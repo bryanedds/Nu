@@ -110,12 +110,17 @@
         <Warning Text="iOS Simulator builds are not supported because it uses software rendering without support for Vulkan descriptor indexing." Condition="'$(TargetPlatformIdentifier)'=='ios' And $(RuntimeIdentifier.StartsWith('iossimulator'))" />
         <ItemGroup>
             <!-- For macOS builds, use the macOS Vulkan SDK's dylibs. Also, the magic of icd.json copying and path fixing enables KosmicKrisp :) -->
-            <MacOSVulkanSdkFile Include="$(MacOSVulkanSdk)/macOS/lib/*.dylib;$(MacOSVulkanSdk)/macOS/share/**/*_icd.json" />
+            <MacOSVulkanSdkDylib Include="$(MacOSVulkanSdk)/macOS/lib/*.dylib" />
+            <MacOSVulkanSdkIcdJson Include="$(MacOSVulkanSdk)/macOS/share/**/*_icd.json" />
             <!-- For iOS device builds, use the macOS Vulkan SDK's libshaderc and Vulkan loader. -->
             <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios' And !$(RuntimeIdentifier.StartsWith('iossimulator'))" Include="$(MacOSVulkanSdk)/iOS/lib/libshaderc_combined.a" Kind="Static" />
             <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios' And !$(RuntimeIdentifier.StartsWith('iossimulator'))" Include="$(MacOSVulkanSdk)/iOS/lib/*.xcframework" Kind="Framework" />
         </ItemGroup>
-        <Copy Condition="'$(TargetPlatformIdentifier)'!='ios'" SourceFiles="@(MacOSVulkanSdkFile)" DestinationFiles="@(MacOSVulkanSdkFile->'$(OutDir)%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+        <Error Condition="'$(TargetPlatformIdentifier)'!='ios' And '@(MacOSVulkanSdkDylib)'==''" Text="No macOS Vulkan SDK dylibs were found at '$(MacOSVulkanSdk)/macOS/lib/*.dylib'. Ensure MacOSVulkanSdk points to a valid Vulkan SDK installation." />
+        <!-- Create symbolic links for macOS Vulkan SDK dylibs -->
+        <Exec Condition="'$(TargetPlatformIdentifier)'!='ios'"
+              Command="mkdir -p &quot;$(OutDir)%(MacOSVulkanSdkDylib.RecursiveDir)&quot; &amp;&amp; ln -sfn &quot;%(MacOSVulkanSdkDylib.Identity)&quot; &quot;$(OutDir)%(MacOSVulkanSdkDylib.RecursiveDir)%(MacOSVulkanSdkDylib.Filename)%(MacOSVulkanSdkDylib.Extension)&quot;" />
+        <Copy Condition="'$(TargetPlatformIdentifier)'!='ios'" SourceFiles="@(MacOSVulkanSdkIcdJson)" DestinationFiles="@(MacOSVulkanSdkIcdJson->'$(OutDir)%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
         <ItemGroup>
             <OutIcdJsonFile Include="$(OutDir)/vulkan/icd.d/*_icd.json" />
         </ItemGroup>

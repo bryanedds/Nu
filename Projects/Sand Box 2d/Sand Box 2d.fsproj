@@ -130,6 +130,7 @@
 		<AndroidNativeLibrary Include="../../Nu/Nu.Dependencies/ShaderC/android/*/libshaderc_shared.so" />
 		<AndroidNativeLibrary Include="../../Nu/Nu.Dependencies/ShaderC/android/*/libc++_shared.so" />
 		<AndroidNativeLibrary Include="../../Nu/Nu.Dependencies/ImGui/android/*/libcimgui.so" />
+		<AndroidNativeLibrary Include="../../Nu/Nu.Dependencies/AssimpNet/android/*/libassimp.so" />
 		<PackageReference Include="Xamarin.Google.Android.Play.Asset.Delivery" Version="2.3.0.6" />
     </ItemGroup>
 
@@ -155,25 +156,32 @@
         <ProjectReference Include="..\..\Nu\Nu.Spine\Nu.Spine.csproj" />
     </ItemGroup>
 
-    <!-- Use macOS Vulkan SDK for MoltenVK and KosmicKrisp on iOS and macOS -->
-    <PropertyGroup>
-        <!-- Override the macOS Vulkan SDK path here -->
-        <MacOSVulkanSdk></MacOSVulkanSdk>
-    </PropertyGroup>
     <Target Name="CopyMacOSVulkanSdk" BeforeTargets="AssignTargetPaths" Condition="$(BuildingMacOS) Or '$(TargetPlatformIdentifier)'=='ios'">
-        <Exec Condition="'$(MacOSVulkanSdk)' == '' And $([System.OperatingSystem]::IsMacOS())" Command="&#xD;&#xA;            if [ -x ~/.bash_profile ]&#xD;&#xA;            then source ~/.bash_profile&#xD;&#xA;            fi&#xD;&#xA;            if [ &quot;$VULKAN_SDK&quot; == &quot;&quot; ] # Try to read VULKAN_SDK from bash_profile first&#xD;&#xA;            then VULKAN_SDK=`ls -d ~/VulkanSDK/* | grep -E &quot;[^/]+/[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$&quot; | sort -V -r | head -n 1` # By default, the Vulkan SDK for macOS is installed in ~/VulkanSDK with versioned subdirectories&#xD;&#xA;            fi&#xD;&#xA;            echo &quot;$VULKAN_SDK&quot;" ConsoleToMsBuild="true">
+        <Exec Condition="'$(MacOSVulkanSdk)' == '' And $([System.OperatingSystem]::IsMacOS())" Command="
+            if [ -x ~/.bash_profile ]
+            then source ~/.bash_profile
+            fi
+            if [ &quot;$VULKAN_SDK&quot; == &quot;&quot; ] # Try to read VULKAN_SDK from bash_profile first
+            then VULKAN_SDK=`ls -d ~/VulkanSDK/* | grep -E &quot;[^/]+/[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$&quot; | sort -V -r | head -n 1` # By default, the Vulkan SDK for macOS is installed in ~/VulkanSDK with versioned subdirectories
+            fi
+            echo &quot;$VULKAN_SDK&quot;" ConsoleToMsBuild="true">
             <Output TaskParameter="ConsoleOutput" PropertyName="MacOSVulkanSdk" />
         </Exec>
         <Error Text="Please install the macOS Vulkan SDK. If installed to a non-default location, override the MacOSVulkanSdk property in this file." Condition="!$([System.IO.Directory]::Exists($(MacOSVulkanSdk)))" />
         <Warning Text="iOS Simulator builds are not supported because it uses software rendering without support for Vulkan descriptor indexing." Condition="'$(TargetPlatformIdentifier)'=='ios' And $(RuntimeIdentifier.StartsWith('iossimulator'))" />
         <ItemGroup>
             <!-- For macOS builds, use the macOS Vulkan SDK's dylibs. Also, the magic of icd.json copying and path fixing enables KosmicKrisp :) -->
-            <MacOSVulkanSdkFile Include="$(MacOSVulkanSdk)/macOS/lib/*.dylib;$(MacOSVulkanSdk)/macOS/share/**/*_icd.json" />
+            <MacOSVulkanSdkDylib Include="$(MacOSVulkanSdk)/macOS/lib/*.dylib" />
+            <MacOSVulkanSdkIcdJson Include="$(MacOSVulkanSdk)/macOS/share/**/*_icd.json" />
             <!-- For iOS device builds, use the macOS Vulkan SDK's libshaderc and Vulkan loader. -->
             <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios' And !$(RuntimeIdentifier.StartsWith('iossimulator'))" Include="$(MacOSVulkanSdk)/iOS/lib/libshaderc_combined.a" Kind="Static" />
             <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios' And !$(RuntimeIdentifier.StartsWith('iossimulator'))" Include="$(MacOSVulkanSdk)/iOS/lib/*.xcframework" Kind="Framework" />
         </ItemGroup>
-        <Copy Condition="'$(TargetPlatformIdentifier)'!='ios'" SourceFiles="@(MacOSVulkanSdkFile)" DestinationFiles="@(MacOSVulkanSdkFile->'$(OutDir)%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+        <Error Condition="'$(TargetPlatformIdentifier)'!='ios' And '@(MacOSVulkanSdkDylib)'==''" Text="No macOS Vulkan SDK dylibs were found at '$(MacOSVulkanSdk)/macOS/lib/*.dylib'. Ensure MacOSVulkanSdk points to a valid Vulkan SDK installation." />
+        <!-- Create symbolic links for macOS Vulkan SDK dylibs -->
+        <Exec Condition="'$(TargetPlatformIdentifier)'!='ios'"
+              Command="mkdir -p &quot;$(OutDir)%(MacOSVulkanSdkDylib.RecursiveDir)&quot; &amp;&amp; ln -sfn &quot;%(MacOSVulkanSdkDylib.Identity)&quot; &quot;$(OutDir)%(MacOSVulkanSdkDylib.RecursiveDir)%(MacOSVulkanSdkDylib.Filename)%(MacOSVulkanSdkDylib.Extension)&quot;" />
+        <Copy Condition="'$(TargetPlatformIdentifier)'!='ios'" SourceFiles="@(MacOSVulkanSdkIcdJson)" DestinationFiles="@(MacOSVulkanSdkIcdJson->'$(OutDir)%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
         <ItemGroup>
             <OutIcdJsonFile Include="$(OutDir)/vulkan/icd.d/*_icd.json" />
         </ItemGroup>
