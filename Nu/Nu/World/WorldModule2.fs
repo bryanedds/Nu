@@ -1174,7 +1174,7 @@ module WorldModule2 =
                     let flipped = evt.wheel.direction = SDL_MouseWheelDirection.SDL_MOUSEWHEEL_FLIPPED
                     let travel = evt.wheel.y * if flipped then -1.0f else 1.0f
                     MouseState.MouseScrollStateCurrent <- MouseState.MouseScrollStateCurrent + travel
-                    imGui.HandleMouseScrollChange travel
+                    imGui.HandleMouseScrollChange evt.wheel.y // NOTE: ImGui does its own platform-specific flipping according to le AI.
                     let eventData = { Travel = travel }
                     let eventTrace = EventTrace.debug "World" "processInput2" "MouseScroll" EventTrace.empty
                     World.publishPlus eventData Nu.Game.Handle.MouseScrollEvent eventTrace Nu.Game.Handle true true world
