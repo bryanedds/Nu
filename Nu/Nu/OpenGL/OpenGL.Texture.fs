@@ -753,8 +753,8 @@ module Texture =
         let [<VolatileField>] mutable terminated = false
 
         member private this.Run () =
-            let glContext = OpenGL.Hl.CreateSglContextSharedWithCurrentContext (window, sharedContext)
-            OpenGL.Hl.Assert ()
+            let glContext = Hl.CreateSglContextSharedWithCurrentContext (window, sharedContext)
+            Hl.Assert ()
             started <- true
             while not terminated do
                 let batchTime = Stopwatch.StartNew () // NOTE: we stop loading after 1/2 frame passed so far.
@@ -767,16 +767,14 @@ module Texture =
                     while not terminated && batchTime.ElapsedMilliseconds < frameTimeOutMs && lazyTextureQueue.TryDequeue &lazyTexture do
                         lazyTexture.TryServe ()
                 Thread.Sleep (max 1 (int desiredFrameTimeMinimumMs - int batchTime.ElapsedMilliseconds + 1))
-            OpenGL.Hl.DestroySglContext (glContext, window)
+            Hl.DestroySglContext (glContext, window)
 
         member this.Start () =
             if not started then
                 let thread =
                     Thread (ThreadStart (fun () ->
                         try this.Run ()
-                        with exn ->
-                            Log.error (scstring exn)
-                            Environment.Exit Constants.Engine.ExitCodeFailure))
+                        with exn -> Log.error (scstring exn)))
                 threadOpt <- Some thread
                 thread.IsBackground <- true
                 thread.Start ()
