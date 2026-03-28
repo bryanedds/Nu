@@ -301,18 +301,27 @@ module Pipeline =
         member this.VkDescriptorSet setNumber = this.DescriptorSets_.[setNumber].VkDescriptorSet
         
         /// Create the descriptor pool.
-        static member private createDescriptorPool (resourceBindingsSets : VkDescriptorSetLayoutBinding array array) device =
+        static member private createDescriptorPool drawLimit (descriptorSetDefinitions : DescriptorSetDefinition array) device =
             
-            // collect bindings from all sets
+            // process each descriptor set definition
+            let resourceBindingsSets = Array.zeroCreate descriptorSetDefinitions.Length
+            for i in 0 .. dec descriptorSetDefinitions.Length do
+                resourceBindingsSets.[i] <-
+                    Array.map
+                        (fun binding ->
+                             let originalCountWithIndexing = if descriptorSetDefinitions.[i].DescriptorIndexed then binding.DescriptorCount * drawLimit else binding.DescriptorCount
+                             let totalCount = originalCountWithIndexing * Constants.Vulkan.MaxFramesInFlight
+                             (binding.DescriptorType.VkDescriptorType, uint totalCount))
+                        descriptorSetDefinitions.[i].Descriptors
+            
+            // derive pool sizes
             let resourceBindings = Array.concat resourceBindingsSets
-            
-            // derive pool sizes from layout bindings
             let poolSizes = Array.zeroCreate<VkDescriptorPoolSize> resourceBindings.Length
             use poolSizesPin = new ArrayPin<_> (poolSizes)
             for i in [0 .. dec resourceBindings.Length] do
                 let mutable poolSize = VkDescriptorPoolSize ()
-                poolSize.``type`` <- resourceBindings.[i].descriptorType
-                poolSize.descriptorCount <- resourceBindings.[i].descriptorCount * uint Constants.Vulkan.MaxFramesInFlight
+                poolSize.``type`` <- fst resourceBindings.[i]
+                poolSize.descriptorCount <- snd resourceBindings.[i]
                 poolSizes.[i] <- poolSize
             
             // create descriptor pool
@@ -630,7 +639,7 @@ module Pipeline =
                 descriptorSetLayouts.[i] <- Pipeline.createDescriptorSetLayout descriptorSetDefinitions.[i].DescriptorIndexed layoutBindingsSets.[i] vkc.Device
             
             // create descriptor pool
-            let descriptorPool = Pipeline.createDescriptorPool layoutBindingsSets vkc.Device
+            let descriptorPool = Pipeline.createDescriptorPool drawLimit descriptorSetDefinitions vkc.Device
             
             // create descriptor sets
             let descriptorSets = Array.zeroCreate descriptorSetDefinitions.Length
