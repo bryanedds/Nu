@@ -150,7 +150,7 @@ module LightMap =
                 vkc
 
         // setup sampler
-        Pipeline.Pipeline.writeDescriptorSampler 1 0 sampler pipeline vkc
+        Pipeline.Pipeline.writeDescriptorSampler 0 1 0 sampler pipeline vkc
         
         // create uniform buffers
         let transformUniform = Buffer.Buffer.create sizeof<Transform> Buffer.Storage vkc
@@ -196,11 +196,11 @@ module LightMap =
             Buffer.Buffer.uploadValue drawIndex 0 0 environmentFilter pipeline.EnvironmentFilterUniform vkc
     
             // update uniform descriptors
-            Pipeline.Pipeline.updateBufferDescriptorsStorage 0 0 pipeline.TransformUniform pipeline.Pipeline vkc
-            Pipeline.Pipeline.updateBufferDescriptorsStorage 0 1 pipeline.EnvironmentFilterUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateBufferDescriptorsStorage 0 0 0 pipeline.TransformUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateBufferDescriptorsStorage 0 0 1 pipeline.EnvironmentFilterUniform pipeline.Pipeline vkc
 
             // bind texture
-            Pipeline.Pipeline.writeDescriptorSampledImage drawIndex 0 2 cubeMap pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage 0 drawIndex 0 2 cubeMap pipeline.Pipeline vkc
 
             // make viewport and scissor
             let mutable renderArea = VkRect2D (0, 0, uint resolution, uint resolution)
@@ -232,8 +232,8 @@ module LightMap =
                     Vulkan.vkCmdBindIndexBuffer (cb, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
 
                     // bind descriptor sets
-                    let mutable mainDescriptorSet = pipeline.Pipeline.VkDescriptorSet 0
-                    let mutable samplerDescriptorSet = pipeline.Pipeline.VkDescriptorSet 1
+                    let mutable mainDescriptorSet = pipeline.Pipeline.VkDescriptorSet 0 0
+                    let mutable samplerDescriptorSet = pipeline.Pipeline.VkDescriptorSet 1 0
                     Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, asPointer &mainDescriptorSet, 0u, nullPtr)
                     Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, asPointer &samplerDescriptorSet, 0u, nullPtr)
                     

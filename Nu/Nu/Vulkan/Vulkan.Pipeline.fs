@@ -282,7 +282,7 @@ module Pipeline =
         private
             { mutable VkPipelines_ : Map<Blend * bool, VkPipeline>
               DescriptorPool_ : VkDescriptorPool
-              DescriptorSets_ : DescriptorSet array
+              DescriptorSets_ : DescriptorSet array array
               PipelineLayout_ : VkPipelineLayout
               DescriptorSetLayouts_ : VkDescriptorSetLayout array
               ShaderPath_ : string
@@ -300,7 +300,7 @@ module Pipeline =
         member this.DrawLimit = this.DrawLimit_
         
         /// The descriptor set of the given number for the current frame.
-        member this.VkDescriptorSet setNumber = this.DescriptorSets_.[setNumber].VkDescriptorSet
+        member this.VkDescriptorSet setNumber setIndex = this.DescriptorSets_.[setNumber].[setIndex].VkDescriptorSet
         
         /// Create the descriptor pool.
         static member private createDescriptorPool drawLimit (descriptorSetDefinitions : DescriptorSetDefinition array) device =
@@ -525,26 +525,26 @@ module Pipeline =
             Map.tryFind (blend, cullFace) pipeline.VkPipelines_
         
         /// Write a sampler to the descriptor set. Must be used at init.
-        static member writeDescriptorSampler setNumber (binding : int) (sampler : Texture.Sampler) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
-            DescriptorSet.writeDescriptorSampler binding sampler pipeline.DescriptorSets_.[setNumber] vkc
+        static member writeDescriptorSampler setIndex setNumber (binding : int) (sampler : Texture.Sampler) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
+            DescriptorSet.writeDescriptorSampler binding sampler pipeline.DescriptorSets_.[setNumber].[setIndex] vkc
         
         /// Write a sampled image to the descriptor set. Must be used in-frame.
-        static member writeDescriptorSampledImage (descriptorIndex : int) setNumber (binding : int) (texture : Texture.Texture) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
-            DescriptorSet.writeDescriptorSampledImage descriptorIndex binding texture pipeline.DescriptorSets_.[setNumber] vkc
+        static member writeDescriptorSampledImage setIndex (descriptorIndex : int) setNumber (binding : int) (texture : Texture.Texture) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
+            DescriptorSet.writeDescriptorSampledImage descriptorIndex binding texture pipeline.DescriptorSets_.[setNumber].[setIndex] vkc
         
         /// Write a combined image sampler to the descriptor set. Must be used in-frame.
-        static member writeDescriptorCombinedImageSampler (descriptorIndex : int) setNumber (binding : int) (texture : Texture.Texture) (sampler : Texture.Sampler) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
-            DescriptorSet.writeDescriptorCombinedImageSampler descriptorIndex binding texture sampler pipeline.DescriptorSets_.[setNumber] vkc
+        static member writeDescriptorCombinedImageSampler setIndex (descriptorIndex : int) setNumber (binding : int) (texture : Texture.Texture) (sampler : Texture.Sampler) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
+            DescriptorSet.writeDescriptorCombinedImageSampler descriptorIndex binding texture sampler pipeline.DescriptorSets_.[setNumber].[setIndex] vkc
         
         /// Update descriptor sets as uniform buffers are added. Must be used in-frame.
         /// TODO: DJL: this method can not yet handle resized or otherwise replaced buffers in already used index slots.
-        static member updateBufferDescriptorsUniform setNumber (binding : int) (uniform : Buffer.Buffer) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
-            DescriptorSet.updateBufferDescriptors VkDescriptorType.UniformBuffer binding uniform pipeline.DescriptorSets_.[setNumber] vkc
+        static member updateBufferDescriptorsUniform setIndex setNumber (binding : int) (uniform : Buffer.Buffer) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
+            DescriptorSet.updateBufferDescriptors VkDescriptorType.UniformBuffer binding uniform pipeline.DescriptorSets_.[setNumber].[setIndex] vkc
 
         /// Update descriptor sets as storage buffers are added. Must be used in-frame.
         /// TODO: DJL: this method can not yet handle resized or otherwise replaced buffers in already used index slots.
-        static member updateBufferDescriptorsStorage setNumber (binding : int) (uniform : Buffer.Buffer) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
-            DescriptorSet.updateBufferDescriptors VkDescriptorType.StorageBuffer binding uniform pipeline.DescriptorSets_.[setNumber] vkc
+        static member updateBufferDescriptorsStorage setIndex setNumber (binding : int) (uniform : Buffer.Buffer) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
+            DescriptorSet.updateBufferDescriptors VkDescriptorType.StorageBuffer binding uniform pipeline.DescriptorSets_.[setNumber].[setIndex] vkc
 
         /// Create a Pipeline.
         static member create
@@ -647,7 +647,10 @@ module Pipeline =
             // create descriptor sets
             let descriptorSets = Array.zeroCreate descriptorSetDefinitions.Length
             for i in 0 .. dec descriptorSetDefinitions.Length do
-                descriptorSets.[i] <- DescriptorSet.create layoutBindingsSets.[i] descriptorSetLayouts.[i] descriptorPool vkc.Device
+                let subArray = Array.zeroCreate descriptorSetDefinitions.[i].SetCount
+                for j in 0 .. dec subArray.Length do
+                    subArray.[j] <- DescriptorSet.create layoutBindingsSets.[i] descriptorSetLayouts.[i] descriptorPool vkc.Device
+                descriptorSets.[i] <- subArray
             
             // create pipeline layout and vkPipelines
             if blends.Length < 1 then Log.fail "No pipeline blend was specified."

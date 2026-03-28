@@ -50,7 +50,7 @@ module SkyBox =
                 vkc
 
         // setup sampler
-        Pipeline.Pipeline.writeDescriptorSampler 1 0 sampler pipeline vkc
+        Pipeline.Pipeline.writeDescriptorSampler 0 1 0 sampler pipeline vkc
         
         // create uniform buffers
         let skyBoxVertUniform = Buffer.Buffer.create sizeof<SkyBoxVert> Buffer.Storage vkc
@@ -102,11 +102,11 @@ module SkyBox =
             Buffer.Buffer.uploadValue drawIndex 0 0 skyBoxFrag pipeline.SkyBoxFragUniform vkc
             
             // update uniform descriptors
-            Pipeline.Pipeline.updateBufferDescriptorsStorage 0 0 pipeline.SkyBoxVertUniform pipeline.SkyBoxPipeline vkc
-            Pipeline.Pipeline.updateBufferDescriptorsStorage 0 1 pipeline.SkyBoxFragUniform pipeline.SkyBoxPipeline vkc
+            Pipeline.Pipeline.updateBufferDescriptorsStorage 0 0 0 pipeline.SkyBoxVertUniform pipeline.SkyBoxPipeline vkc
+            Pipeline.Pipeline.updateBufferDescriptorsStorage 0 0 1 pipeline.SkyBoxFragUniform pipeline.SkyBoxPipeline vkc
             
             // bind texture
-            Pipeline.Pipeline.writeDescriptorSampledImage drawIndex 0 2 cubeMap pipeline.SkyBoxPipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage 0 drawIndex 0 2 cubeMap pipeline.SkyBoxPipeline vkc
 
             // make viewport and scissor
             let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
@@ -143,8 +143,8 @@ module SkyBox =
                     Vulkan.vkCmdBindIndexBuffer (cb, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
 
                     // bind descriptor sets
-                    let mutable mainDescriptorSet = pipeline.SkyBoxPipeline.VkDescriptorSet 0
-                    let mutable samplerDescriptorSet = pipeline.SkyBoxPipeline.VkDescriptorSet 1
+                    let mutable mainDescriptorSet = pipeline.SkyBoxPipeline.VkDescriptorSet 0 0
+                    let mutable samplerDescriptorSet = pipeline.SkyBoxPipeline.VkDescriptorSet 1 0
                     Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.SkyBoxPipeline.PipelineLayout, 0u, 1u, asPointer &mainDescriptorSet, 0u, nullPtr)
                     Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.SkyBoxPipeline.PipelineLayout, 1u, 1u, asPointer &samplerDescriptorSet, 0u, nullPtr)
                     

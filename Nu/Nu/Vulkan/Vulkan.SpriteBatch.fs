@@ -87,7 +87,7 @@ module SpriteBatch =
                 [|vkc.SwapFormat|] None vkc
 
         // setup sampler
-        Pipeline.Pipeline.writeDescriptorSampler 1 0 sampler pipeline vkc
+        Pipeline.Pipeline.writeDescriptorSampler 0 1 0 sampler pipeline vkc
         
         // create uniforms
         let spriteUniform = Buffer.Buffer.create sizeof<Sprite> Buffer.Storage vkc
@@ -129,11 +129,11 @@ module SpriteBatch =
                 Buffer.Buffer.uploadValue env.DrawIndex 0 0 viewProjection viewProjectionUniform vkc
                 
                 // update uniform descriptors
-                Pipeline.Pipeline.updateBufferDescriptorsStorage 0 0 spriteUniform env.Pipeline vkc
-                Pipeline.Pipeline.updateBufferDescriptorsStorage 0 1 viewProjectionUniform env.Pipeline vkc
+                Pipeline.Pipeline.updateBufferDescriptorsStorage 0 0 0 spriteUniform env.Pipeline vkc
+                Pipeline.Pipeline.updateBufferDescriptorsStorage 0 0 1 viewProjectionUniform env.Pipeline vkc
 
                 // bind texture
-                Pipeline.Pipeline.writeDescriptorSampledImage env.DrawIndex 0 2 texture env.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorSampledImage 0 env.DrawIndex 0 2 texture env.Pipeline vkc
                 
                 // make viewport and scissor
                 let mutable renderArea = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)
@@ -178,8 +178,8 @@ module SpriteBatch =
                         Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)
 
                         // bind descriptor sets
-                        let mutable mainDescriptorSet = env.Pipeline.VkDescriptorSet 0
-                        let mutable samplerDescriptorSet = env.Pipeline.VkDescriptorSet 1
+                        let mutable mainDescriptorSet = env.Pipeline.VkDescriptorSet 0 0
+                        let mutable samplerDescriptorSet = env.Pipeline.VkDescriptorSet 1 0
                         Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, env.Pipeline.PipelineLayout, 0u, 1u, asPointer &mainDescriptorSet, 0u, nullPtr)
                         Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, env.Pipeline.PipelineLayout, 1u, 1u, asPointer &samplerDescriptorSet, 0u, nullPtr)
                 
