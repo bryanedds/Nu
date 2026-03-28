@@ -204,7 +204,7 @@
         <PackageReference Include="DotRecast.Recast.Toolset" Version="2026.1.1" />
         <PackageReference Include="JoltPhysicsSharp" Version="2.19.5" />
         <PackageReference Include="LibTessDotNet" Version="1.1.15" />
-        <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.11.0" />
+        <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.11.1" />
         <PackageReference Include="Pfim" Version="0.11.4" />
         <PackageReference Include="Prime" Version="11.5.0" />
         <PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.1" />
