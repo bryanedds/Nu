@@ -91,12 +91,14 @@ module Pipeline =
     /// Describes a descriptor set.
     type DescriptorSetDefinition =
         { DescriptorIndexed : bool
+          SetCount : int
           Descriptors : DescriptorBinding array }
 
     /// Describes a descriptor set.
     [<DebuggerHidden; DebuggerStepThrough>]
-    let descriptorSet descriptorIndexed descriptors =
+    let descriptorSet descriptorIndexed setCount descriptors =
         { DescriptorIndexed = descriptorIndexed
+          SetCount = setCount
           Descriptors = descriptors }
     
     /// Describes a push constant.
@@ -310,7 +312,7 @@ module Pipeline =
                     Array.map
                         (fun binding ->
                              let originalCountWithIndexing = if descriptorSetDefinitions.[i].DescriptorIndexed then binding.DescriptorCount * drawLimit else binding.DescriptorCount
-                             let totalCount = originalCountWithIndexing * Constants.Vulkan.MaxFramesInFlight
+                             let totalCount = originalCountWithIndexing * descriptorSetDefinitions.[i].SetCount * Constants.Vulkan.MaxFramesInFlight
                              (binding.DescriptorType.VkDescriptorType, uint totalCount))
                         descriptorSetDefinitions.[i].Descriptors
             
@@ -330,7 +332,7 @@ module Pipeline =
             // https://docs.vulkan.org/refpages/latest/refpages/source/VkPhysicalDeviceDescriptorIndexingProperties.html.
             let mutable info = VkDescriptorPoolCreateInfo ()
             info.flags <- VkDescriptorPoolCreateFlags.UpdateAfterBind
-            info.maxSets <- uint (Constants.Vulkan.MaxFramesInFlight * resourceBindingsSets.Length)
+            info.maxSets <- uint ((Array.sumBy (fun x -> x.SetCount) descriptorSetDefinitions) * Constants.Vulkan.MaxFramesInFlight)
             info.poolSizeCount <- uint poolSizes.Length
             info.pPoolSizes <- poolSizesPin.Pointer
             let mutable descriptorPool = Unchecked.defaultof<VkDescriptorPool>
@@ -594,7 +596,8 @@ module Pipeline =
             let mutable nonIndexedSampledImageDescriptorSum = 0
 
             // count descriptors
-            // TODO: DJL: handle illegitimate use of descriptor indexed (combined image) samplers once combined is phased out.
+            // TODO: DJL: handle use of descriptor indexed (combined image) samplers.
+            // TODO: DJL: reevaluate counting system in light of non-trivial descriptor set counts.
             for i in 0 .. dec descriptorSetDefinitions.Length do
                 let uniformBufferTotal = Array.sumBy (fun descriptor -> if descriptor.DescriptorType.IsUniformBuffer then descriptor.DescriptorCount else 0) descriptorSetDefinitions.[i].Descriptors
                 let storageBufferTotal = Array.sumBy (fun descriptor -> if descriptor.DescriptorType.IsStorageBuffer then descriptor.DescriptorCount else 0) descriptorSetDefinitions.[i].Descriptors
@@ -602,12 +605,12 @@ module Pipeline =
                 let samplerTotal = Array.sumBy (fun descriptor -> if descriptor.DescriptorType.IsSampler then descriptor.DescriptorCount else 0) descriptorSetDefinitions.[i].Descriptors
                 if descriptorSetDefinitions.[i].DescriptorIndexed
                 then
-                    indexedDescriptorSum <- indexedDescriptorSum + uniformBufferTotal + storageBufferTotal + sampledImageTotal
+                    indexedDescriptorSum <- indexedDescriptorSum + (uniformBufferTotal + storageBufferTotal + sampledImageTotal) * descriptorSetDefinitions.[i].SetCount
                     indexedUniformBufferDescriptorSum <- indexedUniformBufferDescriptorSum + uniformBufferTotal
                     indexedStorageBufferDescriptorSum <- indexedStorageBufferDescriptorSum + storageBufferTotal
                     indexedSampledImageDescriptorSum <- indexedSampledImageDescriptorSum + sampledImageTotal
                 else
-                    nonIndexedDescriptorSum <- nonIndexedDescriptorSum + uniformBufferTotal + storageBufferTotal + sampledImageTotal + samplerTotal
+                    nonIndexedDescriptorSum <- nonIndexedDescriptorSum + (uniformBufferTotal + storageBufferTotal + sampledImageTotal + samplerTotal) * descriptorSetDefinitions.[i].SetCount
                     nonIndexedUniformBufferDescriptorSum <- nonIndexedUniformBufferDescriptorSum + uniformBufferTotal
                     nonIndexedStorageBufferDescriptorSum <- nonIndexedStorageBufferDescriptorSum + storageBufferTotal
                     nonIndexedSampledImageDescriptorSum <- nonIndexedSampledImageDescriptorSum + sampledImageTotal
@@ -626,7 +629,7 @@ module Pipeline =
             if indexedSampledImageDescriptorSum > 0 then drawLimits.Add (sampledImageLimit / indexedSampledImageDescriptorSum - drawsToDetract indexedSampledImageDescriptorSum nonIndexedSampledImageDescriptorSum)
             let drawLimit = if drawLimits.Count > 0 then int (Array.min (drawLimits.ToArray ())) else Int32.MaxValue
             
-            // process each descriptor set definition
+            // create descriptor set layouts
             let layoutBindingsSets = Array.zeroCreate descriptorSetDefinitions.Length
             let descriptorSetLayouts = Array.zeroCreate descriptorSetDefinitions.Length
             for i in 0 .. dec descriptorSetDefinitions.Length do

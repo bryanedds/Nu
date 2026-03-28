@@ -1280,7 +1280,7 @@ module PhysicallyBased =
                 shaderPath blends vertexBindings
                 
                 // descriptor set 0: common; per renderGeometry call
-                [|Pipeline.descriptorSet true
+                [|Pipeline.descriptorSet true 1
                     [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexFragmentStage 1 // transform
                       Pipeline.descriptor 1 Hl.StorageBuffer Hl.FragmentStage 1 // common
                       Pipeline.descriptor 2 Hl.SampledImage Hl.FragmentStage 1 // depthTexture
@@ -1290,7 +1290,7 @@ module PhysicallyBased =
                       Pipeline.descriptor 6 Hl.SampledImage Hl.FragmentStage 1|] // environmentFilterMap
 
                   // descriptor set 1: position-specific; per draw
-                  Pipeline.descriptorSet true
+                  Pipeline.descriptorSet true 1
                     [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage 1 // bone
                       Pipeline.descriptor 1 Hl.StorageBuffer Hl.FragmentStage lightMapsMax // lightMap
                       Pipeline.descriptor 2 Hl.StorageBuffer Hl.FragmentStage 1 // lightsGeneral
@@ -1316,7 +1316,7 @@ module PhysicallyBased =
                       Pipeline.descriptor 22 Hl.SampledImage Hl.FragmentStage Constants.Render.ShadowCascadesMax|] // shadowCascades
 
                   // descriptor set 2: samplers
-                  Pipeline.descriptorSet false
+                  Pipeline.descriptorSet false 1
                     [|Pipeline.descriptor 0 Hl.Sampler Hl.FragmentStage 1
                       Pipeline.descriptor 1 Hl.Sampler Hl.FragmentStage 1
                       Pipeline.descriptor 2 Hl.Sampler Hl.FragmentStage 1
