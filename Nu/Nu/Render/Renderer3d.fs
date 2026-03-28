@@ -5586,7 +5586,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
     static member private handleReloadRenderAssets renderer =
         VulkanRenderer3d.invalidateCaches renderer
         VulkanRenderer3d.clearRenderPasses renderer // invalidate render task keys that now contain potentially stale data
-        VulkanRenderer3d.handleReloadShaders renderer
+        VulkanRenderer3d.handleReloadShaders renderer // waits for renders to complete, relevant to all asset reload
         for packageName in renderer.RenderPackages |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq do
             VulkanRenderer3d.tryLoadRenderPackage packageName renderer
     

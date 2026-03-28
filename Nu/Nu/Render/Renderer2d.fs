@@ -962,7 +962,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         // reload render assets upon request
         // NOTE: DJL: doing this *before* rendering because you can't record commands with a VkPipeline then destroy it before submission.
         if renderer.ReloadAssetsRequested then
-            VulkanRenderer2d.handleReloadShaders renderer
+            VulkanRenderer2d.handleReloadShaders renderer // waits for renders to complete, relevant to all asset reload
             VulkanRenderer2d.handleReloadRenderAssets renderer
             renderer.ReloadAssetsRequested <- false
 
