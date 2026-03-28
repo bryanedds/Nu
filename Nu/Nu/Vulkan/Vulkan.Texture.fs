@@ -1234,9 +1234,7 @@ module Texture =
                 let thread =
                     Thread (ThreadStart (fun () ->
                         try this.Run ()
-                        with exn ->
-                            Log.error (scstring exn)
-                            Environment.Exit Constants.Engine.ExitCodeFailure))
+                        with exn -> Log.error (scstring exn)))
                 threadOpt <- Some thread
                 thread.IsBackground <- true
                 thread.Start ()
