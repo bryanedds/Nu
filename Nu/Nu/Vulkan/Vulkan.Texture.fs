@@ -121,7 +121,7 @@ module Texture =
 
     /// Record command to copy buffer to image.
     let private RecordBufferToImageCopy (cb, width, height, mipLevel, layer, vkBuffer, vkImage) =
-        Hl.recordTransitionLayout cb false mipLevel layer 1 VkImageAspectFlags.Color Hl.UndefinedHost Hl.TransferDst vkImage
+        Hl.recordTransitionLayout cb false mipLevel layer 1 VkImageAspectFlags.Color Hl.Undefined Hl.TransferDst vkImage
         let mutable region = VkBufferImageCopy ()
         region.imageSubresource <- Hl.makeSubresourceLayers mipLevel layer VkImageAspectFlags.Color
         region.imageExtent <- VkExtent3D (width, height, 1)
@@ -141,14 +141,14 @@ module Texture =
         barrier.image <- vkImage
         
         // transition mipmap images from undefined as they haven't been touched yet
-        barrier.srcAccessMask <- Hl.UndefinedHost.Access
+        barrier.srcAccessMask <- Hl.Undefined.Access
         barrier.dstAccessMask <- Hl.TransferDst.Access
-        barrier.oldLayout <- Hl.UndefinedHost.VkImageLayout
+        barrier.oldLayout <- Hl.Undefined.VkImageLayout
         barrier.newLayout <- Hl.TransferDst.VkImageLayout
         barrier.subresourceRange <- Hl.makeSubresourceRange 1 (mipLevels - 1) layer 1 VkImageAspectFlags.Color
         Vulkan.vkCmdPipelineBarrier
             (cb,
-             Hl.UndefinedHost.PipelineStage,
+             Hl.Undefined.PipelineStage,
              Hl.TransferDst.PipelineStage,
              VkDependencyFlags.None,
              0u, nullPtr, 0u, nullPtr,
@@ -547,7 +547,7 @@ module Texture =
             iInfo.tiling <- VkImageTiling.Optimal
             iInfo.usage <- usageFlags
             iInfo.sharingMode <- VkSharingMode.Exclusive
-            iInfo.initialLayout <- Hl.UndefinedHost.VkImageLayout
+            iInfo.initialLayout <- Hl.Undefined.VkImageLayout
             let aInfo = VmaAllocationCreateInfo (usage = VmaMemoryUsage.Auto)
             let mutable image = Unchecked.defaultof<VkImage>
             let mutable allocation = Unchecked.defaultof<VmaAllocation>
