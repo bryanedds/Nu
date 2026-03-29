@@ -343,13 +343,6 @@ module GlRendererImGui =
 /// Renders an imgui view via Vulkan.
 type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
 
-    // TODO: DJL: implement the asset texture handling feature implemented above in the opengl. The purpose of those uint32s
-    // is NOT to specify the opengl texture id, but to specify the identifier used by pcmd.TextureId to choose the texture
-    // at draw time. Currently we are passing the descriptor set the font texture is written to. This would require allocating
-    // an entire descriptor set for every texture. Poo. Alternatively we could set up an arbitrary texture indexing system
-    // to enable a descriptor indexing approach. Probably more work. It is worth deferring this feature until the maturation
-    // stage when the global descriptor allocation strategy is properly informed.
-    
     let mutable viewport = viewport
     let mutable pipeline = Unchecked.defaultof<Pipeline.Pipeline>
     let mutable sampler = Unchecked.defaultof<Texture.Sampler>
@@ -358,6 +351,11 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
     let mutable indexBuffer = Unchecked.defaultof<Buffer.Buffer>
     let mutable vertexBufferSize = 8192
     let mutable indexBufferSize = 1024
+    
+    member private renderer.GetImageView id =
+        if id = 0u then fontTexture.ImageView
+        else
+            fontTexture.ImageView
     
     interface RendererImGui with
         
@@ -386,16 +384,13 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
                         [|Pipeline.attribute 0 Hl.Single2 (NativePtr.offsetOf<ImDrawVert> "pos")
                           Pipeline.attribute 1 Hl.Single2 (NativePtr.offsetOf<ImDrawVert> "uv")
                           Pipeline.attribute 2 Hl.Quarter4 (NativePtr.offsetOf<ImDrawVert> "col")|]|] // format must match size of actual data (uint32), even though it is read as vec4 in the shader!
-                    [|Pipeline.descriptorSet false
+                    [|Pipeline.descriptorSet false 32 // TODO: DJL: clarify appropriate descriptor set count for expected number of simultaneous used images.
                         [|Pipeline.descriptor 0 Hl.CombinedImageSampler Hl.FragmentStage 1|]|]
                     [|Pipeline.pushConstant 0 (sizeof<Single> * 4) Hl.VertexStage|]
                     [|vkc.SwapFormat|] None vkc
 
-            // load font atlas texture to descriptor set and store identifier
-            // TODO: DJL: this is currently a bit of a hack as it uses the descriptor set for the first frame in flight.
-            // Figure out how to go about this properly.
-            Pipeline.Pipeline.writeDescriptorCombinedImageSampler 0 0 0 fontTexture sampler pipeline vkc
-            fonts.SetTexID (nativeint (pipeline.VkDescriptorSet 0).Handle)
+            // set font atlas TexId to 0
+            fonts.SetTexID (nativeint 0u)
             
             // NOTE: DJL: this is not used in the dear imgui vulkan backend.
             fonts.ClearTexData ()
@@ -420,6 +415,9 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
             // render when desired and drawData matches viewport
             if vkc.RenderDesired && drawDataMatchesViewport then
 
+                // images added as needed for current frame, associated with descriptor sets by index
+                let usedImages = List ()
+                
                 // init render
                 let cb = vkc.RenderCommandBuffer
                 let mutable renderArea = VkRect2D (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
@@ -509,13 +507,16 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
                                 // set scissor
                                 Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)
 
-                                // bind font descriptor set
-                                let mutable descriptorSet = VkDescriptorSet (uint64 pcmd.TextureId)
-                                Vulkan.vkCmdBindDescriptorSets
-                                    (cb, VkPipelineBindPoint.Graphics,
-                                     pipeline.PipelineLayout, 0u,
-                                     1u, asPointer &descriptorSet,
-                                     0u, nullPtr)
+                                // identify requested texture and write it to a descriptor set to be bound for drawing
+                                let texId = uint pcmd.TextureId
+                                if not (usedImages.Contains texId) then usedImages.Add texId
+                                let descriptorSetIndex = usedImages.IndexOf texId
+                                let imageView = renderer.GetImageView texId
+                                Pipeline.Pipeline.writeDescriptorCombinedImageSampler descriptorSetIndex 0 0 0 imageView sampler pipeline vkc
+                                
+                                // bind descriptor set
+                                let mutable descriptorSet = pipeline.VkDescriptorSet 0 descriptorSetIndex
+                                Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.PipelineLayout, 0u, 1u, asPointer &descriptorSet, 0u, nullPtr)
 
                                 // draw
                                 Vulkan.vkCmdDrawIndexed (cb, pcmd.ElemCount, 1u, pcmd.IdxOffset + uint globalIdxOffset, int pcmd.VtxOffset + globalVtxOffset, 0u)

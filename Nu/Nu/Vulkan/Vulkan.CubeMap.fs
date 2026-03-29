@@ -244,10 +244,10 @@ module CubeMap =
                 [|Pipeline.NoBlend|]
                 [|Pipeline.vertex 0 VertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Hl.Single3 0|]|]
-                [|Pipeline.descriptorSet true
+                [|Pipeline.descriptorSet true 1
                     [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage 6
                       Pipeline.descriptor 1 Hl.SampledImage Hl.FragmentStage 6|]
-                  Pipeline.descriptorSet false
+                  Pipeline.descriptorSet false 1
                     [|Pipeline.descriptor 0 Hl.Sampler Hl.FragmentStage 1|]|]
                 [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]
                 [|colorAttachmentFormat|]
@@ -255,7 +255,7 @@ module CubeMap =
                 vkc
 
         // setup sampler
-        Pipeline.Pipeline.writeDescriptorSampler 1 0 sampler pipeline vkc
+        Pipeline.Pipeline.writeDescriptorSampler 0 1 0 sampler pipeline vkc
         
         // create uniform buffer
         let transformUniform = Buffer.Buffer.create sizeof<Transform> Buffer.Storage vkc
@@ -294,10 +294,10 @@ module CubeMap =
             Buffer.Buffer.uploadValue drawIndex 0 0 transform pipeline.TransformUniform vkc
 
             // update uniform descriptor
-            Pipeline.Pipeline.updateBufferDescriptorsStorage 0 0 pipeline.TransformUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.updateBufferDescriptorsStorage 0 0 0 pipeline.TransformUniform pipeline.Pipeline vkc
 
             // bind texture
-            Pipeline.Pipeline.writeDescriptorSampledImage drawIndex 0 1 cubeMap pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage 0 drawIndex 0 1 cubeMap.ImageView pipeline.Pipeline vkc
 
             // make viewport and scissor
             let mutable renderArea = VkRect2D (0, 0, uint resolution, uint resolution)
@@ -329,8 +329,8 @@ module CubeMap =
                     Vulkan.vkCmdBindIndexBuffer (cb, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
 
                     // bind descriptor sets
-                    let mutable mainDescriptorSet = pipeline.Pipeline.VkDescriptorSet 0
-                    let mutable samplerDescriptorSet = pipeline.Pipeline.VkDescriptorSet 1
+                    let mutable mainDescriptorSet = pipeline.Pipeline.VkDescriptorSet 0 0
+                    let mutable samplerDescriptorSet = pipeline.Pipeline.VkDescriptorSet 1 0
                     Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, asPointer &mainDescriptorSet, 0u, nullPtr)
                     Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, asPointer &samplerDescriptorSet, 0u, nullPtr)
                     
