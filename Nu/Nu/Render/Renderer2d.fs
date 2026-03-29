@@ -239,7 +239,8 @@ type [<ReferenceEquality>] GlRenderer2d =
                     | (false, _) -> Constants.Render.FontSizeDefault
                 else Constants.Render.FontSizeDefault
             let fontSize = fontSizeDefault * single renderer.Viewport.DisplayScalar
-            let fontOpt = SDL3_ttf.TTF_OpenFont (asset.FilePath, fontSize)
+            let filePathSdl = PathF.GetFullPath asset.FilePath
+            let fontOpt = SDL3_ttf.TTF_OpenFont (filePathSdl, fontSize)
             if fontOpt <> NativePtr.nullPtr
             then Some (FontAsset (fontSizeDefault, fontOpt))
             else Log.info ("Could not load font due to '" + SDL3.SDL_GetError () + "'."); None
