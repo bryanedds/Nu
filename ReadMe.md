@@ -32,7 +32,7 @@ Look here to get started with your own project in Nu -
 Some Media on the Nu Game Engine
 ================================
 
-![image]([https://github.com/user-attachments/assets/86cc7f21-88f2-42b2-a0d7-e9b7940d8680](https://github.com/user-attachments/assets/bcd2d036-eda3-45a2-94fa-114f6ef171c4))
+![image](https://github.com/user-attachments/assets/bcd2d036-eda3-45a2-94fa-114f6ef171c4)
 **Screenshot of the Week!**
 
 ![image](https://github.com/user-attachments/assets/e6d56c42-1eb1-41d4-889c-42b03abd4110)
