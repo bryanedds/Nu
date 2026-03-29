@@ -154,7 +154,7 @@ module Sprite =
             Pipeline.Pipeline.updateBufferDescriptorsStorage 0 0 1 spriteFragUniform pipeline vkc
             
             // bind texture
-            Pipeline.Pipeline.writeDescriptorSampledImage 0 drawIndex 0 2 texture pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage 0 drawIndex 0 2 texture.ImageView pipeline vkc
 
             // make viewport and scissor
             let mutable renderArea = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)

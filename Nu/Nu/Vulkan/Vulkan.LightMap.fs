@@ -200,7 +200,7 @@ module LightMap =
             Pipeline.Pipeline.updateBufferDescriptorsStorage 0 0 1 pipeline.EnvironmentFilterUniform pipeline.Pipeline vkc
 
             // bind texture
-            Pipeline.Pipeline.writeDescriptorSampledImage 0 drawIndex 0 2 cubeMap pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage 0 drawIndex 0 2 cubeMap.ImageView pipeline.Pipeline vkc
 
             // make viewport and scissor
             let mutable renderArea = VkRect2D (0, 0, uint resolution, uint resolution)
