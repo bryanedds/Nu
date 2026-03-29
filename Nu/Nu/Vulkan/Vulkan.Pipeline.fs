@@ -133,7 +133,8 @@ module Pipeline =
             { VkDescriptorSets_ : VkDescriptorSet array
               DescriptorLimits_ : int array
               BufferDescriptorsUpdated_ : int array
-              ImageViewsWritten_ : uint64 List array array }
+              ImageViewsWritten_ : uint64 List array array
+              SamplersWritten_ : uint64 List array array }
 
         /// The VkDescriptorSet for the current frame.
         member this.VkDescriptorSet = this.VkDescriptorSets_.[Hl.CurrentFrame]
@@ -202,25 +203,43 @@ module Pipeline =
             else Log.warnOnce "Attempted sampled image write to descriptor set has exceeded descriptor count. You may have failed to pass the correct descriptor count at pipeline creation."
         
         /// Write a combined image sampler to the descriptor set.
-        /// TODO: DJL: prevent redundent writes.
-        /// TODO: DJL: figure out where this stands with frames in flight. Related to ImGui situation.
         static member writeDescriptorCombinedImageSampler (descriptorIndex : int) (binding : int) (texture : Texture.Texture) (sampler : Texture.Sampler) (descriptorSet : DescriptorSet) (vkc : Hl.VulkanContext) =
+            if descriptorIndex < descriptorSet.DescriptorLimits_.[binding] then
             
-            // image info
-            let mutable info = VkDescriptorImageInfo ()
-            info.sampler <- sampler.VkSampler
-            info.imageView <- texture.ImageView
-            info.imageLayout <- Hl.ShaderRead.VkImageLayout
+                // grow image view list as necessary
+                while descriptorSet.ImageViewsWritten_.[Hl.CurrentFrame].[binding].Count <= descriptorIndex do
+                    descriptorSet.ImageViewsWritten_.[Hl.CurrentFrame].[binding].Add 0UL
 
-            // write descriptor set
-            let mutable write = VkWriteDescriptorSet ()
-            write.dstSet <- descriptorSet.VkDescriptorSet
-            write.dstBinding <- uint binding
-            write.dstArrayElement <- uint descriptorIndex
-            write.descriptorCount <- 1u
-            write.descriptorType <- VkDescriptorType.CombinedImageSampler
-            write.pImageInfo <- asPointer &info
-            Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
+                // grow sampler list as necessary
+                while descriptorSet.SamplersWritten_.[Hl.CurrentFrame].[binding].Count <= descriptorIndex do
+                    descriptorSet.SamplersWritten_.[Hl.CurrentFrame].[binding].Add 0UL
+
+                // only proceed if image view or sampler not already written
+                if descriptorSet.ImageViewsWritten_.[Hl.CurrentFrame].[binding].[descriptorIndex] <> texture.ImageView.Handle ||
+                   descriptorSet.SamplersWritten_.[Hl.CurrentFrame].[binding].[descriptorIndex] <> sampler.VkSampler.Handle
+                then
+            
+                    // image info
+                    let mutable info = VkDescriptorImageInfo ()
+                    info.sampler <- sampler.VkSampler
+                    info.imageView <- texture.ImageView
+                    info.imageLayout <- Hl.ShaderRead.VkImageLayout
+
+                    // write descriptor set
+                    let mutable write = VkWriteDescriptorSet ()
+                    write.dstSet <- descriptorSet.VkDescriptorSet
+                    write.dstBinding <- uint binding
+                    write.dstArrayElement <- uint descriptorIndex
+                    write.descriptorCount <- 1u
+                    write.descriptorType <- VkDescriptorType.CombinedImageSampler
+                    write.pImageInfo <- asPointer &info
+                    Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
+
+                    // record written image view and sampler
+                    descriptorSet.ImageViewsWritten_.[Hl.CurrentFrame].[binding].[descriptorIndex] <- texture.ImageView.Handle
+                    descriptorSet.SamplersWritten_.[Hl.CurrentFrame].[binding].[descriptorIndex] <- sampler.VkSampler.Handle
+
+            else Log.warnOnce "Attempted combined image sampler write to descriptor set has exceeded descriptor count. You may have failed to pass the correct descriptor count at pipeline creation."
         
         /// Update descriptor sets as buffers are added. Must be used in-frame.
         /// TODO: DJL: this method can not yet handle resized or otherwise replaced buffers in already used index slots.
@@ -267,12 +286,21 @@ module Pipeline =
                     subArray.[j] <- List ()
                 imageViewsWritten.[i] <- subArray
 
+            // track sampler writes (for combined image sampler)
+            let samplersWritten = Array.zeroCreate<uint64 List array> Constants.Vulkan.MaxFramesInFlight
+            for i in 0 .. dec samplersWritten.Length do
+                let subArray = Array.zeroCreate<uint64 List> (int highestBinding.binding + 1)
+                for j in 0 .. dec subArray.Length do
+                    subArray.[j] <- List ()
+                samplersWritten.[i] <- subArray
+
             // make DescriptorSet
             let descriptorSet =
                 { VkDescriptorSets_ = vkDescriptorSets
                   DescriptorLimits_ = descriptorLimits
                   BufferDescriptorsUpdated_ = bufferDescriptorsUpdated
-                  ImageViewsWritten_ = imageViewsWritten }
+                  ImageViewsWritten_ = imageViewsWritten
+                  SamplersWritten_ = samplersWritten }
             
             // fin
             descriptorSet

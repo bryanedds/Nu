@@ -343,13 +343,6 @@ module GlRendererImGui =
 /// Renders an imgui view via Vulkan.
 type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
 
-    // TODO: DJL: implement the asset texture handling feature implemented above in the opengl. The purpose of those uint32s
-    // is NOT to specify the opengl texture id, but to specify the identifier used by pcmd.TextureId to choose the texture
-    // at draw time. Currently we are passing the descriptor set the font texture is written to. This would require allocating
-    // an entire descriptor set for every texture. Poo. Alternatively we could set up an arbitrary texture indexing system
-    // to enable a descriptor indexing approach. Probably more work. It is worth deferring this feature until the maturation
-    // stage when the global descriptor allocation strategy is properly informed.
-    
     let mutable viewport = viewport
     let mutable pipeline = Unchecked.defaultof<Pipeline.Pipeline>
     let mutable sampler = Unchecked.defaultof<Texture.Sampler>
@@ -358,6 +351,9 @@ type VulkanRendererImGui (viewport : Viewport, vkc : Hl.VulkanContext) =
     let mutable indexBuffer = Unchecked.defaultof<Buffer.Buffer>
     let mutable vertexBufferSize = 8192
     let mutable indexBufferSize = 1024
+    
+    member private renderer.GetImageView id =
+        fontTexture.ImageView
     
     interface RendererImGui with
         
