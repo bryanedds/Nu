@@ -115,7 +115,7 @@ type RendererInline () =
                     let renderer2d = VulkanRenderer2d.make windowViewport vkc :> Renderer2d
 
                     // create imgui renderer
-                    let rendererImGui = VulkanRendererImGui.make (*assetTextureRequests assetTextureOpts*) fonts windowViewport vkc :> RendererImGui
+                    let rendererImGui = VulkanRendererImGui.make assetTextureRequests assetTextureOpts fonts windowViewport vkc :> RendererImGui
 
                     // fin
                     dependenciesOpt <- Some (renderer3d, renderer2d, rendererImGui, vkc)
@@ -381,7 +381,7 @@ type RendererThread () =
         let renderer2d = VulkanRenderer2d.make windowViewport vkc :> Renderer2d
 
         // create imgui renderer
-        let rendererImGui = VulkanRendererImGui.make (*assetTextureRequests assetTextureOpts*) fonts windowViewport vkc :> RendererImGui
+        let rendererImGui = VulkanRendererImGui.make assetTextureRequests assetTextureOpts fonts windowViewport vkc :> RendererImGui
 
         // mark as started
         started <- true
