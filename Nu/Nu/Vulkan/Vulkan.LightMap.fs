@@ -196,8 +196,8 @@ module LightMap =
             Buffer.Buffer.uploadValue drawIndex 0 0 environmentFilter pipeline.EnvironmentFilterUniform vkc
     
             // update uniform descriptors
-            Pipeline.Pipeline.updateBufferDescriptorsStorage 0 0 0 pipeline.TransformUniform pipeline.Pipeline vkc
-            Pipeline.Pipeline.updateBufferDescriptorsStorage 0 0 1 pipeline.EnvironmentFilterUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorStorageBuffer 0 drawIndex 0 0 pipeline.TransformUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorStorageBuffer 0 drawIndex 0 1 pipeline.EnvironmentFilterUniform pipeline.Pipeline vkc
 
             // bind texture
             Pipeline.Pipeline.writeDescriptorSampledImage 0 drawIndex 0 2 cubeMap.ImageView pipeline.Pipeline vkc

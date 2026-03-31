@@ -150,8 +150,8 @@ module Sprite =
             Buffer.Buffer.uploadValue drawIndex 0 0 spriteFrag spriteFragUniform vkc
             
             // update uniform descriptors
-            Pipeline.Pipeline.updateBufferDescriptorsStorage 0 0 0 spriteVertUniform pipeline vkc
-            Pipeline.Pipeline.updateBufferDescriptorsStorage 0 0 1 spriteFragUniform pipeline vkc
+            Pipeline.Pipeline.writeDescriptorStorageBuffer 0 drawIndex 0 0 spriteVertUniform pipeline vkc
+            Pipeline.Pipeline.writeDescriptorStorageBuffer 0 drawIndex 0 1 spriteFragUniform pipeline vkc
             
             // bind texture
             Pipeline.Pipeline.writeDescriptorSampledImage 0 drawIndex 0 2 texture.ImageView pipeline vkc

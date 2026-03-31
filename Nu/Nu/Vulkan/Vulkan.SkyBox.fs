@@ -102,8 +102,8 @@ module SkyBox =
             Buffer.Buffer.uploadValue drawIndex 0 0 skyBoxFrag pipeline.SkyBoxFragUniform vkc
             
             // update uniform descriptors
-            Pipeline.Pipeline.updateBufferDescriptorsStorage 0 0 0 pipeline.SkyBoxVertUniform pipeline.SkyBoxPipeline vkc
-            Pipeline.Pipeline.updateBufferDescriptorsStorage 0 0 1 pipeline.SkyBoxFragUniform pipeline.SkyBoxPipeline vkc
+            Pipeline.Pipeline.writeDescriptorStorageBuffer 0 drawIndex 0 0 pipeline.SkyBoxVertUniform pipeline.SkyBoxPipeline vkc
+            Pipeline.Pipeline.writeDescriptorStorageBuffer 0 drawIndex 0 1 pipeline.SkyBoxFragUniform pipeline.SkyBoxPipeline vkc
             
             // bind texture
             Pipeline.Pipeline.writeDescriptorSampledImage 0 drawIndex 0 2 cubeMap.ImageView pipeline.SkyBoxPipeline vkc
