@@ -90,7 +90,7 @@ module SkyBox =
         // ensure pipeline draw limit is not exceeded
         if drawIndex < pipeline.SkyBoxPipeline.DrawLimit then
         
-            // upload uniforms
+            // bind uniforms
             let mutable skyBoxVert = SkyBoxVert ()
             let mutable skyBoxFrag = SkyBoxFrag ()
             skyBoxVert.view <- view
@@ -100,8 +100,6 @@ module SkyBox =
             skyBoxFrag.brightness <- brightness
             Buffer.Buffer.uploadValue drawIndex 0 0 skyBoxVert pipeline.SkyBoxVertUniform vkc
             Buffer.Buffer.uploadValue drawIndex 0 0 skyBoxFrag pipeline.SkyBoxFragUniform vkc
-            
-            // update uniform descriptors
             Pipeline.Pipeline.writeDescriptorStorageBuffer 0 drawIndex 0 0 pipeline.SkyBoxVertUniform pipeline.SkyBoxPipeline vkc
             Pipeline.Pipeline.writeDescriptorStorageBuffer 0 drawIndex 0 1 pipeline.SkyBoxFragUniform pipeline.SkyBoxPipeline vkc
             

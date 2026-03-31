@@ -112,7 +112,7 @@ module SpriteBatch =
             // ensure pipeline draw limit is not exceeded
             if env.DrawIndex < env.Pipeline.DrawLimit then
             
-                // upload uniforms
+                // bind uniforms
                 let vkc = env.VulkanContext
                 let spriteUniform = env.SpriteUniform
                 let viewProjectionUniform = env.ViewProjectionUniform
@@ -128,8 +128,6 @@ module SpriteBatch =
                 let mutable viewProjection = ViewProjection ()
                 viewProjection.viewProjection <- if env.State.Absolute then env.ViewProjection2dAbsolute else env.ViewProjection2dRelative
                 Buffer.Buffer.uploadValue env.DrawIndex 0 0 viewProjection viewProjectionUniform vkc
-                
-                // update uniform descriptors
                 Pipeline.Pipeline.writeDescriptorStorageBuffer 0 env.DrawIndex 0 1 viewProjectionUniform env.Pipeline vkc
 
                 // bind texture

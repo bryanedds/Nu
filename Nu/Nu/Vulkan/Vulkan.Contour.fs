@@ -57,12 +57,12 @@ module ContourTessellation =
         // ensure pipeline draw limit is not exceeded
         if drawIndex < pipeline.DrawLimit then
         
-            // upload data to the relevant buffers. this will create a bigger VkBuffer if necessary
-            Buffer.Buffer.uploadValue drawIndex 0 0 modelViewProjection modelViewProjectionUniform vkc
+            // upload vertex data
             Buffer.Buffer.uploadArray drawIndex 0 0 tessellation.Vertices vertexBuffer vkc
             Buffer.Buffer.uploadArray drawIndex 0 0 tessellation.Indices indexBuffer vkc
             
-            // update descriptors
+            // bind uniforms
+            Buffer.Buffer.uploadValue drawIndex 0 0 modelViewProjection modelViewProjectionUniform vkc
             Pipeline.Pipeline.writeDescriptorStorageBuffer 0 drawIndex 0 0 modelViewProjectionUniform pipeline vkc
             
             // make viewport and scissor

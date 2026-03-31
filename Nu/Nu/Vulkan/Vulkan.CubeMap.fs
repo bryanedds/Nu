@@ -286,14 +286,12 @@ module CubeMap =
         // ensure pipeline draw limit is not exceeded
         if drawIndex < pipeline.Pipeline.DrawLimit then
         
-            // upload uniforms
+            // bind uniforms
             let mutable transform = Transform ()
             transform.view <- view
             transform.projection <- projection
             transform.viewProjection <- viewProjection
             Buffer.Buffer.uploadValue drawIndex 0 0 transform pipeline.TransformUniform vkc
-
-            // update uniform descriptor
             Pipeline.Pipeline.writeDescriptorStorageBuffer 0 drawIndex 0 0 pipeline.TransformUniform pipeline.Pipeline vkc
 
             // bind texture

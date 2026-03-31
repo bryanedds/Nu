@@ -140,7 +140,7 @@ module Sprite =
                         (if flipH then -texCoordsUnflipped.Size.X else texCoordsUnflipped.Size.X)
                         (if flipV then -texCoordsUnflipped.Size.Y else texCoordsUnflipped.Size.Y))
 
-            // upload uniforms
+            // bind uniforms
             let mutable spriteVert = SpriteVert ()
             let mutable spriteFrag = SpriteFrag ()
             spriteVert.modelViewProjection <- modelViewProjection
@@ -148,8 +148,6 @@ module Sprite =
             spriteFrag.color <- color.V4
             Buffer.Buffer.uploadValue drawIndex 0 0 spriteVert spriteVertUniform vkc
             Buffer.Buffer.uploadValue drawIndex 0 0 spriteFrag spriteFragUniform vkc
-            
-            // update uniform descriptors
             Pipeline.Pipeline.writeDescriptorStorageBuffer 0 drawIndex 0 0 spriteVertUniform pipeline vkc
             Pipeline.Pipeline.writeDescriptorStorageBuffer 0 drawIndex 0 1 spriteFragUniform pipeline vkc
             

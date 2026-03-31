@@ -1422,7 +1422,7 @@ module PhysicallyBased =
         // ensure pipeline draw limit is not exceeded
         if drawIndex < pipeline.Pipeline.DrawLimit then
         
-            // upload common uniforms
+            // bind common uniforms
             let mutable transform = Transform ()
             let mutable common = Common ()
             transform.view <- view
@@ -1464,6 +1464,8 @@ module PhysicallyBased =
             for i in drawIndex .. dec (min (drawIndex + drawCount) pipeline.Pipeline.DrawLimit) do
                 Buffer.Buffer.uploadValue i 0 0 transform pipeline.TransformUniform vkc
                 Buffer.Buffer.uploadValue i 0 0 common pipeline.CommonUniform vkc
+                Pipeline.Pipeline.writeDescriptorStorageBuffer 0 i 0 0 pipeline.TransformUniform pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorStorageBuffer 0 i 0 1 pipeline.CommonUniform pipeline.Pipeline vkc
 
                 // bind common textures
                 Pipeline.Pipeline.writeDescriptorSampledImage 0 i 0 2 depthTexture.ImageView pipeline.Pipeline vkc
@@ -1471,10 +1473,6 @@ module PhysicallyBased =
                 Pipeline.Pipeline.writeDescriptorSampledImage 0 i 0 4 brdfTexture.ImageView pipeline.Pipeline vkc
                 Pipeline.Pipeline.writeDescriptorSampledImage 0 i 0 5 irradianceMap.ImageView pipeline.Pipeline vkc
                 Pipeline.Pipeline.writeDescriptorSampledImage 0 i 0 6 environmentFilterMap.ImageView pipeline.Pipeline vkc
-            
-                // update common uniform descriptors
-                Pipeline.Pipeline.writeDescriptorStorageBuffer 0 i 0 0 pipeline.TransformUniform pipeline.Pipeline vkc
-                Pipeline.Pipeline.writeDescriptorStorageBuffer 0 i 0 1 pipeline.CommonUniform pipeline.Pipeline vkc
 
         // draw not possible
         else Log.warnOnce "Rendering incomplete due to insufficient gpu resources."
@@ -1524,7 +1522,7 @@ module PhysicallyBased =
         // only draw when there is a surface to render to avoid potentially utilizing destroyed textures
         if surfacesCount > 0 && drawIndex < pipeline.Pipeline.DrawLimit then
             
-            // upload position-specific uniforms
+            // bind position-specific uniforms
             for i in 0 .. dec (min Constants.Render.BonesMax bones.Length) do
                 let mutable bone = Bone ()
                 bone.bone <- bones.[i]

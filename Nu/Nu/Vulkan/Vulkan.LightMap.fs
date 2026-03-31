@@ -184,7 +184,7 @@ module LightMap =
         // ensure pipeline draw limit is not exceeded
         if drawIndex < pipeline.Pipeline.DrawLimit then
         
-            // upload uniforms
+            // bind uniforms
             let mutable transform = Transform ()
             let mutable environmentFilter = EnvironmentFilter ()
             transform.view <- view
@@ -194,8 +194,6 @@ module LightMap =
             environmentFilter.resolution <- resolution
             Buffer.Buffer.uploadValue drawIndex 0 0 transform pipeline.TransformUniform vkc
             Buffer.Buffer.uploadValue drawIndex 0 0 environmentFilter pipeline.EnvironmentFilterUniform vkc
-    
-            // update uniform descriptors
             Pipeline.Pipeline.writeDescriptorStorageBuffer 0 drawIndex 0 0 pipeline.TransformUniform pipeline.Pipeline vkc
             Pipeline.Pipeline.writeDescriptorStorageBuffer 0 drawIndex 0 1 pipeline.EnvironmentFilterUniform pipeline.Pipeline vkc
 
