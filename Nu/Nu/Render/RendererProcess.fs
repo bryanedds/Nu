@@ -376,7 +376,7 @@ type RendererThread () =
         Texture.EmptyOpt <- Some empty
 
         // create 3d renderer
-        let renderer3d = VulkanRenderer3d.make geometryViewport windowViewport vkc :> Renderer3d
+        //let renderer3d = VulkanRenderer3d.make geometryViewport windowViewport vkc :> Renderer3d
 
         // create 2d renderer
         let renderer2d = VulkanRenderer2d.make windowViewport vkc :> Renderer2d
@@ -403,11 +403,11 @@ type RendererThread () =
                 Hl.VulkanContext.beginFrame windowSize windowViewport vkc
 
                 // render 3d
-                renderer3d.Render frustumInterior frustumExterior frustumImposter eye3dCenter eye3dRotation eye3dFieldOfView geometryViewport windowViewport messages3d
+                //renderer3d.Render frustumInterior frustumExterior frustumImposter eye3dCenter eye3dRotation eye3dFieldOfView geometryViewport windowViewport messages3d
                 freeStaticModelMessages messages3d
                 freeStaticModelSurfaceMessages messages3d
                 freeAnimatedModelMessages messages3d
-                renderer3dConfig <- renderer3d.RendererConfig
+                //renderer3dConfig <- renderer3d.RendererConfig
 
                 // render 2d
                 renderer2d.Render eye2dCenter eye2dSize windowViewport messages2d
@@ -437,7 +437,7 @@ type RendererThread () =
 
         // clean up
         Hl.VulkanContext.waitIdle vkc
-        renderer3d.CleanUp ()
+        //renderer3d.CleanUp ()
         renderer2d.CleanUp ()
         rendererImGui.CleanUp ()
         Texture.TextureInternal.destroy Texture.TextureInternal.empty vkc

@@ -479,6 +479,29 @@ module WorldModule4 =
             match SdlDeps.tryMake worldConfig.SdlConfig worldConfig.Accompanied windowSize with
             | Right sdlDeps ->
                 use sdlDeps = sdlDeps // bind explicitly to dispose automatically
+                
+                // Ensure initial viewport sizing is based on actual window pixels.
+                let (geometryViewport, windowViewport) =
+                    match SdlDeps.getWindowOpt sdlDeps with
+                    | Some window ->
+                        let mutable width = 0
+                        let mutable height = 0
+                        if SDL3.SDL_GetWindowSizeInPixels (window, &&width, &&height) |> SDLBool.op_Implicit then
+                            let actualWindowSize = v2i width height
+                            let xScalar = max 1 (actualWindowSize.X / Constants.Render.DisplayVirtualResolution.X)
+                            let yScalar = max 1 (actualWindowSize.Y / Constants.Render.DisplayVirtualResolution.Y)
+                            Globals.Render.DisplayScalar <- min xScalar yScalar
+                            let windowViewport = Viewport.makeWindow1 actualWindowSize
+                            let geometryViewport = Viewport.makeGeometry windowViewport.Bounds.Size
+                            Log.info ("Initialized viewports from SDL pixel size: " + scstring actualWindowSize + ", DisplayScalar=" + scstring Globals.Render.DisplayScalar)
+                            (geometryViewport, windowViewport)
+                        else
+                            Log.warn ("Failed to get SDL window size in pixels during startup: " + SDL3.SDL_GetError ())
+                            (geometryViewport, windowViewport)
+                    | None ->
+                        Log.warn "No SDL window found during startup viewport initialization."
+                        (geometryViewport, windowViewport)
+
                 let world = World.make tryMakeEditContext sdlDeps worldConfig geometryViewport windowViewport plugin
                 World.runWithCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess true world
             | Left error -> Log.error error; Constants.Engine.ExitCodeFailure
