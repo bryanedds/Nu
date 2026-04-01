@@ -177,8 +177,6 @@ module Pipeline =
               DescriptorLimits_ : int array }
 
         member private this.DescriptorSetState = this.DescriptorSetStates_.[Hl.CurrentFrame]
-        
-        /// The VkDescriptorSet for the current frame.
         member this.VkDescriptorSet = this.VkDescriptorSets_.[Hl.CurrentFrame]
 
         /// Allocate the VkDescriptorSet for each frame in flight.
@@ -197,6 +195,8 @@ module Pipeline =
         
         /// Write a buffer to the descriptor set. Must be used in-frame.
         static member writeDescriptorBuffer descriptorType (descriptorIndex : int) (binding : int) (buffer : Buffer.Buffer) (descriptorSet : DescriptorSet) (vkc : Hl.VulkanContext) =
+            
+            // only proceed if within limit
             if descriptorIndex < descriptorSet.DescriptorLimits_.[binding] then
             
                 // only proceed if buffer not already written
@@ -220,10 +220,13 @@ module Pipeline =
                     // record written buffer
                     descriptorSet.DescriptorSetState.SetBuffer binding descriptorIndex buffer.[descriptorIndex].Handle
             
+            // warn if limit exceeded
             else Log.warnOnce "Attempted buffer write to descriptor set has exceeded descriptor count. You may have failed to pass the correct descriptor count at pipeline creation."
 
         /// Write a sampled image to the descriptor set. Must be used in-frame.
         static member writeDescriptorSampledImage (descriptorIndex : int) (binding : int) (imageView : VkImageView) (descriptorSet : DescriptorSet) (vkc : Hl.VulkanContext) =
+            
+            // only proceed if within limit
             if descriptorIndex < descriptorSet.DescriptorLimits_.[binding] then
             
                 // only proceed if image view not already written
@@ -247,10 +250,13 @@ module Pipeline =
                     // record written image view
                     descriptorSet.DescriptorSetState.SetImageView binding descriptorIndex imageView.Handle
 
+            // warn if limit exceeded
             else Log.warnOnce "Attempted sampled image write to descriptor set has exceeded descriptor count. You may have failed to pass the correct descriptor count at pipeline creation."
         
         /// Write a sampler to the descriptor set. Must be used in-frame.
         static member writeDescriptorSampler (descriptorIndex : int) (binding : int) (sampler : Texture.Sampler) (descriptorSet : DescriptorSet) (vkc : Hl.VulkanContext) =
+            
+            // only proceed if within limit
             if descriptorIndex < descriptorSet.DescriptorLimits_.[binding] then
             
                 // only proceed if sampler not already written
@@ -273,10 +279,13 @@ module Pipeline =
                     // record written sampler
                     descriptorSet.DescriptorSetState.SetSampler binding descriptorIndex sampler.VkSampler.Handle
 
+            // warn if limit exceeded
             else Log.warnOnce "Attempted sampler write to descriptor set has exceeded descriptor count. You may have failed to pass the correct descriptor count at pipeline creation."
         
         /// Write a combined image sampler to the descriptor set. Must be used in-frame.
         static member writeDescriptorCombinedImageSampler (descriptorIndex : int) (binding : int) (imageView : VkImageView) (sampler : Texture.Sampler) (descriptorSet : DescriptorSet) (vkc : Hl.VulkanContext) =
+            
+            // only proceed if within limit
             if descriptorIndex < descriptorSet.DescriptorLimits_.[binding] then
             
                 // only proceed if image view or sampler not already written
@@ -304,6 +313,7 @@ module Pipeline =
                     descriptorSet.DescriptorSetState.SetImageView binding descriptorIndex imageView.Handle
                     descriptorSet.DescriptorSetState.SetSampler binding descriptorIndex sampler.VkSampler.Handle
 
+            // warn if limit exceeded
             else Log.warnOnce "Attempted combined image sampler write to descriptor set has exceeded descriptor count. You may have failed to pass the correct descriptor count at pipeline creation."
         
         /// Create a DescriptorSet.
