@@ -585,7 +585,7 @@ module Pipeline =
         
         /// Write a sampler to the descriptor set. Must be used in-frame.
         static member writeDescriptorSampler setIndex (descriptorIndex : int) setNumber (binding : int) (sampler : Texture.Sampler) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
-            DescriptorSet.writeDescriptorSampler binding descriptorIndex sampler pipeline.DescriptorSets_.[setNumber].[setIndex] vkc
+            DescriptorSet.writeDescriptorSampler descriptorIndex binding sampler pipeline.DescriptorSets_.[setNumber].[setIndex] vkc
         
         /// Write a combined image sampler to the descriptor set. Must be used in-frame.
         static member writeDescriptorCombinedImageSampler setIndex (descriptorIndex : int) setNumber (binding : int) (imageView : VkImageView) (sampler : Texture.Sampler) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =

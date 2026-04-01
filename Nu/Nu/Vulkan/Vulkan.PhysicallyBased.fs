@@ -1407,7 +1407,7 @@ module PhysicallyBased =
          colorSampler : Texture.Sampler,
          depthSampler : Texture.Sampler,
          brdfSampler : Texture.Sampler,
-         shadowNear : single, // TODO: DJL: figure out what the hell is going on with this parameter!
+         shadowNear : single,
          pipeline : PhysicallyBasedPipeline,
          vkc : Hl.VulkanContext) =
 

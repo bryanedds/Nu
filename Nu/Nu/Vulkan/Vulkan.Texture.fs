@@ -476,7 +476,8 @@ module Texture =
 
     /// A Vulkan sampler parallelized for frames in flight.
     type Sampler =
-        { VkSamplers : VkSampler array }
+        private
+            { VkSamplers : VkSampler array }
 
         /// The VkSampler for the current frame in flight.
         member this.VkSampler = this.VkSamplers.[Hl.CurrentFrame]
