@@ -60,6 +60,7 @@ module SpriteBatch =
               mutable ViewProjectionClipRelative : Matrix4x4
               VulkanContext : Hl.VulkanContext
               Pipeline : Pipeline.Pipeline
+              Sampler : Texture.Sampler // TODO: DJL: integrate into state once filtered 2d textures are set up again.
               SpriteUniform : Buffer.Buffer
               ViewProjectionUniform : Buffer.Buffer
               Perimeters : Vector4 array
@@ -70,7 +71,7 @@ module SpriteBatch =
               mutable State : SpriteBatchState }
 
     /// Create a sprite batch pipeline.
-    let private CreateSpriteBatchPipeline sampler (vkc : Hl.VulkanContext) =
+    let private CreateSpriteBatchPipeline (vkc : Hl.VulkanContext) =
         
         // create sprite batch pipeline
         let pipeline =
@@ -86,9 +87,6 @@ module SpriteBatch =
                 [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]
                 [|vkc.SwapFormat|] None vkc
 
-        // setup sampler
-        Pipeline.Pipeline.writeDescriptorSampler 0 1 0 sampler pipeline vkc
-        
         // create uniforms
         let spriteUniform = Buffer.Buffer.create sizeof<Sprite> Buffer.Storage vkc
         let viewProjectionUniform = Buffer.Buffer.create sizeof<ViewProjection> Buffer.Storage vkc
@@ -132,6 +130,7 @@ module SpriteBatch =
 
                 // bind texture
                 Pipeline.Pipeline.writeDescriptorSampledImage 0 env.DrawIndex 0 2 texture.ImageView env.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorSampler 0 0 1 0 env.Sampler env.Pipeline vkc
                 
                 // make viewport and scissor
                 let mutable renderArea = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)
@@ -264,13 +263,13 @@ module SpriteBatch =
     let CreateSpriteBatchEnv sampler vkc =
         
         // create pipeline
-        let (spriteUniform, viewProjectionUniform, pipeline) = CreateSpriteBatchPipeline sampler vkc
+        let (spriteUniform, viewProjectionUniform, pipeline) = CreateSpriteBatchPipeline vkc
 
         // create env
         { DrawIndex = 0; SpriteIndex = 0;
           ViewProjection2dAbsolute = m4Identity; ViewProjection2dRelative = m4Identity
           ViewProjectionClipAbsolute = m4Identity; ViewProjectionClipRelative = m4Identity
-          VulkanContext = vkc; Pipeline = pipeline; SpriteUniform = spriteUniform; ViewProjectionUniform = viewProjectionUniform
+          VulkanContext = vkc; Pipeline = pipeline; Sampler = sampler; SpriteUniform = spriteUniform; ViewProjectionUniform = viewProjectionUniform
           Perimeters = Array.zeroCreate Constants.Render.SpriteBatchSize
           Pivots = Array.zeroCreate Constants.Render.SpriteBatchSize
           Rotations = Array.zeroCreate Constants.Render.SpriteBatchSize

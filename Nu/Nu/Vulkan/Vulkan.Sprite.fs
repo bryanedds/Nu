@@ -23,7 +23,7 @@ module Sprite =
     let VertexSize = sizeof<single> * 2
     
     /// Create a sprite pipeline.
-    let CreateSpritePipeline sampler (vkc : Hl.VulkanContext) =
+    let CreateSpritePipeline (vkc : Hl.VulkanContext) =
         
         // create sprite pipeline
         let pipeline =
@@ -40,9 +40,6 @@ module Sprite =
                     [|Pipeline.descriptor 0 Hl.Sampler Hl.FragmentStage 1|]|]
                 [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]
                 [|vkc.SwapFormat|] None vkc
-        
-        // setup sampler
-        Pipeline.Pipeline.writeDescriptorSampler 0 1 0 sampler pipeline vkc
         
         // create sprite uniform buffers
         let spriteVertUniform = Buffer.Buffer.create sizeof<SpriteVert> Buffer.Storage vkc
@@ -93,6 +90,7 @@ module Sprite =
          textureWidth,
          textureHeight,
          texture : Texture.Texture,
+         sampler : Texture.Sampler,
          viewport : Viewport,
          spriteVertUniform : Buffer.Buffer,
          spriteFragUniform : Buffer.Buffer,
@@ -153,6 +151,7 @@ module Sprite =
             
             // bind texture
             Pipeline.Pipeline.writeDescriptorSampledImage 0 drawIndex 0 2 texture.ImageView pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampler 0 0 1 0 sampler pipeline vkc
 
             // make viewport and scissor
             let mutable renderArea = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)

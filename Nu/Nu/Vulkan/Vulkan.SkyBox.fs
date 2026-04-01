@@ -29,7 +29,7 @@ module SkyBox =
           SkyBoxPipeline : Pipeline.Pipeline }
 
     /// Create a SkyBoxPipeline.
-    let CreateSkyBoxPipeline colorAttachmentFormat depthAttachmentFormat sampler (vkc : Hl.VulkanContext) =
+    let CreateSkyBoxPipeline colorAttachmentFormat depthAttachmentFormat (vkc : Hl.VulkanContext) =
 
         // create pipeline
         let pipeline =
@@ -49,9 +49,6 @@ module SkyBox =
                 (Some depthAttachmentFormat)
                 vkc
 
-        // setup sampler
-        Pipeline.Pipeline.writeDescriptorSampler 0 1 0 sampler pipeline vkc
-        
         // create uniform buffers
         let skyBoxVertUniform = Buffer.Buffer.create sizeof<SkyBoxVert> Buffer.Storage vkc
         let skyBoxFragUniform = Buffer.Buffer.create sizeof<SkyBoxFrag> Buffer.Storage vkc
@@ -81,6 +78,7 @@ module SkyBox =
          brightness : single,
          cubeMap : Texture.Texture,
          geometry : CubeMap.CubeMapGeometry,
+         sampler : Texture.Sampler,
          viewport : Viewport,
          colorAttachment : Texture.Texture,
          depthAttachment : Texture.Texture,
@@ -105,6 +103,7 @@ module SkyBox =
             
             // bind texture
             Pipeline.Pipeline.writeDescriptorSampledImage 0 drawIndex 0 2 cubeMap.ImageView pipeline.SkyBoxPipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampler 0 0 1 0 sampler pipeline.SkyBoxPipeline vkc
 
             // make viewport and scissor
             let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)

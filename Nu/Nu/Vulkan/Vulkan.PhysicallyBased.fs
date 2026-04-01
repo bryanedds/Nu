@@ -1266,12 +1266,6 @@ module PhysicallyBased =
          vertexBindings,
          colorAttachmentFormat,
          depthTestOpt,
-         filteredSampler,
-         cubeMapSampler,
-         shadowSampler,
-         colorSampler,
-         depthSampler,
-         brdfSampler,
          vkc) =
 
         // create pipeline
@@ -1327,14 +1321,6 @@ module PhysicallyBased =
                 [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]
                 colorAttachmentFormat depthTestOpt vkc
 
-        // setup samplers
-        Pipeline.Pipeline.writeDescriptorSampler 0 2 0 filteredSampler pipeline vkc
-        Pipeline.Pipeline.writeDescriptorSampler 0 2 1 cubeMapSampler pipeline vkc
-        Pipeline.Pipeline.writeDescriptorSampler 0 2 2 shadowSampler pipeline vkc
-        Pipeline.Pipeline.writeDescriptorSampler 0 2 3 colorSampler pipeline vkc
-        Pipeline.Pipeline.writeDescriptorSampler 0 2 4 depthSampler pipeline vkc
-        Pipeline.Pipeline.writeDescriptorSampler 0 2 5 brdfSampler pipeline vkc
-        
         // create set 0 uniform buffers
         let transformUniform = Buffer.Buffer.create sizeof<Transform> Buffer.Storage vkc
         let commonUniform = Buffer.Buffer.create sizeof<Common> Buffer.Storage vkc
@@ -1415,7 +1401,13 @@ module PhysicallyBased =
          brdfTexture : Texture.Texture,
          irradianceMap : Texture.Texture,
          environmentFilterMap : Texture.Texture,
-         shadowNear : single,
+         filteredSampler : Texture.Sampler,
+         cubeMapSampler : Texture.Sampler,
+         shadowSampler : Texture.Sampler,
+         colorSampler : Texture.Sampler,
+         depthSampler : Texture.Sampler,
+         brdfSampler : Texture.Sampler,
+         shadowNear : single, // TODO: DJL: figure out what the hell is going on with this parameter!
          pipeline : PhysicallyBasedPipeline,
          vkc : Hl.VulkanContext) =
 
@@ -1473,6 +1465,14 @@ module PhysicallyBased =
                 Pipeline.Pipeline.writeDescriptorSampledImage 0 i 0 4 brdfTexture.ImageView pipeline.Pipeline vkc
                 Pipeline.Pipeline.writeDescriptorSampledImage 0 i 0 5 irradianceMap.ImageView pipeline.Pipeline vkc
                 Pipeline.Pipeline.writeDescriptorSampledImage 0 i 0 6 environmentFilterMap.ImageView pipeline.Pipeline vkc
+
+            // bind samplers
+            Pipeline.Pipeline.writeDescriptorSampler 0 0 2 0 filteredSampler pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampler 0 0 2 1 cubeMapSampler pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampler 0 0 2 2 shadowSampler pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampler 0 0 2 3 colorSampler pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampler 0 0 2 4 depthSampler pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampler 0 0 2 5 brdfSampler pipeline.Pipeline vkc
 
         // draw not possible
         else Log.warnOnce "Rendering incomplete due to insufficient gpu resources."
@@ -1786,12 +1786,6 @@ module PhysicallyBased =
          lightsMax,
          colorAttachmentFormat,
          depthAttachmentFormat,
-         filteredSampler,
-         cubeMapSampler,
-         shadowSampler,
-         colorSampler,
-         depthSampler,
-         brdfSampler,
          vkc) =
 
         // create forward static pipeline
@@ -1818,12 +1812,6 @@ module PhysicallyBased =
                        Pipeline.attribute 12 Hl.Single4 (36 * sizeof<single>)|]|],
                  [|colorAttachmentFormat|],
                  (Some depthAttachmentFormat),
-                 filteredSampler,
-                 cubeMapSampler,
-                 shadowSampler,
-                 colorSampler,
-                 depthSampler,
-                 brdfSampler,
                  vkc)
         
         // create PhysicallyBasedPipelines

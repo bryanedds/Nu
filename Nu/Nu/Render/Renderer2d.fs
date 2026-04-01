@@ -887,6 +887,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                     textSurfaceWidth,
                                     textSurfaceHeight,
                                     textTexture,
+                                    renderer.UnfilteredSampler,
                                     renderer.Viewport,
                                     spriteVertUniform,
                                     spriteFragUniform,
@@ -1019,7 +1020,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         let unfilteredSampler = Texture.Sampler.create VkSamplerAddressMode.Repeat VkFilter.Nearest VkFilter.Nearest false vkc
         
         // create text resources
-        let spritePipeline = Sprite.CreateSpritePipeline unfilteredSampler vkc
+        let spritePipeline = Sprite.CreateSpritePipeline vkc
         let textQuad = Sprite.CreateSpriteQuad true vkc
         let textureDisposer = Texture.TextureDisposer.create ()
 
