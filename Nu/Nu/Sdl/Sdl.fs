@@ -97,6 +97,15 @@ module SdlDeps =
         then Right ((), destroy)
         else Left ("SDL3# global resource creation failed due to '" + SDL3.SDL_GetError () + "'.")
 
+    /// Get the display mode for the desktop occupied by the given window.
+    let internal getDisplayModeInternal window =
+        let display = SDL3.SDL_GetDisplayForWindow window
+        let displayMode = SDL3.SDL_GetDesktopDisplayMode display
+        if NativePtr.isNullPtr displayMode then
+            Log.error ("Failed to get desktop display mode: " + SDL3.SDL_GetError ())
+            Unchecked.defaultof<_>
+        else NativePtr.read displayMode
+
     /// Get an sdlDep's optional window.
     let getWindowOpt sdlDeps =
         sdlDeps.WindowOpt
@@ -105,14 +114,11 @@ module SdlDeps =
     let getConfig sdlDeps =
         sdlDeps.Config
 
-    /// Get the desktop display mode.
-    let getDesktopDisplayMode () =
-        let display = SDL3.SDL_GetPrimaryDisplay ()
-        let displayMode = SDL3.SDL_GetDesktopDisplayMode display
-        if NativePtr.isNullPtr displayMode then
-            Log.error ("Failed to get desktop display mode: " + SDL3.SDL_GetError ())
-            Unchecked.defaultof<_>
-        else NativePtr.read displayMode
+    /// Attempt to get the display mode for the desktop occupied by any current window.
+    let tryGetDisplayMode sdlDeps =
+        match sdlDeps.WindowOpt with
+        | Some window -> Some (getDisplayModeInternal window)
+        | None -> None
 
     /// Attempt to set the window's full screen state.
     let trySetWindowFullScreen fullScreen sdlDeps =
@@ -122,7 +128,7 @@ module SdlDeps =
             // get a snapshot of whether screen was full
             let mutable width, height = 0, 0
             SDL3.SDL_GetWindowSize (window, &&width, &&height) |> ignore<SDLBool>
-            let displayMode = getDesktopDisplayMode ()
+            let displayMode = getDisplayModeInternal window
             let wasFullScreen = width = displayMode.w || height = displayMode.h
 
             // change full screen status via flags
@@ -206,7 +212,7 @@ module SdlDeps =
                             SDL3.SDL_StartTextInput window |> ignore<SDLBool>
 
                         // set to full screen when window taking up entire screen and unaccompanied
-                        let mutable displayMode = getDesktopDisplayMode ()
+                        let mutable displayMode = getDisplayModeInternal window
                         if (windowSize.X = displayMode.w || windowSize.Y = displayMode.h) && not accompanied then
                             SDL3.SDL_SetWindowFullscreen (window, true) |> ignore<SDLBool>
 
