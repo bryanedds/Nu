@@ -643,7 +643,7 @@ module internal AmbientState =
         | Some window ->            
             let mutable width, height = 0, 0
             SDL3.SDL_GetWindowSize (window, &&width, &&height) |> ignore
-            let displayMode = SdlDeps.getDesktopDisplayMode ()
+            let displayMode = SdlDeps.getDisplayModeInternal window
             Some (width = displayMode.w || height = displayMode.h)
         | _ -> None
 
