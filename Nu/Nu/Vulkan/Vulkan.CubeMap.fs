@@ -235,7 +235,7 @@ module CubeMap =
           Pipeline : Pipeline.Pipeline }
     
     /// Create a CubeMapPipeline.
-    let CreateCubeMapPipeline (shaderPath, colorAttachmentFormat, sampler, vkc : Hl.VulkanContext) =
+    let CreateCubeMapPipeline (shaderPath, colorAttachmentFormat, vkc : Hl.VulkanContext) =
 
         // create pipeline
         let pipeline =
@@ -254,9 +254,6 @@ module CubeMap =
                 None // NOTE: DJL: not porting currently meaningless depth test as it imposes complexity cost in vulkan.
                 vkc
 
-        // setup sampler
-        Pipeline.Pipeline.writeDescriptorSampler 0 1 0 sampler pipeline vkc
-        
         // create uniform buffer
         let transformUniform = Buffer.Buffer.create sizeof<Transform> Buffer.Storage vkc
 
@@ -277,6 +274,7 @@ module CubeMap =
          projection : Matrix4x4,
          viewProjection : Matrix4x4,
          cubeMap : Texture.Texture,
+         sampler : Texture.Sampler,
          geometry : CubeMapGeometry,
          resolution : int,
          colorAttachment : VkImageView,
@@ -286,18 +284,17 @@ module CubeMap =
         // ensure pipeline draw limit is not exceeded
         if drawIndex < pipeline.Pipeline.DrawLimit then
         
-            // upload uniforms
+            // bind uniforms
             let mutable transform = Transform ()
             transform.view <- view
             transform.projection <- projection
             transform.viewProjection <- viewProjection
             Buffer.Buffer.uploadValue drawIndex 0 0 transform pipeline.TransformUniform vkc
-
-            // update uniform descriptor
-            Pipeline.Pipeline.updateBufferDescriptorsStorage 0 0 0 pipeline.TransformUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorStorageBuffer 0 drawIndex 0 0 pipeline.TransformUniform pipeline.Pipeline vkc
 
             // bind texture
             Pipeline.Pipeline.writeDescriptorSampledImage 0 drawIndex 0 1 cubeMap.ImageView pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampler 0 0 1 0 sampler pipeline.Pipeline vkc
 
             // make viewport and scissor
             let mutable renderArea = VkRect2D (0, 0, uint resolution, uint resolution)

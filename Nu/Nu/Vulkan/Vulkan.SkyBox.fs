@@ -29,7 +29,7 @@ module SkyBox =
           SkyBoxPipeline : Pipeline.Pipeline }
 
     /// Create a SkyBoxPipeline.
-    let CreateSkyBoxPipeline colorAttachmentFormat depthAttachmentFormat sampler (vkc : Hl.VulkanContext) =
+    let CreateSkyBoxPipeline colorAttachmentFormat depthAttachmentFormat (vkc : Hl.VulkanContext) =
 
         // create pipeline
         let pipeline =
@@ -49,9 +49,6 @@ module SkyBox =
                 (Some depthAttachmentFormat)
                 vkc
 
-        // setup sampler
-        Pipeline.Pipeline.writeDescriptorSampler 0 1 0 sampler pipeline vkc
-        
         // create uniform buffers
         let skyBoxVertUniform = Buffer.Buffer.create sizeof<SkyBoxVert> Buffer.Storage vkc
         let skyBoxFragUniform = Buffer.Buffer.create sizeof<SkyBoxFrag> Buffer.Storage vkc
@@ -81,6 +78,7 @@ module SkyBox =
          brightness : single,
          cubeMap : Texture.Texture,
          geometry : CubeMap.CubeMapGeometry,
+         sampler : Texture.Sampler,
          viewport : Viewport,
          colorAttachment : Texture.Texture,
          depthAttachment : Texture.Texture,
@@ -90,7 +88,7 @@ module SkyBox =
         // ensure pipeline draw limit is not exceeded
         if drawIndex < pipeline.SkyBoxPipeline.DrawLimit then
         
-            // upload uniforms
+            // bind uniforms
             let mutable skyBoxVert = SkyBoxVert ()
             let mutable skyBoxFrag = SkyBoxFrag ()
             skyBoxVert.view <- view
@@ -100,13 +98,12 @@ module SkyBox =
             skyBoxFrag.brightness <- brightness
             Buffer.Buffer.uploadValue drawIndex 0 0 skyBoxVert pipeline.SkyBoxVertUniform vkc
             Buffer.Buffer.uploadValue drawIndex 0 0 skyBoxFrag pipeline.SkyBoxFragUniform vkc
-            
-            // update uniform descriptors
-            Pipeline.Pipeline.updateBufferDescriptorsStorage 0 0 0 pipeline.SkyBoxVertUniform pipeline.SkyBoxPipeline vkc
-            Pipeline.Pipeline.updateBufferDescriptorsStorage 0 0 1 pipeline.SkyBoxFragUniform pipeline.SkyBoxPipeline vkc
+            Pipeline.Pipeline.writeDescriptorStorageBuffer 0 drawIndex 0 0 pipeline.SkyBoxVertUniform pipeline.SkyBoxPipeline vkc
+            Pipeline.Pipeline.writeDescriptorStorageBuffer 0 drawIndex 0 1 pipeline.SkyBoxFragUniform pipeline.SkyBoxPipeline vkc
             
             // bind texture
             Pipeline.Pipeline.writeDescriptorSampledImage 0 drawIndex 0 2 cubeMap.ImageView pipeline.SkyBoxPipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampler 0 0 1 0 sampler pipeline.SkyBoxPipeline vkc
 
             // make viewport and scissor
             let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)

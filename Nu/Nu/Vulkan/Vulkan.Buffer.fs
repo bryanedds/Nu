@@ -307,9 +307,6 @@ module Buffer =
         /// The first VkBuffer for current frame in flight.
         member this.VkBuffer = this.BufferParallels.[0].VkBuffer
 
-        /// The VkBuffers at index for all frames in flight.
-        member this.VkBuffers index = this.BufferParallels.[index].VkBuffers
-        
         /// Buffer count.
         /// TODO: DJL: probably, this should be limited to buffers being used, i.e. buffers allocated in advance should not be visible to the api.
         member this.Count = this.BufferParallels.Count

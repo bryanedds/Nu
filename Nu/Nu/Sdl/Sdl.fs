@@ -166,6 +166,7 @@ module SdlDeps =
                 // attempt to initialize sdl
                 Log.info "Initializing SDL 3..."
                 SDL3.SDL_SetHint (SDL3.SDL_HINT_WINDOWS_CLOSE_ON_ALT_F4, "0") |> ignore<SDLBool>
+                SDL3.SDL_SetHint (SDL3.SDL_HINT_ORIENTATIONS, "LandscapeLeft") |> ignore<SDLBool>
                 let initConfig =
                     SDL_InitFlags.SDL_INIT_AUDIO |||
                     SDL_InitFlags.SDL_INIT_VIDEO |||

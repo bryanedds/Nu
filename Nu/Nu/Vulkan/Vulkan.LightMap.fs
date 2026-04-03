@@ -72,7 +72,7 @@ module LightMap =
         // fin
         reflectionCubeMap
 
-    let CreateIrradianceMap (mapId, cb, invertY, resolution, cubeMapSurface : CubeMap.CubeMapSurface, colorFormat, irradiancePipeline, vkc) =
+    let CreateIrradianceMap (mapId, cb, invertY, resolution, cubeMapSurface : CubeMap.CubeMapSurface, sampler, colorFormat, irradiancePipeline, vkc) =
 
         // create irradiance cube map
         let metadata = Texture.TextureMetadata.make resolution resolution
@@ -99,7 +99,7 @@ module LightMap =
             let view = views.[i]
             let viewProjection = view * projection
             CubeMap.DrawCubeMap
-                (mapId * 6 + i, cb, invertY, view, projection, viewProjection, cubeMapSurface.CubeMap, cubeMapSurface.CubeMapGeometry, resolution, cubeMap.SubViews.[0, i], irradiancePipeline, vkc)
+                (mapId * 6 + i, cb, invertY, view, projection, viewProjection, cubeMapSurface.CubeMap, sampler, cubeMapSurface.CubeMapGeometry, resolution, cubeMap.SubViews.[0, i], irradiancePipeline, vkc)
 
             // take a snapshot for testing
             // TODO: DJL: implement.
@@ -129,7 +129,7 @@ module LightMap =
           Pipeline : Pipeline.Pipeline }
     
     /// Create an EnvironmentFilterPipeline.
-    let CreateEnvironmentFilterPipeline (shaderPath, colorAttachmentFormat, sampler, vkc : Hl.VulkanContext) =
+    let CreateEnvironmentFilterPipeline (shaderPath, colorAttachmentFormat, vkc : Hl.VulkanContext) =
 
         // create pipeline
         let pipeline =
@@ -149,9 +149,6 @@ module LightMap =
                 None
                 vkc
 
-        // setup sampler
-        Pipeline.Pipeline.writeDescriptorSampler 0 1 0 sampler pipeline vkc
-        
         // create uniform buffers
         let transformUniform = Buffer.Buffer.create sizeof<Transform> Buffer.Storage vkc
         let environmentFilterUniform = Buffer.Buffer.create sizeof<EnvironmentFilter> Buffer.Storage vkc
@@ -176,6 +173,7 @@ module LightMap =
          roughness : single,
          resolution : single,
          cubeMap : Texture.Texture,
+         sampler : Texture.Sampler,
          geometry : CubeMap.CubeMapGeometry,
          colorAttachment : VkImageView,
          pipeline : EnvironmentFilterPipeline,
@@ -184,7 +182,7 @@ module LightMap =
         // ensure pipeline draw limit is not exceeded
         if drawIndex < pipeline.Pipeline.DrawLimit then
         
-            // upload uniforms
+            // bind uniforms
             let mutable transform = Transform ()
             let mutable environmentFilter = EnvironmentFilter ()
             transform.view <- view
@@ -194,13 +192,12 @@ module LightMap =
             environmentFilter.resolution <- resolution
             Buffer.Buffer.uploadValue drawIndex 0 0 transform pipeline.TransformUniform vkc
             Buffer.Buffer.uploadValue drawIndex 0 0 environmentFilter pipeline.EnvironmentFilterUniform vkc
-    
-            // update uniform descriptors
-            Pipeline.Pipeline.updateBufferDescriptorsStorage 0 0 0 pipeline.TransformUniform pipeline.Pipeline vkc
-            Pipeline.Pipeline.updateBufferDescriptorsStorage 0 0 1 pipeline.EnvironmentFilterUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorStorageBuffer 0 drawIndex 0 0 pipeline.TransformUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorStorageBuffer 0 drawIndex 0 1 pipeline.EnvironmentFilterUniform pipeline.Pipeline vkc
 
             // bind texture
             Pipeline.Pipeline.writeDescriptorSampledImage 0 drawIndex 0 2 cubeMap.ImageView pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampler 0 0 1 0 sampler pipeline.Pipeline vkc
 
             // make viewport and scissor
             let mutable renderArea = VkRect2D (0, 0, uint resolution, uint resolution)
@@ -256,7 +253,7 @@ module LightMap =
 
     
     /// Create an environment filter map.
-    let CreateEnvironmentFilterMap (mapId, cb, invertY, resolution, environmentFilterSurface : CubeMap.CubeMapSurface, colorFormat, environmentFilterPipeline, vkc) =
+    let CreateEnvironmentFilterMap (mapId, cb, invertY, resolution, environmentFilterSurface : CubeMap.CubeMapSurface, sampler, colorFormat, environmentFilterPipeline, vkc) =
 
         // create environment filter cube map
         let metadata = Texture.TextureMetadata.make resolution resolution
@@ -296,6 +293,7 @@ module LightMap =
                      mipRoughness,
                      mipResolution,
                      environmentFilterSurface.CubeMap,
+                     sampler,
                      environmentFilterSurface.CubeMapGeometry,
                      cubeMap.SubViews.[mip, i],
                      environmentFilterPipeline,

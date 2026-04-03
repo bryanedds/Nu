@@ -5777,14 +5777,14 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         drawIndex drawCount viewArray projectionArray viewProjectionArray eyeCenter viewInverseArray projectionInverseArray
         lightCutoffMargin lightAmbientColor lightAmbientBrightness lightAmbientBoostCutoff lightAmbientBoostScalar lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity
         fogEnabled fogType fogStart fogFinish fogDensity fogColor ssvfEnabled ssvfIntensity ssvfSteps ssvfAsymmetry ssrrEnabled ssrrIntensity ssrrDetail ssrrRefinementsMax ssrrRayThickness ssrrDistanceCutoff ssrrDistanceCutoffMargin ssrrEdgeHorizontalMargin ssrrEdgeVerticalMargin
-        depthTexture colorTexture brdfTexture irradianceMap environmentFilterMap irradianceMaps pipeline vkc =
+        depthTexture colorTexture brdfTexture irradianceMap environmentFilterMap filteredSampler cubeMapSampler shadowSampler colorSampler depthSampler brdfSampler shadowNear pipeline vkc =
 
         // begin shader
         PhysicallyBased.BeginPhysicallyBasedForwardPipeline
             (drawIndex, drawCount, viewArray, projectionArray, viewProjectionArray, eyeCenter, viewInverseArray, projectionInverseArray,
              lightCutoffMargin, lightAmbientColor, lightAmbientBrightness, lightAmbientBoostCutoff, lightAmbientBoostScalar, lightShadowSamples, lightShadowBias, lightShadowSampleScalar, lightShadowExponent, lightShadowDensity,
              fogEnabled, fogType, fogStart, fogFinish, fogDensity, fogColor, ssvfEnabled, ssvfIntensity, ssvfSteps, ssvfAsymmetry, ssrrEnabled, ssrrIntensity, ssrrDetail, ssrrRefinementsMax, ssrrRayThickness, ssrrDistanceCutoff, ssrrDistanceCutoffMargin, ssrrEdgeHorizontalMargin, ssrrEdgeVerticalMargin,
-             depthTexture, colorTexture, brdfTexture, irradianceMap, environmentFilterMap, irradianceMaps, pipeline, vkc)
+             depthTexture, colorTexture, brdfTexture, irradianceMap, environmentFilterMap, filteredSampler, cubeMapSampler, shadowSampler, colorSampler, depthSampler, brdfSampler, shadowNear, pipeline, vkc)
 
     static member private renderPhysicallyBasedForwardSurfaces
         drawIndex bonesArrays (parameters : struct (Matrix4x4 * Presence * Box2 * MaterialProperties) SList)
@@ -6020,7 +6020,21 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // attempt to render sky box to composition attachment
         match skyBoxOpt with
         | Some (cubeMapColor, cubeMapBrightness, cubeMap, _) ->
-            SkyBox.DrawSkyBox (renderer.SkyBoxDrawIndex, viewSkyBox, windowProjection, windowViewProjectionSkyBox, cubeMapColor, cubeMapBrightness, cubeMap, renderer.CubeMapGeometry, renderer.GeometryViewport, compositionAttachment, compositionZAttachment, renderer.SkyBoxPipeline, vkc)
+            SkyBox.DrawSkyBox
+                (renderer.SkyBoxDrawIndex,
+                 viewSkyBox,
+                 windowProjection,
+                 windowViewProjectionSkyBox,
+                 cubeMapColor,
+                 cubeMapBrightness,
+                 cubeMap,
+                 renderer.CubeMapGeometry,
+                 renderer.CubeMapSampler,
+                 renderer.GeometryViewport,
+                 compositionAttachment,
+                 compositionZAttachment,
+                 renderer.SkyBoxPipeline,
+                 vkc)
             renderer.SkyBoxDrawIndex <- inc renderer.SkyBoxDrawIndex
         | None -> ()
         
@@ -6041,7 +6055,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
                 fogEnabled fogType renderer.LightingConfig.FogStart renderer.LightingConfig.FogFinish renderer.LightingConfig.FogDensity renderer.LightingConfig.FogColor ssvfEnabled renderer.LightingConfig.SsvfIntensity forwardSsvfSteps renderer.LightingConfig.SsvfAsymmetry
                 ssrrEnabled renderer.LightingConfig.SsrrIntensity renderer.LightingConfig.SsrrDetail renderer.LightingConfig.SsrrRefinementsMax renderer.LightingConfig.SsrrRayThickness renderer.LightingConfig.SsrrDistanceCutoff renderer.LightingConfig.SsrrDistanceCutoffMargin renderer.LightingConfig.SsrrEdgeHorizontalMargin renderer.LightingConfig.SsrrEdgeVerticalMargin
-                depthAttachment2 colorAttachment renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap shadowNear pipeline vkc
+                depthAttachment2 colorAttachment renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap renderer.FilteredSampler renderer.CubeMapSampler renderer.ShadowSampler renderer.ColorSampler renderer.DepthSampler renderer.BrdfSampler shadowNear pipeline vkc
         for (model, _, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest) in renderTasks.ForwardSorted do
             let (lightMapOrigins, lightMapMins, lightMapSizes, lightMapAmbientColors, lightMapAmbientBrightnesses, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
                 let surfaceBounds = surface.SurfaceBounds.Transform model
@@ -6146,6 +6160,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                                  false,
                                  Constants.Render.IrradianceMapResolution,
                                  CubeMap.CubeMapSurface.make cubeMap renderer.CubeMapGeometry,
+                                 renderer.CubeMapSampler,
                                  renderer.IrradianceMap.InternalFormat,
                                  renderer.IrradiancePipeline,
                                  vkc)
@@ -6159,7 +6174,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                                  false,
                                  Constants.Render.EnvironmentFilterResolution,
                                  CubeMap.CubeMapSurface.make cubeMap renderer.CubeMapGeometry,
-                                 renderer.EnvironmentFilterMap.InternalFormat,   
+                                 renderer.CubeMapSampler,
+                                 renderer.EnvironmentFilterMap.InternalFormat,
                                  renderer.EnvironmentFilterPipeline,
                                  vkc)
                         environmentFilterMapIndex <- inc environmentFilterMapIndex
@@ -6206,6 +6222,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                                      true, // y inverted here because texture produced by drawing is inverted relative to texture uploaded from file
                                      Constants.Render.IrradianceMapResolution,
                                      CubeMap.CubeMapSurface.make reflectionMap renderer.CubeMapGeometry,
+                                     renderer.CubeMapSampler,
                                      renderer.IrradianceMap.InternalFormat,
                                      renderer.IrradiancePipeline,
                                      vkc)
@@ -6219,6 +6236,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                                      true, // y inverted here because texture produced by drawing is inverted relative to texture uploaded from file
                                      Constants.Render.EnvironmentFilterResolution,
                                      CubeMap.CubeMapSurface.make reflectionMap renderer.CubeMapGeometry,
+                                     renderer.CubeMapSampler,
                                      renderer.EnvironmentFilterMap.InternalFormat,
                                      renderer.EnvironmentFilterPipeline,
                                      vkc)
@@ -6292,15 +6310,15 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         
         // create sky box pipeline
         let (compositionAttachment, compositionDepthAttachment) = physicallyBasedAttachments.CompositionAttachments
-        let skyBoxPipeline = SkyBox.CreateSkyBoxPipeline compositionAttachment.VkFormat compositionDepthAttachment.VkFormat cubeMapSampler vkc
+        let skyBoxPipeline = SkyBox.CreateSkyBoxPipeline compositionAttachment.VkFormat compositionDepthAttachment.VkFormat vkc
         
         // create irradiance pipeline
         let irradianceFormat = Hl.Rgba16f
-        let irradiancePipeline = CubeMap.CreateCubeMapPipeline (Constants.Paths.IrradianceShaderFilePath, irradianceFormat.VkFormat, cubeMapSampler, vkc)
+        let irradiancePipeline = CubeMap.CreateCubeMapPipeline (Constants.Paths.IrradianceShaderFilePath, irradianceFormat.VkFormat, vkc)
         
         // create environment filter pipeline
         let environmentFilterFormat = Hl.Rgba16f
-        let environmentFilterPipeline = LightMap.CreateEnvironmentFilterPipeline (Constants.Paths.EnvironmentFilterShaderFilePath, environmentFilterFormat.VkFormat, cubeMapSampler, vkc)
+        let environmentFilterPipeline = LightMap.CreateEnvironmentFilterPipeline (Constants.Paths.EnvironmentFilterShaderFilePath, environmentFilterFormat.VkFormat, vkc)
         
         // create physically-based pipelines
         let physicallyBasedPipelines =
@@ -6309,12 +6327,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                  Constants.Render.LightsMaxDeferred,
                  compositionAttachment.VkFormat,
                  compositionDepthAttachment.VkFormat,
-                 filteredSampler,
-                 cubeMapSampler,
-                 shadowSampler,
-                 colorSampler,
-                 depthSampler,
-                 brdfSampler,
                  vkc)
         
         // create shadow matrices buffer
@@ -6378,6 +6390,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                  false,
                  Constants.Render.IrradianceMapResolution,
                  cubeMapSurface,
+                 cubeMapSampler,
                  irradianceFormat,
                  irradiancePipeline,
                  vkc)
@@ -6390,6 +6403,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                  false,
                  Constants.Render.EnvironmentFilterResolution,
                  cubeMapSurface,
+                 cubeMapSampler,
                  environmentFilterFormat,
                  environmentFilterPipeline,
                  vkc)
