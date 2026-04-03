@@ -79,7 +79,7 @@ module SpriteBatch =
                 Constants.Paths.SpriteBatchShaderFilePath
                 [|Pipeline.Transparent; Pipeline.Additive; Pipeline.Overwrite|] [||]
                 [|Pipeline.descriptorSet true 1
-                    [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage Constants.Render.SpriteBatchSize
+                    [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage 1
                       Pipeline.descriptor 1 Hl.StorageBuffer Hl.VertexStage 1
                       Pipeline.descriptor 2 Hl.SampledImage Hl.FragmentStage 1|]
                   Pipeline.descriptorSet false 1
@@ -88,7 +88,7 @@ module SpriteBatch =
                 [|vkc.SwapFormat|] None vkc
 
         // create uniforms
-        let spriteUniform = Buffer.Buffer.create sizeof<Sprite> Buffer.Storage vkc
+        let spriteUniform = Buffer.Buffer.create (Constants.Render.SpriteBatchSize * sizeof<Sprite>) Buffer.Storage vkc
         let viewProjectionUniform = Buffer.Buffer.create sizeof<ViewProjection> Buffer.Storage vkc
 
         // fin
@@ -121,8 +121,8 @@ module SpriteBatch =
                     sprite.rotation <- env.Rotations.[i]
                     sprite.texCoords <- env.TexCoordses.[i]
                     sprite.color <- env.Colors.[i]
-                    Buffer.Buffer.uploadValue (env.DrawIndex * Constants.Render.SpriteBatchSize + i) 0 0 sprite spriteUniform vkc
-                    Pipeline.Pipeline.writeDescriptorStorageBuffer 0 (env.DrawIndex * Constants.Render.SpriteBatchSize + i) 0 0 spriteUniform env.Pipeline vkc
+                    Buffer.Buffer.uploadValue env.DrawIndex (i * sizeof<Sprite>) 0 sprite spriteUniform vkc
+                Pipeline.Pipeline.writeDescriptorStorageBuffer 0 env.DrawIndex 0 0 spriteUniform env.Pipeline vkc
                 let mutable viewProjection = ViewProjection ()
                 viewProjection.viewProjection <- if env.State.Absolute then env.ViewProjection2dAbsolute else env.ViewProjection2dRelative
                 Buffer.Buffer.uploadValue env.DrawIndex 0 0 viewProjection viewProjectionUniform vkc
@@ -236,7 +236,6 @@ module SpriteBatch =
 #if !DEBUG
         inline
 #endif
-        // TODO: DJL: maybe remove this process as it just gets reversed at draw time?
         private PopulateSpriteBatchVertex (perimeter : Box2) (pivot : Vector2) (rotation : single) (texCoords : Box2) (color : Color) env =
         env.Perimeters.[env.SpriteIndex] <- v4 perimeter.Min.X perimeter.Min.Y perimeter.Size.X perimeter.Size.Y
         env.Pivots.[env.SpriteIndex] <- pivot

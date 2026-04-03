@@ -34,7 +34,7 @@ layout(push_constant) uniform PushConstant
 
 layout(binding = 0) buffer readonly SpriteBlock
 {
-    Sprite sprite;
+    Sprite sprites[SPRITE_BATCH_SIZE];
 } sprite[];
 
 layout(binding = 1) buffer readonly ViewProjectionBlock
@@ -61,7 +61,7 @@ void main()
 
     // compute position
     vec4 filt = FILTERS[vertexId];
-    Sprite sprite = sprite[nonuniformEXT(drawId * SPRITE_BATCH_SIZE + spriteId)].sprite;
+    Sprite sprite = sprite[drawId].sprites[spriteId];
     mat4 viewProjection = viewProjection[drawId].viewProjection.viewProjection;
     vec4 perimeter = sprite.perimeter * filt;
     vec2 position = vec2(perimeter.x + perimeter.z, perimeter.y + perimeter.w);
