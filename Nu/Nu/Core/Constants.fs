@@ -356,6 +356,11 @@ module Render =
     let [<Literal>] Body3dSegmentRenderDistanceMax = 40.0f
     let [<Literal>] Body3dRenderDistanceMax = 32.0f
 
+    // descriptor related maxes for Vulkan, just grouped here for now
+    // TODO: DJL: properly integrate and make mutable as appropriate.
+    let [<Literal>] ImGuiTextureMax = 512
+    let [<Literal>] LightMapsMax = 128
+
 [<RequireQualifiedAccess>]
 module Audio =
 
