@@ -360,6 +360,7 @@ module Render =
     // TODO: DJL: properly integrate and make mutable as appropriate.
     let [<Literal>] ImGuiTextureMax = 512
     let [<Literal>] LightMapsMax = 128
+    let [<Literal>] GeometryRenderPassMax = LightMapsMax * 6 + 1 // all light map faces plus top level
 
 [<RequireQualifiedAccess>]
 module Audio =
