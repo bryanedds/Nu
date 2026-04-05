@@ -29,9 +29,9 @@ type private GcEventListener () =
 
     override this.OnEventWritten (eventData : EventWrittenEventArgs) =
         if eventData.EventName = "GCAllocationTick_V4" && notNull eventData.Payload && eventData.Payload.Count >= 9 then
-            match eventData.Payload.[8] with
+            match eventData.Payload[8] with
             | :? uint64 as allocSize when allocSize >= uint64 Constants.Runtime.LohSize ->
-                match eventData.Payload.[5] with
+                match eventData.Payload[5] with
                 | :? string as typeName ->
                     Log.info ("Allocated object of type '" + typeName + "' of size " + string allocSize + " on the LOH.")
                 | _ -> ()

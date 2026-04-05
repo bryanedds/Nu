@@ -228,7 +228,7 @@ module WorldSimulantModule =
             | [||] -> failwithumf ()
             | [|_|] -> true
             | names ->
-                let screenName = names.[1]
+                let screenName = names[1]
                 match World.getSelectedScreenOpt world with
                 | Some screen when screen.Name = screenName -> true
                 | _ -> false
@@ -343,7 +343,7 @@ module PropertyDescriptor =
             let propertyDefinitions = World.getReflectivePropertyDefinitionAndContainingTypes simulant world
             let xtension = World.getXtension simulant world
             for (propertyName, _) in xtension.Properties do
-                let (lateBindings, property) = propertyDefinitions.[propertyName]
+                let (lateBindings, property) = propertyDefinitions[propertyName]
                 if property.PropertyType <> typeof<ComputedProperty> &&
                     not (Reflection.isPropertyNonPersistentByName propertyName) then
                     (ValueSome lateBindings, { PropertyName = propertyName; PropertyType = property.PropertyType })}

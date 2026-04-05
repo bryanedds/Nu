@@ -152,7 +152,7 @@ type [<ReferenceEquality>] SdlCursorClient =
                 Dictionary.tryFind packageName cursorClient.CursorPackages
                 |> Option.defaultWith (fun () ->
                     let cursorPackage = { Assets = Dictionary StringComparer.Ordinal; PackageState = () }
-                    cursorClient.CursorPackages.[packageName] <- cursorPackage
+                    cursorClient.CursorPackages[packageName] <- cursorPackage
                     cursorPackage)
 
             // keep existing cursors for which a newer one does not exist, free otherwise
@@ -173,7 +173,7 @@ type [<ReferenceEquality>] SdlCursorClient =
                         let lastWriteTime =
                             try DateTimeOffset (File.GetLastWriteTime asset.FilePath)
                             with exn -> Log.warn ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
-                        cursorPackage.Assets.[asset.AssetTag.AssetName] <- (lastWriteTime, asset, cursorAsset)
+                        cursorPackage.Assets[asset.AssetTag.AssetName] <- (lastWriteTime, asset, cursorAsset)
                     | None -> ()
 
         // handle error case
@@ -196,7 +196,7 @@ type [<ReferenceEquality>] SdlCursorClient =
         | None ->
             let cursor = SDL3.SDL_CreateSystemCursor systemCursor
             if not (NativePtr.isNullPtr cursor) then
-                cursorClient.SystemCursors.[systemCursor] <- cursor
+                cursorClient.SystemCursors[systemCursor] <- cursor
                 SDL3.SDL_SetCursor cursor
             else Log.warn ("Failed to create system cursor '" + scstring systemCursor + "' due to: " + SDL3.SDL_GetError ()); true
 

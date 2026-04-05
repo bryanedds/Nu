@@ -15,7 +15,7 @@ module Log =
 
     /// The global mutable synchronous log config. This may be changed by the engine at run-time. However it should be
     /// changed only via Log.setLogSynchronously as that approach keeps Trace.AutoFlush in sync as well.
-    let [<Uniform>] mutable LogSynchronously = match ConfigurationManager.AppSettings.["LogSynchronously"] with null -> true | value -> scvalue value
+    let [<Uniform>] mutable LogSynchronously = match ConfigurationManager.AppSettings["LogSynchronously"] with null -> true | value -> scvalue value
 
 namespace Nu
 open System

@@ -60,17 +60,17 @@ type AddressConverter (pointType : Type) =
         match source with
         | :? string as addressStr ->
             let makeFromStringFunction = pointType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
-            let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((pointType.GetGenericArguments ()).[0])
+            let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((pointType.GetGenericArguments ())[0])
             makeFromStringFunctionGeneric.Invoke (null, [|addressStr|])
         | :? Symbol as addressSymbol ->
             match addressSymbol with
             | Atom (addressStr, _) | Text (addressStr, _) ->
                 let makeFromStringFunction = pointType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
-                let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((pointType.GetGenericArguments ()).[0])
+                let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((pointType.GetGenericArguments ())[0])
                 makeFromStringFunctionGeneric.Invoke (null, [|addressStr|])
             | Symbols (symbols, _) when symbols.Length = 0 ->
                 let makeFromStringFunction = pointType.GetMethod ("makeEmpty", BindingFlags.Static ||| BindingFlags.Public)
-                let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((pointType.GetGenericArguments ()).[0])
+                let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((pointType.GetGenericArguments ())[0])
                 makeFromStringFunctionGeneric.Invoke (null, [||])
             | Number (_, _) | Quote (_, _) | Symbols (_, _) ->
                 failconv "Expected Atom, Text, Symbols (empty) for conversion to Address." (Some addressSymbol)
@@ -175,7 +175,7 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
     /// the address is absolute.
     static member relative (address : 't Address) =
         address.Names.Length > 0 &&
-            let head = address.Names.[0] in
+            let head = address.Names[0] in
             head = Constants.Address.ParentName || head = Constants.Address.CurrentName
 
     /// Convert any address to an obj Address.
@@ -377,7 +377,7 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
             let addressRelative = Address.relative address
             addNames addressRelative (nameof address) address
             addNames addressRelative (nameof relation) relation
-            if addressRelative && (names.Count = 0 || names.[0] <> Constants.Address.ParentName) then
+            if addressRelative && (names.Count = 0 || names[0] <> Constants.Address.ParentName) then
                 names.Insert (0, Constants.Address.CurrentName)
         else addNames false (nameof relation) relation
         names
@@ -409,7 +409,7 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
             Array.init (max ancestors 1 + depth) (fun i ->
                 if i < ancestors then Constants.Address.ParentName
                 elif i = 0 && ancestors = 0 then Constants.Address.CurrentName
-                else destinationNames.[i - max ancestors 1 + namesMatching])
+                else destinationNames[i - max ancestors 1 + namesMatching])
             |> Address.makeFromArray
         else Address.makeFromSeq destinationNames
 

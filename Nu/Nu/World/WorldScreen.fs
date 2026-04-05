@@ -362,7 +362,7 @@ module WorldScreenModule =
                         | ValueSome physicallyBasedModel ->
                             if surfaceIndex >= 0 && surfaceIndex < physicallyBasedModel.Surfaces.Length then
                                 if bounds.Size.Magnitude < Constants.Nav.Bounds3dMagnitudeMax then
-                                    Choice2Of3 (bounds, affineMatrix, physicallyBasedModel.Surfaces.[surfaceIndex])
+                                    Choice2Of3 (bounds, affineMatrix, physicallyBasedModel.Surfaces[surfaceIndex])
                                 else
                                     Log.warn "Navigation shape bounds magnitude exceeded maximum; ignoring."
                         | ValueNone -> ()
@@ -619,7 +619,7 @@ module WorldScreenModule =
                     let mutable travel = 0.0f
                     let mutable step = RcVec3f.Zero
                     while pathIndex < pathCount && travel < moveSpeed do
-                        let substep = path.[pathIndex] - startPosition
+                        let substep = path[pathIndex] - startPosition
                         let substepTrunc =
                             if travel + substep.Length () > moveSpeed then
                                 let travelOver = travel + substep.Length () - moveSpeed

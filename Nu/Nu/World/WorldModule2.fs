@@ -532,7 +532,7 @@ module WorldModule2 =
         static member private mapEntityDescriptors entityDescriptors =
             entityDescriptors
             |> List.map (fun descriptor ->
-                match descriptor.EntityProperties.[Constants.Engine.NamePropertyName] with
+                match descriptor.EntityProperties[Constants.Engine.NamePropertyName] with
                 | Atom (entityName, _) | Text (entityName, _) -> (entityName, descriptor)
                 | _ -> failwithumf ())
             |> Map.ofList
@@ -589,7 +589,7 @@ module WorldModule2 =
                                     | (false, _) -> Overlay.dispatcherNameToOverlayName currentDescriptor.EntityDispatcherName
                                 let facetNamesIntrinsic =
                                     let entityDispatchers = World.getEntityDispatchers world
-                                    let currentDispatcher = entityDispatchers.[currentDescriptor.EntityDispatcherName]
+                                    let currentDispatcher = entityDispatchers[currentDescriptor.EntityDispatcherName]
                                     currentDispatcher |> getType |> Reflection.getIntrinsicFacetNames
                                 let facetNamesExtrinsic =
                                     match currentDescriptor.EntityProperties.TryGetValue Constants.Engine.FacetNamesPropertyName with
@@ -625,7 +625,7 @@ module WorldModule2 =
                                         | (false, _) -> Overlay.dispatcherNameToOverlayName targetDescriptor.EntityDispatcherName
                                     let facetNamesIntrinsic =
                                         let entityDispatchers = World.getEntityDispatchers world
-                                        let targetDispatcher = entityDispatchers.[targetDescriptor.EntityDispatcherName]
+                                        let targetDispatcher = entityDispatchers[targetDescriptor.EntityDispatcherName]
                                         targetDispatcher |> getType |> Reflection.getIntrinsicFacetNames
                                     let facetNamesExtrinsic =
                                         match targetDescriptor.EntityProperties.TryGetValue Constants.Engine.FacetNamesPropertyName with
@@ -692,7 +692,7 @@ module WorldModule2 =
             let currentDescriptorsOrder =
                 currentDescriptor.EntityDescriptors
                 |> Seq.mapi (fun i currentDescriptor ->
-                    match currentDescriptor.EntityProperties.[Constants.Engine.NamePropertyName] with
+                    match currentDescriptor.EntityProperties[Constants.Engine.NamePropertyName] with
                     | Atom (entityName, _) | Text (entityName, _) -> (entityName, i)
                     | _ -> ("", Int32.MaxValue))
                 |> Map.ofSeq
@@ -701,7 +701,7 @@ module WorldModule2 =
                 |> List.definitize
                 |> List.filter (fun propagatedDescriptor -> String.notEmpty propagatedDescriptor.EntityDispatcherName)
                 |> List.sortBy (fun propagatedDescriptor ->
-                    match propagatedDescriptor.EntityProperties.[Constants.Engine.NamePropertyName] with
+                    match propagatedDescriptor.EntityProperties[Constants.Engine.NamePropertyName] with
                     | (Atom (entityName, _) | Text (entityName, _)) ->
                         match currentDescriptorsOrder.TryGetValue entityName with
                         | (true, order) -> order
@@ -790,7 +790,7 @@ module WorldModule2 =
             let eventNames = eventAddress.Names
             let eventNamesLength = Array.length eventNames
             if eventNamesLength >= 6 then
-                let eventFirstName = eventNames.[0]
+                let eventFirstName = eventNames[0]
                 match eventFirstName with
                 | "Update" ->
 #if DEBUG
@@ -804,7 +804,7 @@ module WorldModule2 =
                     World.updateEntityPublishUpdateFlag entity world |> ignore<bool>
                 | _ -> ()
             if eventNamesLength >= 4 then
-                match eventNames.[0] with
+                match eventNames[0] with
                 | "Change" ->
                     if eventNamesLength >= 7 then
                         let entityAddress = rtoa (Array.skip 3 eventNames)
@@ -1738,7 +1738,7 @@ module WorldModule2 =
 
                             // render faces
                             for i in 0 .. dec 6 do
-                                let (eyeForward, eyeUp) = eyeRotations.[i]
+                                let (eyeForward, eyeUp) = eyeRotations[i]
                                 let shadowRotation = Quaternion.CreateLookAt (eyeForward, eyeUp)
                                 let shadowView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + eyeForward, eyeUp)
                                 let shadowViewProjection = shadowView * shadowProjection
@@ -1837,8 +1837,8 @@ module WorldModule2 =
                                     let sectionNear =
                                         match i with
                                         | 0 -> Constants.Render.NearPlaneDistanceInterior
-                                        | _ -> shadowFarDistance * Constants.Render.ShadowCascadeLimits.[dec i]
-                                    let sectionFar = shadowFarDistance * Constants.Render.ShadowCascadeLimits.[i]
+                                        | _ -> shadowFarDistance * Constants.Render.ShadowCascadeLimits[dec i]
+                                    let sectionFar = shadowFarDistance * Constants.Render.ShadowCascadeLimits[i]
                                     let sectionProjection = Matrix4x4.CreatePerspectiveFieldOfView (eyeFov, eyeAspectRatio, sectionNear, sectionFar)
                                     let sectionViewProjection = eyeView * sectionProjection
                                     let sectionFrustum = Frustum sectionViewProjection
@@ -3303,12 +3303,12 @@ module WorldModule3 =
                         let presenceOld = entityState.Presence
                         let presenceInPlayOld = entityState.PresenceInPlay
                         let boundsOld = entityState.Bounds
-                        World.unregisterEntityIndex (getType entityState.Facets.[index]) entity world
+                        World.unregisterEntityIndex (getType entityState.Facets[index]) entity world
                         if world.Imperative then
-                            entityState.Facets.[index] <- facet
+                            entityState.Facets[index] <- facet
                         else
                             let facets = entityState.Facets.Clone () :?> Facet array
-                            facets.[index] <- facet
+                            facets[index] <- facet
                             let entityState = { entityState with Facets = facets }
                             World.setEntityState entityState entity world
                         World.registerEntityIndex (getType facet) entity world

@@ -146,9 +146,9 @@ module PhysicallyBased =
                 assert (this.PrimitiveType = PrimitiveType.Triangles) // should hold since we use Assimp.PostProcessSteps.Triangulate
                 let triangles =
                     [|for points in Array.chunkBySize 3 this.Indices do
-                        this.Vertices.[points.[0]]
-                        this.Vertices.[points.[1]]
-                        this.Vertices.[points.[2]]|]
+                        this.Vertices[points[0]]
+                        this.Vertices[points[1]]
+                        this.Vertices[points[2]]|]
                 this.TrianglesCached <- Some triangles
                 triangles
             | Some triangles -> triangles
@@ -171,7 +171,7 @@ module PhysicallyBased =
             | ValueNone ->
                 match sceneOpt with
                 | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
-                    let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                    let material = scene.Materials[surface.SurfaceMaterialIndex]
                     ValueOption.defaultValue presenceDefault material.PresenceOpt
                 | Some _ | None -> presenceDefault
             | ValueSome presence -> presence
@@ -181,7 +181,7 @@ module PhysicallyBased =
             | ValueNone ->
                 match sceneOpt with
                 | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
-                    let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                    let material = scene.Materials[surface.SurfaceMaterialIndex]
                     ValueOption.defaultValue renderStyleDefault material.RenderStyleOpt
                 | Some _ | None -> renderStyleDefault
             | ValueSome renderStyle -> renderStyle
@@ -191,7 +191,7 @@ module PhysicallyBased =
             | ValueNone ->
                 match sceneOpt with
                 | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
-                    let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                    let material = scene.Materials[surface.SurfaceMaterialIndex]
                     ValueOption.defaultValue ignoreLightMapsDefault material.IgnoreLightMapsOpt
                 | Some _ | None -> ignoreLightMapsDefault
             | ValueSome ignoreLightMaps -> ignoreLightMaps
@@ -201,7 +201,7 @@ module PhysicallyBased =
             | ValueNone ->
                 match sceneOpt with
                 | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
-                    let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                    let material = scene.Materials[surface.SurfaceMaterialIndex]
                     ValueOption.defaultValue opaqueDistanceDefault material.OpaqueDistanceOpt
                 | Some _ | None -> opaqueDistanceDefault
             | ValueSome opaqueDistance -> opaqueDistance
@@ -211,7 +211,7 @@ module PhysicallyBased =
             | ValueNone ->
                 match sceneOpt with
                 | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
-                    let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                    let material = scene.Materials[surface.SurfaceMaterialIndex]
                     ValueOption.defaultValue finenessOffsetDefault material.FinenessOffsetOpt
                 | Some _ | None -> finenessOffsetDefault
             | ValueSome finenessOffset -> finenessOffset
@@ -221,7 +221,7 @@ module PhysicallyBased =
             | ValueNone ->
                 match sceneOpt with
                 | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
-                    let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                    let material = scene.Materials[surface.SurfaceMaterialIndex]
                     ValueOption.defaultValue scatterTypeDefault material.ScatterTypeOpt
                 | Some _ | None -> scatterTypeDefault
             | ValueSome scatterType -> scatterType
@@ -231,7 +231,7 @@ module PhysicallyBased =
             | ValueNone ->
                 match sceneOpt with
                 | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
-                    let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                    let material = scene.Materials[surface.SurfaceMaterialIndex]
                     ValueOption.defaultValue specularScalarDefault material.SpecularScalarOpt
                 | Some _ | None -> specularScalarDefault
             | ValueSome specularScalar -> specularScalar
@@ -241,7 +241,7 @@ module PhysicallyBased =
             | ValueNone ->
                 match sceneOpt with
                 | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
-                    let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                    let material = scene.Materials[surface.SurfaceMaterialIndex]
                     ValueOption.defaultValue subsurfaceCutoffDefault material.SubsurfaceCutoffOpt
                 | Some _ | None -> subsurfaceCutoffDefault
             | ValueSome subsurfaceCutoff -> subsurfaceCutoff
@@ -251,7 +251,7 @@ module PhysicallyBased =
             | ValueNone ->
                 match sceneOpt with
                 | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
-                    let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                    let material = scene.Materials[surface.SurfaceMaterialIndex]
                     ValueOption.defaultValue subsurfaceCutoffMarginDefault material.SubsurfaceCutoffMarginOpt
                 | Some _ | None -> subsurfaceCutoffMarginDefault
             | ValueSome subsurfaceCutoffMargin -> subsurfaceCutoffMargin
@@ -261,7 +261,7 @@ module PhysicallyBased =
             | ValueNone ->
                 match sceneOpt with
                 | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
-                    let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                    let material = scene.Materials[surface.SurfaceMaterialIndex]
                     ValueOption.defaultValue refractiveIndexDefault material.RefractiveIndexOpt
                 | Some _ | None -> refractiveIndexDefault
             | ValueSome refractiveIndex -> refractiveIndex
@@ -271,7 +271,7 @@ module PhysicallyBased =
             | ValueNone ->
                 match sceneOpt with
                 | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
-                    let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                    let material = scene.Materials[surface.SurfaceMaterialIndex]
                     ValueOption.defaultValue clearCoatDefault material.ClearCoatOpt
                 | Some _ | None -> clearCoatDefault
             | ValueSome clearCoat -> clearCoat
@@ -281,7 +281,7 @@ module PhysicallyBased =
             | ValueNone ->
                 match sceneOpt with
                 | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
-                    let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                    let material = scene.Materials[surface.SurfaceMaterialIndex]
                     ValueOption.defaultValue clearCoatRoughnessDefault material.ClearCoatRoughnessOpt
                 | Some _ | None -> clearCoatRoughnessDefault
             | ValueSome clearCoatRoughness -> clearCoatRoughness
@@ -291,7 +291,7 @@ module PhysicallyBased =
             | ValueNone ->
                 match sceneOpt with
                 | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
-                    let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                    let material = scene.Materials[surface.SurfaceMaterialIndex]
                     ValueOption.defaultValue shapeDefault material.NavShapeOpt
                 | Some _ | None -> shapeDefault
             | ValueSome shape -> shape
@@ -1032,7 +1032,7 @@ module PhysicallyBased =
             let mutable found = false
             let mutable i = 0
             while not found && i < possibleFilePaths.Length do
-                let possibleFilePath = possibleFilePaths.[i]
+                let possibleFilePath = possibleFilePaths[i]
                 if File.Exists (dirPrefix + possibleFilePath) then
                     albedoTextureSlotFilePath <- possibleFilePath
                     found <- true
@@ -1428,17 +1428,17 @@ module PhysicallyBased =
         let mutable positionMax = v3Zero
         for i in 0 .. dec mesh.Vertices.Count do
             let v = i * 8
-            let position = if i < mesh.VertexCount then mesh.Vertices.[i] else Assimp.Vector3D (0.0f, 0.0f, 0.0f)
-            let texCoords = if i < mesh.TextureCoordinateChannels.[0].Capacity then mesh.TextureCoordinateChannels.[0].[i] else Assimp.Vector3D (0.0f, 0.0f, 0.0f)
-            let normal = if i < mesh.Normals.Count then mesh.Normals.[i] else Assimp.Vector3D (0.5f, 0.5f, 1.0f)
-            vertexData.[v] <- position.X
-            vertexData.[v+1] <- position.Y
-            vertexData.[v+2] <- position.Z
-            vertexData.[v+3] <- texCoords.X
-            vertexData.[v+4] <- 1.0f - texCoords.Y
-            vertexData.[v+5] <- normal.X
-            vertexData.[v+6] <- normal.Y
-            vertexData.[v+7] <- normal.Z
+            let position = if i < mesh.VertexCount then mesh.Vertices[i] else Assimp.Vector3D (0.0f, 0.0f, 0.0f)
+            let texCoords = if i < mesh.TextureCoordinateChannels[0].Capacity then mesh.TextureCoordinateChannels[0][i] else Assimp.Vector3D (0.0f, 0.0f, 0.0f)
+            let normal = if i < mesh.Normals.Count then mesh.Normals[i] else Assimp.Vector3D (0.5f, 0.5f, 1.0f)
+            vertexData[v] <- position.X
+            vertexData[v+1] <- position.Y
+            vertexData[v+2] <- position.Z
+            vertexData[v+3] <- texCoords.X
+            vertexData[v+4] <- 1.0f - texCoords.Y
+            vertexData[v+5] <- normal.X
+            vertexData[v+6] <- normal.Y
+            vertexData[v+7] <- normal.Z
             positionMin.X <- min positionMin.X position.X
             positionMin.Y <- min positionMin.Y position.Y
             positionMin.Z <- min positionMin.Z position.Z
@@ -1459,25 +1459,25 @@ module PhysicallyBased =
         let mutable positionMax = v3Zero
         for i in 0 .. dec mesh.Vertices.Count do
             let v = i * 16
-            let position = if i < mesh.VertexCount then mesh.Vertices.[i] else Assimp.Vector3D (0.0f, 0.0f, 0.0f)
-            let texCoords = if i < mesh.TextureCoordinateChannels.[0].Capacity then mesh.TextureCoordinateChannels.[0].[i] else Assimp.Vector3D (0.0f, 0.0f, 0.0f)
-            let normal = if i < mesh.Normals.Count then mesh.Normals.[i] else Assimp.Vector3D (0.5f, 0.5f, 1.0f)
-            vertexData.[v] <- position.X
-            vertexData.[v+1] <- position.Y
-            vertexData.[v+2] <- position.Z
-            vertexData.[v+3] <- texCoords.X
-            vertexData.[v+4] <- 1.0f - texCoords.Y
-            vertexData.[v+5] <- normal.X
-            vertexData.[v+6] <- normal.Y
-            vertexData.[v+7] <- normal.Z
-            vertexData.[v+8] <- -1.0f
-            vertexData.[v+9] <- -1.0f
-            vertexData.[v+10] <- -1.0f
-            vertexData.[v+11] <- -1.0f
-            vertexData.[v+12] <- 0.0f
-            vertexData.[v+13] <- 0.0f
-            vertexData.[v+14] <- 0.0f
-            vertexData.[v+15] <- 0.0f
+            let position = if i < mesh.VertexCount then mesh.Vertices[i] else Assimp.Vector3D (0.0f, 0.0f, 0.0f)
+            let texCoords = if i < mesh.TextureCoordinateChannels[0].Capacity then mesh.TextureCoordinateChannels[0][i] else Assimp.Vector3D (0.0f, 0.0f, 0.0f)
+            let normal = if i < mesh.Normals.Count then mesh.Normals[i] else Assimp.Vector3D (0.5f, 0.5f, 1.0f)
+            vertexData[v] <- position.X
+            vertexData[v+1] <- position.Y
+            vertexData[v+2] <- position.Z
+            vertexData[v+3] <- texCoords.X
+            vertexData[v+4] <- 1.0f - texCoords.Y
+            vertexData[v+5] <- normal.X
+            vertexData[v+6] <- normal.Y
+            vertexData[v+7] <- normal.Z
+            vertexData[v+8] <- -1.0f
+            vertexData[v+9] <- -1.0f
+            vertexData[v+10] <- -1.0f
+            vertexData[v+11] <- -1.0f
+            vertexData[v+12] <- 0.0f
+            vertexData[v+13] <- 0.0f
+            vertexData[v+14] <- 0.0f
+            vertexData[v+15] <- 0.0f
             positionMin.X <- min positionMin.X position.X
             positionMin.Y <- min positionMin.Y position.Y
             positionMin.Z <- min positionMin.Z position.Z
@@ -1488,23 +1488,23 @@ module PhysicallyBased =
 
         // populate vertex bone data
         for boneIndex in 0 .. dec mesh.Bones.Count do
-            let weights = mesh.Bones.[boneIndex].VertexWeights
-            let weightsCount = mesh.Bones.[boneIndex].VertexWeights.Count
+            let weights = mesh.Bones[boneIndex].VertexWeights
+            let weightsCount = mesh.Bones[boneIndex].VertexWeights.Count
             for weightIndex in 0 .. dec weightsCount do
-                let vertexId = weights.[weightIndex].VertexID
+                let vertexId = weights[weightIndex].VertexID
                 let vertexOffset = vertexId * 16
-                let weight = weights.[weightIndex].Weight
+                let weight = weights[weightIndex].Weight
                 if weight > 0.0f then
 
                     // find a free slot to specify the current index and weight (free slots are designated as -1.0f index above)
                     let mutable found = false
                     let mutable i = 0
                     while not found && i < Constants.Render.BonesInfluenceMax do
-                        if vertexData.[vertexOffset+8+i] = single boneIndex then // already found
+                        if vertexData[vertexOffset+8+i] = single boneIndex then // already found
                             found <- true
-                        elif vertexData.[vertexOffset+8+i] < 0.0f then // found free slot
-                            vertexData.[vertexOffset+8+i] <- single boneIndex
-                            vertexData.[vertexOffset+12+i] <- weight
+                        elif vertexData[vertexOffset+8+i] < 0.0f then // found free slot
+                            vertexData[vertexOffset+8+i] <- single boneIndex
+                            vertexData[vertexOffset+12+i] <- weight
                             found <- true
                         else i <- inc i
 
@@ -1514,14 +1514,14 @@ module PhysicallyBased =
                         for i in 0 .. dec Constants.Render.BonesInfluenceMax do
                             match lowestOpt with
                             | ValueSome lowest ->
-                                if vertexData.[vertexOffset+12+i] < vertexData.[vertexOffset+12+lowest] then
+                                if vertexData[vertexOffset+12+i] < vertexData[vertexOffset+12+lowest] then
                                     lowestOpt <- ValueSome i
                             | ValueNone -> lowestOpt <- ValueSome i
                         match lowestOpt with
                         | ValueSome lowest ->
-                            if vertexData.[vertexOffset+12+lowest] < weight then
-                                vertexData.[vertexOffset+8+lowest] <- single boneIndex
-                                vertexData.[vertexOffset+12+lowest] <- weight
+                            if vertexData[vertexOffset+12+lowest] < weight then
+                                vertexData[vertexOffset+8+lowest] <- single boneIndex
+                                vertexData[vertexOffset+12+lowest] <- weight
                         | ValueNone -> failwithumf ()
                                 
 
@@ -1675,7 +1675,7 @@ module PhysicallyBased =
         // create vao
         let vao =  [|0u|]
         Gl.CreateVertexArrays vao
-        let vao = vao.[0]
+        let vao = vao[0]
 
         // per vertex
         Gl.VertexArrayAttribFormat (vao, 0u, 3, VertexAttribType.Float, false, uint 0)
@@ -1774,8 +1774,8 @@ module PhysicallyBased =
                 let vertexData = vertexData.Span
                 for i in 0 .. dec vertices.Length do
                     let j = i * 8
-                    let vertex = v3 vertexData.[j] vertexData.[j+1] vertexData.[j+2]
-                    vertices.[i] <- vertex
+                    let vertex = v3 vertexData[j] vertexData[j+1] vertexData[j+2]
+                    vertices[i] <- vertex
 
                 // create indices
                 let indices = indexData.ToArray ()
@@ -1814,7 +1814,7 @@ module PhysicallyBased =
         // create vao
         let vao =  [|0u|]
         Gl.CreateVertexArrays vao
-        let vao = vao.[0]
+        let vao = vao[0]
 
         // per vertex
         Gl.VertexArrayAttribFormat (vao, 0u, 3, VertexAttribType.Float, false, uint 0)
@@ -1920,8 +1920,8 @@ module PhysicallyBased =
                 let vertexData = vertexData.Span
                 for i in 0 .. dec vertices.Length do
                     let j = i * 16
-                    let vertex = v3 vertexData.[j] vertexData.[j+1] vertexData.[j+2]
-                    vertices.[i] <- vertex
+                    let vertex = v3 vertexData[j] vertexData[j+1] vertexData[j+2]
+                    vertices[i] <- vertex
 
                 // create indices
                 let indices = indexData.ToArray ()
@@ -1961,7 +1961,7 @@ module PhysicallyBased =
         // create vao
         let vao =  [|0u|]
         Gl.CreateVertexArrays vao
-        let vao = vao.[0]
+        let vao = vao[0]
 
         // per vertex
         Gl.VertexArrayAttribFormat (vao, 0u, 3, VertexAttribType.Float, false, uint 0)
@@ -2065,8 +2065,8 @@ module PhysicallyBased =
                 let vertexData = vertexData.Span
                 for i in 0 .. dec vertices.Length do
                     let j = i * 19
-                    let vertex = v3 vertexData.[j] vertexData.[j+1] vertexData.[j+2]
-                    vertices.[i] <- vertex
+                    let vertex = v3 vertexData[j] vertexData[j+1] vertexData[j+2]
+                    vertices[i] <- vertex
 
                 // create indices
                 let indices = indexData.ToArray ()
@@ -2115,8 +2115,8 @@ module PhysicallyBased =
         let propertiesAndMaterials = Array.zeroCreate scene.Materials.Count
         for i in 0 .. dec scene.Materials.Count do
             if Option.isNone errorOpt then
-                let (properties, material) = CreatePhysicallyBasedMaterial (renderable, dirPath, defaultMaterial, textureClient, scene.Materials.[i])
-                propertiesAndMaterials.[i] <- (properties, material)
+                let (properties, material) = CreatePhysicallyBasedMaterial (renderable, dirPath, defaultMaterial, textureClient, scene.Materials[i])
+                propertiesAndMaterials[i] <- (properties, material)
         match errorOpt with
         | Some error -> Left error
         | None -> Right propertiesAndMaterials
@@ -2127,9 +2127,9 @@ module PhysicallyBased =
         let meshAndGeometryLists = Dictionary<int * int * Assimp.BoundingBox, (Assimp.Mesh * PhysicallyBasedGeometry) List> HashIdentity.Structural
         let geometries = SList.make ()
         for i in 0 .. dec scene.Meshes.Count do
-            let indexDataEntry = scene.Metadata.["IndexData" + string i]
+            let indexDataEntry = scene.Metadata["IndexData" + string i]
             let indexData = indexDataEntry.Data :?> int array
-            let mesh = scene.Meshes.[i]
+            let mesh = scene.Meshes[i]
             let mutable found = false
             let meshAndGeometryListOpt = Dictionary.tryFind (mesh.VertexCount, mesh.FaceCount, mesh.BoundingBox) meshAndGeometryLists
             match meshAndGeometryListOpt with
@@ -2138,7 +2138,7 @@ module PhysicallyBased =
                 while not found && enr.MoveNext () do
                     let (meshCached, geometryCached) = enr.Current
                     if  Enumerable.SequenceEqual (meshCached.Vertices, mesh.Vertices) && 
-                        Enumerable.SequenceEqual (meshCached.TextureCoordinateChannels.[0], mesh.TextureCoordinateChannels.[0]) && 
+                        Enumerable.SequenceEqual (meshCached.TextureCoordinateChannels[0], mesh.TextureCoordinateChannels[0]) && 
                         Enumerable.SequenceEqual (meshCached.Normals, mesh.Normals) then
                         geometries.Add geometryCached
                         found <- true
@@ -2147,7 +2147,7 @@ module PhysicallyBased =
                 let geometry = CreatePhysicallyBasedStaticGeometryFromMesh (renderable, indexData, mesh)
                 match meshAndGeometryListOpt with
                 | Some meshesAndGeometries -> meshesAndGeometries.Add (mesh, geometry)
-                | None -> meshAndGeometryLists.[(mesh.VertexCount, mesh.FaceCount, mesh.BoundingBox)] <- List [(mesh, geometry)]
+                | None -> meshAndGeometryLists[(mesh.VertexCount, mesh.FaceCount, mesh.BoundingBox)] <- List [(mesh, geometry)]
                 geometries.Add geometry
         geometries
 
@@ -2156,9 +2156,9 @@ module PhysicallyBased =
     let CreatePhysicallyBasedAnimatedGeometries (renderable, scene : Assimp.Scene) =
         let geometries = SList.make ()
         for i in 0 .. dec scene.Meshes.Count do
-            let indexDataEntry = scene.Metadata.["IndexData" + string i]
+            let indexDataEntry = scene.Metadata["IndexData" + string i]
             let indexData = indexDataEntry.Data :?> int array
-            let mesh = scene.Meshes.[i]
+            let mesh = scene.Meshes[i]
             let geometry = CreatePhysicallyBasedAnimatedGeometryFromMesh (renderable, indexData, mesh)
             geometries.Add geometry
         geometries
@@ -3285,7 +3285,7 @@ module PhysicallyBased =
             // compute target resolution and texture
             let targetResolutionX = resolutionX >>> i
             let targetResolutionY = resolutionY >>> i
-            let targetTexture = targetTextures.[i]
+            let targetTexture = targetTextures[i]
 
             // set viewport to current target's resolution
             Gl.Viewport (0, 0, targetResolutionX, targetResolutionY)
@@ -3349,8 +3349,8 @@ module PhysicallyBased =
         for i in dec resolutionZ .. -1 .. 1 do
 
             // compute source resolution and target texture
-            let sourceTexture = targetTextures.[i]
-            let targetTexture = targetTextures.[dec i]
+            let sourceTexture = targetTextures[i]
+            let targetTexture = targetTextures[dec i]
             let targetResolutionX = resolutionX >>> dec i
             let targetResolutionY = resolutionY >>> dec i
 
@@ -3709,7 +3709,7 @@ module PhysicallyBased =
             Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
             Gl.UniformMatrix4 (shader.ViewProjectionUniform, false, viewProjection)
             for i in 0 .. dec (min Constants.Render.BonesMax bones.Length) do
-                Gl.UniformMatrix4 (shader.BonesUniforms.[i], false, bones.[i])
+                Gl.UniformMatrix4 (shader.BonesUniforms[i], false, bones[i])
             Gl.Uniform1 (shader.LightShadowExponentUniform, lightShadowExponent)
             Hl.Assert ()
 
@@ -3797,7 +3797,7 @@ module PhysicallyBased =
             Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
             Gl.UniformMatrix4 (shader.ViewProjectionUniform, false, viewProjection)
             for i in 0 .. dec (min Constants.Render.BonesMax bones.Length) do
-                Gl.UniformMatrix4 (shader.BonesUniforms.[i], false, bones.[i])
+                Gl.UniformMatrix4 (shader.BonesUniforms[i], false, bones[i])
             Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
             Gl.Uniform1 (shader.LightShadowSamplesUniform, lightShadowSamples)
             Gl.Uniform1 (shader.LightShadowBiasUniform, lightShadowBias)
@@ -4083,55 +4083,55 @@ module PhysicallyBased =
 
             // setup position-specific state
             for i in 0 .. dec (min Constants.Render.BonesMax bones.Length) do
-                Gl.UniformMatrix4 (shader.BonesUniforms.[i], false, bones.[i])
+                Gl.UniformMatrix4 (shader.BonesUniforms[i], false, bones[i])
             for i in 0 .. dec Constants.Render.LightMapsMaxForward do
-                Gl.Uniform1 (shader.IrradianceMapsUniforms.[i], i + 12)
+                Gl.Uniform1 (shader.IrradianceMapsUniforms[i], i + 12)
             for i in 0 .. dec Constants.Render.LightMapsMaxForward do
-                Gl.Uniform1 (shader.EnvironmentFilterMapsUniforms.[i], i + 12 + Constants.Render.LightMapsMaxForward)
+                Gl.Uniform1 (shader.EnvironmentFilterMapsUniforms[i], i + 12 + Constants.Render.LightMapsMaxForward)
             Gl.Uniform1 (shader.ShadowTexturesUniform, 12 + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward)
             for i in 0 .. dec Constants.Render.ShadowMapsMax do
-                Gl.Uniform1 (shader.ShadowMapsUniforms.[i], i + 13 + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward)
+                Gl.Uniform1 (shader.ShadowMapsUniforms[i], i + 13 + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward)
             for i in 0 .. dec Constants.Render.ShadowCascadesMax do
-                Gl.Uniform1 (shader.ShadowCascadesUniforms.[i], i + 13 + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward + Constants.Render.ShadowMapsMax)
+                Gl.Uniform1 (shader.ShadowCascadesUniforms[i], i + 13 + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward + Constants.Render.ShadowMapsMax)
             for i in 0 .. dec (min lightMapOrigins.Length Constants.Render.LightMapsMaxForward) do
-                Gl.Uniform3 (shader.LightMapOriginsUniforms.[i], lightMapOrigins.[i].X, lightMapOrigins.[i].Y, lightMapOrigins.[i].Z)
+                Gl.Uniform3 (shader.LightMapOriginsUniforms[i], lightMapOrigins[i].X, lightMapOrigins[i].Y, lightMapOrigins[i].Z)
             for i in 0 .. dec (min lightMapMins.Length Constants.Render.LightMapsMaxForward) do
-                Gl.Uniform3 (shader.LightMapMinsUniforms.[i], lightMapMins.[i].X, lightMapMins.[i].Y, lightMapMins.[i].Z)
+                Gl.Uniform3 (shader.LightMapMinsUniforms[i], lightMapMins[i].X, lightMapMins[i].Y, lightMapMins[i].Z)
             for i in 0 .. dec (min lightMapSizes.Length Constants.Render.LightMapsMaxForward) do
-                Gl.Uniform3 (shader.LightMapSizesUniforms.[i], lightMapSizes.[i].X, lightMapSizes.[i].Y, lightMapSizes.[i].Z)
+                Gl.Uniform3 (shader.LightMapSizesUniforms[i], lightMapSizes[i].X, lightMapSizes[i].Y, lightMapSizes[i].Z)
             for i in 0 .. dec (min lightMapAmbientColors.Length Constants.Render.LightMapsMaxForward) do
-                Gl.Uniform3 (shader.LightMapAmbientColorsUniforms.[i], lightMapAmbientColors.[i].R, lightMapAmbientColors.[i].G, lightMapAmbientColors.[i].B)
+                Gl.Uniform3 (shader.LightMapAmbientColorsUniforms[i], lightMapAmbientColors[i].R, lightMapAmbientColors[i].G, lightMapAmbientColors[i].B)
             for i in 0 .. dec (min lightMapAmbientBrightnesses.Length Constants.Render.LightMapsMaxForward) do
-                Gl.Uniform1 (shader.LightMapAmbientBrightnessesUniforms.[i], lightMapAmbientBrightnesses.[i])
+                Gl.Uniform1 (shader.LightMapAmbientBrightnessesUniforms[i], lightMapAmbientBrightnesses[i])
             Gl.Uniform1 (shader.LightMapsCountUniform, lightMapsCount)
             Gl.Uniform1 (shader.LightMapSingletonBlendMarginUniform, lightMapSingletonBlendMargin)
             for i in 0 .. dec (min lightOrigins.Length Constants.Render.LightsMaxForward) do
-                Gl.Uniform3 (shader.LightOriginsUniforms.[i], lightOrigins.[i].X, lightOrigins.[i].Y, lightOrigins.[i].Z)
+                Gl.Uniform3 (shader.LightOriginsUniforms[i], lightOrigins[i].X, lightOrigins[i].Y, lightOrigins[i].Z)
             for i in 0 .. dec (min lightDirections.Length Constants.Render.LightsMaxForward) do
-                Gl.Uniform3 (shader.LightDirectionsUniforms.[i], lightDirections.[i].X, lightDirections.[i].Y, lightDirections.[i].Z)
+                Gl.Uniform3 (shader.LightDirectionsUniforms[i], lightDirections[i].X, lightDirections[i].Y, lightDirections[i].Z)
             for i in 0 .. dec (min lightColors.Length Constants.Render.LightsMaxForward) do
-                Gl.Uniform3 (shader.LightColorsUniforms.[i], lightColors.[i].R, lightColors.[i].G, lightColors.[i].B)
+                Gl.Uniform3 (shader.LightColorsUniforms[i], lightColors[i].R, lightColors[i].G, lightColors[i].B)
             for i in 0 .. dec (min lightBrightnesses.Length Constants.Render.LightsMaxForward) do
-                Gl.Uniform1 (shader.LightBrightnessesUniforms.[i], lightBrightnesses.[i])
+                Gl.Uniform1 (shader.LightBrightnessesUniforms[i], lightBrightnesses[i])
             for i in 0 .. dec (min lightAttenuationLinears.Length Constants.Render.LightsMaxForward) do
-                Gl.Uniform1 (shader.LightAttenuationLinearsUniforms.[i], lightAttenuationLinears.[i])
+                Gl.Uniform1 (shader.LightAttenuationLinearsUniforms[i], lightAttenuationLinears[i])
             for i in 0 .. dec (min lightAttenuationQuadratics.Length Constants.Render.LightsMaxForward) do
-                Gl.Uniform1 (shader.LightAttenuationQuadraticsUniforms.[i], lightAttenuationQuadratics.[i])
+                Gl.Uniform1 (shader.LightAttenuationQuadraticsUniforms[i], lightAttenuationQuadratics[i])
             for i in 0 .. dec (min lightCutoffs.Length Constants.Render.LightsMaxForward) do
-                Gl.Uniform1 (shader.LightCutoffsUniforms.[i], lightCutoffs.[i])
+                Gl.Uniform1 (shader.LightCutoffsUniforms[i], lightCutoffs[i])
             for i in 0 .. dec (min lightTypes.Length Constants.Render.LightsMaxForward) do
-                Gl.Uniform1 (shader.LightTypesUniforms.[i], lightTypes.[i])
+                Gl.Uniform1 (shader.LightTypesUniforms[i], lightTypes[i])
             for i in 0 .. dec (min lightConeInners.Length Constants.Render.LightsMaxForward) do
-                Gl.Uniform1 (shader.LightConeInnersUniforms.[i], lightConeInners.[i])
+                Gl.Uniform1 (shader.LightConeInnersUniforms[i], lightConeInners[i])
             for i in 0 .. dec (min lightConeOuters.Length Constants.Render.LightsMaxForward) do
-                Gl.Uniform1 (shader.LightConeOutersUniforms.[i], lightConeOuters.[i])
+                Gl.Uniform1 (shader.LightConeOutersUniforms[i], lightConeOuters[i])
             for i in 0 .. dec (min lightDesireFogs.Length Constants.Render.LightsMaxForward) do
-                Gl.Uniform1 (shader.LightDesireFogsUniforms.[i], lightDesireFogs.[i])
+                Gl.Uniform1 (shader.LightDesireFogsUniforms[i], lightDesireFogs[i])
             for i in 0 .. dec (min lightShadowIndices.Length Constants.Render.LightsMaxForward) do
-                Gl.Uniform1 (shader.LightShadowIndicesUniforms.[i], lightShadowIndices.[i])
+                Gl.Uniform1 (shader.LightShadowIndicesUniforms[i], lightShadowIndices[i])
             Gl.Uniform1 (shader.LightsCountUniform, lightsCount)
             for i in 0 .. dec (min shadowMatrices.Length (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels)) do
-                Gl.UniformMatrix4 (shader.ShadowMatricesUniforms.[i], false, shadowMatrices.[i])
+                Gl.UniformMatrix4 (shader.ShadowMatricesUniforms[i], false, shadowMatrices[i])
             Hl.Assert ()
 
             // setup textures
@@ -4152,18 +4152,18 @@ module PhysicallyBased =
             // NOTE: textures 7 through 9 are configured in begin / end functions.
             for i in 0 .. dec (min irradianceMaps.Length Constants.Render.LightMapsMaxForward) do
                 Gl.ActiveTexture (int TextureUnit.Texture0 + 12 + i |> Branchless.reinterpret)
-                Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMaps.[i].TextureId)
+                Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMaps[i].TextureId)
             for i in 0 .. dec (min environmentFilterMaps.Length Constants.Render.LightMapsMaxForward) do
                 Gl.ActiveTexture (int TextureUnit.Texture0 + 12 + i + Constants.Render.LightMapsMaxForward |> Branchless.reinterpret)
-                Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMaps.[i].TextureId)
+                Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMaps[i].TextureId)
             Gl.ActiveTexture (int TextureUnit.Texture0 + 12 + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward |> Branchless.reinterpret)
             Gl.BindTexture (TextureTarget.Texture2dArray, shadowTextureArray.TextureId)
             for i in 0 .. dec (min shadowMaps.Length Constants.Render.ShadowMapsMax) do
                 Gl.ActiveTexture (int TextureUnit.Texture0 + 13 + i + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward |> Branchless.reinterpret)
-                Gl.BindTexture (TextureTarget.TextureCubeMap, shadowMaps.[i].TextureId)
+                Gl.BindTexture (TextureTarget.TextureCubeMap, shadowMaps[i].TextureId)
             for i in 0 .. dec (min shadowCascades.Length Constants.Render.ShadowCascadesMax) do
                 Gl.ActiveTexture (int TextureUnit.Texture0 + 13 + i + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward + Constants.Render.ShadowMapsMax |> Branchless.reinterpret)
-                Gl.BindTexture (TextureTarget.Texture2dArray, shadowCascades.[i].TextureId)
+                Gl.BindTexture (TextureTarget.Texture2dArray, shadowCascades[i].TextureId)
             Hl.Assert ()
 
             // update instance buffer
@@ -4249,33 +4249,33 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.LightShadowDensityUniform, lightShadowDensity)
         Gl.Uniform1 (shader.LayersCountUniform, layersCount)
         for i in 0 .. dec Constants.Render.TerrainLayersMax do
-            Gl.Uniform1 (shader.AlbedoTexturesUniforms.[i], i)
+            Gl.Uniform1 (shader.AlbedoTexturesUniforms[i], i)
         for i in 0 .. dec Constants.Render.TerrainLayersMax do
-            Gl.Uniform1 (shader.RoughnessTexturesUniforms.[i], i + Constants.Render.TerrainLayersMax)
+            Gl.Uniform1 (shader.RoughnessTexturesUniforms[i], i + Constants.Render.TerrainLayersMax)
         for i in 0 .. dec Constants.Render.TerrainLayersMax do
-            Gl.Uniform1 (shader.AmbientOcclusionTexturesUniforms.[i], i + Constants.Render.TerrainLayersMax * 2)
+            Gl.Uniform1 (shader.AmbientOcclusionTexturesUniforms[i], i + Constants.Render.TerrainLayersMax * 2)
         for i in 0 .. dec Constants.Render.TerrainLayersMax do
-            Gl.Uniform1 (shader.NormalTexturesUniforms.[i], i + Constants.Render.TerrainLayersMax * 3)
+            Gl.Uniform1 (shader.NormalTexturesUniforms[i], i + Constants.Render.TerrainLayersMax * 3)
         for i in 0 .. dec Constants.Render.TerrainLayersMax do
-            Gl.Uniform1 (shader.HeightTexturesUniforms.[i], i + Constants.Render.TerrainLayersMax * 4)
+            Gl.Uniform1 (shader.HeightTexturesUniforms[i], i + Constants.Render.TerrainLayersMax * 4)
         Hl.Assert ()
 
         // setup textures
         for i in 0 .. dec layersCount do
             Gl.ActiveTexture (int TextureUnit.Texture0 + i |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.Texture2d, materials.[i].AlbedoTexture.TextureId)
+            Gl.BindTexture (TextureTarget.Texture2d, materials[i].AlbedoTexture.TextureId)
         for i in 0 .. dec layersCount do
             Gl.ActiveTexture (int TextureUnit.Texture0 + i + Constants.Render.TerrainLayersMax |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.Texture2d, materials.[i].RoughnessTexture.TextureId)
+            Gl.BindTexture (TextureTarget.Texture2d, materials[i].RoughnessTexture.TextureId)
         for i in 0 .. dec layersCount do
             Gl.ActiveTexture (int TextureUnit.Texture0 + i + Constants.Render.TerrainLayersMax * 2 |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.Texture2d, materials.[i].AmbientOcclusionTexture.TextureId)
+            Gl.BindTexture (TextureTarget.Texture2d, materials[i].AmbientOcclusionTexture.TextureId)
         for i in 0 .. dec layersCount do
             Gl.ActiveTexture (int TextureUnit.Texture0 + i + Constants.Render.TerrainLayersMax * 3 |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.Texture2d, materials.[i].NormalTexture.TextureId)
+            Gl.BindTexture (TextureTarget.Texture2d, materials[i].NormalTexture.TextureId)
         for i in 0 .. dec layersCount do
             Gl.ActiveTexture (int TextureUnit.Texture0 + i + Constants.Render.TerrainLayersMax * 4 |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.Texture2d, materials.[i].HeightTexture.TextureId)
+            Gl.BindTexture (TextureTarget.Texture2d, materials[i].HeightTexture.TextureId)
         Hl.Assert ()
 
         // update instance buffer
@@ -4338,11 +4338,11 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.DepthTextureUniform, 0)
         Gl.Uniform1 (shader.NormalPlusTextureUniform, 1)
         for i in 0 .. dec (min lightMapOrigins.Length Constants.Render.LightMapsMaxDeferred) do
-            Gl.Uniform3 (shader.LightMapOriginsUniforms.[i], lightMapOrigins.[i].X, lightMapOrigins.[i].Y, lightMapOrigins.[i].Z)
+            Gl.Uniform3 (shader.LightMapOriginsUniforms[i], lightMapOrigins[i].X, lightMapOrigins[i].Y, lightMapOrigins[i].Z)
         for i in 0 .. dec (min lightMapMins.Length Constants.Render.LightMapsMaxDeferred) do
-            Gl.Uniform3 (shader.LightMapMinsUniforms.[i], lightMapMins.[i].X, lightMapMins.[i].Y, lightMapMins.[i].Z)
+            Gl.Uniform3 (shader.LightMapMinsUniforms[i], lightMapMins[i].X, lightMapMins[i].Y, lightMapMins[i].Z)
         for i in 0 .. dec (min lightMapSizes.Length Constants.Render.LightMapsMaxDeferred) do
-            Gl.Uniform3 (shader.LightMapSizesUniforms.[i], lightMapSizes.[i].X, lightMapSizes.[i].Y, lightMapSizes.[i].Z)
+            Gl.Uniform3 (shader.LightMapSizesUniforms[i], lightMapSizes[i].X, lightMapSizes[i].Y, lightMapSizes[i].Z)
         Gl.Uniform1 (shader.LightMapsCountUniform, lightMapsCount)
         Gl.Uniform1 (shader.LightMapSingletonBlendMarginUniform, lightMapSingletonBlendMargin)
         Hl.Assert ()
@@ -4401,9 +4401,9 @@ module PhysicallyBased =
         Gl.Uniform3 (shader.LightMapAmbientColorUniform, lightMapAmbientColor.R, lightMapAmbientColor.G, lightMapAmbientColor.B)
         Gl.Uniform1 (shader.LightMapAmbientBrightnessUniform, lightMapAmbientBrightness)
         for i in 0 .. dec (min lightMapAmbientColors.Length Constants.Render.LightMapsMaxDeferred) do
-            Gl.Uniform3 (shader.LightMapAmbientColorsUniforms.[i], lightMapAmbientColors.[i].R, lightMapAmbientColors.[i].G, lightMapAmbientColors.[i].B)
+            Gl.Uniform3 (shader.LightMapAmbientColorsUniforms[i], lightMapAmbientColors[i].R, lightMapAmbientColors[i].G, lightMapAmbientColors[i].B)
         for i in 0 .. dec (min lightMapAmbientBrightnesses.Length Constants.Render.LightMapsMaxDeferred) do
-            Gl.Uniform1 (shader.LightMapAmbientBrightnessesUniforms.[i], lightMapAmbientBrightnesses.[i])
+            Gl.Uniform1 (shader.LightMapAmbientBrightnessesUniforms[i], lightMapAmbientBrightnesses[i])
         Hl.Assert ()
 
         // setup textures
@@ -4459,7 +4459,7 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.LightMappingTextureUniform, 2)
         Gl.Uniform1 (shader.IrradianceMapUniform, 3)
         for i in 0 .. dec Constants.Render.LightMapsMaxDeferred do
-            Gl.Uniform1 (shader.IrradianceMapsUniforms.[i], 4 + i)
+            Gl.Uniform1 (shader.IrradianceMapsUniforms[i], 4 + i)
         Hl.Assert ()
 
         // setup textures
@@ -4473,7 +4473,7 @@ module PhysicallyBased =
         Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMap.TextureId)
         for i in 0 .. dec Constants.Render.LightMapsMaxDeferred do
             Gl.ActiveTexture (int TextureUnit.Texture0 + 4 + i |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMaps.[i].TextureId)
+            Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMaps[i].TextureId)
         Hl.Assert ()
 
         // setup geometry
@@ -4529,13 +4529,13 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.LightMappingTextureUniform, 4)
         Gl.Uniform1 (shader.EnvironmentFilterMapUniform, 5)
         for i in 0 .. dec Constants.Render.LightMapsMaxDeferred do
-            Gl.Uniform1 (shader.EnvironmentFilterMapsUniforms.[i], 6 + i)
+            Gl.Uniform1 (shader.EnvironmentFilterMapsUniforms[i], 6 + i)
         for i in 0 .. dec (min lightMapOrigins.Length Constants.Render.LightMapsMaxDeferred) do
-            Gl.Uniform3 (shader.LightMapOriginsUniforms.[i], lightMapOrigins.[i].X, lightMapOrigins.[i].Y, lightMapOrigins.[i].Z)
+            Gl.Uniform3 (shader.LightMapOriginsUniforms[i], lightMapOrigins[i].X, lightMapOrigins[i].Y, lightMapOrigins[i].Z)
         for i in 0 .. dec (min lightMapMins.Length Constants.Render.LightMapsMaxDeferred) do
-            Gl.Uniform3 (shader.LightMapMinsUniforms.[i], lightMapMins.[i].X, lightMapMins.[i].Y, lightMapMins.[i].Z)
+            Gl.Uniform3 (shader.LightMapMinsUniforms[i], lightMapMins[i].X, lightMapMins[i].Y, lightMapMins[i].Z)
         for i in 0 .. dec (min lightMapSizes.Length Constants.Render.LightMapsMaxDeferred) do
-            Gl.Uniform3 (shader.LightMapSizesUniforms.[i], lightMapSizes.[i].X, lightMapSizes.[i].Y, lightMapSizes.[i].Z)
+            Gl.Uniform3 (shader.LightMapSizesUniforms[i], lightMapSizes[i].X, lightMapSizes[i].Y, lightMapSizes[i].Z)
         Hl.Assert ()
 
         // setup textures
@@ -4553,7 +4553,7 @@ module PhysicallyBased =
         Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMap.TextureId)
         for i in 0 .. dec Constants.Render.LightMapsMaxDeferred do
             Gl.ActiveTexture (int TextureUnit.Texture0 + 6 + i |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMaps.[i].TextureId)
+            Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMaps[i].TextureId)
         Hl.Assert ()
 
         // setup geometry
@@ -4710,35 +4710,35 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.ClearCoatPlusTextureUniform, 6)
         Gl.Uniform1 (shader.ShadowTexturesUniform, 7)
         for i in 0 .. dec Constants.Render.ShadowMapsMax do
-            Gl.Uniform1 (shader.ShadowMapsUniforms.[i], i + 8)
+            Gl.Uniform1 (shader.ShadowMapsUniforms[i], i + 8)
         for i in 0 .. dec Constants.Render.ShadowCascadesMax do
-            Gl.Uniform1 (shader.ShadowCascadesUniforms.[i], i + 8 + Constants.Render.ShadowMapsMax)
+            Gl.Uniform1 (shader.ShadowCascadesUniforms[i], i + 8 + Constants.Render.ShadowMapsMax)
         for i in 0 .. dec (min lightOrigins.Length Constants.Render.LightsMaxDeferred) do
-            Gl.Uniform3 (shader.LightOriginsUniforms.[i], lightOrigins.[i].X, lightOrigins.[i].Y, lightOrigins.[i].Z)
+            Gl.Uniform3 (shader.LightOriginsUniforms[i], lightOrigins[i].X, lightOrigins[i].Y, lightOrigins[i].Z)
         for i in 0 .. dec (min lightDirections.Length Constants.Render.LightsMaxDeferred) do
-            Gl.Uniform3 (shader.LightDirectionsUniforms.[i], lightDirections.[i].X, lightDirections.[i].Y, lightDirections.[i].Z)
+            Gl.Uniform3 (shader.LightDirectionsUniforms[i], lightDirections[i].X, lightDirections[i].Y, lightDirections[i].Z)
         for i in 0 .. dec (min lightColors.Length Constants.Render.LightsMaxDeferred) do
-            Gl.Uniform3 (shader.LightColorsUniforms.[i], lightColors.[i].R, lightColors.[i].G, lightColors.[i].B)
+            Gl.Uniform3 (shader.LightColorsUniforms[i], lightColors[i].R, lightColors[i].G, lightColors[i].B)
         for i in 0 .. dec (min lightBrightnesses.Length Constants.Render.LightsMaxDeferred) do
-            Gl.Uniform1 (shader.LightBrightnessesUniforms.[i], lightBrightnesses.[i])
+            Gl.Uniform1 (shader.LightBrightnessesUniforms[i], lightBrightnesses[i])
         for i in 0 .. dec (min lightAttenuationLinears.Length Constants.Render.LightsMaxDeferred) do
-            Gl.Uniform1 (shader.LightAttenuationLinearsUniforms.[i], lightAttenuationLinears.[i])
+            Gl.Uniform1 (shader.LightAttenuationLinearsUniforms[i], lightAttenuationLinears[i])
         for i in 0 .. dec (min lightAttenuationQuadratics.Length Constants.Render.LightsMaxDeferred) do
-            Gl.Uniform1 (shader.LightAttenuationQuadraticsUniforms.[i], lightAttenuationQuadratics.[i])
+            Gl.Uniform1 (shader.LightAttenuationQuadraticsUniforms[i], lightAttenuationQuadratics[i])
         for i in 0 .. dec (min lightCutoffs.Length Constants.Render.LightsMaxDeferred) do
-            Gl.Uniform1 (shader.LightCutoffsUniforms.[i], lightCutoffs.[i])
+            Gl.Uniform1 (shader.LightCutoffsUniforms[i], lightCutoffs[i])
         for i in 0 .. dec (min lightTypes.Length Constants.Render.LightsMaxDeferred) do
-            Gl.Uniform1 (shader.LightTypesUniforms.[i], lightTypes.[i])
+            Gl.Uniform1 (shader.LightTypesUniforms[i], lightTypes[i])
         for i in 0 .. dec (min lightConeInners.Length Constants.Render.LightsMaxDeferred) do
-            Gl.Uniform1 (shader.LightConeInnersUniforms.[i], lightConeInners.[i])
+            Gl.Uniform1 (shader.LightConeInnersUniforms[i], lightConeInners[i])
         for i in 0 .. dec (min lightConeOuters.Length Constants.Render.LightsMaxDeferred) do
-            Gl.Uniform1 (shader.LightConeOutersUniforms.[i], lightConeOuters.[i])
+            Gl.Uniform1 (shader.LightConeOutersUniforms[i], lightConeOuters[i])
         for i in 0 .. dec (min lightShadowIndices.Length Constants.Render.LightsMaxDeferred) do
-            Gl.Uniform1 (shader.LightShadowIndicesUniforms.[i], lightShadowIndices.[i])
+            Gl.Uniform1 (shader.LightShadowIndicesUniforms[i], lightShadowIndices[i])
         Gl.Uniform1 (shader.LightsCountUniform, lightsCount)
         Gl.Uniform1 (shader.ShadowNearUniform, shadowNear)
         for i in 0 .. dec (min shadowMatrices.Length (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels)) do
-            Gl.UniformMatrix4 (shader.ShadowMatricesUniforms.[i], false, shadowMatrices.[i])
+            Gl.UniformMatrix4 (shader.ShadowMatricesUniforms[i], false, shadowMatrices[i])
         Hl.Assert ()
 
         // setup textures
@@ -4760,10 +4760,10 @@ module PhysicallyBased =
         Gl.BindTexture (TextureTarget.Texture2dArray, shadowTextureArray.TextureId)
         for i in 0 .. dec (min shadowMaps.Length Constants.Render.ShadowMapsMax) do
             Gl.ActiveTexture (int TextureUnit.Texture0 + 8 + i |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.TextureCubeMap, shadowMaps.[i].TextureId)
+            Gl.BindTexture (TextureTarget.TextureCubeMap, shadowMaps[i].TextureId)
         for i in 0 .. dec (min shadowCascades.Length Constants.Render.ShadowCascadesMax) do
             Gl.ActiveTexture (int TextureUnit.Texture0 + 8 + i + Constants.Render.ShadowMapsMax |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.Texture2dArray, shadowCascades.[i].TextureId)
+            Gl.BindTexture (TextureTarget.Texture2dArray, shadowCascades[i].TextureId)
         Hl.Assert ()
 
         // setup geometry
@@ -4837,36 +4837,36 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.DepthTextureUniform, 0)
         Gl.Uniform1 (shader.ShadowTexturesUniform, 1)
         for i in 0 .. dec Constants.Render.ShadowMapsMax do
-            Gl.Uniform1 (shader.ShadowMapsUniforms.[i], i + 2)
+            Gl.Uniform1 (shader.ShadowMapsUniforms[i], i + 2)
         for i in 0 .. dec Constants.Render.ShadowCascadesMax do
-            Gl.Uniform1 (shader.ShadowCascadesUniforms.[i], i + 2 + Constants.Render.ShadowMapsMax)
+            Gl.Uniform1 (shader.ShadowCascadesUniforms[i], i + 2 + Constants.Render.ShadowMapsMax)
         for i in 0 .. dec (min lightOrigins.Length Constants.Render.LightsMaxDeferred) do
-            Gl.Uniform3 (shader.LightOriginsUniforms.[i], lightOrigins.[i].X, lightOrigins.[i].Y, lightOrigins.[i].Z)
+            Gl.Uniform3 (shader.LightOriginsUniforms[i], lightOrigins[i].X, lightOrigins[i].Y, lightOrigins[i].Z)
         for i in 0 .. dec (min lightDirections.Length Constants.Render.LightsMaxDeferred) do
-            Gl.Uniform3 (shader.LightDirectionsUniforms.[i], lightDirections.[i].X, lightDirections.[i].Y, lightDirections.[i].Z)
+            Gl.Uniform3 (shader.LightDirectionsUniforms[i], lightDirections[i].X, lightDirections[i].Y, lightDirections[i].Z)
         for i in 0 .. dec (min lightColors.Length Constants.Render.LightsMaxDeferred) do
-            Gl.Uniform3 (shader.LightColorsUniforms.[i], lightColors.[i].R, lightColors.[i].G, lightColors.[i].B)
+            Gl.Uniform3 (shader.LightColorsUniforms[i], lightColors[i].R, lightColors[i].G, lightColors[i].B)
         for i in 0 .. dec (min lightBrightnesses.Length Constants.Render.LightsMaxDeferred) do
-            Gl.Uniform1 (shader.LightBrightnessesUniforms.[i], lightBrightnesses.[i])
+            Gl.Uniform1 (shader.LightBrightnessesUniforms[i], lightBrightnesses[i])
         for i in 0 .. dec (min lightAttenuationLinears.Length Constants.Render.LightsMaxDeferred) do
-            Gl.Uniform1 (shader.LightAttenuationLinearsUniforms.[i], lightAttenuationLinears.[i])
+            Gl.Uniform1 (shader.LightAttenuationLinearsUniforms[i], lightAttenuationLinears[i])
         for i in 0 .. dec (min lightAttenuationQuadratics.Length Constants.Render.LightsMaxDeferred) do
-            Gl.Uniform1 (shader.LightAttenuationQuadraticsUniforms.[i], lightAttenuationQuadratics.[i])
+            Gl.Uniform1 (shader.LightAttenuationQuadraticsUniforms[i], lightAttenuationQuadratics[i])
         for i in 0 .. dec (min lightCutoffs.Length Constants.Render.LightsMaxDeferred) do
-            Gl.Uniform1 (shader.LightCutoffsUniforms.[i], lightCutoffs.[i])
+            Gl.Uniform1 (shader.LightCutoffsUniforms[i], lightCutoffs[i])
         for i in 0 .. dec (min lightTypes.Length Constants.Render.LightsMaxDeferred) do
-            Gl.Uniform1 (shader.LightTypesUniforms.[i], lightTypes.[i])
+            Gl.Uniform1 (shader.LightTypesUniforms[i], lightTypes[i])
         for i in 0 .. dec (min lightConeInners.Length Constants.Render.LightsMaxDeferred) do
-            Gl.Uniform1 (shader.LightConeInnersUniforms.[i], lightConeInners.[i])
+            Gl.Uniform1 (shader.LightConeInnersUniforms[i], lightConeInners[i])
         for i in 0 .. dec (min lightConeOuters.Length Constants.Render.LightsMaxDeferred) do
-            Gl.Uniform1 (shader.LightConeOutersUniforms.[i], lightConeOuters.[i])
+            Gl.Uniform1 (shader.LightConeOutersUniforms[i], lightConeOuters[i])
         for i in 0 .. dec (min lightDesireFogs.Length Constants.Render.LightsMaxDeferred) do
-            Gl.Uniform1 (shader.LightDesireFogsUniforms.[i], lightDesireFogs.[i])
+            Gl.Uniform1 (shader.LightDesireFogsUniforms[i], lightDesireFogs[i])
         for i in 0 .. dec (min lightShadowIndices.Length Constants.Render.LightsMaxDeferred) do
-            Gl.Uniform1 (shader.LightShadowIndicesUniforms.[i], lightShadowIndices.[i])
+            Gl.Uniform1 (shader.LightShadowIndicesUniforms[i], lightShadowIndices[i])
         Gl.Uniform1 (shader.LightsCountUniform, lightsCount)
         for i in 0 .. dec (min shadowMatrices.Length (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels)) do
-            Gl.UniformMatrix4 (shader.ShadowMatricesUniforms.[i], false, shadowMatrices.[i])
+            Gl.UniformMatrix4 (shader.ShadowMatricesUniforms[i], false, shadowMatrices[i])
         Hl.Assert ()
 
         // setup textures
@@ -4876,10 +4876,10 @@ module PhysicallyBased =
         Gl.BindTexture (TextureTarget.Texture2dArray, shadowTextureArray.TextureId)
         for i in 0 .. dec (min shadowMaps.Length Constants.Render.ShadowMapsMax) do
             Gl.ActiveTexture (int TextureUnit.Texture0 + 2 + i |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.TextureCubeMap, shadowMaps.[i].TextureId)
+            Gl.BindTexture (TextureTarget.TextureCubeMap, shadowMaps[i].TextureId)
         for i in 0 .. dec (min shadowCascades.Length Constants.Render.ShadowCascadesMax) do
             Gl.ActiveTexture (int TextureUnit.Texture0 + 2 + i + Constants.Render.ShadowMapsMax |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.Texture2dArray, shadowCascades.[i].TextureId)
+            Gl.BindTexture (TextureTarget.Texture2dArray, shadowCascades[i].TextureId)
         Hl.Assert ()
 
         // setup geometry
@@ -5122,7 +5122,7 @@ module PhysicallyBased =
                     // collect light nodes
                     let lightNodes =
                         [|for i in 0 .. dec scene.LightCount do
-                            let light = scene.Lights.[i]
+                            let light = scene.Lights[i]
                             let node = scene.RootNode.FindNode light.Name
                             yield (light, node)|]
 
@@ -5158,7 +5158,7 @@ module PhysicallyBased =
                               // collect light
                               // NOTE: this is an n^2 algorithm to deal with nodes having no light information
                               for i in 0 .. dec lightNodes.Length do
-                                let (light, lightNode) = lightNodes.[i]
+                                let (light, lightNode) = lightNodes[i]
                                 if lightNode = node then
                                     let names = Array.append names [|"Light" + if i > 0 then string i else ""|]
                                     let lightMatrix = Assimp.ExportMatrix node.TransformWorld
@@ -5184,10 +5184,10 @@ module PhysicallyBased =
                               // collect surfaces
                               for i in 0 .. dec node.MeshIndices.Count do
                                 let names = Array.append names [|"Geometry" + if i > 0 then string (inc i) else ""|]
-                                let meshIndex = node.MeshIndices.[i]
-                                let materialIndex = scene.Meshes.[meshIndex].MaterialIndex
-                                let (properties, material) = materials.[materialIndex]
-                                let geometry = geometries.[meshIndex]
+                                let meshIndex = node.MeshIndices[i]
+                                let materialIndex = scene.Meshes[meshIndex].MaterialIndex
+                                let (properties, material) = materials[materialIndex]
+                                let geometry = geometries[meshIndex]
                                 let surface = PhysicallyBasedSurface.make names transform geometry.Bounds properties material materialIndex node geometry
                                 bounds <- bounds.Combine (geometry.Bounds.Transform transform)
                                 surfaces.Add surface

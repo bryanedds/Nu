@@ -58,8 +58,8 @@ type LineSegmentsDispatcher () =
         let lineWidth = lineSegments.GetLineWidth world
         let mutable transform = Transform.makeIntuitive false v3Zero v3One v3Zero v3Zero v3Zero (lineSegments.GetElevation world)
         for i in 0 .. segments.Length - 2 do
-            let p1 = segments.[i]
-            let p2 = segments.[inc i]
+            let p1 = segments[i]
+            let p2 = segments[inc i]
             transform.Position <- ((p1 + p2) * 0.5f).V3
             transform.Rotation <- Quaternion.CreateLookAt2d (p2 - p1)
             transform.Size <- v3 (p2 - p1).Magnitude lineWidth 0f
@@ -164,12 +164,12 @@ type FluidSimDispatcher () =
                   ("<", (World.getGravityDefault2d world).Transform (Quaternion.CreateFromAngle2d -MathF.PI_OVER_2))
                   ("/", (World.getGravityDefault2d world).Transform (Quaternion.CreateFromAngle2d -MathF.PI_OVER_4))|]
             for i in 0 .. dec gravities.Length do
-                if World.getGravity2d world = snd gravities.[i] then
+                if World.getGravity2d world = snd gravities[i] then
                     if World.doButton $"Gravity"
                         [Entity.Position .= v3 255f 110f 0f
-                         Entity.Text @= $"Gravity: {fst gravities.[i]}"
+                         Entity.Text @= $"Gravity: {fst gravities[i]}"
                          Entity.Elevation .= 1f] world then
-                        World.setGravity2d (snd gravities.[(i + 1) % gravities.Length]) world
+                        World.setGravity2d (snd gravities[(i + 1) % gravities.Length]) world
 
             // particle sprite button
             if World.doButton $"Particle Sprite"
@@ -378,14 +378,14 @@ type FluidSimDispatcher () =
                         List.cons [|mousePosition|] lineSegments) world
                 elif World.isMouseButtonDown MouseMiddle world then
                     fluidSim.LineSegments.Map (fun lineSegments ->
-                        let active = lineSegments.[0]
+                        let active = lineSegments[0]
                         if Vector2.Distance (mousePosition, Array.last active) > 8f then
                             List.updateAt 0 (Array.add mousePosition active) lineSegments
                         else lineSegments) world
 
             // declare containment contour
             for segment in fluidSim.GetLineSegments world do
-                World.doEntity<LineSegmentsDispatcher> $"Contour {segment.[0]}" [Entity.LineSegments @= segment] world
+                World.doEntity<LineSegmentsDispatcher> $"Contour {segment[0]}" [Entity.LineSegments @= segment] world
 
             // end scene declaration
             World.endGroup world

@@ -90,7 +90,7 @@ module WorldModuleGroup =
         static member internal publishGroupChange propertyName (propertyPrevious : obj) (propertyValue : obj) (group : Group) world =
             let changeData = { Name = propertyName; Previous = propertyPrevious; Value = propertyValue }
             let groupNames = Address.getNames group.GroupAddress
-            let changeEventAddress = rtoa<ChangeData> [|Constants.Lens.ChangeName; propertyName; Constants.Lens.EventName; groupNames.[0]; groupNames.[1]; groupNames.[2]|]
+            let changeEventAddress = rtoa<ChangeData> [|Constants.Lens.ChangeName; propertyName; Constants.Lens.EventName; groupNames[0]; groupNames[1]; groupNames[2]|]
             let eventTrace = EventTrace.debug "World" "publishGroupChange" "" EventTrace.empty
             World.publishPlus changeData changeEventAddress eventTrace group false false world
 
