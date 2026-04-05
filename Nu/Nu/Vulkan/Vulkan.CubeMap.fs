@@ -235,7 +235,7 @@ module CubeMap =
           Pipeline : Pipeline.Pipeline }
     
     /// Create a CubeMapPipeline.
-    let CreateCubeMapPipeline (shaderPath, colorAttachmentFormat, vkc : Hl.VulkanContext) =
+    let CreateCubeMapPipeline (shaderPath, maxCubes, colorAttachmentFormat, vkc : Hl.VulkanContext) =
 
         // create pipeline
         let pipeline =
@@ -244,12 +244,12 @@ module CubeMap =
                 [|Pipeline.NoBlend|]
                 [|Pipeline.vertex 0 VertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Hl.Single3 0|]|]
-                [|Pipeline.descriptorSet true 1
-                    [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage 6
-                      Pipeline.descriptor 1 Hl.SampledImage Hl.FragmentStage 6|]
+                [|Pipeline.descriptorSet false (6 * maxCubes)
+                    [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage 1
+                      Pipeline.descriptor 1 Hl.SampledImage Hl.FragmentStage 1|]
                   Pipeline.descriptorSet false 1
                     [|Pipeline.descriptor 0 Hl.Sampler Hl.FragmentStage 1|]|]
-                [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]
+                [||]
                 [|colorAttachmentFormat|]
                 None // NOTE: DJL: not porting currently meaningless depth test as it imposes complexity cost in vulkan.
                 vkc
@@ -290,10 +290,10 @@ module CubeMap =
             transform.projection <- projection
             transform.viewProjection <- viewProjection
             Buffer.Buffer.uploadValue drawIndex 0 0 transform pipeline.TransformUniform vkc
-            Pipeline.Pipeline.writeDescriptorStorageBuffer 0 drawIndex 0 0 pipeline.TransformUniform.[drawIndex] pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorStorageBuffer drawIndex 0 0 0 pipeline.TransformUniform.[drawIndex] pipeline.Pipeline vkc
 
             // bind texture
-            Pipeline.Pipeline.writeDescriptorSampledImage 0 drawIndex 0 1 cubeMap.ImageView pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage drawIndex 0 0 1 cubeMap.ImageView pipeline.Pipeline vkc
             Pipeline.Pipeline.writeDescriptorSampler 0 0 1 0 sampler pipeline.Pipeline vkc
 
             // make viewport and scissor
@@ -326,14 +326,10 @@ module CubeMap =
                     Vulkan.vkCmdBindIndexBuffer (cb, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
 
                     // bind descriptor sets
-                    let mutable mainDescriptorSet = pipeline.Pipeline.VkDescriptorSet 0 0
+                    let mutable mainDescriptorSet = pipeline.Pipeline.VkDescriptorSet 0 drawIndex
                     let mutable samplerDescriptorSet = pipeline.Pipeline.VkDescriptorSet 1 0
                     Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, asPointer &mainDescriptorSet, 0u, nullPtr)
                     Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, asPointer &samplerDescriptorSet, 0u, nullPtr)
-                    
-                    // push draw index
-                    let mutable drawIndex = drawIndex
-                    Vulkan.vkCmdPushConstants (cb, pipeline.Pipeline.PipelineLayout, Hl.VertexFragmentStage.VkShaderStageFlags, 0u, 4u, asVoidPtr &drawIndex)
                     
                     // draw
                     Vulkan.vkCmdDrawIndexed (cb, uint geometry.ElementCount, 1u, 0u, 0, 0u)
@@ -345,8 +341,8 @@ module CubeMap =
                 // abort
                 | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
 
-        // draw not possible
-        else Log.warnOnce "Rendering incomplete due to insufficient gpu resources."
+        // draw limit exceeded
+        else Log.warnOnce "Attempted cube map draw exceeded maximum number of draws, which indicates an error in cube map management."
 
     /// The key identifying a cube map.
     type CubeMapKey =
