@@ -95,16 +95,47 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
       HashCode : int // OPTIMIZATION: hash is cached for speed.
       Anonymous : bool } // HACK: allows for Nu to internally indicate the anonymity of an address.
 
-    /// Get the length of an address by its names.
-    member this.Length =
-        Array.length this.Names
+    /// Check that an address name contains none of the invalid forms, specifically -
+    /// [] is reserved as the empty address string
+    /// / is reserved as the name separator
+    static member validateAddressName (name : string) =
+        not (Constants.Address.InvalidAddressName.IsMatch name)
 
-    /// Get whether an address is relative, IE, starts with the current symbol '~' or the parent symbol '^'. Otherwise,
-    /// the address is absolute.
-    member this.Relative =
-        this.Names.Length > 0 &&
-            let head = this.Names[0] in
-            head = Constants.Address.ParentName || head = Constants.Address.CurrentName
+    /// Assert that an address name contains none of the invalid forms, specifically -
+    /// [] is reserved as the empty address string
+    /// / is reserved as the name separator
+    static member assertAddressName (name : string) =
+#if DEBUG
+        if not (Address.validateAddressName name) then
+            raise (ArgumentException ("Address name '" + name + "' contains an invalid form of [] or /, which are reserved."))
+#else
+        ignore name
+#endif
+
+    /// Check that an identifier name contains none of the invalid forms, specifically -
+    /// [] is reserved as the empty address string
+    /// / is reserved as the name separator
+    /// * is reserved as the name wildcard
+    /// ... is reserved as the address tail wildcard
+    /// ^ is reserved as the parent symbol
+    /// ~ is reserved as the current symbol
+    static member validateIdentifierName (name : string) =
+        not (Constants.Address.InvalidIdentifierName.IsMatch name)
+
+    /// Assert that an identifier name contains none of the invalid forms, specifically -
+    /// [] is reserved as the empty address string
+    /// / is reserved as the name separator
+    /// * is reserved as the name wildcard
+    /// ... is reserved as the address tail wildcard
+    /// ^ is reserved as the parent symbol
+    /// ~ is reserved as the current symbol
+    static member assertIdentifierName (name : string) =
+#if DEBUG
+        if not (Address.validateIdentifierName name) then
+            raise (ArgumentException ("Identifier name '" + name + "' contains an invalid form of [], /, *, ..., ^, or ~, which are reserved."))
+#else
+        ignore name
+#endif
 
     /// Make an empty address.
     /// NOTE: do not move this function as the AddressConverter's reflection code relies on it being exactly here!
@@ -135,6 +166,17 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
             left.HashCode = right.HashCode then // OPTIMIZATION: check hash equality to bail as quickly as possible.
             0
         else String.compareMany left.Names right.Names
+
+    /// Get the length of an address by its names.
+    static member length (address : 'a Address) =
+        Array.length address.Names
+
+    /// Get whether an address is relative, IE, starts with the current symbol '~' or the parent symbol '^'. Otherwise,
+    /// the address is absolute.
+    static member relative (address : 'a Address) =
+        address.Names.Length > 0 &&
+            let head = address.Names.[0] in
+            head = Constants.Address.ParentName || head = Constants.Address.CurrentName
 
     /// Convert any address to an obj Address.
     static member generalize<'a> (address : 'a Address) : obj Address =
@@ -170,7 +212,7 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
 
     /// Convert an address into a string.
     static member atos<'a> (address : 'a Address) =
-        if address.Length <> 0
+        if Address.length address <> 0
         then String.concat Constants.Address.SeparatorName address.Names
         else Constants.Address.EmptyStr
 
@@ -194,13 +236,182 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
     static member acats<'a, 'b> (address : 'a Address) (address2 : 'b Address) : 'b Address  =
         Address.acat (Address.atoa<'a, 'b> address) address2
 
+    /// Make an address from a sequence of names.
+    static member makeFromSeq<'a> names : 'a Address =
+        Address.qtoa<'a> names
+
+    /// Make an address from a list of names.
+    static member makeFromArray<'a> names : 'a Address =
+        Address.rtoa<'a> names
+
+    /// Make an address from a list of names.
+    static member makeFromList<'a> names : 'a Address =
+        Address.ltoa<'a> names
+
+    /// Make an address from a name.
+    static member makeFromName<'a> name : 'a Address =
+        Address.ntoa<'a> name
+
+    /// Convert a weakly-typed Address interface into a strongly-typed address.
+    static member makeFromInterface<'a> address : 'a Address =
+        Address.itoa<'a> address
+
+    /// Anonymize an address.
+    static member anonymize<'a> (address : 'a Address) : 'a Address =
+        { Names = address.Names; HashCode = address.HashCode; Anonymous = true }
+
+    /// Get the names of an address.
+    static member inline getNames address =
+        address.Names
+
+    /// Get the name of an address.
+    static member inline getName address =
+        Address.getNames address |> Array.last
+
+    /// Attempt to get the name of an address if it exists.
+    static member tryGetName address =
+        address |> Address.getNames |> Array.tryLast
+
+    /// Change the type of an address.
+    static member changeType<'a, 'b> (address : 'a Address) =
+        Address.atoa<'a, 'b> address
+
+    /// Get the address's hash code.
+    static member getHashCode address =
+        Address.hash address
+
+    /// Take the head of an address.
+    static member head address =
+        Array.head address.Names
+            
+    /// Take the tail of an address.
+    static member tail<'a, 'b> (address : 'a Address) =
+        Address.makeFromArray<'b> (Array.tail address.Names)
+
+    /// Take a name of an address.
+    static member item index address =
+        Array.item index address.Names
+
+    /// Take an address composed of the name of an address minus a skipped amount of names.
+    static member skip<'a, 'b> n (address : 'a Address) =
+        Address.makeFromArray<'b> (Array.skip n address.Names)
+
+    /// Take an address composed of the given number of names of an address.
+    static member take<'a, 'b> n (address : 'a Address) =
+        Address.makeFromArray<'b> (Array.take n address.Names)
+
+    /// Take an address composed of the given number of names of an address.
+    static member tryTake<'a, 'b> n (address : 'a Address) =
+        Address.makeFromArray<'b> (Array.tryTake n address.Names)
+
+    /// Take the last name of an address.
+    static member last address =
+        Array.last address.Names
+
+    /// Take an address composed of all but the last name of an address.
+    static member allButLast<'a, 'b> (address : 'a Address) =
+        Address.makeFromArray<'b> (Array.allButLast address.Names)
+
+    /// Find the index of a name
+    static member findIndex finder address =
+        Array.findIndex finder address.Names
+
+    /// Find the index of a name
+    static member indexOf name address =
+        Array.IndexOf (address.Names, name)
+
+    /// Check that an address is devoid of names.
+    static member isEmpty address =
+        Array.isEmpty address.Names
+
+    /// Check that an address has one or more names.
+    static member notEmpty address =
+        Array.notEmpty address.Names
+
+    /// A relative address with the current symbol.
+    static member current : 'a Address =
+        Address.makeFromArray<'a> [|Constants.Address.CurrentName|]
+
+    /// A relative address with the parent symbol.
+    static member parent : 'a Address =
+        Address.makeFromArray<'a> [|Constants.Address.ParentName|]
+
     /// Make an absolute address with the name wildcard.
-    static member Wildcard =
+    static member wildcard : 'a Address =
         Address.ntoa Constants.Address.WildcardName
 
     /// Make an absolute address with the address tail wildcard.
-    static member Ellipsis =
+    static member ellipsis : 'a Address =
         Address.ntoa Constants.Address.EllipsisName
+
+    /// The empty address.
+    static member empty : 'a Address =
+        Address<'a>.makeEmpty<'a> ()
+
+    static member private resolveAsList<'a, 'b> (relation : 'b Address) (address : 'a Address) : string List =
+        let names = List (Address.length relation + Address.length address)
+        let mutable parentsUp = 0
+        let addNames allowPointingPastEmpty (param : string) (a : _ Address) =
+            let mutable wildcardExists = false
+            for i in 0 .. dec (Address.length a) do
+                match a.Names[i] with
+                | Constants.Address.ParentName as name ->
+                    if names.Count - parentsUp > 0
+                    then names.RemoveAt (names.Count - 1)
+                    elif allowPointingPastEmpty then
+                        names.Add name
+                        parentsUp <- parentsUp + 1
+                | Constants.Address.CurrentName -> ()
+                | Constants.Address.EmptyStr as name ->
+                    raise (ArgumentException (name + " cannot be an address name", param))
+                | Constants.Address.EllipsisName as name ->
+                    if i <> dec (Address.length a) then raise (ArgumentException (name + " cannot be before the last name", param))
+                    elif wildcardExists then raise (ArgumentException (name + " cannot appear together with another " + Constants.Address.WildcardName, param))
+                    else names.Add name
+                | Constants.Address.WildcardName as name ->
+                    if wildcardExists then raise (ArgumentException (name + " cannot appear together with another " + name, param))
+                    wildcardExists <- true
+                    names.Add name
+                | name -> names.Add name
+        if Address.relative relation then
+            let addressRelative = Address.relative address
+            addNames addressRelative (nameof address) address
+            addNames addressRelative (nameof relation) relation
+            if addressRelative && (names.Count = 0 || names.[0] <> Constants.Address.ParentName) then
+                names.Insert (0, Constants.Address.CurrentName)
+        else addNames false (nameof relation) relation
+        names
+        
+    /// Resolve an address from the given relation and address. When both the relation and address are relative, the
+    /// result is a relative address. Otherwise, the result is an absolute address.
+    static member resolve<'a, 'b> (relation : 'b Address) (address : 'a Address) : 'b Address =
+        let resolved = Address.resolveAsList relation address
+        Address.makeFromSeq resolved
+
+    /// Relate the second address to the first. The given addresses must be absolute. When the given addresses share
+    /// common ancestors, the result is a relative address. Otherwise, the result is an absolute address.
+    static member relate<'a, 'b> (source : 'a Address) (destination : 'b Address) : 'b Address =
+        if Address.relative source then raise (ArgumentException ("Relative addresses cannot be related", nameof source))
+        if Address.relative destination then raise (ArgumentException ("Relative addresses cannot be related", nameof destination))
+        let sourceNames = Address.resolveAsList Address.current source
+        let destinationNames = Address.resolveAsList Address.current destination
+        let namesMatching =
+            let mutable namesMatching = 0
+            let mutable sourceEnr = (sourceNames :> _ seq).GetEnumerator ()
+            let mutable destinationEnr = (destinationNames :> _ seq).GetEnumerator ()
+            while (sourceEnr.MoveNext () && destinationEnr.MoveNext ()) do
+                if sourceEnr.Current = destinationEnr.Current then
+                    namesMatching <- inc namesMatching
+            namesMatching
+        if namesMatching > 0 then
+            let ancestors = sourceNames.Count - namesMatching
+            let depth = destinationNames.Count - namesMatching
+            Array.init (max ancestors 1 + depth) (fun i ->
+                if i < ancestors then Constants.Address.ParentName
+                elif i = 0 && ancestors = 0 then Constants.Address.CurrentName
+                else destinationNames.[i - max ancestors 1 + namesMatching])
+            |> Address.makeFromArray
+        else Address.makeFromSeq destinationNames
 
     /// Concatenate two addresses of the same type.
     static member (-|-) (address : 'a Address, address2 : 'a Address) : 'a Address = Address.acat address address2
@@ -210,6 +421,17 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
 
     /// Concatenate two addresses, taking the type of second address.
     static member (<--) (address : 'a Address, address2 : 'b Address) : 'b Address = Address.acats address address2
+
+    /// Get the length of an address by its names.
+    member this.Length =
+        Array.length this.Names
+
+    /// Get whether an address is relative, IE, starts with the current symbol '~' or the parent symbol '^'. Otherwise,
+    /// the address is absolute.
+    member this.Relative =
+        this.Names.Length > 0 &&
+            let head = this.Names[0] in
+            head = Constants.Address.ParentName || head = Constants.Address.CurrentName
 
     override this.Equals that =
         match that with
@@ -240,234 +462,6 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
         member this.Names = this.Names
         member this.HashCode = this.HashCode
         member this.Anonymous = this.Anonymous
-
-/// Address functions.
-[<RequireQualifiedAccess>]
-module Address =
-
-    /// The empty address.
-    let empty<'a> : 'a Address =
-        Address<'a>.makeEmpty<'a> ()
-
-    /// Test address equality.
-    let equals<'a> (left : 'a Address) (right : 'a Address) =
-        Address<'a>.equals<'a> left right
-
-    /// Make an address from a sequence of names.
-    let makeFromSeq<'a> names : 'a Address =
-        Address.qtoa<'a> names
-
-    /// Make an address from a list of names.
-    let makeFromArray<'a> names : 'a Address =
-        Address.rtoa<'a> names
-
-    /// Make an address from a list of names.
-    let makeFromList<'a> names : 'a Address =
-        Address.ltoa<'a> names
-
-    /// Make an address from a name.
-    let makeFromName<'a> name : 'a Address =
-        Address.ntoa<'a> name
-
-    /// Convert a weakly-typed Address interface into a strongly-typed address.
-    let makeFromInterface<'a> address : 'a Address =
-        Address.itoa<'a> address
-
-    /// A relative address with the current symbol.
-    let current<'a> =
-        makeFromArray<'a> [|Constants.Address.CurrentName|]
-
-    /// A relative address with the parent symbol.
-    let parent<'a> =
-        makeFromArray<'a> [|Constants.Address.ParentName|]
-
-    /// Anonymize an address.
-    let anonymize<'a> (address : 'a Address) : 'a Address =
-        { Names = address.Names; HashCode = address.HashCode; Anonymous = true }
-
-    /// Get the names of an address.
-    let inline getNames address =
-        address.Names
-
-    /// Get the name of an address.
-    let inline getName address =
-        getNames address |> Array.last
-
-    /// Attempt to get the name of an address if it exists.
-    let tryGetName address =
-        address |> getNames |> Array.tryLast
-
-    /// Change the type of an address.
-    let changeType<'a, 'b> (address : 'a Address) =
-        Address.atoa<'a, 'b> address
-
-    /// Get the address's hash code.
-    let getHashCode address =
-        Address.hash address
-
-    /// Take the head of an address.
-    let head address =
-        Array.head address.Names
-            
-    /// Take the tail of an address.
-    let tail<'a, 'b> (address : 'a Address) =
-        makeFromArray<'b> (Array.tail address.Names)
-
-    /// Take a name of an address.
-    let item index address =
-        Array.item index address.Names
-
-    /// Take an address composed of the name of an address minus a skipped amount of names.
-    let skip<'a, 'b> n (address : 'a Address) =
-        makeFromArray<'b> (Array.skip n address.Names)
-
-    /// Take an address composed of the given number of names of an address.
-    let take<'a, 'b> n (address : 'a Address) =
-        makeFromArray<'b> (Array.take n address.Names)
-
-    /// Take an address composed of the given number of names of an address.
-    let tryTake<'a, 'b> n (address : 'a Address) =
-        makeFromArray<'b> (Array.tryTake n address.Names)
-
-    /// Take the last name of an address.
-    let last address =
-        Array.last address.Names
-
-    /// Take an address composed of all but the last name of an address.
-    let allButLast<'a, 'b> (address : 'a Address) =
-        makeFromArray<'b> (Array.allButLast address.Names)
-
-    /// Find the index of a name
-    let findIndex finder address =
-        Array.findIndex finder address.Names
-
-    /// Find the index of a name
-    let indexOf name address =
-        Array.IndexOf (address.Names, name)
-
-    /// Get the length of an address by its names.
-    let length (address : 'a Address) =
-        address.Length
-        
-    /// Get whether an address is relative, IE, starts with the current symbol '~' or the parent symbol '^'. Otherwise,
-    /// the address is absolute.
-    let relative (address : 'a Address) =
-        address.Relative
-
-    /// Check that an address is devoid of names.
-    let isEmpty address =
-        Array.isEmpty address.Names
-
-    /// Check that an address has one or more names.
-    let notEmpty address =
-        Array.notEmpty address.Names
-
-    /// Check that an address name contains none of the invalid forms, specifically -
-    /// [] is reserved as the empty address string
-    /// / is reserved as the name separator
-    let validateAddressName (name : string) =
-        not (Constants.Address.InvalidAddressName.IsMatch name)
-
-    /// Assert that an address name contains none of the invalid forms, specifically -
-    /// [] is reserved as the empty address string
-    /// / is reserved as the name separator
-    let assertAddressName (name : string) =
-#if DEBUG
-        if not (validateAddressName name) then
-            raise (ArgumentException ("Address name '" + name + "' contains an invalid form of [] or /, which are reserved."))
-#else
-        ignore name
-#endif
-
-    /// Check that an identifier name contains none of the invalid forms, specifically -
-    /// [] is reserved as the empty address string
-    /// / is reserved as the name separator
-    /// * is reserved as the name wildcard
-    /// ... is reserved as the address tail wildcard
-    /// ^ is reserved as the parent symbol
-    /// ~ is reserved as the current symbol
-    let validateIdentifierName (name : string) =
-        not (Constants.Address.InvalidIdentifierName.IsMatch name)
-
-    /// Assert that an identifier name contains none of the invalid forms, specifically -
-    /// [] is reserved as the empty address string
-    /// / is reserved as the name separator
-    /// * is reserved as the name wildcard
-    /// ... is reserved as the address tail wildcard
-    /// ^ is reserved as the parent symbol
-    /// ~ is reserved as the current symbol
-    let assertIdentifierName (name : string) =
-#if DEBUG
-        if not (validateIdentifierName name) then
-            raise (ArgumentException ("Identifier name '" + name + "' contains an invalid form of [], /, *, ..., ^, or ~, which are reserved."))
-#else
-        ignore name
-#endif
-
-    let private resolveAsList<'a, 'b> (relation : 'b Address) (address : 'a Address) : string List =
-        let names = List (relation.Length + address.Length)
-        let mutable parentsUp = 0
-        let addNames allowPointingPastEmpty (param : string) (a : _ Address) =
-            let mutable wildcardExists = false
-            for i in 0 .. dec a.Length do
-                match a.Names[i] with
-                | Constants.Address.ParentName as name ->
-                    if names.Count - parentsUp > 0
-                    then names.RemoveAt (names.Count - 1)
-                    elif allowPointingPastEmpty then
-                        names.Add name
-                        parentsUp <- parentsUp + 1
-                | Constants.Address.CurrentName -> ()
-                | Constants.Address.EmptyStr as name ->
-                    raise (ArgumentException (name + " cannot be an address name", param))
-                | Constants.Address.EllipsisName as name ->
-                    if i <> dec a.Length then raise (ArgumentException (name + " cannot be before the last name", param))
-                    elif wildcardExists then raise (ArgumentException (name + " cannot appear together with another " + Constants.Address.WildcardName, param))
-                    else names.Add name
-                | Constants.Address.WildcardName as name ->
-                    if wildcardExists then raise (ArgumentException (name + " cannot appear together with another " + name, param))
-                    wildcardExists <- true
-                    names.Add name
-                | name -> names.Add name
-        if relative relation then
-            let addressRelative = relative address
-            addNames addressRelative (nameof address) address
-            addNames addressRelative (nameof relation) relation
-            if addressRelative && (names.Count = 0 || names.[0] <> Constants.Address.ParentName) then
-                names.Insert (0, Constants.Address.CurrentName)
-        else addNames false (nameof relation) relation
-        names
-        
-    /// Resolve an address from the given relation and address. When both the relation and address are relative, the
-    /// result is a relative address. Otherwise, the result is an absolute address.
-    let resolve<'a, 'b> (relation : 'b Address) (address : 'a Address) : 'b Address =
-        let resolved = resolveAsList relation address
-        makeFromSeq resolved
-
-    /// Relate the second address to the first. The given addresses must be absolute. When the given addresses share
-    /// common ancestors, the result is a relative address. Otherwise, the result is an absolute address.
-    let relate<'a, 'b> (source : 'a Address) (destination : 'b Address) : 'b Address =
-        if relative source then raise (ArgumentException ("Relative addresses cannot be related", nameof source))
-        if relative destination then raise (ArgumentException ("Relative addresses cannot be related", nameof destination))
-        let sourceNames = resolveAsList current source
-        let destinationNames = resolveAsList current destination
-        let namesMatching =
-            let mutable namesMatching = 0
-            let mutable sourceEnr = (sourceNames :> _ seq).GetEnumerator ()
-            let mutable destinationEnr = (destinationNames :> _ seq).GetEnumerator ()
-            while (sourceEnr.MoveNext () && destinationEnr.MoveNext ()) do
-                if sourceEnr.Current = destinationEnr.Current then
-                    namesMatching <- inc namesMatching
-            namesMatching
-        if namesMatching > 0 then
-            let ancestors = sourceNames.Count - namesMatching
-            let depth = destinationNames.Count - namesMatching
-            Array.init (max ancestors 1 + depth) (fun i ->
-                if i < ancestors then Constants.Address.ParentName
-                elif i = 0 && ancestors = 0 then Constants.Address.CurrentName
-                else destinationNames.[i - max ancestors 1 + namesMatching])
-            |> makeFromArray
-        else makeFromSeq destinationNames
 
 /// Address operators.
 [<AutoOpen>]

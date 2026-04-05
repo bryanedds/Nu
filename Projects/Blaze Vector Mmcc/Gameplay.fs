@@ -67,7 +67,7 @@ type GameplayDispatcher () =
          Screen.DeselectingEvent => FinishQuitting
          Screen.PostUpdateEvent => UpdateEye
          for i in 0 .. dec SectionCount do
-            Events.DeathEvent --> Simulants.GameplaySection i --> Address.Wildcard => Score 100]
+            Events.DeathEvent --> Simulants.GameplaySection i --> Address.wildcard => Score 100]
 
     // here we handle the above messages
     override this.Message (gameplay, message, _, _) =
