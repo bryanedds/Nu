@@ -228,7 +228,7 @@ module WorldSimulantModule =
             | [||] -> failwithumf ()
             | [|_|] -> true
             | names ->
-                let screenName = names.[1]
+                let screenName = names[1]
                 match World.getSelectedScreenOpt world with
                 | Some screen when screen.Name = screenName -> true
                 | _ -> false

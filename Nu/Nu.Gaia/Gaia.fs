@@ -477,7 +477,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
     let private truncateLog () =
         if LogStr.Length > Constants.Gaia.LogCharactersMax then
             let cutPoint = LogStr.IndexOf ('\n', LogStr.Length - Constants.Gaia.LogCharactersMax) |> inc
-            LogStr <- "...\n" + LogStr.[cutPoint ..]
+            LogStr <- "...\n" + LogStr[cutPoint ..]
 
     let private concatLog (str : string) =
         truncateLog ()
@@ -738,7 +738,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             if ImGui.IsKeyReleased (enum key) then
                 let chr = char (key - int ImGuiKey.A + 97)
                 names
-                |> Seq.filter (fun (name : string) -> name.Length > 0 && Char.ToLowerInvariant name.[0] = chr)
+                |> Seq.filter (fun (name : string) -> name.Length > 0 && Char.ToLowerInvariant name[0] = chr)
                 |> Seq.tryHead|]
         |> Array.definitize
         |> Array.tryHead
@@ -1204,7 +1204,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
                     // generate code reload fsx file string
                     // TODO: P1: consider rewriting this code to use the XML representation to ensure more reliable parsing.
-                    let fsprojFilePath = fsprojFilePaths.[0]
+                    let fsprojFilePath = fsprojFilePaths[0]
                     Log.info ("Inspecting code for F# project '" + fsprojFilePath + "'...")
                     let fsprojFileLines = // TODO: P1: consider loading these references from Nu.fsproj.
                         [|"""<PackageReference Include="Aether.Physics2D" Version="2.2.0" />"""
@@ -2316,8 +2316,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     let delta = m4Identity.ToArray ()
                     let manipulationResult =
                         if snap = 0.0f
-                        then ImGuizmo.Manipulate (&view.[0], &projection.[0], ManipulationOperation, manipulationSpace, &affine.[0], &delta.[0])
-                        else ImGuizmo.Manipulate (&view.[0], &projection.[0], ManipulationOperation, manipulationSpace, &affine.[0], &delta.[0], &snap)
+                        then ImGuizmo.Manipulate (&view[0], &projection[0], ManipulationOperation, manipulationSpace, &affine[0], &delta[0])
+                        else ImGuizmo.Manipulate (&view[0], &projection[0], ManipulationOperation, manipulationSpace, &affine[0], &delta[0], &snap)
                     if manipulationResult then
                         let manipulationAwaken =
                             if not ManipulationActive && ImGui.IsMouseDown ImGuiMouseButton.Left then
@@ -2447,7 +2447,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         if OverlayMode && not FreeMode
                         then v2 (single windowViewport.Bounds.Size.X - 475.0f) 100.0f
                         else v2 (innerImGui.Max.X - 178.0f) (innerImGui.Min.Y + 44.0f)
-                    ImGuizmo.ViewManipulate (&eyeRotationArray.[0], 1.0f, position, size, uint 0x00000000)
+                    ImGuizmo.ViewManipulate (&eyeRotationArray[0], 1.0f, position, size, uint 0x00000000)
                     let eyeRotation = Matrix4x4.CreateFromArray(eyeRotationArray).Transposed.Rotation
                     let eyeDiv = eyeRotation.RollPitchYaw.Z / MathF.PI_OVER_2 // NOTE: this and the eyeUpright variable mitigate #932.
                     let eyeUpright = Math.ApproximatelyEqual (eyeDiv, round eyeDiv, 0.01f)
@@ -3158,21 +3158,21 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 ImPlot.SetupAxesLimits (0.0, double (dec TimingsArray.Length), 0.0, 40.0)
                 ImPlot.SetupAxes ("Frame", "Time (ms)", ImPlotAxisFlags.NoLabel ||| ImPlotAxisFlags.NoTickLabels, ImPlotAxisFlags.None)
                 FrameTimings.CopyTo (TimingsArray, 0)
-                ImPlot.PlotLine ("Frame Time", &TimingsArray.[0], TimingsArray.Length)
+                ImPlot.PlotLine ("Frame Time", &TimingsArray[0], TimingsArray.Length)
                 MainThreadTimings.CopyTo (TimingsArray, 0)
-                ImPlot.PlotLine ("Main Thread", &TimingsArray.[0], TimingsArray.Length)
+                ImPlot.PlotLine ("Main Thread", &TimingsArray[0], TimingsArray.Length)
                 ImGuiTimings.CopyTo (TimingsArray, 0)
-                ImPlot.PlotLine ("ImGui Time", &TimingsArray.[0], TimingsArray.Length)
+                ImPlot.PlotLine ("ImGui Time", &TimingsArray[0], TimingsArray.Length)
                 RenderMessagesTimings.CopyTo (TimingsArray, 0)
-                ImPlot.PlotLine ("Render Msgs", &TimingsArray.[0], TimingsArray.Length)
+                ImPlot.PlotLine ("Render Msgs", &TimingsArray[0], TimingsArray.Length)
                 UpdateTimings.CopyTo (TimingsArray, 0)
-                ImPlot.PlotLine ("Update Time", &TimingsArray.[0], TimingsArray.Length)
+                ImPlot.PlotLine ("Update Time", &TimingsArray[0], TimingsArray.Length)
                 PhysicsTimings.CopyTo (TimingsArray, 0)
-                ImPlot.PlotLine ("Physics Time", &TimingsArray.[0], TimingsArray.Length)
+                ImPlot.PlotLine ("Physics Time", &TimingsArray[0], TimingsArray.Length)
                 MiscTimings.CopyTo (TimingsArray, 0)
-                ImPlot.PlotLine ("Misc Time", &TimingsArray.[0], TimingsArray.Length)
+                ImPlot.PlotLine ("Misc Time", &TimingsArray[0], TimingsArray.Length)
                 GcTimings.CopyTo (TimingsArray, 0)
-                ImPlot.PlotShaded ("GC Time", &TimingsArray.[0], TimingsArray.Length)
+                ImPlot.PlotShaded ("GC Time", &TimingsArray[0], TimingsArray.Length)
                 ImPlot.EndPlot ()
 
         // fin
@@ -3772,7 +3772,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         openProjectDlls
                         |> Array.map (fun (filePath : string) ->
                             try let names = filePath.Split "/"
-                                let projectName = names.[names.Length - 1] + " (" + names.[names.Length - 2] + ")"
+                                let projectName = names[names.Length - 1] + " (" + names[names.Length - 2] + ")"
                                 Some projectName
                             with _ -> None)
                         |> Array.definitize
@@ -3788,7 +3788,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             ImGui.InputText ("##openProjectEditMode", &OpenProjectEditMode, 4096u) |> ignore<bool>
             if ImGui.Button "Open" || ImGui.IsKeyReleased ImGuiKey.Enter then
                 ShowOpenProjectDialog <- false
-                let gaiaState = makeGaiaState openProjectDlls.[OpenProjectIndex] (Some OpenProjectEditMode) true world
+                let gaiaState = makeGaiaState openProjectDlls[OpenProjectIndex] (Some OpenProjectEditMode) true world
                 try File.WriteAllText (gaiaDir + "/" + Constants.Gaia.StateFilePath, printGaiaState gaiaState)
                     Directory.SetCurrentDirectory gaiaDir
                     ShowRestartDialog <- true
@@ -4510,7 +4510,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         // ensure imgui ini file exists and was created by Gaia before initialising imgui
         let imguiIniFilePath = targetDir + "/" + Constants.Gaia.ImGuiIniFilePath
         if  not (File.Exists imguiIniFilePath) ||
-            (File.ReadAllLines imguiIniFilePath).[0] <> "[Window][Gaia]" then
+            (File.ReadAllLines imguiIniFilePath)[0] <> "[Window][Gaia]" then
             File.WriteAllText (imguiIniFilePath, ImGuiIniFileStr)
 
         // attempt to create SDL dependencies

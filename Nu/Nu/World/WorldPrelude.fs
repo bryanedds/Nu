@@ -167,9 +167,9 @@ type [<SymbolicExpansion>] NavBuilderResultData =
         let interiorEdges =
             [|for i in 0 .. dec dmesh.nmeshes do
                 let m = i * 4
-                let bverts = dmesh.meshes.[m]
-                let btris = dmesh.meshes.[m + 2]
-                let ntris = dmesh.meshes.[m + 3]
+                let bverts = dmesh.meshes[m]
+                let btris = dmesh.meshes[m + 2]
+                let ntris = dmesh.meshes[m + 3]
                 let verts = bverts * 3
                 let tris = btris * 4
                 for j in 0 .. dec ntris do
@@ -177,18 +177,18 @@ type [<SymbolicExpansion>] NavBuilderResultData =
                     let mutable k = 0
                     let mutable kp = 2
                     while k < 3 do
-                        let ef = (dmesh.tris.[t + 3] >>> (kp * 2)) &&& 0x3
+                        let ef = (dmesh.tris[t + 3] >>> (kp * 2)) &&& 0x3
                         if ef = 0 then
                             let start =
                                 v3
-                                    dmesh.verts.[verts + dmesh.tris.[t + kp] * 3]
-                                    dmesh.verts.[verts + dmesh.tris.[t + kp] * 3 + 1]
-                                    dmesh.verts.[verts + dmesh.tris.[t + kp] * 3 + 2]
+                                    dmesh.verts[verts + dmesh.tris[t + kp] * 3]
+                                    dmesh.verts[verts + dmesh.tris[t + kp] * 3 + 1]
+                                    dmesh.verts[verts + dmesh.tris[t + kp] * 3 + 2]
                             let stop =
                                 v3
-                                    dmesh.verts.[verts + dmesh.tris.[t + k] * 3]
-                                    dmesh.verts.[verts + dmesh.tris.[t + k] * 3 + 1]
-                                    dmesh.verts.[verts + dmesh.tris.[t + k] * 3 + 2]
+                                    dmesh.verts[verts + dmesh.tris[t + k] * 3]
+                                    dmesh.verts[verts + dmesh.tris[t + k] * 3 + 1]
+                                    dmesh.verts[verts + dmesh.tris[t + k] * 3 + 2]
                             segment3 start stop
                         kp <- k
                         k <- inc k|]
@@ -197,9 +197,9 @@ type [<SymbolicExpansion>] NavBuilderResultData =
         let exteriorEdges =
             [|for i in 0 .. dec dmesh.nmeshes do
                 let m = i * 4
-                let bverts = dmesh.meshes.[m]
-                let btris = dmesh.meshes.[m + 2]
-                let ntris = dmesh.meshes.[m + 3]
+                let bverts = dmesh.meshes[m]
+                let btris = dmesh.meshes[m + 2]
+                let ntris = dmesh.meshes[m + 3]
                 let verts = bverts * 3
                 let tris = btris * 4
                 for j in 0 .. dec ntris do
@@ -207,18 +207,18 @@ type [<SymbolicExpansion>] NavBuilderResultData =
                     let mutable k = 0
                     let mutable kp = 2
                     while k < 3 do
-                        let ef = (dmesh.tris.[t + 3] >>> (kp * 2)) &&& 0x3
+                        let ef = (dmesh.tris[t + 3] >>> (kp * 2)) &&& 0x3
                         if ef <> 0 then
                             let start =
                                 v3
-                                    dmesh.verts.[verts + dmesh.tris.[t + kp] * 3]
-                                    dmesh.verts.[verts + dmesh.tris.[t + kp] * 3 + 1]
-                                    dmesh.verts.[verts + dmesh.tris.[t + kp] * 3 + 2]
+                                    dmesh.verts[verts + dmesh.tris[t + kp] * 3]
+                                    dmesh.verts[verts + dmesh.tris[t + kp] * 3 + 1]
+                                    dmesh.verts[verts + dmesh.tris[t + kp] * 3 + 2]
                             let stop =
                                 v3
-                                    dmesh.verts.[verts + dmesh.tris.[t + k] * 3]
-                                    dmesh.verts.[verts + dmesh.tris.[t + k] * 3 + 1]
-                                    dmesh.verts.[verts + dmesh.tris.[t + k] * 3 + 2]
+                                    dmesh.verts[verts + dmesh.tris[t + k] * 3]
+                                    dmesh.verts[verts + dmesh.tris[t + k] * 3 + 1]
+                                    dmesh.verts[verts + dmesh.tris[t + k] * 3 + 2]
                             if edgesMinY > start.Y then edgesMinY <- start.Y
                             if edgesMaxY < start.Y then edgesMaxY <- start.Y
                             if edgesMinY > stop.Y then edgesMinY <- stop.Y

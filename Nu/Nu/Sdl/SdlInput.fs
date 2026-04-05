@@ -208,33 +208,33 @@ module internal KeyboardState =
     let internal isKeyDown (key : KeyboardKey) =
         match KeyboardStateCurrent with
         | [||] -> false
-        | keyboardState -> keyboardState.[int key]
+        | keyboardState -> keyboardState[int key]
 
     /// Check that the given keyboard key is up.
     let internal isKeyUp (key : KeyboardKey) =
         match KeyboardStateCurrent with
         | [||] -> false
-        | keyboardState -> not keyboardState.[int key]
+        | keyboardState -> not keyboardState[int key]
 
     /// Check that the given keyboard key was just pressed.
     let internal isKeyPressed key =
         match KeyboardStateCurrent with
         | [||] -> false
         | keyboardState ->
-            keyboardState.[int key] &&
+            keyboardState[int key] &&
             match KeyboardStatePrevious with
             | [||] -> false
-            | keyboardState -> not keyboardState.[int key]
+            | keyboardState -> not keyboardState[int key]
 
     /// Check that the given keyboard key was just released.
     let internal isKeyReleased key =
         match KeyboardStateCurrent with
         | [||] -> false
         | keyboardState ->
-            not keyboardState.[int key] &&
+            not keyboardState[int key] &&
             match KeyboardStatePrevious with
             | [||] -> false
-            | keyboardState -> keyboardState.[int key]
+            | keyboardState -> keyboardState[int key]
 
     /// Check that either enter key is down.
     let internal isEnterDown () =
@@ -290,7 +290,7 @@ module GamepadState =
     let internal init () =
         use joysticks = SDL3.SDL_GetJoysticks ()
         // NOTE: we don't have a matching call to SDL3.SDL_CloseJoystick, but it may not be necessary
-        Joysticks <- Array.init joysticks.Count (fun i -> SDL3.SDL_OpenJoystick joysticks.[i])
+        Joysticks <- Array.init joysticks.Count (fun i -> SDL3.SDL_OpenJoystick joysticks[i])
 
     /// Get the number of open gamepad.
     let internal getGamepadCount () =

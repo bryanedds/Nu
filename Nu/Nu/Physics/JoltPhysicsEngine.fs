@@ -81,9 +81,9 @@ type [<CustomEquality; NoComparison>] private UnscaledPointsKey =
     static member make (vertices : Vector3 array) =
         let hashCode =
             hash vertices.Length ^^^
-            (if vertices.Length > 0 then vertices.[0].GetHashCode () else 0) ^^^
-            (if vertices.Length > 0 then vertices.[vertices.Length / 2].GetHashCode () else 0) ^^^
-            (if vertices.Length > 0 then vertices.[vertices.Length - 1].GetHashCode () else 0)
+            (if vertices.Length > 0 then vertices[0].GetHashCode () else 0) ^^^
+            (if vertices.Length > 0 then vertices[vertices.Length / 2].GetHashCode () else 0) ^^^
+            (if vertices.Length > 0 then vertices[vertices.Length - 1].GetHashCode () else 0)
         { HashCode = hashCode
           Vertices = vertices }
 
@@ -174,13 +174,13 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
         let theta = contactNormal.Dot Vector3.UnitY |> max -1.0f |> min 1.0f |> acos
         if theta <= Constants.Physics.GroundAngleMax && contactNormal.Y > 0.0f then
             match physicsEngine.BodyCollisionsGround.TryGetValue bodyId with
-            | (true, collisions) -> collisions.[body2Id] <- contactNormal
-            | (false, _) -> physicsEngine.BodyCollisionsGround.[bodyId] <- dictPlus HashIdentity.Structural [(body2Id, contactNormal)]
+            | (true, collisions) -> collisions[body2Id] <- contactNormal
+            | (false, _) -> physicsEngine.BodyCollisionsGround[bodyId] <- dictPlus HashIdentity.Structural [(body2Id, contactNormal)]
             
         // track body collisions
         match physicsEngine.BodyCollisionsAll.TryGetValue bodyId with
-        | (true, collisions) -> collisions.[body2Id] <- contactNormal
-        | (false, _) -> physicsEngine.BodyCollisionsAll.[bodyId] <- dictPlus HashIdentity.Structural [(body2Id, contactNormal)]
+        | (true, collisions) -> collisions[body2Id] <- contactNormal
+        | (false, _) -> physicsEngine.BodyCollisionsAll[bodyId] <- dictPlus HashIdentity.Structural [(body2Id, contactNormal)]
 
     static member private handleBodySeparation (bodyId : BodyId) (body2Id : BodyId) physicsEngine =
 
@@ -407,7 +407,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
         let triangles =
             vertices
             |> Seq.chunkBySize 3
-            |> Seq.map (fun t -> Triangle (&t.[0], &t.[1], &t.[2]))
+            |> Seq.map (fun t -> Triangle (&t[0], &t[1], &t[2]))
             |> Array.ofSeq
         let shapeSettings = new MeshShapeSettings (triangles)
         shapeSettings.Sanitize ()
@@ -484,7 +484,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
         match Metadata.tryGetStaticModelMetadata staticModelShape.StaticModel with
         | ValueSome staticModel ->
             Seq.fold (fun centerMassInertiaDisposes i ->
-                let surface = staticModel.Surfaces.[i]
+                let surface = staticModel.Surfaces[i]
                 let transform =
                     match staticModelShape.TransformOpt with
                     | Some transform ->
@@ -498,7 +498,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
                 | ValueSome staticModel ->
                     if  staticModelSurfaceShape.SurfaceIndex > -1 &&
                         staticModelSurfaceShape.SurfaceIndex < staticModel.Surfaces.Length then
-                        let geometry = staticModel.Surfaces.[staticModelSurfaceShape.SurfaceIndex].PhysicallyBasedGeometry
+                        let geometry = staticModel.Surfaces[staticModelSurfaceShape.SurfaceIndex].PhysicallyBasedGeometry
                         let transformOpt = staticModelSurfaceShape.TransformOpt
                         let propertiesOpt = staticModelSurfaceShape.PropertiesOpt
                         match staticModelSurfaceShape.Profile with
@@ -516,7 +516,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
         | ValueSome staticModel ->
             if  staticModelSurfaceShape.SurfaceIndex > -1 &&
                 staticModelSurfaceShape.SurfaceIndex < staticModel.Surfaces.Length then
-                let surface = staticModel.Surfaces.[staticModelSurfaceShape.SurfaceIndex]
+                let surface = staticModel.Surfaces[staticModelSurfaceShape.SurfaceIndex]
                 let geometry = surface.PhysicallyBasedGeometry
                 let transformOpt = staticModelSurfaceShape.TransformOpt
                 let propertiesOpt = staticModelSurfaceShape.PropertiesOpt
@@ -534,7 +534,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
                 if terrainShape.Resolution.X = terrainShape.Resolution.Y then
                     let heights = Array.zeroCreate heightMapMetadata.HeightsNormalized.Length
                     for i in 0 .. dec heightMapMetadata.HeightsNormalized.Length do
-                        heights.[i] <- heightMapMetadata.HeightsNormalized.[i] * terrainShape.Bounds.Height
+                        heights[i] <- heightMapMetadata.HeightsNormalized[i] * terrainShape.Bounds.Height
                     let struct (center, rotation) =
                         match terrainShape.TransformOpt with
                         | Some transform -> struct (transform.Translation, transform.Rotation)
@@ -752,8 +752,8 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
 
                     // track character collision normals
                     match physicsEngine.CharacterCollisions.TryGetValue character with
-                    | (true, collisions) -> collisions.[subShape2ID] <- contactNormal
-                    | (false, _) -> physicsEngine.CharacterCollisions.[character] <- dictPlus HashIdentity.Structural [(subShape2ID, contactNormal)]
+                    | (true, collisions) -> collisions[subShape2ID] <- contactNormal
+                    | (false, _) -> physicsEngine.CharacterCollisions[character] <- dictPlus HashIdentity.Structural [(subShape2ID, contactNormal)]
                             
                     // create character contact add event
                     let character2Identifier = ValueLeft character2.ID
@@ -956,7 +956,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
             let motionType = JoltPhysicsEngine.computeMotionType setBodyEnabledMessage.BodyEnabled bodyType
             physicsEngine.PhysicsContext.BodyInterface.SetObjectLayer (&bodyID, &objectLayer)
             physicsEngine.PhysicsContext.BodyInterface.SetMotionType (&bodyID, motionType, Activation.Activate)
-            physicsEngine.BodyUserData.[bodyID] <- { physicsEngine.BodyUserData.[bodyID] with BodyEnabled = setBodyEnabledMessage.BodyEnabled }
+            physicsEngine.BodyUserData[bodyID] <- { physicsEngine.BodyUserData[bodyID] with BodyEnabled = setBodyEnabledMessage.BodyEnabled }
         | ValueNone -> ()
 
     static member private setBodyCenter (setBodyCenterMessage : SetBodyCenterMessage) physicsEngine =
@@ -1117,7 +1117,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
             for contactEvent in physicsEngine.CharacterContactEvents do
                 match contactEvent with
                 | CharacterContactAdded (character, character2Identifier, _, _, contactNormal) ->
-                    let bodyId = (physicsEngine.CharacterUserData.[character.ID]).CharacterBodyId
+                    let bodyId = (physicsEngine.CharacterUserData[character.ID]).CharacterBodyId
                     let body2IdOpt =
                         match character2Identifier with
                         | ValueLeft character2ID ->
@@ -1134,7 +1134,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
                         JoltPhysicsEngine.handleCharacterPenetration body2Id bodyId -contactNormal physicsEngine
                     | ValueNone -> ()
                 | CharacterContactRemoved (character, character2Identifier, _) ->
-                    let bodyId = physicsEngine.CharacterUserData.[character.ID].CharacterBodyId
+                    let bodyId = physicsEngine.CharacterUserData[character.ID].CharacterBodyId
                     let body2IdOpt =
                         match character2Identifier with
                         | ValueLeft character2ID ->
@@ -1189,7 +1189,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
         for characterEntry in physicsEngine.Characters do
             let bodyId = characterEntry.Key
             let character = characterEntry.Value
-            let bodyUserData = physicsEngine.BodyUserData.[character.InnerBodyID]
+            let bodyUserData = physicsEngine.BodyUserData[character.InnerBodyID]
             if bodyUserData.BodyEnabled then
                 let innerBodyId = character.InnerBodyID
                 let bodyTransformMessage =
@@ -1205,7 +1205,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
         for bodiesEntry in physicsEngine.Bodies do
             let bodyId = bodiesEntry.Key
             let bodyID = bodiesEntry.Value
-            let bodyUserData = physicsEngine.BodyUserData.[bodyID]
+            let bodyUserData = physicsEngine.BodyUserData[bodyID]
             if  bodyUserData.BodyEnabled &&
                 bodyInterface.IsActive &bodyID &&
                 not (physicsEngine.Characters.ContainsKey bodyId) then
@@ -1471,7 +1471,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
                         (&ray, rayCastSettings, collectorType, rayCastResults, null, null, bodyFilter) |> ignore<bool>
                     rayCastResults
             [|for rayCastResult in rayCastResults do
-                let bodyId = physicsEngine.BodyUserData.[rayCastResult.BodyID].BodyId
+                let bodyId = physicsEngine.BodyUserData[rayCastResult.BodyID].BodyId
                 let subShapeID = SubShapeID rayCastResult.subShapeID2
                 let position = ray.Position + ray.Direction * rayCastResult.Fraction
                 let mutable bodyLockRead = BodyLockRead ()
@@ -1512,7 +1512,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
                     (shape, &transformMatrix, &ray.Direction, &baseOffset, collectionType, rayCastResults, null, null, bodyFilter, null) |> ignore<bool>
                 [|for rayCastResult in rayCastResults do
                     let bodyID = rayCastResult.BodyID2 // second body since the first is the user-provided shape
-                    let bodyId = physicsEngine.BodyUserData.[bodyID].BodyId
+                    let bodyId = physicsEngine.BodyUserData[bodyID].BodyId
                     let subShapeID = rayCastResult.SubShapeID2
                     let position = ray.Origin + ray.Direction * rayCastResult.Fraction
                     let mutable bodyLockRead = BodyLockRead ()
@@ -1557,9 +1557,9 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
                 // update characters when body enabled
                 let characterLayer = Constants.Physics.ObjectLayerMoving
                 for character in physicsEngine.Characters.Values do
-                    let bodyUserData = physicsEngine.BodyUserData.[character.InnerBodyID]
+                    let bodyUserData = physicsEngine.BodyUserData[character.InnerBodyID]
                     if bodyUserData.BodyEnabled then
-                        let characterUserData = physicsEngine.CharacterUserData.[character.ID]
+                        let characterUserData = physicsEngine.CharacterUserData[character.ID]
                         let characterGravityFactor =
                             match characterUserData.CharacterGravity with
                             | GravityWorld -> 1.0f
@@ -1591,7 +1591,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
                 for bodyConstraintEntry in physicsEngine.BodyConstraintBreakingPoints do
                     let bodyJointId = bodyConstraintEntry.Key
                     let breakingPoint = bodyConstraintEntry.Value
-                    let constrain = physicsEngine.BodyConstraints.[bodyJointId]
+                    let constrain = physicsEngine.BodyConstraints[bodyJointId]
                     let lambdaPositionOpt =
                         match constrain with
                         | :? HingeConstraint as constrain -> ValueSome constrain.TotalLambdaPosition.Magnitude
@@ -1648,7 +1648,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
             physicsEngine.CharacterUserData.Clear ()
             for character in physicsEngine.Characters.Values do
                 let innerBodyID = character.InnerBodyID
-                let innerBodyId = physicsEngine.BodyUserData.[innerBodyID].BodyId
+                let innerBodyId = physicsEngine.BodyUserData[innerBodyID].BodyId
                 physicsEngine.CharacterVsCharacterCollision.Remove character
                 physicsEngine.BodyUserData.Remove innerBodyID |> ignore<bool>
                 physicsEngine.Bodies.Remove innerBodyId |> ignore<bool>

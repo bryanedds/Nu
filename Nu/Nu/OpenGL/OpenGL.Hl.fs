@@ -76,7 +76,7 @@ module Hl =
     let rec CheckRenderFormat (format : InternalFormat) =
         let result = [|0|]
         Gl.GetInternalformat (TextureTarget.Renderbuffer, format, InternalFormatPName.InternalformatSupported, result)
-        if result.[0] = 0 then
+        if result[0] = 0 then
             let formatFallback =
                 match format with
                 | InternalFormat.StencilIndex
@@ -269,12 +269,12 @@ module Hl =
             try try let pixelDataPtr = handle.AddrOfPinnedObject ()
                     Gl.ReadPixels (0, 0, width, height, PixelFormat.Rgba, PixelType.Float, pixelDataPtr)
                     use bitmap = new Drawing.Bitmap (width, height, Drawing.Imaging.PixelFormat.Format32bppArgb)
-                    let pixelBytes = Array.init pixelFloats.Length (fun i -> byte (pixelFloats.[i] * 255.0f))
+                    let pixelBytes = Array.init pixelFloats.Length (fun i -> byte (pixelFloats[i] * 255.0f))
                     for i in 0 .. dec (pixelBytes.Length / 4) do // swap red and blue
                         let j = i * 4
-                        let temp = pixelBytes.[j]
-                        pixelBytes.[j] <- pixelBytes.[j+2]
-                        pixelBytes.[j+2] <- temp
+                        let temp = pixelBytes[j]
+                        pixelBytes[j] <- pixelBytes[j+2]
+                        pixelBytes[j+2] <- temp
                     let bitmapData = bitmap.LockBits (Drawing.Rectangle (0, 0, width, height), Drawing.Imaging.ImageLockMode.WriteOnly, Drawing.Imaging.PixelFormat.Format32bppArgb)
                     Marshal.Copy (pixelBytes, 0, bitmapData.Scan0, pixelBytes.Length)
                     bitmap.UnlockBits bitmapData

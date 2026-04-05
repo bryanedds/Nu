@@ -68,7 +68,7 @@ module LightMap =
 
             // render to reflection cube map face
             let lightAmbientOverride = Some (ambientColor, ambientBrightness)
-            let (eyeForward, eyeUp) = eyeRotations.[i]
+            let (eyeForward, eyeUp) = eyeRotations[i]
             let eyeRotationMatrix = Matrix4x4.CreateLookAt (v3Zero, eyeForward, eyeUp)
             let eyeRotation = Quaternion.CreateFromRotationMatrix eyeRotationMatrix
             let view = Matrix4x4.CreateLookAt (origin, origin + eyeForward, eyeUp)
@@ -158,7 +158,7 @@ module LightMap =
         for i in 0 .. dec 6 do
 
             // render face
-            let view = views.[i]
+            let view = views[i]
             let viewProjection = view * projection
             let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
             Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, cubeMapId, 0)
@@ -316,7 +316,7 @@ module LightMap =
             for i in 0 .. dec 6 do
 
                 // draw mip face
-                let view = views.[i]
+                let view = views[i]
                 let viewProjection = view * projection
                 let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
                 Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, cubeMapId, mip)

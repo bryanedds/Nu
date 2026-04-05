@@ -40,7 +40,7 @@ type Palette =
 
     static member tryGetStyle index palette =
         if index >= 0 && index < Array.length palette.Styles
-        then Some palette.Styles.[index]
+        then Some palette.Styles[index]
         else None
 
     static member addStyle style palette =

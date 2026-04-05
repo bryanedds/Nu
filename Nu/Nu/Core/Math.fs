@@ -1144,23 +1144,23 @@ module Matrix3x2 =
         /// Create a matrix from an array of 16 single values.
         static member CreateFromArray (arr : single array) =
             Matrix3x2
-                (arr.[00], arr.[01],
-                 arr.[02], arr.[03],
-                 arr.[04], arr.[05])
+                (arr[00], arr[01],
+                 arr[02], arr[03],
+                 arr[04], arr[05])
 
         /// Convert a Matrix3x2 to an array.
         member this.ToArray () =
             let value = Array.zeroCreate 6
-            value.[00] <- this.M11; value.[01] <- this.M12
-            value.[02] <- this.M21; value.[03] <- this.M22
-            value.[04] <- this.M31; value.[05] <- this.M32
+            value[00] <- this.M11; value[01] <- this.M12
+            value[02] <- this.M21; value[03] <- this.M22
+            value[04] <- this.M31; value[05] <- this.M32
             value
 
         /// Convert a Matrix3x2 to an array.
         member this.ToArray (value : single array, offset) =
-            value.[offset+00] <- this.M11; value.[offset+01] <- this.M12
-            value.[offset+02] <- this.M21; value.[offset+03] <- this.M22
-            value.[offset+04] <- this.M31; value.[offset+05] <- this.M32
+            value[offset+00] <- this.M11; value[offset+01] <- this.M12
+            value[offset+02] <- this.M21; value[offset+03] <- this.M22
+            value[offset+04] <- this.M31; value[offset+05] <- this.M32
 
     let inline m3x2 (r0 : Vector2) (r1 : Vector2) (r2 : Vector2) =
         Matrix3x2
@@ -1268,26 +1268,26 @@ module Matrix4x4 =
         /// Create a matrix from an array of 16 single values.
         static member CreateFromArray (arr : single array) =
             Matrix4x4
-                (arr.[00], arr.[01], arr.[02], arr.[03],
-                 arr.[04], arr.[05], arr.[06], arr.[07],
-                 arr.[08], arr.[09], arr.[10], arr.[11],
-                 arr.[12], arr.[13], arr.[14], arr.[15])
+                (arr[00], arr[01], arr[02], arr[03],
+                 arr[04], arr[05], arr[06], arr[07],
+                 arr[08], arr[09], arr[10], arr[11],
+                 arr[12], arr[13], arr[14], arr[15])
 
         /// Convert a Matrix4x4 to an array.
         member this.ToArray () =
             let value = Array.zeroCreate 16
-            value.[00] <- this.M11; value.[01] <- this.M12; value.[02] <- this.M13; value.[03] <- this.M14
-            value.[04] <- this.M21; value.[05] <- this.M22; value.[06] <- this.M23; value.[07] <- this.M24
-            value.[08] <- this.M31; value.[09] <- this.M32; value.[10] <- this.M33; value.[11] <- this.M34
-            value.[12] <- this.M41; value.[13] <- this.M42; value.[14] <- this.M43; value.[15] <- this.M44
+            value[00] <- this.M11; value[01] <- this.M12; value[02] <- this.M13; value[03] <- this.M14
+            value[04] <- this.M21; value[05] <- this.M22; value[06] <- this.M23; value[07] <- this.M24
+            value[08] <- this.M31; value[09] <- this.M32; value[10] <- this.M33; value[11] <- this.M34
+            value[12] <- this.M41; value[13] <- this.M42; value[14] <- this.M43; value[15] <- this.M44
             value
 
         /// Convert a Matrix4x4 to an array.
         member this.ToArray (value : single array, offset) =
-            value.[offset+00] <- this.M11; value.[offset+01] <- this.M12; value.[offset+02] <- this.M13; value.[offset+03] <- this.M14
-            value.[offset+04] <- this.M21; value.[offset+05] <- this.M22; value.[offset+06] <- this.M23; value.[offset+07] <- this.M24
-            value.[offset+08] <- this.M31; value.[offset+09] <- this.M32; value.[offset+10] <- this.M33; value.[offset+11] <- this.M34
-            value.[offset+12] <- this.M41; value.[offset+13] <- this.M42; value.[offset+14] <- this.M43; value.[offset+15] <- this.M44
+            value[offset+00] <- this.M11; value[offset+01] <- this.M12; value[offset+02] <- this.M13; value[offset+03] <- this.M14
+            value[offset+04] <- this.M21; value[offset+05] <- this.M22; value[offset+06] <- this.M23; value[offset+07] <- this.M24
+            value[offset+08] <- this.M31; value[offset+09] <- this.M32; value[offset+10] <- this.M33; value[offset+11] <- this.M34
+            value[offset+12] <- this.M41; value[offset+13] <- this.M42; value[offset+14] <- this.M43; value[offset+15] <- this.M44
 
     let inline m4 (r0 : Vector4) (r1 : Vector4) (r2 : Vector4) (r3 : Vector4) =
         Matrix4x4

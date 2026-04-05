@@ -196,7 +196,7 @@ module Texture =
                     let mutable x = 0
                     while x < stride - 2 do
                         let i = x + stride * y
-                        data.[i]; data.[i+1]; data.[i+2]; 255uy
+                        data[i]; data[i+1]; data[i+2]; 255uy
                         x <- x + 3
                     y <- inc y|]
             Some converted
@@ -207,7 +207,7 @@ module Texture =
                     let mutable x = 0
                     while x < stride - 3 do
                         let i = x + stride * y
-                        data.[i]; data.[i+1]; data.[i+2]; data.[i+3]
+                        data[i]; data[i+1]; data[i+2]; data[i+3]
                         x <- x + 4
                     y <- inc y|]
             Some converted
@@ -223,7 +223,7 @@ module Texture =
                     let mutable x = 0
                     while x < mipmap.Stride - 2 do
                         let i = x + mipmap.Stride * y + mipmap.DataOffset
-                        data.[i]; data.[i+1]; data.[i+2]; 255uy
+                        data[i]; data[i+1]; data[i+2]; 255uy
                         x <- x + 3
                     y <- inc y|]
             (v2i mipmap.Width mipmap.Height, converted)
@@ -234,7 +234,7 @@ module Texture =
                     let mutable x = 0
                     while x < mipmap.Stride - 3 do
                         let i = x + mipmap.Stride * y + mipmap.DataOffset
-                        data.[i]; data.[i+1]; data.[i+2]; data.[i+3]
+                        data[i]; data[i+1]; data[i+2]; data[i+3]
                         x <- x + 4
                     y <- inc y|]
             (v2i mipmap.Width mipmap.Height, converted)
@@ -260,9 +260,9 @@ module Texture =
                 else 0
             let mipmapBytesArray =
                 [|for i in minimalMipmapIndex .. dec mipmaps.Length do
-                    FormatUncompressedPfimageMipmap (format, mipmaps.[i], data)|]
+                    FormatUncompressedPfimageMipmap (format, mipmaps[i], data)|]
             if minimal then
-                let (minimalMipmapResolution, minimalMipmapBytes) = mipmapBytesArray.[0]
+                let (minimalMipmapResolution, minimalMipmapBytes) = mipmapBytesArray[0]
                 let remainingMipmapBytes = if minimalMipmapBytes.Length > 1 then Array.tail mipmapBytesArray else [||]
                 Some (minimalMipmapResolution, minimalMipmapBytes, remainingMipmapBytes)
             else Some (v2i image.Width image.Height, bytes, mipmapBytesArray)
@@ -293,7 +293,7 @@ module Texture =
                         (dims, dds.Data.AsSpan(index, size).ToArray())|]
             else [||]
         if minimal then
-            let (minimalMipmapResolution, minimalMipmapBytes) = mipmapBytesArray.[0]
+            let (minimalMipmapResolution, minimalMipmapBytes) = mipmapBytesArray[0]
             let remainingMipmapBytes = if minimalMipmapBytes.Length > 1 then Array.tail mipmapBytesArray else [||]
             (minimalMipmapResolution, minimalMipmapBytes, remainingMipmapBytes)
         else (v2i dds.Width dds.Height, bytes, mipmapBytesArray)
@@ -396,7 +396,7 @@ module Texture =
                     Hl.Assert ()
                     let mutable mipmapIndex = 0
                     while mipmapIndex < mipmapBytesArray.Length do
-                        let (mipmapResolution, mipmapBytes) = mipmapBytesArray.[mipmapIndex]
+                        let (mipmapResolution, mipmapBytes) = mipmapBytesArray[mipmapIndex]
                         let mipmapBytesPtr = GCHandle.Alloc (mipmapBytes, GCHandleType.Pinned)
                         try Gl.CompressedTexSubImage2D (TextureTarget.Texture2d, inc mipmapIndex, 0, 0, mipmapResolution.X, mipmapResolution.Y, format, mipmapBytes.Length, mipmapBytesPtr.AddrOfPinnedObject ())
                         finally mipmapBytesPtr.Free ()
@@ -424,7 +424,7 @@ module Texture =
                     Hl.Assert ()
                     let mutable mipmapIndex = 0
                     while mipmapIndex < mipmapBytesArray.Length do
-                        let (mipmapResolution, mipmapBytes) = mipmapBytesArray.[mipmapIndex]
+                        let (mipmapResolution, mipmapBytes) = mipmapBytesArray[mipmapIndex]
                         let mipmapBytesPtr = GCHandle.Alloc (mipmapBytes, GCHandleType.Pinned)
                         try Gl.TexImage2D (TextureTarget.Texture2d, inc mipmapIndex, Uncompressed.InternalFormat, mipmapResolution.X, mipmapResolution.Y, 0, Uncompressed.PixelFormat, PixelType.UnsignedByte, mipmapBytesPtr.AddrOfPinnedObject ())
                         finally mipmapBytesPtr.Free ()
@@ -496,13 +496,13 @@ module Texture =
                         |> Array.ofSeq
                         |> Array.map (fun mip ->
                             let resolution = v2i (int mip.Width) (int mip.Height)
-                            let bytes = mip.Faces.[0].Data
+                            let bytes = mip.Faces[0].Data
                             (resolution, bytes))
                     let bytesArray = // ensure last element isn't a duplicate, which might happen when texture is not power-of-two or perhaps written to disk incorrectly
                         if bytesArray.Length >= 2 then
                             let bytesArrayRev = Array.rev bytesArray
-                            let bytesLast = snd bytesArrayRev.[0]
-                            let bytes2ndToLast = snd bytesArrayRev.[1]
+                            let bytesLast = snd bytesArrayRev[0]
+                            let bytes2ndToLast = snd bytesArrayRev[1]
                             if bytes2ndToLast.Length = bytesLast.Length
                             then Array.allButLast bytesArray
                             else bytesArray

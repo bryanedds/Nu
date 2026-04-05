@@ -264,7 +264,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                              OpenGL.CubeMap.CubeMapClient (),
                              OpenGL.PhysicallyBased.PhysicallyBasedSceneClient ())
                     let renderPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = assetClient }
-                    renderer.RenderPackages.[packageName] <- renderPackage
+                    renderer.RenderPackages[packageName] <- renderPackage
                     renderPackage
 
             // categorize existing assets based on the required action
@@ -310,14 +310,14 @@ type [<ReferenceEquality>] GlRenderer2d =
                     let lastWriteTime =
                         try DateTimeOffset (File.GetLastWriteTime asset.FilePath)
                         with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
-                    assetsLoaded.[asset.AssetTag.AssetName] <- (lastWriteTime, asset, renderAsset)
+                    assetsLoaded[asset.AssetTag.AssetName] <- (lastWriteTime, asset, renderAsset)
                 | None -> ()
 
             // insert assets into package
             for assetEntry in assetsLoaded do
                 let assetName = assetEntry.Key
                 let (lastWriteTime, asset, renderAsset) = assetEntry.Value
-                renderPackage.Assets.[assetName] <- (lastWriteTime, asset, renderAsset)
+                renderPackage.Assets[assetName] <- (lastWriteTime, asset, renderAsset)
 
         // handle error cases
         | Left failedAssetNames ->
@@ -506,7 +506,7 @@ type [<ReferenceEquality>] GlRenderer2d =
             | TextureAsset texture ->
                 let mutable index = 0
                 while index < particles.Length do
-                    let particle = &particles.[index]
+                    let particle = &particles[index]
                     let transform = &particle.Transform
                     let absolute = transform.Absolute
                     let perimeter = transform.Perimeter
@@ -575,7 +575,7 @@ type [<ReferenceEquality>] GlRenderer2d =
             while tileIndex < tilesLength do
 
                 // gather context for rendering tile
-                let tile = tiles.[tileIndex]
+                let tile = tiles[tileIndex]
                 if tile.Gid <> 0 then // not the empty tile
                     let tileBounds = box2 tileMin tileSize
                     let viewBounds = box2 (eyeCenter - eyeSize * 0.5f) eyeSize
@@ -847,13 +847,13 @@ type [<ReferenceEquality>] GlRenderer2d =
         | RenderSprites descriptor ->
             let sprites = descriptor.Sprites
             for index in 0 .. sprites.Length - 1 do
-                let sprite = &sprites.[index]
+                let sprite = &sprites[index]
                 GlRenderer2d.renderSprite
                     (&sprite.Transform, &sprite.InsetOpt, &sprite.ClipOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Emission, sprite.Flip, renderer)
         | RenderSpriteDescriptors descriptor ->
             let sprites = descriptor.SpriteDescriptors
             for index in 0 .. sprites.Length - 1 do
-                let sprite = sprites.[index]
+                let sprite = sprites[index]
                 GlRenderer2d.renderSprite
                     (&sprite.Transform, &sprite.InsetOpt, &sprite.ClipOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Emission, sprite.Flip, renderer)
         | RenderSpriteParticles descriptor ->
@@ -886,7 +886,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                     if renderAsset.IsFontAsset then
                         GlRenderer2d.freeRenderAsset renderAsset renderer
                         match GlRenderer2d.tryLoadRenderAsset package.PackageState asset renderer with
-                        | Some renderAsset -> package.Assets.[assetName] <- (lastWriteTime, asset, renderAsset)
+                        | Some renderAsset -> package.Assets[assetName] <- (lastWriteTime, asset, renderAsset)
                         | None -> Log.fail ("Failed to reload font '" + scstring asset.AssetTag + "' on DisplayScalar change.")
 
         // update viewport
@@ -928,7 +928,7 @@ type [<ReferenceEquality>] GlRenderer2d =
             |> Seq.map (fun entry -> entry.Key)
             |> Seq.toArray
         for entry in textTexturesUnused do
-            let (_, _, _, textTexture) = snd renderer.TextTextures.[entry]
+            let (_, _, _, textTexture) = snd renderer.TextTextures[entry]
             renderer.TextTextures.Remove entry |> ignore<bool>
             renderer.TextTextureIdPool.Push textTexture.TextureId
             OpenGL.Hl.Assert ()

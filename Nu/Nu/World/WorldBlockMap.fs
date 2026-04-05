@@ -246,7 +246,7 @@ type BlockMapDispatcher () =
                 let palette = blockMap.Palette
                 let styleIndex = blockMap.StyleIndex
                 let styles = palette.Styles
-                let style = styles.[styleIndex]
+                let style = styles[styleIndex]
                 let mutable color = style.Color.V4
                 if ImGui.ColorEdit4 ("Palette Selection", &color, ImGuiColorEditFlags.NoLabel ||| ImGuiColorEditFlags.NoInputs) then
                     let styles = Array.removeAt styleIndex styles
@@ -266,7 +266,7 @@ type BlockMapDispatcher () =
                 let palette = blockMap.Palette
                 let styles = palette.Styles
                 for i in 0 .. dec styles.Length do
-                    let style = styles.[i]
+                    let style = styles[i]
                     if ImGui.ColorButton ("Style" + string i, style.Color.V4) then
                         blockMap <- BlockMap.setStyleIndex i blockMap
                     if  inc i % 12 <> 0 &&

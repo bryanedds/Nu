@@ -1137,7 +1137,7 @@ and [<ReferenceEquality; CLIMutable>] ScreenState =
           Name = name }
 
     static member internal makeSentinel (world : World) =
-        ScreenState.make GameTime.zero (Some "@Sentinel") world.WorldExtension.LateBindingsInstances.ScreenDispatchers.[nameof ScreenDispatcher]
+        ScreenState.make GameTime.zero (Some "@Sentinel") world.WorldExtension.LateBindingsInstances.ScreenDispatchers[nameof ScreenDispatcher]
 
     interface SimulantState with
         member this.GetXtension () = this.Xtension
@@ -1194,7 +1194,7 @@ and [<ReferenceEquality; CLIMutable>] GroupState =
           Name = name }
 
     static member internal makeSentinel (world : World) =
-        GroupState.make (Some "@Sentinel") world.WorldExtension.LateBindingsInstances.GroupDispatchers.[nameof GroupDispatcher]
+        GroupState.make (Some "@Sentinel") world.WorldExtension.LateBindingsInstances.GroupDispatchers[nameof GroupDispatcher]
 
     interface SimulantState with
         member this.GetXtension () = this.Xtension
@@ -1387,7 +1387,7 @@ and [<TypeConverter (typeof<GameConverter>)>] Game (gameAddress : Game Address) 
 
 #if DEBUG
     // check that address is of correct length for a game
-    do if gameAddress.Length <> 1 || gameAddress.Names.[0] <> Constants.Engine.GameName then
+    do if gameAddress.Length <> 1 || gameAddress.Names[0] <> Constants.Engine.GameName then
         failwith "Game address must be length of 1 with name = 'Game'."
 #endif
 
@@ -1480,7 +1480,7 @@ and [<TypeConverter (typeof<ScreenConverter>)>] Screen (screenAddress) =
 
 #if DEBUG
     // check that address is of correct length for a screen
-    do if screenAddress.Length <> 2 || screenAddress.Names.[0] <> Constants.Engine.GameName then
+    do if screenAddress.Length <> 2 || screenAddress.Names[0] <> Constants.Engine.GameName then
         failwith "Screen address must be length of 2 with Game name = 'Game'."
 #endif
 
@@ -1578,7 +1578,7 @@ and [<TypeConverter (typeof<GroupConverter>)>] Group (groupAddress) =
 
 #if DEBUG
     // check that address is of correct length for a group
-    do if groupAddress.Length <> 3 || groupAddress.Names.[0] <> Constants.Engine.GameName then
+    do if groupAddress.Length <> 3 || groupAddress.Names[0] <> Constants.Engine.GameName then
         failwith "Group address must be length of 3 with Game name = 'Game'."
 #endif
 
@@ -1598,7 +1598,7 @@ and [<TypeConverter (typeof<GroupConverter>)>] Group (groupAddress) =
     member this.GroupAddress = groupAddress
 
     /// The containing screen of the group.
-    member this.Screen = let names = this.GroupAddress.Names in Screen (names.[0], names[1])
+    member this.Screen = let names = this.GroupAddress.Names in Screen (names[0], names[1])
 
     /// Get the names of a group.
     member inline this.Names = Address.getNames this.GroupAddress
@@ -1680,7 +1680,7 @@ and [<TypeConverter (typeof<EntityConverter>)>] Entity (entityAddress) =
 
 #if DEBUG
     // check that address is of correct length for an entity
-    do if entityAddress.Length < 4 || entityAddress.Names.[0] <> Constants.Engine.GameName then
+    do if entityAddress.Length < 4 || entityAddress.Names[0] <> Constants.Engine.GameName then
         failwith "Entity address must be length >= 4 with Game name = 'Game'."
 #endif
 
@@ -1703,10 +1703,10 @@ and [<TypeConverter (typeof<EntityConverter>)>] Entity (entityAddress) =
     member this.EntityAddress = entityAddress
 
     /// The containing screen of the entity.
-    member this.Screen = let names = this.EntityAddress.Names in Screen (names.[0], names.[1])
+    member this.Screen = let names = this.EntityAddress.Names in Screen (names[0], names[1])
 
     /// The containing group of the entity.
-    member this.Group = let names = this.EntityAddress.Names in Group (names.[0], names.[1], names.[2])
+    member this.Group = let names = this.EntityAddress.Names in Group (names[0], names[1], names[2])
 
     /// The containing parent of the entity.
     member this.Parent =

@@ -70,7 +70,7 @@ module Content =
                 // drag event signals with existing subscription ids forward in time
                 for eventSignalEntry in eventSignalContentsOld do
                     if eventSignalContents.ContainsKey eventSignalEntry.Key then
-                        eventSignalContents.[eventSignalEntry.Key] <- eventSignalEntry.Value
+                        eventSignalContents[eventSignalEntry.Key] <- eventSignalEntry.Value
 
     let
 #if !DEBUG
@@ -109,7 +109,7 @@ module Content =
                 // drag event signals with existing subscription ids forward in time
                 for eventHandlerEntry in eventHandlerContentsOld do
                     if eventHandlerContents.ContainsKey eventHandlerEntry.Key then
-                        eventHandlerContents.[eventHandlerEntry.Key] <- eventHandlerEntry.Value
+                        eventHandlerContents[eventHandlerEntry.Key] <- eventHandlerEntry.Value
 
     let
 #if !DEBUG
@@ -139,7 +139,7 @@ module Content =
             content.EntityCachedOpt <- entity
             let propertyContents = content.PropertyContentsOpt
             for i in 0 .. dec propertyContents.Count do
-                let propertyContent = propertyContents.[i]
+                let propertyContent = propertyContents[i]
                 let lens = propertyContent.PropertyLens
                 if lens.Name = Constants.Engine.MountOptPropertyName then
                     mountOptOpt <- ValueSome (propertyContent.PropertyValue :?> Entity Address option)
@@ -214,7 +214,7 @@ module Content =
                     for entry in entitiesPotentiallyAltered do
                         let entity = entry.Key
                         let entityContent = entry.Value
-                        let entityContentOld = contentOld.EntityContentsOpt.[entity.Name]
+                        let entityContentOld = contentOld.EntityContentsOpt[entity.Name]
                         synchronizeEntity initializing reinitializing entityContentOld entityContent origin entity world
                 for (entity : Entity, entityContent : EntityContent) in entitiesAdded do
                     if not (entity.GetExists world) || entity.GetDestroying world then
@@ -238,7 +238,7 @@ module Content =
                     for entry in entitiesPotentiallyAltered do
                         let entity = entry.Key
                         let entityContent = entry.Value
-                        let entityContentOld = contentOld.EntityContentsOpt.[entity.Name]
+                        let entityContentOld = contentOld.EntityContentsOpt[entity.Name]
                         synchronizeEntity initializing reinitializing entityContentOld entityContent origin entity world
                 for (entity : Entity, entityContent : EntityContent) in entitiesAdded do
                     if not (entity.GetExists world) || entity.GetDestroying world then
@@ -280,7 +280,7 @@ module Content =
                 for entry in groupsPotentiallyAltered do
                     let group = entry.Key
                     let groupContent = entry.Value
-                    let groupContentOld = contentOld.GroupContents.[group.Name]
+                    let groupContentOld = contentOld.GroupContents[group.Name]
                     synchronizeGroup initializing reinitializing groupContentOld groupContent origin group world
                 for (group : Group, groupContent : GroupContent) in groupsAdded do
                     if not (group.GetExists world) || group.GetDestroying world then
@@ -304,7 +304,7 @@ module Content =
                 for entry in screensPotentiallyAltered do
                     let screen = entry.Key
                     let screenContent = entry.Value
-                    let screenContentOld = contentOld.ScreenContents.[screen.Name]
+                    let screenContentOld = contentOld.ScreenContents[screen.Name]
                     synchronizeScreen initializing reinitializing screenContentOld screenContent origin screen world
                 for (screen : Screen, screenContent : ScreenContent) in screensAdded do
                     if not (screen.GetExists world) || screen.GetDestroying world then
@@ -750,7 +750,7 @@ module Content =
         | (true, struct (v, (:? 'c as content))) when v === value -> content
         | (_, _) ->
             let content = fn value
-            ContentsCached.[name] <- struct (value, content)
+            ContentsCached[name] <- struct (value, content)
             content
 
     /// Discard cached content.

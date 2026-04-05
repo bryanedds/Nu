@@ -202,8 +202,8 @@ type GlRendererImGui
                     match Metadata.tryGetFilePath assetTag with
                     | Some filePath ->
                         match OpenGL.Texture.TryCreateTextureGl (true, OpenGL.TextureMinFilter.Nearest, OpenGL.TextureMagFilter.Nearest, false, false, OpenGL.Texture.InferCompression filePath, filePath) with
-                        | Right (_, textureId) -> assetTextureOpts.[assetTag] <- ValueSome textureId
-                        | Left _ -> assetTextureOpts.[assetTag] <- ValueNone
+                        | Right (_, textureId) -> assetTextureOpts[assetTag] <- ValueSome textureId
+                        | Left _ -> assetTextureOpts[assetTag] <- ValueNone
                     | None -> ()
                 let mutable removed = ()
                 assetTextureRequests.TryRemove (assetTag, &removed) |> ignore<bool>
@@ -238,7 +238,7 @@ type GlRendererImGui
                 // compute offsets
                 let cmdLists = drawData.CmdLists
                 for i in 0 .. dec drawData.CmdListsCount do
-                    let cmdList = cmdLists.[i]
+                    let cmdList = cmdLists[i]
                     OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, vertexBuffer)
                     OpenGL.Gl.BufferSubData (OpenGL.BufferTarget.ArrayBuffer, nativeint (vertexOffsetInVertices * sizeof<ImDrawVert>), uint (cmdList.VtxBuffer.Size * Unsafe.SizeOf<ImDrawVert> ()), cmdList.VtxBuffer.Data)
                     OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, indexBuffer)
@@ -273,10 +273,10 @@ type GlRendererImGui
                 let mutable indexOffset = 0
                 for i in 0 .. dec drawData.CmdListsCount do
                     let cmdLists = drawData.CmdLists
-                    let cmdList = cmdLists.[i]
+                    let cmdList = cmdLists[i]
                     for cmd in 0 .. dec cmdList.CmdBuffer.Size do
                         let pcmds = cmdList.CmdBuffer
-                        let pcmd = pcmds.[cmd]
+                        let pcmd = pcmds[cmd]
                         if not (textureIdBlacklist.Contains (uint32 pcmd.TextureId)) then
                             if pcmd.UserCallback = nativeint 0 then
                                 let clip = pcmd.ClipRect

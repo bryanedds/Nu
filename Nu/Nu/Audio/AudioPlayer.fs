@@ -170,7 +170,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
                 | Some audioPackage -> audioPackage
                 | None ->
                     let audioPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = () }
-                    audioPlayer.AudioPackages.[packageName] <- audioPackage
+                    audioPlayer.AudioPackages[packageName] <- audioPackage
                     audioPackage
 
             // categorize existing assets based on the required action
@@ -211,14 +211,14 @@ type [<ReferenceEquality>] SdlAudioPlayer =
                         with exn ->
                             Log.info ("Asset file write time read error due to: " + scstring exn)
                             DateTimeOffset.MinValue.DateTime
-                    assetsLoaded.[asset.AssetTag.AssetName] <- (lastWriteTime, asset, audioAsset)
+                    assetsLoaded[asset.AssetTag.AssetName] <- (lastWriteTime, asset, audioAsset)
                 | None -> ()
 
             // insert assets into package
             for assetEntry in assetsLoaded do
                 let assetName = assetEntry.Key
                 let (lastWriteTime, asset, audioAsset) = assetEntry.Value
-                audioPackage.Assets.[assetName] <- (lastWriteTime, asset, audioAsset)
+                audioPackage.Assets[assetName] <- (lastWriteTime, asset, audioAsset)
 
         // handle error case
         | Left failedAssetNames ->

@@ -77,7 +77,7 @@ module WorldModuleScreen =
 
         static member internal publishScreenChange (propertyName : string) (propertyPrevious : obj) (propertyValue : obj) (screen : Screen) world =
             let changeData = { Name = propertyName; Previous = propertyPrevious; Value = propertyValue }
-            let changeEventAddress = rtoa<ChangeData> [|Constants.Lens.ChangeName; propertyName; Constants.Lens.EventName; screen.Names.[0]; screen.Names.[1]|]
+            let changeEventAddress = rtoa<ChangeData> [|Constants.Lens.ChangeName; propertyName; Constants.Lens.EventName; screen.Names[0]; screen.Names[1]|]
             let eventTrace = EventTrace.debug "World" "publishScreenChange" "" EventTrace.empty
             World.publishPlus changeData changeEventAddress eventTrace screen false false world
 
