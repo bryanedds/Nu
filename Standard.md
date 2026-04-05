@@ -49,9 +49,31 @@ Correctness, Consistency, Simplicity
 
 6) Order the parameters of functions from least to most important (that is, in the order of increasing semantic impact). This makes currying easy to leverage and consistent.
 
-7) Prefer stepped indentation as it refactors better, keeps lines shorter, and keeps formatting normal and enforcible via automation. For example, write this -
+7) As F#'s static member definition facility has gained more expressiveness, it appears that member functions are usually better expressed as static members of their target type rather than let bindings in a separate module whose name matches the target types'. This is a syntactic simplification but more importantly, it lead to Address members getting split over fewer pages by tools like `fsdocs`. So rather than writing this -
 
+```F#
+type T =
+    { U : int }
+
+module T =
+
+    let triple t =
+        { t with U = t.U * 3 }
 ```
+
+prefer to write something like this -
+
+```F#
+type T =
+    { U : int }
+
+    static member triple t =
+        { t with U = t.U * 3 }
+```
+
+8) Prefer stepped indentation as it refactors better, keeps lines shorter, and keeps formatting normal and enforcible via automation. For example, write this -
+
+```F#
     let result =
         ingest
             apple
@@ -61,15 +83,15 @@ Correctness, Consistency, Simplicity
 
 - rather than this -
 
-```
+```F#
     let result = ingest apple
                         banana
                         grape
 ```
 
-8) F\#'s syntax is based on ML, which is structurally derived from Lisp rather than C, so use Lisp-style bracing instead of C-style. For example, write this -
+9) F\#'s syntax is based on ML, which is structurally derived from Lisp rather than C, so use Lisp-style bracing instead of C-style. For example, write this -
 
-```
+```F#
     let ys =
         [f x
          g x
@@ -78,7 +100,7 @@ Correctness, Consistency, Simplicity
 
 - rather than this -
 
-```
+```F#
     let ys =
         [
             f x
@@ -89,7 +111,7 @@ Correctness, Consistency, Simplicity
 
 - and this -
 
-```
+```F#
     type T =
         { M : int
           N : single }
@@ -97,7 +119,7 @@ Correctness, Consistency, Simplicity
 
 - rather than this -
 
-```
+```F#
     type T =
         {
             M : int
@@ -105,9 +127,9 @@ Correctness, Consistency, Simplicity
         }
 ```
 
-9) Tab out discriminated union case definitions to keep them lined up with their members. For example, write this -
+10) Tab out discriminated union case definitions to keep them lined up with their members. For example, write this -
 
-```
+```F#
     type T =
         | A of int
         | B of single
@@ -117,7 +139,7 @@ Correctness, Consistency, Simplicity
 
 - rather than this -
 
-```
+```F#
     type T =
     | A of int
     | B of single
@@ -125,46 +147,46 @@ Correctness, Consistency, Simplicity
         static member makeB s = B (s * 2.0f)
 ```
 
-10) Handle the intentional case first when matching / if'ing -
+11) Handle the intentional case first when matching / if'ing -
 
-```
+```F#
     let fn valueOpt =
         match valueOpt with
         | Some value -> // do what we actually intended to do in this function
         | None -> // handle the edge case
 ```
 
-11) Surround tuples with parens to keep evaluation ordering and intent clear. For example, write this -
+12) Surround tuples with parens to keep evaluation ordering and intent clear. For example, write this -
 
-```
+```F#
     let (a, b) = (b, a)
 ```
 
 - rather than this -
 
-```
+```F#
     let a, b = b, a
 ```
 
-12) For sequentially-named identifiers, prefer to start counting with blank, then 2, 3, 4. For example, write this -
+13) For sequentially-named identifiers, prefer to start counting with blank, then 2, 3, 4. For example, write this -
 
-```
+```F#
     let player = Player.make ()
     let player2 = Player.make ()
 ```
 
 - rather than this -
 
-```
+```F#
     let player0 = Player.make ()
     let player1 = Player.make ()
 ```
 
 - **except** when you intend to use indexing as part of the naming scheme, then write like the latter.
 
-13) Conceptually, () is unit, so please treat it as such. For example, write `fn ()` rather than `fn()`.
+14) Conceptually, () is unit, so please treat it as such. For example, write `fn ()` rather than `fn()`.
 
-14) Conceptually, (a, b, c) is a tuple, so please treat it as such. For example, write `fn (a, b, c)` rather than `fn(a, b, c)`. The exception is when you need to use F#'s flow-syntax feature.
+15) Conceptually, (a, b, c) is a tuple, so please treat it as such. For example, write `fn (a, b, c)` rather than `fn(a, b, c)`. The exception is when you need to use F#'s flow-syntax feature.
 
 **C) Simplicity**
 

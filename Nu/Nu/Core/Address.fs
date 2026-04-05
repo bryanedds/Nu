@@ -139,125 +139,125 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
 
     /// Make an empty address.
     /// NOTE: do not move this function as the AddressConverter's reflection code relies on it being exactly here!
-    static member makeEmpty<'a> () : 'a Address =
+    static member makeEmpty<'t> () : 't Address =
         { Names = [||]; HashCode = 0; Anonymous = false }
 
     /// Make an address from a '/' delimited string.
     /// NOTE: do not move this function as the AddressConverter's reflection code relies on it being exactly here!
-    static member makeFromString<'a> (addressStr : string) : 'a Address =
+    static member makeFromString<'t> (addressStr : string) : 't Address =
         if addressStr <> Constants.Address.EmptyStr then
             let names = addressStr.Split Constants.Address.SeparatorName
             { Names = names; HashCode = String.hashMany names; Anonymous = false }
-        else Address.makeEmpty<'a> ()
+        else Address.makeEmpty<'t> ()
 
     /// Hash an Address.
-    static member inline hash (address : 'a Address) =
+    static member inline hash (address : 't Address) =
         address.HashCode
 
     /// Equate Addresses.
-    static member equals<'a> (left : 'a Address) (right : 'a Address) =
+    static member equals<'t> (left : 't Address) (right : 't Address) =
         refEq left right || // OPTIMIZATION: first check ref equality.
         left.HashCode = right.HashCode && // OPTIMIZATION: check hash equality to bail as quickly as possible.
         String.equateManyBack left.Names right.Names // OPTIMIZATION: later names in an address tend to have higher variance.
 
     /// Compare Addresses.
-    static member compare<'a> (left : 'a Address) (right : 'a Address) =
+    static member compare<'t> (left : 't Address) (right : 't Address) =
         if  refEq left right || // OPTIMIZATION: first check ref equality.
             left.HashCode = right.HashCode then // OPTIMIZATION: check hash equality to bail as quickly as possible.
             0
         else String.compareMany left.Names right.Names
 
     /// Get the length of an address by its names.
-    static member length (address : 'a Address) =
+    static member length (address : 't Address) =
         Array.length address.Names
 
     /// Get whether an address is relative, IE, starts with the current symbol '~' or the parent symbol '^'. Otherwise,
     /// the address is absolute.
-    static member relative (address : 'a Address) =
+    static member relative (address : 't Address) =
         address.Names.Length > 0 &&
             let head = address.Names.[0] in
             head = Constants.Address.ParentName || head = Constants.Address.CurrentName
 
     /// Convert any address to an obj Address.
-    static member generalize<'a> (address : 'a Address) : obj Address =
+    static member generalize<'t> (address : 't Address) : obj Address =
         { Names = address.Names; HashCode = address.HashCode; Anonymous = address.Anonymous }
 
     /// Convert an obj address to any Address.
-    static member specialize<'a> (address : obj Address) : 'a Address =
+    static member specialize<'t> (address : obj Address) : 't Address =
         { Names = address.Names; HashCode = address.HashCode; Anonymous = address.Anonymous }
 
     /// Convert a string into an address.
-    static member stoa<'a> str =
-        Address<'a>.makeFromString<'a> str
+    static member stoa<'t> str =
+        Address.makeFromString<'t> str
 
     /// Convert a names array into an address.
-    static member rtoa<'a> (names : string array) : 'a Address =
+    static member rtoa<'t> (names : string array) : 't Address =
         { Names = names; HashCode = String.hashMany names; Anonymous = false }
 
     /// Convert a names list into an address.
-    static member ltoa<'a> (names : string list) : 'a Address =
-        Address.rtoa<'a> (List.toArray names)
+    static member ltoa<'t> (names : string list) : 't Address =
+        Address.rtoa<'t> (List.toArray names)
 
     /// Convert a names sequence into an address.
-    static member qtoa<'a> (names : string seq) : 'a Address =
-        Address.rtoa<'a> (Seq.toArray names)
+    static member qtoa<'t> (names : string seq) : 't Address =
+        Address.rtoa<'t> (Seq.toArray names)
 
     /// Convert a single name into an address.
-    static member ntoa<'a> name : 'a Address =
-        Address.rtoa<'a> [|name|]
+    static member ntoa<'t> name : 't Address =
+        Address.rtoa<'t> [|name|]
 
     /// Convert a weakly-typed Address interface into a strongly-typed address.
     static member itoa (address : Address) =
         { Names = address.Names; HashCode = address.HashCode; Anonymous = address.Anonymous }
 
     /// Convert an address into a string.
-    static member atos<'a> (address : 'a Address) =
+    static member atos<'t> (address : 't Address) =
         if Address.length address <> 0
         then String.concat Constants.Address.SeparatorName address.Names
         else Constants.Address.EmptyStr
 
-    /// Convert an address of type 'a to an address of type 'b.
-    static member atoa<'a, 'b> (address : 'a Address) : 'b Address =
+    /// Convert an address of type 't to an address of type 'u.
+    static member atoa<'t, 'u> (address : 't Address) : 'u Address =
         { Names = address.Names; HashCode = address.HashCode; Anonymous = address.Anonymous }
 
     /// Convert any address to an obj Address.
-    static member atooa<'a> (address : 'a Address) : obj Address =
+    static member atooa<'t> (address : 't Address) : obj Address =
         Address.generalize address
 
     /// Concatenate two addresses of the same type.
-    static member acat<'a> (address : 'a Address) (address2 : 'a Address) : 'a Address=
-        Address.rtoa<'a> (Array.append address.Names address2.Names)
+    static member acat<'t> (address : 't Address) (address2 : 't Address) : 't Address=
+        Address.rtoa<'t> (Array.append address.Names address2.Names)
 
     /// Concatenate two addresses, taking the type of first address.
-    static member acatf<'a, 'b> (address : 'a Address) (address2 : 'b Address) : 'a Address =
-        Address.acat address (Address.atoa<'b, 'a> address2)
+    static member acatf<'t, 'u> (address : 't Address) (address2 : 'u Address) : 't Address =
+        Address.acat address (Address.atoa<'u, 't> address2)
 
     /// Concatenate two addresses, taking the type of second address.
-    static member acats<'a, 'b> (address : 'a Address) (address2 : 'b Address) : 'b Address  =
-        Address.acat (Address.atoa<'a, 'b> address) address2
+    static member acats<'t, 'u> (address : 't Address) (address2 : 'u Address) : 'u Address  =
+        Address.acat (Address.atoa<'t, 'u> address) address2
 
     /// Make an address from a sequence of names.
-    static member makeFromSeq<'a> names : 'a Address =
-        Address.qtoa<'a> names
+    static member makeFromSeq<'t> names : 't Address =
+        Address.qtoa<'t> names
 
     /// Make an address from a list of names.
-    static member makeFromArray<'a> names : 'a Address =
-        Address.rtoa<'a> names
+    static member makeFromArray<'t> names : 't Address =
+        Address.rtoa<'t> names
 
     /// Make an address from a list of names.
-    static member makeFromList<'a> names : 'a Address =
-        Address.ltoa<'a> names
+    static member makeFromList<'t> names : 't Address =
+        Address.ltoa<'t> names
 
     /// Make an address from a name.
-    static member makeFromName<'a> name : 'a Address =
-        Address.ntoa<'a> name
+    static member makeFromName<'t> name : 't Address =
+        Address.ntoa<'t> name
 
     /// Convert a weakly-typed Address interface into a strongly-typed address.
-    static member makeFromInterface<'a> address : 'a Address =
-        Address.itoa<'a> address
+    static member makeFromInterface<'t> address : 't Address =
+        Address.itoa<'t> address
 
     /// Anonymize an address.
-    static member anonymize<'a> (address : 'a Address) : 'a Address =
+    static member anonymize<'t> (address : 't Address) : 't Address =
         { Names = address.Names; HashCode = address.HashCode; Anonymous = true }
 
     /// Get the names of an address.
@@ -273,8 +273,8 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
         address |> Address.getNames |> Array.tryLast
 
     /// Change the type of an address.
-    static member changeType<'a, 'b> (address : 'a Address) =
-        Address.atoa<'a, 'b> address
+    static member changeType<'t, 'u> (address : 't Address) =
+        Address.atoa<'t, 'u> address
 
     /// Get the address's hash code.
     static member getHashCode address =
@@ -285,32 +285,32 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
         Array.head address.Names
             
     /// Take the tail of an address.
-    static member tail<'a, 'b> (address : 'a Address) =
-        Address.makeFromArray<'b> (Array.tail address.Names)
+    static member tail<'t, 'u> (address : 't Address) =
+        Address.makeFromArray<'u> (Array.tail address.Names)
 
     /// Take a name of an address.
     static member item index address =
         Array.item index address.Names
 
     /// Take an address composed of the name of an address minus a skipped amount of names.
-    static member skip<'a, 'b> n (address : 'a Address) =
-        Address.makeFromArray<'b> (Array.skip n address.Names)
+    static member skip<'t, 'u> n (address : 't Address) =
+        Address.makeFromArray<'u> (Array.skip n address.Names)
 
     /// Take an address composed of the given number of names of an address.
-    static member take<'a, 'b> n (address : 'a Address) =
-        Address.makeFromArray<'b> (Array.take n address.Names)
+    static member take<'t, 'u> n (address : 't Address) =
+        Address.makeFromArray<'u> (Array.take n address.Names)
 
     /// Take an address composed of the given number of names of an address.
-    static member tryTake<'a, 'b> n (address : 'a Address) =
-        Address.makeFromArray<'b> (Array.tryTake n address.Names)
+    static member tryTake<'t, 'u> n (address : 't Address) =
+        Address.makeFromArray<'u> (Array.tryTake n address.Names)
 
     /// Take the last name of an address.
     static member last address =
         Array.last address.Names
 
     /// Take an address composed of all but the last name of an address.
-    static member allButLast<'a, 'b> (address : 'a Address) =
-        Address.makeFromArray<'b> (Array.allButLast address.Names)
+    static member allButLast<'t, 'u> (address : 't Address) =
+        Address.makeFromArray<'u> (Array.allButLast address.Names)
 
     /// Find the index of a name
     static member findIndex finder address =
@@ -346,9 +346,9 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
 
     /// The empty address.
     static member empty : 'a Address =
-        Address<'a>.makeEmpty<'a> ()
+        Address.makeEmpty<'a> ()
 
-    static member private resolveAsList<'a, 'b> (relation : 'b Address) (address : 'a Address) : string List =
+    static member private resolveAsList<'t, 'u> (relation : 'u Address) (address : 't Address) : string List =
         let names = List (Address.length relation + Address.length address)
         let mutable parentsUp = 0
         let addNames allowPointingPastEmpty (param : string) (a : _ Address) =
@@ -384,13 +384,13 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
         
     /// Resolve an address from the given relation and address. When both the relation and address are relative, the
     /// result is a relative address. Otherwise, the result is an absolute address.
-    static member resolve<'a, 'b> (relation : 'b Address) (address : 'a Address) : 'b Address =
+    static member resolve<'t, 'u> (relation : 'u Address) (address : 't Address) : 'u Address =
         let resolved = Address.resolveAsList relation address
         Address.makeFromSeq resolved
 
     /// Relate the second address to the first. The given addresses must be absolute. When the given addresses share
     /// common ancestors, the result is a relative address. Otherwise, the result is an absolute address.
-    static member relate<'a, 'b> (source : 'a Address) (destination : 'b Address) : 'b Address =
+    static member relate<'t, 'u> (source : 't Address) (destination : 'u Address) : 'u Address =
         if Address.relative source then raise (ArgumentException ("Relative addresses cannot be related", nameof source))
         if Address.relative destination then raise (ArgumentException ("Relative addresses cannot be related", nameof destination))
         let sourceNames = Address.resolveAsList Address.current source
@@ -414,13 +414,13 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
         else Address.makeFromSeq destinationNames
 
     /// Concatenate two addresses of the same type.
-    static member (-|-) (address : 'a Address, address2 : 'a Address) : 'a Address = Address.acat address address2
+    static member (-|-) (address : 't Address, address2 : 't Address) : 't Address = Address.acat address address2
 
     /// Concatenate two addresses, taking the type of first address.
-    static member (-->) (address : 'a Address, address2 : 'b Address) : 'a Address = Address.acatf address address2
+    static member (-->) (address : 't Address, address2 : 'u Address) : 't Address = Address.acatf address address2
 
     /// Concatenate two addresses, taking the type of second address.
-    static member (<--) (address : 'a Address, address2 : 'b Address) : 'b Address = Address.acats address address2
+    static member (<--) (address : 't Address, address2 : 'u Address) : 'u Address = Address.acats address address2
 
     /// Get the length of an address by its names.
     member this.Length =
@@ -446,11 +446,11 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
 
     interface 'a Address IEquatable with
         member this.Equals that =
-            Address<'a>.equals<'a> this that
+            Address.equals<'a> this that
 
     interface 'a Address IComparable with
         member this.CompareTo that =
-            Address<'a>.compare this that
+            Address.compare this that
 
     interface IComparable with
         member this.CompareTo that =
@@ -467,23 +467,23 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
 [<AutoOpen>]
 module AddressOperators =
 
-    /// Convert an address of type 'a to an address of type 'b.
+    /// Convert an address of type 'a to an address of type 'u.
     let inline atoa<'a, 'b> (address : 'a Address) = Address.atoa<'a, 'b> address
 
     /// Convert a string into an address.
-    let inline stoa<'a> str = Address<'a>.stoa<'a> str
+    let inline stoa<'a> str = Address.stoa<'a> str
 
     /// Convert a names array into an address.
-    let inline rtoa<'a> names : 'a Address  = Address<'a>.rtoa<'a> names
+    let inline rtoa<'a> names : 'a Address  = Address.rtoa<'a> names
 
     /// Convert a names list into an address.
-    let inline ltoa<'a> names : 'a Address  = Address<'a>.ltoa<'a> names
+    let inline ltoa<'a> names : 'a Address  = Address.ltoa<'a> names
 
     /// Convert a single name into an address.
-    let inline ntoa<'a> name : 'a Address  = Address<'a>.ntoa<'a> name
+    let inline ntoa<'a> name : 'a Address  = Address.ntoa<'a> name
 
     /// Convert a weakly-typed Address interface into a strongly-typed address.
-    let inline itoa<'a> address : 'a Address  = Address<'a>.itoa<'a> address
+    let inline itoa<'a> address : 'a Address  = Address.itoa<'a> address
 
     /// Convert an address into a string.
     let inline atos<'a> (address : 'a Address) = Address.atos<'a> address
