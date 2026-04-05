@@ -122,11 +122,11 @@ module SpriteBatch =
                     sprite.texCoords <- env.TexCoordses.[i]
                     sprite.color <- env.Colors.[i]
                     Buffer.Buffer.uploadValue env.DrawIndex (i * sizeof<Sprite>) 0 sprite spriteUniform vkc
-                Pipeline.Pipeline.writeDescriptorStorageBuffer 0 env.DrawIndex 0 0 spriteUniform env.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorStorageBuffer 0 env.DrawIndex 0 0 spriteUniform.[env.DrawIndex] env.Pipeline vkc
                 let mutable viewProjection = ViewProjection ()
                 viewProjection.viewProjection <- if env.State.Absolute then env.ViewProjection2dAbsolute else env.ViewProjection2dRelative
                 Buffer.Buffer.uploadValue env.DrawIndex 0 0 viewProjection viewProjectionUniform vkc
-                Pipeline.Pipeline.writeDescriptorStorageBuffer 0 env.DrawIndex 0 1 viewProjectionUniform env.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorStorageBuffer 0 env.DrawIndex 0 1 viewProjectionUniform.[env.DrawIndex] env.Pipeline vkc
 
                 // bind texture
                 Pipeline.Pipeline.writeDescriptorSampledImage 0 env.DrawIndex 0 2 texture.ImageView env.Pipeline vkc

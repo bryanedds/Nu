@@ -290,7 +290,7 @@ module CubeMap =
             transform.projection <- projection
             transform.viewProjection <- viewProjection
             Buffer.Buffer.uploadValue drawIndex 0 0 transform pipeline.TransformUniform vkc
-            Pipeline.Pipeline.writeDescriptorStorageBuffer 0 drawIndex 0 0 pipeline.TransformUniform pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorStorageBuffer 0 drawIndex 0 0 pipeline.TransformUniform.[drawIndex] pipeline.Pipeline vkc
 
             // bind texture
             Pipeline.Pipeline.writeDescriptorSampledImage 0 drawIndex 0 1 cubeMap.ImageView pipeline.Pipeline vkc

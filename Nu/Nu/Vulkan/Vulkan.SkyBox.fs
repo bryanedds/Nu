@@ -38,13 +38,13 @@ module SkyBox =
                 [|Pipeline.NoBlend|]
                 [|Pipeline.vertex 0 CubeMap.VertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Hl.Single3 0|]|]
-                [|Pipeline.descriptorSet true 1
+                [|Pipeline.descriptorSet false Constants.Render.GeometryRenderPassMax
                     [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage 1
                       Pipeline.descriptor 1 Hl.StorageBuffer Hl.FragmentStage 1
                       Pipeline.descriptor 2 Hl.SampledImage Hl.FragmentStage 1|]
                   Pipeline.descriptorSet false 1
                     [|Pipeline.descriptor 0 Hl.Sampler Hl.FragmentStage 1|]|]
-                [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]
+                [||]
                 [|colorAttachmentFormat|]
                 (Some depthAttachmentFormat)
                 vkc
@@ -70,7 +70,7 @@ module SkyBox =
 
     /// Draw a sky box.
     let DrawSkyBox
-        (drawIndex : int,
+        (renderPassIndex : int,
          view : Matrix4x4,
          projection : Matrix4x4,
          viewProjection : Matrix4x4,
@@ -85,8 +85,8 @@ module SkyBox =
          pipeline : SkyBoxPipeline,
          vkc : Hl.VulkanContext) =
 
-        // ensure pipeline draw limit is not exceeded
-        if drawIndex < pipeline.SkyBoxPipeline.DrawLimit then
+        // ensure render pass limit is not exceeded
+        if renderPassIndex < Constants.Render.GeometryRenderPassMax then
         
             // bind uniforms
             let mutable skyBoxVert = SkyBoxVert ()
@@ -96,13 +96,13 @@ module SkyBox =
             skyBoxVert.viewProjection <- viewProjection
             skyBoxFrag.color <- color.V3
             skyBoxFrag.brightness <- brightness
-            Buffer.Buffer.uploadValue drawIndex 0 0 skyBoxVert pipeline.SkyBoxVertUniform vkc
-            Buffer.Buffer.uploadValue drawIndex 0 0 skyBoxFrag pipeline.SkyBoxFragUniform vkc
-            Pipeline.Pipeline.writeDescriptorStorageBuffer 0 drawIndex 0 0 pipeline.SkyBoxVertUniform pipeline.SkyBoxPipeline vkc
-            Pipeline.Pipeline.writeDescriptorStorageBuffer 0 drawIndex 0 1 pipeline.SkyBoxFragUniform pipeline.SkyBoxPipeline vkc
+            Buffer.Buffer.uploadValue renderPassIndex 0 0 skyBoxVert pipeline.SkyBoxVertUniform vkc
+            Buffer.Buffer.uploadValue renderPassIndex 0 0 skyBoxFrag pipeline.SkyBoxFragUniform vkc
+            Pipeline.Pipeline.writeDescriptorStorageBuffer renderPassIndex 0 0 0 pipeline.SkyBoxVertUniform.[renderPassIndex] pipeline.SkyBoxPipeline vkc
+            Pipeline.Pipeline.writeDescriptorStorageBuffer renderPassIndex 0 0 1 pipeline.SkyBoxFragUniform.[renderPassIndex] pipeline.SkyBoxPipeline vkc
             
             // bind texture
-            Pipeline.Pipeline.writeDescriptorSampledImage 0 drawIndex 0 2 cubeMap.ImageView pipeline.SkyBoxPipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage renderPassIndex 0 0 2 cubeMap.ImageView pipeline.SkyBoxPipeline vkc
             Pipeline.Pipeline.writeDescriptorSampler 0 0 1 0 sampler pipeline.SkyBoxPipeline vkc
 
             // make viewport and scissor
@@ -140,14 +140,10 @@ module SkyBox =
                     Vulkan.vkCmdBindIndexBuffer (cb, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
 
                     // bind descriptor sets
-                    let mutable mainDescriptorSet = pipeline.SkyBoxPipeline.VkDescriptorSet 0 0
+                    let mutable mainDescriptorSet = pipeline.SkyBoxPipeline.VkDescriptorSet 0 renderPassIndex
                     let mutable samplerDescriptorSet = pipeline.SkyBoxPipeline.VkDescriptorSet 1 0
                     Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.SkyBoxPipeline.PipelineLayout, 0u, 1u, asPointer &mainDescriptorSet, 0u, nullPtr)
                     Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.SkyBoxPipeline.PipelineLayout, 1u, 1u, asPointer &samplerDescriptorSet, 0u, nullPtr)
-                    
-                    // push draw index
-                    let mutable drawIndex = drawIndex
-                    Vulkan.vkCmdPushConstants (cb, pipeline.SkyBoxPipeline.PipelineLayout, Hl.VertexFragmentStage.VkShaderStageFlags, 0u, 4u, asVoidPtr &drawIndex)
                     
                     // draw
                     Vulkan.vkCmdDrawIndexed (cb, uint geometry.ElementCount, 1u, 0u, 0, 0u)
@@ -159,5 +155,5 @@ module SkyBox =
                 // abort
                 | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
 
-        // draw not possible
-        else Log.warnOnce "Rendering incomplete due to insufficient gpu resources."
+        // render pass limit exceeded
+        else Log.warnOnce "Attempted draw exceeded maximum number of render passes, which indicates an error in render pass management."
