@@ -6321,7 +6321,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let irradiancePipeline =
             CubeMap.CreateCubeMapPipeline
                 (Constants.Paths.IrradianceShaderFilePath,
-                 Constants.Render.LightMapsMax + 1, // includes fallback
+                 Constants.Render.LightMapsMax + 1, // includes fallback light map
                  irradianceFormat.VkFormat,
                  vkc)
         

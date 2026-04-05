@@ -1,5 +1,4 @@
 #version 450 core
-#extension GL_EXT_nonuniform_qualifier : enable
 
 const float PI = 3.141592654;
 const uint SAMPLE_COUNT = 1024u;
@@ -10,17 +9,12 @@ struct EnvironmentFilter
     float resolution; // resolution of cube map face
 };
 
-layout(push_constant) uniform PushConstant
-{
-    int drawId;
-};
-
 layout(binding = 1) buffer readonly EnvironmentFilterBlock
 {
     EnvironmentFilter environmentFilter;
-} environmentFilters[];
+} environmentFilter;
 
-layout(binding = 2) uniform textureCube cubeMap[];
+layout(binding = 2) uniform textureCube cubeMap;
 
 layout(set = 1, binding = 0) uniform sampler samp;
 
@@ -86,8 +80,8 @@ vec3 importanceSampleGGX(vec2 xi, vec3 normal, float roughness)
 void main()
 {
     // compute normal
-    float roughness = environmentFilters[drawId].environmentFilter.roughness;
-    float resolution = environmentFilters[drawId].environmentFilter.resolution;
+    float roughness = environmentFilter.environmentFilter.roughness;
+    float resolution = environmentFilter.environmentFilter.resolution;
     vec3 normal = normalize(positionOut);
 
     // make the simplifying assumption that v equals r equals the normal
@@ -116,7 +110,7 @@ void main()
             float saTexel = 4.0 * PI / (6.0 * resolution * resolution);
             float saSample = 1.0 / (float(SAMPLE_COUNT) * pdf + 0.0001);
             float mipLevel = roughness == 0.0 ? 0.0 : 0.5 * log2(saSample / saTexel);
-            vec3 sampleColor = textureLod(samplerCube(cubeMap[drawId], samp), l, mipLevel).rgb;
+            vec3 sampleColor = textureLod(samplerCube(cubeMap, samp), l, mipLevel).rgb;
             if (!any(isnan(sampleColor))) // TODO: understand why NaN can come from this sample and try to apply a more appropriate fix.
             {
                 filterColor += sampleColor * nDotL;

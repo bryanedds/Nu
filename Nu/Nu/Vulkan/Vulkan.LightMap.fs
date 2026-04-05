@@ -138,13 +138,13 @@ module LightMap =
                 [|Pipeline.NoBlend|]
                 [|Pipeline.vertex 0 ((3 (*position*)) * sizeof<single>) VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Hl.Single3 0|]|]
-                [|Pipeline.descriptorSet true 1
-                    [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage (6 * Constants.Render.EnvironmentFilterMips)
-                      Pipeline.descriptor 1 Hl.StorageBuffer Hl.FragmentStage (6 * Constants.Render.EnvironmentFilterMips)
-                      Pipeline.descriptor 2 Hl.SampledImage Hl.FragmentStage (6 * Constants.Render.EnvironmentFilterMips)|]
+                [|Pipeline.descriptorSet false (6 * Constants.Render.EnvironmentFilterMips * (Constants.Render.LightMapsMax + 1)) // includes fallback light map
+                    [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage 1
+                      Pipeline.descriptor 1 Hl.StorageBuffer Hl.FragmentStage 1
+                      Pipeline.descriptor 2 Hl.SampledImage Hl.FragmentStage 1|]
                   Pipeline.descriptorSet false 1
                     [|Pipeline.descriptor 0 Hl.Sampler Hl.FragmentStage 1|]|]
-                [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]
+                [||]
                 [|colorAttachmentFormat|]
                 None
                 vkc
@@ -192,11 +192,11 @@ module LightMap =
             environmentFilter.resolution <- resolution
             Buffer.Buffer.uploadValue drawIndex 0 0 transform pipeline.TransformUniform vkc
             Buffer.Buffer.uploadValue drawIndex 0 0 environmentFilter pipeline.EnvironmentFilterUniform vkc
-            Pipeline.Pipeline.writeDescriptorStorageBuffer 0 drawIndex 0 0 pipeline.TransformUniform.[drawIndex] pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorStorageBuffer 0 drawIndex 0 1 pipeline.EnvironmentFilterUniform.[drawIndex] pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorStorageBuffer drawIndex 0 0 0 pipeline.TransformUniform.[drawIndex] pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorStorageBuffer drawIndex 0 0 1 pipeline.EnvironmentFilterUniform.[drawIndex] pipeline.Pipeline vkc
 
             // bind texture
-            Pipeline.Pipeline.writeDescriptorSampledImage 0 drawIndex 0 2 cubeMap.ImageView pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage drawIndex 0 0 2 cubeMap.ImageView pipeline.Pipeline vkc
             Pipeline.Pipeline.writeDescriptorSampler 0 0 1 0 sampler pipeline.Pipeline vkc
 
             // make viewport and scissor
@@ -229,14 +229,10 @@ module LightMap =
                     Vulkan.vkCmdBindIndexBuffer (cb, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
 
                     // bind descriptor sets
-                    let mutable mainDescriptorSet = pipeline.Pipeline.VkDescriptorSet 0 0
+                    let mutable mainDescriptorSet = pipeline.Pipeline.VkDescriptorSet 0 drawIndex
                     let mutable samplerDescriptorSet = pipeline.Pipeline.VkDescriptorSet 1 0
                     Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, asPointer &mainDescriptorSet, 0u, nullPtr)
                     Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, asPointer &samplerDescriptorSet, 0u, nullPtr)
-                    
-                    // push draw index
-                    let mutable drawIndex = drawIndex
-                    Vulkan.vkCmdPushConstants (cb, pipeline.Pipeline.PipelineLayout, Hl.VertexFragmentStage.VkShaderStageFlags, 0u, 4u, asVoidPtr &drawIndex)
                     
                     // draw
                     Vulkan.vkCmdDrawIndexed (cb, uint geometry.ElementCount, 1u, 0u, 0, 0u)
