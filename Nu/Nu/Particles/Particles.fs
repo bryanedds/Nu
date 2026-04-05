@@ -204,7 +204,7 @@ module Transformer =
         let mutable i = 0
         let scalar = delta |> double |> single
         while i < bodies.Length do
-            let body = &bodies.[i]
+            let body = &bodies[i]
             body.Position <- body.Position + body.LinearVelocity * scalar
             body.Angles <- body.Angles + body.AngularVelocity * scalar
             i <- inc i
@@ -216,7 +216,7 @@ module Transformer =
         | Sphere (radius, center) ->
             let mutable i = 0
             while i < bodies.Length do
-                let body = &bodies.[i]
+                let body = &bodies[i]
                 let positionNext = body.Position + body.LinearVelocity * scalar
                 let distanceDelta = positionNext - center
                 let distanceSquared = distanceDelta.MagnitudeSquared
@@ -230,7 +230,7 @@ module Transformer =
             // TODO: implement properly bouncing angles.
             let mutable i = 0
             while i < bodies.Length do
-                let body = &bodies.[i]
+                let body = &bodies[i]
                 let positionNext = body.Position + body.LinearVelocity * scalar
                 let distanceDelta = positionNext - box.Center
                 if box.Intersects positionNext then
@@ -241,7 +241,7 @@ module Transformer =
         | Constraints constraints ->
             let mutable i = 0
             while i < constraints.Length do
-                let constrain' = constraints.[i]
+                let constrain' = constraints[i]
                 constrain delta constrain' bodies
                 i <- inc i
 
@@ -253,7 +253,7 @@ module Transformer =
                 let scalar = delta |> double |> single
                 let mutable i = 0
                 while i < bodies.Length do
-                    let body = &bodies.[i]
+                    let body = &bodies[i]
                     body.LinearVelocity <- body.LinearVelocity + gravity * scalar
                     i <- inc i
                 Output.empty
@@ -261,7 +261,7 @@ module Transformer =
                 let scalar = delta |> double |> single
                 let mutable i = 0
                 while i < bodies.Length do
-                    let body = &bodies.[i]
+                    let body = &bodies[i]
                     let direction = position - body.Position
                     let distance = direction.Magnitude
                     let normal = direction / distance
@@ -274,7 +274,7 @@ module Transformer =
                 let scalar = delta |> double |> single
                 let mutable i = 0
                 while i < bodies.Length do
-                    let body = &bodies.[i]
+                    let body = &bodies[i]
                     let linearDrag = body.LinearVelocity * linearDrag
                     let angularDrag = body.AngularVelocity * angularDrag
                     body.LinearVelocity <- body.LinearVelocity - linearDrag * scalar
@@ -294,54 +294,54 @@ module Transformer =
             fun _ _ _ targets ->
                 let mutable i = 0
                 while i < targets.Length do
-                    let v = &targets.[i]
+                    let v = &targets[i]
                     let struct (targetLife, targetValue) = v
-                    targets.[i] <- struct (targetLife, targetValue || value)
+                    targets[i] <- struct (targetLife, targetValue || value)
                     i <- inc i
                 Output.empty
         | Nor value ->
             fun _ _ _ targets ->
                 let mutable i = 0
                 while i < targets.Length do
-                    let v = &targets.[i]
+                    let v = &targets[i]
                     let struct (targetLife, targetValue) = v
-                    targets.[i] <- struct (targetLife, not targetValue && not value)
+                    targets[i] <- struct (targetLife, not targetValue && not value)
                     i <- inc i
                 Output.empty
         | Xor value ->
             fun _ _ _ targets ->
                 let mutable i = 0
                 while i < targets.Length do
-                    let v = &targets.[i]
+                    let v = &targets[i]
                     let struct (targetLife, targetValue) = v
-                    targets.[i] <- struct (targetLife, targetValue <> value)
+                    targets[i] <- struct (targetLife, targetValue <> value)
                     i <- inc i
                 Output.empty
         | And value ->
             fun _ _ _ targets ->
                 let mutable i = 0
                 while i < targets.Length do
-                    let v = &targets.[i]
+                    let v = &targets[i]
                     let struct (targetLife, targetValue) = v
-                    targets.[i] <- struct (targetLife, targetValue && value)
+                    targets[i] <- struct (targetLife, targetValue && value)
                     i <- inc i
                 Output.empty
         | Nand value ->
             fun _ _ _ targets ->
                 let mutable i = 0
                 while i < targets.Length do
-                    let v = &targets.[i]
+                    let v = &targets[i]
                     let struct (targetLife, targetValue) = v
-                    targets.[i] <- struct (targetLife, not (targetValue && value))
+                    targets[i] <- struct (targetLife, not (targetValue && value))
                     i <- inc i
                 Output.empty
         | Equal value ->
             fun _ _ _ targets ->
                 let mutable i = 0
                 while i < targets.Length do
-                    let v = &targets.[i]
+                    let v = &targets[i]
                     let struct (targetLife, _) = v
-                    targets.[i] <- struct (targetLife, value)
+                    targets[i] <- struct (targetLife, value)
                     i <- inc i
                 Output.empty
 
@@ -359,135 +359,135 @@ module Transformer =
             fun _ _ _ targets ->
                 let mutable i = 0
                 while i < targets.Length do
-                    let v = &targets.[i]
+                    let v = &targets[i]
                     let struct (targetLife, targetValue) = v
-                    targets.[i] <- struct (targetLife, applyRange targetValue value)
+                    targets[i] <- struct (targetLife, applyRange targetValue value)
                     i <- inc i
                 Output.empty
         | Linear (value, value2) ->
             fun _ _ _ targets ->
                 let mutable i = 0
                 while i < targets.Length do
-                    let v = &targets.[i]
+                    let v = &targets[i]
                     let struct (targetLife, targetValue) = v
                     let progress = Life.getProgress3 time range.RangeLife targetLife
                     let result = applyRange targetValue (value + scale (value2 - value, progress))
-                    targets.[i] <- struct (targetLife, result)
+                    targets[i] <- struct (targetLife, result)
                     i <- inc i
                 Output.empty
         | Random (value, value2) ->
             fun _ _ _ targets ->
                 let mutable i = 0
                 while i < targets.Length do
-                    let v = &targets.[i]
+                    let v = &targets[i]
                     let struct (targetLife, targetValue) = v
                     let progress = Life.getProgress3 time range.RangeLife targetLife
                     let rand = Rand.makeFromInt (int ((Math.Max (double progress, 0.000000001)) * double Int32.MaxValue))
                     let randValue = fst (Rand.nextDouble rand)
                     let result = applyRange targetValue (value + scale (value2 - value, randValue))
-                    targets.[i] <- struct (targetLife, result)
+                    targets[i] <- struct (targetLife, result)
                     i <- inc i
                 Output.empty
         | Chaos (value, value2) ->
             fun _ _ _ targets ->
                 let mutable i = 0
                 while i < targets.Length do
-                    let v = &targets.[i]
+                    let v = &targets[i]
                     let struct (targetLife, targetValue) = v
                     let chaosValue = Gen.random
                     let result = applyRange targetValue (value + scale (value2 - value, chaosValue))
-                    targets.[i] <- struct (targetLife, result)
+                    targets[i] <- struct (targetLife, result)
                     i <- inc i
                 Output.empty
         | Ease (value, value2) ->
             fun _ _ _ targets ->
                 let mutable i = 0
                 while i < targets.Length do
-                    let v = &targets.[i]
+                    let v = &targets[i]
                     let struct (targetLife, targetValue) = v
                     let progress = Life.getProgress3 time range.RangeLife targetLife
                     let progressEase = Math.Pow (Math.Sin (Math.PI * double progress * 0.5), 2.0)
                     let result = applyRange targetValue (value + scale (value2 - value, progressEase))
-                    targets.[i] <- struct (targetLife, result)
+                    targets[i] <- struct (targetLife, result)
                     i <- inc i
                 Output.empty
         | EaseIn (value, value2) ->
             fun _ _ _ targets ->
                 let mutable i = 0
                 while i < targets.Length do
-                    let v = &targets.[i]
+                    let v = &targets[i]
                     let struct (targetLife, targetValue) = v
                     let progress = Life.getProgress3 time range.RangeLife targetLife
                     let progressScaled = progress * Math.PI * 0.5
                     let progressEaseIn = 1.0 + Math.Sin (progressScaled + Math.PI * 1.5)
                     let result = applyRange targetValue (value + scale (value2 - value, progressEaseIn))
-                    targets.[i] <- struct (targetLife, result)
+                    targets[i] <- struct (targetLife, result)
                     i <- inc i
                 Output.empty
         | EaseOut (value, value2) ->
             fun _ _ _ targets ->
                 let mutable i = 0
                 while i < targets.Length do
-                    let v = &targets.[i]
+                    let v = &targets[i]
                     let struct (targetLife, targetValue) = v
                     let progress = Life.getProgress3 time range.RangeLife targetLife
                     let progressScaled = progress * Math.PI * 0.5
                     let progressEaseOut = Math.Sin progressScaled
                     let result = applyRange targetValue (value + scale (value2 - value, progressEaseOut))
-                    targets.[i] <- struct (targetLife, result)
+                    targets[i] <- struct (targetLife, result)
                     i <- inc i
                 Output.empty
         | Sin (value, value2) ->
             fun _ _ _ targets ->
                 let mutable i = 0
                 while i < targets.Length do
-                    let v = &targets.[i]
+                    let v = &targets[i]
                     let struct (targetLife, targetValue) = v
                     let progress = Life.getProgress3 time range.RangeLife targetLife
                     let progressScaled = progress * Math.PI * 2.0
                     let progressSin = Math.Sin progressScaled
                     let result = applyRange targetValue (value + scale (value2 - value, progressSin))
-                    targets.[i] <- struct (targetLife, result)
+                    targets[i] <- struct (targetLife, result)
                     i <- inc i
                 Output.empty
         | SinScaled (scalar, value, value2) ->
             fun _ _ _ targets ->
                 let mutable i = 0
                 while i < targets.Length do
-                    let v = &targets.[i]
+                    let v = &targets[i]
                     let struct (targetLife, targetValue) = v
                     let progress = Life.getProgress3 time range.RangeLife targetLife
                     let progressScaled = progress * Math.PI * 2.0 * scalar
                     let progressSin = Math.Sin progressScaled
                     let result = applyRange targetValue (value + scale (value2 - value, progressSin))
-                    targets.[i] <- struct (targetLife, result)
+                    targets[i] <- struct (targetLife, result)
                     i <- inc i
                 Output.empty
         | Cos (value, value2) ->
             fun _ _ _ targets ->
                 let mutable i = 0
                 while i < targets.Length do
-                    let v = &targets.[i]
+                    let v = &targets[i]
 
                     let struct (targetLife, targetValue) = v
                     let progress = Life.getProgress3 time range.RangeLife targetLife
                     let progressScaled = progress * Math.PI * 2.0
                     let progressCos = Math.Cos progressScaled
                     let result = applyRange targetValue (value + scale (value2 - value, progressCos))
-                    targets.[i] <- struct (targetLife, result)
+                    targets[i] <- struct (targetLife, result)
                     i <- inc i
                 Output.empty
         | CosScaled (scalar, value, value2) ->
             fun _ _ _ targets ->
                 let mutable i = 0
                 while i < targets.Length do
-                    let v = &targets.[i]
+                    let v = &targets[i]
                     let struct (targetLife, targetValue) = v
                     let progress = Life.getProgress3 time range.RangeLife targetLife
                     let progressScaled = progress * Math.PI * 2.0 * scalar
                     let progressCos = Math.Cos progressScaled
                     let result = applyRange targetValue (value + scale (value2 - value, progressCos))
-                    targets.[i] <- struct (targetLife, result)
+                    targets[i] <- struct (targetLife, result)
                     i <- inc i
                 Output.empty
 
@@ -536,13 +536,13 @@ module Scope =
                 let fields = SArray.zeroCreate targets.Length
                 let mutable i = 0
                 while i < targets.Length do
-                    getField.Invoke (&targets.[i], &fields.[i])
+                    getField.Invoke (&targets[i], &fields[i])
                     i <- inc i
                 fields
           Out = fun output fields (targets : 'a SArray) ->
             let mutable i = 0
             while i < targets.Length do
-                setField.Invoke (&fields.[i], &targets.[i])
+                setField.Invoke (&fields[i], &targets[i])
                 i <- inc i
             output }
 
@@ -583,7 +583,7 @@ type [<ReferenceEquality>] Behavior<'a, 'b when 'a : struct> =
     static member run delta time (constrain : Constraint) (behavior : Behavior<'a, 'b>) (target : 'a) =
         let targets = SArray.singleton target
         let output = Behavior<'a, 'b>.runMany delta time constrain behavior targets
-        let target = targets.[0]
+        let target = targets[0]
         (output, target)
 
     interface Behavior with
@@ -759,7 +759,7 @@ type [<ReferenceEquality>] StaticSpriteEmitter<'a when 'a :> Particle and 'a : e
       ToParticlesDescriptor : GameTime -> 'a StaticSpriteEmitter -> SpriteParticlesDescriptor }
 
     static member private emit time emitter =
-        let particle = &emitter.ParticleRing.[emitter.ParticleIndex]
+        let particle = &emitter.ParticleRing[emitter.ParticleIndex]
         particle <- emitter.ParticleInitializer time emitter
         particle.Life <- Life.make time particle.Life.LifeTimeOpt
         emitter.ParticleIndex <-
@@ -863,9 +863,9 @@ module BasicStaticSpriteEmitter =
         let particles' : Nu.Particle SArray =
             SArray.zeroCreate particles.Length
         for index in 0 .. particles.Length - 1 do
-            let particle = &particles.[index]
+            let particle = &particles[index]
             if Life.getAlive time particle.Life then
-                let particle' = &particles'.[index]
+                let particle' = &particles'[index]
                 particle'.Transform.Position <- particle.Body.Position
                 particle'.Transform.Scale <- particle.Body.Scale
                 particle'.Transform.Angles <- particle.Body.Angles
@@ -937,7 +937,7 @@ module BasicStaticSpriteEmitter =
             let watermark = emitter.ParticleWatermark
             let mutable index = 0
             while index <= watermark do
-                let particle = &emitter.ParticleRing.[index]
+                let particle = &emitter.ParticleRing[index]
                 let progress = Life.getProgress time particle.Life
                 particle.Color.A <- single (1.0 - progress)
                 index <- inc index
@@ -1013,7 +1013,7 @@ type [<ReferenceEquality>] StaticBillboardEmitter<'a when 'a :> Particle and 'a 
       ToParticlesDescriptor : GameTime -> 'a StaticBillboardEmitter -> BillboardParticlesDescriptor }
 
     static member private emit time emitter =
-        let particle = &emitter.ParticleRing.[emitter.ParticleIndex]
+        let particle = &emitter.ParticleRing[emitter.ParticleIndex]
         particle <- emitter.ParticleInitializer time emitter
         particle.Life <- Life.make time particle.Life.LifeTimeOpt
         emitter.ParticleIndex <-
@@ -1120,9 +1120,9 @@ module BasicStaticBillboardEmitter =
         let particles' : Nu.Particle SArray =
             SArray.zeroCreate particles.Length
         for index in 0 .. particles.Length - 1 do
-            let particle = &particles.[index]
+            let particle = &particles[index]
             if Life.getAlive time particle.Life then
-                let particle' = &particles'.[index]
+                let particle' = &particles'[index]
                 particle'.Transform.Position <- particle.Body.Position
                 particle'.Transform.Scale <- particle.Body.Scale
                 particle'.Transform.Angles <- particle.Body.Angles
@@ -1194,7 +1194,7 @@ module BasicStaticBillboardEmitter =
             let watermark = emitter.ParticleWatermark
             let mutable index = 0
             while index <= watermark do
-                let particle = &emitter.ParticleRing.[index]
+                let particle = &emitter.ParticleRing[index]
                 let progress = Life.getProgress time particle.Life
                 particle.Color.A <- single (1.0 - progress)
                 index <- inc index

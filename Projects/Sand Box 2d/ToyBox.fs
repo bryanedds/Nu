@@ -541,7 +541,7 @@ type ToyBoxDispatcher () =
             let x = cos boxAngle * spawnScale + spawnX
             let y = sin boxAngle * spawnScale + spawnY
             let (declaredBodyId, _) =
-                World.doBox2d boxNames.[i]
+                World.doBox2d boxNames[i]
                     [Entity.Position |= spawnCenter + v3 x y 0f
                      Entity.Rotation |= Quaternion.CreateFromAngle2d (boxAngle + MathF.PI_OVER_2) // first box sprite at right side should orient right as up
                      Entity.Color |= color
@@ -641,9 +641,9 @@ type ToyBoxDispatcher () =
             let gooPosition = (world.ContextGroup / gooName).GetPosition world
             for (linkRelation, otherGooSpawnPosition) in
                 [if layer < dec numLayers then
-                    ("Previous", spawnPositions.[layer].[if vertex = 0 then dec numSides else dec vertex])
+                    ("Previous", spawnPositions[layer][if vertex = 0 then dec numSides else dec vertex])
                  if layer > 0 then
-                    ("Inner", spawnPositions.[dec layer].[vertex])] do
+                    ("Inner", spawnPositions[dec layer][vertex])] do
 
                 // declare link
                 let otherGooName = spawnPositionToName otherGooSpawnPosition
@@ -780,7 +780,7 @@ type ToyBoxDispatcher () =
 
                 // declare visual representation of the shoulder
                 shoulderPolygon
-                |> Array.add shoulderPolygon.[0]
+                |> Array.add shoulderPolygon[0]
                 |> Array.map ((*) objectScale)
                 |> Array.pairwise
                 |> Array.iter (fun (p1, p2) ->
@@ -1022,7 +1022,7 @@ type ToyBoxDispatcher () =
                     [Entity.Position .= v3 255f -50f 0f
                      Entity.Text @= $"Avatar Gravity: {fst gravity}"
                      Entity.Elevation .= 1f
-                     Entity.FontSizing .= Some 10] world then
+                     Entity.FontSizing .= Some 10.f] world then
                     toyBox.AvatarGravities.Map List.tail world
 
             // clear toys button
@@ -1083,7 +1083,7 @@ type ToyBoxDispatcher () =
                          Mouse Left - Click button or Drag entity. Mouse Right - Cause an explosion.\n\
                          Mouse Scroll - Apply rotation to entity.\n\
                          Alt+F4 - Close game if not in Editor. Read source code for explanations!"
-                     Entity.FontSizing .= Some 10
+                     Entity.FontSizing .= Some 10.f
                      Entity.TextMargin .= v2 5f 0f] world
                 if World.doButton "Info Close"
                     [Entity.LayoutOrder .= 3

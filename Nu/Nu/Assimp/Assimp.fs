@@ -9,9 +9,9 @@ open System
 open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Numerics
-open Prime
 open System.Reflection
 open System.Threading
+open Prime
 
 /// Determines how an animated behavior is executed.
 type [<Struct>] Playback =
@@ -103,13 +103,13 @@ module Assimp =
         while low <= high && not found do
             let mid = (low + high) / 2
             if mid < last then
-                let midTime = keys.[inc mid].Time
+                let midTime = keys[inc mid].Time
                 if animationTime < midTime then high <- mid - 1
                 elif animationTime > midTime then low <- mid + 1
                 else found <- true; i <- mid
             else found <- true; i <- last
         if not found then
-            i <- if animationTime < keys.[inc low].Time then low else dec low
+            i <- if animationTime < keys[inc low].Time then low else dec low
         i
 
     let internal ComputeRotationKeyFrameIndex (animationTime : double, keys : Assimp.QuaternionKey array) =
@@ -121,13 +121,13 @@ module Assimp =
         while low <= high && not found do
             let mid = (low + high) / 2
             if mid < last then
-                let midTime = keys.[inc mid].Time
+                let midTime = keys[inc mid].Time
                 if animationTime < midTime then high <- mid - 1
                 elif animationTime > midTime then low <- mid + 1
                 else found <- true; i <- mid
             else found <- true; i <- last
         if not found then
-            i <- if animationTime < keys.[inc low].Time then low else dec low
+            i <- if animationTime < keys[inc low].Time then low else dec low
         i
 
     let internal ComputeScalingKeyFrameIndex (animationTime : double, keys : Assimp.VectorKey array) =
@@ -139,35 +139,35 @@ module Assimp =
         while low <= high && not found do
             let mid = (low + high) / 2
             if mid < last then
-                let midTime = keys.[inc mid].Time
+                let midTime = keys[inc mid].Time
                 if animationTime < midTime then high <- mid - 1
                 elif animationTime > midTime then low <- mid + 1
                 else found <- true; i <- mid
             else found <- true; i <- last
         if not found then
-            i <- if animationTime < keys.[inc low].Time then low else dec low
+            i <- if animationTime < keys[inc low].Time then low else dec low
         i
 
     let internal InterpolatePosition (animationTime : double, positionKeys : Assimp.VectorKey array) =
         if positionKeys.Length <> 1 then
             let positionIndex = ComputePositionKeyFrameIndex (animationTime, positionKeys)
             let positionIndexNext = inc positionIndex % positionKeys.Length
-            let positionKey = positionKeys.[positionIndex]
-            let positionKeyNext = positionKeys.[positionIndexNext]
+            let positionKey = positionKeys[positionIndex]
+            let positionKeyNext = positionKeys[positionIndexNext]
             let deltaTime = positionKeyNext.Time - positionKey.Time
             let factor = (animationTime - positionKey.Time) / deltaTime
             let start = positionKey.Value
             let stop = positionKeyNext.Value
             let delta = stop - start
             start + single factor * delta
-        else positionKeys.[0].Value
+        else positionKeys[0].Value
 
     let internal InterpolateRotation (animationTime : double, rotationKeys : Assimp.QuaternionKey array) =
         if rotationKeys.Length <> 1 then
             let rotationIndex = ComputeRotationKeyFrameIndex (animationTime, rotationKeys)
             let rotationIndexNext = inc rotationIndex % rotationKeys.Length
-            let rotationKey = rotationKeys.[rotationIndex]
-            let rotationKeyNext = rotationKeys.[rotationIndexNext]
+            let rotationKey = rotationKeys[rotationIndex]
+            let rotationKeyNext = rotationKeys[rotationIndexNext]
             let deltaTime = rotationKeyNext.Time - rotationKey.Time
             let factor = (animationTime - rotationKey.Time) / deltaTime
             let startRotation = rotationKey.Value
@@ -175,21 +175,21 @@ module Assimp =
             let result = Assimp.Quaternion.Slerp (startRotation, stopRotation, single factor)
             result.Normalize ()
             result
-        else rotationKeys.[0].Value
+        else rotationKeys[0].Value
 
     let internal InterpolateScaling (animationTime : double, scalingKeys : Assimp.VectorKey array) =
         if scalingKeys.Length <> 1 then
             let scalingIndex = ComputeScalingKeyFrameIndex (animationTime, scalingKeys)
             let scalingIndexNext = inc scalingIndex % scalingKeys.Length
-            let scalingKey = scalingKeys.[scalingIndex]
-            let scalingKeyNext = scalingKeys.[scalingIndexNext]
+            let scalingKey = scalingKeys[scalingIndex]
+            let scalingKeyNext = scalingKeys[scalingIndexNext]
             let deltaTime = scalingKeyNext.Time - scalingKey.Time
             let factor = (animationTime - scalingKey.Time) / deltaTime
             let start = scalingKey.Value
             let stop = scalingKeyNext.Value
             let delta = stop - start
             start + single factor * delta
-        else scalingKeys.[0].Value
+        else scalingKeys[0].Value
 
 [<AutoOpen>]
 module AssimpExtensions =
@@ -300,7 +300,7 @@ module AssimpExtensions =
             let mutable property = Unchecked.defaultof<_>
             if not (MaterialPropertyCached.TryGetValue (key, &property)) then
                 let propertyOpt = ValueOption.ofObj (this.GetNonTextureProperty propertyName)
-                MaterialPropertyCached.[key] <- propertyOpt
+                MaterialPropertyCached[key] <- propertyOpt
                 propertyOpt
             else property
 
@@ -616,7 +616,7 @@ module AssimpExtensions =
 
         member this.IndexDatasToMetadata () =
             for i in 0 .. dec this.Meshes.Count do
-                let mesh = this.Meshes.[i]
+                let mesh = this.Meshes[i]
                 let indices = mesh.GetIndices ()
                 this.Metadata.Add ("IndexData" + string i, Assimp.Metadata.Entry (Assimp.MetaDataType.Int32, indices))
                 mesh.Faces.Clear ()
@@ -626,7 +626,7 @@ module AssimpExtensions =
 
             // TODO: P1: see if we can prevent this discarded data from being generated in the first place.
             for i in 0 .. dec this.Meshes.Count do
-                let mesh = this.Meshes.[i]
+                let mesh = this.Meshes[i]
                 let m_colorsField = (getType mesh).GetField ("m_colors", BindingFlags.Instance ||| BindingFlags.NonPublic)
                 m_colorsField.SetValue (mesh, Array.empty<Assimp.Color4D List>)
                 for attachment in mesh.MeshAnimationAttachments do
@@ -642,7 +642,7 @@ module AssimpExtensions =
         member this.TryFindNode (meshIndex, node : Assimp.Node) =
             let nodes =
                 [for i in 0 .. dec node.MeshCount do
-                    if node.MeshIndices.[i] = meshIndex then
+                    if node.MeshIndices[i] = meshIndex then
                         node]
             match nodes with
             | node :: _ -> Some node
@@ -682,10 +682,10 @@ module AssimpExtensions =
                             | Once ->
                                 localTime * double animationRate
                             | Loop ->
-                                let length = animationChannel.RotationKeys.[dec animationChannel.RotationKeys.Length].Time
+                                let length = animationChannel.RotationKeys[dec animationChannel.RotationKeys.Length].Time
                                 localTime * double animationRate % length
                             | Bounce ->
-                                let length = animationChannel.RotationKeys.[dec animationChannel.RotationKeys.Length].Time
+                                let length = animationChannel.RotationKeys[dec animationChannel.RotationKeys.Length].Time
                                 let localTimeScaled = localTime * double animationRate
                                 let remainingTime = localTimeScaled % length
                                 if int (localTimeScaled / length) % 2 = 1
@@ -725,14 +725,14 @@ module AssimpExtensions =
             let accumulatedTransform = nodeTransform * parentTransform
             let mutable boneId = Unchecked.defaultof<_>
             if boneIds.TryGetValue (node.Name, &boneId) then
-                let boneOffset = boneInfos.[boneId].BoneOffset
-                boneInfos.[boneId].BoneTransform <- boneOffset * accumulatedTransform
+                let boneOffset = boneInfos[boneId].BoneOffset
+                boneInfos[boneId].BoneTransform <- boneOffset * accumulatedTransform
                 boneWrites.Value <- inc boneWrites.Value
 
             // recur if there are still bones left to write
             if boneWrites.Value < boneInfos.Length then
                 for i in 0 .. dec node.ChildCount do
-                    let child = node.Children.[i]
+                    let child = node.Children[i]
                     Assimp.Scene.UpdateBoneTransforms (time, boneIds, boneInfos, boneWrites, animationChannels, animations, child, accumulatedTransform, scene)
 
         /// Compute the bone ids, offsets, and animated transforms of the mesh's bones in the given scene.
@@ -746,8 +746,8 @@ module AssimpExtensions =
                 for animation in this.Animations do
                     for channel in animation.NodeAnimationChannels do
                         let animationChannel = AnimationChannel.make (Array.ofSeq channel.PositionKeys) (Array.ofSeq channel.RotationKeys) (Array.ofSeq channel.ScalingKeys)
-                        animationChannels.[AnimationChannelKey.make animation.Name channel.NodeName] <- animationChannel
-                AnimationChannelsCached.[this] <- animationChannels
+                        animationChannels[AnimationChannelKey.make animation.Name channel.NodeName] <- animationChannel
+                AnimationChannelsCached[this] <- animationChannels
 
             // log if there are more bones than we currently support
             if mesh.Bones.Count >= Constants.Render.BonesMax then
@@ -757,10 +757,10 @@ module AssimpExtensions =
             let boneIds = dictPlus StringComparer.Ordinal []
             let boneInfos = Array.zeroCreate<_> mesh.Bones.Count
             for boneId in 0 .. dec mesh.Bones.Count do
-                let bone = mesh.Bones.[boneId]
+                let bone = mesh.Bones[boneId]
                 let boneName = bone.Name
-                boneIds.[boneName] <- boneId
-                boneInfos.[boneId] <- BoneInfo.make bone.OffsetMatrix
+                boneIds[boneName] <- boneId
+                boneInfos[boneId] <- BoneInfo.make bone.OffsetMatrix
 
             // write bone transforms to bone infos array
             Assimp.Scene.UpdateBoneTransforms (time.Seconds, boneIds, boneInfos, ref 0, animationChannels, animations, this.RootNode, Assimp.Matrix4x4.Identity, this)
@@ -769,9 +769,9 @@ module AssimpExtensions =
             let boneOffsets = Array.zeroCreate boneInfos.Length
             let boneTransforms = Array.zeroCreate boneInfos.Length
             for i in 0 .. dec boneInfos.Length do
-                let boneInfo = &boneInfos.[i]
-                boneOffsets.[i] <- Assimp.ExportMatrix boneInfo.BoneOffset
-                boneTransforms.[i] <- Assimp.ExportMatrix boneInfo.BoneTransform
+                let boneInfo = &boneInfos[i]
+                boneOffsets[i] <- Assimp.ExportMatrix boneInfo.BoneOffset
+                boneTransforms[i] <- Assimp.ExportMatrix boneInfo.BoneTransform
             (boneIds, boneOffsets, boneTransforms)
 
 [<RequireQualifiedAccess>]

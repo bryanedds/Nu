@@ -201,7 +201,7 @@ module WorldEntityHierarchyExtensions =
                             boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine entityBounds) | None -> Some entityBounds
                             frozenEntities.Add entity
                             let metadata = Metadata.getStaticModelMetadata staticModel
-                            let surface = metadata.Surfaces.[surfaceIndex]
+                            let surface = metadata.Surfaces[surfaceIndex]
                             let frozenKey = (material.Clipped, material, surface, depthTest, renderType)
                             let frozenValue = (affineMatrix, castShadow, presence, Option.defaultValue box2Zero insetOpt, properties, entityBounds)
                             match frozenPreBatches.TryGetValue frozenKey with
@@ -228,7 +228,7 @@ module WorldEntityHierarchyExtensions =
                             let metadata = Metadata.getStaticModelMetadata (entity.GetStaticModel world)
                             let mutable surfaceIndex = 0
                             while surfaceIndex < metadata.Surfaces.Length do
-                                let surface = metadata.Surfaces.[surfaceIndex]
+                                let surface = metadata.Surfaces[surfaceIndex]
                                 let surfaceMatrix = if surface.SurfaceMatrixIsIdentity then affineMatrix else surface.SurfaceMatrix * affineMatrix
                                 let surfaceBounds = surface.SurfaceBounds.Transform surfaceMatrix
                                 let presence = OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.extractPresence transform.Presence metadata.SceneOpt surface
@@ -260,7 +260,7 @@ module WorldEntityHierarchyExtensions =
                                     else Material.empty
                                 boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine surfaceBounds) | None -> Some surfaceBounds
                                 let metadata = Metadata.getStaticModelMetadata staticModel
-                                let surface = metadata.Surfaces.[surfaceIndex]
+                                let surface = metadata.Surfaces[surfaceIndex]
                                 let frozenKey = (clipped, material, surface, depthTest, renderType)
                                 let frozenValue = (affineMatrix, castShadow, presence, Option.defaultValue box2Zero insetOpt, properties, surfaceBounds)
                                 match frozenPreBatches.TryGetValue frozenKey with

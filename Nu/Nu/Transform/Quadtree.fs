@@ -120,7 +120,7 @@ module internal Quadnode =
                 | NodeChildren nodes ->
                     let mutable delta = 0
                     for i in 0 .. dec nodes.Length do
-                        let node = nodes.[i]
+                        let node = nodes[i]
                         delta <- delta + addElement bounds &element node
                     delta
                 | ElementChildren elements ->
@@ -142,7 +142,7 @@ module internal Quadnode =
                 | NodeChildren nodes ->
                     let mutable delta = 0
                     for i in 0 .. dec nodes.Length do
-                        let node = nodes.[i]
+                        let node = nodes[i]
                         delta <- delta + removeElement bounds &element node
                     delta
                 | ElementChildren elements ->
@@ -162,7 +162,7 @@ module internal Quadnode =
             | NodeChildren nodes ->
                 let mutable delta = 0
                 for i in 0 .. dec nodes.Length do
-                    let node = nodes.[i]
+                    let node = nodes[i]
                     if isIntersectingBounds boundsOld node || isIntersectingBounds boundsNew node then
                         delta <- delta + updateElement boundsOld boundsNew &element node
                 delta
@@ -186,7 +186,7 @@ module internal Quadnode =
             ()
         | NodeChildren nodes ->
             for i in 0 .. dec nodes.Length do
-                let node = &nodes.[i]
+                let node = &nodes[i]
                 clearElements node
         | ElementChildren children ->
             children.Clear ()
@@ -197,7 +197,7 @@ module internal Quadnode =
             ()
         | NodeChildren nodes ->
             for i in 0 .. dec nodes.Length do
-                let node = &nodes.[i]
+                let node = &nodes[i]
                 if node.ElementsCount_ > 0 && atPoint point node then
                     getElementsAtPoint point set node
         | ElementChildren elements ->
@@ -212,7 +212,7 @@ module internal Quadnode =
             ()
         | NodeChildren nodes ->
             for i in 0 .. dec nodes.Length do
-                let node = &nodes.[i]
+                let node = &nodes[i]
                 if node.ElementsCount_ > 0 && isIntersectingBounds bounds node then
                     getElementsInBounds bounds set node
         | ElementChildren elements ->
@@ -226,7 +226,7 @@ module internal Quadnode =
             ()
         | NodeChildren nodes ->
             for i in 0 .. dec nodes.Length do
-                let node = &nodes.[i]
+                let node = &nodes[i]
                 if node.ElementsCount_ > 0 && isIntersectingBounds bounds node then
                     getElementsInView bounds set node
         | ElementChildren elements ->
@@ -240,7 +240,7 @@ module internal Quadnode =
             ()
         | NodeChildren nodes ->
             for i in 0 .. dec nodes.Length do
-                let node = &nodes.[i]
+                let node = &nodes[i]
                 if node.ElementsCount_ > 0 && isIntersectingBounds bounds node then
                     getElementsInPlay bounds set node
         | ElementChildren elements ->
@@ -256,7 +256,7 @@ module internal Quadnode =
             ()
         | NodeChildren nodes ->
             for i in 0 .. dec nodes.Length do
-                let node = &nodes.[i]
+                let node = &nodes[i]
                 if node.ElementsCount_ > 0 then
                     getElements set node
         | ElementChildren children ->
@@ -269,7 +269,7 @@ module internal Quadnode =
                 ()
             | NodeChildren nodes ->
                 for i in 0 .. dec nodes.Length do
-                    let node = &nodes.[i]
+                    let node = &nodes[i]
                     sweep node
             | ElementChildren _ ->
                 node.Leaves_.Remove node.Bounds_.Min |> ignore<bool>

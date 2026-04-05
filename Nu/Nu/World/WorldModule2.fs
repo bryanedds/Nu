@@ -11,7 +11,7 @@ open System.Diagnostics
 open System.IO
 open System.Numerics
 open System.Threading
-open SDL2
+open SDL
 open ImGuiNET
 open Prime
 
@@ -535,7 +535,7 @@ module WorldModule2 =
         static member private mapEntityDescriptors entityDescriptors =
             entityDescriptors
             |> List.map (fun descriptor ->
-                match descriptor.EntityProperties.[Constants.Engine.NamePropertyName] with
+                match descriptor.EntityProperties[Constants.Engine.NamePropertyName] with
                 | Atom (entityName, _) | Text (entityName, _) -> (entityName, descriptor)
                 | _ -> failwithumf ())
             |> Map.ofList
@@ -592,7 +592,7 @@ module WorldModule2 =
                                     | (false, _) -> Overlay.dispatcherNameToOverlayName currentDescriptor.EntityDispatcherName
                                 let facetNamesIntrinsic =
                                     let entityDispatchers = World.getEntityDispatchers world
-                                    let currentDispatcher = entityDispatchers.[currentDescriptor.EntityDispatcherName]
+                                    let currentDispatcher = entityDispatchers[currentDescriptor.EntityDispatcherName]
                                     currentDispatcher |> getType |> Reflection.getIntrinsicFacetNames
                                 let facetNamesExtrinsic =
                                     match currentDescriptor.EntityProperties.TryGetValue Constants.Engine.FacetNamesPropertyName with
@@ -628,7 +628,7 @@ module WorldModule2 =
                                         | (false, _) -> Overlay.dispatcherNameToOverlayName targetDescriptor.EntityDispatcherName
                                     let facetNamesIntrinsic =
                                         let entityDispatchers = World.getEntityDispatchers world
-                                        let targetDispatcher = entityDispatchers.[targetDescriptor.EntityDispatcherName]
+                                        let targetDispatcher = entityDispatchers[targetDescriptor.EntityDispatcherName]
                                         targetDispatcher |> getType |> Reflection.getIntrinsicFacetNames
                                     let facetNamesExtrinsic =
                                         match targetDescriptor.EntityProperties.TryGetValue Constants.Engine.FacetNamesPropertyName with
@@ -695,7 +695,7 @@ module WorldModule2 =
             let currentDescriptorsOrder =
                 currentDescriptor.EntityDescriptors
                 |> Seq.mapi (fun i currentDescriptor ->
-                    match currentDescriptor.EntityProperties.[Constants.Engine.NamePropertyName] with
+                    match currentDescriptor.EntityProperties[Constants.Engine.NamePropertyName] with
                     | Atom (entityName, _) | Text (entityName, _) -> (entityName, i)
                     | _ -> ("", Int32.MaxValue))
                 |> Map.ofSeq
@@ -704,7 +704,7 @@ module WorldModule2 =
                 |> List.definitize
                 |> List.filter (fun propagatedDescriptor -> String.notEmpty propagatedDescriptor.EntityDispatcherName)
                 |> List.sortBy (fun propagatedDescriptor ->
-                    match propagatedDescriptor.EntityProperties.[Constants.Engine.NamePropertyName] with
+                    match propagatedDescriptor.EntityProperties[Constants.Engine.NamePropertyName] with
                     | (Atom (entityName, _) | Text (entityName, _)) ->
                         match currentDescriptorsOrder.TryGetValue entityName with
                         | (true, order) -> order
@@ -793,7 +793,7 @@ module WorldModule2 =
             let eventNames = eventAddress.Names
             let eventNamesLength = Array.length eventNames
             if eventNamesLength >= 6 then
-                let eventFirstName = eventNames.[0]
+                let eventFirstName = eventNames[0]
                 match eventFirstName with
                 | "Update" ->
 #if DEBUG
@@ -807,7 +807,7 @@ module WorldModule2 =
                     World.updateEntityPublishUpdateFlag entity world |> ignore<bool>
                 | _ -> ()
             if eventNamesLength >= 4 then
-                match eventNames.[0] with
+                match eventNames[0] with
                 | "Change" ->
                     if eventNamesLength >= 7 then
                         let entityAddress = rtoa (Array.skip 3 eventNames)
@@ -944,7 +944,7 @@ module WorldModule2 =
         /// Attempt to reload asset graph, build assets, then reload built assets.
         /// Currently does not support reloading of song assets, and possibly others that are
         /// locked by the engine's subsystems.
-        static member tryReloadAssetGraph inputDirectory outputDirectory refinementDirectory world =
+        static member tryReloadAssetGraph inputDirectory outputDirectory refinementDirectory blockCompression world =
 
             // attempt to reload asset graph file
             let inputAssetGraphFilePath = inputDirectory + "/" + Assets.Global.AssetGraphFilePath
@@ -958,7 +958,7 @@ module WorldModule2 =
                 let assetGraph = AssetGraph.makeFromFileOpt outputAssetGraphFilePath
 
                 // rebuild assets
-                AssetGraph.buildAssets inputDirectory outputDirectory refinementDirectory false assetGraph
+                AssetGraph.buildAssets inputDirectory outputDirectory refinementDirectory blockCompression false assetGraph
 
                 // reload assets
                 AssimpContext.Wipe ()
@@ -976,7 +976,9 @@ module WorldModule2 =
         static member tryReloadAssets world =
             let targetDir = AppDomain.CurrentDomain.BaseDirectory
             let assetSourceDir = PathF.GetFullPath (targetDir + "../../..")
-            match World.tryReloadAssetGraph assetSourceDir targetDir Constants.Engine.RefinementDir world with
+            let refinementDir = Constants.Engine.RefinementDir
+            let blockCompression = Constants.Render.TextureBlockCompression
+            match World.tryReloadAssetGraph assetSourceDir targetDir refinementDir blockCompression world with
             | Right _ -> true
             | Left _ -> false
 
@@ -1100,55 +1102,54 @@ module WorldModule2 =
             | KeyboardKey.LShift -> [ImGuiKey.LeftShift; ImGuiKey.ModShift]
             | KeyboardKey.RShift -> [ImGuiKey.RightShift; ImGuiKey.ModShift]
             | _ ->
-                if int keyboardKey >= int KeyboardKey.Num1 && int keyboardKey <= int KeyboardKey.Num9 then int ImGuiKey._1 + (int keyboardKey - int KeyboardKey.Num1) |> enum<ImGuiKey> |> List.singleton
-                elif int keyboardKey >= int KeyboardKey.A && int keyboardKey <= int KeyboardKey.Z then int ImGuiKey.A + (int keyboardKey - int KeyboardKey.A) |> enum<ImGuiKey> |> List.singleton
-                elif int keyboardKey >= int KeyboardKey.F1 && int keyboardKey <= int KeyboardKey.F12 then int ImGuiKey.F1 + (int keyboardKey - int KeyboardKey.F1) |> enum<ImGuiKey> |> List.singleton
+                if keyboardKey >= KeyboardKey.Num1 && keyboardKey <= KeyboardKey.Num9 then ImGuiKey._1 + (keyboardKey - KeyboardKey.Num1 |> LanguagePrimitives.EnumToValue |> LanguagePrimitives.EnumOfValue) |> List.singleton
+                elif keyboardKey >= KeyboardKey.A && keyboardKey <= KeyboardKey.Z then ImGuiKey.A + (keyboardKey - KeyboardKey.A |> LanguagePrimitives.EnumToValue |> LanguagePrimitives.EnumOfValue) |> List.singleton
+                elif keyboardKey >= KeyboardKey.F1 && keyboardKey <= KeyboardKey.F12 then ImGuiKey.F1 + (keyboardKey - KeyboardKey.F1 |> LanguagePrimitives.EnumToValue |> LanguagePrimitives.EnumOfValue) |> List.singleton
                 else []
 
-        static member private processInput2 (evt : SDL.SDL_Event) (world : World) =
-            match evt.``type`` with
-            | SDL.SDL_EventType.SDL_QUIT ->
+        static member private processInput2 (evt : SDL_Event) (world : World) =
+            match evt.Type with
+            | SDL_EventType.SDL_EVENT_QUIT ->
                 if world.Accompanied then
                     let eventTrace = EventTrace.debug "World" "processInput2" "ExitRequest" EventTrace.empty
                     World.publishPlus () Nu.Game.Handle.ExitRequestEvent eventTrace Nu.Game.Handle true true world
-            | SDL.SDL_EventType.SDL_WINDOWEVENT ->
-                if evt.window.windowEvent = SDL.SDL_WindowEventID.SDL_WINDOWEVENT_SIZE_CHANGED then
+            | SDL_EventType.SDL_EVENT_WINDOW_RESIZED ->
 
-                    // ensure window size is a factor of display virtual resolution, going to full screen otherwise
-                    let windowSize = World.getWindowSize world
-                    let windowScalar =
-                        max (single windowSize.X / single Constants.Render.DisplayVirtualResolution.X |> ceil |> int |> max 1)
-                            (single windowSize.Y / single Constants.Render.DisplayVirtualResolution.Y |> ceil |> int |> max 1)
-                    let windowSize' = windowScalar * Constants.Render.DisplayVirtualResolution
-                    World.trySetWindowSize windowSize' world
-                    let windowSize'' = World.getWindowSize world
-                    if windowSize''.X < windowSize'.X || windowSize''.Y < windowSize'.Y then
-                        World.trySetWindowFullScreen true world
+                // ensure window size is a factor of display virtual resolution, going to full screen otherwise
+                let windowSize = World.getWindowSize world
+                let windowScalar =
+                    max (single windowSize.X / single Constants.Render.DisplayVirtualResolution.X |> ceil |> int |> max 1)
+                        (single windowSize.Y / single Constants.Render.DisplayVirtualResolution.Y |> ceil |> int |> max 1)
+                let windowSize' = windowScalar * Constants.Render.DisplayVirtualResolution
+                World.trySetWindowSize windowSize' world
+                let windowSize'' = World.getWindowSize world
+                if windowSize''.X < windowSize'.X || windowSize''.Y < windowSize'.Y then
+                    World.trySetWindowFullScreen true world
 
-                    // synchronize display virtual scalar
-                    let windowSize'' = World.getWindowSize world
-                    let xScalar = windowSize''.X / Constants.Render.DisplayVirtualResolution.X
-                    let yScalar = windowSize''.Y / Constants.Render.DisplayVirtualResolution.Y
-                    Globals.Render.DisplayScalar <- min xScalar yScalar
+                // synchronize display virtual scalar
+                let windowSize'' = World.getWindowSize world
+                let xScalar = windowSize''.X / Constants.Render.DisplayVirtualResolution.X
+                let yScalar = windowSize''.Y / Constants.Render.DisplayVirtualResolution.Y
+                Globals.Render.DisplayScalar <- min xScalar yScalar
 
-                    // synchronize view ports
-                    World.synchronizeViewports world
+                // synchronize view ports
+                World.synchronizeViewports world
 
-            | SDL.SDL_EventType.SDL_MOUSEMOTION ->
+            | SDL_EventType.SDL_EVENT_MOUSE_MOTION ->
                 let io = ImGui.GetIO ()
                 let boundsMin = world.WindowViewport.Bounds.Min
-                io.AddMousePosEvent (single (evt.button.x - boundsMin.X), single (evt.button.y - boundsMin.Y))
+                io.AddMousePosEvent (evt.button.x - single boundsMin.X, evt.button.y - single boundsMin.Y)
                 let mousePosition = v2 (single evt.button.x) (single evt.button.y)
                 if World.isMouseButtonDown MouseLeft world then
                     let eventTrace = EventTrace.debug "World" "processInput2" "MouseDrag" EventTrace.empty
                     World.publishPlus { MouseMoveData.Position = mousePosition } Nu.Game.Handle.MouseDragEvent eventTrace Nu.Game.Handle true true world
                 let eventTrace = EventTrace.debug "World" "processInput2" "MouseMove" EventTrace.empty
                 World.publishPlus { MouseMoveData.Position = mousePosition } Nu.Game.Handle.MouseMoveEvent eventTrace Nu.Game.Handle true true world
-            | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
+            | SDL_EventType.SDL_EVENT_MOUSE_BUTTON_DOWN ->
                 let io = ImGui.GetIO ()
-                let mouseButton = World.toNuMouseButton (uint32 evt.button.button)
+                let mouseButton = World.toNuMouseButton evt.button.Button
                 io.AddMouseButtonEvent (World.toImGuiMouseButton mouseButton, true)
-                if not (io.WantCaptureMouseGlobal) then
+                if not io.WantCaptureMouseGlobal then
                     let mousePosition = World.getMousePosition world
                     let mouseButtonDownEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Down/Event/" + Constants.Engine.GameName)
                     let mouseButtonChangeEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Change/Event/" + Constants.Engine.GameName)
@@ -1157,13 +1158,12 @@ module WorldModule2 =
                     World.publishPlus eventData mouseButtonDownEvent eventTrace Nu.Game.Handle true true world
                     let eventTrace = EventTrace.debug "World" "processInput2" "MouseButtonChange" EventTrace.empty
                     World.publishPlus eventData mouseButtonChangeEvent eventTrace Nu.Game.Handle true true world
-            | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
+            | SDL_EventType.SDL_EVENT_MOUSE_BUTTON_UP ->
                 let io = ImGui.GetIO ()
-                let mouseButton = World.toNuMouseButton (uint32 evt.button.button)
+                let mouseButton = World.toNuMouseButton evt.button.Button
                 io.AddMouseButtonEvent (World.toImGuiMouseButton mouseButton, false)
-                if not (io.WantCaptureMouseGlobal) then
+                if not io.WantCaptureMouseGlobal then
                     let mousePosition = World.getMousePosition world
-                    let mouseButton = World.toNuMouseButton (uint32 evt.button.button)
                     let mouseButtonUpEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Up/Event/" + Constants.Engine.GameName)
                     let mouseButtonChangeEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Change/Event/" + Constants.Engine.GameName)
                     let eventData = { Position = mousePosition; Button = mouseButton; Down = false }
@@ -1171,82 +1171,84 @@ module WorldModule2 =
                     World.publishPlus eventData mouseButtonUpEvent eventTrace Nu.Game.Handle true true world
                     let eventTrace = EventTrace.debug "World" "processInput2" "MouseButtonChange" EventTrace.empty
                     World.publishPlus eventData mouseButtonChangeEvent eventTrace Nu.Game.Handle true true world
-            | SDL.SDL_EventType.SDL_MOUSEWHEEL ->
+            | SDL_EventType.SDL_EVENT_MOUSE_WHEEL ->
                 let imGui = World.getImGui world
-                if evt.wheel.preciseY <> 0.0f then
-                    let flipped = evt.wheel.direction = uint SDL.SDL_MouseWheelDirection.SDL_MOUSEWHEEL_FLIPPED
-                    let travel = evt.wheel.preciseY * if flipped then -1.0f else 1.0f
+                if evt.wheel.y <> 0.0f then
+                    let flipped = evt.wheel.direction = SDL_MouseWheelDirection.SDL_MOUSEWHEEL_FLIPPED
+                    let travel = evt.wheel.y * if flipped then -1.0f else 1.0f
                     MouseState.MouseScrollStateCurrent <- MouseState.MouseScrollStateCurrent + travel
-                    imGui.HandleMouseScrollChange travel
+                    imGui.HandleMouseScrollChange evt.wheel.y // NOTE: ImGui does its own platform-specific flipping according to le AI.
                     let eventData = { Travel = travel }
                     let eventTrace = EventTrace.debug "World" "processInput2" "MouseScroll" EventTrace.empty
                     World.publishPlus eventData Nu.Game.Handle.MouseScrollEvent eventTrace Nu.Game.Handle true true world
-            | SDL.SDL_EventType.SDL_TEXTINPUT ->
+            | SDL_EventType.SDL_EVENT_TEXT_INPUT ->
                 let io = ImGui.GetIO ()
                 let imGui = World.getImGui world
-                let textInput = char evt.text.text.FixedElementField
-                imGui.HandleKeyChar textInput
-                if not (io.WantCaptureKeyboardGlobal) then
+                let textInput = evt.text.GetText ()
+                imGui.HandleTextInput textInput
+                if not io.WantCaptureKeyboardGlobal then
                     let eventData = { TextInput = textInput }
                     let eventTrace = EventTrace.debug "World" "processInput2" "TextInput" EventTrace.empty
                     World.publishPlus eventData Nu.Game.Handle.TextInputEvent eventTrace Nu.Game.Handle true true world
-            | SDL.SDL_EventType.SDL_KEYDOWN ->
+            | SDL_EventType.SDL_EVENT_KEY_DOWN ->
                 let io = ImGui.GetIO ()
-                let keyboard = evt.key
-                let key = keyboard.keysym
-                let keyboardKey = key.scancode |> int |> enum<KeyboardKey>
+                let key = evt.key
+                let keyboardKey = key.scancode |> LanguagePrimitives.EnumToValue |> LanguagePrimitives.EnumOfValue
                 for imGuiKey in World.toImGuiKeys keyboardKey do
                     io.AddKeyEvent (imGuiKey, true)
                 if not (io.WantCaptureKeyboardGlobal) then
-                    let eventData = { KeyboardKey = keyboardKey; Repeated = keyboard.repeat <> byte 0; Down = true }
+                    let eventData = { KeyboardKey = keyboardKey; Repeated = key.repeat; Down = true }
                     let eventTrace = EventTrace.debug "World" "processInput2" "KeyboardKeyDown" EventTrace.empty
                     World.publishPlus eventData Nu.Game.Handle.KeyboardKeyDownEvent eventTrace Nu.Game.Handle true true world
                     let eventTrace = EventTrace.debug "World" "processInput2" "KeyboardKeyChange" EventTrace.empty
                     World.publishPlus eventData Nu.Game.Handle.KeyboardKeyChangeEvent eventTrace Nu.Game.Handle true true world
-            | SDL.SDL_EventType.SDL_KEYUP ->
+            | SDL_EventType.SDL_EVENT_KEY_UP ->
                 let io = ImGui.GetIO ()
-                let keyboard = evt.key
-                let key = keyboard.keysym
-                let keyboardKey = key.scancode |> int |> enum<KeyboardKey>
+                let key = evt.key
+                let keyboardKey = key.scancode |> LanguagePrimitives.EnumToValue |> LanguagePrimitives.EnumOfValue
                 for imGuiKey in World.toImGuiKeys keyboardKey do
                     io.AddKeyEvent (imGuiKey, false)
                 if not (io.WantCaptureKeyboardGlobal) then
-                    let eventData = { KeyboardKey = key.scancode |> int |> enum<KeyboardKey>; Repeated = keyboard.repeat <> byte 0; Down = false }
+                    let eventData = { KeyboardKey = keyboardKey; Repeated = key.repeat; Down = false }
                     let eventTrace = EventTrace.debug "World" "processInput2" "KeyboardKeyUp" EventTrace.empty
                     World.publishPlus eventData Nu.Game.Handle.KeyboardKeyUpEvent eventTrace Nu.Game.Handle true true world
                     let eventTrace = EventTrace.debug "World" "processInput2" "KeyboardKeyChange" EventTrace.empty
                     World.publishPlus eventData Nu.Game.Handle.KeyboardKeyChangeEvent eventTrace Nu.Game.Handle true true world
-            | SDL.SDL_EventType.SDL_JOYAXISMOTION ->
-                let index = evt.jaxis.which
-                let axis = evt.jaxis.axis |> int |> enum<SDL.SDL_GameControllerAxis>
-                let value = evt.jaxis.axisValue
+            | SDL_EventType.SDL_EVENT_JOYSTICK_AXIS_MOTION ->
+                let index = evt.jaxis.which |> LanguagePrimitives.EnumToValue
+                let axis = evt.jaxis.axis |> int |> enum<SDL_GamepadAxis>
+                let value = evt.jaxis.value
                 let eventData = { GamepadAxis = GamepadState.toNuAxisValue value }
                 let eventTrace = EventTrace.debug "World" "processInput2" "GamepadAxisChange" EventTrace.empty
                 World.publishPlus eventData (Nu.Game.Handle.GamepadAxisChangeEvent (GamepadState.toNuAxis axis) index) eventTrace Nu.Game.Handle true true world
-            | SDL.SDL_EventType.SDL_JOYHATMOTION ->
-                let index = evt.jhat.which
-                let direction = evt.jhat.hatValue
+            | SDL_EventType.SDL_EVENT_JOYSTICK_HAT_MOTION ->
+                let index = evt.jhat.which |> LanguagePrimitives.EnumToValue
+                let direction = evt.jhat.value
                 let eventData = { GamepadDirection = GamepadState.toNuDirection direction }
                 let eventTrace = EventTrace.debug "World" "processInput2" "GamepadDirectionChange" EventTrace.empty
                 World.publishPlus eventData (Nu.Game.Handle.GamepadDirectionChangeEvent index) eventTrace Nu.Game.Handle true true world
-            | SDL.SDL_EventType.SDL_JOYBUTTONDOWN ->
-                let index = evt.jbutton.which
-                let button = int evt.jbutton.button
-                if GamepadState.isSdlButtonSupported button then
-                    let eventData = { GamepadButton = GamepadState.toNuButton button; Down = true }
+            | SDL_EventType.SDL_EVENT_JOYSTICK_BUTTON_DOWN ->
+                let index = evt.jbutton.which |> LanguagePrimitives.EnumToValue
+                let button = evt.jbutton.button |> int |> enum<SDL_GamepadButton>
+                match GamepadState.tryToNuButton button with
+                | Some button ->
+                    let eventData = { GamepadButton = button; Down = true }
                     let eventTrace = EventTrace.debug "World" "processInput2" "GamepadButtonDown" EventTrace.empty
                     World.publishPlus eventData (Nu.Game.Handle.GamepadButtonDownEvent index) eventTrace Nu.Game.Handle true true world
                     let eventTrace = EventTrace.debug "World" "processInput2" "GamepadButtonChange" EventTrace.empty
                     World.publishPlus eventData (Nu.Game.Handle.GamepadButtonChangeEvent index) eventTrace Nu.Game.Handle true true world
-            | SDL.SDL_EventType.SDL_JOYBUTTONUP ->
-                let index = evt.jbutton.which
-                let button = int evt.jbutton.button
-                if GamepadState.isSdlButtonSupported button then
-                    let eventData = { GamepadButton = GamepadState.toNuButton button; Down = true }
+                | None -> ()
+            | SDL_EventType.SDL_EVENT_JOYSTICK_BUTTON_UP ->
+                let index = evt.jbutton.which |> LanguagePrimitives.EnumToValue
+                let button = evt.jbutton.button |> int |> enum<SDL_GamepadButton>
+                match GamepadState.tryToNuButton button with
+                | Some button ->
+                    let eventData = { GamepadButton = button; Down = true }
                     let eventTrace = EventTrace.debug "World" "processInput2" "GamepadButtonUp" EventTrace.empty
                     World.publishPlus eventData (Nu.Game.Handle.GamepadButtonUpEvent index) eventTrace Nu.Game.Handle true true world
                     let eventTrace = EventTrace.debug "World" "processInput2" "GamepadButtonChange" EventTrace.empty
                     World.publishPlus eventData (Nu.Game.Handle.GamepadButtonChangeEvent index) eventTrace Nu.Game.Handle true true world
+                | None -> ()
             | _ -> ()
 
         static member private processIntegrationMessage integrationMessage (world : World) =
@@ -1746,7 +1748,7 @@ module WorldModule2 =
 
                             // render faces
                             for i in 0 .. dec 6 do
-                                let (eyeForward, eyeUp) = eyeRotations.[i]
+                                let (eyeForward, eyeUp) = eyeRotations[i]
                                 let shadowRotation = Quaternion.CreateLookAt (eyeForward, eyeUp)
                                 let shadowView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + eyeForward, eyeUp)
                                 let shadowViewProjection = shadowView * shadowProjection
@@ -1845,8 +1847,8 @@ module WorldModule2 =
                                     let sectionNear =
                                         match i with
                                         | 0 -> Constants.Render.NearPlaneDistanceInterior
-                                        | _ -> shadowFarDistance * Constants.Render.ShadowCascadeLimits.[dec i]
-                                    let sectionFar = shadowFarDistance * Constants.Render.ShadowCascadeLimits.[i]
+                                        | _ -> shadowFarDistance * Constants.Render.ShadowCascadeLimits[dec i]
+                                    let sectionFar = shadowFarDistance * Constants.Render.ShadowCascadeLimits[i]
                                     let sectionProjection = Matrix4x4.CreatePerspectiveFieldOfView (eyeFov, eyeAspectRatio, sectionNear, sectionFar)
                                     let sectionViewProjection = eyeView * sectionProjection
                                     let sectionFrustum = Frustum sectionViewProjection
@@ -1904,7 +1906,7 @@ module WorldModule2 =
                 WorldModuleInternal2.HashSet3dShadowCached.Clear ()
 
         static member private processInput (world : World) =
-            if SDL.SDL_WasInit SDL.SDL_INIT_TIMER <> 0u then
+            if SDL3.SDL_WasInit SDL_InitFlags.SDL_INIT_EVENTS <> LanguagePrimitives.EnumOfValue 0u then
                 SdlEvents.poll ()
                 MouseState.update ()
                 KeyboardState.update ()
@@ -2044,7 +2046,7 @@ module WorldModule2 =
 
                                                                     // process audio
                                                                     world.Timers.AudioTimer.Restart ()
-                                                                    if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u then
+                                                                    if SDL3.SDL_WasInit SDL_InitFlags.SDL_INIT_AUDIO <> LanguagePrimitives.EnumOfValue 0u then
                                                                         let audioPlayer = World.getAudioPlayer world
                                                                         let audioMessages = audioPlayer.PopMessages ()
                                                                         audioPlayer.Play audioMessages
@@ -3319,12 +3321,12 @@ module WorldModule3 =
                         let presenceOld = entityState.Presence
                         let presenceInPlayOld = entityState.PresenceInPlay
                         let boundsOld = entityState.Bounds
-                        World.unregisterEntityIndex (getType entityState.Facets.[index]) entity world
+                        World.unregisterEntityIndex (getType entityState.Facets[index]) entity world
                         if world.Imperative then
-                            entityState.Facets.[index] <- facet
+                            entityState.Facets[index] <- facet
                         else
                             let facets = entityState.Facets.Clone () :?> Facet array
-                            facets.[index] <- facet
+                            facets[index] <- facet
                             let entityState = { entityState with Facets = facets }
                             World.setEntityState entityState entity world
                         World.registerEntityIndex (getType facet) entity world

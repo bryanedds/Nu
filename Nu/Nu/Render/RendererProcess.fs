@@ -10,7 +10,7 @@ open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Numerics
 open System.Threading
-open SDL2
+open SDL
 open ImGuiNET
 open Prime
 
@@ -20,7 +20,7 @@ type RendererProcess =
     interface
         
         /// Start the rendering process.
-        abstract Start : ImFontAtlasPtr -> Window option -> Viewport -> Viewport -> unit
+        abstract Start : ImFontAtlasPtr -> SDL_Window nativeptr option -> Viewport -> Viewport -> unit
         
         /// The current configuration of the 3d renderer.
         abstract Renderer3dConfig : Renderer3dConfig
@@ -67,11 +67,11 @@ type RendererInline () =
 
     let mutable started = false
     let mutable terminated = false
-    let mutable windowOpt = Option<Window>.None
+    let mutable windowOpt = Option<SDL_Window nativeptr>.None
     let mutable messages3d = List ()
     let mutable messages2d = List ()
     let mutable messagesImGui = List ()
-    let mutable dependenciesOpt = Option<nativeint * Renderer3d * Renderer2d * RendererImGui>.None
+    let mutable dependenciesOpt = Option<SDL_GLContextState nativeptr * Renderer3d * Renderer2d * RendererImGui>.None
     let assetTextureRequests = ConcurrentDictionary<AssetTag, unit> HashIdentity.Structural
     let assetTextureOpts = ConcurrentDictionary<AssetTag, uint32 voption> HashIdentity.Structural
 
@@ -91,7 +91,7 @@ type RendererInline () =
                 | Some window ->
                 
                     // create gl context
-                    let glContext = match window with SglWindow window -> OpenGL.Hl.CreateSglContextInitial window.SglWindow
+                    let glContext = OpenGL.Hl.CreateSglContextInitial window
                     OpenGL.Hl.Assert ()
 
                     // initialize gl context
@@ -128,7 +128,7 @@ type RendererInline () =
             | None -> Renderer3dConfig.defaultConfig
 
         member ri.TryGetImGuiTextureId assetTag =
-            assetTextureRequests.[assetTag] <- ()
+            assetTextureRequests[assetTag] <- ()
             match assetTextureOpts.TryGetValue assetTag with
             | (true, textureIdOpt) -> textureIdOpt
             | (false, _) -> ValueNone
@@ -204,7 +204,7 @@ type RendererInline () =
 
         member ri.RequestSwap () =
             match windowOpt with
-            | Some (SglWindow window) -> SDL.SDL_GL_SwapWindow window.SglWindow
+            | Some window -> SDL3.SDL_GL_SwapWindow window |> ignore<SDLBool>
             | None -> ()
 
         member ri.Terminate () =
@@ -226,7 +226,7 @@ type RendererInline () =
                 // clean up gl
                 dependenciesOpt <- None
                 match windowOpt with
-                | Some (SglWindow window) -> OpenGL.Hl.DestroySglContext (glContext, window.SglWindow)
+                | Some window -> OpenGL.Hl.DestroySglContext (glContext, window)
                 | None -> ()
 
                 // fin
@@ -374,7 +374,7 @@ type RendererThread () =
     member private rt.Run fonts window geometryViewport windowViewport =
 
         // create gl context
-        let glContext = match window with SglWindow window -> OpenGL.Hl.CreateSglContextInitial window.SglWindow
+        let glContext = OpenGL.Hl.CreateSglContextInitial window
         OpenGL.Hl.Assert ()
 
         // initialize gl context
@@ -445,7 +445,7 @@ type RendererThread () =
                         swapRequestAcknowledged <- true
 
                         // swap
-                        match window with SglWindow window -> SDL.SDL_GL_SwapWindow window.SglWindow
+                        SDL3.SDL_GL_SwapWindow window |> ignore<SDLBool>
 
         // clean up 3d
         renderer3d.CleanUp ()
@@ -460,7 +460,7 @@ type RendererThread () =
         OpenGL.Hl.Assert ()
 
         // clean up gl
-        OpenGL.Hl.DestroySglContext (glContext, match window with SglWindow window -> window.SglWindow)
+        OpenGL.Hl.DestroySglContext (glContext, window)
 
     interface RendererProcess with
 
@@ -503,7 +503,7 @@ type RendererThread () =
             renderer3dConfig
 
         member rt.TryGetImGuiTextureId assetTag =
-            assetTextureRequests.[assetTag] <- ()
+            assetTextureRequests[assetTag] <- ()
             match assetTextureOpts.TryGetValue assetTag with
             | (true, textureIdOpt) -> textureIdOpt
             | (false, _) -> ValueNone
@@ -525,7 +525,7 @@ type RendererThread () =
                     cachedMessage.CachedStaticModelDepthTest <- rsm.DepthTest
                     cachedMessage.CachedStaticModelRenderType <- rsm.RenderType
                     cachedMessage.CachedStaticModelRenderPass <- rsm.RenderPass
-                    messageBuffers3d.[messageBufferIndex].Add cachedStaticModelMessage
+                    messageBuffers3d[messageBufferIndex].Add cachedStaticModelMessage
                 | _ -> failwithumf ()
             | RenderStaticModelSurface rsms ->
                 let cachedStaticModelSurfaceMessage = allocStaticModelSurfaceMessage ()
@@ -542,7 +542,7 @@ type RendererThread () =
                     cachedMessage.CachedStaticModelSurfaceDepthTest <- rsms.DepthTest
                     cachedMessage.CachedStaticModelSurfaceRenderType <- rsms.RenderType
                     cachedMessage.CachedStaticModelSurfaceRenderPass <- rsms.RenderPass
-                    messageBuffers3d.[messageBufferIndex].Add cachedStaticModelSurfaceMessage
+                    messageBuffers3d[messageBufferIndex].Add cachedStaticModelSurfaceMessage
                 | _ -> failwithumf ()
             | RenderAnimatedModel ram ->
                 let cachedAnimatedModelMessage = allocAnimatedModelMessage ()
@@ -557,9 +557,9 @@ type RendererThread () =
                     cachedMessage.CachedAnimatedModel <- ram.AnimatedModel
                     cachedMessage.CachedAnimatedModelDepthTest <- ram.DepthTest
                     cachedMessage.CachedAnimatedModelRenderPass <- ram.RenderPass
-                    messageBuffers3d.[messageBufferIndex].Add cachedAnimatedModelMessage
+                    messageBuffers3d[messageBufferIndex].Add cachedAnimatedModelMessage
                 | _ -> failwithumf ()
-            | _ -> messageBuffers3d.[messageBufferIndex].Add message
+            | _ -> messageBuffers3d[messageBufferIndex].Add message
 
         member rt.RenderStaticModelFast (modelMatrix, castShadow, presence, insetOpt, materialProperties, staticModel, clipped, depthTest, renderType, renderPass) =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
@@ -576,7 +576,7 @@ type RendererThread () =
                 cachedMessage.CachedStaticModelDepthTest <- depthTest
                 cachedMessage.CachedStaticModelRenderType <- renderType
                 cachedMessage.CachedStaticModelRenderPass <- renderPass
-                messageBuffers3d.[messageBufferIndex].Add cachedStaticModelMessage
+                messageBuffers3d[messageBufferIndex].Add cachedStaticModelMessage
             | _ -> failwithumf ()
 
         member rt.RenderStaticModelSurfaceFast (modelMatrix, castShadow, presence, insetOpt, materialProperties, material, staticModel, surfaceIndex, depthTest, renderType, renderPass) =
@@ -595,7 +595,7 @@ type RendererThread () =
                 cachedMessage.CachedStaticModelSurfaceDepthTest <- depthTest
                 cachedMessage.CachedStaticModelSurfaceRenderType <- renderType
                 cachedMessage.CachedStaticModelSurfaceRenderPass <- renderPass
-                messageBuffers3d.[messageBufferIndex].Add cachedStaticModelSurfaceMessage
+                messageBuffers3d[messageBufferIndex].Add cachedStaticModelSurfaceMessage
             | _ -> failwithumf ()
 
         member rt.RenderAnimatedModelFast (modelMatrix, castShadow, presence, insetOpt, materialProperties, boneTransforms, animatedModel, subsortOffsets, drsIndices, depthTest, renderType, renderPass) =
@@ -615,7 +615,7 @@ type RendererThread () =
                 cachedMessage.CachedAnimatedModelDepthTest <- depthTest
                 cachedMessage.CachedAnimatedModelRenderType <- renderType
                 cachedMessage.CachedAnimatedModelRenderPass <- renderPass
-                messageBuffers3d.[messageBufferIndex].Add cachedAnimatedModelMessage
+                messageBuffers3d[messageBufferIndex].Add cachedAnimatedModelMessage
             | _ -> failwithumf ()
 
         member rt.EnqueueMessage2d message =
@@ -640,11 +640,11 @@ type RendererThread () =
                             descriptor.CachedSprite.Blend <- sprite.Blend
                             descriptor.CachedSprite.Emission <- sprite.Emission
                             descriptor.CachedSprite.Flip <- sprite.Flip
-                            messageBuffers2d.[messageBufferIndex].Add cachedSpriteMessage 
+                            messageBuffers2d[messageBufferIndex].Add cachedSpriteMessage 
                         | _ -> failwithumf ()
                     | _ -> failwithumf ()
-                | _ -> messageBuffers2d.[messageBufferIndex].Add message
-            | _ -> messageBuffers2d.[messageBufferIndex].Add message
+                | _ -> messageBuffers2d[messageBufferIndex].Add message
+            | _ -> messageBuffers2d[messageBufferIndex].Add message
 
         member rt.RenderLayeredSpriteFast (elevation, horizon, assetTag, transform, insetOpt, clipOpt, image, color, blend, emission, flip) =
             let cachedSpriteMessage = allocSpriteMessage ()
@@ -663,29 +663,29 @@ type RendererThread () =
                     descriptor.CachedSprite.Blend <- blend
                     descriptor.CachedSprite.Emission <- emission
                     descriptor.CachedSprite.Flip <- flip
-                    messageBuffers2d.[messageBufferIndex].Add cachedSpriteMessage 
+                    messageBuffers2d[messageBufferIndex].Add cachedSpriteMessage 
                 | _ -> failwithumf ()
             | _ -> failwithumf ()
 
         member rt.EnqueueMessageImGui message =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
-            messageBuffersImGui.[messageBufferIndex].Add message
+            messageBuffersImGui[messageBufferIndex].Add message
 
         member rt.ClearMessages () =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
-            messageBuffers3d.[messageBufferIndex].Clear ()
-            messageBuffers2d.[messageBufferIndex].Clear ()
-            messageBuffersImGui.[messageBufferIndex].Clear ()
+            messageBuffers3d[messageBufferIndex].Clear ()
+            messageBuffers2d[messageBufferIndex].Clear ()
+            messageBuffersImGui[messageBufferIndex].Clear ()
 
         member rt.SubmitMessages frustumInterior frustumExterior frustumImposter eye3dCenter eye3dRotation eye3dFieldOfView eye2dCenter eye2dSize eyeMargin geometryViewport windowViewport drawData =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
-            let messages3d = messageBuffers3d.[messageBufferIndex]
-            let messages2d = messageBuffers2d.[messageBufferIndex]
-            let messagesImGui = messageBuffersImGui.[messageBufferIndex]
+            let messages3d = messageBuffers3d[messageBufferIndex]
+            let messages2d = messageBuffers2d[messageBufferIndex]
+            let messagesImGui = messageBuffersImGui[messageBufferIndex]
             messageBufferIndex <- if messageBufferIndex = 0 then 1 else 0
-            messageBuffers3d.[messageBufferIndex].Clear ()
-            messageBuffers2d.[messageBufferIndex].Clear ()
-            messageBuffersImGui.[messageBufferIndex].Clear ()
+            messageBuffers3d[messageBufferIndex].Clear ()
+            messageBuffers2d[messageBufferIndex].Clear ()
+            messageBuffersImGui[messageBufferIndex].Clear ()
             submissionOpt <- Some (frustumInterior, frustumExterior, frustumImposter, messages3d, messages2d, messagesImGui, eye3dCenter, eye3dRotation, eye3dFieldOfView, eye2dCenter, eye2dSize, eyeMargin, geometryViewport, windowViewport, drawData)
 
         member rt.RequestSwap () =

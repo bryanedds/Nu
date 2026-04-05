@@ -9,8 +9,8 @@ open System
 open System.Collections.Generic
 open System.IO
 open System.Numerics
-open System.Runtime.InteropServices
-open SDL2
+open FSharp.NativeInterop
+open SDL
 open TiledSharp
 open Prime
 
@@ -31,7 +31,7 @@ type [<Struct>] TextValue =
       mutable ClipOpt : Box2 voption
       mutable Text : string
       mutable Font : Font AssetTag
-      mutable FontSizing : int option
+      mutable FontSizing : single option
       mutable FontStyling : FontStyle Set
       mutable Color : Color
       mutable Justification : Justification
@@ -95,7 +95,7 @@ type TextDescriptor =
       ClipOpt : Box2 voption
       Text : string
       Font : Font AssetTag
-      FontSizing : int option
+      FontSizing : single option
       FontStyling : FontStyle Set
       Color : Color
       Justification : Justification
@@ -165,12 +165,13 @@ type [<ReferenceEquality>] StubRenderer2d =
     private
         { StubRenderer2d : unit }
 
+    /// Make a StubRenderer2d.
+    static member make () =
+        { StubRenderer2d = () }
+
     interface Renderer2d with
         member renderer.Render _ _ _ _ = ()
         member renderer.CleanUp () = ()
-
-    static member make () =
-        { StubRenderer2d = () }
 
 /// The OpenGL implementation of Renderer2d.
 type [<ReferenceEquality>] GlRenderer2d =
@@ -207,7 +208,7 @@ type [<ReferenceEquality>] GlRenderer2d =
         match renderAsset with
         | RawAsset -> ()
         | TextureAsset texture -> texture.Destroy ()
-        | FontAsset (_, font) -> SDL_ttf.TTF_CloseFont font
+        | FontAsset (_, font) -> SDL3_ttf.TTF_CloseFont font
         | CubeMapAsset _ -> ()
         | StaticModelAsset _ -> ()
         | AnimatedModelAsset _ -> ()
@@ -233,15 +234,16 @@ type [<ReferenceEquality>] GlRenderer2d =
             let fontSizeDefault =
                 if fileFirstNameLength >= 3 then
                     let fontSizeText = fileFirstName.Substring (fileFirstNameLength - 3, 3)
-                    match Int32.TryParse fontSizeText with
+                    match Single.TryParse fontSizeText with
                     | (true, fontSize) -> fontSize
                     | (false, _) -> Constants.Render.FontSizeDefault
                 else Constants.Render.FontSizeDefault
-            let fontSize = fontSizeDefault * renderer.Viewport.DisplayScalar
-            let fontOpt = SDL_ttf.TTF_OpenFont (asset.FilePath, fontSize)
-            if fontOpt <> IntPtr.Zero
+            let fontSize = fontSizeDefault * single renderer.Viewport.DisplayScalar
+            let filePathSdl = PathF.GetFullPath asset.FilePath
+            let fontOpt = SDL3_ttf.TTF_OpenFont (filePathSdl, fontSize)
+            if fontOpt <> NativePtr.nullPtr
             then Some (FontAsset (fontSizeDefault, fontOpt))
-            else Log.info ("Could not load font due to '" + SDL_ttf.TTF_GetError () + "'."); None
+            else Log.info ("Could not load font due to '" + SDL3.SDL_GetError () + "'."); None
         | _ -> None
 
     static member private tryLoadRenderPackage packageName renderer =
@@ -262,7 +264,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                              OpenGL.CubeMap.CubeMapClient (),
                              OpenGL.PhysicallyBased.PhysicallyBasedSceneClient ())
                     let renderPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = assetClient }
-                    renderer.RenderPackages.[packageName] <- renderPackage
+                    renderer.RenderPackages[packageName] <- renderPackage
                     renderPackage
 
             // categorize existing assets based on the required action
@@ -308,14 +310,14 @@ type [<ReferenceEquality>] GlRenderer2d =
                     let lastWriteTime =
                         try DateTimeOffset (File.GetLastWriteTime asset.FilePath)
                         with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
-                    assetsLoaded.[asset.AssetTag.AssetName] <- (lastWriteTime, asset, renderAsset)
+                    assetsLoaded[asset.AssetTag.AssetName] <- (lastWriteTime, asset, renderAsset)
                 | None -> ()
 
             // insert assets into package
             for assetEntry in assetsLoaded do
                 let assetName = assetEntry.Key
                 let (lastWriteTime, asset, renderAsset) = assetEntry.Value
-                renderPackage.Assets.[assetName] <- (lastWriteTime, asset, renderAsset)
+                renderPackage.Assets[assetName] <- (lastWriteTime, asset, renderAsset)
 
         // handle error cases
         | Left failedAssetNames ->
@@ -575,7 +577,7 @@ type [<ReferenceEquality>] GlRenderer2d =
             while tileIndex < tilesLength do
 
                 // gather context for rendering tile
-                let tile = tiles.[tileIndex]
+                let tile = tiles[tileIndex]
                 if tile.Gid <> 0 then // not the empty tile
                     let tileBounds = box2 tileMin tileSize
                     let viewBounds = box2 (eyeCenter - eyeSize * 0.5f) eyeSize
@@ -620,6 +622,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                 // fin
                 tileIndex <- inc tileIndex
                 tileMin.X <- tileMin.X + tileSize.X
+
         else Log.infoOnce ("TileLayerDescriptor failed due to unloadable or non-texture assets for one or more of '" + scstring tileAssets + "'.")
 
     /// Render Spine skeleton.
@@ -660,7 +663,7 @@ type [<ReferenceEquality>] GlRenderer2d =
          clipOpt : Box2 voption inref,
          text : string,
          font : Font AssetTag,
-         fontSizing : int option,
+         fontSizing : single option,
          fontStyling : FontStyle Set,
          color : Color inref,
          justification : Justification,
@@ -704,8 +707,8 @@ type [<ReferenceEquality>] GlRenderer2d =
                         // determine font size
                         let fontSize =
                             match fontSizing with
-                            | Some fontSize -> fontSize * renderer.Viewport.DisplayScalar
-                            | None -> fontSizeDefault * renderer.Viewport.DisplayScalar
+                            | Some fontSize -> fontSize * single renderer.Viewport.DisplayScalar
+                            | None -> fontSizeDefault * single renderer.Viewport.DisplayScalar
 
                         // attempt to find or create text texture
                         // NOTE: because of the hacky way the caret is shown, texture is recreated every blink on / off.
@@ -715,48 +718,47 @@ type [<ReferenceEquality>] GlRenderer2d =
                             | (false, _) ->
 
                                 // gather rendering resources
-                                let (offset, textSurface, textSurfacePtr) =
+                                let (offset, textSurfacePtr) =
 
                                     // create sdl color
-                                    let mutable colorSdl = SDL.SDL_Color ()
+                                    let mutable colorSdl = SDL_Color ()
                                     colorSdl.r <- color.R8
                                     colorSdl.g <- color.G8
                                     colorSdl.b <- color.B8
                                     colorSdl.a <- color.A8
 
                                     // attempt to configure sdl font size
-                                    if SDL_ttf.TTF_SetFontSize (font, fontSize) <> 0 then
-                                        let error = SDL_ttf.TTF_GetError ()
+                                    if not (SDL3_ttf.TTF_SetFontSize (font, fontSize)) then
+                                        let error = SDL3.SDL_GetError ()
                                         Log.infoOnce ("Failed to set font size for font '" + scstring font + "' due to: " + error)
-                                        SDL_ttf.TTF_SetFontSize (font, fontSizeDefault * renderer.Viewport.DisplayScalar) |> ignore<int>
+                                        SDL3_ttf.TTF_SetFontSize (font, fontSizeDefault * single renderer.Viewport.DisplayScalar) |> ignore<SDLBool>
 
                                     // configure sdl font style
                                     let styleSdl =
                                         if fontStyling.Count > 0 then // OPTIMIZATION: avoid set queries where possible.
-                                            (if fontStyling.Contains Bold then SDL_ttf.TTF_STYLE_BOLD else 0) |||
-                                            (if fontStyling.Contains Italic then SDL_ttf.TTF_STYLE_ITALIC else 0) |||
-                                            (if fontStyling.Contains Underline then SDL_ttf.TTF_STYLE_UNDERLINE else 0) |||
-                                            (if fontStyling.Contains Strikethrough then SDL_ttf.TTF_STYLE_STRIKETHROUGH else 0)
-                                        else 0
-                                    SDL_ttf.TTF_SetFontStyle (font, styleSdl)
+                                            (if fontStyling.Contains Bold then TTF_FontStyleFlags.TTF_STYLE_BOLD else TTF_FontStyleFlags.TTF_STYLE_NORMAL) |||
+                                            (if fontStyling.Contains Italic then TTF_FontStyleFlags.TTF_STYLE_ITALIC else TTF_FontStyleFlags.TTF_STYLE_NORMAL) |||
+                                            (if fontStyling.Contains Underline then TTF_FontStyleFlags.TTF_STYLE_UNDERLINE else TTF_FontStyleFlags.TTF_STYLE_NORMAL) |||
+                                            (if fontStyling.Contains Strikethrough then TTF_FontStyleFlags.TTF_STYLE_STRIKETHROUGH else TTF_FontStyleFlags.TTF_STYLE_NORMAL)
+                                        else TTF_FontStyleFlags.TTF_STYLE_NORMAL
+                                    SDL3_ttf.TTF_SetFontStyle (font, styleSdl)
 
                                     // render text to surface
                                     match justification with
                                     | Unjustified wrapped ->
                                         let textSurfacePtr =
                                             if wrapped
-                                            then SDL_ttf.TTF_RenderUNICODE_Blended_Wrapped (font, text, colorSdl, uint32 size.X)
-                                            else SDL_ttf.TTF_RenderUNICODE_Blended (font, text, colorSdl)
-                                        let textSurface = Marshal.PtrToStructure<SDL.SDL_Surface> textSurfacePtr
+                                            then SDL3_ttf.TTF_RenderText_Blended_Wrapped (font, text, 0un, colorSdl, int size.X)
+                                            else SDL3_ttf.TTF_RenderText_Blended (font, text, 0un, colorSdl)
+                                        let textSurface = NativePtr.toByRef textSurfacePtr
                                         let textSurfaceHeight = single textSurface.h
                                         let offsetY = size.Y - textSurfaceHeight
-                                        (v2 0.0f offsetY, textSurface, textSurfacePtr)
+                                        (v2 0.0f offsetY, textSurfacePtr)
                                     | Justified (h, v) ->
                                         let mutable width = 0
                                         let mutable height = 0
-                                        SDL_ttf.TTF_SizeUNICODE (font, text, &width, &height) |> ignore
-                                        let textSurfacePtr = SDL_ttf.TTF_RenderUNICODE_Blended (font, text, colorSdl)
-                                        let textSurface = Marshal.PtrToStructure<SDL.SDL_Surface> textSurfacePtr
+                                        SDL3_ttf.TTF_GetStringSize (font, text, 0un, &&width, &&height) |> ignore<SDLBool>
+                                        let textSurfacePtr = SDL3_ttf.TTF_RenderText_Blended (font, text, 0un, colorSdl)
                                         let offsetX =
                                             match h with
                                             | JustifyLeft -> 0.0f
@@ -768,13 +770,14 @@ type [<ReferenceEquality>] GlRenderer2d =
                                             | JustifyMiddle -> floor ((size.Y - single height) * 0.5f)
                                             | JustifyBottom -> 0.0f
                                         let offset = v2 offsetX offsetY
-                                        (offset, textSurface, textSurfacePtr)
+                                        (offset, textSurfacePtr)
 
                                 // render only when a valid surface was created
-                                if textSurfacePtr <> IntPtr.Zero then
+                                if not (NativePtr.isNullPtr textSurfacePtr) then
+                                    let textSurface = NativePtr.toByRef textSurfacePtr
 
                                     // construct mvp matrix
-                                    let textSurfaceWidth = textSurface.pitch / 4
+                                    let textSurfaceWidth = textSurface.pitch / 4 // NOTE: textSurface.w may be an innacurate representation of texture width in SDL2_ttf versions beyond v2.0.15 because... I don't know why.
                                     let textSurfaceHeight = textSurface.h
                                     let translation = (position + offset).V3
                                     let scale = v3 (single textSurfaceWidth) (single textSurfaceHeight) 1.0f
@@ -791,7 +794,7 @@ type [<ReferenceEquality>] GlRenderer2d =
 
                                     // upload texture data
                                     OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, textTextureId)
-                                    OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, OpenGL.Texture.Uncompressed.InternalFormat, textSurfaceWidth, textSurfaceHeight, 0, OpenGL.PixelFormat.Bgra, OpenGL.PixelType.UnsignedByte, textSurface.pixels)
+                                    OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, OpenGL.Texture.Uncompressed.InternalFormat, textSurfaceWidth, textSurfaceHeight, 0, OpenGL.Texture.Uncompressed.PixelFormat, OpenGL.PixelType.UnsignedByte, textSurface.pixels)
                                     OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMinFilter, int OpenGL.TextureMinFilter.Nearest)
                                     OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMagFilter, int OpenGL.TextureMagFilter.Nearest)
                                     OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
@@ -802,8 +805,8 @@ type [<ReferenceEquality>] GlRenderer2d =
                                     let textTexture = OpenGL.Texture.EagerTexture { TextureMetadata = textTextureMetadata; TextureId = textTextureId }
                                     OpenGL.Hl.Assert ()
 
-                                    // free sdl surface
-                                    SDL.SDL_FreeSurface textSurfacePtr
+                                    // destroy sdl surface
+                                    SDL3.SDL_DestroySurface textSurfacePtr
 
                                     // register texture for reuse
                                     renderer.TextTextures.Add (textTextureKey, (ref true, (textSurfaceWidth, textSurfaceHeight, modelViewProjection, textTexture)))
@@ -846,13 +849,13 @@ type [<ReferenceEquality>] GlRenderer2d =
         | RenderSprites descriptor ->
             let sprites = descriptor.Sprites
             for index in 0 .. sprites.Length - 1 do
-                let sprite = &sprites.[index]
+                let sprite = &sprites[index]
                 GlRenderer2d.renderSprite
                     (&sprite.Transform, &sprite.InsetOpt, &sprite.ClipOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Emission, sprite.Flip, renderer)
         | RenderSpriteDescriptors descriptor ->
             let sprites = descriptor.SpriteDescriptors
             for index in 0 .. sprites.Length - 1 do
-                let sprite = sprites.[index]
+                let sprite = sprites[index]
                 GlRenderer2d.renderSprite
                     (&sprite.Transform, &sprite.InsetOpt, &sprite.ClipOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Emission, sprite.Flip, renderer)
         | RenderSpriteParticles descriptor ->
@@ -885,7 +888,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                     if renderAsset.IsFontAsset then
                         GlRenderer2d.freeRenderAsset renderAsset renderer
                         match GlRenderer2d.tryLoadRenderAsset package.PackageState asset renderer with
-                        | Some renderAsset -> package.Assets.[assetName] <- (lastWriteTime, asset, renderAsset)
+                        | Some renderAsset -> package.Assets[assetName] <- (lastWriteTime, asset, renderAsset)
                         | None -> Log.fail ("Failed to reload font '" + scstring asset.AssetTag + "' on DisplayScalar change.")
 
         // update viewport
@@ -927,7 +930,7 @@ type [<ReferenceEquality>] GlRenderer2d =
             |> Seq.map (fun entry -> entry.Key)
             |> Seq.toArray
         for entry in textTexturesUnused do
-            let (_, _, _, textTexture) = snd renderer.TextTextures.[entry]
+            let (_, _, _, textTexture) = snd renderer.TextTextures[entry]
             renderer.TextTextures.Remove entry |> ignore<bool>
             renderer.TextTextureIdPool.Push textTexture.TextureId
             OpenGL.Hl.Assert ()

@@ -4,7 +4,7 @@ Nu Game Engine [![Build status](https://github.com/bryanedds/Nu/actions/workflow
 
 So... just what is the **Nu Game Engine**?
 
-*"The Nu Game Engine is the world's first practical functional 2D and 3D cross-platform game engine. Built in F#, it offers an immediate-mode API based on ImGui called ImSim as well as a model-driven API called MMCC (Model-Message-Command-Content). Nu offers a path to a future where game developers are liberated from the snowballing complexity of overly-imperative game programming approaches. Nu's implementation has matured enough to prove both the efficacy and viability of declarative programming in games. Nu currently utilizes SDL2, OpenGL, Aether 2D Physics, and Jolt 3D Physics."*
+*"The Nu Game Engine is the world's first practical functional 2D and 3D cross-platform game engine. Built in F#, it offers an immediate-mode API based on ImGui called ImSim as well as a model-driven API called MMCC (Model-Message-Command-Content). Nu offers a path to a future where game developers are liberated from the snowballing complexity of overly-imperative game programming approaches. Nu's implementation has matured enough to prove both the efficacy and viability of declarative programming in games. Nu currently utilizes SDL3, OpenGL, Aether 2D Physics, and Jolt 3D Physics."*
 
 ***"...everything that I can think of that makes games programming so awful seems to have a solution in your engine!"* - @Sigmoid**
 
@@ -25,12 +25,14 @@ Look here to get started with your own project in Nu -
 
 [Introductory Material](https://github.com/bryanedds/Nu/wiki#introductory-material) - start here first!
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/bryanedds/Nu) -  an increasingly accurate AI-generated wiki for Nu!
+
 [API Documentation](https://bryanedds.github.io/Nu/) - a basic API reference.
 
 Some Media on the Nu Game Engine
 ================================
 
-![image](https://github.com/user-attachments/assets/86cc7f21-88f2-42b2-a0d7-e9b7940d8680)
+![image](https://github.com/user-attachments/assets/bcd2d036-eda3-45a2-94fa-114f6ef171c4)
 **Screenshot of the Week!**
 
 ![image](https://github.com/user-attachments/assets/e6d56c42-1eb1-41d4-889c-42b03abd4110)

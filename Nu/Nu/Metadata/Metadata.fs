@@ -63,6 +63,13 @@ module Metadata =
                 let height = BinaryPrimitives.ReadUInt32LittleEndian (ddsHeader.AsSpan (12, 4))
                 let width = BinaryPrimitives.ReadUInt32LittleEndian (ddsHeader.AsSpan (16, 4))
                 Some (OpenGL.Texture.TextureMetadata.make (int width) (int height))
+            elif fileExtension = ".ktx" then
+                let ktxHeader = Array.zeroCreate<byte> 44
+                use fileStream = new FileStream (filePath, FileMode.Open, FileAccess.Read, FileShare.Read)
+                fileStream.ReadExactly ktxHeader
+                let width = BinaryPrimitives.ReadUInt32LittleEndian (ktxHeader.AsSpan (36, 4))
+                let height = BinaryPrimitives.ReadUInt32LittleEndian (ktxHeader.AsSpan (40, 4))
+                Some (OpenGL.Texture.TextureMetadata.make (int width) (int height))
             elif fileExtension = ".tga" then
                 let ddsHeader = Array.zeroCreate<byte> 16
                 use fileStream = new FileStream (filePath, FileMode.Open, FileAccess.Read, FileShare.Read)
@@ -272,14 +279,14 @@ module Metadata =
                             let lastWriteTime =
                                 try DateTimeOffset (File.GetLastWriteTime asset.FilePath)
                                 with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
-                            assetsLoaded.[asset.AssetTag.AssetName] <- (lastWriteTime, asset.FilePath, assetMetadata)
+                            assetsLoaded[asset.AssetTag.AssetName] <- (lastWriteTime, asset.FilePath, assetMetadata)
                         | None -> ()
 
                     // insert assets into package
                     for assetEntry in assetsLoaded do
                         let assetName = assetEntry.Key
                         let (lastWriteTime, filePath, audioAsset) = assetEntry.Value
-                        metadataPackage.[assetName] <- (lastWriteTime, filePath, audioAsset)
+                        metadataPackage[assetName] <- (lastWriteTime, filePath, audioAsset)
 
                     // insert package
                     MetadataPackagesLoaded.TryAdd (metadataPackageName, metadataPackage) |> ignore<bool>
@@ -425,7 +432,7 @@ module Metadata =
         | ValueSome modelMetadata ->
             match modelMetadata.SceneOpt with
             | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
-                let material = scene.Materials.[materialIndex]
+                let material = scene.Materials[materialIndex]
                 let mutable (_, albedoTextureSlotA) = material.GetMaterialTexture (Assimp.TextureType.BaseColor, 0)
                 let mutable (_, albedoTextureSlotB) = material.GetMaterialTexture (Assimp.TextureType.Diffuse, 0)
                 let albedoTextureSlotFilePath =
@@ -445,7 +452,7 @@ module Metadata =
         | ValueSome modelMetadata ->
             match modelMetadata.SceneOpt with
             | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
-                let material = scene.Materials.[materialIndex]
+                let material = scene.Materials[materialIndex]
                 let mutable (_, roughnessTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Roughness, 0)
                 if isNull roughnessTextureSlot.FilePath then roughnessTextureSlot.FilePath <- "" // ensure not null
                 let assetName = PathF.GetFileNameWithoutExtension roughnessTextureSlot.FilePath
@@ -485,7 +492,7 @@ module Metadata =
         | ValueSome modelMetadata ->
             match modelMetadata.SceneOpt with
             | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
-                let material = scene.Materials.[materialIndex]
+                let material = scene.Materials[materialIndex]
                 let mutable (_, metallicTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Metalness, 0)
                 if isNull metallicTextureSlot.FilePath then metallicTextureSlot.FilePath <- "" // ensure not null
                 let assetName = PathF.GetFileNameWithoutExtension metallicTextureSlot.FilePath
@@ -525,7 +532,7 @@ module Metadata =
         | ValueSome modelMetadata ->
             match modelMetadata.SceneOpt with
             | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
-                let material = scene.Materials.[materialIndex]
+                let material = scene.Materials[materialIndex]
                 let mutable (_, ambientOcclusionTextureSlotA) = material.GetMaterialTexture (Assimp.TextureType.Ambient, 0)
                 let mutable (_, ambientOcclusionTextureSlotB) = material.GetMaterialTexture (Assimp.TextureType.AmbientOcclusion, 0)
                 let ambientOcclusionTextureSlotFilePath =
@@ -568,7 +575,7 @@ module Metadata =
         | ValueSome modelMetadata ->
             match modelMetadata.SceneOpt with
             | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
-                let material = scene.Materials.[materialIndex]
+                let material = scene.Materials[materialIndex]
                 let mutable (_, emissionTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Emissive, 0)
                 if isNull emissionTextureSlot.FilePath then emissionTextureSlot.FilePath <- "" // ensure not null
                 let assetName = PathF.GetFileNameWithoutExtension emissionTextureSlot.FilePath
@@ -600,7 +607,7 @@ module Metadata =
         | ValueSome modelMetadata ->
             match modelMetadata.SceneOpt with
             | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
-                let material = scene.Materials.[materialIndex]
+                let material = scene.Materials[materialIndex]
                 let mutable (_, normalTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Normals, 0)
                 if isNull normalTextureSlot.FilePath then normalTextureSlot.FilePath <- "" // ensure not null
                 let assetName = PathF.GetFileNameWithoutExtension normalTextureSlot.FilePath
@@ -630,7 +637,7 @@ module Metadata =
         | ValueSome modelMetadata ->
             match modelMetadata.SceneOpt with
             | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
-                let material = scene.Materials.[materialIndex]
+                let material = scene.Materials[materialIndex]
                 let mutable (_, heightTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Height, 0)
                 if isNull heightTextureSlot.FilePath then heightTextureSlot.FilePath <- "" // ensure not null
                 let assetName = PathF.GetFileNameWithoutExtension heightTextureSlot.FilePath
@@ -798,7 +805,7 @@ module Metadata =
         | ValueSome modelMetadata ->
             match modelMetadata.SceneOpt with
             | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
-                let material = scene.Materials.[materialIndex]
+                let material = scene.Materials[materialIndex]
                 match material.TwoSidedOpt with
                 | ValueSome twoSided -> ValueSome twoSided
                 | ValueNone -> ValueNone
@@ -811,7 +818,7 @@ module Metadata =
         | ValueSome modelMetadata ->
             match modelMetadata.SceneOpt with
             | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
-                let material = scene.Materials.[materialIndex]
+                let material = scene.Materials[materialIndex]
                 match material.ClippedOpt with
                 | ValueSome clipped -> ValueSome clipped
                 | ValueNone -> ValueNone
@@ -824,7 +831,7 @@ module Metadata =
         | ValueSome modelMetadata ->
             match modelMetadata.SceneOpt with
             | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
-                let material = scene.Materials.[materialIndex]
+                let material = scene.Materials[materialIndex]
                 match material.NavShapeOpt with
                 | ValueSome shape -> ValueSome shape
                 | ValueNone -> ValueNone

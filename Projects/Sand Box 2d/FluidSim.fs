@@ -58,8 +58,8 @@ type LineSegmentsDispatcher () =
         let lineWidth = lineSegments.GetLineWidth world
         let mutable transform = Transform.makeIntuitive false v3Zero v3One v3Zero v3Zero v3Zero (lineSegments.GetElevation world) (lineSegments.GetPerimeterCentered world)
         for i in 0 .. segments.Length - 2 do
-            let p1 = segments.[i]
-            let p2 = segments.[inc i]
+            let p1 = segments[i]
+            let p2 = segments[inc i]
             transform.Position <- ((p1 + p2) * 0.5f).V3
             transform.Rotation <- Quaternion.CreateLookAt2d (p2 - p1)
             transform.Size <- v3 (p2 - p1).Magnitude lineWidth 0f
@@ -164,19 +164,19 @@ type FluidSimDispatcher () =
                   ("<", (World.getGravityDefault2d world).Transform (Quaternion.CreateFromAngle2d -MathF.PI_OVER_2))
                   ("/", (World.getGravityDefault2d world).Transform (Quaternion.CreateFromAngle2d -MathF.PI_OVER_4))|]
             for i in 0 .. dec gravities.Length do
-                if World.getGravity2d world = snd gravities.[i] then
+                if World.getGravity2d world = snd gravities[i] then
                     if World.doButton $"Gravity"
                         [Entity.Position .= v3 255f 110f 0f
-                         Entity.Text @= $"Gravity: {fst gravities.[i]}"
+                         Entity.Text @= $"Gravity: {fst gravities[i]}"
                          Entity.Elevation .= 1f] world then
-                        World.setGravity2d (snd gravities.[(i + 1) % gravities.Length]) world
+                        World.setGravity2d (snd gravities[(i + 1) % gravities.Length]) world
 
             // particle sprite button
             if World.doButton $"Particle Sprite"
                 [Entity.Position .= v3 255f 80f 0f
                  Entity.Text @= $"Particle Sprite: {(fluidEmitter.GetStaticImage world).AssetName}"
                  Entity.Elevation .= 1f
-                 Entity.FontSizing .= Some 8] world then
+                 Entity.FontSizing .= Some 8.f] world then
                 if fluidEmitter.GetStaticImage world = Assets.Default.Ball then
                     // in Paint.NET (canvas size = 50 x 50), use the Brush (size = 50, hardness = 50%, fill = solid color #0094FF)
                     // and click the center once, to generate this Particle image.
@@ -199,7 +199,7 @@ type FluidSimDispatcher () =
                 [Entity.Position .= v3 255f 50f 0f
                  Entity.Text @= $"Viscosity: {fluidEmitter.GetViscocity world}"
                  Entity.Elevation .= 1f
-                 Entity.FontSizing .= Some 12] world then
+                 Entity.FontSizing .= Some 12.f] world then
                 fluidEmitter.Viscocity.Map
                     (function
                      | 0.004f -> 0.01f
@@ -216,7 +216,7 @@ type FluidSimDispatcher () =
                 [Entity.Position .= v3 255f 20f 0f
                  Entity.Text @= $"Linear Damping: {fluidEmitter.GetLinearDamping world}"
                  Entity.Elevation .= 1f
-                 Entity.FontSizing .= Some 11] world then
+                 Entity.FontSizing .= Some 11.f] world then
                 fluidEmitter.LinearDamping.Map
                     (function
                      | 0f -> 0.2f
@@ -232,7 +232,7 @@ type FluidSimDispatcher () =
                 [Entity.Position .= v3 255f -10f 0f
                  Entity.Text @= $"Particle Radius: {fluidEmitter.GetFluidParticleRadius world}"
                  Entity.Elevation .= 1f
-                 Entity.FontSizing .= Some 10] world then
+                 Entity.FontSizing .= Some 10.f] world then
                 fluidEmitter.FluidParticleRadius.Map
                     (function
                      | 28.8f -> fluidEmitter.LinearDamping.Map (max 0.5f) world; 22.2f // Particles would explode when tank is full without damping
@@ -299,7 +299,7 @@ type FluidSimDispatcher () =
                         Mouse Left and Right - Summon a giant bubble that collides with particles.\n\
                         Mouse Middle - Draw contours that collide with particles. \n\
                         NOTE: Intersecting contours are not supported and will cause tunneling!"
-                     Entity.FontSizing .= Some 10
+                     Entity.FontSizing .= Some 10.f
                      Entity.TextMargin .= v2 5f 0f] world
                 if World.doButton "Info Close"
                     [Entity.LayoutOrder .= 3
@@ -378,14 +378,14 @@ type FluidSimDispatcher () =
                         List.cons [|mousePosition|] lineSegments) world
                 elif World.isMouseButtonDown MouseMiddle world then
                     fluidSim.LineSegments.Map (fun lineSegments ->
-                        let active = lineSegments.[0]
+                        let active = lineSegments[0]
                         if Vector2.Distance (mousePosition, Array.last active) > 8f then
                             List.updateAt 0 (Array.add mousePosition active) lineSegments
                         else lineSegments) world
 
             // declare containment contour
             for segment in fluidSim.GetLineSegments world do
-                World.doEntity<LineSegmentsDispatcher> $"Contour {segment.[0]}" [Entity.LineSegments @= segment] world
+                World.doEntity<LineSegmentsDispatcher> $"Contour {segment[0]}" [Entity.LineSegments @= segment] world
 
             // end scene declaration
             World.endGroup world

@@ -71,7 +71,7 @@ type StaticSpriteFacet () =
     override this.Render (_, entity, world) =
         let mutable transform = entity.GetTransform world
         let staticImage = entity.GetStaticImage world
-        let insetOpt = match entity.GetInsetOpt world with Some inset -> ValueSome inset | None -> ValueNone
+        let insetOpt = entity.GetInsetOpt world |> Option.toValueOption
         let clipOpt = entity.GetClipOpt world |> Option.toValueOption
         let color = entity.GetColor world
         let blend = entity.GetBlend world
@@ -152,7 +152,7 @@ type AnimatedSpriteFacet () =
     override this.Render (_, entity, world) =
         let mutable transform = entity.GetTransform world
         let animationSheet = entity.GetAnimationSheet world
-        let insetOpt = match getSpriteInsetOpt entity world with Some inset -> ValueSome inset | None -> ValueNone
+        let insetOpt = getSpriteInsetOpt entity world |> Option.toValueOption
         let clipOpt = entity.GetClipOpt world |> Option.toValueOption
         let color = entity.GetColor world
         let blend = entity.GetBlend world
@@ -423,8 +423,8 @@ module TextFacetExtensions =
         member this.GetFont world : Font AssetTag = this.Get (nameof this.Font) world
         member this.SetFont (value : Font AssetTag) world = this.Set (nameof this.Font) value world
         member this.Font = lens (nameof this.Font) this this.GetFont this.SetFont
-        member this.GetFontSizing world : int option = this.Get (nameof this.FontSizing) world
-        member this.SetFontSizing (value : int option) world = this.Set (nameof this.FontSizing) value world
+        member this.GetFontSizing world : single option = this.Get (nameof this.FontSizing) world
+        member this.SetFontSizing (value : single option) world = this.Set (nameof this.FontSizing) value world
         member this.FontSizing = lens (nameof this.FontSizing) this this.GetFontSizing this.SetFontSizing
         member this.GetFontStyling world : FontStyle Set = this.Get (nameof this.FontStyling) world
         member this.SetFontStyling (value : FontStyle Set) world = this.Set (nameof this.FontStyling) value world
@@ -886,9 +886,9 @@ type FillBarFacet () =
          define Entity.ColorDisabled Constants.Gui.ColorDisabledDefault
          define Entity.Fill 0.0f
          define Entity.FillInset 0.0f
-         define Entity.FillColor (Color (1.0f, 0.0f, 0.0f, 1.0f))
+         define Entity.FillColor Color.Red
          define Entity.FillImage Assets.Default.White
-         define Entity.BorderColor (Color (1.0f, 1.0f, 1.0f, 1.0f))
+         define Entity.BorderColor Color.White
          define Entity.BorderImage Assets.Default.Border]
 
     override this.Render (_, entity, world) =
@@ -1568,11 +1568,11 @@ type RigidBodyFacet () =
         // OPTIMIZATION: share lambdas to reduce live object count.
         // OPTIMIZATION: using special BodyPropertiesAffecting change event to reduce subscription count.
         let subIds = Array.init 5 (fun _ -> Gen.id64)
-        World.subscribePlus subIds.[0] (propagatePhysicsCenter entity) (entity.ChangeEvent (nameof entity.Transform)) entity world |> ignore
-        World.subscribePlus subIds.[1] (propagatePhysicsRotation entity) (entity.ChangeEvent (nameof entity.Rotation)) entity world |> ignore
-        World.subscribePlus subIds.[2] (propagatePhysicsLinearVelocity entity) (entity.ChangeEvent (nameof entity.LinearVelocity)) entity world |> ignore
-        World.subscribePlus subIds.[3] (propagatePhysicsAngularVelocity entity) (entity.ChangeEvent (nameof entity.AngularVelocity)) entity world |> ignore
-        World.subscribePlus subIds.[4] (propagatePhysicsAffected entity) (entity.ChangeEvent "BodyPropertiesAffecting") entity world |> ignore
+        World.subscribePlus subIds[0] (propagatePhysicsCenter entity) (entity.ChangeEvent (nameof entity.Transform)) entity world |> ignore
+        World.subscribePlus subIds[1] (propagatePhysicsRotation entity) (entity.ChangeEvent (nameof entity.Rotation)) entity world |> ignore
+        World.subscribePlus subIds[2] (propagatePhysicsLinearVelocity entity) (entity.ChangeEvent (nameof entity.LinearVelocity)) entity world |> ignore
+        World.subscribePlus subIds[3] (propagatePhysicsAngularVelocity entity) (entity.ChangeEvent (nameof entity.AngularVelocity)) entity world |> ignore
+        World.subscribePlus subIds[4] (propagatePhysicsAffected entity) (entity.ChangeEvent "BodyPropertiesAffecting") entity world |> ignore
         let unsubscribe = fun world ->
             for subId in subIds do
                 World.unsubscribe subId world
@@ -3378,7 +3378,7 @@ type StaticModelSurfaceFacet () =
         | ValueSome staticModelMetadata ->
             let surfaceIndex = entity.GetSurfaceIndex world
             if surfaceIndex > -1 && surfaceIndex < staticModelMetadata.Surfaces.Length then
-                let bounds = staticModelMetadata.Surfaces.[surfaceIndex].SurfaceBounds
+                let bounds = staticModelMetadata.Surfaces[surfaceIndex].SurfaceBounds
                 AttributesInferred.important bounds.Size bounds.Center
             else base.GetAttributesInferred (entity, world)
         | ValueNone -> base.GetAttributesInferred (entity, world)
@@ -3389,7 +3389,7 @@ type StaticModelSurfaceFacet () =
         | ValueSome staticModelMetadata ->
             let surfaceIndex = entity.GetSurfaceIndex world
             if surfaceIndex < staticModelMetadata.Surfaces.Length then
-                let surface = staticModelMetadata.Surfaces.[surfaceIndex]
+                let surface = staticModelMetadata.Surfaces[surfaceIndex]
                 let geometry = surface.PhysicallyBasedGeometry
                 let boundsIntersectionOpt = rayEntity.Intersects geometry.Bounds
                 if boundsIntersectionOpt.HasValue then
@@ -3417,7 +3417,7 @@ module StaticModelSurfaceFacetExtensions2 =
                     match Metadata.tryGetStaticModelMetadata staticModel with
                     | ValueSome metadata ->
                         let surfaceIndex = this.GetSurfaceIndex world
-                        let surface = metadata.Surfaces.[surfaceIndex]
+                        let surface = metadata.Surfaces[surfaceIndex]
                         match Metadata.tryGetStaticModelAlbedoImage surface.SurfaceMaterialIndex staticModel with
                         | ValueSome _ as albedoImageOpt -> albedoImageOpt
                         | ValueNone -> ValueNone
@@ -3493,8 +3493,8 @@ module AnimatedModelFacetExtensions =
             match (this.GetBoneOffsetsOpt world, this.GetBoneTransformsOpt world) with
             | (Some offsets, Some transforms) ->
                 let transform =
-                    offsets.[boneIndex].Inverted *
-                    transforms.[boneIndex] *
+                    offsets[boneIndex].Inverted *
+                    transforms[boneIndex] *
                     this.GetAffineMatrix world
                 Some transform
             | (_, _) -> None
@@ -3503,7 +3503,7 @@ module AnimatedModelFacetExtensions =
         member this.TryComputeBoneTransforms time animations (sceneOpt : Assimp.Scene option) =
             match sceneOpt with
             | Some scene when scene.Meshes.Count > 0 ->
-                let (boneIds, boneOffsets, boneTransforms) = scene.ComputeBoneTransforms (time, animations, scene.Meshes.[0])
+                let (boneIds, boneOffsets, boneTransforms) = scene.ComputeBoneTransforms (time, animations, scene.Meshes[0])
                 Some (boneIds, boneOffsets, boneTransforms)
             | Some _ | None -> None
 
@@ -3637,8 +3637,8 @@ type AnimatedModelFacet () =
             | (Some offsets, Some transforms) ->
                 let affineMatrix = entity.GetAffineMatrix world
                 for i in 0 .. dec offsets.Length do
-                    let offset = offsets.[i]
-                    let transform = transforms.[i]
+                    let offset = offsets[i]
+                    let transform = transforms[i]
                     World.imGuiCircle3d (offset.Inverted * transform * affineMatrix).Translation 2.0f false Color.Yellow world
             | (_, _) -> ()
         | _ -> ()

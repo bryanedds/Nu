@@ -151,7 +151,7 @@ module TmxMap =
         let tileMapRun = tmd.TileMapSizeM.X
         let i = tileIndex % tileMapRun
         let j = tileIndex / tileMapRun
-        let tile = tl.Tiles.[tileIndex]
+        let tile = tl.Tiles[tileIndex]
         if tile.Gid <> 0 then // not the empty tile
             let mutable tileOffset = 1 // gid 0 is the empty tile
             let mutable tileSetIndex = 0
@@ -168,7 +168,7 @@ module TmxMap =
                     tileSetIndex <- inc tileSetIndex
                     tileOffset <- tileOffset + tileCount
             let tileId = tile.Gid - tileOffset
-            let tileSet = tmd.TileMap.Tilesets.[tileSetIndex]
+            let tileSet = tmd.TileMap.Tilesets[tileSetIndex]
             let tilePositionI =
                 v2i
                     (int tmd.TileMapPosition.X + tmd.TileSizeI.X * i)
@@ -269,11 +269,11 @@ module TmxMap =
         // combine adjacent tiles on the same row into strips
         let strips = List ()
         for boxes in tileBoxes.Values do
-            let mutable box = boxes.[0]
+            let mutable box = boxes[0]
             let epsilon = box.Size.X * 0.001f
             if boxes.Count > 1 then
                 for i in 1 .. dec boxes.Count do
-                    let box2 = boxes.[i]
+                    let box2 = boxes[i]
                     let distance = abs (box2.Left.X - box.Right.X)
                     if distance < epsilon then
                         box.Size <- v3 (box.Size.X + box2.Size.X) box.Size.Y 0.0f
@@ -370,7 +370,7 @@ module TmxMap =
                             let tileStrip = SList.make ()
                             for tileX in 0 .. dec tileMap.Width do
                                 let tileIndex = tileY * tileMap.Width + tileX
-                                let tile = layer.Tiles.[tileIndex]
+                                let tile = layer.Tiles[tileIndex]
                                 let tileGid =
                                     if  tile.Gid <> 0 && // never offset the zero tile!
                                         tile.Gid >= fst tileIndexOffsetRange &&

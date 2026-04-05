@@ -316,7 +316,7 @@ module WorldModule =
                 world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
 
         static member internal getSimulantImSim simulant (world : World) =
-            world.SimulantsImSim.[simulant]
+            world.SimulantsImSim[simulant]
 
         static member internal addSimulantImSim simulant simulantImSim (world : World) =
             let simulantsImSim = SUMap.add simulant simulantImSim world.SimulantsImSim
@@ -356,7 +356,7 @@ module WorldModule =
                 world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
 
         static member internal getSubscriptionImSim subscription (world : World) =
-            world.SubscriptionsImSim.[subscription]
+            world.SubscriptionsImSim[subscription]
 
         static member internal addSubscriptionImSim subscription subscriptionImSim (world : World) =
             let subscriptionsImSim = SUMap.add subscription subscriptionImSim world.SubscriptionsImSim

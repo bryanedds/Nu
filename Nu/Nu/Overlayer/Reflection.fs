@@ -79,7 +79,7 @@ module Reflection =
 
     /// Configure a property to be non-persistent.
     let internal initPropertyNonPersistent nonPersistent propertyName =
-        PropertyPersistence.[propertyName] <- nonPersistent
+        PropertyPersistence[propertyName] <- nonPersistent
 
     /// Is a property with the given name not persistent?
     let isPropertyNonPersistentByName (propertyName : string) =
@@ -87,7 +87,7 @@ module Reflection =
         | (true, result) -> result
         | (false, _) ->
             let result = false
-            PropertyPersistence.[propertyName] <- result
+            PropertyPersistence[propertyName] <- result
             result
 
     /// Is the property of the given target not persistent?
@@ -553,13 +553,13 @@ module Reflection =
 
             // process loading assemblies
             AppDomain.CurrentDomain.AssemblyLoad.Add (fun args ->
-                AssembliesLoaded.[args.LoadedAssembly.FullName] <- args.LoadedAssembly)
+                AssembliesLoaded[args.LoadedAssembly.FullName] <- args.LoadedAssembly)
             AppDomain.CurrentDomain.add_AssemblyResolve (ResolveEventHandler (fun _ args ->
                 snd (AssembliesLoaded.TryGetValue args.Name)))
 
             // process existing assemblies
             for assembly in AppDomain.CurrentDomain.GetAssemblies () do
-                AssembliesLoaded.[assembly.FullName] <- assembly
+                AssembliesLoaded[assembly.FullName] <- assembly
 
 /// Reflection operators.
 [<AutoOpen>]

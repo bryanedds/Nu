@@ -201,11 +201,6 @@ module WorldInputModule =
             ignore (world : World)
             KeyboardState.isShiftUp ()
 
-        /// Check that an SDL gamepad button is supported.
-        static member isSdlButtonSupported button world =
-            ignore (world : World)
-            GamepadState.isSdlButtonSupported button
-
         /// Get the number of open gamepad.
         static member getGamepadCount world =
             ignore (world : World)
@@ -226,10 +221,10 @@ module WorldInputModule =
             ignore (world : World)
             GamepadState.toSdlButton gamepadButton
 
-        /// Convert SDL's representation of a joystick button to a GamepadButton.
-        static member toNuButton gamepadButton world =
+        /// Try to convert SDL's representation of a joystick button to a GamepadButton.
+        static member tryToNuButton gamepadButton world =
             ignore (world : World)
-            GamepadState.toNuButton gamepadButton
+            GamepadState.tryToNuButton gamepadButton
 
         /// Convert a GamepadDirection to SDL's representation.
         static member toSdlDirection gamepadDirection world =

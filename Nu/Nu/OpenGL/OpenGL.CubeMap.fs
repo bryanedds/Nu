@@ -32,27 +32,32 @@ module CubeMap =
         let faceFilePaths = [|faceRightFilePath; faceLeftFilePath; faceTopFilePath; faceBottomFilePath; faceBackFilePath; faceFrontFilePath|]
         for i in 0 .. dec faceFilePaths.Length do
             if Option.isNone errorOpt then
-                let faceFilePath = faceFilePaths.[i]
+                let faceFilePath = faceFilePaths[i]
                 let faceFilePath = if not (File.Exists faceFilePath) then PathF.ChangeExtension (faceFilePath, ".png") else faceFilePath // in case of PsdToPng
-                let faceFilePath = if not (File.Exists faceFilePath) then PathF.ChangeExtension (faceFilePath, ".dds") else faceFilePath // in case of ConvertToDds
+                let faceFilePath =
+                    if not (File.Exists faceFilePath) then // in case of BlockCompress
+                        match Constants.Render.TextureBlockCompression with
+                        | BcCompression -> PathF.ChangeExtension (faceFilePath, ".dds")
+                        | AstcCompression -> PathF.ChangeExtension (faceFilePath, ".ktx")
+                    else faceFilePath
                 match Texture.TryCreateTextureData (false, faceFilePath) with
                 | Some textureData ->
                     match textureData with
                     | OpenGL.Texture.TextureData.TextureDataDotNet (metadata, bytes) ->
                         let bytesPtr = GCHandle.Alloc (bytes, GCHandleType.Pinned)
-                        try Gl.TexImage2D (LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i), 0, Texture.Uncompressed.InternalFormat, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, bytesPtr.AddrOfPinnedObject ())
+                        try Gl.TexImage2D (LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i), 0, Texture.Uncompressed.InternalFormat, metadata.TextureWidth, metadata.TextureHeight, 0, Texture.Uncompressed.PixelFormat, PixelType.UnsignedByte, bytesPtr.AddrOfPinnedObject ())
                         finally bytesPtr.Free ()
                         Hl.Assert ()
                     | OpenGL.Texture.TextureData.TextureDataMipmap (metadata, compressed, bytes, _) ->
                         let bytesPtr = GCHandle.Alloc (bytes, GCHandleType.Pinned)
                         try if compressed
                             then Gl.CompressedTexImage2D (LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i), 0, Texture.ColorCompression.InternalFormat, metadata.TextureWidth, metadata.TextureHeight, 0, bytes.Length, bytesPtr.AddrOfPinnedObject ())
-                            else Gl.TexImage2D (LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i), 0, Texture.Uncompressed.InternalFormat, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, bytesPtr.AddrOfPinnedObject ())
+                            else Gl.TexImage2D (LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i), 0, Texture.Uncompressed.InternalFormat, metadata.TextureWidth, metadata.TextureHeight, 0, Texture.ColorCompression.PixelFormat, PixelType.UnsignedByte, bytesPtr.AddrOfPinnedObject ())
                         finally bytesPtr.Free ()
                         Hl.Assert ()
                     | OpenGL.Texture.TextureData.TextureDataNative (metadata, bytesPtr, disposer) ->
                         use _ = disposer
-                        Gl.TexImage2D (LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i), 0, Texture.Uncompressed.InternalFormat, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, bytesPtr)
+                        Gl.TexImage2D (LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i), 0, Texture.Uncompressed.InternalFormat, metadata.TextureWidth, metadata.TextureHeight, 0, Texture.Uncompressed.PixelFormat, PixelType.UnsignedByte, bytesPtr)
                         Hl.Assert ()
                 | None -> errorOpt <- Some ("Could not create surface for image from '" + faceFilePath + "'")
 
@@ -163,7 +168,7 @@ module CubeMap =
         // create vao
         let vao =  [|0u|]
         Gl.CreateVertexArrays vao
-        let vao = vao.[0]
+        let vao = vao[0]
 
         // per vertex
         Gl.VertexArrayAttribFormat (vao, 0u, 3, VertexAttribType.Float, false, uint 0)
@@ -210,8 +215,8 @@ module CubeMap =
                 let vertexData = vertexData.Span
                 for i in 0 .. dec vertices.Length do
                     let j = i * 3
-                    let vertex = v3 vertexData.[j] vertexData.[j+1] vertexData.[j+2]
-                    vertices.[i] <- vertex
+                    let vertex = v3 vertexData[j] vertexData[j+1] vertexData[j+2]
+                    vertices[i] <- vertex
                 
                 // fin
                 (vertices, 0u, 0u)

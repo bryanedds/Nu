@@ -65,7 +65,6 @@
         <Compile Include="OpenGL\OpenGL.Filter.fs" />
         <Compile Include="OpenGL\OpenGL.SkyBox.fs" />
         <Compile Include="OpenGL\OpenGL.PhysicallyBased.fs" />
-        <Compile Include="Sdl\SdlInterop.fs" />
         <Compile Include="Sdl\SdlInputBindings.fs" />
         <Compile Include="Sdl\SdlInput.fs" />
         <Compile Include="Sdl\Sdl.fs" />
@@ -141,66 +140,6 @@
         <Compile Include="World\World.fs" />
         <None Include="Scripts\GenerateDependencyGraph.fsx" />
         <None Include="Scripts\GenerateInputBindings.fsx" />
-        <None Include="SDL2.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
-        <None Include="SDL2_image.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
-        <None Include="SDL2_mixer.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
-        <None Include="SDL2_ttf.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
-        <None Include="libfreetype-6.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
-        <None Include="libjpeg-9.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
-        <None Include="libmodplug-1.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
-        <None Include="libogg-0.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
-        <None Include="libopus-0.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
-        <None Include="libopusfile-0.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
-        <None Include="libpng16-16.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
-        <None Include="libFLAC-8.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
-        <None Include="libtiff-5.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
-        <None Include="libmpg123-0.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
-        <None Include="libwebp-7.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
         <None Include="zlib1.dll">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Visible>False</Visible>
@@ -209,11 +148,19 @@
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Visible>False</Visible>
         </None>
+        <None Include="libassimp.dylib">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Visible>False</Visible>
+        </None>
         <None Include="libassimp.so">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Visible>False</Visible>
         </None>
         <None Include="libbulletc.dll">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Visible>False</Visible>
+        </None>
+        <None Include="libbulletc.dylib">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Visible>False</Visible>
         </None>
@@ -233,23 +180,25 @@
         <Reference Include="OpenGL.Net">
             <HintPath>..\Nu.Dependencies\OpenGL.NET\lib\netcoreapp2.2\OpenGL.Net.dll</HintPath>
         </Reference>
-        <Reference Include="SDL2-CS">
-            <HintPath>..\Nu.Dependencies\SDL2-CS\netstandard2.0\SDL2-CS.dll</HintPath>
-        </Reference>
         <Reference Include="TiledSharp">
             <HintPath>..\Nu.Dependencies\TiledSharp\lib\netstandard2.0\TiledSharp.dll</HintPath>
         </Reference>
         <PackageReference Include="Aether.Physics2D" Version="2.2.0" />
+        <PackageReference Include="AstcEncoderCSharp" Version="5.3.1-alpha.0.4" />
 		<PackageReference Include="Box2D.NET" Version="3.1.1.557" />
         <PackageReference Include="BCnEncoder.Net" Version="2.2.1" />
         <PackageReference Include="DotRecast.Recast.Toolset" Version="2026.1.1" />
         <PackageReference Include="JoltPhysicsSharp" Version="2.19.5" />
-        <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.10.3" />
+        <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.11.1" />
         <PackageReference Include="Pfim" Version="0.11.4" />
-        <PackageReference Include="Prime" Version="11.4.1" />
+        <PackageReference Include="Prime" Version="11.5.0" />
         <PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.1" />
         <PackageReference Include="System.Drawing.Common" Version="10.0.1" />
         <PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" />
+        <PackageReference Include="ppy.SDL3-CS" Version="2026.302.0" />
+        <PackageReference Include="ppy.SDL3_ttf-CS" Version="2026.302.0" />
+        <PackageReference Include="ppy.SDL3_image-CS" Version="2026.302.0" />
+        <PackageReference Include="ppy.SDL3_mixer-CS" Version="2026.302.0" />
     </ItemGroup>
 
     <ItemGroup>

@@ -332,8 +332,13 @@ type PhysicsEngine =
 
 /// The stub implementation of PhysicsEngine.
 type [<ReferenceEquality>] StubPhysicsEngine =
-    private { StubPhysicsEngine : unit }
-    static member make () = { StubPhysicsEngine = () }
+    private
+        { StubPhysicsEngine : unit }
+    
+    /// Make a StubPhysicsEngine.
+    static member make () =
+        { StubPhysicsEngine = () }
+    
     interface PhysicsEngine with
         member physicsEngine.GravityDefault = v3Zero
         member physicsEngine.Gravity = v3Zero

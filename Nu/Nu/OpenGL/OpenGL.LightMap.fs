@@ -68,7 +68,7 @@ module LightMap =
 
             // render to reflection cube map face
             let lightAmbientOverride = Some (ambientColor, ambientBrightness)
-            let (eyeForward, eyeUp) = eyeRotations.[i]
+            let (eyeForward, eyeUp) = eyeRotations[i]
             let eyeRotationMatrix = Matrix4x4.CreateLookAt (v3Zero, eyeForward, eyeUp)
             let eyeRotation = Quaternion.CreateFromRotationMatrix eyeRotationMatrix
             let view = Matrix4x4.CreateLookAt (origin, origin + eyeForward, eyeUp)
@@ -104,6 +104,9 @@ module LightMap =
         Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, 0u)
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, 0u)
         let reflectionCubeMap = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = reflectionCubeMapId }
+
+        // fin
+        Gl.Finish () // NOTE: this is REQUIRED on Intel Arc in order to ensure the texture is fully created before potential use.
         reflectionCubeMap
 
     let CreateIrradianceMap (resolution, cubeMapSurface : CubeMap.CubeMapSurface, irradianceShader, cubeMapVao, renderbuffer, framebuffer) =
@@ -155,7 +158,7 @@ module LightMap =
         for i in 0 .. dec 6 do
 
             // render face
-            let view = views.[i]
+            let view = views[i]
             let viewProjection = view * projection
             let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
             Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, cubeMapId, 0)
@@ -176,6 +179,9 @@ module LightMap =
         Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, 0u)
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, 0u)
         let cubeMap = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = cubeMapId }
+
+        // fin
+        Gl.Finish () // NOTE: this is REQUIRED on Intel Arc in order to ensure the texture is fully created before potential use.
         cubeMap
 
     /// Describes an environment filter shader that's loaded into GPU.
@@ -310,7 +316,7 @@ module LightMap =
             for i in 0 .. dec 6 do
 
                 // draw mip face
-                let view = views.[i]
+                let view = views[i]
                 let viewProjection = view * projection
                 let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
                 Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, cubeMapId, mip)
@@ -331,6 +337,9 @@ module LightMap =
         Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, 0u)
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, 0u)
         let cubeMap = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = cubeMapId }
+
+        // fin
+        Gl.Finish () // NOTE: this is REQUIRED on Intel Arc in order to ensure the texture is fully created before potential use.
         cubeMap
 
     /// A collection of maps consisting a light map.

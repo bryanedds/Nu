@@ -9,7 +9,7 @@ open System
 open System.Collections.Generic
 open System.Diagnostics
 open System.Numerics
-open SDL2
+open SDL
 open TiledSharp
 open DotRecast.Core.Collections
 open DotRecast.Core.Numerics
@@ -167,9 +167,9 @@ type [<SymbolicExpansion>] NavBuilderResultData =
         let interiorEdges =
             [|for i in 0 .. dec dmesh.nmeshes do
                 let m = i * 4
-                let bverts = dmesh.meshes.[m]
-                let btris = dmesh.meshes.[m + 2]
-                let ntris = dmesh.meshes.[m + 3]
+                let bverts = dmesh.meshes[m]
+                let btris = dmesh.meshes[m + 2]
+                let ntris = dmesh.meshes[m + 3]
                 let verts = bverts * 3
                 let tris = btris * 4
                 for j in 0 .. dec ntris do
@@ -177,18 +177,18 @@ type [<SymbolicExpansion>] NavBuilderResultData =
                     let mutable k = 0
                     let mutable kp = 2
                     while k < 3 do
-                        let ef = (dmesh.tris.[t + 3] >>> (kp * 2)) &&& 0x3
+                        let ef = (dmesh.tris[t + 3] >>> (kp * 2)) &&& 0x3
                         if ef = 0 then
                             let start =
                                 v3
-                                    dmesh.verts.[verts + dmesh.tris.[t + kp] * 3]
-                                    dmesh.verts.[verts + dmesh.tris.[t + kp] * 3 + 1]
-                                    dmesh.verts.[verts + dmesh.tris.[t + kp] * 3 + 2]
+                                    dmesh.verts[verts + dmesh.tris[t + kp] * 3]
+                                    dmesh.verts[verts + dmesh.tris[t + kp] * 3 + 1]
+                                    dmesh.verts[verts + dmesh.tris[t + kp] * 3 + 2]
                             let stop =
                                 v3
-                                    dmesh.verts.[verts + dmesh.tris.[t + k] * 3]
-                                    dmesh.verts.[verts + dmesh.tris.[t + k] * 3 + 1]
-                                    dmesh.verts.[verts + dmesh.tris.[t + k] * 3 + 2]
+                                    dmesh.verts[verts + dmesh.tris[t + k] * 3]
+                                    dmesh.verts[verts + dmesh.tris[t + k] * 3 + 1]
+                                    dmesh.verts[verts + dmesh.tris[t + k] * 3 + 2]
                             segment3 start stop
                         kp <- k
                         k <- inc k|]
@@ -197,9 +197,9 @@ type [<SymbolicExpansion>] NavBuilderResultData =
         let exteriorEdges =
             [|for i in 0 .. dec dmesh.nmeshes do
                 let m = i * 4
-                let bverts = dmesh.meshes.[m]
-                let btris = dmesh.meshes.[m + 2]
-                let ntris = dmesh.meshes.[m + 3]
+                let bverts = dmesh.meshes[m]
+                let btris = dmesh.meshes[m + 2]
+                let ntris = dmesh.meshes[m + 3]
                 let verts = bverts * 3
                 let tris = btris * 4
                 for j in 0 .. dec ntris do
@@ -207,18 +207,18 @@ type [<SymbolicExpansion>] NavBuilderResultData =
                     let mutable k = 0
                     let mutable kp = 2
                     while k < 3 do
-                        let ef = (dmesh.tris.[t + 3] >>> (kp * 2)) &&& 0x3
+                        let ef = (dmesh.tris[t + 3] >>> (kp * 2)) &&& 0x3
                         if ef <> 0 then
                             let start =
                                 v3
-                                    dmesh.verts.[verts + dmesh.tris.[t + kp] * 3]
-                                    dmesh.verts.[verts + dmesh.tris.[t + kp] * 3 + 1]
-                                    dmesh.verts.[verts + dmesh.tris.[t + kp] * 3 + 2]
+                                    dmesh.verts[verts + dmesh.tris[t + kp] * 3]
+                                    dmesh.verts[verts + dmesh.tris[t + kp] * 3 + 1]
+                                    dmesh.verts[verts + dmesh.tris[t + kp] * 3 + 2]
                             let stop =
                                 v3
-                                    dmesh.verts.[verts + dmesh.tris.[t + k] * 3]
-                                    dmesh.verts.[verts + dmesh.tris.[t + k] * 3 + 1]
-                                    dmesh.verts.[verts + dmesh.tris.[t + k] * 3 + 2]
+                                    dmesh.verts[verts + dmesh.tris[t + k] * 3]
+                                    dmesh.verts[verts + dmesh.tris[t + k] * 3 + 1]
+                                    dmesh.verts[verts + dmesh.tris[t + k] * 3 + 2]
                             if edgesMinY > start.Y then edgesMinY <- start.Y
                             if edgesMaxY < start.Y then edgesMaxY <- start.Y
                             if edgesMinY > stop.Y then edgesMinY <- stop.Y
@@ -651,23 +651,22 @@ module internal AmbientState =
 
     let internal tryGetWindowFlags state =
         match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
-        | Some (SglWindow window) -> Some (SDL.SDL_GetWindowFlags window.SglWindow)
+        | Some window -> Some (SDL3.SDL_GetWindowFlags window)
         | _ -> None
 
     let internal tryGetWindowMinimized state =
-        Option.map (fun flags -> flags &&& uint32 SDL.SDL_WindowFlags.SDL_WINDOW_MINIMIZED <> 0u) (tryGetWindowFlags state)
+        Option.map (fun flags -> flags &&& SDL_WindowFlags.SDL_WINDOW_MINIMIZED <> LanguagePrimitives.EnumOfValue 0UL) (tryGetWindowFlags state)
 
     let internal tryGetWindowMaximized state =
-        Option.map (fun flags -> flags &&& uint32 SDL.SDL_WindowFlags.SDL_WINDOW_MAXIMIZED <> 0u) (tryGetWindowFlags state)
+        Option.map (fun flags -> flags &&& SDL_WindowFlags.SDL_WINDOW_MAXIMIZED <> LanguagePrimitives.EnumOfValue 0UL) (tryGetWindowFlags state)
 
     let internal tryGetWindowFullScreen state =
         match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
-        | Some (SglWindow window) ->            
-            let (width, height) = (ref 0, ref 0)
-            SDL.SDL_GetWindowSize (window.SglWindow, width, height) |> ignore
-            let mutable displayMode = Unchecked.defaultof<_>
-            SDL.SDL_GetDesktopDisplayMode (0, &displayMode) |> ignore<int>
-            Some (width.Value = displayMode.w || height.Value = displayMode.h)
+        | Some window ->            
+            let mutable width, height = 0, 0
+            SDL3.SDL_GetWindowSize (window, &&width, &&height) |> ignore
+            let displayMode = SdlDeps.getDisplayModeInternal window
+            Some (width = displayMode.w || height = displayMode.h)
         | _ -> None
 
     let internal trySetWindowFullScreen fullScreen state =
@@ -682,28 +681,28 @@ module internal AmbientState =
 
     let internal tryGetWindowPosition state =
         match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
-        | Some (SglWindow window) ->
-            let (x, y) = (ref 0, ref 0)
-            SDL.SDL_GetWindowPosition (window.SglWindow, x, y) |> ignore
-            Some (v2i x.Value y.Value)
+        | Some window ->
+            let mutable x, y = 0, 0
+            SDL3.SDL_GetWindowPosition (window, &&x, &&y) |> ignore<SDLBool>
+            Some (v2i x y)
         | _ -> None
 
     let internal trySetWindowPosition (position : Vector2i) state =
         match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
-        | Some (SglWindow window) -> SDL.SDL_SetWindowPosition (window.SglWindow, position.X, position.Y) |> ignore
+        | Some window -> SDL3.SDL_SetWindowPosition (window, position.X, position.Y) |> ignore<SDLBool>
         | None -> ()
 
     let internal tryGetWindowSize state =
         match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
-        | Some (SglWindow window) ->
-            let (width, height) = (ref 0, ref 0)
-            SDL.SDL_GetWindowSize (window.SglWindow, width, height) |> ignore
-            Some (v2i width.Value height.Value)
+        | Some window ->
+            let mutable width, height = 0, 0
+            SDL3.SDL_GetWindowSize (window, &&width, &&height) |> ignore<SDLBool>
+            Some (v2i width height)
         | _ -> None
 
     let internal trySetWindowSize (size : Vector2i) state =
         match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
-        | Some (SglWindow window) -> SDL.SDL_SetWindowSize (window.SglWindow, size.X, size.Y) |> ignore
+        | Some window -> SDL3.SDL_SetWindowSize (window, size.X, size.Y) |> ignore
         | None -> ()
 
     let internal getSymbolicsBy by state =

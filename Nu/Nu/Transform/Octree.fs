@@ -133,7 +133,7 @@ module internal Octnode =
                 | NodeChildren nodes ->
                     let mutable delta = 0
                     for i in 0 .. dec nodes.Length do
-                        let node = nodes.[i]
+                        let node = nodes[i]
                         delta <- delta + addElement bounds &element node
                     delta
                 | ElementChildren elements ->
@@ -155,7 +155,7 @@ module internal Octnode =
                 | NodeChildren nodes ->
                     let mutable delta = 0
                     for i in 0 .. dec nodes.Length do
-                        let node = nodes.[i]
+                        let node = nodes[i]
                         delta <- delta + removeElement bounds &element node
                     delta
                 | ElementChildren elements ->
@@ -175,7 +175,7 @@ module internal Octnode =
             | NodeChildren nodes ->
                 let mutable delta = 0
                 for i in 0 .. dec nodes.Length do
-                    let node = nodes.[i]
+                    let node = nodes[i]
                     if isIntersectingBox boundsOld node || isIntersectingBox boundsNew node then
                         delta <- delta + updateElement boundsOld boundsNew &element node
                 delta
@@ -199,7 +199,7 @@ module internal Octnode =
             ()
         | NodeChildren nodes ->
             for i in 0 .. dec nodes.Length do
-                let node = &nodes.[i]
+                let node = &nodes[i]
                 clearElements node
         | ElementChildren children ->
             children.Clear ()
@@ -210,7 +210,7 @@ module internal Octnode =
             ()
         | NodeChildren nodes ->
             for i in 0 .. dec nodes.Length do
-                let node = nodes.[i]
+                let node = nodes[i]
                 if node.ElementsCount_ > 0 && atPoint point node then
                     getElementsAtPoint point set node
         | ElementChildren elements ->
@@ -225,7 +225,7 @@ module internal Octnode =
             ()
         | NodeChildren nodes ->
             for i in 0 .. dec nodes.Length do
-                let node = nodes.[i]
+                let node = nodes[i]
                 if node.ElementsCount_ > 0 && isIntersectingBox box node then
                     getElementsInBox box set node
         | ElementChildren elements ->
@@ -240,7 +240,7 @@ module internal Octnode =
             ()
         | NodeChildren nodes ->
             for i in 0 .. dec nodes.Length do
-                let node = nodes.[i]
+                let node = nodes[i]
                 if node.ElementsCount_ > 0 && isIntersectingFrustum frustum node then
                     getElementsInFrustum frustum set node
         | ElementChildren elements ->
@@ -255,7 +255,7 @@ module internal Octnode =
             ()
         | NodeChildren nodes ->
             for i in 0 .. dec nodes.Length do
-                let node = nodes.[i]
+                let node = nodes[i]
                 if node.ElementsCount_ > 0 && isIntersectingBox box node then
                     getElementsInPlayBox box set node
         | ElementChildren elements ->
@@ -272,7 +272,7 @@ module internal Octnode =
             ()
         | NodeChildren nodes ->
             for i in 0 .. dec nodes.Length do
-                let node = nodes.[i]
+                let node = nodes[i]
                 if node.ElementsCount_ > 0 && isIntersectingFrustum frustum node then
                     getLightProbesInViewFrustum frustum set node
         | ElementChildren elements ->
@@ -288,7 +288,7 @@ module internal Octnode =
             ()
         | NodeChildren nodes ->
             for i in 0 .. dec nodes.Length do
-                let node = nodes.[i]
+                let node = nodes[i]
                 if node.ElementsCount_ > 0 && isIntersectingBox box node then
                     getLightProbesInViewBox box set node
         | ElementChildren elements ->
@@ -304,7 +304,7 @@ module internal Octnode =
             ()
         | NodeChildren nodes ->
             for i in 0 .. dec nodes.Length do
-                let node = nodes.[i]
+                let node = nodes[i]
                 if node.ElementsCount_ > 0 then
                     getLightProbes set node
         | ElementChildren elements ->
@@ -318,7 +318,7 @@ module internal Octnode =
             ()
         | NodeChildren nodes ->
             for i in 0 .. dec nodes.Length do
-                let node = nodes.[i]
+                let node = nodes[i]
                 if node.ElementsCount_ > 0 && isIntersectingFrustum frustum node then
                     getLightsInViewFrustum frustum set node
         | ElementChildren elements ->
@@ -334,7 +334,7 @@ module internal Octnode =
             ()
         | NodeChildren nodes ->
             for i in 0 .. dec nodes.Length do
-                let node = nodes.[i]
+                let node = nodes[i]
                 if node.ElementsCount_ > 0 then
                     let intersectingInterior = isIntersectingFrustum frustumInterior node
                     let intersectingExterior = isIntersectingFrustum frustumExterior node
@@ -349,7 +349,7 @@ module internal Octnode =
             ()
         | NodeChildren nodes ->
             for i in 0 .. dec nodes.Length do
-                let node = nodes.[i]
+                let node = nodes[i]
                 if node.ElementsCount_ > 0 && isIntersectingFrustum frustum node then
                     getElementsInPlayFrustum frustum set node
         | ElementChildren elements ->
@@ -366,7 +366,7 @@ module internal Octnode =
             ()
         | NodeChildren nodes ->
             for i in 0 .. dec nodes.Length do
-                let node = nodes.[i]
+                let node = nodes[i]
                 if node.ElementsCount_ > 0 && isIntersectingFrustum frustum node then
                     getElementsInViewFrustum interior exterior frustum set node
         | ElementChildren elements ->
@@ -387,7 +387,7 @@ module internal Octnode =
             ()
         | NodeChildren nodes ->
             for i in 0 .. dec nodes.Length do
-                let node = nodes.[i]
+                let node = nodes[i]
                 if node.ElementsCount_ > 0 && isIntersectingBox box node then
                     getElementsInViewBox box set node
         | ElementChildren elements ->
@@ -401,7 +401,7 @@ module internal Octnode =
             ()
         | NodeChildren nodes ->
             for i in 0 .. dec nodes.Length do
-                let node = nodes.[i]
+                let node = nodes[i]
                 if node.ElementsCount_ > 0 then
                     let intersectingInterior = isIntersectingFrustum frustumInterior node
                     let intersectingExterior = isIntersectingFrustum frustumExterior node
@@ -416,7 +416,7 @@ module internal Octnode =
             ()
         | NodeChildren nodes ->
             for i in 0 .. dec nodes.Length do
-                let node = nodes.[i]
+                let node = nodes[i]
                 if node.ElementsCount_ > 0 then
                     if isIntersectingBox playBox node then
                         getElementsInPlayBox playBox set node
@@ -430,7 +430,7 @@ module internal Octnode =
             ()
         | NodeChildren nodes ->
             for i in 0 .. dec nodes.Length do
-                let node = nodes.[i]
+                let node = nodes[i]
                 if node.ElementsCount_ > 0 then
                     getElements set node
         | ElementChildren children ->
@@ -443,7 +443,7 @@ module internal Octnode =
                 ()
             | NodeChildren nodes ->
                 for i in 0 .. dec nodes.Length do
-                    let node = &nodes.[i]
+                    let node = &nodes[i]
                     sweep node
             | ElementChildren _ ->
                 node.Leaves_.Remove node.Bounds_.Min |> ignore<bool>
