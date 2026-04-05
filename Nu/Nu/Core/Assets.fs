@@ -29,12 +29,14 @@ open Prime
 /// The global assets that come with the Nu Game Engine.
 [<RequireQualifiedAccess>]
 module Global =
+
     let [<Literal>] AssetGraphFilePath = "AssetGraph.nuag"
     let [<Literal>] OverlayerFilePath = "Overlayer.nuol"
 
 /// The default assets that come with the Nu Game Engine.
 [<RequireQualifiedAccess>]
 module Default =
+
     let [<Literal>] PackageName = "Default"
     let [<Literal>] ImageName = "Image"
     let [<Literal>] EmptyImageName = "EmptyImage"
