@@ -58,7 +58,7 @@ type SpiritState =
                     SpiritMovementStart = time
                     SpiritMovementCachedOpt = None }
             else spiritState
-        match spiritState.SpiritMovements.[spiritState.SpiritMovementIndex] with
+        match spiritState.SpiritMovements[spiritState.SpiritMovementIndex] with
         | Creep ->
             let v = target - position
             let n = v.Normalized

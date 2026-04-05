@@ -508,7 +508,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                 | TextureAsset texture ->
                     let mutable index = 0
                     while index < particles.Length do
-                        let particle = &particles.[index]
+                        let particle = &particles[index]
                         let transform = &particle.Transform
                         let absolute = transform.Absolute
                         let perimeter = transform.Perimeter

@@ -4,7 +4,6 @@
 namespace OmniBlade
 open System
 open System.IO
-open SDL2
 open Nu
 module Program =
 

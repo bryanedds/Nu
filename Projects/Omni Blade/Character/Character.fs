@@ -537,7 +537,7 @@ module Character =
                         let leadAlly = AllyIndex 0 // have 50% chance of selecting lead ally
                         if Seq.length alliesHealthy > 2 && alliesHealthy.ContainsKey leadAlly then
                             if Gen.randomb
-                            then Some alliesHealthy.[leadAlly]
+                            then Some alliesHealthy[leadAlly]
                             else alliesHealthy |> Map.remove leadAlly |> Gen.randomValueOpt
                         else Gen.randomValueOpt alliesHealthy
                     else Gen.randomValueOpt enemiesStanding

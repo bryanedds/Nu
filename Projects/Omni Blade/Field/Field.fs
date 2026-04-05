@@ -218,7 +218,7 @@ module Field =
                         // TODO: bounds checking
                         let size = Constants.Gameplay.CharacterSize
                         let celSize = Constants.Gameplay.CharacterCelSize
-                        let position = if party.Length = 1 then allyPositions.[teamIndex] + Constants.Battle.CharacterOffset else allyPositions.[teamIndex]
+                        let position = if party.Length = 1 then allyPositions[teamIndex] + Constants.Battle.CharacterOffset else allyPositions[teamIndex]
                         let bounds = box3 position size
                         let characterIndex = AllyIndex teamIndex
                         let characterType = characterData.CharacterType
@@ -267,7 +267,7 @@ module Field =
         | (false, _) -> None
 
     let getProp propId field =
-        field.Props_.[propId]
+        field.Props_[propId]
 
     let getChests field =
         field.Props_ |>
@@ -338,7 +338,7 @@ module Field =
 
     let tryGetFacingProp (field : Field) =
         match getFacingProps field with
-        | head :: _ -> Some (field.Props_.[head])
+        | head :: _ -> Some (field.Props_[head])
         | [] -> None
 
     // NOTE: I really don't like the need to do these inefficient reverse map look-ups as a matter of course. Perhaps
@@ -1199,9 +1199,9 @@ module Field =
                             let battleType =
                                 // TODO: toughen up this code.
                                 match spirit.SpiritType with
-                                | WeakSpirit -> encounterData.BattleTypes.[Gen.random2 0 3]
-                                | NormalSpirit -> encounterData.BattleTypes.[Gen.random2 3 6]
-                                | StrongSpirit -> encounterData.BattleTypes.[Gen.random2 6 9]
+                                | WeakSpirit -> encounterData.BattleTypes[Gen.random2 0 3]
+                                | NormalSpirit -> encounterData.BattleTypes[Gen.random2 3 6]
+                                | StrongSpirit -> encounterData.BattleTypes[Gen.random2 6 9]
                             match Data.Value.Battles.TryGetValue battleType with
                             | (true, battleData) -> Left (battleData, field)
                             | (false, _) -> Right field

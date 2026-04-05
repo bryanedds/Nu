@@ -24,7 +24,7 @@ type [<SymbolicExpansion>] Dialog =
         let detokenized = detokenize dialog.DialogTokenized
         let text =
             match dialog.DialogForm with
-            | DialogShort | DialogThin | DialogThick -> detokenized.Split(Constants.Gameplay.DialogSplit).[dialog.DialogPage] |> Dialog.wordWrap 48
+            | DialogShort | DialogThin | DialogThick -> detokenized.Split(Constants.Gameplay.DialogSplit)[dialog.DialogPage] |> Dialog.wordWrap 48
             | DialogNarration -> detokenized
         String.tryTake dialog.DialogProgress text
 
@@ -54,7 +54,7 @@ type [<SymbolicExpansion>] Dialog =
         let pages = detokenized.Split Constants.Gameplay.DialogSplit
         let lastPage = dec (Array.length pages)
         dialog.DialogPage = lastPage &&
-        dialog.DialogProgress > pages.[lastPage].Length
+        dialog.DialogProgress > pages[lastPage].Length
 
     // TODO: use a fold here instead of an inner function if possible.
     static member wordWrap limit (text : string) =

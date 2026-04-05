@@ -34,7 +34,7 @@ type FieldDispatcher () =
 
     static let preloadFields fieldType (field : Field) =
         match fieldType with
-        | CastleConnector -> for i in 0 .. 2 do FieldData.tryGetTileMap field.OmniSeedState (Data.Value.Fields.[Castle i]) |> ignore
+        | CastleConnector -> for i in 0 .. 2 do FieldData.tryGetTileMap field.OmniSeedState (Data.Value.Fields[Castle i]) |> ignore
         | _ -> ()
 
     static let isIntersectedProp (collider : BodyShapeIndex) (collidee : BodyShapeIndex) world =
@@ -131,7 +131,7 @@ type FieldDispatcher () =
                         | TombInner ->
                             Metadata.loadMetadataPackage (nameof Castle)
                         | CastleConnector ->
-                            for i in 0 .. 2 do FieldData.tryGetTileMap field.OmniSeedState (Data.Value.Fields.[Castle i]) |> ignore
+                            for i in 0 .. 2 do FieldData.tryGetTileMap field.OmniSeedState (Data.Value.Fields[Castle i]) |> ignore
                         | _ -> ()
 
                         // transition field
@@ -279,7 +279,7 @@ type FieldDispatcher () =
                     | MenuTeam menuTeam ->
                         match menuTeam.TeamEquipOpt with
                         | Some equip ->
-                            let teammate = field.Team.[menuTeam.TeamIndex]
+                            let teammate = field.Team[menuTeam.TeamIndex]
                             let menuUseOpt =
                                 match equip.EquipType with
                                 | EquipWeapon _ ->
@@ -1134,7 +1134,7 @@ type FieldDispatcher () =
                 // equip
                 match menuTeam.TeamEquipOpt with
                 | Some equip when field.Team.ContainsKey menuTeam.TeamIndex ->
-                    let teammate = field.Team.[menuTeam.TeamIndex]
+                    let teammate = field.Team[menuTeam.TeamIndex]
                     let (changing, currentEquipmentName, teammate') =
                         match equip.EquipType with
                         | EquipWeapon weaponTypeOpt -> (teammate.WeaponOpt <> weaponTypeOpt, teammate.WeaponOpt |> Option.map _.Name |> Option.defaultValue "None", Teammate.equipWeaponOpt weaponTypeOpt teammate)
@@ -1280,7 +1280,7 @@ type FieldDispatcher () =
                                          Entity.Size == Constants.Field.AutoTileSize
                                          Entity.Elevation == Constants.Field.GuiElevation + 1.0f
                                          Entity.Absolute == true
-                                         Entity.StaticImage := asset Assets.Field.PackageName (scstringMemo randMap.Segments.[dec Constants.Field.RandMapSize.Y - j].[i])]
+                                         Entity.StaticImage := asset Assets.Field.PackageName (scstringMemo randMap.Segments[dec Constants.Field.RandMapSize.Y - j].[i])]
                                 if Some index = randMap.OriginOpt then
                                     Content.staticSprite "AutoOrigin"
                                         [Entity.Position :=
@@ -1519,8 +1519,8 @@ type FieldDispatcher () =
                              Entity.DownImage == Assets.Gui.ButtonBigDownImage
                              Entity.ClickEvent => PartyMenuSelect teamIndex]
                      for i in 0 .. dec field.PartyMenu.PartyMenuSelections.Length do
-                        let teamIndex = field.PartyMenu.PartyMenuSelections.[i]
-                        let teammate = field.Team.[teamIndex]
+                        let teamIndex = field.PartyMenu.PartyMenuSelections[i]
+                        let teammate = field.Team[teamIndex]
                         let w =
                             match field.Menu.MenuState with
                             | MenuTechs _ -> 336.0f

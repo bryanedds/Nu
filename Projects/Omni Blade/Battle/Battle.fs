@@ -946,7 +946,7 @@ module Battle =
             | Some characterData ->
                 match Data.Value.Archetypes.TryFind characterData.ArchetypeType with
                 | Some archetypeData ->
-                    let (w, h) = (layout.Length, layout.[0].Length)
+                    let (w, h) = (layout.Length, layout[0].Length)
                     let (x, y) =
                         if index = 0 && characterData.Boss
                         then (w / 2, h / 2 - 1) // HACK: put boss enemy 0 in center.
@@ -956,32 +956,32 @@ module Battle =
                     | SmallStature | NormalStature | LargeStature ->
                         if x > 0 && x < w - 1 && y < h - 1 then
                             match
-                                (layout.[x-1].[y+1], layout.[x+0].[y+1], layout.[x+1].[y+1],
-                                 layout.[x-1].[y+0], layout.[x+0].[y+0], layout.[x+1].[y+0]) with
+                                (layout[x-1][y+1], layout[x+0][y+1], layout[x+1][y+1],
+                                 layout[x-1][y+0], layout[x+0][y+0], layout[x+1][y+0]) with
                             |   (Left (), Left (), Left (),
                                  Left (), Left (), Left ()) ->
-                                layout.[x-1].[y+1] <- Right None; layout.[x+0].[y+1] <- Right None; layout.[x+1].[y+1] <- Right None
-                                layout.[x-1].[y+0] <- Right None; layout.[x+0].[y+0] <- Right (Some (index, archetypeData.Stature, enemyOrderRev, enemy)); layout.[x+1].[y+0] <- Right None
+                                layout[x-1][y+1] <- Right None; layout[x+0][y+1] <- Right None; layout[x+1][y+1] <- Right None
+                                layout[x-1][y+0] <- Right None; layout[x+0][y+0] <- Right (Some (index, archetypeData.Stature, enemyOrderRev, enemy)); layout[x+1][y+0] <- Right None
                             | _ -> tryRandomizeEnemy (inc attempts) index enemy layout
                         else tryRandomizeEnemy (inc attempts) index enemy layout
                     | BossStature ->
                         if x > 1 && x < w - 2 && y > 0 && y < h - 3 then
                             match
-                                (layout.[x-2].[y+3], layout.[x-1].[y+3], layout.[x+0].[y+3], layout.[x+1].[y+3], layout.[x+2].[y+3],
-                                 layout.[x-2].[y+2], layout.[x-1].[y+2], layout.[x+0].[y+2], layout.[x+1].[y+2], layout.[x+2].[y+2],
-                                 layout.[x-2].[y+1], layout.[x-1].[y+1], layout.[x+0].[y+1], layout.[x+1].[y+1], layout.[x+2].[y+1],
-                                 layout.[x-2].[y+0], layout.[x-1].[y+0], layout.[x+0].[y+0], layout.[x+1].[y+0], layout.[x+2].[y+0],
-                                 layout.[x-2].[y-1], layout.[x-1].[y-1], layout.[x+0].[y-1], layout.[x+1].[y-1], layout.[x+2].[y-1]) with
+                                (layout[x-2][y+3], layout[x-1][y+3], layout[x+0][y+3], layout[x+1][y+3], layout[x+2][y+3],
+                                 layout[x-2][y+2], layout[x-1][y+2], layout[x+0][y+2], layout[x+1][y+2], layout[x+2][y+2],
+                                 layout[x-2][y+1], layout[x-1][y+1], layout[x+0][y+1], layout[x+1][y+1], layout[x+2][y+1],
+                                 layout[x-2][y+0], layout[x-1][y+0], layout[x+0][y+0], layout[x+1][y+0], layout[x+2][y+0],
+                                 layout[x-2][y-1], layout[x-1][y-1], layout[x+0][y-1], layout[x+1][y-1], layout[x+2][y-1]) with
                             |   (Left (), Left (), Left (), Left (), Left (),
                                  Left (), Left (), Left (), Left (), Left (),
                                  Left (), Left (), Left (), Left (), Left (),
                                  Left (), Left (), Left (), Left (), Left (),
                                  Left (), Left (), Left (), Left (), Left ()) ->
-                                layout.[x-2].[y+3] <- Right None; layout.[x-1].[y+3] <- Right None; layout.[x+0].[y+3] <- Right None; layout.[x+1].[y+3] <- Right None; layout.[x+2].[y+3] <- Right None
-                                layout.[x-2].[y+2] <- Right None; layout.[x-1].[y+2] <- Right None; layout.[x+0].[y+2] <- Right None; layout.[x+1].[y+2] <- Right None; layout.[x+2].[y+2] <- Right None
-                                layout.[x-2].[y+1] <- Right None; layout.[x-1].[y+1] <- Right None; layout.[x+0].[y+1] <- Right None; layout.[x+1].[y+1] <- Right None; layout.[x+2].[y+1] <- Right None
-                                layout.[x-2].[y+0] <- Right None; layout.[x-1].[y+0] <- Right None; layout.[x+0].[y+0] <- Right (Some (index, archetypeData.Stature, enemyOrderRev, enemy)); layout.[x+1].[y+0] <- Right None; layout.[x+2].[y+0] <- Right None
-                                layout.[x-2].[y-1] <- Right None; layout.[x-1].[y-1] <- Right None; layout.[x+0].[y-1] <- Right None; layout.[x+1].[y-1] <- Right None; layout.[x+2].[y-1] <- Right None
+                                layout[x-2][y+3] <- Right None; layout[x-1][y+3] <- Right None; layout[x+0][y+3] <- Right None; layout[x+1][y+3] <- Right None; layout[x+2][y+3] <- Right None
+                                layout[x-2][y+2] <- Right None; layout[x-1][y+2] <- Right None; layout[x+0][y+2] <- Right None; layout[x+1][y+2] <- Right None; layout[x+2][y+2] <- Right None
+                                layout[x-2][y+1] <- Right None; layout[x-1][y+1] <- Right None; layout[x+0][y+1] <- Right None; layout[x+1][y+1] <- Right None; layout[x+2][y+1] <- Right None
+                                layout[x-2][y+0] <- Right None; layout[x-1][y+0] <- Right None; layout[x+0][y+0] <- Right (Some (index, archetypeData.Stature, enemyOrderRev, enemy)); layout[x+1][y+0] <- Right None; layout[x+2][y+0] <- Right None
+                                layout[x-2][y-1] <- Right None; layout[x-1][y-1] <- Right None; layout[x+0][y-1] <- Right None; layout[x+1][y-1] <- Right None; layout[x+2][y-1] <- Right None
                             | _ -> tryRandomizeEnemy (inc attempts) index enemy layout
                         else tryRandomizeEnemy (inc attempts) index enemy layout
                 | None -> ()
@@ -990,10 +990,10 @@ module Battle =
 
     let private randomizeEnemyLayout w h (enemies : EnemyType list) =
         let layout = Array.init w (fun _ -> Array.init h (fun _ -> Left ()))
-        layout.[0].[0] <- Left () // no one puts enemy in a corner
-        layout.[w-1].[0] <- Left ()
-        layout.[0].[h-1] <- Left ()
-        layout.[w-1].[h-1] <- Left ()
+        layout[0][0] <- Left () // no one puts enemy in a corner
+        layout[w-1][0] <- Left ()
+        layout[0][h-1] <- Left ()
+        layout[w-1][h-1] <- Left ()
         List.iteri (fun index enemy -> tryRandomizeEnemy 0 index enemy layout) enemies
         layout
 
