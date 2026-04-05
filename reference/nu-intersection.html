@@ -7,15 +7,15 @@
     <meta content="Nu" name="author">
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
-    <meta property="og:title" content="FluidCollision (Nu)" />
+    <meta property="og:title" content="Intersection (Nu)" />
     <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="/Nu/">
-    <meta name="twitter:title" content="FluidCollision (Nu)">
+    <meta name="twitter:title" content="Intersection (Nu)">
     
-    <title>FluidCollision (Nu) | Nu</title>
+    <title>Intersection (Nu) | Nu</title>
     <link href="https://fonts.googleapis.com" rel="preconnect">
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
@@ -92,7 +92,7 @@
     <div id="content">
         <div>
   <h2>
-    FluidCollision Type
+    Intersection Type
   </h2>
   <dl class="fsdocs-metadata">
     <dt>
@@ -110,9 +110,15 @@
     </dt>
     <dt>
       All Interfaces: 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/nu-fluidcollision.html">FluidCollision</a>&gt;</span></code>
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/nu-intersection.html">Intersection</a>&gt;</span></code>
       , 
       <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralequatable">IStructuralEquatable</a></code>
+      , 
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.icomparable-1">IComparable</a>&lt;<a href="/Nu/reference/nu-intersection.html">Intersection</a>&gt;</span></code>
+      , 
+      <code><a href="https://learn.microsoft.com/dotnet/api/system.icomparable">IComparable</a></code>
+      , 
+      <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralcomparable">IStructuralComparable</a></code>
     </dt>
     <dt>
       Kind: Struct
@@ -121,23 +127,22 @@
   <div class="fsdocs-xmldoc">
     <div>
       <p class="fsdocs-summary">
-         Describes a collision between a fluid particle and a rigid body.
+         The result of an intersection-detecting operation.
       </p>
     </div>
   </div>
   <div></div>
   <div></div>
   <div></div>
-  <div></div>
   <div>
     <h3>
-      Record fields
+      Union cases
     </h3>
     <table class="table outer-list fsdocs-member-list">
       <thead>
         <tr>
           <td class="fsdocs-member-list-header">
-            Record Field
+            Union case
           </td>
           <td class="fsdocs-member-list-header">
             Description
@@ -148,157 +153,81 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '5568', 5568)" onmouseover="showTip(event, '5568', 5568)">
+              <code onmouseout="hideTip(event, '6041', 6041)" onmouseover="showTip(event, '6041', 6041)">
                 <p>
-                  <a id="FluidCollidee">
-                    <a href="#FluidCollidee">
-                      <code>FluidCollidee</code>
+                  <a id="Hit">
+                    <a href="#Hit">
+                      <code><span>Hit&#32;single</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="5568">
+              <div class="fsdocs-tip" id="6041">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>FluidCollidee</code>
+                  <code><span>Hit&#32;single</span></code>
                   <br/>
                   <br/>
-                  <span>
-                    Field type: 
-                    <code><a href="/Nu/reference/nu-bodyshapeindex.html">BodyShapeIndex</a></code>
-                  </span>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code>single</code>
+                    </span>
+                    <br/>
+                  </ul>
                   <br/>
                 </div>
               </div>
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
                 </span>
-                <code><a href="/Nu/reference/nu-bodyshapeindex.html">BodyShapeIndex</a></code>
+                :
+                <code>single</code>
               </dt>
-              <dd class="fsdocs-return-docs"></dd>
+              <dd class="fsdocs-param-docs"></dd>
             </dl>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '5569', 5569)" onmouseover="showTip(event, '5569', 5569)">
+              <code onmouseout="hideTip(event, '6042', 6042)" onmouseover="showTip(event, '6042', 6042)">
                 <p>
-                  <a id="FluidCollider">
-                    <a href="#FluidCollider">
-                      <code>FluidCollider</code>
+                  <a id="Miss">
+                    <a href="#Miss">
+                      <code><span>Miss</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="5569">
+              <div class="fsdocs-tip" id="6042">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>FluidCollider</code>
+                  <code><span>Miss</span></code>
                   <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code><a href="/Nu/reference/nu-fluidparticle.html">FluidParticle</a></code>
-                  </span>
                   <br/>
                 </div>
               </div>
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code><a href="/Nu/reference/nu-fluidparticle.html">FluidParticle</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '5570', 5570)" onmouseover="showTip(event, '5570', 5570)">
-                <p>
-                  <a id="Nearest">
-                    <a href="#Nearest">
-                      <code>Nearest</code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="5570">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code>Nearest</code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a></code>
-                  </span>
-                  <br/>
-                </div>
-              </div>
+            <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Math.fs#L1749-1749" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
             </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '5571', 5571)" onmouseover="showTip(event, '5571', 5571)">
-                <p>
-                  <a id="Normal">
-                    <a href="#Normal">
-                      <code>Normal</code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="5571">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code>Normal</code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a></code>
-                  </span>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
           </td>
         </tr>
       </tbody>
@@ -307,7 +236,201 @@
   <div></div>
   <div></div>
   <div></div>
-  <div></div>
+  <div>
+    <h3>
+      Instance members
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Instance member
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '6043', 6043)" onmouseover="showTip(event, '6043', 6043)">
+                <p>
+                  <a id="IsHit">
+                    <a href="#IsHit">
+                      <code><span>this.IsHit</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="6043">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.IsHit</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>bool</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '6044', 6044)" onmouseover="showTip(event, '6044', 6044)">
+                <p>
+                  <a id="IsMiss">
+                    <a href="#IsMiss">
+                      <code><span>this.IsMiss</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="6044">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.IsMiss</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>bool</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div>
+    <h3>
+      Static members
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Static member
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '6045', 6045)" onmouseover="showTip(event, '6045', 6045)">
+                <p>
+                  <a id="ofNullable">
+                    <a href="#ofNullable">
+                      <code><span>Intersection.ofNullable&#32;<span>intersection</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="6045">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Intersection.ofNullable&#32;<span>intersection</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        intersection
+                      </b>
+                      :
+                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.nullable-1">Nullable</a>&lt;single&gt;</span></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="/Nu/reference/nu-intersection.html">Intersection</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:Nu.Intersection.ofNullable`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Intersection.ofNullable\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Math.fs#L1752-1752" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
+                  <p class="fsdocs-summary">
+                     Convert from nullable intersection value.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    intersection
+                  </span>
+                  :
+                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.nullable-1">Nullable</a>&lt;single&gt;</span></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="/Nu/reference/nu-intersection.html">Intersection</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </div>
         
     </div>

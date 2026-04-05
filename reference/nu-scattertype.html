@@ -7,15 +7,15 @@
     <meta content="Nu" name="author">
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
-    <meta property="og:title" content="AetherFluidEmitterDescriptor (Nu)" />
+    <meta property="og:title" content="ScatterType (Nu)" />
     <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="/Nu/">
-    <meta name="twitter:title" content="AetherFluidEmitterDescriptor (Nu)">
+    <meta name="twitter:title" content="ScatterType (Nu)">
     
-    <title>AetherFluidEmitterDescriptor (Nu) | Nu</title>
+    <title>ScatterType (Nu) | Nu</title>
     <link href="https://fonts.googleapis.com" rel="preconnect">
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
@@ -92,7 +92,7 @@
     <div id="content">
         <div>
   <h2>
-    AetherFluidEmitterDescriptor Type
+    ScatterType Type
   </h2>
   <dl class="fsdocs-metadata">
     <dt>
@@ -106,35 +106,43 @@
     </dt>
     <dt>
       Base Type: 
-      <code>obj</code>
+      <code><a href="https://learn.microsoft.com/dotnet/api/system.valuetype">ValueType</a></code>
     </dt>
     <dt>
       All Interfaces: 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/nu-aetherfluidemitterdescriptor.html">AetherFluidEmitterDescriptor</a>&gt;</span></code>
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/nu-scattertype.html">ScatterType</a>&gt;</span></code>
       , 
       <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralequatable">IStructuralEquatable</a></code>
+      , 
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.icomparable-1">IComparable</a>&lt;<a href="/Nu/reference/nu-scattertype.html">ScatterType</a>&gt;</span></code>
+      , 
+      <code><a href="https://learn.microsoft.com/dotnet/api/system.icomparable">IComparable</a></code>
+      , 
+      <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralcomparable">IStructuralComparable</a></code>
+    </dt>
+    <dt>
+      Kind: Struct
     </dt>
   </dl>
   <div class="fsdocs-xmldoc">
     <div>
       <p class="fsdocs-summary">
-         Describes a particle-based 2d fluid emitter for Aether physics.
+         The type of subsurface scattering that a material utilizes.
       </p>
     </div>
   </div>
   <div></div>
   <div></div>
   <div></div>
-  <div></div>
   <div>
     <h3>
-      Record fields
+      Union cases
     </h3>
     <table class="table outer-list fsdocs-member-list">
       <thead>
         <tr>
           <td class="fsdocs-member-list-header">
-            Record Field
+            Union case
           </td>
           <td class="fsdocs-member-list-header">
             Description
@@ -145,24 +153,178 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '4688', 4688)" onmouseover="showTip(event, '4688', 4688)">
+              <code onmouseout="hideTip(event, '7245', 7245)" onmouseover="showTip(event, '7245', 7245)">
                 <p>
-                  <a id="CellSize">
-                    <a href="#CellSize">
-                      <code>CellSize</code>
+                  <a id="FoliageScatter">
+                    <a href="#FoliageScatter">
+                      <code><span>FoliageScatter</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="4688">
+              <div class="fsdocs-tip" id="7245">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>CellSize</code>
+                  <code><span>FoliageScatter</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Math.fs#L1901-1901" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '7246', 7246)" onmouseover="showTip(event, '7246', 7246)">
+                <p>
+                  <a id="NoScatter">
+                    <a href="#NoScatter">
+                      <code><span>NoScatter</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="7246">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>NoScatter</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Math.fs#L1899-1899" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '7247', 7247)" onmouseover="showTip(event, '7247', 7247)">
+                <p>
+                  <a id="SkinScatter">
+                    <a href="#SkinScatter">
+                      <code><span>SkinScatter</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="7247">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>SkinScatter</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Math.fs#L1900-1900" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '7248', 7248)" onmouseover="showTip(event, '7248', 7248)">
+                <p>
+                  <a id="WaxScatter">
+                    <a href="#WaxScatter">
+                      <code><span>WaxScatter</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="7248">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>WaxScatter</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Math.fs#L1902-1902" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div>
+    <h3>
+      Instance members
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Instance member
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '7249', 7249)" onmouseover="showTip(event, '7249', 7249)">
+                <p>
+                  <a id="Enumerate">
+                    <a href="#Enumerate">
+                      <code><span>this.Enumerate</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="7249">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Enumerate</span></code>
                   <br/>
                   <br/>
                   <span>
-                    Field type: 
-                    <code>single</code>
+                    Returns: 
+                    <code>float32</code>
                   </span>
                   <br/>
                 </div>
@@ -170,115 +332,55 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code>single</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '4689', 4689)" onmouseover="showTip(event, '4689', 4689)">
-                <p>
-                  <a id="CollisionTestsMax">
-                    <a href="#CollisionTestsMax">
-                      <code>CollisionTestsMax</code>
-                    </a>
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:Nu.ScatterType.Enumerate`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.ScatterType.Enumerate\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Math.fs#L1905-1905" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="4689">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code>CollisionTestsMax</code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code>int</code>
-                  </span>
-                  <br/>
+                  <p class="fsdocs-summary">
+                     Convert to a float tag that can be utilized by a shader.
+                  </p>
                 </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code>int</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '4690', 4690)" onmouseover="showTip(event, '4690', 4690)">
-                <p>
-                  <a id="Configs">
-                    <a href="#Configs">
-                      <code>Configs</code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="4690">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code>Configs</code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span>string,&#32;<a href="/Nu/reference/nu-gravity.html">Gravity</a></span>&gt;</span></code>
+              </summary>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
                   </span>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpmap-2">Map</a>&lt;<span>string,&#32;<a href="/Nu/reference/nu-gravity.html">Gravity</a></span>&gt;</span></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+                  <code>float32</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '4691', 4691)" onmouseover="showTip(event, '4691', 4691)">
+              <code onmouseout="hideTip(event, '7250', 7250)" onmouseover="showTip(event, '7250', 7250)">
                 <p>
-                  <a id="Enabled">
-                    <a href="#Enabled">
-                      <code>Enabled</code>
+                  <a id="IsFoliageScatter">
+                    <a href="#IsFoliageScatter">
+                      <code><span>this.IsFoliageScatter</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="4691">
+              <div class="fsdocs-tip" id="7250">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>Enabled</code>
+                  <code><span>this.IsFoliageScatter</span></code>
                   <br/>
                   <br/>
                   <span>
-                    Field type: 
+                    Returns: 
                     <code>bool</code>
                   </span>
                   <br/>
@@ -290,7 +392,7 @@
             <dl class="fsdocs-returns">
               <dt>
                 <span class="fsdocs-return-name">
-                  Field type: 
+                  Returns: 
                 </span>
                 <code>bool</code>
               </dt>
@@ -301,24 +403,24 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '4692', 4692)" onmouseover="showTip(event, '4692', 4692)">
+              <code onmouseout="hideTip(event, '7251', 7251)" onmouseover="showTip(event, '7251', 7251)">
                 <p>
-                  <a id="Gravity">
-                    <a href="#Gravity">
-                      <code>Gravity</code>
+                  <a id="IsNoScatter">
+                    <a href="#IsNoScatter">
+                      <code><span>this.IsNoScatter</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="4692">
+              <div class="fsdocs-tip" id="7251">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>Gravity</code>
+                  <code><span>this.IsNoScatter</span></code>
                   <br/>
                   <br/>
                   <span>
-                    Field type: 
-                    <code><a href="/Nu/reference/nu-gravity.html">Gravity</a></code>
+                    Returns: 
+                    <code>bool</code>
                   </span>
                   <br/>
                 </div>
@@ -329,9 +431,9 @@
             <dl class="fsdocs-returns">
               <dt>
                 <span class="fsdocs-return-name">
-                  Field type: 
+                  Returns: 
                 </span>
-                <code><a href="/Nu/reference/nu-gravity.html">Gravity</a></code>
+                <code>bool</code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -340,24 +442,24 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '4693', 4693)" onmouseover="showTip(event, '4693', 4693)">
+              <code onmouseout="hideTip(event, '7252', 7252)" onmouseover="showTip(event, '7252', 7252)">
                 <p>
-                  <a id="LinearDamping">
-                    <a href="#LinearDamping">
-                      <code>LinearDamping</code>
+                  <a id="IsSkinScatter">
+                    <a href="#IsSkinScatter">
+                      <code><span>this.IsSkinScatter</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="4693">
+              <div class="fsdocs-tip" id="7252">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>LinearDamping</code>
+                  <code><span>this.IsSkinScatter</span></code>
                   <br/>
                   <br/>
                   <span>
-                    Field type: 
-                    <code>single</code>
+                    Returns: 
+                    <code>bool</code>
                   </span>
                   <br/>
                 </div>
@@ -368,9 +470,9 @@
             <dl class="fsdocs-returns">
               <dt>
                 <span class="fsdocs-return-name">
-                  Field type: 
+                  Returns: 
                 </span>
-                <code>single</code>
+                <code>bool</code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -379,24 +481,24 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '4694', 4694)" onmouseover="showTip(event, '4694', 4694)">
+              <code onmouseout="hideTip(event, '7253', 7253)" onmouseover="showTip(event, '7253', 7253)">
                 <p>
-                  <a id="NeighborsMax">
-                    <a href="#NeighborsMax">
-                      <code>NeighborsMax</code>
+                  <a id="IsWaxScatter">
+                    <a href="#IsWaxScatter">
+                      <code><span>this.IsWaxScatter</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="4694">
+              <div class="fsdocs-tip" id="7253">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>NeighborsMax</code>
+                  <code><span>this.IsWaxScatter</span></code>
                   <br/>
                   <br/>
                   <span>
-                    Field type: 
-                    <code>int</code>
+                    Returns: 
+                    <code>bool</code>
                   </span>
                   <br/>
                 </div>
@@ -407,204 +509,9 @@
             <dl class="fsdocs-returns">
               <dt>
                 <span class="fsdocs-return-name">
-                  Field type: 
+                  Returns: 
                 </span>
-                <code>int</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '4695', 4695)" onmouseover="showTip(event, '4695', 4695)">
-                <p>
-                  <a id="ParticleRadius">
-                    <a href="#ParticleRadius">
-                      <code>ParticleRadius</code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="4695">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code>ParticleRadius</code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code>single</code>
-                  </span>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code>single</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '4696', 4696)" onmouseover="showTip(event, '4696', 4696)">
-                <p>
-                  <a id="ParticleScale">
-                    <a href="#ParticleScale">
-                      <code>ParticleScale</code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="4696">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code>ParticleScale</code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code>single</code>
-                  </span>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code>single</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '4697', 4697)" onmouseover="showTip(event, '4697', 4697)">
-                <p>
-                  <a id="ParticlesMax">
-                    <a href="#ParticlesMax">
-                      <code>ParticlesMax</code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="4697">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code>ParticlesMax</code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code>int</code>
-                  </span>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code>int</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '4698', 4698)" onmouseover="showTip(event, '4698', 4698)">
-                <p>
-                  <a id="SimulationBounds">
-                    <a href="#SimulationBounds">
-                      <code>SimulationBounds</code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="4698">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code>SimulationBounds</code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code><a href="/Nu/reference/system-numerics-box2-0.html">Box2</a></code>
-                  </span>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code><a href="/Nu/reference/system-numerics-box2-0.html">Box2</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '4699', 4699)" onmouseover="showTip(event, '4699', 4699)">
-                <p>
-                  <a id="Viscosity">
-                    <a href="#Viscosity">
-                      <code>Viscosity</code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="4699">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code>Viscosity</code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code>single</code>
-                  </span>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code>single</code>
+                <code>bool</code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -613,9 +520,6 @@
       </tbody>
     </table>
   </div>
-  <div></div>
-  <div></div>
-  <div></div>
   <div></div>
 </div>
         

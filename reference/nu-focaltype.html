@@ -7,15 +7,15 @@
     <meta content="Nu" name="author">
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
-    <meta property="og:title" content="FogType (Nu)" />
+    <meta property="og:title" content="FocalType (Nu)" />
     <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="/Nu/">
-    <meta name="twitter:title" content="FogType (Nu)">
+    <meta name="twitter:title" content="FocalType (Nu)">
     
-    <title>FogType (Nu) | Nu</title>
+    <title>FocalType (Nu) | Nu</title>
     <link href="https://fonts.googleapis.com" rel="preconnect">
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
@@ -92,13 +92,13 @@
     <div id="content">
         <div>
   <h2>
-    FogType Type
+    FocalType Type
   </h2>
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="/Nu/reference/system-numerics.html">
-        System.Numerics
+      <a href="/Nu/reference/nu.html">
+        Nu
       </a>
     </dt>
     <dt>
@@ -110,11 +110,11 @@
     </dt>
     <dt>
       All Interfaces: 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/system-numerics-fogtype.html">FogType</a>&gt;</span></code>
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/nu-focaltype.html">FocalType</a>&gt;</span></code>
       , 
       <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralequatable">IStructuralEquatable</a></code>
       , 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.icomparable-1">IComparable</a>&lt;<a href="/Nu/reference/system-numerics-fogtype.html">FogType</a>&gt;</span></code>
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.icomparable-1">IComparable</a>&lt;<a href="/Nu/reference/nu-focaltype.html">FocalType</a>&gt;</span></code>
       , 
       <code><a href="https://learn.microsoft.com/dotnet/api/system.icomparable">IComparable</a></code>
       , 
@@ -127,7 +127,7 @@
   <div class="fsdocs-xmldoc">
     <div>
       <p class="fsdocs-summary">
-         The type of fog to utilize.
+         The manner in which depth of field is computed.
       </p>
     </div>
   </div>
@@ -153,19 +153,19 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '10440', 10440)" onmouseover="showTip(event, '10440', 10440)">
+              <code onmouseout="hideTip(event, '5632', 5632)" onmouseover="showTip(event, '5632', 5632)">
                 <p>
-                  <a id="ExponentialFog">
-                    <a href="#ExponentialFog">
-                      <code><span>ExponentialFog</span></code>
+                  <a id="DynamicFocalDistance">
+                    <a href="#DynamicFocalDistance">
+                      <code><span>DynamicFocalDistance</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="10440">
+              <div class="fsdocs-tip" id="5632">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>ExponentialFog</span></code>
+                  <code><span>DynamicFocalDistance</span></code>
                   <br/>
                   <br/>
                 </div>
@@ -174,11 +174,11 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
-              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Math.fs#L1724-1724" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Math.fs#L1915-1915" class="fsdocs-source-link" title="Source on GitHub">
                 <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
               </a>
               <p class="fsdocs-summary">
-                 Useful for a pervasive fog that include 'foreground' and 'background' based on FogDensity.
+                
               </p>
             </div>
           </td>
@@ -186,19 +186,19 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '10441', 10441)" onmouseover="showTip(event, '10441', 10441)">
+              <code onmouseout="hideTip(event, '5633', 5633)" onmouseover="showTip(event, '5633', 5633)">
                 <p>
-                  <a id="ExponentialSquaredFog">
-                    <a href="#ExponentialSquaredFog">
-                      <code><span>ExponentialSquaredFog</span></code>
+                  <a id="StaticFocalDistance">
+                    <a href="#StaticFocalDistance">
+                      <code><span>StaticFocalDistance</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="10441">
+              <div class="fsdocs-tip" id="5633">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>ExponentialSquaredFog</span></code>
+                  <code><span>StaticFocalDistance</span></code>
                   <br/>
                   <br/>
                 </div>
@@ -207,44 +207,11 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
-              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Math.fs#L1727-1727" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Math.fs#L1914-1914" class="fsdocs-source-link" title="Source on GitHub">
                 <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
               </a>
               <p class="fsdocs-summary">
-                 Useful for a distance for that mostly just includes 'background' based on FogDensity.
-              </p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '10442', 10442)" onmouseover="showTip(event, '10442', 10442)">
-                <p>
-                  <a id="LinearFog">
-                    <a href="#LinearFog">
-                      <code><span>LinearFog</span></code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="10442">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code><span>LinearFog</span></code>
-                  <br/>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Math.fs#L1721-1721" class="fsdocs-source-link" title="Source on GitHub">
-                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-              </a>
-              <p class="fsdocs-summary">
-                 Useful for a finite, user-specifiable visibility cutoff distance from FogStart to FogStop.
+                
               </p>
             </div>
           </td>
@@ -274,7 +241,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '10443', 10443)" onmouseover="showTip(event, '10443', 10443)">
+              <code onmouseout="hideTip(event, '5634', 5634)" onmouseover="showTip(event, '5634', 5634)">
                 <p>
                   <a id="Enumerate">
                     <a href="#Enumerate">
@@ -283,7 +250,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="10443">
+              <div class="fsdocs-tip" id="5634">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.Enumerate</span></code>
@@ -302,13 +269,13 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:System.Numerics.FogType.Enumerate`')">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:Nu.FocalType.Enumerate`')">
                     <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
                   </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:System.Numerics.FogType.Enumerate\'/>')">
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.FocalType.Enumerate\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Math.fs#L1730-1730" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Math.fs#L1918-1918" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -331,19 +298,19 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '10444', 10444)" onmouseover="showTip(event, '10444', 10444)">
+              <code onmouseout="hideTip(event, '5635', 5635)" onmouseover="showTip(event, '5635', 5635)">
                 <p>
-                  <a id="IsExponentialFog">
-                    <a href="#IsExponentialFog">
-                      <code><span>this.IsExponentialFog</span></code>
+                  <a id="IsDynamicFocalDistance">
+                    <a href="#IsDynamicFocalDistance">
+                      <code><span>this.IsDynamicFocalDistance</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="10444">
+              <div class="fsdocs-tip" id="5635">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>this.IsExponentialFog</span></code>
+                  <code><span>this.IsDynamicFocalDistance</span></code>
                   <br/>
                   <br/>
                   <span>
@@ -370,58 +337,19 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '10445', 10445)" onmouseover="showTip(event, '10445', 10445)">
+              <code onmouseout="hideTip(event, '5636', 5636)" onmouseover="showTip(event, '5636', 5636)">
                 <p>
-                  <a id="IsExponentialSquaredFog">
-                    <a href="#IsExponentialSquaredFog">
-                      <code><span>this.IsExponentialSquaredFog</span></code>
+                  <a id="IsStaticFocalDistance">
+                    <a href="#IsStaticFocalDistance">
+                      <code><span>this.IsStaticFocalDistance</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="10445">
+              <div class="fsdocs-tip" id="5636">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>this.IsExponentialSquaredFog</span></code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Returns: 
-                    <code>bool</code>
-                  </span>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Returns: 
-                </span>
-                <code>bool</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '10446', 10446)" onmouseover="showTip(event, '10446', 10446)">
-                <p>
-                  <a id="IsLinearFog">
-                    <a href="#IsLinearFog">
-                      <code><span>this.IsLinearFog</span></code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="10446">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code><span>this.IsLinearFog</span></code>
+                  <code><span>this.IsStaticFocalDistance</span></code>
                   <br/>
                   <br/>
                   <span>
@@ -467,19 +395,19 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '10447', 10447)" onmouseover="showTip(event, '10447', 10447)">
+              <code onmouseout="hideTip(event, '5637', 5637)" onmouseover="showTip(event, '5637', 5637)">
                 <p>
                   <a id="Names">
                     <a href="#Names">
-                      <code><span>FogType.Names</span></code>
+                      <code><span>FocalType.Names</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="10447">
+              <div class="fsdocs-tip" id="5637">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>FogType.Names</span></code>
+                  <code><span>FocalType.Names</span></code>
                   <br/>
                   <br/>
                   <span>
@@ -495,18 +423,17 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:System.Numerics.FogType.Names`')">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:Nu.FocalType.Names`')">
                     <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
                   </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:System.Numerics.FogType.Names\'/>')">
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.FocalType.Names\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Math.fs#L1746-1746" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Math.fs#L1931-1931" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
-                     The names of the fog types.
- TODO: generate these reflectively and memoized.
+                     The names of the focal depth types.
                   </p>
                 </div>
               </summary>
@@ -525,19 +452,19 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '10448', 10448)" onmouseover="showTip(event, '10448', 10448)">
+              <code onmouseout="hideTip(event, '5638', 5638)" onmouseover="showTip(event, '5638', 5638)">
                 <p>
                   <a id="makeFromEnumeration">
                     <a href="#makeFromEnumeration">
-                      <code><span>FogType.makeFromEnumeration&#32;<span>enumeration</span></span></code>
+                      <code><span>FocalType.makeFromEnumeration&#32;<span>enumeration</span></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="10448">
+              <div class="fsdocs-tip" id="5638">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>FogType.makeFromEnumeration&#32;<span>enumeration</span></span></code>
+                  <code><span>FocalType.makeFromEnumeration&#32;<span>enumeration</span></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -554,7 +481,7 @@
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/system-numerics-fogtype.html">FogType</a></code>
+                    <code><a href="/Nu/reference/nu-focaltype.html">FocalType</a></code>
                   </span>
                   <br/>
                 </div>
@@ -565,17 +492,17 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:System.Numerics.FogType.makeFromEnumeration`')">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:Nu.FocalType.makeFromEnumeration`')">
                     <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
                   </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:System.Numerics.FogType.makeFromEnumeration\'/>')">
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.FocalType.makeFromEnumeration\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Math.fs#L1737-1737" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Math.fs#L1924-1924" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
-                     Make a fog type from an enumeration value that can be utilized by a shader.
+                     Make a focal depth type from an enumeration value that can be utilized by a shader.
                   </p>
                 </div>
               </summary>
@@ -594,7 +521,7 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/system-numerics-fogtype.html">FogType</a></code>
+                  <code><a href="/Nu/reference/nu-focaltype.html">FocalType</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
