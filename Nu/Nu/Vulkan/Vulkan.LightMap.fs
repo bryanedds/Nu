@@ -244,8 +244,8 @@ module LightMap =
                 // abort
                 | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
 
-        // draw not possible
-        else Log.warnOnce "Rendering incomplete due to insufficient gpu resources."
+        // draw limit exceeded
+        else Log.warnOnce "Attempted environment filter map draw exceeded maximum number of draws, which indicates an error in environment filter map management."
 
     
     /// Create an environment filter map.
