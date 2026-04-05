@@ -207,7 +207,7 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
         Address.rtoa<'t> [|name|]
 
     /// Convert a weakly-typed Address interface into a strongly-typed address.
-    static member itoa (address : Address) =
+    static member itoa<'t> (address : Address) : 't Address =
         { Names = address.Names; HashCode = address.HashCode; Anonymous = address.Anonymous }
 
     /// Convert an address into a string.
