@@ -43,10 +43,10 @@ module WorldModuleScreen =
                 | Some screens -> screens.Add screen |> ignore<bool>
                 | None ->
                     let screens = hashSetPlus HashIdentity.Structural [screen :> Simulant]
-                    world.Simulants.[Game.Handle] <- Some screens
+                    world.Simulants[Game.Handle] <- Some screens
             | (false, _) -> failwith ("Cannot add screen '" + scstring screen + "' to non-existent game.")
-            if not (world.Simulants.ContainsKey screen) then world.Simulants.[screen] <- None
-            world.ScreenStates.[screen] <- screenState
+            if not (world.Simulants.ContainsKey screen) then world.Simulants[screen] <- None
+            world.ScreenStates[screen] <- screenState
 
         static member private screenStateRemover (screen : Screen) world =
             match world.Simulants.TryGetValue (Game.Handle :> Simulant) with
@@ -55,8 +55,8 @@ module WorldModuleScreen =
                 | Some screens ->
                     screens.Remove screen |> ignore<bool>
                     if screens.Count = 0
-                    then world.Simulants.[Game.Handle] <- None 
-                    else world.Simulants.[Game.Handle] <- Some screens
+                    then world.Simulants[Game.Handle] <- None 
+                    else world.Simulants[Game.Handle] <- Some screens
                 | None -> ()
             | (false, _) -> ()
             world.Simulants.Remove screen |> ignore<bool>
@@ -67,7 +67,7 @@ module WorldModuleScreen =
             if not (world.ScreenStates.ContainsKey screen) then
                 failwith ("Cannot set the state of a non-existent screen '" + scstring screen + "'")
 #endif
-            world.ScreenStates.[screen] <- screenState 
+            world.ScreenStates[screen] <- screenState 
 
         static member private addScreenState screenState screen world =
             World.screenStateAdder screenState screen world

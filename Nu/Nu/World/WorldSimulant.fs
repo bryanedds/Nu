@@ -343,7 +343,7 @@ module PropertyDescriptor =
             let propertyDefinitions = World.getReflectivePropertyDefinitionAndContainingTypes simulant world
             let xtension = World.getXtension simulant world
             for (propertyName, _) in xtension.Properties.Pairs do
-                let (lateBindings, property) = propertyDefinitions.[propertyName]
+                let (lateBindings, property) = propertyDefinitions[propertyName]
                 if property.PropertyType <> typeof<ComputedProperty> &&
                     not (Reflection.isPropertyNonPersistentByName propertyName) then
                     (ValueSome lateBindings, { PropertyName = propertyName; PropertyType = property.PropertyType })}

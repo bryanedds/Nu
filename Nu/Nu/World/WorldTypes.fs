@@ -1346,7 +1346,7 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
           Surnames = surnames }
 
     static member internal makeSentinel (world : World) =
-        EntityState.make None (Some [|"@Sentinel"|]) None world.WorldExtension.LateBindingsInstances.EntityDispatchers.[nameof EntityDispatcher]
+        EntityState.make None (Some [|"@Sentinel"|]) None world.WorldExtension.LateBindingsInstances.EntityDispatchers[nameof EntityDispatcher]
 
     interface SimulantState with
         member this.GetXtension () = this.Xtension

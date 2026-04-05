@@ -44,10 +44,10 @@ module WorldModuleGroup =
                 | Some groups -> groups.Add group |> ignore<bool>
                 | None ->
                     let groups = hashSetPlus HashIdentity.Structural [group :> Simulant]
-                    world.Simulants.[screen] <- Some groups
+                    world.Simulants[screen] <- Some groups
             | (false, _) -> failwith ("Cannot add group '" + scstring group + "' to non-existent screen.")
-            if not (world.Simulants.ContainsKey group) then world.Simulants.[group] <- None
-            world.GroupStates.[group] <- groupState
+            if not (world.Simulants.ContainsKey group) then world.Simulants[group] <- None
+            world.GroupStates[group] <- groupState
 
         static member private groupStateRemover (group : Group) world =
             let screen = group.Screen
@@ -57,8 +57,8 @@ module WorldModuleGroup =
                 | Some groups ->
                     groups.Remove group |> ignore<bool>
                     if groups.Count = 0
-                    then world.Simulants.[screen] <- None
-                    else world.Simulants.[screen] <- Some groups
+                    then world.Simulants[screen] <- None
+                    else world.Simulants[screen] <- Some groups
                 | None -> ()
             | (false, _) -> ()
             world.Simulants.Remove group |> ignore<bool>
@@ -69,7 +69,7 @@ module WorldModuleGroup =
             if not (world.GroupStates.ContainsKey group) then
                 failwith ("Cannot set the state of a non-existent group '" + scstring group + "'")
 #endif
-            world.GroupStates.[group] <- groupState
+            world.GroupStates[group] <- groupState
 
         static member private addGroupState groupState group world =
             World.groupStateAdder groupState group world

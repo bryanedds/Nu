@@ -65,12 +65,12 @@ module EventGraph =
 
     /// Get event state.
     let getEventState<'a> key (eventGraph : EventGraph) =
-        let state = eventGraph.EventStates.[key]
+        let state = eventGraph.EventStates[key]
         state :?> 'a
 
     /// Add event state.
     let addEventState<'a> key (state : 'a) (eventGraph : EventGraph) =
-        eventGraph.EventStates.[key] <- state :> obj
+        eventGraph.EventStates[key] <- state :> obj
 
     /// Remove event state.
     let removeEventState key (eventGraph : EventGraph) =

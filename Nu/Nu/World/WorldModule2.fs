@@ -824,20 +824,20 @@ module WorldModule2 =
                                     else dec entityChangeCount
                                 if entityChangeCount = 0
                                     then entityChangeCounts.Remove entityAddress |> ignore<bool>
-                                    else entityChangeCounts.[entityAddress] <- entityChangeCount
+                                    else entityChangeCounts[entityAddress] <- entityChangeCount
                                 if entity.GetExists world then
                                     if entityChangeCount = 0 then World.setEntityPublishChangeEvents false entity world |> ignore<bool>
                                     elif entityChangeCount = 1 then World.setEntityPublishChangeEvents true entity world |> ignore<bool>
                             | (false, _) ->
                                 if not subscribing then failwithumf ()
                                 if entity.GetExists world then World.setEntityPublishChangeEvents true entity world |> ignore<bool>
-                                entityChangeCounts.[entityAddress] <- 1 // no event
+                                entityChangeCounts[entityAddress] <- 1 // no event
                         | (false, _) ->
                             if not subscribing then failwithumf ()
                             if entity.GetExists world then World.setEntityPublishChangeEvents true entity world |> ignore<bool>
                             let entityChangeCounts = dictPlus HashIdentity.Structural [(entityAddress, 1)]
                             let keyValueStore = World.getKeyValueStore world
-                            keyValueStore.[EntityChangeCountsKey] <- entityChangeCounts // no event
+                            keyValueStore[EntityChangeCountsKey] <- entityChangeCounts // no event
                     if  Array.contains Constants.Address.WildcardName eventNames ||
                         Array.contains Constants.Address.EllipsisName eventNames then
                         Log.error "Subscribing to change events with a wildcard or ellipsis is not supported."
@@ -3280,8 +3280,8 @@ module WorldModule3 =
                         let presenceOld = entityState.Presence
                         let presenceInPlayOld = entityState.PresenceInPlay
                         let boundsOld = entityState.Bounds
-                        World.unregisterEntityIndex (getType entityState.Facets.[index]) entity world
-                        entityState.Facets.[index] <- facet
+                        World.unregisterEntityIndex (getType entityState.Facets[index]) entity world
+                        entityState.Facets[index] <- facet
                         World.registerEntityIndex (getType facet) entity world
                         World.updateEntityInEntityTree visibleInViewOld staticInPlayOld lightProbeOld lightOld presenceOld presenceInPlayOld boundsOld entity world
                         World.updateEntityPresenceOverride entity world

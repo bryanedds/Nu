@@ -60,13 +60,13 @@ module WorldModuleEntity =
                 match entitiesOpt with
                 | Some entities ->
                     entities.Add entity |> ignore<bool>
-                    world.Simulants.[parent] <- Some entities
+                    world.Simulants[parent] <- Some entities
                 | None ->
                     let entities = hashSetPlus HashIdentity.Structural [entity :> Simulant]
-                    world.Simulants.[parent] <- Some entities
+                    world.Simulants[parent] <- Some entities
             | (false, _) -> failwith ("Cannot add entity '" + scstring entity + "' to non-existent parent '" + scstring parent + "'.")
-            if not (world.Simulants.ContainsKey entity) then world.Simulants.[entity] <- None
-            world.EntityStates.[entity] <- entityState
+            if not (world.Simulants.ContainsKey entity) then world.Simulants[entity] <- None
+            world.EntityStates[entity] <- entityState
 
         static member private entityStateRemover (entity : Entity) world =
             let parent =
@@ -80,7 +80,7 @@ module WorldModuleEntity =
                     entities.Remove entity |> ignore<bool>
                     if entities.Count = 0
                     then world.Simulants[parent] <- None
-                    else world.Simulants.[parent] <- Some entities
+                    else world.Simulants[parent] <- Some entities
                 | None -> ()
             | (false, _) -> ()
             world.Simulants.Remove entity |> ignore<bool>
@@ -91,7 +91,7 @@ module WorldModuleEntity =
             if not (world.EntityStates.ContainsKey entity) then
                 failwith ("Cannot set the state of a non-existent entity '" + scstring entity + "'")
 #endif
-            world.EntityStates.[entity] <- entityState
+            world.EntityStates[entity] <- entityState
 
         static member private addEntityState (entityState : EntityState) (entity : Entity) world =
 
@@ -476,7 +476,7 @@ module WorldModuleEntity =
                 | (true, mounters) -> mounters.Add entity |> ignore<bool>
                 | (false, _) ->
                     let mounters = hashSetPlus HashIdentity.Structural [entity]
-                    world.EntityMounts.[mountNew] <- mounters
+                    world.EntityMounts[mountNew] <- mounters
                     if World.getEntityExists mountNew world then World.setEntityMounted true mountNew world |> ignore<bool>
                 let mountData = { Mount = mountNew; Mounter = entity }
                 let eventTrace = EventTrace.debug "World" "addEntityToMounts" "" EventTrace.empty
@@ -492,7 +492,7 @@ module WorldModuleEntity =
                     if mounters.Count = 0 then
                         world.EntityMounts.Remove mountOld |> ignore<bool>
                         if World.getEntityExists mountOld world then World.setEntityMounted false mountOld world |> ignore<bool>
-                    else world.EntityMounts.[mountOld] <- mounters
+                    else world.EntityMounts[mountOld] <- mounters
                 | (false, _) -> ()
                 let mountData = { Mount = mountOld; Mounter = entity }
                 let eventTrace = EventTrace.debug "World" "removeEntityFromMounts" "" EventTrace.empty
@@ -574,7 +574,7 @@ module WorldModuleEntity =
             match world.WorldExtension.PropagationTargets.TryGetValue source with
             | (true, targets) ->
                 targets.Add entity |> ignore<bool>
-                world.WorldExtension.PropagationTargets.[source] <- targets
+                world.WorldExtension.PropagationTargets[source] <- targets
             | (false, _) ->
                 if World.getEntityExists source world then
                     match World.getEntityPropagatedDescriptorOpt source world with
@@ -583,7 +583,7 @@ module WorldModuleEntity =
                         World.setEntityPropagatedDescriptorOpt (Some propagatedDescriptor) source world |> ignore<bool>
                     | Some _ -> ()
                 let targets = hashSetPlus HashIdentity.Structural [entity]
-                world.WorldExtension.PropagationTargets.[source] <- targets
+                world.WorldExtension.PropagationTargets[source] <- targets
 
         static member internal removeEntityFromPropagationTargets source entity world =
             match world.WorldExtension.PropagationTargets.TryGetValue source with
@@ -591,7 +591,7 @@ module WorldModuleEntity =
                 targets.Remove entity |> ignore<bool>
                 if targets.Count = 0
                 then world.WorldExtension.PropagationTargets.Remove source |> ignore<bool>
-                else world.WorldExtension.PropagationTargets.[source] <- targets
+                else world.WorldExtension.PropagationTargets[source] <- targets
             | (false, _) -> ()
 
         static member internal updateEntityInPropagationTargets (sourceOldOpt : Entity option) sourceNewOpt entity world =
@@ -1807,7 +1807,7 @@ module WorldModuleEntity =
                 | (true, entities) ->
                     entities.Add entity |> ignore<bool>
                 | (false, _) ->
-                    world.EntitiesIndexed.[struct (entity.Group, ty)] <- HashSet.singleton HashIdentity.Structural entity
+                    world.EntitiesIndexed[struct (entity.Group, ty)] <- HashSet.singleton HashIdentity.Structural entity
 
         static member internal unregisterEntityIndex (ty : Type) (entity : Entity) (world : World) =
             for ty in ty :: Reflection.getBaseTypesExceptObject ty do

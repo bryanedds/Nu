@@ -51,13 +51,13 @@ module Xtension =
     /// Attach a property to an Xtension.
     let attachProperty name property xtension =
         if Reflection.isRuntimeProperty property then xtension.ContainsRuntimeProperties_ <- true
-        xtension.Properties_.[name] <- property
+        xtension.Properties_[name] <- property
 
     /// Attach multiple properties to an Xtension.
     let attachProperties properties xtension =
         if Reflection.containsRuntimeProperties properties then xtension.ContainsRuntimeProperties_ <- true
         for (name, property) in properties do
-            xtension.Properties_.[name] <- property
+            xtension.Properties_[name] <- property
 
     /// Detach a property from an Xtension.
     let detachProperty name xtension =

@@ -310,7 +310,7 @@ module WorldModule =
             world.SimulantsImSim[simulant]
 
         static member internal addSimulantImSim simulant simulantImSim (world : World) =
-            world.SimulantsImSim.[simulant] <- simulantImSim
+            world.SimulantsImSim[simulant] <- simulantImSim
 
         static member internal removeSimulantImSim (simulant : Simulant) (world : World) =
             world.SimulantsImSim.Remove simulant.SimulantAddress |> ignore<bool>
@@ -328,7 +328,7 @@ module WorldModule =
             world.SubscriptionsImSim[subscription]
 
         static member internal addSubscriptionImSim subscription subscriptionImSim (world : World) =
-            world.SubscriptionsImSim.[subscription] <- subscriptionImSim
+            world.SubscriptionsImSim[subscription] <- subscriptionImSim
 
         static member internal utilizeSubscriptionImSim _ subscriptionImSim (_ : World) =
             subscriptionImSim.SubscriptionUtilized <- true
@@ -715,16 +715,16 @@ module WorldModule =
                     let mutable subscriptionEntry = Unchecked.defaultof<SubscriptionEntry>
                     if subscriptionEntries.TryGetValue (subscriptionId, &subscriptionEntry) then
                         let subscriptionEntry = { subscriptionEntry with SubscriptionCallback = World.boxCallback callback }
-                        subscriptionEntries.[subscriptionId] <- subscriptionEntry
+                        subscriptionEntries[subscriptionId] <- subscriptionEntry
                     else
                         let subscriptionEntry = { SubscriptionCallback = World.boxCallback callback; SubscriptionSubscriber = subscriber }
-                        subscriptionEntries.[subscriptionId] <- subscriptionEntry
+                        subscriptionEntries[subscriptionId] <- subscriptionEntry
                 | (false, _) ->
                     let subscriptionEntry = { SubscriptionCallback = World.boxCallback callback; SubscriptionSubscriber = subscriber }
                     let subscriptionEntries = OrderedDictionary HashIdentity.Structural
-                    subscriptionEntries.[subscriptionId] <- subscriptionEntry
-                    subscriptions.[eventAddressObj] <- subscriptionEntries
-                unsubscriptions.[subscriptionId] <- struct (eventAddressObj, subscriber :> Simulant) 
+                    subscriptionEntries[subscriptionId] <- subscriptionEntry
+                    subscriptions[eventAddressObj] <- subscriptionEntries
+                unsubscriptions[subscriptionId] <- struct (eventAddressObj, subscriber :> Simulant) 
                 WorldTypes.handleSubscribeAndUnsubscribeEvent true eventAddressObj Game.Handle world
                 World.unsubscribe subscriptionId
             else failwith "Event name cannot be empty."
@@ -813,7 +813,7 @@ module WorldModule =
         /// Look up a value from the world's key value store, throwing an exception if it is not found.
         static member getKeyedValue<'a> key world =
             let keyValueStore = World.getKeyValueStore world
-            keyValueStore.[key] :?> 'a
+            keyValueStore[key] :?> 'a
 
         /// Add a value to the world's key value store.
         static member addKeyedValue<'a> key (value : 'a) world =
@@ -821,7 +821,7 @@ module WorldModule =
             let valueOpt = Some (value :> obj)
             let data = { Key = key; PreviousOpt = previousOpt; ValueOpt = valueOpt }
             let keyValueStore = World.getKeyValueStore world
-            keyValueStore.[key] <- value :> obj
+            keyValueStore[key] <- value :> obj
             match previousOpt with
             | Some previous when previous =/= value -> World.publish data (Events.KeyedValueChangeEvent key) Nu.Game.Handle world
             | None -> World.publish data (Events.KeyedValueChangeEvent key) Nu.Game.Handle world

@@ -210,15 +210,15 @@ module WorldModule4 =
             let pluginGameDispatchers = plugin.Birth<GameDispatcher> assemblies
             world.WorldExtension.Plugin <- plugin
             for (facetName, facet) in pluginFacets do
-                world.WorldExtension.LateBindingsInstances.Facets.[facetName] <- facet
+                world.WorldExtension.LateBindingsInstances.Facets[facetName] <- facet
             for (dispatcherName, dispatcher) in pluginEntityDispatchers do
-                world.WorldExtension.LateBindingsInstances.EntityDispatchers.[dispatcherName] <- dispatcher
+                world.WorldExtension.LateBindingsInstances.EntityDispatchers[dispatcherName] <- dispatcher
             for (dispatcherName, dispatcher) in pluginGroupDispatchers do
-                world.WorldExtension.LateBindingsInstances.GroupDispatchers.[dispatcherName] <- dispatcher
+                world.WorldExtension.LateBindingsInstances.GroupDispatchers[dispatcherName] <- dispatcher
             for (dispatcherName, dispatcher) in pluginScreenDispatchers do
-                world.WorldExtension.LateBindingsInstances.ScreenDispatchers.[dispatcherName] <- dispatcher
+                world.WorldExtension.LateBindingsInstances.ScreenDispatchers[dispatcherName] <- dispatcher
             for (dispatcherName, dispatcher) in pluginGameDispatchers do
-                world.WorldExtension.LateBindingsInstances.GameDispatchers.[dispatcherName] <- dispatcher
+                world.WorldExtension.LateBindingsInstances.GameDispatchers[dispatcherName] <- dispatcher
 
             // update late bindings for all simulants
             let lateBindingsInstances =
