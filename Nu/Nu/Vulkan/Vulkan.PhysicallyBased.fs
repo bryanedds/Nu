@@ -1274,7 +1274,7 @@ module PhysicallyBased =
                 shaderPath blends vertexBindings
                 
                 // descriptor set 0: common; per renderGeometry call
-                [|Pipeline.descriptorSet true 1
+                [|Pipeline.descriptorSet false Constants.Render.GeometryRenderPassMax
                     [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexFragmentStage 1 // transform
                       Pipeline.descriptor 1 Hl.StorageBuffer Hl.FragmentStage 1 // common
                       Pipeline.descriptor 2 Hl.SampledImage Hl.FragmentStage 1 // depthTexture
@@ -1359,8 +1359,7 @@ module PhysicallyBased =
     
     /// Begin the process of drawing with a forward pipeline.
     let BeginPhysicallyBasedForwardPipeline
-        (drawIndex : int,
-         drawCount : int,
+        (renderPassIndex : int,
          view : Matrix4x4,
          projection : Matrix4x4,
          viewProjection : Matrix4x4,
@@ -1411,8 +1410,8 @@ module PhysicallyBased =
          pipeline : PhysicallyBasedPipeline,
          vkc : Hl.VulkanContext) =
 
-        // ensure pipeline draw limit is not exceeded
-        if drawIndex < pipeline.Pipeline.DrawLimit then
+        // ensure render pass limit is not exceeded
+        if renderPassIndex < Constants.Render.GeometryRenderPassMax then
         
             // bind common uniforms
             let mutable transform = Transform ()
@@ -1453,18 +1452,17 @@ module PhysicallyBased =
             common.ssrrEdgeHorizontalMargin <- ssrrEdgeHorizontalMargin
             common.ssrrEdgeVerticalMargin <- ssrrEdgeVerticalMargin
             common.shadowNear <- shadowNear
-            for i in drawIndex .. dec (min (drawIndex + drawCount) pipeline.Pipeline.DrawLimit) do
-                Buffer.Buffer.uploadValue i 0 0 transform pipeline.TransformUniform vkc
-                Buffer.Buffer.uploadValue i 0 0 common pipeline.CommonUniform vkc
-                Pipeline.Pipeline.writeDescriptorStorageBuffer 0 i 0 0 pipeline.TransformUniform.[i] pipeline.Pipeline vkc
-                Pipeline.Pipeline.writeDescriptorStorageBuffer 0 i 0 1 pipeline.CommonUniform.[i] pipeline.Pipeline vkc
+            Buffer.Buffer.uploadValue renderPassIndex 0 0 transform pipeline.TransformUniform vkc
+            Buffer.Buffer.uploadValue renderPassIndex 0 0 common pipeline.CommonUniform vkc
+            Pipeline.Pipeline.writeDescriptorStorageBuffer renderPassIndex 0 0 0 pipeline.TransformUniform.[renderPassIndex] pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorStorageBuffer renderPassIndex 0 0 1 pipeline.CommonUniform.[renderPassIndex] pipeline.Pipeline vkc
 
-                // bind common textures
-                Pipeline.Pipeline.writeDescriptorSampledImage 0 i 0 2 depthTexture.ImageView pipeline.Pipeline vkc
-                Pipeline.Pipeline.writeDescriptorSampledImage 0 i 0 3 colorTexture.ImageView pipeline.Pipeline vkc
-                Pipeline.Pipeline.writeDescriptorSampledImage 0 i 0 4 brdfTexture.ImageView pipeline.Pipeline vkc
-                Pipeline.Pipeline.writeDescriptorSampledImage 0 i 0 5 irradianceMap.ImageView pipeline.Pipeline vkc
-                Pipeline.Pipeline.writeDescriptorSampledImage 0 i 0 6 environmentFilterMap.ImageView pipeline.Pipeline vkc
+            // bind common textures
+            Pipeline.Pipeline.writeDescriptorSampledImage renderPassIndex 0 0 2 depthTexture.ImageView pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage renderPassIndex 0 0 3 colorTexture.ImageView pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage renderPassIndex 0 0 4 brdfTexture.ImageView pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage renderPassIndex 0 0 5 irradianceMap.ImageView pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage renderPassIndex 0 0 6 environmentFilterMap.ImageView pipeline.Pipeline vkc
 
             // bind samplers
             Pipeline.Pipeline.writeDescriptorSampler 0 0 2 0 filteredSampler pipeline.Pipeline vkc
@@ -1474,12 +1472,13 @@ module PhysicallyBased =
             Pipeline.Pipeline.writeDescriptorSampler 0 0 2 4 depthSampler pipeline.Pipeline vkc
             Pipeline.Pipeline.writeDescriptorSampler 0 0 2 5 brdfSampler pipeline.Pipeline vkc
 
-        // draw not possible
-        else Log.warnOnce "Rendering incomplete due to insufficient gpu resources."
+        // render pass limit exceeded
+        else Log.warnOnce "Attempted draw exceeded maximum number of render passes, which indicates an error in render pass management."
 
     /// Draw a batch of physically-based forward surfaces.
     let DrawPhysicallyBasedForwardSurfaces
         (drawIndex : int,
+         renderPassIndex : int,
          bones : Matrix4x4 array,
          surfacesCount : int,
          instanceFields : single array,
@@ -1631,7 +1630,7 @@ module PhysicallyBased =
 
                     // bind descriptor sets
                     // TODO: DJL: try to move set 0 (common) binding to BeginPhysicallyBasedForwardPipeline.
-                    let mutable descriptorSet0 = pipeline.Pipeline.VkDescriptorSet 0 0
+                    let mutable descriptorSet0 = pipeline.Pipeline.VkDescriptorSet 0 renderPassIndex
                     let mutable descriptorSet1 = pipeline.Pipeline.VkDescriptorSet 1 0
                     let mutable descriptorSet2 = pipeline.Pipeline.VkDescriptorSet 2 0
                     Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, asPointer &descriptorSet0, 0u, nullPtr)

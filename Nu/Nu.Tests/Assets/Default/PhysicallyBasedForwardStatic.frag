@@ -115,19 +115,19 @@ layout(push_constant) uniform PushConstant
 layout(binding = 0) buffer readonly TransformBlock
 {
     Transform transform;
-} transform[];
+} transform;
 
 layout(binding = 1) buffer readonly CommonBlock
 {
     // TODO: DJL: reform name.
     Common commonData; // common is reserved
-} commonData[];
+} commonData;
 
-layout(binding = 2) uniform texture2D depthTexture[];
-layout(binding = 3) uniform texture2D colorTexture[];
-layout(binding = 4) uniform texture2D brdfTexture[];
-layout(binding = 5) uniform textureCube irradianceMap[];
-layout(binding = 6) uniform textureCube environmentFilterMap[];
+layout(binding = 2) uniform texture2D depthTexture;
+layout(binding = 3) uniform texture2D colorTexture;
+layout(binding = 4) uniform texture2D brdfTexture;
+layout(binding = 5) uniform textureCube irradianceMap;
+layout(binding = 6) uniform textureCube environmentFilterMap;
 
 layout(set = 1, binding = 1) buffer readonly LightMapBlock
 {
@@ -179,8 +179,8 @@ flat layout(location = 6) in vec4 subsurfacePlusOut;
 
 layout(location = 0) out vec4 frag;
 
-Transform transformInstance = transform[drawId].transform;
-Common commonDataInstance = commonData[drawId].commonData;
+Transform transformInstance = transform.transform;
+Common commonDataInstance = commonData.commonData;
 LightsGeneral lightsGeneralInstance = lightsGeneral[drawId].lightsGeneral;
 
 mat4 view = transformInstance.view;
@@ -831,7 +831,7 @@ void computeSsrr(float depth, vec4 position, vec3 normal, float refractiveIndex,
     float eyeDistanceFromPlane = abs(dot(normalView, positionView.xyz));
 
     // compute the fragment at which to start marching
-    vec2 texSize = textureSize(sampler2D(depthTexture[drawId], depthSampler), 0).xy;
+    vec2 texSize = textureSize(sampler2D(depthTexture, depthSampler), 0).xy;
     vec4 startFrag4 = projection * startView;
     vec2 startFrag = startFrag4.xy / startFrag4.w;
     startFrag = startFrag * 0.5 + 0.5;
@@ -867,7 +867,7 @@ void computeSsrr(float depth, vec4 position, vec3 normal, float refractiveIndex,
         // advance frag values
         currentFrag += stepAmount;
         currentTexCoords = currentFrag / texSize;
-        currentDepth = texture(sampler2D(depthTexture[drawId], depthSampler), currentTexCoords).r;
+        currentDepth = texture(sampler2D(depthTexture, depthSampler), currentTexCoords).r;
         currentPosition = depthToPosition(currentDepth, currentTexCoords);
         currentPositionView = view * currentPosition;
         currentProgressB = length(currentFrag - startFrag) / lengthFrag;
@@ -887,7 +887,7 @@ void computeSsrr(float depth, vec4 position, vec3 normal, float refractiveIndex,
                 // advance frag values
                 currentFrag = mix(startFrag, stopFrag, currentProgressB);
                 currentTexCoords = currentFrag / texSize;
-                currentDepth = texture(sampler2D(depthTexture[drawId], depthSampler), currentTexCoords).r;
+                currentDepth = texture(sampler2D(depthTexture, depthSampler), currentTexCoords).r;
                 currentPosition = depthToPosition(currentDepth, currentTexCoords);
                 currentPositionView = view * currentPosition;
                 currentDepthView = -startView.z * -stopView.z / max(0.00001, mix(-stopView.z, -startView.z, currentProgressB)); // NOTE: uses perspective correct interpolation for depth.
@@ -900,7 +900,7 @@ void computeSsrr(float depth, vec4 position, vec3 normal, float refractiveIndex,
                 if (currentDepth != 0.0 && depthDelta >= 0.0 && depthDelta <= thickness)
                 {
                     // compute screen-space diffuse color
-                    diffuseScreen = texture(sampler2D(colorTexture[drawId], colorSampler), currentTexCoords).rgb * ssrrIntensity;
+                    diffuseScreen = texture(sampler2D(colorTexture, colorSampler), currentTexCoords).rgb * ssrrIntensity;
 
                     // compute diffuse surface weight
                     diffuseSurfaceWeight =
@@ -1129,13 +1129,13 @@ void main()
     {
         ambientColor = lightAmbientColor;
         ambientBrightness = lightAmbientBrightness;
-        irradiance = texture(samplerCube(irradianceMap[drawId], cubeMapSampler), n).rgb;
+        irradiance = texture(samplerCube(irradianceMap, cubeMapSampler), n).rgb;
         vec3 r = reflect(-v, n);
-        environmentFilter = textureLod(samplerCube(environmentFilterMap[drawId], cubeMapSampler), r, roughness * REFLECTION_LOD_MAX).rgb;
+        environmentFilter = textureLod(samplerCube(environmentFilterMap, cubeMapSampler), r, roughness * REFLECTION_LOD_MAX).rgb;
         float cosNvn = dot(-v, n);
         float k = 1.0 - refractiveIndex * refractiveIndex * (1.0 - cosNvn * cosNvn);
         vec3 rfr = k >= 0.0 ? refract(-v, n, refractiveIndex) : r;
-        environmentFilterRefracted = ssrrDesired ? textureLod(samplerCube(environmentFilterMap[drawId], cubeMapSampler), rfr, 0).rgb : vec3(1.0);
+        environmentFilterRefracted = ssrrDesired ? textureLod(samplerCube(environmentFilterMap, cubeMapSampler), rfr, 0).rgb : vec3(1.0);
     }
     else if (lm2 == -1)
     {
@@ -1155,7 +1155,7 @@ void main()
 
         // compute blended irradiance
         vec3 irradiance1 = texture(samplerCube(irradianceMaps[drawId * LIGHT_MAPS_MAX + lm1], cubeMapSampler), n).rgb;
-        vec3 irradiance2 = texture(samplerCube(irradianceMap[drawId], cubeMapSampler), n).rgb;
+        vec3 irradiance2 = texture(samplerCube(irradianceMap, cubeMapSampler), n).rgb;
         irradiance = mix(irradiance1, irradiance2, ratio);
 
         // compute blended environment filter
@@ -1163,7 +1163,7 @@ void main()
         vec3 r2 = reflect(-v, n);
 
         vec3 environmentFilter1 = textureLod(samplerCube(environmentFilterMaps[drawId * LIGHT_MAPS_MAX + lm1], cubeMapSampler), r1, roughness * REFLECTION_LOD_MAX).rgb;
-        vec3 environmentFilter2 = textureLod(samplerCube(environmentFilterMap[drawId], cubeMapSampler), r2, roughness * REFLECTION_LOD_MAX).rgb;
+        vec3 environmentFilter2 = textureLod(samplerCube(environmentFilterMap, cubeMapSampler), r2, roughness * REFLECTION_LOD_MAX).rgb;
         environmentFilter = mix(environmentFilter1, environmentFilter2, ratio);
 
         // compute blended environment filter refracted
@@ -1172,7 +1172,7 @@ void main()
         vec3 rfr1 = k >= 0.0 ? refract(-v, n, refractiveIndex) : r1;
         vec3 rfr2 = k >= 0.0 ? refract(-v, n, refractiveIndex) : r2;
         vec3 environmentFilterRefracted1 = ssrrDesired ? textureLod(samplerCube(environmentFilterMaps[drawId * LIGHT_MAPS_MAX + lm1], cubeMapSampler), rfr1, 0).rgb : vec3(1.0);
-        vec3 environmentFilterRefracted2 = ssrrDesired ? textureLod(samplerCube(environmentFilterMap[drawId], cubeMapSampler), rfr2, 0).rgb : vec3(1.0);
+        vec3 environmentFilterRefracted2 = ssrrDesired ? textureLod(samplerCube(environmentFilterMap, cubeMapSampler), rfr2, 0).rgb : vec3(1.0);
         environmentFilterRefracted = mix(environmentFilterRefracted1, environmentFilterRefracted2, ratio);
     }
     else
@@ -1235,7 +1235,7 @@ void main()
     }
 
     // compute specular term
-    vec2 environmentBrdf = texture(sampler2D(brdfTexture[drawId], brdfSampler), vec2(nDotV, roughness)).rg;
+    vec2 environmentBrdf = texture(sampler2D(brdfTexture, brdfSampler), vec2(nDotV, roughness)).rg;
     vec3 specular = environmentFilter * (f * environmentBrdf.x + environmentBrdf.y) * ambientSpecular;
 
     // compute alpha term
