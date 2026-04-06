@@ -6257,6 +6257,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     | _ -> ()
 
                     lightMapIndex <- inc lightMapIndex
+
+                // light map limit exceeded
+                else Log.warnOnce "The creation of one or more light maps has been aborted because Constants.Render.LightMapsMax is set too low."
         
         
         // sort spot and directional lights according to how they are utilized by shadows

@@ -37,6 +37,9 @@ module Hl =
     /// TODO: DJL: figure out how to prevent potential outside mutation.
     let mutable internal CurrentFrame = 0
 
+    /// The total number of resource descriptors needed.
+    let mutable internal DescriptorsNeeded = 0u
+    
     /// The format of an image.
     type ImageFormat =
         | Rgba8

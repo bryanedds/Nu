@@ -364,7 +364,7 @@ module Pipeline =
         member this.VkDescriptorSet setNumber setIndex = this.DescriptorSets_.[setNumber].VkDescriptorSet setIndex
         
         /// Create the descriptor pool.
-        static member private createDescriptorPool bulkDrawLimit (descriptorSetDefinitions : DescriptorSetDefinition array) device =
+        static member private createDescriptorPool bulkDrawLimit (descriptorSetDefinitions : DescriptorSetDefinition array) (vkc : Hl.VulkanContext) =
             
             // process each descriptor set definition
             let resourceBindingsSets = Array.zeroCreate descriptorSetDefinitions.Length
@@ -387,9 +387,14 @@ module Pipeline =
                 poolSize.descriptorCount <- snd resourceBindings.[i]
                 poolSizes.[i] <- poolSize
             
+            // count total descriptor usage and fail when hardware limit exceeded
+            Hl.DescriptorsNeeded <- Hl.DescriptorsNeeded + Array.sumBy (fun x -> snd x) resourceBindings
+            if Hl.DescriptorsNeeded > vkc.DescriptorIndexingProperties.maxUpdateAfterBindDescriptorsInAllPools
+            then Log.fail "The current hardware cannot support the currently configured drawing maxes. Consider tuning down unneeded maxes, especially 3D drawing and light maps."
+            
             // create descriptor pool
             // NOTE: DJL: all descriptor pools should enable update after bind to avoid the *other*
-            // maxes which a) would make calculation even more complicated and b) may be lower. See
+            // maxes which a) would complicate calculations like above and b) may be lower. See
             // https://docs.vulkan.org/refpages/latest/refpages/source/VkPhysicalDeviceDescriptorIndexingProperties.html.
             let mutable info = VkDescriptorPoolCreateInfo ()
             info.flags <- VkDescriptorPoolCreateFlags.UpdateAfterBind
@@ -397,7 +402,7 @@ module Pipeline =
             info.poolSizeCount <- uint poolSizes.Length
             info.pPoolSizes <- poolSizesPin.Pointer
             let mutable descriptorPool = Unchecked.defaultof<VkDescriptorPool>
-            Vulkan.vkCreateDescriptorPool (device, &info, nullPtr, &descriptorPool) |> Hl.check
+            Vulkan.vkCreateDescriptorPool (vkc.Device, &info, nullPtr, &descriptorPool) |> Hl.check
             descriptorPool
 
         /// Create the descriptor set layout.
@@ -627,7 +632,7 @@ module Pipeline =
             let pushConstantRanges = Array.map (fun pushConstant -> Hl.makePushConstantRange pushConstant.Offset pushConstant.Size pushConstant.ShaderStage) pushConstants
 
             // create descriptor set layouts
-            // TODO: DJL: count descriptors against global and pipeline limits to log when limits are reached.
+            // TODO: DJL: count descriptors against pipeline limits to log when limits are reached.
             let layoutBindingsSets = Array.zeroCreate descriptorSetDefinitions.Length
             let descriptorSetLayouts = Array.zeroCreate descriptorSetDefinitions.Length
             for i in 0 .. dec descriptorSetDefinitions.Length do
@@ -640,7 +645,7 @@ module Pipeline =
                 descriptorSetLayouts.[i] <- Pipeline.createDescriptorSetLayout descriptorSetDefinitions.[i].DescriptorIndexed layoutBindingsSets.[i] vkc.Device
             
             // create descriptor pool
-            let descriptorPool = Pipeline.createDescriptorPool bulkDrawLimit descriptorSetDefinitions vkc.Device
+            let descriptorPool = Pipeline.createDescriptorPool bulkDrawLimit descriptorSetDefinitions vkc
             
             // create descriptor sets
             let descriptorSets = Array.zeroCreate descriptorSetDefinitions.Length
