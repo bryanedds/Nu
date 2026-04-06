@@ -419,7 +419,7 @@ type VulkanRendererImGui
             // create pipeline
             pipeline <-
                 Pipeline.Pipeline.create
-                    Constants.Paths.ImGuiShaderFilePath
+                    Constants.Paths.ImGuiShaderFilePath 0
                     [|Pipeline.ImGui|]
                     [|Pipeline.vertex 0 sizeof<ImDrawVert> VkVertexInputRate.Vertex
                         [|Pipeline.attribute 0 Hl.Single2 (NativePtr.offsetOf<ImDrawVert> "pos")

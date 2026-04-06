@@ -17,7 +17,6 @@ open Nu
 module Vulkan =
 
     let [<Literal>] MaxFramesInFlight = 2
-    let [<Literal>] PipelineTotal = 8
 
 [<RequireQualifiedAccess>]
 module Runtime =
@@ -361,6 +360,10 @@ module Render =
     let [<Literal>] ImGuiTextureMax = 512
     let [<Literal>] LightMapsMax = 128
     let [<Literal>] GeometryRenderPassMax = LightMapsMax * 6 + 1 // all light map faces plus top level
+    let [<Literal>] SpritesMax = 1024
+    let [<Literal>] SpriteBatchesMax = 1024
+    let [<Literal>] ContoursMax = 1024
+    let [<Literal>] ForwardStaticDrawsMax = 512
 
 [<RequireQualifiedAccess>]
 module Audio =

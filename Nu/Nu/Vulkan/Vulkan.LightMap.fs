@@ -135,6 +135,7 @@ module LightMap =
         let pipeline =
             Pipeline.Pipeline.create
                 shaderPath
+                0
                 [|Pipeline.NoBlend|]
                 [|Pipeline.vertex 0 ((3 (*position*)) * sizeof<single>) VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Hl.Single3 0|]|]

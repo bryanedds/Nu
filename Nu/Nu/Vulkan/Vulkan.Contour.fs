@@ -29,6 +29,7 @@ module ContourTessellation =
         let pipeline =
             Pipeline.Pipeline.create
                 Constants.Paths.ContourShaderFilePath
+                Constants.Render.ContoursMax
                 [|Pipeline.Transparent|]
                 [|Pipeline.vertex 0 vertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Hl.Single2 0 // Position
@@ -54,8 +55,8 @@ module ContourTessellation =
         (modelViewProjectionUniform : Buffer.Buffer, pipeline : Pipeline.Pipeline)
         (vkc : Hl.VulkanContext) =
         
-        // ensure pipeline draw limit is not exceeded
-        if drawIndex < pipeline.DrawLimit then
+        // ensure bulk draw limit is not exceeded
+        if drawIndex < pipeline.BulkDrawLimit then
         
             // upload vertex data
             Buffer.Buffer.uploadArray drawIndex 0 0 tessellation.Vertices vertexBuffer vkc
@@ -131,5 +132,5 @@ module ContourTessellation =
                 // abort
                 | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
 
-        // draw not possible
-        else Log.warnOnce "Rendering incomplete due to insufficient gpu resources."
+        // bulk draw limit exceeded
+        else Log.warnOnce "Draw operations aborted because bulk draw limit has been reached. Increase relevant bulk draw limit as necessary for current application."

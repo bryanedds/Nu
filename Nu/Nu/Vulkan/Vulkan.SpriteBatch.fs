@@ -77,6 +77,7 @@ module SpriteBatch =
         let pipeline =
             Pipeline.Pipeline.create
                 Constants.Paths.SpriteBatchShaderFilePath
+                Constants.Render.SpriteBatchesMax
                 [|Pipeline.Transparent; Pipeline.Additive; Pipeline.Overwrite|] [||]
                 [|Pipeline.descriptorSet true 1
                     [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage 1
@@ -107,8 +108,8 @@ module SpriteBatch =
         match env.State.TextureOpt with
         | ValueSome texture when env.SpriteIndex > 0 ->
 
-            // ensure pipeline draw limit is not exceeded
-            if env.DrawIndex < env.Pipeline.DrawLimit then
+            // ensure bulk draw limit is not exceeded
+            if env.DrawIndex < env.Pipeline.BulkDrawLimit then
             
                 // bind uniforms
                 let vkc = env.VulkanContext
@@ -193,8 +194,8 @@ module SpriteBatch =
                     // abort
                     | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
 
-            // draw not possible
-            else Log.warnOnce "Rendering incomplete due to insufficient gpu resources."
+            // bulk draw limit exceeded
+            else Log.warnOnce "Draw operations aborted because bulk draw limit has been reached. Increase relevant bulk draw limit as necessary for current application."
             
             // next batch
             env.DrawIndex <- inc env.DrawIndex

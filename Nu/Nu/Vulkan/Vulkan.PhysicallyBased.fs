@@ -1261,6 +1261,7 @@ module PhysicallyBased =
     let CreatePhysicallyBasedPipeline
         (lightMapsMax,
          lightsMax,
+         drawsMax,
          shaderPath,
          blends,
          vertexBindings,
@@ -1271,7 +1272,7 @@ module PhysicallyBased =
         // create pipeline
         let pipeline =
             Pipeline.Pipeline.create
-                shaderPath blends vertexBindings
+                shaderPath drawsMax blends vertexBindings
                 
                 // descriptor set 0: common; per renderGeometry call
                 [|Pipeline.descriptorSet false Constants.Render.GeometryRenderPassMax
@@ -1519,7 +1520,7 @@ module PhysicallyBased =
          vkc : Hl.VulkanContext) =
 
         // only draw when there is a surface to render to avoid potentially utilizing destroyed textures
-        if surfacesCount > 0 && drawIndex < pipeline.Pipeline.DrawLimit then
+        if surfacesCount > 0 && drawIndex < pipeline.Pipeline.BulkDrawLimit then
             
             // bind position-specific uniforms
             for i in 0 .. dec (min Constants.Render.BonesMax bones.Length) do
@@ -1651,9 +1652,9 @@ module PhysicallyBased =
                 // abort
                 | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
 
-        // warn if gpu resources insufficient
-        if drawIndex >= pipeline.Pipeline.DrawLimit then
-            Log.warnOnce "Rendering incomplete due to insufficient gpu resources."
+        // warn if bulk draw limit reached
+        if drawIndex >= pipeline.Pipeline.BulkDrawLimit then
+            Log.warnOnce "Draw operations aborted because bulk draw limit has been reached. Increase relevant bulk draw limit as necessary for current application."
 
     /// End the process of drawing with a forward pipeline.
     let EndPhysicallyBasedForwardPipeline (_ : PhysicallyBasedPipeline) =
@@ -1795,6 +1796,7 @@ module PhysicallyBased =
             CreatePhysicallyBasedPipeline
                 (Constants.Render.LightMapsMaxForward,
                  Constants.Render.LightsMaxForward,
+                 Constants.Render.ForwardStaticDrawsMax,
                  Constants.Paths.PhysicallyBasedForwardStaticShaderFilePath,
                  [|Pipeline.NoBlend; Pipeline.Transparent|],
                  [|Pipeline.vertex 0 StaticVertexSize VkVertexInputRate.Vertex

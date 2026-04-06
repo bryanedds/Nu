@@ -241,6 +241,7 @@ module CubeMap =
         let pipeline =
             Pipeline.Pipeline.create
                 shaderPath
+                0
                 [|Pipeline.NoBlend|]
                 [|Pipeline.vertex 0 VertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Hl.Single3 0|]|]

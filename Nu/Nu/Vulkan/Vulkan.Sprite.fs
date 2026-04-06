@@ -29,6 +29,7 @@ module Sprite =
         let pipeline =
             Pipeline.Pipeline.create
                 Constants.Paths.SpriteShaderFilePath
+                Constants.Render.SpritesMax
                 [|Pipeline.Transparent|]
                 [|Pipeline.vertex 0 VertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Hl.Single2 0|]|]
@@ -97,8 +98,8 @@ module Sprite =
          pipeline : Pipeline.Pipeline,
          vkc : Hl.VulkanContext) =
 
-        // ensure pipeline draw limit is not exceeded
-        if drawIndex < pipeline.DrawLimit then
+        // ensure bulk draw limit is not exceeded
+        if drawIndex < pipeline.BulkDrawLimit then
 
             // compute unflipped tex coords
             let texCoordsUnflipped =
@@ -221,5 +222,5 @@ module Sprite =
                 // abort
                 | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
 
-        // draw not possible
-        else Log.warnOnce "Rendering incomplete due to insufficient gpu resources."
+        // bulk draw limit exceeded
+        else Log.warnOnce "Draw operations aborted because bulk draw limit has been reached. Increase relevant bulk draw limit as necessary for current application."

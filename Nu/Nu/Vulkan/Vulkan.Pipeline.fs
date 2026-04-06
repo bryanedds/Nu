@@ -352,19 +352,19 @@ module Pipeline =
               VertexAttributes_ : VkVertexInputAttributeDescription array
               ColorAttachmentFormats_ : VkFormat array
               DepthTestFormatOpt_ : VkFormat option
-              DrawLimit_ : int }
+              BulkDrawLimit_ : int }
 
         /// The pipeline layout.
         member this.PipelineLayout = this.PipelineLayout_
 
-        /// The maximum number of times this pipeline can draw per frame.
-        member this.DrawLimit = this.DrawLimit_
+        /// The maximum number of arbitrarily repeated draws, only applicable with descriptor indexing.
+        member this.BulkDrawLimit = this.BulkDrawLimit_
         
         /// The descriptor set of the given number for the current frame.
         member this.VkDescriptorSet setNumber setIndex = this.DescriptorSets_.[setNumber].VkDescriptorSet setIndex
         
         /// Create the descriptor pool.
-        static member private createDescriptorPool drawLimit (descriptorSetDefinitions : DescriptorSetDefinition array) device =
+        static member private createDescriptorPool bulkDrawLimit (descriptorSetDefinitions : DescriptorSetDefinition array) device =
             
             // process each descriptor set definition
             let resourceBindingsSets = Array.zeroCreate descriptorSetDefinitions.Length
@@ -372,7 +372,7 @@ module Pipeline =
                 resourceBindingsSets.[i] <-
                     Array.map
                         (fun binding ->
-                             let originalCountWithIndexing = if descriptorSetDefinitions.[i].DescriptorIndexed then binding.DescriptorCount * drawLimit else binding.DescriptorCount
+                             let originalCountWithIndexing = if descriptorSetDefinitions.[i].DescriptorIndexed then binding.DescriptorCount * bulkDrawLimit else binding.DescriptorCount
                              let totalCount = originalCountWithIndexing * descriptorSetDefinitions.[i].SetCount * Constants.Vulkan.MaxFramesInFlight
                              (binding.DescriptorType.VkDescriptorType, uint totalCount))
                         descriptorSetDefinitions.[i].Descriptors
@@ -608,6 +608,7 @@ module Pipeline =
         /// Create a Pipeline.
         static member create
             shaderPath
+            bulkDrawLimit
             (blends : Blend array)
             (vertexBindings : VertexBinding array)
             (descriptorSetDefinitions : DescriptorSetDefinition array)
@@ -625,83 +626,21 @@ module Pipeline =
                           yield Hl.makeVertexAttribute attribute.Location vertexBindings.[i].Binding attribute.Format attribute.Offset |]
             let pushConstantRanges = Array.map (fun pushConstant -> Hl.makePushConstantRange pushConstant.Offset pushConstant.Size pushConstant.ShaderStage) pushConstants
 
-            // all the applicable descriptor limits
-            // NOTE: DJL: for simplicity, each pipeline is allowed an equal share of the global descriptor limit.
-            // this share should be MUCH higher than the pipeline descriptor limits so it shouldn't matter in practice.
-            // TODO: DJL: but on some machines it's significantly lower so improve on equal share for such cases.
-            let globalLimit = min (vkc.DescriptorIndexingProperties.maxUpdateAfterBindDescriptorsInAllPools / (uint Constants.Vulkan.PipelineTotal * uint Constants.Vulkan.MaxFramesInFlight)) (uint Int32.MaxValue) |> int
-            let uniformBufferLimit = min vkc.DescriptorIndexingProperties.maxPerStageDescriptorUpdateAfterBindUniformBuffers (uint Int32.MaxValue) |> int
-            let storageBufferLimit = min vkc.DescriptorIndexingProperties.maxPerStageDescriptorUpdateAfterBindStorageBuffers (uint Int32.MaxValue) |> int
-            let sampledImageLimit = min vkc.DescriptorIndexingProperties.maxPerStageDescriptorUpdateAfterBindSampledImages (uint Int32.MaxValue) |> int
-            
-            // attempt to fallback to a typical pipeline descriptor limit in cases where gpu reports figures like UInt32.MaxValue!
-            let fallbackLimit = 1048576
-            let thresholdLimit = 100000000 // a cutoff point for reported limits that are obviously bs
-            let warning = "Accurate information about descriptor limits appears not to be available; over-allocation may occur."
-            let uniformBufferLimit = if uniformBufferLimit < thresholdLimit then uniformBufferLimit else Log.warnOnce warning; fallbackLimit
-            let storageBufferLimit = if storageBufferLimit < thresholdLimit then storageBufferLimit else Log.warnOnce warning; fallbackLimit
-            let sampledImageLimit = if sampledImageLimit < thresholdLimit then sampledImageLimit else Log.warnOnce warning; fallbackLimit
-            
-            // number of descriptors to receive equal share of maxes
-            let mutable indexedDescriptorSum = 0
-            let mutable indexedUniformBufferDescriptorSum = 0
-            let mutable indexedStorageBufferDescriptorSum = 0
-            let mutable indexedSampledImageDescriptorSum = 0
-            
-            // except still leave enough room for the rest
-            let mutable nonIndexedDescriptorSum = 0
-            let mutable nonIndexedUniformBufferDescriptorSum = 0
-            let mutable nonIndexedStorageBufferDescriptorSum = 0
-            let mutable nonIndexedSampledImageDescriptorSum = 0
-
-            // count descriptors
-            // TODO: DJL: handle use of descriptor indexed (combined image) samplers.
-            // TODO: DJL: reevaluate counting system in light of non-trivial descriptor set counts.
-            for i in 0 .. dec descriptorSetDefinitions.Length do
-                let uniformBufferTotal = Array.sumBy (fun descriptor -> if descriptor.DescriptorType.IsUniformBuffer then descriptor.DescriptorCount else 0) descriptorSetDefinitions.[i].Descriptors
-                let storageBufferTotal = Array.sumBy (fun descriptor -> if descriptor.DescriptorType.IsStorageBuffer then descriptor.DescriptorCount else 0) descriptorSetDefinitions.[i].Descriptors
-                let sampledImageTotal = Array.sumBy (fun descriptor -> if descriptor.DescriptorType.IsSampledImage || descriptor.DescriptorType.IsCombinedImageSampler then descriptor.DescriptorCount else 0) descriptorSetDefinitions.[i].Descriptors
-                let samplerTotal = Array.sumBy (fun descriptor -> if descriptor.DescriptorType.IsSampler then descriptor.DescriptorCount else 0) descriptorSetDefinitions.[i].Descriptors
-                if descriptorSetDefinitions.[i].DescriptorIndexed
-                then
-                    indexedDescriptorSum <- indexedDescriptorSum + (uniformBufferTotal + storageBufferTotal + sampledImageTotal) * descriptorSetDefinitions.[i].SetCount
-                    indexedUniformBufferDescriptorSum <- indexedUniformBufferDescriptorSum + uniformBufferTotal
-                    indexedStorageBufferDescriptorSum <- indexedStorageBufferDescriptorSum + storageBufferTotal
-                    indexedSampledImageDescriptorSum <- indexedSampledImageDescriptorSum + sampledImageTotal
-                else
-                    nonIndexedDescriptorSum <- nonIndexedDescriptorSum + (uniformBufferTotal + storageBufferTotal + sampledImageTotal + samplerTotal) * descriptorSetDefinitions.[i].SetCount
-                    nonIndexedUniformBufferDescriptorSum <- nonIndexedUniformBufferDescriptorSum + uniformBufferTotal
-                    nonIndexedStorageBufferDescriptorSum <- nonIndexedStorageBufferDescriptorSum + storageBufferTotal
-                    nonIndexedSampledImageDescriptorSum <- nonIndexedSampledImageDescriptorSum + sampledImageTotal
-
-            // calculate number of draws to detract to make room for non-indexed descriptors
-            let drawsToDetract indexed nonIndexed =
-                if indexed * nonIndexed = 0 then 0
-                elif nonIndexed % indexed = 0 then nonIndexed / indexed
-                else nonIndexed / indexed + 1
-            
-            // determine lowest draw limit imposed by any descriptor limit
-            let drawLimits = List ()
-            if indexedDescriptorSum > 0 then drawLimits.Add (globalLimit / indexedDescriptorSum - drawsToDetract indexedDescriptorSum nonIndexedDescriptorSum)
-            if indexedUniformBufferDescriptorSum > 0 then drawLimits.Add (uniformBufferLimit / indexedUniformBufferDescriptorSum - drawsToDetract indexedUniformBufferDescriptorSum nonIndexedUniformBufferDescriptorSum)
-            if indexedStorageBufferDescriptorSum > 0 then drawLimits.Add (storageBufferLimit / indexedStorageBufferDescriptorSum - drawsToDetract indexedStorageBufferDescriptorSum nonIndexedStorageBufferDescriptorSum)
-            if indexedSampledImageDescriptorSum > 0 then drawLimits.Add (sampledImageLimit / indexedSampledImageDescriptorSum - drawsToDetract indexedSampledImageDescriptorSum nonIndexedSampledImageDescriptorSum)
-            let drawLimit = if drawLimits.Count > 0 then Seq.min drawLimits else Int32.MaxValue
-            
             // create descriptor set layouts
+            // TODO: DJL: count descriptors against global and pipeline limits to log when limits are reached.
             let layoutBindingsSets = Array.zeroCreate descriptorSetDefinitions.Length
             let descriptorSetLayouts = Array.zeroCreate descriptorSetDefinitions.Length
             for i in 0 .. dec descriptorSetDefinitions.Length do
                 layoutBindingsSets.[i] <-
                     Array.map
                         (fun binding ->
-                             let descriptorCount = if descriptorSetDefinitions.[i].DescriptorIndexed then binding.DescriptorCount * drawLimit else binding.DescriptorCount
+                             let descriptorCount = if descriptorSetDefinitions.[i].DescriptorIndexed then binding.DescriptorCount * bulkDrawLimit else binding.DescriptorCount
                              Hl.makeDescriptorBinding binding.Binding binding.DescriptorType descriptorCount binding.ShaderStage)
                         descriptorSetDefinitions.[i].Descriptors
                 descriptorSetLayouts.[i] <- Pipeline.createDescriptorSetLayout descriptorSetDefinitions.[i].DescriptorIndexed layoutBindingsSets.[i] vkc.Device
             
             // create descriptor pool
-            let descriptorPool = Pipeline.createDescriptorPool drawLimit descriptorSetDefinitions vkc.Device
+            let descriptorPool = Pipeline.createDescriptorPool bulkDrawLimit descriptorSetDefinitions vkc.Device
             
             // create descriptor sets
             let descriptorSets = Array.zeroCreate descriptorSetDefinitions.Length
@@ -713,12 +652,6 @@ module Pipeline =
             let pipelineSettings = Array.allPairs blends [|false; true|] // blend and cull modes
             let pipelineLayout = Pipeline.createPipelineLayout descriptorSetLayouts pushConstantRanges vkc.Device
             let vkPipelines = Pipeline.tryCreateVkPipelines shaderPath pipelineSettings vertexBindingDescriptions vertexAttributes pipelineLayout colorAttachmentFormats depthTestFormatOpt vkc.Device
-            
-            // count pipelines as they're created and check that they don't exceed Constants.Vulkan.PipelineTotal.
-            Hl.PipelinesCreated <- inc Hl.PipelinesCreated
-            if Hl.PipelinesCreated > Constants.Vulkan.PipelineTotal then
-                Log.warnOnce "More graphics Pipelines have been created than the total used to calculate descriptor limits. This may lead to over-allocation error on some hardware. Constants.Vulkan.PipelineTotal must be set to final pipeline count."
-                Log.info ("Pipeline count: " + Hl.PipelinesCreated.ToString () + ".")
             
             // make Pipeline
             let pipeline =
@@ -733,7 +666,7 @@ module Pipeline =
                   VertexAttributes_ = vertexAttributes
                   ColorAttachmentFormats_ = colorAttachmentFormats
                   DepthTestFormatOpt_ = depthTestFormatOpt
-                  DrawLimit_ = drawLimit }
+                  BulkDrawLimit_ = bulkDrawLimit }
 
             // fin
             pipeline
