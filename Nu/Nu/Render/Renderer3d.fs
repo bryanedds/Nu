@@ -5162,7 +5162,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           mutable GeometryViewport : Viewport
           mutable WindowViewport : Viewport
           mutable GeometryRenderPassIndex : int
-          mutable ForwardStaticDrawIndex : int
           LazyTextureQueues : ConcurrentDictionary<Texture.LazyTexture ConcurrentQueue, Texture.LazyTexture ConcurrentQueue>
           TextureServer : Texture.TextureServer
           TextureDisposer : Texture.TextureDisposer
@@ -6053,6 +6052,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 fogEnabled fogType renderer.LightingConfig.FogStart renderer.LightingConfig.FogFinish renderer.LightingConfig.FogDensity renderer.LightingConfig.FogColor ssvfEnabled renderer.LightingConfig.SsvfIntensity forwardSsvfSteps renderer.LightingConfig.SsvfAsymmetry
                 ssrrEnabled renderer.LightingConfig.SsrrIntensity renderer.LightingConfig.SsrrDetail renderer.LightingConfig.SsrrRefinementsMax renderer.LightingConfig.SsrrRayThickness renderer.LightingConfig.SsrrDistanceCutoff renderer.LightingConfig.SsrrDistanceCutoffMargin renderer.LightingConfig.SsrrEdgeHorizontalMargin renderer.LightingConfig.SsrrEdgeVerticalMargin
                 depthAttachment2 colorAttachment renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap renderer.FilteredSampler renderer.CubeMapSampler renderer.ShadowSampler renderer.ColorSampler renderer.DepthSampler renderer.BrdfSampler shadowNear pipeline vkc
+        
+        let mutable forwardStaticDrawIndex = 0
         for (model, _, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest) in renderTasks.ForwardSorted do
             let (lightMapOrigins, lightMapMins, lightMapSizes, lightMapAmbientColors, lightMapAmbientBrightnesses, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
                 let surfaceBounds = surface.SurfaceBounds.Transform model
@@ -6068,12 +6069,12 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             match pipelineOpt with
             | Some pipeline ->
                 VulkanRenderer3d.renderPhysicallyBasedForwardSurfaces
-                    renderer.ForwardStaticDrawIndex renderer.GeometryRenderPassIndex bonesArray (SList.singleton (model, presence, texCoordsOffset, properties))
+                    forwardStaticDrawIndex renderer.GeometryRenderPassIndex bonesArray (SList.singleton (model, presence, texCoordsOffset, properties))
                     lightMapIrradianceMaps lightMapEnvironmentFilterMaps shadowTextureArray shadowMaps shadowCascades lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses (min lightMapEnvironmentFilterMaps.Length renderTasks.LightMaps.Count) renderer.LightingConfig.LightMapSingletonBlendMargin
                     lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices (min lightIds.Length renderTasks.Lights.Count) renderer.ShadowMatrices
                     surface depthTest true renderer.GeometryViewport compositionAttachment compositionZAttachment pipeline vkc renderer
             | None -> ()
-            renderer.ForwardStaticDrawIndex <- inc renderer.ForwardStaticDrawIndex
+            forwardStaticDrawIndex <- inc forwardStaticDrawIndex
         for pipeline in forwardPipelines do
             VulkanRenderer3d.endPhysicallyBasedForwardPipeline pipeline
         
@@ -6116,7 +6117,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         
         // reset geometry render pass index
         renderer.GeometryRenderPassIndex <- 0
-        renderer.ForwardStaticDrawIndex <- 0 // TODO: DJL: remove.
         
         // update viewports
         if renderer.GeometryViewport <> geometryViewport then
@@ -6519,7 +6519,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               GeometryViewport = geometryViewport
               WindowViewport = windowViewport
               GeometryRenderPassIndex = 0
-              ForwardStaticDrawIndex = 0
               LazyTextureQueues = lazyTextureQueues
               TextureServer = textureServer
               TextureDisposer = textureDisposer

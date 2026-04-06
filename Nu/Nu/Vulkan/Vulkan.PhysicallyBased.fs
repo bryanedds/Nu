@@ -1285,7 +1285,7 @@ module PhysicallyBased =
                       Pipeline.descriptor 6 Hl.SampledImage Hl.FragmentStage 1|] // environmentFilterMap
 
                   // descriptor set 1: position-specific; per draw
-                  Pipeline.descriptorSet true 1
+                  Pipeline.descriptorSet true Constants.Render.GeometryRenderPassMax
                     [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage 1 // bone
                       Pipeline.descriptor 1 Hl.StorageBuffer Hl.FragmentStage lightMapsMax // lightMap
                       Pipeline.descriptor 2 Hl.StorageBuffer Hl.FragmentStage 1 // lightsGeneral
@@ -1411,70 +1411,64 @@ module PhysicallyBased =
          pipeline : PhysicallyBasedPipeline,
          vkc : Hl.VulkanContext) =
 
-        // ensure render pass limit is not exceeded
-        if renderPassIndex < Constants.Render.GeometryRenderPassMax then
-        
-            // bind common uniforms
-            let mutable transform = Transform ()
-            let mutable common = Common ()
-            transform.view <- view
-            transform.projection <- projection
-            transform.viewProjection <- viewProjection
-            common.eyeCenter <- eyeCenter
-            common.viewInverse <- viewInverse
-            common.projectionInverse <- projectionInverse
-            common.lightCutoffMargin <- lightCutoffMargin
-            common.lightAmbientColor <- lightAmbientColor.V3
-            common.lightAmbientBrightness <- lightAmbientBrightness
-            common.lightAmbientBoostCutoff <- lightAmbientBoostCutoff
-            common.lightAmbientBoostScalar <- lightAmbientBoostScalar
-            common.lightShadowSamples <- lightShadowSamples
-            common.lightShadowBias <- lightShadowBias
-            common.lightShadowSampleScalar <- lightShadowSampleScalar
-            common.lightShadowExponent <- lightShadowExponent
-            common.lightShadowDensity <- lightShadowDensity
-            common.fogEnabled <- fogEnabled
-            common.fogType <- fogType
-            common.fogStart <- fogStart
-            common.fogFinish <- fogFinish
-            common.fogDensity <- fogDensity
-            common.fogColor <- fogColor.V4
-            common.ssvfEnabled <- ssvfEnabled
-            common.ssvfIntensity <- ssvfIntensity
-            common.ssvfSteps <- ssvfSteps
-            common.ssvfAsymmetry <- ssvfAsymmetry
-            common.ssrrEnabled <- ssrrEnabled
-            common.ssrrIntensity <- ssrrIntensity
-            common.ssrrDetail <- ssrrDetail
-            common.ssrrRefinementsMax <- ssrrRefinementsMax
-            common.ssrrRayThickness <- ssrrRayThickness
-            common.ssrrDistanceCutoff <- ssrrDistanceCutoff
-            common.ssrrDistanceCutoffMargin <- ssrrDistanceCutoffMargin
-            common.ssrrEdgeHorizontalMargin <- ssrrEdgeHorizontalMargin
-            common.ssrrEdgeVerticalMargin <- ssrrEdgeVerticalMargin
-            common.shadowNear <- shadowNear
-            Buffer.Buffer.uploadValue renderPassIndex 0 0 transform pipeline.TransformUniform vkc
-            Buffer.Buffer.uploadValue renderPassIndex 0 0 common pipeline.CommonUniform vkc
-            Pipeline.Pipeline.writeDescriptorStorageBuffer renderPassIndex 0 0 0 pipeline.TransformUniform.[renderPassIndex] pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorStorageBuffer renderPassIndex 0 0 1 pipeline.CommonUniform.[renderPassIndex] pipeline.Pipeline vkc
+        // bind common uniforms
+        let mutable transform = Transform ()
+        let mutable common = Common ()
+        transform.view <- view
+        transform.projection <- projection
+        transform.viewProjection <- viewProjection
+        common.eyeCenter <- eyeCenter
+        common.viewInverse <- viewInverse
+        common.projectionInverse <- projectionInverse
+        common.lightCutoffMargin <- lightCutoffMargin
+        common.lightAmbientColor <- lightAmbientColor.V3
+        common.lightAmbientBrightness <- lightAmbientBrightness
+        common.lightAmbientBoostCutoff <- lightAmbientBoostCutoff
+        common.lightAmbientBoostScalar <- lightAmbientBoostScalar
+        common.lightShadowSamples <- lightShadowSamples
+        common.lightShadowBias <- lightShadowBias
+        common.lightShadowSampleScalar <- lightShadowSampleScalar
+        common.lightShadowExponent <- lightShadowExponent
+        common.lightShadowDensity <- lightShadowDensity
+        common.fogEnabled <- fogEnabled
+        common.fogType <- fogType
+        common.fogStart <- fogStart
+        common.fogFinish <- fogFinish
+        common.fogDensity <- fogDensity
+        common.fogColor <- fogColor.V4
+        common.ssvfEnabled <- ssvfEnabled
+        common.ssvfIntensity <- ssvfIntensity
+        common.ssvfSteps <- ssvfSteps
+        common.ssvfAsymmetry <- ssvfAsymmetry
+        common.ssrrEnabled <- ssrrEnabled
+        common.ssrrIntensity <- ssrrIntensity
+        common.ssrrDetail <- ssrrDetail
+        common.ssrrRefinementsMax <- ssrrRefinementsMax
+        common.ssrrRayThickness <- ssrrRayThickness
+        common.ssrrDistanceCutoff <- ssrrDistanceCutoff
+        common.ssrrDistanceCutoffMargin <- ssrrDistanceCutoffMargin
+        common.ssrrEdgeHorizontalMargin <- ssrrEdgeHorizontalMargin
+        common.ssrrEdgeVerticalMargin <- ssrrEdgeVerticalMargin
+        common.shadowNear <- shadowNear
+        Buffer.Buffer.uploadValue renderPassIndex 0 0 transform pipeline.TransformUniform vkc
+        Buffer.Buffer.uploadValue renderPassIndex 0 0 common pipeline.CommonUniform vkc
+        Pipeline.Pipeline.writeDescriptorStorageBuffer renderPassIndex 0 0 0 pipeline.TransformUniform.[renderPassIndex] pipeline.Pipeline vkc
+        Pipeline.Pipeline.writeDescriptorStorageBuffer renderPassIndex 0 0 1 pipeline.CommonUniform.[renderPassIndex] pipeline.Pipeline vkc
 
-            // bind common textures
-            Pipeline.Pipeline.writeDescriptorSampledImage renderPassIndex 0 0 2 depthTexture.ImageView pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorSampledImage renderPassIndex 0 0 3 colorTexture.ImageView pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorSampledImage renderPassIndex 0 0 4 brdfTexture.ImageView pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorSampledImage renderPassIndex 0 0 5 irradianceMap.ImageView pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorSampledImage renderPassIndex 0 0 6 environmentFilterMap.ImageView pipeline.Pipeline vkc
+        // bind common textures
+        Pipeline.Pipeline.writeDescriptorSampledImage renderPassIndex 0 0 2 depthTexture.ImageView pipeline.Pipeline vkc
+        Pipeline.Pipeline.writeDescriptorSampledImage renderPassIndex 0 0 3 colorTexture.ImageView pipeline.Pipeline vkc
+        Pipeline.Pipeline.writeDescriptorSampledImage renderPassIndex 0 0 4 brdfTexture.ImageView pipeline.Pipeline vkc
+        Pipeline.Pipeline.writeDescriptorSampledImage renderPassIndex 0 0 5 irradianceMap.ImageView pipeline.Pipeline vkc
+        Pipeline.Pipeline.writeDescriptorSampledImage renderPassIndex 0 0 6 environmentFilterMap.ImageView pipeline.Pipeline vkc
 
-            // bind samplers
-            Pipeline.Pipeline.writeDescriptorSampler 0 0 2 0 filteredSampler pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorSampler 0 0 2 1 cubeMapSampler pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorSampler 0 0 2 2 shadowSampler pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorSampler 0 0 2 3 colorSampler pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorSampler 0 0 2 4 depthSampler pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorSampler 0 0 2 5 brdfSampler pipeline.Pipeline vkc
-
-        // render pass limit exceeded
-        else Log.warnOnce "Attempted draw exceeded maximum number of render passes, which indicates an error in render pass management."
+        // bind samplers
+        Pipeline.Pipeline.writeDescriptorSampler 0 0 2 0 filteredSampler pipeline.Pipeline vkc
+        Pipeline.Pipeline.writeDescriptorSampler 0 0 2 1 cubeMapSampler pipeline.Pipeline vkc
+        Pipeline.Pipeline.writeDescriptorSampler 0 0 2 2 shadowSampler pipeline.Pipeline vkc
+        Pipeline.Pipeline.writeDescriptorSampler 0 0 2 3 colorSampler pipeline.Pipeline vkc
+        Pipeline.Pipeline.writeDescriptorSampler 0 0 2 4 depthSampler pipeline.Pipeline vkc
+        Pipeline.Pipeline.writeDescriptorSampler 0 0 2 5 brdfSampler pipeline.Pipeline vkc
 
     /// Draw a batch of physically-based forward surfaces.
     let DrawPhysicallyBasedForwardSurfaces
@@ -1528,7 +1522,7 @@ module PhysicallyBased =
                 bone.bone <- bones.[i]
                 let bufferIndex = drawIndex * Constants.Render.BonesMax + i
                 Buffer.Buffer.uploadValue bufferIndex 0 0 bone pipeline.BoneUniform vkc
-                Pipeline.Pipeline.writeDescriptorStorageBuffer 0 bufferIndex 1 0 pipeline.BoneUniform.[bufferIndex] pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorStorageBuffer renderPassIndex bufferIndex 1 0 pipeline.BoneUniform.[bufferIndex] pipeline.Pipeline vkc
             for i in 0 .. dec (min lightMapOrigins.Length Constants.Render.LightMapsMaxForward) do // TODO: DJL: use lightmapscount?
                 let mutable lightMap = LightMap ()
                 lightMap.lightMapOrigins <- lightMapOrigins.[i]
@@ -1538,13 +1532,13 @@ module PhysicallyBased =
                 lightMap.lightMapAmbientBrightnesses <- lightMapAmbientBrightnesses.[i]
                 let bufferIndex = drawIndex * Constants.Render.LightMapsMaxForward + i
                 Buffer.Buffer.uploadValue bufferIndex 0 0 lightMap pipeline.LightMapUniform vkc
-                Pipeline.Pipeline.writeDescriptorStorageBuffer 0 bufferIndex 1 1 pipeline.LightMapUniform.[bufferIndex] pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorStorageBuffer renderPassIndex bufferIndex 1 1 pipeline.LightMapUniform.[bufferIndex] pipeline.Pipeline vkc
             let mutable lightsGeneral = LightsGeneral ()
             lightsGeneral.lightMapsCount <- lightMapsCount
             lightsGeneral.lightMapSingletonBlendMargin <- lightMapSingletonBlendMargin
             lightsGeneral.lightsCount <- lightsCount
             Buffer.Buffer.uploadValue drawIndex 0 0 lightsGeneral pipeline.LightsGeneralUniform vkc
-            Pipeline.Pipeline.writeDescriptorStorageBuffer 0 drawIndex 1 2 pipeline.LightsGeneralUniform.[drawIndex] pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorStorageBuffer renderPassIndex drawIndex 1 2 pipeline.LightsGeneralUniform.[drawIndex] pipeline.Pipeline vkc
             for i in 0 .. dec (min lightOrigins.Length Constants.Render.LightsMaxForward) do // TODO: DJL: use lightscount?
                 let mutable light = Light ()
                 light.lightOrigins <- lightOrigins.[i]
@@ -1561,31 +1555,31 @@ module PhysicallyBased =
                 light.lightShadowIndices <- lightShadowIndices.[i]
                 let bufferIndex = drawIndex * Constants.Render.LightsMaxForward + i
                 Buffer.Buffer.uploadValue bufferIndex 0 0 light pipeline.LightUniform vkc
-                Pipeline.Pipeline.writeDescriptorStorageBuffer 0 bufferIndex 1 3 pipeline.LightUniform.[bufferIndex] pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorStorageBuffer renderPassIndex bufferIndex 1 3 pipeline.LightUniform.[bufferIndex] pipeline.Pipeline vkc
             for i in 0 .. dec (min shadowMatrices.Length (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels)) do
                 let mutable shadowMatrix = ShadowMatrix ()
                 shadowMatrix.shadowMatrix <- shadowMatrices.[i]
                 let bufferIndex = drawIndex * (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels) + i
                 Buffer.Buffer.uploadValue bufferIndex 0 0 shadowMatrix pipeline.ShadowMatrixUniform vkc
-                Pipeline.Pipeline.writeDescriptorStorageBuffer 0 bufferIndex 1 4 pipeline.ShadowMatrixUniform.[bufferIndex] pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorStorageBuffer renderPassIndex bufferIndex 1 4 pipeline.ShadowMatrixUniform.[bufferIndex] pipeline.Pipeline vkc
         
             // bind position-specific textures
-            Pipeline.Pipeline.writeDescriptorSampledImage 0 drawIndex 1 5 material.AlbedoTexture.ImageView pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorSampledImage 0 drawIndex 1 6 material.RoughnessTexture.ImageView pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorSampledImage 0 drawIndex 1 7 material.MetallicTexture.ImageView pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorSampledImage 0 drawIndex 1 8 material.AmbientOcclusionTexture.ImageView pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorSampledImage 0 drawIndex 1 9 material.EmissionTexture.ImageView pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorSampledImage 0 drawIndex 1 10 material.NormalTexture.ImageView pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorSampledImage 0 drawIndex 1 11 material.HeightTexture.ImageView pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage renderPassIndex drawIndex 1 5 material.AlbedoTexture.ImageView pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage renderPassIndex drawIndex 1 6 material.RoughnessTexture.ImageView pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage renderPassIndex drawIndex 1 7 material.MetallicTexture.ImageView pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage renderPassIndex drawIndex 1 8 material.AmbientOcclusionTexture.ImageView pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage renderPassIndex drawIndex 1 9 material.EmissionTexture.ImageView pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage renderPassIndex drawIndex 1 10 material.NormalTexture.ImageView pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage renderPassIndex drawIndex 1 11 material.HeightTexture.ImageView pipeline.Pipeline vkc
             for i in 0 .. dec (min irradianceMaps.Length Constants.Render.LightMapsMaxForward) do
-                Pipeline.Pipeline.writeDescriptorSampledImage 0 (drawIndex * Constants.Render.LightMapsMaxForward + i) 1 18 irradianceMaps.[i].ImageView pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorSampledImage renderPassIndex (drawIndex * Constants.Render.LightMapsMaxForward + i) 1 18 irradianceMaps.[i].ImageView pipeline.Pipeline vkc
             for i in 0 .. dec (min environmentFilterMaps.Length Constants.Render.LightMapsMaxForward) do
-                Pipeline.Pipeline.writeDescriptorSampledImage 0 (drawIndex * Constants.Render.LightMapsMaxForward + i) 1 19 environmentFilterMaps.[i].ImageView pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorSampledImage 0 drawIndex 1 20 shadowTextureArray.ImageView pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorSampledImage renderPassIndex (drawIndex * Constants.Render.LightMapsMaxForward + i) 1 19 environmentFilterMaps.[i].ImageView pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage renderPassIndex drawIndex 1 20 shadowTextureArray.ImageView pipeline.Pipeline vkc
             for i in 0 .. dec (min shadowMaps.Length Constants.Render.ShadowMapsMax) do
-                Pipeline.Pipeline.writeDescriptorSampledImage 0 (drawIndex * Constants.Render.ShadowMapsMax + i) 1 21 shadowMaps.[i].ImageView pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorSampledImage renderPassIndex (drawIndex * Constants.Render.ShadowMapsMax + i) 1 21 shadowMaps.[i].ImageView pipeline.Pipeline vkc
             for i in 0 .. dec (min shadowCascades.Length Constants.Render.ShadowCascadesMax) do
-                Pipeline.Pipeline.writeDescriptorSampledImage 0 (drawIndex * Constants.Render.ShadowCascadesMax + i) 1 22 shadowCascades.[i].ImageView pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorSampledImage renderPassIndex (drawIndex * Constants.Render.ShadowCascadesMax + i) 1 22 shadowCascades.[i].ImageView pipeline.Pipeline vkc
         
             // update instance buffer
             use instanceFieldsPin = new ArrayPin<_> (instanceFields)
@@ -1632,7 +1626,7 @@ module PhysicallyBased =
                     // bind descriptor sets
                     // TODO: DJL: try to move set 0 (common) binding to BeginPhysicallyBasedForwardPipeline.
                     let mutable descriptorSet0 = pipeline.Pipeline.VkDescriptorSet 0 renderPassIndex
-                    let mutable descriptorSet1 = pipeline.Pipeline.VkDescriptorSet 1 0
+                    let mutable descriptorSet1 = pipeline.Pipeline.VkDescriptorSet 1 renderPassIndex
                     let mutable descriptorSet2 = pipeline.Pipeline.VkDescriptorSet 2 0
                     Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, asPointer &descriptorSet0, 0u, nullPtr)
                     Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, asPointer &descriptorSet1, 0u, nullPtr)
