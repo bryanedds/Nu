@@ -358,12 +358,12 @@ module Render =
     // descriptor related maxes for Vulkan, just grouped here for now
     // TODO: DJL: properly integrate and make mutable as appropriate.
     // TODO: DJL: need stupidly low 3D values for now to test on limited hardware.
-    let [<Literal>] ImGuiTextureMax = 512
-    let [<Literal>] LightMapsMax = 8
+    let [<Literal>] ImGuiTextureMax = 1024
+    let [<Literal>] LightMapsMax = 8 // NOTE: DJL: applications that set this below LightMapsMaxDeferred should cap the latter to avoid descriptor waste.
     let [<Literal>] GeometryRenderPassMax = LightMapsMax * 6 + 1 // all light map faces plus top level
-    let [<Literal>] SpritesMax = 1024
-    let [<Literal>] SpriteBatchesMax = 1024
-    let [<Literal>] ContoursMax = 1024
+    let [<Literal>] SpritesMax = 8192
+    let [<Literal>] SpriteBatchesMax = 8192
+    let [<Literal>] ContoursMax = 8192
     let [<Literal>] ForwardStaticDrawsMax = 128
 
 [<RequireQualifiedAccess>]

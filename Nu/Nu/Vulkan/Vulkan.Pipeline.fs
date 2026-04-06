@@ -632,7 +632,6 @@ module Pipeline =
             let pushConstantRanges = Array.map (fun pushConstant -> Hl.makePushConstantRange pushConstant.Offset pushConstant.Size pushConstant.ShaderStage) pushConstants
 
             // create descriptor set layouts
-            // TODO: DJL: count descriptors against pipeline limits to log when limits are reached.
             let layoutBindingsSets = Array.zeroCreate descriptorSetDefinitions.Length
             let descriptorSetLayouts = Array.zeroCreate descriptorSetDefinitions.Length
             for i in 0 .. dec descriptorSetDefinitions.Length do
