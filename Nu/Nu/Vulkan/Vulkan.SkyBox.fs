@@ -96,12 +96,12 @@ module SkyBox =
         skyBoxFrag.brightness <- brightness
         Buffer.Buffer.uploadValue renderPassIndex 0 0 skyBoxVert pipeline.SkyBoxVertUniform vkc
         Buffer.Buffer.uploadValue renderPassIndex 0 0 skyBoxFrag pipeline.SkyBoxFragUniform vkc
-        Pipeline.Pipeline.writeDescriptorStorageBuffer renderPassIndex 0 0 0 pipeline.SkyBoxVertUniform.[renderPassIndex] pipeline.SkyBoxPipeline vkc
-        Pipeline.Pipeline.writeDescriptorStorageBuffer renderPassIndex 0 0 1 pipeline.SkyBoxFragUniform.[renderPassIndex] pipeline.SkyBoxPipeline vkc
+        Pipeline.Pipeline.writeDescriptorStorageBuffer 0 0 renderPassIndex 0 pipeline.SkyBoxVertUniform.[renderPassIndex] pipeline.SkyBoxPipeline vkc
+        Pipeline.Pipeline.writeDescriptorStorageBuffer 0 1 renderPassIndex 0 pipeline.SkyBoxFragUniform.[renderPassIndex] pipeline.SkyBoxPipeline vkc
         
         // bind texture
-        Pipeline.Pipeline.writeDescriptorSampledImage renderPassIndex 0 0 2 cubeMap.ImageView pipeline.SkyBoxPipeline vkc
-        Pipeline.Pipeline.writeDescriptorSampler 0 0 1 0 sampler pipeline.SkyBoxPipeline vkc
+        Pipeline.Pipeline.writeDescriptorSampledImage 0 2 renderPassIndex 0 cubeMap.ImageView pipeline.SkyBoxPipeline vkc
+        Pipeline.Pipeline.writeDescriptorSampler 1 0 0 0 sampler pipeline.SkyBoxPipeline vkc
 
         // make viewport and scissor
         let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)

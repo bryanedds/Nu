@@ -123,15 +123,15 @@ module SpriteBatch =
                     sprite.texCoords <- env.TexCoordses.[i]
                     sprite.color <- env.Colors.[i]
                     Buffer.Buffer.uploadValue env.DrawIndex (i * sizeof<Sprite>) 0 sprite spriteUniform vkc
-                Pipeline.Pipeline.writeDescriptorStorageBuffer 0 env.DrawIndex 0 0 spriteUniform.[env.DrawIndex] env.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorStorageBuffer 0 0 0 env.DrawIndex spriteUniform.[env.DrawIndex] env.Pipeline vkc
                 let mutable viewProjection = ViewProjection ()
                 viewProjection.viewProjection <- if env.State.Absolute then env.ViewProjection2dAbsolute else env.ViewProjection2dRelative
                 Buffer.Buffer.uploadValue env.DrawIndex 0 0 viewProjection viewProjectionUniform vkc
-                Pipeline.Pipeline.writeDescriptorStorageBuffer 0 env.DrawIndex 0 1 viewProjectionUniform.[env.DrawIndex] env.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorStorageBuffer 0 1 0 env.DrawIndex viewProjectionUniform.[env.DrawIndex] env.Pipeline vkc
 
                 // bind texture
-                Pipeline.Pipeline.writeDescriptorSampledImage 0 env.DrawIndex 0 2 texture.ImageView env.Pipeline vkc
-                Pipeline.Pipeline.writeDescriptorSampler 0 0 1 0 env.Sampler env.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorSampledImage 0 2 0 env.DrawIndex texture.ImageView env.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorSampler 1 0 0 0 env.Sampler env.Pipeline vkc
                 
                 // make viewport and scissor
                 let mutable renderArea = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)

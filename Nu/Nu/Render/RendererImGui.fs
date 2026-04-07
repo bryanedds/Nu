@@ -586,7 +586,7 @@ type VulkanRendererImGui
                                         // write texture to descriptor set
                                         let imageView = renderer.GetImageView textureId
                                         let sampler = renderer.GetSampler textureId
-                                        Pipeline.Pipeline.writeDescriptorCombinedImageSampler descriptorSetIndex 0 0 0 imageView sampler pipeline vkc
+                                        Pipeline.Pipeline.writeDescriptorCombinedImageSampler 0 0 descriptorSetIndex 0 imageView sampler pipeline vkc
                                         
                                         // bind descriptor set
                                         let mutable descriptorSet = pipeline.VkDescriptorSet 0 descriptorSetIndex

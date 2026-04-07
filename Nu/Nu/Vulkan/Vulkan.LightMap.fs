@@ -190,12 +190,12 @@ module LightMap =
         environmentFilter.resolution <- resolution
         Buffer.Buffer.uploadValue drawIndex 0 0 transform pipeline.TransformUniform vkc
         Buffer.Buffer.uploadValue drawIndex 0 0 environmentFilter pipeline.EnvironmentFilterUniform vkc
-        Pipeline.Pipeline.writeDescriptorStorageBuffer drawIndex 0 0 0 pipeline.TransformUniform.[drawIndex] pipeline.Pipeline vkc
-        Pipeline.Pipeline.writeDescriptorStorageBuffer drawIndex 0 0 1 pipeline.EnvironmentFilterUniform.[drawIndex] pipeline.Pipeline vkc
+        Pipeline.Pipeline.writeDescriptorStorageBuffer 0 0 drawIndex 0 pipeline.TransformUniform.[drawIndex] pipeline.Pipeline vkc
+        Pipeline.Pipeline.writeDescriptorStorageBuffer 0 1 drawIndex 0 pipeline.EnvironmentFilterUniform.[drawIndex] pipeline.Pipeline vkc
 
         // bind texture
-        Pipeline.Pipeline.writeDescriptorSampledImage drawIndex 0 0 2 cubeMap.ImageView pipeline.Pipeline vkc
-        Pipeline.Pipeline.writeDescriptorSampler 0 0 1 0 sampler pipeline.Pipeline vkc
+        Pipeline.Pipeline.writeDescriptorSampledImage 0 2 drawIndex 0 cubeMap.ImageView pipeline.Pipeline vkc
+        Pipeline.Pipeline.writeDescriptorSampler 1 0 0 0 sampler pipeline.Pipeline vkc
 
         // make viewport and scissor
         let mutable renderArea = VkRect2D (0, 0, uint resolution, uint resolution)

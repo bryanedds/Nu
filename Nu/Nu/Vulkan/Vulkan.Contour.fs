@@ -64,7 +64,7 @@ module ContourTessellation =
             
             // bind uniforms
             Buffer.Buffer.uploadValue drawIndex 0 0 modelViewProjection modelViewProjectionUniform vkc
-            Pipeline.Pipeline.writeDescriptorStorageBuffer 0 drawIndex 0 0 modelViewProjectionUniform.[drawIndex] pipeline vkc
+            Pipeline.Pipeline.writeDescriptorStorageBuffer 0 0 0 drawIndex modelViewProjectionUniform.[drawIndex] pipeline vkc
             
             // make viewport and scissor
             let mutable renderArea = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)

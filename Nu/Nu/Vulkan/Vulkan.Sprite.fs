@@ -147,12 +147,12 @@ module Sprite =
             spriteFrag.color <- color.V4
             Buffer.Buffer.uploadValue drawIndex 0 0 spriteVert spriteVertUniform vkc
             Buffer.Buffer.uploadValue drawIndex 0 0 spriteFrag spriteFragUniform vkc
-            Pipeline.Pipeline.writeDescriptorStorageBuffer 0 drawIndex 0 0 spriteVertUniform.[drawIndex] pipeline vkc
-            Pipeline.Pipeline.writeDescriptorStorageBuffer 0 drawIndex 0 1 spriteFragUniform.[drawIndex] pipeline vkc
+            Pipeline.Pipeline.writeDescriptorStorageBuffer 0 0 0 drawIndex spriteVertUniform.[drawIndex] pipeline vkc
+            Pipeline.Pipeline.writeDescriptorStorageBuffer 0 1 0 drawIndex spriteFragUniform.[drawIndex] pipeline vkc
             
             // bind texture
-            Pipeline.Pipeline.writeDescriptorSampledImage 0 drawIndex 0 2 texture.ImageView pipeline vkc
-            Pipeline.Pipeline.writeDescriptorSampler 0 0 1 0 sampler pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage 0 2 0 drawIndex texture.ImageView pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampler 1 0 0 0 sampler pipeline vkc
 
             // make viewport and scissor
             let mutable renderArea = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)
