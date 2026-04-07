@@ -139,11 +139,11 @@ module LightMap =
                 [|Pipeline.NoBlend|]
                 [|Pipeline.vertex 0 ((3 (*position*)) * sizeof<single>) VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Hl.Single3 0|]|]
-                [|Pipeline.descriptorSet false (6 * Constants.Render.EnvironmentFilterMips * (Constants.Render.LightMapsMax + 1)) // includes fallback light map
+                [|Pipeline.descriptorSet Hl.BulkNone (6 * Constants.Render.EnvironmentFilterMips * (Constants.Render.LightMapsMax + 1)) // includes fallback light map
                     [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage 1
                       Pipeline.descriptor 1 Hl.StorageBuffer Hl.FragmentStage 1
                       Pipeline.descriptor 2 Hl.SampledImage Hl.FragmentStage 1|]
-                  Pipeline.descriptorSet false 1
+                  Pipeline.descriptorSet Hl.BulkNone 1
                     [|Pipeline.descriptor 0 Hl.Sampler Hl.FragmentStage 1|]|]
                 [||]
                 [|colorAttachmentFormat|]

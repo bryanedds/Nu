@@ -34,7 +34,7 @@ module ContourTessellation =
                 [|Pipeline.vertex 0 vertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Hl.Single2 0 // Position
                       Pipeline.attribute 1 Hl.Single4 sizeof<Vector2>|]|] // Color
-                [|Pipeline.descriptorSet true 1 [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage 1|]|]
+                [|Pipeline.descriptorSet Hl.BulkDescriptorIndexed 1 [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage 1|]|]
                 [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]
                 [|vkc.SwapFormat|] None vkc
         

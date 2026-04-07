@@ -90,14 +90,14 @@ module Pipeline =
     
     /// Describes a descriptor set.
     type DescriptorSetDefinition =
-        { DescriptorIndexed : bool
+        { BulkMode : Hl.BulkDescriptorMode
           SetCount : int
           Descriptors : DescriptorBinding array }
 
     /// Describes a descriptor set.
     [<DebuggerHidden; DebuggerStepThrough>]
-    let descriptorSet descriptorIndexed setCount descriptors =
-        { DescriptorIndexed = descriptorIndexed
+    let descriptorSet bulkMode setCount descriptors =
+        { BulkMode = bulkMode
           SetCount = setCount
           Descriptors = descriptors }
     
@@ -372,8 +372,8 @@ module Pipeline =
                 resourceBindingsSets.[i] <-
                     Array.map
                         (fun binding ->
-                             let originalCountWithIndexing = if descriptorSetDefinitions.[i].DescriptorIndexed then binding.DescriptorCount * bulkDrawLimit else binding.DescriptorCount
-                             let totalCount = originalCountWithIndexing * descriptorSetDefinitions.[i].SetCount * Constants.Vulkan.MaxFramesInFlight
+                             let bulk = if descriptorSetDefinitions.[i].BulkMode.IsBulkNone then 1 else bulkDrawLimit
+                             let totalCount = bulk * binding.DescriptorCount * descriptorSetDefinitions.[i].SetCount * Constants.Vulkan.MaxFramesInFlight
                              (binding.DescriptorType.VkDescriptorType, uint totalCount))
                         descriptorSetDefinitions.[i].Descriptors
             
@@ -392,13 +392,17 @@ module Pipeline =
             if Hl.DescriptorsNeeded > vkc.DescriptorIndexingProperties.maxUpdateAfterBindDescriptorsInAllPools
             then Log.fail "The current hardware cannot support the currently configured drawing maxes. Consider tuning down unneeded maxes, especially 3D drawing and light maps."
             
+            // calculate total descriptor sets
+            let setCount setDef = if setDef.BulkMode.IsBulkSetIndexed then setDef.SetCount * bulkDrawLimit else setDef.SetCount
+            let maxSets = Array.sumBy setCount descriptorSetDefinitions * Constants.Vulkan.MaxFramesInFlight
+            
             // create descriptor pool
             // NOTE: DJL: all descriptor pools should enable update after bind to avoid the *other*
             // maxes which a) would complicate calculations like above and b) may be lower. See
             // https://docs.vulkan.org/refpages/latest/refpages/source/VkPhysicalDeviceDescriptorIndexingProperties.html.
             let mutable info = VkDescriptorPoolCreateInfo ()
             info.flags <- VkDescriptorPoolCreateFlags.UpdateAfterBind
-            info.maxSets <- uint ((Array.sumBy (fun x -> x.SetCount) descriptorSetDefinitions) * Constants.Vulkan.MaxFramesInFlight)
+            info.maxSets <- uint maxSets
             info.poolSizeCount <- uint poolSizes.Length
             info.pPoolSizes <- poolSizesPin.Pointer
             let mutable descriptorPool = Unchecked.defaultof<VkDescriptorPool>
@@ -638,10 +642,10 @@ module Pipeline =
                 layoutBindingsSets.[i] <-
                     Array.map
                         (fun binding ->
-                             let descriptorCount = if descriptorSetDefinitions.[i].DescriptorIndexed then binding.DescriptorCount * bulkDrawLimit else binding.DescriptorCount
+                             let descriptorCount = if descriptorSetDefinitions.[i].BulkMode.IsBulkDescriptorIndexed then binding.DescriptorCount * bulkDrawLimit else binding.DescriptorCount
                              Hl.makeDescriptorBinding binding.Binding binding.DescriptorType descriptorCount binding.ShaderStage)
                         descriptorSetDefinitions.[i].Descriptors
-                descriptorSetLayouts.[i] <- Pipeline.createDescriptorSetLayout descriptorSetDefinitions.[i].DescriptorIndexed layoutBindingsSets.[i] vkc.Device
+                descriptorSetLayouts.[i] <- Pipeline.createDescriptorSetLayout descriptorSetDefinitions.[i].BulkMode.IsBulkDescriptorIndexed layoutBindingsSets.[i] vkc.Device
             
             // create descriptor pool
             let descriptorPool = Pipeline.createDescriptorPool bulkDrawLimit descriptorSetDefinitions vkc
@@ -649,7 +653,8 @@ module Pipeline =
             // create descriptor sets
             let descriptorSets = Array.zeroCreate descriptorSetDefinitions.Length
             for i in 0 .. dec descriptorSetDefinitions.Length do
-                descriptorSets.[i] <- DescriptorSet.create descriptorSetDefinitions.[i].SetCount layoutBindingsSets.[i] descriptorSetLayouts.[i] descriptorPool vkc.Device
+                let setCount = if descriptorSetDefinitions.[i].BulkMode.IsBulkSetIndexed then descriptorSetDefinitions.[i].SetCount * bulkDrawLimit else descriptorSetDefinitions.[i].SetCount
+                descriptorSets.[i] <- DescriptorSet.create setCount layoutBindingsSets.[i] descriptorSetLayouts.[i] descriptorPool vkc.Device
             
             // create pipeline layout and vkPipelines
             if blends.Length < 1 then Log.fail "No pipeline blend was specified."

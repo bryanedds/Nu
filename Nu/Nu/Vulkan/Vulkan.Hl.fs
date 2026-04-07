@@ -249,6 +249,12 @@ module Hl =
             | UniformBuffer -> VkDescriptorType.UniformBuffer
             | StorageBuffer -> VkDescriptorType.StorageBuffer
     
+    /// Describes whether descriptors are multiplied for bulk use, and how.
+    type BulkDescriptorMode =
+        | BulkNone
+        | BulkDescriptorIndexed
+        | BulkSetIndexed
+    
     /// Convert VkExtensionProperties.extensionName to a string.
     /// TODO: see if we can inline functions like these once F# supports C#'s representation of this fixed buffer type.
     let private getExtensionName (extensionProps : VkExtensionProperties) =

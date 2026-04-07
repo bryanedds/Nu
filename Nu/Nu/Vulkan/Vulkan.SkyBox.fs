@@ -39,11 +39,11 @@ module SkyBox =
                 [|Pipeline.NoBlend|]
                 [|Pipeline.vertex 0 CubeMap.VertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Hl.Single3 0|]|]
-                [|Pipeline.descriptorSet false Constants.Render.GeometryRenderPassMax
+                [|Pipeline.descriptorSet Hl.BulkNone Constants.Render.GeometryRenderPassMax
                     [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage 1
                       Pipeline.descriptor 1 Hl.StorageBuffer Hl.FragmentStage 1
                       Pipeline.descriptor 2 Hl.SampledImage Hl.FragmentStage 1|]
-                  Pipeline.descriptorSet false 1
+                  Pipeline.descriptorSet Hl.BulkNone 1
                     [|Pipeline.descriptor 0 Hl.Sampler Hl.FragmentStage 1|]|]
                 [||]
                 [|colorAttachmentFormat|]
