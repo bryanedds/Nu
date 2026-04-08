@@ -59,7 +59,7 @@ type Constraint =
         | (_, _) -> Constraints (SArray.ofList [constrain; constrain2])
 
     /// The empty constraint.
-    static member empty =
+    static member val empty =
         Constraints SArray.empty
 
     /// Checks that constraint is the empty constraint constant.
@@ -164,7 +164,7 @@ type [<ReferenceEquality>] Output =
         | (_, _) -> Outputs (SArray.ofList [output; output2])
 
     /// The empty output.
-    static member empty =
+    static member val empty =
         Outputs SArray.empty
 
     /// Checks that output is the empty output constant.
@@ -598,7 +598,7 @@ type [<ReferenceEquality>] Behaviors =
     { Behaviors : Behavior FStack }
 
     /// The empty behaviors.
-    static member empty =
+    static member val empty =
         { Behaviors = FStack.empty }
 
     /// The singleton behaviors.
@@ -732,7 +732,7 @@ type [<ReferenceEquality>] ParticleSystem =
         List.rev descriptorsRev
 
     /// The empty particle system.
-    static member empty =
+    static member val empty =
         { Emitters = Map.empty }
 
 /// The static sprite-based particle emitter.

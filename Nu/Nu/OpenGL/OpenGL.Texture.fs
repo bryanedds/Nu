@@ -313,7 +313,7 @@ module Texture =
               TextureTexelHeight = 1.0f / single height }
 
         /// Unpopulated texture data.
-        static member empty =
+        static member val empty =
             { TextureWidth = 0
               TextureHeight = 0
               TextureTexelWidth = 0.0f
@@ -776,6 +776,7 @@ module Texture =
                         try this.Run ()
                         with exn -> Log.error (scstring exn)))
                 threadOpt <- Some thread
+                thread.Name <- nameof TextureServer
                 thread.IsBackground <- true
                 thread.Start ()
                 while not started do Thread.Yield () |> ignore<bool>

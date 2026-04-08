@@ -49,7 +49,7 @@ type Palette =
     static member removeStyle index palette =
         { Styles = Array.removeAt index palette.Styles }
 
-    static member initial =
+    static member val initial =
         let blockStyles =
             [|for (name, color) in List.zip Palette.BaseColorNames Palette.BaseColorValues do
                 Style.make color name Map.empty|]
@@ -164,14 +164,14 @@ and Chunk =
     static member make boundsI blocks =
         { BoundsI = boundsI; Blocks = blocks }
 
-    static member initial =
+    static member val initial =
         Chunk.make (box3i v3iZero (v3iDup 24)) Map.empty
 
 type Selection =
     | SelectionVolume of Vector3i * Vector3i
     | SelectionAdHoc of Vector3i Set
 
-    static member initial =
+    static member val initial =
         SelectionAdHoc Set.empty
 
 type ProcessParam =
@@ -217,7 +217,7 @@ type Pass =
     static member tryGetProcessor name pass =
         Array.tryFind (fun processor -> processor.ProcessorName = name) pass.Processors
 
-    static member initial =
+    static member val initial =
         { Processors = [||] }
 
 type EditPlane =
@@ -228,7 +228,7 @@ type EditPlane =
 type Config =
     { CastShadows : bool }
 
-    static member initial =
+    static member val initial =
         { CastShadows = true }
 
 [<RequireQualifiedAccess>]

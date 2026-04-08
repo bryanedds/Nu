@@ -476,6 +476,7 @@ type RendererThread () =
                 // start real thread
                 let thread = Thread (ThreadStart (fun () -> rt.Run fonts window geometryViewport windowViewport))
                 threadOpt <- Some thread
+                thread.Name <- nameof RendererThread
                 thread.IsBackground <- true
                 thread.Start ()
 
@@ -493,6 +494,7 @@ type RendererThread () =
                             if not terminated then
                                 swapRequestAcknowledged <- true))
                 threadOpt <- Some thread
+                thread.Name <- nameof RendererThread
                 thread.IsBackground <- true
                 thread.Start ()
 
