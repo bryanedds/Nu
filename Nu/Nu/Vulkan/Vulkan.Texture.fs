@@ -1237,6 +1237,7 @@ module Texture =
                         try this.Run ()
                         with exn -> Log.error (scstring exn)))
                 threadOpt <- Some thread
+                thread.Name <- nameof TextureServer
                 thread.IsBackground <- true
                 thread.Start ()
                 while not started do Thread.Yield () |> ignore<bool>
