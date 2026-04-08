@@ -19,7 +19,7 @@ type [<CustomEquality; NoComparison>] PropPlus =
           Advents = advents
           Prop = prop }
 
-    static member empty =
+    static member val empty =
         { UpdateTime = 0L
           PointOfInterest = v3Zero
           Advents = Set.empty

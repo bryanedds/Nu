@@ -11,7 +11,7 @@ type Credits =
     { ScrollPosition : Vector3
       QuitVisible : bool }
 
-    static member empty =
+    static member val empty =
         { ScrollPosition = v3Zero
           QuitVisible = true }
 

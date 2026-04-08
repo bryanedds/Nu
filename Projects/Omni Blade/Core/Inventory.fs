@@ -145,7 +145,7 @@ type PrizePool =
       Gold : int
       Exp : int }
 
-    static member empty =
+    static member val empty =
         { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
 
 type [<SymbolicExpansion>] Inventory =
@@ -239,8 +239,8 @@ type [<SymbolicExpansion>] Inventory =
     static member removeGold gold (inventory : Inventory) =
         { inventory with Gold = max 0 (inventory.Gold - gold) }
 
-    static member empty =
+    static member val empty =
         { Items = Map.empty; Gold = 0 }
 
-    static member initial =
+    static member val initial =
         { Items = Map.ofList [(Consumable GreenHerb, 1)]; Gold = 10 }

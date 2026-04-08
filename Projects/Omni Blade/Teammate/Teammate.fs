@@ -125,5 +125,5 @@ type [<SymbolicExpansion>] Teammate =
           ArmorOpt = armorOpt
           Accessories = accessories }
 
-    static member empty =
+    static member val empty =
         Teammate.make 1 0 Jinn

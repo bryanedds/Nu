@@ -914,7 +914,7 @@ type BattleData =
       BattleSongOpt : Song AssetTag option
       BattleEnemyListDataForRetryOpt : (int * Vector3 * int * EnemyType) list option }
 
-    static member empty =
+    static member val empty =
         { BattleType = BattleType.EmptyBattle
           BattleAllyPositions = []
           BattleEnemies = []

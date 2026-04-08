@@ -14,6 +14,6 @@ type CharacterPlus =
         { UpdateTime = time
           Character = character }
 
-    static member empty =
+    static member val empty =
         { UpdateTime = 0L
           Character = Character.empty }

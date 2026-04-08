@@ -112,12 +112,12 @@ type [<SymbolicExpansion>] CharacterAnimationState =
     static member materialized time state =
         { state with StartTime = time; CharacterAnimationType = PoiseAnimation Poising; MaterializationOpt = None }
 
-    static member empty =
+    static member val empty =
         { StartTime = 0L
           AnimationSheet = Assets.Field.JinnAnimationSheet
           CharacterAnimationType = IdleAnimation
           MaterializationOpt = None
           Direction = Downward }
 
-    static member initial =
-        { CharacterAnimationState.empty with Direction = Upward }
+    static member val initial =
+        { CharacterAnimationState.empty with Direction = Upward } : CharacterAnimationState

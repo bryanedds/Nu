@@ -10,10 +10,10 @@ open Nu
 type Title =
     { TitleTime : int64 }
 
-    static member empty =
+    static member val empty =
         { TitleTime = 0L }
 
-    static member initial =
+    static member val initial =
         { TitleTime = 0L }
 
 type TitleMessage =

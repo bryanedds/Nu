@@ -119,7 +119,7 @@ type [<SymbolicExpansion>] CharacterState =
               ItemPrizeOpt = Algorithms.itemPrizeOpt archetypeType level }
         characterState
 
-    static member empty =
+    static member val empty =
         let characterState =
             { ArchetypeType = Apprentice
               ExpPoints = 0
