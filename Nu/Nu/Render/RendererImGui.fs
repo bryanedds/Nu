@@ -358,7 +358,6 @@ type VulkanRendererImGui
     let mutable indexBuffer = Unchecked.defaultof<Buffer.Buffer>
     let mutable vertexBufferSize = 8192
     let mutable indexBufferSize = 1024
-    let maxTexturesPerFrame = 1024 // TODO: DJL: determine minimum safe limit based on ImGui behavior
     
     member private renderer.DestroyAssetTextures (destroyedTextureIdsOpt : uint32 HashSet option) =
         Hl.Queue.waitIdle vkc.RenderQueue
@@ -420,13 +419,13 @@ type VulkanRendererImGui
             // create pipeline
             pipeline <-
                 Pipeline.Pipeline.create
-                    Constants.Paths.ImGuiShaderFilePath
+                    Constants.Paths.ImGuiShaderFilePath 0
                     [|Pipeline.ImGui|]
                     [|Pipeline.vertex 0 sizeof<ImDrawVert> VkVertexInputRate.Vertex
                         [|Pipeline.attribute 0 Hl.Single2 (NativePtr.offsetOf<ImDrawVert> "pos")
                           Pipeline.attribute 1 Hl.Single2 (NativePtr.offsetOf<ImDrawVert> "uv")
                           Pipeline.attribute 2 Hl.Quarter4 (NativePtr.offsetOf<ImDrawVert> "col")|]|] // format must match size of actual data (uint32), even though it is read as vec4 in the shader!
-                    [|Pipeline.descriptorSet false maxTexturesPerFrame
+                    [|Pipeline.descriptorSet Hl.BulkNone Constants.Render.ImGuiTextureMax
                         [|Pipeline.descriptor 0 Hl.CombinedImageSampler Hl.FragmentStage 1|]|]
                     [|Pipeline.pushConstant 0 (sizeof<Single> * 4) Hl.VertexStage|]
                     [|vkc.SwapFormat|] None vkc
@@ -582,12 +581,12 @@ type VulkanRendererImGui
                                     let descriptorSetIndex = usedImages.IndexOf textureId
                                     
                                     // only draw if descriptor set index within range
-                                    if descriptorSetIndex < maxTexturesPerFrame then
+                                    if descriptorSetIndex < Constants.Render.ImGuiTextureMax then
 
                                         // write texture to descriptor set
                                         let imageView = renderer.GetImageView textureId
                                         let sampler = renderer.GetSampler textureId
-                                        Pipeline.Pipeline.writeDescriptorCombinedImageSampler descriptorSetIndex 0 0 0 imageView sampler pipeline vkc
+                                        Pipeline.Pipeline.writeDescriptorCombinedImageSampler 0 0 descriptorSetIndex 0 imageView sampler pipeline vkc
                                         
                                         // bind descriptor set
                                         let mutable descriptorSet = pipeline.VkDescriptorSet 0 descriptorSetIndex

@@ -36,7 +36,7 @@ layout(push_constant) uniform PushConstant
 layout(binding = 0) buffer readonly TransformBlock
 {
     Transform transform;
-} transform[];
+} transform;
 
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec2 texCoords;
@@ -68,5 +68,5 @@ void main()
     normalOut = transpose(inverse(mat3(model))) * normal;
     heightPlusOut = heightPlus;
     subsurfacePlusOut = subsurfacePlus;
-    gl_Position = transform[drawId].transform.viewProjection * positionOut;
+    gl_Position = transform.transform.viewProjection * positionOut;
 }

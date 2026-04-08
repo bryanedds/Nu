@@ -29,11 +29,12 @@ module ContourTessellation =
         let pipeline =
             Pipeline.Pipeline.create
                 Constants.Paths.ContourShaderFilePath
+                Constants.Render.ContoursMax
                 [|Pipeline.Transparent|]
                 [|Pipeline.vertex 0 vertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Hl.Single2 0 // Position
                       Pipeline.attribute 1 Hl.Single4 sizeof<Vector2>|]|] // Color
-                [|Pipeline.descriptorSet true 1 [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage 1|]|]
+                [|Pipeline.descriptorSet Hl.BulkDescriptorIndexed 1 [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage 1|]|]
                 [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]
                 [|vkc.SwapFormat|] None vkc
         
@@ -54,8 +55,8 @@ module ContourTessellation =
         (modelViewProjectionUniform : Buffer.Buffer, pipeline : Pipeline.Pipeline)
         (vkc : Hl.VulkanContext) =
         
-        // ensure pipeline draw limit is not exceeded
-        if drawIndex < pipeline.DrawLimit then
+        // ensure bulk draw limit is not exceeded
+        if drawIndex < pipeline.BulkDrawLimit then
         
             // upload vertex data
             Buffer.Buffer.uploadArray drawIndex 0 0 tessellation.Vertices vertexBuffer vkc
@@ -63,7 +64,7 @@ module ContourTessellation =
             
             // bind uniforms
             Buffer.Buffer.uploadValue drawIndex 0 0 modelViewProjection modelViewProjectionUniform vkc
-            Pipeline.Pipeline.writeDescriptorStorageBuffer 0 drawIndex 0 0 modelViewProjectionUniform pipeline vkc
+            Pipeline.Pipeline.writeDescriptorStorageBuffer 0 0 0 drawIndex modelViewProjectionUniform.[drawIndex] pipeline vkc
             
             // make viewport and scissor
             let mutable renderArea = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)
@@ -131,5 +132,5 @@ module ContourTessellation =
                 // abort
                 | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
 
-        // draw not possible
-        else Log.warnOnce "Rendering incomplete due to insufficient gpu resources."
+        // bulk draw limit exceeded
+        else Log.warnOnce "Draw operations aborted because bulk draw limit has been reached. Increase relevant bulk draw limit as necessary for current application."

@@ -1,5 +1,4 @@
 #version 450 core
-#extension GL_EXT_nonuniform_qualifier : enable
 
 struct Transform
 {
@@ -8,15 +7,10 @@ struct Transform
     mat4 viewProjection;
 };
 
-layout(push_constant) uniform PushConstant
-{
-    int drawId;
-};
-
 layout(binding = 0) buffer readonly TransformBlock
 {
     Transform transform;
-} transforms[];
+} transform;
 
 layout(location = 0) in vec3 position;
 
@@ -25,5 +19,5 @@ layout(location = 0) out vec3 positionOut;
 void main()
 {
     positionOut = position;
-    gl_Position = transforms[drawId].transform.viewProjection * vec4(positionOut, 1.0);
+    gl_Position = transform.transform.viewProjection * vec4(positionOut, 1.0);
 }

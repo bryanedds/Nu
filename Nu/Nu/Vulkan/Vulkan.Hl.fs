@@ -37,8 +37,8 @@ module Hl =
     /// TODO: DJL: figure out how to prevent potential outside mutation.
     let mutable internal CurrentFrame = 0
 
-    /// The number of Pipelines that have been created.
-    let mutable internal PipelinesCreated = 0
+    /// The total number of resource descriptors needed.
+    let mutable internal DescriptorsNeeded = 0u
     
     /// The format of an image.
     type ImageFormat =
@@ -248,6 +248,12 @@ module Hl =
             | SampledImage -> VkDescriptorType.SampledImage
             | UniformBuffer -> VkDescriptorType.UniformBuffer
             | StorageBuffer -> VkDescriptorType.StorageBuffer
+    
+    /// Describes whether descriptors are multiplied for bulk use, and how.
+    type BulkDescriptorMode =
+        | BulkNone
+        | BulkDescriptorIndexed
+        | BulkSetIndexed
     
     /// Convert VkExtensionProperties.extensionName to a string.
     /// TODO: see if we can inline functions like these once F# supports C#'s representation of this fixed buffer type.

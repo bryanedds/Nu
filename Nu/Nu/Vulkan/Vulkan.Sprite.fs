@@ -29,14 +29,15 @@ module Sprite =
         let pipeline =
             Pipeline.Pipeline.create
                 Constants.Paths.SpriteShaderFilePath
+                Constants.Render.SpritesMax
                 [|Pipeline.Transparent|]
                 [|Pipeline.vertex 0 VertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Hl.Single2 0|]|]
-                [|Pipeline.descriptorSet true 1
+                [|Pipeline.descriptorSet Hl.BulkDescriptorIndexed 1
                     [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage 1
                       Pipeline.descriptor 1 Hl.StorageBuffer Hl.FragmentStage 1
                       Pipeline.descriptor 2 Hl.SampledImage Hl.FragmentStage 1|]
-                  Pipeline.descriptorSet false 1
+                  Pipeline.descriptorSet Hl.BulkNone 1
                     [|Pipeline.descriptor 0 Hl.Sampler Hl.FragmentStage 1|]|]
                 [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]
                 [|vkc.SwapFormat|] None vkc
@@ -97,8 +98,8 @@ module Sprite =
          pipeline : Pipeline.Pipeline,
          vkc : Hl.VulkanContext) =
 
-        // ensure pipeline draw limit is not exceeded
-        if drawIndex < pipeline.DrawLimit then
+        // ensure bulk draw limit is not exceeded
+        if drawIndex < pipeline.BulkDrawLimit then
 
             // compute unflipped tex coords
             let texCoordsUnflipped =
@@ -146,12 +147,12 @@ module Sprite =
             spriteFrag.color <- color.V4
             Buffer.Buffer.uploadValue drawIndex 0 0 spriteVert spriteVertUniform vkc
             Buffer.Buffer.uploadValue drawIndex 0 0 spriteFrag spriteFragUniform vkc
-            Pipeline.Pipeline.writeDescriptorStorageBuffer 0 drawIndex 0 0 spriteVertUniform pipeline vkc
-            Pipeline.Pipeline.writeDescriptorStorageBuffer 0 drawIndex 0 1 spriteFragUniform pipeline vkc
+            Pipeline.Pipeline.writeDescriptorStorageBuffer 0 0 0 drawIndex spriteVertUniform.[drawIndex] pipeline vkc
+            Pipeline.Pipeline.writeDescriptorStorageBuffer 0 1 0 drawIndex spriteFragUniform.[drawIndex] pipeline vkc
             
             // bind texture
-            Pipeline.Pipeline.writeDescriptorSampledImage 0 drawIndex 0 2 texture.ImageView pipeline vkc
-            Pipeline.Pipeline.writeDescriptorSampler 0 0 1 0 sampler pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage 0 2 0 drawIndex texture.ImageView pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampler 1 0 0 0 sampler pipeline vkc
 
             // make viewport and scissor
             let mutable renderArea = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)
@@ -221,5 +222,5 @@ module Sprite =
                 // abort
                 | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
 
-        // draw not possible
-        else Log.warnOnce "Rendering incomplete due to insufficient gpu resources."
+        // bulk draw limit exceeded
+        else Log.warnOnce "Draw operations aborted because bulk draw limit has been reached. Increase relevant bulk draw limit as necessary for current application."

@@ -17,7 +17,6 @@ open Nu
 module Vulkan =
 
     let [<Literal>] MaxFramesInFlight = 2
-    let [<Literal>] PipelineTotal = 8
 
     /// On macOS, enabling this uses MoltenVk in place of KosmicKrisp
     /// On iOS, it must be set to true
@@ -366,6 +365,17 @@ module Render =
     let [<Literal>] Body3dSegmentRenderMagnitudeMax = 48.0f
     let [<Literal>] Body3dSegmentRenderDistanceMax = 40.0f
     let [<Literal>] Body3dRenderDistanceMax = 32.0f
+
+    // descriptor related maxes for Vulkan, just grouped here for now
+    // TODO: DJL: properly integrate and make mutable as appropriate.
+    // TODO: DJL: need stupidly low 3D values for now to test on limited hardware.
+    let [<Literal>] ImGuiTextureMax = 1024
+    let [<Literal>] LightMapsMax = 8 // NOTE: DJL: applications that set this below LightMapsMaxDeferred should cap the latter to avoid descriptor waste.
+    let [<Literal>] GeometryRenderPassMax = LightMapsMax * 6 + 1 // all light map faces plus top level
+    let [<Literal>] SpritesMax = 8192
+    let [<Literal>] SpriteBatchesMax = 8192
+    let [<Literal>] ContoursMax = 8192
+    let [<Literal>] ForwardStaticDrawsMax = 128
 
 [<RequireQualifiedAccess>]
 module Audio =

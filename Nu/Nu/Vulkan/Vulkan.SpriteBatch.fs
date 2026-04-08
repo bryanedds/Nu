@@ -77,14 +77,15 @@ module SpriteBatch =
         let pipeline =
             Pipeline.Pipeline.create
                 Constants.Paths.SpriteBatchShaderFilePath
+                Constants.Render.SpriteBatchesMax
                 [|Pipeline.Transparent; Pipeline.Additive; Pipeline.Overwrite|] [||]
-                [|Pipeline.descriptorSet true 1
+                [|Pipeline.descriptorSet Hl.BulkSetIndexed 1
                     [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage 1
                       Pipeline.descriptor 1 Hl.StorageBuffer Hl.VertexStage 1
                       Pipeline.descriptor 2 Hl.SampledImage Hl.FragmentStage 1|]
-                  Pipeline.descriptorSet false 1
+                  Pipeline.descriptorSet Hl.BulkNone 1
                     [|Pipeline.descriptor 0 Hl.Sampler Hl.FragmentStage 1|]|]
-                [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]
+                [||]
                 [|vkc.SwapFormat|] None vkc
 
         // create uniforms
@@ -107,8 +108,8 @@ module SpriteBatch =
         match env.State.TextureOpt with
         | ValueSome texture when env.SpriteIndex > 0 ->
 
-            // ensure pipeline draw limit is not exceeded
-            if env.DrawIndex < env.Pipeline.DrawLimit then
+            // ensure bulk draw limit is not exceeded
+            if env.DrawIndex < env.Pipeline.BulkDrawLimit then
             
                 // bind uniforms
                 let vkc = env.VulkanContext
@@ -122,15 +123,15 @@ module SpriteBatch =
                     sprite.texCoords <- env.TexCoordses.[i]
                     sprite.color <- env.Colors.[i]
                     Buffer.Buffer.uploadValue env.DrawIndex (i * sizeof<Sprite>) 0 sprite spriteUniform vkc
-                Pipeline.Pipeline.writeDescriptorStorageBuffer 0 env.DrawIndex 0 0 spriteUniform env.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorStorageBuffer 0 0 env.DrawIndex 0 spriteUniform.[env.DrawIndex] env.Pipeline vkc
                 let mutable viewProjection = ViewProjection ()
                 viewProjection.viewProjection <- if env.State.Absolute then env.ViewProjection2dAbsolute else env.ViewProjection2dRelative
                 Buffer.Buffer.uploadValue env.DrawIndex 0 0 viewProjection viewProjectionUniform vkc
-                Pipeline.Pipeline.writeDescriptorStorageBuffer 0 env.DrawIndex 0 1 viewProjectionUniform env.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorStorageBuffer 0 1 env.DrawIndex 0 viewProjectionUniform.[env.DrawIndex] env.Pipeline vkc
 
                 // bind texture
-                Pipeline.Pipeline.writeDescriptorSampledImage 0 env.DrawIndex 0 2 texture.ImageView env.Pipeline vkc
-                Pipeline.Pipeline.writeDescriptorSampler 0 0 1 0 env.Sampler env.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorSampledImage 0 2 env.DrawIndex 0 texture.ImageView env.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorSampler 1 0 0 0 env.Sampler env.Pipeline vkc
                 
                 // make viewport and scissor
                 let mutable renderArea = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)
@@ -175,14 +176,11 @@ module SpriteBatch =
                         Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)
 
                         // bind descriptor sets
-                        let mutable mainDescriptorSet = env.Pipeline.VkDescriptorSet 0 0
+                        let mutable mainDescriptorSet = env.Pipeline.VkDescriptorSet 0 env.DrawIndex
                         let mutable samplerDescriptorSet = env.Pipeline.VkDescriptorSet 1 0
                         Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, env.Pipeline.PipelineLayout, 0u, 1u, asPointer &mainDescriptorSet, 0u, nullPtr)
                         Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, env.Pipeline.PipelineLayout, 1u, 1u, asPointer &samplerDescriptorSet, 0u, nullPtr)
                 
-                        // push draw index
-                        Vulkan.vkCmdPushConstants (cb, env.Pipeline.PipelineLayout, Hl.VertexFragmentStage.VkShaderStageFlags, 0u, 4u, asVoidPtr &env.DrawIndex)
-                        
                         // draw
                         Vulkan.vkCmdDraw (cb, uint (6 * env.SpriteIndex), 1u, 0u, 0u)
                         Hl.reportDrawCall env.SpriteIndex
@@ -193,8 +191,8 @@ module SpriteBatch =
                     // abort
                     | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
 
-            // draw not possible
-            else Log.warnOnce "Rendering incomplete due to insufficient gpu resources."
+            // bulk draw limit exceeded
+            else Log.warnOnce "Draw operations aborted because bulk draw limit has been reached. Increase relevant bulk draw limit as necessary for current application."
             
             // next batch
             env.DrawIndex <- inc env.DrawIndex
