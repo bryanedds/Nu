@@ -10,7 +10,7 @@ type [<SymbolicExpansion>] Player =
       LastTimeGrounded : int64
       LastTimeJump : int64 }
 
-    static member initial =
+    static member val initial =
         { Alive = true
           LastTimeGrounded = Int64.MinValue
           LastTimeJump = Int64.MinValue }

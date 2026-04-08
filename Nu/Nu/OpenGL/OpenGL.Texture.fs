@@ -313,7 +313,7 @@ module Texture =
               TextureTexelHeight = 1.0f / single height }
 
         /// Unpopulated texture data.
-        static member empty =
+        static member val empty =
             { TextureWidth = 0
               TextureHeight = 0
               TextureTexelWidth = 0.0f
