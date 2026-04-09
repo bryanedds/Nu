@@ -34,8 +34,8 @@ module ContourTessellation =
                 [|Pipeline.vertex 0 vertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Hl.Single2 0 // Position
                       Pipeline.attribute 1 Hl.Single4 sizeof<Vector2>|]|] // Color
-                [|Pipeline.descriptorSet Hl.BulkDescriptorIndexed 1 [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage 1|]|]
-                [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]
+                [|Pipeline.descriptorSet Hl.BulkSetIndexed 1 [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage 1|]|]
+                [||]
                 [|vkc.SwapFormat|] None vkc
         
         // fin
@@ -64,7 +64,7 @@ module ContourTessellation =
             
             // bind uniforms
             Buffer.Buffer.uploadValue drawIndex 0 0 modelViewProjection modelViewProjectionUniform vkc
-            Pipeline.Pipeline.writeDescriptorStorageBuffer 0 0 0 drawIndex modelViewProjectionUniform.[drawIndex] pipeline vkc
+            Pipeline.Pipeline.writeDescriptorStorageBuffer 0 0 drawIndex 0 modelViewProjectionUniform.[drawIndex] pipeline vkc
             
             // make viewport and scissor
             let mutable renderArea = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)
@@ -115,12 +115,8 @@ module ContourTessellation =
                     Vulkan.vkCmdBindIndexBuffer (cb, indexBuffer.[drawIndex], 0UL, VkIndexType.Uint32)
                     
                     // bind descriptor set
-                    let mutable descriptorSet = pipeline.VkDescriptorSet 0 0
+                    let mutable descriptorSet = pipeline.VkDescriptorSet 0 drawIndex
                     Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.PipelineLayout, 0u, 1u, asPointer &descriptorSet, 0u, nullPtr)
-                    
-                    // push draw index
-                    let mutable drawIdx = drawIndex
-                    Vulkan.vkCmdPushConstants (cb, pipeline.PipelineLayout, Hl.VertexFragmentStage.VkShaderStageFlags, 0u, 4u, asVoidPtr &drawIdx)
                     
                     // draw
                     Vulkan.vkCmdDrawIndexed (cb, uint32 tessellation.Indices.Length, 1u, 0u, 0, 0u)
