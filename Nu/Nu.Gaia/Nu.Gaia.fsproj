@@ -28,6 +28,10 @@
     <!-- Build Nu.Pipe only once even for multi-project builds -->
     <Target Name="BuildNuPipe" BeforeTargets="BeforeBuild">
         <MSBuild Projects="../../Nu/Nu.Pipe/Nu.Pipe.fsproj" RemoveProperties="TargetFramework;RuntimeIdentifier;SelfContained" Targets="Restore;Build" />
+        <ItemGroup>
+		    <GaiaProject Include="../../Projects/*/*.fsproj" />
+		</ItemGroup>
+        <MSBuild Projects="@(GaiaProject)" Targets="Restore;Build" BuildInParallel="true" />
     </Target>
     <!-- Run Nu.Pipe -->
     <Target Name="NuPipe" BeforeTargets="ResizetizeCollectItems;AssignTargetPaths" DependsOnTargets="BuildNuPipe">
