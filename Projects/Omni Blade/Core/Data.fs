@@ -1001,21 +1001,18 @@ type FieldData =
       Definitions : CueSystem.CueDefinitions
       Treasures : ItemType list }
 
-[<RequireQualifiedAccess>]
-module FieldData =
+    static member val private tileMapsMemoized = Map.empty<uint64 * FieldType, Choice<TmxMap, TmxMap * TmxMap, RandMap * TmxMap * Origin, TmxMap>> with get, set
+    static member val private propObjectsMemoized = Map.empty<uint64 * FieldType, TmxMap * (TmxObjectGroup * TmxObject) list * Origin option> with get, set
+    static member val private propDescriptorsMemoized = Map.empty<uint64 * FieldType, PropDescriptor list> with get, set
 
-    let mutable tileMapsMemoized = Map.empty<uint64 * FieldType, Choice<TmxMap, TmxMap * TmxMap, RandMap * TmxMap * Origin, TmxMap>>
-    let mutable propObjectsMemoized = Map.empty<uint64 * FieldType, TmxMap * (TmxObjectGroup * TmxObject) list * Origin option>
-    let mutable propDescriptorsMemoized = Map.empty<uint64 * FieldType, PropDescriptor list>
-
-#if DEV
-    let clearMemoized () =
-        tileMapsMemoized <- Map.empty
-        propObjectsMemoized <- Map.empty
-        propDescriptorsMemoized <- Map.empty
+#if !DEV
+    static member clearMemoized () =
+        FieldData.tileMapsMemoized <- Map.empty
+        FieldData.propObjectsMemoized <- Map.empty
+        FieldData.propDescriptorsMemoized <- Map.empty
 #endif
 
-    let objectToPropOpt (object : TmxObject) (group : TmxObjectGroup) (tileMap : TmxMap) =
+    static member objectToPropOpt (object : TmxObject) (group : TmxObjectGroup) (tileMap : TmxMap) =
         let propPosition = v3 (single object.X) (single tileMap.Height * single tileMap.TileHeight - single object.Y) 0.0f // invert y
         let propSize = v3 (single object.Width) (single object.Height) 0.0f
         let propPerimeter = box3 propPosition propSize
@@ -1029,10 +1026,10 @@ module FieldData =
             Some { PropPerimeter = propPerimeter; PropElevation = propElevation; PropData = propData; PropId = object.Id }
         | (false, _) -> None
 
-    let tryGetTileMap omniSeedState fieldData =
+    static member tryGetTileMap omniSeedState fieldData =
         let rotatedSeedState = OmniSeedState.rotate fieldData.FieldType omniSeedState
         let memoKey = (rotatedSeedState, fieldData.FieldType)
-        match Map.tryFind memoKey tileMapsMemoized with
+        match Map.tryFind memoKey FieldData.tileMapsMemoized with
         | None ->
             let tileMapOpt =
                 match fieldData.FieldTileMap with
@@ -1055,18 +1052,18 @@ module FieldData =
                     | ValueSome tileMapMetadata -> Some (Choice4Of4 tileMapMetadata.TileMap)
                     | ValueNone -> None
             match tileMapOpt with
-            | Some tileMapChc -> tileMapsMemoized <- Map.add memoKey tileMapChc tileMapsMemoized
+            | Some tileMapChc -> FieldData.tileMapsMemoized <- Map.add memoKey tileMapChc FieldData.tileMapsMemoized
             | None -> ()
             tileMapOpt
         | tileMapOpt -> tileMapOpt
 
-    let getPropObjects omniSeedState fieldData =
+    static member getPropObjects omniSeedState fieldData =
         let rotatedSeedState = OmniSeedState.rotate fieldData.FieldType omniSeedState
         let memoKey = (rotatedSeedState, fieldData.FieldType)
-        match Map.tryFind memoKey propObjectsMemoized with
+        match Map.tryFind memoKey FieldData.propObjectsMemoized with
         | None ->
             let result =
-                match tryGetTileMap omniSeedState fieldData with
+                match FieldData.tryGetTileMap omniSeedState fieldData with
                 | Some tileMapChc ->
                     match tileMapChc with
                     | Choice1Of4 tileMap ->
@@ -1094,18 +1091,18 @@ module FieldData =
                             (tileMap, propObjects, None)
                         else (tileMap, [], None)
                 | None -> (TmxMap.makeDefault (), [], None)
-            propObjectsMemoized <- Map.add memoKey result propObjectsMemoized
+            FieldData.propObjectsMemoized <- Map.add memoKey result FieldData.propObjectsMemoized
             result
         | Some result -> result
 
-    let getPropDescriptors omniSeedState fieldData =
+    static member getPropDescriptors omniSeedState fieldData =
         let rotatedSeedState = OmniSeedState.rotate fieldData.FieldType omniSeedState
         let memoKey = (rotatedSeedState, fieldData.FieldType)
-        match Map.tryFind memoKey propDescriptorsMemoized with
+        match Map.tryFind memoKey FieldData.propDescriptorsMemoized with
         | None ->
             let rand = Rand.makeFromSeedState rotatedSeedState
-            let (tileMap, propObjects, originOpt) = getPropObjects omniSeedState fieldData
-            let props = List.choose (fun (group, object) -> objectToPropOpt object group tileMap) propObjects
+            let (tileMap, propObjects, originOpt) = FieldData.getPropObjects omniSeedState fieldData
+            let props = List.choose (fun (group, object) -> FieldData.objectToPropOpt object group tileMap) propObjects
             let (chestSpawnsUnsorted, nonChestSpawns) = List.split (fun prop -> match prop.PropData with ChestSpawn -> true | _ -> false) props
             let chestSpawns =
                 match originOpt with
@@ -1163,20 +1160,20 @@ module FieldData =
                     ([], rand)
             let portalSpawneds = [] // NOTE: no level uses this feature in the demo.
             let propDescriptors = chestSpawneds @ portalSpawneds @ nonChestSpawns
-            propDescriptorsMemoized <- Map.add memoKey propDescriptors propDescriptorsMemoized
+            FieldData.propDescriptorsMemoized <- Map.add memoKey propDescriptors FieldData.propDescriptorsMemoized
             propDescriptors
         | Some propDescriptors -> propDescriptors
 
-    let getPortals omniSeedState fieldData =
-        let propDescriptors = getPropDescriptors omniSeedState fieldData
+    static member getPortals omniSeedState fieldData =
+        let propDescriptors = FieldData.getPropDescriptors omniSeedState fieldData
         List.filter (fun propDescriptor -> match propDescriptor.PropData with Portal _ -> true | _ -> false) propDescriptors
 
-    let tryGetPortal omniSeedState portalIndex fieldData =
-        let portals = getPortals omniSeedState fieldData
+    static member tryGetPortal omniSeedState portalIndex fieldData =
+        let portals = FieldData.getPortals omniSeedState fieldData
         List.tryFind (fun prop -> match prop.PropData with Portal (_, portalIndex2, _, _, _, _, _) -> portalIndex2 = portalIndex | _ -> failwithumf ()) portals
 
-    let tryGetSpiritType omniSeedState avatarBottom fieldData =
-        match tryGetTileMap omniSeedState fieldData with
+    static member tryGetSpiritType omniSeedState avatarBottom fieldData =
+        match FieldData.tryGetTileMap omniSeedState fieldData with
         | Some tileMapChc ->
             match tileMapChc with
             | Choice3Of4 (_, tileMap, origin) ->
