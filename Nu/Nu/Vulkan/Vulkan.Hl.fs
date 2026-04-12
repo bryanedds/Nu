@@ -850,13 +850,17 @@ module Hl =
                 // fin
                 VkExtent2D (width, height)
         
-        /// Update the swap extent.
-        static member updateSwapExtent vkPhysicalDevice surface swapchain =
-            swapchain.SwapExtent_ <- Swapchain.getSwapExtent vkPhysicalDevice surface swapchain.Window_
-        
         /// Check if window is minimized.
         static member isWindowMinimized window =
             SDL3.SDL_GetWindowFlags window &&& SDL_WindowFlags.SDL_WINDOW_MINIMIZED <> LanguagePrimitives.EnumOfValue 0UL
+        
+        /// Check if window has been resized.
+        static member isWindowResized vkPhysicalDevice surface swapchain =
+            swapchain.SwapExtent_ <> Swapchain.getSwapExtent vkPhysicalDevice surface swapchain.Window_
+
+        /// Update the swap extent.
+        static member updateSwapExtent vkPhysicalDevice surface swapchain =
+            swapchain.SwapExtent_ <- Swapchain.getSwapExtent vkPhysicalDevice surface swapchain.Window_
         
         /// Refresh the swapchain for a new swap extent.
         static member refresh physicalDevice surface swapchain device =
@@ -1028,8 +1032,7 @@ module Hl =
     /// Exposes the vulkan handles that must be globally accessible within the renderer.
     type [<ReferenceEquality>] VulkanContext =
         private
-            { mutable WindowSizeOpt_ : Vector2i option
-              mutable WindowMinimized_ : bool
+            { mutable WindowMinimized_ : bool
               mutable RenderDesired_ : bool
               Instance_ : VkInstance
               DebugMessengerOpt_ : VkDebugUtilsMessengerEXT option
@@ -1054,7 +1057,7 @@ module Hl =
         member this.RenderDesired = this.RenderDesired_
         
         /// The physical device.
-        member this.PhysicalDevice = this.PhysicalDevice_.VkPhysicalDevice
+        member this.VkPhysicalDevice = this.PhysicalDevice_.VkPhysicalDevice
 
         /// The physical device properties for descriptor indexing.
         member this.DescriptorIndexingProperties = this.PhysicalDevice_.DescriptorIndexingProperties
@@ -1435,20 +1438,8 @@ module Hl =
             if not vkc.WindowMinimized_ then Swapchain.refresh vkc.PhysicalDevice_ vkc.Surface_ vkc.Swapchain_ vkc.Device
         
         /// Begin the frame.
-        static member beginFrame windowSize_ (windowViewport : Viewport) (vkc : VulkanContext) =
+        static member beginFrame (windowViewport : Viewport) (vkc : VulkanContext) =
 
-            // check for window resize
-            // NOTE: DJL: WindowSizeOpt should never be used directly, only use the swap extent.
-            // TODO: DJL: we need to replace this functional way of updating windowResized with a proper callback.
-            // if it's out of date, some devices may fail to refresh swapchain when they should. Plus it creates an
-            // awkward 2-tiered system which leads to double swapchain refreshes.
-            let mutable windowResized = false
-            match vkc.WindowSizeOpt_ with
-            | Some windowSize ->
-                windowResized <- windowSize <> windowSize_
-                vkc.WindowSizeOpt_ <- Some windowSize_ // update window size
-            | None -> vkc.WindowSizeOpt_ <- Some windowSize_ // init window size
-            
             // ensure current frame is ready
             let mutable fence = vkc.InFlightFence
             Vulkan.vkWaitForFences (vkc.Device, 1u, asPointer &fence, true, UInt64.MaxValue) |> check
@@ -1456,7 +1447,7 @@ module Hl =
             // either deal with window bullshit or draw!
             if vkc.WindowMinimized_ then VulkanContext.handleWindowSize vkc // refresh swapchain if window restored, otherwise do nothing
             else
-                if windowResized then VulkanContext.handleWindowSize vkc // refresh swapchain if size changes
+                if Swapchain.isWindowResized vkc.VkPhysicalDevice vkc.Surface_ vkc.Swapchain_ then VulkanContext.handleWindowSize vkc // refresh swapchain if size changes
                 else
                     // check that swap extent >= viewport.Bounds >= viewport.Inner
                     let extent = vkc.Swapchain_.SwapExtent_
@@ -1603,8 +1594,7 @@ module Hl =
 
                 // make VulkanContext
                 let vulkanContext =
-                    { WindowSizeOpt_ = None
-                      WindowMinimized_ = windowMinimized
+                    { WindowMinimized_ = windowMinimized
                       RenderDesired_ = false
                       Instance_ = instance
                       DebugMessengerOpt_ = debugMessengerOpt

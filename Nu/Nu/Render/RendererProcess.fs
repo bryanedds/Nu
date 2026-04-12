@@ -185,7 +185,7 @@ type RendererInline () =
             | Some (renderer3d, renderer2d, rendererImGui, vkc) ->
 
                 // begin frame
-                Hl.VulkanContext.beginFrame windowSize windowViewport vkc
+                Hl.VulkanContext.beginFrame windowViewport vkc
 
                 // render 3d
                 renderer3d.Render frustumInterior frustumExterior frustumImposter eye3dCenter eye3dRotation eye3dFieldOfView geometryViewport windowViewport messages3d
@@ -399,7 +399,7 @@ type RendererThread () =
                 
                 // begin frame
                 // TODO: DJL: clarify when to use .Bounds vs .Outer.
-                Hl.VulkanContext.beginFrame windowSize windowViewport vkc
+                Hl.VulkanContext.beginFrame windowViewport vkc
 
                 // render 3d
                 renderer3d.Render frustumInterior frustumExterior frustumImposter eye3dCenter eye3dRotation eye3dFieldOfView geometryViewport windowViewport messages3d
