@@ -3,6 +3,7 @@ namespace Vortice.Vulkan
 open System
 open System.Collections.Generic
 open System.Diagnostics
+open FSharp.NativeInterop
 open Vortice.ShaderCompiler
 open Prime
 open Nu
@@ -531,24 +532,29 @@ module Pipeline =
                 | Some depthTestFormat -> rnInfo.depthAttachmentFormat <- depthTestFormat
                 | None -> ()
                 
-                // create vulkan pipelines
-                let vkPipelines = Array.zeroCreate<VkPipeline> pipelineSettings.Length
-                for i in 0 .. dec vkPipelines.Length do
+                // pipeline create infos
+                let blendStates = NativePtr.stackalloc<VkPipelineColorBlendAttachmentState> pipelineSettings.Length
+                let bInfos = NativePtr.stackalloc<VkPipelineColorBlendStateCreateInfo> pipelineSettings.Length
+                let rInfos = NativePtr.stackalloc<VkPipelineRasterizationStateCreateInfo> pipelineSettings.Length
+                let infos = NativePtr.stackalloc<VkGraphicsPipelineCreateInfo> pipelineSettings.Length
+                for i in 0 .. dec pipelineSettings.Length do
                 
                     // extract settings
                     let (blend, cullFace) = pipelineSettings.[i]
                     
                     // blend info
-                    let mutable blendState = Blend.makeAttachment blend
+                    let blendState = Blend.makeAttachment blend
+                    NativePtr.set blendStates i blendState
                     let mutable bInfo = VkPipelineColorBlendStateCreateInfo ()
                     bInfo.attachmentCount <- 1u
-                    bInfo.pAttachments <- asPointer &blendState
+                    bInfo.pAttachments <- NativePtr.add blendStates i
+                    NativePtr.set bInfos i bInfo
 
                     // cull mode
                     rInfo.cullMode <- if cullFace then VkCullModeFlags.Back else VkCullModeFlags.None
+                    NativePtr.set rInfos i rInfo
 
-                    // create vulkan pipeline
-                    // TODO: DJL: create vulkan pipelines with single call outside loop, then with derivatives, then with cache.
+                    // create info
                     let mutable info = VkGraphicsPipelineCreateInfo ()
                     info.pNext <- asVoidPtr &rnInfo
                     info.stageCount <- uint ssInfos.Length
@@ -556,17 +562,21 @@ module Pipeline =
                     info.pVertexInputState <- asPointer &viInfo
                     info.pInputAssemblyState <- asPointer &iaInfo
                     info.pViewportState <- asPointer &vInfo
-                    info.pRasterizationState <- asPointer &rInfo
+                    info.pRasterizationState <- NativePtr.add rInfos i
                     info.pMultisampleState <- asPointer &mInfo
                     info.pDepthStencilState <- asPointer &dInfo
-                    info.pColorBlendState <- asPointer &bInfo
+                    info.pColorBlendState <- NativePtr.add bInfos i
                     info.pDynamicState <- asPointer &dsInfo
                     info.layout <- pipelineLayout
                     info.renderPass <- VkRenderPass.Null
                     info.subpass <- 0u
-                    let mutable vkPipeline = Unchecked.defaultof<VkPipeline>
-                    Vulkan.vkCreateGraphicsPipelines (device, VkPipelineCache.Null, 1u, &info, nullPtr, asPointer &vkPipeline) |> Hl.check
-                    vkPipelines.[i] <- vkPipeline
+                    NativePtr.set infos i info
+                    
+                // create vulkan pipelines
+                // TODO: DJL: consider pipeline cache.
+                let vkPipelines = Array.zeroCreate<VkPipeline> pipelineSettings.Length
+                use vkPipelinesPin = new ArrayPin<_> (vkPipelines)
+                Vulkan.vkCreateGraphicsPipelines (device, VkPipelineCache.Null, uint vkPipelines.Length, infos, nullPtr, vkPipelinesPin.Pointer) |> Hl.check
                 
                 // destroy shader modules
                 Vulkan.vkDestroyShaderModule (device, vertModule, nullPtr)
