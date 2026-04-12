@@ -629,6 +629,7 @@ module Pipeline =
             shaderPath
             bulkDrawLimit
             (blends : Blend array)
+            (cullModes : bool array)
             (vertexBindings : VertexBinding array)
             (descriptorSetDefinitions : DescriptorSetDefinition array)
             (pushConstants : PushConstant array)
@@ -668,7 +669,7 @@ module Pipeline =
             
             // create pipeline layout and vkPipelines
             if blends.Length < 1 then Log.fail "No pipeline blend was specified."
-            let pipelineSettings = Array.allPairs blends [|false; true|] // blend and cull modes
+            let pipelineSettings = Array.allPairs blends cullModes
             let pipelineLayout = Pipeline.createPipelineLayout descriptorSetLayouts pushConstantRanges vkc.Device
             let vkPipelines = Pipeline.tryCreateVkPipelines shaderPath pipelineSettings vertexBindingDescriptions vertexAttributes pipelineLayout colorAttachmentFormats depthTestFormatOpt vkc.Device
             

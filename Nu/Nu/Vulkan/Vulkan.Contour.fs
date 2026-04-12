@@ -30,13 +30,12 @@ module ContourTessellation =
             Pipeline.Pipeline.create
                 Constants.Paths.ContourShaderFilePath
                 Constants.Render.ContoursMax
-                [|Pipeline.Transparent|]
+                [|Pipeline.Transparent|] [|true|]
                 [|Pipeline.vertex 0 vertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Hl.Single2 0 // Position
                       Pipeline.attribute 1 Hl.Single4 sizeof<Vector2>|]|] // Color
                 [|Pipeline.descriptorSet Hl.BulkSetIndexed 1 [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage 1|]|]
-                [||]
-                [|vkc.SwapFormat|] None vkc
+                [||] [|vkc.SwapFormat|] None vkc
         
         // fin
         ((vertexBuffer, indexBuffer), (modelViewProjectionUniform, pipeline))

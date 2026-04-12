@@ -30,7 +30,7 @@ module Sprite =
             Pipeline.Pipeline.create
                 Constants.Paths.SpriteShaderFilePath
                 Constants.Render.SpritesMax
-                [|Pipeline.Transparent|]
+                [|Pipeline.Transparent|] [|true|]
                 [|Pipeline.vertex 0 VertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Hl.Single2 0|]|]
                 [|Pipeline.descriptorSet Hl.BulkSetIndexed 1
@@ -39,8 +39,7 @@ module Sprite =
                       Pipeline.descriptor 2 Hl.SampledImage Hl.FragmentStage 1|]
                   Pipeline.descriptorSet Hl.BulkNone 1
                     [|Pipeline.descriptor 0 Hl.Sampler Hl.FragmentStage 1|]|]
-                [||]
-                [|vkc.SwapFormat|] None vkc
+                [||] [|vkc.SwapFormat|] None vkc
         
         // create sprite uniform buffers
         let spriteVertUniform = Buffer.Buffer.create sizeof<SpriteVert> Buffer.Storage vkc
