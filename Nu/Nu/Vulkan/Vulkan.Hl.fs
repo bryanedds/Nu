@@ -97,6 +97,24 @@ module Hl =
                 let y = if height % 4 = 0 then height else (height / 4 + 1) * 4
                 x * y
             | D32f -> width * height * 4
+
+        /// Determine if format is supported for use as an attachment.
+        static member supportsAttachment vkPhysicalDevice format =
+            let requiredFeatures =
+                match format with
+                | Rgba8
+                | Rgba16f
+                | Rgb16f
+                | Rg32f
+                | R16f
+                | R32f
+                | Bc3
+                | Bc5
+                | Astc -> VkFormatFeatureFlags.BlitSrc ||| VkFormatFeatureFlags.BlitDst ||| VkFormatFeatureFlags.ColorAttachment ||| VkFormatFeatureFlags.SampledImage
+                | D32f -> VkFormatFeatureFlags.BlitSrc ||| VkFormatFeatureFlags.BlitDst ||| VkFormatFeatureFlags.DepthStencilAttachment
+            let mutable properties = Unchecked.defaultof<VkFormatProperties>
+            Vulkan.vkGetPhysicalDeviceFormatProperties (vkPhysicalDevice, format.VkFormat, &properties)
+            properties.optimalTilingFeatures &&& requiredFeatures = requiredFeatures
     
     /// The pixel format of an image.
     type PixelFormat =
