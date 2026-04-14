@@ -10,27 +10,26 @@ open Nu
 [<RequireQualifiedAccess>]
 module Attachment =
     
-    // TODO: DJL: implement format fallbacks (must not be ints for blit conversion), and don't forget to check for blit support (see TextureInternal.create).
     // NOTE: DJL: in the context of individual attachment textures, depth component attachments used for depth testing are named "z" to easily distinguish them
     // from color component attachments using the name "depth". Otherwise color and depth component textures are just called "color" and "depth" attachments,
     // as they are called when passed to Vulkan structures.
     
     /// Create color attachment.
-    let private CreateColorAttachment (textureType, optionalUsages, internalFormat, pixelFormat, resolutionX, resolutionY, vkc) =
+    let private CreateColorAttachment (textureType, optionalUsages, internalFormat, pixelFormat, resolutionX, resolutionY, vkc : Hl.VulkanContext) =
         let metadata = Texture.TextureMetadata.make resolutionX resolutionY
         let textureInternal =
             Texture.TextureInternal.create
                 Texture.MipmapNone (Texture.AttachmentColor true) textureType optionalUsages
-                internalFormat pixelFormat metadata vkc
+                (Hl.CheckAttachmentFormat (vkc.VkPhysicalDevice, internalFormat)) pixelFormat metadata vkc
         Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureInternal = textureInternal }
     
     /// Create depth attachment.
-    let private CreateDepthAttachment (optionalUsages, resolutionX, resolutionY, vkc) =
+    let private CreateDepthAttachment (optionalUsages, resolutionX, resolutionY, vkc : Hl.VulkanContext) =
         let metadata = Texture.TextureMetadata.make resolutionX resolutionY
         let textureInternal =
             Texture.TextureInternal.create
                 Texture.MipmapNone (Texture.AttachmentDepth true) Texture.Texture2d optionalUsages
-                Hl.D32f Hl.Depth metadata vkc
+                (Hl.CheckAttachmentFormat (vkc.VkPhysicalDevice, Hl.D32f)) Hl.Depth metadata vkc
         Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureInternal = textureInternal }
     
     /// Create general-purpose attachments.
@@ -150,7 +149,7 @@ module Attachment =
     
     /// Create coloring attachments.
     let CreateColoringAttachments (resolutionX, resolutionY, vkc) =
-        let color = CreateColorAttachment (Texture.Texture2d, [|VkImageUsageFlags.Sampled|], Hl.Rgba16f, Hl.Rgb, resolutionX, resolutionY, vkc) // TODO: DJL: use Rgb16f with fallback to Rgba16f.
+        let color = CreateColorAttachment (Texture.Texture2d, [|VkImageUsageFlags.Sampled|], Hl.Rgb16f, Hl.Rgb, resolutionX, resolutionY, vkc)
         let depth = CreateColorAttachment (Texture.Texture2d, [|VkImageUsageFlags.Sampled|], Hl.R16f, Hl.Red, resolutionX, resolutionY, vkc)
         (color, depth)
     

@@ -273,6 +273,33 @@ module Hl =
         | BulkDescriptorIndexed
         | BulkSetIndexed
     
+    /// Check if an image format is supported for attachments, falling back to a standard format where possible.
+    let rec CheckAttachmentFormat (vkPhysicalDevice, format : ImageFormat) =
+        if not (ImageFormat.supportsAttachment vkPhysicalDevice format) then
+            
+            // NOTE: DJL: format fallbacks must not be ints for blit conversion.
+            let (formatFallback : ImageFormat) =
+                match format with
+                | Bc3
+                | Bc5
+                | Astc ->
+                    Log.fail ("Compressed image formats are not supported for attachment textures.")
+                | Rgb16f ->
+                    CheckAttachmentFormat (vkPhysicalDevice, Rgba16f)
+                | Rgba8 (* standard *)
+                | Rgba16f (* standard *)
+                | Rg32f (* standard *)
+                | R16f (* standard *)
+                | R32f (* standard *) ->
+                    
+                    // NOTE: DJL: for spec requirements, see https://docs.vulkan.org/spec/latest/chapters/formats.html#features-required-format-support.
+                    Log.fail ("Vulkan attachment image format '" + scstring format.VkFormat + "' support is absent but required. Further, it's a requirement in the Vulkan specification!")
+                | D32f ->
+                    Log.fail "Could not find a suitable format for depth attachment textures."
+            Log.warn ("Falling back to " + scstring formatFallback.VkFormat + " attachment format due to unavailability of " + scstring format.VkFormat + " attachment format.")
+            formatFallback
+        else format
+    
     /// Convert VkExtensionProperties.extensionName to a string.
     /// TODO: see if we can inline functions like these once F# supports C#'s representation of this fixed buffer type.
     let private getExtensionName (extensionProps : VkExtensionProperties) =
