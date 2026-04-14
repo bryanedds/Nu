@@ -78,15 +78,14 @@ module SpriteBatch =
             Pipeline.Pipeline.create
                 Constants.Paths.SpriteBatchShaderFilePath
                 Constants.Render.SpriteBatchesMax
-                [|Pipeline.Transparent; Pipeline.Additive; Pipeline.Overwrite|] [||]
+                [|Pipeline.Transparent; Pipeline.Additive; Pipeline.Overwrite|] [|true|] [||]
                 [|Pipeline.descriptorSet Hl.BulkSetIndexed 1
                     [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage 1
                       Pipeline.descriptor 1 Hl.StorageBuffer Hl.VertexStage 1
                       Pipeline.descriptor 2 Hl.SampledImage Hl.FragmentStage 1|]
                   Pipeline.descriptorSet Hl.BulkNone 1
                     [|Pipeline.descriptor 0 Hl.Sampler Hl.FragmentStage 1|]|]
-                [||]
-                [|vkc.SwapFormat|] None vkc
+                [||] [|vkc.SwapFormat|] None vkc
 
         // create uniforms
         let spriteUniform = Buffer.Buffer.create (Constants.Render.SpriteBatchSize * sizeof<Sprite>) Buffer.Storage vkc

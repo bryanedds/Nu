@@ -138,7 +138,7 @@ module Buffer =
             // allocate memory
             let mutable info = VkMemoryAllocateInfo ()
             info.allocationSize <- memRequirements.size
-            info.memoryTypeIndex <- findMemoryType memRequirements.memoryTypeBits properties vkc.PhysicalDevice
+            info.memoryTypeIndex <- findMemoryType memRequirements.memoryTypeBits properties vkc.VkPhysicalDevice
             let mutable memory = Unchecked.defaultof<VkDeviceMemory>
             Vulkan.vkAllocateMemory (vkc.Device, asPointer &info, nullPtr, &memory) |> Hl.check
 

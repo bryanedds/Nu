@@ -52,6 +52,8 @@ module Hl =
         | Bc5
         | Astc
         | D32f
+        | D32fs8ui
+        | D24s8ui
 
         /// The VkFormat.
         member this.VkFormat =
@@ -66,6 +68,8 @@ module Hl =
             | Bc5 -> VkFormat.Bc5UnormBlock
             | Astc -> VkFormat.Astc4x4UnormBlock
             | D32f -> VkFormat.D32Sfloat
+            | D32fs8ui -> VkFormat.D32SfloatS8Uint
+            | D24s8ui -> VkFormat.D24UnormS8Uint
 
         /// The VkImageAspectFlags.
         member this.VkImageAspectFlags =
@@ -80,6 +84,8 @@ module Hl =
             | Bc5 -> VkImageAspectFlags.Color
             | Astc -> VkImageAspectFlags.Color
             | D32f -> VkImageAspectFlags.Depth
+            | D32fs8ui -> VkImageAspectFlags.Depth ||| VkImageAspectFlags.Stencil
+            | D24s8ui -> VkImageAspectFlags.Depth ||| VkImageAspectFlags.Stencil
         
         /// Get the size in bytes of an image with given width, height and format.
         static member getImageSize width height imageFormat =
@@ -97,6 +103,28 @@ module Hl =
                 let y = if height % 4 = 0 then height else (height / 4 + 1) * 4
                 x * y
             | D32f -> width * height * 4
+            | D32fs8ui -> width * height * 5
+            | D24s8ui -> width * height * 4
+
+        /// Determine if format is supported for use as an attachment.
+        static member supportsAttachment vkPhysicalDevice format =
+            let requiredFeatures =
+                match format with
+                | Rgba8
+                | Rgba16f
+                | Rgb16f
+                | Rg32f
+                | R16f
+                | R32f
+                | Bc3
+                | Bc5
+                | Astc -> VkFormatFeatureFlags.BlitSrc ||| VkFormatFeatureFlags.BlitDst ||| VkFormatFeatureFlags.ColorAttachment ||| VkFormatFeatureFlags.SampledImage
+                | D32f
+                | D32fs8ui
+                | D24s8ui -> VkFormatFeatureFlags.BlitSrc ||| VkFormatFeatureFlags.BlitDst ||| VkFormatFeatureFlags.DepthStencilAttachment
+            let mutable properties = Unchecked.defaultof<VkFormatProperties>
+            Vulkan.vkGetPhysicalDeviceFormatProperties (vkPhysicalDevice, format.VkFormat, &properties)
+            properties.optimalTilingFeatures &&& requiredFeatures = requiredFeatures
     
     /// The pixel format of an image.
     type PixelFormat =
@@ -254,6 +282,37 @@ module Hl =
         | BulkNone
         | BulkDescriptorIndexed
         | BulkSetIndexed
+    
+    /// Check if an image format is supported for attachments, falling back to a standard format where possible.
+    let rec CheckAttachmentFormat (vkPhysicalDevice, format : ImageFormat) =
+        if not (ImageFormat.supportsAttachment vkPhysicalDevice format) then
+            
+            // NOTE: DJL: format fallbacks must not be ints for blit conversion.
+            let (formatFallback : ImageFormat) =
+                match format with
+                | Bc3
+                | Bc5
+                | Astc ->
+                    Log.fail ("Compressed image formats are not supported for attachment textures.")
+                | Rgb16f ->
+                    CheckAttachmentFormat (vkPhysicalDevice, Rgba16f)
+                | Rgba8 (* standard *)
+                | Rgba16f (* standard *)
+                | Rg32f (* standard *)
+                | R16f (* standard *)
+                | R32f (* standard *) ->
+                    
+                    // NOTE: DJL: for spec requirements, see https://docs.vulkan.org/spec/latest/chapters/formats.html#features-required-format-support.
+                    Log.fail ("Vulkan attachment image format '" + scstring format.VkFormat + "' support is absent but required. Further, it's a requirement in the Vulkan specification!")
+                | D32f ->
+                    CheckAttachmentFormat (vkPhysicalDevice, D32fs8ui)
+                | D32fs8ui ->
+                    CheckAttachmentFormat (vkPhysicalDevice, D24s8ui)
+                | D24s8ui ->
+                    Log.fail "Could not find a suitable format for depth attachment textures."
+            Log.warn ("Falling back to " + scstring formatFallback.VkFormat + " attachment format due to unavailability of " + scstring format.VkFormat + " attachment format.")
+            formatFallback
+        else format
     
     /// Convert VkExtensionProperties.extensionName to a string.
     /// TODO: see if we can inline functions like these once F# supports C#'s representation of this fixed buffer type.
@@ -854,13 +913,17 @@ module Hl =
                 // fin
                 VkExtent2D (width, height)
         
-        /// Update the swap extent.
-        static member updateSwapExtent vkPhysicalDevice surface swapchain =
-            swapchain.SwapExtent_ <- Swapchain.getSwapExtent vkPhysicalDevice surface swapchain.Window_
-        
         /// Check if window is minimized.
         static member isWindowMinimized window =
             SDL3.SDL_GetWindowFlags window &&& SDL_WindowFlags.SDL_WINDOW_MINIMIZED <> LanguagePrimitives.EnumOfValue 0UL
+        
+        /// Check if window has been resized.
+        static member isWindowResized vkPhysicalDevice surface swapchain =
+            swapchain.SwapExtent_ <> Swapchain.getSwapExtent vkPhysicalDevice surface swapchain.Window_
+
+        /// Update the swap extent.
+        static member updateSwapExtent vkPhysicalDevice surface swapchain =
+            swapchain.SwapExtent_ <- Swapchain.getSwapExtent vkPhysicalDevice surface swapchain.Window_
         
         /// Refresh the swapchain for a new swap extent.
         static member refresh physicalDevice surface swapchain device =
@@ -1032,8 +1095,7 @@ module Hl =
     /// Exposes the vulkan handles that must be globally accessible within the renderer.
     type [<ReferenceEquality>] VulkanContext =
         private
-            { mutable WindowSizeOpt_ : Vector2i option
-              mutable WindowMinimized_ : bool
+            { mutable WindowMinimized_ : bool
               mutable RenderDesired_ : bool
               Instance_ : VkInstance
               DebugMessengerOpt_ : VkDebugUtilsMessengerEXT option
@@ -1058,7 +1120,7 @@ module Hl =
         member this.RenderDesired = this.RenderDesired_
         
         /// The physical device.
-        member this.PhysicalDevice = this.PhysicalDevice_.VkPhysicalDevice
+        member this.VkPhysicalDevice = this.PhysicalDevice_.VkPhysicalDevice
 
         /// The physical device properties for descriptor indexing.
         member this.DescriptorIndexingProperties = this.PhysicalDevice_.DescriptorIndexingProperties
@@ -1477,20 +1539,8 @@ module Hl =
             if not vkc.WindowMinimized_ then Swapchain.refresh vkc.PhysicalDevice_ vkc.Surface_ vkc.Swapchain_ vkc.Device
         
         /// Begin the frame.
-        static member beginFrame windowSize_ (windowViewport : Viewport) (vkc : VulkanContext) =
+        static member beginFrame (windowViewport : Viewport) (vkc : VulkanContext) =
 
-            // check for window resize
-            // NOTE: DJL: WindowSizeOpt should never be used directly, only use the swap extent.
-            // TODO: DJL: we need to replace this functional way of updating windowResized with a proper callback.
-            // if it's out of date, some devices may fail to refresh swapchain when they should. Plus it creates an
-            // awkward 2-tiered system which leads to double swapchain refreshes.
-            let mutable windowResized = false
-            match vkc.WindowSizeOpt_ with
-            | Some windowSize ->
-                windowResized <- windowSize <> windowSize_
-                vkc.WindowSizeOpt_ <- Some windowSize_ // update window size
-            | None -> vkc.WindowSizeOpt_ <- Some windowSize_ // init window size
-            
             // ensure current frame is ready
             let mutable fence = vkc.InFlightFence
             Vulkan.vkWaitForFences (vkc.Device, 1u, asPointer &fence, true, UInt64.MaxValue) |> check
@@ -1498,7 +1548,7 @@ module Hl =
             // either deal with window bullshit or draw!
             if vkc.WindowMinimized_ then VulkanContext.handleWindowSize vkc // refresh swapchain if window restored, otherwise do nothing
             else
-                if windowResized then VulkanContext.handleWindowSize vkc // refresh swapchain if size changes
+                if Swapchain.isWindowResized vkc.VkPhysicalDevice vkc.Surface_ vkc.Swapchain_ then VulkanContext.handleWindowSize vkc // refresh swapchain if size changes
                 else
                     // check that swap extent >= viewport.Bounds >= viewport.Inner
                     let extent = vkc.Swapchain_.SwapExtent_
@@ -1645,8 +1695,7 @@ module Hl =
 
                 // make VulkanContext
                 let vulkanContext =
-                    { WindowSizeOpt_ = None
-                      WindowMinimized_ = windowMinimized
+                    { WindowMinimized_ = windowMinimized
                       RenderDesired_ = false
                       Instance_ = instance
                       DebugMessengerOpt_ = debugMessengerOpt

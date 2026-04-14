@@ -30,17 +30,16 @@ module Sprite =
             Pipeline.Pipeline.create
                 Constants.Paths.SpriteShaderFilePath
                 Constants.Render.SpritesMax
-                [|Pipeline.Transparent|]
+                [|Pipeline.Transparent|] [|true|]
                 [|Pipeline.vertex 0 VertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Hl.Single2 0|]|]
-                [|Pipeline.descriptorSet Hl.BulkDescriptorIndexed 1
+                [|Pipeline.descriptorSet Hl.BulkSetIndexed 1
                     [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage 1
                       Pipeline.descriptor 1 Hl.StorageBuffer Hl.FragmentStage 1
                       Pipeline.descriptor 2 Hl.SampledImage Hl.FragmentStage 1|]
                   Pipeline.descriptorSet Hl.BulkNone 1
                     [|Pipeline.descriptor 0 Hl.Sampler Hl.FragmentStage 1|]|]
-                [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]
-                [|vkc.SwapFormat|] None vkc
+                [||] [|vkc.SwapFormat|] None vkc
         
         // create sprite uniform buffers
         let spriteVertUniform = Buffer.Buffer.create sizeof<SpriteVert> Buffer.Storage vkc
@@ -147,11 +146,11 @@ module Sprite =
             spriteFrag.color <- color.V4
             Buffer.Buffer.uploadValue drawIndex 0 0 spriteVert spriteVertUniform vkc
             Buffer.Buffer.uploadValue drawIndex 0 0 spriteFrag spriteFragUniform vkc
-            Pipeline.Pipeline.writeDescriptorStorageBuffer 0 0 0 drawIndex spriteVertUniform.[drawIndex] pipeline vkc
-            Pipeline.Pipeline.writeDescriptorStorageBuffer 0 1 0 drawIndex spriteFragUniform.[drawIndex] pipeline vkc
+            Pipeline.Pipeline.writeDescriptorStorageBuffer 0 0 drawIndex 0 spriteVertUniform.[drawIndex] pipeline vkc
+            Pipeline.Pipeline.writeDescriptorStorageBuffer 0 1 drawIndex 0 spriteFragUniform.[drawIndex] pipeline vkc
             
             // bind texture
-            Pipeline.Pipeline.writeDescriptorSampledImage 0 2 0 drawIndex texture.ImageView pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage 0 2 drawIndex 0 texture.ImageView pipeline vkc
             Pipeline.Pipeline.writeDescriptorSampler 1 0 0 0 sampler pipeline vkc
 
             // make viewport and scissor
@@ -203,14 +202,10 @@ module Sprite =
                     Vulkan.vkCmdBindIndexBuffer (cb, indices.VkBuffer, 0UL, VkIndexType.Uint32)
 
                     // bind descriptor sets
-                    let mutable mainDescriptorSet = pipeline.VkDescriptorSet 0 0
+                    let mutable mainDescriptorSet = pipeline.VkDescriptorSet 0 drawIndex
                     let mutable samplerDescriptorSet = pipeline.VkDescriptorSet 1 0
                     Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.PipelineLayout, 0u, 1u, asPointer &mainDescriptorSet, 0u, nullPtr)
                     Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.PipelineLayout, 1u, 1u, asPointer &samplerDescriptorSet, 0u, nullPtr)
-                    
-                    // push draw index
-                    let mutable drawIndex = drawIndex
-                    Vulkan.vkCmdPushConstants (cb, pipeline.PipelineLayout, Hl.VertexFragmentStage.VkShaderStageFlags, 0u, 4u, asVoidPtr &drawIndex)
                     
                     // draw
                     Vulkan.vkCmdDrawIndexed (cb, 6u, 1u, 0u, 0, 0u)

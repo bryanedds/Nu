@@ -240,9 +240,7 @@ module CubeMap =
         // create pipeline
         let pipeline =
             Pipeline.Pipeline.create
-                shaderPath
-                0
-                [|Pipeline.NoBlend|]
+                shaderPath 0 [|Pipeline.NoBlend|] [|false|]
                 [|Pipeline.vertex 0 VertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Hl.Single3 0|]|]
                 [|Pipeline.descriptorSet Hl.BulkNone (6 * maxCubes)
@@ -250,8 +248,7 @@ module CubeMap =
                       Pipeline.descriptor 1 Hl.SampledImage Hl.FragmentStage 1|]
                   Pipeline.descriptorSet Hl.BulkNone 1
                     [|Pipeline.descriptor 0 Hl.Sampler Hl.FragmentStage 1|]|]
-                [||]
-                [|colorAttachmentFormat|]
+                [||] [|colorAttachmentFormat|]
                 None // NOTE: DJL: not porting currently meaningless depth test as it imposes complexity cost in vulkan.
                 vkc
 

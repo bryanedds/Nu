@@ -35,8 +35,7 @@ module SkyBox =
         let pipeline =
             Pipeline.Pipeline.create
                 Constants.Paths.SkyBoxShaderFilePath
-                0
-                [|Pipeline.NoBlend|]
+                0 [|Pipeline.NoBlend|] [|false|]
                 [|Pipeline.vertex 0 CubeMap.VertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Hl.Single3 0|]|]
                 [|Pipeline.descriptorSet Hl.BulkNone Constants.Render.GeometryRenderPassMax
@@ -45,10 +44,7 @@ module SkyBox =
                       Pipeline.descriptor 2 Hl.SampledImage Hl.FragmentStage 1|]
                   Pipeline.descriptorSet Hl.BulkNone 1
                     [|Pipeline.descriptor 0 Hl.Sampler Hl.FragmentStage 1|]|]
-                [||]
-                [|colorAttachmentFormat|]
-                (Some depthAttachmentFormat)
-                vkc
+                [||] [|colorAttachmentFormat|] (Some depthAttachmentFormat) vkc
 
         // create uniform buffers
         let skyBoxVertUniform = Buffer.Buffer.create sizeof<SkyBoxVert> Buffer.Storage vkc

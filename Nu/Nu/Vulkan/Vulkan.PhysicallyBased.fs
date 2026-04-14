@@ -1264,6 +1264,7 @@ module PhysicallyBased =
          drawsMax,
          shaderPath,
          blends,
+         cullModes,
          vertexBindings,
          colorAttachmentFormat,
          depthTestOpt,
@@ -1272,7 +1273,7 @@ module PhysicallyBased =
         // create pipeline
         let pipeline =
             Pipeline.Pipeline.create
-                shaderPath drawsMax blends vertexBindings
+                shaderPath drawsMax blends cullModes vertexBindings
                 
                 // descriptor set 0: common; per renderGeometry call
                 [|Pipeline.descriptorSet Hl.BulkNone Constants.Render.GeometryRenderPassMax
@@ -1793,6 +1794,7 @@ module PhysicallyBased =
                  Constants.Render.ForwardStaticDrawsMax,
                  Constants.Paths.PhysicallyBasedForwardStaticShaderFilePath,
                  [|Pipeline.NoBlend; Pipeline.Transparent|],
+                 [|false; true|],
                  [|Pipeline.vertex 0 StaticVertexSize VkVertexInputRate.Vertex
                      [|Pipeline.attribute 0 Hl.Single3 0
                        Pipeline.attribute 1 Hl.Single2 StaticTexCoordsOffset

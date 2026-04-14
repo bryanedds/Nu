@@ -693,7 +693,7 @@ module Texture =
                         // check if hardware supports mipmap generation; this is done here to prevent unused (i.e. blank) mip levels
                         // TODO: DJL: check for VkFormatFeatureFlags.BlitSrc/Dst as well.
                         let mutable formatProperties = Unchecked.defaultof<VkFormatProperties>
-                        Vulkan.vkGetPhysicalDeviceFormatProperties (vkc.PhysicalDevice, internalFormat.VkFormat, &formatProperties)
+                        Vulkan.vkGetPhysicalDeviceFormatProperties (vkc.VkPhysicalDevice, internalFormat.VkFormat, &formatProperties)
                         let mipGenSupport = formatProperties.optimalTilingFeatures &&& VkFormatFeatureFlags.SampledImageFilterLinear <> VkFormatFeatureFlags.None
                         
                         // calculate mip levels
@@ -1237,6 +1237,7 @@ module Texture =
                         try this.Run ()
                         with exn -> Log.error (scstring exn)))
                 threadOpt <- Some thread
+                thread.Name <- nameof TextureServer
                 thread.IsBackground <- true
                 thread.Start ()
                 while not started do Thread.Yield () |> ignore<bool>
