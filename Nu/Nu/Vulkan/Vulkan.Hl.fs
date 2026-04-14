@@ -52,6 +52,8 @@ module Hl =
         | Bc5
         | Astc
         | D32f
+        | D32fs8ui
+        | D24s8ui
 
         /// The VkFormat.
         member this.VkFormat =
@@ -66,6 +68,8 @@ module Hl =
             | Bc5 -> VkFormat.Bc5UnormBlock
             | Astc -> VkFormat.Astc4x4UnormBlock
             | D32f -> VkFormat.D32Sfloat
+            | D32fs8ui -> VkFormat.D32SfloatS8Uint
+            | D24s8ui -> VkFormat.D24UnormS8Uint
 
         /// The VkImageAspectFlags.
         member this.VkImageAspectFlags =
@@ -80,6 +84,8 @@ module Hl =
             | Bc5 -> VkImageAspectFlags.Color
             | Astc -> VkImageAspectFlags.Color
             | D32f -> VkImageAspectFlags.Depth
+            | D32fs8ui -> VkImageAspectFlags.Depth ||| VkImageAspectFlags.Stencil
+            | D24s8ui -> VkImageAspectFlags.Depth ||| VkImageAspectFlags.Stencil
         
         /// Get the size in bytes of an image with given width, height and format.
         static member getImageSize width height imageFormat =
@@ -97,6 +103,8 @@ module Hl =
                 let y = if height % 4 = 0 then height else (height / 4 + 1) * 4
                 x * y
             | D32f -> width * height * 4
+            | D32fs8ui -> width * height * 5
+            | D24s8ui -> width * height * 4
 
         /// Determine if format is supported for use as an attachment.
         static member supportsAttachment vkPhysicalDevice format =
@@ -111,7 +119,9 @@ module Hl =
                 | Bc3
                 | Bc5
                 | Astc -> VkFormatFeatureFlags.BlitSrc ||| VkFormatFeatureFlags.BlitDst ||| VkFormatFeatureFlags.ColorAttachment ||| VkFormatFeatureFlags.SampledImage
-                | D32f -> VkFormatFeatureFlags.BlitSrc ||| VkFormatFeatureFlags.BlitDst ||| VkFormatFeatureFlags.DepthStencilAttachment
+                | D32f
+                | D32fs8ui
+                | D24s8ui -> VkFormatFeatureFlags.BlitSrc ||| VkFormatFeatureFlags.BlitDst ||| VkFormatFeatureFlags.DepthStencilAttachment
             let mutable properties = Unchecked.defaultof<VkFormatProperties>
             Vulkan.vkGetPhysicalDeviceFormatProperties (vkPhysicalDevice, format.VkFormat, &properties)
             properties.optimalTilingFeatures &&& requiredFeatures = requiredFeatures
@@ -295,6 +305,10 @@ module Hl =
                     // NOTE: DJL: for spec requirements, see https://docs.vulkan.org/spec/latest/chapters/formats.html#features-required-format-support.
                     Log.fail ("Vulkan attachment image format '" + scstring format.VkFormat + "' support is absent but required. Further, it's a requirement in the Vulkan specification!")
                 | D32f ->
+                    CheckAttachmentFormat (vkPhysicalDevice, D32fs8ui)
+                | D32fs8ui ->
+                    CheckAttachmentFormat (vkPhysicalDevice, D24s8ui)
+                | D24s8ui ->
                     Log.fail "Could not find a suitable format for depth attachment textures."
             Log.warn ("Falling back to " + scstring formatFallback.VkFormat + " attachment format due to unavailability of " + scstring format.VkFormat + " attachment format.")
             formatFallback
