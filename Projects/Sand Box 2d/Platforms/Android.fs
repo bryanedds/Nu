@@ -21,14 +21,15 @@ open Xamarin.Google.Android.Play.Core.AssetPacks
 //[<UsesPermission (Android.Manifest.Permission.Internet)>] // for example
 
 // Use the MauiIcon ("mobile_icon_bg" is the file name): https://learn.microsoft.com/en-us/dotnet/maui/user-interface/images/app-icons?tabs=android#platform-specific-configuration
-[<Application (Icon = "@mipmap/mobile_icon_bg", RoundIcon = "@mipmap/mobile_icon_bg_round", HardwareAccelerated = true)>] // Note: Application label is derived from project file
+[<Application (Icon = "@mipmap/mobile_icon_bg", RoundIcon = "@mipmap/mobile_icon_bg_round")>] // Note: Application label is derived from project file
 do ()
 
 // Entry point, SDL usage taken from https://github.com/ppy/SDL3-CS/blob/master/SDL3-CS.Tests.Android/MainActivity.cs
 [<Activity (LaunchMode = LaunchMode.SingleInstance, // Only allow one instance of the game to be launched at once
             MainLauncher = true, // At least one activity must be marked as the main launcher to be able to start the app (when the user taps the app icon).
             Theme = "@style/Maui.SplashTheme", // SplashTheme: https://learn.microsoft.com/en-us/dotnet/maui/user-interface/images/splashscreen?tabs=android#platform-specific-configuration
-            ConfigurationChanges = enum -1)>] // SDL - Do not recreate the activity on all configuration changes, since SDL handles them itself.
+            ConfigurationChanges = enum -1, // SDL - Do not recreate the activity on all configuration changes, since SDL handles them itself.
+            ScreenOrientation = ScreenOrientation.Landscape)>] // Orientation before SDL initialization where it overrides based on SDL_HINT_ORIENTATIONS
 [<IntentFilter ([|Android.Hardware.Usb.UsbManager.ActionUsbDeviceAttached|])>] // SDL - Let Android know that we can handle some USB devices and should receive this event
 type MainActivity () =
     inherit Org.Libsdl.App.SDLActivity ()
