@@ -987,21 +987,24 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         if renderer.VulkanContext.RenderDesired then
             SpriteBatch.EndSpriteBatchFrame renderer.Viewport renderer.SpriteBatchEnv
 
-        // clean up any text textures that went unused this frame
-        let textTexturesUnused =
-            renderer.TextTextures
-            |> Seq.filter (fun entry -> not (fst entry.Value).Value)
-            |> Seq.map (fun entry -> entry.Key)
-            |> Seq.toArray
-        for entry in textTexturesUnused do
-            let (_, _, _, textTexture) = snd renderer.TextTextures.[entry]
-            Texture.TextureDisposer.submit textTexture renderer.TextureDisposer
-            renderer.TextTextures.Remove entry |> ignore<bool>
+            // clean up any text textures that went unused this frame
+            let textTexturesUnused =
+                renderer.TextTextures
+                |> Seq.filter (fun entry -> not (fst entry.Value).Value)
+                |> Seq.map (fun entry -> entry.Key)
+                |> Seq.toArray
+            for entry in textTexturesUnused do
+                let (_, _, _, textTexture) = snd renderer.TextTextures.[entry]
+                
+                // RenderDesired must be true to avoid premature destruction
+                // TODO: DJL: the logic behind this is too complex and subtle, see if there is an easier and safer way to do things.
+                Texture.TextureDisposer.submit textTexture renderer.TextureDisposer
+                renderer.TextTextures.Remove entry |> ignore<bool>
 
-        // mark remaining text textures as unused for next frame
-        for entry in renderer.TextTextures.Values do
-            let used = fst entry
-            used.Value <- false
+            // mark remaining text textures as unused for next frame
+            for entry in renderer.TextTextures.Values do
+                let used = fst entry
+                used.Value <- false
         
         (* TODO: DJL: enable when spine rendering is working again.
         // sweep up any skeleton renderers that went unused this frame
