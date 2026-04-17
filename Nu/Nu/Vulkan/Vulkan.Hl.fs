@@ -1484,9 +1484,6 @@ module Hl =
         /// Handle changes in window size, and check for minimization.
         static member private handleWindowSize vkc =
             
-            // always disable rendering here, rendering only given permission by beginFrame
-            vkc.RenderDesired_ <- false
-
             // query minimization status
             // NOTE: DJL: this both detects the beginning of minimization and checks for the end.
             vkc.WindowMinimized_ <- Swapchain.isWindowMinimized vkc.Swapchain_.Window_
@@ -1499,29 +1496,38 @@ module Hl =
         /// Begin the frame.
         static member beginFrame (windowViewport : Viewport) (vkc : VulkanContext) =
 
+            // ensure that rendering is only permitted after passing all checks below
+            vkc.RenderDesired_ <- false
+
             // ensure current frame is ready
             let mutable fence = vkc.InFlightFence
             Vulkan.vkWaitForFences (vkc.Device, 1u, asPointer &fence, true, UInt64.MaxValue) |> check
 
-            // either deal with window bullshit or draw!
-            if vkc.WindowMinimized_ then VulkanContext.handleWindowSize vkc // refresh swapchain if window restored, otherwise do nothing
+            // check for handling of minimized window from previous frame(s); if *still* minimized then do nothing; if restored then refresh swapchain
+            if vkc.WindowMinimized_ then VulkanContext.handleWindowSize vkc
             else
-                if Swapchain.isWindowResized vkc.VkPhysicalDevice vkc.Surface_ vkc.Swapchain_ then VulkanContext.handleWindowSize vkc // refresh swapchain if size changes
+                // check for change in screen state; if screen *has become* minimized then update WindowMinimized_ and don't render; if screen size changed then refresh swapchain
+                if  Swapchain.isWindowMinimized vkc.Swapchain_.Window_ ||
+                    Swapchain.isWindowResized vkc.VkPhysicalDevice vkc.Surface_ vkc.Swapchain_ then VulkanContext.handleWindowSize vkc
                 else
-                    // check that swap extent >= viewport.Bounds >= viewport.Inner
+                    // check that swap extent >= viewport.Bounds >= viewport.Inner; done *after* screen change check to avoid outdated swap extent
                     let extent = vkc.Swapchain_.SwapExtent_
                     let swapchainBounds = box2i v2iZero (v2i (int extent.width) (int extent.height))
                     if
                         swapchainBounds.ContainsInclusive windowViewport.Bounds = ContainmentType.Contains &&
                         windowViewport.Bounds.ContainsInclusive windowViewport.Inner = ContainmentType.Contains
                     then
-                        // try to acquire image from swapchain to draw onto
-                        // NOTE: DJL: due to semaphore, if this is successful, the render *must* proceed!
-                        let result = Vulkan.vkAcquireNextImageKHR (vkc.Device, vkc.Swapchain_.VkSwapchain, UInt64.MaxValue, vkc.ImageAvailableSemaphore, VkFence.Null, &ImageIndex)
-                        if result = VkResult.ErrorOutOfDateKHR then VulkanContext.handleWindowSize vkc // refresh swapchain if out of date
+                        // to be as sure as possible, check *again* for screen state change right before attempting image acquisition!
+                        if  Swapchain.isWindowMinimized vkc.Swapchain_.Window_ ||
+                            Swapchain.isWindowResized vkc.VkPhysicalDevice vkc.Surface_ vkc.Swapchain_ then VulkanContext.handleWindowSize vkc
                         else
-                            check result // NOTE: DJL: this will report a suboptimal swapchain image.
-                            vkc.RenderDesired_ <- true // permit rendering
+                            // try to acquire image from swapchain to draw onto
+                            // NOTE: DJL: due to semaphore, if this is successful, the render *must* proceed!
+                            let result = Vulkan.vkAcquireNextImageKHR (vkc.Device, vkc.Swapchain_.VkSwapchain, UInt64.MaxValue, vkc.ImageAvailableSemaphore, VkFence.Null, &ImageIndex)
+                            if result = VkResult.ErrorOutOfDateKHR then VulkanContext.handleWindowSize vkc // refresh swapchain if out of date
+                            else
+                                check result // NOTE: DJL: this will report a suboptimal swapchain image.
+                                vkc.RenderDesired_ <- true // permit rendering
 
             if vkc.RenderDesired_ then
             
