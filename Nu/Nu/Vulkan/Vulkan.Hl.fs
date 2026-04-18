@@ -1572,6 +1572,7 @@ module Hl =
                 Queue.submit vkc.RenderCommandBuffer [|vkc.ImageAvailableSemaphore, waitStage|] [|vkc.RenderFinishedSemaphore|] vkc.InFlightFence vkc.RenderQueue
                 
                 // try to present image
+                // TODO: DJL: fence does not guarantee present finished before refresh.
                 let result = Queue.present vkc.RenderFinishedSemaphore vkc.Swapchain_.VkSwapchain vkc.PresentQueue_
 
                 // refresh swapchain if framebuffer out of date or suboptimal
@@ -1579,8 +1580,9 @@ module Hl =
                     VulkanContext.handleWindowSize vkc
                 else check result
 
-                // advance frame in flight
-                CurrentFrame <- inc CurrentFrame % Constants.Vulkan.MaxFramesInFlight
+            // advance frame in flight
+            // NOTE: DJL: this MUST happen EVERY frame regardless of RenderDesired_ otherwise fence security is broken.
+            CurrentFrame <- inc CurrentFrame % Constants.Vulkan.MaxFramesInFlight
 
         /// Wait for all device operations to complete before cleaning up resources.
         static member waitIdle (vkc : VulkanContext) =
