@@ -855,6 +855,7 @@ module Hl =
         
         /// Destroy a SwapchainInternal.
         static member destroy swapchainInternal device =
+            Vulkan.vkDeviceWaitIdle device |> check // only simple way to ensure swapchain, images and semaphores not still in use
             for i in 0 .. dec swapchainInternal.ImageViews.Length do Vulkan.vkDestroyImageView (device, swapchainInternal.ImageViews.[i], nullPtr)
             Vulkan.vkDestroySwapchainKHR (device, swapchainInternal.VkSwapchain, nullPtr)
             for i in 0 .. dec swapchainInternal.RenderFinishedSemaphores.Length do Vulkan.vkDestroySemaphore (device, swapchainInternal.RenderFinishedSemaphores.[i], nullPtr)
@@ -1572,7 +1573,6 @@ module Hl =
                 Queue.submit vkc.RenderCommandBuffer [|vkc.ImageAvailableSemaphore, waitStage|] [|vkc.RenderFinishedSemaphore|] vkc.InFlightFence vkc.RenderQueue
                 
                 // try to present image
-                // TODO: DJL: fence does not guarantee present finished before refresh.
                 let result = Queue.present vkc.RenderFinishedSemaphore vkc.Swapchain_.VkSwapchain vkc.PresentQueue_
 
                 // refresh swapchain if framebuffer out of date or suboptimal
