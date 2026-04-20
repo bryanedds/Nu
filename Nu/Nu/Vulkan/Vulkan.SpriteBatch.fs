@@ -60,7 +60,8 @@ module SpriteBatch =
               mutable ViewProjectionClipRelative : Matrix4x4
               VulkanContext : Hl.VulkanContext
               Pipeline : Pipeline.Pipeline
-              Sampler : Texture.Sampler // TODO: DJL: integrate into state once filtered 2d textures are set up again.
+              UnfilteredSampler : Texture.Sampler
+              FilteredSampler : Texture.Sampler
               SpriteUniform : Buffer.Buffer
               ViewProjectionUniform : Buffer.Buffer
               Perimeters : Vector4 array
@@ -83,7 +84,7 @@ module SpriteBatch =
                     [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage 1
                       Pipeline.descriptor 1 Hl.StorageBuffer Hl.VertexStage 1
                       Pipeline.descriptor 2 Hl.SampledImage Hl.FragmentStage 1|]
-                  Pipeline.descriptorSet Hl.BulkNone 1
+                  Pipeline.descriptorSet Hl.BulkNone 2 // one for unfiltered, one for filtered
                     [|Pipeline.descriptor 0 Hl.Sampler Hl.FragmentStage 1|]|]
                 [||] [|vkc.SwapFormat|] None vkc
 
@@ -130,7 +131,8 @@ module SpriteBatch =
 
                 // bind texture
                 Pipeline.Pipeline.writeDescriptorSampledImage 0 2 env.DrawIndex 0 texture.ImageView env.Pipeline vkc
-                Pipeline.Pipeline.writeDescriptorSampler 1 0 0 0 env.Sampler env.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorSampler 1 0 0 0 env.UnfilteredSampler env.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorSampler 1 0 1 0 env.FilteredSampler env.Pipeline vkc
                 
                 // make viewport and scissor
                 let mutable renderArea = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)
@@ -175,8 +177,9 @@ module SpriteBatch =
                         Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)
 
                         // bind descriptor sets
+                        let samplerIndex = if texture.MipLevels = 1 then 0 else 1 // > 1 mips = filtered
                         let mutable mainDescriptorSet = env.Pipeline.VkDescriptorSet 0 env.DrawIndex
-                        let mutable samplerDescriptorSet = env.Pipeline.VkDescriptorSet 1 0
+                        let mutable samplerDescriptorSet = env.Pipeline.VkDescriptorSet 1 samplerIndex
                         Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, env.Pipeline.PipelineLayout, 0u, 1u, asPointer &mainDescriptorSet, 0u, nullPtr)
                         Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, env.Pipeline.PipelineLayout, 1u, 1u, asPointer &samplerDescriptorSet, 0u, nullPtr)
                 
@@ -256,7 +259,7 @@ module SpriteBatch =
         env.SpriteIndex <- inc env.SpriteIndex
 
     /// Destroy the given sprite batch environment.
-    let CreateSpriteBatchEnv sampler vkc =
+    let CreateSpriteBatchEnv unfilteredSampler filteredSampler vkc =
         
         // create pipeline
         let (spriteUniform, viewProjectionUniform, pipeline) = CreateSpriteBatchPipeline vkc
@@ -265,7 +268,8 @@ module SpriteBatch =
         { DrawIndex = 0; SpriteIndex = 0;
           ViewProjection2dAbsolute = m4Identity; ViewProjection2dRelative = m4Identity
           ViewProjectionClipAbsolute = m4Identity; ViewProjectionClipRelative = m4Identity
-          VulkanContext = vkc; Pipeline = pipeline; Sampler = sampler; SpriteUniform = spriteUniform; ViewProjectionUniform = viewProjectionUniform
+          VulkanContext = vkc; Pipeline = pipeline; UnfilteredSampler = unfilteredSampler; FilteredSampler = filteredSampler
+          SpriteUniform = spriteUniform; ViewProjectionUniform = viewProjectionUniform
           Perimeters = Array.zeroCreate Constants.Render.SpriteBatchSize
           Pivots = Array.zeroCreate Constants.Render.SpriteBatchSize
           Rotations = Array.zeroCreate Constants.Render.SpriteBatchSize

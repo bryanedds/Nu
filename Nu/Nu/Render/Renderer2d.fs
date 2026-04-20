@@ -192,6 +192,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
           ContourTessellationVertices : Buffer.Buffer * Buffer.Buffer
           TextureDisposer : Texture.TextureDisposer
           UnfilteredSampler : Texture.Sampler
+          FilteredSampler : Texture.Sampler
           TextTextures : Dictionary<obj, bool ref * (int * int * Matrix4x4 * Texture.Texture)>
           SpriteBatchEnv : SpriteBatch.SpriteBatchEnv
           SpritePipeline : Buffer.Buffer * Buffer.Buffer * Pipeline.Pipeline
@@ -1019,8 +1020,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
     static member make viewport (vkc : Hl.VulkanContext) =
         
         // create samplers
-        // TODO: DJL: setup filtered sampling.
         let unfilteredSampler = Texture.Sampler.create VkSamplerAddressMode.Repeat VkFilter.Nearest VkFilter.Nearest false vkc
+        let filteredSampler = Texture.Sampler.create VkSamplerAddressMode.Repeat VkFilter.Linear VkFilter.Linear true vkc
         
         // create text resources
         let spritePipeline = Sprite.CreateSpritePipeline vkc
@@ -1028,7 +1029,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         let textureDisposer = Texture.TextureDisposer.create ()
 
         // create sprite batch env
-        let spriteBatchEnv = SpriteBatch.CreateSpriteBatchEnv unfilteredSampler vkc
+        let spriteBatchEnv = SpriteBatch.CreateSpriteBatchEnv unfilteredSampler filteredSampler vkc
 
         // create contour tessellation pipeline
         let (contourTesselationVertices, contourTesselationPipeline) = ContourTessellation.createPipeline vkc
@@ -1043,6 +1044,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
               ContourTessellationVertices = contourTesselationVertices
               TextureDisposer = textureDisposer
               UnfilteredSampler = unfilteredSampler
+              FilteredSampler = filteredSampler
               TextTextures = dictPlus HashIdentity.Structural []
               SpriteBatchEnv = spriteBatchEnv
               SpritePipeline = spritePipeline
@@ -1075,6 +1077,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             renderer.TextTextures.Clear ()
             Texture.TextureDisposer.destroy renderer.TextureDisposer vkc
             Texture.Sampler.destroy renderer.UnfilteredSampler vkc
+            Texture.Sampler.destroy renderer.FilteredSampler vkc
             Pipeline.Pipeline.destroy pipeline vkc
             Pipeline.Pipeline.destroy tessellationPipeline vkc
             Buffer.Buffer.destroy spriteVertUniform vkc
