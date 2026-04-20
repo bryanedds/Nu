@@ -29,7 +29,7 @@ do ()
             MainLauncher = true, // At least one activity must be marked as the main launcher to be able to start the app (when the user taps the app icon).
             Theme = "@style/Maui.SplashTheme", // SplashTheme: https://learn.microsoft.com/en-us/dotnet/maui/user-interface/images/splashscreen?tabs=android#platform-specific-configuration
             ConfigurationChanges = enum -1, // SDL - Do not recreate the activity on all configuration changes, since SDL handles them itself.
-            ScreenOrientation = ScreenOrientation.Landscape)>] // Orientation before SDL initialization where it overrides based on SDL_HINT_ORIENTATIONS
+            ScreenOrientation = ScreenOrientation.UserLandscape)>] // Orientation before SDL initialization where it overrides based on SDL_HINT_ORIENTATIONS
 [<IntentFilter ([|Android.Hardware.Usb.UsbManager.ActionUsbDeviceAttached|])>] // SDL - Let Android know that we can handle some USB devices and should receive this event
 type MainActivity () =
     inherit Org.Libsdl.App.SDLActivity ()
