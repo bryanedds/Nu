@@ -192,6 +192,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
           ContourTessellationVertices : Buffer.Buffer * Buffer.Buffer
           TextureDisposer : Texture.TextureDisposer
           UnfilteredSampler : Texture.Sampler
+          FilteredSampler : Texture.Sampler
           TextTextures : Dictionary<obj, bool ref * (int * int * Matrix4x4 * Texture.Texture)>
           SpriteBatchEnv : SpriteBatch.SpriteBatchEnv
           SpritePipeline : Buffer.Buffer * Buffer.Buffer * Pipeline.Pipeline
@@ -987,21 +988,24 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         if renderer.VulkanContext.RenderDesired then
             SpriteBatch.EndSpriteBatchFrame renderer.Viewport renderer.SpriteBatchEnv
 
-        // clean up any text textures that went unused this frame
-        let textTexturesUnused =
-            renderer.TextTextures
-            |> Seq.filter (fun entry -> not (fst entry.Value).Value)
-            |> Seq.map (fun entry -> entry.Key)
-            |> Seq.toArray
-        for entry in textTexturesUnused do
-            let (_, _, _, textTexture) = snd renderer.TextTextures.[entry]
-            Texture.TextureDisposer.submit textTexture renderer.TextureDisposer
-            renderer.TextTextures.Remove entry |> ignore<bool>
+            // clean up any text textures that went unused this frame
+            let textTexturesUnused =
+                renderer.TextTextures
+                |> Seq.filter (fun entry -> not (fst entry.Value).Value)
+                |> Seq.map (fun entry -> entry.Key)
+                |> Seq.toArray
+            for entry in textTexturesUnused do
+                let (_, _, _, textTexture) = snd renderer.TextTextures.[entry]
+                
+                // RenderDesired must be true to avoid premature destruction
+                // TODO: DJL: the logic behind this is too complex and subtle, see if there is an easier and safer way to do things.
+                Texture.TextureDisposer.submit textTexture renderer.TextureDisposer
+                renderer.TextTextures.Remove entry |> ignore<bool>
 
-        // mark remaining text textures as unused for next frame
-        for entry in renderer.TextTextures.Values do
-            let used = fst entry
-            used.Value <- false
+            // mark remaining text textures as unused for next frame
+            for entry in renderer.TextTextures.Values do
+                let used = fst entry
+                used.Value <- false
         
         (* TODO: DJL: enable when spine rendering is working again.
         // sweep up any skeleton renderers that went unused this frame
@@ -1016,8 +1020,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
     static member make viewport (vkc : Hl.VulkanContext) =
         
         // create samplers
-        // TODO: DJL: setup filtered sampling.
         let unfilteredSampler = Texture.Sampler.create VkSamplerAddressMode.Repeat VkFilter.Nearest VkFilter.Nearest false vkc
+        let filteredSampler = Texture.Sampler.create VkSamplerAddressMode.Repeat VkFilter.Linear VkFilter.Linear true vkc
         
         // create text resources
         let spritePipeline = Sprite.CreateSpritePipeline vkc
@@ -1025,7 +1029,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         let textureDisposer = Texture.TextureDisposer.create ()
 
         // create sprite batch env
-        let spriteBatchEnv = SpriteBatch.CreateSpriteBatchEnv unfilteredSampler vkc
+        let spriteBatchEnv = SpriteBatch.CreateSpriteBatchEnv unfilteredSampler filteredSampler vkc
 
         // create contour tessellation pipeline
         let (contourTesselationVertices, contourTesselationPipeline) = ContourTessellation.createPipeline vkc
@@ -1040,6 +1044,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
               ContourTessellationVertices = contourTesselationVertices
               TextureDisposer = textureDisposer
               UnfilteredSampler = unfilteredSampler
+              FilteredSampler = filteredSampler
               TextTextures = dictPlus HashIdentity.Structural []
               SpriteBatchEnv = spriteBatchEnv
               SpritePipeline = spritePipeline
@@ -1072,6 +1077,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             renderer.TextTextures.Clear ()
             Texture.TextureDisposer.destroy renderer.TextureDisposer vkc
             Texture.Sampler.destroy renderer.UnfilteredSampler vkc
+            Texture.Sampler.destroy renderer.FilteredSampler vkc
             Pipeline.Pipeline.destroy pipeline vkc
             Pipeline.Pipeline.destroy tessellationPipeline vkc
             Buffer.Buffer.destroy spriteVertUniform vkc
