@@ -904,7 +904,6 @@ module Hl =
         { SwapchainInternalOpts_ : SwapchainInternal option array
           Window_ : SDL_Window nativeptr
           SurfaceFormat_ : VkSurfaceFormatKHR
-          mutable SwapExtent_ : VkExtent2D // TODO: DJL: try to get rid of this.
           mutable SwapchainIndex_ : int }
 
         /// The Vulkan swapchain itself.
@@ -922,14 +921,17 @@ module Hl =
         /// The render finished semaphore for the current swapchain image.
         member this.RenderFinishedSemaphore = (Option.get this.SwapchainInternalOpts_.[this.SwapchainIndex_]).RenderFinishedSemaphores.[int ImageIndex]
 
+        /// The swap extent of the current vkSwapchain.
+        member this.SwapExtent = (Option.get this.SwapchainInternalOpts_.[this.SwapchainIndex_]).SwapExtent
+
         /// Check if window is minimized.
         static member isWindowMinimized window =
             SDL3.SDL_GetWindowFlags window &&& SDL_WindowFlags.SDL_WINDOW_MINIMIZED <> LanguagePrimitives.EnumOfValue 0UL
         
         /// Check if window has been resized.
-        static member isWindowResized vkPhysicalDevice surface swapchain =
+        static member isWindowResized vkPhysicalDevice surface (swapchain : Swapchain) =
             let capabilities = getSurfaceCapabilities vkPhysicalDevice surface
-            swapchain.SwapExtent_ <> getSwapExtent capabilities swapchain.Window_
+            swapchain.SwapExtent <> getSwapExtent capabilities swapchain.Window_
 
         /// Refresh the swapchain for a new swap extent.
         static member refresh physicalDevice surface swapchain device =
@@ -948,7 +950,6 @@ module Hl =
             // create new swapchain internal
             let swapchainInternal = SwapchainInternal.create swapchain.SurfaceFormat_ oldVkSwapchainOpt physicalDevice surface swapchain.Window_ device
             swapchain.SwapchainInternalOpts_.[swapchain.SwapchainIndex_] <- Some swapchainInternal
-            swapchain.SwapExtent_ <- swapchainInternal.SwapExtent
         
         /// Create a Swapchain.
         static member create surfaceFormat physicalDevice surface window device =
@@ -970,15 +971,11 @@ module Hl =
                 let swapchainInternal = SwapchainInternal.create surfaceFormat VkSwapchainKHR.Null physicalDevice surface window device
                 swapchainInternalOpts.[swapchainIndex] <- Some swapchainInternal
 
-            // real extent from swapchain or dummy if minimized at startup
-            let swapExtent = match swapchainInternalOpts.[swapchainIndex] with Some swapchainInternal -> swapchainInternal.SwapExtent | None -> VkExtent2D (1,1)
-            
             // make Swapchain
             let swapchain =
                 { SwapchainInternalOpts_ = swapchainInternalOpts
                   Window_ = window
                   SurfaceFormat_ = surfaceFormat
-                  SwapExtent_ = swapExtent
                   SwapchainIndex_ = swapchainIndex }
 
             // fin
@@ -1511,7 +1508,7 @@ module Hl =
                     if Swapchain.isWindowResized vkc.VkPhysicalDevice Surface vkc.Swapchain_ then VulkanContext.handleWindowSize vkc
                     else
                         // check that swap extent >= viewport.Bounds >= viewport.Inner; done *after* screen change check to avoid outdated swap extent
-                        let extent = vkc.Swapchain_.SwapExtent_
+                        let extent = vkc.Swapchain_.SwapExtent
                         let swapchainBounds = box2i v2iZero (v2i (int extent.width) (int extent.height))
                         if
                             swapchainBounds.ContainsInclusive windowViewport.Bounds = ContainmentType.Contains &&
@@ -1542,7 +1539,7 @@ module Hl =
                 recordTransitionLayout vkc.RenderCommandBuffer true 1 0 1 VkImageAspectFlags.Color Undefined ColorAttachmentWrite vkc.Swapchain_.Image
                 
                 // clear screen
-                let renderArea = VkRect2D (VkOffset2D.Zero, vkc.Swapchain_.SwapExtent_)
+                let renderArea = VkRect2D (VkOffset2D.Zero, vkc.Swapchain_.SwapExtent)
                 let clearColor = VkClearValue (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
                 let mutable rendering = makeRenderingInfo [|vkc.SwapchainImageView|] None renderArea (Some clearColor)
                 Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &rendering)
