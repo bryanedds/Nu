@@ -594,7 +594,31 @@ module Hl =
         Vulkan.vkGetPhysicalDeviceSurfaceCapabilitiesKHR (vkPhysicalDevice, surface, &capabilities) |> check
         capabilities
     
-    /// Create an image view.
+    /// Get swap extent.
+    let private getSwapExtent (capabilities : VkSurfaceCapabilitiesKHR) window =
+
+        // check if window size is fixed or variable
+        if capabilities.currentExtent.width <> UInt32.MaxValue
+        then capabilities.currentExtent
+        else
+
+            // get pixel resolution from sdl
+            // NOTE: DJL: unlike the GLFW counterpart, this does NOT return 0 when minimized.
+            let mutable width = Unchecked.defaultof<int>
+            let mutable height = Unchecked.defaultof<int>
+            if not (SDL3.SDL_GetWindowSizeInPixels (window, &&width, &&height)) then
+                Log.fail (SDL3.SDL_GetError ())
+
+            // clamp resolution to size limits
+            width <- max width (int capabilities.minImageExtent.width)
+            width <- min width (int capabilities.maxImageExtent.width)
+            height <- max height (int capabilities.minImageExtent.height)
+            height <- min height (int capabilities.maxImageExtent.height)
+
+            // fin
+            VkExtent2D (width, height)
+        
+        /// Create an image view.
     let createImageView pixelFormat vkFormat mipLevel mipCount layer layerCount viewType imageAspect image device =
         let mutable info = VkImageViewCreateInfo ()
         info.image <- image
@@ -775,10 +799,11 @@ module Hl =
         { VkSwapchain : VkSwapchainKHR
           Images : VkImage array
           ImageViews : VkImageView array
-          RenderFinishedSemaphores : VkSemaphore array }
+          RenderFinishedSemaphores : VkSemaphore array
+          SwapExtent : VkExtent2D }
 
         /// Create the Vulkan swapchain itself.
-        static member private createVkSwapchain (surfaceFormat : VkSurfaceFormatKHR) swapExtent oldVkSwapchainOpt physicalDevice surface device =
+        static member private createVkSwapchain (surfaceFormat : VkSurfaceFormatKHR) oldVkSwapchainOpt physicalDevice surface window device =
 
             // decide the minimum number of images in the swapchain. Sellers, Vulkan Programming Guide p. 144, recommends
             // at least 3 for performance, but to keep latency low let's start with the more conservative recommendation of
@@ -789,6 +814,9 @@ module Hl =
                 then capabilities.minImageCount + 1u
                 else min (capabilities.minImageCount + 1u) capabilities.maxImageCount
 
+            // get swap extent
+            let swapExtent = getSwapExtent capabilities window
+            
             // in case graphics and present queue families differ
             // TODO: as part of optimization, the sharing mode in this case should probably be VkSharingMode.Exclusive (see below).
             let indicesArray = [|physicalDevice.GraphicsQueueFamily; physicalDevice.PresentQueueFamily|]
@@ -816,7 +844,7 @@ module Hl =
             info.oldSwapchain <- oldVkSwapchainOpt
             let mutable vkSwapchain = Unchecked.defaultof<VkSwapchainKHR>
             Vulkan.vkCreateSwapchainKHR (device, &info, nullPtr, &vkSwapchain) |> check
-            vkSwapchain
+            (vkSwapchain, swapExtent)
 
         /// Get swapchain images.
         static member private getSwapchainImages vkSwapchain device =
@@ -840,10 +868,10 @@ module Hl =
             semaphores
         
         /// Create a SwapchainInternal.
-        static member create surfaceFormat swapExtent oldVkSwapchainOpt physicalDevice surface device =
+        static member create surfaceFormat oldVkSwapchainOpt physicalDevice surface window device =
             
             // create Vulkan swapchain and its assets
-            let vkSwapchain = SwapchainInternal.createVkSwapchain surfaceFormat swapExtent oldVkSwapchainOpt physicalDevice surface device
+            let (vkSwapchain, swapExtent) = SwapchainInternal.createVkSwapchain surfaceFormat oldVkSwapchainOpt physicalDevice surface window device
             let images = SwapchainInternal.getSwapchainImages vkSwapchain device
             let imageViews = SwapchainInternal.createImageViews surfaceFormat.format images device
 
@@ -858,7 +886,8 @@ module Hl =
                 { VkSwapchain = vkSwapchain
                   Images = images
                   ImageViews = imageViews
-                  RenderFinishedSemaphores = renderFinishedSemaphores }
+                  RenderFinishedSemaphores = renderFinishedSemaphores
+                  SwapExtent = swapExtent }
 
             // fin
             swapchainInternal
@@ -875,7 +904,7 @@ module Hl =
         { SwapchainInternalOpts_ : SwapchainInternal option array
           Window_ : SDL_Window nativeptr
           SurfaceFormat_ : VkSurfaceFormatKHR
-          mutable SwapExtent_ : VkExtent2D
+          mutable SwapExtent_ : VkExtent2D // TODO: DJL: try to get rid of this.
           mutable SwapchainIndex_ : int }
 
         /// The Vulkan swapchain itself.
@@ -893,45 +922,15 @@ module Hl =
         /// The render finished semaphore for the current swapchain image.
         member this.RenderFinishedSemaphore = (Option.get this.SwapchainInternalOpts_.[this.SwapchainIndex_]).RenderFinishedSemaphores.[int ImageIndex]
 
-        /// Get swap extent.
-        static member private getSwapExtent vkPhysicalDevice surface window =
-
-            // get surface capabilities
-            let capabilities = getSurfaceCapabilities vkPhysicalDevice surface
-            
-            // check if window size is fixed or variable
-            if capabilities.currentExtent.width <> UInt32.MaxValue
-            then capabilities.currentExtent
-            else
-
-                // get pixel resolution from sdl
-                // NOTE: DJL: unlike the GLFW counterpart, this does NOT return 0 when minimized.
-                let mutable width = Unchecked.defaultof<int>
-                let mutable height = Unchecked.defaultof<int>
-                if not (SDL3.SDL_GetWindowSizeInPixels (window, &&width, &&height)) then
-                    Log.fail (SDL3.SDL_GetError ())
-
-                // clamp resolution to size limits
-                width <- max width (int capabilities.minImageExtent.width)
-                width <- min width (int capabilities.maxImageExtent.width)
-                height <- max height (int capabilities.minImageExtent.height)
-                height <- min height (int capabilities.maxImageExtent.height)
-
-                // fin
-                VkExtent2D (width, height)
-        
         /// Check if window is minimized.
         static member isWindowMinimized window =
             SDL3.SDL_GetWindowFlags window &&& SDL_WindowFlags.SDL_WINDOW_MINIMIZED <> LanguagePrimitives.EnumOfValue 0UL
         
         /// Check if window has been resized.
         static member isWindowResized vkPhysicalDevice surface swapchain =
-            swapchain.SwapExtent_ <> Swapchain.getSwapExtent vkPhysicalDevice surface swapchain.Window_
+            let capabilities = getSurfaceCapabilities vkPhysicalDevice surface
+            swapchain.SwapExtent_ <> getSwapExtent capabilities swapchain.Window_
 
-        /// Update the swap extent.
-        static member updateSwapExtent vkPhysicalDevice surface swapchain =
-            swapchain.SwapExtent_ <- Swapchain.getSwapExtent vkPhysicalDevice surface swapchain.Window_
-        
         /// Refresh the swapchain for a new swap extent.
         static member refresh physicalDevice surface swapchain device =
             
@@ -946,12 +945,10 @@ module Hl =
             | Some swapchainInternal -> SwapchainInternal.destroy swapchainInternal device
             | None -> ()
             
-            // update swap extent
-            Swapchain.updateSwapExtent physicalDevice.VkPhysicalDevice surface swapchain
-            
             // create new swapchain internal
-            let swapchainInternal = SwapchainInternal.create swapchain.SurfaceFormat_ swapchain.SwapExtent_ oldVkSwapchainOpt physicalDevice surface device
+            let swapchainInternal = SwapchainInternal.create swapchain.SurfaceFormat_ oldVkSwapchainOpt physicalDevice surface swapchain.Window_ device
             swapchain.SwapchainInternalOpts_.[swapchain.SwapchainIndex_] <- Some swapchainInternal
+            swapchain.SwapExtent_ <- swapchainInternal.SwapExtent
         
         /// Create a Swapchain.
         static member create surfaceFormat physicalDevice surface window device =
@@ -965,17 +962,17 @@ module Hl =
             // but can still only be refreshed once per frame.
             let swapchainInternalOpts = Array.create (Constants.Vulkan.MaxFramesInFlight + 1) None
             
-            // get swap extent
-            let swapExtent = Swapchain.getSwapExtent physicalDevice.VkPhysicalDevice surface window
-            
             // check if window is minimized at startup
             let windowMinimized = Swapchain.isWindowMinimized window
             
             // create first SwapchainInternal if window is not minimized
             if not windowMinimized then
-                let swapchainInternal = SwapchainInternal.create surfaceFormat swapExtent VkSwapchainKHR.Null physicalDevice surface device
+                let swapchainInternal = SwapchainInternal.create surfaceFormat VkSwapchainKHR.Null physicalDevice surface window device
                 swapchainInternalOpts.[swapchainIndex] <- Some swapchainInternal
 
+            // real extent from swapchain or dummy if minimized at startup
+            let swapExtent = match swapchainInternalOpts.[swapchainIndex] with Some swapchainInternal -> swapchainInternal.SwapExtent | None -> VkExtent2D (1,1)
+            
             // make Swapchain
             let swapchain =
                 { SwapchainInternalOpts_ = swapchainInternalOpts
