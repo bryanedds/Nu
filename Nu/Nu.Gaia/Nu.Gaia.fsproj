@@ -35,16 +35,15 @@
     </Target>
     <!-- Run Nu.Pipe -->
     <Target Name="NuPipe" BeforeTargets="ResizetizeCollectItems;AssignTargetPaths" DependsOnTargets="BuildNuPipe">
-        <Copy SourceFiles="AssetGraph.nuag" DestinationFolder="refinement-out" />
-        <Copy SourceFiles="Overlayer.nuol" DestinationFolder="refinement-out" />
+        <Copy SourceFiles="App.config;AssetGraph.nuag;Overlayer.nuol" DestinationFolder="refinement-out/$(TargetFramework)" SkipUnchangedFiles="true" />
         <!-- iOS and Android: call NuPipe via BeforeTargets="ResizetizeCollectItems" -->
 		<!-- Desktop: call NuPipe via BeforeTargets="AssignTargetPaths" -->
-        <MSBuild Projects="../../Nu/Nu.Pipe/Nu.Pipe.fsproj" RemoveProperties="TargetFramework;RuntimeIdentifier;SelfContained" Properties="NoBuild=true;RunWorkingDirectory=$(MSBuildProjectDirectory);RunArguments=&quot;$(MSBuildProjectDirectory)/&quot; &quot;$(MSBuildProjectDirectory)/refinement-out/&quot; &quot;$(MSBuildProjectDirectory)/refinement/&quot; &quot;$(BlockCompression)&quot; &quot;False&quot;" Targets="Run" />
+        <MSBuild Projects="../../Nu/Nu.Pipe/Nu.Pipe.fsproj" RemoveProperties="TargetFramework;RuntimeIdentifier;SelfContained" Properties="NoBuild=true;RunWorkingDirectory=$(MSBuildProjectDirectory);RunArguments=&quot;$(MSBuildProjectDirectory)/&quot; &quot;$(MSBuildProjectDirectory)/refinement-out/$(TargetFramework)/&quot; &quot;$(MSBuildProjectDirectory)/refinement/$(TargetFramework)/&quot; &quot;$(BlockCompression)&quot; &quot;False&quot;" Targets="Run" />
         <ItemGroup>
             <!-- AssetPack and DeliveryType are for Android: https://learn.microsoft.com/en-us/dotnet/maui/android/asset-packs?view=net-maui-10.0#asset-packs-in-net-maui-apps -->
             <!-- We do not pack assets into the main app bundle nor use install-time asset packs as they are not extracted to the file system! Nu loads various files outside of any asset system, and efficient memory-mapped files are necessary for some games. -->
             <!-- We use fast-follow asset packs here which allow up to 512MB. If you need assets up to 2GB, use on-demand asset packs instead. Both types of asset packs are extracted to the file system. -->
-            <MauiAsset Include="refinement-out/**/*.*" AssetPack="gameassets" DeliveryType="FastFollow" />
+            <MauiAsset Include="refinement-out/$(TargetFramework)/**/*.*" AssetPack="gameassets" DeliveryType="FastFollow" />
         </ItemGroup>
         <!-- For desktop, just copy assets to output directory. -->
         <Copy Condition="'$(TargetPlatformIdentifier)' == ''" SourceFiles="@(MauiAsset)" DestinationFolder="$(MSBuildProjectDirectory)/bin/$(Configuration)/$(TargetFramework)/%(RecursiveDir)" />

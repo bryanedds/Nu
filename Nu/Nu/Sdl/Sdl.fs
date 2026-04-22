@@ -22,10 +22,11 @@ type SdlWindowConfig =
 
     /// A default SdlWindowConfig.
     static member val defaultConfig =
+        let mobileFullScreen = if OperatingSystem.IsIOS () || OperatingSystem.IsAndroid () then SDL_WindowFlags.SDL_WINDOW_FULLSCREEN else Unchecked.defaultof<_> // no notification bar
         { WindowTitle = "Nu Game"
           WindowX = int SDL3.SDL_WINDOWPOS_UNDEFINED
           WindowY = int SDL3.SDL_WINDOWPOS_UNDEFINED
-          WindowFlags = SDL_WindowFlags.SDL_WINDOW_RESIZABLE ||| SDL_WindowFlags.SDL_WINDOW_VULKAN }
+          WindowFlags = SDL_WindowFlags.SDL_WINDOW_RESIZABLE ||| SDL_WindowFlags.SDL_WINDOW_VULKAN ||| mobileFullScreen }
 
 /// Describes the general configuration of SDL.
 type [<ReferenceEquality>] SdlConfig =

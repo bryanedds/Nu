@@ -63,9 +63,14 @@ type MainActivity () =
             assetPackLocation <- tcs.Task.Result
             assetPackManager.UnregisterListener assetPackListener.Listener
         
-        // create symbolic links for the files in the asset pack to the app's base directory, so that SDL can still access them with relative paths.
+        // set current directory for asset loading
         Directory.EnumerateDirectories (assetPackLocation.AssetsPath () + "/refinement-out", "*")
         |> Seq.exactlyOne
         |> Directory.SetCurrentDirectory
+
+        // direct ConfigurationManager.AppSettings to load values from our App.config file
+        if not (File.Exists "App.config") then
+            raise (FileNotFoundException ($"Expected App.config at '{Directory.GetCurrentDirectory ()}' but it was not found. Something went wrong with asset pack loading."))
+        AppDomain.CurrentDomain.SetData ("APP_CONFIG_FILE", System.IO.Path.GetFullPath "App.config") // "App.config" here will be interpreted as relative to AppDomain.CurrentDomain.BaseDirectory by .NET
 
         SandBox2d.Program.main () |> ignore<int>

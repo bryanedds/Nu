@@ -60,7 +60,7 @@
     </Target>
     <!-- Run Nu.Pipe -->
     <Target Name="NuPipe" BeforeTargets="ResizetizeCollectItems;AssignTargetPaths" DependsOnTargets="BuildNuPipe">
-        <Copy SourceFiles="AssetGraph.nuag;Overlayer.nuol" DestinationFolder="refinement-out/$(TargetFramework)" SkipUnchangedFiles="true" />
+        <Copy SourceFiles="App.config;AssetGraph.nuag;Overlayer.nuol" DestinationFolder="refinement-out/$(TargetFramework)" SkipUnchangedFiles="true" />
         <!-- iOS and Android: call NuPipe via BeforeTargets="ResizetizeCollectItems" -->
 		<!-- Desktop: call NuPipe via BeforeTargets="AssignTargetPaths" -->
         <MSBuild Projects="../../Nu/Nu.Pipe/Nu.Pipe.fsproj" RemoveProperties="TargetFramework;RuntimeIdentifier;SelfContained" Properties="NoBuild=true;RunWorkingDirectory=$(MSBuildProjectDirectory);RunArguments=&quot;$(MSBuildProjectDirectory)/&quot; &quot;$(MSBuildProjectDirectory)/refinement-out/$(TargetFramework)/&quot; &quot;$(MSBuildProjectDirectory)/refinement/$(TargetFramework)/&quot; &quot;$(BlockCompression)&quot; &quot;False&quot;" Targets="Run" />
