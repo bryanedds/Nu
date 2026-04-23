@@ -855,8 +855,15 @@ module Hl =
             info.clipped <- true
             info.oldSwapchain <- oldVkSwapchainOpt
             let mutable vkSwapchain = Unchecked.defaultof<VkSwapchainKHR>
-            Vulkan.vkCreateSwapchainKHR (device, &info, nullPtr, &vkSwapchain) |> check
-            (vkSwapchain, swapExtent)
+            let result = Vulkan.vkCreateSwapchainKHR (device, &info, nullPtr, &vkSwapchain)
+            
+            // if (despite all the other error handling) swapchain creation fails due to lost surface then refresh surface and try again
+            if result <> VkResult.ErrorSurfaceLostKHR then
+                check result
+                (vkSwapchain, swapExtent)
+            else
+                refreshVulkanSurface window instance
+                SwapchainInternal.createVkSwapchain surfaceFormat oldVkSwapchainOpt physicalDevice surface window device instance
 
         /// Get swapchain images.
         static member private getSwapchainImages vkSwapchain device =
@@ -1536,8 +1543,13 @@ module Hl =
                                     let result = Vulkan.vkAcquireNextImageKHR (vkc.Device, vkc.Swapchain_.VkSwapchain, UInt64.MaxValue, vkc.ImageAvailableSemaphore, VkFence.Null, &ImageIndex)
                                     if result = VkResult.ErrorOutOfDateKHR then VulkanContext.handleWindowSize vkc // refresh swapchain if out of date
                                     else
-                                        check result // NOTE: DJL: this will report a suboptimal swapchain image.
-                                        vkc.RenderDesired_ <- true // permit rendering
+                                        // refresh surface *and* swapchain if surface lost
+                                        if result = VkResult.ErrorSurfaceLostKHR then
+                                            refreshVulkanSurface vkc.Swapchain_.Window_ vkc.Instance_
+                                            VulkanContext.handleWindowSize vkc
+                                        else
+                                            check result // NOTE: DJL: this will report a suboptimal swapchain image.
+                                            vkc.RenderDesired_ <- true // permit rendering
 
             if vkc.RenderDesired_ then
             
@@ -1585,7 +1597,11 @@ module Hl =
                 let result = Queue.present vkc.RenderFinishedSemaphore vkc.Swapchain_.VkSwapchain vkc.PresentQueue_
 
                 // refresh swapchain if framebuffer out of date or suboptimal
-                if result = VkResult.ErrorOutOfDateKHR || result = VkResult.SuboptimalKHR then
+                if result = VkResult.ErrorOutOfDateKHR || result = VkResult.SuboptimalKHR then VulkanContext.handleWindowSize vkc
+                
+                // refresh surface *and* swapchain if surface lost
+                elif result = VkResult.ErrorSurfaceLostKHR then
+                    refreshVulkanSurface vkc.Swapchain_.Window_ vkc.Instance_
                     VulkanContext.handleWindowSize vkc
                 else check result
 
