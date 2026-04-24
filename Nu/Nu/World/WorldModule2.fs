@@ -895,7 +895,7 @@ module WorldModule2 =
             for entity in entities do
                 World.unregisterEntityPhysics entity world
 
-        static member private synchronizeViewports world =
+        static member internal synchronizeViewports world =
             let windowSize = World.getWindowSize world
             let windowViewport = Viewport.makeWindow1 windowSize
             World.setWindowViewport windowViewport world
