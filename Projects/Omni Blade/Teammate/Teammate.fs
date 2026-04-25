@@ -14,6 +14,7 @@ type [<SymbolicExpansion>] Teammate =
       ExpPoints : int
       HitPoints : int
       TechPoints : int
+      ConjureChargeRemainder : int
       WeaponOpt : WeaponType option
       ArmorOpt : ArmorType option
       Accessories : AccessoryType list }
@@ -121,6 +122,7 @@ type [<SymbolicExpansion>] Teammate =
           ExpPoints = expPoints
           HitPoints = Algorithms.hitPointsMax armorOpt archetypeType level
           TechPoints = Algorithms.techPointsMax armorOpt archetypeType level
+          ConjureChargeRemainder = 0
           WeaponOpt = weaponOpt
           ArmorOpt = armorOpt
           Accessories = accessories }

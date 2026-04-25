@@ -227,7 +227,8 @@ module Field =
                         let direction = Direction.ofVector3 -bounds.Bottom
                         let actionTime = 1000.0f - Constants.Battle.AllyActionTimeSpacing * single index
                         let characterState = CharacterState.make characterData teammate.HitPoints teammate.TechPoints teammate.ExpPoints teammate.WeaponOpt teammate.ArmorOpt teammate.Accessories
-                        let character = Character.make bounds characterIndex 0 characterType boss animationSheet celSize direction characterState None actionTime
+                        let conjureChargeRemainder = teammate.ConjureChargeRemainder
+                        let character = Character.make bounds characterIndex 0 characterType boss animationSheet celSize direction characterState conjureChargeRemainder None actionTime
                         character
                     | None -> failwith ("Could not find CharacterData for '" + scstring teammate.CharacterType + "'."))
                 party
@@ -558,7 +559,8 @@ module Field =
                 { teammate with
                     HitPoints = ally.HitPoints
                     TechPoints = ally.TechPoints
-                    ExpPoints = ally.ExpPoints })
+                    ExpPoints = ally.ExpPoints
+                    ConjureChargeRemainder = Option.defaultValue 0 ally.ConjureChargeOpt })
                 i field)
             field allies
 

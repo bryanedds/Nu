@@ -22,6 +22,7 @@ module Character =
               CharacterAnimationState_ : CharacterAnimationState
               CharacterInputState_ : CharacterInputState
               CharacterState_ : CharacterState
+              ConjureChargeRemainder_ : int
               ConjureChargeOpt_ : int option
               TechChargeOpt_ : (int * int * TechType) option
               AutoBattleOpt_ : AutoBattle option
@@ -88,6 +89,7 @@ module Character =
 
         (* Local Properties *)
         member this.CharacterInputState = this.CharacterInputState_
+        member this.ConjureChargeRemainder = this.ConjureChargeRemainder_
         member this.ConjureChargeOpt = this.ConjureChargeOpt_
         member this.TechChargeOpt = this.TechChargeOpt_
         member this.AutoBattleOpt = this.AutoBattleOpt_
@@ -615,7 +617,7 @@ module Character =
             | (_, _) -> (false, character)
         { character with ActionStunned_ = character.ActionStunned_ || cancelled }
 
-    let make bounds characterIndex characterOrderRev characterType boss animationSheet celSize direction (characterState : CharacterState) chargeTechOpt actionTime =
+    let make bounds characterIndex characterOrderRev characterType boss animationSheet celSize direction (characterState : CharacterState) conjureChargeRemainder chargeTechOpt actionTime =
         let animationType = if characterState.Healthy then IdleAnimation else WoundAnimation
         let animationState = { StartTime = 0L; AnimationSheet = animationSheet; CharacterAnimationType = animationType; MaterializationOpt = None; Direction = direction }
         { PerimeterOriginal_ = bounds
@@ -627,6 +629,7 @@ module Character =
           CharacterAnimationState_ = animationState
           CharacterInputState_ = NoInput
           CharacterState_ = characterState
+          ConjureChargeRemainder_ = conjureChargeRemainder
           ConjureChargeOpt_ = None
           TechChargeOpt_ = chargeTechOpt
           AutoBattleOpt_ = None
@@ -662,7 +665,7 @@ module Character =
                         if waitSpeed
                         then -25.0f
                         else -275.0f
-                let enemy = make bounds (EnemyIndex subindex) enemyOrderRev characterType characterData.Boss characterData.AnimationSheet celSize Rightward characterState chargeTechOpt actionTime
+                let enemy = make bounds (EnemyIndex subindex) enemyOrderRev characterType characterData.Boss characterData.AnimationSheet celSize Rightward characterState 0 chargeTechOpt actionTime
                 Some enemy
             | None -> None
         | None -> None
@@ -679,6 +682,7 @@ module Character =
           CharacterAnimationState_ = characterAnimationState
           CharacterInputState_ = NoInput
           CharacterState_ = CharacterState.empty
+          ConjureChargeRemainder_ = 0
           ConjureChargeOpt_ = None
           TechChargeOpt_ = None
           AutoBattleOpt_ = None
