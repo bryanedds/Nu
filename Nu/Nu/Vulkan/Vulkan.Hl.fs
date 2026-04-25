@@ -40,6 +40,12 @@ module Hl =
     /// The total number of resource descriptors needed.
     let mutable internal DescriptorsNeeded = 0u
     
+    type private SurfaceState =
+        | SurfaceReady
+        | SurfaceLost
+        | SurfaceDestroyed
+    
+    let mutable private SurfaceState = SurfaceDestroyed
     let mutable private Surface = Unchecked.defaultof<VkSurfaceKHR>
     
     /// The format of an image.
@@ -500,14 +506,28 @@ module Hl =
         result.extent.height <- uint extentHeight
         result
 
-    /// Create vulkan surface.
     let private createVulkanSurface window instance =
-        let mutable surface = Unchecked.defaultof<VkSurfaceKHR_T nativeptr>
-        let instance = NativePtr.ofNativeInt (VkInstance.op_Implicit instance)
-        if not (SDL3.SDL_Vulkan_CreateSurface (window, instance, NativePtr.nullPtr, &&surface)) then
-            Log.fail (SDL3.SDL_GetError ())
-        NativePtr.toNativeInt surface |> uint64 |> VkSurfaceKHR.op_Implicit
+        match SurfaceState with
+        | SurfaceDestroyed ->
+            let mutable surfacePtr = Unchecked.defaultof<VkSurfaceKHR_T nativeptr>
+            let instance = NativePtr.ofNativeInt (VkInstance.op_Implicit instance)
+            if not (SDL3.SDL_Vulkan_CreateSurface (window, instance, NativePtr.nullPtr, &&surfacePtr)) then
+                Log.error (SDL3.SDL_GetError ())
+            else
+                Surface <- NativePtr.toNativeInt surfacePtr |> uint64 |> VkSurfaceKHR.op_Implicit
+                SurfaceState <- SurfaceReady
+        | SurfaceReady -> Log.error "Attempted creation of Vulkan surface when existing surface has not been destroyed!"
+        | SurfaceLost -> Log.error "Attempted creation of Vulkan surface when existing surface has been lost but not destroyed!"
 
+    let private destroyVulkanSurface instance =
+        match SurfaceState with
+        | SurfaceReady
+        | SurfaceLost ->
+            Vulkan.vkDestroySurfaceKHR (instance, Surface, nullPtr)
+            SurfaceState <- SurfaceDestroyed
+        | SurfaceDestroyed ->
+            Log.error "Attempted destruction of Vulkan surface that has already been destroyed!"
+    
     /// Check the given Vulkan operation result, logging on non-Success.
     let check (result : VkResult) =
         if int result > 0 then Log.info ("Vulkan info: " + string result)
@@ -596,6 +616,7 @@ module Hl =
             check result
             capabilities
         else
+            SurfaceState <- SurfaceLost
             capabilities // TODO: DJL: return None.
     
     /// Get swap extent.
@@ -853,7 +874,9 @@ module Hl =
             if result <> VkResult.ErrorSurfaceLostKHR then
                 check result
                 (vkSwapchain, swapExtent)
-            else (vkSwapchain, swapExtent) // TODO: DJL: return None.
+            else
+                SurfaceState <- SurfaceLost
+                (vkSwapchain, swapExtent) // TODO: DJL: return None.
 
         /// Get swapchain images.
         static member private getSwapchainImages vkSwapchain device =
@@ -1535,6 +1558,7 @@ module Hl =
                                     else
                                         // attempt swapchain refresh if surface lost
                                         if result = VkResult.ErrorSurfaceLostKHR then
+                                            SurfaceState <- SurfaceLost
                                             VulkanContext.handleWindowSize vkc
                                         else
                                             check result // NOTE: DJL: this will report a suboptimal swapchain image.
@@ -1590,6 +1614,7 @@ module Hl =
                 
                 // attempt swapchain refresh if surface lost
                 elif result = VkResult.ErrorSurfaceLostKHR then
+                    SurfaceState <- SurfaceLost
                     VulkanContext.handleWindowSize vkc
                 else check result
 
@@ -1622,7 +1647,7 @@ module Hl =
             let debugMessengerOpt = VulkanContext.tryCreateDebugMessenger debugInfo instance
             
             // create surface
-            Surface <- createVulkanSurface window instance
+            createVulkanSurface window instance
 
             // attempt to select physical device
             match VulkanContext.trySelectPhysicalDevice Surface instance with
@@ -1713,6 +1738,6 @@ module Hl =
             Vulkan.vkDestroyCommandPool (vkc.Device, vkc.TransientCommandPool, nullPtr)
             Vma.vmaDestroyAllocator vkc.VmaAllocator
             Vulkan.vkDestroyDevice (vkc.Device, nullPtr)
-            Vulkan.vkDestroySurfaceKHR (vkc.Instance_, Surface, nullPtr)
+            destroyVulkanSurface vkc.Instance_
             match vkc.DebugMessengerOpt_ with Some debugMessenger -> Vulkan.vkDestroyDebugUtilsMessengerEXT (vkc.Instance_, debugMessenger, nullPtr) | None -> ()
             Vulkan.vkDestroyInstance (vkc.Instance_, nullPtr)
