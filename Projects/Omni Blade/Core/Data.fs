@@ -330,6 +330,15 @@ type TechType =
         | DoubleCut -> true
         | _ -> false
 
+    // TODO: put this in TechData.
+    member this.CriticalFromBack =
+        match this with
+        | PoisonCut
+        | PowerCut
+        | DispelSlash
+        | DoubleCut -> true
+        | _ -> false
+
 type StatureType =
     | SmallStature
     | NormalStature
@@ -869,6 +878,9 @@ type TechData =
 
     member this.AimType =
         this.TargetType.AimType
+
+    member this.CriticalFromBack =
+        this.TechType.CriticalFromBack
 
 type ArchetypeData =
     { ArchetypeType : ArchetypeType // key

@@ -258,10 +258,14 @@ module Character =
             let affectsWounded = techData.TechType = Vita // TODO: pull from tech data.
             let healing0 = single efficacy * techScalar * splitScalar * splashScalar |> int |> max 1
             let healing1 = if target.Statuses.ContainsKey StatusType.Curse then 0 else healing0
-            (target.CharacterIndex, false, affectsWounded, healing1, techData.StatusesAdded, techData.StatusesRemoved)
+            (target.CharacterIndex, false, false, affectsWounded, healing1, techData.StatusesAdded, techData.StatusesRemoved)
         else
             let cancelled = techData.Cancels && autoTeching target
-            let shield = target.Shield techData.EffectType
+            let critical =
+                let criticalFromBack = techData.CriticalFromBack
+                let fromBack = source.Direction = target.Direction
+                criticalFromBack && fromBack && not splash
+            let shield = if critical then 0 else target.Shield techData.EffectType
             let defendingScalar = if target.Defending then Constants.Battle.DefendingScalar else 1.0f
             let damage0 = (single efficacy * affinityScalar * techScalar * splitScalar * splashScalar + specialAddend - single shield) * defendingScalar |> int |> max 1
             let damage1 =
@@ -294,21 +298,21 @@ module Character =
                     | (false, _) -> damage1
                 | None -> damage1
             let damage = damage2 |> max 1
-            (target.CharacterIndex, cancelled, false, -damage, Set.difference techData.StatusesAdded target.Immunities, techData.StatusesRemoved)
+            (target.CharacterIndex, critical, cancelled, false, -damage, Set.difference techData.StatusesAdded target.Immunities, techData.StatusesRemoved)
 
     let evalTech techData source target characters =
         let (direct, splashing) = evalTargetType techData.TargetType source target characters
         let targetsCount = Map.count direct + Map.count splashing
         let directResults =
             Map.fold (fun results _ target ->
-                let (index, cancelled, affectsWounded, delta, added, removed) = evalTechUnary false targetsCount techData source target
-                Map.add index (cancelled, affectsWounded, delta, added, removed) results)
+                let (index, critical, cancelled, affectsWounded, delta, added, removed) = evalTechUnary false targetsCount techData source target
+                Map.add index (critical, cancelled, affectsWounded, delta, added, removed) results)
                 Map.empty
                 direct
         let splashResults =
             Map.fold (fun results _ target ->
-                let (index, cancelled, affectsWounded, delta, added, removed) = evalTechUnary true targetsCount techData source target
-                Map.add index (cancelled, affectsWounded, delta, added, removed) results)
+                let (index, critical, cancelled, affectsWounded, delta, added, removed) = evalTechUnary true targetsCount techData source target
+                Map.add index (critical, cancelled, affectsWounded, delta, added, removed) results)
                 Map.empty
                 splashing
         let results = directResults @@ splashResults

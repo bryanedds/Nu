@@ -198,14 +198,24 @@ type BattleDispatcher () =
                 entity.SetEffectDescriptor (EffectDescriptors.hitPointsChange delta) world
             | None -> ()
 
-        | DisplayCancel targetIndex ->
+        | DisplayCriticalMessage targetIndex ->
             match Battle.tryGetCharacter targetIndex battle with
             | Some target ->
                 let entity = World.createEntity<Effect2dDispatcher> (Some Address.parent) DefaultOverlay None Simulants.BattleScene world
                 entity.SetPosition target.Perimeter.CenterOffset4 world
                 entity.SetElevation (Constants.Battle.GuiEffectElevation + 1.0f) world
                 entity.SetSelfDestruct true world
-                entity.SetEffectDescriptor EffectDescriptors.cancel world
+                entity.SetEffectDescriptor EffectDescriptors.criticalMessage world
+            | None -> ()
+
+        | DisplayCancelMessage targetIndex ->
+            match Battle.tryGetCharacter targetIndex battle with
+            | Some target ->
+                let entity = World.createEntity<Effect2dDispatcher> (Some Address.parent) DefaultOverlay None Simulants.BattleScene world
+                entity.SetPosition target.Perimeter.CenterOffset4 world
+                entity.SetElevation (Constants.Battle.GuiEffectElevation + 1.0f) world
+                entity.SetSelfDestruct true world
+                entity.SetEffectDescriptor EffectDescriptors.cancelMessage world
             | None -> ()
 
         | DisplayCut (delay, light, targetIndex) ->

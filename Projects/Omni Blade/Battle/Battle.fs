@@ -37,7 +37,8 @@ type BattleCommand =
     | DisplayCircle of Vector3 * single
     | DisplayFade of int64 * int64 * int64 * int64 * Color
     | DisplayHitPointsChange of CharacterIndex * int
-    | DisplayCancel of CharacterIndex
+    | DisplayCriticalMessage of CharacterIndex
+    | DisplayCancelMessage of CharacterIndex
     | DisplayCut of int64 * bool * CharacterIndex
     | DisplayCritical of int64 * CharacterIndex
     | DisplayPowerCritical of int64 * CharacterIndex
@@ -879,7 +880,7 @@ module Battle =
             | All affectTypes -> List.forall (fun affectType -> evalTechAffectType affectType techType cancelled affectsWounded delta statusesAdded statusesRemoved source target observer battle) affectTypes
         | (false, _) -> false
 
-    let private evalTechInteractions4 (source : Character) (_ : Character) (observer : Character) (techType : TechType) (techResults : Map<CharacterIndex, bool * bool * int * StatusType Set * StatusType Set>) battle =
+    let private evalTechInteractions4 (source : Character) (_ : Character) (observer : Character) (techType : TechType) (techResults : Map<CharacterIndex, bool * bool * bool * int * StatusType Set * StatusType Set>) battle =
         List.fold (fun consequences interaction ->
             let condition = interaction.BattleCondition
             let consequences' = interaction.BattleConsequences
@@ -912,7 +913,7 @@ module Battle =
                         techResults |>
                         Map.map (fun characterIndex result -> (result, tryGetCharacter characterIndex battle)) |>
                         Map.toValueList |>
-                        List.exists (fun ((cancelled, affectsWounded, delta, statusesAdded, statusesRemoved), targetOpt) ->
+                        List.exists (fun ((_, cancelled, affectsWounded, delta, statusesAdded, statusesRemoved), targetOpt) ->
                             match targetOpt with
                             | Some target ->
                                 evalTechAffectType affectType techType cancelled affectsWounded delta statusesAdded statusesRemoved source target observer battle &&
@@ -1437,11 +1438,13 @@ module Battle =
                                 elif localTime = techAnimationData.AffectingStart then
                                     let (_, spawnOpt, results) = evalTech sourceIndex targetIndex techType battle
                                     let (battle, sigs) =
-                                        Map.fold (fun (battle, sigs) characterIndex (cancelled, _, hitPointsChange, _, _) ->
+                                        Map.fold (fun (battle, sigs) characterIndex (critical, cancelled, _, hitPointsChange, _, _) ->
                                             if hitPointsChange < 0 && getCharacterHealthy characterIndex battle then
                                                 let battle = animateCharacter DamageAnimation characterIndex battle
-                                                let displayCancel = DisplayCancel characterIndex
-                                                let sigs = if cancelled then signal displayCancel :: sigs else sigs
+                                                let sigs =
+                                                    if cancelled then signal (DisplayCancelMessage characterIndex) :: sigs
+                                                    elif critical then signal (DisplayCriticalMessage characterIndex) :: sigs
+                                                    else sigs
                                                 (battle, sigs)
                                             else (battle, sigs))
                                             (battle, [])
@@ -1477,7 +1480,7 @@ module Battle =
                                     let (techCost, _, results) = evalTech sourceIndex targetIndex techType battle
                                     let source = getCharacter sourceIndex battle
                                     let (battle, sigs) =
-                                        Map.fold (fun (battle, sigs) characterIndex (cancelled, affectsWounded, hitPointsChange, added, removed) ->
+                                        Map.fold (fun (battle, sigs) characterIndex (_, cancelled, affectsWounded, hitPointsChange, added, removed) ->
                                             let cancelDataOpt = if cancelled then Some (source.PerimeterOriginal.Bottom, sourceIndex) else None
                                             let battle = modifyCharacterHitPoints true affectsWounded cancelDataOpt hitPointsChange characterIndex battle
                                             let vulnerabilities = getCharacterVulnerabilities characterIndex battle

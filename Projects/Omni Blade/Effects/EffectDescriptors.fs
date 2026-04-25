@@ -50,13 +50,32 @@ module EffectDescriptors =
                        { TweenValue = colorTransparent; TweenLength = 0L }|])|],
                  Nil) }
 
-    let cancel =
-        { EffectName = "Cancel"
+    let criticalMessage =
+        { EffectName = "CriticalMessage"
           LifeTimeOpt = Some 40L
           Definitions = Map.empty
           Content =
             StaticSprite
-                (Resource (AssetTag.toPair Assets.Battle.CancelImage),
+                (Resource (AssetTag.toPair Assets.Battle.CriticalMessageImage),
+                 [|Angleses
+                    (Sum, Linear, Bounce,
+                     [|{ TweenValue = v3 0.0f 0.0f (MathF.TWO_PI); TweenLength = 10L }
+                       { TweenValue = v3Zero; TweenLength = 30L }
+                       { TweenValue = v3Zero; TweenLength = 0L }|])
+                   Sizes
+                    (Set, EaseOut, Once,
+                     [|{ TweenValue = v3Zero; TweenLength = 10L }
+                       { TweenValue = v3 156.0f 48.0f 0.0f; TweenLength = 30L }
+                       { TweenValue = v3 156.0f 48.0f 0.0f; TweenLength = 0L }|])|],
+                 Nil) }
+
+    let cancelMessage =
+        { EffectName = "CancelMessage"
+          LifeTimeOpt = Some 40L
+          Definitions = Map.empty
+          Content =
+            StaticSprite
+                (Resource (AssetTag.toPair Assets.Battle.CancelMessageImage),
                  [|Angleses
                     (Sum, Linear, Bounce,
                      [|{ TweenValue = v3 0.0f 0.0f (MathF.TWO_PI); TweenLength = 10L }
