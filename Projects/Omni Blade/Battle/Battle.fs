@@ -344,7 +344,7 @@ module Battle =
     let private populateAlliesConjureCharges battle =
         mapAllies (fun ally ->
             if Character.hasConjureTechs ally
-            then Character.setConjureChargeOpt (Some 0) ally
+            then Character.setConjureChargeOpt (Some ally.ConjureChargeRemainder) ally
             else ally)
             battle
 
