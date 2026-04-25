@@ -261,13 +261,25 @@ module Character =
             (target.CharacterIndex, false, false, affectsWounded, healing1, techData.StatusesAdded, techData.StatusesRemoved)
         else
             let cancelled = techData.Cancels && autoTeching target
+            let shield = target.Shield techData.EffectType
             let critical =
                 let criticalFromBack = techData.CriticalFromBack
                 let fromBack = source.Direction = target.Direction
                 criticalFromBack && fromBack && not splash
-            let shield = if critical then 0 else target.Shield techData.EffectType
+            let criticalScalar = if critical then 1.667f else 1.0f
             let defendingScalar = if target.Defending then Constants.Battle.DefendingScalar else 1.0f
-            let damage0 = (single efficacy * affinityScalar * techScalar * splitScalar * splashScalar + specialAddend - single shield) * defendingScalar |> int |> max 1
+            let damage0 =
+                (single efficacy *
+                 affinityScalar *
+                 techScalar *
+                 splitScalar *
+                 splashScalar +
+                 specialAddend -
+                 single shield) *
+                criticalScalar *
+                defendingScalar
+                |> int
+                |> max 1
             let damage1 =
                 match techData.EffectType with
                 | Physical | Magical when techData.AffinityOpt = Some Wind || techData.AffinityOpt = Some Shadow ->
