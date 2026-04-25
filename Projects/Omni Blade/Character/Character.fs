@@ -265,8 +265,8 @@ module Character =
             let critical =
                 let criticalFromBack = techData.CriticalFromBack
                 let fromBack = source.Direction = target.Direction
-                criticalFromBack && fromBack && not splash
-            let criticalScalar = if critical then 1.667f else 1.0f
+                criticalFromBack && fromBack
+            let criticalScalar = if critical then Constants.Battle.CriticalScalar else 1.0f
             let defendingScalar = if target.Defending then Constants.Battle.DefendingScalar else 1.0f
             let damage0 =
                 (single efficacy *
