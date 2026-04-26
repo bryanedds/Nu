@@ -608,16 +608,16 @@ module Hl =
              0u, nullPtr, 0u, nullPtr,
              1u, asPointer &barrier)
     
-    /// Get surface capabilities.
-    let private getSurfaceCapabilities vkPhysicalDevice surface =
+    /// Try get surface capabilities.
+    let private tryGetSurfaceCapabilities vkPhysicalDevice surface =
         let mutable capabilities = Unchecked.defaultof<VkSurfaceCapabilitiesKHR>
         let result = Vulkan.vkGetPhysicalDeviceSurfaceCapabilitiesKHR (vkPhysicalDevice, surface, &capabilities)
         if result <> VkResult.ErrorSurfaceLostKHR then
             check result
-            capabilities
+            Some capabilities
         else
             SurfaceState <- SurfaceLost
-            capabilities // TODO: DJL: return None.
+            None
     
     /// Get swap extent.
     let private getSwapExtent (capabilities : VkSurfaceCapabilitiesKHR) window =
@@ -799,26 +799,33 @@ module Hl =
 
         /// Attempt to construct PhysicalDevice.
         static member tryCreate vkPhysicalDevice surface =
-            let (properties, diProperties) = PhysicalDevice.getProperties vkPhysicalDevice
-            let features = PhysicalDevice.getFeatures vkPhysicalDevice
-            let extensions = PhysicalDevice.getExtensions vkPhysicalDevice
-            let surfaceCapabilities = getSurfaceCapabilities vkPhysicalDevice surface
-            let surfaceFormats = PhysicalDevice.getSurfaceFormats vkPhysicalDevice surface
-            match PhysicalDevice.tryGetQueueFamilies vkPhysicalDevice surface with
-            | (Some (graphicsQueueFamily, graphicsQueueCount), Some presentQueueFamily) ->
-                let physicalDevice =
-                    { VkPhysicalDevice = vkPhysicalDevice
-                      Properties = properties
-                      DescriptorIndexingProperties = diProperties
-                      Features = features
-                      Extensions = extensions
-                      SurfaceCapabilities = surfaceCapabilities
-                      SurfaceFormats = surfaceFormats
-                      GraphicsQueueFamily = graphicsQueueFamily
-                      PresentQueueFamily = presentQueueFamily
-                      GraphicsQueueCount = graphicsQueueCount }
-                Some physicalDevice
-            | (_, _) -> None
+            match tryGetSurfaceCapabilities vkPhysicalDevice surface with
+            | Some surfaceCapabilities ->
+                let (properties, diProperties) = PhysicalDevice.getProperties vkPhysicalDevice
+                let features = PhysicalDevice.getFeatures vkPhysicalDevice
+                let extensions = PhysicalDevice.getExtensions vkPhysicalDevice
+                let surfaceFormats = PhysicalDevice.getSurfaceFormats vkPhysicalDevice surface
+                match PhysicalDevice.tryGetQueueFamilies vkPhysicalDevice surface with
+                | (Some (graphicsQueueFamily, graphicsQueueCount), Some presentQueueFamily) ->
+                    let physicalDevice =
+                        { VkPhysicalDevice = vkPhysicalDevice
+                          Properties = properties
+                          DescriptorIndexingProperties = diProperties
+                          Features = features
+                          Extensions = extensions
+                          SurfaceCapabilities = surfaceCapabilities
+                          SurfaceFormats = surfaceFormats
+                          GraphicsQueueFamily = graphicsQueueFamily
+                          PresentQueueFamily = presentQueueFamily
+                          GraphicsQueueCount = graphicsQueueCount }
+                    Some physicalDevice
+                | (_, _) -> None
+            | None ->
+                
+                // TODO: DJL: this means that, currently, Vulkan initialization will fail on android if Nu is backgrounded on launch.
+                // That must be prevented unless we want to allow defered graphics init. Or perhaps this function just needs to loop until surface is available.
+                Log.error "Could not obtain graphics device data because the Vulkan surface was lost."
+                None
     
     /// A single swapchain and its assets.
     type private SwapchainInternal =
@@ -828,55 +835,58 @@ module Hl =
           RenderFinishedSemaphores : VkSemaphore array
           SwapExtent : VkExtent2D }
 
-        /// Create the Vulkan swapchain itself.
-        static member private createVkSwapchain (surfaceFormat : VkSurfaceFormatKHR) oldVkSwapchainOpt physicalDevice surface window device =
-
-            // decide the minimum number of images in the swapchain. Sellers, Vulkan Programming Guide p. 144, recommends
-            // at least 3 for performance, but to keep latency low let's start with the more conservative recommendation of
-            // https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Swap_chain#page_Creating-the-swap-chain.
-            let capabilities = getSurfaceCapabilities physicalDevice.VkPhysicalDevice surface
-            let minImageCount =
-                if capabilities.maxImageCount = 0u
-                then capabilities.minImageCount + 1u
-                else min (capabilities.minImageCount + 1u) capabilities.maxImageCount
-
-            // get swap extent
-            let swapExtent = getSwapExtent capabilities window
+        /// Try create the VkSwapchain.
+        static member private tryCreateVkSwapchain (surfaceFormat : VkSurfaceFormatKHR) oldVkSwapchainOpt physicalDevice surface window device =
+            match tryGetSurfaceCapabilities physicalDevice.VkPhysicalDevice surface with
+            | Some capabilities ->
             
-            // in case graphics and present queue families differ
-            // TODO: as part of optimization, the sharing mode in this case should probably be VkSharingMode.Exclusive (see below).
-            let indicesArray = [|physicalDevice.GraphicsQueueFamily; physicalDevice.PresentQueueFamily|]
-            use indicesArrayPin = new ArrayPin<_> (indicesArray)
+                // decide the minimum number of images in the swapchain. Sellers, Vulkan Programming Guide p. 144, recommends
+                // at least 3 for performance, but to keep latency low let's start with the more conservative recommendation of
+                // https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Swap_chain#page_Creating-the-swap-chain.
+                let minImageCount =
+                    if capabilities.maxImageCount = 0u
+                    then capabilities.minImageCount + 1u
+                    else min (capabilities.minImageCount + 1u) capabilities.maxImageCount
 
-            // create swapchain
-            let mutable info = VkSwapchainCreateInfoKHR ()
-            info.surface <- surface
-            info.minImageCount <- minImageCount
-            info.imageFormat <- surfaceFormat.format
-            info.imageColorSpace <- surfaceFormat.colorSpace
-            info.imageExtent <- swapExtent
-            info.imageArrayLayers <- 1u
-            info.imageUsage <- VkImageUsageFlags.ColorAttachment ||| VkImageUsageFlags.TransferDst
-            if (physicalDevice.GraphicsQueueFamily = physicalDevice.PresentQueueFamily) then
-                info.imageSharingMode <- VkSharingMode.Exclusive
-            else
-                info.imageSharingMode <- VkSharingMode.Concurrent
-                info.queueFamilyIndexCount <- 2u
-                info.pQueueFamilyIndices <- indicesArrayPin.Pointer
-            info.preTransform <- capabilities.currentTransform
-            info.compositeAlpha <- VkCompositeAlphaFlagsKHR.Opaque
-            info.presentMode <- VkPresentModeKHR.Fifo // NOTE: guaranteed by the spec and seems most appropriate for Nu.
-            info.clipped <- true
-            info.oldSwapchain <- oldVkSwapchainOpt
-            let mutable vkSwapchain = Unchecked.defaultof<VkSwapchainKHR>
-            let result = Vulkan.vkCreateSwapchainKHR (device, &info, nullPtr, &vkSwapchain)
-            
-            if result <> VkResult.ErrorSurfaceLostKHR then
-                check result
-                (vkSwapchain, swapExtent)
-            else
-                SurfaceState <- SurfaceLost
-                (vkSwapchain, swapExtent) // TODO: DJL: return None.
+                // get swap extent
+                let swapExtent = getSwapExtent capabilities window
+                
+                // in case graphics and present queue families differ
+                // TODO: as part of optimization, the sharing mode in this case should probably be VkSharingMode.Exclusive (see below).
+                let indicesArray = [|physicalDevice.GraphicsQueueFamily; physicalDevice.PresentQueueFamily|]
+                use indicesArrayPin = new ArrayPin<_> (indicesArray)
+
+                // create swapchain
+                let mutable info = VkSwapchainCreateInfoKHR ()
+                info.surface <- surface
+                info.minImageCount <- minImageCount
+                info.imageFormat <- surfaceFormat.format
+                info.imageColorSpace <- surfaceFormat.colorSpace
+                info.imageExtent <- swapExtent
+                info.imageArrayLayers <- 1u
+                info.imageUsage <- VkImageUsageFlags.ColorAttachment ||| VkImageUsageFlags.TransferDst
+                if (physicalDevice.GraphicsQueueFamily = physicalDevice.PresentQueueFamily) then
+                    info.imageSharingMode <- VkSharingMode.Exclusive
+                else
+                    info.imageSharingMode <- VkSharingMode.Concurrent
+                    info.queueFamilyIndexCount <- 2u
+                    info.pQueueFamilyIndices <- indicesArrayPin.Pointer
+                info.preTransform <- capabilities.currentTransform
+                info.compositeAlpha <- VkCompositeAlphaFlagsKHR.Opaque
+                info.presentMode <- VkPresentModeKHR.Fifo // NOTE: guaranteed by the spec and seems most appropriate for Nu.
+                info.clipped <- true
+                info.oldSwapchain <- oldVkSwapchainOpt
+                let mutable vkSwapchain = Unchecked.defaultof<VkSwapchainKHR>
+                let result = Vulkan.vkCreateSwapchainKHR (device, &info, nullPtr, &vkSwapchain)
+                
+                if result <> VkResult.ErrorSurfaceLostKHR then
+                    check result
+                    Some (vkSwapchain, swapExtent)
+                else
+                    SurfaceState <- SurfaceLost
+                    None
+
+            | None -> None
 
         /// Get swapchain images.
         static member private getSwapchainImages vkSwapchain device =
@@ -899,30 +909,32 @@ module Hl =
             for i in 0 .. dec semaphores.Length do semaphores.[i] <- createSemaphore device
             semaphores
         
-        /// Create a SwapchainInternal.
-        static member create surfaceFormat oldVkSwapchainOpt physicalDevice surface window device =
+        /// Try create a SwapchainInternal.
+        static member tryCreate surfaceFormat oldVkSwapchainOpt physicalDevice surface window device =
             
-            // create Vulkan swapchain and its assets
-            let (vkSwapchain, swapExtent) = SwapchainInternal.createVkSwapchain surfaceFormat oldVkSwapchainOpt physicalDevice surface window device
-            let images = SwapchainInternal.getSwapchainImages vkSwapchain device
-            let imageViews = SwapchainInternal.createImageViews surfaceFormat.format images device
+            // try create vkSwapchain and its assets
+            match SwapchainInternal.tryCreateVkSwapchain surfaceFormat oldVkSwapchainOpt physicalDevice surface window device with
+            | Some (vkSwapchain, swapExtent) ->
+                let images = SwapchainInternal.getSwapchainImages vkSwapchain device
+                let imageViews = SwapchainInternal.createImageViews surfaceFormat.format images device
 
-            // render finished semaphores based on swapchain images rather than frames in flight to address
-            // safety issue described in https://docs.vulkan.org/guide/latest/swapchain_semaphore_reuse.html.
-            // these should naturally be associated with the vkSwapchain itself, especially to prevent validation
-            // errors triggered by reuse of semaphores that "may still be in use" by obsolete vkSwapchains.
-            let renderFinishedSemaphores = SwapchainInternal.createRenderFinishedSemaphores images.Length device
+                // render finished semaphores based on swapchain images rather than frames in flight to address
+                // safety issue described in https://docs.vulkan.org/guide/latest/swapchain_semaphore_reuse.html.
+                // these should naturally be associated with the vkSwapchain itself, especially to prevent validation
+                // errors triggered by reuse of semaphores that "may still be in use" by obsolete vkSwapchains.
+                let renderFinishedSemaphores = SwapchainInternal.createRenderFinishedSemaphores images.Length device
 
-            // make SwapchainInternal
-            let swapchainInternal =
-                { VkSwapchain = vkSwapchain
-                  Images = images
-                  ImageViews = imageViews
-                  RenderFinishedSemaphores = renderFinishedSemaphores
-                  SwapExtent = swapExtent }
+                // make SwapchainInternal
+                let swapchainInternal =
+                    { VkSwapchain = vkSwapchain
+                      Images = images
+                      ImageViews = imageViews
+                      RenderFinishedSemaphores = renderFinishedSemaphores
+                      SwapExtent = swapExtent }
 
-            // fin
-            swapchainInternal
+                // fin
+                Some swapchainInternal
+            | None -> None
         
         /// Destroy a SwapchainInternal.
         static member destroy swapchainInternal device =
@@ -938,6 +950,9 @@ module Hl =
           SurfaceFormat_ : VkSurfaceFormatKHR
           mutable SwapchainIndex_ : int }
 
+        /// The current SwapchainInternalOpt.
+        member this.SwapchainInternalOpt = this.SwapchainInternalOpts_.[this.SwapchainIndex_]
+        
         /// The Vulkan swapchain itself.
         member this.VkSwapchain = (Option.get this.SwapchainInternalOpts_.[this.SwapchainIndex_]).VkSwapchain
 
@@ -962,16 +977,24 @@ module Hl =
         
         /// Check if window has been resized or surface lost.
         static member isWindowResizedOrSurfaceLost vkPhysicalDevice surface (swapchain : Swapchain) =
-            let capabilities = getSurfaceCapabilities vkPhysicalDevice surface
-            swapchain.SwapExtent <> getSwapExtent capabilities swapchain.Window_ // TODO: DJL: check for loss.
+            match tryGetSurfaceCapabilities vkPhysicalDevice surface with
+            | Some capabilities -> swapchain.SwapExtent <> getSwapExtent capabilities swapchain.Window_
+            | None -> true
 
-        /// Refresh the swapchain for a new swap extent.
-        static member refresh physicalDevice surface swapchain device =
+        /// Try to refresh the swapchain.
+        static member tryRefresh physicalDevice surface swapchain device =
+            
+            // TODO: DJL: handle surface loss here.
             
             // don't pass the old vulkan swapchain if only 1 frame in flight as it will get destroyed immediately
-            let oldVkSwapchainOpt = if swapchain.SwapchainInternalOpts_.Length > 1 then swapchain.VkSwapchain else VkSwapchainKHR.Null
+            // TODO: DJL: swapchain count no longer equals frames in flight! revisit logic.
+            let oldVkSwapchainOpt =
+                match swapchain.SwapchainInternalOpts_.[swapchain.SwapchainIndex_] with
+                | Some swapchainInternal -> if swapchain.SwapchainInternalOpts_.Length > 1 then swapchainInternal.VkSwapchain else VkSwapchainKHR.Null
+                | None -> VkSwapchainKHR.Null
 
             // advance swapchain index
+            // TODO: DJL: figure out what now happens here.
             swapchain.SwapchainIndex_ <- (inc swapchain.SwapchainIndex_) % swapchain.SwapchainInternalOpts_.Length
 
             // destroy SwapchainInternal at new index if present
@@ -979,9 +1002,9 @@ module Hl =
             | Some swapchainInternal -> SwapchainInternal.destroy swapchainInternal device
             | None -> ()
             
-            // create new swapchain internal
-            let swapchainInternal = SwapchainInternal.create swapchain.SurfaceFormat_ oldVkSwapchainOpt physicalDevice surface swapchain.Window_ device
-            swapchain.SwapchainInternalOpts_.[swapchain.SwapchainIndex_] <- Some swapchainInternal
+            // try create new swapchain internal
+            let swapchainInternalOpt = SwapchainInternal.tryCreate swapchain.SurfaceFormat_ oldVkSwapchainOpt physicalDevice surface swapchain.Window_ device
+            swapchain.SwapchainInternalOpts_.[swapchain.SwapchainIndex_] <- swapchainInternalOpt
         
         /// Create a Swapchain.
         static member create surfaceFormat physicalDevice surface window device =
@@ -998,10 +1021,10 @@ module Hl =
             // check if window is minimized at startup
             let windowMinimized = Swapchain.isWindowMinimized window
             
-            // create first SwapchainInternal if window is not minimized
+            // try create first SwapchainInternal if window is not minimized
             if not windowMinimized then
-                let swapchainInternal = SwapchainInternal.create surfaceFormat VkSwapchainKHR.Null physicalDevice surface window device
-                swapchainInternalOpts.[swapchainIndex] <- Some swapchainInternal
+                let swapchainInternalOpt = SwapchainInternal.tryCreate surfaceFormat VkSwapchainKHR.Null physicalDevice surface window device
+                swapchainInternalOpts.[swapchainIndex] <- swapchainInternalOpt
 
             // make Swapchain
             let swapchain =
@@ -1519,7 +1542,7 @@ module Hl =
             // refresh the swapchain if window is not minimized
             // NOTE: DJL: this happens a) when the window size simply changes and b) when minimization ends as detected above.
             // see https://vulkan-tutorial.com/Drawing_a_triangle/Swap_chain_recreation#page_Handling-minimization.
-            if not vkc.WindowMinimized_ then Swapchain.refresh vkc.PhysicalDevice_ Surface vkc.Swapchain_ vkc.Device
+            if not vkc.WindowMinimized_ then Swapchain.tryRefresh vkc.PhysicalDevice_ Surface vkc.Swapchain_ vkc.Device
         
         /// Begin the frame.
         static member beginFrame (windowViewport : Viewport) (vkc : VulkanContext) =
@@ -1531,38 +1554,43 @@ module Hl =
             let mutable fence = vkc.InFlightFence
             Vulkan.vkWaitForFences (vkc.Device, 1u, asPointer &fence, true, UInt64.MaxValue) |> check
 
+            // the cascade of checks needed to handle window behavior, avoiding 'elif' statements for maximum understandability
+            
             // check for handling of minimized window from previous frame(s); if *still* minimized then do nothing; if restored then refresh swapchain
             if vkc.WindowMinimized_ then VulkanContext.handleWindowSize vkc
             else
-                // check for change in screen state; if screen *has become* minimized then update WindowMinimized_ and don't render; if screen size changed (or surface lost) then refresh swapchain
-                if Swapchain.isWindowMinimized vkc.Swapchain_.Window_ then VulkanContext.handleWindowSize vkc
+                // check if current swapchain is non-existent due to surface loss, after WindowMinimized check to prevent excessive repeated refresh attempts
+                if Option.isNone vkc.Swapchain_.SwapchainInternalOpt then VulkanContext.handleWindowSize vkc
                 else
-                    if Swapchain.isWindowResizedOrSurfaceLost vkc.VkPhysicalDevice Surface vkc.Swapchain_ then VulkanContext.handleWindowSize vkc
+                    // check for change in screen state; if screen *has become* minimized then update WindowMinimized_ and don't render; if screen size changed (or surface lost) then refresh swapchain
+                    if Swapchain.isWindowMinimized vkc.Swapchain_.Window_ then VulkanContext.handleWindowSize vkc
                     else
-                        // check that swap extent >= viewport.Bounds >= viewport.Inner; done *after* screen change check to avoid outdated swap extent
-                        let extent = vkc.Swapchain_.SwapExtent
-                        let swapchainBounds = box2i v2iZero (v2i (int extent.width) (int extent.height))
-                        if
-                            swapchainBounds.ContainsInclusive windowViewport.Bounds = ContainmentType.Contains &&
-                            windowViewport.Bounds.ContainsInclusive windowViewport.Inner = ContainmentType.Contains
-                        then
-                            // to be as sure as possible, check *again* for screen state change right before attempting image acquisition!
-                            if Swapchain.isWindowMinimized vkc.Swapchain_.Window_ then VulkanContext.handleWindowSize vkc
-                            else
-                                if Swapchain.isWindowResizedOrSurfaceLost vkc.VkPhysicalDevice Surface vkc.Swapchain_ then VulkanContext.handleWindowSize vkc
+                        if Swapchain.isWindowResizedOrSurfaceLost vkc.VkPhysicalDevice Surface vkc.Swapchain_ then VulkanContext.handleWindowSize vkc
+                        else
+                            // check that swap extent >= viewport.Bounds >= viewport.Inner; done *after* screen change check to avoid outdated swap extent
+                            let extent = vkc.Swapchain_.SwapExtent
+                            let swapchainBounds = box2i v2iZero (v2i (int extent.width) (int extent.height))
+                            if
+                                swapchainBounds.ContainsInclusive windowViewport.Bounds = ContainmentType.Contains &&
+                                windowViewport.Bounds.ContainsInclusive windowViewport.Inner = ContainmentType.Contains
+                            then
+                                // to be as sure as possible, check *again* for screen state change right before attempting image acquisition!
+                                if Swapchain.isWindowMinimized vkc.Swapchain_.Window_ then VulkanContext.handleWindowSize vkc
                                 else
-                                    // try to acquire image from swapchain to draw onto
-                                    // NOTE: DJL: due to semaphore, if this is successful, the render *must* proceed!
-                                    let result = Vulkan.vkAcquireNextImageKHR (vkc.Device, vkc.Swapchain_.VkSwapchain, UInt64.MaxValue, vkc.ImageAvailableSemaphore, VkFence.Null, &ImageIndex)
-                                    if result = VkResult.ErrorOutOfDateKHR then VulkanContext.handleWindowSize vkc // refresh swapchain if out of date
+                                    if Swapchain.isWindowResizedOrSurfaceLost vkc.VkPhysicalDevice Surface vkc.Swapchain_ then VulkanContext.handleWindowSize vkc
                                     else
-                                        // attempt swapchain refresh if surface lost
-                                        if result = VkResult.ErrorSurfaceLostKHR then
-                                            SurfaceState <- SurfaceLost
-                                            VulkanContext.handleWindowSize vkc
+                                        // try to acquire image from swapchain to draw onto
+                                        // NOTE: DJL: due to semaphore, if this is successful, the render *must* proceed!
+                                        let result = Vulkan.vkAcquireNextImageKHR (vkc.Device, vkc.Swapchain_.VkSwapchain, UInt64.MaxValue, vkc.ImageAvailableSemaphore, VkFence.Null, &ImageIndex)
+                                        if result = VkResult.ErrorOutOfDateKHR then VulkanContext.handleWindowSize vkc // refresh swapchain if out of date
                                         else
-                                            check result // NOTE: DJL: this will report a suboptimal swapchain image.
-                                            vkc.RenderDesired_ <- true // permit rendering
+                                            // attempt swapchain refresh if surface lost
+                                            if result = VkResult.ErrorSurfaceLostKHR then
+                                                SurfaceState <- SurfaceLost
+                                                VulkanContext.handleWindowSize vkc
+                                            else
+                                                check result // NOTE: DJL: this will report a suboptimal swapchain image.
+                                                vkc.RenderDesired_ <- true // permit rendering
 
             if vkc.RenderDesired_ then
             
