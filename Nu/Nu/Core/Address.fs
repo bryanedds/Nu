@@ -345,7 +345,7 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
         Address.ntoa Constants.Address.EllipsisName
 
     /// The empty address.
-    static member empty : 'a Address =
+    static member val empty : 'a Address =
         Address.makeEmpty<'a> ()
 
     static member private resolveAsList<'t, 'u> (relation : 'u Address) (address : 't Address) : string List =

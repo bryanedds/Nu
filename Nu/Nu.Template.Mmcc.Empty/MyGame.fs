@@ -8,7 +8,8 @@ open Nu
 // https://github.com/bryanedds/Nu/wiki/Model-View-Update-for-Games-via-MMCC
 type MyGame =
     { MyGameTime : int64 }
-    static member initial = { MyGameTime = 0L }
+    static member val initial =
+        { MyGameTime = 0L }
 
 // this is our top-level MMCC message type.
 type MyGameMessage =

@@ -1815,7 +1815,7 @@ and EntityDescriptor =
         | None -> { descriptor with EntityProperties = Map.remove Constants.Engine.NamePropertyName descriptor.EntityProperties }
 
     /// The empty entity descriptor.
-    static member empty =
+    static member val empty =
         { EntityDispatcherName = String.Empty
           EntityProperties = Map.empty
           EntityDescriptors  = [] }
@@ -1834,7 +1834,7 @@ and GroupDescriptor =
         |> Option.map symbolToValue<string>
 
     /// The empty group descriptor.
-    static member empty =
+    static member val empty =
         { GroupDispatcherName = String.Empty
           GroupProperties = Map.empty
           EntityDescriptors = [] }
@@ -1853,7 +1853,7 @@ and ScreenDescriptor =
         |> Option.map symbolToValue<string>
 
     /// The empty screen descriptor.
-    static member empty =
+    static member val empty =
         { ScreenDispatcherName = String.Empty
           ScreenProperties = Map.empty
           GroupDescriptors = [] }
@@ -1872,7 +1872,7 @@ and GameDescriptor =
         |> Option.map symbolToValue<string>
 
     /// The empty game descriptor.
-    static member empty =
+    static member val empty =
         { GameDispatcherName = String.Empty
           GameProperties = Map.empty
           ScreenDescriptors = [] }

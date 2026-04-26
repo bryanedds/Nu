@@ -158,7 +158,7 @@ type Gameplay =
         else gameplay
 
     // this represents the gameplay model in an unutilized state, such as when the gameplay screen is not selected.
-    static member empty =
+    static member val empty =
         { GameplayTime = 0L
           GameplayState = Quit
           BoardSize = v2iDup 4

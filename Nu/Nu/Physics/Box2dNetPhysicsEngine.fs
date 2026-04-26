@@ -1569,6 +1569,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
         worldDef.gravity <- gravity
         let world = B2Worlds.b2CreateWorld &worldDef
         B2Worlds.b2World_SetPreSolveCallback (world, preSolveCallback, contactsTracker)
+        B2Worlds.b2World_SetRestitutionThreshold (world, 1.0f / Constants.Engine.Meter2d) // Minimum velocity for restitution to occur, 1 m/s by default. We set it to 1 virtual-pixel/s instead.
         world
 
     /// Make a physics engine.

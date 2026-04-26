@@ -71,7 +71,7 @@ module PhysicallyBased =
           ClearCoatRoughness : single }
 
         /// The empty material properties.
-        static member empty =
+        static member val empty =
             { Albedo = Color.Zero
               Roughness = 0.0f
               Metallic = 0.0f
@@ -109,7 +109,7 @@ module PhysicallyBased =
           Names : string }
 
         /// The empty material.
-        static member empty =
+        static member val empty =
             { AlbedoTexture = Texture.EmptyTexture
               RoughnessTexture = Texture.EmptyTexture
               MetallicTexture = Texture.EmptyTexture

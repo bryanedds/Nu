@@ -16,12 +16,12 @@ type [<SymbolicExpansion>] Gameplay =
       Score : int }
 
     // this represents the gameplay model in an unutilized state, such as when the gameplay screen is not selected.
-    static member empty =
+    static member val empty =
         { GameplayState = Quit
           Score = 0 }
 
     // this represents the gameplay model in its initial state, such as when gameplay starts.
-    static member initial =
+    static member val initial =
         { GameplayState = Playing
           Score = 0 }
 
