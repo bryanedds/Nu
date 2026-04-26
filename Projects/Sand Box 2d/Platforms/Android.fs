@@ -106,9 +106,9 @@ type MainActivity () =
             // hide loading ui
             match loadingDialogOpt with
             | Some (loadingDialog, _, _) ->
+                loadingDialogOpt <- None
                 loadingDialog.Dismiss () // thread safe
                 loadingDialog.Dispose ()
-                loadingDialogOpt <- None
             | None -> ()
 
         // set current directory for asset loading
