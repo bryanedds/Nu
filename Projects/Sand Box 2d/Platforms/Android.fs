@@ -35,13 +35,7 @@ do ()
 [<IntentFilter ([|Android.Hardware.Usb.UsbManager.ActionUsbDeviceAttached|])>] // SDL - Let Android know that we can handle some USB devices and should receive this event
 type MainActivity () =
     inherit Org.Libsdl.App.SDLActivity ()
-    let mutable awaitingAssetPackConfirmationResult = false
     override this.GetLibraries () = [|"SDL3"; "SDL3_image"; "SDL3_ttf"; "SDL3_mixer"|] // SDL - Load these native libraries
-
-    override this.OnActivityResult (requestCode, resultCode, data) =
-        base.OnActivityResult (requestCode, resultCode, data)
-        if awaitingAssetPackConfirmationResult then
-            awaitingAssetPackConfirmationResult <- false
     override this.Main () =
         // Get the file system path for fast-follow asset pack "gameassets". Customize this if you use a different asset pack. For on-demand asset packs, you would need to trigger the download and wait for completion before getting the path.
         // How to use asset pack manager: https://developer.android.com/guide/playcore/asset-delivery/integrate-java
@@ -64,9 +58,7 @@ type MainActivity () =
                 let loadingText = new TextView (this, Text = "Preparing assets download...")
                 layout.AddView loadingText
                 let loadingProgressBar = new ProgressBar (this, null, Android.Resource.Attribute.ProgressBarStyleHorizontal)
-                let progressLayoutParams = new LinearLayout.LayoutParams (Android.Views.ViewGroup.LayoutParams.MatchParent, Android.Views.ViewGroup.LayoutParams.WrapContent)
-                progressLayoutParams.TopMargin <- int (8.0f * density)
-                layout.AddView (loadingProgressBar, progressLayoutParams)
+                layout.AddView (loadingProgressBar, new LinearLayout.LayoutParams (Android.Views.ViewGroup.LayoutParams.MatchParent, Android.Views.ViewGroup.LayoutParams.WrapContent, TopMargin = int (8.0f * density)))
 
                 // display layout as dialog
                 let builder = new AlertDialog.Builder (this)
@@ -79,7 +71,7 @@ type MainActivity () =
 
             // update loading ui
             let assetPackListener = new AssetPackStateUpdateListenerWrapper ()
-            assetPackListener.StateUpdate.Add (fun e ->
+            assetPackListener.StateUpdate.Add <| fun e ->
                 if e.State.Name () = "gameassets" then
                     let downloadProgress =
                         if e.State.TotalBytesToDownload () > 0L then int (100L * e.State.BytesDownloaded () / e.State.TotalBytesToDownload ()) else 100
@@ -95,26 +87,19 @@ type MainActivity () =
                     | Model.AssetPackStatus.Downloading -> updateLoadingUi $"Downloading assets..." downloadProgress
                     | Model.AssetPackStatus.WaitingForWifi ->
                         updateLoadingUi $"Waiting for Wi-Fi connection..." downloadProgress
-                        if not awaitingAssetPackConfirmationResult then
-                            awaitingAssetPackConfirmationResult <- true
-                            assetPackManager.ShowConfirmationDialog this |> ignore
+                        assetPackManager.ShowConfirmationDialog this |> ignore
                     | Model.AssetPackStatus.RequiresUserConfirmation ->
                         updateLoadingUi $"Waiting for user confirmation..." downloadProgress
-                        if not awaitingAssetPackConfirmationResult then
-                            awaitingAssetPackConfirmationResult <- true
-                            assetPackManager.ShowConfirmationDialog this |> ignore
+                        assetPackManager.ShowConfirmationDialog this |> ignore
                     | Model.AssetPackStatus.Transferring -> updateLoadingUi $"Download complete. Installing assets..." (e.State.TransferProgressPercentage ())
                     | Model.AssetPackStatus.Completed -> tcs.TrySetResult (assetPackManager.GetPackLocation "gameassets") |> ignore
-                    | Model.AssetPackStatus.Failed ->
-                        updateLoadingUi $"Installation failed with error code {e.State.ErrorCode ()}." downloadProgress
-                    | Model.AssetPackStatus.Canceled ->
-                        updateLoadingUi $"Installation canceled." downloadProgress
+                    | Model.AssetPackStatus.Failed -> updateLoadingUi $"Installation failed with error code {e.State.ErrorCode ()}." downloadProgress
+                    | Model.AssetPackStatus.Canceled -> updateLoadingUi $"Installation canceled." downloadProgress
                     | status -> updateLoadingUi $"Unknown installation status {status}..." downloadProgress
-                )
 
             assetPackManager.RegisterListener assetPackListener.Listener
             assetPackManager.Fetch [|"gameassets"|] |> ignore
-            // Wait synchronously in the main SDL thread. This is not the main Android UI thread so the system won't kill the app.
+            // wait synchronously in the main SDL thread. this is not the main Android UI thread so the system won't kill the app.
             try
                 assetPackLocation <- tcs.Task.Result
             finally
