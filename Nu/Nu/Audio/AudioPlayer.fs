@@ -146,7 +146,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
         | Some mixer ->
             let predecode =
                 match PathF.GetExtensionLower asset.FilePath with
-                | SongExtension _ -> true
+                | SoundExtension _ -> true
                 | _ -> false
             let filePathSdl = PathF.GetFullPath asset.FilePath
             let audioOpt = SDL3_mixer.MIX_LoadAudio (mixer, filePathSdl, predecode)
