@@ -47,7 +47,7 @@ type MainActivity () =
             let mutable loadingDialogOpt = None
 
             // show loading ui
-            this.RunOnUiThread (Action (fun () ->
+            this.RunOnUiThread (fun () ->
                 // set up loading layout
                 let layout = new LinearLayout (this, Orientation = Orientation.Vertical)
                 let density = this.Resources.DisplayMetrics.Density
@@ -67,7 +67,7 @@ type MainActivity () =
                 builder.SetView layout |> ignore
                 let loadingDialog = builder.Create ()
                 loadingDialogOpt <- Some (loadingDialog, loadingText, loadingProgressBar)
-                loadingDialog.Show ()))
+                loadingDialog.Show ())
 
             // update loading ui
             let assetPackListener = new AssetPackStateUpdateListenerWrapper ()
@@ -97,21 +97,19 @@ type MainActivity () =
                     | Model.AssetPackStatus.Canceled -> updateLoadingUi $"Installation canceled." downloadProgress
                     | status -> updateLoadingUi $"Unknown installation status {status}..." downloadProgress
 
+            // fetch assets then wait synchronously in the main SDL thread. this is not the main Android UI thread so the system won't kill the app.
             assetPackManager.RegisterListener assetPackListener.Listener
             assetPackManager.Fetch [|"gameassets"|] |> ignore
-            // wait synchronously in the main SDL thread. this is not the main Android UI thread so the system won't kill the app.
-            try
-                assetPackLocation <- tcs.Task.Result
-            finally
-                assetPackManager.UnregisterListener assetPackListener.Listener
-                // hide loading ui
-                this.RunOnUiThread (Action (fun () ->
-                    match loadingDialogOpt with
-                    | Some (loadingDialog, _, _) ->
-                        loadingDialog.Dismiss ()
-                        loadingDialog.Dispose ()
-                        loadingDialogOpt <- None
-                    | None -> ()))
+            assetPackLocation <- tcs.Task.Result
+            assetPackManager.UnregisterListener assetPackListener.Listener
+
+            // hide loading ui
+            match loadingDialogOpt with
+            | Some (loadingDialog, _, _) ->
+                loadingDialog.Dismiss () // thread safe
+                loadingDialog.Dispose ()
+                loadingDialogOpt <- None
+            | None -> ()
 
         // set current directory for asset loading
         Directory.EnumerateDirectories (assetPackLocation.AssetsPath () + "/refinement-out", "*")
