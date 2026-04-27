@@ -1248,19 +1248,19 @@ module Battle =
                                         | _ ->
                                             match getCharacterArchetypeType sourceIndex battle with
                                             | Cleric ->
-                                                let playCharge = ScheduleSound (0L, Constants.Audio.SongVolumeDefault, Assets.Battle.ChargeHolySound)
+                                                let playCharge = ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Battle.ChargeHolySound)
                                                 let displayCast = DisplayHolyCast (0L, sourceIndex)
                                                 Right [signal playCharge; signal displayCast]
                                             | Wizard ->
-                                                let playCharge = ScheduleSound (0L, Constants.Audio.SongVolumeDefault, Assets.Battle.ChargeDimensionSound)
+                                                let playCharge = ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Battle.ChargeDimensionSound)
                                                 let displayCast = DisplayGenericCast (0L, sourceIndex)
                                                 Right [playCharge; displayCast]
                                             | Conjuror ->
-                                                let playCharge = ScheduleSound (0L, Constants.Audio.SongVolumeDefault, Assets.Battle.ChargeDimensionSound)
+                                                let playCharge = ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Battle.ChargeDimensionSound)
                                                 let displayCast = DisplayDimensionalCast (0L, sourceIndex)
                                                 Right [playCharge; displayCast]
                                             | _ ->
-                                                let playCharge = ScheduleSound (0L, Constants.Audio.SongVolumeDefault, Assets.Battle.ChargeDimensionSound)
+                                                let playCharge = ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Battle.ChargeDimensionSound)
                                                 let displayCast = DisplayGenericCast (0L, sourceIndex)
                                                 Right [playCharge; displayCast]
                                     match effectOpt with
