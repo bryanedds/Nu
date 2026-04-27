@@ -506,6 +506,11 @@ module Hl =
         result.extent.height <- uint extentHeight
         result
 
+    /// Check whether Android window is ready for Vulkan surface creation.
+    let private isAndroidWindowReadyForVulkan window =
+        not (OperatingSystem.IsAndroid ()) ||
+        SDL3.SDL_GetPointerProperty (SDL3.SDL_GetWindowProperties window, SDL3.SDL_PROP_WINDOW_ANDROID_WINDOW_POINTER, 0n) <> 0n
+    
     let private createVulkanSurface window instance =
         match SurfaceState with
         | SurfaceDestroyed ->
@@ -836,8 +841,8 @@ module Hl =
           SwapExtent : VkExtent2D }
 
         /// Try create the VkSwapchain.
-        static member private tryCreateVkSwapchain (surfaceFormat : VkSurfaceFormatKHR) oldVkSwapchainOpt physicalDevice surface window device =
-            match tryGetSurfaceCapabilities physicalDevice.VkPhysicalDevice surface with
+        static member private tryCreateVkSwapchain (surfaceFormat : VkSurfaceFormatKHR) oldVkSwapchainOpt physicalDevice window device =
+            match tryGetSurfaceCapabilities physicalDevice.VkPhysicalDevice Surface with
             | Some capabilities ->
             
                 // decide the minimum number of images in the swapchain. Sellers, Vulkan Programming Guide p. 144, recommends
@@ -858,7 +863,7 @@ module Hl =
 
                 // create swapchain
                 let mutable info = VkSwapchainCreateInfoKHR ()
-                info.surface <- surface
+                info.surface <- Surface
                 info.minImageCount <- minImageCount
                 info.imageFormat <- surfaceFormat.format
                 info.imageColorSpace <- surfaceFormat.colorSpace
@@ -910,10 +915,10 @@ module Hl =
             semaphores
         
         /// Try create a SwapchainInternal.
-        static member tryCreate surfaceFormat oldVkSwapchainOpt physicalDevice surface window device =
+        static member tryCreate surfaceFormat oldVkSwapchainOpt physicalDevice window device =
             
             // try create vkSwapchain and its assets
-            match SwapchainInternal.tryCreateVkSwapchain surfaceFormat oldVkSwapchainOpt physicalDevice surface window device with
+            match SwapchainInternal.tryCreateVkSwapchain surfaceFormat oldVkSwapchainOpt physicalDevice window device with
             | Some (vkSwapchain, swapExtent) ->
                 let images = SwapchainInternal.getSwapchainImages vkSwapchain device
                 let imageViews = SwapchainInternal.createImageViews surfaceFormat.format images device
@@ -981,6 +986,24 @@ module Hl =
             Swapchain.clear swapchain device // must do this first
             destroyVulkanSurface instance
         
+        static member private tryCreateSurfaceAndSwapchainInternal physicalDevice swapchain device instance =
+            
+            // check if window is ready for surface creation
+            if isAndroidWindowReadyForVulkan swapchain.Window_ then
+                
+                // create surface
+                createVulkanSurface swapchain.Window_ instance
+                
+                // ensure surface creation was successful
+                if SurfaceState = SurfaceReady then
+                    
+                    // try create SwapchainInternal
+                    let swapchainInternalOpt = SwapchainInternal.tryCreate swapchain.SurfaceFormat_ VkSwapchainKHR.Null physicalDevice swapchain.Window_ device
+                    swapchain.SwapchainInternalOpts_.[swapchain.SwapchainIndex_] <- swapchainInternalOpt
+                    
+                    // destroy surface if lost again
+                    if SurfaceState = SurfaceLost then Swapchain.destroySurface swapchain device instance
+        
         /// Check if window is minimized.
         static member isWindowMinimized window =
             SDL3.SDL_GetWindowFlags window &&& SDL_WindowFlags.SDL_WINDOW_MINIMIZED <> LanguagePrimitives.EnumOfValue 0UL
@@ -992,7 +1015,7 @@ module Hl =
             | None -> true
 
         /// Try to refresh the swapchain.
-        static member tryRefresh physicalDevice surface swapchain device instance =
+        static member tryRefresh physicalDevice swapchain device instance =
             match SurfaceState with
             
             // recreate the swapchain, handling sudden surface loss with attempted recovery
@@ -1017,33 +1040,25 @@ module Hl =
                 | None -> ()
                 
                 // try create new swapchain internal
-                let swapchainInternalOpt = SwapchainInternal.tryCreate swapchain.SurfaceFormat_ oldVkSwapchainOpt physicalDevice surface swapchain.Window_ device
+                let swapchainInternalOpt = SwapchainInternal.tryCreate swapchain.SurfaceFormat_ oldVkSwapchainOpt physicalDevice swapchain.Window_ device
                 swapchain.SwapchainInternalOpts_.[swapchain.SwapchainIndex_] <- swapchainInternalOpt
 
                 // if surface is lost here, destroy and attempt to recover on the spot
                 if SurfaceState = SurfaceLost then
                     Swapchain.destroySurface swapchain device instance
-
-                    
-                    ()
+                    Swapchain.tryCreateSurfaceAndSwapchainInternal physicalDevice swapchain device instance
 
             // handle surface loss and attempt to recreate surface and swapchain immediately
             | SurfaceLost ->
-                
-                // destroy lost surface
                 Swapchain.destroySurface swapchain device instance
-
-
-                ()
+                Swapchain.tryCreateSurfaceAndSwapchainInternal physicalDevice swapchain device instance
 
             // listen for surface availability and recreate surface and swapchain when available
             | SurfaceDestroyed ->
-                
-
-                ()
+                Swapchain.tryCreateSurfaceAndSwapchainInternal physicalDevice swapchain device instance
         
         /// Create a Swapchain.
-        static member create surfaceFormat physicalDevice surface window device =
+        static member create surfaceFormat physicalDevice window device =
             
             // init swapchain index
             let swapchainIndex = 0
@@ -1059,7 +1074,7 @@ module Hl =
             
             // try create first SwapchainInternal if window is not minimized
             if not windowMinimized then
-                let swapchainInternalOpt = SwapchainInternal.tryCreate surfaceFormat VkSwapchainKHR.Null physicalDevice surface window device
+                let swapchainInternalOpt = SwapchainInternal.tryCreate surfaceFormat VkSwapchainKHR.Null physicalDevice window device
                 swapchainInternalOpts.[swapchainIndex] <- swapchainInternalOpt
 
             // make Swapchain
@@ -1575,7 +1590,7 @@ module Hl =
             // refresh the swapchain if window is not minimized
             // NOTE: DJL: this happens a) when the window size simply changes and b) when minimization ends as detected above.
             // see https://vulkan-tutorial.com/Drawing_a_triangle/Swap_chain_recreation#page_Handling-minimization.
-            if not vkc.WindowMinimized_ then Swapchain.tryRefresh vkc.PhysicalDevice_ Surface vkc.Swapchain_ vkc.Device vkc.Instance_
+            if not vkc.WindowMinimized_ then Swapchain.tryRefresh vkc.PhysicalDevice_ vkc.Swapchain_ vkc.Device vkc.Instance_
         
         /// Begin the frame.
         static member beginFrame (windowViewport : Viewport) (vkc : VulkanContext) =
@@ -1756,7 +1771,7 @@ module Hl =
 
                 // setup swapchain
                 let surfaceFormat = VulkanContext.getSurfaceFormat physicalDevice.SurfaceFormats
-                let (swapchain, windowMinimized) = Swapchain.create surfaceFormat physicalDevice Surface window device
+                let (swapchain, windowMinimized) = Swapchain.create surfaceFormat physicalDevice window device
 
                 // make VulkanContext
                 let vulkanContext =
