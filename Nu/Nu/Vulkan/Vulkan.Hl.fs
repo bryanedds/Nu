@@ -971,6 +971,16 @@ module Hl =
         /// The swap extent of the current vkSwapchain.
         member this.SwapExtent = (Option.get this.SwapchainInternalOpts_.[this.SwapchainIndex_]).SwapExtent
 
+        static member private clear swapchain device =
+            for i in 0 .. dec swapchain.SwapchainInternalOpts_.Length do
+                match swapchain.SwapchainInternalOpts_.[i] with
+                | Some swapchainInternal -> SwapchainInternal.destroy swapchainInternal device
+                | None -> ()
+        
+        static member private destroySurface swapchain device instance =
+            Swapchain.clear swapchain device // must do this first
+            destroyVulkanSurface instance
+        
         /// Check if window is minimized.
         static member isWindowMinimized window =
             SDL3.SDL_GetWindowFlags window &&& SDL_WindowFlags.SDL_WINDOW_MINIMIZED <> LanguagePrimitives.EnumOfValue 0UL
@@ -982,29 +992,55 @@ module Hl =
             | None -> true
 
         /// Try to refresh the swapchain.
-        static member tryRefresh physicalDevice surface swapchain device =
+        static member tryRefresh physicalDevice surface swapchain device instance =
+            match SurfaceState with
             
-            // TODO: DJL: handle surface loss here.
+            // recreate the swapchain, handling sudden surface loss with attempted recovery
+            | SurfaceReady ->
             
-            // don't pass the old vulkan swapchain if only 1 frame in flight as it will get destroyed immediately
-            // TODO: DJL: swapchain count no longer equals frames in flight! revisit logic.
-            let oldVkSwapchainOpt =
+                // NOTE: DJL: although we check for presence of current SwapchainInternal where appropriate,
+                // it is *always* supposed to exist when the surface is ready because we *always* recreate when we can.
+                
+                // use current VkSwapchain to create new one
+                let oldVkSwapchainOpt =
+                    match swapchain.SwapchainInternalOpts_.[swapchain.SwapchainIndex_] with
+                    | Some swapchainInternal -> if swapchain.SwapchainInternalOpts_.Length > 1 then swapchainInternal.VkSwapchain else VkSwapchainKHR.Null
+                    | None -> VkSwapchainKHR.Null
+
+                // advance swapchain index
+                if Option.isSome swapchain.SwapchainInternalOpts_.[swapchain.SwapchainIndex_] then
+                    swapchain.SwapchainIndex_ <- (inc swapchain.SwapchainIndex_) % swapchain.SwapchainInternalOpts_.Length
+
+                // destroy SwapchainInternal at new index if present
                 match swapchain.SwapchainInternalOpts_.[swapchain.SwapchainIndex_] with
-                | Some swapchainInternal -> if swapchain.SwapchainInternalOpts_.Length > 1 then swapchainInternal.VkSwapchain else VkSwapchainKHR.Null
-                | None -> VkSwapchainKHR.Null
+                | Some swapchainInternal -> SwapchainInternal.destroy swapchainInternal device
+                | None -> ()
+                
+                // try create new swapchain internal
+                let swapchainInternalOpt = SwapchainInternal.tryCreate swapchain.SurfaceFormat_ oldVkSwapchainOpt physicalDevice surface swapchain.Window_ device
+                swapchain.SwapchainInternalOpts_.[swapchain.SwapchainIndex_] <- swapchainInternalOpt
 
-            // advance swapchain index
-            // TODO: DJL: figure out what now happens here.
-            swapchain.SwapchainIndex_ <- (inc swapchain.SwapchainIndex_) % swapchain.SwapchainInternalOpts_.Length
+                // if surface is lost here, destroy and attempt to recover on the spot
+                if SurfaceState = SurfaceLost then
+                    Swapchain.destroySurface swapchain device instance
 
-            // destroy SwapchainInternal at new index if present
-            match swapchain.SwapchainInternalOpts_.[swapchain.SwapchainIndex_] with
-            | Some swapchainInternal -> SwapchainInternal.destroy swapchainInternal device
-            | None -> ()
-            
-            // try create new swapchain internal
-            let swapchainInternalOpt = SwapchainInternal.tryCreate swapchain.SurfaceFormat_ oldVkSwapchainOpt physicalDevice surface swapchain.Window_ device
-            swapchain.SwapchainInternalOpts_.[swapchain.SwapchainIndex_] <- swapchainInternalOpt
+                    
+                    ()
+
+            // handle surface loss and attempt to recreate surface and swapchain immediately
+            | SurfaceLost ->
+                
+                // destroy lost surface
+                Swapchain.destroySurface swapchain device instance
+
+
+                ()
+
+            // listen for surface availability and recreate surface and swapchain when available
+            | SurfaceDestroyed ->
+                
+
+                ()
         
         /// Create a Swapchain.
         static member create surfaceFormat physicalDevice surface window device =
@@ -1038,10 +1074,7 @@ module Hl =
         
         /// Destroy a Swapchain.
         static member destroy swapchain device =
-            for i in 0 .. dec swapchain.SwapchainInternalOpts_.Length do
-                match swapchain.SwapchainInternalOpts_.[i] with
-                | Some swapchainInternal -> SwapchainInternal.destroy swapchainInternal device
-                | None -> ()
+            Swapchain.clear swapchain device
     
     /// A command queue that internally synchronizes use across multiple threads.
     type [<ReferenceEquality>] Queue =
@@ -1542,7 +1575,7 @@ module Hl =
             // refresh the swapchain if window is not minimized
             // NOTE: DJL: this happens a) when the window size simply changes and b) when minimization ends as detected above.
             // see https://vulkan-tutorial.com/Drawing_a_triangle/Swap_chain_recreation#page_Handling-minimization.
-            if not vkc.WindowMinimized_ then Swapchain.tryRefresh vkc.PhysicalDevice_ Surface vkc.Swapchain_ vkc.Device
+            if not vkc.WindowMinimized_ then Swapchain.tryRefresh vkc.PhysicalDevice_ Surface vkc.Swapchain_ vkc.Device vkc.Instance_
         
         /// Begin the frame.
         static member beginFrame (windowViewport : Viewport) (vkc : VulkanContext) =
