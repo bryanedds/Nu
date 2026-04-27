@@ -71,7 +71,7 @@
             <MauiAsset Include="refinement-out/$(TargetFramework)/**/*.*" AssetPack="gameassets" DeliveryType="FastFollow" />
         </ItemGroup>
         <!-- For desktop, just copy assets to output directory. -->
-        <Copy Condition="'$(TargetPlatformIdentifier)' == ''" SourceFiles="@(MauiAsset)" DestinationFolder="$(MSBuildProjectDirectory)/bin/$(Configuration)/$(TargetFramework)/%(RecursiveDir)" SkipUnchangedFiles="true" />
+        <Copy Condition="'$(TargetPlatformIdentifier)' == ''" SourceFiles="@(MauiAsset)" DestinationFolder="$(MSBuildProjectDirectory)/bin/$(Configuration)/$(TargetFramework)/%(RecursiveDir)" SkipUnchangedFiles="true" OverwriteReadOnlyFiles="true" />
     </Target>
     <Target Name="CleanNuPipe" AfterTargets="Clean">
         <RemoveDir Directories="refinement" />
@@ -122,6 +122,8 @@
     </ItemGroup>
 
     <ItemGroup Condition="'$(TargetPlatformIdentifier)'=='android'">
+		<PackageReference Include="Xamarin.Google.Android.Play.Asset.Delivery" Version="2.3.0.6" />
+
 		<!-- Prevent linux binaries from being packaged on Android. Keep these updated with the version selected in the Nu project. -->
 		<PackageReference Include="Silk.NET.Shaderc.Native" Version="2.21.0" ExcludeAssets="native" /> <!-- transitive dependency of Vortice.ShaderCompiler -->
 		<PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" ExcludeAssets="native" />
@@ -131,7 +133,8 @@
 		<AndroidNativeLibrary Include="../../Nu/Nu.Dependencies/ShaderC/android/*/libc++_shared.so" />
 		<AndroidNativeLibrary Include="../../Nu/Nu.Dependencies/ImGui/android/*/libcimgui.so" />
 		<AndroidNativeLibrary Include="../../Nu/Nu.Dependencies/AssimpNet/android/*/libassimp.so" />
-		<PackageReference Include="Xamarin.Google.Android.Play.Asset.Delivery" Version="2.3.0.6" />
+		<!-- Download Vulkan validation layers here: https://github.com/KhronosGroup/Vulkan-ValidationLayers/releases -->
+		<!--AndroidNativeLibrary Include="../../Nu/Nu.Dependencies/Vulkan-validation/**/*.so" Condition="'$(Configuration)' == 'Debug'" /-->
     </ItemGroup>
 
     <ItemGroup>
