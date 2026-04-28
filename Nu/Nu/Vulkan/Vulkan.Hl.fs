@@ -1615,30 +1615,40 @@ module Hl =
                     else
                         if Swapchain.isWindowResizedOrSurfaceLost vkc.VkPhysicalDevice Surface vkc.Swapchain_ then VulkanContext.handleWindowSize vkc
                         else
-                            // check that swap extent >= viewport.Bounds >= viewport.Inner; done *after* screen change check to avoid outdated swap extent
-                            let extent = vkc.Swapchain_.SwapExtent
-                            let swapchainBounds = box2i v2iZero (v2i (int extent.width) (int extent.height))
-                            if
-                                swapchainBounds.ContainsInclusive windowViewport.Bounds = ContainmentType.Contains &&
-                                windowViewport.Bounds.ContainsInclusive windowViewport.Inner = ContainmentType.Contains
-                            then
-                                // to be as sure as possible, check *again* for screen state change right before attempting image acquisition!
-                                if Swapchain.isWindowMinimized vkc.Swapchain_.Window_ then VulkanContext.handleWindowSize vkc
-                                else
-                                    if Swapchain.isWindowResizedOrSurfaceLost vkc.VkPhysicalDevice Surface vkc.Swapchain_ then VulkanContext.handleWindowSize vkc
+                            // check for surface loss directly
+                            if not (isAndroidWindowReadyForVulkan vkc.Swapchain_.Window_) then
+                                SurfaceState <- SurfaceLost
+                                VulkanContext.handleWindowSize vkc
+                            else
+                                // check that swap extent >= viewport.Bounds >= viewport.Inner; done *after* screen change check to avoid outdated swap extent
+                                let extent = vkc.Swapchain_.SwapExtent
+                                let swapchainBounds = box2i v2iZero (v2i (int extent.width) (int extent.height))
+                                if
+                                    swapchainBounds.ContainsInclusive windowViewport.Bounds = ContainmentType.Contains &&
+                                    windowViewport.Bounds.ContainsInclusive windowViewport.Inner = ContainmentType.Contains
+                                then
+                                    // to be as sure as possible, check *again* for screen state change right before attempting image acquisition!
+                                    if Swapchain.isWindowMinimized vkc.Swapchain_.Window_ then VulkanContext.handleWindowSize vkc
                                     else
-                                        // try to acquire image from swapchain to draw onto
-                                        // NOTE: DJL: due to semaphore, if this is successful, the render *must* proceed!
-                                        let result = Vulkan.vkAcquireNextImageKHR (vkc.Device, vkc.Swapchain_.VkSwapchain, UInt64.MaxValue, vkc.ImageAvailableSemaphore, VkFence.Null, &ImageIndex)
-                                        if result = VkResult.ErrorOutOfDateKHR then VulkanContext.handleWindowSize vkc // refresh swapchain if out of date
+                                        if Swapchain.isWindowResizedOrSurfaceLost vkc.VkPhysicalDevice Surface vkc.Swapchain_ then VulkanContext.handleWindowSize vkc
                                         else
-                                            // attempt swapchain refresh if surface lost
-                                            if result = VkResult.ErrorSurfaceLostKHR then
+                                            // check for surface loss directly
+                                            if not (isAndroidWindowReadyForVulkan vkc.Swapchain_.Window_) then
                                                 SurfaceState <- SurfaceLost
                                                 VulkanContext.handleWindowSize vkc
                                             else
-                                                check result // NOTE: DJL: this will report a suboptimal swapchain image.
-                                                vkc.RenderDesired_ <- true // permit rendering
+                                                // try to acquire image from swapchain to draw onto
+                                                // NOTE: DJL: due to semaphore, if this is successful, the render *must* proceed!
+                                                let result = Vulkan.vkAcquireNextImageKHR (vkc.Device, vkc.Swapchain_.VkSwapchain, UInt64.MaxValue, vkc.ImageAvailableSemaphore, VkFence.Null, &ImageIndex)
+                                                if result = VkResult.ErrorOutOfDateKHR then VulkanContext.handleWindowSize vkc // refresh swapchain if out of date
+                                                else
+                                                    // attempt swapchain refresh if surface lost
+                                                    if result = VkResult.ErrorSurfaceLostKHR then
+                                                        SurfaceState <- SurfaceLost
+                                                        VulkanContext.handleWindowSize vkc
+                                                    else
+                                                        check result // NOTE: DJL: this will report a suboptimal swapchain image.
+                                                        vkc.RenderDesired_ <- true // permit rendering
 
             if vkc.RenderDesired_ then
             
