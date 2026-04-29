@@ -416,17 +416,27 @@ type FluidEmitter2dDispatcher () =
     override this.Render (_, emitter, world) =
         let particleRadius = emitter.GetFluidParticleRadius world
         let staticImage = emitter.GetStaticImage world
-        let insetOpt = match emitter.GetInsetOpt world with Some inset -> ValueSome inset | None -> ValueNone
+        let insetOpt = emitter.GetInsetOpt world |> Option.toValueOption
         let clipOpt = emitter.GetClipOpt world |> Option.toValueOption
         let color = emitter.GetColor world
         let blend = emitter.GetBlend world
         let emission = emitter.GetEmission world
         let flip = emitter.GetFlip world
-        let drawnSize = emitter.GetFluidParticleImageSizeOverride world |> Option.defaultValue (v2Dup particleRadius)
-        let mutable transform = Transform.makeIntuitive false v3Zero v3One v3Zero drawnSize.V3 v3Zero (emitter.GetElevation world)
+        let drawnSizeOverrideOpt = emitter.GetFluidParticleImageSizeOverride world
+        let mutable particleColor = color
+        let mutable transform = Transform.makeIntuitive false v3Zero v3One v3Zero v3Zero v3Zero (emitter.GetElevation world)
         for particle in emitter.GetFluidParticles world do
+            let struct (scale, shade) =
+                match particle.FluidParticleConfig with
+                | "Sand" -> struct (5.25f, Color.Yellow)
+                | "Gas" -> struct (10.5f, Color.White)
+                | "Oil" -> struct (5.25f, color 0.36862746f 0.22352941f 0.039215688f 1.0f)
+                | _ -> struct (5.5f, Color.Cyan) // Water / fallback
+            let drawnSize = drawnSizeOverrideOpt |> Option.defaultValue (v2Dup (particleRadius * scale))
+            transform.Size <- drawnSize.V3
             transform.Position <- particle.FluidParticlePosition
-            World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, staticImage, &transform, &insetOpt, &clipOpt, staticImage, &color, blend, &emission, flip, world)
+            particleColor <- color * shade
+            World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, staticImage, &transform, &insetOpt, &clipOpt, staticImage, &particleColor, blend, &emission, flip, world)
 
     override this.GetAttributesInferred (_, _) =
         AttributesInferred.unimportant
