@@ -1714,18 +1714,9 @@ module FluidEmitter2dFacetExtensions =
         member this.GetFluidParticlesMax world : int = this.Get (nameof Entity.FluidParticlesMax) world
         member this.SetFluidParticlesMax (value : int) world = this.Set (nameof Entity.FluidParticlesMax) value world
         member this.FluidParticlesMax = lens (nameof Entity.FluidParticlesMax) this this.GetFluidParticlesMax this.SetFluidParticlesMax
-        member this.GetFluidParticleNeighborsMax world : int = this.Get (nameof Entity.FluidParticleNeighborsMax) world
-        member this.SetFluidParticleNeighborsMax (value : int) world = this.Set (nameof Entity.FluidParticleNeighborsMax) value world
-        member this.FluidParticleNeighborsMax = lens (nameof Entity.FluidParticleNeighborsMax) this this.GetFluidParticleNeighborsMax this.SetFluidParticleNeighborsMax
-        member this.GetFluidParticleCollisionTestsMax world : int = this.Get (nameof Entity.FluidParticleCollisionTestsMax) world
-        member this.SetFluidParticleCollisionTestsMax (value : int) world = this.Set (nameof Entity.FluidParticleCollisionTestsMax) value world
-        member this.FluidParticleCollisionTestsMax = lens (nameof Entity.FluidParticleCollisionTestsMax) this this.GetFluidParticleCollisionTestsMax this.SetFluidParticleCollisionTestsMax
         member this.GetFluidCellRatio world : single = this.Get (nameof Entity.FluidCellRatio) world
         member this.SetFluidCellRatio (value : single) world = this.Set (nameof Entity.FluidCellRatio) value world
         member this.FluidCellRatio = lens (nameof Entity.FluidCellRatio) this this.GetFluidCellRatio this.SetFluidCellRatio
-        member this.GetViscocity world : single = this.Get (nameof Entity.Viscocity) world
-        member this.SetViscocity (value : single) world = this.Set (nameof Entity.Viscocity) value world
-        member this.Viscocity = lens (nameof Entity.Viscocity) this this.GetViscocity this.SetViscocity
         member this.GetFluidEmitterId world : FluidEmitterId = this.Get (nameof Entity.FluidEmitterId) world
         member this.FluidEmitterId = lensReadOnly (nameof Entity.FluidEmitterId) this this.GetFluidEmitterId
         member this.FluidEmitterUpdateEvent = Events.FluidEmitterUpdateEvent --> this
@@ -1759,11 +1750,7 @@ type FluidEmitter2dFacet () =
          define Entity.FluidParticles SArray.empty
          define Entity.FluidParticleRadius 5.0f
          define Entity.FluidParticlesMax 20000
-         define Entity.FluidParticleNeighborsMax 75
-         define Entity.FluidParticleCollisionTestsMax 20
          define Entity.FluidCellRatio 5.0f
-         define Entity.Viscocity 0.004f
-         define Entity.LinearDamping 0.0f
          define Entity.Gravity GravityWorld
          computed Entity.FluidEmitterId (fun (entity : Entity) _ -> { FluidEmitterSource = entity }) None]
 
@@ -1774,11 +1761,7 @@ type FluidEmitter2dFacet () =
             [emitter.FluidEnabled.ChangeEvent
              emitter.FluidParticleRadius.ChangeEvent
              emitter.FluidParticlesMax.ChangeEvent
-             emitter.FluidParticleNeighborsMax.ChangeEvent
-             emitter.FluidParticleCollisionTestsMax.ChangeEvent
              emitter.FluidCellRatio.ChangeEvent
-             emitter.Viscocity.ChangeEvent
-             emitter.LinearDamping.ChangeEvent
              emitter.Bounds.ChangeEvent
              emitter.Gravity.ChangeEvent] do
             World.sense updateCallback event emitter (nameof FluidEmitter2dFacet) world
