@@ -235,10 +235,10 @@ type FluidSimDispatcher () =
                  Entity.FontSizing .= Some 10.f] world then
                 fluidEmitter.FluidParticleRadius.Map
                     (function
-                     | 4.0f -> 6.0f
+                     | 4.0f -> 5.0f
+                     | 5.0f -> 6.0f
                      | 6.0f -> 8.0f
                      | 8.0f -> 12.0f
-                     | 12.0f -> 20.0f
                      | _ -> 4.0f)
                     world
 

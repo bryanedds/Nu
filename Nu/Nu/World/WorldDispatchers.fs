@@ -431,7 +431,7 @@ type FluidEmitter2dDispatcher () =
                 | "Sand" -> struct (5.25f, Color.Yellow)
                 | "Gas" -> struct (10.5f, Color.White)
                 | "Oil" -> struct (5.25f, Color.color 0.36862746f 0.22352941f 0.039215688f 1.0f)
-                | _ -> struct (5.5f, Color.Cyan) // Water / fallback
+                | _ -> struct (5.5f, colorPacked 0x0094FFFFu)
             let drawnSize = drawnSizeOverrideOpt |> Option.defaultValue (v2Dup (particleRadius * scale))
             transform.Size <- drawnSize.V3
             transform.Position <- particle.FluidParticlePosition

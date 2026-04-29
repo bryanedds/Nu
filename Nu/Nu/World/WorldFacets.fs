@@ -1757,7 +1757,7 @@ type FluidEmitter2dFacet () =
     static member Properties =
         [define Entity.FluidEnabled true
          define Entity.FluidParticles SArray.empty
-         define Entity.FluidParticleRadius 4.0f
+         define Entity.FluidParticleRadius 5.0f
          define Entity.FluidParticlesMax 20000
          define Entity.FluidParticleNeighborsMax 75
          define Entity.FluidParticleCollisionTestsMax 20
