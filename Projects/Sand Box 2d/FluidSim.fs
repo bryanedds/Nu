@@ -178,42 +178,36 @@ type FluidSimDispatcher () =
                         World.setGravity2d (snd gravities[(i + 1) % gravities.Length]) world
 
             // particle sprite button
+            let particleImage = (fluidEmitter.GetFluidParticleRenders world).["Water"].Image
             if World.doButton $"Particle Sprite"
                 [Entity.Position .= v3 255f 80f 0f
-                 Entity.Text @= $"Particle Sprite: {(fluidEmitter.GetStaticImage world).AssetName}"
+                 Entity.Text @= $"Particle Sprite: {particleImage.AssetName}"
                  Entity.Elevation .= 1f
                  Entity.FontSizing .= Some 8.f] world then
-                if fluidEmitter.GetStaticImage world = Assets.Default.Ball then
-                    // in Paint.NET (canvas size = 50 x 50), use the Brush (size = 50, hardness = 50%, fill = solid color #0094FF)
+                if particleImage = Assets.Default.Ball then
+                    // in Paint.NET (canvas size = 57 x 57), use the Brush (size = 57, hardness = 50%, fill = solid color #0094FF)
                     // and click the center once, to generate this Particle image.
-                    fluidEmitter.SetStaticImage Assets.Default.Fluid world
-                    fluidEmitter.SetFluidParticleImageSizeOverride None world
-                elif fluidEmitter.GetStaticImage world = Assets.Default.Fluid then
+                    fluidEmitter.FluidParticleRenders.Map (Map.map (fun _ render ->
+                        let mutable transform = render.Transform
+                        transform.Size <- (Metadata.getTextureSizeF Assets.Default.Fluid).V3
+                        { render with Image = Assets.Default.Fluid; Transform = transform })) world
+                elif particleImage = Assets.Default.Fluid then
                     // credit: https://ena.our-dogs.info/spring-2023.html
-                    fluidEmitter.SetStaticImage Assets.Gameplay.BubbleImage world
-                    fluidEmitter.SetFluidParticleImageSizeOverride None world
-                elif fluidEmitter.GetStaticImage world = Assets.Gameplay.BubbleImage then
+                    fluidEmitter.FluidParticleRenders.Map (Map.map (fun _ render ->
+                        let mutable transform = render.Transform
+                        transform.Size <- (Metadata.getTextureSizeF Assets.Gameplay.BubbleImage).V3
+                        { render with Image = Assets.Gameplay.BubbleImage; Transform = transform })) world
+                elif particleImage = Assets.Gameplay.BubbleImage then
                     // credit: Aether.Physics2D demos
-                    fluidEmitter.SetStaticImage Assets.Gameplay.GooImage world
-                    fluidEmitter.SetFluidParticleImageSizeOverride (v2Dup 8f |> Some) world
+                    fluidEmitter.FluidParticleRenders.Map (Map.map (fun _ render ->
+                        let mutable transform = render.Transform
+                        transform.Size <- v3 8f 8f 0f
+                        { render with Image = Assets.Gameplay.GooImage; Transform = transform })) world
                 else
-                    fluidEmitter.SetStaticImage Assets.Default.Ball world
-                    fluidEmitter.SetFluidParticleImageSizeOverride (v2Dup 2f |> Some) world
-
-            // particle radius button
-            if World.doButton $"Particle Radius"
-                [Entity.Position .= v3 255f 50f 0f
-                 Entity.Text @= $"Particle Radius: {fluidEmitter.GetFluidParticleRadius world}"
-                 Entity.Elevation .= 1f
-                 Entity.FontSizing .= Some 10.f] world then
-                fluidEmitter.FluidParticleRadius.Map
-                    (function
-                     | 4.0f -> 5.0f
-                     | 5.0f -> 6.0f
-                     | 6.0f -> 8.0f
-                     | 8.0f -> 12.0f
-                     | _ -> 4.0f)
-                    world
+                    fluidEmitter.FluidParticleRenders.Map (Map.map (fun _ render ->
+                        let mutable transform = render.Transform
+                        transform.Size <- v3 2f 2f 0f
+                        { render with Image = Assets.Default.Ball; Transform = transform })) world
 
             // squish button
             if World.doButton $"Squish"

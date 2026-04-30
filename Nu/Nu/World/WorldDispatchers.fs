@@ -392,9 +392,9 @@ type BodyJoint2dDispatcher () =
 [<AutoOpen>]
 module FluidEmitterDispatcherExtensions =
     type Entity with
-        member this.GetFluidParticleImageSizeOverride world : Vector2 option = this.Get (nameof Entity.FluidParticleImageSizeOverride) world
-        member this.SetFluidParticleImageSizeOverride (value : Vector2 option) world = this.Set (nameof Entity.FluidParticleImageSizeOverride) value world
-        member this.FluidParticleImageSizeOverride = lens (nameof Entity.FluidParticleImageSizeOverride) this this.GetFluidParticleImageSizeOverride this.SetFluidParticleImageSizeOverride
+        member this.GetFluidParticleRenders world : Map<string, SpriteDescriptor> = this.Get (nameof Entity.FluidParticleRenders) world
+        member this.SetFluidParticleRenders (value : Map<string, SpriteDescriptor>) world = this.Set (nameof Entity.FluidParticleRenders) value world
+        member this.FluidParticleRenders = lens (nameof Entity.FluidParticleRenders) this this.GetFluidParticleRenders this.SetFluidParticleRenders
 
 /// Gives an entity the base behavior of fluid emission.
 type FluidEmitter2dDispatcher () =
@@ -404,39 +404,22 @@ type FluidEmitter2dDispatcher () =
         [typeof<FluidEmitter2dFacet>]
 
     static member Properties =
-        [define Entity.FluidParticleImageSizeOverride None
-         define Entity.InsetOpt None
-         define Entity.ClipOpt None
-         define Entity.StaticImage Assets.Default.Fluid
-         define Entity.Color Color.One
-         define Entity.Blend Transparent
-         define Entity.Emission Color.Zero
-         define Entity.Flip Unflipped]
+        [define Entity.FluidParticleRenders
+            (Map.ofList
+                [("Water", { Transform = Transform.makeIntuitive false v3Zero v3One v3Zero (Metadata.getTextureSizeF Assets.Default.Fluid).V3 v3Zero 0.0f; InsetOpt = ValueNone; ClipOpt = ValueNone; Image = Assets.Default.Fluid; Color = colorPacked 0x0094FFFFu; Blend = Transparent; Emission = colorZero; Flip = Unflipped })
+                 ("Sand", { Transform = Transform.makeIntuitive false v3Zero v3One v3Zero (Metadata.getTextureSizeF Assets.Default.Fluid).V3 v3Zero 0.02f; InsetOpt = ValueNone; ClipOpt = ValueNone; Image = Assets.Default.Fluid; Color = Color.Yellow; Blend = Transparent; Emission = colorZero; Flip = Unflipped })
+                 ("Gas", { Transform = Transform.makeIntuitive false v3Zero v3One v3Zero (Metadata.getTextureSizeF Assets.Default.Smoke).V3 v3Zero -0.01f; InsetOpt = ValueNone; ClipOpt = ValueNone; Image = Assets.Default.Smoke; Color = colorOne; Blend = Transparent; Emission = colorZero; Flip = Unflipped })
+                 ("Oil", { Transform = Transform.makeIntuitive false v3Zero v3One v3Zero (Metadata.getTextureSizeF Assets.Default.Fluid).V3 v3Zero 0.01f; InsetOpt = ValueNone; ClipOpt = ValueNone; Image = Assets.Default.Fluid; Color = Color.color 0.36862746f 0.22352941f 0.039215688f 1.0f; Blend = Transparent; Emission = colorZero; Flip = Unflipped })])]
 
     override this.Render (_, emitter, world) =
-        let particleRadius = emitter.GetFluidParticleRadius world
-        let staticImage = emitter.GetStaticImage world
-        let insetOpt = emitter.GetInsetOpt world |> Option.toValueOption
-        let clipOpt = emitter.GetClipOpt world |> Option.toValueOption
-        let color = emitter.GetColor world
-        let blend = emitter.GetBlend world
-        let emission = emitter.GetEmission world
-        let flip = emitter.GetFlip world
-        let drawnSizeOverrideOpt = emitter.GetFluidParticleImageSizeOverride world
-        let mutable particleColor = color
-        let mutable transform = Transform.makeIntuitive false v3Zero v3One v3Zero v3Zero v3Zero (emitter.GetElevation world)
+        let mutable transform = emitter.GetTransform world
+        let renders = emitter.GetFluidParticleRenders world
         for particle in emitter.GetFluidParticles world do
-            let struct (scale, shade) =
-                match particle.FluidParticleConfig with
-                | "Sand" -> struct (5.25f, Color.Yellow)
-                | "Gas" -> struct (10.5f, Color.White)
-                | "Oil" -> struct (5.25f, Color.color 0.36862746f 0.22352941f 0.039215688f 1.0f)
-                | _ -> struct (5.5f, colorPacked 0x0094FFFFu)
-            let drawnSize = drawnSizeOverrideOpt |> Option.defaultValue (v2Dup (particleRadius * scale))
-            transform.Size <- drawnSize.V3
-            transform.Position <- particle.FluidParticlePosition
-            particleColor <- color * shade
-            World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, staticImage, &transform, &insetOpt, &clipOpt, staticImage, &particleColor, blend, &emission, flip, world)
+            let mutable render = Unchecked.defaultof<_>
+            if not (Map.tryGetValue (particle.FluidParticleConfig, renders, &render)) then
+                render <- renders["Water"]
+            let mutable transform = Transform.makeIntuitive false (render.Transform.Position + particle.FluidParticlePosition) (render.Transform.Scale * transform.Scale) (render.Transform.Offset + transform.Offset) render.Transform.Size (render.Transform.Angles + transform.Angles) (render.Transform.Elevation + transform.Elevation)
+            World.enqueueRenderMessage2d (LayeredOperation2d { Elevation = transform.Elevation; Horizon = transform.Horizon; AssetTag = render.Image; RenderOperation2d = RenderSprite { render with Transform = transform } }) world
 
     override this.GetAttributesInferred (_, _) =
         AttributesInferred.unimportant

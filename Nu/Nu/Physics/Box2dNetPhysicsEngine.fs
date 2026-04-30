@@ -334,7 +334,7 @@ type private Box2dNetFluidEmitter =
                 let offsetLength = B2MathFunction.b2Length offset
                 if offsetLength < 0.001f then () else
                 let dst = offsetLength / radiusA * config.Impact // MAGIC: dst scales inversely with radiusA but effectiveRange scales linearly with radiusA? (@.@)
-                let effectiveRange = (config.Impact + config.Impact) * config.Impact
+                let effectiveRange = (config.Impact + config.Impact) * config.Impact // MAGIC: idk why this formula is like this
                 if dst < effectiveRange then
                     let Density r = r * r * MathF.Sqrt r
 
