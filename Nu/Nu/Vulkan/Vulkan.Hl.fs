@@ -943,7 +943,10 @@ module Hl =
         
         /// Destroy a SwapchainInternal.
         static member destroy swapchainInternal device =
-            Vulkan.vkDeviceWaitIdle device |> check // only simple way to ensure swapchain, images and semaphores not still in use
+            
+            // TODO: DJL: this is not sufficient to ensure resources not still in use, that requires an extension!!
+            // https://docs.vulkan.org/guide/latest/swapchain_semaphore_reuse.html#_vk_ext_swapchain_maintenance1_extension
+            Vulkan.vkDeviceWaitIdle device |> check
             for i in 0 .. dec swapchainInternal.ImageViews.Length do Vulkan.vkDestroyImageView (device, swapchainInternal.ImageViews.[i], nullPtr)
             Vulkan.vkDestroySwapchainKHR (device, swapchainInternal.VkSwapchain, nullPtr)
             for i in 0 .. dec swapchainInternal.RenderFinishedSemaphores.Length do Vulkan.vkDestroySemaphore (device, swapchainInternal.RenderFinishedSemaphores.[i], nullPtr)
