@@ -115,6 +115,7 @@ module Hl =
             | D24s8ui -> width * height * 4
 
         /// Determine if format is supported for use as an attachment.
+        /// TODO: P0: DJL: investigate working around depth blitting as some MESA drivers may deny us that feature.
         static member supportsAttachment vkPhysicalDevice format =
             let requiredFeatures =
                 match format with
@@ -292,6 +293,7 @@ module Hl =
         | BulkSetIndexed
     
     /// Check if an image format is supported for attachments, falling back to a standard format where possible.
+    /// TODO: DJL: try ALL depth formats.
     let rec CheckAttachmentFormat (vkPhysicalDevice, format : ImageFormat) =
         if not (ImageFormat.supportsAttachment vkPhysicalDevice format) then
             
