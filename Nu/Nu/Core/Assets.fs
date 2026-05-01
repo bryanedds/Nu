@@ -51,6 +51,7 @@ module Default =
     let [<Literal>] BrickName = "Brick"
     let [<Literal>] PaddleName = "Paddle"
     let [<Literal>] FluidName = "Fluid"
+    let [<Literal>] SmokeName = "Smoke"
     let [<Literal>] HighlightSpriteName = "Highlight"
     let [<Literal>] Character2dIdleName = "Character2dIdle"
     let [<Literal>] Character2dJumpName = "Character2dJump"
