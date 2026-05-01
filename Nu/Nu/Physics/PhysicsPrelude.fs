@@ -551,28 +551,30 @@ type [<Struct>] FluidParticle =
 /// See sfml-box2d-fluid: Game.cpp, Game::InitFluid
 /// TODO: rename this and member vals from XxxConfig to XxxProperties?
 /// NOTE: sfml-box2d-fluid is under rewrite, it is not recommended to tune for these parameters as a future update would change things up.
+/// NOTE: The fluid interaction solver operates in virtual-pixel space (matching upstream behavior),
+/// then impulses are converted back to Box2D meter space at application time.
 type [<SymbolicExpansion>] FluidParticleConfig = 
-    { Radius : single
-      Density : single
-      Friction : single
-      Restitution : single
-      LinearDamping : single
-      Impact : single
-      ForceMultiplier : single
-      ForceSurface : single
-      ForceAdhesion : single
-      ShearViscosity : single
-      Viscosity : single
-      ViscosityLeave : single
-      GetForceMax : single
-      ForceMax : single
-      DensityMin : single
-      DensityMax : single
-      ForceDamping : single
-      SurfaceWithOther : bool
-      CollisionCategories : uint64
-      CollisionMask : uint64
-      Gravity : Gravity }
+    { Radius : single (* virtual pixels; converted to Box2D meters on shape creation *)
+      Density : single (* physical Box2D 2D density, mass/area (kg/m^2) in meter-space simulation *)
+      Friction : single (* unitless material coefficient *)
+      Restitution : single (* unitless material coefficient *)
+      LinearDamping : single (* Box2D damping scalar, unitless *)
+      Impact : single (* unitless interaction radius scalar; range ~= Radius * Impact *)
+      ForceMultiplier : single (* heuristic solver-space magnitude; not strict SI force (N = kg*m/s^2) *)
+      ForceSurface : single (* heuristic solver-space surface-tension magnitude *)
+      ForceAdhesion : single (* heuristic solver-space adhesion magnitude; currently unused *)
+      ShearViscosity : single (* heuristic shear/friction magnitude in solver space *)
+      Viscosity : single (* heuristic viscosity magnitude in solver space *)
+      ViscosityLeave : single (* unitless multiplier for separating-particle viscosity behavior *)
+      GetForceMax : single (* per-axis clamp magnitude in solver space *)
+      ForceMax : single (* max kernel force contribution in solver space *)
+      DensityMin : single (* pseudo-density clamp minimum in heuristic fluid solver (not strict SI density) *)
+      DensityMax : single (* pseudo-density clamp maximum in heuristic fluid solver (not strict SI density) *)
+      ForceDamping : single (* unitless damping coefficient on repulsion-derived term *)
+      SurfaceWithOther : bool (* applies cross-fluid surface interaction when true *)
+      CollisionCategories : uint64 (* Box2D collision category bitfield *)
+      CollisionMask : uint64 (* Box2D collision mask bitfield *)
+      Gravity : Gravity (* world/override/scale/ignore gravity mode *) }
 
     /// The default fluid particle configuration.
     static member val defaultConfig =
@@ -582,17 +584,17 @@ type [<SymbolicExpansion>] FluidParticleConfig =
           Restitution = 0.01f
           LinearDamping = 0.0f
           Impact = 5.0f
-          ForceMultiplier = 45000.f * Constants.Physics.FluidParticleScale
-          ForceSurface = 50.f * Constants.Physics.FluidParticleScale
-          ForceAdhesion = 0.f * Constants.Physics.FluidParticleScale
+          ForceMultiplier = 45000.f
+          ForceSurface = 50.f
+          ForceAdhesion = 0.f
           ShearViscosity = 15.0f
           Viscosity = 0.0f
           ViscosityLeave = 0.0f
-          GetForceMax = 1000.0f * Constants.Physics.FluidParticleScale
-          ForceMax = 187500.0f * Constants.Physics.FluidParticleScale
+          GetForceMax = 1000.0f
+          ForceMax = 187500.0f
           DensityMin = 0.25f
           DensityMax = 3.0f
-          ForceDamping = 0.0025f * Constants.Physics.FluidParticleScale
+          ForceDamping = 0.0025f
           SurfaceWithOther = true
           CollisionCategories = Box2D.NET.B2Constants.B2_DEFAULT_CATEGORY_BITS
           CollisionMask = Box2D.NET.B2Constants.B2_DEFAULT_MASK_BITS
@@ -610,10 +612,10 @@ type [<SymbolicExpansion>] FluidParticleConfig =
             Friction = 0.75f
             Restitution = 0.025f
             // see sfml-box2d-fluid: Game.cpp, Game::InitFluid
-            ForceMultiplier = 50000.0f * Constants.Physics.FluidParticleScale
-            ForceSurface = 50.0f * Constants.Physics.FluidParticleScale
-            Viscosity = 60.0f * Constants.Physics.FluidParticleScale
-            ViscosityLeave = 0.5f * Constants.Physics.FluidParticleScale
+            ForceMultiplier = 50000.0f
+            ForceSurface = 50.0f
+            Viscosity = 60.0f
+            ViscosityLeave = 0.5f
             ShearViscosity = 200.0f }
 
     /// The fluid particle configuration for gas.
@@ -625,12 +627,12 @@ type [<SymbolicExpansion>] FluidParticleConfig =
             Restitution = 0.025f
             Gravity = GravityScale -0.25f
             // see sfml-box2d-fluid: Game.cpp, Game::InitFluid
-            ForceMultiplier = 10000.f * Constants.Physics.FluidParticleScale
-            ForceSurface = 10.0f * Constants.Physics.FluidParticleScale / 10.0f // HACK: for some reason, extra scaling is needed here
-            Viscosity = 20.0f * Constants.Physics.FluidParticleScale / 10.0f
+            ForceMultiplier = 10000.f
+            ForceSurface = 10.0f
+            Viscosity = 20.0f
             DensityMin = 1.0f
             DensityMax = 1.0f
-            GetForceMax = 43750.0f * Constants.Physics.FluidParticleScale / 10.0f }
+            GetForceMax = 43750.0f }
 
     /// The fluid particle configuration for oil.
     static member val oilConfig =
@@ -639,7 +641,7 @@ type [<SymbolicExpansion>] FluidParticleConfig =
             Density = 1.5f
             Friction = 0.0f
             // see sfml-box2d-fluid: Game.cpp, Game::InitFluid
-            ForceSurface = 1000.0f * Constants.Physics.FluidParticleScale
+            ForceSurface = 1000.0f
             DensityMax = 1.5f
             SurfaceWithOther = false }
 
