@@ -447,13 +447,15 @@ type BattleDispatcher () =
                  Entity.UpImage == Assets.Gui.ButtonShortUpImage
                  Entity.DownImage == Assets.Gui.ButtonShortDownImage
                  Entity.Visible :=
-                    match battle.DialogOpt with
-                    | Some dialog ->
-                        Dialog.canAdvance id dialog &&
-                        match battle.BattleState with
-                        | BattleResult (_, LoseBattle) -> true
-                        | _ -> false
-                    | None -> false
+                    if not battle.HardcoreMode then
+                        match battle.DialogOpt with
+                        | Some dialog ->
+                            Dialog.canAdvance id dialog &&
+                            match battle.BattleState with
+                            | BattleResult (_, LoseBattle) -> true
+                            | _ -> false
+                        | None -> false
+                    else false
                  Entity.Text == "Retry"
                  Entity.ClickEvent => Retry]
 

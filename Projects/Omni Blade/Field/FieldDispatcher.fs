@@ -1457,8 +1457,8 @@ type FieldDispatcher () =
                              Entity.Text := "Play Mode"]
                         Content.button "PlayModeSelection"
                             [Entity.PositionLocal == v3 408.0f 108.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
-                             Entity.UntoggledImage == Assets.Gui.ButtonShortUpImage
-                             Entity.ToggledImage == Assets.Gui.ButtonShortDownImage
+                             Entity.UpImage == Assets.Gui.ButtonShortUpImage
+                             Entity.DownImage == Assets.Gui.ButtonShortDownImage
                              Entity.Text := if field.Options.HardcoreMode then "Hardcore" else "Original"
                              Entity.ClickEvent => MenuOptionsHardcoreModeToggle]
                         Content.text "QuitGame"
