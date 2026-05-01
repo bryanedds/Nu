@@ -406,10 +406,10 @@ type FluidEmitter2dDispatcher () =
     static member Properties =
         [define Entity.FluidParticleRenders
             (Map.ofList
-                [("Water", { Transform = Transform.makeIntuitive false v3Zero v3One v3Zero (Metadata.getTextureSizeF Assets.Default.Fluid).V3 v3Zero 0.0f; InsetOpt = ValueNone; ClipOpt = ValueNone; Image = Assets.Default.Fluid; Color = colorPacked 0x0094FFFFu; Blend = Transparent; Emission = colorZero; Flip = Unflipped })
-                 ("Sand", { Transform = Transform.makeIntuitive false v3Zero v3One v3Zero (Metadata.getTextureSizeF Assets.Default.Fluid).V3 v3Zero 0.02f; InsetOpt = ValueNone; ClipOpt = ValueNone; Image = Assets.Default.Fluid; Color = Color.Yellow; Blend = Transparent; Emission = colorZero; Flip = Unflipped })
-                 ("Gas", { Transform = Transform.makeIntuitive false v3Zero v3One v3Zero (Metadata.getTextureSizeF Assets.Default.Smoke).V3 v3Zero -0.01f; InsetOpt = ValueNone; ClipOpt = ValueNone; Image = Assets.Default.Smoke; Color = colorOne; Blend = Transparent; Emission = colorZero; Flip = Unflipped })
-                 ("Oil", { Transform = Transform.makeIntuitive false v3Zero v3One v3Zero (Metadata.getTextureSizeF Assets.Default.Fluid).V3 v3Zero 0.01f; InsetOpt = ValueNone; ClipOpt = ValueNone; Image = Assets.Default.Fluid; Color = Color.color 0.36862746f 0.22352941f 0.039215688f 1.0f; Blend = Transparent; Emission = colorZero; Flip = Unflipped })])]
+                [("Water", { Transform = Transform.makeIntuitive false v3Zero v3One v3Zero (Metadata.getTextureSizeF Assets.Default.Fluid).V3 v3Zero -0.03f; InsetOpt = ValueNone; ClipOpt = ValueNone; Image = Assets.Default.Fluid; Color = colorPacked 0x0094FFFFu; Blend = Transparent; Emission = colorZero; Flip = Unflipped })
+                 ("Sand", { Transform = Transform.makeIntuitive false v3Zero v3One v3Zero (Metadata.getTextureSizeF Assets.Default.Fluid).V3 v3Zero -0.01f; InsetOpt = ValueNone; ClipOpt = ValueNone; Image = Assets.Default.Fluid; Color = Color.Yellow; Blend = Transparent; Emission = colorZero; Flip = Unflipped })
+                 ("Gas", { Transform = Transform.makeIntuitive false v3Zero v3One v3Zero (Metadata.getTextureSizeF Assets.Default.Smoke).V3 v3Zero 0.0f; InsetOpt = ValueNone; ClipOpt = ValueNone; Image = Assets.Default.Smoke; Color = colorOne; Blend = Transparent; Emission = colorZero; Flip = Unflipped })
+                 ("Oil", { Transform = Transform.makeIntuitive false v3Zero v3One v3Zero (Metadata.getTextureSizeF Assets.Default.Fluid).V3 v3Zero -0.02f; InsetOpt = ValueNone; ClipOpt = ValueNone; Image = Assets.Default.Fluid; Color = Color.color 0.36862746f 0.22352941f 0.039215688f 1.0f; Blend = Transparent; Emission = colorZero; Flip = Unflipped })])]
 
     override this.Render (_, emitter, world) =
         let mutable transform = emitter.GetTransform world

@@ -187,24 +187,28 @@ type FluidSimDispatcher () =
                 if particleImage = Assets.Default.Ball then
                     // in Paint.NET (canvas size = 57 x 57), use the Brush (size = 57, hardness = 50%, fill = solid color #0094FF)
                     // and click the center once, to generate this Particle image.
-                    fluidEmitter.FluidParticleRenders.Map (Map.map (fun _ render ->
+                    fluidEmitter.FluidParticleRenders.Map (Map.map (fun key render ->
+                        if key = "Gas" then render else
                         let mutable transform = render.Transform
                         transform.Size <- (Metadata.getTextureSizeF Assets.Default.Fluid).V3
                         { render with Image = Assets.Default.Fluid; Transform = transform })) world
                 elif particleImage = Assets.Default.Fluid then
                     // credit: https://ena.our-dogs.info/spring-2023.html
-                    fluidEmitter.FluidParticleRenders.Map (Map.map (fun _ render ->
+                    fluidEmitter.FluidParticleRenders.Map (Map.map (fun key render ->
+                        if key = "Gas" then render else
                         let mutable transform = render.Transform
-                        transform.Size <- (Metadata.getTextureSizeF Assets.Gameplay.BubbleImage).V3
+                        transform.Size <- (Metadata.getTextureSizeF Assets.Default.Fluid).V3 // scale it down to fluid size
                         { render with Image = Assets.Gameplay.BubbleImage; Transform = transform })) world
                 elif particleImage = Assets.Gameplay.BubbleImage then
                     // credit: Aether.Physics2D demos
-                    fluidEmitter.FluidParticleRenders.Map (Map.map (fun _ render ->
+                    fluidEmitter.FluidParticleRenders.Map (Map.map (fun key render ->
+                        if key = "Gas" then render else
                         let mutable transform = render.Transform
                         transform.Size <- v3 8f 8f 0f
                         { render with Image = Assets.Gameplay.GooImage; Transform = transform })) world
                 else
-                    fluidEmitter.FluidParticleRenders.Map (Map.map (fun _ render ->
+                    fluidEmitter.FluidParticleRenders.Map (Map.map (fun key render ->
+                        if key = "Gas" then render else
                         let mutable transform = render.Transform
                         transform.Size <- v3 2f 2f 0f
                         { render with Image = Assets.Default.Ball; Transform = transform })) world
