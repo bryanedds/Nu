@@ -382,20 +382,51 @@ module Character =
                 elif Map.exists (fun key _ -> match key with Time true -> true | _ -> false) statuses then Color (byte 255, byte 255, byte 255, pulseIntensity) // bright white
                 elif Map.exists (fun key _ -> match key with Time false -> true | _ -> false) statuses then Color (byte 127, byte 127, byte 127, pulseIntensity) // dark white
                 elif Map.exists (fun key _ -> match key with Power (true, _) -> true | _ -> false) statuses then Color (byte 255, byte 255, byte 127, pulseIntensity) // bright orange
-                elif Map.exists (fun key _ -> match key with Power (false, _) -> true | _ -> false) statuses then Color (byte 127, byte 127, byte 0, pulseIntensity) // dark orange
                 elif Map.exists (fun key _ -> match key with Magic (true, _) -> true | _ -> false) statuses then Color (byte 255, byte 127, byte 255, pulseIntensity) // bright purple
-                elif Map.exists (fun key _ -> match key with Magic (false, _) -> true | _ -> false) statuses then Color (byte 127, byte 0, byte 127, pulseIntensity) // dark purple
                 elif Map.exists (fun key _ -> match key with Shield (true, _) -> true | _ -> false) statuses then Color (byte 127, byte 255, byte 127, pulseIntensity) // bright yellow
-                elif Map.exists (fun key _ -> match key with Shield (false, _) -> true | _ -> false) statuses then Color (byte 0, byte 127, byte 0, pulseIntensity) // dark yellow
-                elif Map.containsKey Confuse statuses then Color (byte 191, byte 191, byte 255, pulseIntensity) // blue-green
-                elif Map.containsKey StatusType.Sleep statuses then Color (byte 0, byte 0, byte 255, pulseIntensity) // blue
-                elif Map.containsKey Silence statuses then Color (byte 255,byte 255, byte 0, pulseIntensity) // orange
-                elif Map.containsKey Poison statuses then Color (byte 0, byte 191, byte 0, pulseIntensity) // green
                 else Color.Zero
         else Color.Zero
 
     let getAnimationFinished time character =
         CharacterAnimationState.getFinished time character.CharacterAnimationState_
+
+    let getAfflictionInsetOpt1 status =
+        match status with
+        | Confuse -> Some 4
+        | Curse -> Some 3
+        | StatusType.Sleep -> Some 2
+        | Silence -> Some 1
+        | Poison -> Some 0
+        | Time false -> Some 5
+        | Power (false, _) -> Some 6
+        | Magic (false, _) -> Some 7
+        | Shield (false, _) -> Some 8
+        | _ -> None
+
+    let getAfflictionInsetOpt time (character : Character) =
+        if character.Standing then
+            let statuses = character.Statuses
+            let celYOpt =
+                if character.Wounded then None
+                else
+                    match statuses.Count with
+                    | 0 ->
+                        None
+                    | 1 ->
+                        let status = statuses.Pairs |> Seq.head |> fst
+                        getAfflictionInsetOpt1 status
+                    | count ->
+                        let index = int ((time / 64L) % int64 count)
+                        let status = statuses.Pairs |> Seq.item index |> fst
+                        getAfflictionInsetOpt1 status
+            match celYOpt with
+            | Some afflictionY ->
+                let afflictionX = time / 8L % 8L |> int
+                let afflictionPosition = v2 (single afflictionX * Constants.Battle.AfflictionCelSize.X) (single afflictionY * Constants.Battle.AfflictionCelSize.Y)
+                let inset = box2 afflictionPosition Constants.Battle.AfflictionCelSize
+                Some inset
+            | None -> None
+        else None
 
     let getCharacterInputState character =
         character.CharacterInputState_

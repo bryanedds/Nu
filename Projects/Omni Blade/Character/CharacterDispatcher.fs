@@ -17,30 +17,6 @@ module CharacterExtensions =
 type CharacterDispatcher () =
     inherit Entity2dDispatcher<CharacterPlus, Message, Command> (true, false, false, CharacterPlus.empty)
 
-    static let getAfflictionInsetOpt time (character : Character) =
-        if character.Standing then
-            let statuses = character.Statuses
-            let celYOpt =
-                if character.Wounded then None
-                elif Map.containsKey Confuse statuses then Some 4
-                elif Map.containsKey Curse statuses then Some 3
-                elif Map.containsKey StatusType.Sleep statuses then Some 2
-                elif Map.containsKey Silence statuses then Some 1
-                elif Map.containsKey Poison statuses then Some 0
-                elif Map.exists (fun key _ -> match key with Time false -> true | _ -> false) statuses then Some 5
-                elif Map.exists (fun key _ -> match key with Power (false, _) -> true | _ -> false) statuses then Some 6
-                elif Map.exists (fun key _ -> match key with Magic (false, _) -> true | _ -> false) statuses then Some 7
-                elif Map.exists (fun key _ -> match key with Shield (false, _) -> true | _ -> false) statuses then Some 8
-                else None
-            match celYOpt with
-            | Some afflictionY ->
-                let afflictionX = time / 8L % 8L |> int
-                let afflictionPosition = v2 (single afflictionX * Constants.Battle.AfflictionCelSize.X) (single afflictionY * Constants.Battle.AfflictionCelSize.Y)
-                let inset = box2 afflictionPosition Constants.Battle.AfflictionCelSize
-                Some inset
-            | None -> None
-        else None
-
     static let getChargeOrbInsetOpt time (character : Character) =
         if character.Standing then
             let celXOpt =
@@ -94,7 +70,7 @@ type CharacterDispatcher () =
                 world
 
             // render affliction (if any)
-            match getAfflictionInsetOpt time character with
+            match Character.getAfflictionInsetOpt time character with
             | Some afflictionInset ->
                 let afflictionImage = Assets.Battle.AfflictionsAnimationSheet
                 let afflictionPosition =
