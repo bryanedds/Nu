@@ -48,6 +48,7 @@ type FieldMessage =
     | MenuKeyItemsSelect of int * (ItemType * int Option)
     | MenuOptionsOpen
     | MenuOptionsSelectBattleSpeed of BattleSpeed
+    | MenuOptionsHardcoreModeToggle
     | MenuOptionsQuitPrompt
     | MenuOptionsQuitConfirm
     | MenuOptionsQuitCancel
@@ -94,6 +95,7 @@ type SaveSlot =
 
 type [<SymbolicExpansion>] Options =
     { BattleSpeed : BattleSpeed
+      HardcoreMode : bool
       SongVolume : single }
 
 type FieldState =
@@ -204,7 +206,7 @@ module Field =
                 (propDescriptor.PropId, prop))
         | None -> Map.empty
 
-    let private makeBattleFromTeam battleSpeed inventory (team : Map<int, Teammate>) prizePool battleData =
+    let private makeBattleFromTeam hardcoreMode battleSpeed inventory (team : Map<int, Teammate>) prizePool battleData =
         let party = team |> Map.toList |> List.tryTake 3
         let allyPositions =
             if List.length party < 3
@@ -232,7 +234,7 @@ module Field =
                         character
                     | None -> failwith ("Could not find CharacterData for '" + scstring teammate.CharacterType + "'."))
                 party
-        Battle.makeFromParty inventory party prizePool battleSpeed battleData
+        Battle.makeFromParty hardcoreMode inventory party prizePool battleSpeed battleData
 
     let rec detokenize (field : Field) (text : string) =
         text
@@ -577,7 +579,7 @@ module Field =
         field
 
     let commenceBattle songTime battleData prizePool (field : Field) =
-        let battle = makeBattleFromTeam field.Options.BattleSpeed field.Inventory field.Team prizePool battleData
+        let battle = makeBattleFromTeam field.Options.HardcoreMode field.Options.BattleSpeed field.Inventory field.Team prizePool battleData
         let field = setFieldSongTimeOpt (Some songTime) field
         (battle, field)
 
@@ -629,6 +631,9 @@ module Field =
 
     (* High-Level Operations (signal-producing) *)
 
+    let hardcoreModeToggle field =
+        { field with Options_ = { field.Options with HardcoreMode = not field.Options_.HardcoreMode }}
+
     let quitPrompt field =
         match field.Menu_.MenuState with
         | MenuOptions false -> { field with Menu_ = { field.Menu_ with MenuState = MenuOptions true }}
@@ -654,7 +659,7 @@ module Field =
         if field.Advents_.IsSupersetOf requirements then
             let field = mapAvatar (Avatar.lookAt prop.Perimeter.Center) field
             let field = mapAdvents (Set.add (Opened chestId)) field
-            let field = mapInventory (Inventory.tryAddItem itemType >> snd) field
+            let field = mapInventory (Inventory.tryAddItem field.Options.HardcoreMode itemType >> snd) field
             let field =
                 match battleTypeOpt with
                 | Some battleType -> setDialogOpt (Some (Dialog.makePlus DialogThin ("Found " + itemType.Name + "!^But something approaches!") None (Some (battleType, Set.empty)))) field
@@ -839,7 +844,7 @@ module Field =
                     world
 
         | AddItem itemType ->
-            (Fin, definitions, just (mapInventory (Inventory.tryAddItem itemType >> snd) field))
+            (Fin, definitions, just (mapInventory (Inventory.tryAddItem field.Options.HardcoreMode itemType >> snd) field))
 
         | RemoveItem itemType ->
             (Fin, definitions, just (mapInventory (Inventory.tryRemoveItem itemType >> snd) field))
@@ -1319,9 +1324,13 @@ module Field =
             match Data.Value.Fields.TryGetValue fieldType with
             | (true, fieldData) -> (fieldData.EncounterRate, fieldData.FieldDebugAdvents, fieldData.FieldDebugKeyItems, fieldData.Definitions)
             | (false, _) -> (1.0f, Set.empty, List.empty, Map.empty)
+        let options =
+            { BattleSpeed = WaitSpeed
+              HardcoreMode = false
+              SongVolume = Constants.Gameplay.SongVolumeDefault }
         let (advents, inventory) =
             match fieldType with
-            | DebugField -> (debugAdvents, snd (Inventory.tryAddItems (List.map KeyItem debugKeyItems) inventory))
+            | DebugField -> (debugAdvents, snd (Inventory.tryAddItems options.HardcoreMode (List.map KeyItem debugKeyItems) inventory))
             | _ -> (advents, inventory)
         let omniSeedState = OmniSeedState.makeFromSeedState randSeedState
         let props = makeProps time fieldType omniSeedState
@@ -1343,7 +1352,7 @@ module Field =
           Menu_ = { MenuState = MenuClosed; MenuUseOpt = None }
           PartyMenu_ = { PartyMenuState = PartyMenuClosed; PartyMenuSelections = [] }
           ShopOpt_ = None
-          Options_ = { BattleSpeed = WaitSpeed; SongVolume = Constants.Gameplay.SongVolumeDefault }
+          Options_ = options
           Definitions_ = definitions
           DefinitionsOriginal_ = definitions
           Cue_ = CueSystem.Fin
@@ -1374,7 +1383,7 @@ module Field =
           Menu_ = { MenuState = MenuClosed; MenuUseOpt = None }
           PartyMenu_ = { PartyMenuState = PartyMenuClosed; PartyMenuSelections = [] }
           ShopOpt_ = None
-          Options_ = { BattleSpeed = WaitSpeed; SongVolume = Constants.Gameplay.SongVolumeDefault }
+          Options_ = { BattleSpeed = WaitSpeed; HardcoreMode = false; SongVolume = Constants.Gameplay.SongVolumeDefault }
           Definitions_ = Map.empty
           DefinitionsOriginal_ = Map.empty
           Cue_ = CueSystem.Fin

@@ -396,7 +396,7 @@ type FieldDispatcher () =
                                     | None -> inventory
                                 let inventory =
                                     match teammate.WeaponOpt with
-                                    | Some weaponType -> Inventory.tryAddItem (Equipment (WeaponType weaponType)) inventory |> snd
+                                    | Some weaponType -> Inventory.tryAddItem field.Options.HardcoreMode (Equipment (WeaponType weaponType)) inventory |> snd
                                     | None -> inventory
                                 let teammate = Teammate.equipWeaponOpt weaponTypeOpt teammate
                                 (teammate, inventory)
@@ -407,7 +407,7 @@ type FieldDispatcher () =
                                     | None -> inventory
                                 let inventory =
                                     match teammate.ArmorOpt with
-                                    | Some armorType -> Inventory.tryAddItem (Equipment (ArmorType armorType)) inventory |> snd
+                                    | Some armorType -> Inventory.tryAddItem field.Options.HardcoreMode (Equipment (ArmorType armorType)) inventory |> snd
                                     | None -> inventory
                                 let teammate = Teammate.equipArmorOpt armorTypeOpt teammate
                                 (teammate, inventory)
@@ -418,7 +418,7 @@ type FieldDispatcher () =
                                     | None -> inventory
                                 let inventory =
                                     match teammate.Accessories with
-                                    | accessoryType :: _ -> Inventory.tryAddItem (Equipment (AccessoryType accessoryType)) inventory |> snd
+                                    | accessoryType :: _ -> Inventory.tryAddItem field.Options.HardcoreMode (Equipment (AccessoryType accessoryType)) inventory |> snd
                                     | [] -> inventory
                                 let teammate = Teammate.equipAccessoryOpt accessoryTypeOpt teammate
                                 (teammate, inventory)
@@ -476,7 +476,7 @@ type FieldDispatcher () =
                     let itemType = snd menuUse.MenuUseSelection
                     let (result, displacedOpt, teammate) = Teammate.tryUseItem itemType teammate
                     let field = if result then Field.mapInventory (Inventory.tryRemoveItem itemType >> snd) field else field
-                    let field = match displacedOpt with Some displaced -> Field.mapInventory (Inventory.tryAddItem displaced >> snd) field | None -> field
+                    let field = match displacedOpt with Some displaced -> Field.mapInventory (Inventory.tryAddItem field.Options.HardcoreMode displaced >> snd) field | None -> field
                     let field = Field.mapTeam (Map.add index teammate) field
                     let field = Field.mapMenu (constant { field.Menu with MenuUseOpt = None }) field
                     World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Field.HealSound world
@@ -575,6 +575,10 @@ type FieldDispatcher () =
             World.setMasterSongVolume field.Options.SongVolume world
             just field
 
+        | MenuOptionsHardcoreModeToggle ->
+            let field = Field.hardcoreModeToggle field
+            just field
+
         | MenuOptionsQuitPrompt ->
             let field = Field.quitPrompt field
             just field
@@ -650,11 +654,11 @@ type FieldDispatcher () =
                     let valid =
                         match shop.ShopState with
                         | ShopBuying ->
-                            Inventory.canAddItem itemType field.Inventory &&
+                            Inventory.canAddItem field.Options.HardcoreMode itemType field.Inventory &&
                             field.Inventory.Gold >= shopConfirm.ShopConfirmPrice
                         | ShopSelling -> true
                     if valid then
-                        let field = Field.mapInventory (match shop.ShopState with ShopBuying -> Inventory.tryAddItem itemType >> snd | ShopSelling -> Inventory.tryRemoveItem itemType >> snd) field
+                        let field = Field.mapInventory (match shop.ShopState with ShopBuying -> Inventory.tryAddItem field.Options.HardcoreMode itemType >> snd | ShopSelling -> Inventory.tryRemoveItem itemType >> snd) field
                         let field = Field.mapInventory (match shop.ShopState with ShopBuying -> Inventory.removeGold shopConfirm.ShopConfirmPrice | ShopSelling -> Inventory.addGold shopConfirm.ShopConfirmPrice) field
                         let field = Field.mapShopOpt (Option.map (fun shop -> { shop with ShopConfirmOpt = None })) field
                         World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Field.PurchaseSound world
@@ -1396,71 +1400,82 @@ type FieldDispatcher () =
                              Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                              Entity.Text == "Battle Speed"]
                         Content.radioButton "Wait"
-                            [Entity.PositionLocal == v3 180.0f 390.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
+                            [Entity.PositionLocal == v3 180.0f 396.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
                              Entity.UndialedImage == Assets.Gui.ButtonShortUpImage
                              Entity.DialedImage == Assets.Gui.ButtonShortDownImage
                              Entity.Text == "Wait"
                              Entity.Dialed := match field.Options.BattleSpeed with WaitSpeed -> true | _ -> false
                              Entity.DialedEvent => MenuOptionsSelectBattleSpeed WaitSpeed]
                         Content.radioButton "Paced"
-                            [Entity.PositionLocal == v3 408.0f 390.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
+                            [Entity.PositionLocal == v3 408.0f 396.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
                              Entity.UndialedImage == Assets.Gui.ButtonShortUpImage
                              Entity.DialedImage == Assets.Gui.ButtonShortDownImage
                              Entity.Text == "Paced"
                              Entity.Dialed := match field.Options.BattleSpeed with PacedSpeed -> true | _ -> false
                              Entity.DialedEvent => MenuOptionsSelectBattleSpeed PacedSpeed]
                         Content.radioButton "Swift"
-                            [Entity.PositionLocal == v3 636.0f 390.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
+                            [Entity.PositionLocal == v3 636.0f 396.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
                              Entity.UndialedImage == Assets.Gui.ButtonShortUpImage
                              Entity.DialedImage == Assets.Gui.ButtonShortDownImage
                              Entity.Text == "Swift"
                              Entity.Dialed := match field.Options.BattleSpeed with SwiftSpeed -> true | _ -> false
                              Entity.DialedEvent => MenuOptionsSelectBattleSpeed SwiftSpeed]
                         Content.text "SongVolume"
-                            [Entity.PositionLocal == v3 336.0f 336.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 288.0f 48.0f 0.0f
+                            [Entity.PositionLocal == v3 336.0f 348.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 288.0f 48.0f 0.0f
                              Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                              Entity.Text == "Song Volume"]
                         Content.button "SongVolumeDown"
-                            [Entity.PositionLocal == v3 300.0f 282.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
+                            [Entity.PositionLocal == v3 300.0f 300.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
                              Entity.UpImage == Assets.Gui.ButtonShortUpImage
                              Entity.DownImage == Assets.Gui.ButtonShortDownImage
                              Entity.Text == "-"
                              Entity.ClickEvent => MenuOptionsSongVolumeDown]
                         Content.text "SongVolumeInt"
-                            [Entity.PositionLocal == v3 408.0f 282.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
+                            [Entity.PositionLocal == v3 408.0f 300.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
                              Entity.UpImage == Assets.Gui.ButtonShortUpImage
                              Entity.DownImage == Assets.Gui.ButtonShortDownImage
                              Entity.Text := field.Options.SongVolume * 20.0f |> int |> string]
                         Content.button "SongVolumeUp"
-                            [Entity.PositionLocal == v3 516.0f 282.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
+                            [Entity.PositionLocal == v3 516.0f 300.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
                              Entity.UpImage == Assets.Gui.ButtonShortUpImage
                              Entity.DownImage == Assets.Gui.ButtonShortDownImage
                              Entity.Text == "+"
                              Entity.ClickEvent => MenuOptionsSongVolumeUp]
                         Content.text "FullScreen"
-                            [Entity.PositionLocal == v3 336.0f 228.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 288.0f 48.0f 0.0f
+                            [Entity.PositionLocal == v3 336.0f 252.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 288.0f 48.0f 0.0f
                              Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                              Entity.Text == "Full Screen"]
                         Content.button "ToggleFullScreen"
-                            [Entity.PositionLocal == v3 408.0f 174.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
+                            [Entity.PositionLocal == v3 408.0f 204.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
                              Entity.UpImage == Assets.Gui.ButtonShortUpImage
                              Entity.DownImage == Assets.Gui.ButtonShortDownImage
                              Entity.Text == "Toggle"
                              Entity.ClickEvent => MenuOptionsToggleFullScreen]
+                        Content.text "PlayMode"
+                            [Entity.PositionLocal == v3 336.0f 156.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 288.0f 48.0f 0.0f
+                             Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
+                             Entity.Text := "Play Mode"]
+                        Content.button "PlayModeSelection"
+                            [Entity.PositionLocal == v3 408.0f 108.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
+                             Entity.UntoggledImage == Assets.Gui.ButtonShortUpImage
+                             Entity.ToggledImage == Assets.Gui.ButtonShortDownImage
+                             Entity.Text := if field.Options.HardcoreMode then "Hardcore" else "Original"
+                             Entity.ClickEvent => MenuOptionsHardcoreModeToggle]
                         Content.text "QuitGame"
-                            [Entity.PositionLocal == v3 336.0f 120.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 288.0f 48.0f 0.0f
+                            [Entity.PositionLocal == v3 336.0f 60.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 288.0f 48.0f 0.0f
                              Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                              Entity.Text == "Quit Game"]
                         Content.button "Quit"
-                            [Entity.PositionLocal == v3 408.0f 66.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
+                            [Entity.PositionLocal == v3 408.0f 12.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
                              Entity.UpImage == Assets.Gui.ButtonShortUpImage
                              Entity.DownImage == Assets.Gui.ButtonShortDownImage
                              Entity.Text == "Quit"
                              Entity.ClickEvent => MenuOptionsQuitPrompt]
-                        Content.text "About"
-                            [Entity.PositionLocal == v3 262.0f 6.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 432.0f 48.0f 0.0f
-                             Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
-                             Entity.Text == "Omni Blade Demo v1.1.1"]
+                        // NOTE: got rid of this to make room for play mode selection
+                        //Content.text "About"
+                        //    [Entity.PositionLocal == v3 262.0f 6.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 432.0f 48.0f 0.0f
+                        //     Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
+                        //     Entity.Text == "Omni Blade Demo v1.1.1"]
                      else
                         Content.text "QuitConfirmation"
                             [Entity.PositionLocal == v3 336.0f 312.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 288.0f 48.0f 0.0f

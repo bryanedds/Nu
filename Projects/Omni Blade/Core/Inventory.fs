@@ -173,6 +173,11 @@ type [<SymbolicExpansion>] Inventory =
         Array.definitize |>
         Map.ofArray
 
+    static member getItemLimit hardcoreMode =
+        if hardcoreMode
+        then Constants.Gameplay.ItemLimitHardcore
+        else Constants.Gameplay.ItemLimitNormal
+
     static member containsItem item inventory =
         match Map.tryFind item inventory.Items with
         | Some itemCount when itemCount > 0 -> true
@@ -181,29 +186,29 @@ type [<SymbolicExpansion>] Inventory =
     static member containsItems items inventory =
         List.forall (flip Inventory.containsItem inventory) items
 
-    static member canAddItem item inventory =
+    static member canAddItem hardcoreMode item inventory =
         match item with
         | Equipment _ | Consumable _ | KeyItem _ ->
             match Map.tryFind item inventory.Items with
-            | Some itemCount -> itemCount < Constants.Gameplay.ItemLimit
+            | Some itemCount -> itemCount < Inventory.getItemLimit hardcoreMode
             | None -> true
         | Stash _ -> true
 
-    static member tryAddItem item inventory =
+    static member tryAddItem hardcoreMode item inventory =
         match item with
         | Equipment _ | Consumable _ | KeyItem _ ->
             match Map.tryFind item inventory.Items with
             | Some itemCount ->
-                if itemCount < Constants.Gameplay.ItemLimit then
+                if itemCount < Inventory.getItemLimit hardcoreMode then
                     let inventory = { inventory with Items = Map.add item (inc itemCount) inventory.Items }
                     (true, inventory)
                 else (false, inventory)
             | None -> (true, { inventory with Items = Map.add item 1 inventory.Items })
         | Stash gold -> (true, { inventory with Gold = inventory.Gold + gold })
 
-    static member tryAddItems items inventory =
+    static member tryAddItems hardcoreMode items inventory =
         List.foldBack (fun item (failures, inventory) ->
-            match Inventory.tryAddItem item inventory with
+            match Inventory.tryAddItem hardcoreMode item inventory with
             | (true, inventory) -> (failures, inventory)
             | (false, inventory) -> (Some item :: failures, inventory))
             items ([], inventory)

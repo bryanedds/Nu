@@ -115,6 +115,7 @@ module Battle =
         private
             { BattleTime_ : int64
               BattleState_ : BattleState
+              HardcoreMode_ : bool
               Inventory_ : Inventory
               Characters_ : Map<CharacterIndex, Character>
               PrizePool_ : PrizePool
@@ -135,6 +136,7 @@ module Battle =
         member this.Inventory = this.Inventory_
         member this.Characters = this.Characters_
         member this.PrizePool = this.PrizePool_
+        member this.HardcoreMode = this.HardcoreMode_
         member this.BattleData = this.BattleData_
         member this.TileMap = this.TileMap_
         member this.TileIndexOffset = this.TileIndexOffset_
@@ -2086,7 +2088,7 @@ module Battle =
                             else ally)
                             battle
                     let battle = setInventory ({ battle.Inventory_ with Gold = battle.Inventory_.Gold + battle.PrizePool_.Gold }) battle
-                    let battle = setInventory (Inventory.tryAddItems battle.PrizePool_.Items battle.Inventory_ |> snd) battle
+                    let battle = setInventory (Inventory.tryAddItems battle.HardcoreMode battle.PrizePool_.Items battle.Inventory_ |> snd) battle
                     if List.notEmpty alliesLevelingUp then World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Battle.GrowthSound world
                     just battle
                 World.fadeOutSong 360L world
@@ -2156,7 +2158,7 @@ module Battle =
         let field = { field with BattleTime_ = inc field.BattleTime_ }
         just field
 
-    let makeFromParty inventory (party : Party) (prizePool : PrizePool) battleSpeed battleData =
+    let makeFromParty hardcoreMode inventory (party : Party) (prizePool : PrizePool) battleSpeed battleData =
         let (retry, enemies) =
             match battleData.BattleEnemyListDataForRetryOpt with
             | Some enemyDataList ->
@@ -2186,6 +2188,7 @@ module Battle =
         let tileIndexOffsetRange = battleData.BattleTileIndexOffsetRange
         { BattleTime_ = 0L
           BattleState_ = BattleReadying (1L, retry)
+          HardcoreMode_ = hardcoreMode
           Inventory_ = inventory
           Characters_ = characters
           PrizePool_ = prizePool
@@ -2205,6 +2208,7 @@ module Battle =
         | Some battle ->
             { BattleTime_ = 0L
               BattleState_ = BattleConclude
+              HardcoreMode_ = false
               Inventory_ = Inventory.empty
               Characters_ = Map.empty
               PrizePool_ = PrizePool.empty
