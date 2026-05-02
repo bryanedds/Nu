@@ -6,6 +6,7 @@
 
 namespace Nu
 open System
+open System.Runtime.InteropServices
 open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Numerics
@@ -382,6 +383,10 @@ type RendererThread () =
 
         // create imgui renderer
         let rendererImGui = VulkanRendererImGui.make assetTextureRequests assetTextureOpts fonts windowViewport vkc :> RendererImGui
+
+        // setup sdl callback for app backgrounding on mobile devices
+        let callback = Marshal.GetFunctionPointerForDelegate<Hl.BackgroundingDelegate> Hl.backgroundingDelegate
+        SDL3.SDL_SetEventFilter (callback, IntPtr.Zero)
 
         // mark as started
         started <- true

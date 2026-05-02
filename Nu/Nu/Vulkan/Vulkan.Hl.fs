@@ -48,6 +48,16 @@ module Hl =
     let mutable private SurfaceState = SurfaceDestroyed
     let mutable private Surface = Unchecked.defaultof<VkSurfaceKHR>
     
+    let private handleBackgrounding (userData : nativeint, event : nativeint) =
+        Log.infoOnce "Callback active."
+        true
+
+    // set up delegate for app backgrounding callback
+    // TODO: DJL: for mobile devices: https://learn.microsoft.com/en-us/dotnet/standard/native-interop/calling-conventions#when-you-can-omit-the-calling-convention.
+    [<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
+    type BackgroundingDelegate = delegate of (nativeint * nativeint) -> bool
+    let mutable backgroundingDelegate : BackgroundingDelegate = BackgroundingDelegate handleBackgrounding
+    
     /// The format of an image.
     type ImageFormat =
         | Rgba8
@@ -1185,6 +1195,7 @@ module Hl =
             // return result
             result
     
+    // TODO: DJL: for mobile devices: https://learn.microsoft.com/en-us/dotnet/standard/native-interop/calling-conventions#when-you-can-omit-the-calling-convention.
     [<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
     type private DebugDelegate =
         delegate of VkDebugUtilsMessageSeverityFlagsEXT * VkDebugUtilsMessageTypeFlagsEXT * nativeint * nativeint -> uint32
