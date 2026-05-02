@@ -1396,86 +1396,86 @@ type FieldDispatcher () =
                     [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuInventoryOpen) (fun () -> MenuTechsOpen) (fun () -> MenuKeyItemsOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
                      if not quitPrompt then
                         Content.text "BattleSpeed"
-                            [Entity.PositionLocal == v3 336.0f 444.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 288.0f 48.0f 0.0f
+                            [Entity.PositionLocal == v3 336.0f 447.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 288.0f 48.0f 0.0f
                              Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                              Entity.Text == "Battle Speed"]
                         Content.radioButton "Wait"
-                            [Entity.PositionLocal == v3 180.0f 396.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
+                            [Entity.PositionLocal == v3 180.0f 399.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
                              Entity.UndialedImage == Assets.Gui.ButtonShortUpImage
                              Entity.DialedImage == Assets.Gui.ButtonShortDownImage
                              Entity.Text == "Wait"
                              Entity.Dialed := match field.Options.BattleSpeed with WaitSpeed -> true | _ -> false
                              Entity.DialedEvent => MenuOptionsSelectBattleSpeed WaitSpeed]
                         Content.radioButton "Paced"
-                            [Entity.PositionLocal == v3 408.0f 396.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
+                            [Entity.PositionLocal == v3 408.0f 399.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
                              Entity.UndialedImage == Assets.Gui.ButtonShortUpImage
                              Entity.DialedImage == Assets.Gui.ButtonShortDownImage
                              Entity.Text == "Paced"
                              Entity.Dialed := match field.Options.BattleSpeed with PacedSpeed -> true | _ -> false
                              Entity.DialedEvent => MenuOptionsSelectBattleSpeed PacedSpeed]
                         Content.radioButton "Swift"
-                            [Entity.PositionLocal == v3 636.0f 396.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
+                            [Entity.PositionLocal == v3 636.0f 399.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
                              Entity.UndialedImage == Assets.Gui.ButtonShortUpImage
                              Entity.DialedImage == Assets.Gui.ButtonShortDownImage
                              Entity.Text == "Swift"
                              Entity.Dialed := match field.Options.BattleSpeed with SwiftSpeed -> true | _ -> false
                              Entity.DialedEvent => MenuOptionsSelectBattleSpeed SwiftSpeed]
                         Content.text "SongVolume"
-                            [Entity.PositionLocal == v3 336.0f 348.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 288.0f 48.0f 0.0f
+                            [Entity.PositionLocal == v3 336.0f 351.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 288.0f 48.0f 0.0f
                              Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                              Entity.Text == "Song Volume"]
                         Content.button "SongVolumeDown"
-                            [Entity.PositionLocal == v3 300.0f 300.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
+                            [Entity.PositionLocal == v3 300.0f 303.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
                              Entity.UpImage == Assets.Gui.ButtonShortUpImage
                              Entity.DownImage == Assets.Gui.ButtonShortDownImage
                              Entity.Text == "-"
                              Entity.ClickEvent => MenuOptionsSongVolumeDown]
                         Content.text "SongVolumeInt"
-                            [Entity.PositionLocal == v3 408.0f 300.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
+                            [Entity.PositionLocal == v3 408.0f 303.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
                              Entity.UpImage == Assets.Gui.ButtonShortUpImage
                              Entity.DownImage == Assets.Gui.ButtonShortDownImage
                              Entity.Text := field.Options.SongVolume * 20.0f |> int |> string]
                         Content.button "SongVolumeUp"
-                            [Entity.PositionLocal == v3 516.0f 300.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
+                            [Entity.PositionLocal == v3 516.0f 303.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
                              Entity.UpImage == Assets.Gui.ButtonShortUpImage
                              Entity.DownImage == Assets.Gui.ButtonShortDownImage
                              Entity.Text == "+"
                              Entity.ClickEvent => MenuOptionsSongVolumeUp]
                         Content.text "FullScreen"
-                            [Entity.PositionLocal == v3 336.0f 252.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 288.0f 48.0f 0.0f
+                            [Entity.PositionLocal == v3 336.0f 255.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 288.0f 48.0f 0.0f
                              Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                              Entity.Text == "Full Screen"]
                         Content.button "ToggleFullScreen"
-                            [Entity.PositionLocal == v3 408.0f 204.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
+                            [Entity.PositionLocal == v3 408.0f 207.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
                              Entity.UpImage == Assets.Gui.ButtonShortUpImage
                              Entity.DownImage == Assets.Gui.ButtonShortDownImage
                              Entity.Text == "Toggle"
                              Entity.ClickEvent => MenuOptionsToggleFullScreen]
                         Content.text "PlayMode"
-                            [Entity.PositionLocal == v3 336.0f 156.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 288.0f 48.0f 0.0f
+                            [Entity.PositionLocal == v3 336.0f 159.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 288.0f 48.0f 0.0f
                              Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                              Entity.Text := "Play Mode"]
                         Content.button "PlayModeSelection"
-                            [Entity.PositionLocal == v3 408.0f 108.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
+                            [Entity.PositionLocal == v3 408.0f 111.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
                              Entity.UpImage == Assets.Gui.ButtonShortUpImage
                              Entity.DownImage == Assets.Gui.ButtonShortDownImage
                              Entity.Text := if field.Options.HardcoreMode then "Hardcore" else "Original"
                              Entity.ClickEvent => MenuOptionsHardcoreModeToggle]
                         Content.text "QuitGame"
-                            [Entity.PositionLocal == v3 336.0f 60.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 288.0f 48.0f 0.0f
+                            [Entity.PositionLocal == v3 336.0f 63.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 288.0f 48.0f 0.0f
                              Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                              Entity.Text == "Quit Game"]
                         Content.button "Quit"
-                            [Entity.PositionLocal == v3 408.0f 12.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
+                            [Entity.PositionLocal == v3 408.0f 15.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
                              Entity.UpImage == Assets.Gui.ButtonShortUpImage
                              Entity.DownImage == Assets.Gui.ButtonShortDownImage
                              Entity.Text == "Quit"
                              Entity.ClickEvent => MenuOptionsQuitPrompt]
-                        // NOTE: got rid of this to make room for play mode selection
-                        //Content.text "About"
-                        //    [Entity.PositionLocal == v3 262.0f 6.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 432.0f 48.0f 0.0f
-                        //     Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
-                        //     Entity.Text == "Omni Blade Demo v1.2.0"]
+                        Content.text "Version"
+                            [Entity.PositionLocal == v3 672.0f 15.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 198.0f 48.0f 0.0f
+                             Entity.Justification == Justified (JustifyRight, JustifyMiddle)
+                             Entity.TextColor == color 0.35f 0.35f 0.35f 1.0f
+                             Entity.Text == "Demo v1.2.0"]
                      else
                         Content.text "QuitConfirmation"
                             [Entity.PositionLocal == v3 336.0f 312.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 288.0f 48.0f 0.0f
