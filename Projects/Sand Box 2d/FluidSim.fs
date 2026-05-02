@@ -36,14 +36,20 @@ type LineSegmentsDispatcher () =
                 let box = Box2.Enclose segments
                 let lineWidth = lineSegments.GetLineWidth world
                 let size = v2 (box.Width + lineWidth) (box.Height + lineWidth)
+                let segments = segments |> Array.map (fun p -> ((p - box.Center) / size).V3)
                 lineSegments.SetPosition box.Center.V3 world
                 lineSegments.SetSize size.V3 world
                 lineSegments.SetBodyShape (
-                    ContourShape
-                        { Links = segments |> Array.map (fun p -> ((p - box.Center) / size).V3)
-                          Closed = false
-                          TransformOpt = None
-                          PropertiesOpt = None }) world
+                    BodyShapes [
+                        // NOTE: One contour only collides with the right hand side of its links.
+                        // For two-sided collisions, we create two contours with opposite winding orders.
+                        for segments in [segments; Array.rev segments] do
+                            ContourShape
+                                { Links = [|Array.head segments; yield! segments; Array.last segments|] // the first and last links provide no collision.
+                                  Closed = false
+                                  TransformOpt = None
+                                  PropertiesOpt = None }
+                    ]) world
             Cascade) lineSegments.LineSegments.ChangeEvent lineSegments world
 
     override this.Render (_, lineSegments, world) =
@@ -172,73 +178,40 @@ type FluidSimDispatcher () =
                         World.setGravity2d (snd gravities[(i + 1) % gravities.Length]) world
 
             // particle sprite button
+            let particleImage = (fluidEmitter.GetFluidParticleRenders world).["Water"].Image
             if World.doButton $"Particle Sprite"
                 [Entity.Position .= v3 255f 80f 0f
-                 Entity.Text @= $"Particle Sprite: {(fluidEmitter.GetStaticImage world).AssetName}"
+                 Entity.Text @= $"Particle Sprite: {particleImage.AssetName}"
                  Entity.Elevation .= 1f
                  Entity.FontSizing .= Some 8.f] world then
-                if fluidEmitter.GetStaticImage world = Assets.Default.Ball then
-                    // in Paint.NET (canvas size = 50 x 50), use the Brush (size = 50, hardness = 50%, fill = solid color #0094FF)
+                if particleImage = Assets.Default.Ball then
+                    // in Paint.NET (canvas size = 57 x 57), use the Brush (size = 57, hardness = 50%, fill = solid color #0094FF)
                     // and click the center once, to generate this Particle image.
-                    fluidEmitter.SetStaticImage Assets.Default.Fluid world
-                    fluidEmitter.SetFluidParticleImageSizeOverride None world
-                elif fluidEmitter.GetStaticImage world = Assets.Default.Fluid then
+                    fluidEmitter.FluidParticleRenders.Map (Map.map (fun key render ->
+                        if key = "Gas" then render else
+                        let mutable transform = render.Transform
+                        transform.Size <- (Metadata.getTextureSizeF Assets.Default.Fluid).V3
+                        { render with Image = Assets.Default.Fluid; Transform = transform })) world
+                elif particleImage = Assets.Default.Fluid then
                     // credit: https://ena.our-dogs.info/spring-2023.html
-                    fluidEmitter.SetStaticImage Assets.Gameplay.BubbleImage world
-                    fluidEmitter.SetFluidParticleImageSizeOverride None world
-                elif fluidEmitter.GetStaticImage world = Assets.Gameplay.BubbleImage then
+                    fluidEmitter.FluidParticleRenders.Map (Map.map (fun key render ->
+                        if key = "Gas" then render else
+                        let mutable transform = render.Transform
+                        transform.Size <- (Metadata.getTextureSizeF Assets.Default.Fluid).V3 // scale it down to fluid size
+                        { render with Image = Assets.Gameplay.BubbleImage; Transform = transform })) world
+                elif particleImage = Assets.Gameplay.BubbleImage then
                     // credit: Aether.Physics2D demos
-                    fluidEmitter.SetStaticImage Assets.Gameplay.GooImage world
-                    fluidEmitter.SetFluidParticleImageSizeOverride (v2Dup 8f |> Some) world
+                    fluidEmitter.FluidParticleRenders.Map (Map.map (fun key render ->
+                        if key = "Gas" then render else
+                        let mutable transform = render.Transform
+                        transform.Size <- v3 8f 8f 0f
+                        { render with Image = Assets.Gameplay.GooImage; Transform = transform })) world
                 else
-                    fluidEmitter.SetStaticImage Assets.Default.Ball world
-                    fluidEmitter.SetFluidParticleImageSizeOverride (v2Dup 2f |> Some) world
-
-            // viscosity button
-            if World.doButton $"Viscosity"
-                [Entity.Position .= v3 255f 50f 0f
-                 Entity.Text @= $"Viscosity: {fluidEmitter.GetViscocity world}"
-                 Entity.Elevation .= 1f
-                 Entity.FontSizing .= Some 12.f] world then
-                fluidEmitter.Viscocity.Map
-                    (function
-                     | 0.004f -> 0.01f
-                     | 0.01f -> 0.1f
-                     | 0.1f -> 1f
-                     | 1f -> 2f
-                     | 2f -> 5f
-                     | 5f -> 20f
-                     | _ -> 0.004f)
-                    world
-
-            // linear damping button
-            if World.doButton $"Linear Damping"
-                [Entity.Position .= v3 255f 20f 0f
-                 Entity.Text @= $"Linear Damping: {fluidEmitter.GetLinearDamping world}"
-                 Entity.Elevation .= 1f
-                 Entity.FontSizing .= Some 11.f] world then
-                fluidEmitter.LinearDamping.Map
-                    (function
-                     | 0f -> 0.2f
-                     | 0.2f -> 0.5f
-                     | 0.5f -> 0.7f
-                     | 0.7f -> 0.9f
-                     | 0.9f -> 0.99f
-                     | _ -> 0f)
-                    world
-
-            // particle radius button
-            if World.doButton $"Particle Radius"
-                [Entity.Position .= v3 255f -10f 0f
-                 Entity.Text @= $"Particle Radius: {fluidEmitter.GetFluidParticleRadius world}"
-                 Entity.Elevation .= 1f
-                 Entity.FontSizing .= Some 10.f] world then
-                fluidEmitter.FluidParticleRadius.Map
-                    (function
-                     | 28.8f -> fluidEmitter.LinearDamping.Map (max 0.5f) world; 22.2f // Particles would explode when tank is full without damping
-                     | 22.2f -> 40.0f
-                     | _ -> 28.8f)
-                    world
+                    fluidEmitter.FluidParticleRenders.Map (Map.map (fun key render ->
+                        if key = "Gas" then render else
+                        let mutable transform = render.Transform
+                        transform.Size <- v3 2f 2f 0f
+                        { render with Image = Assets.Default.Ball; Transform = transform })) world
 
             // squish button
             if World.doButton $"Squish"
@@ -295,11 +268,12 @@ type FluidSimDispatcher () =
                     [Entity.LayoutOrder .= 2
                      Entity.Justification .= Unjustified true
                      Entity.Text .=
-                     "Controls: Mouse Left - Click button/Add particles. Mouse right - Delete particles.\n\
-                        Mouse Left and Right - Summon a giant bubble that collides with particles.\n\
-                        Mouse Middle - Draw contours that collide with particles. \n\
-                        NOTE: Intersecting contours are not supported and will cause tunneling!"
-                     Entity.FontSizing .= Some 10.f
+                     "Controls: Mouse Left - Click button/Add particles \n\
+                        (Shift: Sand, Ctrl: Gas, Alt: Oil, Else: Water). \n\
+                        Mouse Right - Delete particles. \n\
+                        Mouse Left and Right - Summon a giant bubble that collides with particles. \n\
+                        Mouse Middle - Draw contours that collide with particles."
+                     Entity.FontSizing .= Some 9.5f
                      Entity.TextMargin .= v2 5f 0f] world
                 if World.doButton "Info Close"
                     [Entity.LayoutOrder .= 3

@@ -401,9 +401,9 @@ type BodyJoint2dDispatcher () =
 [<AutoOpen>]
 module FluidEmitterDispatcherExtensions =
     type Entity with
-        member this.GetFluidParticleImageSizeOverride world : Vector2 option = this.Get (nameof Entity.FluidParticleImageSizeOverride) world
-        member this.SetFluidParticleImageSizeOverride (value : Vector2 option) world = this.Set (nameof Entity.FluidParticleImageSizeOverride) value world
-        member this.FluidParticleImageSizeOverride = lens (nameof Entity.FluidParticleImageSizeOverride) this this.GetFluidParticleImageSizeOverride this.SetFluidParticleImageSizeOverride
+        member this.GetFluidParticleRenders world : Map<string, SpriteDescriptor> = this.Get (nameof Entity.FluidParticleRenders) world
+        member this.SetFluidParticleRenders (value : Map<string, SpriteDescriptor>) world = this.Set (nameof Entity.FluidParticleRenders) value world
+        member this.FluidParticleRenders = lens (nameof Entity.FluidParticleRenders) this this.GetFluidParticleRenders this.SetFluidParticleRenders
 
 /// Gives an entity the base behavior of fluid emission.
 type FluidEmitter2dDispatcher () =
@@ -413,31 +413,23 @@ type FluidEmitter2dDispatcher () =
         [typeof<FluidEmitter2dFacet>]
 
     static member Properties =
-        [define Entity.FluidParticleImageSizeOverride None
-         define Entity.InsetOpt None
-         define Entity.ClipOpt None
-         define Entity.StaticImage Assets.Default.Fluid
-         define Entity.Color Color.One
-         define Entity.Blend Transparent
-         define Entity.Emission Color.Zero
-         define Entity.Flip Unflipped]
+        let perimeterCentered = Constants.Engine.Entity2dPerimeterCenteredDefault
+        [define Entity.FluidParticleRenders
+            (Map.ofList
+                [("Water", { Transform = Transform.makeIntuitive false v3Zero v3One v3Zero (Metadata.getTextureSizeF Assets.Default.Fluid).V3 v3Zero -0.03f perimeterCentered; InsetOpt = ValueNone; ClipOpt = ValueNone; Image = Assets.Default.Fluid; Color = colorPacked 0x0094FFFFu; Blend = Transparent; Emission = colorZero; Flip = Unflipped })
+                 ("Sand", { Transform = Transform.makeIntuitive false v3Zero v3One v3Zero (Metadata.getTextureSizeF Assets.Default.Fluid).V3 v3Zero -0.01f perimeterCentered; InsetOpt = ValueNone; ClipOpt = ValueNone; Image = Assets.Default.Fluid; Color = Color.Yellow; Blend = Transparent; Emission = colorZero; Flip = Unflipped })
+                 ("Gas", { Transform = Transform.makeIntuitive false v3Zero v3One v3Zero (Metadata.getTextureSizeF Assets.Default.Smoke).V3 v3Zero 0.0f perimeterCentered; InsetOpt = ValueNone; ClipOpt = ValueNone; Image = Assets.Default.Smoke; Color = colorOne; Blend = Transparent; Emission = colorZero; Flip = Unflipped })
+                 ("Oil", { Transform = Transform.makeIntuitive false v3Zero v3One v3Zero (Metadata.getTextureSizeF Assets.Default.Fluid).V3 v3Zero -0.02f perimeterCentered; InsetOpt = ValueNone; ClipOpt = ValueNone; Image = Assets.Default.Fluid; Color = Color.color 0.36862746f 0.22352941f 0.039215688f 1.0f; Blend = Transparent; Emission = colorZero; Flip = Unflipped })])]
 
     override this.Render (_, emitter, world) =
-        let particleRadius = emitter.GetFluidParticleRadius world
-        let staticImage = emitter.GetStaticImage world
-        let insetOpt = match emitter.GetInsetOpt world with Some inset -> ValueSome inset | None -> ValueNone
-        let clipOpt = emitter.GetClipOpt world |> Option.toValueOption
-        let color = emitter.GetColor world
-        let blend = emitter.GetBlend world
-        let emission = emitter.GetEmission world
-        let flip = emitter.GetFlip world
-        let drawnSize = emitter.GetFluidParticleImageSizeOverride world |> Option.defaultValue (v2Dup particleRadius)
-
-        // render particles
-        let mutable transform = Transform.makeIntuitive false v3Zero v3One v3Zero drawnSize.V3 v3Zero (emitter.GetElevation world) (emitter.GetPerimeterCentered world)
+        let mutable transform = emitter.GetTransform world
+        let renders = emitter.GetFluidParticleRenders world
         for particle in emitter.GetFluidParticles world do
-            transform.Position <- particle.FluidParticlePosition
-            World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, staticImage, &transform, &insetOpt, &clipOpt, staticImage, &color, blend, &emission, flip, world)
+            let mutable render = Unchecked.defaultof<_>
+            if not (Map.tryGetValue (particle.FluidParticleConfig, renders, &render)) then
+                render <- renders["Water"]
+            let mutable transform = Transform.makeIntuitive false (render.Transform.Position + particle.FluidParticlePosition) (render.Transform.Scale * transform.Scale) (render.Transform.Offset + transform.Offset) render.Transform.Size (render.Transform.Angles + transform.Angles) (render.Transform.Elevation + transform.Elevation) (emitter.GetPerimeterCentered world)
+            World.enqueueRenderMessage2d (LayeredOperation2d { Elevation = transform.Elevation; Horizon = transform.Horizon; AssetTag = render.Image; RenderOperation2d = RenderSprite { render with Transform = transform } }) world
 
     override this.GetAttributesInferred (_, _) =
         AttributesInferred.unimportant

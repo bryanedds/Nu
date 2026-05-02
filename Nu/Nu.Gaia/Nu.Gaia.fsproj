@@ -69,7 +69,7 @@
 		<Reference Include="TiledSharp">
 			<HintPath>..\..\Nu\Nu.Dependencies\TiledSharp\lib\netstandard2.0\TiledSharp.dll</HintPath>
 		</Reference>
-		<PackageReference Include="FSharp.Compiler.Service" Version="43.10.103" />
+		<PackageReference Include="FSharp.Compiler.Service" Version="43.12.203" />
 	</ItemGroup>
 
 	<ItemGroup>

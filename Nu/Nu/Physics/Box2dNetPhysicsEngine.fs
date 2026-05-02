@@ -329,13 +329,12 @@ type private Box2dNetFluidEmitter =
                 let otherState = fluidEmitter.States[other.ParticleIndex]
                 let posB = otherState.CachedPosition
                 let offset = posB - posA
-                let radiusB = otherState.CachedRadius
                 
                 // when in range...
                 let offsetLength = B2MathFunction.b2Length offset
                 if offsetLength < 0.001f then () else
                 let dst = offsetLength / radiusA * config.Impact // MAGIC: dst scales inversely with radiusA but effectiveRange scales linearly with radiusA? (@.@)
-                let effectiveRange = (radiusA + radiusB) * config.Impact
+                let effectiveRange = (config.Impact + config.Impact) * config.Impact // MAGIC: idk why this formula is like this
                 if dst < effectiveRange then
                     let Density r = r * r * MathF.Sqrt r
 
@@ -434,7 +433,7 @@ type private Box2dNetFluidEmitter =
                     otherAccumulatedImpulse <- otherAccumulatedImpulse + neighbor.AccumulatedImpulse
             for i in 0 .. dec fluidEmitter.StateCount do
                 let state = fluidEmitter.States[i]
-                B2Bodies.b2Body_ApplyLinearImpulseToCenter (state.Body, toPhysicsB2Vec2 (toPhysicsB2Vec2 state.AccumulatedImpulse), true) // NOTE: impulse scales with mass which scales with area (length^2)
+                B2Bodies.b2Body_ApplyLinearImpulseToCenter (state.Body, toPhysicsB2Vec2 (toPhysicsB2Vec2 (toPhysicsB2Vec2 state.AccumulatedImpulse)), true) // NOTE: impulse scales with mass (which scales with area) and velocity (length^3)
                 state.CachedConfig <- Unchecked.defaultof<FluidParticleConfig>
 
             // apply gravity overrides
