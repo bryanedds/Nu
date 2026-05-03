@@ -668,7 +668,7 @@ module Character =
                     (true, character)
             | (_, _) -> (false, character)
         let character = { character with ActionStunned_ = character.ActionStunned_ || cancelled }
-        let character = if cancelled then updateConjureCharge character else character
+        let character = if cancelled then updateTechCharge character else character
         character
 
     let make bounds characterIndex characterOrderRev characterType boss animationSheet celSize direction (characterState : CharacterState) conjureChargeRemainder chargeTechOpt actionTime =
