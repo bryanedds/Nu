@@ -48,8 +48,29 @@ module Hl =
     let mutable private SurfaceState = SurfaceDestroyed
     let mutable private Surface = Unchecked.defaultof<VkSurfaceKHR>
     
+    /// Represents a strict cycle ensuring that any presentation resources (surface and swapchains) that exist or are being created during the onset
+    /// of app backgrounding on a mobile device are torn down/cancelled.
+    type private BackgroundingResponseState =
+        | PresentationSetupInitiated // setup of presentation resources has begun and may be complete
+        | PresentationTeardownPending // presentation resources can no longer be trusted as app has commenced backgrounding
+        | PresentationTeardownComplete // presentation resources have been destroyed and restoration will commence when app is back in foreground
+    
+    // presentation teardown in response to app backgrounding follows BackgroundingResponseState cycle,
+    // whereas presentation setup need only care whether app is *currently* in foreground
+    // TODO: DJL: setup threadsafe setters for BackgroundingResponseState as it must be set by both render loop and callback.
+    let mutable private BackgroundingResponseState = PresentationTeardownComplete
+    let mutable private AppInForeground = true
+    
     let private handleBackgrounding (userData : nativeint, event : nativeint) =
         Log.infoOnce "Callback active."
+        
+        // on SDL_EVENT_WILL_ENTER_BACKGROUND
+        // AppInForeground <- false
+        // if BackgroundingResponseState = PresentationSetupInitiated then BackgroundingResponseState <- PresentationTeardownPending
+        
+        // on SDL_EVENT_DID_ENTER_FOREGROUND
+        // AppInForeground <- true
+        
         true
 
     // set up delegate for app backgrounding callback
