@@ -17,6 +17,7 @@ type [<SymbolicExpansion>] Dialog =
       DialogTokenized : string
       DialogPromptOpt : ((string * CueSystem.Cue) * (string * CueSystem.Cue)) option
       DialogBattleOpt : (BattleType * Advent Set) option
+      DialogSkippableWhenNotTombSealed : bool
       DialogProgress : int
       DialogPage : int }
 
@@ -76,16 +77,17 @@ type [<SymbolicExpansion>] Dialog =
             else text :: acc
         wordWrap [] text |> List.rev |> String.join "\n"
 
-    static member makePlus dialogForm textTokenized promptOpt battleOpt =
+    static member makePlus dialogForm textTokenized promptOpt battleOpt skippableWhenNotTombSealed =
         { DialogForm = dialogForm
           DialogTokenized = textTokenized
           DialogPromptOpt = promptOpt
           DialogBattleOpt = battleOpt
+          DialogSkippableWhenNotTombSealed = skippableWhenNotTombSealed
           DialogProgress = 0
           DialogPage = 0 }
 
     static member makePrompt dialogForm textTokenized prompt =
-        Dialog.makePlus dialogForm textTokenized (Some prompt) None
+        Dialog.makePlus dialogForm textTokenized (Some prompt) None false
 
-    static member make dialogForm textTokenized =
-        Dialog.makePlus dialogForm textTokenized None None
+    static member make dialogForm textTokenized skippableWhenNotTombSealed =
+        Dialog.makePlus dialogForm textTokenized None None skippableWhenNotTombSealed

@@ -1211,7 +1211,7 @@ module Battle =
 
     let private updateMessage text lifeTime localTime battle =
         ignore<int64> localTime
-        let dialog = Dialog.make DialogShort text
+        let dialog = Dialog.make DialogShort text false
         let battle = setMessageOpt (Some (battle.BattleTime_, lifeTime, dialog)) battle
         let battle = setCurrentCommandOpt None battle
         just battle
@@ -1543,7 +1543,7 @@ module Battle =
         match messageOpt with
         | Some message ->
             if localTime = 0L then
-                let dialog = Dialog.make DialogShort message
+                let dialog = Dialog.make DialogShort message false
                 let battle = setMessageOpt (Some (battle.BattleTime_, dec messageTime, dialog)) battle
                 (false, battle)
             else
@@ -1779,7 +1779,7 @@ module Battle =
                 let battle =
                     if containsCharacterHealthy observerIndex battle then 
                         let lifeTime = if lifeTime <= 0L then 60L else lifeTime
-                        let dialog = Dialog.make DialogShort text
+                        let dialog = Dialog.make DialogShort text false
                         setMessageOpt (Some (battle.BattleTime_, lifeTime, dialog)) battle
                     else battle
                 let battle = setCurrentCommandOpt None battle
@@ -2077,7 +2077,7 @@ module Battle =
                     | _ :: _ as items -> "^Found " + (items |> List.map (fun i -> i.Name) |> String.join ", ") + "!"
                     | [] -> ""
                 let text = textA + textB + textC + textD
-                let dialog = Dialog.make DialogThick text
+                let dialog = Dialog.make DialogThick text false
                 let battle = setDialogOpt (Some dialog) battle
                 let (sigs, battle) =
                     let battle = mapAllies (fun ally -> if ally.Healthy then Character.setExpPoints (ally.ExpPoints + battle.PrizePool_.Exp) ally else ally) battle
@@ -2106,7 +2106,7 @@ module Battle =
             elif localTime = 200L then
                 let referentStr = match getAllyIndices battle with [_] -> "his" | _ -> "their"
                 let dialogStr = "And so eternal death became " + referentStr + " slumber..."
-                let dialog = Dialog.make DialogNarration dialogStr
+                let dialog = Dialog.make DialogNarration dialogStr false
                 let battle = setDialogOpt (Some dialog) battle
                 World.playSong 60L 0L 0L None 0.5f Assets.Battle.EternalSlumber world
                 just battle

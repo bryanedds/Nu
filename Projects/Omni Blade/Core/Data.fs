@@ -675,7 +675,7 @@ module CueSystem =
         | MoveState of int64 * CueTarget * Vector3 * Vector3 * CueMovement
         | Warp of FieldType * Vector3 * Direction
         | WarpState
-        | Dialog of string * bool
+        | Dialog of string * bool * bool // HACK: bool for dialog skippable when tomb is unsealed.
         | DialogState
         | Prompt of string * (string * Cue) * (string * Cue)
         | PromptState

@@ -70,6 +70,7 @@ type FieldMessage =
     | PromptLeft
     | PromptRight
     | Interact
+    | SkipDialog
 #if DEV
     | ReloadProps
 #endif
@@ -662,14 +663,14 @@ module Field =
             let field = mapInventory (Inventory.tryAddItem field.Options.HardcoreMode itemType >> snd) field
             let field =
                 match battleTypeOpt with
-                | Some battleType -> setDialogOpt (Some (Dialog.makePlus DialogThin ("Found " + itemType.Name + "!^But something approaches!") None (Some (battleType, Set.empty)))) field
-                | None -> setDialogOpt (Some (Dialog.make DialogThin ("Found " + itemType.Name + "!"))) field
+                | Some battleType -> setDialogOpt (Some (Dialog.makePlus DialogThin ("Found " + itemType.Name + "!^But something approaches!") None (Some (battleType, Set.empty)) false)) field
+                | None -> setDialogOpt (Some (Dialog.make DialogThin ("Found " + itemType.Name + "!") false)) field
             let field = setCue cue field
             World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Field.ChestOpenSound world |> ignore
             just field
         else
             let field = mapAvatar (Avatar.lookAt prop.Perimeter.Center) field
-            let field = setDialogOpt (Some (Dialog.make DialogThin "Locked!")) field
+            let field = setDialogOpt (Some (Dialog.make DialogThin "Locked!" false)) field
             World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Field.ChestLockedSound world |> ignore
             just field
 
@@ -685,7 +686,7 @@ module Field =
                 just field
             else
                 let field = mapAvatar (Avatar.lookAt prop.Perimeter.Center) field
-                let field = setDialogOpt (Some (Dialog.make DialogThin "Locked!")) field
+                let field = setDialogOpt (Some (Dialog.make DialogThin "Locked!" false)) field
                 World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Field.DoorLockedSound world |> ignore
                 just field
         | _ -> failwithumf ()
@@ -699,7 +700,7 @@ module Field =
             just field
         else
             let field = mapAvatar (Avatar.lookAt prop.Perimeter.Center) field
-            let field = setDialogOpt (Some (Dialog.make DialogThin "Won't budge!")) field
+            let field = setDialogOpt (Some (Dialog.make DialogThin "Won't budge!" false)) field
             World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Field.SwitchStuckSound world |> ignore
             just field
 
@@ -713,7 +714,7 @@ module Field =
         if field.Advents_.IsSupersetOf requirements then
             let field = mapAvatar (Avatar.lookAt prop.Perimeter.BottomOffset5) field
             let branchesFiltered = branches |> List.choose (fun (branch : CueSystem.CueBranch) -> if field.Advents_.IsSupersetOf branch.Requirements then Some branch.Cue else None) |> List.rev
-            let branchCue = match List.tryHead branchesFiltered with Some cue -> cue | None -> CueSystem.Dialog ("...", false)
+            let branchCue = match List.tryHead branchesFiltered with Some cue -> cue | None -> CueSystem.Dialog ("...", false, false)
             let field = setCue branchCue field
             World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Gui.AffirmSound world |> ignore
             just field
@@ -735,7 +736,7 @@ module Field =
     let private interactSavePoint (field : Field) world =
         let field = restoreTeam field
         save field
-        let field = setDialogOpt (Some (Dialog.make DialogThin "Recovered strength and saved game.")) field
+        let field = setDialogOpt (Some (Dialog.make DialogThin "Recovered strength and saved game." false)) field
         World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Gui.SlotSound world |> ignore
         just field
 
@@ -834,12 +835,12 @@ module Field =
                 let field = recruit allyType field
                 let field = mapAdvents (Set.add advent) field
                 let field = mapInventory (Inventory.removeGold fee) field
-                World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Gui.AffirmSound world |> ignore
+                World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Field.PurchaseSound world |> ignore
                 (Fin, definitions, just field)
             else
                 updateCue
                     (Parallel
-                        [Cue.Dialog ("You don't have enough...", false)
+                        [Cue.Dialog ("You don't have enough...", false, false)
                          PlaySound (Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)]) definitions field
                     world
 
@@ -1052,13 +1053,13 @@ module Field =
             | Some _ -> (cue, definitions, just field)
             | None -> (Fin, definitions, just field)
 
-        | Dialog (text, isNarration) ->
+        | Dialog (text, isNarration, skippableWhenNotTombSealed) ->
             match field.DialogOpt_ with
             | Some _ ->
                 (cue, definitions, just field)
             | None ->
                 let dialogForm = if isNarration then DialogNarration else DialogThick
-                let dialog = Dialog.make dialogForm text
+                let dialog = Dialog.make dialogForm text skippableWhenNotTombSealed
                 let field = setDialogOpt (Some dialog) field
                 (DialogState, definitions, just field)
 

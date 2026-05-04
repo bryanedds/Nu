@@ -702,6 +702,11 @@ type FieldDispatcher () =
         | Interact ->
             Field.interact field world
 
+        | SkipDialog ->
+            if field.DialogOpt.IsSome
+            then Field.setDialogOpt None field |> just
+            else just field
+
 #if DEV
         | ReloadProps ->
             let field = Field.reloadProps field
@@ -1010,6 +1015,21 @@ type FieldDispatcher () =
                     | None -> ""
                  Entity.ClickSoundOpt == None
                  Entity.ClickEvent => Interact]
+
+             // skip button
+             Content.button "Skip"
+                [Entity.Position == v3 306.0f -246.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 144.0f 48.0f 0.0f
+                 Entity.UpImage == Assets.Gui.ButtonShortUpImage
+                 Entity.DownImage == Assets.Gui.ButtonShortDownImage
+                 Entity.Visible :=
+                    match field.DialogOpt with
+                    | Some dialog ->
+                        not (Dialog.canAdvance (Field.detokenize field) dialog) &&
+                        dialog.DialogSkippableWhenNotTombSealed &&
+                        not (field.Advents.Contains TombSealed)
+                    | None -> false
+                 Entity.Text := "Skip"
+                 Entity.ClickEvent => SkipDialog]
 
              // dialog
              yield! Content.dialog "Dialog"
