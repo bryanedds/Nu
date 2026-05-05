@@ -1532,7 +1532,7 @@ type FieldDispatcher () =
                      Content.text "Select"
                         [Entity.PositionLocal == v3 126.0f 429.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 288.0f 32.0f 0.0f
                          Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
-                         Entity.Text == "Select Party:"]
+                         Entity.Text == "Select up to 3:"]
                      Content.text "Current"
                         [Entity.PositionLocal == v3 480.0f 429.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 288.0f 32.0f 0.0f
                          Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
