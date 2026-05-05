@@ -298,15 +298,15 @@ type TechType =
     | Snowball
     | Cure
     | Empower
-    | Aura
     | Enlighten
+    | Aura
     | Protect
     | Vita
     | Purify
     | Weaken
     | Muddle
-    | Slow
     | Bolt
+    | Slow
     | ConjureRamuh
     | Inferno
     | Silk
