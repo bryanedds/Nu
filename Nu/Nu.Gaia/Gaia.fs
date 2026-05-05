@@ -2527,6 +2527,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                 eyeRotationOld.Up.Dot eyeRotation.Up >= 0.0f &&
                                 eyeUpright then
                                 DesiredEye3dRotation <- eyeRotation
+                                World.setEye3dRotation DesiredEye3dRotation world // NOTE: we also set directly to fix #1361.
                             io.SwallowMouse ()
 
             // clear editing states that this code otherwise affects
