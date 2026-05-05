@@ -1495,7 +1495,7 @@ type FieldDispatcher () =
                             [Entity.PositionLocal == v3 672.0f 15.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 198.0f 48.0f 0.0f
                              Entity.Justification == Justified (JustifyRight, JustifyMiddle)
                              Entity.TextColor == color 0.35f 0.35f 0.35f 1.0f
-                             Entity.Text == "Demo v1.2.1"]
+                             Entity.Text == "Demo v1.3.0"]
                      else
                         Content.text "QuitConfirmation"
                             [Entity.PositionLocal == v3 336.0f 312.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 288.0f 48.0f 0.0f
