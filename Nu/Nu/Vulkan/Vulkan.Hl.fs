@@ -61,7 +61,7 @@ module Hl =
     let mutable private BackgroundingResponseState = PresentationTeardownComplete
     let mutable private AppInForeground = true
     
-    let private handleBackgrounding (userData : nativeint, event : nativeint) =
+    let private handleBackgrounding (userData : nativeint) (event : nativeint) : SDLBool =
         Log.infoOnce "Callback active."
         
         // on SDL_EVENT_WILL_ENTER_BACKGROUND
@@ -76,9 +76,9 @@ module Hl =
     // set up delegate for app backgrounding callback
     // TODO: DJL: for mobile devices: https://learn.microsoft.com/en-us/dotnet/standard/native-interop/calling-conventions#when-you-can-omit-the-calling-convention.
     [<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
-    type BackgroundingDelegate = delegate of (nativeint * nativeint) -> bool
+    type BackgroundingDelegate = delegate of nativeint * nativeint -> SDLBool
     let mutable backgroundingDelegate : BackgroundingDelegate = BackgroundingDelegate handleBackgrounding
-    
+
     /// The format of an image.
     type ImageFormat =
         | Rgba8
