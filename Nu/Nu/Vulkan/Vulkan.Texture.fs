@@ -1116,6 +1116,12 @@ module Texture =
             | EagerTexture eagerTexture -> eagerTexture.TextureInternal.MipLevels_
             | LazyTexture lazyTexture -> lazyTexture.TextureInternal.MipLevels_
         
+        member this.Layers =
+            match this with
+            | EmptyTexture -> TextureInternal.empty.TextureType_.Layers
+            | EagerTexture eagerTexture -> eagerTexture.TextureInternal.TextureType_.Layers
+            | LazyTexture lazyTexture -> lazyTexture.TextureInternal.TextureType_.Layers
+        
         member this.Destroy vkc =
             match this with
             | EmptyTexture -> () // TODO: DJL: protect TextureInternal.empty from premature destruction.
