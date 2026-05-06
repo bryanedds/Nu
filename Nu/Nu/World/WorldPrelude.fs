@@ -696,7 +696,11 @@ module internal AmbientState =
         match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
         | Some window ->
             let mutable width, height = 0, 0
-            SDL3.SDL_GetWindowSize (window, &&width, &&height) |> ignore<SDLBool>
+            let gotSize =
+                if OperatingSystem.IsIOS () || OperatingSystem.IsAndroid ()
+                then SDL3.SDL_GetWindowSizeInPixels (window, &&width, &&height)
+                else SDL3.SDL_GetWindowSize (window, &&width, &&height)
+            if not gotSize then SDL3.SDL_GetWindowSize (window, &&width, &&height) |> ignore<SDLBool>
             Some (v2i width height)
         | _ -> None
 

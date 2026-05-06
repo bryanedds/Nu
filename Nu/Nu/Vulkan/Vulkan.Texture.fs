@@ -690,15 +690,15 @@ module Texture =
                     match attachmentMode with
                     | AttachmentNone ->
 
-                        // check if hardware supports mipmap generation; this is done here to prevent unused (i.e. blank) mip levels
-                        // TODO: DJL: check for VkFormatFeatureFlags.BlitSrc/Dst as well.
+                        // check if hardware supports blit-based mipmap generation; this is done here to prevent unused (i.e. blank) mip levels
                         let mutable formatProperties = Unchecked.defaultof<VkFormatProperties>
                         Vulkan.vkGetPhysicalDeviceFormatProperties (vkc.VkPhysicalDevice, internalFormat.VkFormat, &formatProperties)
-                        let mipGenSupport = formatProperties.optimalTilingFeatures &&& VkFormatFeatureFlags.SampledImageFilterLinear <> VkFormatFeatureFlags.None
+                        let mipGenFeatures = VkFormatFeatureFlags.BlitSrc ||| VkFormatFeatureFlags.BlitDst ||| VkFormatFeatureFlags.SampledImageFilterLinear
+                        let mipGenSupport = formatProperties.optimalTilingFeatures &&& mipGenFeatures = mipGenFeatures
                         
                         // calculate mip levels
                         if mipGenSupport then max metadata.TextureWidth metadata.TextureHeight |> Math.Log2 |> floor |> inc |> int
-                        else Log.errorOnce "Graphics device does not support mipmap generation for some used image format(s)."; 1
+                        else Log.warnOnce "Graphics device does not support blit-based mipmap generation for some used image format(s). Using base mip level only."; 1
                     
                     | _ -> Log.infoOnce "Automatic mipmap generation not supported for attachment texture."; 1
             
@@ -770,7 +770,7 @@ module Texture =
                 let cb = Hl.initCommandBufferTransient pool vkc.Device
                 RecordGenerateMipmaps (cb, metadata.TextureWidth, metadata.TextureHeight, textureInternal.MipLevels, layer, textureInternal.Image)
                 Hl.Queue.executeTransient cb pool fence queue vkc.Device
-            else Log.warn "Mipmap generation attempted on texture with only one mip level."
+            else ()
         
         /// Create an empty TextureInternal.
         /// NOTE: DJL: this is for fast empty texture creation. It is not preferred for TextureInternal.empty, which is created from Assets.Default.Image.

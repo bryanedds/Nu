@@ -897,6 +897,11 @@ module WorldModule2 =
 
         static member internal synchronizeViewports world =
             let windowSize = World.getWindowSize world
+            if OperatingSystem.IsIOS () || OperatingSystem.IsAndroid () then
+                let xScalar = max 1 (windowSize.X / Constants.Render.DisplayVirtualResolution.X)
+                let yScalar = max 1 (windowSize.Y / Constants.Render.DisplayVirtualResolution.Y)
+                let displayScalar = min xScalar yScalar
+                Globals.Render.DisplayScalar <- displayScalar
             let windowViewport = Viewport.makeWindow1 windowSize
             World.setWindowViewport windowViewport world
             World.setGeometryViewport (Viewport.makeGeometry windowViewport.Bounds.Size) world
@@ -1112,25 +1117,32 @@ module WorldModule2 =
                     World.publishPlus () Nu.Game.Handle.ExitRequestEvent eventTrace Nu.Game.Handle true true world
             | SDL_EventType.SDL_EVENT_WINDOW_RESIZED ->
 
-                // ensure window size is a factor of display virtual resolution, going to full screen otherwise
-                let windowSize = World.getWindowSize world
-                let windowScalar =
-                    max (single windowSize.X / single Constants.Render.DisplayVirtualResolution.X |> ceil |> int |> max 1)
-                        (single windowSize.Y / single Constants.Render.DisplayVirtualResolution.Y |> ceil |> int |> max 1)
-                let windowSize' = windowScalar * Constants.Render.DisplayVirtualResolution
-                World.trySetWindowSize windowSize' world
-                let windowSize'' = World.getWindowSize world
-                if windowSize''.X < windowSize'.X || windowSize''.Y < windowSize'.Y then
-                    World.trySetWindowFullScreen true world
+                if OperatingSystem.IsIOS () || OperatingSystem.IsAndroid () then
 
-                // synchronize display virtual scalar
-                let windowSize'' = World.getWindowSize world
-                let xScalar = windowSize''.X / Constants.Render.DisplayVirtualResolution.X
-                let yScalar = windowSize''.Y / Constants.Render.DisplayVirtualResolution.Y
-                Globals.Render.DisplayScalar <- min xScalar yScalar
+                    // mobile window sizes are platform-owned; just synchronize to the drawable pixel size
+                    World.synchronizeViewports world
 
-                // synchronize view ports
-                World.synchronizeViewports world
+                else
+
+                    // ensure window size is a factor of display virtual resolution, going to full screen otherwise
+                    let windowSize = World.getWindowSize world
+                    let windowScalar =
+                        max (single windowSize.X / single Constants.Render.DisplayVirtualResolution.X |> ceil |> int |> max 1)
+                            (single windowSize.Y / single Constants.Render.DisplayVirtualResolution.Y |> ceil |> int |> max 1)
+                    let windowSize' = windowScalar * Constants.Render.DisplayVirtualResolution
+                    World.trySetWindowSize windowSize' world
+                    let windowSize'' = World.getWindowSize world
+                    if windowSize''.X < windowSize'.X || windowSize''.Y < windowSize'.Y then
+                        World.trySetWindowFullScreen true world
+
+                    // synchronize display virtual scalar
+                    let windowSize'' = World.getWindowSize world
+                    let xScalar = windowSize''.X / Constants.Render.DisplayVirtualResolution.X
+                    let yScalar = windowSize''.Y / Constants.Render.DisplayVirtualResolution.Y
+                    Globals.Render.DisplayScalar <- min xScalar yScalar
+
+                    // synchronize view ports
+                    World.synchronizeViewports world
 
             | SDL_EventType.SDL_EVENT_MOUSE_MOTION ->
                 let io = ImGui.GetIO ()

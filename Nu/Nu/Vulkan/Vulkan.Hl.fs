@@ -617,6 +617,14 @@ module Hl =
     let getDrawInstanceCount () =
         lock DrawReportLock (fun () -> DrawInstanceCount)
 
+    /// Try to load precompiled SPIR-V code for a GLSL file.
+    let tryLoadCompiledShader shaderPath =
+        let compiledShaderPath = shaderPath + ".spv"
+        if File.Exists compiledShaderPath then
+            try Right (File.ReadAllBytes compiledShaderPath)
+            with exn -> Left ("Vulkan shader bytecode load failed due to:\n" + scstring exn)
+        else Left String.Empty
+
     /// Try to compile GLSL file to SPIR-V code.
     let tryCompileShader shaderPath shaderKind =
         use shaderStream = new StreamReader (File.OpenRead shaderPath)
@@ -631,7 +639,12 @@ module Hl =
 
     /// Try to create a shader module from a GLSL file.
     let tryCreateShaderModuleFromGlsl shaderPath shaderKind device =
-        match tryCompileShader shaderPath shaderKind with
+        let shaderResult =
+            match tryLoadCompiledShader shaderPath with
+            | Right shader -> Right shader
+            | Left "" -> tryCompileShader shaderPath shaderKind
+            | Left msg -> Left msg
+        match shaderResult with
         | Right shader ->
 
             // NOTE: DJL: using a high level overload here to avoid questions about reinterpret casting and memory alignment,
