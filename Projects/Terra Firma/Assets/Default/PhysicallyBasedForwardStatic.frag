@@ -1,5 +1,4 @@
 #version 450 core
-#extension GL_EXT_nonuniform_qualifier : enable
 
 const float PI = 3.141592654;
 const float REFLECTION_LOD_MAX = 7.0;
@@ -107,11 +106,6 @@ struct ShadowMatrix
     mat4 shadowMatrix;
 };
 
-layout(push_constant) uniform PushConstant
-{
-    int drawId;
-};
-
 layout(binding = 0) buffer readonly TransformBlock
 {
     Transform transform;
@@ -132,35 +126,35 @@ layout(binding = 6) uniform textureCube environmentFilterMap;
 layout(set = 1, binding = 1) buffer readonly LightMapBlock
 {
     LightMap lightMap;
-} lightMaps[];
+} lightMaps[LIGHT_MAPS_MAX];
 
 layout(set = 1, binding = 2) buffer readonly LightsGeneralBlock
 {
     LightsGeneral lightsGeneral;
-} lightsGeneral[];
+} lightsGeneral;
 
 layout(set = 1, binding = 3) buffer readonly LightBlock
 {
     Light light;
-} lights[];
+} lights[LIGHTS_MAX];
 
 layout(set = 1, binding = 4) buffer readonly ShadowMatrixBlock
 {
     ShadowMatrix shadowMatrix;
-} shadowMatrices[];
+} shadowMatrices[SHADOW_TEXTURES_MAX + SHADOW_CASCADES_MAX * SHADOW_CASCADE_LEVELS];
 
-layout(set = 1, binding = 5) uniform texture2D albedoTexture[];
-layout(set = 1, binding = 6) uniform texture2D roughnessTexture[];
-layout(set = 1, binding = 7) uniform texture2D metallicTexture[];
-layout(set = 1, binding = 8) uniform texture2D ambientOcclusionTexture[];
-layout(set = 1, binding = 9) uniform texture2D emissionTexture[];
-layout(set = 1, binding = 10) uniform texture2D normalTexture[];
-layout(set = 1, binding = 11) uniform texture2D heightTexture[];
-layout(set = 1, binding = 18) uniform textureCube irradianceMaps[];
-layout(set = 1, binding = 19) uniform textureCube environmentFilterMaps[];
-layout(set = 1, binding = 20) uniform texture2DArray shadowTextures[];
-layout(set = 1, binding = 21) uniform textureCube shadowMaps[];
-layout(set = 1, binding = 22) uniform texture2DArray shadowCascades[];
+layout(set = 1, binding = 5) uniform texture2D albedoTexture;
+layout(set = 1, binding = 6) uniform texture2D roughnessTexture;
+layout(set = 1, binding = 7) uniform texture2D metallicTexture;
+layout(set = 1, binding = 8) uniform texture2D ambientOcclusionTexture;
+layout(set = 1, binding = 9) uniform texture2D emissionTexture;
+layout(set = 1, binding = 10) uniform texture2D normalTexture;
+layout(set = 1, binding = 11) uniform texture2D heightTexture;
+layout(set = 1, binding = 18) uniform textureCube irradianceMaps[LIGHT_MAPS_MAX];
+layout(set = 1, binding = 19) uniform textureCube environmentFilterMaps[LIGHT_MAPS_MAX];
+layout(set = 1, binding = 20) uniform texture2DArray shadowTextures;
+layout(set = 1, binding = 21) uniform textureCube shadowMaps[SHADOW_MAPS_MAX];
+layout(set = 1, binding = 22) uniform texture2DArray shadowCascades[SHADOW_CASCADES_MAX];
 
 layout(set = 2, binding = 0) uniform sampler filteredSampler;
 layout(set = 2, binding = 1) uniform sampler cubeMapSampler;
@@ -181,7 +175,7 @@ layout(location = 0) out vec4 frag;
 
 Transform transformInstance = transform.transform;
 Common commonDataInstance = commonData.commonData;
-LightsGeneral lightsGeneralInstance = lightsGeneral[drawId].lightsGeneral;
+LightsGeneral lightsGeneralInstance = lightsGeneral.lightsGeneral;
 
 mat4 view = transformInstance.view;
 mat4 projection = transformInstance.projection;
@@ -366,7 +360,7 @@ float computeShadowScalarPoint(vec4 position, vec3 lightOrigin, int shadowIndex)
             for (int k = 0; k < lightShadowSamples; ++k)
             {
                 vec3 offset = (vec3(i, j, k) - vec3(lightShadowSamples / 2.0)) * (lightShadowSampleScalar / lightShadowSamples);
-                shadowHits += shadowZ - lightShadowBias > texture(samplerCube(shadowMaps[drawId * SHADOW_MAPS_MAX + (shadowIndex - SHADOW_TEXTURES_MAX)], shadowSampler), positionShadow + offset).x ? 1.0 : 0.0;
+                shadowHits += shadowZ - lightShadowBias > texture(samplerCube(shadowMaps[shadowIndex - SHADOW_TEXTURES_MAX], shadowSampler), positionShadow + offset).x ? 1.0 : 0.0;
             }
         }
     }
@@ -375,7 +369,7 @@ float computeShadowScalarPoint(vec4 position, vec3 lightOrigin, int shadowIndex)
 
 float computeShadowScalarSpot(vec4 position, float lightConeOuter, int shadowIndex)
 {
-    mat4 shadowMatrix = shadowMatrices[drawId * (SHADOW_TEXTURES_MAX + SHADOW_CASCADES_MAX * SHADOW_CASCADE_LEVELS) + shadowIndex].shadowMatrix.shadowMatrix;
+    mat4 shadowMatrix = shadowMatrices[shadowIndex].shadowMatrix.shadowMatrix;
     vec4 positionShadowClip = shadowMatrix * position;
     vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
     if (shadowTexCoordsProj.x >= -1.0 && shadowTexCoordsProj.x < 1.0 &&
@@ -385,7 +379,7 @@ float computeShadowScalarSpot(vec4 position, float lightConeOuter, int shadowInd
         vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
         float shadowZ = shadowTexCoords.z;
         float shadowZExp = exp(-lightShadowExponent * shadowZ);
-        float shadowDepthExp = texture(sampler2DArray(shadowTextures[drawId], shadowSampler), vec3(shadowTexCoords.xy, float(shadowIndex))).y;
+        float shadowDepthExp = texture(sampler2DArray(shadowTextures, shadowSampler), vec3(shadowTexCoords.xy, float(shadowIndex))).y;
         float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
         shadowScalar = pow(shadowScalar, lightShadowDensity);
         shadowScalar = lightConeOuter > SHADOW_FOV_MAX ? fadeShadowScalar(shadowTexCoords.xy, shadowScalar) : shadowScalar;
@@ -396,7 +390,7 @@ float computeShadowScalarSpot(vec4 position, float lightConeOuter, int shadowInd
 
 float computeShadowScalarDirectional(vec4 position, int shadowIndex)
 {
-    mat4 shadowMatrix = shadowMatrices[drawId * (SHADOW_TEXTURES_MAX + SHADOW_CASCADES_MAX * SHADOW_CASCADE_LEVELS) + shadowIndex].shadowMatrix.shadowMatrix;
+    mat4 shadowMatrix = shadowMatrices[shadowIndex].shadowMatrix.shadowMatrix;
     vec4 positionShadowClip = shadowMatrix * position;
     vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
     if (shadowTexCoordsProj.x >= -1.0 + SHADOW_DIRECTIONAL_SEAM_INSET && shadowTexCoordsProj.x < 1.0 - SHADOW_DIRECTIONAL_SEAM_INSET &&
@@ -406,7 +400,7 @@ float computeShadowScalarDirectional(vec4 position, int shadowIndex)
         vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
         float shadowZ = shadowTexCoords.z;
         float shadowZExp = exp(-lightShadowExponent * shadowZ);
-        float shadowDepthExp = texture(sampler2DArray(shadowTextures[drawId], shadowSampler), vec3(shadowTexCoords.xy, float(shadowIndex))).y;
+        float shadowDepthExp = texture(sampler2DArray(shadowTextures, shadowSampler), vec3(shadowTexCoords.xy, float(shadowIndex))).y;
         float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
         shadowScalar = pow(shadowScalar, lightShadowDensity);
         return shadowScalar;
@@ -418,7 +412,7 @@ float computeShadowScalarCascaded(vec4 position, float shadowCutoff, int shadowI
 {
     for (int i = 0; i < SHADOW_CASCADE_LEVELS; ++i)
     {
-        mat4 shadowMatrix = shadowMatrices[drawId * (SHADOW_TEXTURES_MAX + SHADOW_CASCADES_MAX * SHADOW_CASCADE_LEVELS) + (SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + i)].shadowMatrix.shadowMatrix;
+        mat4 shadowMatrix = shadowMatrices[SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + i].shadowMatrix.shadowMatrix;
         vec4 positionShadowClip = shadowMatrix * position;
         vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
         if (shadowTexCoordsProj.x >= -1.0 + SHADOW_CASCADE_SEAM_INSET && shadowTexCoordsProj.x < 1.0 - SHADOW_CASCADE_SEAM_INSET &&
@@ -428,7 +422,7 @@ float computeShadowScalarCascaded(vec4 position, float shadowCutoff, int shadowI
             vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
             float shadowZ = shadowTexCoords.z;
             float shadowZExp = exp(-lightShadowExponent * shadowZ);
-            float shadowDepthExp = texture(sampler2DArray(shadowCascades[drawId * SHADOW_CASCADES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX)], shadowSampler), vec3(shadowTexCoords.xy, float(i))).y;
+            float shadowDepthExp = texture(sampler2DArray(shadowCascades[shadowIndex - SHADOW_TEXTURES_MAX], shadowSampler), vec3(shadowTexCoords.xy, float(i))).y;
             float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
             float densityScalar = 1.0f + float(i) * SHADOW_CASCADE_DENSITY_BONUS;
             shadowScalar = pow(shadowScalar, lightShadowDensity * densityScalar);
@@ -441,7 +435,7 @@ float computeShadowScalarCascaded(vec4 position, float shadowCutoff, int shadowI
 vec3 computeFogAccumPoint(vec4 position, int lightIndex)
 {
     // grab light values
-    Light light = lights[drawId * LIGHTS_MAX + lightIndex].light;
+    Light light = lights[lightIndex].light;
     vec3 lightOrigin = light.lightOrigins;
     float lightCutoff = light.lightCutoffs;
     vec3 lightDirection = light.lightDirections;
@@ -512,7 +506,7 @@ vec3 computeFogAccumPoint(vec4 position, int lightIndex)
             // compute depths
             vec3 positionShadow = currentPosition - lightOrigin;
             float shadowZ = length(positionShadow);
-            float shadowDepth = texture(samplerCube(shadowMaps[drawId * SHADOW_MAPS_MAX + (shadowIndex - SHADOW_TEXTURES_MAX)], shadowSampler), positionShadow).x;
+            float shadowDepth = texture(samplerCube(shadowMaps[shadowIndex - SHADOW_TEXTURES_MAX], shadowSampler), positionShadow).x;
 
             // compute intensity inside light volume
             vec3 v = normalize(eyeCenter - currentPosition);
@@ -553,7 +547,7 @@ vec3 computeFogAccumPoint(vec4 position, int lightIndex)
 vec3 computeFogAccumSpot(vec4 position, int lightIndex)
 {
     // grab light values
-    Light light = lights[drawId * LIGHTS_MAX + lightIndex].light;
+    Light light = lights[lightIndex].light;
     vec3 lightOrigin = light.lightOrigins;
     float lightCutoff = light.lightCutoffs;
     vec3 lightDirection = light.lightDirections;
@@ -618,7 +612,7 @@ vec3 computeFogAccumSpot(vec4 position, int lightIndex)
     else
     {
         // march over ray, accumulating fog light value with shadows
-        mat4 shadowMatrix = shadowMatrices[drawId * (SHADOW_TEXTURES_MAX + SHADOW_CASCADES_MAX * SHADOW_CASCADE_LEVELS) + shadowIndex].shadowMatrix.shadowMatrix;
+        mat4 shadowMatrix = shadowMatrices[shadowIndex].shadowMatrix.shadowMatrix;
         for (int i = 0; i < ssvfSteps; ++i)
         {
             // compute depths
@@ -627,7 +621,7 @@ vec3 computeFogAccumSpot(vec4 position, int lightIndex)
             vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
             bool shadowTexCoordsInRange = shadowTexCoords.x >= 0.0 && shadowTexCoords.x < 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y < 1.0;
             float shadowZ = shadowTexCoords.z;
-            float shadowDepth = shadowTexCoordsInRange ? texture(sampler2DArray(shadowTextures[drawId], shadowSampler), vec3(shadowTexCoords.xy, float(shadowIndex))).x : 1.0;
+            float shadowDepth = shadowTexCoordsInRange ? texture(sampler2DArray(shadowTextures, shadowSampler), vec3(shadowTexCoords.xy, float(shadowIndex))).x : 1.0;
 
             // compute intensity inside light volume
             vec3 v = normalize(eyeCenter - currentPosition);
@@ -668,7 +662,7 @@ vec3 computeFogAccumSpot(vec4 position, int lightIndex)
 vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
 {
     // grab light values
-    Light light = lights[drawId * LIGHTS_MAX + lightIndex].light;
+    Light light = lights[lightIndex].light;
     vec3 lightOrigin = light.lightOrigins;
     vec3 lightDirection = light.lightDirections;
 
@@ -709,7 +703,7 @@ vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
     else
     {
         // march over ray, accumulating fog light value with shadows
-        mat4 shadowMatrix = shadowMatrices[drawId * (SHADOW_TEXTURES_MAX + SHADOW_CASCADES_MAX * SHADOW_CASCADE_LEVELS) + shadowIndex].shadowMatrix.shadowMatrix;
+        mat4 shadowMatrix = shadowMatrices[shadowIndex].shadowMatrix.shadowMatrix;
         for (int i = 0; i < ssvfSteps; ++i)
         {
             // compute depths
@@ -718,7 +712,7 @@ vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
             vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
             bool shadowTexCoordsInRange = shadowTexCoords.x >= 0.0 && shadowTexCoords.x < 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y < 1.0;
             float shadowZ = shadowTexCoords.z;
-            float shadowDepth = shadowTexCoordsInRange ? texture(sampler2DArray(shadowTextures[drawId], shadowSampler), vec3(shadowTexCoords.xy, float(shadowIndex))).x : 1.0;
+            float shadowDepth = shadowTexCoordsInRange ? texture(sampler2DArray(shadowTextures, shadowSampler), vec3(shadowTexCoords.xy, float(shadowIndex))).x : 1.0;
 
             // step through ray, accumulating fog light moment
             if (shadowZ <= shadowDepth || shadowZ >= 1.0f)
@@ -741,7 +735,7 @@ vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
 vec3 computeFogAccumCascaded(vec4 position, int lightIndex)
 {
     // grab light values
-    Light light = lights[drawId * LIGHTS_MAX + lightIndex].light;
+    Light light = lights[lightIndex].light;
     vec3 lightOrigin = light.lightOrigins;
     vec3 lightDirection = light.lightDirections;
 
@@ -792,13 +786,13 @@ vec3 computeFogAccumCascaded(vec4 position, int lightIndex)
             for (int j = 0; j < SHADOW_CASCADE_LEVELS; ++j)
             {
                 // compute depths
-                mat4 shadowMatrix = shadowMatrices[drawId * (SHADOW_TEXTURES_MAX + SHADOW_CASCADES_MAX * SHADOW_CASCADE_LEVELS) + (SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + j)].shadowMatrix.shadowMatrix;
+                mat4 shadowMatrix = shadowMatrices[SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + j].shadowMatrix.shadowMatrix;
                 vec4 positionShadowClip = shadowMatrix * vec4(currentPosition, 1.0);
                 vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
                 vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
                 bool shadowTexCoordsInRange = shadowTexCoords.x >= 0.0 && shadowTexCoords.x < 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y < 1.0;
                 float shadowZ = shadowTexCoords.z;
-                float shadowDepth = shadowTexCoordsInRange ? texture(sampler2DArray(shadowCascades[drawId * SHADOW_CASCADES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX)], shadowSampler), vec3(shadowTexCoords.xy, float(i))).x : 1.0;
+                float shadowDepth = shadowTexCoordsInRange ? texture(sampler2DArray(shadowCascades[shadowIndex - SHADOW_TEXTURES_MAX], shadowSampler), vec3(shadowTexCoords.xy, float(i))).x : 1.0;
 
                 // step through ray, accumulating fog light moment
                 if (shadowZ <= shadowDepth || shadowZ >= 1.0f)
@@ -962,25 +956,25 @@ void main()
     vec3 eyeCenterTangent = toTangent * eyeCenter;
     vec3 positionTangent = toTangent * position.xyz;
     vec3 toEyeTangent = normalize(eyeCenterTangent - positionTangent);
-    float height = texture(sampler2D(heightTexture[drawId], filteredSampler), texCoordsOut).x * heightPlusOut.x;
+    float height = texture(sampler2D(heightTexture, filteredSampler), texCoordsOut).x * heightPlusOut.x;
     vec2 parallax = toEyeTangent.xy * height;
     vec2 texCoords = texCoordsOut - parallax;
 
     // compute albedo with alpha sample
     float opaqueDistance = heightPlusOut.w;
-    vec4 albedoSample = texture(sampler2D(albedoTexture[drawId], filteredSampler), texCoords);
+    vec4 albedoSample = texture(sampler2D(albedoTexture, filteredSampler), texCoords);
     vec4 albedo =
         vec4(
             pow(albedoSample.rgb, vec3(GAMMA)) * albedoOut.rgb,
             mix(albedoSample.a, 1.0, smoothstep(opaqueDistance * 0.667, opaqueDistance, distance)));
 
     // compute normal
-    vec3 n = normalize(toWorld * decodeNormal(texture(sampler2D(normalTexture[drawId], filteredSampler), texCoords).xy));
+    vec3 n = normalize(toWorld * decodeNormal(texture(sampler2D(normalTexture, filteredSampler), texCoords).xy));
 
     // compute roughness with specular anti-aliasing (Tokuyoshi & Kaplanyan 2019)
     // NOTE: the SAA algo also includes derivative scalars that are currently not utilized here due to lack of need -
     // https://github.com/google/filament/blob/d7b44a2585a7ce19615dbe226501acc3fe3f0c16/shaders/src/surface_shading_lit.fs#L41-L42
-    float roughness = texture(sampler2D(roughnessTexture[drawId], filteredSampler), texCoords).r * materialOut.r;
+    float roughness = texture(sampler2D(roughnessTexture, filteredSampler), texCoords).r * materialOut.r;
     vec3 du = dFdx(n);
     vec3 dv = dFdy(n);
     float variance = SAA_VARIANCE * (dot(du, du) + dot(dv, dv));
@@ -990,9 +984,9 @@ void main()
     roughness = sqrt(sqrt(roughnessPerceptualSquared));
 
     // compute remaining material properties
-    float metallic = texture(sampler2D(metallicTexture[drawId], filteredSampler), texCoords).g * materialOut.g;
-    float ambientOcclusion = texture(sampler2D(ambientOcclusionTexture[drawId], filteredSampler), texCoords).b * materialOut.b;
-    vec3 emission = vec3(texture(sampler2D(emissionTexture[drawId], filteredSampler), texCoords).r * materialOut.a);
+    float metallic = texture(sampler2D(metallicTexture, filteredSampler), texCoords).g * materialOut.g;
+    float ambientOcclusion = texture(sampler2D(ambientOcclusionTexture, filteredSampler), texCoords).b * materialOut.b;
+    vec3 emission = vec3(texture(sampler2D(emissionTexture, filteredSampler), texCoords).r * materialOut.a);
 
     // compute ignore light maps
     bool ignoreLightMaps = heightPlusOut.y != 0.0;
@@ -1013,7 +1007,7 @@ void main()
     for (int i = 0; i < lightsCount; ++i)
     {
         // per-light radiance
-        Light light = lights[drawId * LIGHTS_MAX + i].light;
+        Light light = lights[i].light;
         vec3 lightOrigin = light.lightOrigins;
         float lightCutoff = light.lightCutoffs;
         int lightType = light.lightTypes;
@@ -1111,12 +1105,12 @@ void main()
     // determine light map indices, including their validity
     int lm1 = lightMapsCount > 0 && !ignoreLightMaps ? 0 : -1;
     int lm2 = lightMapsCount > 1 && !ignoreLightMaps ? 1 : -1;
-    LightMap lightMap1 = lightMaps[drawId * LIGHT_MAPS_MAX + lm1].lightMap;
-    LightMap lightMap2 = lightMaps[drawId * LIGHT_MAPS_MAX + lm2].lightMap;
+    LightMap lightMap1 = lightMaps[lm1].lightMap;
+    LightMap lightMap2 = lightMaps[lm2].lightMap;
     if (lm2 != -1 && !inBounds(position.xyz, lightMap2.lightMapMins, lightMap2.lightMapSizes)) lm2 = -1;
     if (lm1 != -1 && !inBounds(position.xyz, lightMap1.lightMapMins, lightMap1.lightMapSizes)) lm1 = lm2;
-    lightMap1 = lightMaps[drawId * LIGHT_MAPS_MAX + lm1].lightMap;
-    lightMap2 = lightMaps[drawId * LIGHT_MAPS_MAX + lm2].lightMap;
+    lightMap1 = lightMaps[lm1].lightMap;
+    lightMap2 = lightMaps[lm2].lightMap;
 
     // compute light mapping terms
     vec3 ambientColor = vec3(0.0);
@@ -1154,7 +1148,7 @@ void main()
         ambientBrightness = mix(ambientBrightness1, ambientBrightness2, ratio);
 
         // compute blended irradiance
-        vec3 irradiance1 = texture(samplerCube(irradianceMaps[drawId * LIGHT_MAPS_MAX + lm1], cubeMapSampler), n).rgb;
+        vec3 irradiance1 = texture(samplerCube(irradianceMaps[lm1], cubeMapSampler), n).rgb;
         vec3 irradiance2 = texture(samplerCube(irradianceMap, cubeMapSampler), n).rgb;
         irradiance = mix(irradiance1, irradiance2, ratio);
 
@@ -1162,7 +1156,7 @@ void main()
         vec3 r1 = parallaxCorrection(lightMap1.lightMapOrigins, lightMap1.lightMapMins, lightMap1.lightMapSizes, position.xyz, n);
         vec3 r2 = reflect(-v, n);
 
-        vec3 environmentFilter1 = textureLod(samplerCube(environmentFilterMaps[drawId * LIGHT_MAPS_MAX + lm1], cubeMapSampler), r1, roughness * REFLECTION_LOD_MAX).rgb;
+        vec3 environmentFilter1 = textureLod(samplerCube(environmentFilterMaps[lm1], cubeMapSampler), r1, roughness * REFLECTION_LOD_MAX).rgb;
         vec3 environmentFilter2 = textureLod(samplerCube(environmentFilterMap, cubeMapSampler), r2, roughness * REFLECTION_LOD_MAX).rgb;
         environmentFilter = mix(environmentFilter1, environmentFilter2, ratio);
 
@@ -1171,7 +1165,7 @@ void main()
         float k = 1.0 - refractiveIndex * refractiveIndex * (1.0 - cosNvn * cosNvn);
         vec3 rfr1 = k >= 0.0 ? refract(-v, n, refractiveIndex) : r1;
         vec3 rfr2 = k >= 0.0 ? refract(-v, n, refractiveIndex) : r2;
-        vec3 environmentFilterRefracted1 = ssrrDesired ? textureLod(samplerCube(environmentFilterMaps[drawId * LIGHT_MAPS_MAX + lm1], cubeMapSampler), rfr1, 0).rgb : vec3(1.0);
+        vec3 environmentFilterRefracted1 = ssrrDesired ? textureLod(samplerCube(environmentFilterMaps[lm1], cubeMapSampler), rfr1, 0).rgb : vec3(1.0);
         vec3 environmentFilterRefracted2 = ssrrDesired ? textureLod(samplerCube(environmentFilterMap, cubeMapSampler), rfr2, 0).rgb : vec3(1.0);
         environmentFilterRefracted = mix(environmentFilterRefracted1, environmentFilterRefracted2, ratio);
     }
@@ -1189,15 +1183,15 @@ void main()
         ambientBrightness = mix(ambientBrightness1, ambientBrightness2, ratio);
 
         // compute blended irradiance
-        vec3 irradiance1 = texture(samplerCube(irradianceMaps[drawId * LIGHT_MAPS_MAX + lm1], cubeMapSampler), n).rgb;
-        vec3 irradiance2 = texture(samplerCube(irradianceMaps[drawId * LIGHT_MAPS_MAX + lm2], cubeMapSampler), n).rgb;
+        vec3 irradiance1 = texture(samplerCube(irradianceMaps[lm1], cubeMapSampler), n).rgb;
+        vec3 irradiance2 = texture(samplerCube(irradianceMaps[lm2], cubeMapSampler), n).rgb;
         irradiance = mix(irradiance1, irradiance2, ratio);
 
         // compute blended environment filter
         vec3 r1 = parallaxCorrection(lightMap1.lightMapOrigins, lightMap1.lightMapMins, lightMap1.lightMapSizes, position.xyz, n);
         vec3 r2 = parallaxCorrection(lightMap2.lightMapOrigins, lightMap2.lightMapMins, lightMap2.lightMapSizes, position.xyz, n);
-        vec3 environmentFilter1 = textureLod(samplerCube(environmentFilterMaps[drawId * LIGHT_MAPS_MAX + lm1], cubeMapSampler), r1, roughness * REFLECTION_LOD_MAX).rgb;
-        vec3 environmentFilter2 = textureLod(samplerCube(environmentFilterMaps[drawId * LIGHT_MAPS_MAX + lm2], cubeMapSampler), r2, roughness * REFLECTION_LOD_MAX).rgb;
+        vec3 environmentFilter1 = textureLod(samplerCube(environmentFilterMaps[lm1], cubeMapSampler), r1, roughness * REFLECTION_LOD_MAX).rgb;
+        vec3 environmentFilter2 = textureLod(samplerCube(environmentFilterMaps[lm2], cubeMapSampler), r2, roughness * REFLECTION_LOD_MAX).rgb;
         environmentFilter = mix(environmentFilter1, environmentFilter2, ratio);
 
         // compute blended environment filter refracted
@@ -1205,8 +1199,8 @@ void main()
         float k = 1.0 - refractiveIndex * refractiveIndex * (1.0 - cosNvn * cosNvn);
         vec3 rfr1 = k >= 0.0 ? refract(-v, n, refractiveIndex) : r1;
         vec3 rfr2 = k >= 0.0 ? refract(-v, n, refractiveIndex) : r2;
-        vec3 environmentFilterRefracted1 = ssrrDesired ? textureLod(samplerCube(environmentFilterMaps[drawId * LIGHT_MAPS_MAX + lm1], cubeMapSampler), rfr1, 0).rgb : vec3(1.0);
-        vec3 environmentFilterRefracted2 = ssrrDesired ? textureLod(samplerCube(environmentFilterMaps[drawId * LIGHT_MAPS_MAX + lm2], cubeMapSampler), rfr2, 0).rgb : vec3(1.0);
+        vec3 environmentFilterRefracted1 = ssrrDesired ? textureLod(samplerCube(environmentFilterMaps[lm1], cubeMapSampler), rfr1, 0).rgb : vec3(1.0);
+        vec3 environmentFilterRefracted2 = ssrrDesired ? textureLod(samplerCube(environmentFilterMaps[lm2], cubeMapSampler), rfr2, 0).rgb : vec3(1.0);
         environmentFilterRefracted = mix(environmentFilterRefracted1, environmentFilterRefracted2, ratio);
     }
 
