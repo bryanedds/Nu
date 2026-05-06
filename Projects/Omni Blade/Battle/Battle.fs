@@ -783,7 +783,7 @@ module Battle =
                         friendliesWoundedDifferent.Count > 0 && friendliesHealthyDifferent.Count = 0
                     else false
                 | AffectedTarget (affectType, targetType) ->
-                    if observer.Healthy || affectType = Wounded then
+                    if observer.Healthy || (affectType = Wounded && source = target) then
                         evalAttackAffectType affectType source target observer battle &&
                         evalSingleTargetType targetType source target observer battle
                     else false
@@ -841,7 +841,7 @@ module Battle =
                         friendliesWoundedDifferent.Count > 0 && friendliesHealthyDifferent.Count = 0
                     else false
                 | AffectedTarget (affectType, targetType) ->
-                    if observer.Healthy || affectType = Wounded then
+                    if observer.Healthy || (affectType = Wounded && source = target) then
                         evalItemAffectType affectType source target observer battle &&
                         evalSingleTargetType targetType source target observer battle
                     else false
@@ -882,7 +882,7 @@ module Battle =
             | All affectTypes -> List.forall (fun affectType -> evalTechAffectType affectType techType cancelled affectsWounded delta statusesAdded statusesRemoved source target observer battle) affectTypes
         | (false, _) -> false
 
-    let private evalTechInteractions4 (source : Character) (_ : Character) (observer : Character) (techType : TechType) (techResults : Map<CharacterIndex, bool * bool * bool * int * StatusType Set * StatusType Set>) battle =
+    let private evalTechInteractions4 (source : Character) (target : Character) (observer : Character) (techType : TechType) (techResults : Map<CharacterIndex, bool * bool * bool * int * StatusType Set * StatusType Set>) battle =
         List.fold (fun consequences interaction ->
             let condition = interaction.BattleCondition
             let consequences' = interaction.BattleConsequences
@@ -911,7 +911,7 @@ module Battle =
                         friendliesWoundedDifferent.Count > 0 && friendliesHealthyDifferent.Count = 0
                     else false
                 | AffectedTarget (affectType, targetType) ->
-                    if observer.Healthy || affectType = Wounded then
+                    if observer.Healthy || (affectType = Wounded && source = target) then
                         techResults |>
                         Map.map (fun characterIndex result -> (result, tryGetCharacter characterIndex battle)) |>
                         Map.toValueList |>
