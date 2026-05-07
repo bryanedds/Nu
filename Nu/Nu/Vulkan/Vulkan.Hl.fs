@@ -60,24 +60,27 @@ module Hl =
     // TODO: DJL: setup threadsafe setters for BackgroundingResponseState as it must be set by both render loop and callback.
     let mutable private BackgroundingResponseState = PresentationTeardownComplete
     let mutable private AppInForeground = true
-    
-    let private handleBackgrounding (userData : nativeint) (event : nativeint) : SDLBool =
-        Log.infoOnce "Callback active."
+     
+    let private handleBackgrounding (_userdata : voidptr) (event : SDL_Event nativeptr) : SDLBool =
         
-        // on SDL_EVENT_WILL_ENTER_BACKGROUND
-        // AppInForeground <- false
-        // if BackgroundingResponseState = PresentationSetupInitiated then BackgroundingResponseState <- PresentationTeardownPending
-        
-        // on SDL_EVENT_DID_ENTER_FOREGROUND
-        // AppInForeground <- true
+        let event = NativePtr.toByRef event
+        Log.info $"handleBackgrounding: Received app event of type {event.Type}"
+        match event.Type with
+        | SDL_EventType.SDL_EVENT_WILL_ENTER_BACKGROUND ->
+            AppInForeground <- false
+            if BackgroundingResponseState = PresentationTeardownComplete then
+                BackgroundingResponseState <- PresentationTeardownPending
+                Log.info "handleBackgrounding: Beginning presentation teardown in response to app backgrounding."
+        | SDL_EventType.SDL_EVENT_DID_ENTER_FOREGROUND ->
+            Log.info "handleBackgrounding: Beginning presentation setup in response to app foregrounding."
+            AppInForeground <- true
+        | _ -> ()
         
         true
 
     // set up delegate for app backgrounding callback
-    // TODO: DJL: for mobile devices: https://learn.microsoft.com/en-us/dotnet/standard/native-interop/calling-conventions#when-you-can-omit-the-calling-convention.
-    [<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
-    type BackgroundingDelegate = delegate of nativeint * nativeint -> SDLBool
-    let mutable backgroundingDelegate : BackgroundingDelegate = BackgroundingDelegate handleBackgrounding
+    type BackgroundingDelegate = delegate of userdata : voidptr * event : SDL_Event nativeptr -> SDLBool
+    let mutable backgroundingDelegate : BackgroundingDelegate = BackgroundingDelegate handleBackgrounding // TODO: Does this need to be mutable?
 
     /// The format of an image.
     type ImageFormat =
