@@ -62,16 +62,17 @@ module Hl =
     let mutable private AppInForeground = true
     
     let private handleBackgrounding (userData : nativeint) (event : nativeint) : SDLBool =
-        Log.infoOnce "Callback active."
-        
-        // on SDL_EVENT_WILL_ENTER_BACKGROUND
-        // AppInForeground <- false
-        // if BackgroundingResponseState = PresentationSetupInitiated then BackgroundingResponseState <- PresentationTeardownPending
-        
-        // on SDL_EVENT_DID_ENTER_FOREGROUND
-        // AppInForeground <- true
-        
-        true
+        ignore userData
+        let event = NativePtr.toByRef (NativePtr.ofNativeInt<SDL_Event> event)
+        match event.Type with
+        | SDL_EventType.SDL_EVENT_WILL_ENTER_BACKGROUND ->
+            AppInForeground <- false
+            if BackgroundingResponseState = PresentationSetupInitiated then BackgroundingResponseState <- PresentationTeardownPending
+            false
+        | SDL_EventType.SDL_EVENT_DID_ENTER_FOREGROUND ->
+            AppInForeground <- true
+            false
+        | _ -> true
 
     // set up delegate for app backgrounding callback
     // TODO: DJL: for mobile devices: https://learn.microsoft.com/en-us/dotnet/standard/native-interop/calling-conventions#when-you-can-omit-the-calling-convention.
