@@ -386,7 +386,7 @@ type RendererThread () =
 
         // setup sdl callback for app backgrounding on mobile devices
         let callback = Marshal.GetFunctionPointerForDelegate<Hl.BackgroundingDelegate> Hl.backgroundingDelegate
-        SDL3.SDL_SetEventFilter (callback, IntPtr.Zero)
+        SDL3.SDL_SetEventFilter (callback, 0n)
 
         // mark as started
         started <- true
