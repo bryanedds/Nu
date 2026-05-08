@@ -6054,7 +6054,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 ssrrEnabled renderer.LightingConfig.SsrrIntensity renderer.LightingConfig.SsrrDetail renderer.LightingConfig.SsrrRefinementsMax renderer.LightingConfig.SsrrRayThickness renderer.LightingConfig.SsrrDistanceCutoff renderer.LightingConfig.SsrrDistanceCutoffMargin renderer.LightingConfig.SsrrEdgeHorizontalMargin renderer.LightingConfig.SsrrEdgeVerticalMargin
                 depthAttachment2 colorAttachment renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap renderer.FilteredSampler renderer.CubeMapSampler renderer.ShadowSampler renderer.ColorSampler renderer.DepthSampler renderer.BrdfSampler shadowNear pipeline vkc
         
-        let mutable forwardStaticDrawIndexLocal = 0
+        let mutable forwardStaticDrawIndexLocal = 0 // fresh index for each render pass just to check if limit exceeded
         for (model, _, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest) in renderTasks.ForwardSorted do
             let (lightMapOrigins, lightMapMins, lightMapSizes, lightMapAmbientColors, lightMapAmbientBrightnesses, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
                 let surfaceBounds = surface.SurfaceBounds.Transform model
@@ -6074,9 +6074,11 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     lightMapIrradianceMaps lightMapEnvironmentFilterMaps shadowTextureArray shadowMaps shadowCascades lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses (min lightMapEnvironmentFilterMaps.Length renderTasks.LightMaps.Count) renderer.LightingConfig.LightMapSingletonBlendMargin
                     lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices (min lightIds.Length renderTasks.Lights.Count) renderer.ShadowMatrices
                     surface depthTest true renderer.GeometryViewport compositionAttachment compositionZAttachment pipeline vkc renderer
+                
+                // don't allow skipping descriptor sets if limit exceeded within a render pass
+                if forwardStaticDrawIndexLocal < pipeline.Pipeline.BulkDrawLimit then renderer.ForwardStaticDrawIndex <- inc renderer.ForwardStaticDrawIndex
+                forwardStaticDrawIndexLocal <- inc forwardStaticDrawIndexLocal
             | None -> ()
-            renderer.ForwardStaticDrawIndex <- inc renderer.ForwardStaticDrawIndex
-            forwardStaticDrawIndexLocal <- inc forwardStaticDrawIndexLocal
         for pipeline in forwardPipelines do
             VulkanRenderer3d.endPhysicallyBasedForwardPipeline pipeline
         

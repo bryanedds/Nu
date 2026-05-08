@@ -17,6 +17,9 @@ open Nu
 [<RequireQualifiedAccess>]
 module Hl =
 
+    // TODO: DJL: all these free-floating variables, types and functions have become a
+    // bit of a mess and need to be reordered, not to mention the inconsistent casing.
+    
     let mutable private DrawReportLock = obj ()
     let mutable private DrawCallCount = 0
     let mutable private DrawInstanceCount = 0
@@ -57,17 +60,22 @@ module Hl =
     
     // presentation teardown in response to app backgrounding follows BackgroundingResponseState cycle,
     // whereas presentation setup need only care whether app is *currently* in foreground
-    // TODO: DJL: setup threadsafe setters for BackgroundingResponseState as it must be set by both render loop and callback.
     let mutable private BackgroundingResponseState = PresentationTeardownComplete
     let mutable private AppInForeground = true
     
-    let private handleBackgrounding (userData : nativeint) (event : nativeint) : SDLBool =
+    // thread-safe access to BackgroundingResponseState as it's essentially a semaphore that needs to be set by callback *and* render thread
+    let mutable private BackgroundingResponseStateLock = obj ()
+    let private getBackgroundingResponseState () = lock BackgroundingResponseStateLock (fun () -> BackgroundingResponseState)
+    let private setBackgroundingResponseState newState = lock BackgroundingResponseStateLock (fun () -> BackgroundingResponseState <- newState)
+
+    // callback to inform render loop about app backgrounding
+    let private handleBackgrounding (userData : voidptr) (event : SDL_Event nativeptr) : SDLBool =
         ignore userData
-        let event = NativePtr.toByRef (NativePtr.ofNativeInt<SDL_Event> event)
+        let event = NativePtr.toByRef event
         match event.Type with
         | SDL_EventType.SDL_EVENT_WILL_ENTER_BACKGROUND ->
             AppInForeground <- false
-            if BackgroundingResponseState = PresentationSetupInitiated then BackgroundingResponseState <- PresentationTeardownPending
+            if getBackgroundingResponseState () = PresentationSetupInitiated then setBackgroundingResponseState PresentationTeardownPending
             false
         | SDL_EventType.SDL_EVENT_DID_ENTER_FOREGROUND ->
             AppInForeground <- true
@@ -77,8 +85,8 @@ module Hl =
     // set up delegate for app backgrounding callback
     // TODO: DJL: for mobile devices: https://learn.microsoft.com/en-us/dotnet/standard/native-interop/calling-conventions#when-you-can-omit-the-calling-convention.
     [<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
-    type BackgroundingDelegate = delegate of nativeint * nativeint -> SDLBool
-    let mutable backgroundingDelegate : BackgroundingDelegate = BackgroundingDelegate handleBackgrounding
+    type BackgroundingDelegate = delegate of userData : voidptr * event : SDL_Event nativeptr -> SDLBool
+    let backgroundingDelegate = BackgroundingDelegate handleBackgrounding
 
     /// The format of an image.
     type ImageFormat =
