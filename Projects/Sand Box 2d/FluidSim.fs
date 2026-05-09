@@ -185,19 +185,19 @@ type FluidSimDispatcher () =
                  Entity.Elevation .= 1f
                  Entity.FontSizing .= Some 8.f] world then
                 if particleImage = Assets.Default.Ball then
-                    // in Paint.NET (canvas size = 57 x 57), use the Brush (size = 57, hardness = 50%, fill = solid color #0094FF)
+                    // in Paint.NET (canvas size = 31 x 31), use the Brush (size = 31, hardness = 50%, fill = solid color #0094FF)
                     // and click the center once, to generate this Particle image.
-                    fluidEmitter.FluidParticleRenders.Map (Map.map (fun key render ->
+                    fluidEmitter.FluidParticleRenders.Map (Map.map (fun key render -> 
                         if key = "Gas" then render else
                         let mutable transform = render.Transform
                         transform.Size <- (Metadata.getTextureSizeF Assets.Default.Fluid).V3
                         { render with Image = Assets.Default.Fluid; Transform = transform })) world
                 elif particleImage = Assets.Default.Fluid then
-                    // credit: https://ena.our-dogs.info/spring-2023.html
+                    // credit: https://www.pngitem.com/middle/hbhTw_transparent-bubble-hd-png-download
                     fluidEmitter.FluidParticleRenders.Map (Map.map (fun key render ->
                         if key = "Gas" then render else
                         let mutable transform = render.Transform
-                        transform.Size <- (Metadata.getTextureSizeF Assets.Default.Fluid).V3 // scale it down to fluid size
+                        transform.Size <- v3 16f 16f 0f
                         { render with Image = Assets.Gameplay.BubbleImage; Transform = transform })) world
                 elif particleImage = Assets.Gameplay.BubbleImage then
                     // credit: Aether.Physics2D demos
