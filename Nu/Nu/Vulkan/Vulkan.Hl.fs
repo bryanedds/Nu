@@ -75,6 +75,8 @@ module Hl =
         match event.Type with
         | SDL_EventType.SDL_EVENT_WILL_ENTER_BACKGROUND ->
             AppInForeground <- false
+
+            // TODO: DJL: pack this get and set together into a single threadsafe block to prevent possible(?) separation by another set call.
             if getBackgroundingResponseState () = PresentationSetupInitiated then setBackgroundingResponseState PresentationTeardownPending
             false
         | SDL_EventType.SDL_EVENT_DID_ENTER_FOREGROUND ->
@@ -1030,11 +1032,21 @@ module Hl =
         static member private destroySurface swapchain device instance =
             Swapchain.clear swapchain device // must do this first
             destroyVulkanSurface instance
+
+            // inform the backgrounding callback that the required teardown of presentation is complete
+            // so no action is required if another backgrounding event is triggered prior to recreation;
+            // this must correspond exactly with SurfaceDestroyed, which is used by Swapchain
+            setBackgroundingResponseState PresentationTeardownComplete
         
         static member private tryCreateSurfaceAndSwapchainInternal physicalDevice swapchain device instance =
             
-            // check if window is ready for surface creation
-            if isAndroidWindowReadyForVulkan swapchain.Window_ then
+            // check if app is back in foreground
+            if AppInForeground then
+                
+                // inform the backgrounding callback that we begin the process of recreating surface and swapchain
+                // that may need to be aborted/destroyed at any point before *or* after completion due to another
+                // backgrounding event, hence setup *initiated*
+                setBackgroundingResponseState PresentationSetupInitiated
                 
                 // create surface
                 createVulkanSurface swapchain.Window_ instance
@@ -1042,12 +1054,22 @@ module Hl =
                 // ensure surface creation was successful
                 if SurfaceState = SurfaceReady then
                     
-                    // try create SwapchainInternal
-                    let swapchainInternalOpt = SwapchainInternal.tryCreate swapchain.SurfaceFormat_ VkSwapchainKHR.Null physicalDevice swapchain.Window_ device
-                    swapchain.SwapchainInternalOpts_.[swapchain.SwapchainIndex_] <- swapchainInternalOpt
+                    // check if pause triggered during surface creation
+                    if not (getBackgroundingResponseState () = PresentationTeardownPending) then
                     
-                    // destroy surface if lost again
-                    if SurfaceState = SurfaceLost then Swapchain.destroySurface swapchain device instance
+                        // try create SwapchainInternal
+                        let swapchainInternalOpt = SwapchainInternal.tryCreate swapchain.SurfaceFormat_ VkSwapchainKHR.Null physicalDevice swapchain.Window_ device
+                        swapchain.SwapchainInternalOpts_.[swapchain.SwapchainIndex_] <- swapchainInternalOpt
+                        
+                        // destroy surface if lost again or if pause triggered during swapchain creation
+                        if SurfaceState = SurfaceLost || getBackgroundingResponseState () = PresentationTeardownPending
+                        then Swapchain.destroySurface swapchain device instance
+
+                    // abort
+                    else Swapchain.destroySurface swapchain device instance
+
+                // fail
+                else setBackgroundingResponseState PresentationTeardownComplete
         
         /// Check if window is minimized.
         static member isWindowMinimized window =
@@ -1061,44 +1083,77 @@ module Hl =
 
         /// Try to refresh the swapchain.
         static member tryRefresh physicalDevice swapchain device instance =
+            
+            // NOTE: DJL: by design, this method should know exactly what to do based on the current and changing state of
+            // the surface and app backgrounding, anticipated or not, regardless of the calling context, which just needs 
+            // to detect *if* method must be called. It should have a valid and appropriate result whatever the environment
+            // throws at it.
+            
+            // first handle state of surface
             match SurfaceState with
             
-            // recreate the swapchain, handling sudden surface loss with attempted recovery
+            // attempt to recreate the swapchain, destroying the surface if suddenly lost or if app has/will enter background
             | SurfaceReady ->
             
-                // NOTE: DJL: although we check for presence of current SwapchainInternal where appropriate,
-                // it is *always* supposed to exist when the surface is ready because we *always* recreate when we can.
+                // check state related to app backgrounding
+                // TODO: DJL: handle this crap in initial pipeline creation as well.
+                match getBackgroundingResponseState () with
                 
-                // use current VkSwapchain to create new one
-                let oldVkSwapchainOpt =
+                // no app pause to worry about, just try recreate swapchain
+                | PresentationSetupInitiated ->
+                
+                    // NOTE: DJL: although we check for presence of current SwapchainInternal where appropriate,
+                    // it is *always* supposed to exist when the surface is ready because we *always* recreate when we can.
+                    
+                    // use current VkSwapchain to create new one
+                    let oldVkSwapchainOpt =
+                        match swapchain.SwapchainInternalOpts_.[swapchain.SwapchainIndex_] with
+                        | Some swapchainInternal -> if swapchain.SwapchainInternalOpts_.Length > 1 then swapchainInternal.VkSwapchain else VkSwapchainKHR.Null
+                        | None -> VkSwapchainKHR.Null
+
+                    // advance swapchain index
+                    if Option.isSome swapchain.SwapchainInternalOpts_.[swapchain.SwapchainIndex_] then
+                        swapchain.SwapchainIndex_ <- (inc swapchain.SwapchainIndex_) % swapchain.SwapchainInternalOpts_.Length
+
+                    // destroy SwapchainInternal at new index if present
                     match swapchain.SwapchainInternalOpts_.[swapchain.SwapchainIndex_] with
-                    | Some swapchainInternal -> if swapchain.SwapchainInternalOpts_.Length > 1 then swapchainInternal.VkSwapchain else VkSwapchainKHR.Null
-                    | None -> VkSwapchainKHR.Null
+                    | Some swapchainInternal -> SwapchainInternal.destroy swapchainInternal device
+                    | None -> ()
+                    
+                    // check once more for app pause (triggered during swapchain destruction) before attempting swapchain creation
+                    match getBackgroundingResponseState () with
+                    | PresentationSetupInitiated ->
+                    
+                        // try create new swapchain internal
+                        let swapchainInternalOpt = SwapchainInternal.tryCreate swapchain.SurfaceFormat_ oldVkSwapchainOpt physicalDevice swapchain.Window_ device
+                        swapchain.SwapchainInternalOpts_.[swapchain.SwapchainIndex_] <- swapchainInternalOpt
 
-                // advance swapchain index
-                if Option.isSome swapchain.SwapchainInternalOpts_.[swapchain.SwapchainIndex_] then
-                    swapchain.SwapchainIndex_ <- (inc swapchain.SwapchainIndex_) % swapchain.SwapchainInternalOpts_.Length
+                        // if surface is lost here (or pause triggered during pipeline creation!), destroy and attempt to recover on the spot
+                        if SurfaceState = SurfaceLost || getBackgroundingResponseState () = PresentationTeardownPending then
+                            Swapchain.destroySurface swapchain device instance
+                            Swapchain.tryCreateSurfaceAndSwapchainInternal physicalDevice swapchain device instance
 
-                // destroy SwapchainInternal at new index if present
-                match swapchain.SwapchainInternalOpts_.[swapchain.SwapchainIndex_] with
-                | Some swapchainInternal -> SwapchainInternal.destroy swapchainInternal device
-                | None -> ()
-                
-                // try create new swapchain internal
-                let swapchainInternalOpt = SwapchainInternal.tryCreate swapchain.SurfaceFormat_ oldVkSwapchainOpt physicalDevice swapchain.Window_ device
-                swapchain.SwapchainInternalOpts_.[swapchain.SwapchainIndex_] <- swapchainInternalOpt
+                    | PresentationTeardownPending ->
+                        Swapchain.destroySurface swapchain device instance
+                        Swapchain.tryCreateSurfaceAndSwapchainInternal physicalDevice swapchain device instance
+                    | PresentationTeardownComplete ->
+                        Log.error "Contradictory information reported, indicating programming error; see code."
 
-                // if surface is lost here, destroy and attempt to recover on the spot
-                if SurfaceState = SurfaceLost then
+                // app has or will enter background, destroy surface and recreate if already possible
+                | PresentationTeardownPending ->
                     Swapchain.destroySurface swapchain device instance
                     Swapchain.tryCreateSurfaceAndSwapchainInternal physicalDevice swapchain device instance
+
+                // this should only be the case if SurfaceDestroyed!
+                | PresentationTeardownComplete ->
+                    Log.error "Contradictory information reported, indicating programming error; see code."
 
             // handle surface loss and attempt to recreate surface and swapchain immediately
             | SurfaceLost ->
                 Swapchain.destroySurface swapchain device instance
                 Swapchain.tryCreateSurfaceAndSwapchainInternal physicalDevice swapchain device instance
 
-            // listen for surface availability and recreate surface and swapchain when available
+            // attempt to recreate surface and swapchain when app is in foreground
             | SurfaceDestroyed ->
                 Swapchain.tryCreateSurfaceAndSwapchainInternal physicalDevice swapchain device instance
         
