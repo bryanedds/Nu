@@ -362,7 +362,7 @@ type FluidSimDispatcher () =
             let mousePosition = World.getMousePosition2dWorld false world
             let boxes = fluidSim.GetBoxes world
             for box in boxes do
-                World.doBox2d box
+                World.doBoxBody2d box
                     [Entity.Position |= mousePosition.V3
                      Entity.Color |= color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f] world |> ignore
 
@@ -382,7 +382,7 @@ type FluidSimDispatcher () =
                 | (Bubble, (true, _)) ->
                     // summon a bubble
                     fluidSim.MouseBubbleSize.Map inc world
-                    World.doSphere2d "Bubble"
+                    World.doOrbBody2d "Bubble"
                         [Entity.Position @= mousePosition.V3
                          Entity.Size @= v3Dup (fluidSim.GetMouseBubbleSize world)
                          Entity.StaticImage .= Assets.Gameplay.BubbleImage] world |> ignore
