@@ -83,7 +83,7 @@ type RaceCourseDispatcher () =
                  Entity.StaticImage .= Assets.Gameplay.BackgroundImage] world
 
             // declare race track
-            World.doBlock2d "Race Track"
+            World.doBlockBody2d "Race Track"
                 [Entity.Size .= v3 1f 1f 0f
                  Entity.BodyShape .= ContourShape { Links = RaceTrackPoints; Closed = false; TransformOpt = None; PropertiesOpt = None }
                  Entity.CollisionDetection .= Continuous] world |> ignore // keep car wheels above ground
@@ -95,7 +95,7 @@ type RaceCourseDispatcher () =
                      Entity.StaticImage .= Assets.Default.Black] world
 
             // declare car
-            World.doBox2d "Car"
+            World.doBoxBody2d "Car"
                 [Entity.Position |= CarSpawnPosition
                  Entity.Rotation |= quatIdentity
                  Entity.Size .= CarSize
@@ -117,7 +117,7 @@ type RaceCourseDispatcher () =
                 let carRotation = (car.GetRotation world).Angle2d
                 let wheelOffset = computeWheelOffset position carRotation
                 let wheelPosition = CarSpawnPosition + wheelOffset
-                World.doBall2d $"Wheel {relation}"
+                World.doBallBody2d $"Wheel {relation}"
                     [Entity.Position |= wheelPosition
                      Entity.Rotation |= quatIdentity
                      Entity.Size .= v3One * RaceCourseScale
@@ -163,7 +163,7 @@ type RaceCourseDispatcher () =
                 else raceCourse.CarAcceleration.Map (fun a -> a - single (sign a) * 2.0f * world.ClockDelta) world
 
             // declare teeter totter
-            World.doBox2d "Teeter Board"
+            World.doBoxBody2d "Teeter Board"
                 [Entity.Position |= v3 140f 1f 0f * RaceCourseScale
                  Entity.Rotation |= Quaternion.CreateFromAngle2d 0.15f
                  Entity.Size .= v3 20f 0.5f 0f * RaceCourseScale
@@ -187,7 +187,7 @@ type RaceCourseDispatcher () =
             // declare bridge
             for i in 0 .. 20 do
                 if i < 20 then
-                    World.doBox2d $"Bridge {i}"
+                    World.doBoxBody2d $"Bridge {i}"
                         [Entity.Position |= v3 (161f + 2f * single i) -0.125f 0f * RaceCourseScale
                          Entity.Rotation |= quatIdentity
                          Entity.Size .= v3 2f 0.25f 0f * RaceCourseScale
@@ -213,7 +213,7 @@ type RaceCourseDispatcher () =
 
             // declare boxes
             for i in 0 .. 2 do
-                World.doBox2d $"Box {i}"
+                World.doBoxBody2d $"Box {i}"
                     [Entity.Position |= v3 220f (0.5f + single i) 0f * RaceCourseScale
                      Entity.Size .= v3One * RaceCourseScale
                      Entity.Substance .= Density 1f] world |> ignore

@@ -84,19 +84,19 @@ type GameplayDispatcher () =
 
             // declare walls
             let (leftWallBodyId, _) =
-                World.doBlock2d "LeftWall"
+                World.doBlockBody2d "LeftWall"
                     [Entity.Position .= v3 -164.0f 0.0f 0.0f
                      Entity.Size .= v3 8.0f 360.0f 0.0f
                      Entity.Sensor .= true
                      Entity.StaticImage .= Assets.Default.Black] world
             let (rightWallBodyId, _) =
-                World.doBlock2d "RightWall"
+                World.doBlockBody2d "RightWall"
                     [Entity.Position .= v3 164.0f 0.0f 0.0f
                      Entity.Size .= v3 8.0f 360.0f 0.0f
                      Entity.Sensor .= true
                      Entity.StaticImage .= Assets.Default.Black] world
             let (topWallBodyId, _) =
-                World.doBlock2d "TopWall"
+                World.doBlockBody2d "TopWall"
                     [Entity.Position .= v3 0.0f 176.0f 0.0f
                      Entity.Size .= v3 320.0f 8.0f 0.0f
                      Entity.Sensor .= true
@@ -104,7 +104,7 @@ type GameplayDispatcher () =
 
             // declare paddle
             let (paddleBodyId, _) =
-                World.doBlock2d "Paddle"
+                World.doBlockBody2d "Paddle"
                     [Entity.Position .= PaddleOrigin
                      Entity.Size .= v3 64.0f 16.0f 0.0f
                      Entity.Sensor .= true
@@ -124,7 +124,7 @@ type GameplayDispatcher () =
 
             // declare ball
             let (ballBodyId, ballResults) =
-                World.doBall2d "Ball"
+                World.doBallBody2d "Ball"
                     [Entity.Position .= BallOrigin
                      Entity.Size .= v3 8.0f 8.0f 0.0f
                      Entity.BodyType .= Dynamic
@@ -183,7 +183,7 @@ type GameplayDispatcher () =
 
             // declare bricks
             for (brickName, brick) in (screen.GetBricks world).Pairs do
-                World.doBlock2d brickName
+                World.doBlockBody2d brickName
                     [Entity.Position .= brick.Position
                      Entity.Size .= brick.Size
                      Entity.Sensor .= true
