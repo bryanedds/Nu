@@ -1077,7 +1077,7 @@ type ToyBoxDispatcher () =
                      Entity.Text .= "Ported to Nu by Happypig375 (Hadrian Tang)"] world
                 World.doText "Info Controls"
                     [Entity.LayoutOrder .= 2
-                     Entity.Justification .= Unjustified true // required for newlines to render.
+                     Entity.Justification .= Unjustified true // required for line breaks to render.
                      Entity.Text .=
                         "Controls: Left/Right/Up - Move Avatar. Left/Right - Accelerate Car, Down - Brake.\n\
                          Mouse Left - Click button or Drag entity. Mouse Right - Cause an explosion.\n\

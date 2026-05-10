@@ -330,7 +330,7 @@ type FluidSimDispatcher () =
                      Entity.Text .= "Ported to Nu by Happypig375 (Hadrian Tang)"] world
                 World.doText "Info Controls"
                     [Entity.LayoutOrder .= 2
-                     Entity.Justification .= Unjustified true // required for newlines to render.
+                     Entity.Justification .= Unjustified true // required for line breaks to render.
                      Entity.Text .=
                      "Controls: \n\
                         Mouse Left - Click button / Use tool. \n\
@@ -365,8 +365,8 @@ type FluidSimDispatcher () =
             if fluidSim.GetSelected world && world.Advancing then
                 let mousePosition = World.getMousePosition2dWorld false world
                 let tool = fluidSim.GetSelectedTool world
-                match (tool, World.doFeeler "Feeler" [Entity.Position @= mousePosition.V3] world) with // a feeler is a touch and left mouse detector respecting elevation.
-                | ((Water | Sand | Oil | Smoke), (true, _)) -> // doFeeler returns (isDown, justPressed) detecting touch and left mouse.
+                match (tool, World.doFeeler "Feeler" [Entity.Position @= mousePosition.V3] world) with // a feeler is a touch and mouse left button detector respecting elevation such that buttons with higher elevation prevents this interaction.
+                | ((Water | Sand | Oil | Smoke), (true, _)) -> // doFeeler returns (isDown, justPressed) detecting touch and mouse left button.
                     // create particles
                     let particles =
                         [for _ in 1 .. 4 do
