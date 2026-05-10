@@ -188,27 +188,27 @@ type FluidSimDispatcher () =
                     // in Paint.NET (canvas size = 31 x 31), use the Brush (size = 31, hardness = 50%, fill = solid color #0094FF)
                     // and click the center once, to generate this Particle image.
                     fluidEmitter.FluidParticleRenders.Map (Map.map (fun key render -> 
-                        if key = "Gas" then render else
+                        if key = "Smoke" then render else
                         let mutable transform = render.Transform
                         transform.Size <- (Metadata.getTextureSizeF Assets.Default.Fluid).V3
                         { render with Image = Assets.Default.Fluid; Transform = transform })) world
                 elif particleImage = Assets.Default.Fluid then
                     // credit: https://www.pngitem.com/middle/hbhTw_transparent-bubble-hd-png-download
                     fluidEmitter.FluidParticleRenders.Map (Map.map (fun key render ->
-                        if key = "Gas" then render else
+                        if key = "Smoke" then render else
                         let mutable transform = render.Transform
                         transform.Size <- v3 16f 16f 0f
                         { render with Image = Assets.Gameplay.BubbleImage; Transform = transform })) world
                 elif particleImage = Assets.Gameplay.BubbleImage then
                     // credit: Aether.Physics2D demos
                     fluidEmitter.FluidParticleRenders.Map (Map.map (fun key render ->
-                        if key = "Gas" then render else
+                        if key = "Smoke" then render else
                         let mutable transform = render.Transform
                         transform.Size <- v3 8f 8f 0f
                         { render with Image = Assets.Gameplay.GooImage; Transform = transform })) world
                 else
                     fluidEmitter.FluidParticleRenders.Map (Map.map (fun key render ->
-                        if key = "Gas" then render else
+                        if key = "Smoke" then render else
                         let mutable transform = render.Transform
                         transform.Size <- v3 2f 2f 0f
                         { render with Image = Assets.Default.Ball; Transform = transform })) world
@@ -269,7 +269,7 @@ type FluidSimDispatcher () =
                      Entity.Justification .= Unjustified true
                      Entity.Text .=
                      "Controls: Mouse Left - Click button/Add particles \n\
-                        (Shift: Sand, Ctrl: Gas, Alt: Oil, Else: Water). \n\
+                        (Shift: Sand, Ctrl: Smoke, Alt: Oil, Else: Water). \n\
                         Mouse Right - Delete particles. \n\
                         Mouse Left and Right - Summon a giant bubble that collides with particles. \n\
                         Mouse Middle - Draw contours that collide with particles."
@@ -308,7 +308,7 @@ type FluidSimDispatcher () =
                     // mouse left - create particles
                     let config =
                         if World.isKeyboardShiftDown world then "Sand"
-                        elif World.isKeyboardCtrlDown world then "Gas"
+                        elif World.isKeyboardCtrlDown world then "Smoke"
                         elif World.isKeyboardAltDown world then "Oil"
                         else "Water"
                     let particles =
@@ -324,7 +324,7 @@ type FluidSimDispatcher () =
 
                     // mouse right - destroy particles
                     let discriminator (particle : FluidParticle) =
-                        let bounds = box2 (mousePosition - v2Dup 8.0f) (v2Dup 16.0f)
+                        let bounds = box2 (mousePosition - v2Dup 16.0f) (v2Dup 32.0f)
                         if bounds.Contains particle.FluidParticlePosition.V2 = ContainmentType.Disjoint
                         then ValueSome particle
                         else ValueNone

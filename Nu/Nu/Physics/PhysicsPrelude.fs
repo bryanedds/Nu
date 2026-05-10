@@ -618,15 +618,15 @@ type [<SymbolicExpansion>] FluidParticleConfig =
             ViscosityLeave = 0.5f
             ShearViscosity = 200.0f }
 
-    /// The fluid particle configuration for gas.
-    static member val gasConfig =
+    /// The fluid particle configuration for smoke.
+    static member val smokeConfig =
         { FluidParticleConfig.waterConfig with
             // see sfml-box2d-fluid: Game.cpp, Game::LoadResources
             Density = 0.5f
             Friction = 0.05f
             Restitution = 0.025f
             Gravity = GravityScale -0.25f
-            // see sfml-box2d-fluid: Game.cpp, Game::InitFluid
+            // see sfml-box2d-fluid: Game.cpp, Game::InitFluid for Gas
             ForceMultiplier = 10000.f
             ForceSurface = 10.0f
             Viscosity = 20.0f
@@ -662,7 +662,7 @@ type Box2dNetFluidEmitterDescriptor =
             Map.ofList
                 [("Water", FluidParticleConfig.waterConfig)
                  ("Sand", FluidParticleConfig.sandConfig)
-                 ("Gas", FluidParticleConfig.gasConfig)
+                 ("Smoke", FluidParticleConfig.smokeConfig)
                  ("Oil", FluidParticleConfig.oilConfig)]
           Gravity = GravityWorld
           SimulationBounds = Box2 (-100.f, -100.f, 100.f, 100.f) }
