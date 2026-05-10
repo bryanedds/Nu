@@ -123,28 +123,28 @@ type FluidSimDispatcher () =
 
             // create test geometry
             let scale = 25f
-            World.doBlock2d "Bottom"
+            World.doBlockBody2d "Bottom"
                 [Entity.Size .= v3 12f 1f 0f * scale * 2f 
                  Entity.Position .= v3 0f -7f 0f * scale
                  Entity.StaticImage .= Assets.Default.White
                  Entity.Color .= Color.DeepSkyBlue] world |> ignore
-            World.doBlock2d "Left"
+            World.doBlockBody2d "Left"
                 [Entity.Size .= v3 1f 10f 0f * scale * 2f
                  Entity.Position .= v3 -11f 0f 0f * scale
                  Entity.StaticImage .= Assets.Default.White
                  Entity.Color .= Color.DeepSkyBlue] world |> ignore
-            World.doBlock2d "Right"
+            World.doBlockBody2d "Right"
                 [Entity.Size .= v3 1f 10f 0f * scale * 2f
                  Entity.Position .= v3 11f 0f 0f * scale
                  Entity.StaticImage .= Assets.Default.White
                  Entity.Color .= Color.DeepSkyBlue] world |> ignore
-            World.doBlock2d "Ramp"
+            World.doBlockBody2d "Ramp"
                 [Entity.Size .= v3 5.5f 0.5f 0f * scale * 2f
                  Entity.Position .= v3 6f 2f 0f * scale
                  Entity.Rotation .= Quaternion.CreateFromAngle2d 0.25f
                  Entity.StaticImage .= Assets.Default.White
                  Entity.Color .= Color.DeepSkyBlue] world |> ignore
-            World.doSphere2d "Circle"
+            World.doOrbBody2d "Circle"
                 [Entity.Size .= v3 2f 2f 0f * scale * 2f
                  Entity.Position .= v3 0f 0.2f 0f * scale
                  Entity.Color .= Color.DeepSkyBlue] world |> ignore
