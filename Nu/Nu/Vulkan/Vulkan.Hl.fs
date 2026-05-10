@@ -550,11 +550,6 @@ module Hl =
         result.extent.height <- uint extentHeight
         result
 
-    /// Check whether Android window is ready for Vulkan surface creation.
-    let private isAndroidWindowReadyForVulkan window =
-        not (OperatingSystem.IsAndroid ()) ||
-        SDL3.SDL_GetPointerProperty (SDL3.SDL_GetWindowProperties window, SDL3.SDL_PROP_WINDOW_ANDROID_WINDOW_POINTER, 0n) <> 0n
-    
     let private createVulkanSurface window instance =
         match SurfaceState with
         | SurfaceDestroyed ->
@@ -1026,7 +1021,9 @@ module Hl =
         static member private clear swapchain device =
             for i in 0 .. dec swapchain.SwapchainInternalOpts_.Length do
                 match swapchain.SwapchainInternalOpts_.[i] with
-                | Some swapchainInternal -> SwapchainInternal.destroy swapchainInternal device
+                | Some swapchainInternal ->
+                    SwapchainInternal.destroy swapchainInternal device
+                    swapchain.SwapchainInternalOpts_.[i] <- None
                 | None -> ()
         
         static member private destroySurface swapchain device instance =
@@ -1057,13 +1054,16 @@ module Hl =
                     // check if pause triggered during surface creation
                     if not (getBackgroundingResponseState () = PresentationTeardownPending) then
                     
-                        // try create SwapchainInternal
-                        let swapchainInternalOpt = SwapchainInternal.tryCreate swapchain.SurfaceFormat_ VkSwapchainKHR.Null physicalDevice swapchain.Window_ device
-                        swapchain.SwapchainInternalOpts_.[swapchain.SwapchainIndex_] <- swapchainInternalOpt
-                        
-                        // destroy surface if lost again or if pause triggered during swapchain creation
-                        if SurfaceState = SurfaceLost || getBackgroundingResponseState () = PresentationTeardownPending
-                        then Swapchain.destroySurface swapchain device instance
+                        // check window not minimized
+                        if not (Swapchain.isWindowMinimized swapchain.Window_) then
+
+                            // try create SwapchainInternal
+                            let swapchainInternalOpt = SwapchainInternal.tryCreate swapchain.SurfaceFormat_ VkSwapchainKHR.Null physicalDevice swapchain.Window_ device
+                            swapchain.SwapchainInternalOpts_.[swapchain.SwapchainIndex_] <- swapchainInternalOpt
+                            
+                            // destroy surface if lost again or if pause triggered during swapchain creation
+                            if SurfaceState = SurfaceLost || getBackgroundingResponseState () = PresentationTeardownPending
+                            then Swapchain.destroySurface swapchain device instance
 
                     // abort
                     else Swapchain.destroySurface swapchain device instance
@@ -1076,13 +1076,13 @@ module Hl =
             SDL3.SDL_GetWindowFlags window &&& SDL_WindowFlags.SDL_WINDOW_MINIMIZED <> LanguagePrimitives.EnumOfValue 0UL
         
         /// Check if window has been resized or surface lost.
-        static member isWindowResizedOrSurfaceLost vkPhysicalDevice surface (swapchain : Swapchain) =
-            match tryGetSurfaceCapabilities vkPhysicalDevice surface with
+        static member isWindowResizedOrSurfaceLost vkPhysicalDevice (swapchain : Swapchain) =
+            match tryGetSurfaceCapabilities vkPhysicalDevice Surface with
             | Some capabilities -> swapchain.SwapExtent <> getSwapExtent capabilities swapchain.Window_
             | None -> true
 
-        /// Try to refresh the swapchain.
-        static member tryRefresh physicalDevice swapchain device instance =
+        /// Update the swapchain.
+        static member update physicalDevice swapchain device instance =
             
             // NOTE: DJL: by design, this method should know exactly what to do based on the current and changing state of
             // the surface and app backgrounding, anticipated or not, regardless of the calling context, which just needs 
@@ -1102,9 +1102,6 @@ module Hl =
                 // no app pause to worry about, just try recreate swapchain
                 | PresentationSetupInitiated ->
                 
-                    // NOTE: DJL: although we check for presence of current SwapchainInternal where appropriate,
-                    // it is *always* supposed to exist when the surface is ready because we *always* recreate when we can.
-                    
                     // use current VkSwapchain to create new one
                     let oldVkSwapchainOpt =
                         match swapchain.SwapchainInternalOpts_.[swapchain.SwapchainIndex_] with
@@ -1117,21 +1114,26 @@ module Hl =
 
                     // destroy SwapchainInternal at new index if present
                     match swapchain.SwapchainInternalOpts_.[swapchain.SwapchainIndex_] with
-                    | Some swapchainInternal -> SwapchainInternal.destroy swapchainInternal device
+                    | Some swapchainInternal ->
+                        SwapchainInternal.destroy swapchainInternal device
+                        swapchain.SwapchainInternalOpts_.[swapchain.SwapchainIndex_] <- None
                     | None -> ()
                     
                     // check once more for app pause (triggered during swapchain destruction) before attempting swapchain creation
                     match getBackgroundingResponseState () with
                     | PresentationSetupInitiated ->
                     
-                        // try create new swapchain internal
-                        let swapchainInternalOpt = SwapchainInternal.tryCreate swapchain.SurfaceFormat_ oldVkSwapchainOpt physicalDevice swapchain.Window_ device
-                        swapchain.SwapchainInternalOpts_.[swapchain.SwapchainIndex_] <- swapchainInternalOpt
+                        // check window not minimized
+                        if not (Swapchain.isWindowMinimized swapchain.Window_) then
+                        
+                            // try create new swapchain internal
+                            let swapchainInternalOpt = SwapchainInternal.tryCreate swapchain.SurfaceFormat_ oldVkSwapchainOpt physicalDevice swapchain.Window_ device
+                            swapchain.SwapchainInternalOpts_.[swapchain.SwapchainIndex_] <- swapchainInternalOpt
 
-                        // if surface is lost here (or pause triggered during pipeline creation!), destroy and attempt to recover on the spot
-                        if SurfaceState = SurfaceLost || getBackgroundingResponseState () = PresentationTeardownPending then
-                            Swapchain.destroySurface swapchain device instance
-                            Swapchain.tryCreateSurfaceAndSwapchainInternal physicalDevice swapchain device instance
+                            // if surface is lost here (or pause triggered during pipeline creation!), destroy and attempt to recover on the spot
+                            if SurfaceState = SurfaceLost || getBackgroundingResponseState () = PresentationTeardownPending then
+                                Swapchain.destroySurface swapchain device instance
+                                Swapchain.tryCreateSurfaceAndSwapchainInternal physicalDevice swapchain device instance
 
                     | PresentationTeardownPending ->
                         Swapchain.destroySurface swapchain device instance
@@ -1688,10 +1690,17 @@ module Hl =
             // NOTE: DJL: this both detects the beginning of minimization and checks for the end.
             vkc.WindowMinimized_ <- Swapchain.isWindowMinimized vkc.Swapchain_.Window_
 
-            // refresh the swapchain if window is not minimized
-            // NOTE: DJL: this happens a) when the window size simply changes and b) when minimization ends as detected above.
-            // see https://vulkan-tutorial.com/Drawing_a_triangle/Swap_chain_recreation#page_Handling-minimization.
-            if not vkc.WindowMinimized_ then Swapchain.tryRefresh vkc.PhysicalDevice_ vkc.Swapchain_ vkc.Device vkc.Instance_
+            // update the swapchain if window is not minimized, which happens a) when the window size simply changes
+            // and b) when minimization ends as detected above; must also check for backgrounding in case minimization
+            // occurs first so backgrounding can still be handled straight away
+            if not vkc.WindowMinimized_ || getBackgroundingResponseState () = PresentationTeardownPending
+            then Swapchain.update vkc.PhysicalDevice_ vkc.Swapchain_ vkc.Device vkc.Instance_
+        
+        /// Wait for app to return to foreground.
+        static member private handleBackgrounding vkc =
+            vkc.WindowMinimized_ <- Swapchain.isWindowMinimized vkc.Swapchain_.Window_
+            if AppInForeground && not vkc.WindowMinimized_
+            then Swapchain.update vkc.PhysicalDevice_ vkc.Swapchain_ vkc.Device vkc.Instance_
         
         /// Begin the frame.
         static member beginFrame (windowViewport : Viewport) (vkc : VulkanContext) =
@@ -1705,21 +1714,19 @@ module Hl =
 
             // the cascade of checks needed to handle window behavior, avoiding 'elif' statements for maximum understandability
             
-            // check for handling of minimized window from previous frame(s); if *still* minimized then do nothing; if restored then refresh swapchain
-            if vkc.WindowMinimized_ then VulkanContext.handleWindowSize vkc
+            // check if current swapchain is non-existent, typically because app has been backgrounded
+            if Option.isNone vkc.Swapchain_.SwapchainInternalOpt then VulkanContext.handleBackgrounding vkc
             else
-                // check if current swapchain is non-existent due to surface loss, after WindowMinimized check to prevent excessive repeated refresh attempts
-                if Option.isNone vkc.Swapchain_.SwapchainInternalOpt then VulkanContext.handleWindowSize vkc
+                // check for handling of minimized window from previous frame(s); if *still* minimized then do nothing; if restored then refresh swapchain
+                if vkc.WindowMinimized_ then VulkanContext.handleWindowSize vkc
                 else
-                    // check for change in screen state; if screen *has become* minimized then update WindowMinimized_ and don't render; if screen size changed (or surface lost) then refresh swapchain
-                    if Swapchain.isWindowMinimized vkc.Swapchain_.Window_ then VulkanContext.handleWindowSize vkc
+                    // check if app backgrounding has been triggered, if so then teardown the surface and swapchain
+                    if getBackgroundingResponseState () = PresentationTeardownPending then Swapchain.update vkc.PhysicalDevice_ vkc.Swapchain_ vkc.Device vkc.Instance_
                     else
-                        if Swapchain.isWindowResizedOrSurfaceLost vkc.VkPhysicalDevice Surface vkc.Swapchain_ then VulkanContext.handleWindowSize vkc
+                        // check for change in screen state; if screen *has become* minimized then update WindowMinimized_ and don't render; if screen size changed (or surface lost) then refresh swapchain
+                        if Swapchain.isWindowMinimized vkc.Swapchain_.Window_ then VulkanContext.handleWindowSize vkc
                         else
-                            // check for surface loss directly
-                            if not (isAndroidWindowReadyForVulkan vkc.Swapchain_.Window_) then
-                                SurfaceState <- SurfaceLost
-                                VulkanContext.handleWindowSize vkc
+                            if Swapchain.isWindowResizedOrSurfaceLost vkc.VkPhysicalDevice vkc.Swapchain_ then VulkanContext.handleWindowSize vkc
                             else
                                 // check that swap extent >= viewport.Bounds >= viewport.Inner; done *after* screen change check to avoid outdated swap extent
                                 let extent = vkc.Swapchain_.SwapExtent
@@ -1728,28 +1735,18 @@ module Hl =
                                     swapchainBounds.ContainsInclusive windowViewport.Bounds = ContainmentType.Contains &&
                                     windowViewport.Bounds.ContainsInclusive windowViewport.Inner = ContainmentType.Contains
                                 then
-                                    // to be as sure as possible, check *again* for screen state change right before attempting image acquisition!
-                                    if Swapchain.isWindowMinimized vkc.Swapchain_.Window_ then VulkanContext.handleWindowSize vkc
+                                    // try to acquire image from swapchain to draw onto
+                                    // NOTE: DJL: due to semaphore, if this is successful, the render *must* proceed!
+                                    let result = Vulkan.vkAcquireNextImageKHR (vkc.Device, vkc.Swapchain_.VkSwapchain, UInt64.MaxValue, vkc.ImageAvailableSemaphore, VkFence.Null, &ImageIndex)
+                                    if result = VkResult.ErrorOutOfDateKHR then VulkanContext.handleWindowSize vkc // refresh swapchain if out of date
                                     else
-                                        if Swapchain.isWindowResizedOrSurfaceLost vkc.VkPhysicalDevice Surface vkc.Swapchain_ then VulkanContext.handleWindowSize vkc
+                                        // destroy surface if lost
+                                        if result = VkResult.ErrorSurfaceLostKHR then
+                                            SurfaceState <- SurfaceLost
+                                            Swapchain.update vkc.PhysicalDevice_ vkc.Swapchain_ vkc.Device vkc.Instance_
                                         else
-                                            // check for surface loss directly
-                                            if not (isAndroidWindowReadyForVulkan vkc.Swapchain_.Window_) then
-                                                SurfaceState <- SurfaceLost
-                                                VulkanContext.handleWindowSize vkc
-                                            else
-                                                // try to acquire image from swapchain to draw onto
-                                                // NOTE: DJL: due to semaphore, if this is successful, the render *must* proceed!
-                                                let result = Vulkan.vkAcquireNextImageKHR (vkc.Device, vkc.Swapchain_.VkSwapchain, UInt64.MaxValue, vkc.ImageAvailableSemaphore, VkFence.Null, &ImageIndex)
-                                                if result = VkResult.ErrorOutOfDateKHR then VulkanContext.handleWindowSize vkc // refresh swapchain if out of date
-                                                else
-                                                    // attempt swapchain refresh if surface lost
-                                                    if result = VkResult.ErrorSurfaceLostKHR then
-                                                        SurfaceState <- SurfaceLost
-                                                        VulkanContext.handleWindowSize vkc
-                                                    else
-                                                        check result // NOTE: DJL: this will report a suboptimal swapchain image.
-                                                        vkc.RenderDesired_ <- true // permit rendering
+                                            check result // NOTE: DJL: this will report a suboptimal swapchain image.
+                                            vkc.RenderDesired_ <- true // permit rendering
 
             if vkc.RenderDesired_ then
             
@@ -1799,10 +1796,10 @@ module Hl =
                 // refresh swapchain if framebuffer out of date or suboptimal
                 if result = VkResult.ErrorOutOfDateKHR || result = VkResult.SuboptimalKHR then VulkanContext.handleWindowSize vkc
                 
-                // attempt swapchain refresh if surface lost
+                // destroy surface if lost
                 elif result = VkResult.ErrorSurfaceLostKHR then
                     SurfaceState <- SurfaceLost
-                    VulkanContext.handleWindowSize vkc
+                    Swapchain.update vkc.PhysicalDevice_ vkc.Swapchain_ vkc.Device vkc.Instance_
                 else check result
 
             // advance frame in flight
