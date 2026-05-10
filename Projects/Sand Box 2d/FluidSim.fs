@@ -71,6 +71,8 @@ type LineSegmentsDispatcher () =
             transform.Size <- v3 (p2 - p1).Magnitude lineWidth 0f
             World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, staticImage, &transform, &insetOpt, &clipOpt, staticImage, &color, blend, &emission, flip, world)
 
+type SelectedTool = Water | Sand | Smoke | Oil | Bubble | Line | Box | Explosion
+
 // this extends the Screen API to expose the user-defined properties.
 [<AutoOpen>]
 module FluidSimExtensions =
@@ -81,6 +83,12 @@ module FluidSimExtensions =
         member this.GetMouseBubbleSize world : single = this.Get (nameof Screen.MouseBubbleSize) world
         member this.SetMouseBubbleSize (value : single) world = this.Set (nameof Screen.MouseBubbleSize) value world
         member this.MouseBubbleSize = lens (nameof Screen.MouseBubbleSize) this this.GetMouseBubbleSize this.SetMouseBubbleSize
+        member this.GetSelectedTool world : SelectedTool = this.Get (nameof Screen.SelectedTool) world
+        member this.SetSelectedTool (value : SelectedTool) world = this.Set (nameof Screen.SelectedTool) value world
+        member this.SelectedTool = lens (nameof Screen.SelectedTool) this this.GetSelectedTool this.SetSelectedTool
+        member this.GetBoxes world : string FSet = this.Get (nameof Screen.Boxes) world
+        member this.SetBoxes (value : string FSet) world = this.Set (nameof Screen.Boxes) value world
+        member this.Boxes = lens (nameof Screen.Boxes) this this.GetBoxes this.SetBoxes
 
 // this is the dispatcher that defines the behavior of the screen where gameplay takes place.
 type FluidSimDispatcher () =
@@ -90,7 +98,9 @@ type FluidSimDispatcher () =
     static member Properties =
         [define Screen.InfoOpened false
          define Screen.LineSegments []
-         define Screen.MouseBubbleSize 0f]
+         define Screen.MouseBubbleSize 0f
+         define Screen.SelectedTool Water
+         define Screen.Boxes FSet.empty]
 
     // here we define the screen's top-level behavior
     override this.Process (selectionResults, fluidSim, world) =
@@ -100,6 +110,8 @@ type FluidSimDispatcher () =
             fluidSim.SetInfoOpened false world
             fluidSim.SetLineSegments [] world
             fluidSim.SetMouseBubbleSize 0f world
+            fluidSim.SetSelectedTool Water world
+            fluidSim.SetBoxes FSet.empty world
             World.setGravity2d (World.getGravityDefault2d world) world
             World.setCursorType (UserDefinedCursor Assets.Gameplay.DropletCursor) world
 
@@ -160,6 +172,7 @@ type FluidSimDispatcher () =
                  Entity.Elevation .= 1f] world then
                 World.clearFluidParticles fluidEmitterId world
                 fluidSim.SetLineSegments [] world
+                fluidSim.SetBoxes FSet.empty world
 
             // gravity button
             let gravities =
@@ -185,26 +198,30 @@ type FluidSimDispatcher () =
                  Entity.Elevation .= 1f
                  Entity.FontSizing .= Some 8.f] world then
                 if particleImage = Assets.Default.Ball then
-                    // in Paint.NET (canvas size = 31 x 31), use the Brush (size = 31, hardness = 50%, fill = solid color #0094FF)
-                    // and click the center once, to generate this Particle image.
                     fluidEmitter.FluidParticleRenders.Map (Map.map (fun key render -> 
-                        if key = "Smoke" then render else
                         let mutable transform = render.Transform
-                        transform.Size <- (Metadata.getTextureSizeF Assets.Default.Fluid).V3
-                        { render with Image = Assets.Default.Fluid; Transform = transform })) world
+                        if key = "Smoke" then 
+                            transform.Size <- (Metadata.getTextureSizeF Assets.Default.Gas).V3
+                            // image credit: https://github.com/a-piece-of-snake/sfml-box2d-fluid/blob/master/sfmlSetup/Assets/Textures/smoke.png
+                            { render with Image = Assets.Default.Gas; Transform = transform }
+                        else
+                            // in Paint.NET (canvas size = 31 x 31), use the Brush (size = 31, hardness = 50%, fill = solid color #0094FF)
+                            // and click the center once, to generate this Fluid image.
+                            transform.Size <- (Metadata.getTextureSizeF Assets.Default.Fluid).V3
+                            { render with Image = Assets.Default.Fluid; Transform = transform })) world
                 elif particleImage = Assets.Default.Fluid then
-                    // credit: https://www.pngitem.com/middle/hbhTw_transparent-bubble-hd-png-download
                     fluidEmitter.FluidParticleRenders.Map (Map.map (fun key render ->
                         if key = "Smoke" then render else
                         let mutable transform = render.Transform
                         transform.Size <- v3 16f 16f 0f
+                        // image credit: https://www.pngitem.com/middle/hbhTw_transparent-bubble-hd-png-download
                         { render with Image = Assets.Gameplay.BubbleImage; Transform = transform })) world
                 elif particleImage = Assets.Gameplay.BubbleImage then
-                    // credit: Aether.Physics2D demos
                     fluidEmitter.FluidParticleRenders.Map (Map.map (fun key render ->
                         if key = "Smoke" then render else
                         let mutable transform = render.Transform
                         transform.Size <- v3 8f 8f 0f
+                        // image credit: https://github.com/nkast/Aether.Physics2D/blob/main/Samples/SamplesContent/Samples/goo.png
                         { render with Image = Assets.Gameplay.GooImage; Transform = transform })) world
                 else
                     fluidEmitter.FluidParticleRenders.Map (Map.map (fun key render ->
@@ -212,6 +229,53 @@ type FluidSimDispatcher () =
                         let mutable transform = render.Transform
                         transform.Size <- v3 2f 2f 0f
                         { render with Image = Assets.Default.Ball; Transform = transform })) world
+
+            // tool palette panel
+            World.beginPanel "Tool Panel"
+                [Entity.Position .= v3 255f -10f 0f
+                 Entity.Size .= v3 128f 153f 0f
+                 Entity.Elevation .= 1f] world |> ignore
+
+            // tool palette label
+            let selectedTool = fluidSim.GetSelectedTool world
+            let renders = fluidEmitter.GetFluidParticleRenders world
+            World.doText "Tool Label"
+                [Entity.PositionLocal .= v3 0f 60f 0f
+                 Entity.Text @= $"Tool: {selectedTool}"] world
+
+            // tool palette image buttons (grid below Particle Sprite button)
+            let tools = [|Water; Sand; Oil; Smoke; Bubble; Line; Box; Explosion|]
+            for i in 0 .. dec tools.Length do
+                let tool = tools[i]
+                let col = i % 3
+                let row = i / 3
+                let x = single (col - 1) * 35f
+                let y = 25f - single row * 35f 
+                if World.doButton $"{tool}"
+                    [Entity.PositionLocal .= v3 x y 0f // relative to outer panel
+                     Entity.Size .= v3 35f 35f 0f
+                     Entity.Enabled @= (selectedTool <> tool)
+                     Entity.ElevationLocal .= 1f] world then
+                    fluidSim.SetSelectedTool tool world
+                World.doStaticSprite $"{tool} Overlay"
+                    [Entity.MountOpt .= Some world.DeclaredEntity.EntityAddress // inherits all properties with Local suffix like position, rotation and elevation
+                     Entity.Absolute .= true
+                     match tool with
+                     | Water | Sand | Oil | Smoke ->
+                         let toolName = string tool
+                         Entity.StaticImage .= renders[toolName].Image
+                         Entity.Color .= renders[toolName].Color
+                     | Bubble ->
+                         Entity.StaticImage .= Assets.Gameplay.BubbleImage
+                     | Line ->
+                         Entity.Size .= v3 25f 2f 0f
+                         Entity.StaticImage .= Assets.Default.White
+                         Entity.RotationLocal .= Quaternion.CreateFromAngle2d MathF.PI_OVER_4
+                     | Box -> Entity.Size .= v3 25f 25f 0f
+                     | Explosion -> Entity.StaticImage .= Assets.Gameplay.BoomImage // image credit: https://www.pikpng.com/transpng/hxThxoJ
+                     Entity.ElevationLocal .= 1f] world |> ignore
+
+            World.endPanel world
 
             // squish button
             if World.doButton $"Squish"
@@ -266,13 +330,11 @@ type FluidSimDispatcher () =
                      Entity.Text .= "Ported to Nu by Happypig375 (Hadrian Tang)"] world
                 World.doText "Info Controls"
                     [Entity.LayoutOrder .= 2
-                     Entity.Justification .= Unjustified true
+                     Entity.Justification .= Unjustified true // required for newlines to render.
                      Entity.Text .=
-                     "Controls: Mouse Left - Click button/Add particles \n\
-                        (Shift: Sand, Ctrl: Smoke, Alt: Oil, Else: Water). \n\
-                        Mouse Right - Delete particles. \n\
-                        Mouse Left and Right - Summon a giant bubble that collides with particles. \n\
-                        Mouse Middle - Draw contours that collide with particles."
+                     "Controls: \n\
+                        Mouse Left - Click button / Use tool. \n\
+                        Mouse Right - Delete particles and boxes."
                      Entity.FontSizing .= Some 9.5f
                      Entity.TextMargin .= v2 5f 0f] world
                 if World.doButton "Info Close"
@@ -302,25 +364,51 @@ type FluidSimDispatcher () =
             // mouse interactions with fluid system
             if fluidSim.GetSelected world && world.Advancing then
                 let mousePosition = World.getMousePosition2dWorld false world
-                match (World.isMouseButtonDown MouseLeft world, World.isMouseButtonDown MouseRight world) with
-                | (true, false) ->
-
-                    // mouse left - create particles
-                    let config =
-                        if World.isKeyboardShiftDown world then "Sand"
-                        elif World.isKeyboardCtrlDown world then "Smoke"
-                        elif World.isKeyboardAltDown world then "Oil"
-                        else "Water"
+                let tool = fluidSim.GetSelectedTool world
+                match (tool, World.doFeeler "Feeler" [Entity.Position @= mousePosition.V3] world) with // a feeler is a touch and left mouse detector respecting elevation.
+                | ((Water | Sand | Oil | Smoke), (true, _)) -> // doFeeler returns (isDown, justPressed) detecting touch and left mouse.
+                    // create particles
                     let particles =
                         [for _ in 1 .. 4 do
                             let jitter = v2 (Gen.randomf * 2f - 1f) (Gen.randomf - 0.5f) * 16.0f
-                            { FluidParticlePosition = (mousePosition + jitter).V3; FluidParticleVelocity = v3Zero; FluidParticleConfig = config }]
+                            { FluidParticlePosition = (mousePosition + jitter).V3; FluidParticleVelocity = v3Zero; FluidParticleConfig = string tool }]
                         |> SArray.ofList
 
                     // emit particles
                     World.emitFluidParticles particles fluidEmitterId world
+                | (Bubble, (true, _)) ->
+                    // summon a bubble
+                    fluidSim.MouseBubbleSize.Map inc world
+                    World.doSphere2d "Bubble"
+                        [Entity.Position @= mousePosition.V3
+                         Entity.Size @= v3Dup (fluidSim.GetMouseBubbleSize world)
+                         Entity.StaticImage .= Assets.Gameplay.BubbleImage] world |> ignore
+                | (Bubble, (false, _)) ->
+                    // reset size when not touching
+                    fluidSim.SetMouseBubbleSize 0f world
+                | (Line, (true, true)) ->
+                    // start a contour
+                    fluidSim.LineSegments.Map (fun lineSegments ->
+                        List.cons [|mousePosition|] lineSegments) world
+                | (Line, (true, false)) ->
+                    // draw a contour
+                    fluidSim.LineSegments.Map (fun lineSegments ->
+                        if lineSegments.NotEmpty && Vector2.Distance (mousePosition, Array.last (List.head lineSegments)) > 8f then
+                            List.updateAt 0 (Array.add mousePosition (List.head lineSegments)) lineSegments
+                        else lineSegments) world
+                | (Box, (true, true)) ->
+                    fluidSim.Boxes.Map (FSet.add Gen.name) world
+                | (Explosion, (true, true)) ->
+                    World.applyExplosion2d mousePosition.V3 200f 20f 100f UInt64.MaxValue world
+                | _ -> ()
 
-                | (false, true) ->
+                let boxes = fluidSim.GetBoxes world
+                for box in boxes do
+                    World.doBox2d box
+                        [Entity.Position |= mousePosition.V3
+                         Entity.Color |= color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f] world |> ignore
+
+                if World.isMouseButtonDown MouseRight world then // there is no feeler equivalent for mouse buttons that aren't the left button. this doesn't respect elevation.
 
                     // mouse right - destroy particles
                     let discriminator (particle : FluidParticle) =
@@ -332,30 +420,9 @@ type FluidSimDispatcher () =
                     // filter particles
                     World.chooseFluidParticles discriminator fluidEmitterId world
 
-                | (true, true) ->
-
-                    // mouse both - summon a bubble
-                    fluidSim.MouseBubbleSize.Map inc world
-                    World.doSphere2d "Bubble"
-                        [Entity.Position @= mousePosition.V3
-                         Entity.Size @= v3Dup (fluidSim.GetMouseBubbleSize world)
-                         Entity.StaticImage .= Assets.Gameplay.BubbleImage] world |> ignore
-
-                | (false, false) ->
-
-                    // only reset size when both mouse buttons up
-                    fluidSim.SetMouseBubbleSize 0f world
-
-                // mouse middle - draw a contour
-                if World.isMouseButtonPressed MouseMiddle world then
-                    fluidSim.LineSegments.Map (fun lineSegments ->
-                        List.cons [|mousePosition|] lineSegments) world
-                elif World.isMouseButtonDown MouseMiddle world then
-                    fluidSim.LineSegments.Map (fun lineSegments ->
-                        let active = lineSegments[0]
-                        if Vector2.Distance (mousePosition, Array.last active) > 8f then
-                            List.updateAt 0 (Array.add mousePosition active) lineSegments
-                        else lineSegments) world
+                    for entity in World.getEntities2dAtPoint mousePosition (hashSetPlus HashIdentity.Structural []) world do
+                        if boxes.Contains entity.Name then
+                            fluidSim.Boxes.Map (FSet.remove entity.Name) world
 
             // declare containment contour
             for segment in fluidSim.GetLineSegments world do
