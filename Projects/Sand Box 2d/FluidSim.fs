@@ -200,7 +200,7 @@ type FluidSimDispatcher () =
                 if particleImage = Assets.Default.Ball then
                     fluidEmitter.FluidParticleRenders.Map (Map.map (fun key render -> 
                         let mutable transform = render.Transform
-                        if key = "Smoke" then 
+                        if key = "Smoke" then // smoke uses its own sprite.
                             transform.Size <- (Metadata.getTextureSizeF Assets.Default.Gas).V3
                             // image credit: https://github.com/a-piece-of-snake/sfml-box2d-fluid/blob/master/sfmlSetup/Assets/Textures/smoke.png
                             { render with Image = Assets.Default.Gas; Transform = transform }
@@ -210,22 +210,19 @@ type FluidSimDispatcher () =
                             transform.Size <- (Metadata.getTextureSizeF Assets.Default.Fluid).V3
                             { render with Image = Assets.Default.Fluid; Transform = transform })) world
                 elif particleImage = Assets.Default.Fluid then
-                    fluidEmitter.FluidParticleRenders.Map (Map.map (fun key render ->
-                        if key = "Smoke" then render else
+                    fluidEmitter.FluidParticleRenders.Map (Map.map (fun _ render ->
                         let mutable transform = render.Transform
                         transform.Size <- v3 16f 16f 0f
                         // image credit: https://www.pngitem.com/middle/hbhTw_transparent-bubble-hd-png-download
                         { render with Image = Assets.Gameplay.BubbleImage; Transform = transform })) world
                 elif particleImage = Assets.Gameplay.BubbleImage then
-                    fluidEmitter.FluidParticleRenders.Map (Map.map (fun key render ->
-                        if key = "Smoke" then render else
+                    fluidEmitter.FluidParticleRenders.Map (Map.map (fun _ render ->
                         let mutable transform = render.Transform
                         transform.Size <- v3 8f 8f 0f
                         // image credit: https://github.com/nkast/Aether.Physics2D/blob/main/Samples/SamplesContent/Samples/goo.png
                         { render with Image = Assets.Gameplay.GooImage; Transform = transform })) world
                 else
-                    fluidEmitter.FluidParticleRenders.Map (Map.map (fun key render ->
-                        if key = "Smoke" then render else
+                    fluidEmitter.FluidParticleRenders.Map (Map.map (fun _ render ->
                         let mutable transform = render.Transform
                         transform.Size <- v3 2f 2f 0f
                         { render with Image = Assets.Default.Ball; Transform = transform })) world
@@ -369,10 +366,9 @@ type FluidSimDispatcher () =
                 | ((Water | Sand | Oil | Smoke), (true, _)) -> // doFeeler returns (isDown, justPressed) detecting touch and mouse left button.
                     // create particles
                     let particles =
-                        [for _ in 1 .. 4 do
+                        SArray.init 4 (fun _ ->
                             let jitter = v2 (Gen.randomf * 2f - 1f) (Gen.randomf - 0.5f) * 16.0f
-                            { FluidParticlePosition = (mousePosition + jitter).V3; FluidParticleVelocity = v3Zero; FluidParticleConfig = string tool }]
-                        |> SArray.ofList
+                            { FluidParticlePosition = (mousePosition + jitter).V3; FluidParticleVelocity = v3Zero; FluidParticleConfig = string tool })
 
                     // emit particles
                     World.emitFluidParticles particles fluidEmitterId world
@@ -383,8 +379,8 @@ type FluidSimDispatcher () =
                         [Entity.Position @= mousePosition.V3
                          Entity.Size @= v3Dup (fluidSim.GetMouseBubbleSize world)
                          Entity.StaticImage .= Assets.Gameplay.BubbleImage] world |> ignore
-                | (Bubble, (false, _)) ->
-                    // reset size when not touching
+                | (Bubble, (false, _)) when World.isMouseButtonReleased MouseLeft world -> // the feeler detects only presses, not releases.
+                    // reset size when mouse left button is just released
                     fluidSim.SetMouseBubbleSize 0f world
                 | (Line, (true, true)) ->
                     // start a contour
@@ -420,6 +416,7 @@ type FluidSimDispatcher () =
                     // filter particles
                     World.chooseFluidParticles discriminator fluidEmitterId world
 
+                    // remove boxes
                     for entity in World.getEntities2dAtPoint mousePosition (hashSetPlus HashIdentity.Structural []) world do
                         if boxes.Contains entity.Name then
                             fluidSim.Boxes.Map (FSet.remove entity.Name) world
