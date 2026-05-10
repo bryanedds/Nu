@@ -600,7 +600,7 @@ module WorldImSim =
         /// ImSim declare a 2d block body with the given arguments.
         /// See <see cref="BlockBody2dDispatcher" />.
         /// </summary>
-        static member doBlock2d name args world =
+        static member doBlockBody2d name args world =
             let results = World.doEntityPlus<BlockBody2dDispatcher, _> FQueue.empty World.initBodyResult name args world
             (world.DeclaredEntity.GetBodyId world, results)
 
@@ -608,7 +608,7 @@ module WorldImSim =
         /// ImSim declare a 2d box body with the given arguments.
         /// See <see cref="BoxBody2dDispatcher" />.
         /// </summary>
-        static member doBox2d name args world =
+        static member doBoxBody2d name args world =
             let results = World.doEntityPlus<BoxBody2dDispatcher, _> FQueue.empty World.initBodyResult name args world
             (world.DeclaredEntity.GetBodyId world, results)
 
@@ -616,7 +616,7 @@ module WorldImSim =
         /// ImSim declare a 2d orb body with the given arguments.
         /// See <see cref="OrbBody2dDispatcher" />.
         /// </summary>
-        static member doSphere2d name args world =
+        static member doOrbBody2d name args world =
             let results = World.doEntityPlus<OrbBody2dDispatcher, _> FQueue.empty World.initBodyResult name args world
             (world.DeclaredEntity.GetBodyId world, results)
 
@@ -624,7 +624,7 @@ module WorldImSim =
         /// ImSim declare a 2d ball body with the given arguments.
         /// See <see cref="BallBody2dDispatcher" />.
         /// </summary>
-        static member doBall2d name args world =
+        static member doBallBody2d name args world =
             let results = World.doEntityPlus<BallBody2dDispatcher, _> FQueue.empty World.initBodyResult name args world
             (world.DeclaredEntity.GetBodyId world, results)
 

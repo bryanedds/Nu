@@ -410,7 +410,7 @@ type FluidEmitter2dDispatcher () =
             (Map.ofList
                 [("Water", { Transform = Transform.makeIntuitive false v3Zero v3One v3Zero fluidSize v3Zero -0.03f; InsetOpt = ValueNone; ClipOpt = ValueNone; Image = Assets.Default.Fluid; Color = colorPacked 0x0094FFFFu; Blend = Transparent; Emission = colorZero; Flip = Unflipped })
                  ("Sand", { Transform = Transform.makeIntuitive false v3Zero v3One v3Zero fluidSize v3Zero -0.01f; InsetOpt = ValueNone; ClipOpt = ValueNone; Image = Assets.Default.Fluid; Color = Color.Yellow; Blend = Transparent; Emission = colorZero; Flip = Unflipped })
-                 ("Gas", { Transform = Transform.makeIntuitive false v3Zero v3One v3Zero smokeSize v3Zero 0.0f; InsetOpt = ValueNone; ClipOpt = ValueNone; Image = Assets.Default.Smoke; Color = colorOne; Blend = Transparent; Emission = colorZero; Flip = Unflipped })
+                 ("Smoke", { Transform = Transform.makeIntuitive false v3Zero v3One v3Zero smokeSize v3Zero 0.0f; InsetOpt = ValueNone; ClipOpt = ValueNone; Image = Assets.Default.Gas; Color = colorOne; Blend = Transparent; Emission = colorZero; Flip = Unflipped })
                  ("Oil", { Transform = Transform.makeIntuitive false v3Zero v3One v3Zero fluidSize v3Zero -0.02f; InsetOpt = ValueNone; ClipOpt = ValueNone; Image = Assets.Default.Fluid; Color = Color.color 0.36862746f 0.22352941f 0.039215688f 1.0f; Blend = Transparent; Emission = colorZero; Flip = Unflipped })])]
 
     override this.Render (_, emitter, world) =
@@ -418,8 +418,7 @@ type FluidEmitter2dDispatcher () =
         let renders = emitter.GetFluidParticleRenders world
         for particle in emitter.GetFluidParticles world do
             let mutable render = Unchecked.defaultof<_>
-            if not (Map.tryGetValue (particle.FluidParticleConfig, renders, &render)) then
-                render <- renders["Water"]
+            if not (Map.tryGetValue (particle.FluidParticleConfig, renders, &render)) then render <- renders["Water"]
             let mutable transform = Transform.makeIntuitive false (render.Transform.Position + particle.FluidParticlePosition) (render.Transform.Scale * transform.Scale) (render.Transform.Offset + transform.Offset) render.Transform.Size (render.Transform.Angles + transform.Angles) (render.Transform.Elevation + transform.Elevation)
             World.enqueueRenderMessage2d (LayeredOperation2d { Elevation = transform.Elevation; Horizon = transform.Horizon; AssetTag = render.Image; RenderOperation2d = RenderSprite { render with Transform = transform } }) world
 

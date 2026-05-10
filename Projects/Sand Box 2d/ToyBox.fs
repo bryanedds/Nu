@@ -174,25 +174,25 @@ type ToyBoxDispatcher () =
                     World.applyBodyTorque (v3 0f 0f 40f * event.Travel) (entity.GetBodyId world) world
 
     static let declareBox name spawnCenter world =
-        World.doBox2d name // unlike a block, a box uses dynamic physics by default - it reacts to forces and collisions
+        World.doBoxBody2d name // unlike a block, a box uses dynamic physics by default - it reacts to forces and collisions
             [Entity.Position |= spawnCenter + v3 Gen.randomf Gen.randomf 0f
              Entity.Color |= color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
              Entity.Restitution .= 0.333f] world |> ignore
 
     static let declareBlock name spawnCenter world =
-        World.doBlock2d name
+        World.doBlockBody2d name
             [Entity.Position |= spawnCenter + v3 (Gen.randomf1 500f - 250f) (Gen.randomf1 350f - 175f) 0f // random placement
              Entity.StaticImage .= Assets.Default.Brick] world |> ignore
 
     static let declareBall name spawnCenter world =
-        World.doBall2d name // unlike a sphere, a ball uses dynamic physics by default
+        World.doBallBody2d name // unlike a sphere, a ball uses dynamic physics by default
             [Entity.Position |= spawnCenter + v3 Gen.randomf Gen.randomf 0f
              Entity.Color |= color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
              Entity.Restitution .= 0.5f] world |> ignore // bouncier than default
 
     static let declareTinyBalls name spawnCenter world =
         for i in 0 .. dec 16 do
-            World.doBall2d $"{name} Ball {i}"
+            World.doBallBody2d $"{name} Ball {i}"
                 [Entity.Position |= spawnCenter + v3 Gen.randomf Gen.randomf 0f
                  Entity.Color |= color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f
                  Entity.Size .= Constants.Engine.Entity2dSizeDefault / 4f
@@ -225,7 +225,7 @@ type ToyBoxDispatcher () =
              Entity.BodyJointTarget2 .= Address.makeFromString "~/Face 2"] world
 
         // declare face 1
-        World.doBox2d "Face 1" // pointed to by parent body joint
+        World.doBoxBody2d "Face 1" // pointed to by parent body joint
             [Entity.Position |= spawnCenter
              Entity.Color |= color
              Entity.Size .= v3 150f 10f 0f
@@ -235,7 +235,7 @@ type ToyBoxDispatcher () =
         let face1 = world.DeclaredEntity
 
         // declare face 2
-        World.doBox2d "Face 2"
+        World.doBoxBody2d "Face 2"
             [Entity.Position |= spawnCenter + v3 0f -60f 0f
              Entity.Color |= color
              Entity.Size .= v3 150f 10f 0f
@@ -281,11 +281,11 @@ type ToyBoxDispatcher () =
         // declare anchor 1
         let x = Gen.randomf1 500f - 250f
         let y = Gen.randomf1 350f - 175f
-        World.doSphere2d name [Entity.Position |= spawnCenter + v3 x y 0f] world |> ignore
+        World.doOrbBody2d name [Entity.Position |= spawnCenter + v3 x y 0f] world |> ignore
         let anchor1 = world.DeclaredEntity
 
         // declare anchor 2
-        World.doSphere2d $"{name} Opposite End" [Entity.Position |= spawnCenter + v3 x y 0f] world |> ignore
+        World.doOrbBody2d $"{name} Opposite End" [Entity.Position |= spawnCenter + v3 x y 0f] world |> ignore
         let anchor2 = world.DeclaredEntity
 
         // adjust position of link relative to each anchor as the anchors are dragged around
@@ -299,7 +299,7 @@ type ToyBoxDispatcher () =
         let names = Array.init 6 (sprintf "%s Paddle %d" name)
         let boxHeight = direction.Magnitude / single (Array.length names)
         for i in 0 .. Array.length names - 1 do
-            World.doBox2d names[i]
+            World.doBoxBody2d names[i]
                 [Entity.Size @= v3 4f boxHeight 0f
                  Entity.StaticImage .= Assets.Default.Paddle
                  // paddles are thin, so use continuous collision detection to prevent tunnelling at high velocities
@@ -342,7 +342,7 @@ type ToyBoxDispatcher () =
         let anchor = world.ContextEntity
 
         // declare other blade
-        World.doBox2d $"{name} Other Blade"
+        World.doBoxBody2d $"{name} Other Blade"
             [Entity.Position |= spawnCenter + v3 x y 0f
              Entity.Size .= v3 64f 8f 0f
              Entity.CollisionCategories .= "10"
@@ -386,7 +386,7 @@ type ToyBoxDispatcher () =
                 [(upperLeg, $"^/{name}", Assets.Default.Image, 0.2f)
                  ($"{name} {directionName} Lower Leg", upperLeg, Assets.Default.Black, 0.4f)] do
                 let legLength = 30f
-                World.doBox2d newLeg
+                World.doBoxBody2d newLeg
                     [Entity.Position |= spawnCenter
                      Entity.StaticImage .= image
                      Entity.Size .= v3 legLength 4f 0f
@@ -436,7 +436,7 @@ type ToyBoxDispatcher () =
             [1f, "Torso Upper", "Head", None
              2f, "Torso Middle", "Torso Upper", Some (MathF.PI / 8f)
              3f,  "Torso Lower", "Torso Middle", Some (MathF.PI / 16f)] do
-            World.doBall2d $"{name} {componentName}"
+            World.doOrbBody2d $"{name} {componentName}"
                 [Entity.Position |= spawnCenter + v3 0f (ballY - i * torsoHeight) 0f
                  Entity.BodyShape |= CapsuleShape
                     { Height = 0.5f; Radius = 0.25f; PropertiesOpt = None
@@ -490,7 +490,7 @@ type ToyBoxDispatcher () =
                 [pos1, "Upper", $"Torso {connectsToTorso}"
                  pos1 + posIncrement, "Lower", $"{side} {armOrLeg} Upper"] do
             let componentName = $"{side} {armOrLeg} {upperOrLower}"
-            World.doBall2d $"{name} {componentName}"
+            World.doOrbBody2d $"{name} {componentName}"
                 [Entity.Position |= spawnCenter + pos
                  Entity.Rotation |= Quaternion.CreateFromAngle2d rotation
                  Entity.Size .= v3 armWidth armHeight 0f
@@ -541,7 +541,7 @@ type ToyBoxDispatcher () =
             let x = cos boxAngle * spawnScale + spawnX
             let y = sin boxAngle * spawnScale + spawnY
             let (declaredBodyId, _) =
-                World.doBox2d boxNames[i]
+                World.doBoxBody2d boxNames[i]
                     [Entity.Position |= spawnCenter + v3 x y 0f
                      Entity.Rotation |= Quaternion.CreateFromAngle2d (boxAngle + MathF.PI_OVER_2) // first box sprite at right side should orient right as up
                      Entity.Color |= color
@@ -624,7 +624,7 @@ type ToyBoxDispatcher () =
         for layer in 0 .. dec numLayers do
             for vertex in 0 .. dec numSides do
             let gooSpawnPosition = spawnPositions[layer][vertex]
-            World.doBall2d (spawnPositionToName gooSpawnPosition)
+            World.doOrbBody2d (spawnPositionToName gooSpawnPosition)
                 [Entity.Position |= spawnCenter + gooSpawnPosition
                  Entity.Size .= v3Dup 8f
                  Entity.StaticImage .= Assets.Gameplay.GooImage
@@ -697,7 +697,7 @@ type ToyBoxDispatcher () =
         let chassis = world.ContextEntity
 
         // declare wheel
-        World.doBall2d $"{name} Wheel"
+        World.doOrbBody2d $"{name} Wheel"
             [Entity.Position |= spawnCenter + pivot * objectScale
              Entity.Size .= v3Dup 3.2f * objectScale
              Entity.Elevation .= -0.5f
@@ -737,7 +737,7 @@ type ToyBoxDispatcher () =
                 let legPolygon = if direction > 0f then [|p1; p2; p3|] else [|p1; p3; p2|]
                 let shoulderPolygon = if direction > 0f then [|v3Zero; p5 - p4; p6 - p4|] else [|v3Zero; p6 - p4; p5 - p4|]
                 let (_, legEvents) =
-                    World.doBox2d $"{name} {directionName} {rotation} Leg"
+                    World.doBoxBody2d $"{name} {directionName} {rotation} Leg"
                         [Entity.Position |= spawnCenter
                          Entity.Size .= v3Dup objectScale
                          Entity.Visible .= false
@@ -766,7 +766,7 @@ type ToyBoxDispatcher () =
 
                 // declare shoulder body
                 let (_, shoulderEvents) =
-                    World.doBox2d $"{name} {directionName} {rotation} Shoulder"
+                    World.doBoxBody2d $"{name} {directionName} {rotation} Shoulder"
                         [Entity.Position |= spawnCenter + p4 * objectScale
                          Entity.Size .= v3Dup objectScale
                          Entity.Visible .= false
@@ -911,7 +911,7 @@ type ToyBoxDispatcher () =
             World.beginGroup Simulants.ToyBoxScene.Name [] world
 
             // declare border
-            World.doBlock2d Simulants.ToyBoxBorder.Name // uses static physics by default - it does not react to forces or collisions
+            World.doBlockBody2d Simulants.ToyBoxBorder.Name // uses static physics by default - it does not react to forces or collisions
                 [Entity.Size .= v3 500f 350f 0f
                  Entity.BodyShape .= ContourShape // the body shape handles collisions and is independent of how it's displayed
                     { Links = // a contour shape provides one-sided collision for the right hand side of each link (inward in this case) allowing hollow shapes
@@ -1077,7 +1077,7 @@ type ToyBoxDispatcher () =
                      Entity.Text .= "Ported to Nu by Happypig375 (Hadrian Tang)"] world
                 World.doText "Info Controls"
                     [Entity.LayoutOrder .= 2
-                     Entity.Justification .= Unjustified true
+                     Entity.Justification .= Unjustified true // required for line breaks to render.
                      Entity.Text .=
                         "Controls: Left/Right/Up - Move Avatar. Left/Right - Accelerate Car, Down - Brake.\n\
                          Mouse Left - Click button or Drag entity. Mouse Right - Cause an explosion.\n\
