@@ -365,7 +365,7 @@ type FluidSimDispatcher () =
             if fluidSim.GetSelected world && world.Advancing then
                 let mousePosition = World.getMousePosition2dWorld false world
                 let tool = fluidSim.GetSelectedTool world
-                match (tool, World.doFeeler "Feeler" [Entity.Position @= mousePosition.V3] world) with // a feeler is a touch and mouse left button detector respecting elevation such that buttons with higher elevation prevents this interaction.
+                match (tool, World.doFeeler "Feeler" [Entity.Position @= mousePosition.V3] world) with // a feeler is a touch and mouse left button detector respecting elevation such that buttons with higher elevation prevent this interaction.
                 | ((Water | Sand | Oil | Smoke), (true, _)) -> // doFeeler returns (isDown, justPressed) detecting touch and mouse left button.
                     // create particles
                     let particles =
