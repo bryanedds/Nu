@@ -357,10 +357,17 @@ type FluidSimDispatcher () =
                          Entity.Size .= size.V3
                          Entity.Elevation .= 11f] world then
                         Process.Start (ProcessStartInfo (url, UseShellExecute = true)) |> ignore
+                  
+            // declare boxes
+            let mousePosition = World.getMousePosition2dWorld false world
+            let boxes = fluidSim.GetBoxes world
+            for box in boxes do
+                World.doBox2d box
+                    [Entity.Position |= mousePosition.V3
+                     Entity.Color |= color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f] world |> ignore
 
             // mouse interactions with fluid system
             if fluidSim.GetSelected world && world.Advancing then
-                let mousePosition = World.getMousePosition2dWorld false world
                 let tool = fluidSim.GetSelectedTool world
                 match (tool, World.doFeeler "Feeler" [Entity.Position @= mousePosition.V3] world) with // a feeler is a touch and mouse left button detector respecting elevation such that buttons with higher elevation prevent this interaction.
                 | ((Water | Sand | Oil | Smoke), (true, _)) -> // doFeeler returns (isDown, justPressed) detecting touch and mouse left button.
@@ -397,12 +404,6 @@ type FluidSimDispatcher () =
                 | (Explosion, (true, true)) ->
                     World.applyExplosion2d mousePosition.V3 200f 20f 100f UInt64.MaxValue world
                 | _ -> ()
-
-                let boxes = fluidSim.GetBoxes world
-                for box in boxes do
-                    World.doBox2d box
-                        [Entity.Position |= mousePosition.V3
-                         Entity.Color |= color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f] world |> ignore
 
                 if World.isMouseButtonDown MouseRight world then // there is no feeler equivalent for mouse buttons that aren't the left button. this doesn't respect elevation.
 
