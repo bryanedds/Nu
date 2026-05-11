@@ -47,8 +47,6 @@
 		<SingleProject>true</SingleProject>
 		<!-- However, we don't use MAUI UI libraries. -->
         <SkipValidateMauiImplicitPackageReferences>true</SkipValidateMauiImplicitPackageReferences>
-        <!-- iOS: Work around for using Xcode 26.3 with 26.2 support from .NET -->
-        <ValidateXcodeVersion>false</ValidateXcodeVersion>
         <!-- Android: Debugging settings for asset packs https://learn.microsoft.com/en-us/dotnet/maui/android/asset-packs#test-asset-packs-locally -->
         <AndroidPackageFormat Condition="'$(Configuration)' == 'Debug'">aab</AndroidPackageFormat>
         <AndroidBundleToolExtraArgs Condition="'$(Configuration)' == 'Debug'">--local-testing</AndroidBundleToolExtraArgs>
@@ -98,26 +96,17 @@
         <Compile Include="SandBox2dPlugin.fs" />
         <Compile Include="Program.fs" />
 
-		<!-- Android -->
-        <Compile Include="Platforms/Android.fs" />
-
-		<!-- iOS -->
-        <Compile Include="Platforms/iOS/AppDelegate.fs" />
-        <!--     App Store files to be put at app root -->
-        <!--     Information property list: https://learn.microsoft.com/en-us/dotnet/maui/macios/info-plist -->
-        <None Include="Platforms/iOS/Info.plist" Link="Info.plist" /> <!-- Despite <None>, this file is recognized by the build process through its link location. -->
-        <!--     Privacy manifest: https://learn.microsoft.com/en-us/dotnet/maui/ios/privacy-manifest -->
-        <BundleResource Include="Platforms/iOS/PrivacyInfo.xcprivacy" LogicalName="PrivacyInfo.xcprivacy" />
-
-		<!-- Desktop -->
-        <Compile Include="Platforms/Desktop.fs" />
+        <!-- iOS Information property list: https://learn.microsoft.com/en-us/dotnet/maui/macios/info-plist -->
+        <None Include="Mobile/Info.plist" LogicalName="Info.plist" />
+        <!-- iOS Privacy manifest: https://learn.microsoft.com/en-us/dotnet/maui/ios/privacy-manifest -->
+        <BundleResource Include="Mobile/PrivacyInfo.xcprivacy" LogicalName="PrivacyInfo.xcprivacy" />
 		
         <!-- To comply with Android resource naming rules, MauiIcon and MauiSplashScreen files names must be
             lowercase, start and end with a letter character, and contain only alphanumeric characters or underscores. -->
         <!-- MauiIcon (Composed icon): https://learn.microsoft.com/en-us/dotnet/maui/user-interface/images/app-icons#composed-icon -->
-        <MauiIcon Include="Platforms/mobile_icon_bg.svg" ForegroundFile="Platforms/mobile_icon_fg.svg" />
+        <MauiIcon Include="Mobile/mobile_icon_bg.svg" ForegroundFile="Mobile/mobile_icon_fg.svg" />
         <!-- MauiSplashScreen (with background color): https://learn.microsoft.com/en-us/dotnet/maui/user-interface/images/splashscreen#add-tint-and-background-color -->
-        <MauiSplashScreen Include="Platforms/mobile_icon_fg.svg" Color="#512BD4" /> <!-- For simplicity, icon_fg is both icon foreground and splash screen foreground. -->
+        <MauiSplashScreen Include="Mobile/mobile_icon_fg.svg" Color="#512BD4" /> <!-- For simplicity, icon_fg is both icon foreground and splash screen foreground. -->
 
         <None Include="AssetGraph.nuag" />
         <None Include="Overlayer.nuol" />
