@@ -1286,7 +1286,7 @@ module PhysicallyBased =
                       Pipeline.descriptor 6 Hl.SampledImage Hl.FragmentStage 1|] // environmentFilterMap
 
                   // descriptor set 1: position-specific; per draw
-                  Pipeline.descriptorSet Hl.BulkDescriptorIndexed Constants.Render.GeometryRenderPassMax
+                  Pipeline.descriptorSet Hl.BulkSetIndexed Constants.Render.GeometryRenderPassMax
                     [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage 1 // bone
                       Pipeline.descriptor 1 Hl.StorageBuffer Hl.FragmentStage lightMapsMax // lightMap
                       Pipeline.descriptor 2 Hl.StorageBuffer Hl.FragmentStage 1 // lightsGeneral
@@ -1320,7 +1320,7 @@ module PhysicallyBased =
                       Pipeline.descriptor 4 Hl.Sampler Hl.FragmentStage 1
                       Pipeline.descriptor 5 Hl.Sampler Hl.FragmentStage 1|]|]
                 
-                [|Pipeline.pushConstant 0 sizeof<int> Hl.VertexFragmentStage|]
+                [||]
                 colorAttachmentFormat depthTestOpt vkc
 
         // create set 0 uniform buffers
@@ -1475,6 +1475,7 @@ module PhysicallyBased =
     let DrawPhysicallyBasedForwardSurfaces
         (drawIndex : int,
          renderPassIndex : int,
+         drawIndexPerRenderPass : int,
          bones : Matrix4x4 array,
          surfacesCount : int,
          instanceFields : single array,
@@ -1515,7 +1516,7 @@ module PhysicallyBased =
          vkc : Hl.VulkanContext) =
 
         // only draw when there is a surface to render to avoid potentially utilizing destroyed textures
-        if surfacesCount > 0 && drawIndex < pipeline.Pipeline.BulkDrawLimit then
+        if surfacesCount > 0 && drawIndexPerRenderPass < pipeline.Pipeline.BulkDrawLimit then
             
             // bind position-specific uniforms
             for i in 0 .. dec (min Constants.Render.BonesMax bones.Length) do
@@ -1523,7 +1524,7 @@ module PhysicallyBased =
                 bone.bone <- bones.[i]
                 let bufferIndex = drawIndex * Constants.Render.BonesMax + i
                 Buffer.Buffer.uploadValue bufferIndex 0 0 bone pipeline.BoneUniform vkc
-                Pipeline.Pipeline.writeDescriptorStorageBuffer 1 0 renderPassIndex bufferIndex pipeline.BoneUniform.[bufferIndex] pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorStorageBuffer 1 0 drawIndex i pipeline.BoneUniform.[bufferIndex] pipeline.Pipeline vkc
             for i in 0 .. dec (min lightMapOrigins.Length Constants.Render.LightMapsMaxForward) do // TODO: DJL: use lightmapscount?
                 let mutable lightMap = LightMap ()
                 lightMap.lightMapOrigins <- lightMapOrigins.[i]
@@ -1533,13 +1534,13 @@ module PhysicallyBased =
                 lightMap.lightMapAmbientBrightnesses <- lightMapAmbientBrightnesses.[i]
                 let bufferIndex = drawIndex * Constants.Render.LightMapsMaxForward + i
                 Buffer.Buffer.uploadValue bufferIndex 0 0 lightMap pipeline.LightMapUniform vkc
-                Pipeline.Pipeline.writeDescriptorStorageBuffer 1 1 renderPassIndex bufferIndex pipeline.LightMapUniform.[bufferIndex] pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorStorageBuffer 1 1 drawIndex i pipeline.LightMapUniform.[bufferIndex] pipeline.Pipeline vkc
             let mutable lightsGeneral = LightsGeneral ()
             lightsGeneral.lightMapsCount <- lightMapsCount
             lightsGeneral.lightMapSingletonBlendMargin <- lightMapSingletonBlendMargin
             lightsGeneral.lightsCount <- lightsCount
             Buffer.Buffer.uploadValue drawIndex 0 0 lightsGeneral pipeline.LightsGeneralUniform vkc
-            Pipeline.Pipeline.writeDescriptorStorageBuffer 1 2 renderPassIndex drawIndex pipeline.LightsGeneralUniform.[drawIndex] pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorStorageBuffer 1 2 drawIndex 0 pipeline.LightsGeneralUniform.[drawIndex] pipeline.Pipeline vkc
             for i in 0 .. dec (min lightOrigins.Length Constants.Render.LightsMaxForward) do // TODO: DJL: use lightscount?
                 let mutable light = Light ()
                 light.lightOrigins <- lightOrigins.[i]
@@ -1556,31 +1557,31 @@ module PhysicallyBased =
                 light.lightShadowIndices <- lightShadowIndices.[i]
                 let bufferIndex = drawIndex * Constants.Render.LightsMaxForward + i
                 Buffer.Buffer.uploadValue bufferIndex 0 0 light pipeline.LightUniform vkc
-                Pipeline.Pipeline.writeDescriptorStorageBuffer 1 3 renderPassIndex bufferIndex pipeline.LightUniform.[bufferIndex] pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorStorageBuffer 1 3 drawIndex i pipeline.LightUniform.[bufferIndex] pipeline.Pipeline vkc
             for i in 0 .. dec (min shadowMatrices.Length (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels)) do
                 let mutable shadowMatrix = ShadowMatrix ()
                 shadowMatrix.shadowMatrix <- shadowMatrices.[i]
                 let bufferIndex = drawIndex * (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels) + i
                 Buffer.Buffer.uploadValue bufferIndex 0 0 shadowMatrix pipeline.ShadowMatrixUniform vkc
-                Pipeline.Pipeline.writeDescriptorStorageBuffer 1 4 renderPassIndex bufferIndex pipeline.ShadowMatrixUniform.[bufferIndex] pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorStorageBuffer 1 4 drawIndex i pipeline.ShadowMatrixUniform.[bufferIndex] pipeline.Pipeline vkc
         
             // bind position-specific textures
-            Pipeline.Pipeline.writeDescriptorSampledImage 1 5 renderPassIndex drawIndex material.AlbedoTexture.ImageView pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorSampledImage 1 6 renderPassIndex drawIndex material.RoughnessTexture.ImageView pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorSampledImage 1 7 renderPassIndex drawIndex material.MetallicTexture.ImageView pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorSampledImage 1 8 renderPassIndex drawIndex material.AmbientOcclusionTexture.ImageView pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorSampledImage 1 9 renderPassIndex drawIndex material.EmissionTexture.ImageView pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorSampledImage 1 10 renderPassIndex drawIndex material.NormalTexture.ImageView pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorSampledImage 1 11 renderPassIndex drawIndex material.HeightTexture.ImageView pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage 1 5 drawIndex 0 material.AlbedoTexture.ImageView pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage 1 6 drawIndex 0 material.RoughnessTexture.ImageView pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage 1 7 drawIndex 0 material.MetallicTexture.ImageView pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage 1 8 drawIndex 0 material.AmbientOcclusionTexture.ImageView pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage 1 9 drawIndex 0 material.EmissionTexture.ImageView pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage 1 10 drawIndex 0 material.NormalTexture.ImageView pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage 1 11 drawIndex 0 material.HeightTexture.ImageView pipeline.Pipeline vkc
             for i in 0 .. dec (min irradianceMaps.Length Constants.Render.LightMapsMaxForward) do
-                Pipeline.Pipeline.writeDescriptorSampledImage 1 18 renderPassIndex (drawIndex * Constants.Render.LightMapsMaxForward + i) irradianceMaps.[i].ImageView pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorSampledImage 1 18 drawIndex i irradianceMaps.[i].ImageView pipeline.Pipeline vkc
             for i in 0 .. dec (min environmentFilterMaps.Length Constants.Render.LightMapsMaxForward) do
-                Pipeline.Pipeline.writeDescriptorSampledImage 1 19 renderPassIndex (drawIndex * Constants.Render.LightMapsMaxForward + i) environmentFilterMaps.[i].ImageView pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorSampledImage 1 20 renderPassIndex drawIndex shadowTextureArray.ImageView pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorSampledImage 1 19 drawIndex i environmentFilterMaps.[i].ImageView pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage 1 20 drawIndex 0 shadowTextureArray.ImageView pipeline.Pipeline vkc
             for i in 0 .. dec (min shadowMaps.Length Constants.Render.ShadowMapsMax) do
-                Pipeline.Pipeline.writeDescriptorSampledImage 1 21 renderPassIndex (drawIndex * Constants.Render.ShadowMapsMax + i) shadowMaps.[i].ImageView pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorSampledImage 1 21 drawIndex i shadowMaps.[i].ImageView pipeline.Pipeline vkc
             for i in 0 .. dec (min shadowCascades.Length Constants.Render.ShadowCascadesMax) do
-                Pipeline.Pipeline.writeDescriptorSampledImage 1 22 renderPassIndex (drawIndex * Constants.Render.ShadowCascadesMax + i) shadowCascades.[i].ImageView pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorSampledImage 1 22 drawIndex i shadowCascades.[i].ImageView pipeline.Pipeline vkc
         
             // update instance buffer
             use instanceFieldsPin = new ArrayPin<_> (instanceFields)
@@ -1627,16 +1628,12 @@ module PhysicallyBased =
                     // bind descriptor sets
                     // TODO: DJL: try to move set 0 (common) binding to BeginPhysicallyBasedForwardPipeline.
                     let mutable descriptorSet0 = pipeline.Pipeline.VkDescriptorSet 0 renderPassIndex
-                    let mutable descriptorSet1 = pipeline.Pipeline.VkDescriptorSet 1 renderPassIndex
+                    let mutable descriptorSet1 = pipeline.Pipeline.VkDescriptorSet 1 drawIndex
                     let mutable descriptorSet2 = pipeline.Pipeline.VkDescriptorSet 2 0
                     Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, asPointer &descriptorSet0, 0u, nullPtr)
                     Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, asPointer &descriptorSet1, 0u, nullPtr)
                     Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 2u, 1u, asPointer &descriptorSet2, 0u, nullPtr)
 
-                    // push draw index
-                    let mutable drawIndex = drawIndex
-                    Vulkan.vkCmdPushConstants (cb, pipeline.Pipeline.PipelineLayout, Hl.VertexFragmentStage.VkShaderStageFlags, 0u, 4u, asVoidPtr &drawIndex)
-                    
                     // draw
                     Vulkan.vkCmdDrawIndexed (cb, uint geometry.ElementCount, uint surfacesCount, 0u, 0, 0u)
                     Hl.reportDrawCall surfacesCount
@@ -1648,7 +1645,8 @@ module PhysicallyBased =
                 | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
 
         // warn if bulk draw limit reached
-        if drawIndex >= pipeline.Pipeline.BulkDrawLimit then
+        // NOTE: DJL: must use draw index for current render pass to correctly report this very important information!
+        if drawIndexPerRenderPass >= pipeline.Pipeline.BulkDrawLimit then
             Log.warnOnce "Draw operations aborted because bulk draw limit has been reached. Increase relevant bulk draw limit as necessary for current application."
 
     /// End the process of drawing with a forward pipeline.

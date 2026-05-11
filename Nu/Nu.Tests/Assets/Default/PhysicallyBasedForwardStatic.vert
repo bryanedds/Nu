@@ -1,5 +1,4 @@
 #version 450 core
-#extension GL_EXT_nonuniform_qualifier : enable
 
 const int TEX_COORDS_OFFSET_VERTS = 6;
 
@@ -26,11 +25,6 @@ struct Transform
     mat4 view;
     mat4 projection;
     mat4 viewProjection;
-};
-
-layout(push_constant) uniform PushConstant
-{
-    int drawId;
 };
 
 layout(binding = 0) buffer readonly TransformBlock

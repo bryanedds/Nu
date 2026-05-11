@@ -5162,6 +5162,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           mutable GeometryViewport : Viewport
           mutable WindowViewport : Viewport
           mutable GeometryRenderPassIndex : int
+          mutable ForwardStaticDrawIndex : int
           LazyTextureQueues : ConcurrentDictionary<Texture.LazyTexture ConcurrentQueue, Texture.LazyTexture ConcurrentQueue>
           TextureServer : Texture.TextureServer
           TextureDisposer : Texture.TextureDisposer
@@ -5786,7 +5787,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
              depthTexture, colorTexture, brdfTexture, irradianceMap, environmentFilterMap, filteredSampler, cubeMapSampler, shadowSampler, colorSampler, depthSampler, brdfSampler, shadowNear, pipeline, vkc)
 
     static member private renderPhysicallyBasedForwardSurfaces
-        drawIndex renderPassIndex bonesArrays (parameters : struct (Matrix4x4 * Presence * Box2 * MaterialProperties) SList)
+        drawIndex renderPassIndex drawIndexPerRenderPass bonesArrays (parameters : struct (Matrix4x4 * Presence * Box2 * MaterialProperties) SList)
         irradianceMaps environmentFilterMaps shadowTextureArray shadowMaps shadowCascades lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses lightMapsCount lightMapSingletonBlendMargin
         lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices lightsCount shadowMatrices
         (surface : PhysicallyBased.PhysicallyBasedSurface) depthTest blending viewport colorAttachment depthAttachment pipeline vkc renderer =
@@ -5838,7 +5839,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
         // draw forward surfaces
         PhysicallyBased.DrawPhysicallyBasedForwardSurfaces
-            (drawIndex, renderPassIndex, bonesArrays, parameters.Length, renderer.InstanceFields,
+            (drawIndex, renderPassIndex, drawIndexPerRenderPass, bonesArrays, parameters.Length, renderer.InstanceFields,
              irradianceMaps, environmentFilterMaps, shadowTextureArray, shadowMaps, shadowCascades, lightMapOrigins, lightMapMins, lightMapSizes, lightMapAmbientColors, lightMapAmbientBrightnesses, lightMapsCount, lightMapSingletonBlendMargin,
              lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightTypes, lightConeInners, lightConeOuters, lightDesireFogs, lightShadowIndices, lightsCount, shadowMatrices,
              surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, depthTest, blending, viewport, colorAttachment, depthAttachment, pipeline, vkc)
@@ -5993,11 +5994,11 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // transition sampled attachments to sampling
         let vkc = renderer.VulkanContext
         let cb = vkc.RenderCommandBuffer
-        Hl.recordTransitionLayout cb true 1 0 1 VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.ShaderRead shadowTextureArray.Image
-        for i in 0 .. dec shadowMaps.Length do Hl.recordTransitionLayout cb true 1 0 1 VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.ShaderRead shadowMaps[i].Image
-        for i in 0 .. dec shadowCascades.Length do Hl.recordTransitionLayout cb true 1 0 1 VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.ShaderRead shadowCascades[i].Image
-        Hl.recordTransitionLayout cb true 1 0 1 VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.ShaderRead colorAttachment.Image
-        Hl.recordTransitionLayout cb true 1 0 1 VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.ShaderRead depthAttachment2.Image
+        Hl.recordTransitionLayout cb true 1 0 shadowTextureArray.Layers VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.ShaderRead shadowTextureArray.Image
+        for i in 0 .. dec shadowMaps.Length do Hl.recordTransitionLayout cb true 1 0 shadowMaps[i].Layers VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.ShaderRead shadowMaps[i].Image
+        for i in 0 .. dec shadowCascades.Length do Hl.recordTransitionLayout cb true 1 0 shadowCascades[i].Layers VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.ShaderRead shadowCascades[i].Image
+        Hl.recordTransitionLayout cb true 1 0 colorAttachment.Layers VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.ShaderRead colorAttachment.Image
+        Hl.recordTransitionLayout cb true 1 0 depthAttachment2.Layers VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.ShaderRead depthAttachment2.Image
         
         
         // setup composition attachments
@@ -6053,7 +6054,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 ssrrEnabled renderer.LightingConfig.SsrrIntensity renderer.LightingConfig.SsrrDetail renderer.LightingConfig.SsrrRefinementsMax renderer.LightingConfig.SsrrRayThickness renderer.LightingConfig.SsrrDistanceCutoff renderer.LightingConfig.SsrrDistanceCutoffMargin renderer.LightingConfig.SsrrEdgeHorizontalMargin renderer.LightingConfig.SsrrEdgeVerticalMargin
                 depthAttachment2 colorAttachment renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap renderer.FilteredSampler renderer.CubeMapSampler renderer.ShadowSampler renderer.ColorSampler renderer.DepthSampler renderer.BrdfSampler shadowNear pipeline vkc
         
-        let mutable forwardStaticDrawIndex = 0
+        let mutable forwardStaticDrawIndexLocal = 0 // fresh index for each render pass just to check if limit exceeded
         for (model, _, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest) in renderTasks.ForwardSorted do
             let (lightMapOrigins, lightMapMins, lightMapSizes, lightMapAmbientColors, lightMapAmbientBrightnesses, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
                 let surfaceBounds = surface.SurfaceBounds.Transform model
@@ -6069,12 +6070,15 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             match pipelineOpt with
             | Some pipeline ->
                 VulkanRenderer3d.renderPhysicallyBasedForwardSurfaces
-                    forwardStaticDrawIndex renderer.GeometryRenderPassIndex bonesArray (SList.singleton (model, presence, texCoordsOffset, properties))
+                    renderer.ForwardStaticDrawIndex renderer.GeometryRenderPassIndex forwardStaticDrawIndexLocal bonesArray (SList.singleton (model, presence, texCoordsOffset, properties))
                     lightMapIrradianceMaps lightMapEnvironmentFilterMaps shadowTextureArray shadowMaps shadowCascades lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses (min lightMapEnvironmentFilterMaps.Length renderTasks.LightMaps.Count) renderer.LightingConfig.LightMapSingletonBlendMargin
                     lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices (min lightIds.Length renderTasks.Lights.Count) renderer.ShadowMatrices
                     surface depthTest true renderer.GeometryViewport compositionAttachment compositionZAttachment pipeline vkc renderer
+                
+                // don't allow skipping descriptor sets if limit exceeded within a render pass
+                if forwardStaticDrawIndexLocal < pipeline.Pipeline.BulkDrawLimit then renderer.ForwardStaticDrawIndex <- inc renderer.ForwardStaticDrawIndex
+                forwardStaticDrawIndexLocal <- inc forwardStaticDrawIndexLocal
             | None -> ()
-            forwardStaticDrawIndex <- inc forwardStaticDrawIndex
         for pipeline in forwardPipelines do
             VulkanRenderer3d.endPhysicallyBasedForwardPipeline pipeline
         
@@ -6089,11 +6093,11 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         Hl.recordTransitionLayout cb true 1 targetLayer 1 VkImageAspectFlags.Color Hl.TransferDst Hl.ColorAttachmentWrite targetImage
         
         // transition sampled attachments back to attachment
-        Hl.recordTransitionLayout cb true 1 0 1 VkImageAspectFlags.Color Hl.ShaderRead Hl.ColorAttachmentWrite shadowTextureArray.Image
-        for i in 0 .. dec shadowMaps.Length do Hl.recordTransitionLayout cb true 1 0 1 VkImageAspectFlags.Color Hl.ShaderRead Hl.ColorAttachmentWrite shadowMaps[i].Image
-        for i in 0 .. dec shadowCascades.Length do Hl.recordTransitionLayout cb true 1 0 1 VkImageAspectFlags.Color Hl.ShaderRead Hl.ColorAttachmentWrite shadowCascades[i].Image
-        Hl.recordTransitionLayout cb true 1 0 1 VkImageAspectFlags.Color Hl.ShaderRead Hl.ColorAttachmentWrite colorAttachment.Image
-        Hl.recordTransitionLayout cb true 1 0 1 VkImageAspectFlags.Color Hl.ShaderRead Hl.ColorAttachmentWrite depthAttachment2.Image
+        Hl.recordTransitionLayout cb true 1 0 shadowTextureArray.Layers VkImageAspectFlags.Color Hl.ShaderRead Hl.ColorAttachmentWrite shadowTextureArray.Image
+        for i in 0 .. dec shadowMaps.Length do Hl.recordTransitionLayout cb true 1 0 shadowMaps[i].Layers VkImageAspectFlags.Color Hl.ShaderRead Hl.ColorAttachmentWrite shadowMaps[i].Image
+        for i in 0 .. dec shadowCascades.Length do Hl.recordTransitionLayout cb true 1 0 shadowCascades[i].Layers VkImageAspectFlags.Color Hl.ShaderRead Hl.ColorAttachmentWrite shadowCascades[i].Image
+        Hl.recordTransitionLayout cb true 1 0 colorAttachment.Layers VkImageAspectFlags.Color Hl.ShaderRead Hl.ColorAttachmentWrite colorAttachment.Image
+        Hl.recordTransitionLayout cb true 1 0 depthAttachment2.Layers VkImageAspectFlags.Color Hl.ShaderRead Hl.ColorAttachmentWrite depthAttachment2.Image
 
         // advance geometry render pass index
         renderer.GeometryRenderPassIndex <- inc renderer.GeometryRenderPassIndex
@@ -6115,8 +6119,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let vkc = renderer.VulkanContext
         if vkc.RenderDesired then Texture.TextureDisposer.disposeFinished renderer.TextureDisposer vkc
         
-        // reset geometry render pass index
+        // reset geometry render pass and draw indices
         renderer.GeometryRenderPassIndex <- 0
+        renderer.ForwardStaticDrawIndex <- 0
         
         // update viewports
         if renderer.GeometryViewport <> geometryViewport then
@@ -6522,6 +6527,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               GeometryViewport = geometryViewport
               WindowViewport = windowViewport
               GeometryRenderPassIndex = 0
+              ForwardStaticDrawIndex = 0
               LazyTextureQueues = lazyTextureQueues
               TextureServer = textureServer
               TextureDisposer = textureDisposer
