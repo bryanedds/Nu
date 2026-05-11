@@ -48,7 +48,7 @@
 		<!-- However, we don't use MAUI UI libraries. -->
         <SkipValidateMauiImplicitPackageReferences>true</SkipValidateMauiImplicitPackageReferences>
         <!-- Android: Debugging settings for asset packs https://learn.microsoft.com/en-us/dotnet/maui/android/asset-packs#test-asset-packs-locally -->
-        <AndroidPackageFormat Condition="'$(Configuration)' == 'Debug'">aab</AndroidPackageFormat>
+        <AndroidPackageFormat>aab</AndroidPackageFormat>
         <AndroidBundleToolExtraArgs Condition="'$(Configuration)' == 'Debug'">--local-testing</AndroidBundleToolExtraArgs>
     </PropertyGroup>
 
@@ -115,6 +115,9 @@
 
     <ItemGroup Condition="'$(TargetPlatformIdentifier)'=='android'">
 		<PackageReference Include="Xamarin.Google.Android.Play.Asset.Delivery" Version="2.3.0.6" />
+
+        <!-- We need this to AOT System.Drawing.Common on Mac when doing "dotnet publish" -->
+        <PackageReference Include="System.Formats.Nrbf" Version="10.0.1" />
 
 		<!-- Prevent linux binaries from being packaged on Android. Keep these updated with the version selected in the Nu project. -->
 		<PackageReference Include="Silk.NET.Shaderc.Native" Version="2.21.0" ExcludeAssets="native" /> <!-- transitive dependency of Vortice.ShaderCompiler -->
