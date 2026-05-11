@@ -201,6 +201,11 @@ module WorldInputModule =
             ignore (world : World)
             KeyboardState.isShiftUp ()
 
+        /// Check that a keyboard's num lock is active.
+        static member isKeyboardNumLocked world =
+            ignore (world : World)
+            KeyboardState.isNumLocked ()
+
         /// Get the number of open gamepad.
         static member getGamepadCount world =
             ignore (world : World)
