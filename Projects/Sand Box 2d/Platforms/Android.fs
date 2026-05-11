@@ -1,5 +1,6 @@
-namespace SandBox2dMobile
+namespace SandBox2d
 
+#if ANDROID
 open Android.App
 open Android.Content.PM
 open Android.Widget
@@ -22,8 +23,9 @@ open Xamarin.Google.Android.Play.Core.AssetPacks
 // Declare wanted permissions: https://developer.android.com/reference/android/Manifest.permission
 //[<UsesPermission (Android.Manifest.Permission.Internet)>] // for example
 
-// Use the MauiIcon ("mobile_icon_bg" is the file name): https://learn.microsoft.com/en-us/dotnet/maui/user-interface/images/app-icons?tabs=android#platform-specific-configuration
-[<Application (Icon = "@mipmap/mobile_icon_bg", RoundIcon = "@mipmap/mobile_icon_bg_round")>] // Note: Application label is derived from project file
+// Note: Label property is derived from project file
+[<Application (Icon = "@mipmap/mobile_icon_bg", RoundIcon = "@mipmap/mobile_icon_bg_round", // Use the MauiIcon ("mobile_icon_bg" is the file name): https://learn.microsoft.com/en-us/dotnet/maui/user-interface/images/app-icons?tabs=android#platform-specific-configuration
+               AppCategory = ApplicationCategories.Game)>] // For system summaries like for battery, network, or disk usage
 do ()
 
 // Entry point, SDL usage taken from https://github.com/ppy/SDL3-CS/blob/master/SDL3-CS.Tests.Android/MainActivity.cs
@@ -120,4 +122,5 @@ type MainActivity () =
             raise (FileNotFoundException ($"Expected App.config at '{Directory.GetCurrentDirectory ()}' but it was not found. Something went wrong with asset pack loading."))
         AppDomain.CurrentDomain.SetData ("APP_CONFIG_FILE", System.IO.Path.GetFullPath "App.config") // "App.config" here will be interpreted as relative to AppDomain.CurrentDomain.BaseDirectory by .NET
 
-        SandBox2d.Program.main () |> ignore<int>
+        Program.main () |> ignore<int>
+#endif

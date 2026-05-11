@@ -1,3 +1,6 @@
+namespace SandBox2d
+
+#if IOS
 open SDL
 open FSharp.NativeInterop
 open System.Runtime.InteropServices
@@ -17,3 +20,4 @@ let [<EntryPoint>] main args =
         assert (result = Vortice.Vulkan.VkResult.Success)
 
     SDL3.SDL_RunApp (0, NativePtr.nullPtr, Marshal.GetFunctionPointerForDelegate<_> sdlMain, 0n)
+#endif

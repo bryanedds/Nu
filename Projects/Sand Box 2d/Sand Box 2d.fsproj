@@ -98,16 +98,19 @@
         <Compile Include="SandBox2dPlugin.fs" />
         <Compile Include="Program.fs" />
 
-        <Compile Condition="'$(TargetPlatformIdentifier)'=='android'" Include="Platforms/Android.fs" />
+		<!-- Android -->
+        <Compile Include="Platforms/Android.fs" />
 
-        <Compile Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="Platforms/iOS/AppDelegate.fs" />
-        <!-- App Store files to be put at app root -->
-        <!-- Information property list: https://learn.microsoft.com/en-us/dotnet/maui/macios/info-plist -->
-        <None Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="Platforms/iOS/Info.plist" Link="Info.plist" /> <!-- Despite <None>, this file is recognized by the build process through its link location. -->
-        <!-- Privacy manifest: https://learn.microsoft.com/en-us/dotnet/maui/ios/privacy-manifest -->
-        <BundleResource Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="Platforms/iOS/PrivacyInfo.xcprivacy" LogicalName="PrivacyInfo.xcprivacy" />
+		<!-- iOS -->
+        <Compile Include="Platforms/iOS/AppDelegate.fs" />
+        <!--     App Store files to be put at app root -->
+        <!--     Information property list: https://learn.microsoft.com/en-us/dotnet/maui/macios/info-plist -->
+        <None Include="Platforms/iOS/Info.plist" Link="Info.plist" /> <!-- Despite <None>, this file is recognized by the build process through its link location. -->
+        <!--     Privacy manifest: https://learn.microsoft.com/en-us/dotnet/maui/ios/privacy-manifest -->
+        <BundleResource Include="Platforms/iOS/PrivacyInfo.xcprivacy" LogicalName="PrivacyInfo.xcprivacy" />
 
-        <Compile Condition="'$(TargetPlatformIdentifier)'==''" Include="Platforms/Desktop.fs" />
+		<!-- Desktop -->
+        <Compile Include="Platforms/Desktop.fs" />
 		
         <!-- To comply with Android resource naming rules, MauiIcon and MauiSplashScreen files names must be
             lowercase, start and end with a letter character, and contain only alphanumeric characters or underscores. -->
