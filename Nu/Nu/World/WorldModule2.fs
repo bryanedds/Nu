@@ -1098,6 +1098,21 @@ module WorldModule2 =
             | KeyboardKey.RAlt -> [ImGuiKey.RightAlt; ImGuiKey.ModAlt]
             | KeyboardKey.LShift -> [ImGuiKey.LeftShift; ImGuiKey.ModShift]
             | KeyboardKey.RShift -> [ImGuiKey.RightShift; ImGuiKey.ModShift]
+            | KeyboardKey.KpPlus -> [ImGuiKey.KeypadAdd]
+            | KeyboardKey.KpMinus -> [ImGuiKey.KeypadSubtract]
+            | KeyboardKey.KpDecimal -> [ImGuiKey.KeypadDecimal]
+            | KeyboardKey.KpEnter -> [ImGuiKey.KeypadEnter]
+            | KeyboardKey.Kp0 -> if KeyboardState.isNumLocked () then [ImGuiKey.Keypad0] else []
+            | KeyboardKey.Kp1 -> if KeyboardState.isNumLocked () then [ImGuiKey.Keypad1] else [ImGuiKey.End]
+            | KeyboardKey.Kp2 -> if KeyboardState.isNumLocked () then [ImGuiKey.Keypad2] else []
+            | KeyboardKey.Kp3 -> if KeyboardState.isNumLocked () then [ImGuiKey.Keypad3] else [ImGuiKey.PageDown]
+            | KeyboardKey.Kp4 -> if KeyboardState.isNumLocked () then [ImGuiKey.Keypad4] else []
+            | KeyboardKey.Kp5 -> if KeyboardState.isNumLocked () then [ImGuiKey.Keypad5] else []
+            | KeyboardKey.Kp6 -> if KeyboardState.isNumLocked () then [ImGuiKey.Keypad6] else []
+            | KeyboardKey.Kp7 -> if KeyboardState.isNumLocked () then [ImGuiKey.Keypad7] else [ImGuiKey.Home]
+            | KeyboardKey.Kp8 -> if KeyboardState.isNumLocked () then [ImGuiKey.Keypad8] else []
+            | KeyboardKey.Kp9 -> if KeyboardState.isNumLocked () then [ImGuiKey.Keypad9] else [ImGuiKey.PageUp]
+            | KeyboardKey.NumLockClear -> [ImGuiKey.NumLock] // NOTE: not sure if this is useful.
             | _ ->
                 if keyboardKey >= KeyboardKey.Num1 && keyboardKey <= KeyboardKey.Num9 then ImGuiKey._1 + (keyboardKey - KeyboardKey.Num1 |> LanguagePrimitives.EnumToValue |> LanguagePrimitives.EnumOfValue) |> List.singleton
                 elif keyboardKey >= KeyboardKey.A && keyboardKey <= KeyboardKey.Z then ImGuiKey.A + (keyboardKey - KeyboardKey.A |> LanguagePrimitives.EnumToValue |> LanguagePrimitives.EnumOfValue) |> List.singleton

@@ -280,6 +280,10 @@ module internal KeyboardState =
     let internal isShiftUp () =
         not (isShiftDown ())
 
+    /// Check that num lock is active.
+    let internal isNumLocked () =
+        SDL3.SDL_GetModState () &&& SDL_Keymod.SDL_KMOD_NUM <> SDL_Keymod.SDL_KMOD_NONE
+
 /// Exposes the ongoing state of gamepads.
 [<RequireQualifiedAccess>]        
 module GamepadState =
