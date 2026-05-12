@@ -9,6 +9,7 @@
         <RepositoryType>git</RepositoryType>
         <FsDocsLicenseLink>https://github.com/bryanedds/Nu/blob/master/License.md</FsDocsLicenseLink>
         <FsDocsReleaseNotesLink>https://github.com/bryanedds/Nu</FsDocsReleaseNotesLink>
+        <IsRidAgnostic>false</IsRidAgnostic>
         <OutDir>bin/$(Configuration)</OutDir>
     </PropertyGroup>
 
@@ -155,31 +156,31 @@
         <Compile Include="World\World.fs" />
         <None Include="Scripts\GenerateDependencyGraph.fsx" />
         <None Include="Scripts\GenerateInputBindings.fsx" />
-        <None Include="zlib1.dll">
+        <None Include="zlib1.dll" Condition="!$(RuntimeIdentifier.StartsWith('ios')) And !$(RuntimeIdentifier.StartsWith('android'))">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Visible>False</Visible>
         </None>
-        <None Include="assimp.dll">
+        <None Include="assimp.dll" Condition="!$(RuntimeIdentifier.StartsWith('ios')) And !$(RuntimeIdentifier.StartsWith('android'))">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Visible>False</Visible>
         </None>
-        <None Include="libassimp.dylib" Condition="$([System.OperatingSystem]::IsMacOS())">
+        <None Include="libassimp.dylib" Condition="$([System.OperatingSystem]::IsMacOS()) And !$(RuntimeIdentifier.StartsWith('ios')) And !$(RuntimeIdentifier.StartsWith('android'))">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Visible>False</Visible>
         </None>
-        <None Include="libassimp.so" Condition="!$([System.OperatingSystem]::IsMacOS())">
+        <None Include="libassimp.so" Condition="!$([System.OperatingSystem]::IsMacOS()) And !$(RuntimeIdentifier.StartsWith('ios')) And !$(RuntimeIdentifier.StartsWith('android'))">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Visible>False</Visible>
         </None>
-        <None Include="libbulletc.dll">
+        <None Include="libbulletc.dll" Condition="!$(RuntimeIdentifier.StartsWith('ios')) And !$(RuntimeIdentifier.StartsWith('android'))">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Visible>False</Visible>
         </None>
-        <None Include="libbulletc.dylib" Condition="$([System.OperatingSystem]::IsMacOS())">
+        <None Include="libbulletc.dylib" Condition="$([System.OperatingSystem]::IsMacOS()) And !$(RuntimeIdentifier.StartsWith('ios')) And !$(RuntimeIdentifier.StartsWith('android'))">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Visible>False</Visible>
         </None>
-        <None Include="libbulletc.so" Condition="!$([System.OperatingSystem]::IsMacOS())">
+        <None Include="libbulletc.so" Condition="!$([System.OperatingSystem]::IsMacOS()) And !$(RuntimeIdentifier.StartsWith('ios')) And !$(RuntimeIdentifier.StartsWith('android'))">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Visible>False</Visible>
         </None>
