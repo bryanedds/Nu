@@ -118,6 +118,10 @@ type RendererInline () =
                     // create imgui renderer
                     let rendererImGui = VulkanRendererImGui.make assetTextureRequests assetTextureOpts fonts windowViewport vkc :> RendererImGui
 
+                    // setup sdl callback for app backgrounding on mobile devices
+                    let callback = Marshal.GetFunctionPointerForDelegate<Hl.BackgroundingDelegate> Hl.backgroundingDelegate
+                    SDL3.SDL_SetEventFilter (callback, 0n)
+
                     // fin
                     dependenciesOpt <- Some (renderer3d, renderer2d, rendererImGui, vkc)
 

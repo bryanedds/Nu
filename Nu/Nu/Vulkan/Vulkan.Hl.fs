@@ -81,10 +81,10 @@ module Hl =
             IsAppInForeground <- false
             lock BackgroundingResponseStateLock (fun () ->
                 if BackgroundingResponseState = PresentationSetupInitiated then BackgroundingResponseState <- PresentationTeardownPending)
-            false
+            true
         | SDL_EventType.SDL_EVENT_DID_ENTER_FOREGROUND ->
             IsAppInForeground <- true
-            false
+            true
         | _ -> true
 
     // set up delegate for app backgrounding callback
