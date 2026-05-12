@@ -73,6 +73,7 @@ module Hl =
     let private hasAppBegunBackgrounding () = lock BackgroundingResponseStateLock (fun () -> BackgroundingResponseState = PresentationTeardownPending)
 
     // callback to inform render loop about app backgrounding
+    // official documentation for android case: https://github.com/libsdl-org/SDL/blob/main/docs/README-android.md#activity-lifecycle
     let private handleBackgrounding (userData : voidptr) (event : SDL_Event nativeptr) : SDLBool =
         ignore userData
         let event = NativePtr.toByRef event
