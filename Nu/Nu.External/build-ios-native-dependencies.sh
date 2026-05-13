@@ -36,19 +36,67 @@ cimgui_build="$build_root/cimgui-ios-arm64"
 vma_build="$build_root/vma-ios-arm64"
 joltc_src="$build_root/joltc"
 joltc_build="$build_root/joltc-ios-arm64"
+framework_build="$build_root/frameworks"
 
-assimp_dest="$repo_root/Nu/Nu.Dependencies/AssimpNet/iOS/iphoneos-arm64"
-bulletc_dest="$repo_root/Nu/Nu.Dependencies/BulletSharpPInvoke/iOS/iphoneos-arm64"
-cimgui_dest="$repo_root/Nu/Nu.Dependencies/ImGui/iOS/iphoneos-arm64"
-vma_dest="$repo_root/Nu/Nu.Dependencies/Vortice.VulkanMemoryAllocator/iOS/iphoneos-arm64"
-joltc_dest="$repo_root/Nu/Nu.Dependencies/JoltPhysics/iOS/iphoneos-arm64"
+assimp_dest="$repo_root/Nu/Nu.Dependencies/AssimpNet/iOS"
+bulletc_dest="$repo_root/Nu/Nu.Dependencies/BulletSharpPInvoke/iOS"
+cimgui_dest="$repo_root/Nu/Nu.Dependencies/ImGui/iOS"
+vma_dest="$repo_root/Nu/Nu.Dependencies/Vortice.VulkanMemoryAllocator/iOS"
+joltc_dest="$repo_root/Nu/Nu.Dependencies/JoltPhysics/iOS"
 
-mkdir -p "$build_root" "$assimp_dest" "$bulletc_dest" "$cimgui_dest" "$vma_dest" "$joltc_dest"
-rm -f \
-  "$assimp_dest/libassimp.a" \
-  "$bulletc_dest/libbulletc.a" \
-  "$joltc_dest/libJolt.a" \
-  "$joltc_dest/libjoltc.a"
+mkdir -p "$build_root" "$framework_build" "$assimp_dest" "$bulletc_dest" "$cimgui_dest" "$vma_dest" "$joltc_dest"
+rm -rf \
+  "$assimp_dest/iphoneos-arm64" \
+  "$assimp_dest/assimp.xcframework" \
+  "$bulletc_dest/iphoneos-arm64" \
+  "$bulletc_dest/bulletc.xcframework" \
+  "$cimgui_dest/iphoneos-arm64" \
+  "$cimgui_dest/cimgui.xcframework" \
+  "$vma_dest/iphoneos-arm64" \
+  "$vma_dest/vma.xcframework" \
+  "$joltc_dest/iphoneos-arm64" \
+  "$joltc_dest/joltc.xcframework"
+
+create_ios_dynamic_xcframework () {
+  local name="$1"
+  local binary="$2"
+  local output="$3"
+  local framework="$framework_build/$name.framework"
+
+  rm -rf "$framework" "$output"
+  mkdir -p "$framework"
+  cp "$binary" "$framework/$name"
+  chmod u+w "$framework/$name"
+  /usr/bin/install_name_tool -id "@rpath/$name.framework/$name" "$framework/$name"
+  cat > "$framework/Info.plist" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleExecutable</key>
+	<string>$name</string>
+	<key>CFBundleIdentifier</key>
+	<string>org.nu-game-engine.$name</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$name</string>
+	<key>CFBundlePackageType</key>
+	<string>FMWK</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>MinimumOSVersion</key>
+	<string>$ios_deployment_target</string>
+</dict>
+</plist>
+PLIST
+
+  xcodebuild -create-xcframework -framework "$framework" -output "$output"
+}
 
 if [ ! -d "$assimp_src/.git" ]; then
   git clone --depth 1 --branch "$assimp_tag" https://github.com/assimp/assimp.git "$assimp_src"
@@ -98,11 +146,12 @@ cmake --build "$assimp_build" --config Release --target assimp --parallel
   -miphoneos-version-min="$ios_deployment_target" \
   -isysroot "$sdk_path" \
   -dynamiclib \
-  -install_name @rpath/libassimp.dylib \
+  -install_name @rpath/assimp.framework/assimp \
   -Wl,-force_load,"$assimp_build/lib/libassimp.a" \
   -stdlib=libc++ \
   -lz \
-  -o "$assimp_dest/libassimp.dylib"
+  -o "$assimp_build/assimp"
+create_ios_dynamic_xcframework "assimp" "$assimp_build/assimp" "$assimp_dest/assimp.xcframework"
 
 perl -0pi -e 's/ADD_LIBRARY\(\$\{BULLETC_LIB\} SHARED/ADD_LIBRARY\(\$\{BULLETC_LIB\} STATIC/' "$bulletsharp_src/libbulletc/CMakeLists.txt"
 
@@ -144,10 +193,11 @@ xcrun --sdk iphoneos libtool -static -o "$bulletc_build/libbulletc_combined.a" \
   -miphoneos-version-min="$ios_deployment_target" \
   -isysroot "$sdk_path" \
   -dynamiclib \
-  -install_name @executable_path/libbulletc.dylib \
+  -install_name @rpath/bulletc.framework/bulletc \
   -Wl,-force_load,"$bulletc_build/libbulletc_combined.a" \
   -stdlib=libc++ \
-  -o "$bulletc_dest/libbulletc.dylib"
+  -o "$bulletc_build/bulletc"
+create_ios_dynamic_xcframework "bulletc" "$bulletc_build/bulletc" "$bulletc_dest/bulletc.xcframework"
 
 rm -rf "$cimgui_cmake" "$cimgui_build"
 mkdir -p "$cimgui_cmake"
@@ -255,7 +305,7 @@ cmake -S "$cimgui_cmake" -B "$cimgui_build" -G Ninja \
   -DCMAKE_OSX_DEPLOYMENT_TARGET="$ios_deployment_target" \
   -DCMAKE_BUILD_TYPE=Release
 cmake --build "$cimgui_build" --config Release --parallel
-cp "$cimgui_build/libcimgui.dylib" "$cimgui_dest/libcimgui.dylib"
+create_ios_dynamic_xcframework "cimgui" "$cimgui_build/libcimgui.dylib" "$cimgui_dest/cimgui.xcframework"
 
 rm -rf "$vma_build"
 mkdir -p "$vma_build"
@@ -277,10 +327,10 @@ CPP
   -fvisibility=hidden \
   -Wno-nullability-completeness \
   -I"$vulkan_sdk/macOS/include" \
-  -install_name @rpath/libvma.dylib \
+  -install_name @rpath/vma.framework/vma \
   "$vma_build/vma.cpp" \
-  -o "$vma_build/libvma.dylib"
-cp "$vma_build/libvma.dylib" "$vma_dest/libvma.dylib"
+  -o "$vma_build/vma"
+create_ios_dynamic_xcframework "vma" "$vma_build/vma" "$vma_dest/vma.xcframework"
 
 rm -rf "$joltc_build"
 cmake -S "$joltc_src" -B "$joltc_build" -G Ninja \
@@ -305,10 +355,10 @@ cmake -S "$joltc_src" -B "$joltc_build" -G Ninja \
   -DUSE_F16C=OFF \
   -DUSE_FMADD=OFF
 cmake --build "$joltc_build" --config Release --parallel
-cp "$joltc_build/lib/libjoltc.dylib" "$joltc_dest/libjoltc.dylib"
+create_ios_dynamic_xcframework "joltc" "$joltc_build/lib/libjoltc.dylib" "$joltc_dest/joltc.xcframework"
 
-file "$assimp_dest/libassimp.dylib"
-file "$bulletc_dest/libbulletc.dylib"
-file "$cimgui_dest/libcimgui.dylib"
-file "$vma_dest/libvma.dylib"
-file "$joltc_dest/libjoltc.dylib"
+file "$assimp_dest/assimp.xcframework/ios-arm64/assimp.framework/assimp"
+file "$bulletc_dest/bulletc.xcframework/ios-arm64/bulletc.framework/bulletc"
+file "$cimgui_dest/cimgui.xcframework/ios-arm64/cimgui.framework/cimgui"
+file "$vma_dest/vma.xcframework/ios-arm64/vma.framework/vma"
+file "$joltc_dest/joltc.xcframework/ios-arm64/joltc.framework/joltc"

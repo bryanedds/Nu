@@ -3,6 +3,113 @@ open System
 open System.IO
 open Nu
 
+#if IOS
+open System.Reflection
+open System.Runtime.CompilerServices
+open System.Runtime.InteropServices
+
+let private iosFrameworkBinary frameworkName =
+    Path.Combine (AppContext.BaseDirectory, "Frameworks", frameworkName + ".framework", frameworkName)
+
+let private tryLoadNativeLibrary libraryPath =
+    let mutable handle = 0n
+    if File.Exists libraryPath && NativeLibrary.TryLoad (libraryPath, &handle)
+    then handle
+    else 0n
+
+let private trySetDllImportResolver (assembly : Assembly) mappedLibraries =
+    let resolver =
+        DllImportResolver (fun libraryName _ _ ->
+            mappedLibraries
+            |> List.tryPick (fun (candidateName, frameworkName) ->
+                if String.Equals (libraryName, candidateName, StringComparison.Ordinal) then
+                    match tryLoadNativeLibrary (iosFrameworkBinary frameworkName) with
+                    | 0n -> None
+                    | handle -> Some handle
+                else None)
+            |> Option.defaultValue 0n)
+    try NativeLibrary.SetDllImportResolver (assembly, resolver)
+    with :? InvalidOperationException -> ()
+
+let private loadAssimpIosFramework () =
+    let assimpLibrary = global.Assimp.Unmanaged.AssimpLibrary.Instance
+    if not assimpLibrary.IsLibraryLoaded then
+        let libraryPath = iosFrameworkBinary "assimp"
+        let libraryType = typeof<global.Assimp.Unmanaged.UnmanagedLibrary>
+        let getField name =
+            let field = libraryType.GetField (name, BindingFlags.Instance ||| BindingFlags.NonPublic)
+            if isNull field then failwith ("Could not find AssimpNet field '" + name + "'.")
+            field
+        let impl = (getField "m_impl").GetValue assimpLibrary
+        let loadLibraryMethod = impl.GetType().GetMethod ("LoadLibrary", BindingFlags.Instance ||| BindingFlags.Public)
+        if isNull loadLibraryMethod then failwith "Could not find AssimpNet implementation LoadLibrary method."
+        let loaded = loadLibraryMethod.Invoke (impl, [| box libraryPath |]) :?> bool
+        if not loaded then failwith ("Could not load Assimp framework from '" + libraryPath + "'.")
+        (getField "m_libraryPath").SetValue (assimpLibrary, libraryPath)
+        (getField "m_checkNeedsLoading").SetValue (assimpLibrary, false)
+        // AssimpNet's public LoadLibrary appends ".dylib" to extensionless paths,
+        // but iOS framework executables are intentionally extensionless.
+        let onLibraryLoadedMethod = libraryType.GetMethod ("OnLibraryLoaded", BindingFlags.Instance ||| BindingFlags.NonPublic)
+        if isNull onLibraryLoadedMethod then failwith "Could not find AssimpNet OnLibraryLoaded method."
+        onLibraryLoadedMethod.Invoke (assimpLibrary, [||]) |> ignore
+
+let private configureJoltIosFramework () =
+    let joltApiType = typeof<JoltPhysicsSharp.Jolt>.Assembly.GetType ("JoltPhysicsSharp.JoltApi", true)
+    RuntimeHelpers.RunClassConstructor joltApiType.TypeHandle
+    let joltResolverEvent = joltApiType.GetEvent ("JoltDllImporterResolver", BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic)
+    if isNull joltResolverEvent then failwith "Could not find JoltPhysicsSharp JoltDllImporterResolver event."
+    let resolver =
+        DllImportResolver (fun libraryName _ _ ->
+            if String.Equals (libraryName, "joltc", StringComparison.Ordinal) then
+                tryLoadNativeLibrary (iosFrameworkBinary "joltc")
+            else 0n)
+    joltResolverEvent.AddEventHandler (null, resolver)
+
+let private configureVmaIosFramework () =
+    let vmaType = typeof<Vortice.Vulkan.Vma>
+    RuntimeHelpers.RunClassConstructor vmaType.TypeHandle
+    let vmaResolverEvent = vmaType.GetEvent ("VmaDllImporterResolver", BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic)
+    if isNull vmaResolverEvent then failwith "Could not find Vortice Vulkan VmaDllImporterResolver event."
+    let resolver =
+        DllImportResolver (fun libraryName _ _ ->
+            if String.Equals (libraryName, "vma", StringComparison.Ordinal) then
+                tryLoadNativeLibrary (iosFrameworkBinary "vma")
+            else 0n)
+    vmaResolverEvent.AddEventHandler (null, resolver)
+
+let private configureIosNativeLibraries () =
+    trySetDllImportResolver typeof<SDL.SDL3>.Assembly [
+        "SDL3", "SDL3"
+    ]
+    trySetDllImportResolver typeof<SDL.SDL3_image>.Assembly [
+        "SDL3_image", "SDL3_image"
+    ]
+    trySetDllImportResolver typeof<SDL.SDL3_ttf>.Assembly [
+        "SDL3_ttf", "SDL3_ttf"
+    ]
+    trySetDllImportResolver typeof<SDL.SDL3_mixer>.Assembly [
+        "SDL3_mixer", "SDL3_mixer"
+    ]
+    trySetDllImportResolver typeof<World>.Assembly [
+        "cimgui", "cimgui"
+    ]
+    trySetDllImportResolver typeof<ImGuiNET.ImGui>.Assembly [
+        "cimgui", "cimgui"
+    ]
+    trySetDllImportResolver typeof<BulletSharp.BulletObject>.Assembly [
+        "libbulletc", "bulletc"
+    ]
+
+    let moltenVkPath = iosFrameworkBinary "MoltenVK"
+    let result = Vortice.Vulkan.Vulkan.vkInitialize moltenVkPath
+    if result <> Vortice.Vulkan.VkResult.Success then
+        failwith ("Could not initialize Vulkan from '" + moltenVkPath + "' due to: " + string result)
+    SDL.SDL3.SDL_SetHint (SDL.SDL3.SDL_HINT_VULKAN_LIBRARY, moltenVkPath) |> ignore<SDL.SDLBool>
+    loadAssimpIosFramework ()
+    configureJoltIosFramework ()
+    configureVmaIosFramework ()
+#endif
+
 // this the entry point for your Nu application
 let main () =
 
@@ -171,10 +278,7 @@ let private sdlMain = SdlMain (fun _ _ -> main ())
    
 let [<EntryPoint>] entryPoint _ =
     Log.init None // disable Nu's default file log because the iOS app bundle is read-only.
-    if ObjCRuntime.Runtime.Arch = ObjCRuntime.Arch.SIMULATOR then
-        let result = Vortice.Vulkan.Vulkan.vkInitialize "Frameworks/MoltenVK.framework/MoltenVK"
-        assert (result = Vortice.Vulkan.VkResult.Success)
-
+    configureIosNativeLibraries ()
     SDL3.SDL_RunApp (0, NativePtr.nullPtr, Marshal.GetFunctionPointerForDelegate<_> sdlMain, 0n)
 #endif
 #if !(ANDROID || IOS)

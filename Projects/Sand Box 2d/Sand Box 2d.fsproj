@@ -171,16 +171,15 @@
 
     <ItemGroup>
         <PackageReference Update="FSharp.Core" Version="10.0.103" />
-        <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="$(NuGetPackageRoot)ppy.sdl3-cs/$(SandBox2dPpySdlVersion)/runtimes/ios/native/SDL3.xcframework/ios-arm64/SDL3.framework/SDL3" Kind="Dynamic" CopyToAppBundle="true" RelativePath="libSDL3.dylib" DynamicLibraryId="@executable_path/libSDL3.dylib" />
-        <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="$(NuGetPackageRoot)ppy.sdl3_image-cs/$(SandBox2dPpySdlVersion)/runtimes/ios/native/SDL3_image.xcframework/ios-arm64/SDL3_image.framework/SDL3_image" Kind="Dynamic" CopyToAppBundle="true" RelativePath="libSDL3_image.dylib" DynamicLibraryId="@executable_path/libSDL3_image.dylib" />
-        <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="$(NuGetPackageRoot)ppy.sdl3_ttf-cs/$(SandBox2dPpySdlVersion)/runtimes/ios/native/SDL3_ttf.xcframework/ios-arm64/SDL3_ttf.framework/SDL3_ttf" Kind="Dynamic" CopyToAppBundle="true" RelativePath="libSDL3_ttf.dylib" DynamicLibraryId="@executable_path/libSDL3_ttf.dylib" />
-        <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="$(NuGetPackageRoot)ppy.sdl3_mixer-cs/$(SandBox2dPpySdlVersion)/runtimes/ios/native/SDL3_mixer.xcframework/ios-arm64/SDL3_mixer.framework/SDL3_mixer" Kind="Dynamic" CopyToAppBundle="true" RelativePath="libSDL3_mixer.dylib" DynamicLibraryId="@executable_path/libSDL3_mixer.dylib" />
-        <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="..\..\Nu\Nu.Dependencies\AssimpNet\iOS\iphoneos-arm64\libassimp.dylib" Kind="Dynamic" CopyToAppBundle="true" RelativePath="libassimp.dylib" DynamicLibraryId="@executable_path/libassimp.dylib" />
-        <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="..\..\Nu\Nu.Dependencies\BulletSharpPInvoke\iOS\iphoneos-arm64\libbulletc.dylib" Kind="Dynamic" CopyToAppBundle="true" RelativePath="libbulletc.dylib" DynamicLibraryId="@executable_path/libbulletc.dylib" />
-        <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="..\..\Nu\Nu.Dependencies\JoltPhysics\iOS\iphoneos-arm64\libjoltc.dylib" Kind="Dynamic" CopyToAppBundle="true" RelativePath="libjoltc.dylib" DynamicLibraryId="@executable_path/libjoltc.dylib" />
-        <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="..\..\Nu\Nu.Dependencies\ImGui\iOS\iphoneos-arm64\libcimgui.dylib" Kind="Dynamic" CopyToAppBundle="true" RelativePath="libcimgui.dylib" DynamicLibraryId="@executable_path/libcimgui.dylib" />
-        <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="..\..\Nu\Nu.Dependencies\Vortice.VulkanMemoryAllocator\iOS\iphoneos-arm64\libvma.dylib" Kind="Dynamic" CopyToAppBundle="true" RelativePath="libvma.dylib" DynamicLibraryId="@executable_path/libvma.dylib" />
-        <LinkerArgument Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="-L$(MSBuildProjectDirectory)/../../Nu/Nu.Dependencies/AssimpNet/iOS/iphoneos-arm64" />
+        <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="$(NuGetPackageRoot)ppy.sdl3-cs/$(SandBox2dPpySdlVersion)/runtimes/ios/native/SDL3.xcframework" Kind="Framework" />
+        <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="$(NuGetPackageRoot)ppy.sdl3_image-cs/$(SandBox2dPpySdlVersion)/runtimes/ios/native/SDL3_image.xcframework" Kind="Framework" />
+        <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="$(NuGetPackageRoot)ppy.sdl3_ttf-cs/$(SandBox2dPpySdlVersion)/runtimes/ios/native/SDL3_ttf.xcframework" Kind="Framework" />
+        <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="$(NuGetPackageRoot)ppy.sdl3_mixer-cs/$(SandBox2dPpySdlVersion)/runtimes/ios/native/SDL3_mixer.xcframework" Kind="Framework" />
+        <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="..\..\Nu\Nu.Dependencies\AssimpNet\iOS\assimp.xcframework" Kind="Framework" />
+        <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="..\..\Nu\Nu.Dependencies\BulletSharpPInvoke\iOS\bulletc.xcframework" Kind="Framework" />
+        <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="..\..\Nu\Nu.Dependencies\JoltPhysics\iOS\joltc.xcframework" Kind="Framework" />
+        <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="..\..\Nu\Nu.Dependencies\ImGui\iOS\cimgui.xcframework" Kind="Framework" />
+        <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="..\..\Nu\Nu.Dependencies\Vortice.VulkanMemoryAllocator\iOS\vma.xcframework" Kind="Framework" />
         <Reference Include="AssimpNet">
             <HintPath>$(SandBox2dAssimpNetReferencePath)</HintPath>
         </Reference>
@@ -202,15 +201,15 @@
     </ItemGroup>
 
     <Target Name="ValidateIosNativeDependencies" BeforeTargets="_ExpandNativeReferences" Condition="'$(TargetPlatformIdentifier)'=='ios'">
-        <Error Text="Missing iOS SDL3 native framework package. Restore NuGet packages or update SandBox2dPpySdlVersion." Condition="!Exists('$(NuGetPackageRoot)ppy.sdl3-cs/$(SandBox2dPpySdlVersion)/runtimes/ios/native/SDL3.xcframework/ios-arm64/SDL3.framework/SDL3')" />
-        <Error Text="Missing iOS SDL3_image native framework package. Restore NuGet packages or update SandBox2dPpySdlVersion." Condition="!Exists('$(NuGetPackageRoot)ppy.sdl3_image-cs/$(SandBox2dPpySdlVersion)/runtimes/ios/native/SDL3_image.xcframework/ios-arm64/SDL3_image.framework/SDL3_image')" />
-        <Error Text="Missing iOS SDL3_ttf native framework package. Restore NuGet packages or update SandBox2dPpySdlVersion." Condition="!Exists('$(NuGetPackageRoot)ppy.sdl3_ttf-cs/$(SandBox2dPpySdlVersion)/runtimes/ios/native/SDL3_ttf.xcframework/ios-arm64/SDL3_ttf.framework/SDL3_ttf')" />
-        <Error Text="Missing iOS SDL3_mixer native framework package. Restore NuGet packages or update SandBox2dPpySdlVersion." Condition="!Exists('$(NuGetPackageRoot)ppy.sdl3_mixer-cs/$(SandBox2dPpySdlVersion)/runtimes/ios/native/SDL3_mixer.xcframework/ios-arm64/SDL3_mixer.framework/SDL3_mixer')" />
-        <Error Text="Missing iOS Assimp native library. Run Nu/Nu.External/build-ios-native-dependencies.sh from the repository root." Condition="!Exists('..\..\Nu\Nu.Dependencies\AssimpNet\iOS\iphoneos-arm64\libassimp.dylib')" />
-        <Error Text="Missing iOS Bullet native library. Run Nu/Nu.External/build-ios-native-dependencies.sh from the repository root." Condition="!Exists('..\..\Nu\Nu.Dependencies\BulletSharpPInvoke\iOS\iphoneos-arm64\libbulletc.dylib')" />
-        <Error Text="Missing iOS Jolt native library. Run Nu/Nu.External/build-ios-native-dependencies.sh from the repository root." Condition="!Exists('..\..\Nu\Nu.Dependencies\JoltPhysics\iOS\iphoneos-arm64\libjoltc.dylib')" />
-        <Error Text="Missing iOS cimgui native library. Run Nu/Nu.External/build-ios-native-dependencies.sh from the repository root." Condition="!Exists('..\..\Nu\Nu.Dependencies\ImGui\iOS\iphoneos-arm64\libcimgui.dylib')" />
-        <Error Text="Missing iOS VMA native library. Run Nu/Nu.External/build-ios-native-dependencies.sh from the repository root." Condition="!Exists('..\..\Nu\Nu.Dependencies\Vortice.VulkanMemoryAllocator\iOS\iphoneos-arm64\libvma.dylib')" />
+        <Error Text="Missing iOS SDL3 native framework package. Restore NuGet packages or update SandBox2dPpySdlVersion." Condition="!Exists('$(NuGetPackageRoot)ppy.sdl3-cs/$(SandBox2dPpySdlVersion)/runtimes/ios/native/SDL3.xcframework')" />
+        <Error Text="Missing iOS SDL3_image native framework package. Restore NuGet packages or update SandBox2dPpySdlVersion." Condition="!Exists('$(NuGetPackageRoot)ppy.sdl3_image-cs/$(SandBox2dPpySdlVersion)/runtimes/ios/native/SDL3_image.xcframework')" />
+        <Error Text="Missing iOS SDL3_ttf native framework package. Restore NuGet packages or update SandBox2dPpySdlVersion." Condition="!Exists('$(NuGetPackageRoot)ppy.sdl3_ttf-cs/$(SandBox2dPpySdlVersion)/runtimes/ios/native/SDL3_ttf.xcframework')" />
+        <Error Text="Missing iOS SDL3_mixer native framework package. Restore NuGet packages or update SandBox2dPpySdlVersion." Condition="!Exists('$(NuGetPackageRoot)ppy.sdl3_mixer-cs/$(SandBox2dPpySdlVersion)/runtimes/ios/native/SDL3_mixer.xcframework')" />
+        <Error Text="Missing iOS Assimp xcframework. Run Nu/Nu.External/build-ios-native-dependencies.sh from the repository root." Condition="!Exists('..\..\Nu\Nu.Dependencies\AssimpNet\iOS\assimp.xcframework')" />
+        <Error Text="Missing iOS Bullet xcframework. Run Nu/Nu.External/build-ios-native-dependencies.sh from the repository root." Condition="!Exists('..\..\Nu\Nu.Dependencies\BulletSharpPInvoke\iOS\bulletc.xcframework')" />
+        <Error Text="Missing iOS Jolt xcframework. Run Nu/Nu.External/build-ios-native-dependencies.sh from the repository root." Condition="!Exists('..\..\Nu\Nu.Dependencies\JoltPhysics\iOS\joltc.xcframework')" />
+        <Error Text="Missing iOS cimgui xcframework. Run Nu/Nu.External/build-ios-native-dependencies.sh from the repository root." Condition="!Exists('..\..\Nu\Nu.Dependencies\ImGui\iOS\cimgui.xcframework')" />
+        <Error Text="Missing iOS VMA xcframework. Run Nu/Nu.External/build-ios-native-dependencies.sh from the repository root." Condition="!Exists('..\..\Nu\Nu.Dependencies\Vortice.VulkanMemoryAllocator\iOS\vma.xcframework')" />
     </Target>
 
     <!-- AssimpNet classifies iOS as Linux; patch the iOS-only copy to use its macOS dylib loader. -->
@@ -220,42 +219,6 @@
         <Exec Command="perl -0777 -pi -e '$u=qr/\x18\x80(.{4})\x2a\x17\x80\1\x2a\x18\x80\1\x2a\x16\x80\1\x2a/s; $p=qr/\x18\x80(.{4})\x2a\x18\x80\1\x2a\x18\x80\1\x2a\x16\x80\1\x2a/s; s/$u/\x18\x80$1\x2a\x18\x80$1\x2a\x18\x80$1\x2a\x16\x80$1\x2a/s or /$p/ or die &quot;AssimpNet iOS platform patch pattern not found\n&quot;' &quot;$(SandBox2dAssimpNetReferencePath)&quot;" />
     </Target>
 
-    <Target Name="RemoveSandBox2dIosSdlPackageFrameworkReferences" AfterTargets="_ExpandNativeReferences" BeforeTargets="_ComputeFrameworkFilesToPublish;_LinkNativeExecutable" Condition="'$(TargetPlatformIdentifier)'=='ios'">
-        <ItemGroup>
-            <_FrameworkNativeReference Remove="@(_FrameworkNativeReference)" Condition="'%(_FrameworkNativeReference.Kind)'=='Framework' And $([System.String]::Copy('%(_FrameworkNativeReference.Filename)').StartsWith('SDL3'))" />
-        </ItemGroup>
-    </Target>
-
-    <Target Name="RemoveSandBox2dIosSdlPackageFrameworksFromPublish" AfterTargets="_ComputeFrameworkFilesToPublish" BeforeTargets="_CreateStampLocationForCopyDirectoriesToBundle" Condition="'$(TargetPlatformIdentifier)'=='ios'">
-        <ItemGroup>
-            <_DirectoriesToPublish Remove="@(_DirectoriesToPublish)" Condition="$([System.String]::Copy('%(_DirectoriesToPublish.Filename)').StartsWith('SDL3'))" />
-        </ItemGroup>
-    </Target>
-
-    <Target Name="RewriteSandBox2dIosSdlDynamicLibraryReferences" AfterTargets="_InstallNameTool" BeforeTargets="_UpdateWithReidentifiedDynamicLibraries" Condition="'$(TargetPlatformIdentifier)'=='ios'">
-        <Exec Command="/usr/bin/install_name_tool -change @rpath/SDL3.framework/SDL3 @executable_path/libSDL3.dylib &quot;$(_IntermediateNativeLibraryDir)libSDL3_image.dylib&quot;" Condition="Exists('$(_IntermediateNativeLibraryDir)libSDL3_image.dylib')" />
-        <Exec Command="/usr/bin/install_name_tool -change @rpath/SDL3.framework/SDL3 @executable_path/libSDL3.dylib &quot;$(_IntermediateNativeLibraryDir)libSDL3_ttf.dylib&quot;" Condition="Exists('$(_IntermediateNativeLibraryDir)libSDL3_ttf.dylib')" />
-        <Exec Command="/usr/bin/install_name_tool -change @rpath/SDL3.framework/SDL3 @executable_path/libSDL3.dylib &quot;$(_IntermediateNativeLibraryDir)libSDL3_mixer.dylib&quot;" Condition="Exists('$(_IntermediateNativeLibraryDir)libSDL3_mixer.dylib')" />
-    </Target>
-
-    <Target Name="SignSandBox2dIosDynamicLibraries" BeforeTargets="_CodesignAppBundle" Condition="'$(TargetPlatformIdentifier)'=='ios'">
-        <Message Importance="high" Text="Signing Sand Box 2d iOS dynamic libraries in $(AppBundleDir)" />
-        <ItemGroup>
-            <SandBox2dIosDynamicLibraryToSign Include="$(AppBundleDir)/libSDL3.dylib" />
-            <SandBox2dIosDynamicLibraryToSign Include="$(AppBundleDir)/libSDL3_image.dylib" />
-            <SandBox2dIosDynamicLibraryToSign Include="$(AppBundleDir)/libSDL3_ttf.dylib" />
-            <SandBox2dIosDynamicLibraryToSign Include="$(AppBundleDir)/libSDL3_mixer.dylib" />
-            <SandBox2dIosDynamicLibraryToSign Include="$(AppBundleDir)/libvulkan.dylib" />
-            <SandBox2dIosDynamicLibraryToSign Include="$(AppBundleDir)/libvulkan.so.1" />
-            <SandBox2dIosDynamicLibraryToSign Include="$(AppBundleDir)/libassimp.dylib" />
-            <SandBox2dIosDynamicLibraryToSign Include="$(AppBundleDir)/libbulletc.dylib" />
-            <SandBox2dIosDynamicLibraryToSign Include="$(AppBundleDir)/libjoltc.dylib" />
-            <SandBox2dIosDynamicLibraryToSign Include="$(AppBundleDir)/libcimgui.dylib" />
-            <SandBox2dIosDynamicLibraryToSign Include="$(AppBundleDir)/libvma.dylib" />
-        </ItemGroup>
-        <Exec Command="/usr/bin/codesign --force --sign &quot;$(_CodeSigningKey)&quot; --timestamp=none &quot;%(SandBox2dIosDynamicLibraryToSign.Identity)&quot;" Condition="Exists('%(SandBox2dIosDynamicLibraryToSign.Identity)')" />
-    </Target>
-
     <Target Name="CopyMacOSVulkanSdk" BeforeTargets="_ExpandNativeReferences;AssignTargetPaths" DependsOnTargets="ResolveMacOSVulkanSdk" Condition="'$(BuildingMacOS)'=='true' Or '$(TargetPlatformIdentifier)'=='ios'">
         <Error Text="Please install the macOS Vulkan SDK. If installed to a non-default location, override the MacOSVulkanSdk property in this file." Condition="!$([System.IO.Directory]::Exists($(MacOSVulkanSdk)))" />
         <Error Text="No iOS MoltenVK xcframework was found at '$(MacOSVulkanSdk)/iOS/lib/MoltenVK.xcframework'." Condition="'$(TargetPlatformIdentifier)'=='ios' And !$([System.IO.Directory]::Exists($(MacOSVulkanSdk)/iOS/lib/MoltenVK.xcframework))" />
@@ -263,7 +226,7 @@
             <MacOSVulkanSdkDylib Include="$(MacOSVulkanSdk)/macOS/lib/*.dylib" />
             <MacOSVulkanSdkIcdJson Include="$(MacOSVulkanSdk)/macOS/share/**/*_icd.json" />
             <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="$(MacOSVulkanSdk)/iOS/lib/libshaderc_combined.a" Kind="Static" />
-            <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="$(MacOSVulkanSdk)/iOS/lib/MoltenVK.xcframework/ios-arm64/MoltenVK.framework/MoltenVK" Kind="Dynamic" CopyToAppBundle="true" RelativePath="libvulkan.dylib" DynamicLibraryId="@executable_path/libvulkan.dylib" />
+            <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="$(MacOSVulkanSdk)/iOS/lib/MoltenVK.xcframework" Kind="Framework" />
         </ItemGroup>
         <Error Condition="'$(TargetPlatformIdentifier)'!='ios' And '@(MacOSVulkanSdkDylib)'==''" Text="No macOS Vulkan SDK dylibs were found at '$(MacOSVulkanSdk)/macOS/lib/*.dylib'. Ensure MacOSVulkanSdk points to a valid Vulkan SDK installation." />
         <Exec Condition="'$(TargetPlatformIdentifier)'!='ios'"
@@ -275,7 +238,4 @@
         <WriteLinesToFile Condition="'$(TargetPlatformIdentifier)'!='ios'" File="%(OutIcdJsonFile.Identity)" Lines="$([System.IO.File]::ReadAllText('%(OutIcdJsonFile.Identity)').Replace('../../../lib/','../../'))" Overwrite="true" />
     </Target>
 
-    <Target Name="CopySandBox2dIosVulkanRuntimeAlias" BeforeTargets="SignSandBox2dIosDynamicLibraries" Condition="'$(TargetPlatformIdentifier)'=='ios'">
-        <Copy SourceFiles="$(AppBundleDir)/libvulkan.dylib" DestinationFiles="$(AppBundleDir)/libvulkan.so.1" SkipUnchangedFiles="true" Condition="Exists('$(AppBundleDir)/libvulkan.dylib')" />
-    </Target>
 </Project>
