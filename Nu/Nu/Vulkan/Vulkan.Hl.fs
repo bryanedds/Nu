@@ -1000,6 +1000,7 @@ module Hl =
             
             // TODO: DJL: this is not sufficient to ensure resources not still in use, that requires an extension!!
             // https://docs.vulkan.org/guide/latest/swapchain_semaphore_reuse.html#_vk_ext_swapchain_maintenance1_extension
+            // TODO: DJL: also, turns out vkDeviceWaitIdle isn't thread safe!
             Vulkan.vkDeviceWaitIdle device |> check
             for i in 0 .. dec swapchainInternal.ImageViews.Length do Vulkan.vkDestroyImageView (device, swapchainInternal.ImageViews.[i], nullPtr)
             Vulkan.vkDestroySwapchainKHR (device, swapchainInternal.VkSwapchain, nullPtr)
@@ -1244,16 +1245,17 @@ module Hl =
                 Vulkan.vkEndCommandBuffer cb |> check
 
                 // submit commands
-                let mutable sInfo = VkSubmitInfo ()
-                sInfo.commandBufferCount <- 1u
-                sInfo.pCommandBuffers <- asPointer &cb
-                Vulkan.vkQueueSubmit (queue.VkQueue, 1u, asPointer &sInfo, finishFence) |> check)
+                let mutable info = VkSubmitInfo ()
+                info.commandBufferCount <- 1u
+                info.pCommandBuffers <- asPointer &cb
+                Vulkan.vkQueueSubmit (queue.VkQueue, 1u, asPointer &info, finishFence) |> check
 
-            // wait for execution to finish
-            awaitFence finishFence device
+                // wait for execution to finish
+                // NOTE: DJL: must ALSO be thread safe!
+                awaitFence finishFence device
 
-            // free command buffer
-            Vulkan.vkFreeCommandBuffers (device, commandPool, 1u, asPointer &cb)
+                // free command buffer
+                Vulkan.vkFreeCommandBuffers (device, commandPool, 1u, asPointer &cb))
 
         /// Present swapchain image.
         static member present waitSemaphore vkSwapchain (queue : Queue) =
