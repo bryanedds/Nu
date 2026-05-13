@@ -160,7 +160,6 @@ module Hl =
             | D24s8ui -> width * height * 4
 
         /// Determine if format is supported for use as an attachment.
-        /// TODO: P0: DJL: investigate working around depth blitting as some MESA drivers may deny us that feature.
         static member supportsAttachment vkPhysicalDevice format =
             let requiredFeatures =
                 match format with
@@ -175,7 +174,7 @@ module Hl =
                 | Astc -> VkFormatFeatureFlags.BlitSrc ||| VkFormatFeatureFlags.BlitDst ||| VkFormatFeatureFlags.ColorAttachment ||| VkFormatFeatureFlags.SampledImage
                 | D32f
                 | D32fs8ui
-                | D24s8ui -> VkFormatFeatureFlags.BlitSrc ||| VkFormatFeatureFlags.BlitDst ||| VkFormatFeatureFlags.DepthStencilAttachment
+                | D24s8ui -> VkFormatFeatureFlags.DepthStencilAttachment
             let mutable properties = Unchecked.defaultof<VkFormatProperties>
             Vulkan.vkGetPhysicalDeviceFormatProperties (vkPhysicalDevice, format.VkFormat, &properties)
             properties.optimalTilingFeatures &&& requiredFeatures = requiredFeatures
