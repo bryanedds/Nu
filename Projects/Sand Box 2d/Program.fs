@@ -6,9 +6,20 @@ open Nu
 // this the entry point for your Nu application
 let main () =
 
+#if IOS
+    // this points the current working directory at the bundled game assets
+    let baseDirectory = AppContext.BaseDirectory
+    let nestedAssetDirectory = Path.Combine (baseDirectory, "refinement-out", "net10.0-ios")
+    let workingDirectory =
+        if Directory.Exists (Path.Combine (baseDirectory, "Assets")) then baseDirectory
+        elif Directory.Exists (Path.Combine (nestedAssetDirectory, "Assets")) then nestedAssetDirectory
+        else baseDirectory
+    Directory.SetCurrentDirectory workingDirectory
+#else
     // regardless of where the program is launched from in the command line, always resolve files relative to the application's base directory
     // for Android, we set the current directory to the asset pack location in MainActivity, so we skip this step here
     if not (OperatingSystem.IsAndroid ()) then Directory.SetCurrentDirectory AppContext.BaseDirectory
+#endif
 
     // this initializes Nu before other Nu code is run
     Nu.init ()
@@ -159,10 +170,7 @@ type SdlMain = delegate of argc : int * argv : byte nativeptr nativeptr -> int
 let private sdlMain = SdlMain (fun _ _ -> main ())
    
 let [<EntryPoint>] entryPoint _ =
-    NativeLibrary.SetDllImportResolver (typeof<SDL3>.Assembly, fun _ assembly path -> NativeLibrary.Load ("Frameworks/SDL3.framework/SDL3", assembly, path))
-    NativeLibrary.SetDllImportResolver (typeof<SDL3_image>.Assembly, fun _ assembly path -> NativeLibrary.Load ("Frameworks/SDL3_image.framework/SDL3_image", assembly, path))
-    NativeLibrary.SetDllImportResolver (typeof<SDL3_ttf>.Assembly, fun _ assembly path -> NativeLibrary.Load ("Frameworks/SDL3_ttf.framework/SDL3_ttf", assembly, path))
-    NativeLibrary.SetDllImportResolver (typeof<SDL3_mixer>.Assembly, fun _ assembly path -> NativeLibrary.Load ("Frameworks/SDL3_mixer.framework/SDL3_mixer", assembly, path))
+    Log.init None // disable Nu's default file log because the iOS app bundle is read-only.
     if ObjCRuntime.Runtime.Arch = ObjCRuntime.Arch.SIMULATOR then
         let result = Vortice.Vulkan.Vulkan.vkInitialize "Frameworks/MoltenVK.framework/MoltenVK"
         assert (result = Vortice.Vulkan.VkResult.Success)

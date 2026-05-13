@@ -2,8 +2,9 @@
 
     <PropertyGroup>
         <!-- .NET settings -->
-        <TargetFrameworks>net10.0-android;net10.0</TargetFrameworks> <!-- For some reason, Android is required to come before desktop for Visual Studio to realize that mobile debug targets should be loaded! -->
-        <TargetFrameworks Condition="$([System.OperatingSystem]::IsMacOS())">$(TargetFrameworks);net10.0-ios</TargetFrameworks> <!-- We don't require installing the macOS Vulkan SDK on Windows. Therefore, don't build for iOS if not on macOS. -->
+        <TargetFrameworks>net10.0</TargetFrameworks>
+        <TargetFrameworks Condition="'$(BuildMobileTargets)' == 'true'">net10.0-android;$(TargetFrameworks)</TargetFrameworks> <!-- For some reason, Android is required to come before desktop for Visual Studio to realize that mobile debug targets should be loaded! -->
+        <TargetFrameworks Condition="'$(BuildMobileTargets)' == 'true' And $([System.OperatingSystem]::IsMacOS())">$(TargetFrameworks);net10.0-ios</TargetFrameworks> <!-- We don't require installing the macOS Vulkan SDK on Windows. Therefore, don't build for iOS if not on macOS. -->
         <OutputType>Exe</OutputType>
         <TargetPlatformIdentifier>$([MSBuild]::GetTargetPlatformIdentifier($(TargetFramework)))</TargetPlatformIdentifier> <!-- convenience property -->
         <ServerGarbageCollection Condition="'$(TargetPlatformIdentifier)' != 'ios'">True</ServerGarbageCollection>
@@ -12,9 +13,12 @@
 
         <!-- Project file local properties -->
         <BuildingMacOS>false</BuildingMacOS>
-        <BuildingMacOS Condition="'$(TargetPlatformIdentifier)' == '' And ('$(RuntimeIdentifier)'=='' And $([System.OperatingSystem]::IsMacOS()) Or $(RuntimeIdentifier.StartsWith('osx')))">true</BuildingMacOS>
+        <BuildingMacOS Condition="'$(TargetPlatformIdentifier)' == '' And (('$(RuntimeIdentifier)'=='' And $([System.OperatingSystem]::IsMacOS())) Or $(RuntimeIdentifier.StartsWith('osx')))">true</BuildingMacOS>
         <BlockCompression>BcCompression</BlockCompression>
-        <BlockCompression Condition="$(BuildingMacOS) Or '$(TargetPlatformIdentifier)'=='ios' Or '$(TargetPlatformIdentifier)'=='android'">AstcCompression</BlockCompression>
+        <BlockCompression Condition="'$(BuildingMacOS)'=='true' Or '$(TargetPlatformIdentifier)'=='ios' Or '$(TargetPlatformIdentifier)'=='android'">AstcCompression</BlockCompression>
+        <NuPipeBuildTargets Condition="'$(NuPipeBuildTargets)' == ''">Restore;Build</NuPipeBuildTargets>
+        <NuPipeBuildTargets Condition="'$(Restore)' == 'false'">Build</NuPipeBuildTargets>
+        <MacOSVulkanSdk Condition="'$(MacOSVulkanSdk)' == ''"></MacOSVulkanSdk>
 
         <!-- F# compiler settings -->
         <WarnOn>FS1182</WarnOn>
@@ -29,7 +33,7 @@
         <!-- - Install name of mobile package
                Android: https://learn.microsoft.com/en-us/dotnet/android/building-apps/build-properties#applicationid
                iOS: https://learn.microsoft.com/en-us/dotnet/ios/building-apps/build-properties#applicationid -->
-        <ApplicationId>nu.game.SandBox2d</ApplicationId>
+        <ApplicationId Condition="'$(ApplicationId)' == ''">nu.game.SandBox2d</ApplicationId>
         <!-- - Displayed version of mobile package -->
         <ApplicationDisplayVersion>1.0.0</ApplicationDisplayVersion>
         <!-- - Integer version of mobile package
@@ -42,34 +46,67 @@
 
         <!-- Required properties for mobile -->
         <!-- We use .NET MAUI SDK targets for <MauiIcon>, <MauiSplashScreen>, <MauiAsset>. -->
-        <UseMaui>true</UseMaui>
-		<!-- Additionally, we need this flag to tell Visual Studio that switching the debug target between <TargetFrameworks> is enabled instead of only using the first one. -->
-		<SingleProject>true</SingleProject>
-		<!-- However, we don't use MAUI UI libraries. -->
-        <SkipValidateMauiImplicitPackageReferences>true</SkipValidateMauiImplicitPackageReferences>
+        <UseMaui Condition="'$(TargetPlatformIdentifier)'=='ios' Or '$(TargetPlatformIdentifier)'=='android'">true</UseMaui>
+        <!-- Additionally, we need this flag to tell Visual Studio that switching the debug target between <TargetFrameworks> is enabled instead of only using the first one. -->
+        <SingleProject Condition="'$(TargetPlatformIdentifier)'=='ios' Or '$(TargetPlatformIdentifier)'=='android'">true</SingleProject>
+        <!-- However, we don't use MAUI UI libraries. -->
+        <SkipValidateMauiImplicitPackageReferences Condition="'$(TargetPlatformIdentifier)'=='ios' Or '$(TargetPlatformIdentifier)'=='android'">true</SkipValidateMauiImplicitPackageReferences>
+        <!-- iOS: Work around for using Xcode 26.3 with 26.2 support from .NET -->
+        <ValidateXcodeVersion Condition="'$(TargetPlatformIdentifier)'=='ios'">false</ValidateXcodeVersion>
         <!-- Android: Debugging settings for asset packs https://learn.microsoft.com/en-us/dotnet/maui/android/asset-packs#test-asset-packs-locally -->
-        <AndroidPackageFormat>aab</AndroidPackageFormat>
-        <AndroidBundleToolExtraArgs Condition="'$(Configuration)' == 'Debug'">--local-testing</AndroidBundleToolExtraArgs>
+        <AndroidPackageFormat Condition="'$(TargetPlatformIdentifier)'=='android' And '$(Configuration)' == 'Debug'">aab</AndroidPackageFormat>
+        <AndroidBundleToolExtraArgs Condition="'$(TargetPlatformIdentifier)'=='android' And '$(Configuration)' == 'Debug'">--local-testing</AndroidBundleToolExtraArgs>
+
+        <NuGetPackageRoot Condition="'$(NuGetPackageRoot)' == ''">$(HOME)/.nuget/packages/</NuGetPackageRoot>
+        <SandBox2dPpySdlVersion>2026.302.0</SandBox2dPpySdlVersion>
+        <SandBox2dAssimpNetOriginalDir>$(MSBuildProjectDirectory)/../../Nu/Nu.Dependencies/AssimpNet/netstandard2.1</SandBox2dAssimpNetOriginalDir>
+        <SandBox2dAssimpNetPatchedDir>$(MSBuildProjectDirectory)/$(BaseIntermediateOutputPath)ios-managed/$(TargetFramework)</SandBox2dAssimpNetPatchedDir>
+        <SandBox2dAssimpNetReferencePath>$(SandBox2dAssimpNetOriginalDir)/AssimpNet.dll</SandBox2dAssimpNetReferencePath>
+        <SandBox2dAssimpNetReferencePath Condition="'$(TargetPlatformIdentifier)'=='ios'">$(SandBox2dAssimpNetPatchedDir)/AssimpNet.dll</SandBox2dAssimpNetReferencePath>
     </PropertyGroup>
 
     <!-- Build Nu.Pipe only once even for multi-project builds -->
-    <Target Name="BuildNuPipe" BeforeTargets="BeforeBuild">
-        <MSBuild Projects="../../Nu/Nu.Pipe/Nu.Pipe.fsproj" RemoveProperties="TargetFramework;RuntimeIdentifier;SelfContained" Targets="Restore;Build" />
+    <Target Name="BuildNuPipe" BeforeTargets="BeforeBuild" Condition="'$(SkipNuPipe)' != 'true'">
+        <MSBuild Projects="../../Nu/Nu.Pipe/Nu.Pipe.fsproj" RemoveProperties="TargetFramework;RuntimeIdentifier;SelfContained" Targets="$(NuPipeBuildTargets)" />
     </Target>
+
+    <Target Name="ResolveMacOSVulkanSdk" Condition="'$(MacOSVulkanSdk)' == '' And $([System.OperatingSystem]::IsMacOS()) And ('$(BuildingMacOS)'=='true' Or '$(TargetPlatformIdentifier)'=='ios')">
+        <Exec Command="
+            if [ -x ~/.bash_profile ]
+            then source ~/.bash_profile
+            fi
+            if [ &quot;$VULKAN_SDK&quot; == &quot;&quot; ]
+            then VULKAN_SDK=`ls -d ~/VulkanSDK/* | grep -E &quot;[^/]+/[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$&quot; | sort -V -r | head -n 1`
+            fi
+            echo &quot;$VULKAN_SDK&quot;" ConsoleToMsBuild="true">
+            <Output TaskParameter="ConsoleOutput" PropertyName="MacOSVulkanSdk" />
+        </Exec>
+    </Target>
+
     <!-- Run Nu.Pipe -->
-    <Target Name="NuPipe" BeforeTargets="ResizetizeCollectItems;AssignTargetPaths" DependsOnTargets="BuildNuPipe">
+    <Target Name="NuPipe" BeforeTargets="ResizetizeCollectItems;AssignTargetPaths" DependsOnTargets="BuildNuPipe;ResolveMacOSVulkanSdk" Condition="'$(SkipNuPipe)' != 'true'">
         <Copy SourceFiles="App.config;AssetGraph.nuag;Overlayer.nuol" DestinationFolder="refinement-out/$(TargetFramework)" SkipUnchangedFiles="true" />
-        <!-- iOS and Android: call NuPipe via BeforeTargets="ResizetizeCollectItems" -->
-		<!-- Desktop: call NuPipe via BeforeTargets="AssignTargetPaths" -->
         <MSBuild Projects="../../Nu/Nu.Pipe/Nu.Pipe.fsproj" RemoveProperties="TargetFramework;RuntimeIdentifier;SelfContained" Properties="NoBuild=true;RunWorkingDirectory=$(MSBuildProjectDirectory);RunArguments=&quot;$(MSBuildProjectDirectory)/&quot; &quot;$(MSBuildProjectDirectory)/refinement-out/$(TargetFramework)/&quot; &quot;$(MSBuildProjectDirectory)/refinement/$(TargetFramework)/&quot; &quot;$(BlockCompression)&quot; &quot;False&quot;" Targets="Run" />
         <ItemGroup>
-            <!-- AssetPack and DeliveryType are for Android: https://learn.microsoft.com/en-us/dotnet/maui/android/asset-packs?view=net-maui-10.0#asset-packs-in-net-maui-apps -->
-            <!-- We do not pack assets into the main app bundle nor use install-time asset packs as they are not extracted to the file system! Nu loads various files outside of any asset system, and efficient memory-mapped files are necessary for some games. -->
-            <!-- We use fast-follow asset packs here which allow up to 512MB. If you need assets up to 2GB, use on-demand asset packs instead. Both types of asset packs are extracted to the file system. -->
-            <MauiAsset Include="refinement-out/$(TargetFramework)/**/*.*" AssetPack="gameassets" DeliveryType="FastFollow" />
+            <RawShaderAsset Include="Assets/**/*.vert;Assets/**/*.frag;Assets/**/*.geom;Assets/**/*.tesc;Assets/**/*.tese;Assets/**/*.comp" />
+        </ItemGroup>
+        <Copy SourceFiles="@(RawShaderAsset)" DestinationFiles="@(RawShaderAsset->'refinement-out/$(TargetFramework)/Assets/%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+        <Error Text="Missing macOS Vulkan SDK glslc at '$(MacOSVulkanSdk)/macOS/bin/glslc'." Condition="'$(TargetPlatformIdentifier)'=='ios' And !Exists('$(MacOSVulkanSdk)/macOS/bin/glslc')" />
+        <Exec Condition="'$(TargetPlatformIdentifier)'=='ios'" Command="&quot;$(MacOSVulkanSdk)/macOS/bin/glslc&quot; &quot;%(RawShaderAsset.Identity)&quot; -o &quot;refinement-out/$(TargetFramework)/Assets/%(RawShaderAsset.RecursiveDir)%(RawShaderAsset.Filename)%(RawShaderAsset.Extension).spv&quot;" />
+        <Exec Condition="'$(TargetPlatformIdentifier)'=='ios' And Exists('refinement-out/$(TargetFramework)')" Command="/bin/chmod -R u+w &quot;refinement-out/$(TargetFramework)&quot;" />
+        <ItemGroup>
+            <!-- Android packages assets as a fast-follow asset pack; iOS needs root-relative logical names in the app bundle. -->
+            <MauiAsset Condition="'$(TargetPlatformIdentifier)'=='android'" Include="refinement-out/$(TargetFramework)/**/*.*" AssetPack="gameassets" DeliveryType="FastFollow" />
+            <MauiAsset Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="refinement-out/$(TargetFramework)/**/*.*" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
+            <MauiAsset Condition="'$(TargetPlatformIdentifier)'==''" Include="refinement-out/$(TargetFramework)/**/*.*" />
         </ItemGroup>
         <!-- For desktop, just copy assets to output directory. -->
         <Copy Condition="'$(TargetPlatformIdentifier)' == ''" SourceFiles="@(MauiAsset)" DestinationFolder="$(MSBuildProjectDirectory)/bin/$(Configuration)/$(TargetFramework)/%(RecursiveDir)" SkipUnchangedFiles="true" OverwriteReadOnlyFiles="true" />
+    </Target>
+
+    <Target Name="RemoveStaleSandBox2dIosBundledAssets" BeforeTargets="_CopyResourcesToBundle" Condition="'$(TargetPlatformIdentifier)'=='ios'">
+        <RemoveDir Directories="$(AppBundleDir)/Assets" Condition="Exists('$(AppBundleDir)/Assets')" />
+        <RemoveDir Directories="$(AppBundleDir)/refinement-out" Condition="Exists('$(AppBundleDir)/refinement-out')" />
     </Target>
     <Target Name="CleanNuPipe" AfterTargets="Clean">
         <RemoveDir Directories="refinement" />
@@ -97,16 +134,16 @@
         <Compile Include="Program.fs" />
 
         <!-- iOS Information property list: https://learn.microsoft.com/en-us/dotnet/maui/macios/info-plist -->
-        <None Include="Mobile/Info.plist" LogicalName="Info.plist" />
+        <None Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="Mobile/Info.plist" LogicalName="Info.plist" />
         <!-- iOS Privacy manifest: https://learn.microsoft.com/en-us/dotnet/maui/ios/privacy-manifest -->
-        <BundleResource Include="Mobile/PrivacyInfo.xcprivacy" LogicalName="PrivacyInfo.xcprivacy" />
+        <BundleResource Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="Mobile/PrivacyInfo.xcprivacy" LogicalName="PrivacyInfo.xcprivacy" />
 		
         <!-- To comply with Android resource naming rules, MauiIcon and MauiSplashScreen files names must be
             lowercase, start and end with a letter character, and contain only alphanumeric characters or underscores. -->
         <!-- MauiIcon (Composed icon): https://learn.microsoft.com/en-us/dotnet/maui/user-interface/images/app-icons#composed-icon -->
-        <MauiIcon Include="Mobile/mobile_icon_bg.svg" ForegroundFile="Mobile/mobile_icon_fg.svg" />
+        <MauiIcon Condition="'$(TargetPlatformIdentifier)'=='ios' Or '$(TargetPlatformIdentifier)'=='android'" Include="Mobile/mobile_icon_bg.svg" ForegroundFile="Mobile/mobile_icon_fg.svg" />
         <!-- MauiSplashScreen (with background color): https://learn.microsoft.com/en-us/dotnet/maui/user-interface/images/splashscreen#add-tint-and-background-color -->
-        <MauiSplashScreen Include="Mobile/mobile_icon_fg.svg" Color="#512BD4" /> <!-- For simplicity, icon_fg is both icon foreground and splash screen foreground. -->
+        <MauiSplashScreen Condition="'$(TargetPlatformIdentifier)'=='ios' Or '$(TargetPlatformIdentifier)'=='android'" Include="Mobile/mobile_icon_fg.svg" Color="#512BD4" /> <!-- For simplicity, icon_fg is both icon foreground and splash screen foreground. -->
 
         <None Include="AssetGraph.nuag" />
         <None Include="Overlayer.nuol" />
@@ -134,8 +171,18 @@
 
     <ItemGroup>
         <PackageReference Update="FSharp.Core" Version="10.0.103" />
+        <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="$(NuGetPackageRoot)ppy.sdl3-cs/$(SandBox2dPpySdlVersion)/runtimes/ios/native/SDL3.xcframework/ios-arm64/SDL3.framework/SDL3" Kind="Dynamic" CopyToAppBundle="true" RelativePath="libSDL3.dylib" DynamicLibraryId="@executable_path/libSDL3.dylib" />
+        <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="$(NuGetPackageRoot)ppy.sdl3_image-cs/$(SandBox2dPpySdlVersion)/runtimes/ios/native/SDL3_image.xcframework/ios-arm64/SDL3_image.framework/SDL3_image" Kind="Dynamic" CopyToAppBundle="true" RelativePath="libSDL3_image.dylib" DynamicLibraryId="@executable_path/libSDL3_image.dylib" />
+        <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="$(NuGetPackageRoot)ppy.sdl3_ttf-cs/$(SandBox2dPpySdlVersion)/runtimes/ios/native/SDL3_ttf.xcframework/ios-arm64/SDL3_ttf.framework/SDL3_ttf" Kind="Dynamic" CopyToAppBundle="true" RelativePath="libSDL3_ttf.dylib" DynamicLibraryId="@executable_path/libSDL3_ttf.dylib" />
+        <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="$(NuGetPackageRoot)ppy.sdl3_mixer-cs/$(SandBox2dPpySdlVersion)/runtimes/ios/native/SDL3_mixer.xcframework/ios-arm64/SDL3_mixer.framework/SDL3_mixer" Kind="Dynamic" CopyToAppBundle="true" RelativePath="libSDL3_mixer.dylib" DynamicLibraryId="@executable_path/libSDL3_mixer.dylib" />
+        <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="..\..\Nu\Nu.Dependencies\AssimpNet\iOS\iphoneos-arm64\libassimp.dylib" Kind="Dynamic" CopyToAppBundle="true" RelativePath="libassimp.dylib" DynamicLibraryId="@executable_path/libassimp.dylib" />
+        <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="..\..\Nu\Nu.Dependencies\BulletSharpPInvoke\iOS\iphoneos-arm64\libbulletc.dylib" Kind="Dynamic" CopyToAppBundle="true" RelativePath="libbulletc.dylib" DynamicLibraryId="@executable_path/libbulletc.dylib" />
+        <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="..\..\Nu\Nu.Dependencies\JoltPhysics\iOS\iphoneos-arm64\libjoltc.dylib" Kind="Dynamic" CopyToAppBundle="true" RelativePath="libjoltc.dylib" DynamicLibraryId="@executable_path/libjoltc.dylib" />
+        <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="..\..\Nu\Nu.Dependencies\ImGui\iOS\iphoneos-arm64\libcimgui.dylib" Kind="Dynamic" CopyToAppBundle="true" RelativePath="libcimgui.dylib" DynamicLibraryId="@executable_path/libcimgui.dylib" />
+        <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="..\..\Nu\Nu.Dependencies\Vortice.VulkanMemoryAllocator\iOS\iphoneos-arm64\libvma.dylib" Kind="Dynamic" CopyToAppBundle="true" RelativePath="libvma.dylib" DynamicLibraryId="@executable_path/libvma.dylib" />
+        <LinkerArgument Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="-L$(MSBuildProjectDirectory)/../../Nu/Nu.Dependencies/AssimpNet/iOS/iphoneos-arm64" />
         <Reference Include="AssimpNet">
-            <HintPath>..\..\Nu\Nu.Dependencies\AssimpNet\netstandard2.1\AssimpNet.dll</HintPath>
+            <HintPath>$(SandBox2dAssimpNetReferencePath)</HintPath>
         </Reference>
         <Reference Include="BulletSharpPInvoke">
             <HintPath>..\..\Nu\Nu.Dependencies\BulletSharpPInvoke\netstandard2.1\BulletSharp.dll</HintPath>
@@ -154,29 +201,71 @@
         <ProjectReference Include="..\..\Nu\Nu.Spine\Nu.Spine.csproj" />
     </ItemGroup>
 
-    <Target Name="CopyMacOSVulkanSdk" BeforeTargets="AssignTargetPaths" Condition="$(BuildingMacOS) Or '$(TargetPlatformIdentifier)'=='ios'">
-        <Exec Condition="'$(MacOSVulkanSdk)' == '' And $([System.OperatingSystem]::IsMacOS())" Command="
-            if [ -x ~/.bash_profile ]
-            then source ~/.bash_profile
-            fi
-            if [ &quot;$VULKAN_SDK&quot; == &quot;&quot; ] # Try to read VULKAN_SDK from bash_profile first
-            then VULKAN_SDK=`ls -d ~/VulkanSDK/* | grep -E &quot;[^/]+/[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$&quot; | sort -V -r | head -n 1` # By default, the Vulkan SDK for macOS is installed in ~/VulkanSDK with versioned subdirectories
-            fi
-            echo &quot;$VULKAN_SDK&quot;" ConsoleToMsBuild="true">
-            <Output TaskParameter="ConsoleOutput" PropertyName="MacOSVulkanSdk" />
-        </Exec>
-        <Error Text="Please install the macOS Vulkan SDK. If installed to a non-default location, override the MacOSVulkanSdk property in this file." Condition="!$([System.IO.Directory]::Exists($(MacOSVulkanSdk)))" />
-        <Warning Text="iOS Simulator builds are not supported because it uses software rendering without support for Vulkan descriptor indexing." Condition="'$(TargetPlatformIdentifier)'=='ios' And $(RuntimeIdentifier.StartsWith('iossimulator'))" />
+    <Target Name="ValidateIosNativeDependencies" BeforeTargets="_ExpandNativeReferences" Condition="'$(TargetPlatformIdentifier)'=='ios'">
+        <Error Text="Missing iOS SDL3 native framework package. Restore NuGet packages or update SandBox2dPpySdlVersion." Condition="!Exists('$(NuGetPackageRoot)ppy.sdl3-cs/$(SandBox2dPpySdlVersion)/runtimes/ios/native/SDL3.xcframework/ios-arm64/SDL3.framework/SDL3')" />
+        <Error Text="Missing iOS SDL3_image native framework package. Restore NuGet packages or update SandBox2dPpySdlVersion." Condition="!Exists('$(NuGetPackageRoot)ppy.sdl3_image-cs/$(SandBox2dPpySdlVersion)/runtimes/ios/native/SDL3_image.xcframework/ios-arm64/SDL3_image.framework/SDL3_image')" />
+        <Error Text="Missing iOS SDL3_ttf native framework package. Restore NuGet packages or update SandBox2dPpySdlVersion." Condition="!Exists('$(NuGetPackageRoot)ppy.sdl3_ttf-cs/$(SandBox2dPpySdlVersion)/runtimes/ios/native/SDL3_ttf.xcframework/ios-arm64/SDL3_ttf.framework/SDL3_ttf')" />
+        <Error Text="Missing iOS SDL3_mixer native framework package. Restore NuGet packages or update SandBox2dPpySdlVersion." Condition="!Exists('$(NuGetPackageRoot)ppy.sdl3_mixer-cs/$(SandBox2dPpySdlVersion)/runtimes/ios/native/SDL3_mixer.xcframework/ios-arm64/SDL3_mixer.framework/SDL3_mixer')" />
+        <Error Text="Missing iOS Assimp native library. Run Nu/Nu.External/build-ios-native-dependencies.sh from the repository root." Condition="!Exists('..\..\Nu\Nu.Dependencies\AssimpNet\iOS\iphoneos-arm64\libassimp.dylib')" />
+        <Error Text="Missing iOS Bullet native library. Run Nu/Nu.External/build-ios-native-dependencies.sh from the repository root." Condition="!Exists('..\..\Nu\Nu.Dependencies\BulletSharpPInvoke\iOS\iphoneos-arm64\libbulletc.dylib')" />
+        <Error Text="Missing iOS Jolt native library. Run Nu/Nu.External/build-ios-native-dependencies.sh from the repository root." Condition="!Exists('..\..\Nu\Nu.Dependencies\JoltPhysics\iOS\iphoneos-arm64\libjoltc.dylib')" />
+        <Error Text="Missing iOS cimgui native library. Run Nu/Nu.External/build-ios-native-dependencies.sh from the repository root." Condition="!Exists('..\..\Nu\Nu.Dependencies\ImGui\iOS\iphoneos-arm64\libcimgui.dylib')" />
+        <Error Text="Missing iOS VMA native library. Run Nu/Nu.External/build-ios-native-dependencies.sh from the repository root." Condition="!Exists('..\..\Nu\Nu.Dependencies\Vortice.VulkanMemoryAllocator\iOS\iphoneos-arm64\libvma.dylib')" />
+    </Target>
+
+    <!-- AssimpNet classifies iOS as Linux; patch the iOS-only copy to use its macOS dylib loader. -->
+    <Target Name="PatchSandBox2dIosAssimpNet" BeforeTargets="ResolveReferences;ResolveAssemblyReferences" Condition="'$(TargetPlatformIdentifier)'=='ios'" Inputs="$(SandBox2dAssimpNetOriginalDir)/AssimpNet.dll" Outputs="$(SandBox2dAssimpNetReferencePath)">
+        <MakeDir Directories="$(SandBox2dAssimpNetPatchedDir)" />
+        <Copy SourceFiles="$(SandBox2dAssimpNetOriginalDir)/AssimpNet.dll;$(SandBox2dAssimpNetOriginalDir)/AssimpNet.pdb;$(SandBox2dAssimpNetOriginalDir)/AssimpNet.xml" DestinationFolder="$(SandBox2dAssimpNetPatchedDir)" SkipUnchangedFiles="true" />
+        <Exec Command="perl -0777 -pi -e '$u=qr/\x18\x80(.{4})\x2a\x17\x80\1\x2a\x18\x80\1\x2a\x16\x80\1\x2a/s; $p=qr/\x18\x80(.{4})\x2a\x18\x80\1\x2a\x18\x80\1\x2a\x16\x80\1\x2a/s; s/$u/\x18\x80$1\x2a\x18\x80$1\x2a\x18\x80$1\x2a\x16\x80$1\x2a/s or /$p/ or die &quot;AssimpNet iOS platform patch pattern not found\n&quot;' &quot;$(SandBox2dAssimpNetReferencePath)&quot;" />
+    </Target>
+
+    <Target Name="RemoveSandBox2dIosSdlPackageFrameworkReferences" AfterTargets="_ExpandNativeReferences" BeforeTargets="_ComputeFrameworkFilesToPublish;_LinkNativeExecutable" Condition="'$(TargetPlatformIdentifier)'=='ios'">
         <ItemGroup>
-            <!-- For macOS builds, use the macOS Vulkan SDK's dylibs. Also, the magic of icd.json copying and path fixing enables KosmicKrisp :) -->
+            <_FrameworkNativeReference Remove="@(_FrameworkNativeReference)" Condition="'%(_FrameworkNativeReference.Kind)'=='Framework' And $([System.String]::Copy('%(_FrameworkNativeReference.Filename)').StartsWith('SDL3'))" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="RemoveSandBox2dIosSdlPackageFrameworksFromPublish" AfterTargets="_ComputeFrameworkFilesToPublish" BeforeTargets="_CreateStampLocationForCopyDirectoriesToBundle" Condition="'$(TargetPlatformIdentifier)'=='ios'">
+        <ItemGroup>
+            <_DirectoriesToPublish Remove="@(_DirectoriesToPublish)" Condition="$([System.String]::Copy('%(_DirectoriesToPublish.Filename)').StartsWith('SDL3'))" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="RewriteSandBox2dIosSdlDynamicLibraryReferences" AfterTargets="_InstallNameTool" BeforeTargets="_UpdateWithReidentifiedDynamicLibraries" Condition="'$(TargetPlatformIdentifier)'=='ios'">
+        <Exec Command="/usr/bin/install_name_tool -change @rpath/SDL3.framework/SDL3 @executable_path/libSDL3.dylib &quot;$(_IntermediateNativeLibraryDir)libSDL3_image.dylib&quot;" Condition="Exists('$(_IntermediateNativeLibraryDir)libSDL3_image.dylib')" />
+        <Exec Command="/usr/bin/install_name_tool -change @rpath/SDL3.framework/SDL3 @executable_path/libSDL3.dylib &quot;$(_IntermediateNativeLibraryDir)libSDL3_ttf.dylib&quot;" Condition="Exists('$(_IntermediateNativeLibraryDir)libSDL3_ttf.dylib')" />
+        <Exec Command="/usr/bin/install_name_tool -change @rpath/SDL3.framework/SDL3 @executable_path/libSDL3.dylib &quot;$(_IntermediateNativeLibraryDir)libSDL3_mixer.dylib&quot;" Condition="Exists('$(_IntermediateNativeLibraryDir)libSDL3_mixer.dylib')" />
+    </Target>
+
+    <Target Name="SignSandBox2dIosDynamicLibraries" BeforeTargets="_CodesignAppBundle" Condition="'$(TargetPlatformIdentifier)'=='ios'">
+        <Message Importance="high" Text="Signing Sand Box 2d iOS dynamic libraries in $(AppBundleDir)" />
+        <ItemGroup>
+            <SandBox2dIosDynamicLibraryToSign Include="$(AppBundleDir)/libSDL3.dylib" />
+            <SandBox2dIosDynamicLibraryToSign Include="$(AppBundleDir)/libSDL3_image.dylib" />
+            <SandBox2dIosDynamicLibraryToSign Include="$(AppBundleDir)/libSDL3_ttf.dylib" />
+            <SandBox2dIosDynamicLibraryToSign Include="$(AppBundleDir)/libSDL3_mixer.dylib" />
+            <SandBox2dIosDynamicLibraryToSign Include="$(AppBundleDir)/libvulkan.dylib" />
+            <SandBox2dIosDynamicLibraryToSign Include="$(AppBundleDir)/libvulkan.so.1" />
+            <SandBox2dIosDynamicLibraryToSign Include="$(AppBundleDir)/libassimp.dylib" />
+            <SandBox2dIosDynamicLibraryToSign Include="$(AppBundleDir)/libbulletc.dylib" />
+            <SandBox2dIosDynamicLibraryToSign Include="$(AppBundleDir)/libjoltc.dylib" />
+            <SandBox2dIosDynamicLibraryToSign Include="$(AppBundleDir)/libcimgui.dylib" />
+            <SandBox2dIosDynamicLibraryToSign Include="$(AppBundleDir)/libvma.dylib" />
+        </ItemGroup>
+        <Exec Command="/usr/bin/codesign --force --sign &quot;$(_CodeSigningKey)&quot; --timestamp=none &quot;%(SandBox2dIosDynamicLibraryToSign.Identity)&quot;" Condition="Exists('%(SandBox2dIosDynamicLibraryToSign.Identity)')" />
+    </Target>
+
+    <Target Name="CopyMacOSVulkanSdk" BeforeTargets="_ExpandNativeReferences;AssignTargetPaths" DependsOnTargets="ResolveMacOSVulkanSdk" Condition="'$(BuildingMacOS)'=='true' Or '$(TargetPlatformIdentifier)'=='ios'">
+        <Error Text="Please install the macOS Vulkan SDK. If installed to a non-default location, override the MacOSVulkanSdk property in this file." Condition="!$([System.IO.Directory]::Exists($(MacOSVulkanSdk)))" />
+        <Error Text="No iOS MoltenVK xcframework was found at '$(MacOSVulkanSdk)/iOS/lib/MoltenVK.xcframework'." Condition="'$(TargetPlatformIdentifier)'=='ios' And !$([System.IO.Directory]::Exists($(MacOSVulkanSdk)/iOS/lib/MoltenVK.xcframework))" />
+        <ItemGroup>
             <MacOSVulkanSdkDylib Include="$(MacOSVulkanSdk)/macOS/lib/*.dylib" />
             <MacOSVulkanSdkIcdJson Include="$(MacOSVulkanSdk)/macOS/share/**/*_icd.json" />
-            <!-- For iOS device builds, use the macOS Vulkan SDK's libshaderc and Vulkan loader. -->
-            <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios' And !$(RuntimeIdentifier.StartsWith('iossimulator'))" Include="$(MacOSVulkanSdk)/iOS/lib/libshaderc_combined.a" Kind="Static" />
-            <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios' And !$(RuntimeIdentifier.StartsWith('iossimulator'))" Include="$(MacOSVulkanSdk)/iOS/lib/*.xcframework" Kind="Framework" />
+            <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="$(MacOSVulkanSdk)/iOS/lib/libshaderc_combined.a" Kind="Static" />
+            <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="$(MacOSVulkanSdk)/iOS/lib/MoltenVK.xcframework/ios-arm64/MoltenVK.framework/MoltenVK" Kind="Dynamic" CopyToAppBundle="true" RelativePath="libvulkan.dylib" DynamicLibraryId="@executable_path/libvulkan.dylib" />
         </ItemGroup>
         <Error Condition="'$(TargetPlatformIdentifier)'!='ios' And '@(MacOSVulkanSdkDylib)'==''" Text="No macOS Vulkan SDK dylibs were found at '$(MacOSVulkanSdk)/macOS/lib/*.dylib'. Ensure MacOSVulkanSdk points to a valid Vulkan SDK installation." />
-        <!-- Create symbolic links for macOS Vulkan SDK dylibs -->
         <Exec Condition="'$(TargetPlatformIdentifier)'!='ios'"
               Command="mkdir -p &quot;$(OutDir)%(MacOSVulkanSdkDylib.RecursiveDir)&quot; &amp;&amp; ln -sfn &quot;%(MacOSVulkanSdkDylib.Identity)&quot; &quot;$(OutDir)%(MacOSVulkanSdkDylib.RecursiveDir)%(MacOSVulkanSdkDylib.Filename)%(MacOSVulkanSdkDylib.Extension)&quot;" />
         <Copy Condition="'$(TargetPlatformIdentifier)'!='ios'" SourceFiles="@(MacOSVulkanSdkIcdJson)" DestinationFiles="@(MacOSVulkanSdkIcdJson->'$(OutDir)%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
@@ -184,5 +273,9 @@
             <OutIcdJsonFile Include="$(OutDir)/vulkan/icd.d/*_icd.json" />
         </ItemGroup>
         <WriteLinesToFile Condition="'$(TargetPlatformIdentifier)'!='ios'" File="%(OutIcdJsonFile.Identity)" Lines="$([System.IO.File]::ReadAllText('%(OutIcdJsonFile.Identity)').Replace('../../../lib/','../../'))" Overwrite="true" />
+    </Target>
+
+    <Target Name="CopySandBox2dIosVulkanRuntimeAlias" BeforeTargets="SignSandBox2dIosDynamicLibraries" Condition="'$(TargetPlatformIdentifier)'=='ios'">
+        <Copy SourceFiles="$(AppBundleDir)/libvulkan.dylib" DestinationFiles="$(AppBundleDir)/libvulkan.so.1" SkipUnchangedFiles="true" Condition="Exists('$(AppBundleDir)/libvulkan.dylib')" />
     </Target>
 </Project>
