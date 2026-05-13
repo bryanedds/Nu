@@ -221,12 +221,12 @@
 
     <Target Name="CopyMacOSVulkanSdk" BeforeTargets="_ExpandNativeReferences;AssignTargetPaths" DependsOnTargets="ResolveMacOSVulkanSdk" Condition="'$(BuildingMacOS)'=='true' Or '$(TargetPlatformIdentifier)'=='ios'">
         <Error Text="Please install the macOS Vulkan SDK. If installed to a non-default location, override the MacOSVulkanSdk property in this file." Condition="!$([System.IO.Directory]::Exists($(MacOSVulkanSdk)))" />
-        <Error Text="No iOS MoltenVK xcframework was found at '$(MacOSVulkanSdk)/iOS/lib/MoltenVK.xcframework'." Condition="'$(TargetPlatformIdentifier)'=='ios' And !$([System.IO.Directory]::Exists($(MacOSVulkanSdk)/iOS/lib/MoltenVK.xcframework))" />
+        <Error Text="No iOS MoltenVK xcframework was found at '$(MacOSVulkanSdk)/iOS/lib/MoltenVK.xcframework'." Condition="'$(TargetPlatformIdentifier)'=='ios' And !$(RuntimeIdentifier.StartsWith('iossimulator')) And !$([System.IO.Directory]::Exists($(MacOSVulkanSdk)/iOS/lib/MoltenVK.xcframework))" />
         <ItemGroup>
             <MacOSVulkanSdkDylib Include="$(MacOSVulkanSdk)/macOS/lib/*.dylib" />
             <MacOSVulkanSdkIcdJson Include="$(MacOSVulkanSdk)/macOS/share/**/*_icd.json" />
-            <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="$(MacOSVulkanSdk)/iOS/lib/libshaderc_combined.a" Kind="Static" />
-            <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="$(MacOSVulkanSdk)/iOS/lib/MoltenVK.xcframework" Kind="Framework" />
+            <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios' And !$(RuntimeIdentifier.StartsWith('iossimulator'))" Include="$(MacOSVulkanSdk)/iOS/lib/libshaderc_combined.a" Kind="Static" />
+            <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios' And !$(RuntimeIdentifier.StartsWith('iossimulator'))" Include="$(MacOSVulkanSdk)/iOS/lib/MoltenVK.xcframework" Kind="Framework" />
         </ItemGroup>
         <Error Condition="'$(TargetPlatformIdentifier)'!='ios' And '@(MacOSVulkanSdkDylib)'==''" Text="No macOS Vulkan SDK dylibs were found at '$(MacOSVulkanSdk)/macOS/lib/*.dylib'. Ensure MacOSVulkanSdk points to a valid Vulkan SDK installation." />
         <Exec Condition="'$(TargetPlatformIdentifier)'!='ios'"
