@@ -75,23 +75,23 @@ module WorldImSim =
                 then Address.makeFromArray<'d> (Array.concat [|eventAddress.Names; [|"Event"|]; world.ContextImSim.Names|])
                 else eventAddress
             let subscriptionKey = (name, eventAddress :> Address, eventAddress' :> Address)
-            match world.SubscriptionsImSim.TryGetValue subscriptionKey with
-            | (true, subscriptionImSim) -> World.utilizeSubscriptionImSim subscriptionKey subscriptionImSim world
+            match world.SubscriptionLedgers.TryGetValue subscriptionKey with
+            | (true, subscriptionLedger) -> World.utilizeSubscriptionInLedger subscriptionKey subscriptionLedger world
             | (false, _) ->
                 let subId = Gen.id64
                 let _ =
                     World.subscribePlus subId (fun event world ->
-                        let mapSubscriptionImSim subscriptionImSim =
-                            let results = subscriptionImSim.Results :?> 'r FQueue
-                            { subscriptionImSim with Results = FQueue.conj (mapResult event.Data) results }
-                        World.tryMapSubscriptionImSim mapSubscriptionImSim subscriptionKey world
+                        let mapSubscriptionLedger subscriptionLedger =
+                            let results = subscriptionLedger.Results :?> 'r FQueue
+                            { subscriptionLedger with Results = FQueue.conj (mapResult event.Data) results }
+                        World.tryMapSubscriptionLedger mapSubscriptionLedger subscriptionKey world
                         Cascade)
                         eventAddress'
                         Game
                         world
-                World.addSubscriptionImSim subscriptionKey { SubscriptionUtilized = true; SubscriptionId = subId; Results = FQueue.empty<'r> } world
-            let results = (World.getSubscriptionImSim subscriptionKey world).Results :?> 'r FQueue
-            World.mapSubscriptionImSim (fun subscriptionImSim -> { subscriptionImSim with Results = FQueue.empty<'r> }) subscriptionKey world
+                World.addSubscriptionLedger subscriptionKey { SubscriptionUtilized = true; SubscriptionId = subId; Results = FQueue.empty<'r> } world
+            let results = (World.getSubscriptionLedger subscriptionKey world).Results :?> 'r FQueue
+            World.mapSubscriptionLedger (fun subscriptionLedger -> { subscriptionLedger with Results = FQueue.empty<'r> }) subscriptionKey world
             results
 
         /// ImSim subscribe to the given event address.
@@ -154,12 +154,12 @@ module WorldImSim =
             World.setContext gameAddress world
             let game = Nu.Game gameAddress
             let initializing =
-                match world.SimulantsImSim.TryGetValue game.GameAddress with
+                match world.SimulantLedgers.TryGetValue game.GameAddress with
                 | (true, gameImSim) ->
-                    World.utilizeSimulantImSim game.GameAddress gameImSim world
+                    World.utilizeSimulantInLedger game.GameAddress gameImSim world
                     false
                 | (false, _) ->
-                    World.addSimulantImSim game.GameAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = () } world
+                    World.addSimulantLedger game.GameAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = () } world
                     true
             for arg in args do
                 if (match arg.ArgType with
@@ -203,17 +203,17 @@ module WorldImSim =
             let group = Nu.Group groupAddress
             let groupCreation = not (group.GetExists world)
             let initializing =
-                match world.SimulantsImSim.TryGetValue group.GroupAddress with
+                match world.SimulantLedgers.TryGetValue group.GroupAddress with
                 | (true, groupImSim) ->
-                    World.utilizeSimulantImSim group.GroupAddress groupImSim world
+                    World.utilizeSimulantInLedger group.GroupAddress groupImSim world
                     false
                 | (false, _) ->
 
                     // init subscriptions _before_ potentially creating group
-                    World.addSimulantImSim group.GroupAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = () } world
+                    World.addSimulantLedger group.GroupAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = () } world
                     let mapResult (mapper : 'r -> 'r) world =
                         let mapGroupImSim groupImSim = { groupImSim with Result = mapper (groupImSim.Result :?> 'r) }
-                        World.tryMapSimulantImSim mapGroupImSim group.GroupAddress world
+                        World.tryMapSimulantLedger mapGroupImSim group.GroupAddress world
                     init mapResult group world
 
                     // create group only when needed
@@ -234,8 +234,8 @@ module WorldImSim =
                     group.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
             if groupCreation && group.GetExists world && WorldModuleInternal.UpdatingSimulants && World.getGroupSelected group world then
                 WorldModuleInternal.tryProcessGroup true group world
-            let result = match (World.getSimulantImSim group.GroupAddress world).Result with :? 'r as r -> r | _ -> zero
-            World.mapSimulantImSim (fun simulantImSim -> { simulantImSim with Result = zero }) group.GroupAddress world
+            let result = match (World.getSimulantLedger group.GroupAddress world).Result with :? 'r as r -> r | _ -> zero
+            World.mapSimulantLedger (fun simulantLedger -> { simulantLedger with Result = zero }) group.GroupAddress world
             result
 
         static member inline private beginGroup4<'d when 'd :> GroupDispatcher> name groupFilePathOpt args world =
@@ -257,9 +257,9 @@ module WorldImSim =
                 World.destroyGroupImmediate group world
             let groupCreation = not (group.GetExists world)
             let initializing =
-                match world.SimulantsImSim.TryGetValue group.GroupAddress with
+                match world.SimulantLedgers.TryGetValue group.GroupAddress with
                 | (true, groupImSim) ->
-                    World.utilizeSimulantImSim group.GroupAddress groupImSim world
+                    World.utilizeSimulantInLedger group.GroupAddress groupImSim world
                     false
                 | (false, _) ->
                     if groupCreation then
@@ -267,7 +267,7 @@ module WorldImSim =
                         let groupDescriptor = scvalue<GroupDescriptor> groupDescriptorStr
                         World.readGroup groupDescriptor (Some name) group.Screen world |> ignore<Group>
                         World.setGroupProtection DeclarativeProtection group world |> ignore<bool>
-                    World.addSimulantImSim group.GroupAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = () } world
+                    World.addSimulantLedger group.GroupAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = () } world
                     true
             for arg in args do
                 if (match arg.ArgType with
@@ -331,9 +331,9 @@ module WorldImSim =
 
             // create entity when appropriate
             let initializing =
-                match world.SimulantsImSim.TryGetValue entity.EntityAddress with
+                match world.SimulantLedgers.TryGetValue entity.EntityAddress with
                 | (true, entityImSim) ->
-                    World.utilizeSimulantImSim entity.EntityAddress entityImSim world
+                    World.utilizeSimulantInLedger entity.EntityAddress entityImSim world
                     false
                 | (false, _) ->
                     if entityCreation then
@@ -341,7 +341,7 @@ module WorldImSim =
                         let entityDescriptor = scvalue<EntityDescriptor> entityDescriptorStr
                         World.readEntity false true entityDescriptor (Some name) entity.Parent world |> ignore<Entity>
                         World.setEntityProtection DeclarativeProtection entity world |> ignore<bool>
-                    World.addSimulantImSim entity.EntityAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = () } world
+                    World.addSimulantLedger entity.EntityAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = () } world
                     true
 
             // entity-specific initialization
@@ -383,17 +383,17 @@ module WorldImSim =
 
             // create entity when appropriate
             let initializing =
-                match world.SimulantsImSim.TryGetValue entity.EntityAddress with
+                match world.SimulantLedgers.TryGetValue entity.EntityAddress with
                 | (true, entityImSim) ->
-                    World.utilizeSimulantImSim entity.EntityAddress entityImSim world
+                    World.utilizeSimulantInLedger entity.EntityAddress entityImSim world
                     false
                 | (false, _) ->
 
                     // init subscriptions _before_ potentially creating entity
-                    World.addSimulantImSim entity.EntityAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = zero } world
+                    World.addSimulantLedger entity.EntityAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = zero } world
                     let mapResult (mapper : 'r -> 'r) world =
                         let mapEntityImSim entityImSim = { entityImSim with Result = mapper (entityImSim.Result :?> 'r) }
-                        World.tryMapSimulantImSim mapEntityImSim entity.EntityAddress world
+                        World.tryMapSimulantLedger mapEntityImSim entity.EntityAddress world
                     init mapResult entity world
 
                     // create entity only when needed
@@ -422,8 +422,8 @@ module WorldImSim =
                 WorldModuleInternal.tryProcessEntity true entity world
 
             // update result
-            let result = match (World.getSimulantImSim entity.EntityAddress world).Result with :? 'r as r -> r | _ -> zero
-            World.mapSimulantImSim (fun simulantImSim -> { simulantImSim with Result = zero }) entity.EntityAddress world
+            let result = match (World.getSimulantLedger entity.EntityAddress world).Result with :? 'r as r -> r | _ -> zero
+            World.mapSimulantLedger (fun simulantLedger -> { simulantLedger with Result = zero }) entity.EntityAddress world
             result
 
         /// Begin the ImSim declaration of an entity with the given arguments.

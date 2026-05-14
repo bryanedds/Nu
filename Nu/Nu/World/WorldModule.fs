@@ -305,82 +305,82 @@ module WorldModule =
         static member internal setContext context (world : World) =
             World.setContextAndDeclared context world.WorldExtension.ContextImSim world
 
-        static member internal getSimulantsImSim (world : World) =
-            world.SimulantsImSim
+        static member internal getSimulantLedgers (world : World) =
+            world.SimulantLedgers
 
-        static member internal setSimulantsImSim simulantsImSim (world : World) =
+        static member internal setSimulantLedgers simulantLedgers (world : World) =
             if world.Imperative then
-                world.WorldExtension.SimulantsImSim <- simulantsImSim
+                world.WorldExtension.SimulantLedgers <- simulantLedgers
             else
-                let worldExtension = { world.WorldExtension with SimulantsImSim = simulantsImSim }
+                let worldExtension = { world.WorldExtension with SimulantLedgers = simulantLedgers }
                 world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
 
-        static member internal getSimulantImSim simulant (world : World) =
-            world.SimulantsImSim[simulant]
+        static member internal getSimulantLedger simulant (world : World) =
+            world.SimulantLedgers[simulant]
 
-        static member internal addSimulantImSim simulant simulantImSim (world : World) =
-            let simulantsImSim = SUMap.add simulant simulantImSim world.SimulantsImSim
-            World.setSimulantsImSim simulantsImSim world
+        static member internal addSimulantLedger simulant simulantLedger (world : World) =
+            let simulantLedgers = SUMap.add simulant simulantLedger world.SimulantLedgers
+            World.setSimulantLedgers simulantLedgers world
 
-        static member internal removeSimulantImSim (simulant : Simulant) (world : World) =
-            World.setSimulantsImSim (SUMap.remove simulant.SimulantAddress world.SimulantsImSim) world
+        static member internal removeSimulantLedger (simulant : Simulant) (world : World) =
+            World.setSimulantLedgers (SUMap.remove simulant.SimulantAddress world.SimulantLedgers) world
 
-        static member internal tryMapSimulantImSim mapper simulant (world : World) =
-            match world.SimulantsImSim.TryGetValue simulant with
-            | (true, simulantImSim) ->
-                let simulantImSim = mapper simulantImSim
-                World.addSimulantImSim simulant simulantImSim world
+        static member internal tryMapSimulantLedger mapper simulant (world : World) =
+            match world.SimulantLedgers.TryGetValue simulant with
+            | (true, simulantLedger) ->
+                let simulantLedger = mapper simulantLedger
+                World.addSimulantLedger simulant simulantLedger world
             | (false, _) -> ()
 
-        static member internal mapSimulantImSim mapper simulant world =
-            let simulantImSim = World.getSimulantImSim simulant world
-            let simulantImSim = mapper simulantImSim
-            World.addSimulantImSim simulant simulantImSim world
+        static member internal mapSimulantLedger mapper simulant world =
+            let simulantLedger = World.getSimulantLedger simulant world
+            let simulantLedger = mapper simulantLedger
+            World.addSimulantLedger simulant simulantLedger world
 
-        static member internal utilizeSimulantImSim simulant simulantImSim (world : World) =
+        static member internal utilizeSimulantInLedger simulant simulantLedger (world : World) =
             if world.Imperative then
-                simulantImSim.SimulantUtilized <- true
+                simulantLedger.SimulantUtilized <- true
             else
-                let simulantImSim = { simulantImSim with SimulantUtilized = true }
-                let simulantsImSim = SUMap.add simulant simulantImSim world.SimulantsImSim
-                World.setSimulantsImSim simulantsImSim world
+                let simulantLedger = { simulantLedger with SimulantUtilized = true }
+                let simulantLedgers = SUMap.add simulant simulantLedger world.SimulantLedgers
+                World.setSimulantLedgers simulantLedgers world
 
-        static member internal getSubscriptionsImSim (world : World) =
-            world.SubscriptionsImSim
+        static member internal getSubscriptionLedgers (world : World) =
+            world.SubscriptionLedgers
 
-        static member internal setSubscriptionsImSim subscriptionsImSim (world : World) =
+        static member internal setSubscriptionLedgers subscriptionLedgers (world : World) =
             if world.Imperative then
-                world.WorldExtension.SubscriptionsImSim <- subscriptionsImSim
+                world.WorldExtension.SubscriptionLedgers <- subscriptionLedgers
             else
-                let worldExtension = { world.WorldExtension with SubscriptionsImSim = subscriptionsImSim }
+                let worldExtension = { world.WorldExtension with SubscriptionLedgers = subscriptionLedgers }
                 world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
 
-        static member internal getSubscriptionImSim subscription (world : World) =
-            world.SubscriptionsImSim[subscription]
+        static member internal getSubscriptionLedger subscription (world : World) =
+            world.SubscriptionLedgers[subscription]
 
-        static member internal addSubscriptionImSim subscription subscriptionImSim (world : World) =
-            let subscriptionsImSim = SUMap.add subscription subscriptionImSim world.SubscriptionsImSim
-            World.setSubscriptionsImSim subscriptionsImSim world
+        static member internal addSubscriptionLedger subscription subscriptionLedger (world : World) =
+            let subscriptionLedgers = SUMap.add subscription subscriptionLedger world.SubscriptionLedgers
+            World.setSubscriptionLedgers subscriptionLedgers world
 
-        static member internal tryMapSubscriptionImSim mapper subscription (world : World) =
-            match world.SubscriptionsImSim.TryGetValue subscription with
-            | (true, subscriptionImSim) ->
-                let subscriptionImSim = mapper subscriptionImSim
-                World.addSubscriptionImSim subscription subscriptionImSim world
+        static member internal tryMapSubscriptionLedger mapper subscription (world : World) =
+            match world.SubscriptionLedgers.TryGetValue subscription with
+            | (true, subscriptionLedger) ->
+                let subscriptionLedger = mapper subscriptionLedger
+                World.addSubscriptionLedger subscription subscriptionLedger world
             | (false, _) -> ()
 
-        static member internal mapSubscriptionImSim mapper subscription world =
-            let subscriptionImSim = World.getSubscriptionImSim subscription world
-            let subscriptionImSim = mapper subscriptionImSim
-            World.addSubscriptionImSim subscription subscriptionImSim world
+        static member internal mapSubscriptionLedger mapper subscription world =
+            let subscriptionLedger = World.getSubscriptionLedger subscription world
+            let subscriptionLedger = mapper subscriptionLedger
+            World.addSubscriptionLedger subscription subscriptionLedger world
 
-        static member internal utilizeSubscriptionImSim subscription subscriptionImSim (world : World) =
+        static member internal utilizeSubscriptionInLedger subscription subscriptionLedger (world : World) =
             if world.Imperative then
-                subscriptionImSim.SubscriptionUtilized <- true
+                subscriptionLedger.SubscriptionUtilized <- true
             else
-                let subscriptionImSim = { subscriptionImSim with SubscriptionUtilized = true }
-                let subscriptionsImSim = SUMap.add subscription subscriptionImSim world.SubscriptionsImSim
-                World.setSubscriptionsImSim subscriptionsImSim world
+                let subscriptionLedger = { subscriptionLedger with SubscriptionUtilized = true }
+                let subscriptionLedgers = SUMap.add subscription subscriptionLedger world.SubscriptionLedgers
+                World.setSubscriptionLedgers subscriptionLedgers world
 
         /// Switch simulation to use this ambient state.
         static member internal switchAmbientState (world : World) =

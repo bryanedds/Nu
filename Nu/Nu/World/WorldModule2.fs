@@ -37,8 +37,8 @@ module internal WorldModuleInternal2 =
     let mutable internal FramePaceChecks = 0
 
     (* Cached ImSim Collections *)
+    let internal ImSimSimulantComparer = Comparer<int64 * Simulant>.Create (fun (a, _) (b, _) -> a.CompareTo b)
     let internal ImSimSimulantsToDestroy = List ()
-    let internal SimulantImSimComparer = Comparer<int64 * Simulant>.Create (fun (a, _) (b, _) -> a.CompareTo b)
 
 /// Universal function definitions for the world (2/4).
 [<AutoOpen>]
@@ -366,17 +366,17 @@ module WorldModule2 =
             let screen = Nu.Screen screenAddress
             let screenCreation = not (screen.GetExists world)
             let initializing =
-                match world.SimulantsImSim.TryGetValue screen.ScreenAddress with
-                | (true, screenImSim) -> World.utilizeSimulantImSim screen.ScreenAddress screenImSim world; false
+                match world.SimulantLedgers.TryGetValue screen.ScreenAddress with
+                | (true, screenImSim) -> World.utilizeSimulantInLedger screen.ScreenAddress screenImSim world; false
                 | (false, _) ->
 
                     // init subscriptions _before_ potentially creating screen
-                    World.addSimulantImSim screen.ScreenAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = (FQueue.empty<SelectionEventData>, zero) } world
+                    World.addSimulantLedger screen.ScreenAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = (FQueue.empty<SelectionEventData>, zero) } world
                     let mapFstResult (mapper : SelectionEventData FQueue -> SelectionEventData FQueue) world =
                         let mapScreenImSim screenImSim =
                             let (screenResult, userResult) = screenImSim.Result :?> SelectionEventData FQueue * 'r
                             { screenImSim with Result = (mapper screenResult, userResult) }
-                        World.tryMapSimulantImSim mapScreenImSim screen.ScreenAddress world
+                        World.tryMapSimulantLedger mapScreenImSim screen.ScreenAddress world
                     World.monitor (fun _ world -> mapFstResult (FQueue.conj Select) world; Cascade) screen.SelectEvent screen world
                     World.monitor (fun _ world -> mapFstResult (FQueue.conj IncomingStart) world; Cascade) screen.IncomingStartEvent screen world
                     World.monitor (fun _ world -> mapFstResult (FQueue.conj IncomingFinish) world; Cascade) screen.IncomingFinishEvent screen world
@@ -387,7 +387,7 @@ module WorldModule2 =
                         let mapScreenImSim screenImSim =
                             let (screenResult, userResult) = screenImSim.Result :?> SelectionEventData FQueue * 'r
                             { screenImSim with Result = (screenResult, mapper userResult) }
-                        World.tryMapSimulantImSim mapScreenImSim screen.ScreenAddress world
+                        World.tryMapSimulantLedger mapScreenImSim screen.ScreenAddress world
                     init mapSndResult screen world
 
                     // create screen only when needed
@@ -420,8 +420,8 @@ module WorldModule2 =
                         screen
                         world
                 else transitionScreen screen world
-            let (screenResult, userResult) = (World.getSimulantImSim screen.ScreenAddress world).Result :?> SelectionEventData FQueue * 'r
-            World.mapSimulantImSim (fun simulantImSim -> { simulantImSim with Result = (FQueue.empty<SelectionEventData>, zero) }) screen.ScreenAddress world
+            let (screenResult, userResult) = (World.getSimulantLedger screen.ScreenAddress world).Result :?> SelectionEventData FQueue * 'r
+            World.mapSimulantLedger (fun simulantLedger -> { simulantLedger with Result = (FQueue.empty<SelectionEventData>, zero) }) screen.ScreenAddress world
             (screenResult, userResult)
 
         static member inline private beginScreen8<'d when 'd :> ScreenDispatcher> transitionScreen setScreenSlide name select behavior groupFilePathOpt args world : SelectionEventData FQueue =
@@ -1394,35 +1394,35 @@ module WorldModule2 =
         static member internal sweepSimulants (world : World) =
 
             // update simulant bookkeeping, collecting simulants to destroy in the process
-            for (simulantAddress, simulantImSim) in world.SimulantsImSim do
-                if not simulantImSim.SimulantUtilized then
+            for (simulantAddress, simulantLedger) in world.SimulantLedgers do
+                if not simulantLedger.SimulantUtilized then
                     let simulant = World.deriveFromAddress simulantAddress
-                    WorldModuleInternal2.ImSimSimulantsToDestroy.Add (simulantImSim.InitializationTime, simulant)
-                    World.setSimulantsImSim (SUMap.remove simulantAddress world.SimulantsImSim) world
+                    WorldModuleInternal2.ImSimSimulantsToDestroy.Add (simulantLedger.InitializationTime, simulant)
+                    World.setSimulantLedgers (SUMap.remove simulantAddress world.SimulantLedgers) world
                 else
                     if world.Imperative then
-                        simulantImSim.SimulantUtilized <- false
-                        simulantImSim.SimulantInitializing <- false
+                        simulantLedger.SimulantUtilized <- false
+                        simulantLedger.SimulantInitializing <- false
                     else
-                        let simulantsImSim = SUMap.add simulantAddress { simulantImSim with SimulantUtilized = false; SimulantInitializing = false } world.SimulantsImSim
-                        World.setSimulantsImSim simulantsImSim world
-            WorldModuleInternal2.ImSimSimulantsToDestroy.Sort WorldModuleInternal2.SimulantImSimComparer
+                        let simulantsImSim = SUMap.add simulantAddress { simulantLedger with SimulantUtilized = false; SimulantInitializing = false } world.SimulantLedgers
+                        World.setSimulantLedgers simulantsImSim world
+            WorldModuleInternal2.ImSimSimulantsToDestroy.Sort WorldModuleInternal2.ImSimSimulantComparer
 
             // destroy simulants
             for (_, simulant) in WorldModuleInternal2.ImSimSimulantsToDestroy do World.destroy simulant world
             WorldModuleInternal2.ImSimSimulantsToDestroy.Clear ()
 
             // update subscription bookkeeping
-            for (subscriptionKey, subscriptionImSim) in world.SubscriptionsImSim do
-                if not subscriptionImSim.SubscriptionUtilized then
-                    World.unsubscribe subscriptionImSim.SubscriptionId world
-                    World.setSubscriptionsImSim (SUMap.remove subscriptionKey world.SubscriptionsImSim) world
+            for (subscriptionKey, subscriptionLedger) in world.SubscriptionLedgers do
+                if not subscriptionLedger.SubscriptionUtilized then
+                    World.unsubscribe subscriptionLedger.SubscriptionId world
+                    World.setSubscriptionLedgers (SUMap.remove subscriptionKey world.SubscriptionLedgers) world
                 else
                     if world.Imperative then
-                        subscriptionImSim.SubscriptionUtilized <- false
+                        subscriptionLedger.SubscriptionUtilized <- false
                     else
-                        let simulantsImSim = SUMap.add subscriptionKey { subscriptionImSim with SubscriptionUtilized = false } world.SubscriptionsImSim
-                        World.setSubscriptionsImSim simulantsImSim world
+                        let simulantsImSim = SUMap.add subscriptionKey { subscriptionLedger with SubscriptionUtilized = false } world.SubscriptionLedgers
+                        World.setSubscriptionLedgers simulantsImSim world
 
         static member private preUpdateSimulants (world : World) =
 

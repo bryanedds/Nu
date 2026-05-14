@@ -1873,14 +1873,14 @@ and GameDescriptor =
           ScreenDescriptors = [] }
 
 /// Provides simulant bookkeeping information with the ImSim API.
-and [<NoEquality; NoComparison>] internal SimulantImSim =
+and [<NoEquality; NoComparison>] internal SimulantLedger =
     { mutable SimulantInitializing : bool
       mutable SimulantUtilized : bool
       InitializationTime : int64
       Result : obj }
 
 /// Provides subscription bookkeeping information with the ImSim API.
-and [<NoEquality; NoComparison>] internal SubscriptionImSim =
+and [<NoEquality; NoComparison>] internal SubscriptionLedger =
     { mutable SubscriptionUtilized : bool
       SubscriptionId : uint64
       Results : obj }
@@ -1921,8 +1921,8 @@ and [<ReferenceEquality>] internal WorldExtension =
     { // cache line 1 (assuming 16 byte header)
       mutable ContextImSim : Address
       mutable DeclaredImSim : Address
-      mutable SimulantsImSim : SUMap<Address, SimulantImSim>
-      mutable SubscriptionsImSim : SUMap<string * Address * Address, SubscriptionImSim>
+      mutable SimulantLedgers : SUMap<Address, SimulantLedger>
+      mutable SubscriptionLedgers : SUMap<string * Address * Address, SubscriptionLedger>
       JobGraph : JobGraph
       GeometryViewport : Viewport
 
@@ -2140,8 +2140,8 @@ and [<NoEquality; NoComparison>] World =
 
     /// Check that the current ImSim context is initializing this frame.
     member this.ContextInitializing =
-        match this.WorldExtension.SimulantsImSim.TryGetValue this.WorldExtension.ContextImSim with
-        | (true, simulantImSim) -> simulantImSim.SimulantInitializing
+        match this.WorldExtension.SimulantLedgers.TryGetValue this.WorldExtension.ContextImSim with
+        | (true, simulantLedger) -> simulantLedger.SimulantInitializing
         | (false, _) -> false
 
     /// Get the recent ImSim declaration.
@@ -2178,15 +2178,15 @@ and [<NoEquality; NoComparison>] World =
 
     /// Check that the recent ImSim declaration is initializing this frame.
     member this.DeclaredInitializing =
-        match this.WorldExtension.SimulantsImSim.TryGetValue this.WorldExtension.DeclaredImSim with
-        | (true, simulantImSim) -> simulantImSim.SimulantInitializing
+        match this.WorldExtension.SimulantLedgers.TryGetValue this.WorldExtension.DeclaredImSim with
+        | (true, simulantLedger) -> simulantLedger.SimulantInitializing
         | (false, _) -> false
 
-    member internal this.SimulantsImSim =
-        this.WorldExtension.SimulantsImSim
+    member internal this.SimulantLedgers =
+        this.WorldExtension.SimulantLedgers
 
-    member internal this.SubscriptionsImSim =
-        this.WorldExtension.SubscriptionsImSim
+    member internal this.SubscriptionLedgers =
+        this.WorldExtension.SubscriptionLedgers
 
     /// Get the currently selected screen, if any.
     member this.SelectedScreenOpt =

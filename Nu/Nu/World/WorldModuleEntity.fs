@@ -2238,8 +2238,8 @@ module WorldModuleEntity =
                 // destroy any scheduled tasklets
                 World.removeTasklets entity world
 
-                // remove from simulant imsim tracking
-                World.removeSimulantImSim entity world
+                // remove simulant ledger
+                World.removeSimulantLedger entity world
 
                 // mutate respective entity tree if entity is selected
                 if WorldModuleInternal.getSelected entity world then
