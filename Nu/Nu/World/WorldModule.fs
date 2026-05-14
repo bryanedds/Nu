@@ -300,38 +300,38 @@ module WorldModule =
         static member internal setContext context (world : World) =
             World.setContextAndDeclared context world.WorldExtension.ContextImSim world
 
-        static member internal getSimulantsImSim (world : World) =
-            world.SimulantsImSim
+        static member internal getSimulantLedgers (world : World) =
+            world.SimulantLedgers
 
-        static member internal setSimulantsImSim simulantsImSim (world : World) =
-            world.WorldExtension.SimulantsImSim <- simulantsImSim
+        static member internal setSimulantLedgers simulantLedgers (world : World) =
+            world.WorldExtension.SimulantLedgers <- simulantLedgers
 
-        static member internal getSimulantImSim simulant (world : World) =
-            world.SimulantsImSim[simulant]
+        static member internal getSimulantLedger simulant (world : World) =
+            world.SimulantLedgers[simulant]
 
-        static member internal addSimulantImSim simulant simulantImSim (world : World) =
-            world.SimulantsImSim[simulant] <- simulantImSim
+        static member internal addSimulantLedger simulant simulantLedger (world : World) =
+            world.SimulantLedgers[simulant] <- simulantLedger
 
-        static member internal removeSimulantImSim (simulant : Simulant) (world : World) =
-            world.SimulantsImSim.Remove simulant.SimulantAddress |> ignore<bool>
+        static member internal removeSimulantLedger (simulant : Simulant) (world : World) =
+            world.SimulantLedgers.Remove simulant.SimulantAddress |> ignore<bool>
 
-        static member internal utilizeSimulantImSim _ simulantImSim (_ : World) =
-            simulantImSim.SimulantUtilized <- true
+        static member internal utilizeSimulantInLedger _ simulantLedger (_ : World) =
+            simulantLedger.SimulantUtilized <- true
 
-        static member internal getSubscriptionsImSim (world : World) =
-            world.SubscriptionsImSim
+        static member internal getSubscriptionLedgers (world : World) =
+            world.SubscriptionLedgers
 
-        static member internal setSubscriptionsImSim subscriptionsImSim (world : World) =
-            world.WorldExtension.SubscriptionsImSim <- subscriptionsImSim
+        static member internal setSubscriptionLedgers subscriptionLedgers (world : World) =
+            world.WorldExtension.SubscriptionLedgers <- subscriptionLedgers
 
-        static member internal getSubscriptionImSim subscription (world : World) =
-            world.SubscriptionsImSim[subscription]
+        static member internal getSubscriptionLedger subscription (world : World) =
+            world.SubscriptionLedgers[subscription]
 
-        static member internal addSubscriptionImSim subscription subscriptionImSim (world : World) =
-            world.SubscriptionsImSim[subscription] <- subscriptionImSim
+        static member internal addSubscriptionLedger subscription subscriptionLedger (world : World) =
+            world.SubscriptionLedgers[subscription] <- subscriptionLedger
 
-        static member internal utilizeSubscriptionImSim _ subscriptionImSim (_ : World) =
-            subscriptionImSim.SubscriptionUtilized <- true
+        static member internal utilizeSubscriptionInLedger _ subscriptionLedger (_ : World) =
+            subscriptionLedger.SubscriptionUtilized <- true
 
         /// Place the engine into a state such that the app will exit at the end of the current frame.
         static member exit world =
