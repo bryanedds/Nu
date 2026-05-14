@@ -1931,8 +1931,8 @@ module WorldModuleEntity =
                 // destroy any scheduled tasklets
                 World.removeTasklets entity world
 
-                // remove simulant ledger
-                World.removeSimulantLedger entity world
+                // remove ImSim journal
+                World.removeSimulantJournal entity world
 
                 // mutate respective entity tree if entity is selected
                 if WorldModuleInternal.getSelected entity world then

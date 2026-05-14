@@ -366,19 +366,19 @@ module WorldModule2 =
             let screen = Nu.Screen screenAddress
             let screenCreation = not (screen.GetExists world)
             let initializing =
-                match world.SimulantLedgers.TryGetValue screen.ScreenAddress with
-                | (true, screenLedger) ->
-                    World.utilizeSimulantInLedger screen.ScreenAddress screenLedger world
+                match world.SimulantJournals.TryGetValue screen.ScreenAddress with
+                | (true, screenJournal) ->
+                    World.utilizeSimulantInJournal screen.ScreenAddress screenJournal world
                     false
                 | (false, _) ->
 
                     // init subscriptions _before_ potentially creating screen
-                    World.addSimulantLedger screen.ScreenAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = (FQueue.empty<SelectionEventData>, zero) } world
+                    World.addSimulantJournal screen.ScreenAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = (FQueue.empty<SelectionEventData>, zero) } world
                     let updateFstResult (mapper : SelectionEventData FQueue -> SelectionEventData FQueue) (world : World) =
-                        match world.SimulantLedgers.TryGetValue screen.ScreenAddress with
-                        | (true, simulantLedger) ->
-                            let (screenResult, userResult) = simulantLedger.Result :?> SelectionEventData FQueue * 'r
-                            simulantLedger.Result <- (mapper screenResult, userResult)
+                        match world.SimulantJournals.TryGetValue screen.ScreenAddress with
+                        | (true, simulantJournal) ->
+                            let (screenResult, userResult) = simulantJournal.Result :?> SelectionEventData FQueue * 'r
+                            simulantJournal.Result <- (mapper screenResult, userResult)
                         | (false, _) -> ()
                     World.monitor (fun _ world -> updateFstResult (FQueue.conj Select) world; Cascade) screen.SelectEvent screen world
                     World.monitor (fun _ world -> updateFstResult (FQueue.conj IncomingStart) world; Cascade) screen.IncomingStartEvent screen world
@@ -387,10 +387,10 @@ module WorldModule2 =
                     World.monitor (fun _ world -> updateFstResult (FQueue.conj OutgoingFinish) world; Cascade) screen.OutgoingFinishEvent screen world
                     World.monitor (fun _ world -> updateFstResult (FQueue.conj Deselecting) world; Cascade) screen.DeselectingEvent screen world
                     let updateSndResult (mapper : 'r -> 'r) (world : World) =
-                        match world.SimulantLedgers.TryGetValue screen.ScreenAddress with
-                        | (true, simulantLedger) ->
-                            let (screenResult, userResult) = simulantLedger.Result :?> SelectionEventData FQueue * 'r
-                            simulantLedger.Result <- (screenResult, mapper userResult)
+                        match world.SimulantJournals.TryGetValue screen.ScreenAddress with
+                        | (true, simulantJournal) ->
+                            let (screenResult, userResult) = simulantJournal.Result :?> SelectionEventData FQueue * 'r
+                            simulantJournal.Result <- (screenResult, mapper userResult)
                         | (false, _) -> ()
                     init updateSndResult screen world
 
@@ -424,9 +424,9 @@ module WorldModule2 =
                         screen
                         world
                 else transitionScreen screen world
-            let simulantLedger = World.getSimulantLedger screen.ScreenAddress world
-            let (screenResult, userResult) = simulantLedger.Result :?> SelectionEventData FQueue * 'r
-            simulantLedger.Result <- (FQueue.empty<SelectionEventData>, zero)
+            let simulantJournal = World.getSimulantJournal screen.ScreenAddress world
+            let (screenResult, userResult) = simulantJournal.Result :?> SelectionEventData FQueue * 'r
+            simulantJournal.Result <- (FQueue.empty<SelectionEventData>, zero)
             (screenResult, userResult)
 
         static member inline private beginScreen8<'d when 'd :> ScreenDispatcher> transitionScreen setScreenSlide name select behavior groupFilePathOpt args world : SelectionEventData FQueue =
@@ -1375,16 +1375,16 @@ module WorldModule2 =
         static member internal sweepSimulants (world : World) =
 
             // update simulant bookkeeping, collecting simulants to destroy in the process
-            for entry in world.SimulantLedgers do
+            for entry in world.SimulantJournals do
                 let simulantAddress = entry.Key
-                let simulantLedger = entry.Value
-                if not simulantLedger.SimulantUtilized then
+                let simulantJournal = entry.Value
+                if not simulantJournal.SimulantUtilized then
                     let simulant = World.deriveFromAddress simulantAddress
-                    WorldModuleInternal2.ImSimSimulantsToDestroy.Add (simulantLedger.InitializationTime, simulant)
-                    world.SimulantLedgers.Remove simulantAddress |> ignore<bool>
+                    WorldModuleInternal2.ImSimSimulantsToDestroy.Add (simulantJournal.InitializationTime, simulant)
+                    world.SimulantJournals.Remove simulantAddress |> ignore<bool>
                 else
-                    simulantLedger.SimulantUtilized <- false
-                    simulantLedger.SimulantInitializing <- false
+                    simulantJournal.SimulantUtilized <- false
+                    simulantJournal.SimulantInitializing <- false
             WorldModuleInternal2.ImSimSimulantsToDestroy.Sort WorldModuleInternal2.ImSimSimulantComparer
 
             // destroy simulants
@@ -1393,13 +1393,13 @@ module WorldModule2 =
             WorldModuleInternal2.ImSimSimulantsToDestroy.Clear ()
 
             // update subscription bookkeeping
-            for entry in world.SubscriptionLedgers do
+            for entry in world.SubscriptionJournals do
                 let subscriptionKey = entry.Key
-                let subscriptionLedger = entry.Value
-                if not subscriptionLedger.SubscriptionUtilized then
-                    World.unsubscribe subscriptionLedger.SubscriptionId world
-                    world.SubscriptionLedgers.Remove subscriptionKey |> ignore<bool>
-                else subscriptionLedger.SubscriptionUtilized <- false
+                let subscriptionJournal = entry.Value
+                if not subscriptionJournal.SubscriptionUtilized then
+                    World.unsubscribe subscriptionJournal.SubscriptionId world
+                    world.SubscriptionJournals.Remove subscriptionKey |> ignore<bool>
+                else subscriptionJournal.SubscriptionUtilized <- false
 
         static member private preUpdateSimulants (world : World) =
 

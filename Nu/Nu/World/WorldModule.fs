@@ -300,38 +300,38 @@ module WorldModule =
         static member internal setContext context (world : World) =
             World.setContextAndDeclared context world.WorldExtension.ContextImSim world
 
-        static member internal getSimulantLedgers (world : World) =
-            world.SimulantLedgers
+        static member internal getSimulantJournals (world : World) =
+            world.SimulantJournals
 
-        static member internal setSimulantLedgers simulantLedgers (world : World) =
-            world.WorldExtension.SimulantLedgers <- simulantLedgers
+        static member internal setSimulantJournals simulantJournals (world : World) =
+            world.WorldExtension.SimulantJournals <- simulantJournals
 
-        static member internal getSimulantLedger simulant (world : World) =
-            world.SimulantLedgers[simulant]
+        static member internal getSimulantJournal simulant (world : World) =
+            world.SimulantJournals[simulant]
 
-        static member internal addSimulantLedger simulant simulantLedger (world : World) =
-            world.SimulantLedgers[simulant] <- simulantLedger
+        static member internal addSimulantJournal simulant simulantJournal (world : World) =
+            world.SimulantJournals[simulant] <- simulantJournal
 
-        static member internal removeSimulantLedger (simulant : Simulant) (world : World) =
-            world.SimulantLedgers.Remove simulant.SimulantAddress |> ignore<bool>
+        static member internal removeSimulantJournal (simulant : Simulant) (world : World) =
+            world.SimulantJournals.Remove simulant.SimulantAddress |> ignore<bool>
 
-        static member internal utilizeSimulantInLedger _ simulantLedger (_ : World) =
-            simulantLedger.SimulantUtilized <- true
+        static member internal utilizeSimulantInJournal _ simulantJournal (_ : World) =
+            simulantJournal.SimulantUtilized <- true
 
-        static member internal getSubscriptionLedgers (world : World) =
-            world.SubscriptionLedgers
+        static member internal getSubscriptionJournals (world : World) =
+            world.SubscriptionJournals
 
-        static member internal setSubscriptionLedgers subscriptionLedgers (world : World) =
-            world.WorldExtension.SubscriptionLedgers <- subscriptionLedgers
+        static member internal setSubscriptionJournals subscriptionJournals (world : World) =
+            world.WorldExtension.SubscriptionJournals <- subscriptionJournals
 
-        static member internal getSubscriptionLedger subscription (world : World) =
-            world.SubscriptionLedgers[subscription]
+        static member internal getSubscriptionJournal subscription (world : World) =
+            world.SubscriptionJournals[subscription]
 
-        static member internal addSubscriptionLedger subscription subscriptionLedger (world : World) =
-            world.SubscriptionLedgers[subscription] <- subscriptionLedger
+        static member internal addSubscriptionJournal subscription subscriptionJournal (world : World) =
+            world.SubscriptionJournals[subscription] <- subscriptionJournal
 
-        static member internal utilizeSubscriptionInLedger _ subscriptionLedger (_ : World) =
-            subscriptionLedger.SubscriptionUtilized <- true
+        static member internal utilizeSubscriptionInJournal _ subscriptionJournal (_ : World) =
+            subscriptionJournal.SubscriptionUtilized <- true
 
         /// Place the engine into a state such that the app will exit at the end of the current frame.
         static member exit world =
