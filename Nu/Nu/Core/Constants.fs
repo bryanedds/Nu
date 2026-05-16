@@ -17,6 +17,9 @@ open Nu
 module Vulkan =
 
     let [<Literal>] MaxFramesInFlight = 2
+    
+    // disabled by default for compatability with ios simulator
+    let [<Literal>] DescriptorIndexingEnabled = false
 
 [<RequireQualifiedAccess>]
 module Runtime =

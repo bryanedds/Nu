@@ -861,7 +861,7 @@ module Hl =
     type private PhysicalDevice =
         { VkPhysicalDevice : VkPhysicalDevice
           Properties : VkPhysicalDeviceProperties
-          DescriptorIndexingProperties : VkPhysicalDeviceDescriptorIndexingProperties
+          DescriptorIndexingPropertiesOpt : VkPhysicalDeviceDescriptorIndexingProperties option
           Features : VkPhysicalDeviceFeatures
           Extensions : VkExtensionProperties array
           SurfaceCapabilities : VkSurfaceCapabilitiesKHR // NOTE: DJL: keep this here in case we want to use it for device selection.
@@ -875,13 +875,18 @@ module Hl =
         
         /// Get properties.
         static member private getProperties vkPhysicalDevice =
-            let mutable diProperties = Unchecked.defaultof<VkPhysicalDeviceDescriptorIndexingProperties>
-            diProperties.sType <- Vulkan.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES // wrapper stuffed this up
-            let mutable properties = Unchecked.defaultof<VkPhysicalDeviceProperties2>
-            properties.sType <- Vulkan.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2 // wrapper stuffed this up
-            properties.pNext <- asVoidPtr &diProperties
-            Vulkan.vkGetPhysicalDeviceProperties2 (vkPhysicalDevice, asPointer &properties)
-            (properties.properties, diProperties)
+            if Constants.Vulkan.DescriptorIndexingEnabled then
+                let mutable diProperties = Unchecked.defaultof<VkPhysicalDeviceDescriptorIndexingProperties>
+                diProperties.sType <- Vulkan.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES // wrapper stuffed this up
+                let mutable properties = Unchecked.defaultof<VkPhysicalDeviceProperties2>
+                properties.sType <- Vulkan.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2 // wrapper stuffed this up
+                properties.pNext <- asVoidPtr &diProperties
+                Vulkan.vkGetPhysicalDeviceProperties2 (vkPhysicalDevice, asPointer &properties)
+                (properties.properties, Some diProperties)
+            else
+                let mutable properties = Unchecked.defaultof<VkPhysicalDeviceProperties>
+                Vulkan.vkGetPhysicalDeviceProperties (vkPhysicalDevice, &properties)
+                (properties, None)
 
         /// Get features.
         static member private getFeatures vkPhysicalDevice =
@@ -950,7 +955,7 @@ module Hl =
         static member tryCreate vkPhysicalDevice surface =
             match tryGetSurfaceCapabilities vkPhysicalDevice surface with
             | Some surfaceCapabilities ->
-                let (properties, diProperties) = PhysicalDevice.getProperties vkPhysicalDevice
+                let (properties, diPropertiesOpt) = PhysicalDevice.getProperties vkPhysicalDevice
                 let features = PhysicalDevice.getFeatures vkPhysicalDevice
                 let extensions = PhysicalDevice.getExtensions vkPhysicalDevice
                 let surfaceFormats = PhysicalDevice.getSurfaceFormats vkPhysicalDevice surface
@@ -959,7 +964,7 @@ module Hl =
                     let physicalDevice =
                         { VkPhysicalDevice = vkPhysicalDevice
                           Properties = properties
-                          DescriptorIndexingProperties = diProperties
+                          DescriptorIndexingPropertiesOpt = diPropertiesOpt
                           Features = features
                           Extensions = extensions
                           SurfaceCapabilities = surfaceCapabilities
@@ -1323,7 +1328,7 @@ module Hl =
         member this.VkPhysicalDevice = this.PhysicalDevice_.VkPhysicalDevice
 
         /// The physical device properties for descriptor indexing.
-        member this.DescriptorIndexingProperties = this.PhysicalDevice_.DescriptorIndexingProperties
+        member this.DescriptorIndexingPropertiesOpt = this.PhysicalDevice_.DescriptorIndexingPropertiesOpt
 
         /// Anisotropy supported.
         member this.AnisotropySupported = this.PhysicalDevice_.SupportsAnisotropy
@@ -1561,12 +1566,8 @@ module Hl =
         /// Create the logical device.
         static member private createLogicalDevice (physicalDevice : PhysicalDevice) =
 
-            // Vulkan 1.3 features
-            let mutable vulkan13 = VkPhysicalDeviceVulkan13Features (dynamicRendering = true)
-            
             // descriptor indexing features
             let mutable descriptorIndexing = VkPhysicalDeviceDescriptorIndexingFeatures ()
-            descriptorIndexing.pNext <- asVoidPtr &vulkan13
             descriptorIndexing.shaderUniformBufferArrayNonUniformIndexing <- true
             descriptorIndexing.shaderStorageBufferArrayNonUniformIndexing <- true
             descriptorIndexing.shaderSampledImageArrayNonUniformIndexing <- true
@@ -1576,6 +1577,11 @@ module Hl =
             descriptorIndexing.descriptorBindingUpdateUnusedWhilePending <- true
             descriptorIndexing.descriptorBindingPartiallyBound <- true
             descriptorIndexing.runtimeDescriptorArray <- true
+            
+            // Vulkan 1.3 features
+            let mutable vulkan13 = VkPhysicalDeviceVulkan13Features ()
+            if Option.isSome physicalDevice.DescriptorIndexingPropertiesOpt then vulkan13.pNext <- asVoidPtr &descriptorIndexing
+            vulkan13.dynamicRendering <- true
             
             // queue create infos
             let mutable queuePriority = 1.0f
@@ -1607,7 +1613,7 @@ module Hl =
             
             // create device
             let mutable info = VkDeviceCreateInfo ()
-            info.pNext <- asVoidPtr &descriptorIndexing
+            info.pNext <- asVoidPtr &vulkan13
             info.queueCreateInfoCount <- uint queueCreateInfos.Length
             info.pQueueCreateInfos <- queueCreateInfosPin.Pointer
             info.enabledExtensionCount <- 1u

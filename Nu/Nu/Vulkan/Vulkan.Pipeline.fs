@@ -390,8 +390,11 @@ module Pipeline =
             
             // count total descriptor usage and fail when hardware limit exceeded
             Hl.DescriptorsNeeded <- Hl.DescriptorsNeeded + Array.sumBy (fun x -> snd x) resourceBindings
-            if Hl.DescriptorsNeeded > vkc.DescriptorIndexingProperties.maxUpdateAfterBindDescriptorsInAllPools
-            then Log.fail "The current hardware cannot support the currently configured drawing maxes. Consider tuning down unneeded maxes, especially 3D drawing and light maps."
+            match vkc.DescriptorIndexingPropertiesOpt with
+            | Some properties ->
+                if Hl.DescriptorsNeeded > properties.maxUpdateAfterBindDescriptorsInAllPools
+                then Log.fail "The current hardware cannot support the currently configured drawing maxes. Consider tuning down unneeded maxes, especially 3D drawing and light maps."
+            | None -> ()
             
             // calculate total descriptor sets
             let setCount setDef = if setDef.BulkMode.IsBulkSetIndexed then setDef.SetCount * bulkDrawLimit else setDef.SetCount
@@ -402,7 +405,7 @@ module Pipeline =
             // maxes which a) would complicate calculations like above and b) may be lower. See
             // https://docs.vulkan.org/refpages/latest/refpages/source/VkPhysicalDeviceDescriptorIndexingProperties.html.
             let mutable info = VkDescriptorPoolCreateInfo ()
-            info.flags <- VkDescriptorPoolCreateFlags.UpdateAfterBind
+            if Option.isSome vkc.DescriptorIndexingPropertiesOpt then info.flags <- VkDescriptorPoolCreateFlags.UpdateAfterBind
             info.maxSets <- uint maxSets
             info.poolSizeCount <- uint poolSizes.Length
             info.pPoolSizes <- poolSizesPin.Pointer
@@ -428,6 +431,7 @@ module Pipeline =
             use resourceBindingsPin = new ArrayPin<_> (resourceBindings)
             let mutable info = VkDescriptorSetLayoutCreateInfo ()
             if descriptorIndexing then
+                if not Constants.Vulkan.DescriptorIndexingEnabled then Log.errorOnce "Descriptor indexing not enabled."
                 info.flags <- VkDescriptorSetLayoutCreateFlags.UpdateAfterBindPool
                 info.pNext <- asVoidPtr &bfInfo
             info.bindingCount <- uint resourceBindings.Length
