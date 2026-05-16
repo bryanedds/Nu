@@ -1785,17 +1785,23 @@ module Hl =
                 // flush commands
                 Queue.submit vkc.RenderCommandBuffer [|vkc.ImageAvailableSemaphore, waitStage|] [|vkc.RenderFinishedSemaphore|] vkc.InFlightFence vkc.RenderQueue
                 
-                // try to present image
-                let result = Queue.present vkc.RenderFinishedSemaphore vkc.Swapchain_.VkSwapchain vkc.PresentQueue_
-
-                // refresh swapchain if framebuffer out of date or suboptimal
-                if result = VkResult.ErrorOutOfDateKHR || result = VkResult.SuboptimalKHR then VulkanContext.handleWindowSize vkc
+                // one more check for app backgrounding before we present
+                if not (hasAppBegunBackgrounding ()) then
                 
-                // destroy surface if lost
-                elif result = VkResult.ErrorSurfaceLostKHR then
-                    SurfaceState <- SurfaceLost
-                    Swapchain.update vkc.PhysicalDevice_ vkc.RenderQueue_ vkc.PresentQueue_ vkc.Swapchain_ vkc.Device vkc.Instance_
-                else check result
+                    // try to present image
+                    let result = Queue.present vkc.RenderFinishedSemaphore vkc.Swapchain_.VkSwapchain vkc.PresentQueue_
+
+                    // refresh swapchain if framebuffer out of date or suboptimal
+                    if result = VkResult.ErrorOutOfDateKHR || result = VkResult.SuboptimalKHR then VulkanContext.handleWindowSize vkc
+                    
+                    // destroy surface if lost
+                    elif result = VkResult.ErrorSurfaceLostKHR then
+                        SurfaceState <- SurfaceLost
+                        Swapchain.update vkc.PhysicalDevice_ vkc.RenderQueue_ vkc.PresentQueue_ vkc.Swapchain_ vkc.Device vkc.Instance_
+                    else check result
+
+                // this is valid because RenderFinishedSemaphore will be destroyed
+                else Swapchain.update vkc.PhysicalDevice_ vkc.RenderQueue_ vkc.PresentQueue_ vkc.Swapchain_ vkc.Device vkc.Instance_
 
             // advance frame in flight
             // NOTE: DJL: this MUST happen EVERY frame regardless of RenderDesired_ otherwise fence security is broken.
