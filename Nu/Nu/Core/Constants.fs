@@ -17,6 +17,9 @@ open Nu
 module Vulkan =
 
     let [<Literal>] MaxFramesInFlight = 2
+    
+    // disabled by default for compatability with ios simulator
+    let [<Literal>] DescriptorIndexingEnabled = false
 
     /// On macOS, enabling this uses MoltenVk in place of KosmicKrisp
     /// On iOS, it must be set to true

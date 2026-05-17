@@ -571,6 +571,8 @@ module Texture =
                 else Array2D.zeroCreate<VkImageView> 0 0
 
             // transition layout as appropriate
+            // NOTE: DJL: we use render thread here as attachments are not intended for lazy loading.
+            // TODO: DJL: we should write a proper api for layout transitions at the attachment level and do initial transition separately from creation.
             match attachmentMode with
             | AttachmentColor _
             | AttachmentDepth _ ->
