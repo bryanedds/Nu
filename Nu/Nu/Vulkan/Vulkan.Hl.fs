@@ -105,9 +105,12 @@ module Hl =
         | Bc3
         | Bc5
         | Astc
+        | D16
+        | X8d24Pack32
         | D32f
-        | D32fs8ui
+        | D16s8ui
         | D24s8ui
+        | D32fs8ui
 
         /// The VkFormat.
         member this.VkFormat =
@@ -121,25 +124,31 @@ module Hl =
             | Bc3 -> VkFormat.Bc3UnormBlock
             | Bc5 -> VkFormat.Bc5UnormBlock
             | Astc -> VkFormat.Astc4x4UnormBlock
+            | D16 -> VkFormat.D16Unorm
+            | X8d24Pack32 -> VkFormat.X8D24UnormPack32
             | D32f -> VkFormat.D32Sfloat
-            | D32fs8ui -> VkFormat.D32SfloatS8Uint
+            | D16s8ui -> VkFormat.D16UnormS8Uint
             | D24s8ui -> VkFormat.D24UnormS8Uint
+            | D32fs8ui -> VkFormat.D32SfloatS8Uint
 
         /// The VkImageAspectFlags.
         member this.VkImageAspectFlags =
             match this with
-            | Rgba8 -> VkImageAspectFlags.Color
-            | Rgba16f -> VkImageAspectFlags.Color
-            | Rgb16f -> VkImageAspectFlags.Color
-            | Rg32f -> VkImageAspectFlags.Color
-            | R16f -> VkImageAspectFlags.Color
-            | R32f -> VkImageAspectFlags.Color
-            | Bc3 -> VkImageAspectFlags.Color
-            | Bc5 -> VkImageAspectFlags.Color
+            | Rgba8
+            | Rgba16f
+            | Rgb16f
+            | Rg32f
+            | R16f
+            | R32f
+            | Bc3
+            | Bc5
             | Astc -> VkImageAspectFlags.Color
+            | D16
+            | X8d24Pack32
             | D32f -> VkImageAspectFlags.Depth
+            | D16s8ui
+            | D24s8ui
             | D32fs8ui -> VkImageAspectFlags.Depth ||| VkImageAspectFlags.Stencil
-            | D24s8ui -> VkImageAspectFlags.Depth ||| VkImageAspectFlags.Stencil
         
         /// Get the size in bytes of an image with given width, height and format.
         static member getImageSize width height imageFormat =
@@ -156,9 +165,12 @@ module Hl =
                 let x = if width % 4 = 0 then width else (width / 4 + 1) * 4
                 let y = if height % 4 = 0 then height else (height / 4 + 1) * 4
                 x * y
+            | D16 -> width * height * 2
+            | X8d24Pack32 -> width * height * 4
             | D32f -> width * height * 4
-            | D32fs8ui -> width * height * 5
+            | D16s8ui -> width * height * 3
             | D24s8ui -> width * height * 4
+            | D32fs8ui -> width * height * 5
 
         /// Determine if format is supported for use as an attachment.
         /// TODO: P0: DJL: investigate working around depth blitting as some MESA drivers may deny us that feature.
@@ -174,9 +186,12 @@ module Hl =
                 | Bc3
                 | Bc5
                 | Astc -> VkFormatFeatureFlags.BlitSrc ||| VkFormatFeatureFlags.BlitDst ||| VkFormatFeatureFlags.ColorAttachment ||| VkFormatFeatureFlags.SampledImage
+                | D16
+                | X8d24Pack32
                 | D32f
-                | D32fs8ui
-                | D24s8ui -> VkFormatFeatureFlags.BlitSrc ||| VkFormatFeatureFlags.BlitDst ||| VkFormatFeatureFlags.DepthStencilAttachment
+                | D16s8ui
+                | D24s8ui
+                | D32fs8ui -> VkFormatFeatureFlags.BlitSrc ||| VkFormatFeatureFlags.BlitDst ||| VkFormatFeatureFlags.DepthStencilAttachment
             let mutable properties = Unchecked.defaultof<VkFormatProperties>
             Vulkan.vkGetPhysicalDeviceFormatProperties (vkPhysicalDevice, format.VkFormat, &properties)
             properties.optimalTilingFeatures &&& requiredFeatures = requiredFeatures
@@ -339,7 +354,6 @@ module Hl =
         | BulkSetIndexed
     
     /// Check if an image format is supported for attachments, falling back to a standard format where possible.
-    /// TODO: DJL: try ALL depth formats.
     let rec CheckAttachmentFormat (vkPhysicalDevice, format : ImageFormat) =
         if not (ImageFormat.supportsAttachment vkPhysicalDevice format) then
             
@@ -365,6 +379,12 @@ module Hl =
                 | D32fs8ui ->
                     CheckAttachmentFormat (vkPhysicalDevice, D24s8ui)
                 | D24s8ui ->
+                    CheckAttachmentFormat (vkPhysicalDevice, X8d24Pack32)
+                | X8d24Pack32 ->
+                    CheckAttachmentFormat (vkPhysicalDevice, D16)
+                | D16 ->
+                    CheckAttachmentFormat (vkPhysicalDevice, D16s8ui)
+                | D16s8ui ->
                     Log.fail "Could not find a suitable format for depth attachment textures."
             Log.warn ("Falling back to " + scstring formatFallback.VkFormat + " attachment format due to unavailability of " + scstring format.VkFormat + " attachment format.")
             formatFallback
