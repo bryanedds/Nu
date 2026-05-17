@@ -19,6 +19,9 @@
         <BuildingMacOS Condition="'$(TargetPlatformIdentifier)' == '' And (('$(RuntimeIdentifier)'=='' And $([System.OperatingSystem]::IsMacOS())) Or $(RuntimeIdentifier.StartsWith('osx')))">true</BuildingMacOS>
         <BlockCompression>BcCompression</BlockCompression>
         <BlockCompression Condition="$(BuildingMacOS) Or '$(TargetPlatformIdentifier)'=='ios' Or '$(TargetPlatformIdentifier)'=='android'">AstcCompression</BlockCompression>
+        <SandBox2dPpySdlVersion>2026.302.0</SandBox2dPpySdlVersion>
+        <AssimpNetOriginalDir>$(MSBuildProjectDirectory)/../../Nu/Nu.Dependencies/AssimpNet/netstandard2.1</AssimpNetOriginalDir>
+        <AssimpNetPatchedDir>$(MSBuildProjectDirectory)/$(BaseIntermediateOutputPath)ios-managed/$(TargetFramework)</AssimpNetPatchedDir>
 
         <!-- F# compiler settings -->
         <WarnOn>FS1182</WarnOn>
@@ -55,10 +58,8 @@
         <!-- Android: Debugging settings for asset packs https://learn.microsoft.com/en-us/dotnet/maui/android/asset-packs#test-asset-packs-locally -->
 		<AndroidPackageFormat>aab</AndroidPackageFormat>
         <AndroidBundleToolExtraArgs Condition="'$(Configuration)' == 'Debug'">--local-testing</AndroidBundleToolExtraArgs>
-
-        <SandBox2dPpySdlVersion>2026.302.0</SandBox2dPpySdlVersion>
-        <AssimpNetOriginalDir>$(MSBuildProjectDirectory)/../../Nu/Nu.Dependencies/AssimpNet/netstandard2.1</AssimpNetOriginalDir>
-        <AssimpNetPatchedDir>$(MSBuildProjectDirectory)/$(BaseIntermediateOutputPath)ios-managed/$(TargetFramework)</AssimpNetPatchedDir>
+        <!-- iOS: Skip Xcode version validation if Xcode auto-updates through App Store. See https://github.com/dotnet/maui/discussions/34312#discussioncomment-15985193 -->
+        <ValidateXcodeVersion>False</ValidateXcodeVersion>
     </PropertyGroup>
 
     <!-- Build Nu.Pipe only once even for multi-project builds -->
