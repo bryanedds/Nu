@@ -91,8 +91,9 @@ module Hl =
     // set up delegate for app backgrounding callback
     // TODO: DJL: for mobile devices: https://learn.microsoft.com/en-us/dotnet/standard/native-interop/calling-conventions#when-you-can-omit-the-calling-convention.
     [<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
-    type BackgroundingDelegate = delegate of userData : voidptr * event : SDL_Event nativeptr -> SDLBool
-    let backgroundingDelegate = BackgroundingDelegate handleBackgrounding
+    type private BackgroundingDelegate = delegate of userData : voidptr * event : SDL_Event nativeptr -> SDLBool
+    let private backgroundingDelegate = BackgroundingDelegate handleBackgrounding
+    let backgroundingCallback = Marshal.GetFunctionPointerForDelegate<BackgroundingDelegate> backgroundingDelegate
 
     /// The format of an image.
     type ImageFormat =
@@ -574,7 +575,7 @@ module Hl =
         result.extent.height <- uint extentHeight
         result
 
-    let private createVulkanSurface window instance =
+    let private tryCreateVulkanSurface window instance =
         match SurfaceState with
         | SurfaceDestroyed ->
             
@@ -593,6 +594,15 @@ module Hl =
         | SurfaceReady -> Log.error "Attempted creation of Vulkan surface when existing surface has not been destroyed!"
         | SurfaceLost -> Log.error "Attempted creation of Vulkan surface when existing surface has been lost but not destroyed!"
 
+    let private createVulkanSurface window instance =
+        
+        // wait for app to enter foreground if not already
+        while not IsAppInForeground do ()
+        tryCreateVulkanSurface window instance
+
+        // cannot tolerate failure as this function is intended to guarantee surface creation, otherwise must set up a retry mechanism
+        if SurfaceState.IsSurfaceDestroyed then Log.fail "Vulkan surface creation failed."
+    
     let private destroyVulkanSurface instance =
         match SurfaceState with
         | SurfaceReady
@@ -1167,7 +1177,7 @@ module Hl =
             if IsAppInForeground then
                 
                 // create surface
-                createVulkanSurface swapchain.Window_ instance
+                tryCreateVulkanSurface swapchain.Window_ instance
                 
                 // ensure surface creation was successful
                 if SurfaceState = SurfaceReady then

@@ -126,11 +126,12 @@ type Nu () =
             // init GC event listener
             GcEventListener.init Constants.Runtime.GcDebug
 
+            // init sdl callback for app backgrounding on mobile devices
+            // NOTE: DJL: this happens before SDL init to ensure no backgrounding events are missed.
+            SDL3.SDL_SetEventFilter (Vortice.Vulkan.Hl.backgroundingCallback, 0n)
+
             // init vsync
             Vsync.Init Constants.Engine.RunSynchronously
-
-            // init OpenGL assert mechanism
-            OpenGL.Hl.InitAssert Constants.OpenGL.HlDebug
 
             // mark init flag
             Initialized <- true
