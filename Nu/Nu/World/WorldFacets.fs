@@ -1532,11 +1532,11 @@ type RigidBodyFacet () =
         // OPTIMIZATION: share lambdas to reduce live object count.
         // OPTIMIZATION: using special BodyPropertiesAffecting change event to reduce subscription count.
         let subIds = Array.init 5 (fun _ -> Gen.id64)
-        World.subscribePlus subIds.[0] (propagatePhysicsCenter entity) (entity.ChangeEvent (nameof entity.Transform)) entity world |> ignore
-        World.subscribePlus subIds.[1] (propagatePhysicsRotation entity) (entity.ChangeEvent (nameof entity.Rotation)) entity world |> ignore
-        World.subscribePlus subIds.[2] (propagatePhysicsLinearVelocity entity) (entity.ChangeEvent (nameof entity.LinearVelocity)) entity world |> ignore
-        World.subscribePlus subIds.[3] (propagatePhysicsAngularVelocity entity) (entity.ChangeEvent (nameof entity.AngularVelocity)) entity world |> ignore
-        World.subscribePlus subIds.[4] (propagatePhysicsAffected entity) (entity.ChangeEvent "BodyPropertiesAffecting") entity world |> ignore
+        World.subscribePlus subIds[0] (propagatePhysicsCenter entity) (entity.ChangeEvent (nameof entity.Transform)) entity world |> ignore
+        World.subscribePlus subIds[1] (propagatePhysicsRotation entity) (entity.ChangeEvent (nameof entity.Rotation)) entity world |> ignore
+        World.subscribePlus subIds[2] (propagatePhysicsLinearVelocity entity) (entity.ChangeEvent (nameof entity.LinearVelocity)) entity world |> ignore
+        World.subscribePlus subIds[3] (propagatePhysicsAngularVelocity entity) (entity.ChangeEvent (nameof entity.AngularVelocity)) entity world |> ignore
+        World.subscribePlus subIds[4] (propagatePhysicsAffected entity) (entity.ChangeEvent "BodyPropertiesAffecting") entity world |> ignore
         let unsubscribe = fun world ->
             for subId in subIds do
                 World.unsubscribe subId world
@@ -1708,27 +1708,12 @@ module FluidEmitter2dFacetExtensions =
         member this.GetFluidParticles world : FluidParticle SArray = this.Get (nameof Entity.FluidParticles) world
         member this.SetFluidParticles (value : FluidParticle SArray) world = this.Set (nameof Entity.FluidParticles) value world
         member this.FluidParticles = lens (nameof Entity.FluidParticles) this this.GetFluidParticles this.SetFluidParticles
-        member this.GetFluidParticleRadius world : single = this.Get (nameof Entity.FluidParticleRadius) world
-        member this.SetFluidParticleRadius (value : single) world = this.Set (nameof Entity.FluidParticleRadius) value world
-        member this.FluidParticleRadius = lens (nameof Entity.FluidParticleRadius) this this.GetFluidParticleRadius this.SetFluidParticleRadius
-        member this.GetFluidParticleScale world : single = this.Get (nameof Entity.FluidParticleScale) world
-        member this.SetFluidParticleScale (value : single) world = this.Set (nameof Entity.FluidParticleScale) value world
-        member this.FluidParticleScale = lens (nameof Entity.FluidParticleScale) this this.GetFluidParticleScale this.SetFluidParticleScale
         member this.GetFluidParticlesMax world : int = this.Get (nameof Entity.FluidParticlesMax) world
         member this.SetFluidParticlesMax (value : int) world = this.Set (nameof Entity.FluidParticlesMax) value world
         member this.FluidParticlesMax = lens (nameof Entity.FluidParticlesMax) this this.GetFluidParticlesMax this.SetFluidParticlesMax
-        member this.GetFluidParticleNeighborsMax world : int = this.Get (nameof Entity.FluidParticleNeighborsMax) world
-        member this.SetFluidParticleNeighborsMax (value : int) world = this.Set (nameof Entity.FluidParticleNeighborsMax) value world
-        member this.FluidParticleNeighborsMax = lens (nameof Entity.FluidParticleNeighborsMax) this this.GetFluidParticleNeighborsMax this.SetFluidParticleNeighborsMax
-        member this.GetFluidParticleCollisionTestsMax world : int = this.Get (nameof Entity.FluidParticleCollisionTestsMax) world
-        member this.SetFluidParticleCollisionTestsMax (value : int) world = this.Set (nameof Entity.FluidParticleCollisionTestsMax) value world
-        member this.FluidParticleCollisionTestsMax = lens (nameof Entity.FluidParticleCollisionTestsMax) this this.GetFluidParticleCollisionTestsMax this.SetFluidParticleCollisionTestsMax
-        member this.GetFluidCellRatio world : single = this.Get (nameof Entity.FluidCellRatio) world
-        member this.SetFluidCellRatio (value : single) world = this.Set (nameof Entity.FluidCellRatio) value world
-        member this.FluidCellRatio = lens (nameof Entity.FluidCellRatio) this this.GetFluidCellRatio this.SetFluidCellRatio
-        member this.GetViscocity world : single = this.Get (nameof Entity.Viscocity) world
-        member this.SetViscocity (value : single) world = this.Set (nameof Entity.Viscocity) value world
-        member this.Viscocity = lens (nameof Entity.Viscocity) this this.GetViscocity this.SetViscocity
+        member this.GetFluidCellSize world : single = this.Get (nameof Entity.FluidCellSize) world
+        member this.SetFluidCellSize (value : single) world = this.Set (nameof Entity.FluidCellSize) value world
+        member this.FluidCellSize = lens (nameof Entity.FluidCellSize) this this.GetFluidCellSize this.SetFluidCellSize
         member this.GetFluidEmitterId world : FluidEmitterId = this.Get (nameof Entity.FluidEmitterId) world
         member this.FluidEmitterId = lensReadOnly (nameof Entity.FluidEmitterId) this this.GetFluidEmitterId
         member this.FluidEmitterUpdateEvent = Events.FluidEmitterUpdateEvent --> this
@@ -1743,7 +1728,7 @@ type FluidEmitter2dFacet () =
             Box2dNetFluidEmitterDescriptor
                 { Box2dNetFluidEmitterDescriptor.defaultDescriptor with
                     ParticlesMax = entity.GetFluidParticlesMax world
-                    CellSize = entity.GetFluidCellRatio world * entity.GetFluidParticleRadius world
+                    CellSize = entity.GetFluidCellSize world
                     Enabled = entity.GetFluidEnabled world
                     SimulationBounds = (entity.GetBounds world).Box2
                     Gravity = entity.GetGravity world }
@@ -1760,14 +1745,8 @@ type FluidEmitter2dFacet () =
     static member Properties =
         [define Entity.FluidEnabled true
          define Entity.FluidParticles SArray.empty
-         define Entity.FluidParticleRadius 40.0f
-         define Entity.FluidParticleScale 1.0f
          define Entity.FluidParticlesMax 20000
-         define Entity.FluidParticleNeighborsMax 75
-         define Entity.FluidParticleCollisionTestsMax 20
-         define Entity.FluidCellRatio 0.667f
-         define Entity.Viscocity 0.004f
-         define Entity.LinearDamping 0.0f
+         define Entity.FluidCellSize 20.0f
          define Entity.Gravity GravityWorld
          computed Entity.FluidEmitterId (fun (entity : Entity) _ -> { FluidEmitterSource = entity }) None]
 
@@ -1776,14 +1755,8 @@ type FluidEmitter2dFacet () =
         // update fluid emitter when any of the descriptor properties is set
         for event in
             [emitter.FluidEnabled.ChangeEvent
-             emitter.FluidParticleRadius.ChangeEvent
-             emitter.FluidParticleScale.ChangeEvent
              emitter.FluidParticlesMax.ChangeEvent
-             emitter.FluidParticleNeighborsMax.ChangeEvent
-             emitter.FluidParticleCollisionTestsMax.ChangeEvent
-             emitter.FluidCellRatio.ChangeEvent
-             emitter.Viscocity.ChangeEvent
-             emitter.LinearDamping.ChangeEvent
+             emitter.FluidCellSize.ChangeEvent
              emitter.Bounds.ChangeEvent
              emitter.Gravity.ChangeEvent] do
             World.sense updateCallback event emitter (nameof FluidEmitter2dFacet) world
@@ -3721,7 +3694,7 @@ type StaticModelSurfaceFacet () =
         | ValueSome staticModelMetadata ->
             let surfaceIndex = entity.GetSurfaceIndex world
             if surfaceIndex > -1 && surfaceIndex < staticModelMetadata.Surfaces.Length then
-                let bounds = staticModelMetadata.Surfaces.[surfaceIndex].SurfaceBounds
+                let bounds = staticModelMetadata.Surfaces[surfaceIndex].SurfaceBounds
                 AttributesInferred.important bounds.Size bounds.Center
             else base.GetAttributesInferred (entity, world)
         | ValueNone -> base.GetAttributesInferred (entity, world)
@@ -3732,7 +3705,7 @@ type StaticModelSurfaceFacet () =
         | ValueSome staticModelMetadata ->
             let surfaceIndex = entity.GetSurfaceIndex world
             if surfaceIndex < staticModelMetadata.Surfaces.Length then
-                let surface = staticModelMetadata.Surfaces.[surfaceIndex]
+                let surface = staticModelMetadata.Surfaces[surfaceIndex]
                 let geometry = surface.PhysicallyBasedGeometry
                 let boundsIntersectionOpt = rayEntity.Intersects geometry.Bounds
                 if boundsIntersectionOpt.HasValue then
@@ -3760,7 +3733,7 @@ module StaticModelSurfaceFacetExtensions2 =
                     match Metadata.tryGetStaticModelMetadata staticModel with
                     | ValueSome metadata ->
                         let surfaceIndex = this.GetSurfaceIndex world
-                        let surface = metadata.Surfaces.[surfaceIndex]
+                        let surface = metadata.Surfaces[surfaceIndex]
                         match Metadata.tryGetStaticModelAlbedoImage surface.SurfaceMaterialIndex staticModel with
                         | ValueSome _ as albedoImageOpt -> albedoImageOpt
                         | ValueNone -> ValueNone
@@ -3836,8 +3809,8 @@ module AnimatedModelFacetExtensions =
             match (this.GetBoneOffsetsOpt world, this.GetBoneTransformsOpt world) with
             | (Some offsets, Some transforms) ->
                 let transform =
-                    offsets.[boneIndex].Inverted *
-                    transforms.[boneIndex] *
+                    offsets[boneIndex].Inverted *
+                    transforms[boneIndex] *
                     this.GetAffineMatrix world
                 Some transform
             | (_, _) -> None
@@ -3846,7 +3819,7 @@ module AnimatedModelFacetExtensions =
         member this.TryComputeBoneTransforms time animations (sceneOpt : Assimp.Scene option) =
             match sceneOpt with
             | Some scene when scene.Meshes.Count > 0 ->
-                let (boneIds, boneOffsets, boneTransforms) = scene.ComputeBoneTransforms (time, animations, scene.Meshes.[0])
+                let (boneIds, boneOffsets, boneTransforms) = scene.ComputeBoneTransforms (time, animations, scene.Meshes[0])
                 Some (boneIds, boneOffsets, boneTransforms)
             | Some _ | None -> None
 
@@ -3980,8 +3953,8 @@ type AnimatedModelFacet () =
             | (Some offsets, Some transforms) ->
                 let affineMatrix = entity.GetAffineMatrix world
                 for i in 0 .. dec offsets.Length do
-                    let offset = offsets.[i]
-                    let transform = transforms.[i]
+                    let offset = offsets[i]
+                    let transform = transforms[i]
                     World.imGuiCircle3d (offset.Inverted * transform * affineMatrix).Translation 2.0f false Color.Yellow world
             | (_, _) -> ()
         | _ -> ()

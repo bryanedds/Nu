@@ -43,7 +43,7 @@ module ImGuizmo =
         let mutable draggingFound = false
         let mutable hoveringFound = false
         for i in 0 .. dec centers.Length do
-            let center = centers.[i]
+            let center = centers[i]
             let centerInner = ImGui.Position3dToInner (windowPosition, windowSize, viewProjection, viewport, center)
             let mouseAvailable = not io.WantCaptureMouseGlobal
             let mouseWindow = ImGui.GetMousePos ()
@@ -67,8 +67,8 @@ module ImGuizmo =
                 let mouse = (ray.Intersection plane).Value
                 let delta = mouse - center
                 let movement = delta * direction
-                let center = Math.Snap3d (snap, centers.[i] + movement)
-                centers.[i] <- center
+                let center = Math.Snap3d (snap, centers[i] + movement)
+                centers[i] <- center
                 io.SwallowMouse ()
                 draggingFound <- true
                 box <- Box3.Enclose centers

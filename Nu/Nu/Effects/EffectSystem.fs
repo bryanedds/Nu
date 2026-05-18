@@ -40,7 +40,7 @@ module EffectSystem =
             | [||] -> failwithumf ()
             | [|head|] -> (localTime, head, head)
             | _ ->
-                let (head, next, tail) = (keyFrames.[0], keyFrames.[1], Array.skip 2 keyFrames)
+                let (head, next, tail) = (keyFrames[0], keyFrames[1], Array.skip 2 keyFrames)
                 if localTime > head.KeyFrameLength then
                     match tail with
                     | [||] -> (head.KeyFrameLength, next, next)

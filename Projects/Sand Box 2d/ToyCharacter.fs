@@ -3,7 +3,7 @@ open System.Numerics
 open Nu
 
 [<AutoOpen>]
-module ToyCharacter2dDispatcherExtensions =
+module ToyCharacter2dExtensions =
     type Entity with
         member this.GetCharacter2dRightDirection world : Vector3 = this.Get (nameof this.Character2dRightDirection) world
         member this.SetCharacter2dRightDirection (value : Vector3) world = this.Set (nameof this.Character2dRightDirection) value world

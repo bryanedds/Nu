@@ -187,7 +187,7 @@ module WorldGroupModule =
                 let entities = World.getEntitiesSovereign group world
                 World.unregisterGroup group world
                 World.removeTasklets group world
-                World.removeSimulantImSim group world
+                World.removeSimulantJournal group world
                 World.destroyEntitiesImmediate entities world
                 World.removeGroupState group world
 

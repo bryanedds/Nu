@@ -37,6 +37,7 @@ module Assets =
         let [<Uniform>] Brick = asset<Image> PackageName Assets.Default.BrickName
         let [<Uniform>] Paddle = asset<Image> PackageName Assets.Default.PaddleName
         let [<Uniform>] Fluid = asset<Image> PackageName Assets.Default.FluidName
+        let [<Uniform>] Gas = asset<Image> PackageName Assets.Default.GasName
         let [<Uniform>] HighlightSprite = asset<Image> PackageName Assets.Default.HighlightSpriteName
         let [<Uniform>] Character2dIdle = asset<Image> PackageName Assets.Default.Character2dIdleName
         let [<Uniform>] Character2dJump = asset<Image> PackageName Assets.Default.Character2dJumpName

@@ -209,25 +209,25 @@ module SpriteBatch =
 #endif
         private PopulateSpriteBatchVertex (perimeter : Box2) (pivot : Vector2) (rotation : single) (texCoords : Box2) (color : Color) env =
         let perimeterOffset = env.SpriteIndex * 4
-        env.Perimeters.[perimeterOffset] <- perimeter.Min.X
-        env.Perimeters.[perimeterOffset + 1] <- perimeter.Min.Y
-        env.Perimeters.[perimeterOffset + 2] <- perimeter.Size.X
-        env.Perimeters.[perimeterOffset + 3] <- perimeter.Size.Y
+        env.Perimeters[perimeterOffset] <- perimeter.Min.X
+        env.Perimeters[perimeterOffset + 1] <- perimeter.Min.Y
+        env.Perimeters[perimeterOffset + 2] <- perimeter.Size.X
+        env.Perimeters[perimeterOffset + 3] <- perimeter.Size.Y
         let pivotOffset = env.SpriteIndex * 2
-        env.Pivots.[pivotOffset] <- pivot.X
-        env.Pivots.[pivotOffset + 1] <- pivot.Y
+        env.Pivots[pivotOffset] <- pivot.X
+        env.Pivots[pivotOffset + 1] <- pivot.Y
         let rotationOffset = env.SpriteIndex
-        env.Rotations.[rotationOffset] <- rotation
+        env.Rotations[rotationOffset] <- rotation
         let texCoordsOffset = env.SpriteIndex * 4
-        env.TexCoordses.[texCoordsOffset] <- texCoords.Min.X
-        env.TexCoordses.[texCoordsOffset + 1] <- texCoords.Min.Y
-        env.TexCoordses.[texCoordsOffset + 2] <- texCoords.Size.X
-        env.TexCoordses.[texCoordsOffset + 3] <- texCoords.Size.Y
+        env.TexCoordses[texCoordsOffset] <- texCoords.Min.X
+        env.TexCoordses[texCoordsOffset + 1] <- texCoords.Min.Y
+        env.TexCoordses[texCoordsOffset + 2] <- texCoords.Size.X
+        env.TexCoordses[texCoordsOffset + 3] <- texCoords.Size.Y
         let colorOffset = env.SpriteIndex * 4
-        env.Colors.[colorOffset] <- color.R
-        env.Colors.[colorOffset + 1] <- color.G
-        env.Colors.[colorOffset + 2] <- color.B
-        env.Colors.[colorOffset + 3] <- color.A
+        env.Colors[colorOffset] <- color.R
+        env.Colors[colorOffset + 1] <- color.G
+        env.Colors[colorOffset + 2] <- color.B
+        env.Colors[colorOffset + 3] <- color.A
 
     /// Submit a sprite to the appropriate sprite batch.
     let SubmitSpriteBatchSprite (absolute, min : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2 inref, clipOpt : Box2 voption inref, color : Color inref, bfs, bfd, beq, texture : Texture.Texture, viewport, env) =
@@ -256,7 +256,7 @@ module SpriteBatch =
         // create vao
         let vao =  [|0u|]
         Gl.CreateVertexArrays vao
-        let vao = vao.[0]
+        let vao = vao[0]
         Hl.Assert ()
 
         // create env

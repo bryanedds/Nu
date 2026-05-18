@@ -115,7 +115,7 @@ module OctreeTests =
         Octree.getLightProbesInView results tree
         let elements = collectElements results
         Assert.Equal (1, elements.Length)
-        Assert.Equal (1, elements.[0].Entry.Id)
+        Assert.Equal (1, elements[0].Entry.Id)
 
     [<Test>]
     let ``Removing element from tree decreases element count`` () =
@@ -169,7 +169,7 @@ module OctreeTests =
         Octree.getElementsAtPoint (v3 0.0f 0.0f 0.0f) results tree
         let elements = collectElements results
         Assert.Equal (1, elements.Length)
-        Assert.Equal (1, elements.[0].Entry.Id)
+        Assert.Equal (1, elements[0].Entry.Id)
 
     [<Test>]
     let ``Query in bounds returns intersecting elements`` () =
@@ -188,8 +188,8 @@ module OctreeTests =
         Octree.getElementsInBounds queryBounds results tree
         let elements = collectElements results
         Assert.Equal (2, elements.Length)
-        Assert.Equal (1, elements.[0].Entry.Id)
-        Assert.Equal (3, elements.[1].Entry.Id)
+        Assert.Equal (1, elements[0].Entry.Id)
+        Assert.Equal (3, elements[1].Entry.Id)
 
     [<Test>]
     let ``Query in frustum returns intersecting elements`` () =
@@ -220,7 +220,7 @@ module OctreeTests =
         Octree.getElementsInViewBox queryBox results tree
         let elements = collectElements results
         Assert.Equal (1, elements.Length)
-        Assert.Equal (1, elements.[0].Entry.Id)
+        Assert.Equal (1, elements[0].Entry.Id)
 
     [<Test>]
     let ``Query elements in view with frustums`` () =
@@ -253,7 +253,7 @@ module OctreeTests =
         Octree.getElementsInPlay playBox playFrustum results tree
         let elements = collectElements results
         Assert.Equal (1, elements.Length)
-        Assert.Equal (1, elements.[0].Entry.Id)
+        Assert.Equal (1, elements[0].Entry.Id)
 
     [<Test>]
     let ``Omnipresent elements appear in all queries`` () =
@@ -326,7 +326,7 @@ module OctreeTests =
         Octree.getLightProbesInViewFrustum frustum results tree
         let elements = collectElements results
         Assert.Equal (1, elements.Length) // only visible light probe
-        Assert.Equal (1, elements.[0].Entry.Id)
+        Assert.Equal (1, elements[0].Entry.Id)
 
     [<Test>]
     let ``Light probes in view box query`` () =
@@ -342,7 +342,7 @@ module OctreeTests =
         Octree.getLightProbesInViewBox queryBox results tree
         let elements = collectElements results
         Assert.Equal (1, elements.Length)
-        Assert.Equal (1, elements.[0].Entry.Id)
+        Assert.Equal (1, elements[0].Entry.Id)
 
     [<Test>]
     let ``Lights in view frustum query`` () =
@@ -358,7 +358,7 @@ module OctreeTests =
         Octree.getLightsInViewFrustum frustum results tree
         let elements = collectElements results
         Assert.Equal (1, elements.Length) // only visible light
-        Assert.Equal (1, elements.[0].Entry.Id)
+        Assert.Equal (1, elements[0].Entry.Id)
 
     [<Test>]
     let ``Clear removes all elements`` () =

@@ -275,7 +275,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                              CubeMap.CubeMapClient (),
                              PhysicallyBased.PhysicallyBasedSceneClient ())
                     let renderPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = assetClient }
-                    renderer.RenderPackages.[packageName] <- renderPackage
+                    renderer.RenderPackages[packageName] <- renderPackage
                     renderPackage
 
             // categorize existing assets based on the required action
@@ -321,14 +321,14 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                     let lastWriteTime =
                         try DateTimeOffset (File.GetLastWriteTime asset.FilePath)
                         with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
-                    assetsLoaded.[asset.AssetTag.AssetName] <- (lastWriteTime, asset, renderAsset)
+                    assetsLoaded[asset.AssetTag.AssetName] <- (lastWriteTime, asset, renderAsset)
                 | None -> ()
 
             // insert assets into package
             for assetEntry in assetsLoaded do
                 let assetName = assetEntry.Key
                 let (lastWriteTime, asset, renderAsset) = assetEntry.Value
-                renderPackage.Assets.[assetName] <- (lastWriteTime, asset, renderAsset)
+                renderPackage.Assets[assetName] <- (lastWriteTime, asset, renderAsset)
 
         // handle error cases
         | Left failedAssetNames ->
@@ -518,7 +518,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             | TextureAsset texture ->
                 let mutable index = 0
                 while index < particles.Length do
-                    let particle = &particles.[index]
+                    let particle = &particles[index]
                     let transform = &particle.Transform
                     let absolute = transform.Absolute
                     let perimeter = transform.Perimeter
@@ -587,7 +587,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             while tileIndex < tilesLength do
 
                 // gather context for rendering tile
-                let tile = tiles.[tileIndex]
+                let tile = tiles[tileIndex]
                 if tile.Gid <> 0 then // not the empty tile
                     let tileBounds = box2 tileMin tileSize
                     let viewBounds = box2 (eyeCenter - eyeSize * 0.5f) eyeSize
@@ -912,12 +912,12 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         | RenderSprites descriptor ->
             let sprites = descriptor.Sprites
             for index in 0 .. sprites.Length - 1 do
-                let sprite = &sprites.[index]
+                let sprite = &sprites[index]
                 VulkanRenderer2d.renderSprite (&sprite.Transform, &sprite.InsetOpt, &sprite.ClipOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Emission, sprite.Flip, renderer)
         | RenderSpriteDescriptors descriptor ->
             let sprites = descriptor.SpriteDescriptors
             for index in 0 .. sprites.Length - 1 do
-                let sprite = sprites.[index]
+                let sprite = sprites[index]
                 VulkanRenderer2d.renderSprite (&sprite.Transform, &sprite.InsetOpt, &sprite.ClipOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Emission, sprite.Flip, renderer)
         | RenderSpriteParticles descriptor ->
             VulkanRenderer2d.renderSpriteParticles (&descriptor.ClipOpt, descriptor.Blend, descriptor.Image, descriptor.Particles, renderer)
@@ -956,7 +956,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                     if renderAsset.IsFontAsset then
                         VulkanRenderer2d.freeRenderAsset renderAsset renderer
                         match VulkanRenderer2d.tryLoadRenderAsset package.PackageState asset renderer with
-                        | Some renderAsset -> package.Assets.[assetName] <- (lastWriteTime, asset, renderAsset)
+                        | Some renderAsset -> package.Assets[assetName] <- (lastWriteTime, asset, renderAsset)
                         | None -> Log.fail ("Failed to reload font '" + scstring asset.AssetTag + "' on DisplayScalar change.")
 
         // update viewport
@@ -988,7 +988,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         if renderer.VulkanContext.RenderDesired then
             SpriteBatch.EndSpriteBatchFrame renderer.Viewport renderer.SpriteBatchEnv
 
-            // clean up any text textures that went unused this frame
+            // sweep up any text textures that went unused this frame
             let textTexturesUnused =
                 renderer.TextTextures
                 |> Seq.filter (fun entry -> not (fst entry.Value).Value)

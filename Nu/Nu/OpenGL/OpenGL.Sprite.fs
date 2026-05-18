@@ -37,7 +37,7 @@ module Sprite =
         // create vao
         let vao =  [|0u|]
         Gl.CreateVertexArrays vao
-        let vao = vao.[0]
+        let vao = vao[0]
 
         // per vertex
         Gl.VertexArrayAttribFormat (vao, 0u, 2, VertexAttribType.Float, false, uint 0)
