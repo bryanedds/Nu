@@ -191,7 +191,7 @@ module Hl =
                 | D32f
                 | D16s8ui
                 | D24s8ui
-                | D32fs8ui -> VkFormatFeatureFlags.BlitSrc ||| VkFormatFeatureFlags.BlitDst ||| VkFormatFeatureFlags.DepthStencilAttachment
+                | D32fs8ui -> VkFormatFeatureFlags.BlitSrc (*||| VkFormatFeatureFlags.BlitDst*) ||| VkFormatFeatureFlags.DepthStencilAttachment
             let mutable properties = Unchecked.defaultof<VkFormatProperties>
             Vulkan.vkGetPhysicalDeviceFormatProperties (vkPhysicalDevice, format.VkFormat, &properties)
             properties.optimalTilingFeatures &&& requiredFeatures = requiredFeatures

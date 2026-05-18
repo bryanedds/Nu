@@ -1,6 +1,9 @@
 ﻿module SandBox2d.Program
 open System
 open System.IO
+open System.Reflection
+open System.Runtime.CompilerServices
+open System.Runtime.InteropServices
 open Nu
 
 // this the entry point for your Nu application
@@ -20,6 +23,90 @@ let main () =
 
     // this runs the engine with the given config and plugin, starting the game
     World.run worldConfig (SandBox2dPlugin ())
+
+let private frameworkPath frameworkName =
+    Path.Combine (AppContext.BaseDirectory, "Frameworks", frameworkName + ".framework", frameworkName)
+
+let private tryLoadNativeLibraryOpt libraryPath =
+    let mutable handle = 0n
+    if File.Exists libraryPath && NativeLibrary.TryLoad (libraryPath, &handle)
+    then Some handle
+    else None
+
+let private tryLoadNativeLibraryByNameOpt libraryName =
+    let mutable handle = 0n
+    if NativeLibrary.TryLoad (libraryName, &handle)
+    then Some handle
+    else None
+
+let private trySetDllImportResolver (assembly : Assembly) mappedLibraries =
+    let resolver =
+        DllImportResolver (fun libraryName _ _ ->
+            mappedLibraries
+            |> List.tryPick (fun (candidateName, frameworkName) ->
+                if String.Equals (libraryName, candidateName, StringComparison.Ordinal) then
+                    if frameworkName = "__Internal" then
+                        tryLoadNativeLibraryByNameOpt frameworkName
+                    else tryLoadNativeLibraryOpt (frameworkPath frameworkName)
+                else None)
+            |> Option.defaultValue 0n)
+    try NativeLibrary.SetDllImportResolver (assembly, resolver)
+    with :? InvalidOperationException -> ()
+
+let private loadAssimpFramework () =
+    let assimpLibrary = global.Assimp.Unmanaged.AssimpLibrary.Instance
+    if not assimpLibrary.IsLibraryLoaded then
+        let libraryPath = frameworkPath "assimp"
+        let libraryType = typeof<global.Assimp.Unmanaged.UnmanagedLibrary>
+        let getField name =
+            let field = libraryType.GetField (name, BindingFlags.Instance ||| BindingFlags.NonPublic)
+            if isNull field then failwith ("Could not find AssimpNet field '" + name + "'.")
+            field
+        let impl = (getField "m_impl").GetValue assimpLibrary
+        let loadLibraryMethod = impl.GetType().GetMethod ("LoadLibrary", BindingFlags.Instance ||| BindingFlags.Public)
+        if isNull loadLibraryMethod then failwith "Could not find AssimpNet implementation LoadLibrary method."
+        let loaded = loadLibraryMethod.Invoke (impl, [| box libraryPath |]) :?> bool
+        if not loaded then failwith ("Could not load Assimp framework from '" + libraryPath + "'.")
+        (getField "m_libraryPath").SetValue (assimpLibrary, libraryPath)
+        (getField "m_checkNeedsLoading").SetValue (assimpLibrary, false)
+        // AssimpNet's public LoadLibrary appends ".dylib" to extensionless paths,
+        // but framework executables are intentionally extensionless.
+        let onLibraryLoadedMethod = libraryType.GetMethod ("OnLibraryLoaded", BindingFlags.Instance ||| BindingFlags.NonPublic)
+        if isNull onLibraryLoadedMethod then failwith "Could not find AssimpNet OnLibraryLoaded method."
+        onLibraryLoadedMethod.Invoke (assimpLibrary, [||]) |> ignore
+
+let private configureJoltFramework () =
+    let joltApiType = typeof<JoltPhysicsSharp.Jolt>.Assembly.GetType ("JoltPhysicsSharp.JoltApi", true)
+    RuntimeHelpers.RunClassConstructor joltApiType.TypeHandle
+    let joltResolverEvent = joltApiType.GetEvent ("JoltDllImporterResolver", BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic)
+    if isNull joltResolverEvent then failwith "Could not find JoltPhysicsSharp JoltDllImporterResolver event."
+    let resolver =
+        DllImportResolver (fun libraryName _ _ ->
+            assert (libraryName = "joltc")
+            tryLoadNativeLibraryOpt (frameworkPath "joltc") |> Option.defaultValue 0n)
+    joltResolverEvent.AddEventHandler (null, resolver)
+
+let private configureVmaFramework () =
+    let vmaType = typeof<Vortice.Vulkan.Vma>
+    RuntimeHelpers.RunClassConstructor vmaType.TypeHandle
+    let vmaResolverEvent = vmaType.GetEvent ("VmaDllImporterResolver", BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic)
+    if isNull vmaResolverEvent then failwith "Could not find Vortice Vulkan VmaDllImporterResolver event."
+    let resolver =
+        DllImportResolver (fun libraryName _ _ ->
+            assert (libraryName = "vma")
+            tryLoadNativeLibraryOpt (frameworkPath "vma") |> Option.defaultValue 0n)
+    vmaResolverEvent.AddEventHandler (null, resolver)
+
+let private configureFrameworkNativeLibraries () =
+    trySetDllImportResolver typeof<World>.Assembly
+        ["cimgui", "cimgui"]
+    trySetDllImportResolver typeof<ImGuiNET.ImGui>.Assembly
+        ["cimgui", "cimgui"]
+    trySetDllImportResolver typeof<BulletSharp.BulletObject>.Assembly
+        ["libbulletc", "bulletc"]
+    loadAssimpFramework ()
+    configureJoltFramework ()
+    configureVmaFramework ()
 
 #if ANDROID
 open Android.App
@@ -146,75 +233,24 @@ type MainActivity () =
         main () |> ignore<int>
 #endif
 #if IOS
-
-open System.Reflection
-open System.Runtime.CompilerServices
-open System.Runtime.InteropServices
-
-let private iosFrameworkPath frameworkName =
-    Path.Combine (AppContext.BaseDirectory, "Frameworks", frameworkName + ".framework", frameworkName)
-
-let private tryLoadNativeLibraryOpt libraryPath =
-    let mutable handle = 0n
-    if File.Exists libraryPath && NativeLibrary.TryLoad (libraryPath, &handle)
-    then Some handle
-    else None
-
-let private trySetDllImportResolver (assembly : Assembly) mappedLibraries =
+let private configureShaderCompilerLibrary () =
+    let shaderCompilerAssembly = typeof<Vortice.ShaderCompiler.ShaderMacro>.Assembly
+    let nativeType = shaderCompilerAssembly.GetType ("Vortice.ShaderCompiler.Native", true)
+    RuntimeHelpers.RunClassConstructor nativeType.TypeHandle
+    let resolveLibraryProperty = nativeType.GetProperty ("ResolveLibrary", BindingFlags.Static ||| BindingFlags.Public)
+    if isNull resolveLibraryProperty then failwith "Could not find Vortice.ShaderCompiler.Native.ResolveLibrary property."
     let resolver =
         DllImportResolver (fun libraryName _ _ ->
-            mappedLibraries
-            |> List.tryPick (fun (candidateName, frameworkName) ->
-                if String.Equals (libraryName, candidateName, StringComparison.Ordinal) then
-                    tryLoadNativeLibraryOpt (iosFrameworkPath frameworkName)
-                else None)
+            assert (libraryName = "shaderc_shared")
+            let hasShadercInitSymbol handle =
+                let mutable symbol = 0n
+                NativeLibrary.TryGetExport (handle, "shaderc_compiler_initialize", &symbol)
+            [frameworkPath "shaderc_shared"; "shaderc_shared"; "@rpath/shaderc_shared.framework/shaderc_shared"]
+            |> List.tryPick (fun candidate ->
+                tryLoadNativeLibraryOpt candidate
+                |> Option.filter hasShadercInitSymbol)
             |> Option.defaultValue 0n)
-    try NativeLibrary.SetDllImportResolver (assembly, resolver)
-    with :? InvalidOperationException -> ()
-
-let private loadAssimpIosFramework () =
-    let assimpLibrary = global.Assimp.Unmanaged.AssimpLibrary.Instance
-    if not assimpLibrary.IsLibraryLoaded then
-        let libraryPath = iosFrameworkPath "assimp"
-        let libraryType = typeof<global.Assimp.Unmanaged.UnmanagedLibrary>
-        let getField name =
-            let field = libraryType.GetField (name, BindingFlags.Instance ||| BindingFlags.NonPublic)
-            if isNull field then failwith ("Could not find AssimpNet field '" + name + "'.")
-            field
-        let impl = (getField "m_impl").GetValue assimpLibrary
-        let loadLibraryMethod = impl.GetType().GetMethod ("LoadLibrary", BindingFlags.Instance ||| BindingFlags.Public)
-        if isNull loadLibraryMethod then failwith "Could not find AssimpNet implementation LoadLibrary method."
-        let loaded = loadLibraryMethod.Invoke (impl, [| box libraryPath |]) :?> bool
-        if not loaded then failwith ("Could not load Assimp framework from '" + libraryPath + "'.")
-        (getField "m_libraryPath").SetValue (assimpLibrary, libraryPath)
-        (getField "m_checkNeedsLoading").SetValue (assimpLibrary, false)
-        // AssimpNet's public LoadLibrary appends ".dylib" to extensionless paths,
-        // but iOS framework executables are intentionally extensionless.
-        let onLibraryLoadedMethod = libraryType.GetMethod ("OnLibraryLoaded", BindingFlags.Instance ||| BindingFlags.NonPublic)
-        if isNull onLibraryLoadedMethod then failwith "Could not find AssimpNet OnLibraryLoaded method."
-        onLibraryLoadedMethod.Invoke (assimpLibrary, [||]) |> ignore
-
-let private configureJoltIosFramework () =
-    let joltApiType = typeof<JoltPhysicsSharp.Jolt>.Assembly.GetType ("JoltPhysicsSharp.JoltApi", true)
-    RuntimeHelpers.RunClassConstructor joltApiType.TypeHandle
-    let joltResolverEvent = joltApiType.GetEvent ("JoltDllImporterResolver", BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic)
-    if isNull joltResolverEvent then failwith "Could not find JoltPhysicsSharp JoltDllImporterResolver event."
-    let resolver =
-        DllImportResolver (fun libraryName _ _ ->
-            assert (libraryName = "joltc")
-            tryLoadNativeLibraryOpt (iosFrameworkPath "joltc") |> Option.defaultValue 0n)
-    joltResolverEvent.AddEventHandler (null, resolver)
-
-let private configureVmaIosFramework () =
-    let vmaType = typeof<Vortice.Vulkan.Vma>
-    RuntimeHelpers.RunClassConstructor vmaType.TypeHandle
-    let vmaResolverEvent = vmaType.GetEvent ("VmaDllImporterResolver", BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic)
-    if isNull vmaResolverEvent then failwith "Could not find Vortice Vulkan VmaDllImporterResolver event."
-    let resolver =
-        DllImportResolver (fun libraryName _ _ ->
-            assert (libraryName = "vma")
-            tryLoadNativeLibraryOpt (iosFrameworkPath "vma") |> Option.defaultValue 0n)
-    vmaResolverEvent.AddEventHandler (null, resolver)
+    resolveLibraryProperty.SetValue (null, resolver)
 
 let private configureIosNativeLibraries () =
     trySetDllImportResolver typeof<SDL.SDL3>.Assembly
@@ -225,42 +261,44 @@ let private configureIosNativeLibraries () =
         ["SDL3_ttf", "SDL3_ttf"]
     trySetDllImportResolver typeof<SDL.SDL3_mixer>.Assembly
         ["SDL3_mixer", "SDL3_mixer"]
-    trySetDllImportResolver typeof<World>.Assembly
-        ["cimgui", "cimgui"]
-    trySetDllImportResolver typeof<ImGuiNET.ImGui>.Assembly
-        ["cimgui", "cimgui"]
-    trySetDllImportResolver typeof<BulletSharp.BulletObject>.Assembly
-        ["libbulletc", "bulletc"]
+    configureShaderCompilerLibrary ()
+    configureFrameworkNativeLibraries ()
 
-    let moltenVkPath = iosFrameworkPath "MoltenVK"
+    let moltenVkPath = frameworkPath "MoltenVK"
     let result = Vortice.Vulkan.Vulkan.vkInitialize moltenVkPath
     if result <> Vortice.Vulkan.VkResult.Success then
         failwith ("Could not initialize Vulkan from '" + moltenVkPath + "' due to: " + string result)
     SDL.SDL3.SDL_SetHint (SDL.SDL3.SDL_HINT_VULKAN_LIBRARY, moltenVkPath) |> ignore<SDL.SDLBool>
-    loadAssimpIosFramework ()
-    configureJoltIosFramework ()
-    configureVmaIosFramework ()
 
 open SDL
 open FSharp.NativeInterop
 
 // SDL usage taken from https://github.com/ppy/SDL3-CS/blob/master/SDL3-CS.Tests.iOS/Main.cs
 type SdlMain = delegate of argc : int * argv : byte nativeptr nativeptr -> int
-let private sdlMain = SdlMain (fun _ _ -> main ())
+let private sdlMain =
+    SdlMain (fun _ _ ->
+        // this points the current working directory at the bundled game assets
+        let baseDirectory = AppContext.BaseDirectory
+        let assetDirectory = Path.Combine (baseDirectory, "refinement-out", "net10.0-ios")
+        Directory.SetCurrentDirectory assetDirectory
+
+        main ())
    
 let [<EntryPoint>] entryPoint _ =
     Log.init None // disable Nu's default file log because the iOS app bundle is read-only.
     configureIosNativeLibraries ()
-
-    // this points the current working directory at the bundled game assets
-    let baseDirectory = AppContext.BaseDirectory
-    let assetDirectory = Path.Combine (baseDirectory, "refinement-out", "net10.0-ios")
-    Directory.SetCurrentDirectory assetDirectory
+    if ObjCRuntime.Runtime.Arch = ObjCRuntime.Arch.SIMULATOR then
+        // Avoid hitting MoltenVK iOS Simulator limitations like:
+        // - only 31 buffers are supported in the simulator
+        // - no rendering to array (layered) attachments
+        Constants.Render.SkipRendering3d <- true
 
     SDL3.SDL_RunApp (0, NativePtr.nullPtr, Marshal.GetFunctionPointerForDelegate<_> sdlMain, 0n)
 #endif
 #if !(ANDROID || IOS)
 let [<EntryPoint>] entryPoint _ =
+    if OperatingSystem.IsMacOS () then
+        configureFrameworkNativeLibraries ()
     // regardless of where the program is launched from in the command line, always resolve files relative to the application's base directory
     Directory.SetCurrentDirectory AppContext.BaseDirectory
     main ()

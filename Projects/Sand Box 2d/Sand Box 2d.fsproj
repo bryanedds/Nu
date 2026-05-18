@@ -82,10 +82,6 @@
         <Copy Condition="'$(TargetPlatformIdentifier)' == ''" SourceFiles="@(MauiAsset)" DestinationFolder="$(MSBuildProjectDirectory)/bin/$(Configuration)/$(TargetFramework)/%(RecursiveDir)" SkipUnchangedFiles="true" OverwriteReadOnlyFiles="true" />
     </Target>
 
-    <Target Name="RemoveStaleIosAssets" BeforeTargets="_CopyResourcesToBundle" Condition="'$(TargetPlatformIdentifier)'=='ios'">
-        <RemoveDir Directories="$(AppBundleDir)/Assets" />
-        <RemoveDir Directories="$(AppBundleDir)/refinement-out" />
-    </Target>
     <Target Name="CleanNuPipe" AfterTargets="Clean">
         <RemoveDir Directories="refinement" />
         <RemoveDir Directories="refinement-out" />
@@ -156,7 +152,21 @@
         <NativeReference Include="..\..\Nu\Nu.Dependencies\JoltPhysics\iOS\joltc.xcframework" Kind="Framework" />
         <NativeReference Include="..\..\Nu\Nu.Dependencies\ImGui\iOS\cimgui.xcframework" Kind="Framework" />
         <NativeReference Include="..\..\Nu\Nu.Dependencies\Vortice.VulkanMemoryAllocator\iOS\vma.xcframework" Kind="Framework" />
+        <NativeReference Include="..\..\Nu\Nu.Dependencies\ShaderC\iOS\shaderc_shared.xcframework" Kind="Framework" />
 	</ItemGroup>
+
+    <ItemGroup Condition="$(BuildingMacOS)">
+        <None Include="..\..\Nu\Nu.Dependencies\AssimpNet\iOS\assimp.xcframework\macos-arm64\assimp.framework\**\*">
+            <TargetPath>Frameworks/assimp.framework/%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Visible>False</Visible>
+        </None>
+        <None Include="..\..\Nu\Nu.Dependencies\BulletSharpPInvoke\iOS\bulletc.xcframework\macos-arm64\bulletc.framework\**\*">
+            <TargetPath>Frameworks/bulletc.framework/%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Visible>False</Visible>
+        </None>
+    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Update="FSharp.Core" Version="10.0.103" />
@@ -188,7 +198,11 @@
 		<Exec Command="perl -0777 -pi -e '$u=qr/\x18\x80(.{4})\x2a\x17\x80\1\x2a\x18\x80\1\x2a\x16\x80\1\x2a/s; $p=qr/\x18\x80(.{4})\x2a\x18\x80\1\x2a\x18\x80\1\x2a\x16\x80\1\x2a/s; s/$u/\x18\x80$1\x2a\x18\x80$1\x2a\x18\x80$1\x2a\x16\x80$1\x2a/s or /$p/ or die &quot;AssimpNet iOS platform patch pattern not found\n&quot;' &quot;$(SandBox2dAssimpNetReferencePath)&quot;" />
 	</Target>
 
-    <Target Name="CopyMacOSVulkanSdk" BeforeTargets="AssignTargetPaths" Condition="$(BuildingMacOS) Or '$(TargetPlatformIdentifier)'=='ios'">
+    <Target Name="RemoveStaleIosAssets" BeforeTargets="_CopyResourcesToBundle" Condition="'$(TargetPlatformIdentifier)'=='ios'">
+        <RemoveDir Directories="$(AppBundleDir)/Assets" />
+        <RemoveDir Directories="$(AppBundleDir)/refinement-out" />
+    </Target>
+    <Target Name="UseMacOSVulkanSDK" BeforeTargets="AssignTargetPaths" Condition="$(BuildingMacOS) Or '$(TargetPlatformIdentifier)'=='ios'">
         <Exec Condition="'$(MacOSVulkanSdk)' == '' And $([System.OperatingSystem]::IsMacOS())" Command="
             if [ -x ~/.bash_profile ]
             then source ~/.bash_profile
@@ -200,14 +214,13 @@
             <Output TaskParameter="ConsoleOutput" PropertyName="MacOSVulkanSdk" />
         </Exec>
         <Error Text="Please install the macOS Vulkan SDK. If installed to a non-default location, override the MacOSVulkanSdk property in this file." Condition="!$([System.IO.Directory]::Exists($(MacOSVulkanSdk)))" />
-        <Warning Text="iOS Simulator builds are not supported because it uses software rendering without support for Vulkan descriptor indexing." Condition="'$(TargetPlatformIdentifier)'=='ios' And $(RuntimeIdentifier.StartsWith('iossimulator'))" />
+        <Warning Text="iOS Simulator builds will disable the 3D renderer because array (layered) attachments are unsupported." Condition="'$(TargetPlatformIdentifier)'=='ios' And $(RuntimeIdentifier.StartsWith('iossimulator'))" />
         <ItemGroup>
             <!-- For macOS builds, use the macOS Vulkan SDK's dylibs. Also, the magic of icd.json copying and path fixing enables KosmicKrisp :) -->
             <MacOSVulkanSdkDylib Include="$(MacOSVulkanSdk)/macOS/lib/*.dylib" />
             <MacOSVulkanSdkIcdJson Include="$(MacOSVulkanSdk)/macOS/share/**/*_icd.json" />
-            <!-- For iOS device builds, use the macOS Vulkan SDK's libshaderc and Vulkan loader. -->
-            <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios' And !$(RuntimeIdentifier.StartsWith('iossimulator'))" Include="$(MacOSVulkanSdk)/iOS/lib/libshaderc_combined.a" Kind="Static" />
-            <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios' And !$(RuntimeIdentifier.StartsWith('iossimulator'))" Include="$(MacOSVulkanSdk)/iOS/lib/MoltenVK.xcframework" Kind="Framework" />
+            <!-- For iOS, always package MoltenVK. The simulator slice exists in the Vulkan SDK xcframework. -->
+            <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios'" Include="$(MacOSVulkanSdk)/iOS/lib/MoltenVK.xcframework" Kind="Framework" />
 			<NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios' And !$(RuntimeIdentifier.StartsWith('iossimulator'))" Include="$(MacOSVulkanSdk)/iOS/lib/vulkan.xcframework" Kind="Framework" />
 			<NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios' And !$(RuntimeIdentifier.StartsWith('iossimulator'))" Include="$(MacOSVulkanSdk)/iOS/lib/VkLayer_*.xcframework" Kind="Framework" />
         </ItemGroup>
@@ -220,6 +233,20 @@
             <OutIcdJsonFile Include="$(OutDir)/vulkan/icd.d/*_icd.json" />
         </ItemGroup>
         <WriteLinesToFile Condition="'$(TargetPlatformIdentifier)'!='ios'" File="%(OutIcdJsonFile.Identity)" Lines="$([System.IO.File]::ReadAllText('%(OutIcdJsonFile.Identity)').Replace('../../../lib/','../../'))" Overwrite="true" />
+    </Target>
+
+    <!-- iOS Simulator: Resign the app bundle with free provisioning or it will crash on launch! -->
+    <Target Name="ResignIosSimulatorAppBundle" AfterTargets="Build"
+            Condition="$(RuntimeIdentifier.StartsWith('iossimulator')) And $([System.OperatingSystem]::IsMacOS()) And '$(CodesignKey)' == ''">
+        <Exec Command="security find-identity -v -p codesigning 2&gt;/dev/null | grep -Eq &quot;Apple Development&quot;" IgnoreExitCode="true">
+            <Output TaskParameter="ExitCode" PropertyName="IosSigningIdentityExitCode" />
+        </Exec>
+        <Error Condition="'$(IosSigningIdentityExitCode)'!='0'"
+            Text="No valid Apple Development signing identity was found. iOS simulator launch may fail with AMFI code-signing errors. Create one in Xcode, including free provisioning via a Personal Team." />
+        <Exec Command="find &quot;$(AppBundleDir)/Frameworks&quot; -mindepth 2 -maxdepth 2 -type f -perm -111 -print0 | xargs -0 -I{} codesign --force --sign &quot;Apple Development&quot; --timestamp=none {}"
+                Condition="Exists('$(AppBundleDir)/Frameworks')" />
+        <Exec Command="find &quot;$(AppBundleDir)&quot; -maxdepth 1 -type f -name '*.dylib' -print0 | xargs -0 -I{} codesign --force --sign &quot;Apple Development&quot; --timestamp=none {}" />
+        <Exec Command="codesign --force --sign &quot;Apple Development&quot; --timestamp=none &quot;$(AppBundleDir)&quot;" />
     </Target>
 
 </Project>

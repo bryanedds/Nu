@@ -380,6 +380,8 @@ module Render =
     let [<Literal>] ContoursMax = 8192
     let [<Literal>] ForwardStaticDrawsMax = 128
 
+    let [<Uniform>] mutable SkipRendering3d = false
+
 [<RequireQualifiedAccess>]
 module Audio =
 
