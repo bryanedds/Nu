@@ -6287,6 +6287,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                      renderer.WindowViewport.Outer.Max.Y - renderer.WindowViewport.Inner.Max.Y,
                      uint renderer.WindowViewport.Inner.Size.X,
                      uint renderer.WindowViewport.Inner.Size.Y)
+                |> Hl.scaleRectToWindowPixels vkc.Window
             VulkanRenderer3d.renderGeometry
                 frustumInterior frustumExterior frustumImposter normalPass normalTasks renderer
                 true None eyeCenter view viewSkyBox frustum geometryProjection geometryViewProjection windowProjection targetBounds 0 vkc.SwapchainImage

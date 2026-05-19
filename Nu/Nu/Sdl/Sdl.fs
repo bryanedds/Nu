@@ -26,7 +26,8 @@ type SdlWindowConfig =
         { WindowTitle = "Nu Game"
           WindowX = int SDL3.SDL_WINDOWPOS_UNDEFINED
           WindowY = int SDL3.SDL_WINDOWPOS_UNDEFINED
-          WindowFlags = SDL_WindowFlags.SDL_WINDOW_RESIZABLE ||| SDL_WindowFlags.SDL_WINDOW_VULKAN ||| noNotificationBar }
+          // SDL_WINDOW_HIGH_PIXEL_DENSITY only changes behavior on Apple iOS/macOS or Linux Wayland. see https://wiki.libsdl.org/SDL3/README-highdpi
+          WindowFlags = SDL_WindowFlags.SDL_WINDOW_RESIZABLE ||| SDL_WindowFlags.SDL_WINDOW_VULKAN ||| SDL_WindowFlags.SDL_WINDOW_HIGH_PIXEL_DENSITY ||| noNotificationBar }
 
 /// Describes the general configuration of SDL.
 type [<ReferenceEquality>] SdlConfig =
@@ -183,13 +184,9 @@ module SdlDeps =
             match tryMakeSdlResource
                 (fun () ->
 
-                    // specify that all dimensions must be reported in physical pixels and not window coordinates. see https://wiki.libsdl.org/SDL3/README-highdpi
-                    // for possible SDL_GetCurrentVideoDriver values, check SDL_VideoDevice implementations under https://github.com/libsdl-org/SDL/tree/main/src/video in files with names containing "video".
-                    let highPixelDensity = match SDL3.SDL_GetCurrentVideoDriver () with "cocoa" | "uikit" | "wayland" -> SDL_WindowFlags.SDL_WINDOW_HIGH_PIXEL_DENSITY | _ -> Unchecked.defaultof<_>
-
                     // attempt to create window
                     let windowConfig = sdlConfig.WindowConfig
-                    let windowOpt = SDL3.SDL_CreateWindow (windowConfig.WindowTitle, windowSize.X, windowSize.Y, windowConfig.WindowFlags ||| highPixelDensity)
+                    let windowOpt = SDL3.SDL_CreateWindow (windowConfig.WindowTitle, windowSize.X, windowSize.Y, windowConfig.WindowFlags)
                     if not (NativePtr.isNullPtr windowOpt) then
 
                         // set window position

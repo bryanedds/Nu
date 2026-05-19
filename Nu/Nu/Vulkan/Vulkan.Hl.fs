@@ -439,6 +439,20 @@ module Hl =
         viewport.maxDepth <- 1.0f
         viewport
 
+    /// Get the current pixel density of an SDL window.
+    let getWindowPixelDensity window =
+        let pixelDensity = SDL3.SDL_GetWindowPixelDensity window
+        if pixelDensity > 0.0f then pixelDensity else 1.0f
+
+    /// Scale a rectangle from window coordinate space to pixel coordinate space.
+    let scaleRectForPixelDensity pixelDensity (rect : VkRect2D) =
+        let inline scale v = single v * pixelDensity
+        VkRect2D (int (scale rect.offset.x), int (scale rect.offset.y), uint (scale rect.extent.width), uint (scale rect.extent.height))
+
+    /// Scale a rectangle from SDL window coordinates to SDL pixel coordinates.
+    let scaleRectToWindowPixels window rect =
+        scaleRectForPixelDensity (getWindowPixelDensity window) rect
+
     /// Make a VkPipelineColorBlendAttachmentState.
     let makeBlendAttachment blendDataOpt =
         let mutable blendAttachment = VkPipelineColorBlendAttachmentState ()
@@ -1347,6 +1361,9 @@ module Hl =
 
         /// Render desired.
         member this.RenderDesired = this.RenderDesired_
+
+        /// The SDL window used by the swapchain.
+        member this.Window = this.Swapchain_.Window_
         
         /// The physical device.
         member this.VkPhysicalDevice = this.PhysicalDevice_.VkPhysicalDevice
@@ -1830,7 +1847,9 @@ module Hl =
                 Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
                 // clear viewport
-                let renderArea = VkRect2D (windowViewport.Bounds.Min.X, windowViewport.Bounds.Min.Y, uint windowViewport.Bounds.Size.X, uint windowViewport.Bounds.Size.Y)
+                let renderArea =
+                    VkRect2D (windowViewport.Bounds.Min.X, windowViewport.Bounds.Min.Y, uint windowViewport.Bounds.Size.X, uint windowViewport.Bounds.Size.Y)
+                    |> scaleRectToWindowPixels vkc.Window
                 let clearColor = VkClearValue (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
                 let mutable rendering = makeRenderingInfo [|vkc.SwapchainImageView|] None renderArea (Some clearColor)
                 Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &rendering)

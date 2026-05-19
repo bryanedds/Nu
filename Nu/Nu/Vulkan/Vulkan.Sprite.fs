@@ -154,12 +154,14 @@ module Sprite =
             Pipeline.Pipeline.writeDescriptorSampler 1 0 0 0 sampler pipeline vkc
 
             // make viewport and scissor
-            let mutable renderArea = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)
+            let pixelDensity = Hl.getWindowPixelDensity vkc.Window
+            let renderAreaLogical = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)
+            let mutable renderArea = Hl.scaleRectForPixelDensity pixelDensity renderAreaLogical
             let mutable vkViewport = Hl.makeViewport true renderArea
             let mutable scissor = renderArea
             match clipOpt with
             | ValueSome clip ->
-                let viewProjection = if absolute then viewProjectionClipAbsolute else viewProjectionClipRelative
+                let viewProjection = if absolute then   viewProjectionClipAbsolute else viewProjectionClipRelative
                 let minClip = Vector4.Transform(Vector4 (clip.Min.X, clip.Max.Y, 0.0f, 1.0f), viewProjection).V2
                 let minNdc = minClip * single viewport.DisplayScalar
                 let minScissor = (minNdc + v2One) * 0.5f * viewport.Inner.Size.V2
@@ -167,12 +169,13 @@ module Sprite =
                 let sizeNdc = sizeClip * single viewport.DisplayScalar
                 let sizeScissor = sizeNdc * 0.5f * viewport.Inner.Size.V2
                 let offset = v2i viewport.Inner.Min.X (viewport.Outer.Max.Y - viewport.Inner.Max.Y)
-                scissor <-
+                let scissorLogical =
                     VkRect2D
                         ((minScissor.X |> round |> int) + offset.X,
-                         (single renderArea.extent.height - minScissor.Y |> round |> int) + offset.Y,
+                         (single renderAreaLogical.extent.height - minScissor.Y |> round |> int) + offset.Y,
                          uint sizeScissor.X,
                          uint sizeScissor.Y)
+                scissor <- Hl.scaleRectForPixelDensity pixelDensity scissorLogical
                 scissor <- Hl.clipRect renderArea scissor
             | ValueNone -> ()
             
