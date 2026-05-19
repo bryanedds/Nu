@@ -19,7 +19,7 @@
         <BuildingMacOS Condition="'$(TargetPlatformIdentifier)' == '' And (('$(RuntimeIdentifier)'=='' And $([System.OperatingSystem]::IsMacOS())) Or $(RuntimeIdentifier.StartsWith('osx')))">true</BuildingMacOS>
         <BlockCompression>BcCompression</BlockCompression>
         <BlockCompression Condition="$(BuildingMacOS) Or '$(TargetPlatformIdentifier)'=='ios' Or '$(TargetPlatformIdentifier)'=='android'">AstcCompression</BlockCompression>
-        <SandBox2dPpySdlVersion>2026.302.0</SandBox2dPpySdlVersion>
+        <SandBox2dPpySdlVersion>2026.512.0</SandBox2dPpySdlVersion>
         <AssimpNetOriginalDir>$(MSBuildProjectDirectory)/../../Nu/Nu.Dependencies/AssimpNet/netstandard2.1</AssimpNetOriginalDir>
         <AssimpNetPatchedDir>$(MSBuildProjectDirectory)/$(BaseIntermediateOutputPath)ios-managed/$(TargetFramework)</AssimpNetPatchedDir>
 

@@ -203,10 +203,10 @@
         <PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.1" />
         <PackageReference Include="System.Drawing.Common" Version="10.0.1" />
         <PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" />
-        <PackageReference Include="ppy.SDL3-CS" Version="2026.302.0" />
-        <PackageReference Include="ppy.SDL3_ttf-CS" Version="2026.302.0" />
-        <PackageReference Include="ppy.SDL3_image-CS" Version="2026.302.0" />
-        <PackageReference Include="ppy.SDL3_mixer-CS" Version="2026.302.0" />
+        <PackageReference Include="ppy.SDL3-CS" Version="2026.512.0" />
+        <PackageReference Include="ppy.SDL3_ttf-CS" Version="2026.512.0" />
+        <PackageReference Include="ppy.SDL3_image-CS" Version="2026.512.0" />
+        <PackageReference Include="ppy.SDL3_mixer-CS" Version="2026.512.0" />
         <PackageReference Include="Vortice.ShaderCompiler" Version="1.8.0" />
         <PackageReference Include="Vortice.Vulkan" Version="2.1.1" />
         <PackageReference Include="Vortice.VulkanMemoryAllocator" Version="1.6.1" />
