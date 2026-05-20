@@ -996,9 +996,6 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                 |> Seq.toArray
             for entry in textTexturesUnused do
                 let (_, _, _, textTexture) = snd renderer.TextTextures.[entry]
-                
-                // RenderDesired must be true to avoid premature destruction
-                // TODO: DJL: the logic behind this is too complex and subtle, see if there is an easier and safer way to do things.
                 Texture.TextureDisposer.submit textTexture renderer.TextureDisposer
                 renderer.TextTextures.Remove entry |> ignore<bool>
 

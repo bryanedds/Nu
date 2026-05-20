@@ -1790,9 +1790,6 @@ module Hl =
 
             if vkc.RenderDesired_ then
             
-                // reset fence for current frame if rendering is to go ahead (should be cancelled if swapchain refreshed)
-                Vulkan.vkResetFences (vkc.Device, 1u, asPointer &fence) |> check
-
                 // begin command recording
                 initCommandBuffer vkc.RenderCommandBuffer
                 
@@ -1827,8 +1824,10 @@ module Hl =
                 // the *simple* solution: https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation#page_Subpass-dependencies
                 let waitStage = VkPipelineStageFlags.TopOfPipe
                 
-                // flush commands
-                Queue.submit vkc.RenderCommandBuffer [|vkc.ImageAvailableSemaphore, waitStage|] [|vkc.RenderFinishedSemaphore|] vkc.InFlightFence vkc.RenderQueue
+                // reset fence and flush commands
+                let mutable fence = vkc.InFlightFence
+                Vulkan.vkResetFences (vkc.Device, 1u, asPointer &fence) |> check
+                Queue.submit vkc.RenderCommandBuffer [|vkc.ImageAvailableSemaphore, waitStage|] [|vkc.RenderFinishedSemaphore|] fence vkc.RenderQueue
                 
                 // one more check for app backgrounding before we present
                 if not (hasAppBegunBackgrounding ()) then
