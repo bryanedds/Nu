@@ -903,7 +903,6 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                     // fin
                     | _ -> Log.infoOnce ("Cannot render text with a non-font asset for '" + scstring font + "'.")
                 | ValueNone -> Log.infoOnce ("TextDescriptor failed due to unloadable asset for '" + scstring font + "'.")
-            OpenGL.Hl.Assert ()
     
     static member private renderDescriptor descriptor eyeCenter eyeSize renderer =
         match descriptor with
