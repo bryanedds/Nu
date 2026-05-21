@@ -1324,17 +1324,6 @@ module Hl =
     type private DebugDelegate =
         delegate of VkDebugUtilsMessageSeverityFlagsEXT * VkDebugUtilsMessageTypeFlagsEXT * nativeint * nativeint -> uint32
 
-    // https://github.com/amerkoleci/Vortice.Vulkan/blob/32035603790b64f4c96a979193a7e1391d34a428/src/Vortice.Vulkan/Generated/Structures.cs#L14978
-    // VkDebugUtilsMessengerCreateInfoEXT with pfnUserCallback as "real" nativeint instead of "fake" nativeint which is actually a function pointer type
-    // TODO: report this F# compiler bug that allows assigning to "fake" nativeint to compile without error but causes a crash at runtime
-    type [<Struct>] private VkDebugUtilsMessengerCreateInfoEXT_hack =
-        val mutable sType : VkStructureType
-        val mutable pNext : nativeint
-        val mutable flags : VkDebugUtilsMessengerCreateFlagsEXT
-        val mutable messageSeverity : VkDebugUtilsMessageSeverityFlagsEXT
-        val mutable messageType : VkDebugUtilsMessageTypeFlagsEXT
-        val mutable pfnUserCallback : nativeint // "real" nativeint
-        val mutable pUserData : nativeint
     
     /// Exposes the vulkan handles that must be globally accessible within the renderer.
     type [<ReferenceEquality>] VulkanContext =
@@ -1470,7 +1459,7 @@ module Hl =
         
         static member private makeDebugMessengerInfo () =
             debugDelegate <- DebugDelegate VulkanContext.debugCallback
-            let mutable info = VkDebugUtilsMessengerCreateInfoEXT_hack ()
+            let mutable info = VkDebugUtilsMessengerCreateInfoEXT ()
             info.sType <- VkStructureType.DebugUtilsMessengerCreateInfoEXT
             info.messageSeverity <-
                 VkDebugUtilsMessageSeverityFlagsEXT.Verbose |||
@@ -1481,9 +1470,12 @@ module Hl =
                 VkDebugUtilsMessageTypeFlagsEXT.General |||
                 VkDebugUtilsMessageTypeFlagsEXT.Validation |||
                 VkDebugUtilsMessageTypeFlagsEXT.Performance
-            info.pfnUserCallback <- Marshal.GetFunctionPointerForDelegate<DebugDelegate> debugDelegate // assign to "real" nativeint in the "fake" struct
-            info.pUserData <- 0n
-            Branchless.reinterpret info : VkDebugUtilsMessengerCreateInfoEXT // reinterpret as the "real" struct
+            let callbackPointer = Marshal.GetFunctionPointerForDelegate<DebugDelegate> debugDelegate
+            let offset = Marshal.OffsetOf<VkDebugUtilsMessengerCreateInfoEXT> (nameof info.pfnUserCallback)
+            let fieldRef =  NativePtr.ofNativeInt<byte> (NativePtr.toNativeInt &&info + offset)
+            Unsafe.WriteUnaligned (NativePtr.toByRef<byte> fieldRef, callbackPointer) // TODO: report this F# compiler bug that allows direct assignment to compile without error but causes a crash at runtime
+            info.pUserData <- NativePtr.toVoidPtr NativePtr.nullPtr<byte>
+            info
         
         /// Create the Vulkan instance.
         static member private createVulkanInstance debugInfo =

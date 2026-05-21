@@ -117,6 +117,34 @@ open System.IO
 open System.Threading.Tasks
 open Xamarin.Google.Android.Play.Core.AssetPacks
 
+// We need this for Release mode with full AOT, but not necessary for Debug mode.
+let private configureAndroidNativeLibraries () =
+    let trySetAndroidDllImportResolver (assembly : Assembly) mappedLibraries =
+        let resolver =
+            DllImportResolver (fun libraryName _ _ ->
+                mappedLibraries
+                |> List.tryPick (fun (requestedName, candidateName) ->
+                    if String.Equals (libraryName, requestedName, StringComparison.Ordinal)
+                    then tryLoadNativeLibraryByNameOpt candidateName
+                    else None)
+                |> Option.orElseWith (fun () -> tryLoadNativeLibraryByNameOpt libraryName)
+                |> Option.defaultValue 0n)
+        try NativeLibrary.SetDllImportResolver (assembly, resolver)
+        with :? InvalidOperationException -> ()
+
+    // Normalize desktop-oriented sonames requested by some native bindings.
+    let androidAliases =
+        ["libc.so.6", "libc"
+         "libc.so", "libc"
+         "libdl.so", "libdl"
+         "libvulkan.so.1", "libvulkan"
+         "libvulkan.so", "libvulkan"
+         "liblog", "liblog"
+         "liblog.so", "liblog"]
+    trySetAndroidDllImportResolver typeof<global.Assimp.Unmanaged.AssimpLibrary>.Assembly androidAliases
+    trySetAndroidDllImportResolver typeof<Vortice.Vulkan.Vulkan>.Assembly androidAliases
+    trySetAndroidDllImportResolver typeof<World>.Assembly androidAliases
+
 // Android Manifest through .NET attributes: https://learn.microsoft.com/en-us/dotnet/maui/android/manifest#attributes
 // Refer to https://github.com/libsdl-org/SDL/blob/main/android-project/app/src/main/AndroidManifest.xml for all needed attributes for SDL
 
@@ -147,6 +175,8 @@ type MainActivity () =
     inherit Org.Libsdl.App.SDLActivity ()
     override this.GetLibraries () = [|"SDL3"; "SDL3_image"; "SDL3_ttf"; "SDL3_mixer"|] // SDL - Load these native libraries
     override this.Main () =
+        configureAndroidNativeLibraries ()
+
         // Get the file system path for fast-follow asset pack "gameassets". Customize this if you use a different asset pack. For on-demand asset packs, you would need to trigger the download and wait for completion before getting the path.
         // How to use asset pack manager: https://developer.android.com/guide/playcore/asset-delivery/integrate-java
         // NOTE: For debugging, updates of asset packs are not supported. Before installing a new version of your build, manually uninstall the previous version. See https://developer.android.com/guide/playcore/asset-delivery/test
