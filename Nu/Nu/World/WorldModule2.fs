@@ -1277,7 +1277,8 @@ module WorldModule2 =
                                 if  (entity.GetPhysicsMotion world).IsManualMotion ||
                                     bodyId.BodyIndex <> Constants.Physics.InternalIndex then
                                     let transformData =
-                                        { BodyCenter = center
+                                        { BodyId = bodyId
+                                          BodyCenter = center
                                           BodyRotation = bodyTransformMessage.Rotation
                                           BodyLinearVelocity = bodyTransformMessage.LinearVelocity
                                           BodyAngularVelocity = bodyTransformMessage.AngularVelocity }
