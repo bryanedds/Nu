@@ -57,7 +57,7 @@
         <SkipValidateMauiImplicitPackageReferences>true</SkipValidateMauiImplicitPackageReferences>
         <!-- Android: Debugging settings for asset packs https://learn.microsoft.com/en-us/dotnet/maui/android/asset-packs#test-asset-packs-locally -->
 		<AndroidPackageFormat>aab</AndroidPackageFormat>
-        <AndroidBundleToolExtraArgs Condition="'$(Configuration)' == 'Debug'">--local-testing</AndroidBundleToolExtraArgs>
+        <AndroidBundleToolExtraArgs>--local-testing</AndroidBundleToolExtraArgs>
         <!-- iOS: Skip Xcode version validation if Xcode auto-updates through App Store. See https://github.com/dotnet/maui/discussions/34312#discussioncomment-15985193 -->
         <ValidateXcodeVersion>False</ValidateXcodeVersion>
     </PropertyGroup>

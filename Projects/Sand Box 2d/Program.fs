@@ -8,6 +8,7 @@ open Nu
 
 // this the entry point for your Nu application
 let main () =
+    Constants.Render.SkipRendering3d <- true // skipping the 3D renderer for startup time minimization
 
     // this initializes Nu before other Nu code is run
     Nu.init ()
