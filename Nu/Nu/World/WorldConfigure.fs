@@ -20,7 +20,7 @@ module Configure =
         try let configuration = ConfigurationManager.OpenExeConfiguration exeFilePath
             let settings = configuration.AppSettings.Settings
             for key in settings.AllKeys do
-                let value = settings.[key].Value
+                let value = settings[key].Value
                 match key with
                 | nameof Constants.Runtime.GcDebug -> Constants.Runtime.GcDebug <- scvalue value
                 | nameof Constants.GameTime.DesiredFrameRate -> Constants.GameTime.DesiredFrameRate <- scvalue value

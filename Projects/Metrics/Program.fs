@@ -96,7 +96,7 @@ type MyGameDispatcher () =
         World.doFps "Fps" [Entity.Position .= v3 134.0f -168.0f 0.0f] world
         World.doSkyBox "SkyBox" [] world
         for i in 0 .. dec Positions.Length do
-            let position = Positions.[i]
+            let position = Positions[i]
             World.doEntity<MetricsEntityDispatcher> (string i)
                 [Entity.Presence .= Omnipresent
                  Entity.Position .= position + v3 -12.5f -12.5f -20.0f

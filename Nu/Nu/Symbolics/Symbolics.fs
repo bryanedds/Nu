@@ -58,7 +58,7 @@ module Symbolics =
                 | Some symbolPackage -> symbolPackage
                 | None ->
                     let symbolPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = () }
-                    symbolics.SymbolPackages.[packageName] <- symbolPackage
+                    symbolics.SymbolPackages[packageName] <- symbolPackage
                     symbolPackage
             for asset in assets do
                 match tryLoadSymbol3 metadata packageName asset with
@@ -66,7 +66,7 @@ module Symbolics =
                     let lastWriteTime =
                         try DateTimeOffset (File.GetLastWriteTime asset.FilePath)
                         with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
-                    symbolPackage.Assets.[asset.AssetTag.AssetName] <- (lastWriteTime, asset, symbol)
+                    symbolPackage.Assets[asset.AssetTag.AssetName] <- (lastWriteTime, asset, symbol)
                 | None -> ()
         | Left error ->
             Log.info ("Symbol package load failed due to unloadable assets '" + error + "' for package '" + packageName + "'.")

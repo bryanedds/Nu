@@ -103,7 +103,7 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
         integrationMessages.Add integrationMessage
 
     static member private getBodyContacts (bodyId : BodyId) physicsEngine =
-        let (_, body) = physicsEngine.Bodies.[bodyId]
+        let (_, body) = physicsEngine.Bodies[bodyId]
         let contacts = List<Contact> ()
         let mutable current = body.ContactList
         while notNull current do
@@ -264,7 +264,7 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity contourShape.TransformOpt
         let vertices' = Array.zeroCreate contourShape.Links.Length
         for i in 0 .. dec contourShape.Links.Length do
-            vertices'.[i] <- AetherPhysicsEngine.toPhysicsV2 (contourShape.Links.[i].Transform transform)
+            vertices'[i] <- AetherPhysicsEngine.toPhysicsV2 (contourShape.Links[i].Transform transform)
         let bodyShape =
             if contourShape.Closed
             then body.CreateLoopShape (Common.Vertices vertices')
@@ -280,7 +280,7 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity transformOpt
         let points' = Array.zeroCreate points.Length
         for i in 0 .. dec points.Length do
-            points'.[i] <- AetherPhysicsEngine.toPhysicsV2 (points.[i].Transform transform)
+            points'[i] <- AetherPhysicsEngine.toPhysicsV2 (points[i].Transform transform)
         let density =
             match bodyProperties.Substance with
             | Density density -> density
@@ -299,7 +299,7 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity transformOpt
         let vertices' = Array.zeroCreate vertices.Length
         for i in 0 .. dec vertices.Length do
-            vertices'.[i] <- AetherPhysicsEngine.toPhysicsV2 (vertices.[i].Transform transform)
+            vertices'[i] <- AetherPhysicsEngine.toPhysicsV2 (vertices[i].Transform transform)
         let density =
             match bodyProperties.Substance with
             | Density density -> density
@@ -322,7 +322,7 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
         let corners = bounds.Corners
         let corners' = Array.zeroCreate points.Length
         for i in 0 .. dec corners.Length do
-            corners'.[i] <- AetherPhysicsEngine.toPhysicsV2 (corners.[i].V3.Transform transform)
+            corners'[i] <- AetherPhysicsEngine.toPhysicsV2 (corners[i].V3.Transform transform)
         let density =
             match bodyProperties.Substance with
             | Density density -> density
@@ -755,11 +755,11 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
             AetherPhysicsEngine.getBodyContactNormals bodyId physicsEngine
 
         member physicsEngine.GetBodyLinearVelocity bodyId =
-            let (_, body) = physicsEngine.Bodies.[bodyId]
+            let (_, body) = physicsEngine.Bodies[bodyId]
             AetherPhysicsEngine.toPixelV3 body.LinearVelocity
 
         member physicsEngine.GetBodyAngularVelocity bodyId =
-            let (_, body) = physicsEngine.Bodies.[bodyId]
+            let (_, body) = physicsEngine.Bodies[bodyId]
             v3 0.0f 0.0f body.AngularVelocity
 
         member physicsEngine.GetBodyToGroundContactNormals bodyId =
@@ -779,12 +779,12 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
             Array.notEmpty groundNormals
 
         member physicsEngine.GetBodySensor bodyId =
-            let (_, body) = physicsEngine.Bodies.[bodyId]
+            let (_, body) = physicsEngine.Bodies[bodyId]
             let mutable found = false
             let mutable sensor = false
             let mutable i = 0
             while i < body.FixtureList.Count && not found do
-                let fixture = body.FixtureList.[i]
+                let fixture = body.FixtureList[i]
                 let fixtureBodyId = (fixture.Tag :?> BodyShapeIndex).BodyId
                 if fixtureBodyId = bodyId then
                     sensor <- fixture.IsSensor
@@ -933,8 +933,8 @@ and [<ReferenceEquality>] AetherPhysicsEngine =
                             let vertices = chainShape.Vertices
                             if vertices.Count >= 2 then // when looped, the link from last point to first point is already included
                                 for i in 0 .. vertices.Count - 2 do
-                                    let start = (AetherPhysicsEngine.toPixelV2 vertices.[i]).Transform transform
-                                    let stop = (AetherPhysicsEngine.toPixelV2 vertices.[inc i]).Transform transform
+                                    let start = (AetherPhysicsEngine.toPixelV2 vertices[i]).Transform transform
+                                    let stop = (AetherPhysicsEngine.toPixelV2 vertices[inc i]).Transform transform
                                     let bounds = Box2.Enclose (start, stop)
                                     if eyeBounds.Contains bounds <> ContainmentType.Disjoint then
                                         renderContext.DrawLine (start, stop, color)

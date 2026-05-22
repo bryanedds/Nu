@@ -77,7 +77,7 @@ type AssetClient (textureClient : Texture.TextureClient, cubeMapClient : CubeMap
                         Log.infoOnce "One or more textures for non-2D usage are not streamable; consider using the BlockCompress refinement with them for more efficient loading."
                         let (metadata, textureInternal) = Texture.CreateTextureVulkanFromData (true, Texture.InferCompression filePath, textureData, Texture.RenderThread, vkc)
                         Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = textureInternal }
-                textureClient.Textures.[filePath] <- texture
+                textureClient.Textures[filePath] <- texture
             | Left error -> Log.info error
 
         // run assimp scene loading ops
@@ -99,6 +99,6 @@ type AssetClient (textureClient : Texture.TextureClient, cubeMapClient : CubeMap
                 let faceFrontFilePath = dirPath + "/" + faceFrontFilePath.Trim ()
                 let cubeMapKey = (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath)
                 match CubeMap.TryCreateCubeMap (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath, Texture.RenderThread, vkc) with
-                | Right cubeMap -> cubeMapClient.CubeMaps.[cubeMapKey] <- cubeMap
+                | Right cubeMap -> cubeMapClient.CubeMaps[cubeMapKey] <- cubeMap
                 | Left error -> Log.info ("Could not load cube map '" + cubeMap.FilePath + "' due to: " + error)
             | _ -> Log.info ("Could not load cube map '" + cubeMap.FilePath + "' due to requiring exactly 6 file paths with each file path on its own line.")

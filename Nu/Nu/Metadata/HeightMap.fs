@@ -79,7 +79,7 @@ type [<StructuralEquality; NoComparison>] HeightMap =
                     [|for y in 0 .. dec resolutionY do
                         for x in 0 .. dec resolutionX do
                             let index = (resolutionX * y + x) * 4 + 2 // extract r channel of pixel
-                            single bytes.[index] * scalar|]
+                            single bytes[index] * scalar|]
 
                 // compute positions and tex coordses
                 let quadSizeX = bounds.Size.X / single (dec resolutionX)
@@ -93,7 +93,7 @@ type [<StructuralEquality; NoComparison>] HeightMap =
                 let positionsAndTexCoordses =
                     [|for y in 0 .. dec resolutionY do
                         for x in 0 .. dec resolutionX do
-                            let normalized = heightsNormalized.[y * resolutionX + x]
+                            let normalized = heightsNormalized[y * resolutionX + x]
                             let position = v3 (single x * quadSizeX + terrainPositionX) (normalized * terrainHeight + terrainPositionY) (single y * quadSizeY + terrainPositionZ)
                             let texCoords = v2 (single x * texelWidth) (single y * texelHeight) * tiles
                             struct (position, texCoords)|]
@@ -156,7 +156,7 @@ type [<StructuralEquality; NoComparison>] HeightMap =
                 let positionsAndTexCoordses =
                     [|for y in 0 .. dec resolutionY do
                         for x in 0 .. dec resolutionX do
-                            let normalized = heightsNormalized.[y * resolutionX + x]
+                            let normalized = heightsNormalized[y * resolutionX + x]
                             let position = v3 (single x * quadSizeX + terrainPositionX) (normalized * terrainHeight + terrainPositionY) (single y * quadSizeY + terrainPositionZ)
                             let texCoords = v2 (single x * texelWidth) (1.0f - single y * texelHeight) * tiles // NOTE: flip y because textures are loaded 'upside-down'
                             struct (position, texCoords)|]

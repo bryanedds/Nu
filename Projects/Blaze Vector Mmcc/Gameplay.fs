@@ -16,12 +16,12 @@ type [<SymbolicExpansion>] Gameplay =
       Score : int }
 
     // this represents the gameplay model in an unutilized state, such as when the gameplay screen is not selected.
-    static member empty =
+    static member val empty =
         { GameplayState = Quit
           Score = 0 }
 
     // this represents the gameplay model in its initial state, such as when gameplay starts.
-    static member initial =
+    static member val initial =
         { GameplayState = Playing
           Score = 0 }
 
@@ -67,7 +67,7 @@ type GameplayDispatcher () =
          Screen.DeselectingEvent => FinishQuitting
          Screen.PostUpdateEvent => UpdateEye
          for i in 0 .. dec SectionCount do
-            Events.DeathEvent --> Simulants.GameplaySection i --> Address.Wildcard => Score 100]
+            Events.DeathEvent --> Simulants.GameplaySection i --> Address.wildcard => Score 100]
 
     // here we handle the above messages
     override this.Message (gameplay, message, _, _) =
@@ -101,7 +101,7 @@ type GameplayDispatcher () =
 
                 // load a random section from file (except the first section which is always 0)
                 let section = Simulants.GameplaySection sectionIndex
-                let sectionFilePath = if sectionIndex = 0 then Assets.Gameplay.SectionFilePaths.[0] else Gen.randomChoice Assets.Gameplay.SectionFilePaths
+                let sectionFilePath = if sectionIndex = 0 then Assets.Gameplay.SectionFilePaths[0] else Gen.randomChoice Assets.Gameplay.SectionFilePaths
                 World.readGroupFromFile sectionFilePath (Some section.Name) section.Screen world |> ignore<Group>
 
                 // shift all entities in the loaded section so that they go after the previously loaded section

@@ -224,7 +224,7 @@ module Framebuffer =
                 bloomSampleId|]
 
         // attach first bloom sample texture
-        Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, bloomSampleIds.[0], 0)
+        Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, bloomSampleIds[0], 0)
 
         // associate draw buffers
         Gl.DrawBuffers [|int FramebufferAttachment.ColorAttachment0|]

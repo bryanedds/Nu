@@ -91,8 +91,9 @@ module Hl =
     // set up delegate for app backgrounding callback
     // TODO: DJL: for mobile devices: https://learn.microsoft.com/en-us/dotnet/standard/native-interop/calling-conventions#when-you-can-omit-the-calling-convention.
     [<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
-    type BackgroundingDelegate = delegate of userData : voidptr * event : SDL_Event nativeptr -> SDLBool
-    let backgroundingDelegate = BackgroundingDelegate handleBackgrounding
+    type private BackgroundingDelegate = delegate of userData : voidptr * event : SDL_Event nativeptr -> SDLBool
+    let private backgroundingDelegate = BackgroundingDelegate handleBackgrounding
+    let backgroundingCallback = Marshal.GetFunctionPointerForDelegate<BackgroundingDelegate> backgroundingDelegate
 
     /// The format of an image.
     type ImageFormat =
@@ -588,7 +589,7 @@ module Hl =
         result.extent.height <- uint extentHeight
         result
 
-    let private createVulkanSurface window instance =
+    let private tryCreateVulkanSurface window instance =
         match SurfaceState with
         | SurfaceDestroyed ->
             
@@ -607,6 +608,15 @@ module Hl =
         | SurfaceReady -> Log.error "Attempted creation of Vulkan surface when existing surface has not been destroyed!"
         | SurfaceLost -> Log.error "Attempted creation of Vulkan surface when existing surface has been lost but not destroyed!"
 
+    let private createVulkanSurface window instance =
+        
+        // wait for app to enter foreground if not already
+        while not IsAppInForeground do ()
+        tryCreateVulkanSurface window instance
+
+        // cannot tolerate failure as this function is intended to guarantee surface creation, otherwise must set up a retry mechanism
+        if SurfaceState.IsSurfaceDestroyed then Log.fail "Vulkan surface creation failed."
+    
     let private destroyVulkanSurface instance =
         match SurfaceState with
         | SurfaceReady
@@ -702,9 +712,9 @@ module Hl =
              1u, asPointer &barrier)
     
     /// Try get surface capabilities.
-    let private tryGetSurfaceCapabilities vkPhysicalDevice surface =
+    let private tryGetSurfaceCapabilities vkPhysicalDevice =
         let mutable capabilities = Unchecked.defaultof<VkSurfaceCapabilitiesKHR>
-        let result = Vulkan.vkGetPhysicalDeviceSurfaceCapabilitiesKHR (vkPhysicalDevice, surface, &capabilities)
+        let result = Vulkan.vkGetPhysicalDeviceSurfaceCapabilitiesKHR (vkPhysicalDevice, Surface, &capabilities)
         if result <> VkResult.ErrorSurfaceLostKHR then
             check result
             Some capabilities
@@ -907,6 +917,11 @@ module Hl =
         /// Supports anisotropy.
         member this.SupportsAnisotropy = this.Features.samplerAnisotropy = VkBool32.True
         
+        static member private checkSurface window instance =
+            if hasAppBegunBackgrounding () then
+                destroyVulkanSurface instance
+                createVulkanSurface window instance
+        
         /// Get properties.
         static member private getProperties vkPhysicalDevice =
             if Constants.Vulkan.DescriptorIndexingEnabled then
@@ -938,17 +953,28 @@ module Hl =
             extensions
 
         /// Get available surface formats.
-        static member private getSurfaceFormats vkPhysicalDevice surface =
+        static member private getSurfaceFormats vkPhysicalDevice window instance =
+            PhysicalDevice.checkSurface window instance
             let mutable formatCount = 0u
-            Vulkan.vkGetPhysicalDeviceSurfaceFormatsKHR (vkPhysicalDevice, surface, asPointer &formatCount, nullPtr) |> check
+            Vulkan.vkGetPhysicalDeviceSurfaceFormatsKHR (vkPhysicalDevice, Surface, asPointer &formatCount, nullPtr) |> check
             let formats = Array.zeroCreate<VkSurfaceFormatKHR> (int formatCount)
             use formatsPin = new ArrayPin<_> (formats)
-            Vulkan.vkGetPhysicalDeviceSurfaceFormatsKHR (vkPhysicalDevice, surface, asPointer &formatCount, formatsPin.Pointer) |> check
+            Vulkan.vkGetPhysicalDeviceSurfaceFormatsKHR (vkPhysicalDevice, Surface, asPointer &formatCount, formatsPin.Pointer) |> check
             formats
 
+        /// Get surface capabilities.
+        static member private getSurfaceCapabilities vkPhysicalDevice window instance =
+            PhysicalDevice.checkSurface window instance
+            let mutable capabilities = Unchecked.defaultof<VkSurfaceCapabilitiesKHR>
+            Vulkan.vkGetPhysicalDeviceSurfaceCapabilitiesKHR (vkPhysicalDevice, Surface, &capabilities) |> check
+            capabilities
+        
         /// Attempt to get the queue families.
-        static member private tryGetQueueFamilies vkPhysicalDevice surface =
+        static member private tryGetQueueFamilies vkPhysicalDevice window instance =
 
+            // check surface is still valid
+            PhysicalDevice.checkSurface window instance
+            
             // get queue families' properties
             let mutable queueFamilyCount = 0u
             Vulkan.vkGetPhysicalDeviceQueueFamilyProperties (vkPhysicalDevice, asPointer &queueFamilyCount, nullPtr)
@@ -977,7 +1003,7 @@ module Hl =
                 match presentQueueFamilyOpt with
                 | None ->
                     let mutable presentSupport = VkBool32.False
-                    Vulkan.vkGetPhysicalDeviceSurfaceSupportKHR (vkPhysicalDevice, uint i, surface, &presentSupport) |> check
+                    Vulkan.vkGetPhysicalDeviceSurfaceSupportKHR (vkPhysicalDevice, uint i, Surface, &presentSupport) |> check
                     if (presentSupport = VkBool32.True) then
                         presentQueueFamilyOpt <- Some (uint i)
                 | Some _ -> ()
@@ -986,34 +1012,27 @@ module Hl =
             (graphicsQueueFamilyOpt, presentQueueFamilyOpt)
 
         /// Attempt to construct PhysicalDevice.
-        static member tryCreate vkPhysicalDevice surface =
-            match tryGetSurfaceCapabilities vkPhysicalDevice surface with
-            | Some surfaceCapabilities ->
-                let (properties, diPropertiesOpt) = PhysicalDevice.getProperties vkPhysicalDevice
-                let features = PhysicalDevice.getFeatures vkPhysicalDevice
-                let extensions = PhysicalDevice.getExtensions vkPhysicalDevice
-                let surfaceFormats = PhysicalDevice.getSurfaceFormats vkPhysicalDevice surface
-                match PhysicalDevice.tryGetQueueFamilies vkPhysicalDevice surface with
-                | (Some (graphicsQueueFamily, graphicsQueueCount), Some presentQueueFamily) ->
-                    let physicalDevice =
-                        { VkPhysicalDevice = vkPhysicalDevice
-                          Properties = properties
-                          DescriptorIndexingPropertiesOpt = diPropertiesOpt
-                          Features = features
-                          Extensions = extensions
-                          SurfaceCapabilities = surfaceCapabilities
-                          SurfaceFormats = surfaceFormats
-                          GraphicsQueueFamily = graphicsQueueFamily
-                          PresentQueueFamily = presentQueueFamily
-                          GraphicsQueueCount = graphicsQueueCount }
-                    Some physicalDevice
-                | (_, _) -> None
-            | None ->
-                
-                // TODO: DJL: this means that, currently, Vulkan initialization will fail on android if Nu is backgrounded on launch.
-                // That must be prevented unless we want to allow defered graphics init. Or perhaps this function just needs to loop until surface is available.
-                Log.error "Could not obtain graphics device data because the Vulkan surface was lost."
-                None
+        static member tryCreate vkPhysicalDevice window instance =
+            let (properties, diPropertiesOpt) = PhysicalDevice.getProperties vkPhysicalDevice
+            let features = PhysicalDevice.getFeatures vkPhysicalDevice
+            let extensions = PhysicalDevice.getExtensions vkPhysicalDevice
+            let surfaceFormats = PhysicalDevice.getSurfaceFormats vkPhysicalDevice window instance
+            let surfaceCapabilities = PhysicalDevice.getSurfaceCapabilities vkPhysicalDevice window instance
+            match PhysicalDevice.tryGetQueueFamilies vkPhysicalDevice window instance with
+            | (Some (graphicsQueueFamily, graphicsQueueCount), Some presentQueueFamily) ->
+                let physicalDevice =
+                    { VkPhysicalDevice = vkPhysicalDevice
+                      Properties = properties
+                      DescriptorIndexingPropertiesOpt = diPropertiesOpt
+                      Features = features
+                      Extensions = extensions
+                      SurfaceCapabilities = surfaceCapabilities
+                      SurfaceFormats = surfaceFormats
+                      GraphicsQueueFamily = graphicsQueueFamily
+                      PresentQueueFamily = presentQueueFamily
+                      GraphicsQueueCount = graphicsQueueCount }
+                Some physicalDevice
+            | (_, _) -> None
     
     /// A single swapchain and its assets.
     type private SwapchainInternal =
@@ -1025,7 +1044,7 @@ module Hl =
 
         /// Try create the VkSwapchain.
         static member private tryCreateVkSwapchain (surfaceFormat : VkSurfaceFormatKHR) oldVkSwapchainOpt physicalDevice window device =
-            match tryGetSurfaceCapabilities physicalDevice.VkPhysicalDevice Surface with
+            match tryGetSurfaceCapabilities physicalDevice.VkPhysicalDevice with
             | Some capabilities ->
             
                 // decide the minimum number of images in the swapchain. Sellers, Vulkan Programming Guide p. 144, recommends
@@ -1185,7 +1204,7 @@ module Hl =
             if IsAppInForeground then
                 
                 // create surface
-                createVulkanSurface swapchain.Window_ instance
+                tryCreateVulkanSurface swapchain.Window_ instance
                 
                 // ensure surface creation was successful
                 if SurfaceState = SurfaceReady then
@@ -1213,7 +1232,7 @@ module Hl =
         
         /// Check if window has been resized or surface lost.
         static member isWindowResizedOrSurfaceLost vkPhysicalDevice (swapchain : Swapchain) =
-            match tryGetSurfaceCapabilities vkPhysicalDevice Surface with
+            match tryGetSurfaceCapabilities vkPhysicalDevice with
             | Some capabilities -> swapchain.SwapExtent <> getSwapExtent capabilities swapchain.Window_
             | None -> true
 
@@ -1300,8 +1319,8 @@ module Hl =
             // check if window is minimized at startup
             let windowMinimized = Swapchain.isWindowMinimized window
             
-            // try create first SwapchainInternal if window is not minimized
-            if not windowMinimized then
+            // try create first SwapchainInternal if window is not minimized or app paused
+            if not (windowMinimized || (hasAppBegunBackgrounding ())) then
                 let swapchainInternalOpt = SwapchainInternal.tryCreate surfaceFormat VkSwapchainKHR.Null physicalDevice window device
                 swapchainInternalOpts.[swapchainIndex] <- swapchainInternalOpt
 
@@ -1562,7 +1581,7 @@ module Hl =
             else None
         
         /// Select compatible physical device if available.
-        static member private trySelectPhysicalDevice surface instance =
+        static member private trySelectPhysicalDevice window instance =
 
             // get available physical devices
             let mutable deviceCount = 0u
@@ -1574,7 +1593,7 @@ module Hl =
             // gather devices together with relevant data for selection
             let candidates =
                 [for i in 0 .. dec devices.Length do
-                    match PhysicalDevice.tryCreate devices.[i] surface with
+                    match PhysicalDevice.tryCreate devices.[i] window instance with
                     | Some physicalDevice -> physicalDevice
                     | None -> ()]
 
@@ -1822,9 +1841,6 @@ module Hl =
 
             if vkc.RenderDesired_ then
             
-                // reset fence for current frame if rendering is to go ahead (should be cancelled if swapchain refreshed)
-                Vulkan.vkResetFences (vkc.Device, 1u, asPointer &fence) |> check
-
                 // begin command recording
                 initCommandBuffer vkc.RenderCommandBuffer
                 
@@ -1861,8 +1877,10 @@ module Hl =
                 // the *simple* solution: https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation#page_Subpass-dependencies
                 let waitStage = VkPipelineStageFlags.TopOfPipe
                 
-                // flush commands
-                Queue.submit vkc.RenderCommandBuffer [|vkc.ImageAvailableSemaphore, waitStage|] [|vkc.RenderFinishedSemaphore|] vkc.InFlightFence vkc.RenderQueue
+                // reset fence and flush commands
+                let mutable fence = vkc.InFlightFence
+                Vulkan.vkResetFences (vkc.Device, 1u, asPointer &fence) |> check
+                Queue.submit vkc.RenderCommandBuffer [|vkc.ImageAvailableSemaphore, waitStage|] [|vkc.RenderFinishedSemaphore|] fence vkc.RenderQueue
                 
                 // one more check for app backgrounding before we present
                 if not (hasAppBegunBackgrounding ()) then
@@ -1918,7 +1936,7 @@ module Hl =
             createVulkanSurface window instance
 
             // attempt to select physical device
-            match VulkanContext.trySelectPhysicalDevice Surface instance with
+            match VulkanContext.trySelectPhysicalDevice window instance with
             | Some physicalDevice ->
 
                 // create device

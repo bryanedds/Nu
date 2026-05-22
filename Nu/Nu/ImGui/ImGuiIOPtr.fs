@@ -1,4 +1,4 @@
-﻿// Nu Game Engine.
+// Nu Game Engine.
 // Required Notice:
 // Copyright (C) Bryan Edds.
 // Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
@@ -22,8 +22,8 @@ module ImGuiIOPtr =
 
     type ImGuiIOPtr with
 
-        member this.WantCaptureMouseLocal = WantCaptureMouseLocal || ImGuizmo.IsViewManipulateHovered ()
-        member this.WantCaptureMouseGlobal = WantCaptureMouseLocal || ImGuizmo.IsViewManipulateHovered () || this.WantCaptureMouse
+        member this.WantCaptureMouseLocal = WantCaptureMouseLocal
+        member this.WantCaptureMouseGlobal = WantCaptureMouseLocal || this.WantCaptureMouse
         member this.SwallowMouse () = WantCaptureMouseLocal <- true
 
         member this.WantCaptureKeyboardLocal = WantCaptureKeyboardLocal

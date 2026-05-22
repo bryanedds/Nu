@@ -158,7 +158,7 @@ module QuadtreeTests =
         Quadtree.getElementsAtPoint (v2 0.0f 0.0f) results tree
         let elements = collectElements results
         Assert.Equal (1, elements.Length)
-        Assert.Equal (1, elements.[0].Entry.Id)
+        Assert.Equal (1, elements[0].Entry.Id)
 
     [<Test>]
     let ``Query in bounds returns intersecting elements`` () =
@@ -178,8 +178,8 @@ module QuadtreeTests =
         Quadtree.getElementsInBounds queryBounds results tree
         let elements = collectElements results
         Assert.Equal (2, elements.Length)
-        Assert.Equal (1, elements.[0].Entry.Id)
-        Assert.Equal (3, elements.[1].Entry.Id)
+        Assert.Equal (1, elements[0].Entry.Id)
+        Assert.Equal (3, elements[1].Entry.Id)
 
     [<Test>]
     let ``Query in view returns only visible elements`` () =
@@ -197,7 +197,7 @@ module QuadtreeTests =
         Quadtree.getElementsInView queryBounds results tree
         let elements = collectElements results
         Assert.Equal (1, elements.Length)
-        Assert.Equal (1, elements.[0].Entry.Id)
+        Assert.Equal (1, elements[0].Entry.Id)
 
     [<Test>]
     let ``Query in play returns non-static elements`` () =
@@ -214,7 +214,7 @@ module QuadtreeTests =
         Quadtree.getElementsInPlay queryBounds results tree
         let elements = collectElements results
         Assert.Equal (1, elements.Length)
-        Assert.Equal (1, elements.[0].Entry.Id)
+        Assert.Equal (1, elements[0].Entry.Id)
 
     [<Test>]
     let ``Omnipresent elements appear in all queries`` () =

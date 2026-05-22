@@ -32,7 +32,7 @@ module CubeMap =
         let faceFilePaths = [|faceRightFilePath; faceLeftFilePath; faceTopFilePath; faceBottomFilePath; faceBackFilePath; faceFrontFilePath|]
         for i in 0 .. dec faceFilePaths.Length do
             if Option.isNone errorOpt then
-                let faceFilePath = faceFilePaths.[i]
+                let faceFilePath = faceFilePaths[i]
                 let faceFilePath = if not (File.Exists faceFilePath) then PathF.ChangeExtension (faceFilePath, ".png") else faceFilePath // in case of PsdToPng
                 let faceFilePath =
                     if not (File.Exists faceFilePath) then // in case of BlockCompress
@@ -168,7 +168,7 @@ module CubeMap =
         // create vao
         let vao =  [|0u|]
         Gl.CreateVertexArrays vao
-        let vao = vao.[0]
+        let vao = vao[0]
 
         // per vertex
         Gl.VertexArrayAttribFormat (vao, 0u, 3, VertexAttribType.Float, false, uint 0)
@@ -215,8 +215,8 @@ module CubeMap =
                 let vertexData = vertexData.Span
                 for i in 0 .. dec vertices.Length do
                     let j = i * 3
-                    let vertex = v3 vertexData.[j] vertexData.[j+1] vertexData.[j+2]
-                    vertices.[i] <- vertex
+                    let vertex = v3 vertexData[j] vertexData[j+1] vertexData[j+2]
+                    vertices[i] <- vertex
                 
                 // fin
                 (vertices, 0u, 0u)

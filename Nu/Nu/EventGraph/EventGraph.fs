@@ -135,13 +135,13 @@ module EventGraph =
             Array.iteri (fun i _ ->
                 let eventAddressNamesAny = Array.zeroCreate eventAddressNamesLength
                 Array.Copy (eventAddressNames, 0, eventAddressNamesAny, 0, eventAddressNamesLength)
-                eventAddressNamesAny.[i] <- Constants.Address.WildcardName
+                eventAddressNamesAny[i] <- Constants.Address.WildcardName
                 let eventAddressAny = Address.rtoa eventAddressNamesAny
-                eventAddresses.[i] <- eventAddressAny)
+                eventAddresses[i] <- eventAddressAny)
                 eventAddressNames
 
             // make concrete address the last element
-            eventAddresses.[dec eventAddresses.Length] <- eventAddress
+            eventAddresses[dec eventAddresses.Length] <- eventAddress
             eventAddresses
 
         // has appropriate Event name...
@@ -157,9 +157,9 @@ module EventGraph =
             for i in 0 .. dec eventAddressNamesLength do
                 let eventAddressNames' = Array.zeroCreate eventAddressNamesLength
                 Array.Copy (eventAddressNames, 0, eventAddressNames', 0, eventAddressNamesLength)
-                eventAddressNames'.[i] <- Constants.Address.WildcardName
+                eventAddressNames'[i] <- Constants.Address.WildcardName
                 let eventAddress' = Address.rtoa eventAddressNames'
-                eventAddresses.[i] <- eventAddress'
+                eventAddresses[i] <- eventAddress'
 
             // populate ellipsis addresses
             for i in 0 .. dec eventAddressSimulantsLength do
@@ -167,12 +167,12 @@ module EventGraph =
                 let k = eventAddressNamesLength + i
                 let eventAddressNames' = Array.zeroCreate (j + 1)
                 Array.Copy (eventAddressNames, 0, eventAddressNames', 0, j)
-                eventAddressNames'.[j] <- Constants.Address.EllipsisName
+                eventAddressNames'[j] <- Constants.Address.EllipsisName
                 let eventAddress' = Address.rtoa eventAddressNames'
-                eventAddresses.[k] <- eventAddress'
+                eventAddresses[k] <- eventAddress'
 
             // make concrete address the last element
-            eventAddresses.[dec eventAddresses.Length] <- eventAddress
+            eventAddresses[dec eventAddresses.Length] <- eventAddress
             eventAddresses
 
     /// Get the wild-carded addresses of an event address.

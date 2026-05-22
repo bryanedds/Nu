@@ -8,7 +8,7 @@ open BlazeVector
 type [<SymbolicExpansion>] Enemy =
     { Health : int }
 
-    static member initial =
+    static member val initial =
         { Health = 7 }
 
 type EnemyMessage =

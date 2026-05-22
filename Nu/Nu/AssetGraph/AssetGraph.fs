@@ -137,7 +137,7 @@ module AssetGraph =
         | PsdToPng ->
             if intermediateFileExtension = ".psd" then
                 use imageCollection = new MagickImageCollection (intermediateFilePath)
-                use image0 = imageCollection.[0] // NOTE: we clear out image0 to fix conversion to png somehow.
+                use image0 = imageCollection[0] // NOTE: we clear out image0 to fix conversion to png somehow.
                 image0.ColorFuzz <- Percentage 100.0
                 image0.FloodFill (MagickColors.Transparent, 0, 0)
                 use image = imageCollection.Flatten MagickColors.Transparent
