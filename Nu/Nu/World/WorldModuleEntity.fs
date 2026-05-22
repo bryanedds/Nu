@@ -1824,7 +1824,8 @@ module WorldModuleEntity =
                 facet.Register (entity, world)
                 if WorldModuleInternal.getSelected entity world then facet.RegisterPhysics (entity, world)
             let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
-            dispatcher.RegisterPhysics (entity, world)
+            if WorldModuleInternal.getSelected entity world then
+                dispatcher.RegisterPhysics (entity, world)
             World.registerEntityIndex (getType dispatcher) entity world
             dispatcher.Register (entity, world)
             World.updateEntityPublishUpdateFlag entity world |> ignore<bool>
@@ -1850,7 +1851,8 @@ module WorldModuleEntity =
                 World.unregisterEntityIndex (getType facet) entity world
             let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
             dispatcher.Unregister (entity, world)
-            dispatcher.UnregisterPhysics (entity, world)
+            if WorldModuleInternal.getSelected entity world then
+                dispatcher.UnregisterPhysics (entity, world)
             World.unregisterEntityIndex (getType dispatcher) entity world
 
         static member internal registerEntityPhysics entity world =
