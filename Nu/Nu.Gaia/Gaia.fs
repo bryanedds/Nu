@@ -2759,7 +2759,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 ImGui.Text "Freeze all thawed entities. (Ctrl+Shift+F)"
                 ImGui.EndTooltip ()
             ImGui.SameLine ()
-            if ImGui.Button "Renavigate" then synchronizeNav world
+            if ImGui.Button "Renav" then synchronizeNav world
             if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                 ImGui.Text "Rebuild navigation mesh. (Ctrl+Shift+N)"
                 ImGui.EndTooltip ()
