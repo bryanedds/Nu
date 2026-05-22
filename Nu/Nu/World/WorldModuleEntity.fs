@@ -2129,17 +2129,17 @@ module WorldModuleEntity =
             // register facets, both regular registration and physics
             let facets = World.getEntityFacets entity world
             for facet in facets do
-                World.registerEntityIndex (getType facet) entity world
                 facet.Register (entity, world)
                 if WorldModuleInternal.getSelected entity world then
                     facet.RegisterPhysics (entity, world)
+                World.registerEntityIndex (getType facet) entity world
 
             // register dispatcher, both regular registration and physics
             let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
-            World.registerEntityIndex (getType dispatcher) entity world
             dispatcher.Register (entity, world)
             if WorldModuleInternal.getSelected entity world then
                 dispatcher.RegisterPhysics (entity, world)
+            World.registerEntityIndex (getType dispatcher) entity world
 
             // update bookkeeping
             World.updateEntityPublishUpdateFlag entity world |> ignore<bool>
@@ -2165,17 +2165,17 @@ module WorldModuleEntity =
             // unregister facets, both regular unregistration and physics
             let facets = World.getEntityFacets entity world
             for facet in facets do
+                World.unregisterEntityIndex (getType facet) entity world
                 facet.Unregister (entity, world)
                 if WorldModuleInternal.getSelected entity world then
                     facet.UnregisterPhysics (entity, world)
-                World.unregisterEntityIndex (getType facet) entity world
 
             // unregister dispatcher, both regular unregistration and physics
             let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
+            World.unregisterEntityIndex (getType dispatcher) entity world
             dispatcher.Unregister (entity, world)
             if WorldModuleInternal.getSelected entity world then
                 dispatcher.UnregisterPhysics (entity, world)
-            World.unregisterEntityIndex (getType dispatcher) entity world
 
         static member internal registerEntityPhysics entity world =
             let facets = World.getEntityFacets entity world
