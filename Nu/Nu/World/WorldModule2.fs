@@ -1119,34 +1119,36 @@ module WorldModule2 =
                 elif keyboardKey >= KeyboardKey.F1 && keyboardKey <= KeyboardKey.F12 then ImGuiKey.F1 + (keyboardKey - KeyboardKey.F1 |> LanguagePrimitives.EnumToValue |> LanguagePrimitives.EnumOfValue) |> List.singleton
                 else []
 
-        static member private processInput2 (evt : SDL_Event) (world : World) =
+        static member internal processWindowResized (world : World) =
+
+            // ensure window size is a factor of display virtual resolution, going to full screen otherwise
+            let windowSize = World.getWindowSize world
+            let windowScalar =
+                max (single windowSize.X / single Constants.Render.DisplayVirtualResolution.X |> ceil |> int |> max 1)
+                    (single windowSize.Y / single Constants.Render.DisplayVirtualResolution.Y |> ceil |> int |> max 1)
+            let windowSize' = windowScalar * Constants.Render.DisplayVirtualResolution
+            World.trySetWindowSize windowSize' world
+            let windowSize'' = World.getWindowSize world
+            if windowSize''.X < windowSize'.X || windowSize''.Y < windowSize'.Y then
+                World.trySetWindowFullScreen true world
+
+            // synchronize display virtual scalar
+            let windowSize'' = World.getWindowSize world
+            let xScalar = windowSize''.X / Constants.Render.DisplayVirtualResolution.X
+            let yScalar = windowSize''.Y / Constants.Render.DisplayVirtualResolution.Y
+            Globals.Render.DisplayScalar <- min xScalar yScalar
+
+            // synchronize view ports
+            World.synchronizeViewports world
+
+        static member internal processInput2 (evt : SDL_Event) (world : World) =
             match evt.Type with
             | SDL_EventType.SDL_EVENT_QUIT ->
                 if world.Accompanied then
                     let eventTrace = EventTrace.debug "World" "processInput2" "ExitRequest" EventTrace.empty
                     World.publishPlus () Nu.Game.Handle.ExitRequestEvent eventTrace Nu.Game.Handle true true world
             | SDL_EventType.SDL_EVENT_WINDOW_RESIZED ->
-
-                // ensure window size is a factor of display virtual resolution, going to full screen otherwise
-                let windowSize = World.getWindowSize world
-                let windowScalar =
-                    max (single windowSize.X / single Constants.Render.DisplayVirtualResolution.X |> ceil |> int |> max 1)
-                        (single windowSize.Y / single Constants.Render.DisplayVirtualResolution.Y |> ceil |> int |> max 1)
-                let windowSize' = windowScalar * Constants.Render.DisplayVirtualResolution
-                World.trySetWindowSize windowSize' world
-                let windowSize'' = World.getWindowSize world
-                if windowSize''.X < windowSize'.X || windowSize''.Y < windowSize'.Y then
-                    World.trySetWindowFullScreen true world
-
-                // synchronize display virtual scalar
-                let windowSize'' = World.getWindowSize world
-                let xScalar = windowSize''.X / Constants.Render.DisplayVirtualResolution.X
-                let yScalar = windowSize''.Y / Constants.Render.DisplayVirtualResolution.Y
-                Globals.Render.DisplayScalar <- min xScalar yScalar
-
-                // synchronize view ports
-                World.synchronizeViewports world
-
+                World.processWindowResized world
             | SDL_EventType.SDL_EVENT_MOUSE_MOTION ->
                 let io = ImGui.GetIO ()
                 let boundsMin = world.WindowViewport.Bounds.Min

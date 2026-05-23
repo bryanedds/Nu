@@ -480,14 +480,9 @@ module WorldModule4 =
             match SdlDeps.tryMake worldConfig.SdlConfig worldConfig.Accompanied windowSize with
             | Right sdlDeps ->
                 use sdlDeps = sdlDeps // bind explicitly to dispose automatically
-                let mutable actualWindowSize = windowSize
-                SDL.SDL3.SDL_GetWindowSize (SdlDeps.getWindowOpt sdlDeps |> Option.get, &&actualWindowSize.X, &&actualWindowSize.Y) |> ignore // synchronize window size with actual window size (e.g. for full screen windows on mobile)
-                let world =
-                    if actualWindowSize <> windowSize then
-                        let windowViewport = Viewport.makeWindow1 actualWindowSize
-                        let geometryViewport = Viewport.makeGeometry windowViewport.Bounds.Size
-                        World.make tryMakeEditContext sdlDeps worldConfig geometryViewport windowViewport plugin
-                    else World.make tryMakeEditContext sdlDeps worldConfig geometryViewport windowViewport plugin
+                let world = World.make tryMakeEditContext sdlDeps worldConfig geometryViewport windowViewport plugin
+                if World.getWindowSize world <> windowSize then
+                    World.processWindowResized world // synchronize window size with actual size, e.g. fullscreen for mobile or a display with size smaller than the configured DisplayScalar
                 World.runWithCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess true world
             | Left error -> Log.error error; Constants.Engine.ExitCodeFailure
 
