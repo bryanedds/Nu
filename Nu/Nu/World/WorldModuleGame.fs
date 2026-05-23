@@ -655,7 +655,7 @@ module WorldModuleGame =
                         | DefineExpr valueObj -> valueObj
                         | VariableExpr eval -> eval world
                         | ComputedExpr property -> property.ComputedGet game world
-                    | None -> failwithumf ()
+                    | None -> failwith ("Game property '" + propertyName + "' not found on '" + scstring Game.Handle + "' (sentinel properties are only supported by Entities).")
                 let property = { PropertyType = typeof<'a>; PropertyValue = valueObj }
                 Xtension.attachProperty propertyName property gameState.Xtension
                 Some valueObj

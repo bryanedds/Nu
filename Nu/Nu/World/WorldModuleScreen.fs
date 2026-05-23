@@ -286,7 +286,7 @@ module WorldModuleScreen =
                         | DefineExpr valueObj -> valueObj
                         | VariableExpr eval -> eval world
                         | ComputedExpr property -> property.ComputedGet screen world
-                    | None -> failwithumf ()
+                    | None -> failwith ("Screen property '" + propertyName + "' not found on '" + scstring screen + "' (sentinel properties are only supported by Entities).")
                 let property = { PropertyType = typeof<'a>; PropertyValue = valueObj }
                 Xtension.attachProperty propertyName property screenState.Xtension
                 Some valueObj

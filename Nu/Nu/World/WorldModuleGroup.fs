@@ -238,7 +238,7 @@ module WorldModuleGroup =
                         | DefineExpr valueObj -> valueObj
                         | VariableExpr eval -> eval world
                         | ComputedExpr property -> property.ComputedGet group world
-                    | None -> failwithumf ()
+                    | None -> failwith ("Group property '" + propertyName + "' not found on '" + scstring group + "' (sentinel properties are only supported by Entities).")
                 let property = { PropertyType = typeof<'a>; PropertyValue = valueObj }
                 Xtension.attachProperty propertyName property groupState.Xtension
                 Some valueObj
