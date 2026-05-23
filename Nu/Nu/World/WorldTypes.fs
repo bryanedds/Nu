@@ -678,6 +678,7 @@ and EntityDispatcher (is2d, physical, lightProbe, light) =
          Define? PublishUpdates false
          Define? PublishPostUpdates false
          Define? Persistent true
+         Define? OverflowAbsolute false
          Define? PropagatedDescriptorOpt Option<EntityDescriptor>.None]
 
     /// The presence override, if any.
