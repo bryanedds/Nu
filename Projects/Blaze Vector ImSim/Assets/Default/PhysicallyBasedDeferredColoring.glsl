@@ -17,6 +17,7 @@ void main()
 
 const float PI = 3.141592654;
 const float PI_OVER_2 = PI / 2.0;
+const float SSRL_STEP_COUNT_MAX = 256; // TODO: P1: promote this to uniform?
 
 uniform vec3 eyeCenter;
 uniform mat4 view;
@@ -148,14 +149,18 @@ void computeSsrl(float depth, vec4 position, vec3 albedo, float roughness, float
     float marchHorizontal = stopFrag.x - startFrag.x;
     float marchVertical = stopFrag.y - startFrag.y;
     bool shouldMarchHorizontal = abs(marchHorizontal) >= abs(marchVertical);
-    float stepCount = abs(shouldMarchHorizontal ? marchHorizontal : marchVertical) * ssrlDetail;
+    float stepCount = min(abs(shouldMarchHorizontal ? marchHorizontal : marchVertical) * ssrlDetail, float(SSRL_STEP_COUNT_MAX));
     vec2 stepAmount = vec2(marchHorizontal, marchVertical) / max(stepCount, 0.001);
 
     // march fragment
     float currentProgressA = 0.0;
     float currentProgressB = 0.0;
     float currentDepthView = 0.0;
-    for (int i = 0; i < stepCount && currentTexCoords.x >= 0.0 && currentTexCoords.x < 1.0 && currentTexCoords.y >= 0.0 && currentTexCoords.y < 1.0; ++i)
+    for(int i = 0;
+        i < stepCount &&
+        currentTexCoords.x >= 0.0 && currentTexCoords.x < 1.0 &&
+        currentTexCoords.y >= 0.0 && currentTexCoords.y < 1.0;
+        ++i)
     {
         // advance frag values
         currentFrag += stepAmount;
