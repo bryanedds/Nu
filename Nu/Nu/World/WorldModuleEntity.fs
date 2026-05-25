@@ -2125,16 +2125,26 @@ module WorldModuleEntity =
             world.WorldState <- { world.WorldState with EntitiesIndexed = entitiesIndexed }
 
         static member internal registerEntity entity world =
+
+            // register facets, both regular registration and physics
             let facets = World.getEntityFacets entity world
             for facet in facets do
-                World.registerEntityIndex (getType facet) entity world
                 facet.Register (entity, world)
-                if WorldModuleInternal.getSelected entity world then facet.RegisterPhysics (entity, world)
+                if WorldModuleInternal.getSelected entity world then
+                    facet.RegisterPhysics (entity, world)
+                World.registerEntityIndex (getType facet) entity world
+
+            // register dispatcher, both regular registration and physics
             let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
-            dispatcher.RegisterPhysics (entity, world)
-            World.registerEntityIndex (getType dispatcher) entity world
             dispatcher.Register (entity, world)
+            if WorldModuleInternal.getSelected entity world then
+                dispatcher.RegisterPhysics (entity, world)
+            World.registerEntityIndex (getType dispatcher) entity world
+
+            // update bookkeeping
             World.updateEntityPublishUpdateFlag entity world |> ignore<bool>
+
+            // publish related events
             let eventTrace = EventTrace.debug "World" "registerEntity" "Register" EventTrace.empty
             let eventAddresses = EventGraph.getEventAddresses1 (Events.RegisterEvent --> entity)
             for eventAddress in eventAddresses do
@@ -2143,22 +2153,29 @@ module WorldModuleEntity =
             World.publishPlus (RegisterData entity) (Events.LifeCycleEvent (nameof Entity) --> Nu.Game.Handle) eventTrace entity false false world
 
         static member internal unregisterEntity (entity : Entity) world =
+
+            // publish related events
             let eventTrace = EventTrace.debug "World" "unregisterEntity" "LifeCycle" EventTrace.empty
             World.publishPlus (UnregisteringData entity) (Events.LifeCycleEvent (nameof Entity) --> Nu.Game.Handle) eventTrace entity false false world
             let eventTrace = EventTrace.debug "World" "unregister" "Unregistering" EventTrace.empty
             let eventAddresses = EventGraph.getEventAddresses1 (Events.UnregisteringEvent --> entity)
             for eventAddress in eventAddresses do
                 World.publishPlus () eventAddress eventTrace entity false false world
+
+            // unregister facets, both regular unregistration and physics
             let facets = World.getEntityFacets entity world
             for facet in facets do
+                World.unregisterEntityIndex (getType facet) entity world
                 facet.Unregister (entity, world)
                 if WorldModuleInternal.getSelected entity world then
                     facet.UnregisterPhysics (entity, world)
-                World.unregisterEntityIndex (getType facet) entity world
+
+            // unregister dispatcher, both regular unregistration and physics
             let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
-            dispatcher.Unregister (entity, world)
-            dispatcher.UnregisterPhysics (entity, world)
             World.unregisterEntityIndex (getType dispatcher) entity world
+            dispatcher.Unregister (entity, world)
+            if WorldModuleInternal.getSelected entity world then
+                dispatcher.UnregisterPhysics (entity, world)
 
         static member internal registerEntityPhysics entity world =
             let facets = World.getEntityFacets entity world
@@ -2238,8 +2255,8 @@ module WorldModuleEntity =
                 // destroy any scheduled tasklets
                 World.removeTasklets entity world
 
-                // remove from simulant imsim tracking
-                World.removeSimulantImSim entity world
+                // remove ImSim journal
+                World.removeSimulantJournal entity world
 
                 // mutate respective entity tree if entity is selected
                 if WorldModuleInternal.getSelected entity world then

@@ -55,8 +55,10 @@ type JumpBoxDispatcher () =
         if collisions >= 10 then
             World.doText "Full!" [Entity.Text .= "Full!"] world
 
-        // finish declaring the control panel, group, and screen
+        // finish declaring the control panel
         World.endPanel world
+
+        // finish declaring group and screen
         World.endGroup world
         World.endScreen world
 

@@ -37,8 +37,8 @@ module internal WorldModuleInternal2 =
     let mutable internal FramePaceChecks = 0
 
     (* Cached ImSim Collections *)
+    let internal ImSimSimulantComparer = Comparer<int64 * Simulant>.Create (fun (a, _) (b, _) -> a.CompareTo b)
     let internal ImSimSimulantsToDestroy = List ()
-    let internal SimulantImSimComparer = Comparer<int64 * Simulant>.Create (fun (a, _) (b, _) -> a.CompareTo b)
 
 /// Universal function definitions for the world (2/4).
 [<AutoOpen>]
@@ -366,17 +366,17 @@ module WorldModule2 =
             let screen = Nu.Screen screenAddress
             let screenCreation = not (screen.GetExists world)
             let initializing =
-                match world.SimulantsImSim.TryGetValue screen.ScreenAddress with
-                | (true, screenImSim) -> World.utilizeSimulantImSim screen.ScreenAddress screenImSim world; false
+                match world.SimulantJournals.TryGetValue screen.ScreenAddress with
+                | (true, screenImSim) -> World.utilizeSimulantInJournal screen.ScreenAddress screenImSim world; false
                 | (false, _) ->
 
                     // init subscriptions _before_ potentially creating screen
-                    World.addSimulantImSim screen.ScreenAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = (FQueue.empty<SelectionEventData>, zero) } world
+                    World.addSimulantJournal screen.ScreenAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = (FQueue.empty<SelectionEventData>, zero) } world
                     let mapFstResult (mapper : SelectionEventData FQueue -> SelectionEventData FQueue) world =
                         let mapScreenImSim screenImSim =
                             let (screenResult, userResult) = screenImSim.Result :?> SelectionEventData FQueue * 'r
                             { screenImSim with Result = (mapper screenResult, userResult) }
-                        World.tryMapSimulantImSim mapScreenImSim screen.ScreenAddress world
+                        World.tryMapSimulantJournal mapScreenImSim screen.ScreenAddress world
                     World.monitor (fun _ world -> mapFstResult (FQueue.conj Select) world; Cascade) screen.SelectEvent screen world
                     World.monitor (fun _ world -> mapFstResult (FQueue.conj IncomingStart) world; Cascade) screen.IncomingStartEvent screen world
                     World.monitor (fun _ world -> mapFstResult (FQueue.conj IncomingFinish) world; Cascade) screen.IncomingFinishEvent screen world
@@ -387,7 +387,7 @@ module WorldModule2 =
                         let mapScreenImSim screenImSim =
                             let (screenResult, userResult) = screenImSim.Result :?> SelectionEventData FQueue * 'r
                             { screenImSim with Result = (screenResult, mapper userResult) }
-                        World.tryMapSimulantImSim mapScreenImSim screen.ScreenAddress world
+                        World.tryMapSimulantJournal mapScreenImSim screen.ScreenAddress world
                     init mapSndResult screen world
 
                     // create screen only when needed
@@ -420,8 +420,8 @@ module WorldModule2 =
                         screen
                         world
                 else transitionScreen screen world
-            let (screenResult, userResult) = (World.getSimulantImSim screen.ScreenAddress world).Result :?> SelectionEventData FQueue * 'r
-            World.mapSimulantImSim (fun simulantImSim -> { simulantImSim with Result = (FQueue.empty<SelectionEventData>, zero) }) screen.ScreenAddress world
+            let (screenResult, userResult) = (World.getSimulantJournal screen.ScreenAddress world).Result :?> SelectionEventData FQueue * 'r
+            World.mapSimulantJournal (fun simulantJournal -> { simulantJournal with Result = (FQueue.empty<SelectionEventData>, zero) }) screen.ScreenAddress world
             (screenResult, userResult)
 
         static member inline private beginScreen8<'d when 'd :> ScreenDispatcher> transitionScreen setScreenSlide name select behavior groupFilePathOpt args world : SelectionEventData FQueue =
@@ -1098,6 +1098,21 @@ module WorldModule2 =
             | KeyboardKey.RAlt -> [ImGuiKey.RightAlt; ImGuiKey.ModAlt]
             | KeyboardKey.LShift -> [ImGuiKey.LeftShift; ImGuiKey.ModShift]
             | KeyboardKey.RShift -> [ImGuiKey.RightShift; ImGuiKey.ModShift]
+            | KeyboardKey.KpPlus -> [ImGuiKey.KeypadAdd]
+            | KeyboardKey.KpMinus -> [ImGuiKey.KeypadSubtract]
+            | KeyboardKey.KpDecimal -> [ImGuiKey.KeypadDecimal]
+            | KeyboardKey.KpEnter -> [ImGuiKey.KeypadEnter]
+            | KeyboardKey.Kp0 -> if KeyboardState.isNumLocked () then [ImGuiKey.Keypad0] else []
+            | KeyboardKey.Kp1 -> if KeyboardState.isNumLocked () then [ImGuiKey.Keypad1] else [ImGuiKey.End]
+            | KeyboardKey.Kp2 -> if KeyboardState.isNumLocked () then [ImGuiKey.Keypad2] else []
+            | KeyboardKey.Kp3 -> if KeyboardState.isNumLocked () then [ImGuiKey.Keypad3] else [ImGuiKey.PageDown]
+            | KeyboardKey.Kp4 -> if KeyboardState.isNumLocked () then [ImGuiKey.Keypad4] else []
+            | KeyboardKey.Kp5 -> if KeyboardState.isNumLocked () then [ImGuiKey.Keypad5] else []
+            | KeyboardKey.Kp6 -> if KeyboardState.isNumLocked () then [ImGuiKey.Keypad6] else []
+            | KeyboardKey.Kp7 -> if KeyboardState.isNumLocked () then [ImGuiKey.Keypad7] else [ImGuiKey.Home]
+            | KeyboardKey.Kp8 -> if KeyboardState.isNumLocked () then [ImGuiKey.Keypad8] else []
+            | KeyboardKey.Kp9 -> if KeyboardState.isNumLocked () then [ImGuiKey.Keypad9] else [ImGuiKey.PageUp]
+            | KeyboardKey.NumLockClear -> [ImGuiKey.NumLock] // NOTE: not sure if this is useful.
             | _ ->
                 if keyboardKey >= KeyboardKey.Num1 && keyboardKey <= KeyboardKey.Num9 then ImGuiKey._1 + (keyboardKey - KeyboardKey.Num1 |> LanguagePrimitives.EnumToValue |> LanguagePrimitives.EnumOfValue) |> List.singleton
                 elif keyboardKey >= KeyboardKey.A && keyboardKey <= KeyboardKey.Z then ImGuiKey.A + (keyboardKey - KeyboardKey.A |> LanguagePrimitives.EnumToValue |> LanguagePrimitives.EnumOfValue) |> List.singleton
@@ -1283,7 +1298,8 @@ module WorldModule2 =
                                 if  (entity.GetPhysicsMotion world).IsManualMotion ||
                                     bodyId.BodyIndex <> Constants.Physics.InternalIndex then
                                     let transformData =
-                                        { BodyCenter = center
+                                        { BodyId = bodyId
+                                          BodyCenter = center
                                           BodyRotation = bodyTransformMessage.Rotation
                                           BodyLinearVelocity = bodyTransformMessage.LinearVelocity
                                           BodyAngularVelocity = bodyTransformMessage.AngularVelocity }
@@ -1379,35 +1395,35 @@ module WorldModule2 =
         static member internal sweepSimulants (world : World) =
 
             // update simulant bookkeeping, collecting simulants to destroy in the process
-            for (simulantAddress, simulantImSim) in world.SimulantsImSim do
-                if not simulantImSim.SimulantUtilized then
+            for (simulantAddress, simulantJournal) in world.SimulantJournals do
+                if not simulantJournal.SimulantUtilized then
                     let simulant = World.deriveFromAddress simulantAddress
-                    WorldModuleInternal2.ImSimSimulantsToDestroy.Add (simulantImSim.InitializationTime, simulant)
-                    World.setSimulantsImSim (SUMap.remove simulantAddress world.SimulantsImSim) world
+                    WorldModuleInternal2.ImSimSimulantsToDestroy.Add (simulantJournal.InitializationTime, simulant)
+                    World.setSimulantJournals (SUMap.remove simulantAddress world.SimulantJournals) world
                 else
                     if world.Imperative then
-                        simulantImSim.SimulantUtilized <- false
-                        simulantImSim.SimulantInitializing <- false
+                        simulantJournal.SimulantUtilized <- false
+                        simulantJournal.SimulantInitializing <- false
                     else
-                        let simulantsImSim = SUMap.add simulantAddress { simulantImSim with SimulantUtilized = false; SimulantInitializing = false } world.SimulantsImSim
-                        World.setSimulantsImSim simulantsImSim world
-            WorldModuleInternal2.ImSimSimulantsToDestroy.Sort WorldModuleInternal2.SimulantImSimComparer
+                        let simulantsImSim = SUMap.add simulantAddress { simulantJournal with SimulantUtilized = false; SimulantInitializing = false } world.SimulantJournals
+                        World.setSimulantJournals simulantsImSim world
+            WorldModuleInternal2.ImSimSimulantsToDestroy.Sort WorldModuleInternal2.ImSimSimulantComparer
 
             // destroy simulants
             for (_, simulant) in WorldModuleInternal2.ImSimSimulantsToDestroy do World.destroy simulant world
             WorldModuleInternal2.ImSimSimulantsToDestroy.Clear ()
 
             // update subscription bookkeeping
-            for (subscriptionKey, subscriptionImSim) in world.SubscriptionsImSim do
-                if not subscriptionImSim.SubscriptionUtilized then
-                    World.unsubscribe subscriptionImSim.SubscriptionId world
-                    World.setSubscriptionsImSim (SUMap.remove subscriptionKey world.SubscriptionsImSim) world
+            for (subscriptionKey, subscriptionJournal) in world.SubscriptionJournals do
+                if not subscriptionJournal.SubscriptionUtilized then
+                    World.unsubscribe subscriptionJournal.SubscriptionId world
+                    World.setSubscriptionJournals (SUMap.remove subscriptionKey world.SubscriptionJournals) world
                 else
                     if world.Imperative then
-                        subscriptionImSim.SubscriptionUtilized <- false
+                        subscriptionJournal.SubscriptionUtilized <- false
                     else
-                        let simulantsImSim = SUMap.add subscriptionKey { subscriptionImSim with SubscriptionUtilized = false } world.SubscriptionsImSim
-                        World.setSubscriptionsImSim simulantsImSim world
+                        let simulantsImSim = SUMap.add subscriptionKey { subscriptionJournal with SubscriptionUtilized = false } world.SubscriptionJournals
+                        World.setSubscriptionJournals simulantsImSim world
 
         static member private preUpdateSimulants (world : World) =
 

@@ -103,9 +103,10 @@ type BodySeparationExplicitData =
 type BodySeparationImplicitData =
     { BodyId : BodyId }
 
-/// The data for describing a change in transform.
+/// The data for describing a transform change event.
 type BodyTransformData =
-    { BodyCenter : Vector3
+    { BodyId : BodyId
+      BodyCenter : Vector3
       BodyRotation : Quaternion
       BodyLinearVelocity : Vector3
       BodyAngularVelocity : Vector3 }
