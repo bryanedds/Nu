@@ -467,7 +467,7 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
 [<AutoOpen>]
 module AddressOperators =
 
-    /// Convert an address of type 'a to an address of type 'u.
+    /// Convert an address of type 'a to an address of type 'b.
     let inline atoa<'a, 'b> (address : 'a Address) = Address.atoa<'a, 'b> address
 
     /// Convert a string into an address.
