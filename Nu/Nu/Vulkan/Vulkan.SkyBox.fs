@@ -144,7 +144,7 @@ module SkyBox =
                 Hl.reportDrawCall 1
         
                 // end render
-                Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
+                Vulkan.vkCmdEndRendering cb
 
             // abort
             | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."

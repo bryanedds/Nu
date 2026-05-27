@@ -1639,7 +1639,7 @@ module PhysicallyBased =
                     Hl.reportDrawCall surfacesCount
             
                     // end render
-                    Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
+                    Vulkan.vkCmdEndRendering cb
 
                 // abort
                 | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
