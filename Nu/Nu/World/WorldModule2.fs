@@ -2143,6 +2143,9 @@ module WorldModule2 =
                                                                                     World.publish () (Events.TimeUpdateEvent --> group) group world
                                                                         | None -> ()
 
+                                                                    // render is ready
+                                                                    if firstFrame then Globals.Render.IsReady <- true
+
                                                                     // recur
                                                                     World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess false world
 

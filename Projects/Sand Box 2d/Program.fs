@@ -146,6 +146,13 @@ let private configureAndroidNativeLibraries () =
     trySetAndroidDllImportResolver typeof<Vortice.Vulkan.Vulkan>.Assembly androidAliases
     trySetAndroidDllImportResolver typeof<World>.Assembly androidAliases
 
+type PreDrawListener (dispose : PreDrawListener -> unit) =
+    inherit Java.Lang.Object ()
+    interface Android.Views.ViewTreeObserver.IOnPreDrawListener with
+        member this.OnPreDraw () =
+            if Globals.Render.IsReady then dispose this
+            Globals.Render.IsReady
+
 // Android Manifest through .NET attributes: https://learn.microsoft.com/en-us/dotnet/maui/android/manifest#attributes
 // Refer to https://github.com/libsdl-org/SDL/blob/main/android-project/app/src/main/AndroidManifest.xml for all needed attributes for SDL
 
@@ -174,6 +181,11 @@ do ()
 [<IntentFilter ([|Android.Hardware.Usb.UsbManager.ActionUsbDeviceAttached|])>] // SDL - Let Android know that we can handle some USB devices and should receive this event
 type MainActivity () =
     inherit Org.Libsdl.App.SDLActivity ()
+    override this.OnCreate (savedInstanceState: Android.OS.Bundle) = 
+        base.OnCreate savedInstanceState // Sets activity content
+        // Don't draw SDL's black window by preserving the splash screen until the first frame is available: https://developer.android.com/develop/ui/views/launch/splash-screen?utm_source=copilot.com#suspend-drawing
+        let content = this.FindViewById Android.Resource.Id.Content
+        content.ViewTreeObserver.AddOnPreDrawListener (new PreDrawListener (fun listener -> content.ViewTreeObserver.RemoveOnPreDrawListener listener)) // can't simplify the lambda since the ViewTreeObserver must be alive by getting the property!
     override this.GetLibraries () = [|"SDL3"; "SDL3_image"; "SDL3_ttf"; "SDL3_mixer"|] // SDL - Load these native libraries
     override this.Main () =
         configureAndroidNativeLibraries ()
