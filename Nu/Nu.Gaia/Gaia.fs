@@ -4530,8 +4530,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             ImGui.LoadIniSettingsFromMemory (ImGuiIniFileStr.AsSpan ())
             ImGuiIniResetRequested <- false
 
-    let rec private runWithCleanUpAndErrorProtection firstFrame world =
-        try World.runWithoutCleanUp tautology ignore ignore imGuiRender imGuiProcess imGuiPostProcess firstFrame world
+    let rec private runWithCleanUpAndErrorProtection firstFrameReady world =
+        try World.runWithoutCleanUp tautology ignore ignore imGuiRender imGuiProcess imGuiPostProcess firstFrameReady world
             World.cleanUp world
             Constants.Engine.ExitCodeSuccess
         with exn ->
@@ -4546,7 +4546,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     "\nStack trace:\n" + string exn.StackTrace
                 Log.error errorMsg
                 MessageBoxOpt <- Some errorMsg
-                runWithCleanUpAndErrorProtection false world
+                runWithCleanUpAndErrorProtection None world
             else
                 let errorMsg = "Unexpected exception! Could not rewind world. Error due to: " + scstring exn
                 Log.error errorMsg
@@ -4601,7 +4601,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
             PrettyPrinter.prettyPrint extrinsicOverlaysStr prettyPrinter
         FsiSession <- Shell.FsiEvaluationSession.Create (FsiConfig, FsiArgs, FsiInStream, FsiOutStream, FsiErrorStream)
-        let result = runWithCleanUpAndErrorProtection true world
+        let result = runWithCleanUpAndErrorProtection (Some ignore) world
         (FsiSession :> IDisposable).Dispose () // not sure why we have to cast here...
         FsiErrorStream.Dispose ()
         FsiInStream.Dispose ()
@@ -4633,6 +4633,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                   Advancing = false
                   FramePacing = false
                   ModeOpt = gaiaState.ProjectEditModeOpt
+                  FirstFrameReady = ignore
                   SdlConfig = sdlConfig }
 
             // attempt to create the world
