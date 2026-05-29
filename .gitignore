@@ -21,6 +21,7 @@ Thumbs.db
 #######################
 *.suo
 *.tws
+*.fsproj.user
 
 #####################
 # Build Directories #

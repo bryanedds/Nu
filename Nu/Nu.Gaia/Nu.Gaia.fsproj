@@ -34,18 +34,18 @@
         <MSBuild Projects="@(GaiaProject)" Targets="Restore;Build" BuildInParallel="true" />
     </Target>
 	<!-- Run Nu.Pipe -->
-	<Target Name="NuPipe" BeforeTargets="ResizetizeCollectItems;AssignTargetPaths" DependsOnTargets="BuildNuPipe">
+	<Target Name="NuPipe" BeforeTargets="AssignTargetPaths;ResizetizeCollectItems" DependsOnTargets="BuildNuPipe">
+		<!-- Desktop: call NuPipe via BeforeTargets="AssignTargetPaths" -->
+		<!-- Mobile: call NuPipe via BeforeTargets="ResizetizeCollectItems" -->
 		<PropertyGroup>
 			<!-- Desktop asset output - directly write to the bin folder, they are not used during later build steps. -->
 			<NuPipeOut>$(MSBuildProjectDirectory)/bin/$(Configuration)/$(TargetFramework)</NuPipeOut>
 			<!-- Mobile asset output - since the files need to be used during later build steps, they cannot exist under bin or obj folders. -->
 			<NuPipeOut Condition="'$(TargetPlatformIdentifier)' != ''">$(MSBuildProjectDirectory)/refinement-out/$(TargetFramework)</NuPipeOut>
 		</PropertyGroup>
-		<!-- These 3 files are not copied by Nu.Pipe but are still read by the app (except App.config on desktop which MSBuild converts to <project-name>.exe.config) -->
+		<!-- These 3 files are not copied by Nu.Pipe but are still read by the app (except App.config on desktop which MSBuild converts to <project-name>.dll.config) -->
 		<Copy Condition="'$(TargetPlatformIdentifier)' != ''" SourceFiles="App.config" DestinationFolder="$(NuPipeOut)" SkipUnchangedFiles="true" />
 		<Copy SourceFiles="AssetGraph.nuag;Overlayer.nuol" DestinationFolder="$(NuPipeOut)" SkipUnchangedFiles="true" />
-		<!-- iOS and Android: call NuPipe via BeforeTargets="ResizetizeCollectItems" -->
-		<!-- Desktop: call NuPipe via BeforeTargets="AssignTargetPaths" -->
 		<MSBuild Projects="../../Nu/Nu.Pipe/Nu.Pipe.fsproj" RemoveProperties="TargetFramework;RuntimeIdentifier;SelfContained" Properties="NoBuild=true;RunWorkingDirectory=$(MSBuildProjectDirectory);RunArguments=&quot;$(MSBuildProjectDirectory)/&quot; &quot;$(NuPipeOut)&quot; &quot;$(MSBuildProjectDirectory)/refinement/$(TargetFramework)/&quot; &quot;$(BlockCompression)&quot; &quot;False&quot;" Targets="Run" />
 		<ItemGroup>
 			<!-- AssetPack and DeliveryType are for Android: https://learn.microsoft.com/en-us/dotnet/maui/android/asset-packs?view=net-maui-10.0#asset-packs-in-net-maui-apps -->
