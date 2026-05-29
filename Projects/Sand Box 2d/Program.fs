@@ -7,7 +7,7 @@ open System.Runtime.InteropServices
 open Nu
 
 // this the entry point for your Nu application
-let main () =
+let main firstFrameReady =
     Constants.Render.SkipRendering3d <- true // skipping the 3D renderer for startup time minimization
 
     // this initializes Nu before other Nu code is run
@@ -20,7 +20,7 @@ let main () =
     let sdlConfig = { SdlConfig.defaultConfig with WindowConfig = sdlWindowConfig }
 
     // this specifies the world config using the above SDL config
-    let worldConfig = { WorldConfig.defaultConfig with SdlConfig = sdlConfig }
+    let worldConfig = { WorldConfig.defaultConfig with SdlConfig = sdlConfig; FirstFrameReady = firstFrameReady }
 
     // this runs the engine with the given config and plugin, starting the game
     World.run worldConfig (SandBox2dPlugin ())
@@ -146,12 +146,10 @@ let private configureAndroidNativeLibraries () =
     trySetAndroidDllImportResolver typeof<Vortice.Vulkan.Vulkan>.Assembly androidAliases
     trySetAndroidDllImportResolver typeof<World>.Assembly androidAliases
 
-type PreDrawListener (dispose : PreDrawListener -> unit) =
+type PreDrawListener () =
     inherit Java.Lang.Object ()
     interface Android.Views.ViewTreeObserver.IOnPreDrawListener with
-        member this.OnPreDraw () =
-            if Globals.Render.IsReady then dispose this
-            Globals.Render.IsReady
+        member _.OnPreDraw () = false
 
 // Android Manifest through .NET attributes: https://learn.microsoft.com/en-us/dotnet/maui/android/manifest#attributes
 // Refer to https://github.com/libsdl-org/SDL/blob/main/android-project/app/src/main/AndroidManifest.xml for all needed attributes for SDL
@@ -181,11 +179,11 @@ do ()
 [<IntentFilter ([|Android.Hardware.Usb.UsbManager.ActionUsbDeviceAttached|])>] // SDL - Let Android know that we can handle some USB devices and should receive this event
 type MainActivity () =
     inherit Org.Libsdl.App.SDLActivity ()
-    override this.OnCreate (savedInstanceState: Android.OS.Bundle) = 
-        base.OnCreate savedInstanceState // Sets activity content
-        // Don't draw SDL's black window by preserving the splash screen until the first frame is available: https://developer.android.com/develop/ui/views/launch/splash-screen?utm_source=copilot.com#suspend-drawing
-        let content = this.FindViewById Android.Resource.Id.Content
-        content.ViewTreeObserver.AddOnPreDrawListener (new PreDrawListener (fun listener -> content.ViewTreeObserver.RemoveOnPreDrawListener listener)) // can't simplify the lambda since the ViewTreeObserver must be alive by getting the property!
+    let preDrawListener = new PreDrawListener ()
+    override this.OnCreate savedInstanceState =
+        base.OnCreate savedInstanceState // sets content view
+        // Don't draw SDL's black window by preserving the splash screen until the first frame is available: https://developer.android.com/develop/ui/views/launch/splash-screen#suspend-drawing
+        this.FindViewById(Android.Resource.Id.Content).ViewTreeObserver.AddOnPreDrawListener preDrawListener
     override this.GetLibraries () = [|"SDL3"; "SDL3_image"; "SDL3_ttf"; "SDL3_mixer"|] // SDL - Load these native libraries
     override this.Main () =
         configureAndroidNativeLibraries ()
@@ -273,7 +271,7 @@ type MainActivity () =
             raise (FileNotFoundException ($"Expected App.config at '{Directory.GetCurrentDirectory ()}' but it was not found. Something went wrong with asset pack loading."))
         AppDomain.CurrentDomain.SetData ("APP_CONFIG_FILE", System.IO.Path.GetFullPath "App.config") // "App.config" here will be interpreted as relative to AppDomain.CurrentDomain.BaseDirectory by .NET
 
-        main () |> ignore<int>
+        main (fun () -> this.FindViewById(Android.Resource.Id.Content).ViewTreeObserver.RemoveOnPreDrawListener preDrawListener) |> ignore<int>
 #endif
 #if IOS
 let private configureShaderCompilerLibrary () =
@@ -316,6 +314,9 @@ let private configureIosNativeLibraries () =
 open SDL
 open FSharp.NativeInterop
 
+// UIStoryboard.FromName must run in main thread, not in SdlMain, so it is extracted here
+let splashScreen = UIKit.UIStoryboard.FromName("MauiSplash", null).InstantiateInitialViewController().View
+
 // SDL usage taken from https://github.com/ppy/SDL3-CS/blob/master/SDL3-CS.Tests.iOS/Main.cs
 type SdlMain = delegate of argc : int * argv : byte nativeptr nativeptr -> int
 let private sdlMain =
@@ -325,8 +326,12 @@ let private sdlMain =
         let assetDirectory = Path.Combine (baseDirectory, "refinement-out", "net10.0-ios")
         Directory.SetCurrentDirectory assetDirectory
 
-        main ())
-   
+        // Add a splash screen view that visually continues the default splash screen and remove it when first frame is ready.
+        CoreFoundation.DispatchQueue.MainQueue.DispatchAsync (fun () ->
+            let window = UIKit.UIApplication.SharedApplication.Windows[0] // SharedApplication is null before SdlMain initialization, so we need to invoke main thread in SdlMain
+            splashScreen.Frame <- window.Bounds // ensure splash screen size is the window size instead of its default
+            window.AddSubview splashScreen)
+        main splashScreen.RemoveFromSuperview)
 let [<EntryPoint>] entryPoint _ =
     Log.init None // disable Nu's default file log because the iOS app bundle is read-only.
     configureIosNativeLibraries ()
@@ -344,5 +349,5 @@ let [<EntryPoint>] entryPoint _ =
         configureFrameworkNativeLibraries ()
     // regardless of where the program is launched from in the command line, always resolve files relative to the application's base directory
     Directory.SetCurrentDirectory AppContext.BaseDirectory
-    main ()
+    main ignore
 #endif

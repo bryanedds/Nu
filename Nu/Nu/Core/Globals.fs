@@ -18,6 +18,3 @@ module Render =
 
     /// The global mutable shadow scalar. This may be changed by the engine at run-time.
     let mutable ShadowScalar = match ConfigurationManager.AppSettings["ShadowScalar"] with null -> 4 | value -> scvalue value
-
-    /// The global mutable flag indicating whether the first frame has been rendered. This will be set to true by the engine at run-time.
-    let mutable IsReady = false

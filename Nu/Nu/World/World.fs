@@ -483,7 +483,7 @@ module WorldModule4 =
                 let world = World.make tryMakeEditContext sdlDeps worldConfig geometryViewport windowViewport plugin
                 if World.getWindowSize world <> windowSize then
                     World.processWindowResized world // synchronize window size with actual size, e.g. fullscreen for mobile or a display with size smaller than the configured DisplayScalar
-                World.runWithCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess true world
+                World.runWithCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess worldConfig.FirstFrameReady world
             | Left error -> Log.error error; Constants.Engine.ExitCodeFailure
 
         /// Run the game engine, initializing dependencies as indicated by WorldConfig, and returning exit code upon
