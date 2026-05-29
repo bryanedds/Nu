@@ -127,9 +127,6 @@
     <ItemGroup Condition="'$(TargetPlatformIdentifier)'=='android'">
 		<PackageReference Include="Xamarin.Google.Android.Play.Asset.Delivery" Version="2.3.0.6" />
 
-        <!-- We need this to AOT System.Drawing.Common on Mac when doing "dotnet publish" -->
-        <PackageReference Include="System.Formats.Nrbf" Version="10.0.1" />
-
 		<!-- Prevent linux binaries from being packaged on Android. Keep these updated with the version selected in the Nu project. -->
 		<PackageReference Include="Silk.NET.Shaderc.Native" Version="2.21.0" ExcludeAssets="native" /> <!-- transitive dependency of Vortice.ShaderCompiler -->
 		<PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" ExcludeAssets="native" />

@@ -4,6 +4,7 @@ open System.IO
 open System.Reflection
 open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
+open System.Diagnostics.CodeAnalysis
 open Nu
 
 // this the entry point for your Nu application
@@ -274,6 +275,7 @@ type MainActivity () =
         main (fun () -> this.FindViewById(Android.Resource.Id.Content).ViewTreeObserver.RemoveOnPreDrawListener preDrawListener) |> ignore<int>
 #endif
 #if IOS
+[<System.Diagnostics.CodeAnalysis.DynamicDependency ("ResolveLibrary", "Vortice.ShaderCompiler.Native", "Vortice.ShaderCompiler")>] // Release mode linker will drop the setter without this attribute
 let private configureShaderCompilerLibrary () =
     let shaderCompilerAssembly = typeof<Vortice.ShaderCompiler.ShaderMacro>.Assembly
     let nativeType = shaderCompilerAssembly.GetType ("Vortice.ShaderCompiler.Native", true)

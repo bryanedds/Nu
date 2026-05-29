@@ -202,6 +202,8 @@
         <PackageReference Include="Prime" Version="11.5.0" />
         <PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.1" />
         <PackageReference Include="System.Drawing.Common" Version="10.0.1" />
+        <!-- We need this to AOT System.Drawing.Common for macOS/mobile when building in Release -->
+        <PackageReference Include="System.Formats.Nrbf" Version="10.0.1" />
         <PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" />
         <PackageReference Include="ppy.SDL3-CS" Version="2026.512.0" />
         <PackageReference Include="ppy.SDL3_ttf-CS" Version="2026.512.0" />
