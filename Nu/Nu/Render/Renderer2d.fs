@@ -846,7 +846,9 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                         Texture.TextureInternal.create
                                             Texture.MipmapNone Texture.AttachmentNone Texture.Texture2d [||]
                                             Texture.Uncompressed.ImageFormat Texture.Uncompressed.PixelFormat metadata vkc
-                                    Texture.TextureInternal.uploadAsync vkc.RenderCommandBuffer metadata 0 0 textSurface.pixels textTextureInternal vkc
+                                    
+                                    // NOTE: DJL: upload must be synchronous when memoizing, otherwise readiness for next frame cannot be guaranteed.
+                                    Texture.TextureInternal.upload metadata 0 0 textSurface.pixels Texture.RenderThread textTextureInternal vkc
                                     let textTexture = Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = textTextureInternal }
                                     
                                     // destroy text surface

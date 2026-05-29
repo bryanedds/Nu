@@ -226,26 +226,25 @@ module Pipeline =
             // only proceed if within limit
             if descriptorIndex < descriptorSet.DescriptorLimits_.[binding] then
             
-                // only proceed if image view not already written
-                if (descriptorSet.DescriptorSetState setIndex).GetImageView binding descriptorIndex <> imageView.Handle then
+                // TODO: DJL: figure out how to prevent redundant writes properly as handles of destroyed objects can apparently be reused!
 
-                    // image info
-                    let mutable info = VkDescriptorImageInfo ()
-                    info.imageView <- imageView
-                    info.imageLayout <- Hl.ShaderRead.VkImageLayout
+                // image info
+                let mutable info = VkDescriptorImageInfo ()
+                info.imageView <- imageView
+                info.imageLayout <- Hl.ShaderRead.VkImageLayout
 
-                    // write descriptor set
-                    let mutable write = VkWriteDescriptorSet ()
-                    write.dstSet <- descriptorSet.VkDescriptorSet setIndex
-                    write.dstBinding <- uint binding
-                    write.dstArrayElement <- uint descriptorIndex
-                    write.descriptorCount <- 1u
-                    write.descriptorType <- VkDescriptorType.SampledImage
-                    write.pImageInfo <- asPointer &info
-                    Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
+                // write descriptor set
+                let mutable write = VkWriteDescriptorSet ()
+                write.dstSet <- descriptorSet.VkDescriptorSet setIndex
+                write.dstBinding <- uint binding
+                write.dstArrayElement <- uint descriptorIndex
+                write.descriptorCount <- 1u
+                write.descriptorType <- VkDescriptorType.SampledImage
+                write.pImageInfo <- asPointer &info
+                Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
 
-                    // record written image view
-                    (descriptorSet.DescriptorSetState setIndex).SetImageView binding descriptorIndex imageView.Handle
+                // record written image view
+                (descriptorSet.DescriptorSetState setIndex).SetImageView binding descriptorIndex imageView.Handle
 
             // warn if limit exceeded
             else Log.warnOnce "Attempted sampled image write to descriptor set has exceeded descriptor count. You may have failed to pass the correct descriptor count at pipeline creation."
