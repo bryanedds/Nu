@@ -130,7 +130,7 @@ module SpriteBatch =
                 Pipeline.Pipeline.writeDescriptorStorageBuffer 0 1 env.DrawIndex 0 viewProjectionUniform.[env.DrawIndex] env.Pipeline vkc
 
                 // bind texture
-                Pipeline.Pipeline.writeDescriptorSampledImage 0 2 env.DrawIndex 0 texture.ImageView env.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorSampledImage 0 2 env.DrawIndex 0 texture env.Pipeline vkc
                 Pipeline.Pipeline.writeDescriptorSampler 1 0 0 0 env.UnfilteredSampler env.Pipeline vkc
                 Pipeline.Pipeline.writeDescriptorSampler 1 0 1 0 env.FilteredSampler env.Pipeline vkc
                 

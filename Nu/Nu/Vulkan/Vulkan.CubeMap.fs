@@ -288,7 +288,7 @@ module CubeMap =
         Pipeline.Pipeline.writeDescriptorStorageBuffer 0 0 drawIndex 0 pipeline.TransformUniform.[drawIndex] pipeline.Pipeline vkc
 
         // bind texture
-        Pipeline.Pipeline.writeDescriptorSampledImage 0 1 drawIndex 0 cubeMap.ImageView pipeline.Pipeline vkc
+        Pipeline.Pipeline.writeDescriptorSampledImage 0 1 drawIndex 0 cubeMap pipeline.Pipeline vkc
         Pipeline.Pipeline.writeDescriptorSampler 1 0 0 0 sampler pipeline.Pipeline vkc
 
         // make viewport and scissor

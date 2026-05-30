@@ -1457,11 +1457,11 @@ module PhysicallyBased =
         Pipeline.Pipeline.writeDescriptorStorageBuffer 0 1 renderPassIndex 0 pipeline.CommonUniform.[renderPassIndex] pipeline.Pipeline vkc
 
         // bind common textures
-        Pipeline.Pipeline.writeDescriptorSampledImage 0 2 renderPassIndex 0 depthTexture.ImageView pipeline.Pipeline vkc
-        Pipeline.Pipeline.writeDescriptorSampledImage 0 3 renderPassIndex 0 colorTexture.ImageView pipeline.Pipeline vkc
-        Pipeline.Pipeline.writeDescriptorSampledImage 0 4 renderPassIndex 0 brdfTexture.ImageView pipeline.Pipeline vkc
-        Pipeline.Pipeline.writeDescriptorSampledImage 0 5 renderPassIndex 0 irradianceMap.ImageView pipeline.Pipeline vkc
-        Pipeline.Pipeline.writeDescriptorSampledImage 0 6 renderPassIndex 0 environmentFilterMap.ImageView pipeline.Pipeline vkc
+        Pipeline.Pipeline.writeDescriptorSampledImage 0 2 renderPassIndex 0 depthTexture pipeline.Pipeline vkc
+        Pipeline.Pipeline.writeDescriptorSampledImage 0 3 renderPassIndex 0 colorTexture pipeline.Pipeline vkc
+        Pipeline.Pipeline.writeDescriptorSampledImage 0 4 renderPassIndex 0 brdfTexture pipeline.Pipeline vkc
+        Pipeline.Pipeline.writeDescriptorSampledImage 0 5 renderPassIndex 0 irradianceMap pipeline.Pipeline vkc
+        Pipeline.Pipeline.writeDescriptorSampledImage 0 6 renderPassIndex 0 environmentFilterMap pipeline.Pipeline vkc
 
         // bind samplers
         Pipeline.Pipeline.writeDescriptorSampler 2 0 0 0 filteredSampler pipeline.Pipeline vkc
@@ -1566,22 +1566,22 @@ module PhysicallyBased =
                 Pipeline.Pipeline.writeDescriptorStorageBuffer 1 4 drawIndex i pipeline.ShadowMatrixUniform.[bufferIndex] pipeline.Pipeline vkc
         
             // bind position-specific textures
-            Pipeline.Pipeline.writeDescriptorSampledImage 1 5 drawIndex 0 material.AlbedoTexture.ImageView pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorSampledImage 1 6 drawIndex 0 material.RoughnessTexture.ImageView pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorSampledImage 1 7 drawIndex 0 material.MetallicTexture.ImageView pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorSampledImage 1 8 drawIndex 0 material.AmbientOcclusionTexture.ImageView pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorSampledImage 1 9 drawIndex 0 material.EmissionTexture.ImageView pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorSampledImage 1 10 drawIndex 0 material.NormalTexture.ImageView pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorSampledImage 1 11 drawIndex 0 material.HeightTexture.ImageView pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage 1 5 drawIndex 0 material.AlbedoTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage 1 6 drawIndex 0 material.RoughnessTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage 1 7 drawIndex 0 material.MetallicTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage 1 8 drawIndex 0 material.AmbientOcclusionTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage 1 9 drawIndex 0 material.EmissionTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage 1 10 drawIndex 0 material.NormalTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage 1 11 drawIndex 0 material.HeightTexture pipeline.Pipeline vkc
             for i in 0 .. dec (min irradianceMaps.Length Constants.Render.LightMapsMaxForward) do
-                Pipeline.Pipeline.writeDescriptorSampledImage 1 18 drawIndex i irradianceMaps.[i].ImageView pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorSampledImage 1 18 drawIndex i irradianceMaps.[i] pipeline.Pipeline vkc
             for i in 0 .. dec (min environmentFilterMaps.Length Constants.Render.LightMapsMaxForward) do
-                Pipeline.Pipeline.writeDescriptorSampledImage 1 19 drawIndex i environmentFilterMaps.[i].ImageView pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorSampledImage 1 20 drawIndex 0 shadowTextureArray.ImageView pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorSampledImage 1 19 drawIndex i environmentFilterMaps.[i] pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage 1 20 drawIndex 0 shadowTextureArray pipeline.Pipeline vkc
             for i in 0 .. dec (min shadowMaps.Length Constants.Render.ShadowMapsMax) do
-                Pipeline.Pipeline.writeDescriptorSampledImage 1 21 drawIndex i shadowMaps.[i].ImageView pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorSampledImage 1 21 drawIndex i shadowMaps.[i] pipeline.Pipeline vkc
             for i in 0 .. dec (min shadowCascades.Length Constants.Render.ShadowCascadesMax) do
-                Pipeline.Pipeline.writeDescriptorSampledImage 1 22 drawIndex i shadowCascades.[i].ImageView pipeline.Pipeline vkc
+                Pipeline.Pipeline.writeDescriptorSampledImage 1 22 drawIndex i shadowCascades.[i] pipeline.Pipeline vkc
         
             // update instance buffer
             use instanceFieldsPin = new ArrayPin<_> (instanceFields)

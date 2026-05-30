@@ -150,7 +150,7 @@ module Sprite =
             Pipeline.Pipeline.writeDescriptorStorageBuffer 0 1 drawIndex 0 spriteFragUniform.[drawIndex] pipeline vkc
             
             // bind texture
-            Pipeline.Pipeline.writeDescriptorSampledImage 0 2 drawIndex 0 texture.ImageView pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage 0 2 drawIndex 0 texture pipeline vkc
             Pipeline.Pipeline.writeDescriptorSampler 1 0 0 0 sampler pipeline vkc
 
             // make viewport and scissor
