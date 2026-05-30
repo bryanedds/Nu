@@ -1055,6 +1055,12 @@ module Texture =
         | EagerTexture of EagerTexture
         | LazyTexture of LazyTexture
         
+        member private this.TextureInternal =
+            match this with
+            | EmptyTexture -> TextureInternal.empty
+            | EagerTexture eagerTexture -> eagerTexture.TextureInternal
+            | LazyTexture lazyTexture -> lazyTexture.TextureInternal
+        
         static member hash texture =
             match texture with
             | EmptyTexture -> 0
@@ -1082,47 +1088,13 @@ module Texture =
             | EagerTexture eagerTexture -> eagerTexture.TextureMetadata
             | LazyTexture lazyTexture -> lazyTexture.TextureMetadata
         
-        member this.Image =
-            match this with
-            | EmptyTexture -> TextureInternal.empty.Image
-            | EagerTexture eagerTexture -> eagerTexture.TextureInternal.Image
-            | LazyTexture lazyTexture -> lazyTexture.TextureInternal.Image
-        
-        member this.ImageView =
-            match this with
-            | EmptyTexture -> TextureInternal.empty.ImageView
-            | EagerTexture eagerTexture -> eagerTexture.TextureInternal.ImageView
-            | LazyTexture lazyTexture -> lazyTexture.TextureInternal.ImageView
-
-        member this.SubViews =
-            match this with
-            | EmptyTexture -> TextureInternal.empty.SubViews
-            | EagerTexture eagerTexture -> eagerTexture.TextureInternal.SubViews
-            | LazyTexture lazyTexture -> lazyTexture.TextureInternal.SubViews
-        
-        member this.InternalFormat =
-            match this with
-            | EmptyTexture -> TextureInternal.empty.InternalFormat
-            | EagerTexture eagerTexture -> eagerTexture.TextureInternal.InternalFormat
-            | LazyTexture lazyTexture -> lazyTexture.TextureInternal.InternalFormat
-        
-        member this.VkFormat =
-            match this with
-            | EmptyTexture -> TextureInternal.empty.VkFormat
-            | EagerTexture eagerTexture -> eagerTexture.TextureInternal.VkFormat
-            | LazyTexture lazyTexture -> lazyTexture.TextureInternal.VkFormat
-        
-        member this.MipLevels =
-            match this with
-            | EmptyTexture -> TextureInternal.empty.MipLevels_
-            | EagerTexture eagerTexture -> eagerTexture.TextureInternal.MipLevels_
-            | LazyTexture lazyTexture -> lazyTexture.TextureInternal.MipLevels_
-        
-        member this.Layers =
-            match this with
-            | EmptyTexture -> TextureInternal.empty.TextureType_.Layers
-            | EagerTexture eagerTexture -> eagerTexture.TextureInternal.TextureType_.Layers
-            | LazyTexture lazyTexture -> lazyTexture.TextureInternal.TextureType_.Layers
+        member this.Image = this.TextureInternal.Image
+        member this.ImageView = this.TextureInternal.ImageView
+        member this.SubViews = this.TextureInternal.SubViews
+        member this.InternalFormat = this.TextureInternal.InternalFormat
+        member this.VkFormat = this.TextureInternal.VkFormat
+        member this.MipLevels = this.TextureInternal.MipLevels_
+        member this.Layers = this.TextureInternal.TextureType_.Layers
         
         member this.Destroy vkc =
             match this with
