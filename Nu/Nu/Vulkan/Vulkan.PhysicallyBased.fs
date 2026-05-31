@@ -1287,11 +1287,11 @@ module PhysicallyBased =
 
                   // descriptor set 1: position-specific; per draw
                   Pipeline.descriptorSet Hl.BulkSetIndexed Constants.Render.GeometryRenderPassMax
-                    [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage Constants.Render.BonesMax // bone
-                      Pipeline.descriptor 1 Hl.StorageBuffer Hl.FragmentStage lightMapsMax // lightMap
+                    [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage 1 // bone
+                      Pipeline.descriptor 1 Hl.StorageBuffer Hl.FragmentStage 1 // lightMap
                       Pipeline.descriptor 2 Hl.StorageBuffer Hl.FragmentStage 1 // lightsGeneral
-                      Pipeline.descriptor 3 Hl.StorageBuffer Hl.FragmentStage lightsMax // light
-                      Pipeline.descriptor 4 Hl.StorageBuffer Hl.FragmentStage (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels) // shadowMatrix
+                      Pipeline.descriptor 3 Hl.StorageBuffer Hl.FragmentStage 1 // light
+                      Pipeline.descriptor 4 Hl.StorageBuffer Hl.FragmentStage 1 // shadowMatrix
                       Pipeline.descriptor 5 Hl.SampledImage Hl.FragmentStage 1 // albedoTexture
                       Pipeline.descriptor 6 Hl.SampledImage Hl.FragmentStage 1 // roughnessTexture
                       Pipeline.descriptor 7 Hl.SampledImage Hl.FragmentStage 1 // metallicTexture
@@ -1328,11 +1328,12 @@ module PhysicallyBased =
         let commonUniform = Buffer.Buffer.create sizeof<Common> Buffer.Storage vkc
         
         // create set 1 uniform buffers
-        let boneUniform = Buffer.Buffer.create sizeof<Bone> Buffer.Storage vkc
-        let lightMapUniform = Buffer.Buffer.create sizeof<LightMap> Buffer.Storage vkc
+        let shadowMatrixMax = Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels
+        let boneUniform = Buffer.Buffer.create (Constants.Render.BonesMax * sizeof<Bone>) Buffer.Storage vkc
+        let lightMapUniform = Buffer.Buffer.create (lightMapsMax * sizeof<LightMap>) Buffer.Storage vkc
         let lightsGeneralUniform = Buffer.Buffer.create sizeof<LightsGeneral> Buffer.Storage vkc
-        let lightUniform = Buffer.Buffer.create sizeof<Light> Buffer.Storage vkc
-        let shadowMatrixUniform = Buffer.Buffer.create sizeof<ShadowMatrix> Buffer.Storage vkc
+        let lightUniform = Buffer.Buffer.create (lightsMax * sizeof<Light>) Buffer.Storage vkc
+        let shadowMatrixUniform = Buffer.Buffer.create (shadowMatrixMax * sizeof<ShadowMatrix>) Buffer.Storage vkc
         
         // make PhysicallyBasedPipeline
         let physicallyBasedPipeline =
@@ -1522,9 +1523,10 @@ module PhysicallyBased =
             for i in 0 .. dec (min Constants.Render.BonesMax bones.Length) do
                 let mutable bone = Bone ()
                 bone.bone <- bones.[i]
-                let bufferIndex = drawIndex * Constants.Render.BonesMax + i
-                Buffer.Buffer.uploadValue bufferIndex 0 0 bone pipeline.BoneUniform vkc
-                Pipeline.Pipeline.writeDescriptorStorageBuffer 1 0 drawIndex i pipeline.BoneUniform.[bufferIndex] pipeline.Pipeline vkc
+                Buffer.Buffer.uploadValue drawIndex (i * sizeof<Bone>) 0 bone pipeline.BoneUniform vkc
+            
+            // TODO: DJL: address drawIndex out of range due to no bone uploads.
+            Pipeline.Pipeline.writeDescriptorStorageBuffer 1 0 drawIndex 0 pipeline.BoneUniform.[drawIndex] pipeline.Pipeline vkc
             for i in 0 .. dec (min lightMapOrigins.Length Constants.Render.LightMapsMaxForward) do // TODO: DJL: use lightmapscount?
                 let mutable lightMap = LightMap ()
                 lightMap.lightMapOrigins <- lightMapOrigins.[i]
@@ -1532,9 +1534,8 @@ module PhysicallyBased =
                 lightMap.lightMapSizes <- lightMapSizes.[i]
                 lightMap.lightMapAmbientColors <- lightMapAmbientColors.[i].V3
                 lightMap.lightMapAmbientBrightnesses <- lightMapAmbientBrightnesses.[i]
-                let bufferIndex = drawIndex * Constants.Render.LightMapsMaxForward + i
-                Buffer.Buffer.uploadValue bufferIndex 0 0 lightMap pipeline.LightMapUniform vkc
-                Pipeline.Pipeline.writeDescriptorStorageBuffer 1 1 drawIndex i pipeline.LightMapUniform.[bufferIndex] pipeline.Pipeline vkc
+                Buffer.Buffer.uploadValue drawIndex (i * sizeof<LightMap>) 0 lightMap pipeline.LightMapUniform vkc
+            Pipeline.Pipeline.writeDescriptorStorageBuffer 1 1 drawIndex 0 pipeline.LightMapUniform.[drawIndex] pipeline.Pipeline vkc
             let mutable lightsGeneral = LightsGeneral ()
             lightsGeneral.lightMapsCount <- lightMapsCount
             lightsGeneral.lightMapSingletonBlendMargin <- lightMapSingletonBlendMargin
@@ -1555,15 +1556,13 @@ module PhysicallyBased =
                 light.lightConeOuters <- lightConeOuters.[i]
                 light.lightDesireFogs <- lightDesireFogs.[i]
                 light.lightShadowIndices <- lightShadowIndices.[i]
-                let bufferIndex = drawIndex * Constants.Render.LightsMaxForward + i
-                Buffer.Buffer.uploadValue bufferIndex 0 0 light pipeline.LightUniform vkc
-                Pipeline.Pipeline.writeDescriptorStorageBuffer 1 3 drawIndex i pipeline.LightUniform.[bufferIndex] pipeline.Pipeline vkc
+                Buffer.Buffer.uploadValue drawIndex (i * sizeof<Light>) 0 light pipeline.LightUniform vkc
+            Pipeline.Pipeline.writeDescriptorStorageBuffer 1 3 drawIndex 0 pipeline.LightUniform.[drawIndex] pipeline.Pipeline vkc
             for i in 0 .. dec (min shadowMatrices.Length (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels)) do
                 let mutable shadowMatrix = ShadowMatrix ()
                 shadowMatrix.shadowMatrix <- shadowMatrices.[i]
-                let bufferIndex = drawIndex * (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels) + i
-                Buffer.Buffer.uploadValue bufferIndex 0 0 shadowMatrix pipeline.ShadowMatrixUniform vkc
-                Pipeline.Pipeline.writeDescriptorStorageBuffer 1 4 drawIndex i pipeline.ShadowMatrixUniform.[bufferIndex] pipeline.Pipeline vkc
+                Buffer.Buffer.uploadValue drawIndex (i * sizeof<ShadowMatrix>) 0 shadowMatrix pipeline.ShadowMatrixUniform vkc
+            Pipeline.Pipeline.writeDescriptorStorageBuffer 1 4 drawIndex 0 pipeline.ShadowMatrixUniform.[drawIndex] pipeline.Pipeline vkc
         
             // bind position-specific textures
             Pipeline.Pipeline.writeDescriptorSampledImage 1 5 drawIndex 0 material.AlbedoTexture pipeline.Pipeline vkc
