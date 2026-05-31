@@ -29,12 +29,12 @@ struct ViewProjection
 layout(binding = 0) buffer readonly SpriteBlock
 {
     Sprite sprites[SPRITE_BATCH_SIZE];
-} sprite;
+};
 
 layout(binding = 1) buffer readonly ViewProjectionBlock
 {
     ViewProjection viewProjection;
-} viewProjection;
+};
 
 layout(location = 0) out vec2 texCoords;
 layout(location = 1) out vec4 color;
@@ -55,8 +55,8 @@ void main()
 
     // compute position
     vec4 filt = FILTERS[vertexId];
-    Sprite sprite = sprite.sprites[spriteId];
-    mat4 viewProjection = viewProjection.viewProjection.viewProjection;
+    Sprite sprite = sprites[spriteId];
+    mat4 viewProjection = viewProjection.viewProjection;
     vec4 perimeter = sprite.perimeter * filt;
     vec2 position = vec2(perimeter.x + perimeter.z, perimeter.y + perimeter.w);
     vec2 pivot = sprite.pivot;
