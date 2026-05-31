@@ -128,6 +128,9 @@ module Pipeline =
         | NeverPassTest -> VkCompareOp.Never
         | AlwaysPassTest -> VkCompareOp.Always
     
+    // NOTE: DJL: these identifiers *must* be manually generated to ensure uniqueness across time as object handles can be reused after object destruction.
+    // id reuse can lead to outdated descriptors pointing to possibly destroyed resources. this has caused a severe text rendering bug that only seems to
+    // emerge with validation disabled.
     type private DescriptorSetState =
         private
             { BuffersWritten : uint64 List array
@@ -198,6 +201,7 @@ module Pipeline =
             if descriptorIndex < descriptorSet.DescriptorLimits_.[binding] then
             
                 // only proceed if buffer not already written
+                // TODO: DJL: create proper id for buffer.
                 if (descriptorSet.DescriptorSetState setIndex).GetBuffer binding descriptorIndex <> buffer.Handle then
             
                     // buffer info
@@ -226,25 +230,26 @@ module Pipeline =
             // only proceed if within limit
             if descriptorIndex < descriptorSet.DescriptorLimits_.[binding] then
             
-                // TODO: DJL: figure out how to prevent redundant writes properly as handles of destroyed objects can apparently be reused!
+                // only proceed if image view not already written
+                if (descriptorSet.DescriptorSetState setIndex).GetImageView binding descriptorIndex <> texture.Id then
+                
+                    // image info
+                    let mutable info = VkDescriptorImageInfo ()
+                    info.imageView <- texture.ImageView
+                    info.imageLayout <- Hl.ShaderRead.VkImageLayout
 
-                // image info
-                let mutable info = VkDescriptorImageInfo ()
-                info.imageView <- texture.ImageView
-                info.imageLayout <- Hl.ShaderRead.VkImageLayout
+                    // write descriptor set
+                    let mutable write = VkWriteDescriptorSet ()
+                    write.dstSet <- descriptorSet.VkDescriptorSet setIndex
+                    write.dstBinding <- uint binding
+                    write.dstArrayElement <- uint descriptorIndex
+                    write.descriptorCount <- 1u
+                    write.descriptorType <- VkDescriptorType.SampledImage
+                    write.pImageInfo <- asPointer &info
+                    Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
 
-                // write descriptor set
-                let mutable write = VkWriteDescriptorSet ()
-                write.dstSet <- descriptorSet.VkDescriptorSet setIndex
-                write.dstBinding <- uint binding
-                write.dstArrayElement <- uint descriptorIndex
-                write.descriptorCount <- 1u
-                write.descriptorType <- VkDescriptorType.SampledImage
-                write.pImageInfo <- asPointer &info
-                Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
-
-                // record written image view
-                (descriptorSet.DescriptorSetState setIndex).SetImageView binding descriptorIndex texture.ImageView.Handle
+                    // record written image view
+                    (descriptorSet.DescriptorSetState setIndex).SetImageView binding descriptorIndex texture.Id
 
             // warn if limit exceeded
             else Log.warnOnce "Attempted sampled image write to descriptor set has exceeded descriptor count. You may have failed to pass the correct descriptor count at pipeline creation."
@@ -255,7 +260,7 @@ module Pipeline =
             if descriptorIndex < descriptorSet.DescriptorLimits_.[binding] then
             
                 // only proceed if sampler not already written
-                if (descriptorSet.DescriptorSetState setIndex).GetSampler binding descriptorIndex <> sampler.VkSampler.Handle then
+                if (descriptorSet.DescriptorSetState setIndex).GetSampler binding descriptorIndex <> sampler.Id then
                 
                     // image info
                     let mutable info = VkDescriptorImageInfo ()
@@ -272,7 +277,7 @@ module Pipeline =
                     Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
 
                     // record written sampler
-                    (descriptorSet.DescriptorSetState setIndex).SetSampler binding descriptorIndex sampler.VkSampler.Handle
+                    (descriptorSet.DescriptorSetState setIndex).SetSampler binding descriptorIndex sampler.Id
 
             // warn if limit exceeded
             else Log.warnOnce "Attempted sampler write to descriptor set has exceeded descriptor count. You may have failed to pass the correct descriptor count at pipeline creation."
@@ -283,8 +288,8 @@ module Pipeline =
             if descriptorIndex < descriptorSet.DescriptorLimits_.[binding] then
             
                 // only proceed if image view or sampler not already written
-                if (descriptorSet.DescriptorSetState setIndex).GetImageView binding descriptorIndex <> texture.ImageView.Handle ||
-                   (descriptorSet.DescriptorSetState setIndex).GetSampler binding descriptorIndex <> sampler.VkSampler.Handle
+                if (descriptorSet.DescriptorSetState setIndex).GetImageView binding descriptorIndex <> texture.Id ||
+                   (descriptorSet.DescriptorSetState setIndex).GetSampler binding descriptorIndex <> sampler.Id
                 then
             
                     // image info
@@ -304,8 +309,8 @@ module Pipeline =
                     Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
 
                     // record written image view and sampler
-                    (descriptorSet.DescriptorSetState setIndex).SetImageView binding descriptorIndex texture.ImageView.Handle
-                    (descriptorSet.DescriptorSetState setIndex).SetSampler binding descriptorIndex sampler.VkSampler.Handle
+                    (descriptorSet.DescriptorSetState setIndex).SetImageView binding descriptorIndex texture.Id
+                    (descriptorSet.DescriptorSetState setIndex).SetSampler binding descriptorIndex sampler.Id
 
             // warn if limit exceeded
             else Log.warnOnce "Attempted combined image sampler write to descriptor set has exceeded descriptor count. You may have failed to pass the correct descriptor count at pipeline creation."

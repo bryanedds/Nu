@@ -26,6 +26,12 @@ open Nu
 [<RequireQualifiedAccess>]
 module Texture =
 
+    // provides id for a texture on the gpu that is globally unique i.e. cannot be reused after texture is destroyed,
+    // which is essential for tracking descriptor writes
+    let mutable private TextureIdGenerationLock = obj ()
+    let mutable private TextureIdCounter = 0UL
+    let private GenTextureId () = lock TextureIdGenerationLock (fun () -> TextureIdCounter <- inc TextureIdCounter; TextureIdCounter)
+    
     /// The forward-declared empty texture value.
     /// Initialized in RendererProcesses.
     /// NOTE: if performance issues arise from checking / casting this, maybe use ValueOption or null directly.
@@ -477,13 +483,18 @@ module Texture =
     /// A Vulkan sampler parallelized for frames in flight.
     type Sampler =
         private
-            { VkSamplers : VkSampler array }
+            { Ids : uint64 array
+              VkSamplers : VkSampler array }
 
+        /// The id of the VkSampler for the current frame in flight.
+        member this.Id = this.Ids.[Hl.CurrentFrame]
+        
         /// The VkSampler for the current frame in flight.
         member this.VkSampler = this.VkSamplers.[Hl.CurrentFrame]
         
         /// Create a Sampler.
         static member create addressMode minFilter magFilter anisoFilter (vkc : Hl.VulkanContext) =
+            let ids = Array.zeroCreate Constants.Vulkan.MaxFramesInFlight
             let vkSamplers = Array.zeroCreate Constants.Vulkan.MaxFramesInFlight
             for i in 0 .. dec vkSamplers.Length do
                 let mutable info = VkSamplerCreateInfo ()
@@ -499,8 +510,10 @@ module Texture =
                 info.maxLod <- Vulkan.VK_LOD_CLAMP_NONE
                 let mutable vkSampler = Unchecked.defaultof<VkSampler>
                 Vulkan.vkCreateSampler (vkc.Device, &info, nullPtr, &vkSampler) |> Hl.check
+                ids.[i] <- GenTextureId ()
                 vkSamplers.[i] <- vkSampler
-            { VkSamplers = vkSamplers }
+            { Ids = ids
+              VkSamplers = vkSamplers }
         
         /// Destroy a Sampler.
         static member destroy sampler (vkc : Hl.VulkanContext) =
@@ -528,7 +541,8 @@ module Texture =
               TextureTexelHeight = 0.0f }
 
     type private TextureSingleton =
-        { Image : VkImage
+        { Id : uint64
+          Image : VkImage
           Allocation : VmaAllocation
           ImageView : VkImageView
           SubViews : VkImageView array2d
@@ -586,7 +600,8 @@ module Texture =
             | _ -> ()
             
             // fin
-            { Image = image
+            { Id = GenTextureId ()
+              Image = image
               Allocation = allocation
               ImageView = imageView
               SubViews = subViews
@@ -618,9 +633,8 @@ module Texture =
         member private this.Texture = this.Textures_.[this.CurrentIndex]
         member private this.ImageSize = this.Texture.ImageSize
         
-        /// The unique texture id.
-        /// TODO: DJL: review, should probably just generate Id since images can now be recreated.
-        member this.TextureId = this.Textures_.[0].Image.Handle
+        /// The unique id of the current texture on the gpu, which may change for an attachment.
+        member this.Id = this.Texture.Id
         
         /// The image.
         member this.Image = this.Texture.Image
@@ -642,11 +656,11 @@ module Texture =
         
         override this.Equals thatObj =
             match thatObj with
-            | :? TextureInternal as that -> this.TextureId = that.TextureId
+            | :? TextureInternal as that -> this.Id = that.Id
             | _ -> false
 
         override this.GetHashCode () = 
-            hash this.TextureId
+            hash this.Id
 
         /// Determine which image usage flags to use.
         static member private determineImageUsage (mipmapMode : MipmapMode) (attachmentMode : AttachmentMode) optionalUsageFlags =
@@ -1061,6 +1075,7 @@ module Texture =
             | EagerTexture eagerTexture -> eagerTexture.TextureInternal
             | LazyTexture lazyTexture -> lazyTexture.TextureInternal
         
+        // TODO: DJL: review use of resource specific and therefore mutable texture id for hash and equals.
         static member hash texture =
             match texture with
             | EmptyTexture -> 0
@@ -1075,7 +1090,7 @@ module Texture =
                 | _ -> false
             | EagerTexture eagerThis ->
                 match that with
-                | EagerTexture eagerThat -> eagerThis.TextureInternal.TextureId = eagerThat.TextureInternal.TextureId
+                | EagerTexture eagerThat -> eagerThis.TextureInternal.Id = eagerThat.TextureInternal.Id
                 | _ -> false
             | LazyTexture lazyThis ->
                 match that with
@@ -1088,6 +1103,7 @@ module Texture =
             | EagerTexture eagerTexture -> eagerTexture.TextureMetadata
             | LazyTexture lazyTexture -> lazyTexture.TextureMetadata
         
+        member this.Id = this.TextureInternal.Id
         member this.Image = this.TextureInternal.Image
         member this.ImageView = this.TextureInternal.ImageView
         member this.SubViews = this.TextureInternal.SubViews
