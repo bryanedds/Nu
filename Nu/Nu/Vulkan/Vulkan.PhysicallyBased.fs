@@ -1287,7 +1287,7 @@ module PhysicallyBased =
 
                   // descriptor set 1: position-specific; per draw
                   Pipeline.descriptorSet Hl.BulkSetIndexed Constants.Render.GeometryRenderPassMax
-                    [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage 1 // bone
+                    [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage Constants.Render.BonesMax // bone
                       Pipeline.descriptor 1 Hl.StorageBuffer Hl.FragmentStage lightMapsMax // lightMap
                       Pipeline.descriptor 2 Hl.StorageBuffer Hl.FragmentStage 1 // lightsGeneral
                       Pipeline.descriptor 3 Hl.StorageBuffer Hl.FragmentStage lightsMax // light
