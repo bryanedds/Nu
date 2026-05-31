@@ -109,13 +109,13 @@ struct ShadowMatrix
 layout(binding = 0) buffer readonly TransformBlock
 {
     Transform transform;
-} transform;
+};
 
 layout(binding = 1) buffer readonly CommonBlock
 {
     // TODO: DJL: reform name.
     Common commonData; // common is reserved
-} commonData;
+};
 
 layout(binding = 2) uniform texture2D depthTexture;
 layout(binding = 3) uniform texture2D colorTexture;
@@ -126,22 +126,22 @@ layout(binding = 6) uniform textureCube environmentFilterMap;
 layout(set = 1, binding = 1) buffer readonly LightMapBlock
 {
     LightMap lightMaps[LIGHT_MAPS_MAX];
-} lightMaps;
+};
 
 layout(set = 1, binding = 2) buffer readonly LightsGeneralBlock
 {
     LightsGeneral lightsGeneral;
-} lightsGeneral;
+};
 
 layout(set = 1, binding = 3) buffer readonly LightBlock
 {
     Light lights[LIGHTS_MAX];
-} lights;
+};
 
 layout(set = 1, binding = 4) buffer readonly ShadowMatrixBlock
 {
     ShadowMatrix shadowMatrices[SHADOW_TEXTURES_MAX + SHADOW_CASCADES_MAX * SHADOW_CASCADE_LEVELS];
-} shadowMatrices;
+};
 
 layout(set = 1, binding = 5) uniform texture2D albedoTexture;
 layout(set = 1, binding = 6) uniform texture2D roughnessTexture;
@@ -173,47 +173,44 @@ flat layout(location = 6) in vec4 subsurfacePlusOut;
 
 layout(location = 0) out vec4 frag;
 
-Transform transformInstance = transform.transform;
-Common commonDataInstance = commonData.commonData;
-LightsGeneral lightsGeneralInstance = lightsGeneral.lightsGeneral;
-
-mat4 view = transformInstance.view;
-mat4 projection = transformInstance.projection;
-vec3 eyeCenter = commonDataInstance.eyeCenter;
-mat4 viewInverse = commonDataInstance.viewInverse;
-mat4 projectionInverse = commonDataInstance.projectionInverse;
-float lightCutoffMargin = commonDataInstance.lightCutoffMargin;
-vec3 lightAmbientColor = commonDataInstance.lightAmbientColor;
-float lightAmbientBrightness = commonDataInstance.lightAmbientBrightness;
-float lightAmbientBoostCutoff = commonDataInstance.lightAmbientBoostCutoff;
-float lightAmbientBoostScalar = commonDataInstance.lightAmbientBoostScalar;
-int lightShadowSamples = commonDataInstance.lightShadowSamples;
-float lightShadowBias = commonDataInstance.lightShadowBias;
-float lightShadowSampleScalar = commonDataInstance.lightShadowSampleScalar;
-float lightShadowExponent = commonDataInstance.lightShadowExponent;
-float lightShadowDensity = commonDataInstance.lightShadowDensity;
-int fogEnabled = commonDataInstance.fogEnabled;
-int fogType = commonDataInstance.fogType;
-float fogStart = commonDataInstance.fogStart;
-float fogFinish = commonDataInstance.fogFinish;
-float fogDensity = commonDataInstance.fogDensity;
-vec4 fogColor = commonDataInstance.fogColor;
-int ssvfEnabled = commonDataInstance.ssvfEnabled;
-float ssvfIntensity = commonDataInstance.ssvfIntensity;
-int ssvfSteps = commonDataInstance.ssvfSteps;
-float ssvfAsymmetry = commonDataInstance.ssvfAsymmetry;
-int ssrrEnabled = commonDataInstance.ssrrEnabled;
-float ssrrIntensity = commonDataInstance.ssrrIntensity;
-float ssrrDetail = commonDataInstance.ssrrDetail;
-int ssrrRefinementsMax = commonDataInstance.ssrrRefinementsMax;
-float ssrrRayThickness = commonDataInstance.ssrrRayThickness;
-float ssrrDistanceCutoff = commonDataInstance.ssrrDistanceCutoff;
-float ssrrDistanceCutoffMargin = commonDataInstance.ssrrDistanceCutoffMargin;
-float ssrrEdgeHorizontalMargin = commonDataInstance.ssrrEdgeHorizontalMargin;
-float ssrrEdgeVerticalMargin = commonDataInstance.ssrrEdgeVerticalMargin;
-int lightMapsCount = lightsGeneralInstance.lightMapsCount;
-float lightMapSingletonBlendMargin = lightsGeneralInstance.lightMapSingletonBlendMargin;
-int lightsCount = lightsGeneralInstance.lightsCount;
+// TODO: DJL: get rid of these.
+mat4 view = transform.view;
+mat4 projection = transform.projection;
+vec3 eyeCenter = commonData.eyeCenter;
+mat4 viewInverse = commonData.viewInverse;
+mat4 projectionInverse = commonData.projectionInverse;
+float lightCutoffMargin = commonData.lightCutoffMargin;
+vec3 lightAmbientColor = commonData.lightAmbientColor;
+float lightAmbientBrightness = commonData.lightAmbientBrightness;
+float lightAmbientBoostCutoff = commonData.lightAmbientBoostCutoff;
+float lightAmbientBoostScalar = commonData.lightAmbientBoostScalar;
+int lightShadowSamples = commonData.lightShadowSamples;
+float lightShadowBias = commonData.lightShadowBias;
+float lightShadowSampleScalar = commonData.lightShadowSampleScalar;
+float lightShadowExponent = commonData.lightShadowExponent;
+float lightShadowDensity = commonData.lightShadowDensity;
+int fogEnabled = commonData.fogEnabled;
+int fogType = commonData.fogType;
+float fogStart = commonData.fogStart;
+float fogFinish = commonData.fogFinish;
+float fogDensity = commonData.fogDensity;
+vec4 fogColor = commonData.fogColor;
+int ssvfEnabled = commonData.ssvfEnabled;
+float ssvfIntensity = commonData.ssvfIntensity;
+int ssvfSteps = commonData.ssvfSteps;
+float ssvfAsymmetry = commonData.ssvfAsymmetry;
+int ssrrEnabled = commonData.ssrrEnabled;
+float ssrrIntensity = commonData.ssrrIntensity;
+float ssrrDetail = commonData.ssrrDetail;
+int ssrrRefinementsMax = commonData.ssrrRefinementsMax;
+float ssrrRayThickness = commonData.ssrrRayThickness;
+float ssrrDistanceCutoff = commonData.ssrrDistanceCutoff;
+float ssrrDistanceCutoffMargin = commonData.ssrrDistanceCutoffMargin;
+float ssrrEdgeHorizontalMargin = commonData.ssrrEdgeHorizontalMargin;
+float ssrrEdgeVerticalMargin = commonData.ssrrEdgeVerticalMargin;
+int lightMapsCount = lightsGeneral.lightMapsCount;
+float lightMapSingletonBlendMargin = lightsGeneral.lightMapSingletonBlendMargin;
+int lightsCount = lightsGeneral.lightsCount;
 
 float saturate(float v)
 {
@@ -369,7 +366,7 @@ float computeShadowScalarPoint(vec4 position, vec3 lightOrigin, int shadowIndex)
 
 float computeShadowScalarSpot(vec4 position, float lightConeOuter, int shadowIndex)
 {
-    mat4 shadowMatrix = shadowMatrices.shadowMatrices[shadowIndex].shadowMatrix;
+    mat4 shadowMatrix = shadowMatrices[shadowIndex].shadowMatrix;
     vec4 positionShadowClip = shadowMatrix * position;
     vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
     if (shadowTexCoordsProj.x >= -1.0 && shadowTexCoordsProj.x < 1.0 &&
@@ -390,7 +387,7 @@ float computeShadowScalarSpot(vec4 position, float lightConeOuter, int shadowInd
 
 float computeShadowScalarDirectional(vec4 position, int shadowIndex)
 {
-    mat4 shadowMatrix = shadowMatrices.shadowMatrices[shadowIndex].shadowMatrix;
+    mat4 shadowMatrix = shadowMatrices[shadowIndex].shadowMatrix;
     vec4 positionShadowClip = shadowMatrix * position;
     vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
     if (shadowTexCoordsProj.x >= -1.0 + SHADOW_DIRECTIONAL_SEAM_INSET && shadowTexCoordsProj.x < 1.0 - SHADOW_DIRECTIONAL_SEAM_INSET &&
@@ -412,7 +409,7 @@ float computeShadowScalarCascaded(vec4 position, float shadowCutoff, int shadowI
 {
     for (int i = 0; i < SHADOW_CASCADE_LEVELS; ++i)
     {
-        mat4 shadowMatrix = shadowMatrices.shadowMatrices[SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + i].shadowMatrix;
+        mat4 shadowMatrix = shadowMatrices[SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + i].shadowMatrix;
         vec4 positionShadowClip = shadowMatrix * position;
         vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
         if (shadowTexCoordsProj.x >= -1.0 + SHADOW_CASCADE_SEAM_INSET && shadowTexCoordsProj.x < 1.0 - SHADOW_CASCADE_SEAM_INSET &&
@@ -435,7 +432,7 @@ float computeShadowScalarCascaded(vec4 position, float shadowCutoff, int shadowI
 vec3 computeFogAccumPoint(vec4 position, int lightIndex)
 {
     // grab light values
-    Light light = lights.lights[lightIndex];
+    Light light = lights[lightIndex];
     vec3 lightOrigin = light.lightOrigins;
     float lightCutoff = light.lightCutoffs;
     vec3 lightDirection = light.lightDirections;
@@ -547,7 +544,7 @@ vec3 computeFogAccumPoint(vec4 position, int lightIndex)
 vec3 computeFogAccumSpot(vec4 position, int lightIndex)
 {
     // grab light values
-    Light light = lights.lights[lightIndex];
+    Light light = lights[lightIndex];
     vec3 lightOrigin = light.lightOrigins;
     float lightCutoff = light.lightCutoffs;
     vec3 lightDirection = light.lightDirections;
@@ -612,7 +609,7 @@ vec3 computeFogAccumSpot(vec4 position, int lightIndex)
     else
     {
         // march over ray, accumulating fog light value with shadows
-        mat4 shadowMatrix = shadowMatrices.shadowMatrices[shadowIndex].shadowMatrix;
+        mat4 shadowMatrix = shadowMatrices[shadowIndex].shadowMatrix;
         for (int i = 0; i < ssvfSteps; ++i)
         {
             // compute depths
@@ -662,7 +659,7 @@ vec3 computeFogAccumSpot(vec4 position, int lightIndex)
 vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
 {
     // grab light values
-    Light light = lights.lights[lightIndex];
+    Light light = lights[lightIndex];
     vec3 lightOrigin = light.lightOrigins;
     vec3 lightDirection = light.lightDirections;
 
@@ -703,7 +700,7 @@ vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
     else
     {
         // march over ray, accumulating fog light value with shadows
-        mat4 shadowMatrix = shadowMatrices.shadowMatrices[shadowIndex].shadowMatrix;
+        mat4 shadowMatrix = shadowMatrices[shadowIndex].shadowMatrix;
         for (int i = 0; i < ssvfSteps; ++i)
         {
             // compute depths
@@ -735,7 +732,7 @@ vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
 vec3 computeFogAccumCascaded(vec4 position, int lightIndex)
 {
     // grab light values
-    Light light = lights.lights[lightIndex];
+    Light light = lights[lightIndex];
     vec3 lightOrigin = light.lightOrigins;
     vec3 lightDirection = light.lightDirections;
 
@@ -786,7 +783,7 @@ vec3 computeFogAccumCascaded(vec4 position, int lightIndex)
             for (int j = 0; j < SHADOW_CASCADE_LEVELS; ++j)
             {
                 // compute depths
-                mat4 shadowMatrix = shadowMatrices.shadowMatrices[SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + j].shadowMatrix;
+                mat4 shadowMatrix = shadowMatrices[SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + j].shadowMatrix;
                 vec4 positionShadowClip = shadowMatrix * vec4(currentPosition, 1.0);
                 vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
                 vec3 shadowTexCoords = shadowTexCoordsProj * 0.5 + 0.5;
@@ -1007,7 +1004,7 @@ void main()
     for (int i = 0; i < lightsCount; ++i)
     {
         // per-light radiance
-        Light light = lights.lights[i];
+        Light light = lights[i];
         vec3 lightOrigin = light.lightOrigins;
         float lightCutoff = light.lightCutoffs;
         int lightType = light.lightTypes;
@@ -1105,12 +1102,12 @@ void main()
     // determine light map indices, including their validity
     int lm1 = lightMapsCount > 0 && !ignoreLightMaps ? 0 : -1;
     int lm2 = lightMapsCount > 1 && !ignoreLightMaps ? 1 : -1;
-    LightMap lightMap1 = lightMaps.lightMaps[lm1];
-    LightMap lightMap2 = lightMaps.lightMaps[lm2];
+    LightMap lightMap1 = lightMaps[lm1];
+    LightMap lightMap2 = lightMaps[lm2];
     if (lm2 != -1 && !inBounds(position.xyz, lightMap2.lightMapMins, lightMap2.lightMapSizes)) lm2 = -1;
     if (lm1 != -1 && !inBounds(position.xyz, lightMap1.lightMapMins, lightMap1.lightMapSizes)) lm1 = lm2;
-    lightMap1 = lightMaps.lightMaps[lm1];
-    lightMap2 = lightMaps.lightMaps[lm2];
+    lightMap1 = lightMaps[lm1];
+    lightMap2 = lightMaps[lm2];
 
     // compute light mapping terms
     vec3 ambientColor = vec3(0.0);
