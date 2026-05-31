@@ -1196,7 +1196,7 @@ module WorldImGui =
                     |> (fun s -> if underline then Set.add Underline s else s)
                     |> (fun s -> if strikethrough then Set.add Strikethrough s else s)
                 (promoted, edited, fontStyling)
-            | :? (SpineAnimation array) as animations -> // TODO: P1: implement bepoke individual SpineAnimation editing.
+            | :? (SpineAnimation array) as animations -> // TODO: P1: implement bespoke individual SpineAnimation editing.
                 ImGui.Text name
                 ImGui.SameLine ()
                 ImGui.PushID name

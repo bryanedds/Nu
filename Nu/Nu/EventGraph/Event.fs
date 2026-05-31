@@ -18,12 +18,8 @@ and Event<'a, 's when 's :> Simulant> =
       Address : 'a Address
       Trace : EventTrace }
 
-/// Event functions.
-[<RequireQualifiedAccess>]
-module Event =
-
     /// Make an event value.
-    let make<'a, 's when 's :> Simulant> (data : 'a) (subscriber : 's) publisher (address : 'a Address) trace =
+    static member make<'t, 'x when 'x :> Simulant> (data : 't) (subscriber : 'x) publisher (address : 't Address) trace =
         { Data = data
           Subscriber = subscriber
           Publisher = publisher
@@ -31,15 +27,15 @@ module Event =
           Trace = trace }
 
     /// Specialize an event.
-    let specialize<'a, 's when 's :> Simulant> (evt : Event) : Event<'a, 's> =
-        { Data = evt.Data :?> 'a
-          Subscriber = evt.Subscriber :?> 's
+    static member specialize<'t, 'x when 'x :> Simulant> (evt : Event) : Event<'t, 'x> =
+        { Data = evt.Data :?> 't
+          Subscriber = evt.Subscriber :?> 'x
           Publisher = evt.Publisher
           Address = atoa evt.Address
           Trace = evt.Trace }
 
     /// Generalize an event.
-    let generalize (evt : Event<'a, 's>) : Event =
+    static member generalize (evt : Event<'t, 'x>) : Event =
         { Data = evt.Data :> obj
           Subscriber = evt.Subscriber
           Publisher = evt.Publisher

@@ -16,7 +16,7 @@ module Xtension =
     /// Provides a convenient way to implement both dynamic properties and designer properties.
     type [<ReferenceEquality>] Xtension =
         private
-            { Properties_ : Dictionary<string, Property> // TODO: see if a quadratic searching dictionary could improve perf here.
+            { Properties_ : Dictionary<string, Property>
               mutable ContainsRuntimeProperties_ : bool }
 
         member this.Properties = this.Properties_
