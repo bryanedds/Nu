@@ -8,7 +8,7 @@ struct SpriteFrag
 layout(binding = 1) buffer readonly SpriteFragBlock
 {
     SpriteFrag sprite;
-} spriteFrag;
+};
 
 layout(binding = 2) uniform texture2D tex;
 
@@ -20,6 +20,5 @@ layout(location = 0) out vec4 frag;
 
 void main()
 {
-    SpriteFrag sprite = spriteFrag.sprite;
     frag = sprite.color * texture(sampler2D(tex, samp), texCoords);
 }
