@@ -33,11 +33,11 @@ module WorldModuleOperators =
 module internal WorldModuleInternal =
 
     /// Track if we're in the portion of the frame simulants are being updated.
-    /// TODO: P1: consider making this an AmbientState flag.
+    /// TODO: P1: make this an AmbientState flag.
     let mutable internal UpdatingSimulants = false
 
     /// Track if we're in the portion of the frame when end-frame processing has started.
-    /// TODO: P1: consider making this an AmbientState flag.
+    /// TODO: P1: make this an AmbientState flag.
     let mutable internal EndFrameProcessingStarted = false
 
     /// F# reach function for checking that a simulant is selected.
