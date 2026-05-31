@@ -195,18 +195,18 @@ module Pipeline =
             Vulkan.vkAllocateDescriptorSets (device, asPointer &info, vkDescriptorSetsPin.Pointer) |> Hl.check
             vkDescriptorSets
         
-        static member writeDescriptorBuffer descriptorType (binding : int) setIndex (descriptorIndex : int) (buffer : VkBuffer) (descriptorSet : DescriptorSet) (vkc : Hl.VulkanContext) =
+        static member writeDescriptorBuffer descriptorType (binding : int) setIndex (descriptorIndex : int) (buffer : VkBuffer * uint64) (descriptorSet : DescriptorSet) (vkc : Hl.VulkanContext) =
             
             // only proceed if within limit
             if descriptorIndex < descriptorSet.DescriptorLimits_.[binding] then
             
                 // only proceed if buffer not already written
-                // TODO: DJL: create proper id for buffer.
-                if (descriptorSet.DescriptorSetState setIndex).GetBuffer binding descriptorIndex <> buffer.Handle then
+                let (vkBuffer, bufferId) = buffer
+                if (descriptorSet.DescriptorSetState setIndex).GetBuffer binding descriptorIndex <> bufferId then
             
                     // buffer info
                     let mutable info = VkDescriptorBufferInfo ()
-                    info.buffer <- buffer
+                    info.buffer <- vkBuffer
                     info.range <- Vulkan.VK_WHOLE_SIZE
                 
                     // write descriptor set
@@ -220,7 +220,7 @@ module Pipeline =
                     Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
 
                     // record written buffer
-                    (descriptorSet.DescriptorSetState setIndex).SetBuffer binding descriptorIndex buffer.Handle
+                    (descriptorSet.DescriptorSetState setIndex).SetBuffer binding descriptorIndex bufferId
             
             // warn if limit exceeded
             else Log.warnOnce "Attempted buffer write to descriptor set has exceeded descriptor count. You may have failed to pass the correct descriptor count at pipeline creation."
@@ -613,11 +613,11 @@ module Pipeline =
             Map.tryFind (blend, cullFace) pipeline.VkPipelines_
         
         /// Write a uniform buffer to the descriptor set. Must be used in-frame.
-        static member writeDescriptorUniformBuffer setNumber (binding : int) setIndex (descriptorIndex : int) (buffer : VkBuffer) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
+        static member writeDescriptorUniformBuffer setNumber (binding : int) setIndex (descriptorIndex : int) (buffer : VkBuffer * uint64) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
             DescriptorSet.writeDescriptorBuffer VkDescriptorType.UniformBuffer binding setIndex (descriptorIndex : int) buffer pipeline.DescriptorSets_.[setNumber] vkc
 
         /// Write a storage buffer to the descriptor set. Must be used in-frame.
-        static member writeDescriptorStorageBuffer setNumber (binding : int) setIndex (descriptorIndex : int) (buffer : VkBuffer) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
+        static member writeDescriptorStorageBuffer setNumber (binding : int) setIndex (descriptorIndex : int) (buffer : VkBuffer * uint64) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
             DescriptorSet.writeDescriptorBuffer VkDescriptorType.StorageBuffer binding setIndex (descriptorIndex : int) buffer pipeline.DescriptorSets_.[setNumber] vkc
 
         /// Write a sampled image to the descriptor set. Must be used in-frame.
