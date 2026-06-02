@@ -1570,6 +1570,7 @@ module PhysicallyBased =
             Pipeline.Pipeline.writeDescriptorSampledImage 1 9 drawIndex 0 material.EmissionTexture pipeline.Pipeline vkc
             Pipeline.Pipeline.writeDescriptorSampledImage 1 10 drawIndex 0 material.NormalTexture pipeline.Pipeline vkc
             Pipeline.Pipeline.writeDescriptorSampledImage 1 11 drawIndex 0 material.HeightTexture pipeline.Pipeline vkc
+            // NOTE: bindings 12 - 17 unused in forward rendering.
             for i in 0 .. dec (min irradianceMaps.Length Constants.Render.LightMapsMaxForward) do
                 Pipeline.Pipeline.writeDescriptorSampledImage 1 18 drawIndex i irradianceMaps.[i] pipeline.Pipeline vkc
             for i in 0 .. dec (min environmentFilterMaps.Length Constants.Render.LightMapsMaxForward) do
