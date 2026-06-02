@@ -1641,7 +1641,8 @@ module Hl =
 
             // get swapchain extension
             let swapchainExtensionName = NativePtr.spanToString Vulkan.VK_KHR_SWAPCHAIN_EXTENSION_NAME
-            use extensionArrayWrap = new StringArrayWrap ([|swapchainExtensionName|])
+            let extensionArray = [|swapchainExtensionName|]
+            use extensionArrayWrap = new StringArrayWrap (extensionArray)
 
             // NOTE: DJL: for particularly dated implementations of Vulkan, validation depends on device layers which
             // are deprecated. These must be enabled if validation support for said implementations is desired.
@@ -1655,7 +1656,7 @@ module Hl =
             info.pNext <- asVoidPtr &vulkan13
             info.queueCreateInfoCount <- uint queueCreateInfos.Length
             info.pQueueCreateInfos <- queueCreateInfosPin.Pointer
-            info.enabledExtensionCount <- 1u
+            info.enabledExtensionCount <- uint extensionArray.Length
             info.ppEnabledExtensionNames <- extensionArrayWrap.Pointer
             info.pEnabledFeatures <- asPointer &features
             let mutable device = Unchecked.defaultof<VkDevice>
