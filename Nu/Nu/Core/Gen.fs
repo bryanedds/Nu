@@ -142,7 +142,7 @@ module Gen =
         /// Generate a unique id.
         /// Thread-safe.
         static member id =
-            Guid.NewGuid ()
+            Guid.CreateVersion7 ()
 
         /// Generate an id from a couple of ints.
         /// It is the user's responsibility to ensure uniqueness when using the resulting ids.
