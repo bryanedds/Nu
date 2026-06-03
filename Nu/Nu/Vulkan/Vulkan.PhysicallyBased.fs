@@ -1266,7 +1266,7 @@ module PhysicallyBased =
          blends,
          cullModes,
          vertexBindings,
-         colorAttachmentFormat,
+         colorAttachmentFormats,
          depthTestOpt,
          vkc) =
 
@@ -1321,7 +1321,7 @@ module PhysicallyBased =
                       Pipeline.descriptor 5 Hl.Sampler Hl.FragmentStage 1|]|]
                 
                 [||]
-                colorAttachmentFormat depthTestOpt vkc
+                colorAttachmentFormats depthTestOpt vkc
 
         // create set 0 uniform buffers
         let transformUniform = Buffer.Buffer.create sizeof<Transform> Buffer.Storage vkc
@@ -1778,11 +1778,11 @@ module PhysicallyBased =
     let CreatePhysicallyBasedPipelines
         (lightMapsMax,
          lightsMax,
-         colorAttachmentFormat,
-         depthAttachmentFormat,
+         attachments,
          vkc) =
 
         // create forward static pipeline
+        let (compositionAttachment, compositionDepthAttachment) = attachments.CompositionAttachments
         let forwardStaticPipeline =
             CreatePhysicallyBasedPipeline
                 (Constants.Render.LightMapsMaxForward,
@@ -1806,8 +1806,8 @@ module PhysicallyBased =
                        Pipeline.attribute 10 Hl.Single4 (28 * sizeof<single>)
                        Pipeline.attribute 11 Hl.Single4 (32 * sizeof<single>)
                        Pipeline.attribute 12 Hl.Single4 (36 * sizeof<single>)|]|],
-                 [|colorAttachmentFormat|],
-                 (Some depthAttachmentFormat),
+                 [|compositionAttachment.VkFormat|],
+                 (Some compositionDepthAttachment.VkFormat),
                  vkc)
         
         // create PhysicallyBasedPipelines

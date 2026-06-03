@@ -6342,8 +6342,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             PhysicallyBased.CreatePhysicallyBasedPipelines
                 (Constants.Render.LightMapsMaxDeferred,
                  Constants.Render.LightsMaxDeferred,
-                 compositionAttachment.VkFormat,
-                 compositionDepthAttachment.VkFormat,
+                 physicallyBasedAttachments,
                  vkc)
         
         // create shadow matrices buffer
