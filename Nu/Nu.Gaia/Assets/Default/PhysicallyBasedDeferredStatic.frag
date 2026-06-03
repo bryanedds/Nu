@@ -4,29 +4,71 @@ const float GAMMA = 2.2;
 const float SAA_VARIANCE = 0.1; // TODO: consider exposing as lighting config property.
 const float SAA_THRESHOLD = 0.1; // TODO: consider exposing as lighting config property.
 
-uniform vec3 eyeCenter;
-uniform sampler2D albedoTexture;
-uniform sampler2D roughnessTexture;
-uniform sampler2D metallicTexture;
-uniform sampler2D ambientOcclusionTexture;
-uniform sampler2D emissionTexture;
-uniform sampler2D normalTexture;
-uniform sampler2D heightTexture;
-uniform sampler2D subdermalTexture;
-uniform sampler2D finenessTexture;
-uniform sampler2D scatterTexture;
-uniform sampler2D clearCoatTexture;
-uniform sampler2D clearCoatRoughnessTexture;
-uniform sampler2D clearCoatNormalTexture;
+struct Common
+{
+    vec3 eyeCenter; // only this used in this shader!
+    mat4 viewInverse;
+    mat4 projectionInverse;
+    float lightCutoffMargin;
+    vec3 lightAmbientColor;
+    float lightAmbientBrightness;
+    float lightAmbientBoostCutoff;
+    float lightAmbientBoostScalar;
+    int lightShadowSamples;
+    float lightShadowBias;
+    float lightShadowSampleScalar;
+    float lightShadowExponent;
+    float lightShadowDensity;
+    int fogEnabled;
+    int fogType;
+    float fogStart;
+    float fogFinish;
+    float fogDensity;
+    vec4 fogColor;
+    int ssvfEnabled;
+    float ssvfIntensity;
+    int ssvfSteps;
+    float ssvfAsymmetry;
+    int ssrrEnabled;
+    float ssrrIntensity;
+    float ssrrDetail;
+    int ssrrRefinementsMax;
+    float ssrrRayThickness;
+    float ssrrDistanceCutoff;
+    float ssrrDistanceCutoffMargin;
+    float ssrrEdgeHorizontalMargin;
+    float ssrrEdgeVerticalMargin;
+    float shadowNear; // NOTE: currently unused.
+};
 
-in vec4 positionOut;
-in vec2 texCoordsOut;
-in vec3 normalOut;
-flat in vec4 albedoOut;
-flat in vec4 materialOut;
-flat in vec4 heightPlusOut;
-flat in vec4 subsurfacePlusOut;
-flat in vec4 clearCoatPlusOut;
+layout(binding = 1) buffer readonly CommonBlock
+{
+    // TODO: DJL: reform name.
+    Common commonData; // common is reserved
+};
+
+layout(set = 1, binding = 5) uniform texture2D albedoTexture;
+layout(set = 1, binding = 6) uniform texture2D roughnessTexture;
+layout(set = 1, binding = 7) uniform texture2D metallicTexture;
+layout(set = 1, binding = 8) uniform texture2D ambientOcclusionTexture;
+layout(set = 1, binding = 9) uniform texture2D emissionTexture;
+layout(set = 1, binding = 10) uniform texture2D normalTexture;
+layout(set = 1, binding = 11) uniform texture2D heightTexture;
+layout(set = 1, binding = 12) uniform texture2D subdermalTexture;
+layout(set = 1, binding = 13) uniform texture2D finenessTexture;
+layout(set = 1, binding = 14) uniform texture2D scatterTexture;
+layout(set = 1, binding = 15) uniform texture2D clearCoatTexture;
+layout(set = 1, binding = 16) uniform texture2D clearCoatRoughnessTexture;
+layout(set = 1, binding = 17) uniform texture2D clearCoatNormalTexture;
+
+layout(location = 0) in vec4 positionOut;
+layout(location = 1) in vec2 texCoordsOut;
+layout(location = 2) in vec3 normalOut;
+flat layout(location = 3) in vec4 albedoOut;
+flat layout(location = 4) in vec4 materialOut;
+flat layout(location = 5) in vec4 heightPlusOut;
+flat layout(location = 6) in vec4 subsurfacePlusOut;
+flat layout(location = 7) in vec4 clearCoatPlusOut;
 
 layout(location = 0) out float depth;
 layout(location = 1) out vec3 albedo;
@@ -91,7 +133,7 @@ void main()
     mat3 toTangent = transpose(toWorld);
 
     // compute tex coords in parallax space
-    vec3 eyeCenterTangent = toTangent * eyeCenter;
+    vec3 eyeCenterTangent = toTangent * commonData.eyeCenter;
     vec3 positionTangent = toTangent * positionOut.xyz;
     vec3 toEyeTangent = normalize(eyeCenterTangent - positionTangent);
     float height = texture(heightTexture, texCoordsOut).x * heightPlusOut.x;

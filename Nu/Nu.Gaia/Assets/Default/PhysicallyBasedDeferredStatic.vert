@@ -20,9 +20,17 @@ const vec2 TEX_COORDS_OFFSET_FILTERS_2[TEX_COORDS_OFFSET_VERTS] =
         vec2(1,1),
         vec2(0,1));
 
-uniform mat4 view;
-uniform mat4 projection;
-uniform mat4 viewProjection;
+struct Transform
+{
+    mat4 view;
+    mat4 projection;
+    mat4 viewProjection;
+};
+
+layout(binding = 0) buffer readonly TransformBlock
+{
+    Transform transform;
+};
 
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec2 texCoords;
@@ -35,19 +43,19 @@ layout(location = 10) in vec4 heightPlus;
 layout(location = 11) in vec4 subsurfacePlus;
 layout(location = 12) in vec4 clearCoatPlus; // NOTE: z and w are free for additional parameters.
 
-out vec4 positionOut;
-out vec2 texCoordsOut;
-out vec3 normalOut;
-flat out vec4 albedoOut;
-flat out vec4 materialOut;
-flat out vec4 heightPlusOut;
-flat out vec4 subsurfacePlusOut;
-flat out vec4 clearCoatPlusOut;
+layout(location = 0) out vec4 positionOut;
+layout(location = 1) out vec2 texCoordsOut;
+layout(location = 2) out vec3 normalOut;
+flat layout(location = 3) out vec4 albedoOut;
+flat layout(location = 4) out vec4 materialOut;
+flat layout(location = 5) out vec4 heightPlusOut;
+flat layout(location = 6) out vec4 subsurfacePlusOut;
+flat layout(location = 7) out vec4 clearCoatPlusOut;
 
 void main()
 {
     positionOut = model * vec4(position, 1.0);
-    int texCoordsOffsetIndex = gl_VertexID % TEX_COORDS_OFFSET_VERTS;
+    int texCoordsOffsetIndex = gl_VertexIndex % TEX_COORDS_OFFSET_VERTS;
     vec2 texCoordsOffsetFilter = TEX_COORDS_OFFSET_FILTERS[texCoordsOffsetIndex];
     vec2 texCoordsOffsetFilter2 = TEX_COORDS_OFFSET_FILTERS_2[texCoordsOffsetIndex];
     texCoordsOut = texCoords + texCoordsOffset.xy * texCoordsOffsetFilter + texCoordsOffset.zw * texCoordsOffsetFilter2;
@@ -57,5 +65,5 @@ void main()
     heightPlusOut = heightPlus;
     subsurfacePlusOut = subsurfacePlus;
     clearCoatPlusOut = clearCoatPlus;
-    gl_Position = viewProjection * positionOut;
+    gl_Position = transform.viewProjection * positionOut;
 }
