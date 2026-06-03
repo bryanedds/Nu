@@ -367,7 +367,8 @@ module Render =
     let [<Literal>] SpritesMax = 8192
     let [<Literal>] SpriteBatchesMax = 8192
     let [<Literal>] ContoursMax = 8192
-    let [<Literal>] ForwardStaticDrawsMax = 128
+    let [<Literal>] DeferredStaticDrawsMax = 64
+    let [<Literal>] ForwardStaticDrawsMax = 64
 
 [<RequireQualifiedAccess>]
 module Audio =

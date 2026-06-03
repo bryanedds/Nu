@@ -1773,7 +1773,8 @@ module PhysicallyBased =
 
     /// Physically-based pipelines.
     type PhysicallyBasedPipelines =
-        { ForwardStaticPipeline : PhysicallyBasedPipeline }
+        { DeferredStaticPipeline : PhysicallyBasedPipeline
+          ForwardStaticPipeline : PhysicallyBasedPipeline }
 
     let CreatePhysicallyBasedPipelines
         (lightMapsMax,
@@ -1781,8 +1782,47 @@ module PhysicallyBased =
          attachments,
          vkc) =
 
+        // static vertices
+        let staticVertices =
+            [|Pipeline.vertex 0 StaticVertexSize VkVertexInputRate.Vertex
+                [|Pipeline.attribute 0 Hl.Single3 0
+                  Pipeline.attribute 1 Hl.Single2 StaticTexCoordsOffset
+                  Pipeline.attribute 2 Hl.Single3 StaticNormalOffset|]
+              Pipeline.vertex 1 (Constants.Render.InstanceFieldCount * sizeof<single>) VkVertexInputRate.Instance
+                [|Pipeline.attribute 3 Hl.Single4 0
+                  Pipeline.attribute 4 Hl.Single4 (4 * sizeof<single>)
+                  Pipeline.attribute 5 Hl.Single4 (8 * sizeof<single>)
+                  Pipeline.attribute 6 Hl.Single4 (12 * sizeof<single>)
+                  Pipeline.attribute 7 Hl.Single4 (16 * sizeof<single>)
+                  Pipeline.attribute 8 Hl.Single4 (20 * sizeof<single>)
+                  Pipeline.attribute 9 Hl.Single4 (24 * sizeof<single>)
+                  Pipeline.attribute 10 Hl.Single4 (28 * sizeof<single>)
+                  Pipeline.attribute 11 Hl.Single4 (32 * sizeof<single>)
+                  Pipeline.attribute 12 Hl.Single4 (36 * sizeof<single>)|]|]
+        
+        // create deferred static pipeline
+        let (depth, albedo, material, normalPlus, subdermalPlus, scatterPlus, clearCoatPlus, z) = attachments.GeometryAttachments
+        let deferredStaticPipeline =
+            CreatePhysicallyBasedPipeline
+                (lightMapsMax,
+                 lightsMax,
+                 Constants.Render.DeferredStaticDrawsMax,
+                 Constants.Paths.PhysicallyBasedDeferredStaticShaderFilePath,
+                 [|Pipeline.NoBlend|],
+                 [|false; true|],
+                 staticVertices,
+                 [|depth.VkFormat
+                   albedo.VkFormat
+                   material.VkFormat
+                   normalPlus.VkFormat
+                   subdermalPlus.VkFormat
+                   scatterPlus.VkFormat
+                   clearCoatPlus.VkFormat|],
+                 (Some z.VkFormat),
+                 vkc)
+        
         // create forward static pipeline
-        let (compositionAttachment, compositionDepthAttachment) = attachments.CompositionAttachments
+        let (composition, compositionZ) = attachments.CompositionAttachments
         let forwardStaticPipeline =
             CreatePhysicallyBasedPipeline
                 (Constants.Render.LightMapsMaxForward,
@@ -1791,34 +1831,23 @@ module PhysicallyBased =
                  Constants.Paths.PhysicallyBasedForwardStaticShaderFilePath,
                  [|Pipeline.NoBlend; Pipeline.Transparent|],
                  [|false; true|],
-                 [|Pipeline.vertex 0 StaticVertexSize VkVertexInputRate.Vertex
-                     [|Pipeline.attribute 0 Hl.Single3 0
-                       Pipeline.attribute 1 Hl.Single2 StaticTexCoordsOffset
-                       Pipeline.attribute 2 Hl.Single3 StaticNormalOffset|]
-                   Pipeline.vertex 1 (Constants.Render.InstanceFieldCount * sizeof<single>) VkVertexInputRate.Instance
-                     [|Pipeline.attribute 3 Hl.Single4 0
-                       Pipeline.attribute 4 Hl.Single4 (4 * sizeof<single>)
-                       Pipeline.attribute 5 Hl.Single4 (8 * sizeof<single>)
-                       Pipeline.attribute 6 Hl.Single4 (12 * sizeof<single>)
-                       Pipeline.attribute 7 Hl.Single4 (16 * sizeof<single>)
-                       Pipeline.attribute 8 Hl.Single4 (20 * sizeof<single>)
-                       Pipeline.attribute 9 Hl.Single4 (24 * sizeof<single>)
-                       Pipeline.attribute 10 Hl.Single4 (28 * sizeof<single>)
-                       Pipeline.attribute 11 Hl.Single4 (32 * sizeof<single>)
-                       Pipeline.attribute 12 Hl.Single4 (36 * sizeof<single>)|]|],
-                 [|compositionAttachment.VkFormat|],
-                 (Some compositionDepthAttachment.VkFormat),
+                 staticVertices,
+                 [|composition.VkFormat|],
+                 (Some compositionZ.VkFormat),
                  vkc)
         
         // create PhysicallyBasedPipelines
         let physicallyBasedPipelines =
-            { ForwardStaticPipeline = forwardStaticPipeline }
+            { DeferredStaticPipeline = deferredStaticPipeline
+              ForwardStaticPipeline = forwardStaticPipeline }
 
         // fin
         physicallyBasedPipelines
     
     let ReloadPhysicallyBasedShaders physicallyBasedPipelines vkc =
+        Pipeline.Pipeline.reloadShaders physicallyBasedPipelines.DeferredStaticPipeline.Pipeline vkc
         Pipeline.Pipeline.reloadShaders physicallyBasedPipelines.ForwardStaticPipeline.Pipeline vkc
     
     let DestroyPhysicallyBasedPipelines physicallyBasedPipelines vkc =
+        DestroyPhysicallyBasedPipeline physicallyBasedPipelines.DeferredStaticPipeline vkc
         DestroyPhysicallyBasedPipeline physicallyBasedPipelines.ForwardStaticPipeline vkc
