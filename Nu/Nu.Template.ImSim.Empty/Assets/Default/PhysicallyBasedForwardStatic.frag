@@ -150,6 +150,7 @@ layout(set = 1, binding = 8) uniform texture2D ambientOcclusionTexture;
 layout(set = 1, binding = 9) uniform texture2D emissionTexture;
 layout(set = 1, binding = 10) uniform texture2D normalTexture;
 layout(set = 1, binding = 11) uniform texture2D heightTexture;
+// NOTE: bindings 12 - 17 unused in forward rendering.
 layout(set = 1, binding = 18) uniform textureCube irradianceMaps[LIGHT_MAPS_MAX];
 layout(set = 1, binding = 19) uniform textureCube environmentFilterMaps[LIGHT_MAPS_MAX];
 layout(set = 1, binding = 20) uniform texture2DArray shadowTextures;
