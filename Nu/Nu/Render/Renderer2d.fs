@@ -428,7 +428,7 @@ type [<ReferenceEquality>] GlRenderer2d =
             match insetOpt with
             | ValueSome inset ->
                 let mx = inset.Min.X * texelWidth + borderWidth
-                let my = (inset.Min.Y + inset.Size.Y) * texelHeight - borderHeight
+                let my = inset.Min.Y * texelHeight + inset.Size.Y * texelHeight - borderHeight // distributes texelHeight multiplication to preserve precision
                 let sx = inset.Size.X * texelWidth - borderWidth * 2.0f
                 let sy = -inset.Size.Y * texelHeight + borderHeight * 2.0f
                 Box2 (mx, my, sx, sy)
