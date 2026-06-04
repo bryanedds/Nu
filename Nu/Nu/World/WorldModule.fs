@@ -33,11 +33,11 @@ module WorldModuleOperators =
 module internal WorldModuleInternal =
 
     /// Track if we're in the portion of the frame simulants are being updated.
-    /// TODO: P1: consider making this an AmbientState flag.
+    /// TODO: P1: make this an AmbientState flag.
     let mutable internal UpdatingSimulants = false
 
     /// Track if we're in the portion of the frame when end-frame processing has started.
-    /// TODO: P1: consider making this an AmbientState flag.
+    /// TODO: P1: make this an AmbientState flag.
     let mutable internal EndFrameProcessingStarted = false
 
     /// F# reach function for checking that a simulant is selected.
@@ -305,82 +305,82 @@ module WorldModule =
         static member internal setContext context (world : World) =
             World.setContextAndDeclared context world.WorldExtension.ContextImSim world
 
-        static member internal getSimulantsImSim (world : World) =
-            world.SimulantsImSim
+        static member internal getSimulantJournals (world : World) =
+            world.SimulantJournals
 
-        static member internal setSimulantsImSim simulantsImSim (world : World) =
+        static member internal setSimulantJournals simulantJournals (world : World) =
             if world.Imperative then
-                world.WorldExtension.SimulantsImSim <- simulantsImSim
+                world.WorldExtension.SimulantJournals <- simulantJournals
             else
-                let worldExtension = { world.WorldExtension with SimulantsImSim = simulantsImSim }
+                let worldExtension = { world.WorldExtension with SimulantJournals = simulantJournals }
                 world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
 
-        static member internal getSimulantImSim simulant (world : World) =
-            world.SimulantsImSim[simulant]
+        static member internal getSimulantJournal simulant (world : World) =
+            world.SimulantJournals[simulant]
 
-        static member internal addSimulantImSim simulant simulantImSim (world : World) =
-            let simulantsImSim = SUMap.add simulant simulantImSim world.SimulantsImSim
-            World.setSimulantsImSim simulantsImSim world
+        static member internal addSimulantJournal simulant simulantJournal (world : World) =
+            let simulantJournals = SUMap.add simulant simulantJournal world.SimulantJournals
+            World.setSimulantJournals simulantJournals world
 
-        static member internal removeSimulantImSim (simulant : Simulant) (world : World) =
-            World.setSimulantsImSim (SUMap.remove simulant.SimulantAddress world.SimulantsImSim) world
+        static member internal removeSimulantJournal (simulant : Simulant) (world : World) =
+            World.setSimulantJournals (SUMap.remove simulant.SimulantAddress world.SimulantJournals) world
 
-        static member internal tryMapSimulantImSim mapper simulant (world : World) =
-            match world.SimulantsImSim.TryGetValue simulant with
-            | (true, simulantImSim) ->
-                let simulantImSim = mapper simulantImSim
-                World.addSimulantImSim simulant simulantImSim world
+        static member internal tryMapSimulantJournal mapper simulant (world : World) =
+            match world.SimulantJournals.TryGetValue simulant with
+            | (true, simulantJournal) ->
+                let simulantJournal = mapper simulantJournal
+                World.addSimulantJournal simulant simulantJournal world
             | (false, _) -> ()
 
-        static member internal mapSimulantImSim mapper simulant world =
-            let simulantImSim = World.getSimulantImSim simulant world
-            let simulantImSim = mapper simulantImSim
-            World.addSimulantImSim simulant simulantImSim world
+        static member internal mapSimulantJournal mapper simulant world =
+            let simulantJournal = World.getSimulantJournal simulant world
+            let simulantJournal = mapper simulantJournal
+            World.addSimulantJournal simulant simulantJournal world
 
-        static member internal utilizeSimulantImSim simulant simulantImSim (world : World) =
+        static member internal utilizeSimulantInJournal simulant simulantJournal (world : World) =
             if world.Imperative then
-                simulantImSim.SimulantUtilized <- true
+                simulantJournal.SimulantUtilized <- true
             else
-                let simulantImSim = { simulantImSim with SimulantUtilized = true }
-                let simulantsImSim = SUMap.add simulant simulantImSim world.SimulantsImSim
-                World.setSimulantsImSim simulantsImSim world
+                let simulantJournal = { simulantJournal with SimulantUtilized = true }
+                let simulantJournals = SUMap.add simulant simulantJournal world.SimulantJournals
+                World.setSimulantJournals simulantJournals world
 
-        static member internal getSubscriptionsImSim (world : World) =
-            world.SubscriptionsImSim
+        static member internal getSubscriptionJournals (world : World) =
+            world.SubscriptionJournals
 
-        static member internal setSubscriptionsImSim subscriptionsImSim (world : World) =
+        static member internal setSubscriptionJournals subscriptionJournals (world : World) =
             if world.Imperative then
-                world.WorldExtension.SubscriptionsImSim <- subscriptionsImSim
+                world.WorldExtension.SubscriptionJournals <- subscriptionJournals
             else
-                let worldExtension = { world.WorldExtension with SubscriptionsImSim = subscriptionsImSim }
+                let worldExtension = { world.WorldExtension with SubscriptionJournals = subscriptionJournals }
                 world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
 
-        static member internal getSubscriptionImSim subscription (world : World) =
-            world.SubscriptionsImSim[subscription]
+        static member internal getSubscriptionJournal subscription (world : World) =
+            world.SubscriptionJournals[subscription]
 
-        static member internal addSubscriptionImSim subscription subscriptionImSim (world : World) =
-            let subscriptionsImSim = SUMap.add subscription subscriptionImSim world.SubscriptionsImSim
-            World.setSubscriptionsImSim subscriptionsImSim world
+        static member internal addSubscriptionJournal subscription subscriptionJournal (world : World) =
+            let subscriptionJournals = SUMap.add subscription subscriptionJournal world.SubscriptionJournals
+            World.setSubscriptionJournals subscriptionJournals world
 
-        static member internal tryMapSubscriptionImSim mapper subscription (world : World) =
-            match world.SubscriptionsImSim.TryGetValue subscription with
-            | (true, subscriptionImSim) ->
-                let subscriptionImSim = mapper subscriptionImSim
-                World.addSubscriptionImSim subscription subscriptionImSim world
+        static member internal tryMapSubscriptionJournal mapper subscription (world : World) =
+            match world.SubscriptionJournals.TryGetValue subscription with
+            | (true, subscriptionJournal) ->
+                let subscriptionJournal = mapper subscriptionJournal
+                World.addSubscriptionJournal subscription subscriptionJournal world
             | (false, _) -> ()
 
-        static member internal mapSubscriptionImSim mapper subscription world =
-            let subscriptionImSim = World.getSubscriptionImSim subscription world
-            let subscriptionImSim = mapper subscriptionImSim
-            World.addSubscriptionImSim subscription subscriptionImSim world
+        static member internal mapSubscriptionJournal mapper subscription world =
+            let subscriptionJournal = World.getSubscriptionJournal subscription world
+            let subscriptionJournal = mapper subscriptionJournal
+            World.addSubscriptionJournal subscription subscriptionJournal world
 
-        static member internal utilizeSubscriptionImSim subscription subscriptionImSim (world : World) =
+        static member internal utilizeSubscriptionInJournal subscription subscriptionJournal (world : World) =
             if world.Imperative then
-                subscriptionImSim.SubscriptionUtilized <- true
+                subscriptionJournal.SubscriptionUtilized <- true
             else
-                let subscriptionImSim = { subscriptionImSim with SubscriptionUtilized = true }
-                let subscriptionsImSim = SUMap.add subscription subscriptionImSim world.SubscriptionsImSim
-                World.setSubscriptionsImSim subscriptionsImSim world
+                let subscriptionJournal = { subscriptionJournal with SubscriptionUtilized = true }
+                let subscriptionJournals = SUMap.add subscription subscriptionJournal world.SubscriptionJournals
+                World.setSubscriptionJournals subscriptionJournals world
 
         /// Switch simulation to use this ambient state.
         static member internal switchAmbientState (world : World) =

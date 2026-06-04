@@ -6,7 +6,6 @@
 
 namespace System.Numerics
 open System
-open System.Collections.Generic
 open System.ComponentModel
 open System.Globalization
 open System.Numerics

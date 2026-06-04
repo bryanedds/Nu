@@ -205,7 +205,7 @@ module WorldScreenModule =
                 let groups = World.getGroups screen world
                 World.unregisterScreen screen world
                 World.removeTasklets screen world
-                World.removeSimulantImSim screen world
+                World.removeSimulantJournal screen world
                 World.destroyGroupsImmediate groups world
                 World.removeScreenState screen world
 

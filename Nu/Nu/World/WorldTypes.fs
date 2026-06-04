@@ -679,6 +679,7 @@ and EntityDispatcher (is2d, perimeterCentered, physical, lightProbe, light) =
          Define? PublishUpdates false
          Define? PublishPostUpdates false
          Define? Persistent true
+         Define? OverflowAbsolute false
          Define? PropagatedDescriptorOpt Option<EntityDescriptor>.None]
 
     /// The presence override, if any.
@@ -1878,14 +1879,14 @@ and GameDescriptor =
           ScreenDescriptors = [] }
 
 /// Provides simulant bookkeeping information with the ImSim API.
-and [<NoEquality; NoComparison>] internal SimulantImSim =
+and [<NoEquality; NoComparison>] internal SimulantJournal =
     { mutable SimulantInitializing : bool
       mutable SimulantUtilized : bool
       InitializationTime : int64
       Result : obj }
 
 /// Provides subscription bookkeeping information with the ImSim API.
-and [<NoEquality; NoComparison>] internal SubscriptionImSim =
+and [<NoEquality; NoComparison>] internal SubscriptionJournal =
     { mutable SubscriptionUtilized : bool
       SubscriptionId : uint64
       Results : obj }
@@ -1926,8 +1927,8 @@ and [<ReferenceEquality>] internal WorldExtension =
     { // cache line 1 (assuming 16 byte header)
       mutable ContextImSim : Address
       mutable DeclaredImSim : Address
-      mutable SimulantsImSim : SUMap<Address, SimulantImSim>
-      mutable SubscriptionsImSim : SUMap<string * Address * Address, SubscriptionImSim>
+      mutable SimulantJournals : SUMap<Address, SimulantJournal>
+      mutable SubscriptionJournals : SUMap<string * Address * Address, SubscriptionJournal>
       JobGraph : JobGraph
       GeometryViewport : Viewport
 
@@ -2145,8 +2146,8 @@ and [<NoEquality; NoComparison>] World =
 
     /// Check that the current ImSim context is initializing this frame.
     member this.ContextInitializing =
-        match this.WorldExtension.SimulantsImSim.TryGetValue this.WorldExtension.ContextImSim with
-        | (true, simulantImSim) -> simulantImSim.SimulantInitializing
+        match this.WorldExtension.SimulantJournals.TryGetValue this.WorldExtension.ContextImSim with
+        | (true, simulantJournal) -> simulantJournal.SimulantInitializing
         | (false, _) -> false
 
     /// Get the recent ImSim declaration.
@@ -2183,15 +2184,15 @@ and [<NoEquality; NoComparison>] World =
 
     /// Check that the recent ImSim declaration is initializing this frame.
     member this.DeclaredInitializing =
-        match this.WorldExtension.SimulantsImSim.TryGetValue this.WorldExtension.DeclaredImSim with
-        | (true, simulantImSim) -> simulantImSim.SimulantInitializing
+        match this.WorldExtension.SimulantJournals.TryGetValue this.WorldExtension.DeclaredImSim with
+        | (true, simulantJournal) -> simulantJournal.SimulantInitializing
         | (false, _) -> false
 
-    member internal this.SimulantsImSim =
-        this.WorldExtension.SimulantsImSim
+    member internal this.SimulantJournals =
+        this.WorldExtension.SimulantJournals
 
-    member internal this.SubscriptionsImSim =
-        this.WorldExtension.SubscriptionsImSim
+    member internal this.SubscriptionJournals =
+        this.WorldExtension.SubscriptionJournals
 
     /// Get the currently selected screen, if any.
     member this.SelectedScreenOpt =

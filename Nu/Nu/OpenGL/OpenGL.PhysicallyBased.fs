@@ -980,6 +980,7 @@ module PhysicallyBased =
         OpenGL.Framebuffer.DestroySsaoBuffers buffers.SsaoBuffersUnfiltered
         OpenGL.Framebuffer.DestroySsaoBuffers buffers.SsaoBuffersFiltered
         OpenGL.Framebuffer.DestroyLightingBuffers buffers.LightingBuffers
+        OpenGL.Framebuffer.DestroyFoggingBuffers buffers.FoggingBuffers
         OpenGL.Framebuffer.DestroyColoringBuffers buffers.ColoringBuffers
         OpenGL.Framebuffer.DestroyFilterBilateralDownSampleBuffers buffers.SpecularScreenDownSampleBuffers
         OpenGL.Framebuffer.DestroyColorBuffers buffers.SpecularScreenUpSampleBuffers
@@ -4149,7 +4150,7 @@ module PhysicallyBased =
             Gl.BindTexture (TextureTarget.Texture2d, material.NormalTexture.TextureId)
             Gl.ActiveTexture TextureUnit.Texture6
             Gl.BindTexture (TextureTarget.Texture2d, material.HeightTexture.TextureId)
-            // NOTE: textures 7 through 9 are configured in begin / end functions.
+            // NOTE: textures 7 through 11 are configured in begin / end functions.
             for i in 0 .. dec (min irradianceMaps.Length Constants.Render.LightMapsMaxForward) do
                 Gl.ActiveTexture (int TextureUnit.Texture0 + 12 + i |> Branchless.reinterpret)
                 Gl.BindTexture (TextureTarget.TextureCubeMap, irradianceMaps[i].TextureId)

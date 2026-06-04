@@ -92,7 +92,7 @@ type private Box2dNetFluidEmitter =
       RemovedIndexes : int List // assumed to be ordered from smallest to largest
       BodySource : Simulant
       mutable NextBodyIndex : int }
-        
+
     static let CellCapacityDefault = 16
     static let Neighborhood =
         [|for x in -1 .. 1 do

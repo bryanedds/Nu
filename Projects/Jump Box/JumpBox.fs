@@ -28,10 +28,10 @@ type JumpBoxDispatcher () =
         World.beginGroup "Group" [] world
 
         // declare a block
-        World.doBlock2d "Block" [Entity.Position .= v3 128.0f -64.0f 0.0f] world |> ignore
+        World.doBlockBody2d "Block" [Entity.Position .= v3 128.0f -64.0f 0.0f] world |> ignore
 
         // declare a box and then handle its body interactions for the frame
-        let (boxBodyId, results) = World.doBox2d "Box" [Entity.Position |= v3 128.0f 64.0f 0.0f] world
+        let (boxBodyId, results) = World.doBoxBody2d "Box" [Entity.Position |= v3 128.0f 64.0f 0.0f] world
         for result in results do
             match result with
             | BodyPenetrationData _ -> game.Collisions.Map inc world
@@ -55,8 +55,10 @@ type JumpBoxDispatcher () =
         if collisions >= 10 then
             World.doText "Full!" [Entity.Text .= "Full!"] world
 
-        // finish declaring the control panel, group, and screen
+        // finish declaring the control panel
         World.endPanel world
+
+        // finish declaring group and screen
         World.endGroup world
         World.endScreen world
 
