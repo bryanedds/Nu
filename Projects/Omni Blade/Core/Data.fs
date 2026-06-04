@@ -1017,7 +1017,7 @@ type FieldData =
     static member val private propObjectsMemoized = Map.empty<uint64 * FieldType, TmxMap * (TmxObjectGroup * TmxObject) list * Origin option> with get, set
     static member val private propDescriptorsMemoized = Map.empty<uint64 * FieldType, PropDescriptor list> with get, set
 
-#if !DEV
+#if DEV
     static member clearMemoized () =
         FieldData.tileMapsMemoized <- Map.empty
         FieldData.propObjectsMemoized <- Map.empty
