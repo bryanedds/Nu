@@ -541,7 +541,7 @@ module Pipeline =
                 | None -> ()
                 
                 // pipeline create infos
-                let blendStates = NativePtr.stackalloc<VkPipelineColorBlendAttachmentState> pipelineSettings.Length
+                let blendStates = NativePtr.stackalloc<VkPipelineColorBlendAttachmentState> (pipelineSettings.Length * colorAttachmentFormats.Length)
                 let bInfos = NativePtr.stackalloc<VkPipelineColorBlendStateCreateInfo> pipelineSettings.Length
                 let rInfos = NativePtr.stackalloc<VkPipelineRasterizationStateCreateInfo> pipelineSettings.Length
                 let infos = NativePtr.stackalloc<VkGraphicsPipelineCreateInfo> pipelineSettings.Length
@@ -550,12 +550,12 @@ module Pipeline =
                     // extract settings
                     let (blend, cullFace) = pipelineSettings.[i]
                     
-                    // blend info
+                    // blend info (specifying blend state for each color attachment)
                     let blendState = Blend.makeAttachment blend
-                    NativePtr.set blendStates i blendState
+                    for j in 0 .. dec colorAttachmentFormats.Length do NativePtr.set blendStates (i * colorAttachmentFormats.Length + j) blendState
                     let mutable bInfo = VkPipelineColorBlendStateCreateInfo ()
-                    bInfo.attachmentCount <- 1u
-                    bInfo.pAttachments <- NativePtr.add blendStates i
+                    bInfo.attachmentCount <- uint colorAttachmentFormats.Length
+                    bInfo.pAttachments <- NativePtr.add blendStates (i * colorAttachmentFormats.Length)
                     NativePtr.set bInfos i bInfo
 
                     // cull mode
