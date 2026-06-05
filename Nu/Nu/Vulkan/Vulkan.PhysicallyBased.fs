@@ -1360,6 +1360,134 @@ module PhysicallyBased =
         Buffer.Buffer.destroy physicallyBasedPipeline.ShadowMatrixUniform vkc
         Pipeline.Pipeline.destroy physicallyBasedPipeline.Pipeline vkc
     
+    /// Draw a batch of physically-based deferred surfaces.
+    let DrawPhysicallyBasedDeferredSurfaces
+        (drawIndex : int,
+         renderPassIndex : int,
+         drawIndexPerRenderPass : int,
+         batchPhase : BatchPhase,
+         view : Matrix4x4,
+         projection : Matrix4x4,
+         viewProjection : Matrix4x4,
+         bones : Matrix4x4 array,
+         eyeCenter : Vector3,
+         surfacesCount : int,
+         instanceFields : single array,
+         filteredSampler : Texture.Sampler,
+         material : PhysicallyBasedMaterial,
+         geometry : PhysicallyBasedGeometry,
+         viewport : Viewport,
+         colorAttachments : VkImageView array,
+         depthAttachment : Texture.Texture,
+         pipeline : PhysicallyBasedPipeline,
+         vkc : Hl.VulkanContext) =
+
+        // start batch
+        if batchPhase.Starting then
+
+            // bind common uniforms
+            let mutable transform = Transform ()
+            let mutable common = Common ()
+            transform.view <- view
+            transform.projection <- projection
+            transform.viewProjection <- viewProjection
+            common.eyeCenter <- eyeCenter
+            Buffer.Buffer.uploadValue renderPassIndex 0 0 transform pipeline.TransformUniform vkc
+            Buffer.Buffer.uploadValue renderPassIndex 0 0 common pipeline.CommonUniform vkc
+            Pipeline.Pipeline.writeDescriptorStorageBuffer 0 0 renderPassIndex 0 pipeline.TransformUniform.[renderPassIndex] pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorStorageBuffer 0 1 renderPassIndex 0 pipeline.CommonUniform.[renderPassIndex] pipeline.Pipeline vkc
+
+            // bind sampler
+            Pipeline.Pipeline.writeDescriptorSampler 2 0 0 0 filteredSampler pipeline.Pipeline vkc
+
+        // only set up uniforms when there is a surface to render to avoid potentially utilizing destroyed textures
+        if surfacesCount > 0 && drawIndexPerRenderPass < pipeline.Pipeline.BulkDrawLimit then
+
+            // bind position-specific uniforms
+            for i in 0 .. dec (min bones.Length Constants.Render.BonesMax) do
+                let mutable bone = Bone ()
+                bone.bone <- bones.[i]
+                Buffer.Buffer.uploadValue drawIndex (i * sizeof<Bone>) 0 bone pipeline.BoneUniform vkc
+                Pipeline.Pipeline.writeDescriptorStorageBuffer 1 0 drawIndex 0 pipeline.BoneUniform.[drawIndex] pipeline.Pipeline vkc
+            
+            // bind position-specific textures
+            Pipeline.Pipeline.writeDescriptorSampledImage 1 5 drawIndex 0 material.AlbedoTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage 1 6 drawIndex 0 material.RoughnessTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage 1 7 drawIndex 0 material.MetallicTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage 1 8 drawIndex 0 material.AmbientOcclusionTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage 1 9 drawIndex 0 material.EmissionTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage 1 10 drawIndex 0 material.NormalTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage 1 11 drawIndex 0 material.HeightTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage 1 12 drawIndex 0 material.SubdermalTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage 1 13 drawIndex 0 material.FinenessTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage 1 14 drawIndex 0 material.ScatterTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage 1 15 drawIndex 0 material.ClearCoatTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage 1 16 drawIndex 0 material.ClearCoatRoughnessTexture pipeline.Pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage 1 17 drawIndex 0 material.ClearCoatNormalTexture pipeline.Pipeline vkc
+
+            // update instance buffer
+            use instanceFieldsPin = new ArrayPin<_> (instanceFields)
+            Buffer.Buffer.upload drawIndex 0 0 (Constants.Render.InstanceFieldCount * sizeof<single>) surfacesCount instanceFieldsPin.NativeInt geometry.InstanceBuffer vkc
+        
+            // make viewport and scissor
+            let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
+            let mutable vkViewport = Hl.makeViewport true renderArea
+            let mutable scissor = renderArea
+
+            // only draw if scissor (and therefore also viewport) is valid
+            if Hl.validateRect scissor then
+
+                // only draw if required vkPipeline exists
+                match Pipeline.Pipeline.tryGetVkPipeline Pipeline.NoBlend (not material.TwoSided) pipeline.Pipeline with
+                | Some vkPipeline ->
+                
+                    // init render
+                    let cb = vkc.RenderCommandBuffer
+                    let mutable rendering = Hl.makeRenderingInfo colorAttachments (Some depthAttachment.ImageView) renderArea None
+                    Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
+
+                    // bind pipeline
+                    Vulkan.vkCmdBindPipeline (cb, VkPipelineBindPoint.Graphics, vkPipeline)
+
+                    // set viewport and scissor
+                    Vulkan.vkCmdSetViewport (cb, 0u, 1u, asPointer &vkViewport)
+                    Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)
+                    
+                    // set depth test state
+                    Vulkan.vkCmdSetDepthTestEnable (cb, true)
+                    Vulkan.vkCmdSetDepthCompareOp (cb, VkCompareOp.LessOrEqual)
+            
+                    // bind vertex and index buffers
+                    let vertexBuffers = [|geometry.VertexBuffer.VkBuffer; fst geometry.InstanceBuffer.[drawIndex]|]
+                    let vertexOffsets = [|0UL; 0UL|]
+                    use vertexBuffersPin = new ArrayPin<_> (vertexBuffers)
+                    use vertexOffsetsPin = new ArrayPin<_> (vertexOffsets)
+                    Vulkan.vkCmdBindVertexBuffers (cb, 0u, 2u, vertexBuffersPin.Pointer, vertexOffsetsPin.Pointer)
+                    Vulkan.vkCmdBindIndexBuffer (cb, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
+
+                    // bind descriptor sets
+                    let mutable descriptorSet0 = pipeline.Pipeline.VkDescriptorSet 0 renderPassIndex
+                    let mutable descriptorSet1 = pipeline.Pipeline.VkDescriptorSet 1 drawIndex
+                    let mutable descriptorSet2 = pipeline.Pipeline.VkDescriptorSet 2 0
+                    Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, asPointer &descriptorSet0, 0u, nullPtr)
+                    Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, asPointer &descriptorSet1, 0u, nullPtr)
+                    Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 2u, 1u, asPointer &descriptorSet2, 0u, nullPtr)
+
+                    // draw
+                    Vulkan.vkCmdDrawIndexed (cb, uint geometry.ElementCount, uint surfacesCount, 0u, 0, 0u)
+                    Hl.reportDrawCall surfacesCount
+            
+                    // end render
+                    Vulkan.vkCmdEndRendering cb
+
+                // abort
+                | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
+
+        // warn if bulk draw limit reached
+        // NOTE: DJL: must use draw index for current render pass to correctly report this very important information!
+        if drawIndexPerRenderPass >= pipeline.Pipeline.BulkDrawLimit then
+            Log.warnOnce "Draw operations aborted because bulk draw limit has been reached. Increase relevant bulk draw limit as necessary for current application."
+
     /// Begin the process of drawing with a forward pipeline.
     let BeginPhysicallyBasedForwardPipeline
         (renderPassIndex : int,
