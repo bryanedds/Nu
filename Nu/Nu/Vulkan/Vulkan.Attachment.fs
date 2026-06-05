@@ -104,6 +104,7 @@ module Attachment =
         z.Destroy vkc
     
     /// Create geometry attachments.
+    /// TODO: DJL: this z attachment is unused so maybe worth removing.
     let CreateGeometryAttachments (resolutionX, resolutionY, vkc) =
         let depth = CreateColorAttachment (Texture.Texture2d, [|VkImageUsageFlags.Sampled|], Hl.R32f, Hl.Red, resolutionX, resolutionY, vkc)
         let albedo = CreateColorAttachment (Texture.Texture2d, [|VkImageUsageFlags.Sampled|], Hl.Rgba8, Hl.Rgba, resolutionX, resolutionY, vkc)

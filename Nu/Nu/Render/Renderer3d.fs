@@ -5979,6 +5979,25 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             renderTasks.ForwardSorted.Add struct (model, castShadow, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest)
         forwardSurfacesSortBuffer.Clear ()
         
+        // setup geometry attachments and depth testing
+        // NOTE: DJL: we use the composition z attachment directly to avoid having to find a depth format supporting copy operations,
+        // which is problematic on some mesa drivers.
+        let vkc = renderer.VulkanContext
+        let cb = vkc.RenderCommandBuffer
+        let geometryResolution = renderer.GeometryViewport.Bounds.Size
+        let renderArea = VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)
+        let clearColor = VkClearValue (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
+        let (compositionAttachment, compositionZAttachment) = renderer.PhysicallyBasedAttachments.CompositionAttachments
+        let (depthAttachment, albedoAttachment, materialAttachment, normalPlusAttachment, subdermalPlusAttachment, scatterPlusAttachment, clearCoatPlusAttachment, _) = renderer.PhysicallyBasedAttachments.GeometryAttachments
+        let geometryImageViewArray = [|depthAttachment.ImageView; albedoAttachment.ImageView; materialAttachment.ImageView; normalPlusAttachment.ImageView; subdermalPlusAttachment.ImageView; scatterPlusAttachment.ImageView; clearCoatPlusAttachment.ImageView|]
+        let mutable rendering = Hl.makeRenderingInfo geometryImageViewArray (Some compositionZAttachment.ImageView) renderArea (Some clearColor)
+        Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
+        Vulkan.vkCmdEndRendering cb
+        
+        
+        // render static surfaces deferred
+        // TODO: DJL: implement.
+        
         
         // deferred render quad to lighting attachments
         let sssEnabled = if renderer.RendererConfig.SssEnabled && renderer.LightingConfig.SssEnabled then 1 else 0
@@ -5992,8 +6011,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         
         
         // transition sampled attachments to sampling
-        let vkc = renderer.VulkanContext
-        let cb = vkc.RenderCommandBuffer
         Hl.recordTransitionLayout cb true 1 0 shadowTextureArray.Layers VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.ShaderRead shadowTextureArray.Image
         for i in 0 .. dec shadowMaps.Length do Hl.recordTransitionLayout cb true 1 0 shadowMaps[i].Layers VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.ShaderRead shadowMaps[i].Image
         for i in 0 .. dec shadowCascades.Length do Hl.recordTransitionLayout cb true 1 0 shadowCascades[i].Layers VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.ShaderRead shadowCascades[i].Image
@@ -6001,12 +6018,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         Hl.recordTransitionLayout cb true 1 0 depthAttachment2.Layers VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.ShaderRead depthAttachment2.Image
         
         
-        // setup composition attachments
-        let geometryResolution = renderer.GeometryViewport.Bounds.Size
-        let (compositionAttachment, compositionZAttachment) = renderer.PhysicallyBasedAttachments.CompositionAttachments
-        let renderArea = VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)
-        let clearColor = VkClearValue (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
-        let mutable rendering = Hl.makeRenderingInfo [|compositionAttachment.ImageView|] (Some compositionZAttachment.ImageView) renderArea (Some clearColor)
+        // setup composition attachment
+        let mutable rendering = Hl.makeRenderingInfo [|compositionAttachment.ImageView|] None renderArea (Some clearColor)
         Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
         Vulkan.vkCmdEndRendering cb
         

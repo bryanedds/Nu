@@ -1801,7 +1801,10 @@ module PhysicallyBased =
                   Pipeline.attribute 12 Hl.Single4 (36 * sizeof<single>)|]|]
         
         // create deferred static pipeline
-        let (depth, albedo, material, normalPlus, subdermalPlus, scatterPlus, clearCoatPlus, z) = attachments.GeometryAttachments
+        // NOTE: DJL: we use the composition z attachment directly to avoid having to find a depth format supporting copy operations,
+        // which is problematic on some mesa drivers.
+        let (depth, albedo, material, normalPlus, subdermalPlus, scatterPlus, clearCoatPlus, _) = attachments.GeometryAttachments
+        let (composition, compositionZ) = attachments.CompositionAttachments
         let deferredStaticPipeline =
             CreatePhysicallyBasedPipeline
                 (lightMapsMax,
@@ -1818,11 +1821,10 @@ module PhysicallyBased =
                    subdermalPlus.VkFormat
                    scatterPlus.VkFormat
                    clearCoatPlus.VkFormat|],
-                 (Some z.VkFormat),
+                 (Some compositionZ.VkFormat),
                  vkc)
         
         // create forward static pipeline
-        let (composition, compositionZ) = attachments.CompositionAttachments
         let forwardStaticPipeline =
             CreatePhysicallyBasedPipeline
                 (Constants.Render.LightMapsMaxForward,
