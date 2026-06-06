@@ -5772,6 +5772,126 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         userDefinedStaticModelsToDestroy
     
     
+    static member private renderPhysicallyBasedDeferredSurfaces
+        renderPassIndex batchPhase view projection viewProjection bones eyeCenter (parameters : struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List)
+        filteredSampler (surface : PhysicallyBased.PhysicallyBasedSurface) viewport colorAttachments depthAttachment pipeline vkc renderer =
+                                                                      
+        // ensure we have a large enough instance fields array
+        let mutable length = renderer.InstanceFields.Length
+        while parameters.Count * Constants.Render.InstanceFieldCount > length do length <- length * 2
+        if renderer.InstanceFields.Length < length then
+            renderer.InstanceFields <- Array.zeroCreate<single> length
+
+        // blit parameters to instance fields
+        for i in 0 .. dec parameters.Count do
+            let struct (model, _, presence, texCoordsOffset, properties) = parameters[i]
+            model.ToArray (renderer.InstanceFields, i * Constants.Render.InstanceFieldCount)
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 16] <- texCoordsOffset.Min.X
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 16 + 1] <- texCoordsOffset.Min.Y
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 16 + 2] <- texCoordsOffset.Min.X + texCoordsOffset.Size.X
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 16 + 3] <- texCoordsOffset.Min.Y + texCoordsOffset.Size.Y
+            let albedo = match properties.AlbedoOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Albedo
+            let roughness = match properties.RoughnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Roughness
+            let metallic = match properties.MetallicOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Metallic
+            let ambientOcclusion = match properties.AmbientOcclusionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.AmbientOcclusion
+            let emission = match properties.EmissionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Emission
+            let height = match properties.HeightOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Height
+            let ignoreLightMaps = match properties.IgnoreLightMapsOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.IgnoreLightMaps
+            let finenessOffset = match properties.FinenessOffsetOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.FinenessOffset
+            let scatterType = match properties.ScatterTypeOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ScatterType
+            let clearCoat = match properties.ClearCoatOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ClearCoat
+            let clearCoatRoughness = match properties.ClearCoatRoughnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ClearCoatRoughness
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 20] <- albedo.R
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 20 + 1] <- albedo.G
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 20 + 2] <- albedo.B
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 20 + 3] <- albedo.A
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 24] <- roughness
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 24 + 1] <- metallic
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 24 + 2] <- ambientOcclusion
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 24 + 3] <- emission
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 28] <- surface.SurfaceMaterial.AlbedoTexture.TextureMetadata.TextureTexelHeight * height
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 29] <- if ignoreLightMaps then 1.0f else 0.0f
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 30] <- presence.DepthCutoff
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 31] <- 0.0f // free
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 32] <- finenessOffset
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 33] <- scatterType.Enumerate
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 34] <- 0.0f // free
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 35] <- 0.0f // free
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 36] <- clearCoat
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 37] <- clearCoatRoughness
+
+        // draw deferred surfaces
+        PhysicallyBased.DrawPhysicallyBasedDeferredSurfaces
+            (renderPassIndex, batchPhase, view, projection, viewProjection, bones, eyeCenter,
+             parameters.Count, renderer.InstanceFields, filteredSampler, surface.SurfaceMaterial, surface.PhysicallyBasedGeometry,
+             viewport, colorAttachments, depthAttachment, pipeline, vkc)
+
+    static member private renderPhysicallyBasedDeferredSurfacePreBatch
+        renderPassIndex frustumInterior frustumExterior frustumImposter renderPass
+        view projection viewProjection bones eyeCenter (parameters : (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array)
+        filteredSampler (surface : PhysicallyBased.PhysicallyBasedSurface) viewport colorAttachments depthAttachment pipeline vkc renderer =
+
+        // ensure we have a large enough instance fields array
+        let mutable length = renderer.InstanceFields.Length
+        while parameters.Length * Constants.Render.InstanceFieldCount > length do length <- length * 2
+        if renderer.InstanceFields.Length < length then
+            renderer.InstanceFields <- Array.zeroCreate<single> length
+
+        // blit parameters to instance fields
+        let mutable i = 0
+        for j in 0 .. dec parameters.Length do
+            let (model, _, presence, texCoordsOffset, properties, bounds) = parameters[j]
+            let unculled =
+                match renderPass with
+                | LightMapPass (_, _) -> true // TODO: see if we have enough context to cull here.
+                | ShadowPass (_, _, shadowLightType, _, _, shadowFrustum) ->
+                    let shadowFrustumInteriorOpt = if LightType.shouldShadowInterior shadowLightType then ValueSome shadowFrustum else ValueNone
+                    Presence.intersects3d shadowFrustumInteriorOpt shadowFrustum shadowFrustum false presence bounds
+                | ReflectionPass (_, reflFrustum) -> Presence.intersects3d ValueNone reflFrustum reflFrustum false presence bounds
+                | NormalPass -> Presence.intersects3d (ValueSome frustumInterior) frustumExterior frustumImposter false presence bounds
+            if unculled then
+                model.ToArray (renderer.InstanceFields, i * Constants.Render.InstanceFieldCount)
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 16] <- texCoordsOffset.Min.X
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 16 + 1] <- texCoordsOffset.Min.Y
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 16 + 2] <- texCoordsOffset.Min.X + texCoordsOffset.Size.X
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 16 + 3] <- texCoordsOffset.Min.Y + texCoordsOffset.Size.Y
+                let albedo = match properties.AlbedoOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Albedo
+                let roughness = match properties.RoughnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Roughness
+                let metallic = match properties.MetallicOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Metallic
+                let ambientOcclusion = match properties.AmbientOcclusionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.AmbientOcclusion
+                let emission = match properties.EmissionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Emission
+                let height = match properties.HeightOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Height
+                let ignoreLightMaps = match properties.IgnoreLightMapsOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.IgnoreLightMaps
+                let finenessOffset = match properties.FinenessOffsetOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.FinenessOffset
+                let scatterType = match properties.ScatterTypeOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ScatterType
+                let clearCoat = match properties.ClearCoatOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ClearCoat
+                let clearCoatRoughness = match properties.ClearCoatRoughnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ClearCoatRoughness
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 20] <- albedo.R
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 20 + 1] <- albedo.G
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 20 + 2] <- albedo.B
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 20 + 3] <- albedo.A
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 24] <- roughness
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 24 + 1] <- metallic
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 24 + 2] <- ambientOcclusion
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 24 + 3] <- emission
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 28] <- surface.SurfaceMaterial.AlbedoTexture.TextureMetadata.TextureTexelHeight * height
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 29] <- if ignoreLightMaps then 1.0f else 0.0f
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 30] <- presence.DepthCutoff
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 31] <- 0.0f // free
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 32] <- finenessOffset
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 33] <- scatterType.Enumerate
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 34] <- 0.0f // free
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 35] <- 0.0f // free
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 36] <- clearCoat
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 37] <- clearCoatRoughness
+                i <- inc i
+
+        // draw deferred surfaces
+        PhysicallyBased.DrawPhysicallyBasedDeferredSurfaces
+            (renderPassIndex, SingletonPhase, view, projection, viewProjection, bones, eyeCenter,
+             i, renderer.InstanceFields, filteredSampler, surface.SurfaceMaterial, surface.PhysicallyBasedGeometry,
+             viewport, colorAttachments, depthAttachment, pipeline, vkc)
+
     static member private beginPhysicallyBasedForwardPipeline
         renderPassIndex viewArray projectionArray viewProjectionArray eyeCenter viewInverseArray projectionInverseArray
         lightCutoffMargin lightAmbientColor lightAmbientBrightness lightAmbientBoostCutoff lightAmbientBoostScalar lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity
@@ -5993,9 +6113,29 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
         Vulkan.vkCmdEndRendering cb
         
-        
         // render static surfaces deferred
-        // TODO: DJL: implement.
+        let pipeline = renderer.PhysicallyBasedPipelines.DeferredStaticPipeline
+        pipeline.BeginRenderPass () // reset index for checking against draw limit
+        let mutable i = 0
+        for entry in renderTasks.DeferredStatic do
+            let batchPhase =
+                match renderTasks.DeferredStatic.Count with
+                | 1 -> SingletonPhase
+                | count -> if i = 0 then StartingPhase elif i = dec count then StoppingPhase else ResumingPhase
+            VulkanRenderer3d.renderPhysicallyBasedDeferredSurfaces
+                renderer.GeometryRenderPassIndex batchPhase view geometryProjection geometryViewProjection [||] eyeCenter entry.Value
+                renderer.FilteredSampler entry.Key renderer.GeometryViewport geometryImageViewArray compositionZAttachment pipeline renderer.VulkanContext renderer
+            pipeline.Count () // advance draw indicies
+            i <- inc i
+
+        // render static surface pre-batches deferred
+        for entry in renderTasks.DeferredStaticPreBatches do
+            let struct (surface, preBatch) = entry.Value
+            VulkanRenderer3d.renderPhysicallyBasedDeferredSurfacePreBatch
+                renderer.GeometryRenderPassIndex frustumInterior frustumExterior frustumImposter renderPass
+                view geometryProjection geometryViewProjection [||] eyeCenter preBatch
+                renderer.FilteredSampler surface renderer.GeometryViewport geometryImageViewArray compositionZAttachment pipeline renderer.VulkanContext renderer
+            pipeline.Count () // advance draw indicies
         
         
         // deferred render quad to lighting attachments
@@ -6065,9 +6205,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 fogEnabled fogType renderer.LightingConfig.FogStart renderer.LightingConfig.FogFinish renderer.LightingConfig.FogDensity renderer.LightingConfig.FogColor ssvfEnabled renderer.LightingConfig.SsvfIntensity forwardSsvfSteps renderer.LightingConfig.SsvfAsymmetry
                 ssrrEnabled renderer.LightingConfig.SsrrIntensity renderer.LightingConfig.SsrrDetail renderer.LightingConfig.SsrrRefinementsMax renderer.LightingConfig.SsrrRayThickness renderer.LightingConfig.SsrrDistanceCutoff renderer.LightingConfig.SsrrDistanceCutoffMargin renderer.LightingConfig.SsrrEdgeHorizontalMargin renderer.LightingConfig.SsrrEdgeVerticalMargin
                 depthAttachment2 colorAttachment renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap renderer.FilteredSampler renderer.CubeMapSampler renderer.ShadowSampler renderer.ColorSampler renderer.DepthSampler renderer.BrdfSampler shadowNear pipeline vkc
-            
-            // reset index for checking against draw limit
-            pipeline.BeginRenderPass ()
+            pipeline.BeginRenderPass () // reset index for checking against draw limit
         for (model, _, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest) in renderTasks.ForwardSorted do
             let (lightMapOrigins, lightMapMins, lightMapSizes, lightMapAmbientColors, lightMapAmbientBrightnesses, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
                 let surfaceBounds = surface.SurfaceBounds.Transform model
