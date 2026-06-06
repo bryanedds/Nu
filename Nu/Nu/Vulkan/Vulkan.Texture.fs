@@ -1125,6 +1125,10 @@ module Texture =
             | EagerTexture eagerTexture -> TextureInternal.updateSize metadata eagerTexture.TextureInternal vkc
             | LazyTexture lazyTexture -> TextureInternal.updateSize metadata lazyTexture.TextureInternal vkc
         
+        /// Asynchronously transition the layout of the current texture.
+        static member transitionLayoutAsync cb srcLayout dstLayout (texture : Texture) =
+            Hl.recordTransitionLayout cb true texture.MipLevels 0 texture.Layers texture.InternalFormat.VkImageAspectFlags srcLayout dstLayout texture.Image
+        
         override this.GetHashCode () =
             Texture.hash this
 
