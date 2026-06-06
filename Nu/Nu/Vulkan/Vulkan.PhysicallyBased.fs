@@ -468,7 +468,9 @@ module PhysicallyBased =
     
     /// Describes a physically-based pipeline that's loaded into GPU.
     type PhysicallyBasedPipeline =
-        { TransformUniform : Buffer.Buffer
+        { mutable DrawIndex : int // for actually indexing buffers and descriptor sets across frame
+          mutable DrawIndexPerRenderPass : int // for handling the draw limit within render pass
+          TransformUniform : Buffer.Buffer
           CommonUniform : Buffer.Buffer
           BoneUniform : Buffer.Buffer
           LightMapUniform : Buffer.Buffer
@@ -476,6 +478,22 @@ module PhysicallyBased =
           LightUniform : Buffer.Buffer
           ShadowMatrixUniform : Buffer.Buffer
           Pipeline : Pipeline.Pipeline }
+
+        /// Reset draw indicies.
+        member this.BeginFrame () =
+            this.DrawIndex <- 0
+            this.DrawIndexPerRenderPass <- 0
+
+        /// Reset draw index for single render pass.
+        member this.BeginRenderPass () =
+            this.DrawIndexPerRenderPass <- 0
+
+        /// Advance draw indicies.
+        member this.Count () =
+            
+            // don't allow skipping descriptor sets if limit exceeded within a render pass
+            if this.DrawIndexPerRenderPass < this.Pipeline.BulkDrawLimit then this.DrawIndex <- inc this.DrawIndex
+            this.DrawIndexPerRenderPass <- inc this.DrawIndexPerRenderPass
 
     /// Create the attachments required for physically-based rendering.
     let CreatePhysicallyBasedAttachments (geometryViewport : Viewport, vkc) =
@@ -1337,7 +1355,9 @@ module PhysicallyBased =
         
         // make PhysicallyBasedPipeline
         let physicallyBasedPipeline =
-            { TransformUniform = transformUniform
+            { DrawIndex = 0
+              DrawIndexPerRenderPass = 0
+              TransformUniform = transformUniform
               CommonUniform = commonUniform
               BoneUniform = boneUniform
               LightMapUniform = lightMapUniform
@@ -1362,9 +1382,7 @@ module PhysicallyBased =
     
     /// Draw a batch of physically-based deferred surfaces.
     let DrawPhysicallyBasedDeferredSurfaces
-        (drawIndex : int,
-         renderPassIndex : int,
-         drawIndexPerRenderPass : int,
+        (renderPassIndex : int,
          batchPhase : BatchPhase,
          view : Matrix4x4,
          projection : Matrix4x4,
@@ -1401,7 +1419,8 @@ module PhysicallyBased =
             Pipeline.Pipeline.writeDescriptorSampler 2 0 0 0 filteredSampler pipeline.Pipeline vkc
 
         // only set up uniforms when there is a surface to render to avoid potentially utilizing destroyed textures
-        if surfacesCount > 0 && drawIndexPerRenderPass < pipeline.Pipeline.BulkDrawLimit then
+        let drawIndex = pipeline.DrawIndex
+        if surfacesCount > 0 && pipeline.DrawIndexPerRenderPass < pipeline.Pipeline.BulkDrawLimit then
 
             // bind position-specific uniforms
             for i in 0 .. dec (min bones.Length Constants.Render.BonesMax) do
@@ -1485,7 +1504,7 @@ module PhysicallyBased =
 
         // warn if bulk draw limit reached
         // NOTE: DJL: must use draw index for current render pass to correctly report this very important information!
-        if drawIndexPerRenderPass >= pipeline.Pipeline.BulkDrawLimit then
+        if pipeline.DrawIndexPerRenderPass >= pipeline.Pipeline.BulkDrawLimit then
             Log.warnOnce "Draw operations aborted because bulk draw limit has been reached. Increase relevant bulk draw limit as necessary for current application."
 
     /// Begin the process of drawing with a forward pipeline.
@@ -1602,9 +1621,7 @@ module PhysicallyBased =
 
     /// Draw a batch of physically-based forward surfaces.
     let DrawPhysicallyBasedForwardSurfaces
-        (drawIndex : int,
-         renderPassIndex : int,
-         drawIndexPerRenderPass : int,
+        (renderPassIndex : int,
          bones : Matrix4x4 array,
          surfacesCount : int,
          instanceFields : single array,
@@ -1645,7 +1662,8 @@ module PhysicallyBased =
          vkc : Hl.VulkanContext) =
 
         // only draw when there is a surface to render to avoid potentially utilizing destroyed textures
-        if surfacesCount > 0 && drawIndexPerRenderPass < pipeline.Pipeline.BulkDrawLimit then
+        let drawIndex = pipeline.DrawIndex
+        if surfacesCount > 0 && pipeline.DrawIndexPerRenderPass < pipeline.Pipeline.BulkDrawLimit then
             
             // bind position-specific uniforms
             for i in 0 .. dec (min bones.Length Constants.Render.BonesMax) do
@@ -1772,7 +1790,7 @@ module PhysicallyBased =
 
         // warn if bulk draw limit reached
         // NOTE: DJL: must use draw index for current render pass to correctly report this very important information!
-        if drawIndexPerRenderPass >= pipeline.Pipeline.BulkDrawLimit then
+        if pipeline.DrawIndexPerRenderPass >= pipeline.Pipeline.BulkDrawLimit then
             Log.warnOnce "Draw operations aborted because bulk draw limit has been reached. Increase relevant bulk draw limit as necessary for current application."
 
     /// End the process of drawing with a forward pipeline.
