@@ -148,6 +148,19 @@ module Attachment =
         clearCoatPlus.Destroy vkc
         z.Destroy vkc
     
+    /// Create lighting attachment.
+    let CreateLightingAttachment (resolutionX, resolutionY, vkc) =
+        CreateColorAttachment (Texture.Texture2d, [|VkImageUsageFlags.Sampled|], Hl.Rgb16f, Hl.Rgb, resolutionX, resolutionY, vkc)
+
+    /// Update size of lighting attachment. Must be used every frame.
+    let UpdateLightingAttachmentSize (resolutionX, resolutionY, lighting, vkc) =
+        let metadata = Texture.TextureMetadata.make resolutionX resolutionY
+        Texture.Texture.updateSize metadata lighting vkc
+
+    /// Destroy lighting attachment.
+    let DestroyLightingAttachment (lighting : Texture.Texture, vkc) =
+        lighting.Destroy vkc
+    
     /// Create coloring attachments.
     let CreateColoringAttachments (resolutionX, resolutionY, vkc) =
         let color = CreateColorAttachment (Texture.Texture2d, [|VkImageUsageFlags.Sampled|], Hl.Rgb16f, Hl.Rgb, resolutionX, resolutionY, vkc)

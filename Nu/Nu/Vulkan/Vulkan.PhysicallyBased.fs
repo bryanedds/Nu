@@ -21,6 +21,7 @@ module PhysicallyBased =
           ShadowMapAttachmentsArray : (Texture.Texture * Texture.Texture) array
           ShadowCascadeArrayAttachmentsArray : (Texture.Texture * Texture.Texture) array
           GeometryAttachments : Texture.Texture * Texture.Texture * Texture.Texture * Texture.Texture * Texture.Texture * Texture.Texture * Texture.Texture * Texture.Texture
+          LightingAttachment : Texture.Texture
           ColoringAttachments : Texture.Texture * Texture.Texture
           CompositionAttachments : Texture.Texture * Texture.Texture }
     
@@ -518,6 +519,9 @@ module PhysicallyBased =
         // create geometry attachments
         let geometryAttachments = Attachment.CreateGeometryAttachments (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, vkc)
         
+        // create lighting attachment
+        let lightingAttachment = Attachment.CreateLightingAttachment (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, vkc)
+        
         // create coloring attachments
         let coloringAttachments = Attachment.CreateColoringAttachments (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, vkc)
 
@@ -529,6 +533,7 @@ module PhysicallyBased =
           ShadowMapAttachmentsArray = shadowMapAttachmentsArray
           ShadowCascadeArrayAttachmentsArray = shadowCascadeArrayAttachmentsArray
           GeometryAttachments = geometryAttachments
+          LightingAttachment = lightingAttachment
           ColoringAttachments = coloringAttachments
           CompositionAttachments = compositionAttachments }
 
@@ -540,6 +545,7 @@ module PhysicallyBased =
         for i in 0 .. dec attachments.ShadowCascadeArrayAttachmentsArray.Length do
             Attachment.UpdateShadowCascadeArrayAttachmentsSize (geometryViewport.ShadowCascadeResolution.X, geometryViewport.ShadowCascadeResolution.Y, attachments.ShadowCascadeArrayAttachmentsArray.[i], vkc)
         Attachment.UpdateGeometryAttachmentsSize (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, attachments.GeometryAttachments, vkc)
+        Attachment.UpdateLightingAttachmentSize (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, attachments.LightingAttachment, vkc)
         Attachment.UpdateColoringAttachmentsSize (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, attachments.ColoringAttachments, vkc)
         Attachment.UpdateGeneralAttachmentsSize (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, attachments.CompositionAttachments, vkc)
     
@@ -549,6 +555,7 @@ module PhysicallyBased =
         for i in 0 .. dec attachments.ShadowMapAttachmentsArray.Length do Attachment.DestroyShadowMapAttachments (attachments.ShadowMapAttachmentsArray.[i], vkc)
         for i in 0 .. dec attachments.ShadowCascadeArrayAttachmentsArray.Length do Attachment.DestroyShadowCascadeArrayAttachments (attachments.ShadowCascadeArrayAttachmentsArray.[i], vkc)
         Attachment.DestroyGeometryAttachments (attachments.GeometryAttachments, vkc)
+        Attachment.DestroyLightingAttachment (attachments.LightingAttachment, vkc)
         Attachment.DestroyColoringAttachments (attachments.ColoringAttachments, vkc)
         Attachment.DestroyGeneralAttachments (attachments.CompositionAttachments, vkc)
     
