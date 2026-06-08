@@ -393,42 +393,42 @@ module PhysicallyBased =
         [<FieldOffset(0)>] val mutable view : Matrix4x4
         [<FieldOffset(64)>] val mutable projection : Matrix4x4
         [<FieldOffset(128)>] val mutable viewProjection : Matrix4x4
+        [<FieldOffset(192)>] val mutable viewInverse : Matrix4x4
+        [<FieldOffset(256)>] val mutable projectionInverse : Matrix4x4
+        [<FieldOffset(320)>] val mutable eyeCenter : Vector3
 
     [<Struct; StructLayout(LayoutKind.Explicit)>]
-    type Common =
-        [<FieldOffset(0)>] val mutable eyeCenter : Vector3
-        [<FieldOffset(16)>] val mutable viewInverse : Matrix4x4
-        [<FieldOffset(80)>] val mutable projectionInverse : Matrix4x4
-        [<FieldOffset(144)>] val mutable lightCutoffMargin : single
-        [<FieldOffset(160)>] val mutable lightAmbientColor : Vector3
-        [<FieldOffset(172)>] val mutable lightAmbientBrightness : single
-        [<FieldOffset(176)>] val mutable lightAmbientBoostCutoff : single
-        [<FieldOffset(180)>] val mutable lightAmbientBoostScalar : single
-        [<FieldOffset(184)>] val mutable lightShadowSamples : int
-        [<FieldOffset(188)>] val mutable lightShadowBias : single
-        [<FieldOffset(192)>] val mutable lightShadowSampleScalar : single
-        [<FieldOffset(196)>] val mutable lightShadowExponent : single
-        [<FieldOffset(200)>] val mutable lightShadowDensity : single
-        [<FieldOffset(204)>] val mutable fogEnabled : int
-        [<FieldOffset(208)>] val mutable fogType : int
-        [<FieldOffset(212)>] val mutable fogStart : single
-        [<FieldOffset(216)>] val mutable fogFinish : single
-        [<FieldOffset(220)>] val mutable fogDensity : single
-        [<FieldOffset(224)>] val mutable fogColor : Vector4
-        [<FieldOffset(240)>] val mutable ssvfEnabled : int
-        [<FieldOffset(244)>] val mutable ssvfIntensity : single
-        [<FieldOffset(248)>] val mutable ssvfSteps : int
-        [<FieldOffset(252)>] val mutable ssvfAsymmetry : single
-        [<FieldOffset(256)>] val mutable ssrrEnabled : int
-        [<FieldOffset(260)>] val mutable ssrrIntensity : single
-        [<FieldOffset(264)>] val mutable ssrrDetail : single
-        [<FieldOffset(268)>] val mutable ssrrRefinementsMax : int
-        [<FieldOffset(272)>] val mutable ssrrRayThickness : single
-        [<FieldOffset(276)>] val mutable ssrrDistanceCutoff : single
-        [<FieldOffset(280)>] val mutable ssrrDistanceCutoffMargin : single
-        [<FieldOffset(284)>] val mutable ssrrEdgeHorizontalMargin : single
-        [<FieldOffset(288)>] val mutable ssrrEdgeVerticalMargin : single
-        [<FieldOffset(292)>] val mutable shadowNear : single
+    type Lighting =
+        [<FieldOffset(0)>] val mutable lightCutoffMargin : single
+        [<FieldOffset(16)>] val mutable lightAmbientColor : Vector3
+        [<FieldOffset(28)>] val mutable lightAmbientBrightness : single
+        [<FieldOffset(32)>] val mutable lightAmbientBoostCutoff : single
+        [<FieldOffset(36)>] val mutable lightAmbientBoostScalar : single
+        [<FieldOffset(40)>] val mutable lightShadowSamples : int
+        [<FieldOffset(44)>] val mutable lightShadowBias : single
+        [<FieldOffset(48)>] val mutable lightShadowSampleScalar : single
+        [<FieldOffset(52)>] val mutable lightShadowExponent : single
+        [<FieldOffset(56)>] val mutable lightShadowDensity : single
+        [<FieldOffset(60)>] val mutable fogEnabled : int
+        [<FieldOffset(64)>] val mutable fogType : int
+        [<FieldOffset(68)>] val mutable fogStart : single
+        [<FieldOffset(72)>] val mutable fogFinish : single
+        [<FieldOffset(76)>] val mutable fogDensity : single
+        [<FieldOffset(80)>] val mutable fogColor : Vector4
+        [<FieldOffset(96)>] val mutable ssvfEnabled : int
+        [<FieldOffset(100)>] val mutable ssvfIntensity : single
+        [<FieldOffset(104)>] val mutable ssvfSteps : int
+        [<FieldOffset(108)>] val mutable ssvfAsymmetry : single
+        [<FieldOffset(112)>] val mutable ssrrEnabled : int
+        [<FieldOffset(116)>] val mutable ssrrIntensity : single
+        [<FieldOffset(120)>] val mutable ssrrDetail : single
+        [<FieldOffset(124)>] val mutable ssrrRefinementsMax : int
+        [<FieldOffset(128)>] val mutable ssrrRayThickness : single
+        [<FieldOffset(132)>] val mutable ssrrDistanceCutoff : single
+        [<FieldOffset(136)>] val mutable ssrrDistanceCutoffMargin : single
+        [<FieldOffset(140)>] val mutable ssrrEdgeHorizontalMargin : single
+        [<FieldOffset(144)>] val mutable ssrrEdgeVerticalMargin : single
+        [<FieldOffset(148)>] val mutable shadowNear : single
     
     [<Struct; StructLayout(LayoutKind.Explicit)>]
     type Bone =
@@ -1303,7 +1303,7 @@ module PhysicallyBased =
                 // descriptor set 0: common; per renderGeometry call
                 [|Pipeline.descriptorSet Hl.BulkNone Constants.Render.GeometryRenderPassMax
                     [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexFragmentStage 1 // transform
-                      Pipeline.descriptor 1 Hl.StorageBuffer Hl.FragmentStage 1 // common
+                      Pipeline.descriptor 1 Hl.StorageBuffer Hl.FragmentStage 1 // lighting
                       Pipeline.descriptor 2 Hl.SampledImage Hl.FragmentStage 1 // depthTexture
                       Pipeline.descriptor 3 Hl.SampledImage Hl.FragmentStage 1 // colorTexture
                       Pipeline.descriptor 4 Hl.SampledImage Hl.FragmentStage 1 // brdfTexture
@@ -1350,7 +1350,7 @@ module PhysicallyBased =
 
         // create set 0 uniform buffers
         let transformUniform = Buffer.Buffer.create sizeof<Transform> Buffer.Storage vkc
-        let commonUniform = Buffer.Buffer.create sizeof<Common> Buffer.Storage vkc
+        let commonUniform = Buffer.Buffer.create sizeof<Lighting> Buffer.Storage vkc
         
         // create set 1 uniform buffers
         let shadowMatrixMax = Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels
@@ -1412,15 +1412,12 @@ module PhysicallyBased =
 
             // bind common uniforms
             let mutable transform = Transform ()
-            let mutable common = Common ()
             transform.view <- view
             transform.projection <- projection
             transform.viewProjection <- viewProjection
-            common.eyeCenter <- eyeCenter
+            transform.eyeCenter <- eyeCenter
             Buffer.Buffer.uploadValue renderPassIndex 0 0 transform pipeline.TransformUniform vkc
-            Buffer.Buffer.uploadValue renderPassIndex 0 0 common pipeline.CommonUniform vkc
             Pipeline.Pipeline.writeDescriptorStorageBuffer 0 0 renderPassIndex 0 pipeline.TransformUniform.[renderPassIndex] pipeline.Pipeline vkc
-            Pipeline.Pipeline.writeDescriptorStorageBuffer 0 1 renderPassIndex 0 pipeline.CommonUniform.[renderPassIndex] pipeline.Pipeline vkc
 
             // bind sampler
             Pipeline.Pipeline.writeDescriptorSampler 2 0 0 0 filteredSampler pipeline.Pipeline vkc
@@ -1569,45 +1566,45 @@ module PhysicallyBased =
 
         // bind common uniforms
         let mutable transform = Transform ()
-        let mutable common = Common ()
+        let mutable lighting = Lighting ()
         transform.view <- view
         transform.projection <- projection
         transform.viewProjection <- viewProjection
-        common.eyeCenter <- eyeCenter
-        common.viewInverse <- viewInverse
-        common.projectionInverse <- projectionInverse
-        common.lightCutoffMargin <- lightCutoffMargin
-        common.lightAmbientColor <- lightAmbientColor.V3
-        common.lightAmbientBrightness <- lightAmbientBrightness
-        common.lightAmbientBoostCutoff <- lightAmbientBoostCutoff
-        common.lightAmbientBoostScalar <- lightAmbientBoostScalar
-        common.lightShadowSamples <- lightShadowSamples
-        common.lightShadowBias <- lightShadowBias
-        common.lightShadowSampleScalar <- lightShadowSampleScalar
-        common.lightShadowExponent <- lightShadowExponent
-        common.lightShadowDensity <- lightShadowDensity
-        common.fogEnabled <- fogEnabled
-        common.fogType <- fogType
-        common.fogStart <- fogStart
-        common.fogFinish <- fogFinish
-        common.fogDensity <- fogDensity
-        common.fogColor <- fogColor.V4
-        common.ssvfEnabled <- ssvfEnabled
-        common.ssvfIntensity <- ssvfIntensity
-        common.ssvfSteps <- ssvfSteps
-        common.ssvfAsymmetry <- ssvfAsymmetry
-        common.ssrrEnabled <- ssrrEnabled
-        common.ssrrIntensity <- ssrrIntensity
-        common.ssrrDetail <- ssrrDetail
-        common.ssrrRefinementsMax <- ssrrRefinementsMax
-        common.ssrrRayThickness <- ssrrRayThickness
-        common.ssrrDistanceCutoff <- ssrrDistanceCutoff
-        common.ssrrDistanceCutoffMargin <- ssrrDistanceCutoffMargin
-        common.ssrrEdgeHorizontalMargin <- ssrrEdgeHorizontalMargin
-        common.ssrrEdgeVerticalMargin <- ssrrEdgeVerticalMargin
-        common.shadowNear <- shadowNear
+        transform.viewInverse <- viewInverse
+        transform.projectionInverse <- projectionInverse
+        transform.eyeCenter <- eyeCenter
+        lighting.lightCutoffMargin <- lightCutoffMargin
+        lighting.lightAmbientColor <- lightAmbientColor.V3
+        lighting.lightAmbientBrightness <- lightAmbientBrightness
+        lighting.lightAmbientBoostCutoff <- lightAmbientBoostCutoff
+        lighting.lightAmbientBoostScalar <- lightAmbientBoostScalar
+        lighting.lightShadowSamples <- lightShadowSamples
+        lighting.lightShadowBias <- lightShadowBias
+        lighting.lightShadowSampleScalar <- lightShadowSampleScalar
+        lighting.lightShadowExponent <- lightShadowExponent
+        lighting.lightShadowDensity <- lightShadowDensity
+        lighting.fogEnabled <- fogEnabled
+        lighting.fogType <- fogType
+        lighting.fogStart <- fogStart
+        lighting.fogFinish <- fogFinish
+        lighting.fogDensity <- fogDensity
+        lighting.fogColor <- fogColor.V4
+        lighting.ssvfEnabled <- ssvfEnabled
+        lighting.ssvfIntensity <- ssvfIntensity
+        lighting.ssvfSteps <- ssvfSteps
+        lighting.ssvfAsymmetry <- ssvfAsymmetry
+        lighting.ssrrEnabled <- ssrrEnabled
+        lighting.ssrrIntensity <- ssrrIntensity
+        lighting.ssrrDetail <- ssrrDetail
+        lighting.ssrrRefinementsMax <- ssrrRefinementsMax
+        lighting.ssrrRayThickness <- ssrrRayThickness
+        lighting.ssrrDistanceCutoff <- ssrrDistanceCutoff
+        lighting.ssrrDistanceCutoffMargin <- ssrrDistanceCutoffMargin
+        lighting.ssrrEdgeHorizontalMargin <- ssrrEdgeHorizontalMargin
+        lighting.ssrrEdgeVerticalMargin <- ssrrEdgeVerticalMargin
+        lighting.shadowNear <- shadowNear
         Buffer.Buffer.uploadValue renderPassIndex 0 0 transform pipeline.TransformUniform vkc
-        Buffer.Buffer.uploadValue renderPassIndex 0 0 common pipeline.CommonUniform vkc
+        Buffer.Buffer.uploadValue renderPassIndex 0 0 lighting pipeline.CommonUniform vkc
         Pipeline.Pipeline.writeDescriptorStorageBuffer 0 0 renderPassIndex 0 pipeline.TransformUniform.[renderPassIndex] pipeline.Pipeline vkc
         Pipeline.Pipeline.writeDescriptorStorageBuffer 0 1 renderPassIndex 0 pipeline.CommonUniform.[renderPassIndex] pipeline.Pipeline vkc
 

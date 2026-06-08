@@ -4,47 +4,19 @@ const float GAMMA = 2.2;
 const float SAA_VARIANCE = 0.1; // TODO: consider exposing as lighting config property.
 const float SAA_THRESHOLD = 0.1; // TODO: consider exposing as lighting config property.
 
-struct Common
+struct Transform
 {
-    vec3 eyeCenter; // only this used in this shader!
+    mat4 view;
+    mat4 projection;
+    mat4 viewProjection;
     mat4 viewInverse;
     mat4 projectionInverse;
-    float lightCutoffMargin;
-    vec3 lightAmbientColor;
-    float lightAmbientBrightness;
-    float lightAmbientBoostCutoff;
-    float lightAmbientBoostScalar;
-    int lightShadowSamples;
-    float lightShadowBias;
-    float lightShadowSampleScalar;
-    float lightShadowExponent;
-    float lightShadowDensity;
-    int fogEnabled;
-    int fogType;
-    float fogStart;
-    float fogFinish;
-    float fogDensity;
-    vec4 fogColor;
-    int ssvfEnabled;
-    float ssvfIntensity;
-    int ssvfSteps;
-    float ssvfAsymmetry;
-    int ssrrEnabled;
-    float ssrrIntensity;
-    float ssrrDetail;
-    int ssrrRefinementsMax;
-    float ssrrRayThickness;
-    float ssrrDistanceCutoff;
-    float ssrrDistanceCutoffMargin;
-    float ssrrEdgeHorizontalMargin;
-    float ssrrEdgeVerticalMargin;
-    float shadowNear; // NOTE: currently unused.
+    vec3 eyeCenter;
 };
 
-layout(binding = 1) buffer readonly CommonBlock
+layout(binding = 0) buffer readonly TransformBlock
 {
-    // TODO: DJL: reform name.
-    Common commonData; // common is reserved
+    Transform transform;
 };
 
 layout(set = 1, binding = 5) uniform texture2D albedoTexture;
@@ -135,7 +107,7 @@ void main()
     mat3 toTangent = transpose(toWorld);
 
     // compute tex coords in parallax space
-    vec3 eyeCenterTangent = toTangent * commonData.eyeCenter;
+    vec3 eyeCenterTangent = toTangent * transform.eyeCenter;
     vec3 positionTangent = toTangent * positionOut.xyz;
     vec3 toEyeTangent = normalize(eyeCenterTangent - positionTangent);
     float height = texture(sampler2D(heightTexture, filteredSampler), texCoordsOut).x * heightPlusOut.x;
