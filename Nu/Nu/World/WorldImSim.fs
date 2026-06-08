@@ -164,7 +164,7 @@ module WorldImSim =
             for arg in args do
                 if (match arg.ArgType with
                     | InitializingArg -> initializing
-                    | ReinitializingArg -> initializing || Reinitializing
+                    | ReinitializingArg -> initializing || world.ReinitializingImSim
                     | DynamicArg -> true) then
                     game.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
 
@@ -249,8 +249,7 @@ module WorldImSim =
             let groupAddress = Address.makeFromArray (Array.add name world.ContextImSim.Names)
             World.setContext groupAddress world
             let group = Nu.Group groupAddress
-            // HACK: when group appears to exist as a placeholder created by Gaia, we destroy it so it can be made in a user-defined way.
-            if  group.Name = "Scene" &&
+            if  group.Name = "Scene" && // HACK: when group appears to exist as a placeholder created by Gaia, we destroy it so it can be made in a user-defined way.
                 group.GetExists world &&
                 Seq.isEmpty (World.getEntitiesSovereign group world) &&
                 getTypeName (group.GetDispatcher world) = nameof GroupDispatcher then
