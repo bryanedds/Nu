@@ -1252,7 +1252,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         | Left error ->
             MessageBoxOpt <- Some ("Asset reload error due to: " + error + "'.")
 
-    let private tryReloadCode reinitializing world =
+    let private tryReloadCode initializing world =
         if World.getAllowCodeReload world then
             let worldStateOld = world.CurrentState
             snapshot ReloadCode world
@@ -1371,7 +1371,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         else Log.info "Code compiled with no warnings."
                         Log.info "Updating code..."
                         focusPropertyOpt None world // drop any reference to old property type
-                        World.updateLateBindings reinitializing FsiSession.DynamicAssemblies world // replace references to old types
+                        World.updateLateBindings initializing FsiSession.DynamicAssemblies world // replace references to old types
                         Log.info "Code updated."
                     | (Choice2Of2 _, diags) ->
                         let diagsStr =
@@ -1403,9 +1403,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
         else MessageBoxOpt <- Some "Code reloading not allowed by current plugin. This is likely because you're using the GaiaPlugin which doesn't allow it."
 
-    let private tryReloadAll reinitializing world =
+    let private tryReloadAll initializing world =
         tryReloadAssets world
-        tryReloadCode reinitializing world
+        tryReloadCode initializing world
 
     let private resetEye () =
         DesiredEye2dCenter <- v2Zero
@@ -1772,8 +1772,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             elif ImGui.IsKeyPressed ImGuiKey.F6 then EditWhileAdvancing <- not EditWhileAdvancing
             elif ImGui.IsKeyPressed ImGuiKey.F7 then createRestorePoint world
             elif ImGui.IsKeyPressed ImGuiKey.F8 then ReloadAssetsRequested <- 1
-            elif ImGui.IsKeyPressed ImGuiKey.F9 && ImGui.IsShiftUp () then ReloadCodeRequested <- (true, 1)
-            elif ImGui.IsKeyPressed ImGuiKey.F9 && ImGui.IsShiftDown () then ReloadCodeRequested <- (false, 1)
+            elif ImGui.IsKeyPressed ImGuiKey.F9 && ImGui.IsShiftUp () then ReloadCodeRequested <- (false, 1)
+            elif ImGui.IsKeyPressed ImGuiKey.F9 && ImGui.IsShiftDown () then ReloadCodeRequested <- (true, 1)
             elif ImGui.IsKeyPressed ImGuiKey.F10 then setCaptureMode (not CaptureMode) world
             elif ImGui.IsKeyPressed ImGuiKey.F11 then setFreeMode (not FreeMode) world
             elif ImGui.IsKeyPressed ImGuiKey.F12 then OverlayMode <- not OverlayMode
@@ -1792,8 +1792,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             elif ImGui.IsKeyPressed ImGuiKey.P && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then NewEntityParentOpt <- None
             elif ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltDown () then ShowOpenEntityDialog <- true
             elif ImGui.IsKeyPressed ImGuiKey.S && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltDown () then (match SelectedEntityOpt with Some entity when entity.GetExists world -> ShowSaveEntityDialog <- true | _ -> ())
-            elif ImGui.IsKeyPressed ImGuiKey.R && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then ReloadAllRequested <- (true, 1)
-            elif ImGui.IsKeyPressed ImGuiKey.R && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then ReloadAllRequested <- (false, 1)
+            elif ImGui.IsKeyPressed ImGuiKey.R && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then ReloadAllRequested <- (false, 1)
+            elif ImGui.IsKeyPressed ImGuiKey.R && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then ReloadAllRequested <- (true, 1)
             elif ImGui.IsKeyPressed ImGuiKey.F && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then searchEntityHierarchy ()
             elif ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then ShowOpenProjectDialog <- true
             elif ImGui.IsKeyPressed ImGuiKey.F && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then freezeEntities world
@@ -2591,9 +2591,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     ImGui.Separator ()
                     if ImGui.MenuItem ("Reload Assets", "F8") then ReloadAssetsRequested <- 1
                     if ImGui.MenuItem ("Reload Code", "F9") then ReloadCodeRequested <- (false, 1)
-                    if ImGui.MenuItem ("Reload Code and Resync", "Shift+F9") then ReloadCodeRequested <- (true, 1)
+                    if ImGui.MenuItem ("Reload Code and Initialize", "Shift+F9") then ReloadCodeRequested <- (true, 1)
                     if ImGui.MenuItem ("Reload All", "Ctrl+R") then ReloadAllRequested <- (false, 1)
-                    if ImGui.MenuItem ("Reload All and Resync", "Ctrl+Shift+R") then ReloadAllRequested <- (true, 1)
+                    if ImGui.MenuItem ("Reload All and Initialize", "Ctrl+Shift+R") then ReloadAllRequested <- (true, 1)
                     ImGui.Separator ()
                     if ImGui.MenuItem ("Exit", "Alt+F4") then ShowConfirmExitDialog <- true
                     ImGui.EndMenu ()
@@ -4239,11 +4239,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             tryReloadAssets world
             ReloadAssetsRequested <- 0
 
-    let private imGuiReloadingCodeDialog reinitializing world =
+    let private imGuiReloadingCodeDialog initializing world =
         let title =
-            if reinitializing
+            if initializing
             then "Reloading code..."
-            else "Reloading code and synchronizing properties with initial values..."
+            else "Reloading code and setting initial values..."
         ImGui.SetNextWindowPos (ImGui.MainViewportCenter, ImGuiCond.Appearing, v2Dup 0.5f)
         if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
         if ImGui.BeginPopupModal (title, ImGuiWindowFlags.AlwaysAutoResize) then
@@ -4251,14 +4251,14 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             ImGui.EndPopup ()
         ReloadCodeRequested <- mapSnd inc ReloadCodeRequested
         if snd ReloadCodeRequested = 4 then // NOTE: takes multiple frames to see dialog.
-            tryReloadCode reinitializing world
+            tryReloadCode initializing world
             ReloadCodeRequested <- (false, 0)
 
-    let private imGuiReloadingAllDialog reinitializing world =
+    let private imGuiReloadingAllDialog initializing world =
         let title =
-            if reinitializing
+            if initializing
             then "Reloading assets and code..."
-            else "Reloading assets and code, as well as synchronizing properties with initial values..."
+            else "Reloading assets and code, as well as setting initial values..."
         ImGui.SetNextWindowPos (ImGui.MainViewportCenter, ImGuiCond.Appearing, v2Dup 0.5f)
         if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
         if ImGui.BeginPopupModal (title, ImGuiWindowFlags.AlwaysAutoResize) then
@@ -4266,7 +4266,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             ImGui.EndPopup ()
         ReloadAllRequested <- mapSnd inc ReloadAllRequested
         if snd ReloadAllRequested = 4 then // NOTE: takes multiple frames to see dialog.
-            tryReloadAll reinitializing world
+            tryReloadAll initializing world
             ReloadAllRequested <- (false, 0)
 
     let private imGuiSelectedWindowRestoration () =
