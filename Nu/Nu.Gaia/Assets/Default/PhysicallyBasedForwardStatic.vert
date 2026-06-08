@@ -25,6 +25,9 @@ struct Transform
     mat4 view;
     mat4 projection;
     mat4 viewProjection;
+    mat4 viewInverse;
+    mat4 projectionInverse;
+    vec3 eyeCenter;
 };
 
 layout(binding = 0) buffer readonly TransformBlock
