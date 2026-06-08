@@ -185,10 +185,10 @@ module WorldModule4 =
             |> Map.ofArrayBy World.pairWithName
 
         /// Update late bindings internally stored by the engine from types found in the given assemblies.
-        static member updateLateBindings (assemblies : Assembly array) world =
+        static member updateLateBindings reinitializing (assemblies : Assembly array) world =
 
             // prepare for late-bound type updating
-            WorldImSim.Reinitializing <- true
+            WorldImSim.Reinitializing <- reinitializing
             Content.UpdateLateBindingsCount <- inc Content.UpdateLateBindingsCount
             World.clearEntityFromClipboard world // HACK: clear what's on the clipboard rather than changing its dispatcher instance.
             world.WorldExtension.Plugin.CleanUp ()
