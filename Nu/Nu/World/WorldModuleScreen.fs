@@ -281,7 +281,7 @@ module WorldModuleScreen =
                 match valueObj with
                 | :? 'a -> Some valueObj
                 | null -> null :> obj |> Some
-                | valueObj ->
+                | _ ->
                     let valueObj =
                         try valueObj |> valueToSymbol |> symbolToValue<'a> :> obj
                         with _ ->

@@ -18,7 +18,7 @@ module Xtension =
     /// Provides a convenient way to implement both dynamic properties and designer properties.
     type [<ReferenceEquality>] Xtension =
         private
-            { Properties_ : UMap<string, Property> // TODO: see if a quadratic searching dictionary could improve perf here.
+            { Properties_ : UMap<string, Property>
               Flags_ : int }
 
         member this.Properties = this.Properties_
