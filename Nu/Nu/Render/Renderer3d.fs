@@ -6107,6 +6107,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         Vulkan.vkCmdEndRendering cb
         
         // render static surfaces deferred
+        // TODO: DJL: find out how this is screwing up the light map test!
         let pipeline = renderer.PhysicallyBasedPipelines.DeferredStaticPipeline
         pipeline.BeginRenderPass () // reset index for checking against draw limit
         let mutable i = 0
