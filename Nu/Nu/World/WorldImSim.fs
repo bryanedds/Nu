@@ -63,6 +63,22 @@ module WorldImSim =
             let dispatcher = entity.GetDispatcher world
             dispatcher.TryProcess (zeroDelta,  entity, world)
 
+        /// Whether ImSim is initializing this frame (such as on a code reload).
+        member this.InitializingImSim =
+            Initializing
+
+        /// Whether ImSim is reinitializing this frame (such as on a code reload).
+        member this.ReinitializingImSim =
+            Reinitializing
+
+        /// Whether ImSim is initializing this frame (such as on a code reload).
+        static member getInitializingImSim (world : World) =
+            world.InitializingImSim
+
+        /// Whether ImSim is reinitializing this frame (such as on a code reload).
+        static member getReinitializingImSim (world : World) =
+            world.ReinitializingImSim
+
         /// ImSim subscribe to the given event address with a user-defined result.
         static member doSubscriptionPlus<'d, 'r> (mapResult : 'd -> 'r) name (eventAddress : 'd Address) (world : World) : 'r FQueue =
             let eventAddress' =
