@@ -4222,7 +4222,7 @@ type EditVolumeFacet () =
                         entity.SetSize (bounds.Size / entity.GetScale world) world
                 | ImGuiEditInactive -> ()
             else
-                // TODO: P1: see if we can implement this properly instead of schmoing out.
+                // TODO: P1: see if we can implement this properly instead of punting.
                 Log.warnOnce "Bounds adjustment currently not implemented for entities with non-zero offset."
 
         | _ -> ()

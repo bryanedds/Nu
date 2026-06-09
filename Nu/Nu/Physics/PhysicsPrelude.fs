@@ -10,6 +10,7 @@ open System.Numerics
 open Prime
 
 /// Identifies a body that can be found in a physics engine.
+/// Note that this is an ephermeral type and not intended to be persisted.
 type [<CustomEquality; CustomComparison>] BodyId =
     { BodySource : Simulant
       BodyIndex : int }

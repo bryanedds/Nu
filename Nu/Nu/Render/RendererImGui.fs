@@ -352,7 +352,7 @@ type VulkanRendererImGui
     let mutable fontSampler = Unchecked.defaultof<Texture.Sampler>
     let mutable assetSampler = Unchecked.defaultof<Texture.Sampler>
     let mutable fontTexture = Unchecked.defaultof<Texture.Texture>
-    let mutable assetTextureStorage = Unchecked.defaultof<Dictionary<uint32, Texture.TextureInternal>>
+    let mutable assetTextureStorage = Unchecked.defaultof<Dictionary<uint32, Texture.Texture>>
     let mutable textureIdCounter = 0u
     let mutable vertexBuffer = Unchecked.defaultof<Buffer.Buffer>
     let mutable indexBuffer = Unchecked.defaultof<Buffer.Buffer>
@@ -365,8 +365,8 @@ type VulkanRendererImGui
             match assetTextureOpt with
             | ValueSome textureId ->
                 match Dictionary.tryFind textureId assetTextureStorage with
-                | Some textureInternal ->
-                    Texture.TextureInternal.destroy textureInternal vkc
+                | Some texture ->
+                    texture.Destroy vkc
                     assetTextureStorage.Remove textureId |> ignore<bool>
                 | None -> ()
                 match destroyedTextureIdsOpt with
@@ -375,12 +375,12 @@ type VulkanRendererImGui
             | ValueNone -> ()
         assetTextureOpts.Clear ()
     
-    member private renderer.GetImageView textureId =
-        if textureId = 0u then fontTexture.ImageView
+    member private renderer.GetTexture textureId =
+        if textureId = 0u then fontTexture
         else
             match Dictionary.tryFind textureId assetTextureStorage with
-            | Some textureInternal -> textureInternal.ImageView
-            | None -> Texture.EmptyTexture.ImageView
+            | Some texture -> texture
+            | None -> Texture.EmptyTexture
     
     member private renderer.GetSampler textureId =
         if textureId = 0u then fontSampler else assetSampler
@@ -468,9 +468,10 @@ type VulkanRendererImGui
                     | Some filePath ->
                         match Texture.TryCreateTextureVulkan (true, false, Texture.InferCompression filePath, filePath, Texture.RenderThread, vkc) with
                         | Right (_, textureInternal) ->
+                            let texture = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureInternal = textureInternal }
                             let textureId = textureIdCounter
                             textureIdCounter <- inc textureIdCounter
-                            assetTextureStorage.Add (textureId, textureInternal)
+                            assetTextureStorage.Add (textureId, texture)
                             assetTextureOpts.[assetTag] <- ValueSome textureId
                         | Left _ -> assetTextureOpts.[assetTag] <- ValueNone
                     | None -> ()
@@ -591,9 +592,9 @@ type VulkanRendererImGui
                                     if descriptorSetIndex < Constants.Render.ImGuiTextureMax then
 
                                         // write texture to descriptor set
-                                        let imageView = renderer.GetImageView textureId
+                                        let texture = renderer.GetTexture textureId
                                         let sampler = renderer.GetSampler textureId
-                                        Pipeline.Pipeline.writeDescriptorCombinedImageSampler 0 0 descriptorSetIndex 0 imageView sampler pipeline vkc
+                                        Pipeline.Pipeline.writeDescriptorCombinedImageSampler 0 0 descriptorSetIndex 0 texture sampler pipeline vkc
                                         
                                         // bind descriptor set
                                         let mutable descriptorSet = pipeline.VkDescriptorSet 0 descriptorSetIndex

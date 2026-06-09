@@ -5162,7 +5162,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           mutable GeometryViewport : Viewport
           mutable WindowViewport : Viewport
           mutable GeometryRenderPassIndex : int
-          mutable ForwardStaticDrawIndex : int
           LazyTextureQueues : ConcurrentDictionary<Texture.LazyTexture ConcurrentQueue, Texture.LazyTexture ConcurrentQueue>
           TextureServer : Texture.TextureServer
           TextureDisposer : Texture.TextureDisposer
@@ -5773,6 +5772,126 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         userDefinedStaticModelsToDestroy
     
     
+    static member private renderPhysicallyBasedDeferredSurfaces
+        renderPassIndex batchPhase view projection viewProjection bones eyeCenter (parameters : struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List)
+        filteredSampler (surface : PhysicallyBased.PhysicallyBasedSurface) viewport colorAttachments depthAttachment pipeline vkc renderer =
+                                                                      
+        // ensure we have a large enough instance fields array
+        let mutable length = renderer.InstanceFields.Length
+        while parameters.Count * Constants.Render.InstanceFieldCount > length do length <- length * 2
+        if renderer.InstanceFields.Length < length then
+            renderer.InstanceFields <- Array.zeroCreate<single> length
+
+        // blit parameters to instance fields
+        for i in 0 .. dec parameters.Count do
+            let struct (model, _, presence, texCoordsOffset, properties) = parameters[i]
+            model.ToArray (renderer.InstanceFields, i * Constants.Render.InstanceFieldCount)
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 16] <- texCoordsOffset.Min.X
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 16 + 1] <- texCoordsOffset.Min.Y
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 16 + 2] <- texCoordsOffset.Min.X + texCoordsOffset.Size.X
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 16 + 3] <- texCoordsOffset.Min.Y + texCoordsOffset.Size.Y
+            let albedo = match properties.AlbedoOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Albedo
+            let roughness = match properties.RoughnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Roughness
+            let metallic = match properties.MetallicOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Metallic
+            let ambientOcclusion = match properties.AmbientOcclusionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.AmbientOcclusion
+            let emission = match properties.EmissionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Emission
+            let height = match properties.HeightOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Height
+            let ignoreLightMaps = match properties.IgnoreLightMapsOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.IgnoreLightMaps
+            let finenessOffset = match properties.FinenessOffsetOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.FinenessOffset
+            let scatterType = match properties.ScatterTypeOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ScatterType
+            let clearCoat = match properties.ClearCoatOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ClearCoat
+            let clearCoatRoughness = match properties.ClearCoatRoughnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ClearCoatRoughness
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 20] <- albedo.R
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 20 + 1] <- albedo.G
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 20 + 2] <- albedo.B
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 20 + 3] <- albedo.A
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 24] <- roughness
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 24 + 1] <- metallic
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 24 + 2] <- ambientOcclusion
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 24 + 3] <- emission
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 28] <- surface.SurfaceMaterial.AlbedoTexture.TextureMetadata.TextureTexelHeight * height
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 29] <- if ignoreLightMaps then 1.0f else 0.0f
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 30] <- presence.DepthCutoff
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 31] <- 0.0f // free
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 32] <- finenessOffset
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 33] <- scatterType.Enumerate
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 34] <- 0.0f // free
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 35] <- 0.0f // free
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 36] <- clearCoat
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 37] <- clearCoatRoughness
+
+        // draw deferred surfaces
+        PhysicallyBased.DrawPhysicallyBasedDeferredSurfaces
+            (renderPassIndex, batchPhase, view, projection, viewProjection, bones, eyeCenter,
+             parameters.Count, renderer.InstanceFields, filteredSampler, surface.SurfaceMaterial, surface.PhysicallyBasedGeometry,
+             viewport, colorAttachments, depthAttachment, pipeline, vkc)
+
+    static member private renderPhysicallyBasedDeferredSurfacePreBatch
+        renderPassIndex frustumInterior frustumExterior frustumImposter renderPass
+        view projection viewProjection bones eyeCenter (parameters : (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array)
+        filteredSampler (surface : PhysicallyBased.PhysicallyBasedSurface) viewport colorAttachments depthAttachment pipeline vkc renderer =
+
+        // ensure we have a large enough instance fields array
+        let mutable length = renderer.InstanceFields.Length
+        while parameters.Length * Constants.Render.InstanceFieldCount > length do length <- length * 2
+        if renderer.InstanceFields.Length < length then
+            renderer.InstanceFields <- Array.zeroCreate<single> length
+
+        // blit parameters to instance fields
+        let mutable i = 0
+        for j in 0 .. dec parameters.Length do
+            let (model, _, presence, texCoordsOffset, properties, bounds) = parameters[j]
+            let unculled =
+                match renderPass with
+                | LightMapPass (_, _) -> true // TODO: see if we have enough context to cull here.
+                | ShadowPass (_, _, shadowLightType, _, _, shadowFrustum) ->
+                    let shadowFrustumInteriorOpt = if LightType.shouldShadowInterior shadowLightType then ValueSome shadowFrustum else ValueNone
+                    Presence.intersects3d shadowFrustumInteriorOpt shadowFrustum shadowFrustum false presence bounds
+                | ReflectionPass (_, reflFrustum) -> Presence.intersects3d ValueNone reflFrustum reflFrustum false presence bounds
+                | NormalPass -> Presence.intersects3d (ValueSome frustumInterior) frustumExterior frustumImposter false presence bounds
+            if unculled then
+                model.ToArray (renderer.InstanceFields, i * Constants.Render.InstanceFieldCount)
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 16] <- texCoordsOffset.Min.X
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 16 + 1] <- texCoordsOffset.Min.Y
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 16 + 2] <- texCoordsOffset.Min.X + texCoordsOffset.Size.X
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 16 + 3] <- texCoordsOffset.Min.Y + texCoordsOffset.Size.Y
+                let albedo = match properties.AlbedoOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Albedo
+                let roughness = match properties.RoughnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Roughness
+                let metallic = match properties.MetallicOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Metallic
+                let ambientOcclusion = match properties.AmbientOcclusionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.AmbientOcclusion
+                let emission = match properties.EmissionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Emission
+                let height = match properties.HeightOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Height
+                let ignoreLightMaps = match properties.IgnoreLightMapsOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.IgnoreLightMaps
+                let finenessOffset = match properties.FinenessOffsetOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.FinenessOffset
+                let scatterType = match properties.ScatterTypeOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ScatterType
+                let clearCoat = match properties.ClearCoatOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ClearCoat
+                let clearCoatRoughness = match properties.ClearCoatRoughnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ClearCoatRoughness
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 20] <- albedo.R
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 20 + 1] <- albedo.G
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 20 + 2] <- albedo.B
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 20 + 3] <- albedo.A
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 24] <- roughness
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 24 + 1] <- metallic
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 24 + 2] <- ambientOcclusion
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 24 + 3] <- emission
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 28] <- surface.SurfaceMaterial.AlbedoTexture.TextureMetadata.TextureTexelHeight * height
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 29] <- if ignoreLightMaps then 1.0f else 0.0f
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 30] <- presence.DepthCutoff
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 31] <- 0.0f // free
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 32] <- finenessOffset
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 33] <- scatterType.Enumerate
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 34] <- 0.0f // free
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 35] <- 0.0f // free
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 36] <- clearCoat
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 37] <- clearCoatRoughness
+                i <- inc i
+
+        // draw deferred surfaces
+        PhysicallyBased.DrawPhysicallyBasedDeferredSurfaces
+            (renderPassIndex, SingletonPhase, view, projection, viewProjection, bones, eyeCenter,
+             i, renderer.InstanceFields, filteredSampler, surface.SurfaceMaterial, surface.PhysicallyBasedGeometry,
+             viewport, colorAttachments, depthAttachment, pipeline, vkc)
+
     static member private beginPhysicallyBasedForwardPipeline
         renderPassIndex viewArray projectionArray viewProjectionArray eyeCenter viewInverseArray projectionInverseArray
         lightCutoffMargin lightAmbientColor lightAmbientBrightness lightAmbientBoostCutoff lightAmbientBoostScalar lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity
@@ -5787,7 +5906,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
              depthTexture, colorTexture, brdfTexture, irradianceMap, environmentFilterMap, filteredSampler, cubeMapSampler, shadowSampler, colorSampler, depthSampler, brdfSampler, shadowNear, pipeline, vkc)
 
     static member private renderPhysicallyBasedForwardSurfaces
-        drawIndex renderPassIndex drawIndexPerRenderPass bonesArrays (parameters : struct (Matrix4x4 * Presence * Box2 * MaterialProperties) SList)
+        renderPassIndex bonesArrays (parameters : struct (Matrix4x4 * Presence * Box2 * MaterialProperties) SList)
         irradianceMaps environmentFilterMaps shadowTextureArray shadowMaps shadowCascades lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses lightMapsCount lightMapSingletonBlendMargin
         lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices lightsCount shadowMatrices
         (surface : PhysicallyBased.PhysicallyBasedSurface) depthTest blending viewport colorAttachment depthAttachment pipeline vkc renderer =
@@ -5839,7 +5958,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
         // draw forward surfaces
         PhysicallyBased.DrawPhysicallyBasedForwardSurfaces
-            (drawIndex, renderPassIndex, drawIndexPerRenderPass, bonesArrays, parameters.Length, renderer.InstanceFields,
+            (renderPassIndex, bonesArrays, parameters.Length, renderer.InstanceFields,
              irradianceMaps, environmentFilterMaps, shadowTextureArray, shadowMaps, shadowCascades, lightMapOrigins, lightMapMins, lightMapSizes, lightMapAmbientColors, lightMapAmbientBrightnesses, lightMapsCount, lightMapSingletonBlendMargin,
              lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightTypes, lightConeInners, lightConeOuters, lightDesireFogs, lightShadowIndices, lightsCount, shadowMatrices,
              surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, depthTest, blending, viewport, colorAttachment, depthAttachment, pipeline, vkc)
@@ -5871,16 +5990,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         targetImage =
 
         // compute matrix arrays
-        let viewArray = view.ToArray ()
         let viewInverse = view.Inverted
-        let viewInverseArray = viewInverse.ToArray ()
-        let geometryProjectionArray = geometryProjection.ToArray ()
         let geometryProjectionInverse = geometryProjection.Inverted
-        let geometryProjectionInverseArray = geometryProjectionInverse.ToArray ()
-        let geometryViewProjectionArray = geometryViewProjection.ToArray ()
-        let windowProjectionArray = windowProjection.ToArray ()
         let windowProjectionInverse = windowProjection.Inverted
-        let windowProjectionInverseArray = windowProjectionInverse.ToArray ()
         let windowViewProjectionSkyBox = viewSkyBox * windowProjection
 
         // get ambient lighting, sky box opt, and fallback light map
@@ -5979,6 +6091,89 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             renderTasks.ForwardSorted.Add struct (model, castShadow, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest)
         forwardSurfacesSortBuffer.Clear ()
         
+        // setup geometry attachments and depth testing
+        // NOTE: DJL: we use the composition z attachment directly to avoid having to find a depth format supporting copy operations,
+        // which is problematic on some mesa drivers.
+        let vkc = renderer.VulkanContext
+        let cb = vkc.RenderCommandBuffer
+        let geometryResolution = renderer.GeometryViewport.Bounds.Size
+        let renderArea = VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)
+        let clearColor = VkClearValue (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
+        let (compositionTexture, compositionZTexture) = renderer.PhysicallyBasedAttachments.CompositionAttachments
+        let (depthTexture, albedoTexture, materialTexture, normalPlusTexture, subdermalPlusTexture, scatterPlusTexture, clearCoatPlusTexture, _) = renderer.PhysicallyBasedAttachments.GeometryAttachments
+        let geometryImageViewArray = [|depthTexture.ImageView; albedoTexture.ImageView; materialTexture.ImageView; normalPlusTexture.ImageView; subdermalPlusTexture.ImageView; scatterPlusTexture.ImageView; clearCoatPlusTexture.ImageView|]
+        let mutable rendering = Hl.makeRenderingInfo geometryImageViewArray (Some compositionZTexture.ImageView) renderArea (Some clearColor)
+        Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
+        Vulkan.vkCmdEndRendering cb
+        
+        // render static surfaces deferred
+        // TODO: DJL: find out how this is screwing up the light map test!
+        let pipeline = renderer.PhysicallyBasedPipelines.DeferredStaticPipeline
+        pipeline.BeginRenderPass () // reset index for checking against draw limit
+        let mutable i = 0
+        for entry in renderTasks.DeferredStatic do
+            let batchPhase =
+                match renderTasks.DeferredStatic.Count with
+                | 1 -> SingletonPhase
+                | count -> if i = 0 then StartingPhase elif i = dec count then StoppingPhase else ResumingPhase
+            VulkanRenderer3d.renderPhysicallyBasedDeferredSurfaces
+                renderer.GeometryRenderPassIndex batchPhase view geometryProjection geometryViewProjection [||] eyeCenter entry.Value
+                renderer.FilteredSampler entry.Key renderer.GeometryViewport geometryImageViewArray compositionZTexture pipeline renderer.VulkanContext renderer
+            pipeline.Count () // advance draw indicies
+            i <- inc i
+
+        // render static surface pre-batches deferred
+        for entry in renderTasks.DeferredStaticPreBatches do
+            let struct (surface, preBatch) = entry.Value
+            VulkanRenderer3d.renderPhysicallyBasedDeferredSurfacePreBatch
+                renderer.GeometryRenderPassIndex frustumInterior frustumExterior frustumImposter renderPass
+                view geometryProjection geometryViewProjection [||] eyeCenter preBatch
+                renderer.FilteredSampler surface renderer.GeometryViewport geometryImageViewArray compositionZTexture pipeline renderer.VulkanContext renderer
+            pipeline.Count () // advance draw indicies
+
+        
+        // transition deferred geometry attachments to sampling
+        Texture.Texture.transitionLayoutAsync cb Hl.ColorAttachmentWrite Hl.ShaderRead depthTexture
+        Texture.Texture.transitionLayoutAsync cb Hl.ColorAttachmentWrite Hl.ShaderRead albedoTexture
+        Texture.Texture.transitionLayoutAsync cb Hl.ColorAttachmentWrite Hl.ShaderRead materialTexture
+        Texture.Texture.transitionLayoutAsync cb Hl.ColorAttachmentWrite Hl.ShaderRead normalPlusTexture
+        Texture.Texture.transitionLayoutAsync cb Hl.ColorAttachmentWrite Hl.ShaderRead subdermalPlusTexture
+        Texture.Texture.transitionLayoutAsync cb Hl.ColorAttachmentWrite Hl.ShaderRead scatterPlusTexture
+        Texture.Texture.transitionLayoutAsync cb Hl.ColorAttachmentWrite Hl.ShaderRead clearCoatPlusTexture
+        
+        
+        // run light mapping pass
+        let lightMappingTexture =
+
+            // but only when desired
+            if renderer.RendererConfig.LightMappingEnabled then
+
+                // TODO: DJL: implement.
+                renderer.BlackTexture
+
+            // just use black texture
+            else renderer.BlackTexture
+        
+        
+        // run ssao pass
+        let ssaoTextureFiltered =
+
+            // but only when desired
+            if renderer.RendererConfig.SsaoEnabled && renderer.LightingConfig.SsaoEnabled then
+
+                // TODO: DJL: implement.
+                renderer.WhiteTexture
+
+            // just use white texture
+            else renderer.WhiteTexture
+        
+        
+        // setup lighting attachment
+        let lightAccumTexture = renderer.PhysicallyBasedAttachments.LightingAttachment
+        let mutable rendering = Hl.makeRenderingInfo [|lightAccumTexture.ImageView|] None renderArea (Some clearColor)
+        Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
+        Vulkan.vkCmdEndRendering cb
+        
         
         // deferred render quad to lighting attachments
         let sssEnabled = if renderer.RendererConfig.SssEnabled && renderer.LightingConfig.SssEnabled then 1 else 0
@@ -5987,26 +6182,20 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         
         
         // setup coloring attachments
-        let (colorAttachment, depthAttachment2) = renderer.PhysicallyBasedAttachments.ColoringAttachments
+        let (colorTexture, depthTexture2) = renderer.PhysicallyBasedAttachments.ColoringAttachments
         // TODO: DJL: complete block.
         
         
         // transition sampled attachments to sampling
-        let vkc = renderer.VulkanContext
-        let cb = vkc.RenderCommandBuffer
-        Hl.recordTransitionLayout cb true 1 0 shadowTextureArray.Layers VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.ShaderRead shadowTextureArray.Image
-        for i in 0 .. dec shadowMaps.Length do Hl.recordTransitionLayout cb true 1 0 shadowMaps[i].Layers VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.ShaderRead shadowMaps[i].Image
-        for i in 0 .. dec shadowCascades.Length do Hl.recordTransitionLayout cb true 1 0 shadowCascades[i].Layers VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.ShaderRead shadowCascades[i].Image
-        Hl.recordTransitionLayout cb true 1 0 colorAttachment.Layers VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.ShaderRead colorAttachment.Image
-        Hl.recordTransitionLayout cb true 1 0 depthAttachment2.Layers VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.ShaderRead depthAttachment2.Image
+        Texture.Texture.transitionLayoutAsync cb Hl.ColorAttachmentWrite Hl.ShaderRead shadowTextureArray
+        for i in 0 .. dec shadowMaps.Length do Texture.Texture.transitionLayoutAsync cb Hl.ColorAttachmentWrite Hl.ShaderRead shadowMaps[i]
+        for i in 0 .. dec shadowCascades.Length do Texture.Texture.transitionLayoutAsync cb Hl.ColorAttachmentWrite Hl.ShaderRead shadowCascades[i]
+        Texture.Texture.transitionLayoutAsync cb Hl.ColorAttachmentWrite Hl.ShaderRead colorTexture
+        Texture.Texture.transitionLayoutAsync cb Hl.ColorAttachmentWrite Hl.ShaderRead depthTexture2
         
         
-        // setup composition attachments
-        let geometryResolution = renderer.GeometryViewport.Bounds.Size
-        let (compositionAttachment, compositionZAttachment) = renderer.PhysicallyBasedAttachments.CompositionAttachments
-        let renderArea = VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)
-        let clearColor = VkClearValue (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
-        let mutable rendering = Hl.makeRenderingInfo [|compositionAttachment.ImageView|] (Some compositionZAttachment.ImageView) renderArea (Some clearColor)
+        // setup composition attachment
+        let mutable rendering = Hl.makeRenderingInfo [|compositionTexture.ImageView|] None renderArea (Some clearColor)
         Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
         Vulkan.vkCmdEndRendering cb
         
@@ -6031,8 +6220,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                  renderer.CubeMapGeometry,
                  renderer.CubeMapSampler,
                  renderer.GeometryViewport,
-                 compositionAttachment,
-                 compositionZAttachment,
+                 compositionTexture,
+                 compositionZTexture,
                  renderer.SkyBoxPipeline,
                  vkc)
         | None -> ()
@@ -6052,9 +6241,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
                 fogEnabled fogType renderer.LightingConfig.FogStart renderer.LightingConfig.FogFinish renderer.LightingConfig.FogDensity renderer.LightingConfig.FogColor ssvfEnabled renderer.LightingConfig.SsvfIntensity forwardSsvfSteps renderer.LightingConfig.SsvfAsymmetry
                 ssrrEnabled renderer.LightingConfig.SsrrIntensity renderer.LightingConfig.SsrrDetail renderer.LightingConfig.SsrrRefinementsMax renderer.LightingConfig.SsrrRayThickness renderer.LightingConfig.SsrrDistanceCutoff renderer.LightingConfig.SsrrDistanceCutoffMargin renderer.LightingConfig.SsrrEdgeHorizontalMargin renderer.LightingConfig.SsrrEdgeVerticalMargin
-                depthAttachment2 colorAttachment renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap renderer.FilteredSampler renderer.CubeMapSampler renderer.ShadowSampler renderer.ColorSampler renderer.DepthSampler renderer.BrdfSampler shadowNear pipeline vkc
-        
-        let mutable forwardStaticDrawIndexLocal = 0 // fresh index for each render pass just to check if limit exceeded
+                depthTexture2 colorTexture renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap renderer.FilteredSampler renderer.CubeMapSampler renderer.ShadowSampler renderer.ColorSampler renderer.DepthSampler renderer.BrdfSampler shadowNear pipeline vkc
+            pipeline.BeginRenderPass () // reset index for checking against draw limit
         for (model, _, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest) in renderTasks.ForwardSorted do
             let (lightMapOrigins, lightMapMins, lightMapSizes, lightMapAmbientColors, lightMapAmbientBrightnesses, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
                 let surfaceBounds = surface.SurfaceBounds.Transform model
@@ -6070,14 +6258,13 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             match pipelineOpt with
             | Some pipeline ->
                 VulkanRenderer3d.renderPhysicallyBasedForwardSurfaces
-                    renderer.ForwardStaticDrawIndex renderer.GeometryRenderPassIndex forwardStaticDrawIndexLocal bonesArray (SList.singleton (model, presence, texCoordsOffset, properties))
+                    renderer.GeometryRenderPassIndex bonesArray (SList.singleton (model, presence, texCoordsOffset, properties))
                     lightMapIrradianceMaps lightMapEnvironmentFilterMaps shadowTextureArray shadowMaps shadowCascades lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses (min lightMapEnvironmentFilterMaps.Length renderTasks.LightMaps.Count) renderer.LightingConfig.LightMapSingletonBlendMargin
                     lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices (min lightIds.Length renderTasks.Lights.Count) renderer.ShadowMatrices
-                    surface depthTest true renderer.GeometryViewport compositionAttachment compositionZAttachment pipeline vkc renderer
+                    surface depthTest true renderer.GeometryViewport compositionTexture compositionZTexture pipeline vkc renderer
                 
-                // don't allow skipping descriptor sets if limit exceeded within a render pass
-                if forwardStaticDrawIndexLocal < pipeline.Pipeline.BulkDrawLimit then renderer.ForwardStaticDrawIndex <- inc renderer.ForwardStaticDrawIndex
-                forwardStaticDrawIndexLocal <- inc forwardStaticDrawIndexLocal
+                // advance draw indicies
+                pipeline.Count ()
             | None -> ()
         for pipeline in forwardPipelines do
             VulkanRenderer3d.endPhysicallyBasedForwardPipeline pipeline
@@ -6085,19 +6272,26 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         
         // blit from composition attachment to swapchain (just for now)
         // TODO: DJL: blit from final attachment, not composition.
-        Hl.recordTransitionLayout cb true 1 0 1 VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.TransferSrc compositionAttachment.Image
+        Texture.Texture.transitionLayoutAsync cb Hl.ColorAttachmentWrite Hl.TransferSrc compositionTexture
         Hl.recordTransitionLayout cb true 1 targetLayer 1 VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.TransferDst targetImage
         let mutable blit = Hl.makeBlit 0 0 0 targetLayer (VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)) targetBounds
-        Vulkan.vkCmdBlitImage (cb, compositionAttachment.Image, Hl.TransferSrc.VkImageLayout, targetImage, Hl.TransferDst.VkImageLayout, 1u, asPointer &blit, VkFilter.Linear)
-        Hl.recordTransitionLayout cb true 1 0 1 VkImageAspectFlags.Color Hl.TransferSrc Hl.ColorAttachmentWrite compositionAttachment.Image
+        Vulkan.vkCmdBlitImage (cb, compositionTexture.Image, Hl.TransferSrc.VkImageLayout, targetImage, Hl.TransferDst.VkImageLayout, 1u, asPointer &blit, VkFilter.Linear)
+        Texture.Texture.transitionLayoutAsync cb Hl.TransferSrc Hl.ColorAttachmentWrite compositionTexture
         Hl.recordTransitionLayout cb true 1 targetLayer 1 VkImageAspectFlags.Color Hl.TransferDst Hl.ColorAttachmentWrite targetImage
         
         // transition sampled attachments back to attachment
-        Hl.recordTransitionLayout cb true 1 0 shadowTextureArray.Layers VkImageAspectFlags.Color Hl.ShaderRead Hl.ColorAttachmentWrite shadowTextureArray.Image
-        for i in 0 .. dec shadowMaps.Length do Hl.recordTransitionLayout cb true 1 0 shadowMaps[i].Layers VkImageAspectFlags.Color Hl.ShaderRead Hl.ColorAttachmentWrite shadowMaps[i].Image
-        for i in 0 .. dec shadowCascades.Length do Hl.recordTransitionLayout cb true 1 0 shadowCascades[i].Layers VkImageAspectFlags.Color Hl.ShaderRead Hl.ColorAttachmentWrite shadowCascades[i].Image
-        Hl.recordTransitionLayout cb true 1 0 colorAttachment.Layers VkImageAspectFlags.Color Hl.ShaderRead Hl.ColorAttachmentWrite colorAttachment.Image
-        Hl.recordTransitionLayout cb true 1 0 depthAttachment2.Layers VkImageAspectFlags.Color Hl.ShaderRead Hl.ColorAttachmentWrite depthAttachment2.Image
+        Texture.Texture.transitionLayoutAsync cb Hl.ShaderRead Hl.ColorAttachmentWrite depthTexture
+        Texture.Texture.transitionLayoutAsync cb Hl.ShaderRead Hl.ColorAttachmentWrite albedoTexture
+        Texture.Texture.transitionLayoutAsync cb Hl.ShaderRead Hl.ColorAttachmentWrite materialTexture
+        Texture.Texture.transitionLayoutAsync cb Hl.ShaderRead Hl.ColorAttachmentWrite normalPlusTexture
+        Texture.Texture.transitionLayoutAsync cb Hl.ShaderRead Hl.ColorAttachmentWrite subdermalPlusTexture
+        Texture.Texture.transitionLayoutAsync cb Hl.ShaderRead Hl.ColorAttachmentWrite scatterPlusTexture
+        Texture.Texture.transitionLayoutAsync cb Hl.ShaderRead Hl.ColorAttachmentWrite clearCoatPlusTexture
+        Texture.Texture.transitionLayoutAsync cb Hl.ShaderRead Hl.ColorAttachmentWrite shadowTextureArray
+        for i in 0 .. dec shadowMaps.Length do Texture.Texture.transitionLayoutAsync cb Hl.ShaderRead Hl.ColorAttachmentWrite shadowMaps[i]
+        for i in 0 .. dec shadowCascades.Length do Texture.Texture.transitionLayoutAsync cb Hl.ShaderRead Hl.ColorAttachmentWrite shadowCascades[i]
+        Texture.Texture.transitionLayoutAsync cb Hl.ShaderRead Hl.ColorAttachmentWrite colorTexture
+        Texture.Texture.transitionLayoutAsync cb Hl.ShaderRead Hl.ColorAttachmentWrite depthTexture2
 
         // advance geometry render pass index
         renderer.GeometryRenderPassIndex <- inc renderer.GeometryRenderPassIndex
@@ -6121,7 +6315,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         
         // reset geometry render pass and draw indices
         renderer.GeometryRenderPassIndex <- 0
-        renderer.ForwardStaticDrawIndex <- 0
+        renderer.PhysicallyBasedPipelines.DeferredStaticPipeline.BeginFrame ()
+        renderer.PhysicallyBasedPipelines.ForwardStaticPipeline.BeginFrame ()
         
         // update viewports
         if renderer.GeometryViewport <> geometryViewport then
@@ -6343,8 +6538,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             PhysicallyBased.CreatePhysicallyBasedPipelines
                 (Constants.Render.LightMapsMaxDeferred,
                  Constants.Render.LightsMaxDeferred,
-                 compositionAttachment.VkFormat,
-                 compositionDepthAttachment.VkFormat,
+                 physicallyBasedAttachments,
                  vkc)
         
         // create shadow matrices buffer
@@ -6528,7 +6722,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               GeometryViewport = geometryViewport
               WindowViewport = windowViewport
               GeometryRenderPassIndex = 0
-              ForwardStaticDrawIndex = 0
               LazyTextureQueues = lazyTextureQueues
               TextureServer = textureServer
               TextureDisposer = textureDisposer

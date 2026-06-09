@@ -111,10 +111,10 @@ module ContourTessellation =
                     Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)
                     
                     // bind vertex and index buffers
-                    let mutable vertexBuf = vertexBuffer.[drawIndex]
+                    let mutable vertexBuf = fst vertexBuffer.[drawIndex]
                     let mutable vertexOffset = 0UL
                     Vulkan.vkCmdBindVertexBuffers (cb, 0u, 1u, asPointer &vertexBuf, asPointer &vertexOffset)
-                    Vulkan.vkCmdBindIndexBuffer (cb, indexBuffer.[drawIndex], 0UL, VkIndexType.Uint32)
+                    Vulkan.vkCmdBindIndexBuffer (cb, fst indexBuffer.[drawIndex], 0UL, VkIndexType.Uint32)
                     
                     // bind descriptor set
                     let mutable descriptorSet = pipeline.VkDescriptorSet 0 drawIndex

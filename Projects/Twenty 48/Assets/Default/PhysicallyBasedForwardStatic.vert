@@ -25,12 +25,15 @@ struct Transform
     mat4 view;
     mat4 projection;
     mat4 viewProjection;
+    mat4 viewInverse;
+    mat4 projectionInverse;
+    vec3 eyeCenter;
 };
 
 layout(binding = 0) buffer readonly TransformBlock
 {
     Transform transform;
-} transform;
+};
 
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec2 texCoords;
@@ -62,5 +65,5 @@ void main()
     normalOut = transpose(inverse(mat3(model))) * normal;
     heightPlusOut = heightPlus;
     subsurfacePlusOut = subsurfacePlus;
-    gl_Position = transform.transform.viewProjection * positionOut;
+    gl_Position = transform.viewProjection * positionOut;
 }

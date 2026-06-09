@@ -12,7 +12,7 @@ struct EnvironmentFilter
 layout(binding = 1) buffer readonly EnvironmentFilterBlock
 {
     EnvironmentFilter environmentFilter;
-} environmentFilter;
+};
 
 layout(binding = 2) uniform textureCube cubeMap;
 
@@ -80,8 +80,8 @@ vec3 importanceSampleGGX(vec2 xi, vec3 normal, float roughness)
 void main()
 {
     // compute normal
-    float roughness = environmentFilter.environmentFilter.roughness;
-    float resolution = environmentFilter.environmentFilter.resolution;
+    float roughness = environmentFilter.roughness;
+    float resolution = environmentFilter.resolution;
     vec3 normal = normalize(positionOut);
 
     // make the simplifying assumption that v equals r equals the normal

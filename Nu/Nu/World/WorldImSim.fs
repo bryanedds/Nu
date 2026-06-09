@@ -15,6 +15,9 @@ open Nu
 [<AutoOpen>]
 module WorldImSim =
 
+    /// Instructs ImSim initializing equality (|=) to act as static equality (.=) for a frame.
+    let mutable internal Initializing = false
+
     /// Instructs ImSim static equality (.=) to act as dynamic equality (@=) for a frame.
     let mutable internal Reinitializing = false
 
@@ -60,9 +63,17 @@ module WorldImSim =
             let dispatcher = entity.GetDispatcher world
             dispatcher.TryProcess (zeroDelta,  entity, world)
 
+        /// Whether ImSim is initializing this frame (such as on a code reload).
+        member this.InitializingImSim =
+            Initializing
+
         /// Whether ImSim is reinitializing this frame (such as on a code reload).
         member this.ReinitializingImSim =
             Reinitializing
+
+        /// Whether ImSim is initializing this frame (such as on a code reload).
+        static member getInitializingImSim (world : World) =
+            world.InitializingImSim
 
         /// Whether ImSim is reinitializing this frame (such as on a code reload).
         static member getReinitializingImSim (world : World) =
@@ -163,8 +174,8 @@ module WorldImSim =
                     true
             for arg in args do
                 if (match arg.ArgType with
-                    | InitializingArg -> initializing
-                    | ReinitializingArg -> initializing || Reinitializing
+                    | InitializingArg -> initializing || Initializing
+                    | ReinitializingArg -> initializing || Initializing || Reinitializing
                     | DynamicArg -> true) then
                     game.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
 
@@ -228,8 +239,8 @@ module WorldImSim =
 
             for arg in args do
                 if (match arg.ArgType with
-                    | InitializingArg -> initializing
-                    | ReinitializingArg -> initializing || Reinitializing
+                    | InitializingArg -> initializing || Initializing
+                    | ReinitializingArg -> initializing || Initializing || Reinitializing
                     | DynamicArg -> true) && group.GetExists world then
                     group.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
             if groupCreation && group.GetExists world && WorldModuleInternal.UpdatingSimulants && World.getGroupSelected group world then
@@ -249,8 +260,7 @@ module WorldImSim =
             let groupAddress = Address.makeFromArray (Array.add name world.ContextImSim.Names)
             World.setContext groupAddress world
             let group = Nu.Group groupAddress
-            // HACK: when group appears to exist as a placeholder created by Gaia, we destroy it so it can be made in a user-defined way.
-            if  group.Name = "Scene" &&
+            if  group.Name = "Scene" && // HACK: when group appears to exist as a placeholder created by Gaia, we destroy it so it can be made in a user-defined way.
                 group.GetExists world &&
                 Seq.isEmpty (World.getEntitiesSovereign group world) &&
                 getTypeName (group.GetDispatcher world) = nameof GroupDispatcher then
@@ -271,8 +281,8 @@ module WorldImSim =
                     true
             for arg in args do
                 if (match arg.ArgType with
-                    | InitializingArg -> initializing
-                    | ReinitializingArg -> initializing || Reinitializing
+                    | InitializingArg -> initializing || Initializing
+                    | ReinitializingArg -> initializing || Initializing || Reinitializing
                     | DynamicArg -> true) && group.GetExists world then
                     group.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
             if groupCreation && group.GetExists world && WorldModuleInternal.UpdatingSimulants && World.getGroupSelected group world then
@@ -350,8 +360,8 @@ module WorldImSim =
                 if arg.ArgLens.Name = Constants.Engine.MountOptPropertyName then
                     mountOptOpt <- ValueSome (arg.ArgValue :?> Entity Address option)
                 if (match arg.ArgType with
-                    | InitializingArg -> initializing
-                    | ReinitializingArg -> initializing || Reinitializing
+                    | InitializingArg -> initializing || Initializing
+                    | ReinitializingArg -> initializing || Initializing || Reinitializing
                     | DynamicArg -> true) && entity.GetExists world then
                     entity.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
             
@@ -408,8 +418,8 @@ module WorldImSim =
             // entity-specific initialization
             for arg in args do
                 if (match arg.ArgType with
-                    | InitializingArg -> initializing
-                    | ReinitializingArg -> initializing || Reinitializing
+                    | InitializingArg -> initializing || Initializing
+                    | ReinitializingArg -> initializing || Initializing || Reinitializing
                     | DynamicArg -> true) && entity.GetExists world then
                     entity.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
 

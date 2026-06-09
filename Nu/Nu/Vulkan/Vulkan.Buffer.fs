@@ -11,6 +11,12 @@ open Nu
 [<RequireQualifiedAccess>]
 module Buffer =
 
+    // provides id for a VkBuffer that is globally unique i.e. cannot be reused after VkBuffer is destroyed,
+    // which is essential for tracking descriptor writes
+    let mutable private BufferIdGenerationLock = obj ()
+    let mutable private BufferIdCounter = 0UL
+    let private GenBufferId () = lock BufferIdGenerationLock (fun () -> BufferIdCounter <- inc BufferIdCounter; BufferIdCounter)
+    
     // TODO: DJL: doc comments!
     type BufferType =
         | Staging
@@ -111,12 +117,16 @@ module Buffer =
     /// Abstraction for allocated buffer.
     type private BufferSingleton =
         private
-            { VkBuffer_ : VkBuffer
+            { Id_ : uint64
+              VkBuffer_ : VkBuffer
               Allocation_ : Allocation
               Mapping_ : voidptr
               Size_ : int
               UploadEnabled_ : bool }
 
+        /// The id.
+        member this.Id = this.Id_
+        
         /// The VkBuffer.
         member this.VkBuffer = this.VkBuffer_
         
@@ -152,7 +162,8 @@ module Buffer =
             
             // make BufferSingleton
             let bufferSingleton = 
-                { VkBuffer_ = vkBuffer
+                { Id_ = GenBufferId ()
+                  VkBuffer_ = vkBuffer
                   Allocation_ = Manual memory
                   Mapping_ = mapping
                   Size_ = int bufferInfo.size
@@ -176,7 +187,8 @@ module Buffer =
 
             // make BufferSingleton
             let bufferSingleton =
-                { VkBuffer_ = vkBuffer
+                { Id_ = GenBufferId ()
+                  VkBuffer_ = vkBuffer
                   Allocation_ = Vma allocation
                   Mapping_ = allocationInfo.pMappedData
                   Size_ = int bufferInfo.size
@@ -243,8 +255,8 @@ module Buffer =
         member private this.BufferSingleton = this.BufferSingletons.[this.CurrentIndex]
         member private this.BufferSize = this.BufferSizes.[this.CurrentIndex]
         
+        member this.Id = this.BufferSingleton.Id
         member this.VkBuffer = this.BufferSingleton.VkBuffer
-        member this.VkBuffers = Array.map (fun (bufferSingleton : BufferSingleton) -> bufferSingleton.VkBuffer) this.BufferSingletons
 
         /// Create a BufferSingleton.
         static member private createBufferSingleton size bufferType vkc =
@@ -301,8 +313,10 @@ module Buffer =
               mutable BufferSize : int
               BufferType : BufferType }
 
-        /// The VkBuffer at index for current frame in flight.
-        member this.Item index = this.BufferParallels.[index].VkBuffer
+        /// The VkBuffer at index for current frame in flight, along with its id.
+        member this.Item index =
+            let bufferParallel = this.BufferParallels.[index]
+            (bufferParallel.VkBuffer, bufferParallel.Id)
 
         /// The first VkBuffer for current frame in flight.
         member this.VkBuffer = this.BufferParallels.[0].VkBuffer

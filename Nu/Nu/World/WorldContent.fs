@@ -260,8 +260,7 @@ module Content =
             if contentOld.GroupFilePathOpt =/= content.GroupFilePathOpt then
                 match contentOld.GroupFilePathOpt with
                 | Some groupFilePath ->
-                    // NOTE: have to load the group file just get the name of the group to destroy...
-                    let groupDescriptorStr = File.ReadAllText groupFilePath
+                    let groupDescriptorStr = File.ReadAllText groupFilePath // NOTE: have to load the group file just get the name of the group to destroy...
                     let groupDescriptor = scvalue<GroupDescriptor> groupDescriptorStr
                     let groupName =
                         Constants.Engine.NamePropertyName

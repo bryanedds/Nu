@@ -96,7 +96,7 @@ module SkyBox =
         Pipeline.Pipeline.writeDescriptorStorageBuffer 0 1 renderPassIndex 0 pipeline.SkyBoxFragUniform.[renderPassIndex] pipeline.SkyBoxPipeline vkc
         
         // bind texture
-        Pipeline.Pipeline.writeDescriptorSampledImage 0 2 renderPassIndex 0 cubeMap.ImageView pipeline.SkyBoxPipeline vkc
+        Pipeline.Pipeline.writeDescriptorSampledImage 0 2 renderPassIndex 0 cubeMap pipeline.SkyBoxPipeline vkc
         Pipeline.Pipeline.writeDescriptorSampler 1 0 0 0 sampler pipeline.SkyBoxPipeline vkc
 
         // make viewport and scissor
@@ -144,7 +144,7 @@ module SkyBox =
                 Hl.reportDrawCall 1
         
                 // end render
-                Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
+                Vulkan.vkCmdEndRendering cb
 
             // abort
             | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."

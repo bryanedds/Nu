@@ -221,7 +221,7 @@ module Render =
         | null -> if OperatingSystem.IsMacOS () || OperatingSystem.IsAndroid () || OperatingSystem.IsIOS() then AstcCompression else BcCompression
         | value -> scvalue value
     let [<Literal>] SpriteBatchSize = 192 // NOTE: remember to update SPRITE_BATCH_SIZE in shaders when changing this!
-    let [<Literal>] SpriteBorderTexelScalar = 0.005f
+    let [<Literal>] SpriteBorderTexelScalar = 0.001f
     let [<Literal>] SpriteMessagesPrealloc = 256
     let [<Literal>] StaticModelMessagesPrealloc = 256
     let [<Literal>] StaticModelSurfaceMessagesPrealloc = 256
@@ -337,7 +337,7 @@ module Render =
     let [<Uniform>] DepthOfFieldFocalPointDefault = Vector2.Zero
     let [<Literal>] ChromaticAberrationEnabledGlobalDefault = true
     let [<Literal>] ChromaticAberrationEnabledLocalDefault = false
-    let [<Uniform>] ChromaticAberrationChannelOffsetsDefault = Vector3 (0.006f, 0.004f, -0.004f)
+    let [<Uniform>] ChromaticAberrationChannelOffsetsDefault = Vector3 (0.003f, 0.002f, -0.002f)
     let [<Uniform>] ChromaticAberrationFocalPointDefault = Vector2.Zero
     let [<Literal>] FxaaEnabledDefault = true
     let [<Literal>] FxaaSpanMaxDefault = 16.0f
@@ -378,7 +378,8 @@ module Render =
     let [<Literal>] SpritesMax = 8192
     let [<Literal>] SpriteBatchesMax = 8192
     let [<Literal>] ContoursMax = 8192
-    let [<Literal>] ForwardStaticDrawsMax = 128
+    let [<Literal>] DeferredStaticDrawsMax = 64
+    let [<Literal>] ForwardStaticDrawsMax = 64
 
     let [<Uniform>] mutable SkipRendering3d = false
 

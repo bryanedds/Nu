@@ -23,6 +23,7 @@
         <Tailcalls>False</Tailcalls>
         <WarningLevel>5</WarningLevel>
         <WarningsAsErrors>FS0026;FS0049;FS3239;$(WarningsAsErrors)</WarningsAsErrors>
+		<DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference> <!-- Use the one from Nu project -->
 	</PropertyGroup>
 
     <!-- Build Nu.Pipe only once even for multi-project builds -->
@@ -91,7 +92,7 @@
 		<Reference Include="TiledSharp">
 			<HintPath>..\..\Nu\Nu.Dependencies\TiledSharp\lib\netstandard2.0\TiledSharp.dll</HintPath>
 		</Reference>
-		<PackageReference Include="FSharp.Compiler.Service" Version="43.12.203" />
+		<PackageReference Include="FSharp.Compiler.Service" Version="43.12.204" />
 	</ItemGroup>
 
 	<ItemGroup>

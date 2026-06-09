@@ -150,7 +150,7 @@ module Sprite =
             Pipeline.Pipeline.writeDescriptorStorageBuffer 0 1 drawIndex 0 spriteFragUniform.[drawIndex] pipeline vkc
             
             // bind texture
-            Pipeline.Pipeline.writeDescriptorSampledImage 0 2 drawIndex 0 texture.ImageView pipeline vkc
+            Pipeline.Pipeline.writeDescriptorSampledImage 0 2 drawIndex 0 texture pipeline vkc
             Pipeline.Pipeline.writeDescriptorSampler 1 0 0 0 sampler pipeline vkc
 
             // make viewport and scissor
@@ -215,7 +215,7 @@ module Sprite =
                     Hl.reportDrawCall 1
             
                     // end render
-                    Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
+                    Vulkan.vkCmdEndRendering cb
 
                 // abort
                 | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."

@@ -440,7 +440,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             match insetOpt with
             | ValueSome inset ->
                 let mx = inset.Min.X * texelWidth + borderWidth
-                let my = (inset.Min.Y + inset.Size.Y) * texelHeight - borderHeight
+                let my = inset.Min.Y * texelHeight + inset.Size.Y * texelHeight - borderHeight // distributes texelHeight multiplication to preserve precision
                 let sx = inset.Size.X * texelWidth - borderWidth * 2.0f
                 let sy = -inset.Size.Y * texelHeight + borderHeight * 2.0f
                 Box2 (mx, my, sx, sy)
@@ -846,6 +846,9 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                         Texture.TextureInternal.create
                                             Texture.MipmapNone Texture.AttachmentNone Texture.Texture2d [||]
                                             Texture.Uncompressed.ImageFormat Texture.Uncompressed.PixelFormat metadata vkc
+                                    
+                                    // TODO: DJL: investigate safety of asynchronous upload with regard to memoized access in subsequent frames
+                                    // which does not explicitly wait for upload.
                                     Texture.TextureInternal.uploadAsync vkc.RenderCommandBuffer metadata 0 0 textSurface.pixels textTextureInternal vkc
                                     let textTexture = Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = textTextureInternal }
                                     

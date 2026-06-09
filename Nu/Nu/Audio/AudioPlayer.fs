@@ -79,7 +79,7 @@ type AudioPlayer =
     abstract EnqueueMessage : message : AudioMessage -> unit
     
     /// Get the current optionally-playing song.
-    abstract SongOpt : SongDescriptor option // TODO: We can support multiple tracks for multiple songs.
+    abstract SongOpt : SongDescriptor option
     
     /// Get the current song's position or 0.0 if one isn't playing.
     abstract SongPosition : GameTime
