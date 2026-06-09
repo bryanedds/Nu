@@ -403,11 +403,11 @@ module WorldModule2 =
 
             for arg in args do
                 if (match arg.ArgType with
-                    | InitializingArg -> initializing
-                    | ReinitializingArg -> initializing || Reinitializing
+                    | InitializingArg -> initializing || Initializing
+                    | ReinitializingArg -> initializing || Initializing || Reinitializing
                     | DynamicArg -> true) && screen.GetExists world then
                     screen.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
-            if (initializing || Reinitializing) && screen.GetExists world then
+            if (initializing || Initializing || Reinitializing) && screen.GetExists world then
                 World.applyScreenBehavior setScreenSlide behavior screen world
             if screenCreation && screen.GetExists world then
                 WorldModuleInternal.tryProcessScreen true screen world
