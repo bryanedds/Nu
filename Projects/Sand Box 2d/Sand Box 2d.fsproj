@@ -29,6 +29,7 @@
         <Tailcalls>False</Tailcalls>
         <WarningLevel>5</WarningLevel>
         <WarningsAsErrors>FS0026;FS0049;FS3239;$(WarningsAsErrors)</WarningsAsErrors>
+		<DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference> <!-- Use the one from Nu project -->
  
         <!-- Mobile app settings -->
         <!-- - Mobile application name -->
