@@ -366,7 +366,7 @@ module WorldImSim =
                     entity.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
             
             // update mount opt when appropriate
-            if mountOptOpt.IsNone && (initializing || Reinitializing) && entity.GetExists world && entity.Surnames.Length > 1 then
+            if mountOptOpt.IsNone && (initializing || Initializing || Reinitializing) && entity.GetExists world && entity.Surnames.Length > 1 then
                 entity.SetMountOpt (Some Address.parent) world
             
             // process entity when appropriate
@@ -424,7 +424,7 @@ module WorldImSim =
                     entity.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
 
             // update mount opt when appropriate
-            if mountOptOpt.IsNone && (initializing || Reinitializing) && entity.GetExists world && entity.Surnames.Length > 1 then
+            if mountOptOpt.IsNone && (initializing || Initializing || Reinitializing) && entity.GetExists world && entity.Surnames.Length > 1 then
                 entity.SetMountOpt (Some Address.parent) world
 
             // process entity when appropriate
