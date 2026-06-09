@@ -173,6 +173,7 @@
 
     <ItemGroup>
         <PackageReference Update="FSharp.Core" Version="10.0.103" />
+        <PackageReference Update="Microsoft.Maui.*" RemoveAssets="runtime" /> <!-- Make <UseMaui> package references build time only. We don't use them at runtime. -->
         <Reference Include="AssimpNet">
             <HintPath>$(AssimpNetOriginalDir)/AssimpNet.dll</HintPath>
             <HintPath Condition="'$(TargetPlatformIdentifier)'=='ios'">$(AssimpNetPatchedDir)/AssimpNet.dll</HintPath>
