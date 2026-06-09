@@ -172,10 +172,12 @@ module WorldImSim =
                 | (false, _) ->
                     World.addSimulantJournal game.GameAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = () } world
                     true
+            let initializing = initializing || Initializing
+            let reinitializing = initializing || Reinitializing
             for arg in args do
                 if (match arg.ArgType with
-                    | InitializingArg -> initializing || Initializing
-                    | ReinitializingArg -> initializing || Initializing || Reinitializing
+                    | InitializingArg -> initializing
+                    | ReinitializingArg -> reinitializing
                     | DynamicArg -> true) then
                     game.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
 
@@ -237,10 +239,12 @@ module WorldImSim =
                     // fin
                     true
 
+            let initializing = initializing || Initializing
+            let reinitializing = initializing || Reinitializing
             for arg in args do
                 if (match arg.ArgType with
-                    | InitializingArg -> initializing || Initializing
-                    | ReinitializingArg -> initializing || Initializing || Reinitializing
+                    | InitializingArg -> initializing
+                    | ReinitializingArg -> reinitializing
                     | DynamicArg -> true) && group.GetExists world then
                     group.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
             if groupCreation && group.GetExists world && WorldModuleInternal.UpdatingSimulants && World.getGroupSelected group world then
@@ -279,10 +283,12 @@ module WorldImSim =
                         World.setGroupProtection DeclarativeProtection group world |> ignore<bool>
                     World.addSimulantJournal group.GroupAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = () } world
                     true
+            let initializing = initializing || Initializing
+            let reinitializing = initializing || Reinitializing
             for arg in args do
                 if (match arg.ArgType with
-                    | InitializingArg -> initializing || Initializing
-                    | ReinitializingArg -> initializing || Initializing || Reinitializing
+                    | InitializingArg -> initializing
+                    | ReinitializingArg -> reinitializing
                     | DynamicArg -> true) && group.GetExists world then
                     group.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
             if groupCreation && group.GetExists world && WorldModuleInternal.UpdatingSimulants && World.getGroupSelected group world then
@@ -354,19 +360,23 @@ module WorldImSim =
                     World.addSimulantJournal entity.EntityAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = () } world
                     true
 
+            // compute initialization states
+            let initializing = initializing || Initializing
+            let reinitializing = initializing || Reinitializing
+
             // entity-specific initialization
             let mutable mountOptOpt = ValueNone
             for arg in args do
                 if arg.ArgLens.Name = Constants.Engine.MountOptPropertyName then
                     mountOptOpt <- ValueSome (arg.ArgValue :?> Entity Address option)
                 if (match arg.ArgType with
-                    | InitializingArg -> initializing || Initializing
-                    | ReinitializingArg -> initializing || Initializing || Reinitializing
+                    | InitializingArg -> initializing
+                    | ReinitializingArg -> reinitializing
                     | DynamicArg -> true) && entity.GetExists world then
                     entity.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
             
             // update mount opt when appropriate
-            if mountOptOpt.IsNone && (initializing || Initializing || Reinitializing) && entity.GetExists world && entity.Surnames.Length > 1 then
+            if mountOptOpt.IsNone && reinitializing && entity.GetExists world && entity.Surnames.Length > 1 then
                 entity.SetMountOpt (Some Address.parent) world
             
             // process entity when appropriate
@@ -415,16 +425,20 @@ module WorldImSim =
                     // fin
                     true
 
+            // compute initialization states
+            let initializing = initializing || Initializing
+            let reinitializing = initializing || Reinitializing
+
             // entity-specific initialization
             for arg in args do
                 if (match arg.ArgType with
-                    | InitializingArg -> initializing || Initializing
-                    | ReinitializingArg -> initializing || Initializing || Reinitializing
+                    | InitializingArg -> initializing
+                    | ReinitializingArg -> reinitializing
                     | DynamicArg -> true) && entity.GetExists world then
                     entity.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
 
             // update mount opt when appropriate
-            if mountOptOpt.IsNone && (initializing || Initializing || Reinitializing) && entity.GetExists world && entity.Surnames.Length > 1 then
+            if mountOptOpt.IsNone && reinitializing && entity.GetExists world && entity.Surnames.Length > 1 then
                 entity.SetMountOpt (Some Address.parent) world
 
             // process entity when appropriate

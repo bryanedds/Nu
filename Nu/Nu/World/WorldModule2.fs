@@ -400,14 +400,16 @@ module WorldModule2 =
 
                     // fin
                     true
-
+                    
+            let initializing = initializing || Initializing
+            let reinitializing = initializing || Reinitializing
             for arg in args do
                 if (match arg.ArgType with
-                    | InitializingArg -> initializing || Initializing
-                    | ReinitializingArg -> initializing || Initializing || Reinitializing
+                    | InitializingArg -> initializing
+                    | ReinitializingArg -> reinitializing
                     | DynamicArg -> true) && screen.GetExists world then
                     screen.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
-            if (initializing || Initializing || Reinitializing) && screen.GetExists world then
+            if reinitializing && screen.GetExists world then
                 World.applyScreenBehavior setScreenSlide behavior screen world
             if screenCreation && screen.GetExists world then
                 WorldModuleInternal.tryProcessScreen true screen world
