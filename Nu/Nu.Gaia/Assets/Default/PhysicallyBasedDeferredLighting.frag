@@ -14,6 +14,81 @@ const float SHADOW_CASCADE_DENSITY_BONUS = 0.5;
 const float SHADOW_FOV_MAX = 2.1;
 const float CLEAR_COAT_REFRACTIVE_INDEX = 1.5; // typical for automotive clear coat
 
+struct Transform
+{
+    mat4 view;
+    mat4 projection;
+    mat4 viewProjection;
+    mat4 viewInverse;
+    mat4 projectionInverse;
+    vec3 eyeCenter;
+};
+
+struct Lighting
+{
+    float lightCutoffMargin;
+    int lightShadowSamples;
+    float lightShadowBias;
+    float lightShadowSampleScalar;
+    float lightShadowExponent;
+    float lightShadowDensity;
+    int sssEnabled;
+    int lightsCount;
+    float shadowNear;
+};
+
+struct Light
+{
+    vec3 lightOrigins;
+    vec3 lightDirections;
+    vec3 lightColors;
+    float lightBrightnesses;
+    float lightAttenuationLinears;
+    float lightAttenuationQuadratics;
+    float lightCutoffs;
+    int lightTypes;
+    float lightConeInners;
+    float lightConeOuters;
+    int lightDesireFogs;
+    int lightShadowIndices;
+};
+
+struct ShadowMatrix
+{
+    mat4 shadowMatrix;
+};
+
+layout(binding = 0) buffer readonly TransformBlock
+{
+    Transform transform;
+};
+
+layout(binding = 1) buffer readonly LightingBlock
+{
+    Lighting lighting;
+};
+
+layout(binding = 2) buffer readonly LightBlock
+{
+    Light lights[LIGHTS_MAX];
+};
+
+layout(binding = 3) buffer readonly ShadowMatrixBlock
+{
+    ShadowMatrix shadowMatrices[SHADOW_TEXTURES_MAX + SHADOW_CASCADES_MAX * SHADOW_CASCADE_LEVELS];
+};
+
+layout(binding = 4) uniform texture2D depthTexture;
+layout(binding = 5) uniform texture2D albedoTexture;
+layout(binding = 6) uniform texture2D materialTexture;
+layout(binding = 7) uniform texture2D normalPlusTexture;
+layout(binding = 8) uniform texture2D subdermalPlusTexture;
+layout(binding = 9) uniform texture2D scatterPlusTexture;
+layout(binding = 10) uniform texture2D clearCoatPlusTexture;
+layout(binding = 11) uniform texture2DArray shadowTextures;
+layout(binding = 12) uniform textureCube shadowMaps[SHADOW_MAPS_MAX];
+layout(binding = 13) uniform texture2DArray shadowCascades[SHADOW_CASCADES_MAX];
+
 uniform vec3 eyeCenter;
 uniform mat4 view;
 uniform mat4 viewInverse;
@@ -26,16 +101,7 @@ uniform float lightShadowSampleScalar;
 uniform float lightShadowExponent;
 uniform float lightShadowDensity;
 uniform int sssEnabled;
-uniform sampler2D depthTexture;
-uniform sampler2D albedoTexture;
-uniform sampler2D materialTexture;
-uniform sampler2D normalPlusTexture;
-uniform sampler2D subdermalPlusTexture;
-uniform sampler2D scatterPlusTexture;
-uniform sampler2D clearCoatPlusTexture;
-uniform sampler2DArray shadowTextures;
-uniform samplerCube shadowMaps[SHADOW_MAPS_MAX];
-uniform sampler2DArray shadowCascades[SHADOW_CASCADES_MAX];
+
 uniform vec3 lightOrigins[LIGHTS_MAX];
 uniform vec3 lightDirections[LIGHTS_MAX];
 uniform vec3 lightColors[LIGHTS_MAX];
@@ -51,7 +117,7 @@ uniform int lightsCount;
 uniform float shadowNear;
 uniform mat4 shadowMatrices[SHADOW_TEXTURES_MAX + SHADOW_CASCADES_MAX * SHADOW_CASCADE_LEVELS];
 
-in vec2 texCoordsOut;
+layout(location = 0) in vec2 texCoordsOut;
 
 layout(location = 0) out vec3 frag;
 

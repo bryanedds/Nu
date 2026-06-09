@@ -431,6 +431,18 @@ module PhysicallyBased =
         [<FieldOffset(148)>] val mutable shadowNear : single
     
     [<Struct; StructLayout(LayoutKind.Explicit)>]
+    type Lighting2 =
+        [<FieldOffset(0)>] val mutable lightCutoffMargin : single
+        [<FieldOffset(4)>] val mutable lightShadowSamples : int
+        [<FieldOffset(8)>] val mutable lightShadowBias : single
+        [<FieldOffset(12)>] val mutable lightShadowSampleScalar : single
+        [<FieldOffset(16)>] val mutable lightShadowExponent : single
+        [<FieldOffset(20)>] val mutable lightShadowDensity : single
+        [<FieldOffset(24)>] val mutable sssEnabled : int
+        [<FieldOffset(28)>] val mutable lightsCount : int
+        [<FieldOffset(32)>] val mutable shadowNear : single
+    
+    [<Struct; StructLayout(LayoutKind.Explicit)>]
     type Bone =
         [<FieldOffset(0)>] val mutable bone : Matrix4x4
     
