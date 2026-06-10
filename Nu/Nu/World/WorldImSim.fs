@@ -121,7 +121,7 @@ module WorldImSim =
         static member doSubscriptionCount<'d> name (eventAddress : 'd Address) (world : World) : int =
             World.doSubscriptionPlus<'d, 'd> id name eventAddress world |> FQueue.length
 
-        /// ImGui subscribe to the given screen's selection events.
+        /// ImSim subscribe to the given screen's selection events.
         static member doSubscriptionToSelectionEvents name (screen : Screen) (world : World) : SelectionEventData FQueue =
             let selects = World.doSubscriptionPlus (fun () -> (Gen.id64, Select)) name screen.SelectEvent world
             let incomingStarts = World.doSubscriptionPlus (fun () -> (Gen.id64, IncomingStart)) name screen.IncomingStartEvent world
@@ -133,7 +133,7 @@ module WorldImSim =
             results.Sort (fun (leftId, _) (rightId, _) -> leftId.CompareTo rightId)
             results |> Seq.map snd |> FQueue.ofSeq
 
-        /// ImGui subscribe to the given entity's body events.
+        /// ImSim subscribe to the given entity's body events.
         static member doSubscriptionToBodyEvents name (entity : Entity) (world : World) : BodyEventData FQueue =
             let penetrations = World.doSubscriptionPlus (fun data -> (Gen.id64, BodyPenetrationData data)) name entity.BodyPenetrationEvent world
             let separationExplicits = World.doSubscriptionPlus (fun data -> (Gen.id64, BodySeparationExplicitData data)) name entity.BodySeparationExplicitEvent world
@@ -336,7 +336,7 @@ module WorldImSim =
         /// Begin the ImSim declaration of a entity read from the given file path with the given arguments.
         /// Note that changing the file path over time has no effect as only the first moment is used.
         static member beginEntityFromFile name entityFilePath args (world : World) =
-            
+
             // decide on entity creation
             Address.assertIdentifierName name
             if world.ContextImSim.Names.Length < 3 then raise (InvalidOperationException "ImSim entity declared outside of valid ImSim context (must be called in a Group or Entity context).")
@@ -374,11 +374,11 @@ module WorldImSim =
                     | ReinitializingArg -> reinitializing
                     | DynamicArg -> true) && entity.GetExists world then
                     entity.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
-            
+
             // update mount opt when appropriate
             if mountOptOpt.IsNone && reinitializing && entity.GetExists world && entity.Surnames.Length > 1 then
                 entity.SetMountOpt (Some Address.parent) world
-            
+
             // process entity when appropriate
             if entityCreation && entity.GetExists world && WorldModuleInternal.UpdatingSimulants && World.getEntitySelected entity world then
                 WorldModuleInternal.tryProcessEntity true entity world
