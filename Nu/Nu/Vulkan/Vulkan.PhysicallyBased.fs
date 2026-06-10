@@ -484,7 +484,7 @@ module PhysicallyBased =
         { mutable DrawIndex : int // for actually indexing buffers and descriptor sets across frame
           mutable DrawIndexPerRenderPass : int // for handling the draw limit within render pass
           TransformUniform : Buffer.Buffer
-          CommonUniform : Buffer.Buffer
+          LightingUniform : Buffer.Buffer
           BoneUniform : Buffer.Buffer
           LightMapUniform : Buffer.Buffer
           LightsGeneralUniform : Buffer.Buffer
@@ -1362,7 +1362,7 @@ module PhysicallyBased =
 
         // create set 0 uniform buffers
         let transformUniform = Buffer.Buffer.create sizeof<Transform> Buffer.Storage vkc
-        let commonUniform = Buffer.Buffer.create sizeof<Lighting> Buffer.Storage vkc
+        let lightingUniform = Buffer.Buffer.create sizeof<Lighting> Buffer.Storage vkc
         
         // create set 1 uniform buffers
         let shadowMatrixMax = Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels
@@ -1377,7 +1377,7 @@ module PhysicallyBased =
             { DrawIndex = 0
               DrawIndexPerRenderPass = 0
               TransformUniform = transformUniform
-              CommonUniform = commonUniform
+              LightingUniform = lightingUniform
               BoneUniform = boneUniform
               LightMapUniform = lightMapUniform
               LightsGeneralUniform = lightsGeneralUniform
@@ -1391,7 +1391,7 @@ module PhysicallyBased =
     /// Destroy PhysicallyBasedPipeline.
     let DestroyPhysicallyBasedPipeline physicallyBasedPipeline vkc =
         Buffer.Buffer.destroy physicallyBasedPipeline.TransformUniform vkc
-        Buffer.Buffer.destroy physicallyBasedPipeline.CommonUniform vkc
+        Buffer.Buffer.destroy physicallyBasedPipeline.LightingUniform vkc
         Buffer.Buffer.destroy physicallyBasedPipeline.BoneUniform vkc
         Buffer.Buffer.destroy physicallyBasedPipeline.LightMapUniform vkc
         Buffer.Buffer.destroy physicallyBasedPipeline.LightsGeneralUniform vkc
@@ -1616,9 +1616,9 @@ module PhysicallyBased =
         lighting.ssrrEdgeVerticalMargin <- ssrrEdgeVerticalMargin
         lighting.shadowNear <- shadowNear
         Buffer.Buffer.uploadValue renderPassIndex 0 0 transform pipeline.TransformUniform vkc
-        Buffer.Buffer.uploadValue renderPassIndex 0 0 lighting pipeline.CommonUniform vkc
+        Buffer.Buffer.uploadValue renderPassIndex 0 0 lighting pipeline.LightingUniform vkc
         Pipeline.Pipeline.writeDescriptorStorageBuffer 0 0 renderPassIndex 0 pipeline.TransformUniform.[renderPassIndex] pipeline.Pipeline vkc
-        Pipeline.Pipeline.writeDescriptorStorageBuffer 0 1 renderPassIndex 0 pipeline.CommonUniform.[renderPassIndex] pipeline.Pipeline vkc
+        Pipeline.Pipeline.writeDescriptorStorageBuffer 0 1 renderPassIndex 0 pipeline.LightingUniform.[renderPassIndex] pipeline.Pipeline vkc
 
         // bind common textures
         Pipeline.Pipeline.writeDescriptorSampledImage 0 2 renderPassIndex 0 depthTexture pipeline.Pipeline vkc
