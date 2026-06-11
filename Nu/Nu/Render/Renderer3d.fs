@@ -872,14 +872,14 @@ type private SortableLightMap =
 
     /// Sort light maps into array for uploading to OpenGL.
     /// TODO: consider getting rid of allocation here.
-    static member sortLightMaps lightMapsMax position boundsOpt lightMaps =
+    static member sortLightMaps lightMapsMax position boundsOpt irradianceMapDefault environmentMapDefault lightMaps =
         let lightMapOrigins = Array.zeroCreate<Vector3> lightMapsMax
         let lightMapMins = Array.zeroCreate<Vector3> lightMapsMax
         let lightMapSizes = Array.zeroCreate<Vector3> lightMapsMax
         let lightMapAmbientColors = Array.zeroCreate<Color> lightMapsMax
         let lightMapAmbientBrightnesses = Array.zeroCreate<single> lightMapsMax
-        let lightMapIrradianceMaps = Array.init<Texture.Texture> lightMapsMax (fun _ -> Texture.EmptyTexture)
-        let lightMapEnvironmentFilterMaps = Array.init<Texture.Texture> lightMapsMax (fun _ -> Texture.EmptyTexture)
+        let lightMapIrradianceMaps = Array.replicate<Texture.Texture> lightMapsMax irradianceMapDefault
+        let lightMapEnvironmentFilterMaps = Array.replicate<Texture.Texture> lightMapsMax environmentMapDefault
         let lightMapsFiltered =
             match boundsOpt with
             | Some (bounds : Box3) -> lightMaps |> Array.filter (fun lightMap -> lightMap.SortableLightMapBounds.Intersects bounds)
@@ -6247,7 +6247,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         for (model, _, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest) in renderTasks.ForwardSorted do
             let (lightMapOrigins, lightMapMins, lightMapSizes, lightMapAmbientColors, lightMapAmbientBrightnesses, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
                 let surfaceBounds = surface.SurfaceBounds.Transform model
-                SortableLightMap.sortLightMaps Constants.Render.LightMapsMaxForward model.Translation (Some surfaceBounds) lightMaps
+                SortableLightMap.sortLightMaps Constants.Render.LightMapsMaxForward model.Translation (Some surfaceBounds) lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMaps
             let (lightIds, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightTypes, lightConeInners, lightConeOuters, lightDesireFogs) =
                 SortableLight.sortLights Constants.Render.LightsMaxForward model.Translation renderTasks.Lights
             let lightShadowIndices =
