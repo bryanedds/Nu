@@ -8,6 +8,7 @@ namespace Nu
 open System
 open System.Collections.Generic
 open System.Numerics
+open System.Reflection
 open System.Runtime.InteropServices
 open FSharp.NativeInterop
 open SDL
@@ -69,8 +70,25 @@ module SdlDeps =
             member this.Dispose () =
                 this.Destroy ()
 
-    type private LogOutputDelegate =
-        delegate of nativeint * int * SDL_LogPriority * nativeptr<byte> -> unit
+    type private LogOutputCallback =
+#nowarn 202
+        [<UnmanagedCallersOnly(CallConvs = [| typeof<System.Runtime.CompilerServices.CallConvCdecl> |])>]
+#warnon 202
+        static member Invoke (_ : nativeint, category : int, priority : SDL_LogPriority, message : nativeptr<byte>) =
+            let message = SDL3.PtrToStringUTF8 message
+            let categoryStr = " (Category " + string category + ")"
+            match priority with
+            | SDL_LogPriority.SDL_LOG_PRIORITY_VERBOSE
+            | SDL_LogPriority.SDL_LOG_PRIORITY_DEBUG
+            | SDL_LogPriority.SDL_LOG_PRIORITY_INFO -> Log.info (message + categoryStr)
+            | SDL_LogPriority.SDL_LOG_PRIORITY_WARN -> Log.warn (message + categoryStr)
+            | SDL_LogPriority.SDL_LOG_PRIORITY_ERROR -> Log.error (message + categoryStr)
+            | SDL_LogPriority.SDL_LOG_PRIORITY_CRITICAL -> Log.fail (message + categoryStr)
+            | _ -> ()
+
+    let private logOutputCallbackPtr = lazy (
+        let logOutputMethod = typeof<LogOutputCallback>.GetMethod(nameof LogOutputCallback.Invoke, BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic).MethodHandle
+        logOutputMethod.GetFunctionPointer ())
 
     let private sdlVersionToString version =
         string (SDL3.SDL_VERSIONNUM_MAJOR version) + "." +
@@ -157,19 +175,8 @@ module SdlDeps =
         match attemptPerformSdlInit
             (fun () ->
 
-                // setup SDL logging
-                SDL3.SDL_SetLogOutputFunction
-                    (Marshal.GetFunctionPointerForDelegate<LogOutputDelegate>(fun _ category priority message ->
-                        let message = SDL3.PtrToStringUTF8 message
-                        match priority with
-                        | SDL_LogPriority.SDL_LOG_PRIORITY_VERBOSE
-                        | SDL_LogPriority.SDL_LOG_PRIORITY_DEBUG
-                        | SDL_LogPriority.SDL_LOG_PRIORITY_INFO -> Log.info (message + " (Category " + string category + ")")
-                        | SDL_LogPriority.SDL_LOG_PRIORITY_WARN -> Log.warn (message + " (Category " + string category + ")")
-                        | SDL_LogPriority.SDL_LOG_PRIORITY_ERROR -> Log.error (message + " (Category " + string category + ")")
-                        | SDL_LogPriority.SDL_LOG_PRIORITY_CRITICAL -> Log.fail (message + " (Category " + string category + ")")
-                        | _ -> ()),
-                     0n)
+                // setup SDL logging (use UnmanagedCallersOnly pointer for AOT compatibility)
+                SDL3.SDL_SetLogOutputFunction (logOutputCallbackPtr.Value, 0n)
 
                 // attempt to initialize sdl
                 Log.info "Initializing SDL 3..."
@@ -192,7 +199,7 @@ module SdlDeps =
 
                     // init sdl callback for app backgrounding on mobile devices
                     // NOTE: DJL: this happens before SDL window creation to ensure no backgrounding events are missed.
-                    SDL3.SDL_SetEventFilter (Vortice.Vulkan.Hl.backgroundingCallback, 0n)
+                    SDL3.SDL_SetEventFilter (Vortice.Vulkan.Hl.backgroundingCallback.Value, 0n)
                     
                     // attempt to create window
                     let windowConfig = sdlConfig.WindowConfig

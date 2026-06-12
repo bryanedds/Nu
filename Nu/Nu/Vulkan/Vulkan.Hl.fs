@@ -3,6 +3,7 @@
 
 namespace Vortice.Vulkan
 open System
+open System.Reflection
 open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
 open System.Collections.Generic
@@ -74,6 +75,9 @@ module Hl =
 
     // callback to inform render loop about app backgrounding
     // official documentation for android case: https://github.com/libsdl-org/SDL/blob/main/docs/README-android.md#activity-lifecycle
+#nowarn 202
+    [<UnmanagedCallersOnly(CallConvs = [| typeof<System.Runtime.CompilerServices.CallConvCdecl> |])>]
+#warnon 202
     let private handleBackgrounding (userData : voidptr) (event : SDL_Event nativeptr) : SDLBool =
         ignore userData
         let event = NativePtr.toByRef event
@@ -88,12 +92,9 @@ module Hl =
             true
         | _ -> true
 
-    // set up delegate for app backgrounding callback
-    // TODO: DJL: for mobile devices: https://learn.microsoft.com/en-us/dotnet/standard/native-interop/calling-conventions#when-you-can-omit-the-calling-convention.
-    [<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
-    type private BackgroundingDelegate = delegate of userData : voidptr * event : SDL_Event nativeptr -> SDLBool
-    let private backgroundingDelegate = BackgroundingDelegate handleBackgrounding
-    let backgroundingCallback = Marshal.GetFunctionPointerForDelegate<BackgroundingDelegate> backgroundingDelegate
+    let backgroundingCallback = lazy (
+        let methodInfo = Assembly.GetExecutingAssembly().GetType("Vortice.Vulkan.Hl").GetMethod("handleBackgrounding", BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic).MethodHandle
+        methodInfo.GetFunctionPointer ())
 
     /// The format of an image.
     type ImageFormat =
@@ -1336,11 +1337,7 @@ module Hl =
         /// Destroy a Swapchain.
         static member destroy swapchain device =
             Swapchain.clear swapchain device
-    
-    // TODO: DJL: for mobile devices: https://learn.microsoft.com/en-us/dotnet/standard/native-interop/calling-conventions#when-you-can-omit-the-calling-convention.
-    [<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
-    type private DebugDelegate =
-        delegate of VkDebugUtilsMessageSeverityFlagsEXT * VkDebugUtilsMessageTypeFlagsEXT * nativeint * nativeint -> uint32
+
 
     
     /// Exposes the vulkan handles that must be globally accessible within the renderer.
@@ -1429,8 +1426,9 @@ module Hl =
         /// The swap format.
         member this.SwapFormat = this.Swapchain_.SurfaceFormat_.format
 
-        static let mutable debugDelegate : DebugDelegate = null
-        
+#nowarn 202
+        [<UnmanagedCallersOnly(CallConvs = [| typeof<System.Runtime.CompilerServices.CallConvCdecl> |])>]
+#warnon 202
         static member private debugCallback
             (messageSeverity : VkDebugUtilsMessageSeverityFlagsEXT)
             (messageType : VkDebugUtilsMessageTypeFlagsEXT)
@@ -1476,7 +1474,6 @@ module Hl =
             0u
         
         static member private makeDebugMessengerInfo () =
-            debugDelegate <- DebugDelegate VulkanContext.debugCallback
             let mutable info = VkDebugUtilsMessengerCreateInfoEXT ()
             info.sType <- VkStructureType.DebugUtilsMessengerCreateInfoEXT
             info.messageSeverity <-
@@ -1488,9 +1485,10 @@ module Hl =
                 VkDebugUtilsMessageTypeFlagsEXT.General |||
                 VkDebugUtilsMessageTypeFlagsEXT.Validation |||
                 VkDebugUtilsMessageTypeFlagsEXT.Performance
-            let callbackPointer = Marshal.GetFunctionPointerForDelegate<DebugDelegate> debugDelegate
+            let debugCallbackMethod = typeof<VulkanContext>.GetMethod(nameof VulkanContext.debugCallback, BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic).MethodHandle
+            let callbackPointer = debugCallbackMethod.GetFunctionPointer ()
             let offset = Marshal.OffsetOf<VkDebugUtilsMessengerCreateInfoEXT> (nameof info.pfnUserCallback)
-            let fieldRef =  NativePtr.ofNativeInt<byte> (NativePtr.toNativeInt &&info + offset)
+            let fieldRef = NativePtr.ofNativeInt<byte> (NativePtr.toNativeInt &&info + offset)
             Unsafe.WriteUnaligned (NativePtr.toByRef<byte> fieldRef, callbackPointer) // TODO: report this F# compiler bug that allows direct assignment to compile without error but causes a crash at runtime
             info.pUserData <- NativePtr.toVoidPtr NativePtr.nullPtr<byte>
             info

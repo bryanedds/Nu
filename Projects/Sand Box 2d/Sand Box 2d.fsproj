@@ -63,6 +63,22 @@
         <ValidateXcodeVersion>False</ValidateXcodeVersion>
     </PropertyGroup>
 
+    <!-- Per-assembly ILStrip exclusion for dotnet/fsharp#18702 (F# SRTP witness byref<T> invalid IL)
+         F# SRTP witness methods with byref<T> generate invalid IL that crashes ILStrip on affected
+         assemblies. Exclude FSharp.Core.dll and Nu.dll from IL stripping via the ResolvedFileToPublish hook. -->
+    <Target Name="_ExcludeAssembliesFromILStrip" BeforeTargets="_StripAssemblyIL" Condition="'$(TargetPlatformIdentifier)' == 'ios'">
+        <ItemGroup>
+            <_ExcludedAssemblies Include="@(ResolvedFileToPublish)"
+            Condition="'%(Filename)%(Extension)' == 'FSharp.Core.dll'" />
+            <ResolvedFileToPublish Remove="@(_ExcludedAssemblies)" />
+        </ItemGroup>
+    </Target>
+    <Target Name="_RestoreAssembliesAfterILStrip" AfterTargets="_StripAssemblyIL" Condition="'$(TargetPlatformIdentifier)' == 'ios'">
+        <ItemGroup>
+            <ResolvedFileToPublish Include="@(_ExcludedAssemblies)" />
+        </ItemGroup>
+    </Target>
+
     <!-- Build Nu.Pipe only once even for multi-project builds -->
     <Target Name="BuildNuPipe" BeforeTargets="BeforeBuild">
         <MSBuild Projects="../../Nu/Nu.Pipe/Nu.Pipe.fsproj" RemoveProperties="TargetFramework;RuntimeIdentifier;SelfContained" Targets="Restore;Build" />

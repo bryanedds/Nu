@@ -320,11 +320,10 @@ open FSharp.NativeInterop
 // UIStoryboard.FromName must run in main thread, not in SdlMain, so it is extracted here
 let splashScreen = UIKit.UIStoryboard.FromName("MauiSplash", null).InstantiateInitialViewController().View
 
-// SDL usage taken from https://github.com/ppy/SDL3-CS/blob/master/SDL3-CS.Tests.iOS/Main.cs
-[<UnmanagedFunctionPointer(CallingConvention.Cdecl)>] // Required for iOS AOT! See https://learn.microsoft.com/en-us/previous-versions/xamarin/ios/internals/limitations#using-delegates-to-call-native-functions
-type SdlMain = delegate of argc : int * argv : byte nativeptr nativeptr -> int
-
-let private sdlMain = SdlMain (fun _ _ ->
+// SDL_RunApp main callback using [UnmanagedCallersOnly] for iOS AOT compatibility.
+// See https://github.com/ppy/SDL3-CS/blob/master/SDL3-CS.Tests.iOS/Main.cs for reference.
+[<UnmanagedCallersOnly(CallConvs = [| typeof<System.Runtime.CompilerServices.CallConvCdecl> |])>]
+let private sdlMainImpl (argc: int, argv: nativeptr<nativeptr<byte>>) : int =
     // this points the current working directory at the bundled game assets
     let baseDirectory = AppContext.BaseDirectory
     let assetDirectory = Path.Combine (baseDirectory, "refinement-out", "net10.0-ios")
@@ -335,7 +334,7 @@ let private sdlMain = SdlMain (fun _ _ ->
         let window = UIKit.UIApplication.SharedApplication.Windows[0] // SharedApplication is null before SdlMain initialization, so we need to invoke main thread in SdlMain
         splashScreen.Frame <- window.Bounds // ensure splash screen size is the window size instead of its default
         window.AddSubview splashScreen)
-    main splashScreen.RemoveFromSuperview) // needs to stay alive and not garbage collected
+    main splashScreen.RemoveFromSuperview // needs to stay alive and not garbage collected
 let [<EntryPoint>] entryPoint _ =
     Log.init None // disable Nu's default file log because the iOS app bundle is read-only.
     configureIosNativeLibraries ()
@@ -345,7 +344,9 @@ let [<EntryPoint>] entryPoint _ =
         // - no rendering to array (layered) attachments
         Constants.Render.SkipRendering3d <- true
 
-    SDL3.SDL_RunApp (0, NativePtr.nullPtr, Marshal.GetFunctionPointerForDelegate<_> sdlMain, 0n)
+    let sdlMainMethod = Assembly.GetExecutingAssembly().GetType("SandBox2d.Program").GetMethod(nameof sdlMainImpl, BindingFlags.Static ||| BindingFlags.NonPublic)
+    let sdlMainFuncPtr = sdlMainMethod.MethodHandle.GetFunctionPointer()
+    SDL3.SDL_RunApp (0, NativePtr.nullPtr, sdlMainFuncPtr, 0n)
 #endif
 #if !(ANDROID || IOS)
 let [<EntryPoint>] entryPoint _ =
