@@ -4240,10 +4240,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             ReloadAssetsRequested <- 0
 
     let private imGuiReloadingCodeDialog initializing world =
-        let title =
-            if initializing
-            then "Reloading code..."
-            else "Reloading code and setting initial values..."
+        let title = "Reloading code..."
         ImGui.SetNextWindowPos (ImGui.MainViewportCenter, ImGuiCond.Appearing, v2Dup 0.5f)
         if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
         if ImGui.BeginPopupModal (title, ImGuiWindowFlags.AlwaysAutoResize) then
@@ -4255,10 +4252,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             ReloadCodeRequested <- (false, 0)
 
     let private imGuiReloadingAllDialog initializing world =
-        let title =
-            if initializing
-            then "Reloading assets and code..."
-            else "Reloading assets and code, as well as setting initial values..."
+        let title = "Reloading assets and code..."
         ImGui.SetNextWindowPos (ImGui.MainViewportCenter, ImGuiCond.Appearing, v2Dup 0.5f)
         if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
         if ImGui.BeginPopupModal (title, ImGuiWindowFlags.AlwaysAutoResize) then
