@@ -508,6 +508,14 @@ module PhysicallyBased =
             if this.DrawIndexPerRenderPass < this.Pipeline.BulkDrawLimit then this.DrawIndex <- inc this.DrawIndex
             this.DrawIndexPerRenderPass <- inc this.DrawIndexPerRenderPass
 
+    /// Describes the lighting pass of a deferred physically-based pipeline that's loaded into GPU.
+    type PhysicallyBasedDeferredLightingPipeline =
+        { TransformUniform : Buffer.Buffer
+          LightingUniform : Buffer.Buffer
+          LightUniform : Buffer.Buffer
+          ShadowMatrixUniform : Buffer.Buffer
+          Pipeline : Pipeline.Pipeline }
+    
     /// Create the attachments required for physically-based rendering.
     let CreatePhysicallyBasedAttachments (geometryViewport : Viewport, vkc) =
         
@@ -1389,7 +1397,7 @@ module PhysicallyBased =
         physicallyBasedPipeline
     
     /// Destroy PhysicallyBasedPipeline.
-    let DestroyPhysicallyBasedPipeline physicallyBasedPipeline vkc =
+    let DestroyPhysicallyBasedPipeline (physicallyBasedPipeline : PhysicallyBasedPipeline) vkc =
         Buffer.Buffer.destroy physicallyBasedPipeline.TransformUniform vkc
         Buffer.Buffer.destroy physicallyBasedPipeline.LightingUniform vkc
         Buffer.Buffer.destroy physicallyBasedPipeline.BoneUniform vkc
@@ -1398,6 +1406,56 @@ module PhysicallyBased =
         Buffer.Buffer.destroy physicallyBasedPipeline.LightUniform vkc
         Buffer.Buffer.destroy physicallyBasedPipeline.ShadowMatrixUniform vkc
         Pipeline.Pipeline.destroy physicallyBasedPipeline.Pipeline vkc
+    
+    /// Create a PhysicallyBasedDeferredLightingPipeline.
+    let CreatePhysicallyBasedDeferredLightingPipeline (lightsMax, colorAttachmentFormat, vkc) =
+
+        // create pipeline
+        let pipeline =
+            Pipeline.Pipeline.create
+                Constants.Paths.PhysicallyBasedDeferredLightingShaderFilePath
+                0 [|Pipeline.NoBlend|] [|false|]
+                [|Pipeline.vertex 0 StaticVertexSize VkVertexInputRate.Vertex
+                    [|Pipeline.attribute 0 Hl.Single3 0
+                      Pipeline.attribute 1 Hl.Single2 StaticTexCoordsOffset
+                      Pipeline.attribute 2 Hl.Single3 StaticNormalOffset|]|]
+                [|Pipeline.descriptorSet Hl.BulkNone Constants.Render.GeometryRenderPassMax
+                    [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.FragmentStage 1
+                      Pipeline.descriptor 1 Hl.StorageBuffer Hl.FragmentStage 1
+                      Pipeline.descriptor 2 Hl.StorageBuffer Hl.FragmentStage 1
+                      Pipeline.descriptor 3 Hl.StorageBuffer Hl.FragmentStage 1
+                      Pipeline.descriptor 4 Hl.SampledImage Hl.FragmentStage 1
+                      Pipeline.descriptor 5 Hl.SampledImage Hl.FragmentStage 1
+                      Pipeline.descriptor 6 Hl.SampledImage Hl.FragmentStage 1
+                      Pipeline.descriptor 7 Hl.SampledImage Hl.FragmentStage 1
+                      Pipeline.descriptor 8 Hl.SampledImage Hl.FragmentStage 1
+                      Pipeline.descriptor 9 Hl.SampledImage Hl.FragmentStage 1
+                      Pipeline.descriptor 10 Hl.SampledImage Hl.FragmentStage 1
+                      Pipeline.descriptor 11 Hl.SampledImage Hl.FragmentStage 1
+                      Pipeline.descriptor 12 Hl.SampledImage Hl.FragmentStage Constants.Render.ShadowMapsMax
+                      Pipeline.descriptor 13 Hl.SampledImage Hl.FragmentStage Constants.Render.ShadowCascadesMax|]
+                  Pipeline.descriptorSet Hl.BulkNone 1
+                    [|Pipeline.descriptor 0 Hl.Sampler Hl.FragmentStage 1
+                      Pipeline.descriptor 1 Hl.Sampler Hl.FragmentStage 1|]|]
+                [||] colorAttachmentFormat None vkc
+
+        // create uniform buffers
+        let shadowMatrixMax = Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels
+        let transformUniform = Buffer.Buffer.create sizeof<Transform> Buffer.Storage vkc
+        let lightingUniform = Buffer.Buffer.create sizeof<Lighting2> Buffer.Storage vkc
+        let lightUniform = Buffer.Buffer.create (lightsMax * sizeof<Light>) Buffer.Storage vkc
+        let shadowMatrixUniform = Buffer.Buffer.create (shadowMatrixMax * sizeof<ShadowMatrix>) Buffer.Storage vkc
+
+        // make PhysicallyBasedDeferredLightingPipeline
+        let physicallyBasedDeferredLightingPipeline =
+            { TransformUniform = transformUniform
+              LightingUniform = lightingUniform
+              LightUniform = lightUniform
+              ShadowMatrixUniform = shadowMatrixUniform
+              Pipeline = pipeline }
+        
+        // fin
+        physicallyBasedDeferredLightingPipeline
     
     /// Draw a batch of physically-based deferred surfaces.
     let DrawPhysicallyBasedDeferredSurfaces
