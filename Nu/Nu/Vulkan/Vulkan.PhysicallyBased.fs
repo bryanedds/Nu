@@ -1457,6 +1457,14 @@ module PhysicallyBased =
         // fin
         physicallyBasedDeferredLightingPipeline
     
+    /// Destroy PhysicallyBasedDeferredLightingPipeline.
+    let DestroyPhysicallyBasedDeferredLightingPipeline (pipeline : PhysicallyBasedDeferredLightingPipeline) vkc =
+        Buffer.Buffer.destroy pipeline.TransformUniform vkc
+        Buffer.Buffer.destroy pipeline.LightingUniform vkc
+        Buffer.Buffer.destroy pipeline.LightUniform vkc
+        Buffer.Buffer.destroy pipeline.ShadowMatrixUniform vkc
+        Pipeline.Pipeline.destroy pipeline.Pipeline vkc
+    
     /// Draw a batch of physically-based deferred surfaces.
     let DrawPhysicallyBasedDeferredSurfaces
         (renderPassIndex : int,
@@ -1994,6 +2002,7 @@ module PhysicallyBased =
     /// Physically-based pipelines.
     type PhysicallyBasedPipelines =
         { DeferredStaticPipeline : PhysicallyBasedPipeline
+          DeferredLightingPipeline : PhysicallyBasedDeferredLightingPipeline
           ForwardStaticPipeline : PhysicallyBasedPipeline }
 
     let CreatePhysicallyBasedPipelines
@@ -2044,6 +2053,9 @@ module PhysicallyBased =
                  (Some compositionZ.VkFormat),
                  vkc)
         
+        // create deferred lighting pipeline
+        let deferredLightingPipeline = CreatePhysicallyBasedDeferredLightingPipeline (lightsMax, [|attachments.LightingAttachment.VkFormat|], vkc)
+        
         // create forward static pipeline
         let forwardStaticPipeline =
             CreatePhysicallyBasedPipeline
@@ -2061,6 +2073,7 @@ module PhysicallyBased =
         // create PhysicallyBasedPipelines
         let physicallyBasedPipelines =
             { DeferredStaticPipeline = deferredStaticPipeline
+              DeferredLightingPipeline = deferredLightingPipeline
               ForwardStaticPipeline = forwardStaticPipeline }
 
         // fin
@@ -2068,8 +2081,10 @@ module PhysicallyBased =
     
     let ReloadPhysicallyBasedShaders physicallyBasedPipelines vkc =
         Pipeline.Pipeline.reloadShaders physicallyBasedPipelines.DeferredStaticPipeline.Pipeline vkc
+        Pipeline.Pipeline.reloadShaders physicallyBasedPipelines.DeferredLightingPipeline.Pipeline vkc
         Pipeline.Pipeline.reloadShaders physicallyBasedPipelines.ForwardStaticPipeline.Pipeline vkc
     
     let DestroyPhysicallyBasedPipelines physicallyBasedPipelines vkc =
         DestroyPhysicallyBasedPipeline physicallyBasedPipelines.DeferredStaticPipeline vkc
+        DestroyPhysicallyBasedDeferredLightingPipeline physicallyBasedPipelines.DeferredLightingPipeline vkc
         DestroyPhysicallyBasedPipeline physicallyBasedPipelines.ForwardStaticPipeline vkc
