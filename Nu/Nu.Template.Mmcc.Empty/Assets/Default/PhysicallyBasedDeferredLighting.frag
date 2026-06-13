@@ -478,12 +478,12 @@ vec3 computeSubsurfaceScatter(vec4 position, vec3 albedo, vec4 subdermalPlus, ve
         // tunable parameters
         const float density = 8.0; // absorption coefficient
         const vec3 waxTint = vec3(1.0, 0.94, 0.85); // warm tint
-        const float g = 0.2; // Henyey–Greenstein anisotropy (0 = isotropic, >0 = forward bias)
+        const float g = 0.2; // Henyey-Greenstein anisotropy (0 = isotropic, >0 = forward bias)
 
-        // attenuation by travel distance (Beer–Lambert law)
+        // attenuation by travel distance (Beer-Lambert law)
         vec3 attenuation = exp(-travel * density * finenessSquared * scatter.rgb);
 
-        // Henyey–Greenstein phase function for angular dependence
+        // Henyey-Greenstein phase function for angular dependence
         float cosTheta = clamp(nDotL, -1.0, 1.0);
         float denom = 1.0 + g * g - 2.0 * g * cosTheta;
         float phase = (1.0 - g * g) / (4.0 * PI * pow(denom, 1.5));
