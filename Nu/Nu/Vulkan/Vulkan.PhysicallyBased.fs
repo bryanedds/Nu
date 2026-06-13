@@ -1875,6 +1875,144 @@ module PhysicallyBased =
         if pipeline.DrawIndexPerRenderPass >= pipeline.Pipeline.BulkDrawLimit then
             Log.warnOnce "Draw operations aborted because bulk draw limit has been reached. Increase relevant bulk draw limit as necessary for current application."
 
+    /// Draw the lighting pass of a deferred physically-based surface.
+    let DrawPhysicallyBasedDeferredLightingSurface
+        (renderPassIndex : int,
+         eyeCenter : Vector3,
+         view : Matrix4x4,
+         viewInverse : Matrix4x4,
+         projection : Matrix4x4,
+         projectionInverse : Matrix4x4,
+         lightCutoffMargin : single,
+         lightShadowSamples : int,
+         lightShadowBias : single,
+         lightShadowSampleScalar : single,
+         lightShadowExponent : single,
+         lightShadowDensity : single,
+         sssEnabled : int,
+         depthTexture : Texture.Texture,
+         albedoTexture : Texture.Texture,
+         materialTexture : Texture.Texture,
+         normalPlusTexture : Texture.Texture,
+         subdermalPlusTexture : Texture.Texture,
+         scatterPlusTexture : Texture.Texture,
+         clearCoatPlusTexture : Texture.Texture,
+         shadowTextureArray : Texture.Texture,
+         shadowMaps : Texture.Texture array,
+         shadowCascades : Texture.Texture array,
+         lightOrigins : Vector3 array,
+         lightDirections : Vector3 array,
+         lightColors : Color array,
+         lightBrightnesses : single array,
+         lightAttenuationLinears : single array,
+         lightAttenuationQuadratics : single array,
+         lightCutoffs : single array,
+         lightTypes : int array,
+         lightConeInners : single array,
+         lightConeOuters : single array,
+         lightShadowIndices : int array,
+         lightsCount : int,
+         shadowNear : single,
+         shadowMatrices : single array array,
+         geometry : PhysicallyBasedGeometry,
+         pipeline : PhysicallyBasedDeferredLightingPipeline,
+         vkc : Hl.VulkanContext) =
+
+        // bind uniforms
+        let mutable transform = Transform ()
+        transform.view <- view
+        transform.projection <- projection
+        transform.viewInverse <- viewInverse
+        transform.projectionInverse <- projectionInverse
+        transform.eyeCenter <- eyeCenter
+        Buffer.Buffer.uploadValue renderPassIndex 0 0 transform pipeline.TransformUniform vkc
+        Pipeline.Pipeline.writeDescriptorStorageBuffer 0 0 renderPassIndex 0 pipeline.TransformUniform.[renderPassIndex] pipeline.Pipeline vkc
+        let mutable lighting = Lighting2 ()
+        lighting.lightCutoffMargin <- lightCutoffMargin
+        lighting.lightShadowSamples <- lightShadowSamples
+        lighting.lightShadowBias <- lightShadowBias
+        lighting.lightShadowSampleScalar <- lightShadowSampleScalar
+        lighting.lightShadowExponent <- lightShadowExponent
+        lighting.lightShadowDensity <- lightShadowDensity
+        lighting.sssEnabled <- sssEnabled
+        lighting.lightsCount <- lightsCount
+        lighting.shadowNear <- shadowNear
+        Buffer.Buffer.uploadValue renderPassIndex 0 0 lighting pipeline.LightingUniform vkc
+        Pipeline.Pipeline.writeDescriptorStorageBuffer 0 1 renderPassIndex 0 pipeline.LightingUniform.[renderPassIndex] pipeline.Pipeline vkc
+
+
+    //    Gl.Uniform1 (shader.DepthTextureUniform, 0)
+    //    Gl.Uniform1 (shader.AlbedoTextureUniform, 1)
+    //    Gl.Uniform1 (shader.MaterialTextureUniform, 2)
+    //    Gl.Uniform1 (shader.NormalPlusTextureUniform, 3)
+    //    Gl.Uniform1 (shader.SubdermalPlusTextureUniform, 4)
+    //    Gl.Uniform1 (shader.ScatterPlusTextureUniform, 5)
+    //    Gl.Uniform1 (shader.ClearCoatPlusTextureUniform, 6)
+    //    Gl.Uniform1 (shader.ShadowTexturesUniform, 7)
+    //    for i in 0 .. dec Constants.Render.ShadowMapsMax do
+    //        Gl.Uniform1 (shader.ShadowMapsUniforms[i], i + 8)
+    //    for i in 0 .. dec Constants.Render.ShadowCascadesMax do
+    //        Gl.Uniform1 (shader.ShadowCascadesUniforms[i], i + 8 + Constants.Render.ShadowMapsMax)
+    //    for i in 0 .. dec (min lightOrigins.Length Constants.Render.LightsMaxDeferred) do
+    //        Gl.Uniform3 (shader.LightOriginsUniforms[i], lightOrigins[i].X, lightOrigins[i].Y, lightOrigins[i].Z)
+    //    for i in 0 .. dec (min lightDirections.Length Constants.Render.LightsMaxDeferred) do
+    //        Gl.Uniform3 (shader.LightDirectionsUniforms[i], lightDirections[i].X, lightDirections[i].Y, lightDirections[i].Z)
+    //    for i in 0 .. dec (min lightColors.Length Constants.Render.LightsMaxDeferred) do
+    //        Gl.Uniform3 (shader.LightColorsUniforms[i], lightColors[i].R, lightColors[i].G, lightColors[i].B)
+    //    for i in 0 .. dec (min lightBrightnesses.Length Constants.Render.LightsMaxDeferred) do
+    //        Gl.Uniform1 (shader.LightBrightnessesUniforms[i], lightBrightnesses[i])
+    //    for i in 0 .. dec (min lightAttenuationLinears.Length Constants.Render.LightsMaxDeferred) do
+    //        Gl.Uniform1 (shader.LightAttenuationLinearsUniforms[i], lightAttenuationLinears[i])
+    //    for i in 0 .. dec (min lightAttenuationQuadratics.Length Constants.Render.LightsMaxDeferred) do
+    //        Gl.Uniform1 (shader.LightAttenuationQuadraticsUniforms[i], lightAttenuationQuadratics[i])
+    //    for i in 0 .. dec (min lightCutoffs.Length Constants.Render.LightsMaxDeferred) do
+    //        Gl.Uniform1 (shader.LightCutoffsUniforms[i], lightCutoffs[i])
+    //    for i in 0 .. dec (min lightTypes.Length Constants.Render.LightsMaxDeferred) do
+    //        Gl.Uniform1 (shader.LightTypesUniforms[i], lightTypes[i])
+    //    for i in 0 .. dec (min lightConeInners.Length Constants.Render.LightsMaxDeferred) do
+    //        Gl.Uniform1 (shader.LightConeInnersUniforms[i], lightConeInners[i])
+    //    for i in 0 .. dec (min lightConeOuters.Length Constants.Render.LightsMaxDeferred) do
+    //        Gl.Uniform1 (shader.LightConeOutersUniforms[i], lightConeOuters[i])
+    //    for i in 0 .. dec (min lightShadowIndices.Length Constants.Render.LightsMaxDeferred) do
+    //        Gl.Uniform1 (shader.LightShadowIndicesUniforms[i], lightShadowIndices[i])
+    //    for i in 0 .. dec (min shadowMatrices.Length (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels)) do
+    //        Gl.UniformMatrix4 (shader.ShadowMatricesUniforms[i], false, shadowMatrices[i])
+    //
+    //    // setup textures
+    //    Gl.ActiveTexture TextureUnit.Texture0
+    //    Gl.BindTexture (TextureTarget.Texture2d, depthTexture.TextureId)
+    //    Gl.ActiveTexture TextureUnit.Texture1
+    //    Gl.BindTexture (TextureTarget.Texture2d, albedoTexture.TextureId)
+    //    Gl.ActiveTexture TextureUnit.Texture2
+    //    Gl.BindTexture (TextureTarget.Texture2d, materialTexture.TextureId)
+    //    Gl.ActiveTexture TextureUnit.Texture3
+    //    Gl.BindTexture (TextureTarget.Texture2d, normalPlusTexture.TextureId)
+    //    Gl.ActiveTexture TextureUnit.Texture4
+    //    Gl.BindTexture (TextureTarget.Texture2d, subdermalPlusTexture.TextureId)
+    //    Gl.ActiveTexture TextureUnit.Texture5
+    //    Gl.BindTexture (TextureTarget.Texture2d, scatterPlusTexture.TextureId)
+    //    Gl.ActiveTexture TextureUnit.Texture6
+    //    Gl.BindTexture (TextureTarget.Texture2d, clearCoatPlusTexture.TextureId)
+    //    Gl.ActiveTexture (int TextureUnit.Texture0 + 7 |> Branchless.reinterpret)
+    //    Gl.BindTexture (TextureTarget.Texture2dArray, shadowTextureArray.TextureId)
+    //    for i in 0 .. dec (min shadowMaps.Length Constants.Render.ShadowMapsMax) do
+    //        Gl.ActiveTexture (int TextureUnit.Texture0 + 8 + i |> Branchless.reinterpret)
+    //        Gl.BindTexture (TextureTarget.TextureCubeMap, shadowMaps[i].TextureId)
+    //    for i in 0 .. dec (min shadowCascades.Length Constants.Render.ShadowCascadesMax) do
+    //        Gl.ActiveTexture (int TextureUnit.Texture0 + 8 + i + Constants.Render.ShadowMapsMax |> Branchless.reinterpret)
+    //        Gl.BindTexture (TextureTarget.Texture2dArray, shadowCascades[i].TextureId)
+    //    Hl.Assert ()
+    //
+    //    // setup geometry
+    //    Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, StaticVertexSize)
+    //    Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
+    //    Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
+    //    Hl.Assert ()
+    //
+    //    // draw geometry
+    //    Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
+        Hl.reportDrawCall 1
+
     /// End the process of drawing with a forward pipeline.
     let EndPhysicallyBasedForwardPipeline (_ : PhysicallyBasedPipeline) =
         () // nothing to do
