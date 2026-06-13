@@ -911,9 +911,9 @@ module Hl =
         static member private getProperties vkPhysicalDevice =
             if Constants.Vulkan.DescriptorIndexingEnabled then
                 let mutable diProperties = Unchecked.defaultof<VkPhysicalDeviceDescriptorIndexingProperties>
-                diProperties.sType <- Vulkan.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES // wrapper stuffed this up
+                diProperties.sType <- Vulkan.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES // wrapper failed to set the correct sType value
                 let mutable properties = Unchecked.defaultof<VkPhysicalDeviceProperties2>
-                properties.sType <- Vulkan.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2 // wrapper stuffed this up
+                properties.sType <- Vulkan.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2 // wrapper failed to set the correct sType value
                 properties.pNext <- asVoidPtr &diProperties
                 Vulkan.vkGetPhysicalDeviceProperties2 (vkPhysicalDevice, asPointer &properties)
                 (properties.properties, Some diProperties)
