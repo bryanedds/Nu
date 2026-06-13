@@ -346,7 +346,7 @@ module Pipeline =
     /// An abstraction of a rendering pipeline.
     type Pipeline =
         private
-            { mutable VkPipelines_ : Map<Blend * bool, VkPipeline>
+            { mutable VkPipelines_ : Map<Blend * bool, VkPipeline> // TODO: P0: make sure no allocation happens on look-up.
               DescriptorPool_ : VkDescriptorPool
               DescriptorSets_ : DescriptorSet array
               PipelineLayout_ : VkPipelineLayout
