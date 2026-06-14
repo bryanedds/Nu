@@ -1,6 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
     <PropertyGroup>
+        <!-- Project file local properties -->
+        <TargetPlatformIdentifier>$([MSBuild]::GetTargetPlatformIdentifier($(TargetFramework)))</TargetPlatformIdentifier> <!-- convenience property -->
+        <BuildingMacOS>false</BuildingMacOS>
+        <BuildingMacOS Condition="'$(TargetPlatformIdentifier)' == '' And (('$(RuntimeIdentifier)'=='' And $([System.OperatingSystem]::IsMacOS())) Or $(RuntimeIdentifier.StartsWith('osx')))">true</BuildingMacOS>
+        <BlockCompression>BcCompression</BlockCompression>
+        <BlockCompression Condition="$(BuildingMacOS) Or '$(TargetPlatformIdentifier)'=='ios' Or '$(TargetPlatformIdentifier)'=='android'">AstcCompression</BlockCompression>
+        <SandBox2dPpySdlVersion>2026.512.0</SandBox2dPpySdlVersion>
+        <AssimpNetOriginalDir>$(MSBuildProjectDirectory)/../../Nu/Nu.Dependencies/AssimpNet/netstandard2.1</AssimpNetOriginalDir>
+        <AssimpNetPatchedDir>$(MSBuildProjectDirectory)/$(BaseIntermediateOutputPath)ios-managed/$(TargetFramework)</AssimpNetPatchedDir>
+
 		<!-- .NET settings -->
 		<!-- Note: For a desktop-only build, specify "-f net10.0" in "dotnet build", or uncomment the following line: -->
 		<!--TargetFramework>net10.0</TargetFramework-->
@@ -9,19 +18,11 @@
 		<!-- We don't require installing the macOS Vulkan SDK on Windows. Therefore, don't build for iOS if not on macOS. -->
 		<TargetFrameworks Condition="$([System.OperatingSystem]::IsMacOS())">$(TargetFrameworks);net10.0-ios</TargetFrameworks>
         <OutputType>Exe</OutputType>
-        <TargetPlatformIdentifier>$([MSBuild]::GetTargetPlatformIdentifier($(TargetFramework)))</TargetPlatformIdentifier> <!-- convenience property -->
         <ServerGarbageCollection Condition="'$(TargetPlatformIdentifier)' != 'ios'">True</ServerGarbageCollection>
         <TieredPGO>True</TieredPGO>
         <DisableFastUpToDateCheck>True</DisableFastUpToDateCheck>
-
-        <!-- Project file local properties -->
-        <BuildingMacOS>false</BuildingMacOS>
-        <BuildingMacOS Condition="'$(TargetPlatformIdentifier)' == '' And (('$(RuntimeIdentifier)'=='' And $([System.OperatingSystem]::IsMacOS())) Or $(RuntimeIdentifier.StartsWith('osx')))">true</BuildingMacOS>
-        <BlockCompression>BcCompression</BlockCompression>
-        <BlockCompression Condition="$(BuildingMacOS) Or '$(TargetPlatformIdentifier)'=='ios' Or '$(TargetPlatformIdentifier)'=='android'">AstcCompression</BlockCompression>
-        <SandBox2dPpySdlVersion>2026.512.0</SandBox2dPpySdlVersion>
-        <AssimpNetOriginalDir>$(MSBuildProjectDirectory)/../../Nu/Nu.Dependencies/AssimpNet/netstandard2.1</AssimpNetOriginalDir>
-        <AssimpNetPatchedDir>$(MSBuildProjectDirectory)/$(BaseIntermediateOutputPath)ios-managed/$(TargetFramework)</AssimpNetPatchedDir>
+        <RuntimeIdentifiers Condition="$(BuildingMacOS) And '$(Configuration)' == 'Release'">osx-arm64</RuntimeIdentifiers>
+        <SelfContained Condition="'$(Configuration)' == 'Release'">true</SelfContained>
 
         <!-- F# compiler settings -->
         <WarnOn>FS1182</WarnOn>
@@ -131,16 +132,19 @@
         <Compile Include="Program.fs" />
 
         <!-- iOS Information property list: https://learn.microsoft.com/en-us/dotnet/maui/macios/info-plist -->
-        <None Include="Mobile/Info.plist" LogicalName="Info.plist" />
+        <None Include="App/iOS Info.plist" LogicalName="Info.plist" />
         <!-- iOS Privacy manifest: https://learn.microsoft.com/en-us/dotnet/maui/ios/privacy-manifest -->
-        <BundleResource Include="Mobile/PrivacyInfo.xcprivacy" LogicalName="PrivacyInfo.xcprivacy" />
+        <BundleResource Include="App/iOS PrivacyInfo.xcprivacy" LogicalName="PrivacyInfo.xcprivacy" />
 		
         <!-- To comply with Android resource naming rules, MauiIcon and MauiSplashScreen files names must be
             lowercase, start and end with a letter character, and contain only alphanumeric characters or underscores. -->
         <!-- MauiIcon (Composed icon): https://learn.microsoft.com/en-us/dotnet/maui/user-interface/images/app-icons#composed-icon -->
-        <MauiIcon Include="Mobile/mobile_icon_bg.svg" ForegroundFile="Mobile/mobile_icon_fg.svg" />
+        <!-- The two SVGs below are the SINGLE SOURCE OF TRUTH for the app icon across ALL platforms.
+             MAUI composes them for Android/iOS. GenerateIcons.fsx generates desktop icons from them at build time. -->
+        <MauiIcon Include="App/icon_bg.svg" ForegroundFile="App/icon_fg.svg" />
+        <None Include="App/GenerateIcons.fsx" />
         <!-- MauiSplashScreen (with background color): https://learn.microsoft.com/en-us/dotnet/maui/user-interface/images/splashscreen#add-tint-and-background-color -->
-        <MauiSplashScreen Include="Mobile/mobile_icon_fg.svg" Color="#512BD4" /> <!-- For simplicity, icon_fg is both icon foreground and splash screen foreground. -->
+        <MauiSplashScreen Include="App/icon_fg.svg" Color="#512BD4" /> <!-- For simplicity, icon_fg is both icon foreground and splash screen foreground. -->
 
         <None Include="AssetGraph.nuag" />
         <None Include="Overlayer.nuol" />
@@ -267,6 +271,194 @@
                 Condition="Exists('$(AppBundleDir)/Frameworks')" />
         <Exec Command="find &quot;$(AppBundleDir)&quot; -maxdepth 1 -type f -name '*.dylib' -print0 | xargs -0 -I{} codesign --force --sign &quot;Apple Development&quot; --timestamp=none {}" />
         <Exec Command="codesign --force --sign &quot;Apple Development&quot; --timestamp=none &quot;$(AppBundleDir)&quot;" />
+    </Target>
+
+    <!-- Generate desktop app icons from the MAUI adaptive icon SVGs (the single source of truth).
+         Runs during build so the icon is available for .app bundle assembly and desktop packaging.
+         On macOS: AppIcon.icns  |  On Windows: app.ico  |  On Linux: app.png -->
+    <Target Name="GenerateDesktopIcon" BeforeTargets="BeforeBuild"
+            Condition="'$(TargetPlatformIdentifier)' == ''">
+        <PropertyGroup>
+            <DesktopIconDir>$(IntermediateOutputPath)icons</DesktopIconDir>
+            <IconBgSvg>$(MSBuildProjectDirectory)/App/icon_bg.svg</IconBgSvg>
+            <IconFgSvg>$(MSBuildProjectDirectory)/App/icon_fg.svg</IconFgSvg>
+            <GenerateIconsFsx>$(MSBuildProjectDirectory)/App/GenerateIcons.fsx</GenerateIconsFsx>
+        </PropertyGroup>
+
+        <!-- Generate icons for the current platform. The icon must exist before CoreCompile
+             so it can be embedded into the executable (Windows) or copied into the .app bundle
+             (macOS). Runs BeforeBuild to ensure availability at compile time. -->
+        <Exec Condition="$([System.OperatingSystem]::IsMacOS())"
+              Command="dotnet fsi &quot;$(GenerateIconsFsx)&quot; -- macos &quot;$(IconBgSvg)&quot; &quot;$(IconFgSvg)&quot; &quot;$(DesktopIconDir)&quot;" />
+        <Exec Condition="$([System.OperatingSystem]::IsLinux())"
+              Command="dotnet fsi &quot;$(GenerateIconsFsx)&quot; -- linux &quot;$(IconBgSvg)&quot; &quot;$(IconFgSvg)&quot; &quot;$(DesktopIconDir)&quot;" />
+        <Exec Condition="$([System.OperatingSystem]::IsWindows())"
+              Command="dotnet fsi &quot;$(GenerateIconsFsx)&quot; -- windows &quot;$(IconBgSvg)&quot; &quot;$(IconFgSvg)&quot; &quot;$(DesktopIconDir)/app.ico&quot;" />
+
+        <!-- Windows: embed the generated .ico into the .exe via the compiler win32icon flag -->
+        <PropertyGroup Condition="$([System.OperatingSystem]::IsWindows())">
+            <ApplicationIcon>$(DesktopIconDir)/app.ico</ApplicationIcon>
+        </PropertyGroup>
+    </Target>
+
+    <!-- Distribute generated icons alongside the executable on all desktop platforms.
+         macOS: CreateMacOSAppBundle copies it into .app/Contents/Resources/ at publish time.
+         Windows: app.ico is embedded via ApplicationIcon at compile time; also copy to output.
+         Linux: copy .png to output so .desktop files can reference it. -->
+    <Target Name="IncludeDesktopIcon" AfterTargets="GenerateDesktopIcon"
+            Condition="'$(TargetPlatformIdentifier)' == ''">
+        <PropertyGroup>
+            <DesktopIconDir>$(IntermediateOutputPath)icons</DesktopIconDir>
+        </PropertyGroup>
+        <ItemGroup Condition="$([System.OperatingSystem]::IsMacOS())">
+            <Content Include="$(DesktopIconDir)/AppIcon.icns" Link="AppIcon.icns" CopyToOutputDirectory="PreserveNewest" />
+        </ItemGroup>
+        <ItemGroup Condition="$([System.OperatingSystem]::IsWindows())">
+            <Content Include="$(DesktopIconDir)/app.ico" Link="app.ico" CopyToOutputDirectory="PreserveNewest" />
+        </ItemGroup>
+        <ItemGroup Condition="$([System.OperatingSystem]::IsLinux())">
+            <Content Include="$(DesktopIconDir)/app.png" Link="app.png" CopyToOutputDirectory="PreserveNewest" />
+        </ItemGroup>
+    </Target>
+
+    <!-- Generate macOS Info.plist from .fsproj properties (the same source MAUI uses for iOS).
+         This keeps CFBundleName, CFBundleIdentifier, and versions in sync across both platforms.
+         Uses a shell heredoc to avoid MSBuild XML-escaping issues with WriteLinesToFile. -->
+    <Target Name="GenerateMacOSInfoPlist" BeforeTargets="AssignTargetPaths"
+            Condition="$(BuildingMacOS)">
+        <PropertyGroup>
+            <MacOSPlistPath>$(IntermediateOutputPath)Info.macos.plist</MacOSPlistPath>
+        </PropertyGroup>
+        <MakeDir Directories="$(IntermediateOutputPath)" />
+        <Exec Command="cat &gt; &quot;$(MacOSPlistPath)&quot; &lt;&lt; 'PLISTEOF'
+&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;!DOCTYPE plist PUBLIC &quot;-//Apple//DTD PLIST 1.0//EN&quot; &quot;http://www.apple.com/DTDs/PropertyList-1.0.dtd&quot;&gt;
+&lt;plist version=&quot;1.0&quot;&gt;
+&lt;dict&gt;
+    &lt;key&gt;CFBundleDevelopmentRegion&lt;/key&gt;
+    &lt;string&gt;en&lt;/string&gt;
+    &lt;key&gt;CFBundleExecutable&lt;/key&gt;
+    &lt;string&gt;$(ApplicationTitle)&lt;/string&gt;
+    &lt;key&gt;CFBundleIconFile&lt;/key&gt;
+    &lt;string&gt;AppIcon&lt;/string&gt;
+    &lt;key&gt;CFBundleIdentifier&lt;/key&gt;
+    &lt;string&gt;$(ApplicationId)&lt;/string&gt;
+    &lt;key&gt;CFBundleInfoDictionaryVersion&lt;/key&gt;
+    &lt;string&gt;6.0&lt;/string&gt;
+    &lt;key&gt;CFBundleName&lt;/key&gt;
+    &lt;string&gt;$(ApplicationTitle)&lt;/string&gt;
+    &lt;key&gt;CFBundlePackageType&lt;/key&gt;
+    &lt;string&gt;APPL&lt;/string&gt;
+    &lt;key&gt;CFBundleShortVersionString&lt;/key&gt;
+    &lt;string&gt;$(ApplicationDisplayVersion)&lt;/string&gt;
+    &lt;key&gt;CFBundleVersion&lt;/key&gt;
+    &lt;string&gt;$(ApplicationVersion)&lt;/string&gt;
+    &lt;key&gt;LSMinimumSystemVersion&lt;/key&gt;
+    &lt;string&gt;12.0&lt;/string&gt;
+    &lt;key&gt;NSHighResolutionCapable&lt;/key&gt;
+    &lt;true/&gt;
+    &lt;key&gt;NSSupportsAutomaticGraphicsSwitching&lt;/key&gt;
+    &lt;true/&gt;
+&lt;/dict&gt;
+&lt;/plist&gt;
+PLISTEOF" />
+    </Target>
+
+    <!-- macOS Desktop: Create a distributable .app bundle after publishing in Release mode.
+         This resolves Vulkan SDK dylib symlinks to actual copies, assembles the standard
+         .app bundle structure, and ad-hoc code signs so the app can be launched on other Macs
+         without .NET or Vulkan SDK installed. -->
+    <Target Name="CreateMacOSAppBundle" AfterTargets="Publish"
+            Condition="$(BuildingMacOS) And '$(Configuration)' == 'Release'">
+        <PropertyGroup>
+            <MacOSAppBundleDir>$(MSBuildProjectDirectory)/bin/$(Configuration)/$(ApplicationTitle).app</MacOSAppBundleDir>
+            <MacOSAppContentsDir>$(MacOSAppBundleDir)/Contents</MacOSAppContentsDir>
+            <MacOSAppMacOSDir>$(MacOSAppContentsDir)/MacOS</MacOSAppMacOSDir>
+            <MacOSAppResourcesDir>$(MacOSAppContentsDir)/Resources</MacOSAppResourcesDir>
+        </PropertyGroup>
+
+        <!-- Clean any previous .app bundle -->
+        <RemoveDir Directories="$(MacOSAppBundleDir)" />
+
+        <!-- Create standard .app bundle directory structure -->
+        <MakeDir Directories="$(MacOSAppMacOSDir)" />
+        <MakeDir Directories="$(MacOSAppResourcesDir)" />
+
+        <!-- Copy the generated Info.plist into the bundle (built by GenerateMacOSInfoPlist from .fsproj properties) -->
+        <Copy SourceFiles="$(IntermediateOutputPath)Info.macos.plist"
+              DestinationFiles="$(MacOSAppContentsDir)/Info.plist" />
+
+        <!-- Copy the generated app icon into Resources (built by GenerateDesktopIcon from the SVGs) -->
+        <Copy SourceFiles="$(IntermediateOutputPath)icons/AppIcon.icns"
+              DestinationFolder="$(MacOSAppResourcesDir)" />
+
+        <!-- Copy all published files into Contents/MacOS/, resolving symlinks to real files.
+             cp -RL = recursive + follow symlinks (dereferences to actual file content).
+             This ensures Vulkan SDK dylibs are real files, not broken symlinks to the
+             developer's local SDK installation. -->
+        <Exec Command="cp -RL &quot;$(PublishDir)/&quot;* &quot;$(MacOSAppMacOSDir)/&quot;" />
+
+        <!-- Also copy Nu.Pipe assets. Nu.Pipe writes to $(OutputPath) (framework-level,
+             e.g. bin/Release/net10.0/) but publish with RID writes one level deeper
+             (e.g. bin/Release/net10.0/osx-arm64/). Grab assets from the parent. -->
+        <Exec Command="cp -R &quot;$(PublishDir)/../Assets&quot; &quot;$(MacOSAppMacOSDir)/&quot; 2>/dev/null || true" />
+        <Exec Command="cp &quot;$(PublishDir)/../AssetGraph.nuag&quot; &quot;$(PublishDir)/../AssetGraph.tracker&quot; &quot;$(PublishDir)/../Overlayer.nuol&quot; &quot;$(MacOSAppMacOSDir)/&quot; 2>/dev/null || true" />
+
+        <!-- macOS Vulkan ICD discovery fix:
+             The macOS Vulkan loader searches <bundle>/Contents/Resources/vulkan/icd.d/
+             for driver JSONs. Move the icd.d directory there and fix library_path
+             to point at dylibs in Contents/MacOS/ (one level up from Resources).
+             
+             Also remove MoltenVK ICD on macOS desktop since it is an iOS portability
+             driver that lacks VK_KHR_surface on macOS. KosmicKrisp is the native
+             Metal Vulkan driver for macOS. -->
+        <MakeDir Directories="$(MacOSAppResourcesDir)/vulkan/icd.d" />
+        <Exec Command="mv &quot;$(MacOSAppMacOSDir)/vulkan/icd.d/&quot;*_icd.json &quot;$(MacOSAppResourcesDir)/vulkan/icd.d/&quot;" />
+        <Exec Command="rm -rf &quot;$(MacOSAppMacOSDir)/vulkan&quot;" />
+        <!-- Delete MoltenVK ICD (iOS-only portability driver) -->
+        <Delete Files="$(MacOSAppResourcesDir)/vulkan/icd.d/MoltenVK_icd.json" Condition="Exists('$(MacOSAppResourcesDir)/vulkan/icd.d/MoltenVK_icd.json')" />
+        <!-- Fix library_path in ICD JSONs:
+             Original path from UseMacOSVulkanSDK: ../../libFoo.dylib
+             (resolves to Contents/MacOS/ from Contents/MacOS/vulkan/icd.d/ = 2 levels up)
+             After moving to Contents/Resources/vulkan/icd.d/ (sibling of MacOS/):
+             need ../../../MacOS/libFoo.dylib (3 levels up to Contents/, then into MacOS/) -->
+        <Exec Command="find &quot;$(MacOSAppResourcesDir)/vulkan/icd.d&quot; -name '*_icd.json' -exec sed -i '' 's|\&quot;../../lib|\&quot;../../../MacOS/lib|g' {} \;" />
+
+        <!-- Remove MoltenVK ICD and dylib: macOS desktop uses KosmicKrisp (native Metal Vulkan).
+             MoltenVK is only needed on iOS. The Vulkan loader on macOS fallbacks to libMoltenVK.dylib
+             if no ICD is found, so we must remove it to prevent conflicts. -->
+        <Delete Files="$(MacOSAppResourcesDir)/vulkan/icd.d/MoltenVK_icd.json" Condition="Exists('$(MacOSAppResourcesDir)/vulkan/icd.d/MoltenVK_icd.json')" />
+        <Exec Command="rm -f &quot;$(MacOSAppMacOSDir)&quot;/libMoltenVK*" />
+
+        <!-- Ad-hoc code sign the .app bundle for local distribution.
+             Sign dylibs individually, then frameworks, then the outer .app bundle.
+             Using sign '-' means ad-hoc signing (no developer identity needed).
+             This allows the app to pass Gatekeeper basic integrity checks on other Macs,
+             though users will still need to right-click then Open on first launch.
+             
+             Note: codesign may warn about non-Mach-O files inside the bundle
+             (e.g., .dll assemblies, .json configs). These warnings are harmless
+             for ad-hoc signing. For production distribution with a Developer ID,
+             sign only Mach-O components and notarize separately. -->
+        <Exec Command="find &quot;$(MacOSAppMacOSDir)&quot; -maxdepth 1 -name '*.dylib' -print0 | xargs -0 -I{} codesign --force --sign - {}"
+              IgnoreExitCode="true" />
+        <Exec Command="find &quot;$(MacOSAppMacOSDir)/Frameworks&quot; -name '*.framework' -type d -maxdepth 1 -print0 2>/dev/null | xargs -0 -I{} codesign --force --sign - {}"
+              IgnoreExitCode="true" Condition="Exists('$(MacOSAppMacOSDir)/Frameworks')" />
+        <Exec Command="codesign --force --sign - &quot;$(MacOSAppBundleDir)&quot;"
+              IgnoreExitCode="true" />
+
+        <Message Importance="high" Text="============================================" />
+        <Message Importance="high" Text="macOS .app bundle created at:" />
+        <Message Importance="high" Text="  $(MacOSAppBundleDir)" />
+        <Message Importance="high" Text="" />
+        <Message Importance="high" Text="To share with others: compress the .app bundle" />
+        <Message Importance="high" Text="(e.g. right-click > Compress in Finder) and send" />
+        <Message Importance="high" Text="the resulting .zip file." />
+        <Message Importance="high" Text="" />
+        <Message Importance="high" Text="Note: Ad-hoc signed. Recipients must right-click the app" />
+        <Message Importance="high" Text="and select Open on first launch to bypass Gatekeeper." />
+        <Message Importance="high" Text="For seamless launch, sign with a Developer ID and notarize." />
+        <Message Importance="high" Text="============================================" />
     </Target>
 
 </Project>

@@ -168,7 +168,7 @@ type PreDrawListener () =
 //[<UsesPermission (Android.Manifest.Permission.Internet)>] // for example
 
 // Note: Label property is derived from project file
-[<Application (Icon = "@mipmap/mobile_icon_bg", RoundIcon = "@mipmap/mobile_icon_bg_round", // Use the MauiIcon ("mobile_icon_bg" is the file name): https://learn.microsoft.com/en-us/dotnet/maui/user-interface/images/app-icons?tabs=android#platform-specific-configuration
+[<Application (Icon = "@mipmap/icon_bg", RoundIcon = "@mipmap/icon_bg_round", // Use the MauiIcon ("icon_bg" is the file name): https://learn.microsoft.com/en-us/dotnet/maui/user-interface/images/app-icons?tabs=android#platform-specific-configuration
                AppCategory = ApplicationCategories.Game)>] // For system summaries like for battery, network, or disk usage
 do ()
 
