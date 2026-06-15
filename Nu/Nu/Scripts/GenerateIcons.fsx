@@ -149,7 +149,7 @@ match fsi.CommandLineArgs |> Array.toList with
 
 | _scriptPath :: "windows" :: bgSvg :: fgSvg :: outputIco :: _ ->
     printfn "Compositing Windows icon..."
-    let compositePath = Path.GetTempFileName () + ".png"
+    let compositePath = Path.Combine (Path.GetTempPath (), "composited_1024.png")
     compositeIcon bgSvg fgSvg compositePath
     let icoPath = writeWindowsIco compositePath outputIco
     printfn "Windows .ico -> %s" icoPath
@@ -159,7 +159,7 @@ match fsi.CommandLineArgs |> Array.toList with
     let compositePath = Path.Combine (outputDir, "composited_1024.png")
     compositeIcon bgSvg fgSvg compositePath
     let pngPath = writeLinuxPng compositePath outputDir
-    printfn "Linux  .png -> %s" pngPath
+    printfn "Linux .png -> %s" pngPath
 
 | _ ->
     usage ()

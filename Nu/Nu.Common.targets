@@ -337,12 +337,12 @@
          ============================================================ -->
 
     <Target Name="GenerateDesktopIcon" BeforeTargets="BeforeBuild"
-            Condition="'$(TargetPlatformIdentifier)' == '' And Exists('$(MSBuildProjectDirectory)/App/GenerateIcons.fsx')">
+            Condition="'$(TargetPlatformIdentifier)' == ''">
         <PropertyGroup>
             <_DesktopIconDir>$(IntermediateOutputPath)icons</_DesktopIconDir>
             <_IconBgSvg>$(MSBuildProjectDirectory)/App/icon_bg.svg</_IconBgSvg>
             <_IconFgSvg>$(MSBuildProjectDirectory)/App/icon_fg.svg</_IconFgSvg>
-            <_GenerateIconsFsx>$(MSBuildProjectDirectory)/App/GenerateIcons.fsx</_GenerateIconsFsx>
+            <_GenerateIconsFsx>$(MSBuildThisFileDirectory)Nu/Scripts/GenerateIcons.fsx</_GenerateIconsFsx>
         </PropertyGroup>
 
         <Exec Condition="$([System.OperatingSystem]::IsMacOS())"
@@ -356,10 +356,6 @@
         <PropertyGroup Condition="$([System.OperatingSystem]::IsWindows())">
             <ApplicationIcon>$(_DesktopIconDir)/app.ico</ApplicationIcon>
         </PropertyGroup>
-    </Target>
-
-    <Target Name="IncludeDesktopIcon" AfterTargets="GenerateDesktopIcon"
-            Condition="'$(TargetPlatformIdentifier)' == '' And Exists('$(MSBuildProjectDirectory)/App/GenerateIcons.fsx')">
         <PropertyGroup>
             <_DesktopIconDir>$(IntermediateOutputPath)icons</_DesktopIconDir>
         </PropertyGroup>

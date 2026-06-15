@@ -155,6 +155,7 @@
         <Compile Include="World\World.fs" />
         <None Include="Scripts\GenerateDependencyGraph.fsx" />
         <None Include="Scripts\GenerateInputBindings.fsx" />
+        <None Include="Scripts\GenerateIcons.fsx" />
         <None Include="zlib1.dll">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Visible>False</Visible>

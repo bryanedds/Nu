@@ -53,7 +53,6 @@
     <ItemGroup>
         <!-- MauiIcon (Composed icon) -->
         <MauiIcon Include="App/icon_bg.svg" ForegroundFile="App/icon_fg.svg" />
-        <None Include="App/GenerateIcons.fsx" />
 
         <!-- MauiSplashScreen with background color -->
         <MauiSplashScreen Include="App/icon_fg.svg" Color="#512BD4" />
