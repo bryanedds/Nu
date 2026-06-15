@@ -136,6 +136,8 @@
         <None Include="App/iOS Info.plist" LogicalName="Info.plist" />
         <!-- iOS Privacy manifest: https://learn.microsoft.com/en-us/dotnet/maui/ios/privacy-manifest -->
         <BundleResource Include="App/iOS PrivacyInfo.xcprivacy" LogicalName="PrivacyInfo.xcprivacy" />
+        <!-- macOS desktop Info.plist template; resolved at build time by CreateMacOSAppBundle. -->
+        <MacOSPlistTemplate Include="App/macOS Info.plist" />
 		
         <!-- To comply with Android resource naming rules, MauiIcon and MauiSplashScreen files names must be
             lowercase, start and end with a letter character, and contain only alphanumeric characters or underscores. -->
@@ -322,53 +324,10 @@
         </ItemGroup>
     </Target>
 
-    <!-- Generate macOS Info.plist from .fsproj properties (the same source MAUI uses for iOS).
-         This keeps CFBundleName, CFBundleIdentifier, and versions in sync across both platforms.
-         Uses a shell heredoc to avoid MSBuild XML-escaping issues with WriteLinesToFile. -->
-    <Target Name="GenerateMacOSInfoPlist" BeforeTargets="AssignTargetPaths"
-            Condition="$(BuildingMacOS)">
-        <PropertyGroup>
-            <MacOSPlistPath>$(IntermediateOutputPath)Info.macos.plist</MacOSPlistPath>
-        </PropertyGroup>
-        <MakeDir Directories="$(IntermediateOutputPath)" />
-        <Exec Command="cat &gt; &quot;$(MacOSPlistPath)&quot; &lt;&lt; 'PLISTEOF'
-&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
-&lt;!DOCTYPE plist PUBLIC &quot;-//Apple//DTD PLIST 1.0//EN&quot; &quot;http://www.apple.com/DTDs/PropertyList-1.0.dtd&quot;&gt;
-&lt;plist version=&quot;1.0&quot;&gt;
-&lt;dict&gt;
-    &lt;key&gt;CFBundleDevelopmentRegion&lt;/key&gt;
-    &lt;string&gt;en&lt;/string&gt;
-    &lt;key&gt;CFBundleExecutable&lt;/key&gt;
-    &lt;string&gt;$(ApplicationTitle)&lt;/string&gt;
-    &lt;key&gt;CFBundleIconFile&lt;/key&gt;
-    &lt;string&gt;AppIcon&lt;/string&gt;
-    &lt;key&gt;CFBundleIdentifier&lt;/key&gt;
-    &lt;string&gt;$(ApplicationId)&lt;/string&gt;
-    &lt;key&gt;CFBundleInfoDictionaryVersion&lt;/key&gt;
-    &lt;string&gt;6.0&lt;/string&gt;
-    &lt;key&gt;CFBundleName&lt;/key&gt;
-    &lt;string&gt;$(ApplicationTitle)&lt;/string&gt;
-    &lt;key&gt;CFBundlePackageType&lt;/key&gt;
-    &lt;string&gt;APPL&lt;/string&gt;
-    &lt;key&gt;CFBundleShortVersionString&lt;/key&gt;
-    &lt;string&gt;$(ApplicationDisplayVersion)&lt;/string&gt;
-    &lt;key&gt;CFBundleVersion&lt;/key&gt;
-    &lt;string&gt;$(ApplicationVersion)&lt;/string&gt;
-    &lt;key&gt;LSMinimumSystemVersion&lt;/key&gt;
-    &lt;string&gt;12.0&lt;/string&gt;
-    &lt;key&gt;NSHighResolutionCapable&lt;/key&gt;
-    &lt;true/&gt;
-    &lt;key&gt;NSSupportsAutomaticGraphicsSwitching&lt;/key&gt;
-    &lt;true/&gt;
-&lt;/dict&gt;
-&lt;/plist&gt;
-PLISTEOF" />
-    </Target>
-
     <!-- macOS Desktop: Create a distributable .app bundle after publishing in Release mode.
          This resolves Vulkan SDK dylib symlinks to actual copies, assembles the standard
-         .app bundle structure, and ad-hoc code signs so the app can be launched on other Macs
-         without .NET or Vulkan SDK installed. -->
+         .app bundle structure, generates Info.plist from the template, and ad-hoc code signs
+         so the app can be launched on other Macs without .NET or Vulkan SDK installed. -->
     <Target Name="CreateMacOSAppBundle" AfterTargets="Publish"
             Condition="$(BuildingMacOS) And '$(Configuration)' == 'Release'">
         <PropertyGroup>
@@ -376,6 +335,7 @@ PLISTEOF" />
             <MacOSAppContentsDir>$(MacOSAppBundleDir)/Contents</MacOSAppContentsDir>
             <MacOSAppMacOSDir>$(MacOSAppContentsDir)/MacOS</MacOSAppMacOSDir>
             <MacOSAppResourcesDir>$(MacOSAppContentsDir)/Resources</MacOSAppResourcesDir>
+            <MacOSPlistContent>$([System.IO.File]::ReadAllText('%(MacOSPlistTemplate.Identity)').Replace('@ApplicationTitle@', '$(ApplicationTitle)').Replace('@ApplicationId@', '$(ApplicationId)').Replace('@ApplicationDisplayVersion@', '$(ApplicationDisplayVersion)').Replace('@ApplicationVersion@', '$(ApplicationVersion)'))</MacOSPlistContent>
         </PropertyGroup>
 
         <!-- Clean any previous .app bundle -->
@@ -385,9 +345,8 @@ PLISTEOF" />
         <MakeDir Directories="$(MacOSAppMacOSDir)" />
         <MakeDir Directories="$(MacOSAppResourcesDir)" />
 
-        <!-- Copy the generated Info.plist into the bundle (built by GenerateMacOSInfoPlist from .fsproj properties) -->
-        <Copy SourceFiles="$(IntermediateOutputPath)Info.macos.plist"
-              DestinationFiles="$(MacOSAppContentsDir)/Info.plist" />
+        <!-- Generate Info.plist from template and write directly into the bundle -->
+        <WriteLinesToFile File="$(MacOSAppContentsDir)/Info.plist" Lines="$(MacOSPlistContent)" Overwrite="true" />
 
         <!-- Copy the generated app icon into Resources (built by GenerateDesktopIcon from the SVGs) -->
         <Copy SourceFiles="$(IntermediateOutputPath)icons/AppIcon.icns"

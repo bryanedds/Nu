@@ -122,19 +122,16 @@ let writeWindowsIco (png1024Path : string) (outputIco : string) =
 // ---- Main compositing ----
 
 let compositeIcon (bgSvgPath : string) (fgSvgPath : string) (outputPngPath : string) =
-    let readSettings = MagickReadSettings (BackgroundColor = MagickColors.Transparent)
+    let readSettings =
+        MagickReadSettings (BackgroundColor = MagickColors.Transparent, Width = 1024u, Height = 1024u) // read as 1024 x 1024 for high DPI output.
     use bg = new MagickImage (bgSvgPath, readSettings)
     use fg = new MagickImage (fgSvgPath, readSettings)
     bg.Format <- MagickFormat.Png32
     fg.Format <- MagickFormat.Png32
 
-    // Both SVGs are 456x456. Resize to 1024x1024 for high-DPI output.
-    bg.Resize (1024u, 1024u)
-    fg.Resize (1024u, 1024u)
-
     // Composite foreground onto background (like MAUI adaptive icon).
     // Both are pre-composited at full size; foreground artwork is already
-    // designed to sit within the MAUI safe zone (66.67%% of canvas).
+    // designed to sit within the MAUI safe zone (66.67% of canvas).
     bg.Composite (fg, CompositeOperator.Over)
 
     Directory.CreateDirectory (Path.GetDirectoryName outputPngPath) |> ignore
