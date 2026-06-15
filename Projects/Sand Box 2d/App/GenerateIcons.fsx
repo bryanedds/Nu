@@ -122,8 +122,9 @@ let writeWindowsIco (png1024Path : string) (outputIco : string) =
 // ---- Main compositing ----
 
 let compositeIcon (bgSvgPath : string) (fgSvgPath : string) (outputPngPath : string) =
-    use bg = new MagickImage (bgSvgPath)
-    use fg = new MagickImage (fgSvgPath)
+    let readSettings = MagickReadSettings (BackgroundColor = MagickColors.Transparent)
+    use bg = new MagickImage (bgSvgPath, readSettings)
+    use fg = new MagickImage (fgSvgPath, readSettings)
     bg.Format <- MagickFormat.Png32
     fg.Format <- MagickFormat.Png32
 
