@@ -1,0 +1,465 @@
+<Project>
+    <!--
+    Nu.Common.targets — Shared build configuration for Nu game projects.
+
+    Import this right after your first PropertyGroup (which sets
+    TargetFramework / TargetFrameworks and project identity properties).
+    The shared file then sees TargetFrameworks to condition UseMaui
+    on mobile targets (avoiding MAUI workload for desktop-only projects).
+
+    To opt into mobile targets:
+        <TargetFrameworks>net10.0-android;net10.0</TargetFrameworks>
+        <TargetFrameworks Condition="$([System.OperatingSystem]::IsMacOS())">$(TargetFrameworks);net10.0-ios</TargetFrameworks>
+    iOS is only available on macOS (requires macOS Vulkan SDK).
+    For desktop-only: <TargetFramework>net10.0</TargetFramework>
+
+    Property groups to set BEFORE this import:
+        - TargetFramework / TargetFrameworks
+        - OutputType (should be Exe)
+        - ApplicationTitle, ApplicationId, ApplicationDisplayVersion, ApplicationVersion
+        - SupportedOSPlatformVersion (for Android)
+    Properties set AFTER this import:
+        - MacOSVulkanSdk (override macOS Vulkan SDK path if needed)
+        - PpySdlVersion (override SDL package version if needed)
+    -->
+
+    <!-- ============================================================
+         Common Properties (defaults; override in your project)
+         ============================================================ -->
+
+    <PropertyGroup>
+        <!-- Convenience property: empty for desktop, "android"/"ios" for mobile -->
+        <TargetPlatformIdentifier>$([MSBuild]::GetTargetPlatformIdentifier($(TargetFramework)))</TargetPlatformIdentifier>
+
+        <!-- Detect macOS desktop builds (no TargetPlatformIdentifier, on macOS, non-simulator) -->
+        <BuildingMacOS>false</BuildingMacOS>
+        <BuildingMacOS Condition="'$(TargetPlatformIdentifier)' == '' And (('$(RuntimeIdentifier)'=='' And $([System.OperatingSystem]::IsMacOS())) Or $(RuntimeIdentifier.StartsWith('osx')))">true</BuildingMacOS>
+
+        <!-- Block compression: ASTC for Apple platforms and Android; BC otherwise -->
+        <BlockCompression Condition="'$(BlockCompression)' == ''">BcCompression</BlockCompression>
+        <BlockCompression Condition="$(BuildingMacOS) Or '$(TargetPlatformIdentifier)'=='ios' Or '$(TargetPlatformIdentifier)'=='android'">AstcCompression</BlockCompression>
+
+        <!-- .NET runtime settings (defaults; set earlier in your project to override) -->
+        <ServerGarbageCollection Condition="'$(ServerGarbageCollection)' == '' And '$(TargetPlatformIdentifier)' != 'ios'">True</ServerGarbageCollection>
+        <TieredPGO Condition="'$(TieredPGO)' == ''">True</TieredPGO>
+        <DisableFastUpToDateCheck Condition="'$(DisableFastUpToDateCheck)' == ''">True</DisableFastUpToDateCheck>
+
+        <!-- F# compiler settings -->
+        <WarnOn Condition="'$(WarnOn)' == ''">FS1182</WarnOn>
+        <NoWarn Condition="'$(NoWarn)' == ''">FS0009;FS0052;FS1178;FS3391;FS3536;FS3560</NoWarn>
+        <Tailcalls Condition="'$(Tailcalls)' == ''">False</Tailcalls>
+        <WarningLevel Condition="'$(WarningLevel)' == ''">5</WarningLevel>
+        <WarningsAsErrors Condition="'$(WarningsAsErrors)' == ''">FS0026;FS0049;FS3239;$(WarningsAsErrors)</WarningsAsErrors>
+        <DisableImplicitFSharpCoreReference Condition="'$(DisableImplicitFSharpCoreReference)' == ''">true</DisableImplicitFSharpCoreReference>
+
+        <!-- SDL package version (must match the version in Nu.fsproj's PackageReference) -->
+        <PpySdlVersion Condition="'$(PpySdlVersion)' == ''">2026.512.0</PpySdlVersion>
+    </PropertyGroup>
+
+    <!-- ============================================================
+         Mobile-specific Properties
+         Only apply when TargetFrameworks includes Android or iOS.
+         ============================================================ -->
+
+    <PropertyGroup Condition="'$(TargetFrameworks)' != '' And ($(TargetFrameworks.Contains('android')) Or $(TargetFrameworks.Contains('ios')))">
+        <UseMaui>true</UseMaui> <!-- Import MAUI MSBuild targets -->
+        <SingleProject>true</SingleProject> <!-- Tell Visual Studio to display Android and iOS devices in debugging dropdown menu -->
+        <SkipValidateMauiImplicitPackageReferences>true</SkipValidateMauiImplicitPackageReferences>
+    </PropertyGroup>
+
+    <!-- SelfContained for Release is useful for any deployable app (mobile or desktop). -->
+    <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+        <SelfContained>true</SelfContained>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(TargetPlatformIdentifier)' == 'android'">
+        <AndroidPackageFormat>aab</AndroidPackageFormat>
+        <AndroidBundleToolExtraArgs>--local-testing</AndroidBundleToolExtraArgs>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(TargetPlatformIdentifier)' == 'ios'">
+        <ValidateXcodeVersion>False</ValidateXcodeVersion>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="$(BuildingMacOS) And '$(Configuration)' == 'Release'">
+        <RuntimeIdentifiers Condition="'$(RuntimeIdentifiers)' == ''">osx-arm64</RuntimeIdentifiers>
+        <SelfContained>true</SelfContained>
+    </PropertyGroup>
+
+    <!-- ============================================================
+         Common Assembly References
+         ============================================================ -->
+
+    <ItemGroup>
+        <Reference Include="AssimpNet">
+            <HintPath>$(MSBuildThisFileDirectory)Nu.Dependencies/AssimpNet/netstandard2.1/AssimpNet.dll</HintPath>
+        </Reference>
+        <Reference Include="BulletSharpPInvoke">
+            <HintPath>$(MSBuildThisFileDirectory)Nu.Dependencies/BulletSharpPInvoke/netstandard2.1/BulletSharp.dll</HintPath>
+        </Reference>
+        <Reference Include="OpenGL.Net">
+            <HintPath>$(MSBuildThisFileDirectory)Nu.Dependencies/OpenGL.NET/lib/netcoreapp2.2/OpenGL.Net.dll</HintPath>
+        </Reference>
+        <Reference Include="TiledSharp">
+            <HintPath>$(MSBuildThisFileDirectory)Nu.Dependencies/TiledSharp/lib/netstandard2.0/TiledSharp.dll</HintPath>
+        </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="$(MSBuildThisFileDirectory)Nu/Nu.fsproj" />
+        <ProjectReference Include="$(MSBuildThisFileDirectory)Nu.Math/Nu.Math.csproj" />
+        <ProjectReference Include="$(MSBuildThisFileDirectory)Nu.Spine/Nu.Spine.csproj" />
+    </ItemGroup>
+
+    <!-- ============================================================
+         Mobile Package References
+         ============================================================ -->
+
+    <!-- MAUI packages are build-time only; remove their runtime assets -->
+    <ItemGroup>
+        <PackageReference Update="Microsoft.Maui.*" RemoveAssets="runtime" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(TargetPlatformIdentifier)' == 'android'">
+        <PackageReference Include="Xamarin.Google.Android.Play.Asset.Delivery" Version="2.3.0.6" />
+        <!-- Prevent linux binaries from being packaged on Android.
+             Keep versions updated with those selected in the Nu project. -->
+        <PackageReference Include="Silk.NET.Shaderc.Native" Version="2.21.0" ExcludeAssets="native" />
+        <PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" ExcludeAssets="native" />
+    </ItemGroup>
+
+    <!-- ============================================================
+         Mobile Native Libraries
+         ============================================================ -->
+
+    <ItemGroup Condition="'$(TargetPlatformIdentifier)' == 'android'">
+        <AndroidNativeLibrary Include="$(MSBuildThisFileDirectory)Nu.Dependencies/ShaderC/android/*/libshaderc_shared.so" />
+        <AndroidNativeLibrary Include="$(MSBuildThisFileDirectory)Nu.Dependencies/ShaderC/android/*/libc++_shared.so" />
+        <AndroidNativeLibrary Include="$(MSBuildThisFileDirectory)Nu.Dependencies/ImGui/android/*/libcimgui.so" />
+        <AndroidNativeLibrary Include="$(MSBuildThisFileDirectory)Nu.Dependencies/AssimpNet/android/*/libassimp.so" />
+        <!-- Download Vulkan validation layers here: https://github.com/KhronosGroup/Vulkan-ValidationLayers/releases -->
+        <!--AndroidNativeLibrary Include="$(MSBuildThisFileDirectory)Nu.Dependencies/Vulkan-validation/**/*.so" Condition="'$(Configuration)' == 'Debug'" /-->
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(TargetPlatformIdentifier)' == 'ios'">
+        <NativeReference Include="$(NuGetPackageRoot)ppy.sdl3-cs/$(PpySdlVersion)/runtimes/ios/native/SDL3.xcframework" Kind="Framework" />
+        <NativeReference Include="$(NuGetPackageRoot)ppy.sdl3_image-cs/$(PpySdlVersion)/runtimes/ios/native/SDL3_image.xcframework" Kind="Framework" />
+        <NativeReference Include="$(NuGetPackageRoot)ppy.sdl3_ttf-cs/$(PpySdlVersion)/runtimes/ios/native/SDL3_ttf.xcframework" Kind="Framework" />
+        <NativeReference Include="$(NuGetPackageRoot)ppy.sdl3_mixer-cs/$(PpySdlVersion)/runtimes/ios/native/SDL3_mixer.xcframework" Kind="Framework" />
+        <NativeReference Include="$(MSBuildThisFileDirectory)Nu.Dependencies/AssimpNet/iOS/assimp.xcframework" Kind="Framework" />
+        <NativeReference Include="$(MSBuildThisFileDirectory)Nu.Dependencies/BulletSharpPInvoke/iOS/bulletc.xcframework" Kind="Framework" />
+        <NativeReference Include="$(MSBuildThisFileDirectory)Nu.Dependencies/JoltPhysics/iOS/joltc.xcframework" Kind="Framework" />
+        <NativeReference Include="$(MSBuildThisFileDirectory)Nu.Dependencies/ImGui/iOS/cimgui.xcframework" Kind="Framework" />
+        <NativeReference Include="$(MSBuildThisFileDirectory)Nu.Dependencies/Vortice.VulkanMemoryAllocator/iOS/vma.xcframework" Kind="Framework" />
+        <NativeReference Include="$(MSBuildThisFileDirectory)Nu.Dependencies/ShaderC/iOS/shaderc_shared.xcframework" Kind="Framework" />
+    </ItemGroup>
+
+    <!-- macOS desktop: bundle frameworks into the output -->
+    <ItemGroup Condition="$(BuildingMacOS)">
+        <None Include="$(MSBuildThisFileDirectory)Nu.Dependencies/AssimpNet/iOS/assimp.xcframework/macos-arm64/assimp.framework/**/*">
+            <TargetPath>Frameworks/assimp.framework/%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Visible>False</Visible>
+        </None>
+        <None Include="$(MSBuildThisFileDirectory)Nu.Dependencies/BulletSharpPInvoke/iOS/bulletc.xcframework/macos-arm64/bulletc.framework/**/*">
+            <TargetPath>Frameworks/bulletc.framework/%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Visible>False</Visible>
+        </None>
+    </ItemGroup>
+
+    <!-- ============================================================
+         AssimpNet iOS Patch (classifies iOS as Linux; fix it)
+         ============================================================ -->
+
+    <!-- Runs before reference resolution on iOS. The reference update (Remove/Include) always
+         executes; file patching is incremental via SkipUnchangedFiles on the Copy task. -->
+    <Target Name="PatchAssimpNet" BeforeTargets="ResolveReferences;ResolveAssemblyReferences"
+            Condition="'$(TargetPlatformIdentifier)' == 'ios'">
+        <PropertyGroup>
+            <_AssimpNetOriginal>$(MSBuildThisFileDirectory)Nu.Dependencies/AssimpNet/netstandard2.1</_AssimpNetOriginal>
+            <_AssimpNetPatched>$(MSBuildProjectDirectory)/$(BaseIntermediateOutputPath)ios-managed/$(TargetFramework)</_AssimpNetPatched>
+        </PropertyGroup>
+        <MakeDir Directories="$(_AssimpNetPatched)" />
+        <Copy SourceFiles="$(_AssimpNetOriginal)/AssimpNet.dll;$(_AssimpNetOriginal)/AssimpNet.pdb;$(_AssimpNetOriginal)/AssimpNet.xml"
+              DestinationFolder="$(_AssimpNetPatched)" SkipUnchangedFiles="true" />
+        <Exec Command="perl -0777 -pi -e '$u=qr/\x18\x80(.{4})\x2a\x17\x80\1\x2a\x18\x80\1\x2a\x16\x80\1\x2a/s; $p=qr/\x18\x80(.{4})\x2a\x18\x80\1\x2a\x18\x80\1\x2a\x16\x80\1\x2a/s; s/$u/\x18\x80$1\x2a\x18\x80$1\x2a\x18\x80$1\x2a\x16\x80$1\x2a/s or /$p/ or die &quot;AssimpNet iOS platform patch pattern not found\n&quot;' &quot;$(_AssimpNetPatched)/AssimpNet.dll&quot;" />
+        <ItemGroup>
+            <!-- Always redirect the reference to the patched copy on iOS -->
+            <Reference Remove="AssimpNet" />
+            <Reference Include="AssimpNet">
+                <HintPath>$(_AssimpNetPatched)/AssimpNet.dll</HintPath>
+            </Reference>
+        </ItemGroup>
+    </Target>
+
+    <!-- ============================================================
+         ILStrip Exclusion (F# SRTP byref<T> invalid IL workaround)
+         ============================================================ -->
+
+    <Target Name="_ExcludeAssembliesFromILStrip" BeforeTargets="_StripAssemblyIL"
+            Condition="'$(TargetPlatformIdentifier)' == 'ios'">
+        <ItemGroup>
+            <_ExcludedAssemblies Include="@(ResolvedFileToPublish)"
+                Condition="'%(Filename)%(Extension)' == 'FSharp.Core.dll' Or '%(Filename)%(Extension)' == 'Nu.dll'" />
+            <ResolvedFileToPublish Remove="@(_ExcludedAssemblies)" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="_RestoreAssembliesAfterILStrip" AfterTargets="_StripAssemblyIL"
+            Condition="'$(TargetPlatformIdentifier)' == 'ios'">
+        <ItemGroup>
+            <ResolvedFileToPublish Include="@(_ExcludedAssemblies)" />
+        </ItemGroup>
+    </Target>
+
+    <!-- ============================================================
+         Remove Stale iOS Assets
+         ============================================================ -->
+
+    <Target Name="RemoveStaleIosAssets" BeforeTargets="_CopyResourcesToBundle"
+            Condition="'$(TargetPlatformIdentifier)' == 'ios'">
+        <RemoveDir Directories="$(AppBundleDir)/Assets" />
+        <RemoveDir Directories="$(AppBundleDir)/refinement-out" />
+    </Target>
+
+    <!-- ============================================================
+         Nu.Pipe: Asset Pipeline
+         ============================================================ -->
+
+    <!-- Build Nu.Pipe once even for multi-project builds -->
+    <Target Name="BuildNuPipe" BeforeTargets="BeforeBuild">
+        <MSBuild Projects="$(MSBuildThisFileDirectory)Nu.Pipe/Nu.Pipe.fsproj"
+                 RemoveProperties="TargetFramework;RuntimeIdentifier;SelfContained"
+                 Targets="Restore;Build" />
+    </Target>
+
+    <!-- Run Nu.Pipe to process assets.
+         Uses dotnet exec instead of MSBuild Run to avoid file-locking. -->
+    <Target Name="NuPipe" BeforeTargets="AssignTargetPaths;ResizetizeCollectItems"
+            DependsOnTargets="BuildNuPipe">
+        <PropertyGroup>
+            <!-- Desktop: write directly to bin folder as compilation output -->
+            <NuPipeOut>$(MSBuildProjectDirectory)/bin/$(Configuration)/$(TargetFramework)</NuPipeOut>
+            <!-- Mobile: write to refinement-out for use in later build steps (therefore cannot be under bin or obj folders) -->
+            <NuPipeOut Condition="'$(TargetPlatformIdentifier)' != ''">$(MSBuildProjectDirectory)/refinement-out/$(TargetFramework)</NuPipeOut>
+        </PropertyGroup>
+        <!-- These files are not copied by Nu.Pipe but read by the app.
+             App.config is auto-converted to <project>.dll.config by MSBuild on desktop. -->
+        <Copy Condition="'$(TargetPlatformIdentifier)' != ''"
+              SourceFiles="App.config" DestinationFolder="$(NuPipeOut)" SkipUnchangedFiles="true" />
+        <Copy SourceFiles="AssetGraph.nuag;Overlayer.nuol"
+              DestinationFolder="$(NuPipeOut)" SkipUnchangedFiles="true" />
+        <Exec Command="dotnet &quot;$([System.IO.Directory]::GetDirectories('$(MSBuildThisFileDirectory)Nu.Pipe/bin/$(Configuration)')[0])/Nu.Pipe.dll&quot; &quot;$(MSBuildProjectDirectory)/&quot; &quot;$(NuPipeOut)&quot; &quot;$(MSBuildProjectDirectory)/refinement/$(TargetFramework)/&quot; &quot;$(BlockCompression)&quot; &quot;False&quot;"
+              WorkingDirectory="$(MSBuildProjectDirectory)" />
+        <ItemGroup>
+            <!-- Android: fast-follow asset packs (extracted to file system, up to 512MB).
+                 Use on-demand for up to 2GB. Install-time packs do not have a file system path (remains compressed), don't use it. -->
+            <MauiAsset Include="refinement-out/$(TargetFramework)/**/*.*"
+                       AssetPack="gameassets" DeliveryType="FastFollow" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="CleanNuPipe" AfterTargets="Clean">
+        <RemoveDir Directories="refinement" />
+        <RemoveDir Directories="refinement-out" />
+        <RemoveDir Directories="$(OutDir)/Assets" />
+    </Target>
+
+    <!-- ============================================================
+         OverridePublishDir
+         ============================================================ -->
+
+    <Target Name="OverridePublishDir" AfterTargets="AssignTargetPaths">
+        <PropertyGroup>
+            <PublishDir>$(OutputPath)</PublishDir>
+        </PropertyGroup>
+    </Target>
+
+    <!-- ============================================================
+         macOS Vulkan SDK
+         ============================================================ -->
+
+    <!-- Allow projects to override the Vulkan SDK path -->
+    <PropertyGroup>
+        <MacOSVulkanSdk Condition="'$(MacOSVulkanSdk)' == ''"></MacOSVulkanSdk>
+    </PropertyGroup>
+
+    <Target Name="UseMacOSVulkanSDK" BeforeTargets="AssignTargetPaths"
+            Condition="$(BuildingMacOS) Or '$(TargetPlatformIdentifier)'=='ios'">
+        <!-- Auto-detect Vulkan SDK on macOS if not already set -->
+        <Exec Condition="'$(MacOSVulkanSdk)' == '' And $([System.OperatingSystem]::IsMacOS())" Command="
+            if [ -x ~/.bash_profile ]
+            then source ~/.bash_profile
+            fi
+            if [ &quot;$VULKAN_SDK&quot; == &quot;&quot; ]
+            then VULKAN_SDK=`ls -d ~/VulkanSDK/* | grep -E &quot;[^/]+/[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$&quot; | sort -V -r | head -n 1`
+            fi
+            echo &quot;$VULKAN_SDK&quot;" ConsoleToMsBuild="true">
+            <Output TaskParameter="ConsoleOutput" PropertyName="MacOSVulkanSdk" />
+        </Exec>
+        <Error Text="Please install the macOS Vulkan SDK. If installed to a non-default location, override the MacOSVulkanSdk property in your project file."
+               Condition="!$([System.IO.Directory]::Exists($(MacOSVulkanSdk)))" />
+        <Warning Text="iOS Simulator builds will disable the 3D renderer because array (layered) attachments are unsupported."
+                 Condition="'$(TargetPlatformIdentifier)'=='ios' And $(RuntimeIdentifier.StartsWith('iossimulator'))" />
+        <ItemGroup>
+            <!-- macOS: bundle Vulkan SDK dylibs -->
+            <MacOSVulkanSdkDylib Include="$(MacOSVulkanSdk)/macOS/lib/*.dylib" />
+            <MacOSVulkanSdkIcdJson Include="$(MacOSVulkanSdk)/macOS/share/**/*_icd.json" />
+            <!-- iOS: package MoltenVK (simulator slice exists in the xcframework) -->
+            <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios'"
+                             Include="$(MacOSVulkanSdk)/iOS/lib/MoltenVK.xcframework" Kind="Framework" />
+            <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios' And !$(RuntimeIdentifier.StartsWith('iossimulator'))"
+                             Include="$(MacOSVulkanSdk)/iOS/lib/vulkan.xcframework" Kind="Framework" />
+            <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios' And !$(RuntimeIdentifier.StartsWith('iossimulator'))"
+                             Include="$(MacOSVulkanSdk)/iOS/lib/VkLayer_*.xcframework" Kind="Framework" />
+        </ItemGroup>
+        <Error Condition="'$(TargetPlatformIdentifier)'!='ios' And '@(MacOSVulkanSdkDylib)'==''"
+               Text="No macOS Vulkan SDK dylibs were found at '$(MacOSVulkanSdk)/macOS/lib/*.dylib'. Ensure MacOSVulkanSdk points to a valid Vulkan SDK installation." />
+        <!-- Create symbolic links for macOS Vulkan SDK dylibs -->
+        <Exec Condition="'$(TargetPlatformIdentifier)'!='ios'"
+              Command="mkdir -p &quot;$(OutDir)%(MacOSVulkanSdkDylib.RecursiveDir)&quot; &amp;&amp; ln -sfn &quot;%(MacOSVulkanSdkDylib.Identity)&quot; &quot;$(OutDir)%(MacOSVulkanSdkDylib.RecursiveDir)%(MacOSVulkanSdkDylib.Filename)%(MacOSVulkanSdkDylib.Extension)&quot;" />
+        <Copy Condition="'$(TargetPlatformIdentifier)'!='ios'"
+              SourceFiles="@(MacOSVulkanSdkIcdJson)"
+              DestinationFiles="@(MacOSVulkanSdkIcdJson->'$(OutDir)%(RecursiveDir)%(Filename)%(Extension)')"
+              SkipUnchangedFiles="true" />
+        <ItemGroup>
+            <OutIcdJsonFile Include="$(OutDir)/vulkan/icd.d/*_icd.json" />
+        </ItemGroup>
+        <WriteLinesToFile Condition="'$(TargetPlatformIdentifier)'!='ios'"
+                          File="%(OutIcdJsonFile.Identity)"
+                          Lines="$([System.IO.File]::ReadAllText('%(OutIcdJsonFile.Identity)').Replace('../../../lib/','../../'))"
+                          Overwrite="true" />
+    </Target>
+
+    <!-- ============================================================
+         Desktop Icon Generation (from MAUI adaptive icon SVGs)
+         ============================================================ -->
+
+    <Target Name="GenerateDesktopIcon" BeforeTargets="BeforeBuild"
+            Condition="'$(TargetPlatformIdentifier)' == '' And Exists('$(MSBuildProjectDirectory)/App/GenerateIcons.fsx')">
+        <PropertyGroup>
+            <_DesktopIconDir>$(IntermediateOutputPath)icons</_DesktopIconDir>
+            <_IconBgSvg>$(MSBuildProjectDirectory)/App/icon_bg.svg</_IconBgSvg>
+            <_IconFgSvg>$(MSBuildProjectDirectory)/App/icon_fg.svg</_IconFgSvg>
+            <_GenerateIconsFsx>$(MSBuildProjectDirectory)/App/GenerateIcons.fsx</_GenerateIconsFsx>
+        </PropertyGroup>
+
+        <Exec Condition="$([System.OperatingSystem]::IsMacOS())"
+              Command="dotnet fsi &quot;$(_GenerateIconsFsx)&quot; -- macos &quot;$(_IconBgSvg)&quot; &quot;$(_IconFgSvg)&quot; &quot;$(_DesktopIconDir)&quot;" />
+        <Exec Condition="$([System.OperatingSystem]::IsLinux())"
+              Command="dotnet fsi &quot;$(_GenerateIconsFsx)&quot; -- linux &quot;$(_IconBgSvg)&quot; &quot;$(_IconFgSvg)&quot; &quot;$(_DesktopIconDir)&quot;" />
+        <Exec Condition="$([System.OperatingSystem]::IsWindows())"
+              Command="dotnet fsi &quot;$(_GenerateIconsFsx)&quot; -- windows &quot;$(_IconBgSvg)&quot; &quot;$(_IconFgSvg)&quot; &quot;$(_DesktopIconDir)/app.ico&quot;" />
+
+        <!-- Windows: embed .ico into .exe -->
+        <PropertyGroup Condition="$([System.OperatingSystem]::IsWindows())">
+            <ApplicationIcon>$(_DesktopIconDir)/app.ico</ApplicationIcon>
+        </PropertyGroup>
+    </Target>
+
+    <Target Name="IncludeDesktopIcon" AfterTargets="GenerateDesktopIcon"
+            Condition="'$(TargetPlatformIdentifier)' == '' And Exists('$(MSBuildProjectDirectory)/App/GenerateIcons.fsx')">
+        <PropertyGroup>
+            <_DesktopIconDir>$(IntermediateOutputPath)icons</_DesktopIconDir>
+        </PropertyGroup>
+        <ItemGroup Condition="$([System.OperatingSystem]::IsMacOS())">
+            <Content Include="$(_DesktopIconDir)/AppIcon.icns" Link="AppIcon.icns"
+                     CopyToOutputDirectory="PreserveNewest" />
+        </ItemGroup>
+        <ItemGroup Condition="$([System.OperatingSystem]::IsWindows())">
+            <Content Include="$(_DesktopIconDir)/app.ico" Link="app.ico"
+                     CopyToOutputDirectory="PreserveNewest" />
+        </ItemGroup>
+        <ItemGroup Condition="$([System.OperatingSystem]::IsLinux())">
+            <Content Include="$(_DesktopIconDir)/app.png" Link="app.png"
+                     CopyToOutputDirectory="PreserveNewest" />
+        </ItemGroup>
+    </Target>
+
+    <!-- ============================================================
+         macOS .app Bundle Creation (Release only)
+         ============================================================ -->
+
+    <Target Name="CreateMacOSAppBundle" AfterTargets="Publish"
+            Condition="$(BuildingMacOS) And '$(Configuration)' == 'Release' And '$(ApplicationTitle)' != ''">
+        <PropertyGroup>
+            <_MacOSAppBundleDir>$(MSBuildProjectDirectory)/bin/$(Configuration)/$(ApplicationTitle).app</_MacOSAppBundleDir>
+            <_MacOSAppContentsDir>$(_MacOSAppBundleDir)/Contents</_MacOSAppContentsDir>
+            <_MacOSAppMacOSDir>$(_MacOSAppContentsDir)/MacOS</_MacOSAppMacOSDir>
+            <_MacOSAppResourcesDir>$(_MacOSAppContentsDir)/Resources</_MacOSAppResourcesDir>
+            <_MacOSPlistContent>$([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)/App/macOS Info.plist').Replace('@ApplicationTitle@', '$(ApplicationTitle)').Replace('@ApplicationId@', '$(ApplicationId)').Replace('@ApplicationDisplayVersion@', '$(ApplicationDisplayVersion)').Replace('@ApplicationVersion@', '$(ApplicationVersion)'))</_MacOSPlistContent>
+        </PropertyGroup>
+
+        <!-- Clean previous bundle -->
+        <RemoveDir Directories="$(_MacOSAppBundleDir)" />
+
+        <!-- Create bundle structure -->
+        <MakeDir Directories="$(_MacOSAppMacOSDir)" />
+        <MakeDir Directories="$(_MacOSAppResourcesDir)" />
+
+        <!-- Generate Info.plist -->
+        <WriteLinesToFile File="$(_MacOSAppContentsDir)/Info.plist"
+                          Lines="$(_MacOSPlistContent)" Overwrite="true" />
+
+        <!-- Copy app icon -->
+        <Copy SourceFiles="$(IntermediateOutputPath)icons/AppIcon.icns"
+              DestinationFolder="$(_MacOSAppResourcesDir)" />
+
+        <!-- Copy published files (follow symlinks to resolve Vulkan SDK dylibs) -->
+        <Exec Command="cp -RL &quot;$(PublishDir)/&quot;* &quot;$(_MacOSAppMacOSDir)/&quot;" />
+
+        <!-- Also grab Nu.Pipe assets from the parent (RID publish writes one level deeper) -->
+        <Exec Command="cp -R &quot;$(PublishDir)/../Assets&quot; &quot;$(_MacOSAppMacOSDir)/&quot; 2>/dev/null || true" />
+        <Exec Command="cp &quot;$(PublishDir)/../AssetGraph.nuag&quot; &quot;$(PublishDir)/../AssetGraph.tracker&quot; &quot;$(PublishDir)/../Overlayer.nuol&quot; &quot;$(_MacOSAppMacOSDir)/&quot; 2>/dev/null || true" />
+
+        <!-- macOS Vulkan ICD discovery fix: move icd.d to Resources and fix paths -->
+        <MakeDir Directories="$(_MacOSAppResourcesDir)/vulkan/icd.d" />
+        <Exec Command="mv &quot;$(_MacOSAppMacOSDir)/vulkan/icd.d/&quot;*_icd.json &quot;$(_MacOSAppResourcesDir)/vulkan/icd.d/&quot;" />
+        <Exec Command="rm -rf &quot;$(_MacOSAppMacOSDir)/vulkan&quot;" />
+        <!-- Remove MoltenVK ICD (iOS-only, conflicts with KosmicKrisp on macOS) -->
+        <Delete Files="$(_MacOSAppResourcesDir)/vulkan/icd.d/MoltenVK_icd.json"
+                Condition="Exists('$(_MacOSAppResourcesDir)/vulkan/icd.d/MoltenVK_icd.json')" />
+        <!-- Fix library_path in ICD JSONs: Resources/vulkan/icd.d needs ../../../MacOS/ -->
+        <Exec Command="find &quot;$(_MacOSAppResourcesDir)/vulkan/icd.d&quot; -name '*_icd.json' -exec sed -i '' 's|\&quot;../../lib|\&quot;../../../MacOS/lib|g' {} \;" />
+        <!-- Remove MoltenVK dylib from macOS bundle -->
+        <Exec Command="rm -f &quot;$(_MacOSAppMacOSDir)&quot;/libMoltenVK*" />
+
+        <!-- Ad-hoc code sign for local distribution -->
+        <Exec Command="find &quot;$(_MacOSAppMacOSDir)&quot; -maxdepth 1 -name '*.dylib' -print0 | xargs -0 -I{} codesign --force --sign - {}"
+              IgnoreExitCode="true" />
+        <Exec Command="find &quot;$(_MacOSAppMacOSDir)/Frameworks&quot; -name '*.framework' -type d -maxdepth 1 -print0 2>/dev/null | xargs -0 -I{} codesign --force --sign - {}"
+              IgnoreExitCode="true" Condition="Exists('$(_MacOSAppMacOSDir)/Frameworks')" />
+        <Exec Command="codesign --force --sign - &quot;$(_MacOSAppBundleDir)&quot;"
+              IgnoreExitCode="true" />
+
+        <Message Importance="high" Text="============================================" />
+        <Message Importance="high" Text="macOS .app bundle created at:" />
+        <Message Importance="high" Text="  $(_MacOSAppBundleDir)" />
+        <Message Importance="high" Text="" />
+        <Message Importance="high" Text="To share: compress the .app bundle and send the .zip." />
+        <Message Importance="high" Text="" />
+        <Message Importance="high" Text="Note: Ad-hoc signed. Recipients must right-click the app" />
+        <Message Importance="high" Text="and select Open on first launch to bypass Gatekeeper." />
+        <Message Importance="high" Text="============================================" />
+    </Target>
+
+    <!-- ============================================================
+         iOS Simulator: Resign for Free Provisioning
+         ============================================================ -->
+
+    <Target Name="ResignIosSimulatorAppBundle" AfterTargets="Build"
+            Condition="$(RuntimeIdentifier.StartsWith('iossimulator')) And $([System.OperatingSystem]::IsMacOS()) And '$(CodesignKey)' == ''">
+        <Exec Command="security find-identity -v -p codesigning 2&gt;/dev/null | grep -Eq &quot;Apple Development&quot;"
+              IgnoreExitCode="true">
+            <Output TaskParameter="ExitCode" PropertyName="_IosSigningIdentityExitCode" />
+        </Exec>
+        <Error Condition="'$(_IosSigningIdentityExitCode)'!='0'"
+               Text="No valid Apple Development signing identity was found. iOS simulator launch may fail with AMFI code-signing errors. Create one in Xcode, including free provisioning via a Personal Team." />
+        <Exec Command="find &quot;$(AppBundleDir)/Frameworks&quot; -mindepth 2 -maxdepth 2 -type f -perm -111 -print0 | xargs -0 -I{} codesign --force --sign &quot;Apple Development&quot; --timestamp=none {}"
+              Condition="Exists('$(AppBundleDir)/Frameworks')" />
+        <Exec Command="find &quot;$(AppBundleDir)&quot; -maxdepth 1 -type f -name '*.dylib' -print0 | xargs -0 -I{} codesign --force --sign &quot;Apple Development&quot; --timestamp=none {}" />
+        <Exec Command="codesign --force --sign &quot;Apple Development&quot; --timestamp=none &quot;$(AppBundleDir)&quot;" />
+    </Target>
+
+</Project>
