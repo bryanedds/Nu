@@ -151,11 +151,18 @@
     <!-- iOS: SDL Native References (from resolved package graph) -->
     <Target Name="_CreateSdlNativeReferences" AfterTargets="ResolvePackageDependencies" BeforeTargets="ResolveReferences"
             Condition="'$(TargetPlatformIdentifier)' == 'ios'">
+        <PropertyGroup>
+            <!-- Cna't inline these properties or a build error will result -->
+            <_SdlVersion>@(PackageDependency->WithMetadataValue('Identity', 'ppy.SDL3-CS')->'%(Version)')</_SdlVersion>
+            <_SdlImageVersion>@(PackageDependency->WithMetadataValue('Identity', 'ppy.SDL3_image-CS')->'%(Version)')</_SdlImageVersion>
+            <_SdlTtfVersion>@(PackageDependency->WithMetadataValue('Identity', 'ppy.SDL3_ttf-CS')->'%(Version)')</_SdlTtfVersion>
+            <_SdlMixerVersion>@(PackageDependency->WithMetadataValue('Identity', 'ppy.SDL3_mixer-CS')->'%(Version)')</_SdlMixerVersion>
+        </PropertyGroup>
         <ItemGroup>
-            <NativeReference Include="$(NuGetPackageRoot)ppy.sdl3-cs/@(PackageDependency->WithMetadataValue('Identity', 'ppy.SDL3-CS')->'%(Version)')/runtimes/ios/native/SDL3.xcframework" Kind="Framework" />
-            <NativeReference Include="$(NuGetPackageRoot)ppy.sdl3_image-cs/@(PackageDependency->WithMetadataValue('Identity', 'ppy.SDL3_image-CS')->'%(Version)')/runtimes/ios/native/SDL3_image.xcframework" Kind="Framework" />
-            <NativeReference Include="$(NuGetPackageRoot)ppy.sdl3_ttf-cs/@(PackageDependency->WithMetadataValue('Identity', 'ppy.SDL3_ttf-CS')->'%(Version)')/runtimes/ios/native/SDL3_ttf.xcframework" Kind="Framework" />
-            <NativeReference Include="$(NuGetPackageRoot)ppy.sdl3_mixer-cs/@(PackageDependency->WithMetadataValue('Identity', 'ppy.SDL3-CS')->'%(Version)')/runtimes/ios/native/SDL3_mixer.xcframework" Kind="Framework" />
+            <NativeReference Include="$(NuGetPackageRoot)ppy.sdl3-cs/$(_SdlVersion)/runtimes/ios/native/SDL3.xcframework" Kind="Framework" />
+            <NativeReference Include="$(NuGetPackageRoot)ppy.sdl3_image-cs/$(_SdlImageVersion)/runtimes/ios/native/SDL3_image.xcframework" Kind="Framework" />
+            <NativeReference Include="$(NuGetPackageRoot)ppy.sdl3_ttf-cs/$(_SdlTtfVersion)/runtimes/ios/native/SDL3_ttf.xcframework" Kind="Framework" />
+            <NativeReference Include="$(NuGetPackageRoot)ppy.sdl3_mixer-cs/$(_SdlMixerVersion)/runtimes/ios/native/SDL3_mixer.xcframework" Kind="Framework" />
         </ItemGroup>
     </Target>
 
