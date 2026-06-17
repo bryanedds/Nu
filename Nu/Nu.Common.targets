@@ -51,9 +51,6 @@
         <WarningLevel Condition="'$(WarningLevel)' == ''">5</WarningLevel>
         <WarningsAsErrors Condition="'$(WarningsAsErrors)' == ''">FS0026;FS0049;FS3239;$(WarningsAsErrors)</WarningsAsErrors>
         <DisableImplicitFSharpCoreReference Condition="'$(DisableImplicitFSharpCoreReference)' == ''">true</DisableImplicitFSharpCoreReference>
-
-        <!-- Convenience property: SDL package version (must match the version in Nu.fsproj's PackageReference) -->
-        <PpySdlVersion Condition="'$(PpySdlVersion)' == ''">2026.512.0</PpySdlVersion>
     </PropertyGroup>
 
     <!-- ============================================================
@@ -73,12 +70,13 @@
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(TargetPlatformIdentifier)' == 'android'">
+        <!-- Required properties for asset packs: https://learn.microsoft.com/en-us/dotnet/maui/android/asset-packs -->
         <AndroidPackageFormat>aab</AndroidPackageFormat>
         <AndroidBundleToolExtraArgs>--local-testing</AndroidBundleToolExtraArgs>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(TargetPlatformIdentifier)' == 'ios'">
-        <ValidateXcodeVersion>False</ValidateXcodeVersion>
+        <ValidateXcodeVersion>False</ValidateXcodeVersion> <!-- You can disable this for more annoyances with Xcode version syncing with .NET workloads -->
     </PropertyGroup>
 
     <PropertyGroup Condition="$(BuildingMacOS) And '$(Configuration)' == 'Release'">
@@ -142,10 +140,6 @@
     </ItemGroup>
 
     <ItemGroup Condition="'$(TargetPlatformIdentifier)' == 'ios'">
-        <NativeReference Include="$(NuGetPackageRoot)ppy.sdl3-cs/$(PpySdlVersion)/runtimes/ios/native/SDL3.xcframework" Kind="Framework" />
-        <NativeReference Include="$(NuGetPackageRoot)ppy.sdl3_image-cs/$(PpySdlVersion)/runtimes/ios/native/SDL3_image.xcframework" Kind="Framework" />
-        <NativeReference Include="$(NuGetPackageRoot)ppy.sdl3_ttf-cs/$(PpySdlVersion)/runtimes/ios/native/SDL3_ttf.xcframework" Kind="Framework" />
-        <NativeReference Include="$(NuGetPackageRoot)ppy.sdl3_mixer-cs/$(PpySdlVersion)/runtimes/ios/native/SDL3_mixer.xcframework" Kind="Framework" />
         <NativeReference Include="$(MSBuildThisFileDirectory)Nu.Dependencies/AssimpNet/iOS/assimp.xcframework" Kind="Framework" />
         <NativeReference Include="$(MSBuildThisFileDirectory)Nu.Dependencies/BulletSharpPInvoke/iOS/bulletc.xcframework" Kind="Framework" />
         <NativeReference Include="$(MSBuildThisFileDirectory)Nu.Dependencies/JoltPhysics/iOS/joltc.xcframework" Kind="Framework" />
@@ -153,6 +147,17 @@
         <NativeReference Include="$(MSBuildThisFileDirectory)Nu.Dependencies/Vortice.VulkanMemoryAllocator/iOS/vma.xcframework" Kind="Framework" />
         <NativeReference Include="$(MSBuildThisFileDirectory)Nu.Dependencies/ShaderC/iOS/shaderc_shared.xcframework" Kind="Framework" />
     </ItemGroup>
+
+    <!-- iOS: SDL Native References (from resolved package graph) -->
+    <Target Name="_CreateSdlNativeReferences" AfterTargets="ResolvePackageDependencies" BeforeTargets="ResolveReferences"
+            Condition="'$(TargetPlatformIdentifier)' == 'ios'">
+        <ItemGroup>
+            <NativeReference Include="$(NuGetPackageRoot)ppy.sdl3-cs/@(PackageDependency->WithMetadataValue('Identity', 'ppy.SDL3-CS')->'%(Version)')/runtimes/ios/native/SDL3.xcframework" Kind="Framework" />
+            <NativeReference Include="$(NuGetPackageRoot)ppy.sdl3_image-cs/@(PackageDependency->WithMetadataValue('Identity', 'ppy.SDL3_image-CS')->'%(Version)')/runtimes/ios/native/SDL3_image.xcframework" Kind="Framework" />
+            <NativeReference Include="$(NuGetPackageRoot)ppy.sdl3_ttf-cs/@(PackageDependency->WithMetadataValue('Identity', 'ppy.SDL3_ttf-CS')->'%(Version)')/runtimes/ios/native/SDL3_ttf.xcframework" Kind="Framework" />
+            <NativeReference Include="$(NuGetPackageRoot)ppy.sdl3_mixer-cs/@(PackageDependency->WithMetadataValue('Identity', 'ppy.SDL3-CS')->'%(Version)')/runtimes/ios/native/SDL3_mixer.xcframework" Kind="Framework" />
+        </ItemGroup>
+    </Target>
 
     <!-- macOS desktop: bundle frameworks into the output -->
     <ItemGroup Condition="$(BuildingMacOS)">
