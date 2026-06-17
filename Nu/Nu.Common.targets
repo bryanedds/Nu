@@ -7,7 +7,7 @@
 
     To opt into mobile targets, list them explicitly in your project:
         <TargetFrameworks>net10.0-android;net10.0;net10.0-ios</TargetFrameworks>
-    iOS builds are automatically skipped on non-macOS.
+    iOS builds are automatically skipped on non-macOS. Note that desktop must NOT come first for Visual Studio tooling to show mobile debug targets correctly.
     For desktop-only: <TargetFramework>net10.0</TargetFramework>
 
     Property to set BEFORE this import:
