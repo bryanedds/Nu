@@ -31,11 +31,11 @@
         <!-- Convenience property: empty for desktop, "android"/"ios" for mobile -->
         <TargetPlatformIdentifier>$([MSBuild]::GetTargetPlatformIdentifier($(TargetFramework)))</TargetPlatformIdentifier>
 
-        <!-- Detect macOS desktop builds (no TargetPlatformIdentifier, on macOS, non-simulator) -->
+        <!-- Convenience property: detect macOS desktop builds (no TargetPlatformIdentifier, on macOS, non-simulator) -->
         <BuildingMacOS>false</BuildingMacOS>
         <BuildingMacOS Condition="'$(TargetPlatformIdentifier)' == '' And (('$(RuntimeIdentifier)'=='' And $([System.OperatingSystem]::IsMacOS())) Or $(RuntimeIdentifier.StartsWith('osx')))">true</BuildingMacOS>
 
-        <!-- Block compression: ASTC for Apple platforms and Android; BC otherwise -->
+        <!-- Convenience property: Block compression - ASTC for Apple platforms and Android; BC otherwise -->
         <BlockCompression Condition="'$(BlockCompression)' == ''">BcCompression</BlockCompression>
         <BlockCompression Condition="$(BuildingMacOS) Or '$(TargetPlatformIdentifier)'=='ios' Or '$(TargetPlatformIdentifier)'=='android'">AstcCompression</BlockCompression>
 
@@ -52,12 +52,12 @@
         <WarningsAsErrors Condition="'$(WarningsAsErrors)' == ''">FS0026;FS0049;FS3239;$(WarningsAsErrors)</WarningsAsErrors>
         <DisableImplicitFSharpCoreReference Condition="'$(DisableImplicitFSharpCoreReference)' == ''">true</DisableImplicitFSharpCoreReference>
 
-        <!-- SDL package version (must match the version in Nu.fsproj's PackageReference) -->
+        <!-- Convenience property: SDL package version (must match the version in Nu.fsproj's PackageReference) -->
         <PpySdlVersion Condition="'$(PpySdlVersion)' == ''">2026.512.0</PpySdlVersion>
     </PropertyGroup>
 
     <!-- ============================================================
-         Mobile-specific Properties
+         iOS / Android: Mobile-specific Properties
          Only apply when TargetFrameworks includes Android or iOS.
          ============================================================ -->
 
@@ -112,7 +112,7 @@
     </ItemGroup>
 
     <!-- ============================================================
-         Mobile Package References
+         iOS / Android: Package References
          ============================================================ -->
 
     <!-- MAUI packages are build-time only; remove their runtime assets -->
@@ -129,7 +129,7 @@
     </ItemGroup>
 
     <!-- ============================================================
-         Mobile Native Libraries
+         iOS / Android / macOS: Native Libraries
          ============================================================ -->
 
     <ItemGroup Condition="'$(TargetPlatformIdentifier)' == 'android'">
@@ -169,7 +169,7 @@
     </ItemGroup>
 
     <!-- ============================================================
-         AssimpNet iOS Patch (classifies iOS as Linux; fix it)
+         iOS: AssimpNet Patch (classifies iOS as Linux; fix it)
          ============================================================ -->
 
     <!-- Runs before reference resolution on iOS. The reference update (Remove/Include) always
@@ -194,7 +194,7 @@
     </Target>
 
     <!-- ============================================================
-         ILStrip Exclusion (F# SRTP byref<T> invalid IL workaround)
+         iOS: ILStrip Exclusion (F# SRTP byref<T> invalid IL workaround)
          ============================================================ -->
 
     <Target Name="_ExcludeAssembliesFromILStrip" BeforeTargets="_StripAssemblyIL"
@@ -214,7 +214,7 @@
     </Target>
 
     <!-- ============================================================
-         Remove Stale iOS Assets
+         iOS: Remove Stale Assets
          ============================================================ -->
 
     <Target Name="RemoveStaleIosAssets" BeforeTargets="_CopyResourcesToBundle"
@@ -277,7 +277,7 @@
     </Target>
 
     <!-- ============================================================
-         macOS Vulkan SDK
+         macOS / iOS: Vulkan SDK
          ============================================================ -->
 
     <!-- Allow projects to override the Vulkan SDK path -->
@@ -333,24 +333,26 @@
     </Target>
 
     <!-- ============================================================
-         Desktop Icon Generation (from MAUI adaptive icon SVGs)
+         Desktop: Icon Generation (from MAUI adaptive icon SVGs)
          ============================================================ -->
 
     <Target Name="GenerateDesktopIcon" BeforeTargets="BeforeBuild"
-            Condition="'$(TargetPlatformIdentifier)' == ''">
+            Condition="'$(TargetPlatformIdentifier)' == '' And '@(MauiIcon)' != ''">
         <PropertyGroup>
             <_DesktopIconDir>$(IntermediateOutputPath)icons</_DesktopIconDir>
-            <_IconBgSvg>$(MSBuildProjectDirectory)/App/icon_bg.svg</_IconBgSvg>
-            <_IconFgSvg>$(MSBuildProjectDirectory)/App/icon_fg.svg</_IconFgSvg>
             <_GenerateIconsFsx>$(MSBuildThisFileDirectory)Nu/Scripts/GenerateIcons.fsx</_GenerateIconsFsx>
         </PropertyGroup>
+        <Error Condition="@(MauiIcon->Count()) > 1" Text="Multiple <MauiIcon> items were found. Please only specify one for desktop icon generation." />
+        <Error Condition="'%(MauiIcon.Resize)' != ''" Text="The <MauiIcon> item should not specify the Resize attribute; only Include and ForegroundFile are supported for desktop icon generation." />
+        <Error Condition="'%(MauiIcon.BaseSize)' != ''" Text="The <MauiIcon> item should not specify the BaseSize attribute; only Include and ForegroundFile are supported for desktop icon generation." />
+        <!-- Note: ForegroundFile being omitted is handled by the script checking for a valid file. -->
 
         <Exec Condition="$([System.OperatingSystem]::IsMacOS())"
-              Command="dotnet fsi &quot;$(_GenerateIconsFsx)&quot; -- macos &quot;$(_IconBgSvg)&quot; &quot;$(_IconFgSvg)&quot; &quot;$(_DesktopIconDir)&quot;" />
+              Command="dotnet fsi &quot;$(_GenerateIconsFsx)&quot; -- macos &quot;@(MauiIcon->'%(FullPath)')&quot; &quot;$(MSBuildProjectDirectory)/%(MauiIcon.ForegroundFile)&quot; &quot;$(_DesktopIconDir)&quot;" />
         <Exec Condition="$([System.OperatingSystem]::IsLinux())"
-              Command="dotnet fsi &quot;$(_GenerateIconsFsx)&quot; -- linux &quot;$(_IconBgSvg)&quot; &quot;$(_IconFgSvg)&quot; &quot;$(_DesktopIconDir)&quot;" />
+              Command="dotnet fsi &quot;$(_GenerateIconsFsx)&quot; -- linux &quot;@(MauiIcon->'%(FullPath)')&quot; &quot;$(MSBuildProjectDirectory)/%(MauiIcon.ForegroundFile)&quot; &quot;$(_DesktopIconDir)&quot;" />
         <Exec Condition="$([System.OperatingSystem]::IsWindows())"
-              Command="dotnet fsi &quot;$(_GenerateIconsFsx)&quot; -- windows &quot;$(_IconBgSvg)&quot; &quot;$(_IconFgSvg)&quot; &quot;$(_DesktopIconDir)/app.ico&quot;" />
+              Command="dotnet fsi &quot;$(_GenerateIconsFsx)&quot; -- windows &quot;@(MauiIcon->'%(FullPath)')&quot; &quot;$(MSBuildProjectDirectory)/%(MauiIcon.ForegroundFile)&quot; &quot;$(_DesktopIconDir)/app.ico&quot;" />
 
         <!-- Windows: embed .ico into .exe -->
         <PropertyGroup Condition="$([System.OperatingSystem]::IsWindows())">
@@ -374,7 +376,7 @@
     </Target>
 
     <!-- ============================================================
-         macOS .app Bundle Creation (Release only)
+         macOS: .app Bundle Creation (Release only)
          ============================================================ -->
 
     <Target Name="CreateMacOSAppBundle" AfterTargets="Publish"

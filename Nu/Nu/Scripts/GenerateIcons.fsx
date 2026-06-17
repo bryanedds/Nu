@@ -3,9 +3,10 @@
 // These SVGs are the SINGLE SOURCE OF TRUTH across all platforms.
 //
 // Usage:
-//   dotnet fsi GenerateIcons.fsx macos   <bg.svg> <fg.svg> <output_dir>
-//   dotnet fsi GenerateIcons.fsx windows <bg.svg> <fg.svg> <output.ico>
-//   dotnet fsi GenerateIcons.fsx linux   <bg.svg> <fg.svg> <output_dir>
+//   dotnet fsi GenerateIcons.fsx macos   <bg.svg> [<fg.svg>] <output_dir>
+//   dotnet fsi GenerateIcons.fsx windows <bg.svg> [<fg.svg>] <output.ico>
+//   dotnet fsi GenerateIcons.fsx linux   <bg.svg> [<fg.svg>] <output_dir>
+//   fg.svg is optional. When omitted or empty, the background is used alone (single-layer icon).
 //
 // Dependencies (resolved via NuGet automatically):
 //   Magick.NET-Q8-AnyCPU (SVG rendering + image resizing)
@@ -20,10 +21,10 @@ open ImageMagick
 // ---- CLI ----
 
 let usage () =
-    eprintfn """Usage: dotnet fsi GenerateIcons.fsx <platform> <bg.svg> <fg.svg> <output_dir>
+    eprintfn """Usage: dotnet fsi GenerateIcons.fsx <platform> <bg.svg> [<fg.svg>] <output>
   platform: macos | windows | linux
   bg.svg  : path to the background SVG (MAUI adaptive icon background layer)
-  fg.svg  : path to the foreground SVG (MAUI adaptive icon foreground layer)
+  fg.svg  : optional path to the foreground SVG; omitted or empty for single-layer icon
   output  : output directory (macOS/linux) or .ico file path (Windows)
 The SVGs in App/ are the single source of truth for the app icon design."""
 
@@ -125,14 +126,15 @@ let compositeIcon (bgSvgPath : string) (fgSvgPath : string) (outputPngPath : str
     let readSettings =
         MagickReadSettings (BackgroundColor = MagickColors.Transparent, Width = 1024u, Height = 1024u) // read as 1024 x 1024 for high DPI output.
     use bg = new MagickImage (bgSvgPath, readSettings)
-    use fg = new MagickImage (fgSvgPath, readSettings)
     bg.Format <- MagickFormat.Png32
-    fg.Format <- MagickFormat.Png32
 
-    // Composite foreground onto background (like MAUI adaptive icon).
-    // Both are pre-composited at full size; foreground artwork is already
-    // designed to sit within the MAUI safe zone (66.67% of canvas).
-    bg.Composite (fg, CompositeOperator.Over)
+    if not (String.IsNullOrWhiteSpace fgSvgPath) && File.Exists fgSvgPath then
+        use fg = new MagickImage (fgSvgPath, readSettings)
+        fg.Format <- MagickFormat.Png32
+        // Composite foreground onto background (like MAUI adaptive icon).
+        // Both are pre-composited at full size; foreground artwork is already
+        // designed to sit within the MAUI safe zone (66.67% of canvas).
+        bg.Composite (fg, CompositeOperator.Over)
 
     Directory.CreateDirectory (Path.GetDirectoryName outputPngPath) |> ignore
     bg.Write outputPngPath
