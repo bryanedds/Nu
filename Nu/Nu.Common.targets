@@ -4,23 +4,22 @@
 
     Import this right after your first PropertyGroup (which sets
     TargetFramework / TargetFrameworks and project identity properties).
-    The shared file then sees TargetFrameworks to condition UseMaui
-    on mobile targets (avoiding MAUI workload for desktop-only projects).
+    The shared file then sees TargetFrameworks to:
+      - strip iOS on non-macOS (so projects can explicitly list all targets)
+      - condition UseMaui on mobile targets (avoiding MAUI workload for desktop-only projects)
 
-    To opt into mobile targets:
-        <TargetFrameworks>net10.0-android;net10.0</TargetFrameworks>
-        <TargetFrameworks Condition="$([System.OperatingSystem]::IsMacOS())">$(TargetFrameworks);net10.0-ios</TargetFrameworks>
-    iOS is only available on macOS (requires macOS Vulkan SDK).
+    To opt into mobile targets, list them explicitly in your project:
+        <TargetFrameworks>net10.0-android;net10.0;net10.0-ios</TargetFrameworks>
+    Nu.Common.targets strips net10.0-ios on non-macOS automatically.
     For desktop-only: <TargetFramework>net10.0</TargetFramework>
 
     Property groups to set BEFORE this import:
         - TargetFramework / TargetFrameworks
         - OutputType (should be Exe)
         - ApplicationTitle, ApplicationId, ApplicationDisplayVersion, ApplicationVersion
-        - SupportedOSPlatformVersion (for Android)
     Properties set AFTER this import:
+        - SupportedOSPlatformVersion (where TargetPlatformIdentifier can be used in the condition)
         - MacOSVulkanSdk (override macOS Vulkan SDK path if needed)
-        - PpySdlVersion (override SDL package version if needed)
     -->
 
     <!-- ============================================================
@@ -54,9 +53,20 @@
     </PropertyGroup>
 
     <!-- ============================================================
+         iOS: disable on non-macOS
+         ============================================================
+         Projects can explicitly list net10.0-ios in TargetFrameworks
+         for documentation/clarity; on non-macOS we strip it out so
+         the build doesn't fail due to missing iOS SDK/toolchain. -->
+
+    <PropertyGroup Condition="!$([System.OperatingSystem]::IsMacOS()) And '$(TargetFrameworks)' != '' And $(TargetFrameworks.Contains('net10.0-ios'))">
+        <TargetFrameworks>$(TargetFrameworks.Replace(';net10.0-ios', '').Replace('net10.0-ios;', '').Replace(';;', ';'))</TargetFrameworks>
+    </PropertyGroup>
+
+    <!-- ============================================================
          iOS / Android: Mobile-specific Properties
-         Only apply when TargetFrameworks includes Android or iOS.
-         ============================================================ -->
+         ============================================================ 
+         Only apply when TargetFrameworks includes Android or iOS.-->
 
     <PropertyGroup Condition="'$(TargetFrameworks)' != '' And ($(TargetFrameworks.Contains('android')) Or $(TargetFrameworks.Contains('ios')))">
         <UseMaui>true</UseMaui> <!-- Import MAUI MSBuild targets -->
@@ -354,9 +364,9 @@
             <_DesktopIconDir>$(IntermediateOutputPath)icons</_DesktopIconDir>
             <_GenerateIconsFsx>$(MSBuildThisFileDirectory)Nu/Scripts/GenerateIcons.fsx</_GenerateIconsFsx>
         </PropertyGroup>
-        <Error Condition="@(MauiIcon->Count()) > 1" Text="Multiple <MauiIcon> items were found. Please only specify one for desktop icon generation." />
-        <Error Condition="'%(MauiIcon.Resize)' != ''" Text="The <MauiIcon> item should not specify the Resize attribute; only Include and ForegroundFile are supported for desktop icon generation." />
-        <Error Condition="'%(MauiIcon.BaseSize)' != ''" Text="The <MauiIcon> item should not specify the BaseSize attribute; only Include and ForegroundFile are supported for desktop icon generation." />
+        <Error Condition="@(MauiIcon->Count()) > 1" Text="Multiple &lt;MauiIcon&gt; items were found. Please only specify one for desktop icon generation." />
+        <Error Condition="'%(MauiIcon.Resize)' != ''" Text="The &lt;MauiIcon&gt; item should not specify the Resize attribute; only Include and ForegroundFile are supported for desktop icon generation." />
+        <Error Condition="'%(MauiIcon.BaseSize)' != ''" Text="The &lt;MauiIcon&gt; item should not specify the BaseSize attribute; only Include and ForegroundFile are supported for desktop icon generation." />
         <!-- Note: ForegroundFile being omitted is handled by the script checking for a valid file. -->
 
         <Exec Condition="$([System.OperatingSystem]::IsMacOS())"
