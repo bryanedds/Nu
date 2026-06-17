@@ -2,8 +2,8 @@
 
     <PropertyGroup>
         <!-- Target frameworks: Android must be listed before desktop for Visual Studio
-             to detect mobile debug targets. iOS is stripped on non-macOS
-             by Nu.Common.targets automatically. -->
+             to detect mobile debug targets. iOS builds are validated: they require
+             macOS (see Nu.Common.targets). -->
         <TargetFrameworks>net10.0-android;net10.0;net10.0-ios</TargetFrameworks>
 
         <OutputType>Exe</OutputType>
