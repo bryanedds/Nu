@@ -1125,8 +1125,12 @@ module WorldModule2 =
             match evt.Type with
             | SDL_EventType.SDL_EVENT_QUIT ->
                 if world.Accompanied then
+                    // accompanied (in an editor): forward as a request so the editor can handle it
                     let eventTrace = EventTrace.debug "World" "processInput2" "ExitRequest" EventTrace.empty
                     World.publishPlus () Nu.Game.Handle.ExitRequestEvent eventTrace Nu.Game.Handle true true world
+                else
+                    // unaccompanied (standalone game): closing the window exits the program
+                    World.exit world
             | SDL_EventType.SDL_EVENT_WINDOW_RESIZED ->
 
                 // ensure window size is a factor of display virtual resolution, going to full screen otherwise
