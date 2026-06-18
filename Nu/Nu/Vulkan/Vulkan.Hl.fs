@@ -1486,7 +1486,7 @@ module Hl =
                 VkDebugUtilsMessageTypeFlagsEXT.Validation |||
                 VkDebugUtilsMessageTypeFlagsEXT.Performance
             let debugCallbackMethod = typeof<VulkanContext>.GetMethod(nameof VulkanContext.debugCallback, BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic).MethodHandle
-            let callbackPointer = debugCallbackMethod.GetFunctionPointer ()
+            let callbackPointer = debugCallbackMethod.GetFunctionPointer () // Requires UnmanagedCallersOnly on the function! See https://learn.microsoft.com/en-us/dotnet/api/system.runtimemethodhandle.getfunctionpointer#remarks
             let offset = Marshal.OffsetOf<VkDebugUtilsMessengerCreateInfoEXT> (nameof info.pfnUserCallback)
             let fieldRef = NativePtr.ofNativeInt<byte> (NativePtr.toNativeInt &&info + offset)
             Unsafe.WriteUnaligned (NativePtr.toByRef<byte> fieldRef, callbackPointer) // TODO: report this F# compiler bug that allows direct assignment to compile without error but causes a crash at runtime

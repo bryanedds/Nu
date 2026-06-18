@@ -400,7 +400,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
 
         // get function pointer for the UnmanagedCallersOnly callback
         let stoppedCallbackMethod = typeof<SdlAudioPlayer>.GetMethod("StoppedCallback", BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic).MethodHandle
-        let stoppedCallbackPtr = stoppedCallbackMethod.GetFunctionPointer ()
+        let stoppedCallbackPtr = stoppedCallbackMethod.GetFunctionPointer () // Requires UnmanagedCallersOnly on the function! See https://learn.microsoft.com/en-us/dotnet/api/system.runtimemethodhandle.getfunctionpointer#remarks
 
         let userdataPtr = GCHandle.ToIntPtr playerHandle
 
