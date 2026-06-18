@@ -109,12 +109,8 @@ type [<SymbolicExpansion>] MaterialProperties =
     member this.ClearCoat = ValueOption.defaultValue Constants.Render.ClearCoatDefault this.ClearCoatOpt
     member this.ClearCoatRoughness = ValueOption.defaultValue Constants.Render.ClearCoatRoughnessDefault this.ClearCoatRoughnessOpt
 
-/// MaterialProperties functions.
-[<RequireQualifiedAccess>]
-module MaterialProperties =
-
     /// Material properties with populated default properties.
-    let defaultProperties =
+    static member val defaultProperties =
         { AlbedoOpt = ValueSome Constants.Render.AlbedoDefault
           RoughnessOpt = ValueSome Constants.Render.RoughnessDefault
           MetallicOpt = ValueSome Constants.Render.MetallicDefault
@@ -133,7 +129,7 @@ module MaterialProperties =
           ClearCoatRoughnessOpt = ValueSome Constants.Render.ClearCoatRoughnessDefault }
 
     /// Empty material properties.
-    let empty =
+    static member val empty =
         { AlbedoOpt = ValueNone
           RoughnessOpt = ValueNone
           MetallicOpt = ValueNone
@@ -222,24 +218,8 @@ type [<SymbolicExpansion; CustomEquality; NoComparison>] Material =
         this.TwoSidedOpt = that.TwoSidedOpt &&
         this.ClippedOpt = that.ClippedOpt
 
-    override this.GetHashCode () =
-        Material.hash this
-
-    override this.Equals (that : obj) =
-        match that with
-        | :? Material as that -> Material.equals this that
-        | _ -> false
-
-    interface IEquatable<Material> with
-        member this.Equals that =
-            Material.equals this that
-
-/// Material functions.
-[<RequireQualifiedAccess>]
-module Material =
-
     /// The material with populated default images.
-    let defaultMaterial =
+    static member val defaultMaterial =
         { AlbedoImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialAlbedoName)
           RoughnessImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialRoughnessName)
           MetallicImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialMetallicName)
@@ -257,7 +237,7 @@ module Material =
           ClippedOpt = ValueSome false }
 
     /// The empty material.
-    let empty =
+    static member val empty =
         { AlbedoImageOpt = ValueNone
           RoughnessImageOpt = ValueNone
           MetallicImageOpt = ValueNone
@@ -273,6 +253,18 @@ module Material =
           ClearCoatNormalImageOpt = ValueNone
           TwoSidedOpt = ValueNone
           ClippedOpt = ValueNone }
+
+    override this.GetHashCode () =
+        Material.hash this
+
+    override this.Equals (that : obj) =
+        match that with
+        | :? Material as that -> Material.equals this that
+        | _ -> false
+
+    interface IEquatable<Material> with
+        member this.Equals that =
+            Material.equals this that
 
 /// A mutable 3d light probe value type.
 type [<Struct>] LightProbe3dValue =

@@ -64,7 +64,7 @@ module PhysicallyBased =
               ClearCoatRoughness = 0.0f }
 
     /// Describes a physically-based material.
-    type PhysicallyBasedMaterial =
+    type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial =
         { AlbedoTexture : Texture.Texture
           RoughnessTexture : Texture.Texture
           MetallicTexture : Texture.Texture
@@ -100,6 +100,47 @@ module PhysicallyBased =
               TwoSided = false
               Clipped = false
               Names = "" }
+
+        /// Compute hash.
+        static member hash material =
+            (hash material.AlbedoTexture <<<            00) ^^^
+            (hash material.RoughnessTexture <<<         02) ^^^
+            (hash material.MetallicTexture <<<          04) ^^^
+            (hash material.AmbientOcclusionTexture <<<  06) ^^^
+            (hash material.EmissionTexture <<<          08) ^^^
+            (hash material.NormalTexture <<<            10) ^^^
+            (hash material.HeightTexture <<<            12) ^^^
+            (hash material.SubdermalTexture <<<         14) ^^^
+            (hash material.FinenessTexture <<<          16) ^^^
+            (hash material.ScatterTexture <<<           18) ^^^
+            (hash material.TwoSided <<<                 20) ^^^
+            (hash material.Clipped <<<                  22) ^^^
+            (hash material.Names <<<                    24)
+
+        /// Determing equality.
+        static member equals left right =
+            refEq left right && // OPTIMIZATION: first check ref equality.
+            left.AlbedoTexture = right.AlbedoTexture &&
+            left.RoughnessTexture = right.RoughnessTexture &&
+            left.MetallicTexture = right.MetallicTexture &&
+            left.AmbientOcclusionTexture = right.AmbientOcclusionTexture &&
+            left.EmissionTexture = right.EmissionTexture &&
+            left.NormalTexture = right.NormalTexture &&
+            left.HeightTexture = right.HeightTexture &&
+            left.SubdermalTexture = right.SubdermalTexture &&
+            left.FinenessTexture = right.FinenessTexture &&
+            left.ScatterTexture = right.ScatterTexture &&
+            left.TwoSided = right.TwoSided &&
+            left.Clipped = right.Clipped &&
+            left.Names = right.Names
+
+        override this.GetHashCode () = 
+            PhysicallyBasedMaterial.hash this
+
+        override this.Equals that =
+            match that with
+            | :? PhysicallyBasedMaterial as that -> PhysicallyBasedMaterial.equals this that
+            | _ -> false
 
     /// Describes some physically-based geometry that's loaded into VRAM.
     type PhysicallyBasedGeometry =
@@ -139,6 +180,18 @@ module PhysicallyBased =
           SurfaceMaterialIndex : int
           SurfaceNode : Assimp.Node
           PhysicallyBasedGeometry : PhysicallyBasedGeometry }
+
+        static member inline hash surface =
+            surface.HashCode
+
+        static member equals left right =
+            refEq left right || // OPTIMIZATION: first check ref equality.
+            left.HashCode = right.HashCode && // OPTIMIZATION: check hash equality to bail as quickly as possible.
+            left.SurfaceMaterial = right.SurfaceMaterial &&
+            refEq left.PhysicallyBasedGeometry right.PhysicallyBasedGeometry
+
+        static member comparer =
+            HashIdentity.FromFunctions PhysicallyBasedSurface.hash PhysicallyBasedSurface.equals
 
         static member extractPresence presenceDefault (sceneOpt : Assimp.Scene option) surface =
             match surface.SurfaceNode.PresenceOpt with
@@ -270,46 +323,10 @@ module PhysicallyBased =
                 | Some _ | None -> shapeDefault
             | ValueSome shape -> shape
 
-        static member inline hash surface =
-            surface.HashCode
-
-        static member equals left right =
-            refEq left right || // OPTIMIZATION: first check ref equality.
-            left.HashCode = right.HashCode && // OPTIMIZATION: check hash equality to bail as quickly as possible.
-            left.SurfaceMaterial.AlbedoTexture = right.SurfaceMaterial.AlbedoTexture &&
-            left.SurfaceMaterial.RoughnessTexture = right.SurfaceMaterial.RoughnessTexture &&
-            left.SurfaceMaterial.MetallicTexture = right.SurfaceMaterial.MetallicTexture &&
-            left.SurfaceMaterial.AmbientOcclusionTexture = right.SurfaceMaterial.AmbientOcclusionTexture &&
-            left.SurfaceMaterial.EmissionTexture = right.SurfaceMaterial.EmissionTexture &&
-            left.SurfaceMaterial.NormalTexture = right.SurfaceMaterial.NormalTexture &&
-            left.SurfaceMaterial.HeightTexture = right.SurfaceMaterial.HeightTexture &&
-            left.SurfaceMaterial.SubdermalTexture = right.SurfaceMaterial.SubdermalTexture &&
-            left.SurfaceMaterial.FinenessTexture = right.SurfaceMaterial.FinenessTexture &&
-            left.SurfaceMaterial.ScatterTexture = right.SurfaceMaterial.ScatterTexture &&
-            left.SurfaceMaterial.TwoSided = right.SurfaceMaterial.TwoSided &&
-            left.SurfaceMaterial.Clipped = right.SurfaceMaterial.Clipped &&
-            left.SurfaceMaterial.Names = right.SurfaceMaterial.Names &&
-            refEq left.PhysicallyBasedGeometry right.PhysicallyBasedGeometry
-
-        static member comparer =
-            HashIdentity.FromFunctions PhysicallyBasedSurface.hash PhysicallyBasedSurface.equals
-
         static member make names (surfaceMatrix : Matrix4x4) bounds properties material materialIndex surfaceNode geometry =
             let hashCode =
-                (hash material.AlbedoTexture <<<                                    00) ^^^
-                (hash material.RoughnessTexture <<<                                 02) ^^^
-                (hash material.MetallicTexture <<<                                  04) ^^^
-                (hash material.AmbientOcclusionTexture <<<                          06) ^^^
-                (hash material.EmissionTexture <<<                                  08) ^^^
-                (hash material.NormalTexture <<<                                    10) ^^^
-                (hash material.HeightTexture <<<                                    12) ^^^
-                (hash material.SubdermalTexture <<<                                 14) ^^^
-                (hash material.FinenessTexture <<<                                  16) ^^^
-                (hash material.ScatterTexture <<<                                   18) ^^^
-                (hash material.TwoSided <<<                                         20) ^^^
-                (hash material.Clipped <<<                                          22) ^^^
-                (hash material.Names <<<                                            24) ^^^
-                (Runtime.CompilerServices.RuntimeHelpers.GetHashCode geometry <<<   26)
+                hash material ^^^
+                Runtime.CompilerServices.RuntimeHelpers.GetHashCode geometry
             { HashCode = hashCode
               SurfaceNames = names
               SurfaceMatrixIsIdentity = surfaceMatrix.IsIdentity
