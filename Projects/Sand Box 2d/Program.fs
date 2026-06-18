@@ -151,6 +151,8 @@ type MainActivity () =
         |> Seq.exactlyOne
         |> Directory.SetCurrentDirectory
 
+        Log.init None // disable Nu's default file log because the Android asset pack directory should be treated as read-only for incremental updates to work: https://developer.android.com/reference/com/google/android/play/core/assetpacks/AssetPackManager#getpacklocation
+
         // direct ConfigurationManager.AppSettings to load values from our App.config file
         if not (File.Exists "App.config") then
             raise (FileNotFoundException ($"Expected App.config at '{Directory.GetCurrentDirectory ()}' but it was not found. Something went wrong with asset pack loading."))
