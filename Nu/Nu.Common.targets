@@ -130,7 +130,7 @@
     </ItemGroup>
 
     <ItemGroup Condition="'$(TargetPlatformIdentifier)' == 'android'">
-        <PackageReference Include="Xamarin.Google.Android.Play.Asset.Delivery" Version="2.3.0.6" />
+        <!-- Asset.Delivery version is added dynamically by SelectCompatibleAssetDeliveryVersion below -->
         <!-- Prevent linux binaries from being packaged on Android.
              Keep versions updated with those selected in the Nu project. -->
         <PackageReference Include="Silk.NET.Shaderc.Native" Version="2.21.0" ExcludeAssets="native" />
@@ -142,6 +142,62 @@
         <PackageReference Include="AstcEncoderCSharp-NuGameEngine" Version="5.3.1-alpha.0.4" ExcludeAssets="native" />
         <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.13.1" ExcludeAssets="native" />
     </ItemGroup>
+
+    <!-- ============================================================
+         Android: PackageReference of Xamarin.Google.Android.Play.Asset.Delivery via automatic version selection
+         ============================================================
+         We dynamically choose the highest available
+         Xamarin.Google.Android.Play.Asset.Delivery version that restores
+         for the Android target without NU1608 warnings.
+
+         Selection is done by a script that probes candidate versions by
+         running restore with a temporary override and checking restore output.
+         No package versions or version ranges are hard-coded here.
+         
+         Without this target, we encounter the following conflict:
+
+         Xamarin.Google.Android.Play.Asset.Delivery 2.3.0.6
+         └─ Xamarin.GooglePlayServices.Basement 118.10.0.1
+            └─ Xamarin.AndroidX.Fragment ≥ 1.8.9.2
+            └─ Xamarin.AndroidX.Core 1.17.0.2
+                 └─ Xamarin.AndroidX.Lifecycle.Runtime ≥ 2.10.0.2
+                      └─ Xamarin.AndroidX.Lifecycle.Common ≥ 2.10.0.2
+         UseMaui=true
+         └─ Microsoft.Maui.Controls 10.0.20
+              └─ Microsoft.Maui.Core 10.0.20
+                   └─ Xamarin.AndroidX.Navigation.Fragment 2.9.2.1
+                        ├─ Xamarin.AndroidX.Fragment.Ktx 1.8.8.1
+                        │    └─ requires Xamarin.AndroidX.Fragment [1.8.8.1, 1.8.9) ← upper bound < 1.8.9, conflicts with Xamarin.AndroidX.Fragment ≥ 1.8.9.2
+                        ├─ Xamarin.AndroidX.Activity.Ktx 1.10.1.3
+                        │    └─ requires Xamarin.AndroidX.Activity [1.10.1.3, 1.10.2) ← upper bound < 1.10.2
+                        ├─ Xamarin.AndroidX.Lifecycle.Runtime.Ktx 2.9.2.1
+                        │    └─ requires Xamarin.AndroidX.Lifecycle.Runtime [2.9.2.1, 2.9.3) ← upper bound < 2.9.3, conflicts with Xamarin.AndroidX.Lifecycle.Runtime ≥ 2.10.0.2
+                        └─ Xamarin.AndroidX.Lifecycle.ViewModel.Ktx 2.9.2.1
+                             └─ requires Xamarin.AndroidX.Lifecycle.ViewModel [2.9.2.1, 2.9.3) ← upper bound < 2.9.3
+         warning NU1608: Detected package version outside of dependency constraint: Xamarin.AndroidX.Fragment.Ktx 1.8.8.1 requires Xamarin.AndroidX.Fragment (>= 1.8.8.1 && < 1.8.9) but version Xamarin.AndroidX.Fragment 1.8.9.2 was resolved.
+         warning NU1608: Detected package version outside of dependency constraint: Xamarin.AndroidX.Activity.Ktx 1.10.1.3 requires Xamarin.AndroidX.Activity (>= 1.10.1.3 && < 1.10.2) but version Xamarin.AndroidX.Activity 1.12.4.1 was resolved.
+         warning NU1608: Detected package version outside of dependency constraint: Xamarin.AndroidX.Lifecycle.ViewModel.Ktx 2.9.2.1 requires Xamarin.AndroidX.Lifecycle.ViewModel (>= 2.9.2.1&& < 2.9.3) but version Xamarin.AndroidX.Lifecycle.ViewModel 2.10.0.2 was resolved.
+         warning NU1608: Detected package version outside of dependency constraint: Xamarin.AndroidX.SavedState.SavedState.Ktx 1.3.1.1 requires Xamarin.AndroidX.SavedState (>= 1.3.1.1 && < 1.3.2) but version Xamarin.AndroidX.SavedState 1.4.0.2 was resolved.
+         warning NU1608: Detected package version outside of dependency constraint: Xamarin.AndroidX.Lifecycle.Runtime.Ktx.Android 2.9.2.1 requires Xamarin.AndroidX.Lifecycle.Runtime.Android (>= 2.9.2.1 && < 2.9.3) but version Xamarin.AndroidX.Lifecycle.Runtime.Android 2.10.0.2 was resolved.
+         warning NU1608: Detected package version outside of dependency constraint: Xamarin.AndroidX.Lifecycle.Runtime.Ktx 2.9.2.1 requires Xamarin.AndroidX.Lifecycle.Runtime (>= 2.9.2.1 && < 2.9.3) but version Xamarin.AndroidX.Lifecycle.Runtime 2.10.0.2 was resolved.
+         warning NU1608: Detected package version outside of dependency constraint: Xamarin.AndroidX.Lifecycle.Process 2.9.2.1 requires Xamarin.AndroidX.Lifecycle.Runtime (>= 2.9.2.1 && < 2.9.3) but version Xamarin.AndroidX.Lifecycle.Runtime 2.10.0.2 was resolved.
+          -->
+
+    <Target Name="SelectCompatibleAssetDeliveryVersion" BeforeTargets="CollectPackageReferences"
+            Condition="'$(TargetPlatformIdentifier)' == 'android' And '@(PackageReference->WithMetadataValue(&quot;Identity&quot;, &quot;Xamarin.Google.Android.Play.Asset.Delivery&quot;))' == ''">
+        <PropertyGroup>
+            <_AssetDeliverySelectorScript>$(MSBuildThisFileDirectory)Nu/Scripts/SelectCompatibleAssetDeliveryVersion.fsx</_AssetDeliverySelectorScript>
+        </PropertyGroup>
+        <Error Condition="!Exists('$(_AssetDeliverySelectorScript)')" Text="Asset Delivery selector script was not found at '$(_AssetDeliverySelectorScript)'." />
+        <Exec Command="dotnet fsi &quot;$(_AssetDeliverySelectorScript)&quot; --project-path &quot;$(MSBuildProjectFullPath)&quot; --tfm &quot;$(TargetFramework)&quot;" ConsoleToMsBuild="true">
+            <Output TaskParameter="ConsoleOutput" PropertyName="_AssetDeliverySelectedVersion" />
+        </Exec>
+        <Error Condition="'$(_AssetDeliverySelectedVersion)' == ''" Text="Failed to select a compatible Xamarin.Google.Android.Play.Asset.Delivery version." />
+        <ItemGroup>
+             <PackageReference Include="Xamarin.Google.Android.Play.Asset.Delivery" Version="$(_AssetDeliverySelectedVersion)" />
+        </ItemGroup>
+        <Message Importance="high" Text="Selected Xamarin.Google.Android.Play.Asset.Delivery version $(_AssetDeliverySelectedVersion) for $(MSBuildProjectName)." />
+    </Target>
 
     <!-- ============================================================
          iOS / Android / macOS: Native Libraries
