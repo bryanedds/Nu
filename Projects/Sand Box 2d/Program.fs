@@ -40,7 +40,7 @@ type PreDrawListener () =
 // Refer to https://github.com/libsdl-org/SDL/blob/main/android-project/app/src/main/AndroidManifest.xml for all needed attributes for SDL
 
 // Declare wanted features: https://developer.android.com/guide/topics/manifest/uses-feature-element#features-reference
-[<UsesFeature (PackageManager.FeatureVulkanHardwareVersion, Required = true)>] // TODO: Version pending https://github.com/dotnet/android/pull/10890
+[<UsesFeature (PackageManager.FeatureVulkanHardwareVersion, Required = true)>] // TODO: Use Version property in .NET 11 - https://github.com/dotnet/android/pull/10890
 [<UsesFeature (PackageManager.FeatureTouchscreen, Required = false)>] // SDL - Declare touch screen support
 [<UsesFeature (PackageManager.FeatureBluetooth, Required = false)>] // SDL - Declare game controller support
 [<UsesFeature (PackageManager.FeatureGamepad, Required = false)>] // SDL - Declare game controller support

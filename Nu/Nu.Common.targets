@@ -84,6 +84,8 @@
         <!-- Required properties for asset packs: https://learn.microsoft.com/en-us/dotnet/maui/android/asset-packs -->
         <AndroidPackageFormat>aab</AndroidPackageFormat>
         <AndroidBundleToolExtraArgs>--local-testing</AndroidBundleToolExtraArgs>
+        <!-- Google Play Asset Delivery requires at least Android 6.0 (API version 23) -->
+        <SupportedOSPlatformVersion Condition="'$(SupportedOSPlatformVersion)' == ''">23</SupportedOSPlatformVersion>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(TargetPlatformIdentifier)' == 'ios'">
@@ -123,9 +125,11 @@
          iOS / Android: Package References
          ============================================================ -->
 
-    <!-- MAUI packages are build-time only; remove their runtime assets -->
+    <!-- MAUI packages (imported by <UseMaui>) are build-time only; remove their runtime assets so that we don't need to wait for IL Stripping / AOT on them.
+         Only applies to implicitly added (SDK) PackageReferences — if the user explicitly includes
+         a Microsoft.Maui.* package in their project, they control its assets. -->
     <ItemGroup>
-        <PackageReference Update="Microsoft.Maui.*" RemoveAssets="runtime" />
+        <PackageReference Update="Microsoft.Maui.*" RemoveAssets="runtime" Condition="'%(IsImplicitlyDefined)' == 'true'" />
     </ItemGroup>
 
     <!-- ============================================================
@@ -293,13 +297,15 @@
 
     <!-- ============================================================
          iOS: ILStrip Exclusion (F# SRTP byref<T> invalid IL workaround)
-         ============================================================ -->
+         ============================================================
+         Without this target, Release mode IL stripping for iOS will fail.
+         See https://github.com/dotnet/fsharp/issues/18702#issuecomment-2988572951 -->
 
     <Target Name="_ExcludeAssembliesFromILStrip" BeforeTargets="_StripAssemblyIL"
             Condition="'$(TargetPlatformIdentifier)' == 'ios'">
         <ItemGroup>
             <_ExcludedAssemblies Include="@(ResolvedFileToPublish)"
-                Condition="'%(Filename)%(Extension)' == 'FSharp.Core.dll' Or '%(Filename)%(Extension)' == 'Nu.dll'" />
+                Condition="'%(Filename)%(Extension)' == 'FSharp.Core.dll'" />
             <ResolvedFileToPublish Remove="@(_ExcludedAssemblies)" />
         </ItemGroup>
     </Target>
