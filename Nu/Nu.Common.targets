@@ -122,15 +122,21 @@
     </ItemGroup>
 
     <!-- ============================================================
-         iOS / Android: Package References
-         ============================================================ -->
-
-    <!-- MAUI packages (imported by <UseMaui>) are build-time only; remove their runtime assets so that we don't need to wait for IL Stripping / AOT on them.
+         iOS / Android: Mark <UseMaui> packages as build-time only
+         ============================================================
+         Done so that we don't need to wait for IL Stripping / AOT on them.
          Only applies to implicitly added (SDK) PackageReferences — if the user explicitly includes
-         a Microsoft.Maui.* package in their project, they control its assets. -->
-    <ItemGroup>
-        <PackageReference Update="Microsoft.Maui.*" RemoveAssets="runtime" Condition="'%(IsImplicitlyDefined)' == 'true'" />
-    </ItemGroup>
+         a Microsoft.Maui.* package in their project, they control its assets.
+
+         MAUI SDK sets IsMauiImplicitPackageReference=true on implicit packages
+         (see BundledVersions.in.targets in dotnet/maui). This is NOT the same as
+         NuGet's IsImplicitlyDefined — that's only set by dotnet/sdk's implicit
+         version resolution, not by the MAUI workload. -->
+    <Target Name="_RemoveMauiRuntimeAssets" BeforeTargets="ResolvePackageAssets" Condition="'$(UseMaui)' == 'true'">
+        <ItemGroup>
+            <PackageReference Update="Microsoft.Maui.*" RemoveAssets="runtime" Condition="'%(PackageReference.IsMauiImplicitPackageReference)' == 'true'" />
+        </ItemGroup>
+    </Target>
 
     <!-- ============================================================
          Android: PackageReference of Xamarin.Google.Android.Play.Asset.Delivery via automatic version selection
@@ -343,8 +349,9 @@
     <Target Name="NuPipe" BeforeTargets="AssignTargetPaths;ResizetizeCollectItems"
             DependsOnTargets="BuildNuPipe">
         <PropertyGroup>
-            <!-- Desktop: write directly to bin folder as compilation output -->
-            <NuPipeOut>$(MSBuildProjectDirectory)/bin/$(Configuration)/$(TargetFramework)</NuPipeOut>
+            <!-- Desktop: write directly to bin folder as compilation output.
+                 Need to replace \ with / or the quote right after \ will be escaped from the terminal's interpretation. -->
+            <NuPipeOut>$(MSBuildProjectDirectory)/$(OutDir.Replace('\', '/'))</NuPipeOut>
             <!-- Mobile: write to refinement-out for use in later build steps (therefore cannot be under bin or obj folders) -->
             <NuPipeOut Condition="'$(TargetPlatformIdentifier)' != ''">$(MSBuildProjectDirectory)/refinement-out/$(TargetFramework)</NuPipeOut>
         </PropertyGroup>
