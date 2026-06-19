@@ -195,7 +195,7 @@
     <Target Name="_CreateAndroidPackageReferences" AfterTargets="ResolvePackageDependenciesForBuild" BeforeTargets="ResolveReferences"
             Condition="'$(TargetPlatformIdentifier)' == 'android'">
         <PropertyGroup>
-            <_ReadVersionScript>$(MSBuildThisFileDirectory)Scripts/ReadPackageVersion.fsx</_ReadVersionScript>
+            <_ReadVersionScript>$(MSBuildThisFileDirectory)Nu/Scripts/ReadPackageVersion.fsx</_ReadVersionScript>
             <_AssetsFile>$(ProjectAssetsFile)</_AssetsFile>
         </PropertyGroup>
         <Exec Command="dotnet fsi &quot;$(_ReadVersionScript)&quot; -a &quot;$(_AssetsFile)&quot; -p &quot;Silk.NET.Shaderc.Native&quot;"
