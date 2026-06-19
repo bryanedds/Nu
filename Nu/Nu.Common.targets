@@ -92,7 +92,6 @@
 
     <PropertyGroup Condition="$(BuildingMacOS) And '$(Configuration)' == 'Release'">
         <RuntimeIdentifiers Condition="'$(RuntimeIdentifiers)' == ''">osx-arm64</RuntimeIdentifiers>
-        <SelfContained>true</SelfContained>
     </PropertyGroup>
 
     <!-- ============================================================
@@ -129,26 +128,13 @@
         <PackageReference Update="Microsoft.Maui.*" RemoveAssets="runtime" />
     </ItemGroup>
 
-    <ItemGroup Condition="'$(TargetPlatformIdentifier)' == 'android'">
-        <!-- Asset.Delivery version is added dynamically by SelectCompatibleAssetDeliveryVersion below -->
-        <!-- Prevent linux binaries from being packaged on Android.
-             Keep versions updated with those selected in the Nu project. -->
-        <PackageReference Include="Silk.NET.Shaderc.Native" Version="2.21.0" ExcludeAssets="native" />
-        <PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" ExcludeAssets="native" />
-
-        <!-- Exclude linux-x64 native assets from desktop-native packages (they have
-             no Android runtime folder) to prevent XA0141 16 KB page-size warnings
-             and unnecessary APK bloat. -->
-        <PackageReference Include="AstcEncoderCSharp-NuGameEngine" Version="5.3.1-alpha.0.4" ExcludeAssets="native" />
-        <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.13.1" ExcludeAssets="native" />
-    </ItemGroup>
-
     <!-- ============================================================
          Android: PackageReference of Xamarin.Google.Android.Play.Asset.Delivery via automatic version selection
          ============================================================
-         We dynamically choose the highest available
-         Xamarin.Google.Android.Play.Asset.Delivery version that restores
-         for the Android target without NU1608 warnings.
+         We dynamically choose the highest available Xamarin.Google.Android.Play.Asset.Delivery version
+         that restores for the Android target without NU1608 warnings.
+         If there is an explicit <PackageReference> for Asset.Delivery in the project,
+         this target is skipped to avoid conflicts with the selector script.
 
          Selection is done by a script that probes candidate versions by
          running restore with a temporary override and checking restore output.
@@ -162,7 +148,7 @@
             └─ Xamarin.AndroidX.Core 1.17.0.2
                  └─ Xamarin.AndroidX.Lifecycle.Runtime ≥ 2.10.0.2
                       └─ Xamarin.AndroidX.Lifecycle.Common ≥ 2.10.0.2
-         UseMaui=true
+         UseMaui=true (MAUI workload version 10.0.20)
          └─ Microsoft.Maui.Controls 10.0.20
               └─ Microsoft.Maui.Core 10.0.20
                    └─ Xamarin.AndroidX.Navigation.Fragment 2.9.2.1
@@ -200,8 +186,54 @@
     </Target>
 
     <!-- ============================================================
+         Android: Exclude Linux native assets
+         ============================================================
+         Set ExcludeAssets="native" to prevent linux-x64 native binaries
+         from being packaged into Android APKs (they have no Android runtime folder,
+         causing XA0141 warnings and APK bloat). Versions are read from the resolved
+         dependency graph to stay in sync with the Nu project. -->
+    <Target Name="_CreateAndroidPackageReferences" AfterTargets="ResolvePackageDependenciesForBuild" BeforeTargets="ResolveReferences"
+            Condition="'$(TargetPlatformIdentifier)' == 'android'">
+        <PropertyGroup>
+            <_ReadVersionScript>$(MSBuildThisFileDirectory)Scripts/ReadPackageVersion.fsx</_ReadVersionScript>
+            <_AssetsFile>$(ProjectAssetsFile)</_AssetsFile>
+        </PropertyGroup>
+        <Exec Command="dotnet fsi &quot;$(_ReadVersionScript)&quot; -a &quot;$(_AssetsFile)&quot; -p &quot;Silk.NET.Shaderc.Native&quot;"
+              ConsoleToMsBuild="true" ContinueOnError="true">
+            <Output TaskParameter="ConsoleOutput" PropertyName="_AndroidShadercVersion" />
+        </Exec>
+        <Exec Command="dotnet fsi &quot;$(_ReadVersionScript)&quot; -a &quot;$(_AssetsFile)&quot; -p &quot;Twizzle.ImGui-Bundle.NET&quot;"
+              ConsoleToMsBuild="true" ContinueOnError="true">
+            <Output TaskParameter="ConsoleOutput" PropertyName="_AndroidImGuiVersion" />
+        </Exec>
+        <Exec Command="dotnet fsi &quot;$(_ReadVersionScript)&quot; -a &quot;$(_AssetsFile)&quot; -p &quot;AstcEncoderCSharp-NuGameEngine&quot;"
+              ConsoleToMsBuild="true" ContinueOnError="true">
+            <Output TaskParameter="ConsoleOutput" PropertyName="_AndroidAstcEncoderVersion" />
+        </Exec>
+        <Exec Command="dotnet fsi &quot;$(_ReadVersionScript)&quot; -a &quot;$(_AssetsFile)&quot; -p &quot;Magick.NET-Q8-AnyCPU&quot;"
+              ConsoleToMsBuild="true" ContinueOnError="true">
+            <Output TaskParameter="ConsoleOutput" PropertyName="_AndroidMagickVersion" />
+        </Exec>
+        <Error Condition="'$(_AndroidShadercVersion)' == ''"
+               Text="Silk.NET.Shaderc.Native was not found in project.assets.json (it is a transitive dependency of Vortice.ShaderCompiler). Ensure restore completed successfully." />
+        <Error Condition="'$(_AndroidImGuiVersion)' == ''"
+               Text="Twizzle.ImGui-Bundle.NET was not found in project.assets.json." />
+        <Error Condition="'$(_AndroidAstcEncoderVersion)' == ''"
+               Text="AstcEncoderCSharp-NuGameEngine was not found in project.assets.json." />
+        <Error Condition="'$(_AndroidMagickVersion)' == ''"
+               Text="Magick.NET-Q8-AnyCPU was not found in project.assets.json." />
+        <ItemGroup>
+            <PackageReference Include="Silk.NET.Shaderc.Native" Version="$(_AndroidShadercVersion)" ExcludeAssets="native" />
+            <PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="$(_AndroidImGuiVersion)" ExcludeAssets="native" />
+            <PackageReference Include="AstcEncoderCSharp-NuGameEngine" Version="$(_AndroidAstcEncoderVersion)" ExcludeAssets="native" />
+            <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="$(_AndroidMagickVersion)" ExcludeAssets="native" />
+        </ItemGroup>
+    </Target>
+
+    <!-- ============================================================
          iOS / Android / macOS: Native Libraries
-         ============================================================ -->
+         ============================================================
+         Note: SDL3-CS native libraries do not require manual inclusion -->
 
     <ItemGroup Condition="'$(TargetPlatformIdentifier)' == 'android'">
         <AndroidNativeLibrary Include="$(MSBuildThisFileDirectory)Nu.Dependencies/ShaderC/android/*/libshaderc_shared.so" />
@@ -220,25 +252,6 @@
         <NativeReference Include="$(MSBuildThisFileDirectory)Nu.Dependencies/Vortice.VulkanMemoryAllocator/iOS/vma.xcframework" Kind="Framework" />
         <NativeReference Include="$(MSBuildThisFileDirectory)Nu.Dependencies/ShaderC/iOS/shaderc_shared.xcframework" Kind="Framework" />
     </ItemGroup>
-
-    <!-- iOS: SDL Native References (from resolved package graph) -->
-    <Target Name="_CreateSdlNativeReferences" AfterTargets="ResolvePackageDependencies" BeforeTargets="ResolveReferences"
-            Condition="'$(TargetPlatformIdentifier)' == 'ios'">
-        <PropertyGroup>
-            <!-- Cna't inline these properties or a build error will result -->
-            <_SdlVersion>@(PackageDependency->WithMetadataValue('Identity', 'ppy.SDL3-CS')->'%(Version)')</_SdlVersion>
-            <_SdlImageVersion>@(PackageDependency->WithMetadataValue('Identity', 'ppy.SDL3_image-CS')->'%(Version)')</_SdlImageVersion>
-            <_SdlTtfVersion>@(PackageDependency->WithMetadataValue('Identity', 'ppy.SDL3_ttf-CS')->'%(Version)')</_SdlTtfVersion>
-            <_SdlMixerVersion>@(PackageDependency->WithMetadataValue('Identity', 'ppy.SDL3_mixer-CS')->'%(Version)')</_SdlMixerVersion>
-        </PropertyGroup>
-        <ItemGroup>
-            <NativeReference Include="$(NuGetPackageRoot)ppy.sdl3-cs/$(_SdlVersion)/runtimes/ios/native/SDL3.xcframework" Kind="Framework" />
-            <NativeReference Include="$(NuGetPackageRoot)ppy.sdl3_image-cs/$(_SdlImageVersion)/runtimes/ios/native/SDL3_image.xcframework" Kind="Framework" />
-            <NativeReference Include="$(NuGetPackageRoot)ppy.sdl3_ttf-cs/$(_SdlTtfVersion)/runtimes/ios/native/SDL3_ttf.xcframework" Kind="Framework" />
-            <NativeReference Include="$(NuGetPackageRoot)ppy.sdl3_mixer-cs/$(_SdlMixerVersion)/runtimes/ios/native/SDL3_mixer.xcframework" Kind="Framework" />
-        </ItemGroup>
-    </Target>
-
     <!-- macOS desktop: bundle frameworks into the output -->
     <ItemGroup Condition="$(BuildingMacOS)">
         <None Include="$(MSBuildThisFileDirectory)Nu.Dependencies/AssimpNet/iOS/assimp.xcframework/macos-arm64/assimp.framework/**/*">
