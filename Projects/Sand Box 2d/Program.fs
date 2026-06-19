@@ -58,7 +58,7 @@ do ()
 // Entry point, SDL usage taken from https://github.com/ppy/SDL3-CS/blob/master/SDL3-CS.Tests.Android/MainActivity.cs
 [<Activity (LaunchMode = LaunchMode.SingleInstance, // Only allow one instance of the game to be launched at once
             MainLauncher = true, // At least one activity must be marked as the main launcher to be able to start the app (when the user taps the app icon).
-            Theme = "@style/Maui.SplashTheme", // SplashTheme: https://learn.microsoft.com/en-us/dotnet/maui/user-interface/images/splashscreen?tabs=android#platform-specific-configuration
+            Theme = "@style/Maui.SplashTheme", // From Microsoft.Maui.Core's AAR (available via UseMaui=true). See https://learn.microsoft.com/en-us/dotnet/maui/user-interface/images/splashscreen?tabs=android#platform-specific-configuration
             ConfigurationChanges = enum -1, // SDL - Do not recreate the activity on all configuration changes, since SDL handles them itself.
             ScreenOrientation = ScreenOrientation.UserLandscape)>] // Orientation before SDL initialization where it overrides based on SDL_HINT_ORIENTATIONS
 [<IntentFilter ([|Android.Hardware.Usb.UsbManager.ActionUsbDeviceAttached|])>] // SDL - Let Android know that we can handle some USB devices and should receive this event
@@ -66,8 +66,12 @@ type MainActivity () =
     inherit Org.Libsdl.App.SDLActivity ()
     let preDrawListener = new PreDrawListener ()
     override this.OnCreate savedInstanceState =
-        base.OnCreate savedInstanceState // sets content view
-        // Don't draw SDL's black window by preserving the splash screen until the first frame is available: https://developer.android.com/develop/ui/views/launch/splash-screen#suspend-drawing
+        base.OnCreate savedInstanceState // sets content view (SDL surface)
+        // Don't draw SDL's black window by preserving the splash screen until the first frame is available:
+        // Maui.SplashTheme sets windowBackground via Microsoft.Maui.Core's AAR, which Android 12+ uses as
+        // the system splash screen. Returning false from OnPreDraw prevents the activity's first draw,
+        // keeping the system splash visible until the game is ready to render.
+        // https://developer.android.com/develop/ui/views/launch/splash-screen#suspend-drawing
         this.FindViewById(Android.Resource.Id.Content).ViewTreeObserver.AddOnPreDrawListener preDrawListener
     override this.GetLibraries () = [|"SDL3"; "SDL3_image"; "SDL3_ttf"; "SDL3_mixer"|] // SDL - Load these native libraries
     override this.Main () =

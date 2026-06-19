@@ -135,6 +135,12 @@
              Keep versions updated with those selected in the Nu project. -->
         <PackageReference Include="Silk.NET.Shaderc.Native" Version="2.21.0" ExcludeAssets="native" />
         <PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" ExcludeAssets="native" />
+
+        <!-- Exclude linux-x64 native assets from desktop-native packages (they have
+             no Android runtime folder) to prevent XA0141 16 KB page-size warnings
+             and unnecessary APK bloat. -->
+        <PackageReference Include="AstcEncoderCSharp-NuGameEngine" Version="5.3.1-alpha.0.4" ExcludeAssets="native" />
+        <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.13.1" ExcludeAssets="native" />
     </ItemGroup>
 
     <!-- ============================================================
