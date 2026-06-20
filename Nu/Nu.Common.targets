@@ -427,7 +427,7 @@
         <Error Text="Please install the macOS Vulkan SDK. If installed to a non-default location, override the MacOSVulkanSdk property in your project file."
                Condition="!$([System.IO.Directory]::Exists($(MacOSVulkanSdk)))" />
         <Error Text="You need to choose 'Development libraries for iOS' when installing the macOS Vulkan SDK to build for iOS. Please reinstall the Vulkan SDK with that option enabled."
-               Condition="!$([System.IO.Directory]::Exists('$(MacOSVulkanSdk)/iOS')) And '$(TargetPlatformIdentifier)'=='ios'" />
+               Condition="'$(TargetPlatformIdentifier)'=='ios' And !$([System.IO.Directory]::Exists('$(MacOSVulkanSdk)/iOS'))" />
         <Warning Text="iOS Simulator builds will disable the 3D renderer because array (layered) attachments are unsupported."
                  Condition="'$(TargetPlatformIdentifier)'=='ios' And $(RuntimeIdentifier.StartsWith('iossimulator'))" />
         <ItemGroup>
