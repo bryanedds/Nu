@@ -183,11 +183,7 @@ let private sdlMainImpl (argc: int, argv: nativeptr<nativeptr<byte>>) : int =
 
     // direct ConfigurationManager.AppSettings to load values from our App.config file
     if not (File.Exists "App.config") then
-<<<<<<< Updated upstream
-        raise (FileNotFoundException ($"Expected App.config at '{Directory.GetCurrentDirectory ()}' but it was not found. Something went wrong with asset pack loading."))
-=======
         raise (FileNotFoundException ($"Expected App.config at '{Directory.GetCurrentDirectory ()}' but it was not found. Something went wrong with asset loading."))
->>>>>>> Stashed changes
     AppDomain.CurrentDomain.SetData ("APP_CONFIG_FILE", System.IO.Path.GetFullPath "App.config") // "App.config" here will be interpreted as relative to AppDomain.CurrentDomain.BaseDirectory by .NET
 
     // Add a splash screen view that visually continues the default splash screen and remove it when first frame is ready.
