@@ -359,9 +359,8 @@
     </Target>
 
     <Target Name="CleanNuPipe" AfterTargets="Clean">
-        <RemoveDir Directories="refinement" />
-        <RemoveDir Directories="refinement-out" />
-        <RemoveDir Directories="$(OutDir)/Assets" />
+        <!-- Can't remove refinement directly because clean across TargetFrameworks are executed in parallel so may cause conflict errors -->
+        <RemoveDir Directories="refinement/$(TargetFramework);refinement-out/$(TargetFramework);$(OutDir)/Assets" />
     </Target>
 
     <!-- ============================================================
