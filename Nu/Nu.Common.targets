@@ -38,9 +38,17 @@
 
         <!-- .NET runtime settings (defaults; set earlier in your project to override) -->
         <OutputType>Exe</OutputType> <!-- Except <OutputType>. It is set to Library by default - override it after this target. -->
-        <ServerGarbageCollection Condition="'$(ServerGarbageCollection)' == '' And '$(TargetPlatformIdentifier)' != 'ios'">True</ServerGarbageCollection>
+        <ServerGarbageCollection Condition="'$(ServerGarbageCollection)' == '' And '$(TargetPlatformIdentifier)' != 'ios'">True</ServerGarbageCollection> <!-- This property is unsupported on iOS and will fail the build -->
         <TieredPGO Condition="'$(TieredPGO)' == ''">True</TieredPGO>
         <DisableFastUpToDateCheck Condition="'$(DisableFastUpToDateCheck)' == ''">True</DisableFastUpToDateCheck>
+        <!-- Clear RuntimeIdentifiers for mobile TFMs whose RID can't possibly match the platform.
+             MSBuild evaluates ALL TFMs during restore, so mobile TFMs (net10.0-android, net10.0-ios)
+             are evaluated with the desktop RID (e.g. linux-x64). Without clearing RuntimeIdentifiers,
+             NuGet tries to resolve RID-specific packages for these impossible TFM+RID combinations,
+             such as Microsoft.NETCore.App.Runtime.Mono.linux-x64, which doesn't exist for .NET 10.
+             Without these two properties, "dotnet publish -r linux-x64" will fail the build on Windows/macOS. -->
+        <RuntimeIdentifiers Condition="'$(TargetPlatformIdentifier)' == 'android' And '$(RuntimeIdentifier)' != '' And !$(RuntimeIdentifier.StartsWith('android'))"></RuntimeIdentifiers>
+        <RuntimeIdentifiers Condition="'$(TargetPlatformIdentifier)' == 'ios' And '$(RuntimeIdentifier)' != '' And !$(RuntimeIdentifier.StartsWith('ios'))"></RuntimeIdentifiers>
         <!-- For desktop, embed .NET DLLs into the generated executable. However, mobile doesn't support doing this. -->
         <PublishSingleFile Condition="'$(PublishSingleFile)' == '' And '$(TargetPlatformIdentifier)' == ''">true</PublishSingleFile>
 
@@ -409,29 +417,31 @@
         <Error Condition="'%(MauiIcon.BaseSize)' != ''" Text="The &lt;MauiIcon&gt; item should not specify the BaseSize attribute; only Include and ForegroundFile are supported for desktop icon generation." />
         <!-- Note: ForegroundFile being omitted is handled by the script checking for a valid file. -->
 
-        <Exec Condition="$([System.OperatingSystem]::IsMacOS())"
+        <!-- Use RuntimeIdentifier to determine target OS for cross-compilation (e.g. publishing Linux on macOS);
+             fall back to the host OS when no RID is set (plain dotnet build). -->
+        <Exec Condition="$(RuntimeIdentifier.StartsWith('osx')) Or ('$(RuntimeIdentifier)' == '' And $([System.OperatingSystem]::IsMacOS()))"
               Command="dotnet fsi &quot;$(_GenerateIconsFsx)&quot; -- macos &quot;@(MauiIcon->'%(FullPath)')&quot; &quot;$(MSBuildProjectDirectory)/%(MauiIcon.ForegroundFile)&quot; &quot;$(_DesktopIconDir)&quot;" />
-        <Exec Condition="$([System.OperatingSystem]::IsLinux())"
+        <Exec Condition="$(RuntimeIdentifier.StartsWith('linux')) Or ('$(RuntimeIdentifier)' == '' And $([System.OperatingSystem]::IsLinux()))"
               Command="dotnet fsi &quot;$(_GenerateIconsFsx)&quot; -- linux &quot;@(MauiIcon->'%(FullPath)')&quot; &quot;$(MSBuildProjectDirectory)/%(MauiIcon.ForegroundFile)&quot; &quot;$(_DesktopIconDir)&quot;" />
-        <Exec Condition="$([System.OperatingSystem]::IsWindows())"
+        <Exec Condition="$(RuntimeIdentifier.StartsWith('win')) Or ('$(RuntimeIdentifier)' == '' And $([System.OperatingSystem]::IsWindows()))"
               Command="dotnet fsi &quot;$(_GenerateIconsFsx)&quot; -- windows &quot;@(MauiIcon->'%(FullPath)')&quot; &quot;$(MSBuildProjectDirectory)/%(MauiIcon.ForegroundFile)&quot; &quot;$(_DesktopIconDir)/app.ico&quot;" />
 
         <!-- Windows: embed .ico into .exe -->
-        <PropertyGroup Condition="$([System.OperatingSystem]::IsWindows())">
+        <PropertyGroup Condition="$(RuntimeIdentifier.StartsWith('win')) Or ('$(RuntimeIdentifier)' == '' And $([System.OperatingSystem]::IsWindows()))">
             <ApplicationIcon>$(_DesktopIconDir)/app.ico</ApplicationIcon>
         </PropertyGroup>
         <PropertyGroup>
             <_DesktopIconDir>$(IntermediateOutputPath)icons</_DesktopIconDir>
         </PropertyGroup>
-        <ItemGroup Condition="$([System.OperatingSystem]::IsMacOS())">
+        <ItemGroup Condition="$(RuntimeIdentifier.StartsWith('osx')) Or ('$(RuntimeIdentifier)' == '' And $([System.OperatingSystem]::IsMacOS()))">
             <Content Include="$(_DesktopIconDir)/AppIcon.icns" Link="AppIcon.icns"
                      CopyToOutputDirectory="PreserveNewest" />
         </ItemGroup>
-        <ItemGroup Condition="$([System.OperatingSystem]::IsWindows())">
+        <ItemGroup Condition="$(RuntimeIdentifier.StartsWith('win')) Or ('$(RuntimeIdentifier)' == '' And $([System.OperatingSystem]::IsWindows()))">
             <Content Include="$(_DesktopIconDir)/app.ico" Link="app.ico"
                      CopyToOutputDirectory="PreserveNewest" />
         </ItemGroup>
-        <ItemGroup Condition="$([System.OperatingSystem]::IsLinux())">
+        <ItemGroup Condition="$(RuntimeIdentifier.StartsWith('linux')) Or ('$(RuntimeIdentifier)' == '' And $([System.OperatingSystem]::IsLinux()))">
             <Content Include="$(_DesktopIconDir)/app.png" Link="app.png"
                      CopyToOutputDirectory="PreserveNewest" />
         </ItemGroup>
