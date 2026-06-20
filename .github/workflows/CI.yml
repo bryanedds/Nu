@@ -10,9 +10,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.x'
+          workloads: maui
       - if: ${{ runner.os != 'Windows' }}
         run: sudo sh ./Configure.${{ runner.os }}.Application.sh
       - run: dotnet build
