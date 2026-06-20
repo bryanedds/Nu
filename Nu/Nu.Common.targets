@@ -489,7 +489,7 @@
     </Target>
 
     <!-- ============================================================
-         macOS: .app Bundle Creation (Release only)
+         macOS: .app Bundle Creation on Publish
          ============================================================ -->
 
     <Target Name="CreateMacOSAppBundle" AfterTargets="Publish"
