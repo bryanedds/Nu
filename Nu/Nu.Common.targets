@@ -382,14 +382,52 @@
     </Target>
 
     <!-- ============================================================
-         macOS / iOS: Vulkan SDK
+         Desktop: Icon Generation (from MAUI adaptive icon SVGs)
          ============================================================ -->
 
-    <!-- Allow projects to override the Vulkan SDK path -->
-    <PropertyGroup>
-        <MacOSVulkanSdk Condition="'$(MacOSVulkanSdk)' == ''"></MacOSVulkanSdk>
-    </PropertyGroup>
+    <Target Name="GenerateDesktopIcon" BeforeTargets="BeforeBuild"
+            Condition="'$(TargetPlatformIdentifier)' == '' And '@(MauiIcon)' != ''">
+        <PropertyGroup>
+            <_DesktopIconDir>$(IntermediateOutputPath)icons</_DesktopIconDir>
+            <_GenerateIconsFsx>$(MSBuildThisFileDirectory)Nu/Scripts/GenerateIcons.fsx</_GenerateIconsFsx>
+        </PropertyGroup>
+        <Error Condition="@(MauiIcon->Count()) > 1" Text="Multiple &lt;MauiIcon&gt; items were found. Please only specify one for desktop icon generation." />
+        <Error Condition="'%(MauiIcon.Resize)' != ''" Text="The &lt;MauiIcon&gt; item should not specify the Resize attribute; only Include and ForegroundFile are supported for desktop icon generation." />
+        <Error Condition="'%(MauiIcon.BaseSize)' != ''" Text="The &lt;MauiIcon&gt; item should not specify the BaseSize attribute; only Include and ForegroundFile are supported for desktop icon generation." />
+        <!-- Note: ForegroundFile being omitted is handled by the script checking for a valid file. -->
 
+        <Exec Condition="$([System.OperatingSystem]::IsMacOS())"
+              Command="dotnet fsi &quot;$(_GenerateIconsFsx)&quot; -- macos &quot;@(MauiIcon->'%(FullPath)')&quot; &quot;$(MSBuildProjectDirectory)/%(MauiIcon.ForegroundFile)&quot; &quot;$(_DesktopIconDir)&quot;" />
+        <Exec Condition="$([System.OperatingSystem]::IsLinux())"
+              Command="dotnet fsi &quot;$(_GenerateIconsFsx)&quot; -- linux &quot;@(MauiIcon->'%(FullPath)')&quot; &quot;$(MSBuildProjectDirectory)/%(MauiIcon.ForegroundFile)&quot; &quot;$(_DesktopIconDir)&quot;" />
+        <Exec Condition="$([System.OperatingSystem]::IsWindows())"
+              Command="dotnet fsi &quot;$(_GenerateIconsFsx)&quot; -- windows &quot;@(MauiIcon->'%(FullPath)')&quot; &quot;$(MSBuildProjectDirectory)/%(MauiIcon.ForegroundFile)&quot; &quot;$(_DesktopIconDir)/app.ico&quot;" />
+
+        <!-- Windows: embed .ico into .exe -->
+        <PropertyGroup Condition="$([System.OperatingSystem]::IsWindows())">
+            <ApplicationIcon>$(_DesktopIconDir)/app.ico</ApplicationIcon>
+        </PropertyGroup>
+        <PropertyGroup>
+            <_DesktopIconDir>$(IntermediateOutputPath)icons</_DesktopIconDir>
+        </PropertyGroup>
+        <ItemGroup Condition="$([System.OperatingSystem]::IsMacOS())">
+            <Content Include="$(_DesktopIconDir)/AppIcon.icns" Link="AppIcon.icns"
+                     CopyToOutputDirectory="PreserveNewest" />
+        </ItemGroup>
+        <ItemGroup Condition="$([System.OperatingSystem]::IsWindows())">
+            <Content Include="$(_DesktopIconDir)/app.ico" Link="app.ico"
+                     CopyToOutputDirectory="PreserveNewest" />
+        </ItemGroup>
+        <ItemGroup Condition="$([System.OperatingSystem]::IsLinux())">
+            <Content Include="$(_DesktopIconDir)/app.png" Link="app.png"
+                     CopyToOutputDirectory="PreserveNewest" />
+        </ItemGroup>
+    </Target>
+
+    <!-- ============================================================
+         macOS / iOS: Vulkan SDK
+         ============================================================
+         User projects can override the Vulkan SDK path by setting the MacOSVulkanSdk property in their project file. -->
     <Target Name="UseMacOSVulkanSDK" BeforeTargets="AssignTargetPaths"
             Condition="$(BuildingMacOS) Or '$(TargetPlatformIdentifier)'=='ios'">
         <!-- Auto-detect Vulkan SDK on macOS if not already set -->
@@ -438,46 +476,16 @@
     </Target>
 
     <!-- ============================================================
-         Desktop: Icon Generation (from MAUI adaptive icon SVGs)
-         ============================================================ -->
-
-    <Target Name="GenerateDesktopIcon" BeforeTargets="BeforeBuild"
-            Condition="'$(TargetPlatformIdentifier)' == '' And '@(MauiIcon)' != ''">
-        <PropertyGroup>
-            <_DesktopIconDir>$(IntermediateOutputPath)icons</_DesktopIconDir>
-            <_GenerateIconsFsx>$(MSBuildThisFileDirectory)Nu/Scripts/GenerateIcons.fsx</_GenerateIconsFsx>
-        </PropertyGroup>
-        <Error Condition="@(MauiIcon->Count()) > 1" Text="Multiple &lt;MauiIcon&gt; items were found. Please only specify one for desktop icon generation." />
-        <Error Condition="'%(MauiIcon.Resize)' != ''" Text="The &lt;MauiIcon&gt; item should not specify the Resize attribute; only Include and ForegroundFile are supported for desktop icon generation." />
-        <Error Condition="'%(MauiIcon.BaseSize)' != ''" Text="The &lt;MauiIcon&gt; item should not specify the BaseSize attribute; only Include and ForegroundFile are supported for desktop icon generation." />
-        <!-- Note: ForegroundFile being omitted is handled by the script checking for a valid file. -->
-
-        <Exec Condition="$([System.OperatingSystem]::IsMacOS())"
-              Command="dotnet fsi &quot;$(_GenerateIconsFsx)&quot; -- macos &quot;@(MauiIcon->'%(FullPath)')&quot; &quot;$(MSBuildProjectDirectory)/%(MauiIcon.ForegroundFile)&quot; &quot;$(_DesktopIconDir)&quot;" />
-        <Exec Condition="$([System.OperatingSystem]::IsLinux())"
-              Command="dotnet fsi &quot;$(_GenerateIconsFsx)&quot; -- linux &quot;@(MauiIcon->'%(FullPath)')&quot; &quot;$(MSBuildProjectDirectory)/%(MauiIcon.ForegroundFile)&quot; &quot;$(_DesktopIconDir)&quot;" />
-        <Exec Condition="$([System.OperatingSystem]::IsWindows())"
-              Command="dotnet fsi &quot;$(_GenerateIconsFsx)&quot; -- windows &quot;@(MauiIcon->'%(FullPath)')&quot; &quot;$(MSBuildProjectDirectory)/%(MauiIcon.ForegroundFile)&quot; &quot;$(_DesktopIconDir)/app.ico&quot;" />
-
-        <!-- Windows: embed .ico into .exe -->
-        <PropertyGroup Condition="$([System.OperatingSystem]::IsWindows())">
-            <ApplicationIcon>$(_DesktopIconDir)/app.ico</ApplicationIcon>
-        </PropertyGroup>
-        <PropertyGroup>
-            <_DesktopIconDir>$(IntermediateOutputPath)icons</_DesktopIconDir>
-        </PropertyGroup>
-        <ItemGroup Condition="$([System.OperatingSystem]::IsMacOS())">
-            <Content Include="$(_DesktopIconDir)/AppIcon.icns" Link="AppIcon.icns"
-                     CopyToOutputDirectory="PreserveNewest" />
-        </ItemGroup>
-        <ItemGroup Condition="$([System.OperatingSystem]::IsWindows())">
-            <Content Include="$(_DesktopIconDir)/app.ico" Link="app.ico"
-                     CopyToOutputDirectory="PreserveNewest" />
-        </ItemGroup>
-        <ItemGroup Condition="$([System.OperatingSystem]::IsLinux())">
-            <Content Include="$(_DesktopIconDir)/app.png" Link="app.png"
-                     CopyToOutputDirectory="PreserveNewest" />
-        </ItemGroup>
+         macOS: Copy Vulkan SDK dylibs to publish directory
+         ============================================================
+         The Vulkan SDK dylibs are symlinked into $(OutDir) by UseMacOSVulkanSDK,
+         but they are not part of the resolved publish items. This target copies
+         them (following symlinks) into $(PublishDir) so that CreateMacOSAppBundle
+         can bundle them via the normal cp -RL from PublishDir. -->
+    <Target Name="CopyVulkanSdkToPublishDir" AfterTargets="_CopyResolvedFilesToPublishPreserveNewest;_CopyResolvedFilesToPublishAlways"
+            Condition="$(BuildingMacOS) And '$(PublishDir)' != ''">
+        <Exec Command="cp -RL &quot;$(OutDir)&quot;/libvulkan* &quot;$(OutDir)&quot;/libMoltenVK* &quot;$(PublishDir)&quot; 2>/dev/null || true" />
+        <Exec Command="cp -RL &quot;$(OutDir)/vulkan&quot; &quot;$(PublishDir)/&quot; 2>/dev/null || true" />
     </Target>
 
     <!-- ============================================================
@@ -512,13 +520,9 @@
         <!-- Copy published files (follow symlinks to resolve Vulkan SDK dylibs) -->
         <Exec Command="cp -RL &quot;$(PublishDir)/&quot;* &quot;$(_MacOSAppMacOSDir)/&quot;" />
 
-        <!-- Also grab Nu.Pipe assets from the parent (RID publish writes one level deeper) -->
-        <Exec Command="cp -R &quot;$(PublishDir)/../Assets&quot; &quot;$(_MacOSAppMacOSDir)/&quot; 2>/dev/null || true" />
-        <Exec Command="cp &quot;$(PublishDir)/../AssetGraph.nuag&quot; &quot;$(PublishDir)/../AssetGraph.tracker&quot; &quot;$(PublishDir)/../Overlayer.nuol&quot; &quot;$(_MacOSAppMacOSDir)/&quot; 2>/dev/null || true" />
-
         <!-- macOS Vulkan ICD discovery fix: move icd.d to Resources and fix paths -->
         <MakeDir Directories="$(_MacOSAppResourcesDir)/vulkan/icd.d" />
-        <Exec Command="mv &quot;$(_MacOSAppMacOSDir)/vulkan/icd.d/&quot;*_icd.json &quot;$(_MacOSAppResourcesDir)/vulkan/icd.d/&quot;" />
+        <Exec Command="mv &quot;$(_MacOSAppMacOSDir)/vulkan/icd.d/&quot;*_icd.json &quot;$(_MacOSAppResourcesDir)/vulkan/icd.d/&quot; 2>/dev/null || true" />
         <Exec Command="rm -rf &quot;$(_MacOSAppMacOSDir)/vulkan&quot;" />
         <!-- Remove MoltenVK ICD (iOS-only, conflicts with KosmicKrisp on macOS) -->
         <Delete Files="$(_MacOSAppResourcesDir)/vulkan/icd.d/MoltenVK_icd.json"
@@ -548,7 +552,7 @@
     </Target>
 
     <!-- ============================================================
-         iOS Simulator: Resign for Free Provisioning
+         iOS Simulator: Re-sign the app for Free Provisioning
          ============================================================ -->
 
     <Target Name="ResignIosSimulatorAppBundle" AfterTargets="Build"
