@@ -433,7 +433,8 @@
         <ItemGroup>
             <!-- macOS: bundle Vulkan SDK dylibs -->
             <MacOSVulkanSdkDylib Include="$(MacOSVulkanSdk)/macOS/lib/*.dylib" />
-            <MacOSVulkanSdkIcdOrExplicitLayerJson Include="$(MacOSVulkanSdk)/macOS/share/vulkan/**/*.json" Condition="$([System.String]::Copy('%(Identity)').Contains('/vulkan/explicit_layer.d/')) Or $([System.String]::Copy('%(Identity)').Contains('/vulkan/icd.d/'))" />
+            <MacOSVulkanSdkIcdOrExplicitLayerJson Include="$(MacOSVulkanSdk)/macOS/share/vulkan/explicit_layer.d/*.json" VulkanSubDir="explicit_layer.d" />
+            <MacOSVulkanSdkIcdOrExplicitLayerJson Include="$(MacOSVulkanSdk)/macOS/share/vulkan/icd.d/*.json" VulkanSubDir="icd.d" />
             <!-- iOS: package MoltenVK (simulator slice exists in the xcframework) -->
             <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios'"
                              Include="$(MacOSVulkanSdk)/iOS/lib/MoltenVK.xcframework" Kind="Framework" />
@@ -447,7 +448,7 @@
               Command="mkdir -p &quot;$(OutDir)%(MacOSVulkanSdkDylib.RecursiveDir)&quot; &amp;&amp; ln -sfn &quot;%(MacOSVulkanSdkDylib.Identity)&quot; &quot;$(OutDir)%(MacOSVulkanSdkDylib.RecursiveDir)%(MacOSVulkanSdkDylib.Filename)%(MacOSVulkanSdkDylib.Extension)&quot;" />
         <Copy Condition="'$(TargetPlatformIdentifier)'!='ios'"
               SourceFiles="@(MacOSVulkanSdkIcdOrExplicitLayerJson)"
-              DestinationFiles="@(MacOSVulkanSdkIcdOrExplicitLayerJson->'$(OutDir)vulkan/%(RecursiveDir)%(Filename)%(Extension)')"
+              DestinationFiles="@(MacOSVulkanSdkIcdOrExplicitLayerJson->'$(OutDir)vulkan/%(VulkanSubDir)/%(Filename)%(Extension)')"
               SkipUnchangedFiles="true" />
         <!-- Patch library_path in all Vulkan JSON files (../../../lib/ -> ../../) using Exec/sed instead of MSBuild string Replace to avoid MSBuild path normalization implicitly converting all "\n" to "/n" in the property values -->
         <Exec Condition="'$(TargetPlatformIdentifier)'!='ios'"
