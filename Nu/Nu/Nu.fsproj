@@ -153,7 +153,6 @@
         <Compile Include="World\WorldContent.fs" />
         <Compile Include="World\WorldModule2.fs" />
         <Compile Include="World\World.fs" />
-        <Compile Include="NativeLibraryLoading.fs" />
         <None Include="Scripts\GenerateDependencyGraph.fsx" />
         <None Include="Scripts\GenerateInputBindings.fsx" />
         <None Include="Scripts\GenerateIcons.fsx" />

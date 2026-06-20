@@ -75,7 +75,6 @@ type MainActivity () =
         this.FindViewById(Android.Resource.Id.Content).ViewTreeObserver.AddOnPreDrawListener preDrawListener
     override this.GetLibraries () = [|"SDL3"; "SDL3_image"; "SDL3_ttf"; "SDL3_mixer"|] // SDL - Load these native libraries
     override this.Main () =
-        NativeLibraryLoading.Android.configureAndroidNativeLibraries ()
 
         // Get the file system path for fast-follow asset pack "gameassets". Customize this if you use a different asset pack. For on-demand asset packs, you would need to trigger the download and wait for completion before getting the path.
         // How to use asset pack manager: https://developer.android.com/guide/playcore/asset-delivery/integrate-java
@@ -155,8 +154,6 @@ type MainActivity () =
         |> Seq.exactlyOne
         |> Directory.SetCurrentDirectory
 
-        Log.init None // disable Nu's default file log because the Android asset pack directory should be treated as read-only for incremental updates to work: https://developer.android.com/reference/com/google/android/play/core/assetpacks/AssetPackManager#getpacklocation
-
         // direct ConfigurationManager.AppSettings to load values from our App.config file
         if not (File.Exists "App.config") then
             raise (FileNotFoundException ($"Expected App.config at '{Directory.GetCurrentDirectory ()}' but it was not found. Something went wrong with asset pack loading."))
@@ -193,13 +190,13 @@ let private sdlMainImpl (argc: int, argv: nativeptr<nativeptr<byte>>) : int =
         window.AddSubview splashScreen)
     main splashScreen.RemoveFromSuperview // needs to stay alive and not garbage collected
 let [<EntryPoint>] entryPoint _ =
-    Log.init None // disable Nu's default file log because the iOS app bundle is read-only.
-    NativeLibraryLoading.iOS.configureIosNativeLibraries ()
     if ObjCRuntime.Runtime.Arch = ObjCRuntime.Arch.SIMULATOR then
         // Avoid hitting MoltenVK iOS Simulator limitations like:
         // - only 31 buffers are supported in the simulator
         // - no rendering to array (layered) attachments
         Constants.Render.SkipRendering3d <- true
+
+    Nu.NativeLibraryLoading.iOS.setupSdl () // Required before we initialize SDL on iOS!
 
     let sdlMainMethod = Assembly.GetExecutingAssembly().GetType("SandBox2d.Program").GetMethod (nameof sdlMainImpl, BindingFlags.Static ||| BindingFlags.NonPublic)
     let sdlMainFuncPtr = sdlMainMethod.MethodHandle.GetFunctionPointer () // Requires UnmanagedCallersOnly on the function! See https://learn.microsoft.com/en-us/dotnet/api/system.runtimemethodhandle.getfunctionpointer#remarks
@@ -207,8 +204,6 @@ let [<EntryPoint>] entryPoint _ =
 #endif
 #if !(ANDROID || IOS)
 let [<EntryPoint>] entryPoint _ =
-    if OperatingSystem.IsMacOS () then
-        NativeLibraryLoading.Apple.configureFrameworkNativeLibraries ()
     // regardless of where the program is launched from in the command line, always resolve files relative to the application's base directory
     Directory.SetCurrentDirectory AppContext.BaseDirectory
     main ignore
