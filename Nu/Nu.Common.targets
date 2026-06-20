@@ -426,19 +426,19 @@
         </Exec>
         <Error Text="Please install the macOS Vulkan SDK. If installed to a non-default location, override the MacOSVulkanSdk property in your project file."
                Condition="!$([System.IO.Directory]::Exists($(MacOSVulkanSdk)))" />
+        <Error Text="You need to choose 'Development libraries for iOS' when installing the macOS Vulkan SDK to build for iOS. Please reinstall the Vulkan SDK with that option enabled."
+               Condition="!$([System.IO.Directory]::Exists('$(MacOSVulkanSdk)/iOS')) And '$(TargetPlatformIdentifier)'=='ios'" />
         <Warning Text="iOS Simulator builds will disable the 3D renderer because array (layered) attachments are unsupported."
                  Condition="'$(TargetPlatformIdentifier)'=='ios' And $(RuntimeIdentifier.StartsWith('iossimulator'))" />
         <ItemGroup>
             <!-- macOS: bundle Vulkan SDK dylibs -->
             <MacOSVulkanSdkDylib Include="$(MacOSVulkanSdk)/macOS/lib/*.dylib" />
-            <MacOSVulkanSdkIcdJson Include="$(MacOSVulkanSdk)/macOS/share/**/*_icd.json" />
+            <MacOSVulkanSdkIcdOrExplicitLayerJson Include="$(MacOSVulkanSdk)/macOS/share/vulkan/**/*.json" Condition="$([System.String]::Copy('%(Identity)').Contains('/vulkan/explicit_layer.d/')) Or $([System.String]::Copy('%(Identity)').Contains('/vulkan/icd.d/'))" />
             <!-- iOS: package MoltenVK (simulator slice exists in the xcframework) -->
             <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios'"
                              Include="$(MacOSVulkanSdk)/iOS/lib/MoltenVK.xcframework" Kind="Framework" />
             <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios' And !$(RuntimeIdentifier.StartsWith('iossimulator'))"
-                             Include="$(MacOSVulkanSdk)/iOS/lib/vulkan.xcframework" Kind="Framework" />
-            <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios' And !$(RuntimeIdentifier.StartsWith('iossimulator'))"
-                             Include="$(MacOSVulkanSdk)/iOS/lib/VkLayer_*.xcframework" Kind="Framework" />
+                             Include="$(MacOSVulkanSdk)/iOS/lib/vulkan.xcframework;$(MacOSVulkanSdk)/iOS/lib/VkLayer_*.xcframework" Kind="Framework" />
         </ItemGroup>
         <Error Condition="'$(TargetPlatformIdentifier)'!='ios' And '@(MacOSVulkanSdkDylib)'==''"
                Text="No macOS Vulkan SDK dylibs were found at '$(MacOSVulkanSdk)/macOS/lib/*.dylib'. Ensure MacOSVulkanSdk points to a valid Vulkan SDK installation." />
@@ -446,16 +446,12 @@
         <Exec Condition="'$(TargetPlatformIdentifier)'!='ios'"
               Command="mkdir -p &quot;$(OutDir)%(MacOSVulkanSdkDylib.RecursiveDir)&quot; &amp;&amp; ln -sfn &quot;%(MacOSVulkanSdkDylib.Identity)&quot; &quot;$(OutDir)%(MacOSVulkanSdkDylib.RecursiveDir)%(MacOSVulkanSdkDylib.Filename)%(MacOSVulkanSdkDylib.Extension)&quot;" />
         <Copy Condition="'$(TargetPlatformIdentifier)'!='ios'"
-              SourceFiles="@(MacOSVulkanSdkIcdJson)"
-              DestinationFiles="@(MacOSVulkanSdkIcdJson->'$(OutDir)%(RecursiveDir)%(Filename)%(Extension)')"
+              SourceFiles="@(MacOSVulkanSdkIcdOrExplicitLayerJson)"
+              DestinationFiles="@(MacOSVulkanSdkIcdOrExplicitLayerJson->'$(OutDir)vulkan/%(RecursiveDir)%(Filename)%(Extension)')"
               SkipUnchangedFiles="true" />
-        <ItemGroup>
-            <OutIcdJsonFile Include="$(OutDir)/vulkan/icd.d/*_icd.json" />
-        </ItemGroup>
-        <WriteLinesToFile Condition="'$(TargetPlatformIdentifier)'!='ios'"
-                          File="%(OutIcdJsonFile.Identity)"
-                          Lines="$([System.IO.File]::ReadAllText('%(OutIcdJsonFile.Identity)').Replace('../../../lib/','../../'))"
-                          Overwrite="true" />
+        <!-- Patch library_path in all Vulkan JSON files (../../../lib/ -> ../../) using Exec/sed instead of MSBuild string Replace to avoid MSBuild path normalization implicitly converting all "\n" to "/n" in the property values -->
+        <Exec Condition="'$(TargetPlatformIdentifier)'!='ios'"
+              Command="find &quot;$(OutDir)vulkan/icd.d&quot; &quot;$(OutDir)vulkan/explicit_layer.d&quot; -name '*.json' -exec sed -i '' 's|../../../lib/|../../|g' {} +" />
     </Target>
 
     <!-- ============================================================
