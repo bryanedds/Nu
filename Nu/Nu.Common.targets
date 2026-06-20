@@ -39,7 +39,8 @@
         <ServerGarbageCollection Condition="'$(ServerGarbageCollection)' == '' And '$(TargetPlatformIdentifier)' != 'ios'">True</ServerGarbageCollection>
         <TieredPGO Condition="'$(TieredPGO)' == ''">True</TieredPGO>
         <DisableFastUpToDateCheck Condition="'$(DisableFastUpToDateCheck)' == ''">True</DisableFastUpToDateCheck>
-        <PublishSingleFile Condition="'$(PublishSingleFile)' == ''">true</PublishSingleFile>
+        <!-- For desktop, embed .NET DLLs into the generated executable. However, mobile doesn't support doing this. -->
+        <PublishSingleFile Condition="'$(PublishSingleFile)' == '' And '$(TargetPlatformIdentifier)' == ''">true</PublishSingleFile>
 
         <!-- F# compiler settings -->
         <WarnOn Condition="'$(WarnOn)' == ''">FS1182</WarnOn>
