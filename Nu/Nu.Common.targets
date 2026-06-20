@@ -192,47 +192,23 @@
     </Target>
 
     <!-- ============================================================
-         Android: Exclude Linux native assets
+         Android: Remove Linux native assets from resolved packages
          ============================================================
-         Set ExcludeAssets="native" to prevent linux-x64 native binaries
-         from being packaged into Android APKs (they have no Android runtime folder,
-         causing XA0141 warnings and APK bloat). Versions are read from the resolved
-         dependency graph to stay in sync with the Nu project. -->
-    <Target Name="_CreateAndroidPackageReferences" AfterTargets="ResolvePackageDependenciesForBuild" BeforeTargets="ResolveReferences"
-            Condition="'$(TargetPlatformIdentifier)' == 'android'">
-        <PropertyGroup>
-            <_ReadVersionScript>$(MSBuildThisFileDirectory)Nu/Scripts/ReadPackageVersion.fsx</_ReadVersionScript>
-            <_AssetsFile>$(ProjectAssetsFile)</_AssetsFile>
-        </PropertyGroup>
-        <Exec Command="dotnet fsi &quot;$(_ReadVersionScript)&quot; -a &quot;$(_AssetsFile)&quot; -p &quot;Silk.NET.Shaderc.Native&quot;"
-              ConsoleToMsBuild="true" ContinueOnError="true">
-            <Output TaskParameter="ConsoleOutput" PropertyName="_AndroidShadercVersion" />
-        </Exec>
-        <Exec Command="dotnet fsi &quot;$(_ReadVersionScript)&quot; -a &quot;$(_AssetsFile)&quot; -p &quot;Twizzle.ImGui-Bundle.NET&quot;"
-              ConsoleToMsBuild="true" ContinueOnError="true">
-            <Output TaskParameter="ConsoleOutput" PropertyName="_AndroidImGuiVersion" />
-        </Exec>
-        <Exec Command="dotnet fsi &quot;$(_ReadVersionScript)&quot; -a &quot;$(_AssetsFile)&quot; -p &quot;AstcEncoderCSharp-NuGameEngine&quot;"
-              ConsoleToMsBuild="true" ContinueOnError="true">
-            <Output TaskParameter="ConsoleOutput" PropertyName="_AndroidAstcEncoderVersion" />
-        </Exec>
-        <Exec Command="dotnet fsi &quot;$(_ReadVersionScript)&quot; -a &quot;$(_AssetsFile)&quot; -p &quot;Magick.NET-Q8-AnyCPU&quot;"
-              ConsoleToMsBuild="true" ContinueOnError="true">
-            <Output TaskParameter="ConsoleOutput" PropertyName="_AndroidMagickVersion" />
-        </Exec>
-        <Error Condition="'$(_AndroidShadercVersion)' == ''"
-               Text="Silk.NET.Shaderc.Native was not found in project.assets.json (it is a transitive dependency of Vortice.ShaderCompiler). Ensure restore completed successfully." />
-        <Error Condition="'$(_AndroidImGuiVersion)' == ''"
-               Text="Twizzle.ImGui-Bundle.NET was not found in project.assets.json." />
-        <Error Condition="'$(_AndroidAstcEncoderVersion)' == ''"
-               Text="AstcEncoderCSharp-NuGameEngine was not found in project.assets.json." />
-        <Error Condition="'$(_AndroidMagickVersion)' == ''"
-               Text="Magick.NET-Q8-AnyCPU was not found in project.assets.json." />
+         NuGet packages (Silk.NET.Shaderc.Native, Twizzle.ImGui-Bundle.NET,
+         AstcEncoderCSharp-NuGameEngine, Magick.NET-Q8-AnyCPU) contain Linux
+         .so files under runtimes/linux-*/native/.  The Android build scans
+         all resolved native assets and warns (XA0141) about Linux .so files
+         that have no 16 KB page alignment or are simply not for Android.
+         
+         We cannot set ExcludeAssets="native" before restore (the versions
+         come from the resolved graph), so instead we strip Linux-native
+         entries from the resolved copy-local lists after they are computed. -->
+    <Target Name="_RemoveLinuxNativeAssets" AfterTargets="ResolvePackageAssets" Condition="'$(TargetPlatformIdentifier)' == 'android'">
         <ItemGroup>
-            <PackageReference Include="Silk.NET.Shaderc.Native" Version="$(_AndroidShadercVersion)" ExcludeAssets="native" />
-            <PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="$(_AndroidImGuiVersion)" ExcludeAssets="native" />
-            <PackageReference Include="AstcEncoderCSharp-NuGameEngine" Version="$(_AndroidAstcEncoderVersion)" ExcludeAssets="native" />
-            <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="$(_AndroidMagickVersion)" ExcludeAssets="native" />
+            <!-- Remove any resolved native item whose source path contains
+                 a Linux RID segment (/linux-), which is never correct for Android. -->
+            <NativeCopyLocalItems Remove="@(NativeCopyLocalItems)" Condition="$([System.String]::new('%(NativeCopyLocalItems.Identity)').Contains('/linux-'))" />
+            <RuntimeTargetsCopyLocalItems Remove="@(RuntimeTargetsCopyLocalItems)" Condition="$([System.String]::new('%(RuntimeTargetsCopyLocalItems.Identity)').Contains('/linux-'))" />
         </ItemGroup>
     </Target>
 
@@ -242,6 +218,9 @@
          Note: SDL3-CS native libraries do not require manual inclusion -->
 
     <ItemGroup Condition="'$(TargetPlatformIdentifier)' == 'android'">
+        <!-- Silk.NET.Shaderc.Native and Twizzle.ImGui-Bundle.NET only ship
+             Linux/macOS/Windows native libs — they do NOT provide Android .so files.
+             All Android .so files must come from Nu.Dependencies. -->
         <AndroidNativeLibrary Include="$(MSBuildThisFileDirectory)Nu.Dependencies/ShaderC/android/*/libshaderc_shared.so" />
         <AndroidNativeLibrary Include="$(MSBuildThisFileDirectory)Nu.Dependencies/ShaderC/android/*/libc++_shared.so" />
         <AndroidNativeLibrary Include="$(MSBuildThisFileDirectory)Nu.Dependencies/ImGui/android/*/libcimgui.so" />
