@@ -118,7 +118,7 @@
     </ItemGroup>
 
     <!-- ============================================================
-         iOS / Android: Mark <UseMaui> packages as build-time only
+         iOS / Android: Mark <UseMaui> packages as build-time only during Restore
          ============================================================
          Done so that we don't need to wait for IL Stripping / AOT on them.
          Only applies to implicitly added (SDK) PackageReferences — if the user explicitly includes
@@ -128,9 +128,9 @@
          (see BundledVersions.in.targets in dotnet/maui). This is NOT the same as
          NuGet's IsImplicitlyDefined — that's only set by dotnet/sdk's implicit
          version resolution, not by the MAUI workload. -->
-    <Target Name="_RemoveMauiRuntimeAssets" BeforeTargets="ResolvePackageAssets" Condition="'$(UseMaui)' == 'true'">
+    <Target Name="_RemoveMauiRuntimeAssets" BeforeTargets="CollectPackageReferences" Condition="'$(UseMaui)' == 'true'">
         <ItemGroup>
-            <PackageReference Update="Microsoft.Maui.*" RemoveAssets="runtime" Condition="'%(PackageReference.IsMauiImplicitPackageReference)' == 'true'" />
+            <PackageReference Update="Microsoft.Maui.*" ExcludeAssets="runtime" Condition="'%(PackageReference.IsMauiImplicitPackageReference)' == 'true'" />
         </ItemGroup>
     </Target>
 
