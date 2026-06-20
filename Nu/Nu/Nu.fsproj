@@ -156,26 +156,6 @@
         <None Include="Scripts\GenerateDependencyGraph.fsx" />
         <None Include="Scripts\GenerateInputBindings.fsx" />
         <None Include="Scripts\GenerateIcons.fsx" />
-        <None Include="zlib1.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
-        <None Include="assimp.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
-        <None Include="libassimp.so" Condition="!$([System.OperatingSystem]::IsMacOS())">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
-        <None Include="libbulletc.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
-        <None Include="libbulletc.so" Condition="!$([System.OperatingSystem]::IsMacOS())">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
     </ItemGroup>
 
     <ItemGroup>

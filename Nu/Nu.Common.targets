@@ -215,7 +215,7 @@
     </Target>
 
     <!-- ============================================================
-         iOS / Android / macOS: Native Libraries
+         Native Libraries
          ============================================================
          Note: SDL3-CS native libraries do not require manual inclusion -->
 
@@ -239,6 +239,7 @@
         <NativeReference Include="$(MSBuildThisFileDirectory)Nu.Dependencies/Vortice.VulkanMemoryAllocator/iOS/vma.xcframework" Kind="Framework" />
         <NativeReference Include="$(MSBuildThisFileDirectory)Nu.Dependencies/ShaderC/iOS/shaderc_shared.xcframework" Kind="Framework" />
     </ItemGroup>
+
     <!-- macOS desktop: bundle frameworks into the output -->
     <ItemGroup Condition="$(BuildingMacOS)">
         <None Include="$(MSBuildThisFileDirectory)Nu.Dependencies/AssimpNet/iOS/assimp.xcframework/macos-arm64/assimp.framework/**/*">
@@ -248,6 +249,36 @@
         </None>
         <None Include="$(MSBuildThisFileDirectory)Nu.Dependencies/BulletSharpPInvoke/iOS/bulletc.xcframework/macos-arm64/bulletc.framework/**/*">
             <TargetPath>Frameworks/bulletc.framework/%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Visible>False</Visible>
+        </None>
+    </ItemGroup>
+
+    <!-- Windows x64 desktop: native DLLs (x64-only) -->
+    <ItemGroup Condition="'$(TargetPlatformIdentifier)' == '' And (('$(RuntimeIdentifier)'=='' And $([System.OperatingSystem]::IsWindows()) And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'X64')
+                                                                   Or '$(RuntimeIdentifier)' == 'win-x64')">
+        <None Include="$(MSBuildThisFileDirectory)Nu/zlib1.dll">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Visible>False</Visible>
+        </None>
+        <None Include="$(MSBuildThisFileDirectory)Nu/assimp.dll">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Visible>False</Visible>
+        </None>
+        <None Include="$(MSBuildThisFileDirectory)Nu/libbulletc.dll">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Visible>False</Visible>
+        </None>
+    </ItemGroup>
+
+    <!-- Linux x64 desktop: native .so files (x64-only) -->
+    <ItemGroup Condition="'$(TargetPlatformIdentifier)' == '' And (('$(RuntimeIdentifier)'=='' And $([System.OperatingSystem]::IsLinux()) And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'X64')
+                                                                   Or '$(RuntimeIdentifier)' == 'linux-x64')">
+        <None Include="$(MSBuildThisFileDirectory)Nu/libassimp.so">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Visible>False</Visible>
+        </None>
+        <None Include="$(MSBuildThisFileDirectory)Nu/libbulletc.so">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Visible>False</Visible>
         </None>
