@@ -1,27 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <!-- Gaia is a desktop-only tool (editor/IDE for Nu games) -->
         <TargetFramework>net10.0</TargetFramework>
-        <OutputType>Exe</OutputType>
     </PropertyGroup>
 
     <Import Project="../../Nu/Nu.Common.targets" />
 
-    <!-- Override BuildNuPipe: also build all game projects in addition to Nu.Pipe -->
-    <Target Name="BuildNuPipe" BeforeTargets="BeforeBuild">
-        <MSBuild Projects="../../Nu/Nu.Pipe/Nu.Pipe.fsproj"
-                 RemoveProperties="TargetFramework;RuntimeIdentifier;SelfContained"
-                 Targets="Restore;Build" />
+    <Target Name="BuildGaiaProjects" AfterTargets="BuildNuPipe" BeforeTargets="BeforeBuild">
         <ItemGroup>
             <GaiaProject Include="../../Projects/*/*.fsproj" />
         </ItemGroup>
         <MSBuild Projects="@(GaiaProject)" Targets="Restore;Build" BuildInParallel="true" />
     </Target>
-
-    <!-- ============================================================
-         Project Source Files
-         ============================================================ -->
 
     <ItemGroup>
         <None Include="Assets\*" />
@@ -34,13 +24,7 @@
         <None Include="AssetGraph.nuag" />
         <None Include="Overlayer.nuol" />
         <None Include="App.config" />
-    </ItemGroup>
 
-    <!-- ============================================================
-         Gaia-specific Dependencies
-         ============================================================ -->
-
-    <ItemGroup>
         <PackageReference Include="FSharp.Compiler.Service" Version="43.12.204" />
     </ItemGroup>
 

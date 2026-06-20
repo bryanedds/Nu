@@ -1,10 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <OutputType>Exe</OutputType>
         <TargetFramework>net10.0</TargetFramework>
-        <ProjectGuid>{E2AD5158-2483-488D-806C-ABDCBFB7C6C6}</ProjectGuid>
-        <PlatformTarget>AnyCPU</PlatformTarget>
     </PropertyGroup>
 
     <Import Project="../../Nu/Nu.Common.targets" />

@@ -12,8 +12,9 @@
 
     Property to set BEFORE this import:
         - TargetFramework / TargetFrameworks
+    Property to set AFTER this import:
+        - OutputType (if not Exe)
     Properties that can be set before or after this import:
-        - OutputType (should be Exe)
         - ApplicationTitle, ApplicationId, ApplicationDisplayVersion, ApplicationVersion
         - SupportedOSPlatformVersion (if after, $(TargetPlatformIdentifier) can be used in the condition)
         - MacOSVulkanSdk (override macOS Vulkan SDK path if needed)
@@ -36,6 +37,7 @@
         <BlockCompression Condition="'$(BlockCompression)' == '' And  ($(BuildingMacOS) Or '$(TargetPlatformIdentifier)'=='ios' Or '$(TargetPlatformIdentifier)'=='android')">AstcCompression</BlockCompression>
 
         <!-- .NET runtime settings (defaults; set earlier in your project to override) -->
+        <OutputType>Exe</OutputType> <!-- Except <OutputType>. It is set to Library by default - override it after this target. -->
         <ServerGarbageCollection Condition="'$(ServerGarbageCollection)' == '' And '$(TargetPlatformIdentifier)' != 'ios'">True</ServerGarbageCollection>
         <TieredPGO Condition="'$(TieredPGO)' == ''">True</TieredPGO>
         <DisableFastUpToDateCheck Condition="'$(DisableFastUpToDateCheck)' == ''">True</DisableFastUpToDateCheck>
@@ -48,7 +50,7 @@
         <Tailcalls Condition="'$(Tailcalls)' == ''">False</Tailcalls>
         <WarningLevel Condition="'$(WarningLevel)' == ''">5</WarningLevel>
         <WarningsAsErrors Condition="'$(WarningsAsErrors)' == ''">FS0026;FS0049;FS3239;$(WarningsAsErrors)</WarningsAsErrors>
-        <DisableImplicitFSharpCoreReference Condition="'$(DisableImplicitFSharpCoreReference)' == ''">true</DisableImplicitFSharpCoreReference>
+        <DisableImplicitFSharpCoreReference Condition="'$(DisableImplicitFSharpCoreReference)' == ''">true</DisableImplicitFSharpCoreReference> <!-- Use the one in Nu.fsproj -->
     </PropertyGroup>
     <!-- ============================================================
          iOS: skip on non-macOS
@@ -341,11 +343,12 @@
                  Use on-demand for up to 2GB. Install-time packs do not have a file system path (remains compressed), don't use it. -->
             <MauiAsset Include="$(NuPipeOut)/**/*.*" AssetPack="gameassets" DeliveryType="FastFollow" />
         </ItemGroup>
-        <!-- Desktop: copy to build output directory -->
+        <!-- Desktop: copy to build output directory (overwriting files marked as readonly by Nu/AssetGraph/AssetGraph.fs) -->
         <Copy Condition="'$(TargetPlatformIdentifier)' == ''"
               SourceFiles="@(MauiAsset)"
               DestinationFiles="@(MauiAsset->'$(OutDir)%(RecursiveDir)%(Filename)%(Extension)')"
-              SkipUnchangedFiles="true" />
+              SkipUnchangedFiles="true"
+              OverwriteReadOnlyFiles="true" />
     </Target>
 
     <Target Name="CopyNuPipeToPublishDir" AfterTargets="_CopyResolvedFilesToPublishPreserveNewest;_CopyResolvedFilesToPublishAlways"
