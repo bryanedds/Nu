@@ -1,7 +1,7 @@
 // Nu Game Engine.
 // Copyright (C) Bryan Edds.
 
-namespace Vortice.Vulkan.Nu
+namespace Nu.Vulkan
 open System
 open System.Runtime.InteropServices
 open System.Collections.Generic

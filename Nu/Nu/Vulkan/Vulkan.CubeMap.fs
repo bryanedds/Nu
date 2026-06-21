@@ -1,7 +1,7 @@
 ﻿// Nu Game Engine.
 // Copyright (C) Bryan Edds.
 
-namespace Vortice.Vulkan.Nu
+namespace Nu.Vulkan
 open System
 open System.Collections.Generic
 open System.IO
@@ -9,7 +9,7 @@ open System.Numerics
 open System.Runtime.InteropServices
 open Vortice.Vulkan
 open Prime
-open global.Nu
+open Nu
 
 [<RequireQualifiedAccess>]
 module CubeMap =
@@ -90,8 +90,8 @@ module CubeMap =
           PrimitiveTopology : VkPrimitiveTopology
           ElementCount : int
           Vertices : Vector3 array
-          VertexBuffer : Vortice.Vulkan.Nu.Buffer
-          IndexBuffer : Vortice.Vulkan.Nu.Buffer }
+          VertexBuffer : Nu.Vulkan.Buffer
+          IndexBuffer : Nu.Vulkan.Buffer }
 
     /// Describes a renderable cube map surface.
     type [<Struct>] CubeMapSurface =
@@ -199,7 +199,7 @@ module CubeMap =
                     vertices.[i] <- vertex
                 
                 // fin
-                (vertices, Unchecked.defaultof<Vortice.Vulkan.Nu.Buffer>, Unchecked.defaultof<Vortice.Vulkan.Nu.Buffer>)
+                (vertices, Unchecked.defaultof<Nu.Vulkan.Buffer>, Unchecked.defaultof<Nu.Vulkan.Buffer>)
 
         // make cube map geometry
         let geometry =
@@ -231,7 +231,7 @@ module CubeMap =
 
     /// Describes a cube map pipeline that's loaded into GPU.
     type CubeMapPipeline =
-        { TransformUniform : Vortice.Vulkan.Nu.Buffer
+        { TransformUniform : Nu.Vulkan.Buffer
           Pipeline : Pipeline }
     
     /// Create a CubeMapPipeline.

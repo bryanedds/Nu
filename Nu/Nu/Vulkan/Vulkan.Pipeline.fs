@@ -1,5 +1,7 @@
-﻿
-namespace Vortice.Vulkan.Nu
+﻿// Nu Game Engine.
+// Copyright (C) Bryan Edds.
+
+namespace Nu.Vulkan
 open System
 open System.Collections.Generic
 open System.Diagnostics
@@ -7,7 +9,7 @@ open FSharp.NativeInterop
 open Vortice.ShaderCompiler
 open Prime
 open Vortice.Vulkan
-open global.Nu
+open Nu
 
 /// A blend setting for a Vulkan pipeline.
 /// TODO: DJL: review naming.
@@ -184,7 +186,7 @@ type PushConstant =
 type Pipeline =
     private
         { mutable VkPipelines_ : Map<Blend * bool, VkPipeline> // TODO: P0: make sure no allocation happens on look-up.
-          Buffers_ : Vortice.Vulkan.Nu.Buffer array
+          Buffers_ : Nu.Vulkan.Buffer array
           DescriptorSets_ : DescriptorSet array
           VkPipelineLayout_ : VkPipelineLayout
           VkDescriptorSetLayouts_ : VkDescriptorSetLayout array
@@ -395,7 +397,7 @@ type Pipeline =
     static member tryGetVkPipeline blend cullFace pipeline =
         Map.tryFind (blend, cullFace) pipeline.VkPipelines_
 
-    static member writeDescriptorStorageBuffer (binding : int) (descriptorIndex : int) (buffer : Vortice.Vulkan.Nu.Buffer) vkDescriptorSet (vkc : VulkanContext) =
+    static member writeDescriptorStorageBuffer (binding : int) (descriptorIndex : int) (buffer : Nu.Vulkan.Buffer) vkDescriptorSet (vkc : VulkanContext) =
 
         // buffer info
         let mutable info = VkDescriptorBufferInfo ()

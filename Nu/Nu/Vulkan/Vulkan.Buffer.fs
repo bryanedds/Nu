@@ -1,13 +1,13 @@
 ﻿// Nu Game Engine.
 // Copyright (C) Bryan Edds.
 
-namespace Vortice.Vulkan.Nu
+namespace Nu.Vulkan
 open System
 open System.Collections.Generic
 open FSharp.NativeInterop
 open Vortice.Vulkan
 open Prime
-open global.Nu
+open Nu
 
 [<AutoOpen>]
 module BufferModule =

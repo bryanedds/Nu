@@ -1,7 +1,7 @@
 ﻿// Nu Game Engine.
 // Copyright (C) Bryan Edds.
 
-namespace Vortice.Vulkan.Nu
+namespace Nu.Vulkan
 open System
 open System.Collections.Concurrent
 open System.Collections.Generic
@@ -18,7 +18,7 @@ open AstcEncoder
 open Pfim
 open Vortice.Vulkan
 open Prime
-open global.Nu
+open Nu
 
 // NOTE: on Nu's texturing nomenclature -
 // Texture | Texture2d =    2d texture
@@ -540,7 +540,7 @@ type private TextureSingleton =
       ImageView : VkImageView
       SubViews : VkImageView array2d
       ImageSize : TextureMetadata
-      StagingBuffers : Vortice.Vulkan.Nu.Buffer List }
+      StagingBuffers : Nu.Vulkan.Buffer List }
 
     static member private createImage vkFormat extent mipLevels (textureType : TextureType) usageFlags (vkc : VulkanContext) =
         let mutable iInfo = VkImageCreateInfo ()
@@ -562,7 +562,7 @@ type private TextureSingleton =
         Vma.vmaCreateImage (vkc.VmaAllocator, &iInfo, &aInfo, &image, &allocation, nullPtr) |> Hl.check
         (image, allocation)
 
-    static member create pixelFormat (internalFormat : Vortice.Vulkan.Nu.ImageFormat) metadata mipLevels (attachmentMode : AttachmentMode) (textureType : TextureType) usageFlags (vkc : VulkanContext) =
+    static member create pixelFormat (internalFormat : Nu.Vulkan.ImageFormat) metadata mipLevels (attachmentMode : AttachmentMode) (textureType : TextureType) usageFlags (vkc : VulkanContext) =
 
         // create image and image views
         let extent = VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
@@ -614,7 +614,7 @@ type private TextureSingleton =
 type [<CustomEquality; NoComparison>] TextureInternal =
     private
         { Textures_ : TextureSingleton array
-          InternalFormat_ : Vortice.Vulkan.Nu.ImageFormat
+          InternalFormat_ : Nu.Vulkan.ImageFormat
           PixelFormat_ : PixelFormat
           MipLevels_ : int
           ImageUsages_ : VkImageUsageFlags
@@ -678,7 +678,7 @@ type [<CustomEquality; NoComparison>] TextureInternal =
         (attachmentMode : AttachmentMode)
         (textureType : TextureType)
         optionalUsageFlags
-        (internalFormat : Vortice.Vulkan.Nu.ImageFormat)
+        (internalFormat : Nu.Vulkan.ImageFormat)
         (pixelFormat : PixelFormat)
         metadata
         (vkc : VulkanContext) =

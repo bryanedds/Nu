@@ -1,11 +1,10 @@
 ﻿// Nu Game Engine.
 // Copyright (C) Bryan Edds.
 
-namespace Vortice.Vulkan.Nu
+namespace Nu.Vulkan
 open System
-open Prime
 open Vortice.Vulkan
-open global.Nu
+open Nu
 
 [<RequireQualifiedAccess>]
 module Attachment =
