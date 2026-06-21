@@ -137,7 +137,7 @@ module SpriteBatch =
                 | Some vkPipeline ->
                     
                     // specify uniforms
-                    let mutable uniformDescriptorSet = env.Pipeline.SpecifyDescriptorSet 0 env.Pipeline.DrawIndex env.VulkanContext $ fun vkSet ->
+                    let mutable uniformDescriptorSet = Pipeline.Pipeline.specifyDescriptorSet 0 env.Pipeline.DrawIndex env.Pipeline env.VulkanContext $ fun vkSet ->
 
                         // specify sprites
                         let spriteSize = sizeof<Sprite>
@@ -158,12 +158,12 @@ module SpriteBatch =
                         Pipeline.Pipeline.writeDescriptorStorageBuffer 1 0 env.ViewProjectionUniform vkSet env.VulkanContext
 
                     // specify material
-                    let mutable materialDescriptorSet = env.Pipeline.SpecifyDescriptorSet 1 texture env.VulkanContext $ fun vkSet ->
+                    let mutable materialDescriptorSet = Pipeline.Pipeline.specifyDescriptorSet 1 texture env.Pipeline env.VulkanContext $ fun vkSet ->
                         Pipeline.Pipeline.writeDescriptorSampledImage 0 0 texture vkSet env.VulkanContext
 
                     // specify sampler
                     let sampler = if texture.MipLevels = 0 then env.UnfilteredSampler else env.FilteredSampler
-                    let mutable samplerDescriptorSet = env.Pipeline.SpecifyDescriptorSet 2 sampler env.VulkanContext $ fun vkSet ->
+                    let mutable samplerDescriptorSet = Pipeline.Pipeline.specifyDescriptorSet 2 sampler env.Pipeline env.VulkanContext $ fun vkSet ->
                         Pipeline.Pipeline.writeDescriptorSampler 0 0 sampler vkSet env.VulkanContext
     
                     // set up render
@@ -241,7 +241,8 @@ module SpriteBatch =
 
         // adjust to potential sprite batch state changes
         let state = SpriteBatchState.make absolute clipOpt blend texture
-        if SpriteBatchState.changed state env.State || env.SpriteIndex = Constants.Render.SpriteBatchSize then
+        if  SpriteBatchState.changed state env.State ||
+            env.SpriteIndex = Constants.Render.SpriteBatchSize then
             RestartSpriteBatch state viewport env
 
         // populate vertices

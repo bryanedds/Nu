@@ -1144,19 +1144,19 @@ module Texture =
         /// Submit texture for destruction once the current frame has finished execution.
         member this.Submit texture =
             this.Textures.[Hl.CurrentFrame].Add texture
-
-        /// Create a TextureDestroyer.
+        
+        /// Create a TextureDisposer.
         static member create () =
             let textures = Array.zeroCreate<List<Texture>> Constants.Vulkan.MaxFramesInFlight
             for i in 0 .. dec textures.Length do textures.[i] <- List ()
             { Textures = textures }
-
-        /// Destroy a TextureDestroyer.
-        static member destroy textureDestroyer vkc =
-            for i in 0 .. dec textureDestroyer.Textures.Length do
-                for j in 0 .. dec textureDestroyer.Textures.[i].Count do
-                    textureDestroyer.Textures.[i].[j].Destroy vkc
-
+        
+        /// Destroy a TextureDisposer.
+        static member destroy textureDisposer vkc =
+            for i in 0 .. dec textureDisposer.Textures.Length do
+                for j in 0 .. dec textureDisposer.Textures.[i].Count do
+                    textureDisposer.Textures.[i].[j].Destroy vkc
+    
     /// Memoizes and optionally threads texture loads.
     type TextureClient (lazyTextureQueuesOpt : ConcurrentDictionary<_, _> option) =
         let textures = Dictionary<string, Texture> HashIdentity.Structural

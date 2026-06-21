@@ -32,6 +32,12 @@ module Hl =
 #endif
 
     let mutable private ValidationLayersActivated = false
+
+    // provides id for a texture on the gpu that is globally unique i.e. cannot be reused after texture is destroyed,
+    // which is essential for tracking descriptor writes
+    let mutable private TextureIdGenerationLock = obj ()
+    let mutable private TextureIdCounter = 0UL
+    let internal GenTextureId () = lock TextureIdGenerationLock (fun () -> TextureIdCounter <- inc TextureIdCounter; TextureIdCounter)
     
     /// Index of the current Swapchain image.
     let mutable private ImageIndex = 0u
@@ -39,6 +45,12 @@ module Hl =
     /// The current frame within MaxFramesInFlight.
     /// TODO: DJL: figure out how to prevent potential outside mutation.
     let mutable internal CurrentFrame = 0
+
+    /// The forward-declared empty texture value.
+    /// Initialized in RendererProcesses.
+    /// NOTE: if performance issues arise from checking / casting this, maybe use ValueOption or null directly.
+    /// TODO: see if instead of exposing mutability of this directly, we should define Init and CleanUp fns.
+    let mutable internal EmptyOpt : obj option = None
     
     type private SurfaceState =
         | SurfaceReady

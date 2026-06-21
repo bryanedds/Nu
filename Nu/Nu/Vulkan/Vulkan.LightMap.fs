@@ -184,7 +184,7 @@ module LightMap =
             | Some vkPipeline ->
 
                 // specify uniforms
-                let mutable uniformDescriptorSet = pipeline.Pipeline.SpecifyDescriptorSet 0 pipeline.Pipeline.DrawIndex vkc $ fun vkSet ->
+                let mutable uniformDescriptorSet = Pipeline.Pipeline.specifyDescriptorSet 0 pipeline.Pipeline.DrawIndex pipeline.Pipeline vkc $ fun vkSet ->
 
                     // specify transform
                     let transform = Transform (view = view, projection = projection, viewProjection = viewProjection)
@@ -197,11 +197,11 @@ module LightMap =
                     Pipeline.Pipeline.writeDescriptorStorageBuffer 1 0 pipeline.EnvironmentFilterUniform vkSet vkc
 
                 // specify cube map
-                let mutable cubeMapDescriptorSet = pipeline.Pipeline.SpecifyDescriptorSet 1 cubeMap vkc $ fun vkSet ->
+                let mutable cubeMapDescriptorSet = Pipeline.Pipeline.specifyDescriptorSet 1 cubeMap pipeline.Pipeline vkc $ fun vkSet ->
                     Pipeline.Pipeline.writeDescriptorSampledImage 0 0 cubeMap vkSet vkc
 
                 // specify sampler
-                let mutable samplerDescriptorSet = pipeline.Pipeline.SpecifyDescriptorSet 2 sampler vkc $ fun vkSet ->
+                let mutable samplerDescriptorSet = Pipeline.Pipeline.specifyDescriptorSet 2 sampler pipeline.Pipeline vkc $ fun vkSet ->
                     Pipeline.Pipeline.writeDescriptorSampler 0 0 sampler vkSet vkc
 
                 // set up render

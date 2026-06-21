@@ -566,8 +566,10 @@ module PhysicallyBased =
     /// Destroy the physically-based attachments.
     let DestroyPhysicallyBasedAttachments (attachments : PhysicallyBasedAttachments, vkc) =
         Attachment.DestroyShadowTextureArrayAttachments (attachments.ShadowTextureArrayAttachments, vkc)
-        for i in 0 .. dec attachments.ShadowMapAttachmentsArray.Length do Attachment.DestroyShadowMapAttachments (attachments.ShadowMapAttachmentsArray.[i], vkc)
-        for i in 0 .. dec attachments.ShadowCascadeArrayAttachmentsArray.Length do Attachment.DestroyShadowCascadeArrayAttachments (attachments.ShadowCascadeArrayAttachmentsArray.[i], vkc)
+        for i in 0 .. dec attachments.ShadowMapAttachmentsArray.Length do
+            Attachment.DestroyShadowMapAttachments (attachments.ShadowMapAttachmentsArray.[i], vkc)
+        for i in 0 .. dec attachments.ShadowCascadeArrayAttachmentsArray.Length do
+            Attachment.DestroyShadowCascadeArrayAttachments (attachments.ShadowCascadeArrayAttachmentsArray.[i], vkc)
         Attachment.DestroyGeometryAttachments (attachments.GeometryAttachments, vkc)
         Attachment.DestroyLightingAttachment (attachments.LightingAttachment, vkc)
         Attachment.DestroyColoringAttachments (attachments.ColoringAttachments, vkc)
@@ -1469,7 +1471,7 @@ module PhysicallyBased =
          vkc : Hl.VulkanContext) =
 
         // specify tranform
-        let mutable transformDescriptorSet = pipeline.Pipeline.SpecifyDescriptorSet 0 renderPassIndex vkc $ fun vkSet ->
+        let mutable transformDescriptorSet = Pipeline.Pipeline.specifyDescriptorSet 0 renderPassIndex pipeline.Pipeline vkc $ fun vkSet ->
             let mutable transform = Transform ()
             transform.view <- view
             transform.projection <- projection
@@ -1481,7 +1483,7 @@ module PhysicallyBased =
             Pipeline.Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.TransformUniform vkSet vkc
 
         // specify samplers
-        let mutable samplerDescriptorSet = pipeline.Pipeline.SpecifyDescriptorSet 3 Unit vkc $ fun vkSet ->
+        let mutable samplerDescriptorSet = Pipeline.Pipeline.specifyDescriptorSet 3 Unit pipeline.Pipeline vkc $ fun vkSet ->
             Pipeline.Pipeline.writeDescriptorSampler 0 0 filteredSampler vkSet vkc
 
         // fin
@@ -1519,7 +1521,7 @@ module PhysicallyBased =
                     Buffer.Buffer.uploadSubdata 0 0 (Constants.Render.InstanceFieldCount * sizeof<single>) surfacesCount instanceFieldsPin.NativeInt geometry.InstanceBuffer vkc
 
                     // specify material
-                    let mutable materialDescriptorSet = pipeline.Pipeline.SpecifyDescriptorSet 1 material vkc $ fun vkSet ->
+                    let mutable materialDescriptorSet = Pipeline.Pipeline.specifyDescriptorSet 1 material pipeline.Pipeline vkc $ fun vkSet ->
                         Pipeline.Pipeline.writeDescriptorSampledImage 0 0 material.AlbedoTexture vkSet vkc
                         Pipeline.Pipeline.writeDescriptorSampledImage 1 0 material.RoughnessTexture vkSet vkc
                         Pipeline.Pipeline.writeDescriptorSampledImage 2 0 material.MetallicTexture vkSet vkc
@@ -1535,7 +1537,7 @@ module PhysicallyBased =
                         Pipeline.Pipeline.writeDescriptorSampledImage 12 0 material.ClearCoatNormalTexture vkSet vkc
 
                     // specify dynamic
-                    let mutable dynamicDescriptorSet = pipeline.Pipeline.SpecifyDescriptorSet 2 pipeline.Pipeline.DrawIndex vkc $ fun vkSet ->
+                    let mutable dynamicDescriptorSet = Pipeline.Pipeline.specifyDescriptorSet 2 pipeline.Pipeline.DrawIndex pipeline.Pipeline vkc $ fun vkSet ->
                         use bonesPin = new ArrayPin<_> (bones)
                         Buffer.Buffer.uploadSubdata 0 0 sizeof<Bone> (min bones.Length Constants.Render.BonesMax) bonesPin.NativeInt pipeline.BoneUniform vkc
                         Pipeline.Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.BoneUniform vkSet vkc
@@ -1632,7 +1634,7 @@ module PhysicallyBased =
          vkc : Hl.VulkanContext) =
 
         // specify uniforms
-        let mutable uniformsDescriptorSet = pipeline.Pipeline.SpecifyDescriptorSet 0 renderPassIndex vkc $ fun vkSet ->
+        let mutable uniformsDescriptorSet = Pipeline.Pipeline.specifyDescriptorSet 0 renderPassIndex pipeline.Pipeline vkc $ fun vkSet ->
 
             // specify transform
             let mutable transform = Transform ()
@@ -1688,7 +1690,7 @@ module PhysicallyBased =
             Pipeline.Pipeline.writeDescriptorSampledImage 6 0 environmentFilterMap vkSet vkc
 
         // specify samplers
-        let mutable samplersDescriptorSet = pipeline.Pipeline.SpecifyDescriptorSet 3 Unit vkc $ fun vkSet ->
+        let mutable samplersDescriptorSet = Pipeline.Pipeline.specifyDescriptorSet 3 Unit pipeline.Pipeline vkc $ fun vkSet ->
             Pipeline.Pipeline.writeDescriptorSampler 0 0 filteredSampler vkSet vkc
             Pipeline.Pipeline.writeDescriptorSampler 1 0 cubeMapSampler vkSet vkc
             Pipeline.Pipeline.writeDescriptorSampler 2 0 shadowSampler vkSet vkc
@@ -1761,7 +1763,7 @@ module PhysicallyBased =
                 Buffer.Buffer.uploadSubdata 0 0 (Constants.Render.InstanceFieldCount * sizeof<single>) surfacesCount instanceFieldsPin.NativeInt geometry.InstanceBuffer vkc
 
                 // specify material
-                let mutable materialDescriptorSet = pipeline.Pipeline.SpecifyDescriptorSet 1 material vkc $ fun vkSet ->
+                let mutable materialDescriptorSet = Pipeline.Pipeline.specifyDescriptorSet 1 material pipeline.Pipeline vkc $ fun vkSet ->
                     Pipeline.Pipeline.writeDescriptorSampledImage 0 0 material.AlbedoTexture vkSet vkc
                     Pipeline.Pipeline.writeDescriptorSampledImage 1 0 material.RoughnessTexture vkSet vkc
                     Pipeline.Pipeline.writeDescriptorSampledImage 2 0 material.MetallicTexture vkSet vkc
@@ -1771,7 +1773,7 @@ module PhysicallyBased =
                     Pipeline.Pipeline.writeDescriptorSampledImage 6 0 material.HeightTexture vkSet vkc
 
                 // specify dynamic
-                let mutable dynamicDescriptorSet = pipeline.Pipeline.SpecifyDescriptorSet 2 pipeline.Pipeline.DrawIndex vkc $ fun vkSet ->
+                let mutable dynamicDescriptorSet = Pipeline.Pipeline.specifyDescriptorSet 2 pipeline.Pipeline.DrawIndex pipeline.Pipeline vkc $ fun vkSet ->
 
                     // specify bones
                     use bonesPin = new ArrayPin<_> (bones)

@@ -166,7 +166,7 @@ module Sprite =
 
                 // specify uniforms
                 let color = color
-                let mutable uniformDescriptorSet = pipeline.SpecifyDescriptorSet 0 pipeline.DrawIndex vkc $ fun vkSet ->
+                let mutable uniformDescriptorSet = Pipeline.Pipeline.specifyDescriptorSet 0 pipeline.DrawIndex pipeline vkc $ fun vkSet ->
                     let spriteVert = SpriteVert (modelViewProjection = modelViewProjection, texCoords4 = v4 texCoords.Min.X texCoords.Min.Y texCoords.Size.X texCoords.Size.Y)
                     let spriteFrag = SpriteFrag (color = color.V4)
                     Buffer.Buffer.uploadValue spriteVert spriteVertUniform vkc
@@ -175,11 +175,11 @@ module Sprite =
                     Pipeline.Pipeline.writeDescriptorStorageBuffer 1 0 spriteFragUniform vkSet vkc
 
                 // specify material
-                let mutable materialDescriptorSet = pipeline.SpecifyDescriptorSet 1 texture vkc $ fun vkSet ->
+                let mutable materialDescriptorSet = Pipeline.Pipeline.specifyDescriptorSet 1 texture pipeline vkc $ fun vkSet ->
                     Pipeline.Pipeline.writeDescriptorSampledImage 0 0 texture vkSet vkc
 
                 // specify sampler
-                let mutable samplerDescriptorSet = pipeline.SpecifyDescriptorSet 2 sampler vkc $ fun vkSet ->
+                let mutable samplerDescriptorSet = Pipeline.Pipeline.specifyDescriptorSet 2 sampler pipeline vkc $ fun vkSet ->
                     Pipeline.Pipeline.writeDescriptorSampler 0 0 sampler vkSet vkc
                     
                 // set up render

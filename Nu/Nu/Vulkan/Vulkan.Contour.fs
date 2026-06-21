@@ -85,7 +85,7 @@ module ContourTessellation =
 
                 // specify uniforms
                 let modelViewProjection = modelViewProjection
-                let mutable uniformDescriptorSet = pipeline.SpecifyDescriptorSet 0 pipeline.DrawIndex vkc $ fun vkSet ->
+                let mutable uniformDescriptorSet = Pipeline.Pipeline.specifyDescriptorSet 0 pipeline.DrawIndex pipeline vkc $ fun vkSet ->
                     Buffer.Buffer.uploadValue modelViewProjection modelViewProjectionUniform vkc
                     Pipeline.Pipeline.writeDescriptorStorageBuffer 0 0 modelViewProjectionUniform vkSet vkc
 

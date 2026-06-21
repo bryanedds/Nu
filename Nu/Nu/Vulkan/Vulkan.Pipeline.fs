@@ -269,7 +269,8 @@ module Pipeline =
             Hl.reportDrawCall drawInstances
 
         /// The descriptor set of the given number for the current frame.
-        static member getDescriptorSet set pipeline = pipeline.DescriptorSets_.[set]
+        static member getDescriptorSet set pipeline =
+            pipeline.DescriptorSets_.[set]
 
         /// Create the descriptor set layout.
         static member private createDescriptorSetLayout (resourceBindings : VkDescriptorSetLayoutBinding array) (vkc : Hl.VulkanContext) =
@@ -541,6 +542,11 @@ module Pipeline =
             write.pImageInfo <- asPointer &info
             Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
 
+        /// Specify a descriptor set.
+        static member specifyDescriptorSet<'k when 'k : equality> set (key : 'k) pipeline vkc specify =
+            let descriptorSet = Pipeline.getDescriptorSet set pipeline
+            descriptorSet.Specify key vkc specify
+
         /// Create a Pipeline.
         static member create<'k when 'k : equality>
             shaderPath
@@ -624,10 +630,3 @@ module Pipeline =
             for vkLayout in pipeline.VkDescriptorSetLayouts_ do Vulkan.vkDestroyDescriptorSetLayout (vkc.Device, vkLayout, nullPtr)
             for buffer in pipeline.Buffers_ do Buffer.Buffer.destroy buffer vkc
             for set in pipeline.DescriptorSets_ do set.Destroy vkc
-
-        /// Specify a descriptor set.
-        /// This is a member merely for calling convenience.
-        /// NOTE: this definition has to remain at the bottom of this type for F# compilation reasons.
-        member this.SpecifyDescriptorSet<'k when 'k : equality> set (key : 'k) vkc specify =
-            let descriptorSet = Pipeline.getDescriptorSet set this
-            descriptorSet.Specify key vkc specify
