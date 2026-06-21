@@ -111,7 +111,7 @@ module ContourTessellation =
                 // tear down render
                 Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
-                // advance vertices and indices
+                // advance vertex and index buffers
                 vertexBuffer.Advance ()
                 indexBuffer.Advance ()
 

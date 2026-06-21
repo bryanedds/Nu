@@ -113,12 +113,10 @@ module SkyBox =
                 Vulkan.vkCmdBindPipeline (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
                 Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, asPointer &vkViewport)
                 Vulkan.vkCmdSetScissor (vkc.RenderCommandBuffer, 0u, 1u, asPointer &renderArea)
-                
-                // set depth test state
                 Vulkan.vkCmdSetDepthTestEnable (vkc.RenderCommandBuffer, true)
                 Vulkan.vkCmdSetDepthCompareOp (vkc.RenderCommandBuffer, VkCompareOp.LessOrEqual)
                 
-                // bind vertex and index buffer
+                // bind vertex and index buffers
                 let mutable vertexBuffer = geometry.VertexBuffer.VkBuffer
                 let mutable vertexOffset = 0UL
                 Vulkan.vkCmdBindVertexBuffers (vkc.RenderCommandBuffer, 0u, 1u, asPointer &vertexBuffer, asPointer &vertexOffset)

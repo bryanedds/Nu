@@ -521,8 +521,8 @@ type VulkanRendererImGui
                         vertexOffset <- vertexOffset + vertexSize
                         indexOffset <- indexOffset + indexSize
 
-                // bind vertex and index buffer
-                if drawData.TotalVtxCount > 0 then
+                // bind vertex and index buffers
+                if drawData.TotalVtxCount > 0 then // TODO: P1: see if this conditional is actually necessary.
                     let mutable vertexBuffer = vertexBuffer.VkBuffer
                     let mutable vertexOffset = 0UL
                     Vulkan.vkCmdBindVertexBuffers (vkc.RenderCommandBuffer, 0u, 1u, asPointer &vertexBuffer, asPointer &vertexOffset)

@@ -189,7 +189,7 @@ module Sprite =
                 Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, asPointer &vkViewport)
                 Vulkan.vkCmdSetScissor (vkc.RenderCommandBuffer, 0u, 1u, asPointer &scissor)
                     
-                // bind vertex and index buffer
+                // bind vertex and index buffers
                 let mutable vertexBuffer = vertices.VkBuffer
                 let mutable vertexOffset = 0UL
                 Vulkan.vkCmdBindVertexBuffers (vkc.RenderCommandBuffer, 0u, 1u, asPointer &vertexBuffer, asPointer &vertexOffset)

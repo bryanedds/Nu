@@ -308,7 +308,7 @@ module CubeMap =
                 Vulkan.vkCmdSetViewport (commandBuffer, 0u, 1u, asPointer &vkViewport)
                 Vulkan.vkCmdSetScissor (commandBuffer, 0u, 1u, asPointer &renderArea)
 
-                // bind vertex and index buffer
+                // bind vertex and index buffers
                 let mutable vertexBuffer = geometry.VertexBuffer.VkBuffer
                 let mutable vertexOffset = 0UL
                 Vulkan.vkCmdBindVertexBuffers (commandBuffer, 0u, 1u, asPointer &vertexBuffer, asPointer &vertexOffset)

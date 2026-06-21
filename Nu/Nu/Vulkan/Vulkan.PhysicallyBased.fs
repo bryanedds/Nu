@@ -1546,8 +1546,6 @@ module PhysicallyBased =
                     Vulkan.vkCmdBindPipeline (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
                     Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, asPointer &vkViewport)
                     Vulkan.vkCmdSetScissor (vkc.RenderCommandBuffer, 0u, 1u, asPointer &renderArea)
-                    
-                    // set depth test state
                     Vulkan.vkCmdSetDepthTestEnable (vkc.RenderCommandBuffer, true)
                     Vulkan.vkCmdSetDepthCompareOp (vkc.RenderCommandBuffer, VkCompareOp.LessOrEqual)
 
@@ -1842,8 +1840,6 @@ module PhysicallyBased =
                 Vulkan.vkCmdBindPipeline (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
                 Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, asPointer &vkViewport)
                 Vulkan.vkCmdSetScissor (vkc.RenderCommandBuffer, 0u, 1u, asPointer &renderArea)
-                    
-                // set depth test state
                 Vulkan.vkCmdSetDepthTestEnable (vkc.RenderCommandBuffer, not depthTest.IsAlwaysPassTest)
                 Vulkan.vkCmdSetDepthCompareOp (vkc.RenderCommandBuffer, Pipeline.depthTestToVkCompareOp depthTest)
             
