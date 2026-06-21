@@ -5765,9 +5765,14 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 renderer.ReloadAssetsRequested <- true
         userDefinedStaticModelsToDestroy
     
+    static member private beginPhysicallyBasedDeferredPipeline
+        view projection viewProjection eyeCenter filteredSampler renderPassIndex pipeline renderer =
+        PhysicallyBased.BeginPhysicallyBasedDeferredPipeline
+            (view, projection, viewProjection, eyeCenter, filteredSampler, renderPassIndex, pipeline, renderer.VulkanContext)
+
     static member private renderPhysicallyBasedDeferredSurfaces
-        batchPhase view projection viewProjection bones eyeCenter (parameters : struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List)
-        filteredSampler (surface : PhysicallyBased.PhysicallyBasedSurface) viewport colorAttachments depthAttachment renderPassIndex pipeline renderer =
+        bones (parameters : struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List) (surface : PhysicallyBased.PhysicallyBasedSurface)
+        viewport colorAttachments depthAttachment transformDescriptorSet samplerDescriptorSet pipeline renderer =
                                                                       
         // ensure we have a large enough instance fields array
         let mutable length = renderer.InstanceFields.Length
@@ -5813,19 +5818,21 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 36] <- clearCoat
             renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 37] <- clearCoatRoughness
 
+        // make these bindings mutable for passing by ref
+        let mutable (transformDescriptorSet, samplerDescriptorSet) =
+            (transformDescriptorSet, samplerDescriptorSet)
+
         // draw deferred surfaces
         PhysicallyBased.DrawPhysicallyBasedDeferredSurfaces
-            (batchPhase, view, projection, viewProjection, bones, eyeCenter,
-             parameters.Count, renderer.InstanceFields, filteredSampler, surface.SurfaceMaterial, surface.PhysicallyBasedGeometry,
-             viewport, colorAttachments, depthAttachment, renderPassIndex, pipeline, renderer.VulkanContext)
+            (bones, parameters.Count, renderer.InstanceFields, surface.SurfaceMaterial, surface.PhysicallyBasedGeometry,
+             viewport, colorAttachments, depthAttachment, &transformDescriptorSet, &samplerDescriptorSet, pipeline, renderer.VulkanContext)
 
         // track geometry instancing
         renderer.GeometryInstanced.Add surface.PhysicallyBasedGeometry |> ignore<bool>
 
     static member private renderPhysicallyBasedDeferredSurfacePreBatch
-        frustumInterior frustumExterior frustumImposter renderPass
-        view projection viewProjection bones eyeCenter (parameters : (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array)
-        filteredSampler (surface : PhysicallyBased.PhysicallyBasedSurface) viewport colorAttachments depthAttachment renderPassIndex pipeline renderer =
+        frustumInterior frustumExterior frustumImposter renderPass bones (parameters : (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array) (surface : PhysicallyBased.PhysicallyBasedSurface)
+        viewport colorAttachments depthAttachment transformDescriptorSet samplerDescriptorSet pipeline renderer =
 
         // ensure we have a large enough instance fields array
         let mutable length = renderer.InstanceFields.Length
@@ -5882,14 +5889,20 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 37] <- clearCoatRoughness
                 i <- inc i
 
+        // make these bindings mutable for passing by ref
+        let mutable (transformDescriptorSet, samplerDescriptorSet) =
+            (transformDescriptorSet, samplerDescriptorSet)
+
         // draw deferred surfaces
         PhysicallyBased.DrawPhysicallyBasedDeferredSurfaces
-            (SingletonPhase, view, projection, viewProjection, bones, eyeCenter,
-             i, renderer.InstanceFields, filteredSampler, surface.SurfaceMaterial, surface.PhysicallyBasedGeometry,
-             viewport, colorAttachments, depthAttachment, renderPassIndex, pipeline, renderer.VulkanContext)
+            (bones, i, renderer.InstanceFields, surface.SurfaceMaterial, surface.PhysicallyBasedGeometry,
+             viewport, colorAttachments, depthAttachment, &transformDescriptorSet, &samplerDescriptorSet, pipeline, renderer.VulkanContext)
 
         // track geometry instancing
         renderer.GeometryInstanced.Add surface.PhysicallyBasedGeometry |> ignore<bool>
+
+    static member private endPhysicallyBasedDeferredPipeline pipeline =
+        PhysicallyBased.EndPhysicallyBasedDeferredPipeline pipeline
 
     static member private beginPhysicallyBasedForwardPipeline
         viewArray projectionArray viewProjectionArray eyeCenter viewInverseArray projectionInverseArray
@@ -5970,11 +5983,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         renderer.GeometryInstanced.Add surface.PhysicallyBasedGeometry |> ignore<bool>
 
     static member private endPhysicallyBasedForwardPipeline pipeline =
-
-        // end pipeline
         PhysicallyBased.EndPhysicallyBasedForwardPipeline pipeline
 
-    
     static member private renderGeometry
         frustumInterior
         frustumExterior
@@ -6109,27 +6119,31 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let mutable rendering = Hl.makeRenderingInfo geometryImageViewArray (Some compositionZTexture.ImageView) renderArea (Some clearColor)
         Vulkan.vkCmdBeginRendering (renderer.VulkanContext.RenderCommandBuffer, asPointer &rendering)
         Vulkan.vkCmdEndRendering renderer.VulkanContext.RenderCommandBuffer
-        
-        // render static surfaces deferred
-        // TODO: DJL: find out how this is screwing up the light map test!
+
+        // begin deferred static surfaces
+        let (transformDescriptorSet, samplerDescriptorSet) =
+            VulkanRenderer3d.beginPhysicallyBasedDeferredPipeline
+                view geometryProjection geometryViewProjection eyeCenter renderer.FilteredSampler renderer.RenderPassIndex renderer.PhysicallyBasedPipelines.DeferredStaticPipeline renderer
+
+        // render deferred static surfaces (unbatched)
         let mutable i = 0
         for entry in renderTasks.DeferredStatic do
-            let batchPhase =
-                match renderTasks.DeferredStatic.Count with
-                | 1 -> SingletonPhase
-                | count -> if i = 0 then StartingPhase elif i = dec count then StoppingPhase else ResumingPhase
             VulkanRenderer3d.renderPhysicallyBasedDeferredSurfaces
-                batchPhase view geometryProjection geometryViewProjection [||] eyeCenter entry.Value
-                renderer.FilteredSampler entry.Key renderer.GeometryViewport geometryImageViewArray compositionZTexture renderer.RenderPassIndex renderer.PhysicallyBasedPipelines.DeferredStaticPipeline renderer
+                [||] entry.Value entry.Key
+                renderer.GeometryViewport geometryImageViewArray compositionZTexture
+                transformDescriptorSet samplerDescriptorSet renderer.PhysicallyBasedPipelines.DeferredStaticPipeline renderer
             i <- inc i
-
-        // render static surface pre-batches deferred
+        
+        // render deferred static surface pre-batches
         for entry in renderTasks.DeferredStaticPreBatches do
             let struct (surface, preBatch) = entry.Value
             VulkanRenderer3d.renderPhysicallyBasedDeferredSurfacePreBatch
-                frustumInterior frustumExterior frustumImposter renderPass
-                view geometryProjection geometryViewProjection [||] eyeCenter preBatch
-                renderer.FilteredSampler surface renderer.GeometryViewport geometryImageViewArray compositionZTexture renderer.RenderPassIndex renderer.PhysicallyBasedPipelines.DeferredStaticPipeline renderer
+                frustumInterior frustumExterior frustumImposter renderPass [||] preBatch surface
+                renderer.GeometryViewport geometryImageViewArray compositionZTexture transformDescriptorSet samplerDescriptorSet renderer.PhysicallyBasedPipelines.DeferredStaticPipeline renderer
+
+        // end deferred static surfaces
+        VulkanRenderer3d.endPhysicallyBasedDeferredPipeline
+            renderer.PhysicallyBasedPipelines.DeferredStaticPipeline
         
         // transition deferred geometry attachments to sampling
         Texture.Texture.transitionLayoutAsync Hl.ColorAttachmentWrite Hl.ShaderRead depthTexture renderer.VulkanContext.RenderCommandBuffer
@@ -6208,23 +6222,12 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // attempt to render sky box to composition attachment
         match skyBoxOpt with
         | Some (cubeMapColor, cubeMapBrightness, cubeMap, _) ->
-            SkyBox.DrawSkyBox
-                (viewSkyBox,
-                 windowProjection,
-                 windowViewProjectionSkyBox,
-                 cubeMapColor,
-                 cubeMapBrightness,
-                 cubeMap,
-                 renderer.CubeMapGeometry,
-                 renderer.CubeMapSampler,
-                 renderer.GeometryViewport,
-                 compositionTexture,
-                 compositionZTexture,
-                 renderer.SkyBoxPipeline,
-                 renderer.VulkanContext)
+            SkyBox.DrawSkyBox 
+                (viewSkyBox, windowProjection, windowViewProjectionSkyBox, cubeMapColor, cubeMapBrightness, cubeMap, renderer.CubeMapGeometry, renderer.CubeMapSampler,
+                 renderer.GeometryViewport, compositionTexture, compositionZTexture, renderer.SkyBoxPipeline, renderer.VulkanContext)
         | None -> ()
         
-        // forward render surfaces to composition attachment
+        // begin forward (static and animated) surfaces
         let ssrrEnabled =
             if renderer.RendererConfig.SsrrEnabled && renderer.LightingConfig.SsrrEnabled then 1 else 0
         let forwardSsvfSteps =
@@ -6236,6 +6239,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 fogEnabled fogType renderer.LightingConfig.FogStart renderer.LightingConfig.FogFinish renderer.LightingConfig.FogDensity renderer.LightingConfig.FogColor ssvfEnabled renderer.LightingConfig.SsvfIntensity forwardSsvfSteps renderer.LightingConfig.SsvfAsymmetry
                 ssrrEnabled renderer.LightingConfig.SsrrIntensity renderer.LightingConfig.SsrrDetail renderer.LightingConfig.SsrrRefinementsMax renderer.LightingConfig.SsrrRayThickness renderer.LightingConfig.SsrrDistanceCutoff renderer.LightingConfig.SsrrDistanceCutoffMargin renderer.LightingConfig.SsrrEdgeHorizontalMargin renderer.LightingConfig.SsrrEdgeVerticalMargin
                 depthTexture2 colorTexture renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap renderer.FilteredSampler renderer.CubeMapSampler renderer.ShadowSampler renderer.ColorSampler renderer.DepthSampler renderer.BrdfSampler shadowNear renderer.RenderPassIndex renderer.PhysicallyBasedPipelines.ForwardStaticPipeline renderer.VulkanContext
+        
+        // render forward (static and animated) surfaces to composition attachment
         for (model, _, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest) in renderTasks.ForwardSorted do
             let (lightMapOrigins, lightMapMins, lightMapSizes, lightMapAmbientColors, lightMapAmbientBrightnesses, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
                 let surfaceBounds = surface.SurfaceBounds.Transform model
@@ -6256,6 +6261,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices (min lightIds.Length renderTasks.Lights.Count) renderer.ShadowMatrices
                     surface depthTest true renderer.GeometryViewport compositionTexture compositionZTexture uniformsDescriptorSet samplersDescriptorSet pipeline renderer
             | None -> ()
+
+        // end forward (static and animated) surfaces
         VulkanRenderer3d.endPhysicallyBasedForwardPipeline renderer.PhysicallyBasedPipelines.ForwardStaticPipeline
 
         // blit from composition attachment to swapchain (just for now)

@@ -1455,50 +1455,51 @@ module PhysicallyBased =
     /// Destroy PhysicallyBasedDeferredLightingPipeline.
     let DestroyPhysicallyBasedDeferredLightingPipeline (pipeline : PhysicallyBasedDeferredLightingPipeline) vkc =
         Pipeline.Pipeline.destroy pipeline.Pipeline vkc
-    
+
     /// Draw a batch of physically-based deferred surfaces.
-    let DrawPhysicallyBasedDeferredSurfaces
-        (batchPhase : BatchPhase,
-         view : Matrix4x4,
+    let BeginPhysicallyBasedDeferredPipeline
+        (view : Matrix4x4,
          projection : Matrix4x4,
          viewProjection : Matrix4x4,
-         bones : Matrix4x4 array,
          eyeCenter : Vector3,
+         filteredSampler : Texture.Sampler,
+         renderPassIndex : int,
+         pipeline : PhysicallyBasedPipeline,
+         vkc : Hl.VulkanContext) =
+
+        // specify tranform
+        let mutable transformDescriptorSet = pipeline.Pipeline.SpecifyDescriptorSet 0 renderPassIndex vkc $ fun vkSet ->
+            let mutable transform = Transform ()
+            transform.view <- view
+            transform.projection <- projection
+            transform.viewProjection <- viewProjection
+            transform.viewInverse <- view.Inverted
+            transform.projectionInverse <- projection.Inverted
+            transform.eyeCenter <- eyeCenter
+            Buffer.Buffer.uploadValue transform pipeline.TransformUniform vkc
+            Pipeline.Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.TransformUniform vkSet vkc
+
+        // specify samplers
+        let mutable samplerDescriptorSet = pipeline.Pipeline.SpecifyDescriptorSet 3 Unit vkc $ fun vkSet ->
+            Pipeline.Pipeline.writeDescriptorSampler 0 0 filteredSampler vkSet vkc
+
+        // fin
+        (transformDescriptorSet, samplerDescriptorSet)
+
+    /// Draw a batch of physically-based deferred surfaces.
+    let DrawPhysicallyBasedDeferredSurfaces
+        (bones : Matrix4x4 array,
          surfacesCount : int,
          instanceFields : single array,
-         filteredSampler : Texture.Sampler,
          material : PhysicallyBasedMaterial,
          geometry : PhysicallyBasedGeometry,
          viewport : Viewport,
          colorAttachments : VkImageView array,
          depthAttachment : Texture.Texture,
-         renderPassIndex : int,
+         transformDescriptorSet : VkDescriptorSet byref,
+         samplerDescriptorSet : VkDescriptorSet byref,
          pipeline : PhysicallyBasedPipeline,
          vkc : Hl.VulkanContext) =
-
-        // start batch
-        let mutable (transformDescriptorSet, samplerDescriptorSet) =
-
-            // specify tranform
-            let mutable transformDescriptorSet = pipeline.Pipeline.SpecifyDescriptorSet 0 renderPassIndex vkc $ fun vkSet ->
-                if batchPhase.Starting then
-                    let mutable transform = Transform ()
-                    transform.view <- view
-                    transform.projection <- projection
-                    transform.viewProjection <- viewProjection
-                    transform.viewInverse <- view.Inverted
-                    transform.projectionInverse <- projection.Inverted
-                    transform.eyeCenter <- eyeCenter
-                    Buffer.Buffer.uploadValue transform pipeline.TransformUniform vkc
-                    Pipeline.Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.TransformUniform vkSet vkc
-
-            // specify samplers
-            let mutable samplerDescriptorSet = pipeline.Pipeline.SpecifyDescriptorSet 3 Unit vkc $ fun vkSet ->
-                if batchPhase.Starting then
-                    Pipeline.Pipeline.writeDescriptorSampler 0 0 filteredSampler vkSet vkc
-
-            // fin
-            (transformDescriptorSet, samplerDescriptorSet)
 
         // only draw if render area is valid
         let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
@@ -1699,6 +1700,10 @@ module PhysicallyBased =
         // fin
         (uniformsDescriptorSet, samplersDescriptorSet)
 
+    /// End the process of drawing with a deferred pipeline.
+    let EndPhysicallyBasedDeferredPipeline (_ : PhysicallyBasedPipeline) =
+        () // nothing to do
+
     /// Draw a batch of physically-based forward surfaces.
     let DrawPhysicallyBasedForwardSurfaces
         (bones : Matrix4x4 array,
@@ -1870,6 +1875,10 @@ module PhysicallyBased =
             // abort
             | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
 
+    /// End the process of drawing with a forward pipeline.
+    let EndPhysicallyBasedForwardPipeline (_ : PhysicallyBasedPipeline) =
+        () // nothing to do
+
     /// Draw the lighting pass of a deferred physically-based surface.
     let DrawPhysicallyBasedDeferredLightingSurface
         (eyeCenter : Vector3,
@@ -2007,10 +2016,6 @@ module PhysicallyBased =
     //    // draw geometry
     //    Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
         Hl.reportDrawCall 1
-
-    /// End the process of drawing with a forward pipeline.
-    let EndPhysicallyBasedForwardPipeline (_ : PhysicallyBasedPipeline) =
-        () // nothing to do
 
     /// Destroy physically-based geometry resources.
     let DestroyPhysicallyBasedGeometry (geometry, vkc) =
