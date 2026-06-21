@@ -10,10 +10,10 @@ open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Numerics
 open System.Threading
-open Vortice.Vulkan
 open SDL
 open ImGuiNET
 open Prime
+open Nu.Vulkan
 
 /// A renderer process that may or may not be threaded.
 /// TODO: name all these abstract method parameters.
@@ -72,7 +72,7 @@ type RendererInline () =
     let mutable messages3d = List ()
     let mutable messages2d = List ()
     let mutable messagesImGui = List ()
-    let mutable dependenciesOpt = Option<Renderer3d * Renderer2d * RendererImGui * Hl.VulkanContext>.None
+    let mutable dependenciesOpt = Option<Renderer3d * Renderer2d * RendererImGui * VulkanContext>.None
     let assetTextureRequests = ConcurrentDictionary<AssetTag, unit> HashIdentity.Structural
     let assetTextureOpts = ConcurrentDictionary<AssetTag, uint32 voption> HashIdentity.Structural
 
@@ -93,7 +93,7 @@ type RendererInline () =
 
                     // attempt to create VulkanContext, storing reference to it
                     let vkc =
-                        match Hl.VulkanContext.tryCreate window with
+                        match VulkanContext.tryCreate window with
                         | Some vkc -> vkc
                         | None -> Log.fail "Could not create Vulkan context." // TODO: P0: handle failure more gracefully here?
 
@@ -102,11 +102,11 @@ type RendererInline () =
                         let defaultImageTag = AssetTag.make Assets.Default.PackageName Assets.Default.ImageName
                         match Metadata.tryGetFilePath defaultImageTag with
                         | Some filePath ->
-                            match Texture.TryCreateTextureVulkan (true, false, Texture.Uncompressed, filePath, Texture.RenderThread, vkc) with
+                            match Texture.TryCreateTextureVulkan (true, false, Uncompressed, filePath, RenderThread, vkc) with
                             | Right (_, textureInternal) -> textureInternal
-                            | Left _ -> Texture.TextureInternal.createEmpty vkc
-                        | None -> Texture.TextureInternal.createEmpty vkc
-                    Texture.EmptyOpt <- Some empty
+                            | Left _ -> TextureParallel.createEmpty vkc
+                        | None -> TextureParallel.createEmpty vkc
+                    TextureInternal.EmptyOpt <- Some empty
 
                     // create 3d renderer
                     let renderer3d = VulkanRenderer3d.make geometryViewport windowViewport vkc :> Renderer3d
@@ -185,7 +185,7 @@ type RendererInline () =
             | Some (renderer3d, renderer2d, rendererImGui, vkc) ->
 
                 // begin frame
-                Hl.VulkanContext.beginFrame windowViewport vkc
+                VulkanContext.beginFrame windowViewport vkc
 
                 // render 3d
                 renderer3d.Render frustumInterior frustumExterior frustumImposter eye3dCenter eye3dRotation eye3dFieldOfView geometryViewport windowViewport messages3d
@@ -200,24 +200,24 @@ type RendererInline () =
                 messagesImGui.Clear ()
 
                 // end frame
-                Hl.VulkanContext.endFrame ()
+                VulkanContext.endFrame ()
 
             | None -> ()
 
         member ri.RequestSwap () =
             match dependenciesOpt with
-            | Some (_, _, _, vkc) -> Hl.VulkanContext.present vkc
+            | Some (_, _, _, vkc) -> VulkanContext.present vkc
             | None -> ()
 
         member ri.Terminate () =
             match dependenciesOpt with
             | Some (renderer3d, renderer2d, rendererImGui, vkc) ->
-                Hl.VulkanContext.waitIdle vkc
+                VulkanContext.waitIdle vkc
                 renderer3d.CleanUp ()
                 renderer2d.CleanUp ()
                 rendererImGui.CleanUp ()
-                Texture.TextureInternal.destroy Texture.TextureInternal.empty vkc
-                Hl.VulkanContext.cleanup vkc
+                TextureParallel.destroy TextureParallel.empty vkc
+                VulkanContext.cleanup vkc
                 dependenciesOpt <- None
                 terminated <- true
 
@@ -368,11 +368,11 @@ type RendererThread () =
             let defaultImageTag = AssetTag.make Assets.Default.PackageName Assets.Default.ImageName
             match Metadata.tryGetFilePath defaultImageTag with
             | Some filePath ->
-                match Texture.TryCreateTextureVulkan (true, false, Texture.Uncompressed, filePath, Texture.RenderThread, vkc) with
+                match Texture.TryCreateTextureVulkan (true, false, Uncompressed, filePath, RenderThread, vkc) with
                 | Right (_, textureInternal) -> textureInternal
-                | Left _ -> Texture.TextureInternal.createEmpty vkc
-            | None -> Texture.TextureInternal.createEmpty vkc
-        Texture.EmptyOpt <- Some empty
+                | Left _ -> TextureParallel.createEmpty vkc
+            | None -> TextureParallel.createEmpty vkc
+        TextureInternal.EmptyOpt <- Some empty
 
         // create 3d renderer
         let renderer3d = VulkanRenderer3d.make geometryViewport windowViewport vkc :> Renderer3d
@@ -398,7 +398,7 @@ type RendererThread () =
             if not terminated then
                 
                 // begin frame
-                Hl.VulkanContext.beginFrame windowViewport vkc
+                VulkanContext.beginFrame windowViewport vkc
 
                 // render 3d
                 renderer3d.Render frustumInterior frustumExterior frustumImposter eye3dCenter eye3dRotation eye3dFieldOfView geometryViewport windowViewport messages3d
@@ -415,7 +415,7 @@ type RendererThread () =
                 rendererImGui.Render windowViewport drawData messagesImGui
 
                 // end frame
-                Hl.VulkanContext.endFrame ()
+                VulkanContext.endFrame ()
 
                 // guard against early termination
                 if not terminated then
@@ -431,14 +431,14 @@ type RendererThread () =
                         swapRequestAcknowledged <- true
 
                         // present
-                        Hl.VulkanContext.present vkc
+                        VulkanContext.present vkc
 
         // clean up
-        Hl.VulkanContext.waitIdle vkc
+        VulkanContext.waitIdle vkc
         renderer3d.CleanUp ()
         renderer2d.CleanUp ()
         rendererImGui.CleanUp ()
-        Texture.TextureInternal.destroy Texture.TextureInternal.empty vkc
+        TextureParallel.destroy TextureParallel.empty vkc
 
     interface RendererProcess with
 
@@ -453,7 +453,7 @@ type RendererThread () =
 
                 // attempt to create VulkanContext (on main thread, unlike OpenGL), storing a reference for clean-up.
                 let vkc =
-                    match Hl.VulkanContext.tryCreate window with
+                    match VulkanContext.tryCreate window with
                     | Some vkc -> vkc
                     | None -> Log.fail "Could not create Vulkan context." // TODO: P0: handle failure more gracefully here?
                 vkcOpt <- Some vkc
@@ -689,7 +689,7 @@ type RendererThread () =
             thread.Join ()
             match vkcOpt with
             | Some vkc ->
-                Hl.VulkanContext.cleanup vkc
+                VulkanContext.cleanup vkc
                 vkcOpt <- None
             | None -> ()
             threadOpt <- None

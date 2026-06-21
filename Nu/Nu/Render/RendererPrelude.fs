@@ -9,6 +9,7 @@ open System
 open System.Numerics
 open Prime
 open SDL
+open Nu.Vulkan
 
 /// The blend mode of a sprite.
 type [<Struct>] Blend =
@@ -129,8 +130,8 @@ type [<CustomEquality; NoComparison>] RenderPass =
 /// An asset that is used for rendering.
 type RenderAsset =
     | RawAsset
-    | TextureAsset of Texture : Vortice.Vulkan.Texture.Texture
+    | TextureAsset of Texture : Texture
     | FontAsset of FontSizeDefault : single * Font : TTF_Font nativeptr
-    | CubeMapAsset of FilePaths : Vortice.Vulkan.CubeMap.CubeMapKey * CubeMap : Vortice.Vulkan.Texture.Texture * IrradianceAndEnvironmentMapOptRef : (Vortice.Vulkan.Texture.Texture * Vortice.Vulkan.Texture.Texture) option ref
-    | StaticModelAsset of UserDefined : bool * StaticModel : Vortice.Vulkan.PhysicallyBased.PhysicallyBasedModel
-    | AnimatedModelAsset of AnimatedModel : Vortice.Vulkan.PhysicallyBased.PhysicallyBasedModel
+    | CubeMapAsset of FilePaths : CubeMap.CubeMapKey * CubeMap : Texture * IrradianceAndEnvironmentMapOptRef : (Texture * Texture) option ref
+    | StaticModelAsset of UserDefined : bool * StaticModel : PhysicallyBased.PhysicallyBasedModel
+    | AnimatedModelAsset of AnimatedModel : PhysicallyBased.PhysicallyBasedModel

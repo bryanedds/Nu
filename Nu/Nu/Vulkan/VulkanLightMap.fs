@@ -1,10 +1,11 @@
 // Nu Game Engine.
 // Copyright (C) Bryan Edds.
 
-namespace Vortice.Vulkan
+namespace Nu.Vulkan
 open System
 open System.Numerics
 open System.Runtime.InteropServices
+open Vortice.Vulkan
 open Prime
 open Nu
 
@@ -15,12 +16,12 @@ module LightMap =
     let CreateReflectionMap (render, resolution, origin, ambientColor, ambientBrightness, commandBuffer, vkc) =
 
         // create reflection cube map
-        let metadata = Texture.TextureMetadata.make resolution resolution
-        let reflectionCubeMapInternal =
-            Texture.TextureInternal.create
-                Texture.MipmapNone (Texture.AttachmentColor false) Texture.TextureCubeMap [|VkImageUsageFlags.Sampled; VkImageUsageFlags.TransferDst|]
-                Hl.Rgba16f Hl.Rgba metadata vkc
-        let reflectionCubeMap = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureInternal = reflectionCubeMapInternal }
+        let metadata = TextureMetadata.make resolution resolution
+        let reflectionCubeMapParallel =
+            TextureParallel.create
+                MipmapNone (AttachmentColor false) TextureCubeMap [|VkImageUsageFlags.Sampled; VkImageUsageFlags.TransferDst|]
+                Rgba16f Rgba metadata vkc
+        let reflectionCubeMap = EagerTexture { TextureMetadata = TextureMetadata.empty; TextureParallel = reflectionCubeMapParallel }
 
         // construct geometry viewport
         let bounds = box2i v2iZero (v2iDup resolution)
@@ -59,7 +60,7 @@ module LightMap =
             let projection = Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, geometryViewport.DistanceNear, geometryViewport.DistanceFar)
             let viewProjection = view * projection
             let bounds = VkRect2D (0, 0, uint resolution, uint resolution)
-            render false lightAmbientOverride origin view viewSkyBox frustum projection viewProjection projection bounds i reflectionCubeMapInternal.Image
+            render false lightAmbientOverride origin view viewSkyBox frustum projection viewProjection projection bounds i reflectionCubeMapParallel.Image
 
             // take a snapshot for testing
             // TODO: DJL: implement.
@@ -67,7 +68,7 @@ module LightMap =
             //Hl.Assert ()
 
         // transition cubemap layout
-        Hl.recordTransitionLayout true 1 0 6 VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.ShaderRead reflectionCubeMapInternal.Image commandBuffer
+        Hl.recordTransitionLayout true 1 0 6 VkImageAspectFlags.Color ColorAttachmentWrite ShaderRead reflectionCubeMapParallel.Image commandBuffer
 
         // fin
         reflectionCubeMap
@@ -75,12 +76,12 @@ module LightMap =
     let CreateIrradianceMap (invertY, resolution, cubeMapSurface : CubeMap.CubeMapSurface, sampler, colorFormat, irradiancePipeline, commandBuffer, vkc) =
 
         // create irradiance cube map
-        let metadata = Texture.TextureMetadata.make resolution resolution
-        let cubeMapInternal =
-            Texture.TextureInternal.create
-                Texture.MipmapNone (Texture.AttachmentColor false) Texture.TextureCubeMap [|VkImageUsageFlags.Sampled|]
-                colorFormat Hl.Rgba metadata vkc
-        let cubeMap = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureInternal = cubeMapInternal }
+        let metadata = TextureMetadata.make resolution resolution
+        let cubeMapParallel =
+            TextureParallel.create
+                MipmapNone (AttachmentColor false) TextureCubeMap [|VkImageUsageFlags.Sampled|]
+                colorFormat Rgba metadata vkc
+        let cubeMap = EagerTexture { TextureMetadata = TextureMetadata.empty; TextureParallel = cubeMapParallel }
 
         // compute views and projection
         let views =
@@ -105,7 +106,7 @@ module LightMap =
             //Hl.SaveFramebufferRgbaToBitmap (resolution, resolution, "Irradiance." + string cubeMapId + "." + string i + ".bmp")
 
         // transition cubemap layout
-        Hl.recordTransitionLayout true 1 0 6 VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.ShaderRead cubeMapInternal.Image commandBuffer
+        Hl.recordTransitionLayout true 1 0 6 VkImageAspectFlags.Color ColorAttachmentWrite ShaderRead cubeMapParallel.Image commandBuffer
         
         // fin
         cubeMap
@@ -123,30 +124,30 @@ module LightMap =
     
     /// Describes an environment filter pipeline that's loaded into GPU.
     type EnvironmentFilterPipeline =
-        { TransformUniform : Buffer.Buffer
-          EnvironmentFilterUniform : Buffer.Buffer
-          Pipeline : Pipeline.Pipeline }
+        { TransformUniform : Nu.Vulkan.Buffer
+          EnvironmentFilterUniform : Nu.Vulkan.Buffer
+          Pipeline : Pipeline }
     
     /// Create an EnvironmentFilterPipeline.
-    let CreateEnvironmentFilterPipeline (shaderPath, colorAttachmentFormat, vkc : Hl.VulkanContext) =
+    let CreateEnvironmentFilterPipeline (shaderPath, colorAttachmentFormat, vkc : VulkanContext) =
 
         // create uniform buffers
-        let transformUniform = Buffer.Buffer.create sizeof<Transform> Buffer.Storage vkc
-        let environmentFilterUniform = Buffer.Buffer.create sizeof<EnvironmentFilter> Buffer.Storage vkc
+        let transformUniform = Buffer.create sizeof<Transform> Storage vkc
+        let environmentFilterUniform = Buffer.create sizeof<EnvironmentFilter> Storage vkc
 
         // create pipeline
         let pipeline =
-            Pipeline.Pipeline.create
-                shaderPath [|Pipeline.NoBlend|] [|false|]
+            Pipeline.create
+                shaderPath [|VulkanUnblended|] [|false|]
                 [|Pipeline.vertex 0 ((3 (*position*)) * sizeof<single>) VkVertexInputRate.Vertex
-                    [|Pipeline.attribute 0 Hl.Single3 0|]|]
+                    [|Pipeline.attribute 0 Single3 0|]|]
                 [|Pipeline.descriptorSet<int>
-                    [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage 1
-                      Pipeline.descriptor 1 Hl.StorageBuffer Hl.FragmentStage 1|]
-                  Pipeline.descriptorSet<Texture.Texture>
-                      [|Pipeline.descriptor 0 Hl.SampledImage Hl.FragmentStage 1|]
-                  Pipeline.descriptorSet<Texture.Sampler>
-                    [|Pipeline.descriptor 0 Hl.Sampler Hl.FragmentStage 1|]|]
+                    [|Pipeline.descriptor 0 StorageBuffer VertexStage 1
+                      Pipeline.descriptor 1 StorageBuffer FragmentStage 1|]
+                  Pipeline.descriptorSet<Texture>
+                      [|Pipeline.descriptor 0 SampledImage FragmentStage 1|]
+                  Pipeline.descriptorSet<Sampler>
+                    [|Pipeline.descriptor 0 Sampler FragmentStage 1|]|]
                 [||] [|colorAttachmentFormat|] None
                 [|transformUniform; environmentFilterUniform|]
                 vkc
@@ -156,7 +157,7 @@ module LightMap =
     
     /// Destroy an EnvironmentFilterPipeline.
     let DestroyEnvironmentFilterPipeline (environmentFilterPipeline, vkc) =
-        Pipeline.Pipeline.destroy environmentFilterPipeline.Pipeline vkc
+        Pipeline.destroy environmentFilterPipeline.Pipeline vkc
     
     /// Draw an environment filter.
     let DrawEnvironmentFilter
@@ -166,13 +167,13 @@ module LightMap =
          viewProjection : Matrix4x4,
          roughness : single,
          resolution : single,
-         cubeMap : Texture.Texture,
-         sampler : Texture.Sampler,
+         cubeMap : Texture,
+         sampler : Sampler,
          geometry : CubeMap.CubeMapGeometry,
          colorAttachment : VkImageView,
          pipeline : EnvironmentFilterPipeline,
          commandBuffer : VkCommandBuffer,
-         vkc : Hl.VulkanContext) =
+         vkc : VulkanContext) =
 
         // only draw if render area is valid
         let mutable renderArea = VkRect2D (0, 0, uint resolution, uint resolution)
@@ -180,29 +181,29 @@ module LightMap =
         if Hl.validateRect renderArea then
 
             // only draw if required vkPipeline exists
-            match Pipeline.Pipeline.tryGetVkPipeline Pipeline.NoBlend false pipeline.Pipeline with
+            match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
             | Some vkPipeline ->
 
                 // specify uniforms
-                let mutable uniformDescriptorSet = Pipeline.Pipeline.specifyDescriptorSet 0 pipeline.Pipeline.DrawIndex pipeline.Pipeline vkc $ fun vkSet ->
+                let mutable uniformDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.Pipeline.DrawIndex pipeline.Pipeline vkc $ fun vkSet ->
 
                     // specify transform
                     let transform = Transform (view = view, projection = projection, viewProjection = viewProjection)
-                    Buffer.Buffer.uploadValue transform pipeline.TransformUniform vkc
-                    Pipeline.Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.TransformUniform vkSet vkc
+                    Buffer.uploadValue transform pipeline.TransformUniform vkc
+                    Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.TransformUniform vkSet vkc
 
                     // specify environment filter
                     let environmentFilter = EnvironmentFilter (roughness = roughness, resolution = resolution)
-                    Buffer.Buffer.uploadValue environmentFilter pipeline.EnvironmentFilterUniform vkc
-                    Pipeline.Pipeline.writeDescriptorStorageBuffer 1 0 pipeline.EnvironmentFilterUniform vkSet vkc
+                    Buffer.uploadValue environmentFilter pipeline.EnvironmentFilterUniform vkc
+                    Pipeline.writeDescriptorStorageBuffer 1 0 pipeline.EnvironmentFilterUniform vkSet vkc
 
                 // specify cube map
-                let mutable cubeMapDescriptorSet = Pipeline.Pipeline.specifyDescriptorSet 1 cubeMap pipeline.Pipeline vkc $ fun vkSet ->
-                    Pipeline.Pipeline.writeDescriptorSampledImage 0 0 cubeMap vkSet vkc
+                let mutable cubeMapDescriptorSet = Pipeline.specifyDescriptorSet 1 cubeMap pipeline.Pipeline vkc $ fun vkSet ->
+                    Pipeline.writeDescriptorSampledImage 0 0 cubeMap vkSet vkc
 
                 // specify sampler
-                let mutable samplerDescriptorSet = Pipeline.Pipeline.specifyDescriptorSet 2 sampler pipeline.Pipeline vkc $ fun vkSet ->
-                    Pipeline.Pipeline.writeDescriptorSampler 0 0 sampler vkSet vkc
+                let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 2 sampler pipeline.Pipeline vkc $ fun vkSet ->
+                    Pipeline.writeDescriptorSampler 0 0 sampler vkSet vkc
 
                 // set up render
                 let mutable rendering = Hl.makeRenderingInfo [|colorAttachment|] None renderArea None
@@ -238,12 +239,12 @@ module LightMap =
     let CreateEnvironmentFilterMap (invertY, resolution, environmentFilterSurface : CubeMap.CubeMapSurface, sampler, colorFormat, environmentFilterPipeline, commandBuffer, vkc) =
 
         // create environment filter cube map
-        let metadata = Texture.TextureMetadata.make resolution resolution
-        let cubeMapInternal =
-            Texture.TextureInternal.create
-                (Texture.MipmapManual Constants.Render.EnvironmentFilterMips) (Texture.AttachmentColor false) Texture.TextureCubeMap [|VkImageUsageFlags.Sampled|]
-                colorFormat Hl.Rgba metadata vkc
-        let cubeMap = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureInternal = cubeMapInternal }
+        let metadata = TextureMetadata.make resolution resolution
+        let cubeMapParallel =
+            TextureParallel.create
+                (MipmapManual Constants.Render.EnvironmentFilterMips) (AttachmentColor false) TextureCubeMap [|VkImageUsageFlags.Sampled|]
+                colorFormat Rgba metadata vkc
+        let cubeMap = EagerTexture { TextureMetadata = TextureMetadata.empty; TextureParallel = cubeMapParallel }
         
         // compute views and projection
         let views =
@@ -284,7 +285,7 @@ module LightMap =
                 //Hl.SaveFramebufferRgbaToBitmap (int mipResolution, int mipResolution, "EnvironmentFilter." + string i + "." + string mip + ".bmp")
 
         // transition cubemap layout
-        Hl.recordTransitionLayout true cubeMapInternal.MipLevels 0 6 VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.ShaderRead cubeMapInternal.Image commandBuffer
+        Hl.recordTransitionLayout true cubeMapParallel.MipLevels 0 6 VkImageAspectFlags.Color ColorAttachmentWrite ShaderRead cubeMapParallel.Image commandBuffer
 
         // fin
         cubeMap
@@ -296,8 +297,8 @@ module LightMap =
           Bounds : Box3
           AmbientColor : Color
           AmbientBrightness : single
-          IrradianceMap : Texture.Texture
-          EnvironmentFilterMap : Texture.Texture }
+          IrradianceMap : Texture
+          EnvironmentFilterMap : Texture }
 
     /// Create a light map with existing irradiance and environment filter maps.
     let CreateLightMap enabled origin ambientColor ambientBrightness bounds irradianceMap environmentFilterMap =

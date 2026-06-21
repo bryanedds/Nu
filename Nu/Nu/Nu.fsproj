@@ -56,6 +56,7 @@
         <Compile Include="Transform\Transform.fs" />
         <Compile Include="Contour\Contour.fs" />
         <Compile Include="Assimp\Assimp.fs" />
+        <Compile Include="Vulkan\VulkanHl.fs" />
         <Compile Include="Vulkan\VulkanContext.fs" />
         <Compile Include="Vulkan\VulkanBuffer.fs" />
         <Compile Include="Vulkan\VulkanTexture.fs" />

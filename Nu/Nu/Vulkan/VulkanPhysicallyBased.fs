@@ -1,13 +1,14 @@
 ﻿// Nu Game Engine.
 // Copyright (C) Bryan Edds.
 
-namespace Vortice.Vulkan
+namespace Nu.Vulkan
 open System
 open System.Collections.Generic
 open System.IO
 open System.Linq
 open System.Numerics
 open System.Runtime.InteropServices
+open Vortice.Vulkan
 open Prime
 open Nu
 
@@ -16,13 +17,13 @@ module PhysicallyBased =
 
     /// A set of physically-based attachments that support a given viewport.
     type PhysicallyBasedAttachments =
-        { ShadowTextureArrayAttachments : Texture.Texture * Texture.Texture
-          ShadowMapAttachmentsArray : (Texture.Texture * Texture.Texture) array
-          ShadowCascadeArrayAttachmentsArray : (Texture.Texture * Texture.Texture) array
-          GeometryAttachments : Texture.Texture * Texture.Texture * Texture.Texture * Texture.Texture * Texture.Texture * Texture.Texture * Texture.Texture * Texture.Texture
-          LightingAttachment : Texture.Texture
-          ColoringAttachments : Texture.Texture * Texture.Texture
-          CompositionAttachments : Texture.Texture * Texture.Texture }
+        { ShadowTextureArrayAttachments : Texture * Texture
+          ShadowMapAttachmentsArray : (Texture * Texture) array
+          ShadowCascadeArrayAttachmentsArray : (Texture * Texture) array
+          GeometryAttachments : Texture * Texture * Texture * Texture * Texture * Texture * Texture * Texture
+          LightingAttachment : Texture
+          ColoringAttachments : Texture * Texture
+          CompositionAttachments : Texture * Texture }
     
     /// Describes the configurable properties of a physically-based material.
     type PhysicallyBasedMaterialProperties =
@@ -64,19 +65,19 @@ module PhysicallyBased =
 
     /// Describes a physically-based material.
     type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial =
-        { AlbedoTexture : Texture.Texture
-          RoughnessTexture : Texture.Texture
-          MetallicTexture : Texture.Texture
-          AmbientOcclusionTexture : Texture.Texture
-          EmissionTexture : Texture.Texture
-          NormalTexture : Texture.Texture
-          HeightTexture : Texture.Texture
-          SubdermalTexture : Texture.Texture
-          FinenessTexture : Texture.Texture
-          ScatterTexture : Texture.Texture
-          ClearCoatTexture : Texture.Texture
-          ClearCoatRoughnessTexture : Texture.Texture
-          ClearCoatNormalTexture : Texture.Texture
+        { AlbedoTexture : Texture
+          RoughnessTexture : Texture
+          MetallicTexture : Texture
+          AmbientOcclusionTexture : Texture
+          EmissionTexture : Texture
+          NormalTexture : Texture
+          HeightTexture : Texture
+          SubdermalTexture : Texture
+          FinenessTexture : Texture
+          ScatterTexture : Texture
+          ClearCoatTexture : Texture
+          ClearCoatRoughnessTexture : Texture
+          ClearCoatNormalTexture : Texture
           TwoSided : bool
           Clipped : bool
           Names : string }
@@ -149,9 +150,9 @@ module PhysicallyBased =
           Vertices : Vector3 array
           Indices : int array
           mutable TrianglesCached : Vector3 array option
-          VertexBuffer : Buffer.Buffer
-          InstanceBuffer : Buffer.Buffer
-          IndexBuffer : Buffer.Buffer }
+          VertexBuffer : Nu.Vulkan.Buffer
+          InstanceBuffer : Nu.Vulkan.Buffer
+          IndexBuffer : Nu.Vulkan.Buffer }
 
         /// Lazily access triangles, building them from Vertices and Indices if needed.
         member this.Triangles =
@@ -493,22 +494,22 @@ module PhysicallyBased =
     
     /// Describes a physically-based pipeline that's loaded into GPU.
     type PhysicallyBasedPipeline =
-        { TransformUniform : Buffer.Buffer
-          LightingUniform : Buffer.Buffer
-          BoneUniform : Buffer.Buffer
-          LightMapUniform : Buffer.Buffer
-          LightsGeneralUniform : Buffer.Buffer
-          LightUniform : Buffer.Buffer
-          ShadowMatrixUniform : Buffer.Buffer
-          Pipeline : Pipeline.Pipeline }
+        { TransformUniform : Nu.Vulkan.Buffer
+          LightingUniform : Nu.Vulkan.Buffer
+          BoneUniform : Nu.Vulkan.Buffer
+          LightMapUniform : Nu.Vulkan.Buffer
+          LightsGeneralUniform : Nu.Vulkan.Buffer
+          LightUniform : Nu.Vulkan.Buffer
+          ShadowMatrixUniform : Nu.Vulkan.Buffer
+          Pipeline : Pipeline }
 
     /// Describes the lighting pass of a deferred physically-based pipeline that's loaded into GPU.
     type PhysicallyBasedDeferredLightingPipeline =
-        { TransformUniform : Buffer.Buffer
-          LightingUniform : Buffer.Buffer
-          LightUniform : Buffer.Buffer
-          ShadowMatrixUniform : Buffer.Buffer
-          Pipeline : Pipeline.Pipeline }
+        { TransformUniform : Nu.Vulkan.Buffer
+          LightingUniform : Nu.Vulkan.Buffer
+          LightUniform : Nu.Vulkan.Buffer
+          ShadowMatrixUniform : Nu.Vulkan.Buffer
+          Pipeline : Pipeline }
     
     /// Create the attachments required for physically-based rendering.
     let CreatePhysicallyBasedAttachments (geometryViewport : Viewport, vkc) =
@@ -579,7 +580,7 @@ module PhysicallyBased =
     /// Uses file name-based inferences to look for texture files in case the ones that were hard-coded in the model
     /// files can't be located.
     /// Thread-safe if vkcOpt = None.
-    let CreatePhysicallyBasedMaterial (vkcOpt, dirPath, defaultMaterial, textureClient : Texture.TextureClient, material : Assimp.Material) =
+    let CreatePhysicallyBasedMaterial (vkcOpt, dirPath, defaultMaterial, textureClient : TextureClient, material : Assimp.Material) =
 
         // compute the directory string to prefix to a local asset file path
         let dirPrefix = if dirPath <> "" then dirPath + "/" else ""
@@ -618,7 +619,7 @@ module PhysicallyBased =
         let albedoTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression albedoTextureSlotFilePath, dirPrefix + albedoTextureSlotFilePath, Texture.RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression albedoTextureSlotFilePath, dirPrefix + albedoTextureSlotFilePath, RenderThread, vkc) with
                 | Right texture -> texture
                 | Left _ -> defaultMaterial.AlbedoTexture
             | None -> defaultMaterial.AlbedoTexture
@@ -674,28 +675,28 @@ module PhysicallyBased =
         let roughnessTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression roughnessTextureSlot.FilePath, dirPrefix + roughnessTextureSlot.FilePath, Texture.RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression roughnessTextureSlot.FilePath, dirPrefix + roughnessTextureSlot.FilePath, RenderThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression gTextureFilePath, dirPrefix + gTextureFilePath, Texture.RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression gTextureFilePath, dirPrefix + gTextureFilePath, RenderThread, vkc) with
                     | Right texture -> texture
                     | Left _ ->
-                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression sTextureFilePath, dirPrefix + sTextureFilePath, Texture.RenderThread, vkc) with
+                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression sTextureFilePath, dirPrefix + sTextureFilePath, RenderThread, vkc) with
                         | Right texture -> texture
                         | Left _ ->
-                            match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression g_mTextureFilePath, dirPrefix + g_mTextureFilePath, Texture.RenderThread, vkc) with
+                            match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression g_mTextureFilePath, dirPrefix + g_mTextureFilePath, RenderThread, vkc) with
                             | Right texture -> texture
                             | Left _ ->
-                                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression g_m_aoTextureFilePath, dirPrefix + g_m_aoTextureFilePath, Texture.RenderThread, vkc) with
+                                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression g_m_aoTextureFilePath, dirPrefix + g_m_aoTextureFilePath, RenderThread, vkc) with
                                 | Right texture -> texture
                                 | Left _ ->
-                                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression roughnessTextureFilePath, dirPrefix + roughnessTextureFilePath, Texture.RenderThread, vkc) with
+                                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression roughnessTextureFilePath, dirPrefix + roughnessTextureFilePath, RenderThread, vkc) with
                                     | Right texture -> texture
                                     | Left _ ->
-                                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression rmTextureFilePath, dirPrefix + rmTextureFilePath, Texture.RenderThread, vkc) with
+                                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression rmTextureFilePath, dirPrefix + rmTextureFilePath, RenderThread, vkc) with
                                         | Right texture -> texture
                                         | Left _ ->
-                                            match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression rmaTextureFilePath, dirPrefix + rmaTextureFilePath, Texture.RenderThread, vkc) with
+                                            match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression rmaTextureFilePath, dirPrefix + rmaTextureFilePath, RenderThread, vkc) with
                                             | Right texture -> texture
                                             | Left _ -> defaultMaterial.RoughnessTexture
             | None -> defaultMaterial.RoughnessTexture
@@ -709,28 +710,28 @@ module PhysicallyBased =
         let metallicTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression metallicTextureSlot.FilePath, dirPrefix + metallicTextureSlot.FilePath, Texture.RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression metallicTextureSlot.FilePath, dirPrefix + metallicTextureSlot.FilePath, RenderThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression mTextureFilePath, dirPrefix + mTextureFilePath, Texture.RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression mTextureFilePath, dirPrefix + mTextureFilePath, RenderThread, vkc) with
                     | Right texture -> texture
                     | Left _ ->
-                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression g_mTextureFilePath, dirPrefix + g_mTextureFilePath, Texture.RenderThread, vkc) with
+                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression g_mTextureFilePath, dirPrefix + g_mTextureFilePath, RenderThread, vkc) with
                         | Right texture -> texture
                         | Left _ ->
-                            match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression g_m_aoTextureFilePath, dirPrefix + g_m_aoTextureFilePath, Texture.RenderThread, vkc) with
+                            match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression g_m_aoTextureFilePath, dirPrefix + g_m_aoTextureFilePath, RenderThread, vkc) with
                             | Right texture -> texture
                             | Left _ ->
-                                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression metallicTextureFilePath, dirPrefix + metallicTextureFilePath, Texture.RenderThread, vkc) with
+                                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression metallicTextureFilePath, dirPrefix + metallicTextureFilePath, RenderThread, vkc) with
                                 | Right texture -> texture
                                 | Left _ ->
-                                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression metalnessTextureFilePath, dirPrefix + metalnessTextureFilePath, Texture.RenderThread, vkc) with
+                                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression metalnessTextureFilePath, dirPrefix + metalnessTextureFilePath, RenderThread, vkc) with
                                     | Right texture -> texture
                                     | Left _ ->
-                                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression rmTextureFilePath, dirPrefix + rmTextureFilePath, Texture.RenderThread, vkc) with
+                                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression rmTextureFilePath, dirPrefix + rmTextureFilePath, RenderThread, vkc) with
                                         | Right texture -> texture
                                         | Left _ ->
-                                            match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression rmaTextureFilePath, dirPrefix + rmaTextureFilePath, Texture.RenderThread, vkc) with
+                                            match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression rmaTextureFilePath, dirPrefix + rmaTextureFilePath, RenderThread, vkc) with
                                             | Right texture -> texture
                                             | Left _ -> defaultMaterial.MetallicTexture
             | None -> defaultMaterial.MetallicTexture
@@ -747,25 +748,25 @@ module PhysicallyBased =
         let ambientOcclusionTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression ambientOcclusionTextureSlotFilePath, dirPrefix + ambientOcclusionTextureSlotFilePath, Texture.RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression ambientOcclusionTextureSlotFilePath, dirPrefix + ambientOcclusionTextureSlotFilePath, RenderThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression aoTextureFilePath, dirPrefix + aoTextureFilePath, Texture.RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression aoTextureFilePath, dirPrefix + aoTextureFilePath, RenderThread, vkc) with
                     | Right texture -> texture
                     | Left _ ->
-                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression g_m_aoTextureFilePath, dirPrefix + g_m_aoTextureFilePath, Texture.RenderThread, vkc) with
+                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression g_m_aoTextureFilePath, dirPrefix + g_m_aoTextureFilePath, RenderThread, vkc) with
                         | Right texture -> texture
                         | Left _ ->
-                            match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression ambientOcclusionTextureFilePath, dirPrefix + ambientOcclusionTextureFilePath, Texture.RenderThread, vkc) with
+                            match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression ambientOcclusionTextureFilePath, dirPrefix + ambientOcclusionTextureFilePath, RenderThread, vkc) with
                             | Right texture -> texture
                             | Left _ ->
-                                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression occlusionTextureFilePath, dirPrefix + occlusionTextureFilePath, Texture.RenderThread, vkc) with
+                                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression occlusionTextureFilePath, dirPrefix + occlusionTextureFilePath, RenderThread, vkc) with
                                 | Right texture -> texture
                                 | Left _ ->
-                                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression aoTextureFilePath', dirPrefix + aoTextureFilePath', Texture.RenderThread, vkc) with
+                                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression aoTextureFilePath', dirPrefix + aoTextureFilePath', RenderThread, vkc) with
                                     | Right texture -> texture
                                     | Left _ ->
-                                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression rmaTextureFilePath, dirPrefix + rmaTextureFilePath, Texture.RenderThread, vkc) with
+                                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression rmaTextureFilePath, dirPrefix + rmaTextureFilePath, RenderThread, vkc) with
                                         | Right texture -> texture
                                         | Left _ -> defaultMaterial.AmbientOcclusionTexture
             | None -> defaultMaterial.AmbientOcclusionTexture
@@ -779,16 +780,16 @@ module PhysicallyBased =
         let emissionTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression emissionTextureSlot.FilePath, dirPrefix + emissionTextureSlot.FilePath, Texture.RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression emissionTextureSlot.FilePath, dirPrefix + emissionTextureSlot.FilePath, RenderThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression eTextureFilePath, dirPrefix + eTextureFilePath, Texture.RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression eTextureFilePath, dirPrefix + eTextureFilePath, RenderThread, vkc) with
                     | Right texture -> texture
                     | Left _ ->
-                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression emissiveTextureFilePath, dirPrefix + emissiveTextureFilePath, Texture.RenderThread, vkc) with
+                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression emissiveTextureFilePath, dirPrefix + emissiveTextureFilePath, RenderThread, vkc) with
                         | Right texture -> texture
                         | Left _ ->
-                            match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression emissionTextureFilePath, dirPrefix + emissionTextureFilePath, Texture.RenderThread, vkc) with
+                            match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression emissionTextureFilePath, dirPrefix + emissionTextureFilePath, RenderThread, vkc) with
                             | Right texture -> texture
                             | Left _ -> defaultMaterial.EmissionTexture
             | None -> defaultMaterial.EmissionTexture
@@ -801,13 +802,13 @@ module PhysicallyBased =
         let normalTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression normalTextureSlot.FilePath, dirPrefix + normalTextureSlot.FilePath, Texture.RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression normalTextureSlot.FilePath, dirPrefix + normalTextureSlot.FilePath, RenderThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression nTextureFilePath, dirPrefix + nTextureFilePath, Texture.RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression nTextureFilePath, dirPrefix + nTextureFilePath, RenderThread, vkc) with
                     | Right texture -> texture
                     | Left _ ->
-                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression normalTextureFilePath, dirPrefix + normalTextureFilePath, Texture.RenderThread, vkc) with
+                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression normalTextureFilePath, dirPrefix + normalTextureFilePath, RenderThread, vkc) with
                         | Right texture -> texture
                         | Left _ -> defaultMaterial.NormalTexture
             | None -> defaultMaterial.NormalTexture
@@ -821,13 +822,13 @@ module PhysicallyBased =
         let heightTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression heightTextureSlot.FilePath, dirPrefix + heightTextureSlot.FilePath, Texture.RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression heightTextureSlot.FilePath, dirPrefix + heightTextureSlot.FilePath, RenderThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression hTextureFilePath, dirPrefix + hTextureFilePath, Texture.RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression hTextureFilePath, dirPrefix + hTextureFilePath, RenderThread, vkc) with
                     | Right texture -> texture
                     | Left _ ->
-                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression heightTextureFilePath, dirPrefix + heightTextureFilePath, Texture.RenderThread, vkc) with
+                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression heightTextureFilePath, dirPrefix + heightTextureFilePath, RenderThread, vkc) with
                         | Right texture -> texture
                         | Left _ -> defaultMaterial.HeightTexture
             | None -> defaultMaterial.HeightTexture
@@ -848,10 +849,10 @@ module PhysicallyBased =
         let subdermalTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression subdermalTextureFilePath, dirPrefix + subdermalTextureFilePath, Texture.RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression subdermalTextureFilePath, dirPrefix + subdermalTextureFilePath, RenderThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression subdermalTextureFilePath', dirPrefix + subdermalTextureFilePath', Texture.RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression subdermalTextureFilePath', dirPrefix + subdermalTextureFilePath', RenderThread, vkc) with
                     | Right texture -> texture
                     | Left _ -> defaultMaterial.SubdermalTexture
             | None -> defaultMaterial.SubdermalTexture
@@ -861,10 +862,10 @@ module PhysicallyBased =
         let finenessTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression finenessTextureFilePath, dirPrefix + finenessTextureFilePath, Texture.RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression finenessTextureFilePath, dirPrefix + finenessTextureFilePath, RenderThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression finenessTextureFilePath', dirPrefix + finenessTextureFilePath', Texture.RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression finenessTextureFilePath', dirPrefix + finenessTextureFilePath', RenderThread, vkc) with
                     | Right texture -> texture
                     | Left _ -> defaultMaterial.FinenessTexture
             | None -> defaultMaterial.FinenessTexture
@@ -874,10 +875,10 @@ module PhysicallyBased =
         let scatterTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression scatterTextureFilePath, dirPrefix + scatterTextureFilePath, Texture.RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression scatterTextureFilePath, dirPrefix + scatterTextureFilePath, RenderThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression scatterTextureFilePath', dirPrefix + scatterTextureFilePath', Texture.RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression scatterTextureFilePath', dirPrefix + scatterTextureFilePath', RenderThread, vkc) with
                     | Right texture -> texture
                     | Left _ -> defaultMaterial.ScatterTexture
             | None -> defaultMaterial.ScatterTexture
@@ -911,10 +912,10 @@ module PhysicallyBased =
         let clearCoatTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression clearCoatTextureFilePath, dirPrefix + clearCoatTextureFilePath, Texture.RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression clearCoatTextureFilePath, dirPrefix + clearCoatTextureFilePath, RenderThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression clearCoatTextureFilePath', dirPrefix + clearCoatTextureFilePath', Texture.RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression clearCoatTextureFilePath', dirPrefix + clearCoatTextureFilePath', RenderThread, vkc) with
                     | Right texture -> texture
                     | Left _ -> defaultMaterial.ClearCoatTexture
             | None -> defaultMaterial.ClearCoatTexture
@@ -924,10 +925,10 @@ module PhysicallyBased =
         let clearCoatRoughnessTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression clearCoatRoughnessTextureFilePath, dirPrefix + clearCoatRoughnessTextureFilePath, Texture.RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression clearCoatRoughnessTextureFilePath, dirPrefix + clearCoatRoughnessTextureFilePath, RenderThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression clearCoatRoughnessTextureFilePath', dirPrefix + clearCoatRoughnessTextureFilePath', Texture.RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression clearCoatRoughnessTextureFilePath', dirPrefix + clearCoatRoughnessTextureFilePath', RenderThread, vkc) with
                     | Right texture -> texture
                     | Left _ -> defaultMaterial.ClearCoatRoughnessTexture
             | None -> defaultMaterial.ClearCoatRoughnessTexture
@@ -936,10 +937,10 @@ module PhysicallyBased =
         let clearCoatNormalTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression clearCoatNormalTextureFilePath, dirPrefix + clearCoatNormalTextureFilePath, Texture.RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression clearCoatNormalTextureFilePath, dirPrefix + clearCoatNormalTextureFilePath, RenderThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression clearCoatNormalTextureFilePath', dirPrefix + clearCoatNormalTextureFilePath', Texture.RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression clearCoatNormalTextureFilePath', dirPrefix + clearCoatNormalTextureFilePath', RenderThread, vkc) with
                     | Right texture -> texture
                     | Left _ -> defaultMaterial.ClearCoatNormalTexture
             | None -> defaultMaterial.ClearCoatNormalTexture
@@ -1134,14 +1135,14 @@ module PhysicallyBased =
             | Some vkc ->
 
                 // create buffers
-                let vertexBuffer = Buffer.Buffer.createVertexStagedFromMemory vertexData vkc
-                let instanceBuffer = Buffer.Buffer.create (Constants.Render.InstanceFieldCount * sizeof<single>) (Buffer.Vertex true) vkc
-                let indexBuffer = Buffer.Buffer.createIndexStagedFromMemory indexData vkc
+                let vertexBuffer = Buffer.createVertexStagedFromMemory vertexData vkc
+                let instanceBuffer = Buffer.create (Constants.Render.InstanceFieldCount * sizeof<single>) (Vertex true) vkc
+                let indexBuffer = Buffer.createIndexStagedFromMemory indexData vkc
 
                 // prepare instance buffer
                 let instanceData = Array.zeroCreate Constants.Render.InstanceFieldCount
                 m4Identity.ToArray (instanceData, 0)
-                Buffer.Buffer.uploadArray instanceData instanceBuffer vkc
+                Buffer.uploadArray instanceData instanceBuffer vkc
                 
                 // fin
                 ([||], [||], vertexBuffer, instanceBuffer, indexBuffer)
@@ -1161,7 +1162,7 @@ module PhysicallyBased =
                 let indices = indexData.ToArray ()
 
                 // fin
-                (vertices, indices, Unchecked.defaultof<Buffer.Buffer>, Unchecked.defaultof<Buffer.Buffer>, Unchecked.defaultof<Buffer.Buffer>)
+                (vertices, indices, Unchecked.defaultof<Nu.Vulkan.Buffer>, Unchecked.defaultof<Nu.Vulkan.Buffer>, Unchecked.defaultof<Nu.Vulkan.Buffer>)
 
         // make physically-based geometry
         let geometry =
@@ -1194,14 +1195,14 @@ module PhysicallyBased =
             | Some vkc ->
 
                 // create buffers
-                let vertexBuffer = Buffer.Buffer.createVertexStagedFromMemory vertexData vkc
-                let instanceBuffer = Buffer.Buffer.create (Constants.Render.InstanceFieldCount * sizeof<single>) (Buffer.Vertex true) vkc
-                let indexBuffer = Buffer.Buffer.createIndexStagedFromMemory indexData vkc
+                let vertexBuffer = Buffer.createVertexStagedFromMemory vertexData vkc
+                let instanceBuffer = Buffer.create (Constants.Render.InstanceFieldCount * sizeof<single>) (Vertex true) vkc
+                let indexBuffer = Buffer.createIndexStagedFromMemory indexData vkc
 
                 // prepare instance buffer
                 let instanceData = Array.zeroCreate Constants.Render.InstanceFieldCount
                 m4Identity.ToArray (instanceData, 0)
-                Buffer.Buffer.uploadArray instanceData instanceBuffer vkc
+                Buffer.uploadArray instanceData instanceBuffer vkc
                 
                 // fin
                 ([||], [||], vertexBuffer, instanceBuffer, indexBuffer)
@@ -1221,7 +1222,7 @@ module PhysicallyBased =
                 let indices = indexData.ToArray ()
 
                 // fin
-                (vertices, indices, Unchecked.defaultof<Buffer.Buffer>, Unchecked.defaultof<Buffer.Buffer>, Unchecked.defaultof<Buffer.Buffer>)
+                (vertices, indices, Unchecked.defaultof<Nu.Vulkan.Buffer>, Unchecked.defaultof<Nu.Vulkan.Buffer>, Unchecked.defaultof<Nu.Vulkan.Buffer>)
 
         // make physically-based geometry
         let geometry =
@@ -1311,69 +1312,69 @@ module PhysicallyBased =
          vkc) =
 
         // create set 0 uniform buffers
-        let transformUniform = Buffer.Buffer.create sizeof<Transform> Buffer.Storage vkc
-        let lightingUniform = Buffer.Buffer.create sizeof<Lighting> Buffer.Storage vkc
+        let transformUniform = Buffer.create sizeof<Transform> Storage vkc
+        let lightingUniform = Buffer.create sizeof<Lighting> Storage vkc
         
         // create set 2 uniform buffers
         let shadowMatrixMax = Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels
-        let boneUniform = Buffer.Buffer.create (Constants.Render.BonesMax * sizeof<Bone>) Buffer.Storage vkc
-        let lightMapUniform = Buffer.Buffer.create (lightMapsMax * sizeof<LightMap>) Buffer.Storage vkc
-        let lightsGeneralUniform = Buffer.Buffer.create sizeof<LightsGeneral> Buffer.Storage vkc
-        let lightUniform = Buffer.Buffer.create (lightsMax * sizeof<Light>) Buffer.Storage vkc
-        let shadowMatrixUniform = Buffer.Buffer.create (shadowMatrixMax * sizeof<Matrix4x4>) Buffer.Storage vkc
+        let boneUniform = Buffer.create (Constants.Render.BonesMax * sizeof<Bone>) Storage vkc
+        let lightMapUniform = Buffer.create (lightMapsMax * sizeof<LightMap>) Storage vkc
+        let lightsGeneralUniform = Buffer.create sizeof<LightsGeneral> Storage vkc
+        let lightUniform = Buffer.create (lightsMax * sizeof<Light>) Storage vkc
+        let shadowMatrixUniform = Buffer.create (shadowMatrixMax * sizeof<Matrix4x4>) Storage vkc
 
         // create pipeline
         let pipeline =
-            Pipeline.Pipeline.create
+            Pipeline.create
                 shaderPath blends cullModes vertexBindings
                 
                 // descriptor set 0: per render pass
                 [|Pipeline.descriptorSet<int>
-                    [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexFragmentStage 1 // transform
-                      Pipeline.descriptor 1 Hl.StorageBuffer Hl.FragmentStage 1 // lighting
-                      Pipeline.descriptor 2 Hl.SampledImage Hl.FragmentStage 1 // depthTexture
-                      Pipeline.descriptor 3 Hl.SampledImage Hl.FragmentStage 1 // colorTexture
-                      Pipeline.descriptor 4 Hl.SampledImage Hl.FragmentStage 1 // brdfTexture
-                      Pipeline.descriptor 5 Hl.SampledImage Hl.FragmentStage 1 // irradianceMap
-                      Pipeline.descriptor 6 Hl.SampledImage Hl.FragmentStage 1|] // environmentFilterMap
+                    [|Pipeline.descriptor 0 StorageBuffer VertexFragmentStage 1 // transform
+                      Pipeline.descriptor 1 StorageBuffer FragmentStage 1 // lighting
+                      Pipeline.descriptor 2 SampledImage FragmentStage 1 // depthTexture
+                      Pipeline.descriptor 3 SampledImage FragmentStage 1 // colorTexture
+                      Pipeline.descriptor 4 SampledImage FragmentStage 1 // brdfTexture
+                      Pipeline.descriptor 5 SampledImage FragmentStage 1 // irradianceMap
+                      Pipeline.descriptor 6 SampledImage FragmentStage 1|] // environmentFilterMap
 
                   // descriptor set 1: per material
                   Pipeline.descriptorSet<PhysicallyBasedMaterial>
-                    [|Pipeline.descriptor 0 Hl.SampledImage Hl.FragmentStage 1 // albedoTexture
-                      Pipeline.descriptor 1 Hl.SampledImage Hl.FragmentStage 1 // roughnessTexture
-                      Pipeline.descriptor 2 Hl.SampledImage Hl.FragmentStage 1 // metallicTexture
-                      Pipeline.descriptor 3 Hl.SampledImage Hl.FragmentStage 1 // ambientOcclusionTexture
-                      Pipeline.descriptor 4 Hl.SampledImage Hl.FragmentStage 1 // emissionTexture
-                      Pipeline.descriptor 5 Hl.SampledImage Hl.FragmentStage 1 // normalTexture
-                      Pipeline.descriptor 6 Hl.SampledImage Hl.FragmentStage 1 // heightTexture
-                      Pipeline.descriptor 7 Hl.SampledImage Hl.FragmentStage 1 // subdermalTexture
-                      Pipeline.descriptor 8 Hl.SampledImage Hl.FragmentStage 1 // finenessTexture
-                      Pipeline.descriptor 9 Hl.SampledImage Hl.FragmentStage 1 // scatterTexture
-                      Pipeline.descriptor 10 Hl.SampledImage Hl.FragmentStage 1 // clearCoatTexture
-                      Pipeline.descriptor 11 Hl.SampledImage Hl.FragmentStage 1 // clearCoatRoughnessTexture
-                      Pipeline.descriptor 12 Hl.SampledImage Hl.FragmentStage 1|] // clearCoatNormalTexture
+                    [|Pipeline.descriptor 0 SampledImage FragmentStage 1 // albedoTexture
+                      Pipeline.descriptor 1 SampledImage FragmentStage 1 // roughnessTexture
+                      Pipeline.descriptor 2 SampledImage FragmentStage 1 // metallicTexture
+                      Pipeline.descriptor 3 SampledImage FragmentStage 1 // ambientOcclusionTexture
+                      Pipeline.descriptor 4 SampledImage FragmentStage 1 // emissionTexture
+                      Pipeline.descriptor 5 SampledImage FragmentStage 1 // normalTexture
+                      Pipeline.descriptor 6 SampledImage FragmentStage 1 // heightTexture
+                      Pipeline.descriptor 7 SampledImage FragmentStage 1 // subdermalTexture
+                      Pipeline.descriptor 8 SampledImage FragmentStage 1 // finenessTexture
+                      Pipeline.descriptor 9 SampledImage FragmentStage 1 // scatterTexture
+                      Pipeline.descriptor 10 SampledImage FragmentStage 1 // clearCoatTexture
+                      Pipeline.descriptor 11 SampledImage FragmentStage 1 // clearCoatRoughnessTexture
+                      Pipeline.descriptor 12 SampledImage FragmentStage 1|] // clearCoatNormalTexture
 
                   // descriptor set 2: dynamic
                   Pipeline.descriptorSet<int>
-                    [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage 1 // bone
-                      Pipeline.descriptor 1 Hl.StorageBuffer Hl.FragmentStage 1 // lightMap
-                      Pipeline.descriptor 2 Hl.StorageBuffer Hl.FragmentStage 1 // lightsGeneral
-                      Pipeline.descriptor 3 Hl.StorageBuffer Hl.FragmentStage 1 // light
-                      Pipeline.descriptor 4 Hl.StorageBuffer Hl.FragmentStage 1 // shadowMatrix
-                      Pipeline.descriptor 5 Hl.SampledImage Hl.FragmentStage lightMapsMax // irradianceMaps
-                      Pipeline.descriptor 6 Hl.SampledImage Hl.FragmentStage lightMapsMax // environmentFilterMaps
-                      Pipeline.descriptor 7 Hl.SampledImage Hl.FragmentStage 1 // shadowTextures
-                      Pipeline.descriptor 8 Hl.SampledImage Hl.FragmentStage Constants.Render.ShadowMapsMax // shadowMaps
-                      Pipeline.descriptor 9 Hl.SampledImage Hl.FragmentStage Constants.Render.ShadowCascadesMax|] // shadowCascades
+                    [|Pipeline.descriptor 0 StorageBuffer VertexStage 1 // bone
+                      Pipeline.descriptor 1 StorageBuffer FragmentStage 1 // lightMap
+                      Pipeline.descriptor 2 StorageBuffer FragmentStage 1 // lightsGeneral
+                      Pipeline.descriptor 3 StorageBuffer FragmentStage 1 // light
+                      Pipeline.descriptor 4 StorageBuffer FragmentStage 1 // shadowMatrix
+                      Pipeline.descriptor 5 SampledImage FragmentStage lightMapsMax // irradianceMaps
+                      Pipeline.descriptor 6 SampledImage FragmentStage lightMapsMax // environmentFilterMaps
+                      Pipeline.descriptor 7 SampledImage FragmentStage 1 // shadowTextures
+                      Pipeline.descriptor 8 SampledImage FragmentStage Constants.Render.ShadowMapsMax // shadowMaps
+                      Pipeline.descriptor 9 SampledImage FragmentStage Constants.Render.ShadowCascadesMax|] // shadowCascades
 
                   // descriptor set 3: samplers
                   Pipeline.descriptorSet<Unit>
-                    [|Pipeline.descriptor 0 Hl.Sampler Hl.FragmentStage 1
-                      Pipeline.descriptor 1 Hl.Sampler Hl.FragmentStage 1
-                      Pipeline.descriptor 2 Hl.Sampler Hl.FragmentStage 1
-                      Pipeline.descriptor 3 Hl.Sampler Hl.FragmentStage 1
-                      Pipeline.descriptor 4 Hl.Sampler Hl.FragmentStage 1
-                      Pipeline.descriptor 5 Hl.Sampler Hl.FragmentStage 1|]|]
+                    [|Pipeline.descriptor 0 Sampler FragmentStage 1
+                      Pipeline.descriptor 1 Sampler FragmentStage 1
+                      Pipeline.descriptor 2 Sampler FragmentStage 1
+                      Pipeline.descriptor 3 Sampler FragmentStage 1
+                      Pipeline.descriptor 4 Sampler FragmentStage 1
+                      Pipeline.descriptor 5 Sampler FragmentStage 1|]|]
                 
                 [||] colorAttachmentFormats depthTestOpt
                 [|transformUniform
@@ -1401,45 +1402,45 @@ module PhysicallyBased =
     
     /// Destroy PhysicallyBasedPipeline.
     let DestroyPhysicallyBasedPipeline (physicallyBasedPipeline : PhysicallyBasedPipeline) vkc =
-        Pipeline.Pipeline.destroy physicallyBasedPipeline.Pipeline vkc
+        Pipeline.destroy physicallyBasedPipeline.Pipeline vkc
     
     /// Create a PhysicallyBasedDeferredLightingPipeline.
     let CreatePhysicallyBasedDeferredLightingPipeline (lightsMax, colorAttachmentFormat, vkc) =
 
         // create uniform buffers
         let shadowMatrixMax = Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels
-        let transformUniform = Buffer.Buffer.create sizeof<Transform> Buffer.Storage vkc
-        let lightingUniform = Buffer.Buffer.create sizeof<Lighting2> Buffer.Storage vkc
-        let lightUniform = Buffer.Buffer.create (lightsMax * sizeof<Light>) Buffer.Storage vkc
-        let shadowMatrixUniform = Buffer.Buffer.create (shadowMatrixMax * sizeof<Matrix4x4>) Buffer.Storage vkc
+        let transformUniform = Buffer.create sizeof<Transform> Storage vkc
+        let lightingUniform = Buffer.create sizeof<Lighting2> Storage vkc
+        let lightUniform = Buffer.create (lightsMax * sizeof<Light>) Storage vkc
+        let shadowMatrixUniform = Buffer.create (shadowMatrixMax * sizeof<Matrix4x4>) Storage vkc
 
         // create pipeline
         let pipeline =
-            Pipeline.Pipeline.create
+            Pipeline.create
                 Constants.Paths.PhysicallyBasedDeferredLightingShaderFilePath
-                [|Pipeline.NoBlend|] [|false|]
+                [|VulkanUnblended|] [|false|]
                 [|Pipeline.vertex 0 StaticVertexSize VkVertexInputRate.Vertex
-                    [|Pipeline.attribute 0 Hl.Single3 0
-                      Pipeline.attribute 1 Hl.Single2 StaticTexCoordsOffset
-                      Pipeline.attribute 2 Hl.Single3 StaticNormalOffset|]|]
+                    [|Pipeline.attribute 0 Single3 0
+                      Pipeline.attribute 1 Single2 StaticTexCoordsOffset
+                      Pipeline.attribute 2 Single3 StaticNormalOffset|]|]
                 [|Pipeline.descriptorSet<int>
-                    [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.FragmentStage 1 // transform
-                      Pipeline.descriptor 1 Hl.StorageBuffer Hl.FragmentStage 1 // lighting
-                      Pipeline.descriptor 2 Hl.StorageBuffer Hl.FragmentStage 1 // light
-                      Pipeline.descriptor 3 Hl.StorageBuffer Hl.FragmentStage 1 // shadowMatrix
-                      Pipeline.descriptor 4 Hl.SampledImage Hl.FragmentStage 1 // depth
-                      Pipeline.descriptor 5 Hl.SampledImage Hl.FragmentStage 1 // albedo
-                      Pipeline.descriptor 6 Hl.SampledImage Hl.FragmentStage 1 // material
-                      Pipeline.descriptor 7 Hl.SampledImage Hl.FragmentStage 1 // normalPlus
-                      Pipeline.descriptor 8 Hl.SampledImage Hl.FragmentStage 1 // subdermalPlus
-                      Pipeline.descriptor 9 Hl.SampledImage Hl.FragmentStage 1 // scatterPlus
-                      Pipeline.descriptor 10 Hl.SampledImage Hl.FragmentStage 1 // clearCoatPlus
-                      Pipeline.descriptor 11 Hl.SampledImage Hl.FragmentStage 1 // shadowTextures
-                      Pipeline.descriptor 12 Hl.SampledImage Hl.FragmentStage Constants.Render.ShadowMapsMax // shadowMaps
-                      Pipeline.descriptor 13 Hl.SampledImage Hl.FragmentStage Constants.Render.ShadowCascadesMax|] // shadowCascades
+                    [|Pipeline.descriptor 0 StorageBuffer FragmentStage 1 // transform
+                      Pipeline.descriptor 1 StorageBuffer FragmentStage 1 // lighting
+                      Pipeline.descriptor 2 StorageBuffer FragmentStage 1 // light
+                      Pipeline.descriptor 3 StorageBuffer FragmentStage 1 // shadowMatrix
+                      Pipeline.descriptor 4 SampledImage FragmentStage 1 // depth
+                      Pipeline.descriptor 5 SampledImage FragmentStage 1 // albedo
+                      Pipeline.descriptor 6 SampledImage FragmentStage 1 // material
+                      Pipeline.descriptor 7 SampledImage FragmentStage 1 // normalPlus
+                      Pipeline.descriptor 8 SampledImage FragmentStage 1 // subdermalPlus
+                      Pipeline.descriptor 9 SampledImage FragmentStage 1 // scatterPlus
+                      Pipeline.descriptor 10 SampledImage FragmentStage 1 // clearCoatPlus
+                      Pipeline.descriptor 11 SampledImage FragmentStage 1 // shadowTextures
+                      Pipeline.descriptor 12 SampledImage FragmentStage Constants.Render.ShadowMapsMax // shadowMaps
+                      Pipeline.descriptor 13 SampledImage FragmentStage Constants.Render.ShadowCascadesMax|] // shadowCascades
                   Pipeline.descriptorSet<Unit>
-                    [|Pipeline.descriptor 0 Hl.Sampler Hl.FragmentStage 1
-                      Pipeline.descriptor 1 Hl.Sampler Hl.FragmentStage 1|]|]
+                    [|Pipeline.descriptor 0 Sampler FragmentStage 1
+                      Pipeline.descriptor 1 Sampler FragmentStage 1|]|]
                 [||] colorAttachmentFormat None
                 [|transformUniform; lightingUniform; lightUniform; shadowMatrixUniform|]
                 vkc
@@ -1457,7 +1458,7 @@ module PhysicallyBased =
     
     /// Destroy PhysicallyBasedDeferredLightingPipeline.
     let DestroyPhysicallyBasedDeferredLightingPipeline (pipeline : PhysicallyBasedDeferredLightingPipeline) vkc =
-        Pipeline.Pipeline.destroy pipeline.Pipeline vkc
+        Pipeline.destroy pipeline.Pipeline vkc
 
     /// Draw a batch of physically-based deferred surfaces.
     let BeginPhysicallyBasedDeferredPipeline
@@ -1465,13 +1466,13 @@ module PhysicallyBased =
          projection : Matrix4x4,
          viewProjection : Matrix4x4,
          eyeCenter : Vector3,
-         filteredSampler : Texture.Sampler,
+         filteredSampler : Sampler,
          renderPassIndex : int,
          pipeline : PhysicallyBasedPipeline,
-         vkc : Hl.VulkanContext) =
+         vkc : VulkanContext) =
 
         // specify tranform
-        let mutable transformDescriptorSet = Pipeline.Pipeline.specifyDescriptorSet 0 renderPassIndex pipeline.Pipeline vkc $ fun vkSet ->
+        let mutable transformDescriptorSet = Pipeline.specifyDescriptorSet 0 renderPassIndex pipeline.Pipeline vkc $ fun vkSet ->
             let mutable transform = Transform ()
             transform.view <- view
             transform.projection <- projection
@@ -1479,12 +1480,12 @@ module PhysicallyBased =
             transform.viewInverse <- view.Inverted
             transform.projectionInverse <- projection.Inverted
             transform.eyeCenter <- eyeCenter
-            Buffer.Buffer.uploadValue transform pipeline.TransformUniform vkc
-            Pipeline.Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.TransformUniform vkSet vkc
+            Buffer.uploadValue transform pipeline.TransformUniform vkc
+            Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.TransformUniform vkSet vkc
 
         // specify samplers
-        let mutable samplerDescriptorSet = Pipeline.Pipeline.specifyDescriptorSet 3 Unit pipeline.Pipeline vkc $ fun vkSet ->
-            Pipeline.Pipeline.writeDescriptorSampler 0 0 filteredSampler vkSet vkc
+        let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 3 Unit pipeline.Pipeline vkc $ fun vkSet ->
+            Pipeline.writeDescriptorSampler 0 0 filteredSampler vkSet vkc
 
         // fin
         (transformDescriptorSet, samplerDescriptorSet)
@@ -1498,11 +1499,11 @@ module PhysicallyBased =
          geometry : PhysicallyBasedGeometry,
          viewport : Viewport,
          colorAttachments : VkImageView array,
-         depthAttachment : Texture.Texture,
+         depthAttachment : Texture,
          transformDescriptorSet : VkDescriptorSet byref,
          samplerDescriptorSet : VkDescriptorSet byref,
          pipeline : PhysicallyBasedPipeline,
-         vkc : Hl.VulkanContext) =
+         vkc : VulkanContext) =
 
         // only draw if render area is valid
         let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
@@ -1513,34 +1514,34 @@ module PhysicallyBased =
             if surfacesCount > 0 then
 
                 // only draw if required vkPipeline exists
-                match Pipeline.Pipeline.tryGetVkPipeline Pipeline.NoBlend (not material.TwoSided) pipeline.Pipeline with
+                match Pipeline.tryGetVkPipeline VulkanUnblended (not material.TwoSided) pipeline.Pipeline with
                 | Some vkPipeline ->
 
                     // specify instancing
                     use instanceFieldsPin = new ArrayPin<_> (instanceFields)
-                    Buffer.Buffer.uploadSubdata 0 0 (Constants.Render.InstanceFieldCount * sizeof<single>) surfacesCount instanceFieldsPin.NativeInt geometry.InstanceBuffer vkc
+                    Buffer.uploadSubdata 0 0 (Constants.Render.InstanceFieldCount * sizeof<single>) surfacesCount instanceFieldsPin.NativeInt geometry.InstanceBuffer vkc
 
                     // specify material
-                    let mutable materialDescriptorSet = Pipeline.Pipeline.specifyDescriptorSet 1 material pipeline.Pipeline vkc $ fun vkSet ->
-                        Pipeline.Pipeline.writeDescriptorSampledImage 0 0 material.AlbedoTexture vkSet vkc
-                        Pipeline.Pipeline.writeDescriptorSampledImage 1 0 material.RoughnessTexture vkSet vkc
-                        Pipeline.Pipeline.writeDescriptorSampledImage 2 0 material.MetallicTexture vkSet vkc
-                        Pipeline.Pipeline.writeDescriptorSampledImage 3 0 material.AmbientOcclusionTexture vkSet vkc
-                        Pipeline.Pipeline.writeDescriptorSampledImage 4 0 material.EmissionTexture vkSet vkc
-                        Pipeline.Pipeline.writeDescriptorSampledImage 5 0 material.NormalTexture vkSet vkc
-                        Pipeline.Pipeline.writeDescriptorSampledImage 6 0 material.HeightTexture vkSet vkc
-                        Pipeline.Pipeline.writeDescriptorSampledImage 7 0 material.SubdermalTexture vkSet vkc
-                        Pipeline.Pipeline.writeDescriptorSampledImage 8 0 material.FinenessTexture vkSet vkc
-                        Pipeline.Pipeline.writeDescriptorSampledImage 9 0 material.ScatterTexture vkSet vkc
-                        Pipeline.Pipeline.writeDescriptorSampledImage 10 0 material.ClearCoatTexture vkSet vkc
-                        Pipeline.Pipeline.writeDescriptorSampledImage 11 0 material.ClearCoatRoughnessTexture vkSet vkc
-                        Pipeline.Pipeline.writeDescriptorSampledImage 12 0 material.ClearCoatNormalTexture vkSet vkc
+                    let mutable materialDescriptorSet = Pipeline.specifyDescriptorSet 1 material pipeline.Pipeline vkc $ fun vkSet ->
+                        Pipeline.writeDescriptorSampledImage 0 0 material.AlbedoTexture vkSet vkc
+                        Pipeline.writeDescriptorSampledImage 1 0 material.RoughnessTexture vkSet vkc
+                        Pipeline.writeDescriptorSampledImage 2 0 material.MetallicTexture vkSet vkc
+                        Pipeline.writeDescriptorSampledImage 3 0 material.AmbientOcclusionTexture vkSet vkc
+                        Pipeline.writeDescriptorSampledImage 4 0 material.EmissionTexture vkSet vkc
+                        Pipeline.writeDescriptorSampledImage 5 0 material.NormalTexture vkSet vkc
+                        Pipeline.writeDescriptorSampledImage 6 0 material.HeightTexture vkSet vkc
+                        Pipeline.writeDescriptorSampledImage 7 0 material.SubdermalTexture vkSet vkc
+                        Pipeline.writeDescriptorSampledImage 8 0 material.FinenessTexture vkSet vkc
+                        Pipeline.writeDescriptorSampledImage 9 0 material.ScatterTexture vkSet vkc
+                        Pipeline.writeDescriptorSampledImage 10 0 material.ClearCoatTexture vkSet vkc
+                        Pipeline.writeDescriptorSampledImage 11 0 material.ClearCoatRoughnessTexture vkSet vkc
+                        Pipeline.writeDescriptorSampledImage 12 0 material.ClearCoatNormalTexture vkSet vkc
 
                     // specify dynamic
-                    let mutable dynamicDescriptorSet = Pipeline.Pipeline.specifyDescriptorSet 2 pipeline.Pipeline.DrawIndex pipeline.Pipeline vkc $ fun vkSet ->
+                    let mutable dynamicDescriptorSet = Pipeline.specifyDescriptorSet 2 pipeline.Pipeline.DrawIndex pipeline.Pipeline vkc $ fun vkSet ->
                         use bonesPin = new ArrayPin<_> (bones)
-                        Buffer.Buffer.uploadSubdata 0 0 sizeof<Bone> (min bones.Length Constants.Render.BonesMax) bonesPin.NativeInt pipeline.BoneUniform vkc
-                        Pipeline.Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.BoneUniform vkSet vkc
+                        Buffer.uploadSubdata 0 0 sizeof<Bone> (min bones.Length Constants.Render.BonesMax) bonesPin.NativeInt pipeline.BoneUniform vkc
+                        Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.BoneUniform vkSet vkc
 
                     // set up render
                     let mutable rendering = Hl.makeRenderingInfo colorAttachments (Some depthAttachment.ImageView) renderArea None
@@ -1617,24 +1618,24 @@ module PhysicallyBased =
          ssrrDistanceCutoffMargin : single,
          ssrrEdgeHorizontalMargin : single,
          ssrrEdgeVerticalMargin : single,
-         depthTexture : Texture.Texture,
-         colorTexture : Texture.Texture,
-         brdfTexture : Texture.Texture,
-         irradianceMap : Texture.Texture,
-         environmentFilterMap : Texture.Texture,
-         filteredSampler : Texture.Sampler,
-         cubeMapSampler : Texture.Sampler,
-         shadowSampler : Texture.Sampler,
-         colorSampler : Texture.Sampler,
-         depthSampler : Texture.Sampler,
-         brdfSampler : Texture.Sampler,
+         depthTexture : Texture,
+         colorTexture : Texture,
+         brdfTexture : Texture,
+         irradianceMap : Texture,
+         environmentFilterMap : Texture,
+         filteredSampler : Sampler,
+         cubeMapSampler : Sampler,
+         shadowSampler : Sampler,
+         colorSampler : Sampler,
+         depthSampler : Sampler,
+         brdfSampler : Sampler,
          shadowNear : single,
          renderPassIndex : int,
          pipeline : PhysicallyBasedPipeline,
-         vkc : Hl.VulkanContext) =
+         vkc : VulkanContext) =
 
         // specify uniforms
-        let mutable uniformsDescriptorSet = Pipeline.Pipeline.specifyDescriptorSet 0 renderPassIndex pipeline.Pipeline vkc $ fun vkSet ->
+        let mutable uniformsDescriptorSet = Pipeline.specifyDescriptorSet 0 renderPassIndex pipeline.Pipeline vkc $ fun vkSet ->
 
             // specify transform
             let mutable transform = Transform ()
@@ -1644,8 +1645,8 @@ module PhysicallyBased =
             transform.viewInverse <- viewInverse
             transform.projectionInverse <- projectionInverse
             transform.eyeCenter <- eyeCenter
-            Buffer.Buffer.uploadValue transform pipeline.TransformUniform vkc
-            Pipeline.Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.TransformUniform vkSet vkc
+            Buffer.uploadValue transform pipeline.TransformUniform vkc
+            Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.TransformUniform vkSet vkc
 
             // specify lighting
             let mutable lighting = Lighting ()
@@ -1679,24 +1680,24 @@ module PhysicallyBased =
             lighting.ssrrEdgeHorizontalMargin <- ssrrEdgeHorizontalMargin
             lighting.ssrrEdgeVerticalMargin <- ssrrEdgeVerticalMargin
             lighting.shadowNear <- shadowNear
-            Buffer.Buffer.uploadValue lighting pipeline.LightingUniform vkc
-            Pipeline.Pipeline.writeDescriptorStorageBuffer 1 0 pipeline.LightingUniform vkSet vkc
+            Buffer.uploadValue lighting pipeline.LightingUniform vkc
+            Pipeline.writeDescriptorStorageBuffer 1 0 pipeline.LightingUniform vkSet vkc
 
             // specify static environment textures
-            Pipeline.Pipeline.writeDescriptorSampledImage 2 0 depthTexture vkSet vkc
-            Pipeline.Pipeline.writeDescriptorSampledImage 3 0 colorTexture vkSet vkc
-            Pipeline.Pipeline.writeDescriptorSampledImage 4 0 brdfTexture vkSet vkc
-            Pipeline.Pipeline.writeDescriptorSampledImage 5 0 irradianceMap vkSet vkc
-            Pipeline.Pipeline.writeDescriptorSampledImage 6 0 environmentFilterMap vkSet vkc
+            Pipeline.writeDescriptorSampledImage 2 0 depthTexture vkSet vkc
+            Pipeline.writeDescriptorSampledImage 3 0 colorTexture vkSet vkc
+            Pipeline.writeDescriptorSampledImage 4 0 brdfTexture vkSet vkc
+            Pipeline.writeDescriptorSampledImage 5 0 irradianceMap vkSet vkc
+            Pipeline.writeDescriptorSampledImage 6 0 environmentFilterMap vkSet vkc
 
         // specify samplers
-        let mutable samplersDescriptorSet = Pipeline.Pipeline.specifyDescriptorSet 3 Unit pipeline.Pipeline vkc $ fun vkSet ->
-            Pipeline.Pipeline.writeDescriptorSampler 0 0 filteredSampler vkSet vkc
-            Pipeline.Pipeline.writeDescriptorSampler 1 0 cubeMapSampler vkSet vkc
-            Pipeline.Pipeline.writeDescriptorSampler 2 0 shadowSampler vkSet vkc
-            Pipeline.Pipeline.writeDescriptorSampler 3 0 colorSampler vkSet vkc
-            Pipeline.Pipeline.writeDescriptorSampler 4 0 depthSampler vkSet vkc
-            Pipeline.Pipeline.writeDescriptorSampler 5 0 brdfSampler vkSet vkc
+        let mutable samplersDescriptorSet = Pipeline.specifyDescriptorSet 3 Unit pipeline.Pipeline vkc $ fun vkSet ->
+            Pipeline.writeDescriptorSampler 0 0 filteredSampler vkSet vkc
+            Pipeline.writeDescriptorSampler 1 0 cubeMapSampler vkSet vkc
+            Pipeline.writeDescriptorSampler 2 0 shadowSampler vkSet vkc
+            Pipeline.writeDescriptorSampler 3 0 colorSampler vkSet vkc
+            Pipeline.writeDescriptorSampler 4 0 depthSampler vkSet vkc
+            Pipeline.writeDescriptorSampler 5 0 brdfSampler vkSet vkc
 
         // fin
         (uniformsDescriptorSet, samplersDescriptorSet)
@@ -1710,11 +1711,11 @@ module PhysicallyBased =
         (bones : Matrix4x4 array,
          surfacesCount : int,
          instanceFields : single array,
-         irradianceMaps : Texture.Texture array,
-         environmentFilterMaps : Texture.Texture array,
-         shadowTextureArray : Texture.Texture,
-         shadowMaps : Texture.Texture array,
-         shadowCascades : Texture.Texture array,
+         irradianceMaps : Texture array,
+         environmentFilterMaps : Texture array,
+         shadowTextureArray : Texture,
+         shadowMaps : Texture array,
+         shadowCascades : Texture array,
          lightMapOrigins : Vector3 array,
          lightMapMins : Vector3 array,
          lightMapSizes : Vector3 array,
@@ -1741,12 +1742,12 @@ module PhysicallyBased =
          depthTest : DepthTest,
          blending : bool,
          viewport : Viewport,
-         colorAttachment : Texture.Texture,
-         depthAttachment : Texture.Texture,
+         colorAttachment : Texture,
+         depthAttachment : Texture,
          uniformsDescriptorSet : VkDescriptorSet byref,
          samplersDescriptorSet : VkDescriptorSet byref,
          pipeline : PhysicallyBasedPipeline,
-         vkc : Hl.VulkanContext) =
+         vkc : VulkanContext) =
         
         // only draw if render area is valid
         let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
@@ -1754,31 +1755,31 @@ module PhysicallyBased =
         if Hl.validateRect renderArea then
 
             // only draw if required vkPipeline exists
-            let blend = if blending then Pipeline.Transparent else Pipeline.NoBlend
-            match Pipeline.Pipeline.tryGetVkPipeline blend (not material.TwoSided) pipeline.Pipeline with
+            let blend = if blending then VulkanTransparent else VulkanUnblended
+            match Pipeline.tryGetVkPipeline blend (not material.TwoSided) pipeline.Pipeline with
             | Some vkPipeline ->
 
                 // specify instancing
                 use instanceFieldsPin = new ArrayPin<_> (instanceFields)
-                Buffer.Buffer.uploadSubdata 0 0 (Constants.Render.InstanceFieldCount * sizeof<single>) surfacesCount instanceFieldsPin.NativeInt geometry.InstanceBuffer vkc
+                Buffer.uploadSubdata 0 0 (Constants.Render.InstanceFieldCount * sizeof<single>) surfacesCount instanceFieldsPin.NativeInt geometry.InstanceBuffer vkc
 
                 // specify material
-                let mutable materialDescriptorSet = Pipeline.Pipeline.specifyDescriptorSet 1 material pipeline.Pipeline vkc $ fun vkSet ->
-                    Pipeline.Pipeline.writeDescriptorSampledImage 0 0 material.AlbedoTexture vkSet vkc
-                    Pipeline.Pipeline.writeDescriptorSampledImage 1 0 material.RoughnessTexture vkSet vkc
-                    Pipeline.Pipeline.writeDescriptorSampledImage 2 0 material.MetallicTexture vkSet vkc
-                    Pipeline.Pipeline.writeDescriptorSampledImage 3 0 material.AmbientOcclusionTexture vkSet vkc
-                    Pipeline.Pipeline.writeDescriptorSampledImage 4 0 material.EmissionTexture vkSet vkc
-                    Pipeline.Pipeline.writeDescriptorSampledImage 5 0 material.NormalTexture vkSet vkc
-                    Pipeline.Pipeline.writeDescriptorSampledImage 6 0 material.HeightTexture vkSet vkc
+                let mutable materialDescriptorSet = Pipeline.specifyDescriptorSet 1 material pipeline.Pipeline vkc $ fun vkSet ->
+                    Pipeline.writeDescriptorSampledImage 0 0 material.AlbedoTexture vkSet vkc
+                    Pipeline.writeDescriptorSampledImage 1 0 material.RoughnessTexture vkSet vkc
+                    Pipeline.writeDescriptorSampledImage 2 0 material.MetallicTexture vkSet vkc
+                    Pipeline.writeDescriptorSampledImage 3 0 material.AmbientOcclusionTexture vkSet vkc
+                    Pipeline.writeDescriptorSampledImage 4 0 material.EmissionTexture vkSet vkc
+                    Pipeline.writeDescriptorSampledImage 5 0 material.NormalTexture vkSet vkc
+                    Pipeline.writeDescriptorSampledImage 6 0 material.HeightTexture vkSet vkc
 
                 // specify dynamic
-                let mutable dynamicDescriptorSet = Pipeline.Pipeline.specifyDescriptorSet 2 pipeline.Pipeline.DrawIndex pipeline.Pipeline vkc $ fun vkSet ->
+                let mutable dynamicDescriptorSet = Pipeline.specifyDescriptorSet 2 pipeline.Pipeline.DrawIndex pipeline.Pipeline vkc $ fun vkSet ->
 
                     // specify bones
                     use bonesPin = new ArrayPin<_> (bones)
-                    Buffer.Buffer.uploadSubdata 0 0 sizeof<Bone> (min bones.Length Constants.Render.BonesMax) bonesPin.NativeInt pipeline.BoneUniform vkc
-                    Pipeline.Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.BoneUniform vkSet vkc
+                    Buffer.uploadSubdata 0 0 sizeof<Bone> (min bones.Length Constants.Render.BonesMax) bonesPin.NativeInt pipeline.BoneUniform vkc
+                    Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.BoneUniform vkSet vkc
 
                     // specify light maps
                     for i in 0 .. dec Constants.Render.LightMapsMaxForward do
@@ -1790,16 +1791,16 @@ module PhysicallyBased =
                             lightMap.lightMapAmbientColors <- lightMapAmbientColors.[i].V3
                             lightMap.lightMapAmbientBrightnesses <- lightMapAmbientBrightnesses.[i]
                         use lightMapPin = new ArrayPin<_> ([|lightMap|])
-                        Buffer.Buffer.uploadSubdata (i * sizeof<LightMap>) 0 sizeof<LightMap> 1 lightMapPin.NativeInt pipeline.LightMapUniform vkc
-                    Pipeline.Pipeline.writeDescriptorStorageBuffer 1 0 pipeline.LightMapUniform vkSet vkc
+                        Buffer.uploadSubdata (i * sizeof<LightMap>) 0 sizeof<LightMap> 1 lightMapPin.NativeInt pipeline.LightMapUniform vkc
+                    Pipeline.writeDescriptorStorageBuffer 1 0 pipeline.LightMapUniform vkSet vkc
 
                     // specify lights general
                     let mutable lightsGeneral = LightsGeneral ()
                     lightsGeneral.lightMapsCount <- lightMapsCount
                     lightsGeneral.lightMapSingletonBlendMargin <- lightMapSingletonBlendMargin
                     lightsGeneral.lightsCount <- lightsCount
-                    Buffer.Buffer.uploadValue lightsGeneral pipeline.LightsGeneralUniform vkc
-                    Pipeline.Pipeline.writeDescriptorStorageBuffer 2 0 pipeline.LightsGeneralUniform vkSet vkc
+                    Buffer.uploadValue lightsGeneral pipeline.LightsGeneralUniform vkc
+                    Pipeline.writeDescriptorStorageBuffer 2 0 pipeline.LightsGeneralUniform vkSet vkc
                     
                     // specify lights
                     for i in 0 .. dec Constants.Render.LightsMaxForward do
@@ -1818,23 +1819,23 @@ module PhysicallyBased =
                             light.lightDesireFogs <- lightDesireFogs.[i]
                             light.lightShadowIndices <- lightShadowIndices.[i]
                         use lightPin = new ArrayPin<_> ([|light|])
-                        Buffer.Buffer.uploadSubdata (i * sizeof<Light>) 0 sizeof<Light> 1 lightPin.NativeInt pipeline.LightUniform vkc
-                    Pipeline.Pipeline.writeDescriptorStorageBuffer 3 0 pipeline.LightUniform vkSet vkc
+                        Buffer.uploadSubdata (i * sizeof<Light>) 0 sizeof<Light> 1 lightPin.NativeInt pipeline.LightUniform vkc
+                    Pipeline.writeDescriptorStorageBuffer 3 0 pipeline.LightUniform vkSet vkc
 
                     // specify shadow matrices
                     for i in 0 .. dec (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels) do
                         let mutable shadowMatrix = m4Zero
                         let shadowMatrixPin = new ArrayPin<_> ([|shadowMatrix|])
                         if shadowMatrices.Length < i then shadowMatrix <- shadowMatrices.[i]
-                        Buffer.Buffer.uploadSubdata (i * sizeof<Matrix4x4>) 0 sizeof<Matrix4x4> 1 shadowMatrixPin.NativeInt pipeline.ShadowMatrixUniform vkc
-                    Pipeline.Pipeline.writeDescriptorStorageBuffer 4 0 pipeline.ShadowMatrixUniform vkSet vkc
+                        Buffer.uploadSubdata (i * sizeof<Matrix4x4>) 0 sizeof<Matrix4x4> 1 shadowMatrixPin.NativeInt pipeline.ShadowMatrixUniform vkc
+                    Pipeline.writeDescriptorStorageBuffer 4 0 pipeline.ShadowMatrixUniform vkSet vkc
 
                     // specify dynamics environment textures
-                    Pipeline.Pipeline.writeDescriptorSampledImages 5 0 irradianceMaps vkSet vkc
-                    Pipeline.Pipeline.writeDescriptorSampledImages 6 0 environmentFilterMaps vkSet vkc
-                    Pipeline.Pipeline.writeDescriptorSampledImage 7 0 shadowTextureArray vkSet vkc
-                    Pipeline.Pipeline.writeDescriptorSampledImages 8 0 shadowMaps vkSet vkc
-                    Pipeline.Pipeline.writeDescriptorSampledImages 9 0 shadowCascades vkSet vkc
+                    Pipeline.writeDescriptorSampledImages 5 0 irradianceMaps vkSet vkc
+                    Pipeline.writeDescriptorSampledImages 6 0 environmentFilterMaps vkSet vkc
+                    Pipeline.writeDescriptorSampledImage 7 0 shadowTextureArray vkSet vkc
+                    Pipeline.writeDescriptorSampledImages 8 0 shadowMaps vkSet vkc
+                    Pipeline.writeDescriptorSampledImages 9 0 shadowCascades vkSet vkc
                 
                 // set up render
                 let mutable rendering = Hl.makeRenderingInfo [|colorAttachment.ImageView|] (Some depthAttachment.ImageView) renderArea None
@@ -1892,16 +1893,16 @@ module PhysicallyBased =
          lightShadowExponent : single,
          lightShadowDensity : single,
          sssEnabled : int,
-         depthTexture : Texture.Texture,
-         albedoTexture : Texture.Texture,
-         materialTexture : Texture.Texture,
-         normalPlusTexture : Texture.Texture,
-         subdermalPlusTexture : Texture.Texture,
-         scatterPlusTexture : Texture.Texture,
-         clearCoatPlusTexture : Texture.Texture,
-         shadowTextureArray : Texture.Texture,
-         shadowMaps : Texture.Texture array,
-         shadowCascades : Texture.Texture array,
+         depthTexture : Texture,
+         albedoTexture : Texture,
+         materialTexture : Texture,
+         normalPlusTexture : Texture,
+         subdermalPlusTexture : Texture,
+         scatterPlusTexture : Texture,
+         clearCoatPlusTexture : Texture,
+         shadowTextureArray : Texture,
+         shadowMaps : Texture array,
+         shadowCascades : Texture array,
          lightOrigins : Vector3 array,
          lightDirections : Vector3 array,
          lightColors : Color array,
@@ -1919,7 +1920,7 @@ module PhysicallyBased =
          renderPassIndex : int,
          geometry : PhysicallyBasedGeometry,
          pipeline : PhysicallyBasedDeferredLightingPipeline,
-         vkc : Hl.VulkanContext) =
+         vkc : VulkanContext) =
 
     //    // bind uniforms
     //    let mutable transform = Transform ()
@@ -1928,8 +1929,8 @@ module PhysicallyBased =
     //    transform.viewInverse <- viewInverse
     //    transform.projectionInverse <- projectionInverse
     //    transform.eyeCenter <- eyeCenter
-    //    Buffer.Buffer.uploadValue renderPassIndex 0 0 transform pipeline.TransformUniform vkc
-    //    Pipeline.Pipeline.writeDescriptorStorageBuffer 0 0 renderPassIndex 0 pipeline.TransformUniform.[renderPassIndex] pipeline.Pipeline vkc
+    //    Buffer.uploadValue renderPassIndex 0 0 transform pipeline.TransformUniform vkc
+    //    Pipeline.writeDescriptorStorageBuffer 0 0 renderPassIndex 0 pipeline.TransformUniform.[renderPassIndex] pipeline.Pipeline vkc
     //    let mutable lighting = Lighting2 ()
     //    lighting.lightCutoffMargin <- lightCutoffMargin
     //    lighting.lightShadowSamples <- lightShadowSamples
@@ -1940,8 +1941,8 @@ module PhysicallyBased =
     //    lighting.sssEnabled <- sssEnabled
     //    lighting.lightsCount <- lightsCount
     //    lighting.shadowNear <- shadowNear
-    //    Buffer.Buffer.uploadValue renderPassIndex 0 0 lighting pipeline.LightingUniform vkc
-    //    Pipeline.Pipeline.writeDescriptorStorageBuffer 0 1 renderPassIndex 0 pipeline.LightingUniform.[renderPassIndex] pipeline.Pipeline vkc
+    //    Buffer.uploadValue renderPassIndex 0 0 lighting pipeline.LightingUniform vkc
+    //    Pipeline.writeDescriptorStorageBuffer 0 1 renderPassIndex 0 pipeline.LightingUniform.[renderPassIndex] pipeline.Pipeline vkc
     //
     //
     //    Gl.Uniform1 (shader.DepthTextureUniform, 0)
@@ -2018,9 +2019,9 @@ module PhysicallyBased =
 
     /// Destroy physically-based geometry resources.
     let DestroyPhysicallyBasedGeometry (geometry, vkc) =
-        Buffer.Buffer.destroy geometry.VertexBuffer vkc
-        Buffer.Buffer.destroy geometry.InstanceBuffer vkc
-        Buffer.Buffer.destroy geometry.IndexBuffer vkc
+        Buffer.destroy geometry.VertexBuffer vkc
+        Buffer.destroy geometry.InstanceBuffer vkc
+        Buffer.destroy geometry.IndexBuffer vkc
 
     /// Destroy physically-based model resources.
     let DestroyPhysicallyBasedModel (model : PhysicallyBasedModel, vkc) =
@@ -2151,20 +2152,20 @@ module PhysicallyBased =
         // static vertices
         let staticVertices =
             [|Pipeline.vertex 0 StaticVertexSize VkVertexInputRate.Vertex
-                [|Pipeline.attribute 0 Hl.Single3 0
-                  Pipeline.attribute 1 Hl.Single2 StaticTexCoordsOffset
-                  Pipeline.attribute 2 Hl.Single3 StaticNormalOffset|]
+                [|Pipeline.attribute 0 Single3 0
+                  Pipeline.attribute 1 Single2 StaticTexCoordsOffset
+                  Pipeline.attribute 2 Single3 StaticNormalOffset|]
               Pipeline.vertex 1 (Constants.Render.InstanceFieldCount * sizeof<single>) VkVertexInputRate.Instance
-                [|Pipeline.attribute 3 Hl.Single4 0
-                  Pipeline.attribute 4 Hl.Single4 (4 * sizeof<single>)
-                  Pipeline.attribute 5 Hl.Single4 (8 * sizeof<single>)
-                  Pipeline.attribute 6 Hl.Single4 (12 * sizeof<single>)
-                  Pipeline.attribute 7 Hl.Single4 (16 * sizeof<single>)
-                  Pipeline.attribute 8 Hl.Single4 (20 * sizeof<single>)
-                  Pipeline.attribute 9 Hl.Single4 (24 * sizeof<single>)
-                  Pipeline.attribute 10 Hl.Single4 (28 * sizeof<single>)
-                  Pipeline.attribute 11 Hl.Single4 (32 * sizeof<single>)
-                  Pipeline.attribute 12 Hl.Single4 (36 * sizeof<single>)|]|]
+                [|Pipeline.attribute 3 Single4 0
+                  Pipeline.attribute 4 Single4 (4 * sizeof<single>)
+                  Pipeline.attribute 5 Single4 (8 * sizeof<single>)
+                  Pipeline.attribute 6 Single4 (12 * sizeof<single>)
+                  Pipeline.attribute 7 Single4 (16 * sizeof<single>)
+                  Pipeline.attribute 8 Single4 (20 * sizeof<single>)
+                  Pipeline.attribute 9 Single4 (24 * sizeof<single>)
+                  Pipeline.attribute 10 Single4 (28 * sizeof<single>)
+                  Pipeline.attribute 11 Single4 (32 * sizeof<single>)
+                  Pipeline.attribute 12 Single4 (36 * sizeof<single>)|]|]
         
         // create deferred static pipeline
         // NOTE: DJL: we use the composition z attachment directly to avoid having to find a depth format supporting copy operations,
@@ -2176,7 +2177,7 @@ module PhysicallyBased =
                 (lightMapsMax,
                  lightsMax,
                  Constants.Paths.PhysicallyBasedDeferredStaticShaderFilePath,
-                 [|Pipeline.NoBlend|],
+                 [|VulkanUnblended|],
                  [|false; true|],
                  staticVertices,
                  [|depth.VkFormat
@@ -2198,7 +2199,7 @@ module PhysicallyBased =
                 (Constants.Render.LightMapsMaxForward,
                  Constants.Render.LightsMaxForward,
                  Constants.Paths.PhysicallyBasedForwardStaticShaderFilePath,
-                 [|Pipeline.NoBlend; Pipeline.Transparent|],
+                 [|VulkanUnblended; VulkanTransparent|],
                  [|false; true|],
                  staticVertices,
                  [|composition.VkFormat|],
@@ -2215,9 +2216,9 @@ module PhysicallyBased =
         physicallyBasedPipelines
     
     let ReloadPhysicallyBasedShaders physicallyBasedPipelines vkc =
-        Pipeline.Pipeline.reloadShaders physicallyBasedPipelines.DeferredStaticPipeline.Pipeline vkc
-        Pipeline.Pipeline.reloadShaders physicallyBasedPipelines.DeferredLightingPipeline.Pipeline vkc
-        Pipeline.Pipeline.reloadShaders physicallyBasedPipelines.ForwardStaticPipeline.Pipeline vkc
+        Pipeline.reloadShaders physicallyBasedPipelines.DeferredStaticPipeline.Pipeline vkc
+        Pipeline.reloadShaders physicallyBasedPipelines.DeferredLightingPipeline.Pipeline vkc
+        Pipeline.reloadShaders physicallyBasedPipelines.ForwardStaticPipeline.Pipeline vkc
     
     let DestroyPhysicallyBasedPipelines physicallyBasedPipelines vkc =
         DestroyPhysicallyBasedPipeline physicallyBasedPipelines.DeferredStaticPipeline vkc

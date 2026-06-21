@@ -14,6 +14,7 @@ open System.Numerics
 open System.Threading
 open TiledSharp
 open Prime
+open Nu.Vulkan
 
 /// A tile map's metadata.
 type TileMapMetadata =
@@ -29,11 +30,11 @@ type SpineSkeletonMetadata =
 /// memory.
 type Metadata =
     | RawMetadata
-    | TextureMetadata of Vortice.Vulkan.Texture.TextureMetadata
+    | TextureMetadata of TextureMetadata
     | TileMapMetadata of TileMapMetadata
     | SpineSkeletonMetadata of SpineSkeletonMetadata
-    | StaticModelMetadata of Vortice.Vulkan.PhysicallyBased.PhysicallyBasedModel
-    | AnimatedModelMetadata of Vortice.Vulkan.PhysicallyBased.PhysicallyBasedModel
+    | StaticModelMetadata of PhysicallyBased.PhysicallyBasedModel
+    | AnimatedModelMetadata of PhysicallyBased.PhysicallyBasedModel
     | SoundMetadata
     | SongMetadata
 
@@ -62,28 +63,28 @@ module Metadata =
                 fileStream.ReadExactly ddsHeader
                 let height = BinaryPrimitives.ReadUInt32LittleEndian (ddsHeader.AsSpan (12, 4))
                 let width = BinaryPrimitives.ReadUInt32LittleEndian (ddsHeader.AsSpan (16, 4))
-                Some (Vortice.Vulkan.Texture.TextureMetadata.make (int width) (int height))
+                Some (TextureMetadata.make (int width) (int height))
             elif fileExtension = ".ktx" then
                 let ktxHeader = Array.zeroCreate<byte> 44
                 use fileStream = new FileStream (filePath, FileMode.Open, FileAccess.Read, FileShare.Read)
                 fileStream.ReadExactly ktxHeader
                 let width = BinaryPrimitives.ReadUInt32LittleEndian (ktxHeader.AsSpan (36, 4))
                 let height = BinaryPrimitives.ReadUInt32LittleEndian (ktxHeader.AsSpan (40, 4))
-                Some (Vortice.Vulkan.Texture.TextureMetadata.make (int width) (int height))
+                Some (TextureMetadata.make (int width) (int height))
             elif fileExtension = ".tga" then
                 let ddsHeader = Array.zeroCreate<byte> 16
                 use fileStream = new FileStream (filePath, FileMode.Open, FileAccess.Read, FileShare.Read)
                 fileStream.ReadExactly ddsHeader
                 let width = BinaryPrimitives.ReadUInt16LittleEndian (ddsHeader.AsSpan (12, 2))
                 let height = BinaryPrimitives.ReadUInt16LittleEndian (ddsHeader.AsSpan (14, 2))
-                Some (Vortice.Vulkan.Texture.TextureMetadata.make (int width) (int height))
+                Some (TextureMetadata.make (int width) (int height))
             elif platform = PlatformID.Win32NT || platform = PlatformID.Win32Windows then
                 use fileStream = new FileStream (filePath, FileMode.Open, FileAccess.Read, FileShare.Read)
                 use image = Drawing.Image.FromStream (fileStream, false, false)
-                Some (Vortice.Vulkan.Texture.TextureMetadata.make image.Width image.Height)
+                Some (TextureMetadata.make image.Width image.Height)
             else
                 Log.infoOnce "Slow path used to load texture metadata."
-                match Vortice.Vulkan.Texture.TryCreateTextureData (true, filePath) with
+                match Texture.TryCreateTextureData (true, filePath) with
                 | Some textureData ->
                     let metadata = textureData.Metadata
                     textureData.Dispose ()
@@ -153,9 +154,9 @@ module Metadata =
     /// Thread-safe.
     let private tryGenerateModelMetadata (asset : Asset) =
         if File.Exists asset.FilePath then
-            let textureClient = Vortice.Vulkan.Texture.TextureClient None // unused. TODO: consider making this opt.
-            let sceneClient = Vortice.Vulkan.PhysicallyBased.PhysicallyBasedSceneClient () // unused. TODO: consider making this opt.
-            match sceneClient.TryCreatePhysicallyBasedModel (None, asset.FilePath, Vortice.Vulkan.PhysicallyBased.PhysicallyBasedMaterial.empty, textureClient) with
+            let textureClient = TextureClient None // unused. TODO: consider making this opt.
+            let sceneClient = PhysicallyBased.PhysicallyBasedSceneClient () // unused. TODO: consider making this opt.
+            match sceneClient.TryCreatePhysicallyBasedModel (None, asset.FilePath, PhysicallyBased.PhysicallyBasedMaterial.empty, textureClient) with
             | Right model ->
                 if model.Animated
                 then Some (AnimatedModelMetadata model)

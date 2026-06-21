@@ -10,10 +10,10 @@ open System.Collections.Concurrent
 open System.Collections.Generic
 open System.IO
 open System.Numerics
-open System.Runtime.InteropServices
 open Vortice.Vulkan
 open SDL
 open Prime
+open Nu.Vulkan
 
 /// A layer from which a 3d terrain's material is composed.
 type TerrainLayer =
@@ -851,8 +851,8 @@ type private SortableLightMap =
       SortableLightMapAmbientColor : Color
       SortableLightMapAmbientBrightness : single
       SortableLightMapBounds : Box3
-      SortableLightMapIrradianceMap : Texture.Texture
-      SortableLightMapEnvironmentFilterMap : Texture.Texture
+      SortableLightMapIrradianceMap : Texture
+      SortableLightMapEnvironmentFilterMap : Texture
       mutable SortableLightMapDistanceSquared : single }
 
     /// TODO: maybe put this somewhere general?
@@ -870,8 +870,8 @@ type private SortableLightMap =
         let lightMapSizes = Array.zeroCreate<Vector3> lightMapsMax
         let lightMapAmbientColors = Array.zeroCreate<Color> lightMapsMax
         let lightMapAmbientBrightnesses = Array.zeroCreate<single> lightMapsMax
-        let lightMapIrradianceMaps = Array.replicate<Texture.Texture> lightMapsMax irradianceMapDefault
-        let lightMapEnvironmentFilterMaps = Array.replicate<Texture.Texture> lightMapsMax environmentMapDefault
+        let lightMapIrradianceMaps = Array.replicate<Texture> lightMapsMax irradianceMapDefault
+        let lightMapEnvironmentFilterMaps = Array.replicate<Texture> lightMapsMax environmentMapDefault
         let lightMapsFiltered =
             match boundsOpt with
             | Some (bounds : Box3) -> lightMaps |> Array.filter (fun lightMap -> lightMap.SortableLightMapBounds.Intersects bounds)
@@ -1227,8 +1227,8 @@ type [<ReferenceEquality>] GlRenderer3d =
     private
         { mutable GeometryViewport : Viewport
           mutable WindowViewport : Viewport
-          LazyTextureQueues : ConcurrentDictionary<OpenGL.Texture.LazyTexture ConcurrentQueue, OpenGL.Texture.LazyTexture ConcurrentQueue>
-          TextureServer : OpenGL.Texture.TextureServer
+          LazyTextureQueues : ConcurrentDictionary<OpenGL.Texture ConcurrentQueue, OpenGL.Texture ConcurrentQueue>
+          TextureServer : OpenGL.TextureServer
           CubeMapVao : uint
           mutable SkyBoxShader : OpenGL.SkyBox.SkyBoxShader
           mutable IrradianceShader : OpenGL.CubeMap.CubeMapShader
@@ -1246,18 +1246,18 @@ type [<ReferenceEquality>] GlRenderer3d =
           PhysicallyBasedQuad : OpenGL.PhysicallyBased.PhysicallyBasedGeometry
           PhysicallyBasedTerrainGeometries : Dictionary<TerrainGeometryDescriptor, Dictionary<TerrainPatchDescriptor, OpenGL.PhysicallyBased.PhysicallyBasedGeometry>>
           PhysicallyBasedTerrainGeometriesUtilized : TerrainGeometryDescriptor HashSet
-          CubeMap : OpenGL.Texture.Texture
-          WhiteTexture : OpenGL.Texture.Texture
-          BlackTexture : OpenGL.Texture.Texture
-          BrdfTexture : OpenGL.Texture.Texture
+          CubeMap : OpenGL.Texture
+          WhiteTexture : OpenGL.Texture
+          BlackTexture : OpenGL.Texture
+          BrdfTexture : OpenGL.Texture
           ReflectionRenderbuffer : uint
           ReflectionFramebuffer : uint
           IrradianceMapRenderbuffer : uint
           IrradianceMapFramebuffer : uint
           EnvironmentFilterRenderbuffer : uint
           EnvironmentFilterFramebuffer : uint
-          IrradianceMap : OpenGL.Texture.Texture
-          EnvironmentFilterMap : OpenGL.Texture.Texture
+          IrradianceMap : OpenGL.Texture
+          EnvironmentFilterMap : OpenGL.Texture
           PhysicallyBasedMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial
           mutable PhysicallyBasedBuffers : OpenGL.PhysicallyBased.PhysicallyBasedBuffers
           LightMaps : Dictionary<uint64, OpenGL.LightMap.LightMap>
@@ -3473,7 +3473,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         (lightType : LightType)
         (shadowTextureIndex : int)
         (shadowResolution : Vector2i)
-        (shadowTextureArray : OpenGL.Texture.Texture)
+        (shadowTextureArray : OpenGL.Texture)
         (renderbuffer : uint)
         (framebuffer : uint) =
 
@@ -3515,7 +3515,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         (shadowViewProjection : Matrix4x4)
         (shadowFrustum : Frustum)
         (shadowResolution : Vector2i)
-        (shadowMap : OpenGL.Texture.Texture)
+        (shadowMap : OpenGL.Texture)
         (renderbuffer : uint)
         (framebuffer : uint) =
 
@@ -3558,7 +3558,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         (shadowViewProjection : Matrix4x4)
         (shadowFrustum : Frustum)
         (shadowResolution : Vector2i)
-        (shadowCascade : OpenGL.Texture.Texture)
+        (shadowCascade : OpenGL.Texture)
         (renderbuffer : uint)
         (framebuffer : uint) =
 
@@ -3628,7 +3628,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let (lightAmbientColor, lightAmbientBrightness) = Option.defaultValue (lightAmbientColor, lightAmbientBrightness) lightAmbientOverride
         let lightMapFallback =
             match skyBoxOpt with
-            | Some (ambientColor, ambientBrightness, _, (irradianceAndEnvironmentMapsOptRef : (OpenGL.Texture.Texture * OpenGL.Texture.Texture) option ref)) ->
+            | Some (ambientColor, ambientBrightness, _, (irradianceAndEnvironmentMapsOptRef : (OpenGL.Texture * OpenGL.Texture) option ref)) ->
                 let (irradianceMap, environmentFilterMap) =
                     match irradianceAndEnvironmentMapsOptRef.Value with
                     | Some irradianceAndEnvironmentMaps -> irradianceAndEnvironmentMaps
@@ -4373,7 +4373,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
             // fallback light map pre-pass
             match GlRenderer3d.getLastSkyBoxOpt renderPass renderer |> __c with
-            | Some (_, _, cubeMap, irradianceAndEnvironmentMapsOptRef : (OpenGL.Texture.Texture * OpenGL.Texture.Texture) option ref) ->
+            | Some (_, _, cubeMap, irradianceAndEnvironmentMapsOptRef : (OpenGL.Texture * OpenGL.Texture) option ref) ->
 
                 // render fallback irradiance and env filter maps
                 if Option.isNone irradianceAndEnvironmentMapsOptRef.Value then
@@ -4743,8 +4743,8 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // start lazy texture server
         if not (SDL3.SDL_GL_MakeCurrent (window, NativePtr.nullPtr)) then Log.error "Could not clear OpenGL context current when desired."
-        let lazyTextureQueues = ConcurrentDictionary<OpenGL.Texture.LazyTexture ConcurrentQueue, OpenGL.Texture.LazyTexture ConcurrentQueue> HashIdentity.Reference
-        let textureServer = OpenGL.Texture.TextureServer (lazyTextureQueues, glContext, window)
+        let lazyTextureQueues = ConcurrentDictionary<OpenGL.Texture ConcurrentQueue, OpenGL.Texture ConcurrentQueue> HashIdentity.Reference
+        let textureServer = OpenGL.TextureServer (lazyTextureQueues, glContext, window)
         textureServer.Start ()
         if not (SDL3.SDL_GL_MakeCurrent (window, glContext)) then Log.error "Could not make OpenGL context current when required."
         OpenGL.Hl.Assert ()
@@ -4924,7 +4924,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // get albedo metadata and texture
         let albedoTexture =
-            match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, OpenGL.Texture.ColorCompression, "Assets/Default/MaterialAlbedo" + ext) with
+            match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, OpenGL.ColorCompression, "Assets/Default/MaterialAlbedo" + ext) with
             | Right (metadata, textureId) -> OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId }
             | Left error -> failwith ("Could not load albedo material texture due to: " + error)
         OpenGL.Hl.Assert ()
@@ -4932,19 +4932,19 @@ type [<ReferenceEquality>] GlRenderer3d =
         // create default physically-based material
         let physicallyBasedMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
             let roughnessTexture =
-                match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, OpenGL.Texture.ColorCompression, "Assets/Default/MaterialRoughness" + ext) with
+                match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, OpenGL.ColorCompression, "Assets/Default/MaterialRoughness" + ext) with
                 | Right (metadata, textureId) -> OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId }
                 | Left error -> failwith ("Could not load material roughness texture due to: " + error)
             let metallicTexture =
-                match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, OpenGL.Texture.ColorCompression, "Assets/Default/MaterialMetallic" + ext) with
+                match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, OpenGL.ColorCompression, "Assets/Default/MaterialMetallic" + ext) with
                 | Right (metadata, textureId) -> OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId }
                 | Left error -> failwith ("Could not load material metallic texture due to: " + error)
             let ambientOcclusionTexture =
-                match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, OpenGL.Texture.ColorCompression, "Assets/Default/MaterialAmbientOcclusion" + ext) with
+                match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, OpenGL.ColorCompression, "Assets/Default/MaterialAmbientOcclusion" + ext) with
                 | Right (metadata, textureId) -> OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId }
                 | Left error -> failwith ("Could not load material ambient occlusion texture due to: " + error)
             let emissionTexture =
-                match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, OpenGL.Texture.ColorCompression, "Assets/Default/MaterialEmission" + ext) with
+                match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, OpenGL.ColorCompression, "Assets/Default/MaterialEmission" + ext) with
                 | Right (metadata, textureId) -> OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId }
                 | Left error -> failwith ("Could not load material emission texture due to: " + error)
             let normalTexture =
@@ -4952,27 +4952,27 @@ type [<ReferenceEquality>] GlRenderer3d =
                 | Right (metadata, textureId) -> OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId }
                 | Left error -> failwith ("Could not load material normal texture due to: " + error)
             let heightTexture =
-                match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, OpenGL.Texture.ColorCompression, "Assets/Default/MaterialHeight" + ext) with
+                match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, OpenGL.ColorCompression, "Assets/Default/MaterialHeight" + ext) with
                 | Right (metadata, textureId) -> OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId }
                 | Left error -> failwith ("Could not load material height texture due to: " + error)
             let subdermalTexture =
-                match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, OpenGL.Texture.ColorCompression, "Assets/Default/MaterialSubdermal" + ext) with
+                match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, OpenGL.ColorCompression, "Assets/Default/MaterialSubdermal" + ext) with
                 | Right (metadata, textureId) -> OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId }
                 | Left error -> failwith ("Could not load material subdermal texture due to: " + error)
             let finenessTexture =
-                match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, OpenGL.Texture.ColorCompression, "Assets/Default/MaterialFineness" + ext) with
+                match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, OpenGL.ColorCompression, "Assets/Default/MaterialFineness" + ext) with
                 | Right (metadata, textureId) -> OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId }
                 | Left error -> failwith ("Could not load material fineness texture due to: " + error)
             let scatterTexture =
-                match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, OpenGL.Texture.ColorCompression, "Assets/Default/MaterialSubdermal" + ext) with
+                match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, OpenGL.ColorCompression, "Assets/Default/MaterialSubdermal" + ext) with
                 | Right (metadata, textureId) -> OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId }
                 | Left error -> failwith ("Could not load material scatter texture due to: " + error)
             let clearCoatTexture =
-                match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, OpenGL.Texture.ColorCompression, "Assets/Default/MaterialClearCoat" + ext) with
+                match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, OpenGL.ColorCompression, "Assets/Default/MaterialClearCoat" + ext) with
                 | Right (metadata, textureId) -> OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId }
                 | Left error -> failwith ("Could not load material clear coat texture due to: " + error)
             let clearCoatRoughnessTexture =
-                match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, OpenGL.Texture.ColorCompression, "Assets/Default/MaterialClearCoatRoughness" + ext) with
+                match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, OpenGL.ColorCompression, "Assets/Default/MaterialClearCoatRoughness" + ext) with
                 | Right (metadata, textureId) -> OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId }
                 | Left error -> failwith ("Could not load material clear coat roughness texture due to: " + error)
             let clearCoatNormalTexture =
@@ -5150,19 +5150,19 @@ type [<ReferenceEquality>] GlRenderer3d =
 /// The Vulkan implementation of Renderer3d.
 type [<ReferenceEquality>] VulkanRenderer3d =
     private
-        { VulkanContext : Hl.VulkanContext
+        { VulkanContext : VulkanContext
           mutable GeometryViewport : Viewport
           mutable WindowViewport : Viewport
-          LazyTextureQueues : ConcurrentDictionary<Texture.LazyTexture ConcurrentQueue, Texture.LazyTexture ConcurrentQueue>
-          TextureServer : Texture.TextureServer
-          TextureDestroyer : Texture.TextureDestroyer
-          FilteredSampler : Texture.Sampler
-          CubeMapSampler : Texture.Sampler
-          GeometrySampler : Texture.Sampler
-          ShadowSampler : Texture.Sampler
-          ColorSampler : Texture.Sampler
-          DepthSampler : Texture.Sampler
-          BrdfSampler : Texture.Sampler
+          LazyTextureQueues : ConcurrentDictionary<LazyTexture ConcurrentQueue, LazyTexture ConcurrentQueue>
+          TextureServer : TextureServer
+          TextureDestroyer : TextureDestroyer
+          FilteredSampler : Sampler
+          CubeMapSampler : Sampler
+          GeometrySampler : Sampler
+          ShadowSampler : Sampler
+          ColorSampler : Sampler
+          DepthSampler : Sampler
+          BrdfSampler : Sampler
           mutable RenderPassIndex : int
           GeometryInstanced : PhysicallyBased.PhysicallyBasedGeometry HashSet
           mutable SkyBoxPipeline : SkyBox.SkyBoxPipeline
@@ -5172,12 +5172,12 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           ShadowMatrices : Matrix4x4 array
           LightShadowIndices : Dictionary<uint64, int>
           CubeMapGeometry : CubeMap.CubeMapGeometry
-          CubeMap : Texture.Texture
-          WhiteTexture : Texture.Texture
-          BlackTexture : Texture.Texture
-          BrdfTexture : Texture.Texture
-          IrradianceMap : Texture.Texture
-          EnvironmentFilterMap : Texture.Texture
+          CubeMap : Texture
+          WhiteTexture : Texture
+          BlackTexture : Texture
+          BrdfTexture : Texture
+          IrradianceMap : Texture
+          EnvironmentFilterMap : Texture
           PhysicallyBasedMaterial : PhysicallyBased.PhysicallyBasedMaterial
           mutable PhysicallyBasedAttachments : PhysicallyBased.PhysicallyBasedAttachments
           LightMaps : Dictionary<uint64, LightMap.LightMap>
@@ -5282,7 +5282,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
     static member private tryLoadTextureAsset (assetClient : AssetClient) (asset : Asset) renderer =
         VulkanRenderer3d.invalidateCaches renderer
-        match assetClient.TextureClient.TryCreateTextureFiltered (true, Texture.InferCompression asset.FilePath, asset.FilePath, Texture.RenderThread, renderer.VulkanContext) with
+        match assetClient.TextureClient.TryCreateTextureFiltered (true, Texture.InferCompression asset.FilePath, asset.FilePath, RenderThread, renderer.VulkanContext) with
         | Right texture ->
             Some texture
         | Left error ->
@@ -5301,7 +5301,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             let faceBackFilePath = dirPath + "/" + faceBackFilePath.Trim ()
             let faceFrontFilePath = dirPath + "/" + faceFrontFilePath.Trim ()
             let cubeMapKey = (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath)
-            match assetClient.CubeMapClient.TryCreateCubeMap cubeMapKey Texture.RenderThread renderer.VulkanContext with
+            match assetClient.CubeMapClient.TryCreateCubeMap cubeMapKey RenderThread renderer.VulkanContext with
             | Right cubeMap -> Some (cubeMapKey, cubeMap, ref None)
             | Left error -> Log.info ("Could not load cube map '" + asset.FilePath + "' due to: " + error); None
         | _ -> Log.info ("Could not load cube map '" + asset.FilePath + "' due to requiring exactly 6 file paths with each file path on its own line."); None
@@ -5383,9 +5383,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 | None ->
                     let assetClient =
                         AssetClient
-                            (Texture.TextureClient (Some renderer.LazyTextureQueues),
-                                CubeMap.CubeMapClient (),
-                                PhysicallyBased.PhysicallyBasedSceneClient ())
+                            (TextureClient (Some renderer.LazyTextureQueues),
+                             CubeMap.CubeMapClient (),
+                             PhysicallyBased.PhysicallyBasedSceneClient ())
                     let renderPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = assetClient }
                     renderer.RenderPackages.[packageName] <- renderPackage
                     renderPackage
@@ -5558,9 +5558,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         | None -> (Color.White, 1.0f, None)
     
     static member private handleReloadShaders renderer =
-        Pipeline.Pipeline.reloadShaders renderer.SkyBoxPipeline.Pipeline renderer.VulkanContext
-        Pipeline.Pipeline.reloadShaders renderer.IrradiancePipeline.Pipeline renderer.VulkanContext
-        Pipeline.Pipeline.reloadShaders renderer.EnvironmentFilterPipeline.Pipeline renderer.VulkanContext
+        Pipeline.reloadShaders renderer.SkyBoxPipeline.Pipeline renderer.VulkanContext
+        Pipeline.reloadShaders renderer.IrradiancePipeline.Pipeline renderer.VulkanContext
+        Pipeline.reloadShaders renderer.EnvironmentFilterPipeline.Pipeline renderer.VulkanContext
         PhysicallyBased.ReloadPhysicallyBasedShaders renderer.PhysicallyBasedPipelines renderer.VulkanContext
     
     static member private handleLoadRenderPackage hintPackageName renderer =
@@ -6016,7 +6016,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let (lightAmbientColor, lightAmbientBrightness) = Option.defaultValue (lightAmbientColor, lightAmbientBrightness) lightAmbientOverride
         let lightMapFallback =
             match skyBoxOpt with
-            | Some (ambientColor, ambientBrightness, _, (irradianceAndEnvironmentMapsOptRef : (Texture.Texture * Texture.Texture) option ref)) ->
+            | Some (ambientColor, ambientBrightness, _, (irradianceAndEnvironmentMapsOptRef : (Texture * Texture) option ref)) ->
                 let (irradianceMap, environmentFilterMap) =
                     match irradianceAndEnvironmentMapsOptRef.Value with
                     | Some irradianceAndEnvironmentMaps -> irradianceAndEnvironmentMaps
@@ -6146,13 +6146,13 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             renderer.PhysicallyBasedPipelines.DeferredStaticPipeline
         
         // transition deferred geometry attachments to sampling
-        Texture.Texture.transitionLayoutAsync Hl.ColorAttachmentWrite Hl.ShaderRead depthTexture renderer.VulkanContext.RenderCommandBuffer
-        Texture.Texture.transitionLayoutAsync Hl.ColorAttachmentWrite Hl.ShaderRead albedoTexture renderer.VulkanContext.RenderCommandBuffer
-        Texture.Texture.transitionLayoutAsync Hl.ColorAttachmentWrite Hl.ShaderRead materialTexture renderer.VulkanContext.RenderCommandBuffer
-        Texture.Texture.transitionLayoutAsync Hl.ColorAttachmentWrite Hl.ShaderRead normalPlusTexture renderer.VulkanContext.RenderCommandBuffer
-        Texture.Texture.transitionLayoutAsync Hl.ColorAttachmentWrite Hl.ShaderRead subdermalPlusTexture renderer.VulkanContext.RenderCommandBuffer
-        Texture.Texture.transitionLayoutAsync Hl.ColorAttachmentWrite Hl.ShaderRead scatterPlusTexture renderer.VulkanContext.RenderCommandBuffer
-        Texture.Texture.transitionLayoutAsync Hl.ColorAttachmentWrite Hl.ShaderRead clearCoatPlusTexture renderer.VulkanContext.RenderCommandBuffer
+        Texture.transitionLayoutAsync ColorAttachmentWrite ShaderRead depthTexture renderer.VulkanContext.RenderCommandBuffer
+        Texture.transitionLayoutAsync ColorAttachmentWrite ShaderRead albedoTexture renderer.VulkanContext.RenderCommandBuffer
+        Texture.transitionLayoutAsync ColorAttachmentWrite ShaderRead materialTexture renderer.VulkanContext.RenderCommandBuffer
+        Texture.transitionLayoutAsync ColorAttachmentWrite ShaderRead normalPlusTexture renderer.VulkanContext.RenderCommandBuffer
+        Texture.transitionLayoutAsync ColorAttachmentWrite ShaderRead subdermalPlusTexture renderer.VulkanContext.RenderCommandBuffer
+        Texture.transitionLayoutAsync ColorAttachmentWrite ShaderRead scatterPlusTexture renderer.VulkanContext.RenderCommandBuffer
+        Texture.transitionLayoutAsync ColorAttachmentWrite ShaderRead clearCoatPlusTexture renderer.VulkanContext.RenderCommandBuffer
         
         
         // run light mapping pass
@@ -6200,11 +6200,11 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         
         
         // transition sampled attachments to sampling
-        Texture.Texture.transitionLayoutAsync Hl.ColorAttachmentWrite Hl.ShaderRead shadowTextureArray renderer.VulkanContext.RenderCommandBuffer
-        for i in 0 .. dec shadowMaps.Length do Texture.Texture.transitionLayoutAsync Hl.ColorAttachmentWrite Hl.ShaderRead shadowMaps[i] renderer.VulkanContext.RenderCommandBuffer
-        for i in 0 .. dec shadowCascades.Length do Texture.Texture.transitionLayoutAsync Hl.ColorAttachmentWrite Hl.ShaderRead shadowCascades[i] renderer.VulkanContext.RenderCommandBuffer
-        Texture.Texture.transitionLayoutAsync Hl.ColorAttachmentWrite Hl.ShaderRead colorTexture renderer.VulkanContext.RenderCommandBuffer
-        Texture.Texture.transitionLayoutAsync Hl.ColorAttachmentWrite Hl.ShaderRead depthTexture2 renderer.VulkanContext.RenderCommandBuffer
+        Texture.transitionLayoutAsync ColorAttachmentWrite ShaderRead shadowTextureArray renderer.VulkanContext.RenderCommandBuffer
+        for i in 0 .. dec shadowMaps.Length do Texture.transitionLayoutAsync ColorAttachmentWrite ShaderRead shadowMaps[i] renderer.VulkanContext.RenderCommandBuffer
+        for i in 0 .. dec shadowCascades.Length do Texture.transitionLayoutAsync ColorAttachmentWrite ShaderRead shadowCascades[i] renderer.VulkanContext.RenderCommandBuffer
+        Texture.transitionLayoutAsync ColorAttachmentWrite ShaderRead colorTexture renderer.VulkanContext.RenderCommandBuffer
+        Texture.transitionLayoutAsync ColorAttachmentWrite ShaderRead depthTexture2 renderer.VulkanContext.RenderCommandBuffer
         
         
         // setup composition attachment
@@ -6267,26 +6267,26 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
         // blit from composition attachment to swapchain (just for now)
         // TODO: DJL: blit from final attachment, not composition.
-        Texture.Texture.transitionLayoutAsync Hl.ColorAttachmentWrite Hl.TransferSrc compositionTexture renderer.VulkanContext.RenderCommandBuffer
-        Hl.recordTransitionLayout true 1 targetLayer 1 VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.TransferDst targetImage renderer.VulkanContext.RenderCommandBuffer
+        Texture.transitionLayoutAsync ColorAttachmentWrite TransferSrc compositionTexture renderer.VulkanContext.RenderCommandBuffer
+        Hl.recordTransitionLayout true 1 targetLayer 1 VkImageAspectFlags.Color ColorAttachmentWrite TransferDst targetImage renderer.VulkanContext.RenderCommandBuffer
         let mutable blit = Hl.makeBlit 0 0 0 targetLayer (VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)) targetBounds
-        Vulkan.vkCmdBlitImage (renderer.VulkanContext.RenderCommandBuffer, compositionTexture.Image, Hl.TransferSrc.VkImageLayout, targetImage, Hl.TransferDst.VkImageLayout, 1u, asPointer &blit, VkFilter.Linear)
-        Texture.Texture.transitionLayoutAsync Hl.TransferSrc Hl.ColorAttachmentWrite compositionTexture renderer.VulkanContext.RenderCommandBuffer
-        Hl.recordTransitionLayout true 1 targetLayer 1 VkImageAspectFlags.Color Hl.TransferDst Hl.ColorAttachmentWrite targetImage renderer.VulkanContext.RenderCommandBuffer
+        Vulkan.vkCmdBlitImage (renderer.VulkanContext.RenderCommandBuffer, compositionTexture.Image, TransferSrc.VkImageLayout, targetImage, TransferDst.VkImageLayout, 1u, asPointer &blit, VkFilter.Linear)
+        Texture.transitionLayoutAsync TransferSrc ColorAttachmentWrite compositionTexture renderer.VulkanContext.RenderCommandBuffer
+        Hl.recordTransitionLayout true 1 targetLayer 1 VkImageAspectFlags.Color TransferDst ColorAttachmentWrite targetImage renderer.VulkanContext.RenderCommandBuffer
         
         // transition sampled attachments back to attachment
-        Texture.Texture.transitionLayoutAsync Hl.ShaderRead Hl.ColorAttachmentWrite depthTexture renderer.VulkanContext.RenderCommandBuffer
-        Texture.Texture.transitionLayoutAsync Hl.ShaderRead Hl.ColorAttachmentWrite albedoTexture renderer.VulkanContext.RenderCommandBuffer
-        Texture.Texture.transitionLayoutAsync Hl.ShaderRead Hl.ColorAttachmentWrite materialTexture renderer.VulkanContext.RenderCommandBuffer
-        Texture.Texture.transitionLayoutAsync Hl.ShaderRead Hl.ColorAttachmentWrite normalPlusTexture renderer.VulkanContext.RenderCommandBuffer
-        Texture.Texture.transitionLayoutAsync Hl.ShaderRead Hl.ColorAttachmentWrite subdermalPlusTexture renderer.VulkanContext.RenderCommandBuffer
-        Texture.Texture.transitionLayoutAsync Hl.ShaderRead Hl.ColorAttachmentWrite scatterPlusTexture renderer.VulkanContext.RenderCommandBuffer
-        Texture.Texture.transitionLayoutAsync Hl.ShaderRead Hl.ColorAttachmentWrite clearCoatPlusTexture renderer.VulkanContext.RenderCommandBuffer
-        Texture.Texture.transitionLayoutAsync Hl.ShaderRead Hl.ColorAttachmentWrite shadowTextureArray renderer.VulkanContext.RenderCommandBuffer
-        for i in 0 .. dec shadowMaps.Length do Texture.Texture.transitionLayoutAsync Hl.ShaderRead Hl.ColorAttachmentWrite shadowMaps[i] renderer.VulkanContext.RenderCommandBuffer
-        for i in 0 .. dec shadowCascades.Length do Texture.Texture.transitionLayoutAsync Hl.ShaderRead Hl.ColorAttachmentWrite shadowCascades[i] renderer.VulkanContext.RenderCommandBuffer
-        Texture.Texture.transitionLayoutAsync Hl.ShaderRead Hl.ColorAttachmentWrite colorTexture renderer.VulkanContext.RenderCommandBuffer
-        Texture.Texture.transitionLayoutAsync Hl.ShaderRead Hl.ColorAttachmentWrite depthTexture2 renderer.VulkanContext.RenderCommandBuffer
+        Texture.transitionLayoutAsync ShaderRead ColorAttachmentWrite depthTexture renderer.VulkanContext.RenderCommandBuffer
+        Texture.transitionLayoutAsync ShaderRead ColorAttachmentWrite albedoTexture renderer.VulkanContext.RenderCommandBuffer
+        Texture.transitionLayoutAsync ShaderRead ColorAttachmentWrite materialTexture renderer.VulkanContext.RenderCommandBuffer
+        Texture.transitionLayoutAsync ShaderRead ColorAttachmentWrite normalPlusTexture renderer.VulkanContext.RenderCommandBuffer
+        Texture.transitionLayoutAsync ShaderRead ColorAttachmentWrite subdermalPlusTexture renderer.VulkanContext.RenderCommandBuffer
+        Texture.transitionLayoutAsync ShaderRead ColorAttachmentWrite scatterPlusTexture renderer.VulkanContext.RenderCommandBuffer
+        Texture.transitionLayoutAsync ShaderRead ColorAttachmentWrite clearCoatPlusTexture renderer.VulkanContext.RenderCommandBuffer
+        Texture.transitionLayoutAsync ShaderRead ColorAttachmentWrite shadowTextureArray renderer.VulkanContext.RenderCommandBuffer
+        for i in 0 .. dec shadowMaps.Length do Texture.transitionLayoutAsync ShaderRead ColorAttachmentWrite shadowMaps[i] renderer.VulkanContext.RenderCommandBuffer
+        for i in 0 .. dec shadowCascades.Length do Texture.transitionLayoutAsync ShaderRead ColorAttachmentWrite shadowCascades[i] renderer.VulkanContext.RenderCommandBuffer
+        Texture.transitionLayoutAsync ShaderRead ColorAttachmentWrite colorTexture renderer.VulkanContext.RenderCommandBuffer
+        Texture.transitionLayoutAsync ShaderRead ColorAttachmentWrite depthTexture2 renderer.VulkanContext.RenderCommandBuffer
 
         // advance render pass index
         renderer.RenderPassIndex <- inc renderer.RenderPassIndex
@@ -6355,7 +6355,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 
                 // fallback light map pre-pass
                 match VulkanRenderer3d.getLastSkyBoxOpt renderPass renderer |> __c with
-                | Some (_, _, cubeMap, irradianceAndEnvironmentMapsOptRef : (Texture.Texture * Texture.Texture) option ref) ->
+                | Some (_, _, cubeMap, irradianceAndEnvironmentMapsOptRef : (Texture * Texture) option ref) ->
 
                     // render fallback irradiance and env filter maps
                     if Option.isNone irradianceAndEnvironmentMapsOptRef.Value then
@@ -6492,21 +6492,21 @@ type [<ReferenceEquality>] VulkanRenderer3d =
     static member make geometryViewport windowViewport vkc =
         
         // start lazy texture server
-        let lazyTextureQueues = ConcurrentDictionary<Texture.LazyTexture ConcurrentQueue, Texture.LazyTexture ConcurrentQueue> HashIdentity.Reference
-        let textureServer = Texture.TextureServer (lazyTextureQueues, vkc)
+        let lazyTextureQueues = ConcurrentDictionary<LazyTexture ConcurrentQueue, LazyTexture ConcurrentQueue> HashIdentity.Reference
+        let textureServer = TextureServer (lazyTextureQueues, vkc)
         textureServer.Start ()
         
         // create texture destroyer
-        let textureDestroyer = Texture.TextureDestroyer.create ()
+        let textureDestroyer = TextureDestroyer.create ()
         
         // create samplers
-        let filteredSampler = Texture.Sampler.create VkSamplerAddressMode.Repeat VkFilter.Linear VkFilter.Linear true vkc
-        let cubeMapSampler = Texture.Sampler.create VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false vkc
-        let geometrySampler = Texture.Sampler.create VkSamplerAddressMode.ClampToEdge VkFilter.Nearest VkFilter.Nearest false vkc
-        let shadowSampler = Texture.Sampler.create VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false vkc
-        let colorSampler = Texture.Sampler.create VkSamplerAddressMode.ClampToEdge VkFilter.Nearest VkFilter.Nearest false vkc
-        let depthSampler = Texture.Sampler.create VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false vkc // using linear filtering since coloring depth attachment is the source for a down-sampling filter
-        let brdfSampler = Texture.Sampler.create VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false vkc
+        let filteredSampler = Sampler.create VkSamplerAddressMode.Repeat VkFilter.Linear VkFilter.Linear true vkc
+        let cubeMapSampler = Sampler.create VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false vkc
+        let geometrySampler = Sampler.create VkSamplerAddressMode.ClampToEdge VkFilter.Nearest VkFilter.Nearest false vkc
+        let shadowSampler = Sampler.create VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false vkc
+        let colorSampler = Sampler.create VkSamplerAddressMode.ClampToEdge VkFilter.Nearest VkFilter.Nearest false vkc
+        let depthSampler = Sampler.create VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false vkc // using linear filtering since coloring depth attachment is the source for a down-sampling filter
+        let brdfSampler = Sampler.create VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false vkc
         
         // create physically-based attachments using the geometry viewport
         let physicallyBasedAttachments = PhysicallyBased.CreatePhysicallyBasedAttachments (geometryViewport, vkc)
@@ -6516,7 +6516,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let skyBoxPipeline = SkyBox.CreateSkyBoxPipeline compositionAttachment.VkFormat compositionDepthAttachment.VkFormat vkc
         
         // create irradiance pipeline
-        let irradianceFormat = Hl.Rgba16f
+        let irradianceFormat = Rgba16f
         let irradiancePipeline =
             CubeMap.CreateCubeMapPipeline
                 (Constants.Paths.IrradianceShaderFilePath,
@@ -6524,7 +6524,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                  vkc)
         
         // create environment filter pipeline
-        let environmentFilterFormat = Hl.Rgba16f
+        let environmentFilterFormat = Rgba16f
         let environmentFilterPipeline = LightMap.CreateEnvironmentFilterPipeline (Constants.Paths.EnvironmentFilterShaderFilePath, environmentFilterFormat.VkFormat, vkc)
         
         // create physically-based pipelines
@@ -6542,7 +6542,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // create white cube map
         let cubeMap =
             let white = "Assets/Default/White.png"
-            match CubeMap.TryCreateCubeMap (white, white, white, white, white, white, Texture.RenderThread, vkc) with
+            match CubeMap.TryCreateCubeMap (white, white, white, white, white, white, RenderThread, vkc) with
             | Right cubeMap -> cubeMap
             | Left error -> failwith error
         
@@ -6554,14 +6554,14 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         
         // create white texture
         let whiteTexture =
-            match Texture.TryCreateTextureVulkan (false, true, Texture.Uncompressed, "Assets/Default/White.png", Texture.RenderThread, vkc) with
-            | Right (metadata, textureInternal) -> Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = textureInternal }
+            match Texture.TryCreateTextureVulkan (false, true, Uncompressed, "Assets/Default/White.png", RenderThread, vkc) with
+            | Right (metadata, textureInternal) -> EagerTexture { TextureMetadata = metadata; TextureParallel = textureInternal }
             | Left error -> failwith ("Could not load white texture due to: " + error)
 
         // create black texture
         let blackTexture =
-            match Texture.TryCreateTextureVulkan (false, true, Texture.Uncompressed, "Assets/Default/Black.png", Texture.RenderThread, vkc) with
-            | Right (metadata, textureInternal) -> Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = textureInternal }
+            match Texture.TryCreateTextureVulkan (false, true, Uncompressed, "Assets/Default/Black.png", RenderThread, vkc) with
+            | Right (metadata, textureInternal) -> EagerTexture { TextureMetadata = metadata; TextureParallel = textureInternal }
             | Left error -> failwith ("Could not load black texture due to: " + error)
         
         // load or create and save brdf texture
@@ -6582,10 +6582,10 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                         |> Array.concat
                     File.WriteAllBytes (brdfFilePath, brdfBuffer)
                     brdfBuffer
-            let brdfMetadata = Texture.TextureMetadata.make Constants.Render.BrdfResolution Constants.Render.BrdfResolution
-            let brdfTextureInternal = Texture.TextureInternal.create Texture.MipmapNone Texture.AttachmentNone Texture.Texture2d [||] Hl.Rg32f Hl.Rg brdfMetadata vkc
-            Texture.TextureInternal.uploadArray brdfMetadata 0 0 brdfBuffer Texture.RenderThread brdfTextureInternal vkc
-            Texture.EagerTexture { TextureMetadata = brdfMetadata; TextureInternal = brdfTextureInternal }
+            let brdfMetadata = TextureMetadata.make Constants.Render.BrdfResolution Constants.Render.BrdfResolution
+            let brdfTexture = TextureParallel.create MipmapNone AttachmentNone Texture2d [||] Rg32f Rg brdfMetadata vkc
+            TextureParallel.uploadArray brdfMetadata 0 0 brdfBuffer RenderThread brdfTexture vkc
+            EagerTexture { TextureMetadata = brdfMetadata; TextureParallel = brdfTexture }
 
         // create default irradiance map and default environment filter map and set up transiently
         let commandBuffer = Hl.createTransientCommandBuffer vkc.TransientCommandPool vkc.Device
@@ -6610,7 +6610,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                  commandBuffer,
                  vkc)
         let fence = Hl.createFence false vkc.Device
-        Hl.Queue.executeTransient commandBuffer vkc.TransientCommandPool fence vkc.RenderQueue vkc.Device
+        Queue.executeTransient commandBuffer vkc.TransientCommandPool fence vkc.RenderQueue vkc.Device
         Vulkan.vkDestroyFence (vkc.Device, fence, nullPtr)
 
         // compute compressed image file extension
@@ -6621,59 +6621,59 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         
         // get albedo metadata and texture
         let albedoTexture =
-            match Texture.TryCreateTextureVulkan (false, true, Texture.ColorCompression, "Assets/Default/MaterialAlbedo" + ext, Texture.RenderThread, vkc) with
-            | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = vulkanTexture }
+            match Texture.TryCreateTextureVulkan (false, true, ColorCompression, "Assets/Default/MaterialAlbedo" + ext, RenderThread, vkc) with
+            | Right (metadata, vulkanTexture) -> EagerTexture { TextureMetadata = metadata; TextureParallel = vulkanTexture }
             | Left error -> failwith ("Could not load albedo material texture due to: " + error)
 
         // create default physically-based material
         let physicallyBasedMaterial : PhysicallyBased.PhysicallyBasedMaterial =
             let roughnessTexture =
-                match Texture.TryCreateTextureVulkan (false, true, Texture.ColorCompression, "Assets/Default/MaterialRoughness" + ext, Texture.RenderThread, vkc) with
-                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = vulkanTexture }
+                match Texture.TryCreateTextureVulkan (false, true, ColorCompression, "Assets/Default/MaterialRoughness" + ext, RenderThread, vkc) with
+                | Right (metadata, vulkanTexture) -> EagerTexture { TextureMetadata = metadata; TextureParallel = vulkanTexture }
                 | Left error -> failwith ("Could not load material roughness texture due to: " + error)
             let metallicTexture =
-                match Texture.TryCreateTextureVulkan (false, true, Texture.ColorCompression, "Assets/Default/MaterialMetallic" + ext, Texture.RenderThread, vkc) with
-                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = vulkanTexture }
+                match Texture.TryCreateTextureVulkan (false, true, ColorCompression, "Assets/Default/MaterialMetallic" + ext, RenderThread, vkc) with
+                | Right (metadata, vulkanTexture) -> EagerTexture { TextureMetadata = metadata; TextureParallel = vulkanTexture }
                 | Left error -> failwith ("Could not load material metallic texture due to: " + error)
             let ambientOcclusionTexture =
-                match Texture.TryCreateTextureVulkan (false, true, Texture.ColorCompression, "Assets/Default/MaterialAmbientOcclusion" + ext, Texture.RenderThread, vkc) with
-                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = vulkanTexture }
+                match Texture.TryCreateTextureVulkan (false, true, ColorCompression, "Assets/Default/MaterialAmbientOcclusion" + ext, RenderThread, vkc) with
+                | Right (metadata, vulkanTexture) -> EagerTexture { TextureMetadata = metadata; TextureParallel = vulkanTexture }
                 | Left error -> failwith ("Could not load material ambient occlusion texture due to: " + error)
             let emissionTexture =
-                match Texture.TryCreateTextureVulkan (false, true, Texture.ColorCompression, "Assets/Default/MaterialEmission" + ext, Texture.RenderThread, vkc) with
-                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = vulkanTexture }
+                match Texture.TryCreateTextureVulkan (false, true, ColorCompression, "Assets/Default/MaterialEmission" + ext, RenderThread, vkc) with
+                | Right (metadata, vulkanTexture) -> EagerTexture { TextureMetadata = metadata; TextureParallel = vulkanTexture }
                 | Left error -> failwith ("Could not load material emission texture due to: " + error)
             let normalTexture =
-                match Texture.TryCreateTextureVulkan (false, true, Texture.NormalCompression, "Assets/Default/MaterialNormal" + ext, Texture.RenderThread, vkc) with
-                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = vulkanTexture }
+                match Texture.TryCreateTextureVulkan (false, true, NormalCompression, "Assets/Default/MaterialNormal" + ext, RenderThread, vkc) with
+                | Right (metadata, vulkanTexture) -> EagerTexture { TextureMetadata = metadata; TextureParallel = vulkanTexture }
                 | Left error -> failwith ("Could not load material normal texture due to: " + error)
             let heightTexture =
-                match Texture.TryCreateTextureVulkan (false, true, Texture.ColorCompression, "Assets/Default/MaterialHeight" + ext, Texture.RenderThread, vkc) with
-                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = vulkanTexture }
+                match Texture.TryCreateTextureVulkan (false, true, ColorCompression, "Assets/Default/MaterialHeight" + ext, RenderThread, vkc) with
+                | Right (metadata, vulkanTexture) -> EagerTexture { TextureMetadata = metadata; TextureParallel = vulkanTexture }
                 | Left error -> failwith ("Could not load material height texture due to: " + error)
             let subdermalTexture =
-                match Texture.TryCreateTextureVulkan (false, true, Texture.ColorCompression, "Assets/Default/MaterialSubdermal" + ext, Texture.RenderThread, vkc) with
-                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = vulkanTexture }
+                match Texture.TryCreateTextureVulkan (false, true, ColorCompression, "Assets/Default/MaterialSubdermal" + ext, RenderThread, vkc) with
+                | Right (metadata, vulkanTexture) -> EagerTexture { TextureMetadata = metadata; TextureParallel = vulkanTexture }
                 | Left error -> failwith ("Could not load material subdermal texture due to: " + error)
             let finenessTexture =
-                match Texture.TryCreateTextureVulkan (false, true, Texture.ColorCompression, "Assets/Default/MaterialFineness" + ext, Texture.RenderThread, vkc) with
-                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = vulkanTexture }
+                match Texture.TryCreateTextureVulkan (false, true, ColorCompression, "Assets/Default/MaterialFineness" + ext, RenderThread, vkc) with
+                | Right (metadata, vulkanTexture) -> EagerTexture { TextureMetadata = metadata; TextureParallel = vulkanTexture }
                 | Left error -> failwith ("Could not load material fineness texture due to: " + error)
             let scatterTexture =
-                match Texture.TryCreateTextureVulkan (false, true, Texture.ColorCompression, "Assets/Default/MaterialSubdermal" + ext, Texture.RenderThread, vkc) with
-                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = vulkanTexture }
+                match Texture.TryCreateTextureVulkan (false, true, ColorCompression, "Assets/Default/MaterialSubdermal" + ext, RenderThread, vkc) with
+                | Right (metadata, vulkanTexture) -> EagerTexture { TextureMetadata = metadata; TextureParallel = vulkanTexture }
                 | Left error -> failwith ("Could not load material scatter texture due to: " + error)
             let clearCoatTexture =
-                match Texture.TryCreateTextureVulkan (false, true, Texture.ColorCompression, "Assets/Default/MaterialClearCoat" + ext, Texture.RenderThread, vkc) with
-                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = vulkanTexture }
+                match Texture.TryCreateTextureVulkan (false, true, ColorCompression, "Assets/Default/MaterialClearCoat" + ext, RenderThread, vkc) with
+                | Right (metadata, vulkanTexture) -> EagerTexture { TextureMetadata = metadata; TextureParallel = vulkanTexture }
                 | Left error -> failwith ("Could not load material clear coat texture due to: " + error)
             let clearCoatRoughnessTexture =
-                match Texture.TryCreateTextureVulkan (false, true, Texture.ColorCompression, "Assets/Default/MaterialClearCoatRoughness" + ext, Texture.RenderThread, vkc) with
-                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = vulkanTexture }
+                match Texture.TryCreateTextureVulkan (false, true, ColorCompression, "Assets/Default/MaterialClearCoatRoughness" + ext, RenderThread, vkc) with
+                | Right (metadata, vulkanTexture) -> EagerTexture { TextureMetadata = metadata; TextureParallel = vulkanTexture }
                 | Left error -> failwith ("Could not load material clear coat roughness texture due to: " + error)
             let clearCoatNormalTexture =
-                match Texture.TryCreateTextureVulkan (false, true, Texture.NormalCompression, "Assets/Default/MaterialClearCoatNormal" + ext, Texture.RenderThread, vkc) with
-                | Right (metadata, vulkanTexture) -> Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = vulkanTexture }
+                match Texture.TryCreateTextureVulkan (false, true, NormalCompression, "Assets/Default/MaterialClearCoatNormal" + ext, RenderThread, vkc) with
+                | Right (metadata, vulkanTexture) -> EagerTexture { TextureMetadata = metadata; TextureParallel = vulkanTexture }
                 | Left error -> failwith ("Could not load material clear coat normal texture due to: " + error)
             { AlbedoTexture = albedoTexture
               RoughnessTexture = roughnessTexture
@@ -6766,16 +6766,16 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         
         member renderer.CleanUp () =
             
-            Texture.Sampler.destroy renderer.FilteredSampler renderer.VulkanContext
-            Texture.Sampler.destroy renderer.CubeMapSampler renderer.VulkanContext
-            Texture.Sampler.destroy renderer.GeometrySampler renderer.VulkanContext
-            Texture.Sampler.destroy renderer.ShadowSampler renderer.VulkanContext
-            Texture.Sampler.destroy renderer.ColorSampler renderer.VulkanContext
-            Texture.Sampler.destroy renderer.DepthSampler renderer.VulkanContext
-            Texture.Sampler.destroy renderer.BrdfSampler renderer.VulkanContext
+            Sampler.destroy renderer.FilteredSampler renderer.VulkanContext
+            Sampler.destroy renderer.CubeMapSampler renderer.VulkanContext
+            Sampler.destroy renderer.GeometrySampler renderer.VulkanContext
+            Sampler.destroy renderer.ShadowSampler renderer.VulkanContext
+            Sampler.destroy renderer.ColorSampler renderer.VulkanContext
+            Sampler.destroy renderer.DepthSampler renderer.VulkanContext
+            Sampler.destroy renderer.BrdfSampler renderer.VulkanContext
             
             SkyBox.DestroySkyBoxPipeline renderer.SkyBoxPipeline renderer.VulkanContext
-            CubeMap.DestroyCubeMapPipeline (renderer.IrradiancePipeline, renderer.VulkanContext)
+            CubeMap.DestroyCubeMapPipeline (renderer.IrradiancePipeline.Pipeline, renderer.VulkanContext)
             LightMap.DestroyEnvironmentFilterPipeline (renderer.EnvironmentFilterPipeline, renderer.VulkanContext)
             PhysicallyBased.DestroyPhysicallyBasedPipelines renderer.PhysicallyBasedPipelines renderer.VulkanContext
             
@@ -6804,7 +6804,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             renderer.PhysicallyBasedMaterial.ClearCoatRoughnessTexture.Destroy renderer.VulkanContext
             renderer.PhysicallyBasedMaterial.ClearCoatNormalTexture.Destroy renderer.VulkanContext
             
-            Texture.TextureDestroyer.destroy renderer.TextureDestroyer renderer.VulkanContext
+            TextureDestroyer.destroy renderer.TextureDestroyer renderer.VulkanContext
             
             PhysicallyBased.DestroyPhysicallyBasedAttachments (renderer.PhysicallyBasedAttachments, renderer.VulkanContext)
             

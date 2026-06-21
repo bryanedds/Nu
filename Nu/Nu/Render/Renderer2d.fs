@@ -14,6 +14,7 @@ open Vortice.Vulkan
 open SDL
 open TiledSharp
 open Prime
+open Nu.Vulkan
 
 /// A mutable sprite value.
 type [<Struct>] SpriteValue =
@@ -184,16 +185,16 @@ type [<ReferenceEquality>] StubRenderer2d =
 /// The Vulkan implementation of Renderer2d.
 type [<ReferenceEquality>] VulkanRenderer2d =
     private
-        { VulkanContext : Hl.VulkanContext
+        { VulkanContext : VulkanContext
           mutable Viewport : Viewport
-          TextQuad : Buffer.Buffer * Buffer.Buffer
-          TextureDestroyer : Texture.TextureDestroyer
-          UnfilteredSampler : Texture.Sampler
-          FilteredSampler : Texture.Sampler
-          TextTextures : Dictionary<obj, bool ref * (int * int * Matrix4x4 * Texture.Texture)>
+          TextQuad : Nu.Vulkan.Buffer * Nu.Vulkan.Buffer
+          TextureDestroyer : TextureDestroyer
+          UnfilteredSampler : Sampler
+          FilteredSampler : Sampler
+          TextTextures : Dictionary<obj, bool ref * (int * int * Matrix4x4 * Texture)>
           SpriteBatchEnv : SpriteBatch.SpriteBatchEnv
-          SpritePipeline : Buffer.Buffer * Buffer.Buffer * Pipeline.Pipeline
-          ContourTessellationPipeline : Buffer.Buffer * Buffer.Buffer * Buffer.Buffer * Pipeline.Pipeline
+          SpritePipeline : Nu.Vulkan.Buffer * Nu.Vulkan.Buffer * Pipeline
+          ContourTessellationPipeline : Nu.Vulkan.Buffer * Nu.Vulkan.Buffer * Nu.Vulkan.Buffer * Pipeline
           RenderPackages : Packages<RenderAsset, AssetClient>
           SpineSkeletonRenderers : Dictionary<uint64, bool ref * Spine.SkeletonRenderer>
           mutable RenderPackageCachedOpt : RenderPackageCached
@@ -228,8 +229,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         | ImageExtension _ ->
             let textureEir =
                 if Texture.InferFiltered2d asset.FilePath
-                then assetClient.TextureClient.TryCreateTextureFiltered (false, Texture.Uncompressed, asset.FilePath, Texture.RenderThread, renderer.VulkanContext)
-                else assetClient.TextureClient.TryCreateTextureUnfiltered (false, asset.FilePath, Texture.RenderThread, renderer.VulkanContext)
+                then assetClient.TextureClient.TryCreateTextureFiltered (false, Uncompressed, asset.FilePath, RenderThread, renderer.VulkanContext)
+                else assetClient.TextureClient.TryCreateTextureUnfiltered (false, asset.FilePath, RenderThread, renderer.VulkanContext)
             match textureEir with
             | Right texture ->
                 Some (TextureAsset texture)
@@ -268,7 +269,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                 | None ->
                     let assetClient =
                         AssetClient
-                            (Texture.TextureClient None,
+                            (TextureClient None,
                              CubeMap.CubeMapClient (),
                              PhysicallyBased.PhysicallyBasedSceneClient ())
                     let renderPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = assetClient }
@@ -385,8 +386,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
     static member private handleReloadShaders renderer =
         let (_, _, spritePipeline) = renderer.SpritePipeline
         let (_, _, _, contourPipeline) = renderer.ContourTessellationPipeline
-        Pipeline.Pipeline.reloadShaders spritePipeline renderer.VulkanContext
-        Pipeline.Pipeline.reloadShaders contourPipeline renderer.VulkanContext
+        Pipeline.reloadShaders spritePipeline renderer.VulkanContext
+        Pipeline.reloadShaders contourPipeline renderer.VulkanContext
         SpriteBatch.ReloadShaders renderer.SpriteBatchEnv renderer.VulkanContext
 
     static member private handleReloadRenderAssets renderer =
@@ -420,7 +421,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         (rotation : single)
         (insetOpt : Box2 voption)
         (clipOpt : Box2 voption)
-        (texture : Texture.Texture)
+        (texture : Texture)
         (color : Color)
         (blend : Blend)
         (emission : Color)
@@ -469,9 +470,9 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         // prepare blending info for pipeline
         let pipelineBlend =
             match blend with
-            | Transparent -> Pipeline.Transparent
-            | Additive -> Pipeline.Additive
-            | Overwrite -> Pipeline.Overwrite
+            | Transparent -> VulkanTransparent
+            | Additive -> VulkanAdditive
+            | Overwrite -> VulkanOverwrite
 
         // attempt to draw regular sprite
         if color.A <> 0.0f then
@@ -479,7 +480,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
 
         // attempt to draw emission sprite
         if emission.A <> 0.0f then
-            SpriteBatch.SubmitSpriteBatchSprite (absolute, min, size, pivot, rotation, &texCoords, &clipOpt, &emission, Pipeline.Additive, texture, renderer.Viewport, renderer.SpriteBatchEnv)
+            SpriteBatch.SubmitSpriteBatchSprite (absolute, min, size, pivot, rotation, &texCoords, &clipOpt, &emission, VulkanAdditive, texture, renderer.Viewport, renderer.SpriteBatchEnv)
 
     /// Render sprite.
     static member renderSprite
@@ -834,16 +835,16 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                     let modelViewProjection = modelMatrix * viewProjection2d
 
                                     // create and load texture
-                                    let metadata = Texture.TextureMetadata.make textSurfaceWidth textSurfaceHeight
-                                    let textTextureInternal =
-                                        Texture.TextureInternal.create
-                                            Texture.MipmapNone Texture.AttachmentNone Texture.Texture2d [||]
-                                            Texture.Uncompressed.ImageFormat Texture.Uncompressed.PixelFormat metadata renderer.VulkanContext
+                                    let metadata = TextureMetadata.make textSurfaceWidth textSurfaceHeight
+                                    let textTextureParallel =
+                                        TextureParallel.create
+                                            MipmapNone AttachmentNone Texture2d [||]
+                                            Uncompressed.ImageFormat Uncompressed.PixelFormat metadata renderer.VulkanContext
                                     
                                     // TODO: DJL: investigate safety of asynchronous upload with regard to memoized access in subsequent frames
                                     // which does not explicitly wait for upload.
-                                    Texture.TextureInternal.uploadAsync renderer.VulkanContext.RenderCommandBuffer metadata 0 0 textSurface.pixels textTextureInternal renderer.VulkanContext
-                                    let textTexture = Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = textTextureInternal }
+                                    TextureParallel.uploadAsync renderer.VulkanContext.RenderCommandBuffer metadata 0 0 textSurface.pixels textTextureParallel renderer.VulkanContext
+                                    let textTexture = EagerTexture { TextureMetadata = metadata; TextureParallel = textTextureParallel }
                                     
                                     // destroy text surface
                                     SDL3.SDL_DestroySurface textSurfacePtr
@@ -1031,16 +1032,16 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             ()
 
     /// Make a VulkanRenderer2d.
-    static member make viewport (vkc : Hl.VulkanContext) =
+    static member make viewport (vkc : VulkanContext) =
         
         // create samplers
-        let unfilteredSampler = Texture.Sampler.create VkSamplerAddressMode.Repeat VkFilter.Nearest VkFilter.Nearest false vkc
-        let filteredSampler = Texture.Sampler.create VkSamplerAddressMode.Repeat VkFilter.Linear VkFilter.Linear true vkc
+        let unfilteredSampler = Sampler.create VkSamplerAddressMode.Repeat VkFilter.Nearest VkFilter.Nearest false vkc
+        let filteredSampler = Sampler.create VkSamplerAddressMode.Repeat VkFilter.Linear VkFilter.Linear true vkc
         
         // create text resources
         let spritePipeline = Sprite.CreateSpritePipeline vkc
         let textQuad = Sprite.CreateSpriteQuad true vkc
-        let textureDestroyer = Texture.TextureDestroyer.create ()
+        let textureDestroyer = TextureDestroyer.create ()
 
         // create sprite batch env
         let spriteBatchEnv = SpriteBatch.CreateSpriteBatchEnv unfilteredSampler filteredSampler vkc
@@ -1084,13 +1085,13 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             let (_, _, _, tessellationPipeline) = renderer.ContourTessellationPipeline
             for (_, _, _, textTexture) in Seq.map snd renderer.TextTextures.Values do textTexture.Destroy renderer.VulkanContext
             renderer.TextTextures.Clear ()
-            Texture.TextureDestroyer.destroy renderer.TextureDestroyer renderer.VulkanContext
-            Texture.Sampler.destroy renderer.UnfilteredSampler renderer.VulkanContext
-            Texture.Sampler.destroy renderer.FilteredSampler renderer.VulkanContext
-            Pipeline.Pipeline.destroy spritePipeline renderer.VulkanContext
-            Pipeline.Pipeline.destroy tessellationPipeline renderer.VulkanContext
-            Buffer.Buffer.destroy textVertexBuffer renderer.VulkanContext
-            Buffer.Buffer.destroy textIndexBuffer renderer.VulkanContext
+            TextureDestroyer.destroy renderer.TextureDestroyer renderer.VulkanContext
+            Sampler.destroy renderer.UnfilteredSampler renderer.VulkanContext
+            Sampler.destroy renderer.FilteredSampler renderer.VulkanContext
+            Pipeline.destroy spritePipeline renderer.VulkanContext
+            Pipeline.destroy tessellationPipeline renderer.VulkanContext
+            Nu.Vulkan.Buffer.destroy textVertexBuffer renderer.VulkanContext
+            Nu.Vulkan.Buffer.destroy textIndexBuffer renderer.VulkanContext
 
             // destroy sprite batch environment
             SpriteBatch.DestroySpriteBatchEnv renderer.SpriteBatchEnv

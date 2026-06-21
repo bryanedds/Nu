@@ -189,7 +189,7 @@ module SdlDeps =
 
                     // init sdl callback for app backgrounding on mobile devices
                     // NOTE: DJL: this happens before SDL window creation to ensure no backgrounding events are missed.
-                    SDL3.SDL_SetEventFilter (Vortice.Vulkan.Hl.backgroundingCallback, 0n)
+                    SDL3.SDL_SetEventFilter (Nu.Vulkan.HlInternal.backgroundingCallback, 0n)
                     
                     // attempt to create window
                     let windowConfig = sdlConfig.WindowConfig

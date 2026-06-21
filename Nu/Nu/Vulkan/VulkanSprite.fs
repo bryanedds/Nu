@@ -1,10 +1,11 @@
 ﻿// Nu Game Engine.
 // Copyright (C) Bryan Edds.
 
-namespace Vortice.Vulkan
+namespace Nu.Vulkan
 open System
 open System.Numerics
 open System.Runtime.InteropServices
+open Vortice.Vulkan
 open Prime
 open Nu
 
@@ -23,26 +24,26 @@ module Sprite =
     let VertexSize = sizeof<single> * 2
     
     /// Create a sprite pipeline.
-    let CreateSpritePipeline (vkc : Hl.VulkanContext) =
+    let CreateSpritePipeline (vkc : VulkanContext) =
 
         // create sprite uniform buffers
-        let spriteVertUniform = Buffer.Buffer.create sizeof<SpriteVert> Buffer.Storage vkc
-        let spriteFragUniform = Buffer.Buffer.create sizeof<SpriteFrag> Buffer.Storage vkc
+        let spriteVertUniform = Buffer.create sizeof<SpriteVert> Storage vkc
+        let spriteFragUniform = Buffer.create sizeof<SpriteFrag> Storage vkc
         
         // create sprite pipeline
         let pipeline =
-            Pipeline.Pipeline.create
+            Pipeline.create
                 Constants.Paths.SpriteShaderFilePath
-                [|Pipeline.Transparent|] [|true|]
+                [|VulkanTransparent|] [|true|]
                 [|Pipeline.vertex 0 VertexSize VkVertexInputRate.Vertex
-                    [|Pipeline.attribute 0 Hl.Single2 0|]|]
+                    [|Pipeline.attribute 0 Single2 0|]|]
                 [|Pipeline.descriptorSet<int>
-                    [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage 1
-                      Pipeline.descriptor 1 Hl.StorageBuffer Hl.FragmentStage 1|]
-                  Pipeline.descriptorSet<Texture.Texture>
-                    [|Pipeline.descriptor 0 Hl.SampledImage Hl.FragmentStage 1|]
-                  Pipeline.descriptorSet<Texture.Sampler>
-                    [|Pipeline.descriptor 0 Hl.Sampler Hl.FragmentStage 1|]|]
+                    [|Pipeline.descriptor 0 StorageBuffer VertexStage 1
+                      Pipeline.descriptor 1 StorageBuffer FragmentStage 1|]
+                  Pipeline.descriptorSet<Texture>
+                    [|Pipeline.descriptor 0 SampledImage FragmentStage 1|]
+                  Pipeline.descriptorSet<Sampler>
+                    [|Pipeline.descriptor 0 Sampler FragmentStage 1|]|]
                 [||] [|vkc.SwapFormat|] None
                 [|spriteVertUniform; spriteFragUniform|]
                 vkc
@@ -70,16 +71,16 @@ module Sprite =
         let indexData = [|0u; 1u; 2u; 2u; 3u; 0u|]
         
         // create buffers
-        let vertexBuffer = Buffer.Buffer.createVertexStagedFromArray vertexData vkc
-        let indexBuffer = Buffer.Buffer.createIndexStagedFromArray indexData vkc
+        let vertexBuffer = Buffer.createVertexStagedFromArray vertexData vkc
+        let indexBuffer = Buffer.createIndexStagedFromArray indexData vkc
         
         // fin
         (vertexBuffer, indexBuffer)
 
     /// Draw a sprite whose indices and vertices were created by Vulkan.CreateSpriteQuad and whose uniforms and pipeline match those of CreateSpritePipeline.
     let DrawSprite
-        (vertices : Buffer.Buffer,
-         indices : Buffer.Buffer,
+        (vertices : Nu.Vulkan.Buffer,
+         indices : Nu.Vulkan.Buffer,
          absolute,
          viewProjectionClipAbsolute : Matrix4x4 inref,
          viewProjectionClipRelative : Matrix4x4 inref,
@@ -90,13 +91,13 @@ module Sprite =
          flip,
          textureWidth,
          textureHeight,
-         texture : Texture.Texture,
-         sampler : Texture.Sampler,
+         texture : Texture,
+         sampler : Sampler,
          viewport : Viewport,
-         spriteVertUniform : Buffer.Buffer,
-         spriteFragUniform : Buffer.Buffer,
-         pipeline : Pipeline.Pipeline,
-         vkc : Hl.VulkanContext) =
+         spriteVertUniform : Nu.Vulkan.Buffer,
+         spriteFragUniform : Nu.Vulkan.Buffer,
+         pipeline : Pipeline,
+         vkc : VulkanContext) =
 
         // only draw if scissor (and therefore also viewport) is valid
         let mutable renderArea = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)
@@ -123,7 +124,7 @@ module Sprite =
         if Hl.validateRect scissor then
 
             // only draw if required vkPipeline exists
-            match Pipeline.Pipeline.tryGetVkPipeline Pipeline.Transparent true pipeline with
+            match Pipeline.tryGetVkPipeline VulkanTransparent true pipeline with
             | Some vkPipeline ->
 
                 // compute unflipped tex coords
@@ -166,21 +167,21 @@ module Sprite =
 
                 // specify uniforms
                 let color = color
-                let mutable uniformDescriptorSet = Pipeline.Pipeline.specifyDescriptorSet 0 pipeline.DrawIndex pipeline vkc $ fun vkSet ->
+                let mutable uniformDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.DrawIndex pipeline vkc $ fun vkSet ->
                     let spriteVert = SpriteVert (modelViewProjection = modelViewProjection, texCoords4 = v4 texCoords.Min.X texCoords.Min.Y texCoords.Size.X texCoords.Size.Y)
                     let spriteFrag = SpriteFrag (color = color.V4)
-                    Buffer.Buffer.uploadValue spriteVert spriteVertUniform vkc
-                    Buffer.Buffer.uploadValue spriteFrag spriteFragUniform vkc
-                    Pipeline.Pipeline.writeDescriptorStorageBuffer 0 0 spriteVertUniform vkSet vkc
-                    Pipeline.Pipeline.writeDescriptorStorageBuffer 1 0 spriteFragUniform vkSet vkc
+                    Buffer.uploadValue spriteVert spriteVertUniform vkc
+                    Buffer.uploadValue spriteFrag spriteFragUniform vkc
+                    Pipeline.writeDescriptorStorageBuffer 0 0 spriteVertUniform vkSet vkc
+                    Pipeline.writeDescriptorStorageBuffer 1 0 spriteFragUniform vkSet vkc
 
                 // specify material
-                let mutable materialDescriptorSet = Pipeline.Pipeline.specifyDescriptorSet 1 texture pipeline vkc $ fun vkSet ->
-                    Pipeline.Pipeline.writeDescriptorSampledImage 0 0 texture vkSet vkc
+                let mutable materialDescriptorSet = Pipeline.specifyDescriptorSet 1 texture pipeline vkc $ fun vkSet ->
+                    Pipeline.writeDescriptorSampledImage 0 0 texture vkSet vkc
 
                 // specify sampler
-                let mutable samplerDescriptorSet = Pipeline.Pipeline.specifyDescriptorSet 2 sampler pipeline vkc $ fun vkSet ->
-                    Pipeline.Pipeline.writeDescriptorSampler 0 0 sampler vkSet vkc
+                let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 2 sampler pipeline vkc $ fun vkSet ->
+                    Pipeline.writeDescriptorSampler 0 0 sampler vkSet vkc
                     
                 // set up render
                 let mutable rendering = Hl.makeRenderingInfo [|vkc.SwapchainImageView|] None renderArea None

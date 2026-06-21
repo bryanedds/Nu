@@ -3631,7 +3631,7 @@ type StaticModelFacet () =
         match Metadata.tryGetStaticModelMetadata (entity.GetStaticModel world) with
         | ValueSome staticModelMetadata ->
             let intersectionses =
-                Array.map (fun (surface : Vortice.Vulkan.PhysicallyBased.PhysicallyBasedSurface) ->
+                Array.map (fun (surface : Nu.Vulkan.PhysicallyBased.PhysicallyBasedSurface) ->
                     let geometry = surface.PhysicallyBasedGeometry
                     let (_, inverse) = Matrix4x4.Invert surface.SurfaceMatrix
                     let raySurface = rayEntity.Transform inverse
@@ -3926,7 +3926,7 @@ type AnimatedModelFacet () =
         match Metadata.tryGetAnimatedModelMetadata (entity.GetAnimatedModel world) with
         | ValueSome animatedModelMetadata ->
             let intersectionses =
-                Array.map (fun (surface : Vortice.Vulkan.PhysicallyBased.PhysicallyBasedSurface) ->
+                Array.map (fun (surface : Nu.Vulkan.PhysicallyBased.PhysicallyBasedSurface) ->
                     let geometry = surface.PhysicallyBasedGeometry
                     let (_, inverse) = Matrix4x4.Invert surface.SurfaceMatrix
                     let raySurface = rayEntity.Transform inverse

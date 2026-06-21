@@ -4,8 +4,9 @@
 // Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
 // See https://github.com/bryanedds/Nu/blob/master/License.md.
 
-namespace Vortice.Vulkan
+namespace Nu.Vulkan
 open System.Numerics
+open Vortice.Vulkan
 open Prime
 open Nu
 
@@ -17,21 +18,21 @@ module ContourTessellation =
 
         // create buffers
         let count = 1024 // TODO: P1: make constant.
-        let vertexBuffer = Buffer.Buffer.create (count * sizeof<ContourVertex>) (Buffer.Vertex true) vkc
-        let indexBuffer = Buffer.Buffer.create (count * sizeof<uint32>) (Buffer.Index true) vkc
-        let modelViewProjectionUniform = Buffer.Buffer.create sizeof<Matrix4x4> Buffer.Storage vkc
+        let vertexBuffer = Buffer.create (count * sizeof<ContourVertex>) (Vertex true) vkc
+        let indexBuffer = Buffer.create (count * sizeof<uint32>) (Index true) vkc
+        let modelViewProjectionUniform = Buffer.create sizeof<Matrix4x4> Storage vkc
         
         // create pipeline
         let vertexSize = sizeof<ContourVertex> // = sizeof<Vector2> + sizeof<Color> = 2 * sizeof<single> + 4 * sizeof<single>
         let pipeline =
-            Pipeline.Pipeline.create
+            Pipeline.create
                 Constants.Paths.ContourShaderFilePath
-                [|Pipeline.Transparent|] [|true|]
+                [|VulkanTransparent|] [|true|]
                 [|Pipeline.vertex 0 vertexSize VkVertexInputRate.Vertex
-                    [|Pipeline.attribute 0 Hl.Single2 0
-                      Pipeline.attribute 1 Hl.Single4 sizeof<Vector2>|]|]
+                    [|Pipeline.attribute 0 Single2 0
+                      Pipeline.attribute 1 Single4 sizeof<Vector2>|]|]
                 [|Pipeline.descriptorSet<int>
-                    [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage 1|]|]
+                    [|Pipeline.descriptor 0 StorageBuffer VertexStage 1|]|]
                 [||] [|vkc.SwapFormat|] None
                 [|vertexBuffer; indexBuffer; modelViewProjectionUniform|]
                 vkc
@@ -48,8 +49,8 @@ module ContourTessellation =
         (modelViewProjection : Matrix4x4 inref)
         (clipOpt : Box2 voption inref)
         (viewport : Viewport)
-        (vertexBuffer : Buffer.Buffer, indexBuffer : Buffer.Buffer, modelViewProjectionUniform : Buffer.Buffer, pipeline : Pipeline.Pipeline)
-        (vkc : Hl.VulkanContext) =
+        (vertexBuffer : Buffer, indexBuffer : Buffer, modelViewProjectionUniform : Buffer, pipeline : Pipeline)
+        (vkc : VulkanContext) =
             
         // only draw if scissor is valid
         let mutable renderArea = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)
@@ -76,18 +77,18 @@ module ContourTessellation =
         if Hl.validateRect scissor then
                 
             // only draw if required vkPipeline exists
-            match Pipeline.Pipeline.tryGetVkPipeline Pipeline.Transparent true pipeline with
+            match Pipeline.tryGetVkPipeline VulkanTransparent true pipeline with
             | Some vkPipeline ->
 
                 // update vertices and indices
-                Buffer.Buffer.uploadArray tessellation.Vertices vertexBuffer vkc
-                Buffer.Buffer.uploadArray tessellation.Indices indexBuffer vkc
+                Buffer.uploadArray tessellation.Vertices vertexBuffer vkc
+                Buffer.uploadArray tessellation.Indices indexBuffer vkc
 
                 // specify uniforms
                 let modelViewProjection = modelViewProjection
-                let mutable uniformDescriptorSet = Pipeline.Pipeline.specifyDescriptorSet 0 pipeline.DrawIndex pipeline vkc $ fun vkSet ->
-                    Buffer.Buffer.uploadValue modelViewProjection modelViewProjectionUniform vkc
-                    Pipeline.Pipeline.writeDescriptorStorageBuffer 0 0 modelViewProjectionUniform vkSet vkc
+                let mutable uniformDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.DrawIndex pipeline vkc $ fun vkSet ->
+                    Buffer.uploadValue modelViewProjection modelViewProjectionUniform vkc
+                    Pipeline.writeDescriptorStorageBuffer 0 0 modelViewProjectionUniform vkSet vkc
 
                 // set up render
                 let mutable rendering = Hl.makeRenderingInfo [|vkc.SwapchainImageView|] None renderArea None

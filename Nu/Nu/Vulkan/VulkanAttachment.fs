@@ -16,20 +16,20 @@ module Attachment =
     /// Create color attachment.
     let private CreateColorAttachment (textureType, optionalUsages, internalFormat, pixelFormat, resolutionX, resolutionY, vkc : VulkanContext) =
         let metadata = TextureMetadata.make resolutionX resolutionY
-        let textureInternal =
-            TextureInternal.create
+        let textureParallel =
+            TextureParallel.create
                 MipmapNone (AttachmentColor true) textureType optionalUsages
                 (Hl.CheckAttachmentFormat (vkc.VkPhysicalDevice, internalFormat)) pixelFormat metadata vkc
-        Texture.EagerTexture { TextureMetadata = TextureMetadata.empty; TextureInternal = textureInternal }
+        EagerTexture { TextureMetadata = TextureMetadata.empty; TextureParallel = textureParallel }
     
     /// Create depth attachment.
     let private CreateDepthAttachment (optionalUsages, resolutionX, resolutionY, vkc : VulkanContext) =
         let metadata = TextureMetadata.make resolutionX resolutionY
-        let textureInternal =
-            TextureInternal.create
+        let textureParallel =
+            TextureParallel.create
                 MipmapNone (AttachmentDepth true) Texture2d optionalUsages
                 (Hl.CheckAttachmentFormat (vkc.VkPhysicalDevice, D32f)) Depth metadata vkc
-        Texture.EagerTexture { TextureMetadata = TextureMetadata.empty; TextureInternal = textureInternal }
+        EagerTexture { TextureMetadata = TextureMetadata.empty; TextureParallel = textureParallel }
     
     /// Create general-purpose attachments.
     let CreateGeneralAttachments (resolutionX, resolutionY, vkc) =

@@ -1,10 +1,11 @@
 ﻿// Nu Game Engine.
 // Copyright (C) Bryan Edds.
 
-namespace Vortice.Vulkan
+namespace Nu.Vulkan
 open System
 open System.Numerics
 open System.Runtime.InteropServices
+open Vortice.Vulkan
 open Prime
 open Nu
 
@@ -24,31 +25,31 @@ module SkyBox =
     
     /// Describes a sky box pipeline that's loaded into GPU.
     type SkyBoxPipeline =
-        { SkyBoxVertUniform : Buffer.Buffer
-          SkyBoxFragUniform : Buffer.Buffer
-          Pipeline : Pipeline.Pipeline }
+        { SkyBoxVertUniform : Nu.Vulkan.Buffer
+          SkyBoxFragUniform : Nu.Vulkan.Buffer
+          Pipeline : Pipeline }
 
     /// Create a SkyBoxPipeline.
-    let CreateSkyBoxPipeline colorAttachmentFormat depthAttachmentFormat (vkc : Hl.VulkanContext) =
+    let CreateSkyBoxPipeline colorAttachmentFormat depthAttachmentFormat (vkc : VulkanContext) =
 
         // create uniform buffers
-        let skyBoxVertUniform = Buffer.Buffer.create sizeof<SkyBoxVert> Buffer.Storage vkc
-        let skyBoxFragUniform = Buffer.Buffer.create sizeof<SkyBoxFrag> Buffer.Storage vkc
+        let skyBoxVertUniform = Buffer.create sizeof<SkyBoxVert> Storage vkc
+        let skyBoxFragUniform = Buffer.create sizeof<SkyBoxFrag> Storage vkc
 
         // create pipeline
         let pipeline =
-            Pipeline.Pipeline.create
+            Pipeline.create
                 Constants.Paths.SkyBoxShaderFilePath
-                [|Pipeline.NoBlend|] [|false|]
+                [|VulkanUnblended|] [|false|]
                 [|Pipeline.vertex 0 CubeMap.VertexSize VkVertexInputRate.Vertex
-                    [|Pipeline.attribute 0 Hl.Single3 0|]|]
+                    [|Pipeline.attribute 0 Single3 0|]|]
                 [|Pipeline.descriptorSet<int>
-                    [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage 1
-                      Pipeline.descriptor 1 Hl.StorageBuffer Hl.FragmentStage 1|]
-                  Pipeline.descriptorSet<Texture.Texture>
-                    [|Pipeline.descriptor 0 Hl.SampledImage Hl.FragmentStage 1|]
-                  Pipeline.descriptorSet<Texture.Sampler>
-                    [|Pipeline.descriptor 0 Hl.Sampler Hl.FragmentStage 1|]|]
+                    [|Pipeline.descriptor 0 StorageBuffer VertexStage 1
+                      Pipeline.descriptor 1 StorageBuffer FragmentStage 1|]
+                  Pipeline.descriptorSet<Texture>
+                    [|Pipeline.descriptor 0 SampledImage FragmentStage 1|]
+                  Pipeline.descriptorSet<Sampler>
+                    [|Pipeline.descriptor 0 Sampler FragmentStage 1|]|]
                 [||] [|colorAttachmentFormat|] (Some depthAttachmentFormat)
                 [|skyBoxVertUniform; skyBoxFragUniform|] vkc
         
@@ -63,7 +64,7 @@ module SkyBox =
 
     /// Destroy a SkyBoxPipeline.
     let DestroySkyBoxPipeline skyBoxPipeline vkc =
-        Pipeline.Pipeline.destroy skyBoxPipeline.Pipeline vkc
+        Pipeline.destroy skyBoxPipeline.Pipeline vkc
 
     /// Draw a sky box.
     let DrawSkyBox
@@ -72,14 +73,14 @@ module SkyBox =
          viewProjection : Matrix4x4,
          color : Color,
          brightness : single,
-         cubeMap : Texture.Texture,
+         cubeMap : Texture,
          geometry : CubeMap.CubeMapGeometry,
-         sampler : Texture.Sampler,
+         sampler : Sampler,
          viewport : Viewport,
-         colorAttachment : Texture.Texture,
-         depthAttachment : Texture.Texture,
+         colorAttachment : Texture,
+         depthAttachment : Texture,
          pipeline : SkyBoxPipeline,
-         vkc : Hl.VulkanContext) =
+         vkc : VulkanContext) =
 
         // only draw if scissor (and therefore also viewport) is valid
         let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
@@ -87,25 +88,25 @@ module SkyBox =
         if Hl.validateRect renderArea then
 
             // only draw if required vkPipeline exists
-            match Pipeline.Pipeline.tryGetVkPipeline Pipeline.NoBlend false pipeline.Pipeline with
+            match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
             | Some vkPipeline ->
 
                 // specify uniforms
-                let mutable uniformDescriptorSet = Pipeline.Pipeline.specifyDescriptorSet 0 pipeline.Pipeline.DrawIndex pipeline.Pipeline vkc $ fun vkSet ->
+                let mutable uniformDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.Pipeline.DrawIndex pipeline.Pipeline vkc $ fun vkSet ->
                     let skyBoxVert = SkyBoxVert (view = view, projection = projection, viewProjection = viewProjection)
                     let skyBoxFrag = SkyBoxFrag (color = color.V3, brightness = brightness)
-                    Buffer.Buffer.uploadValue skyBoxVert pipeline.SkyBoxVertUniform vkc
-                    Buffer.Buffer.uploadValue skyBoxFrag pipeline.SkyBoxFragUniform vkc
-                    Pipeline.Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.SkyBoxVertUniform vkSet vkc
-                    Pipeline.Pipeline.writeDescriptorStorageBuffer 1 0 pipeline.SkyBoxFragUniform vkSet vkc
+                    Buffer.uploadValue skyBoxVert pipeline.SkyBoxVertUniform vkc
+                    Buffer.uploadValue skyBoxFrag pipeline.SkyBoxFragUniform vkc
+                    Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.SkyBoxVertUniform vkSet vkc
+                    Pipeline.writeDescriptorStorageBuffer 1 0 pipeline.SkyBoxFragUniform vkSet vkc
 
                 // specify material
-                let mutable materialDescriptorSet = Pipeline.Pipeline.specifyDescriptorSet 1 cubeMap pipeline.Pipeline vkc $ fun vkSet ->
-                    Pipeline.Pipeline.writeDescriptorSampledImage 0 0 cubeMap vkSet vkc
+                let mutable materialDescriptorSet = Pipeline.specifyDescriptorSet 1 cubeMap pipeline.Pipeline vkc $ fun vkSet ->
+                    Pipeline.writeDescriptorSampledImage 0 0 cubeMap vkSet vkc
 
                 // specify sampler
-                let mutable samplerDescriptorSet = Pipeline.Pipeline.specifyDescriptorSet 2 sampler pipeline.Pipeline vkc $ fun vkSet ->
-                    Pipeline.Pipeline.writeDescriptorSampler 0 0 sampler vkSet vkc
+                let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 2 sampler pipeline.Pipeline vkc $ fun vkSet ->
+                    Pipeline.writeDescriptorSampler 0 0 sampler vkSet vkc
 
                 // set up render
                 let mutable rendering = Hl.makeRenderingInfo [|colorAttachment.ImageView|] (Some depthAttachment.ImageView) renderArea None

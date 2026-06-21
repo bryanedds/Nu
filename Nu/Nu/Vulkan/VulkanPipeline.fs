@@ -12,35 +12,35 @@ open Vortice.Vulkan
 open Nu
 
 /// A blend setting for a Vulkan pipeline.
-/// TODO: DJL: review naming.
-type Blend =
-    | NoBlend
-    | Transparent
-    | Additive
-    | Overwrite
-    | ImGui
+/// TODO: P1: review naming.
+type VulkanBlend =
+    | VulkanUnblended
+    | VulkanTransparent
+    | VulkanAdditive
+    | VulkanOverwrite
+    | VulkanImGui
 
     /// Make blend attachment.
     static member makeAttachment blend =
         match blend with
-        | NoBlend ->
+        | VulkanUnblended ->
             Hl.makeBlendAttachment None
-        | Transparent ->
+        | VulkanTransparent ->
             Hl.makeBlendAttachment
                 (Some
                     (VkBlendFactor.SrcAlpha, VkBlendFactor.OneMinusSrcAlpha,
                      VkBlendFactor.One, VkBlendFactor.Zero))
-        | Additive ->
+        | VulkanAdditive ->
             Hl.makeBlendAttachment
                 (Some
                     (VkBlendFactor.SrcAlpha, VkBlendFactor.One,
                      VkBlendFactor.One, VkBlendFactor.Zero))
-        | Overwrite ->
+        | VulkanOverwrite ->
             Hl.makeBlendAttachment
                 (Some
                     (VkBlendFactor.One, VkBlendFactor.Zero,
                      VkBlendFactor.One, VkBlendFactor.Zero))
-        | ImGui ->
+        | VulkanImGui ->
             Hl.makeBlendAttachment
                 (Some
                     (VkBlendFactor.SrcAlpha, VkBlendFactor.OneMinusSrcAlpha,
@@ -185,13 +185,13 @@ type PushConstant =
 /// An abstraction of a rendering pipeline.
 type Pipeline =
     private
-        { mutable VkPipelines_ : Map<Blend * bool, VkPipeline> // TODO: P0: make sure no allocation happens on look-up.
+        { mutable VkPipelines_ : Map<VulkanBlend * bool, VkPipeline> // TODO: P0: make sure no allocation happens on look-up.
           Buffers_ : Nu.Vulkan.Buffer array
           DescriptorSets_ : DescriptorSet array
           VkPipelineLayout_ : VkPipelineLayout
           VkDescriptorSetLayouts_ : VkDescriptorSetLayout array
           ShaderPath_ : string
-          PipelineSettings_ : (Blend * bool) array
+          PipelineSettings_ : (VulkanBlend * bool) array
           VkVertexBindings_ : VkVertexInputBindingDescription array
           VkVertexAttributes_ : VkVertexInputAttributeDescription array
           VkColorAttachmentFormats_ : VkFormat array
@@ -245,7 +245,7 @@ type Pipeline =
     /// Try to create the VkPipelines.
     static member private tryCreateVkPipelines
         shaderPath
-        (pipelineSettings : (Blend * bool) array)
+        (pipelineSettings : (VulkanBlend * bool) array)
         (vertexBindings : VkVertexInputBindingDescription array)
         (vertexAttributes : VkVertexInputAttributeDescription array)
         pipelineLayout
@@ -336,7 +336,7 @@ type Pipeline =
                 let (blend, cullFace) = pipelineSettings.[i]
                 
                 // blend info (specifying blend state for each color attachment)
-                let blendState = Blend.makeAttachment blend
+                let blendState = VulkanBlend.makeAttachment blend
                 for j in 0 .. dec colorAttachmentFormats.Length do NativePtr.set blendStates (i * colorAttachmentFormats.Length + j) blendState
                 let mutable bInfo = VkPipelineColorBlendStateCreateInfo ()
                 bInfo.attachmentCount <- uint colorAttachmentFormats.Length
@@ -492,7 +492,7 @@ type Pipeline =
     /// Create a Pipeline.
     static member create<'k when 'k : equality>
         shaderPath
-        (blends : Blend array)
+        (blends : VulkanBlend array)
         (cullModes : bool array)
         (vertexBindings : VertexBinding array)
         (descriptorSetDefinitions : DescriptorSetDefinition array)

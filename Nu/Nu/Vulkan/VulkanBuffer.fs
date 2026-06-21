@@ -68,6 +68,7 @@ module BufferModule =
             offset + stride * count
 
 // TODO: DJL: doc comments!
+// TODO: P0: rename this to BufferStreamType or BufferMultiType?
 type BufferType =
     | Staging
     | Vertex of UploadEnabled : bool
@@ -107,7 +108,7 @@ type BufferType =
             BufferType.makeInfoInternal size usage
         | Uniform -> BufferType.makeInfoInternal size VkBufferUsageFlags.UniformBuffer
         | Storage -> BufferType.makeInfoInternal size VkBufferUsageFlags.StorageBuffer
-    
+
 type Allocation =
     | Vma of VmaAllocation
     | Manual of VkDeviceMemory
@@ -239,14 +240,14 @@ type BufferSingleton =
 /// A buffer interface that internally automates parallelization for frames in flight.
 type BufferParallel =
     private 
-        { BufferSingletons : BufferSingleton array
-          BufferSizes : int array
-          BufferType : BufferType }
+        { BufferSingletons_ : BufferSingleton array
+          BufferSizes_ : int array
+          BufferType_ : BufferType }
 
-    member private this.IsParallel = this.BufferType.IsParallel
+    member private this.IsParallel = this.BufferType_.IsParallel
     member private this.CurrentIndex = if this.IsParallel then HlInternal.CurrentFrame else 0
-    member private this.BufferSingleton = this.BufferSingletons.[this.CurrentIndex]
-    member private this.BufferSize = this.BufferSizes.[this.CurrentIndex]
+    member private this.BufferSingleton = this.BufferSingletons_.[this.CurrentIndex]
+    member private this.BufferSize = this.BufferSizes_.[this.CurrentIndex]
     
     member this.VkBuffer = this.BufferSingleton.VkBuffer
 
@@ -275,9 +276,9 @@ type BufferParallel =
 
         // make BufferParallel
         let bufferParallel =
-            { BufferSingletons = bufferSingletons 
-              BufferSizes = bufferSizes
-              BufferType = bufferType }
+            { BufferSingletons_ = bufferSingletons 
+              BufferSizes_ = bufferSizes
+              BufferType_ = bufferType }
 
         // fin
         bufferParallel
@@ -286,8 +287,8 @@ type BufferParallel =
     static member updateSize size (bufferParallel : BufferParallel) vkc =
         if size > bufferParallel.BufferSize then
             BufferSingleton.destroy bufferParallel.BufferSingleton vkc
-            bufferParallel.BufferSingletons.[bufferParallel.CurrentIndex] <- BufferParallel.createBufferSingleton size bufferParallel.BufferType vkc
-            bufferParallel.BufferSizes.[bufferParallel.CurrentIndex] <- size
+            bufferParallel.BufferSingletons_.[bufferParallel.CurrentIndex] <- BufferParallel.createBufferSingleton size bufferParallel.BufferType_ vkc
+            bufferParallel.BufferSizes_.[bufferParallel.CurrentIndex] <- size
 
     /// Upload data to BufferParallel.
     static member upload offset alignment size count data (bufferParallel : BufferParallel) vkc =
@@ -295,46 +296,48 @@ type BufferParallel =
 
     /// Destroy BufferParallel. Never call this in frame as previous frame(s) may still be using it.
     static member destroy bufferParallel vkc =
-        for i in 0 .. dec bufferParallel.BufferSingletons.Length do
-            BufferSingleton.destroy bufferParallel.BufferSingletons.[i] vkc
+        for i in 0 .. dec bufferParallel.BufferSingletons_.Length do
+            BufferSingleton.destroy bufferParallel.BufferSingletons_.[i] vkc
 
-/// Represents a dynamically growing multi-buffer with parallel underlying vulkan buffers. Maintains an internal
+/// Represents a dynamically growing multibuffer with parallel underlying vulkan buffers. Maintains an internal
 /// cursor that selects the currently active buffer, which is reset via BeginFrame and advanced to the next vulkan
 /// buffer with Advance. Automatically resizes when usage exceeds its capacity and creates additional buffers when
 /// the cursor moves beyond current capacity. This type is intended for transient or frequently updated GPU data
 /// such as storage data, uniform data, and streaming data.
+/// TODO: P0: rename this to BufferStream or BufferMulti since we otherwise have to qualify it to disambiguate from
+/// System.Buffer?
 type Buffer =
     private
-        { BufferParallels : BufferParallel List
-          mutable BufferCursor : int
-          BufferType : BufferType
-          mutable BufferSize : int }
+        { BufferParallels_ : BufferParallel List
+          mutable BufferCursor_ : int
+          BufferType_ : BufferType
+          mutable BufferSize_ : int }
 
-    member private this.BufferParallel = this.BufferParallels.[this.BufferCursor]
+    member private this.BufferParallel = this.BufferParallels_.[this.BufferCursor_]
 
     /// Get the vulkan buffer currently at the cursor.
     member this.VkBuffer = this.BufferParallel.VkBuffer
 
     /// Begin use of this buffer for the current frame.
-    member this.BeginFrame () = this.BufferCursor <- 0
+    member this.BeginFrame () = this.BufferCursor_ <- 0
 
     /// Advance the cursor.
-    member this.Advance () = this.BufferCursor <- inc this.BufferCursor
+    member this.Advance () = this.BufferCursor_ <- inc this.BufferCursor_
     
     /// Create a new Buffer.
     static member create bufferSize (bufferType : BufferType) vkc =
-        { BufferParallels = List [BufferParallel.create bufferSize bufferType vkc]
-          BufferCursor = 0
-          BufferType = bufferType
-          BufferSize = bufferSize }
+        { BufferParallels_ = List [BufferParallel.create bufferSize bufferType vkc]
+          BufferCursor_ = 0
+          BufferType_ = bufferType
+          BufferSize_ = bufferSize }
 
     /// Expand buffer size and count as necessary.
     static member update size (buffer : Buffer) vkc =
-        if size > buffer.BufferSize then buffer.BufferSize <- size
-        while buffer.BufferCursor > dec buffer.BufferParallels.Count do // TODO: P1: consider doubling capacity instead of just increasing to cursor.
-            let bufferParallel = BufferParallel.create buffer.BufferSize buffer.BufferType vkc
-            buffer.BufferParallels.Add bufferParallel
-        BufferParallel.updateSize buffer.BufferSize buffer.BufferParallel vkc
+        if size > buffer.BufferSize_ then buffer.BufferSize_ <- size
+        while buffer.BufferCursor_ > dec buffer.BufferParallels_.Count do // TODO: P1: consider doubling capacity instead of just increasing to cursor.
+            let bufferParallel = BufferParallel.create buffer.BufferSize_ buffer.BufferType_ vkc
+            buffer.BufferParallels_.Add bufferParallel
+        BufferParallel.updateSize buffer.BufferSize_ buffer.BufferParallel vkc
 
     /// Upload subdata to Buffer.
     static member uploadSubdata offset alignment size count data (buffer : Buffer) vkc =
@@ -400,5 +403,5 @@ type Buffer =
     
     /// Destroy Buffer.
     static member destroy (buffer : Buffer) vkc =
-        for i in 0 .. dec buffer.BufferParallels.Count do
-            BufferParallel.destroy buffer.BufferParallels.[i] vkc
+        for i in 0 .. dec buffer.BufferParallels_.Count do
+            BufferParallel.destroy buffer.BufferParallels_.[i] vkc
