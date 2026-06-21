@@ -32,7 +32,8 @@ module Sprite =
         // create sprite pipeline
         let pipeline =
             Pipeline.Pipeline.create
-                Constants.Paths.SpriteShaderFilePath [|Pipeline.Transparent|] [|true|]
+                Constants.Paths.SpriteShaderFilePath
+                [|Pipeline.Transparent|] [|true|]
                 [|Pipeline.vertex 0 VertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Hl.Single2 0|]|]
                 [|Pipeline.descriptorSet<int>

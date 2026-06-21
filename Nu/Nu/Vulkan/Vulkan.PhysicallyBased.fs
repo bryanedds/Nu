@@ -1414,7 +1414,8 @@ module PhysicallyBased =
         // create pipeline
         let pipeline =
             Pipeline.Pipeline.create
-                Constants.Paths.PhysicallyBasedDeferredLightingShaderFilePath [|Pipeline.NoBlend|] [|false|]
+                Constants.Paths.PhysicallyBasedDeferredLightingShaderFilePath
+                [|Pipeline.NoBlend|] [|false|]
                 [|Pipeline.vertex 0 StaticVertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Hl.Single3 0
                       Pipeline.attribute 1 Hl.Single2 StaticTexCoordsOffset

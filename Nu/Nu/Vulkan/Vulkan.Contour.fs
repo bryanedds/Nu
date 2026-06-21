@@ -25,7 +25,8 @@ module ContourTessellation =
         let vertexSize = sizeof<ContourVertex> // = sizeof<Vector2> + sizeof<Color> = 2 * sizeof<single> + 4 * sizeof<single>
         let pipeline =
             Pipeline.Pipeline.create
-                Constants.Paths.ContourShaderFilePath [|Pipeline.Transparent|] [|true|]
+                Constants.Paths.ContourShaderFilePath
+                [|Pipeline.Transparent|] [|true|]
                 [|Pipeline.vertex 0 vertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Hl.Single2 0
                       Pipeline.attribute 1 Hl.Single4 sizeof<Vector2>|]|]

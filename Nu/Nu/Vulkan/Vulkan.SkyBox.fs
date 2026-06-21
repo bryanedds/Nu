@@ -38,7 +38,8 @@ module SkyBox =
         // create pipeline
         let pipeline =
             Pipeline.Pipeline.create
-                Constants.Paths.SkyBoxShaderFilePath [|Pipeline.NoBlend|] [|false|]
+                Constants.Paths.SkyBoxShaderFilePath
+                [|Pipeline.NoBlend|] [|false|]
                 [|Pipeline.vertex 0 CubeMap.VertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Hl.Single3 0|]|]
                 [|Pipeline.descriptorSet<int>
