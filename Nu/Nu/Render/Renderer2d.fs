@@ -186,17 +186,14 @@ type [<ReferenceEquality>] VulkanRenderer2d =
     private
         { VulkanContext : Hl.VulkanContext
           mutable Viewport : Viewport
-          mutable TextDrawIndex : int
-          mutable ContourTessellationDrawIndex : int
           TextQuad : Buffer.Buffer * Buffer.Buffer
-          ContourTessellationVertices : Buffer.Buffer * Buffer.Buffer
-          TextureDisposer : Texture.TextureDisposer
+          TextureDestroyer : Texture.TextureDestroyer
           UnfilteredSampler : Texture.Sampler
           FilteredSampler : Texture.Sampler
           TextTextures : Dictionary<obj, bool ref * (int * int * Matrix4x4 * Texture.Texture)>
           SpriteBatchEnv : SpriteBatch.SpriteBatchEnv
           SpritePipeline : Buffer.Buffer * Buffer.Buffer * Pipeline.Pipeline
-          ContourTessellationPipeline : Buffer.Buffer * Pipeline.Pipeline
+          ContourTessellationPipeline : Buffer.Buffer * Buffer.Buffer * Buffer.Buffer * Pipeline.Pipeline
           RenderPackages : Packages<RenderAsset, AssetClient>
           SpineSkeletonRenderers : Dictionary<uint64, bool ref * Spine.SkeletonRenderer>
           mutable RenderPackageCachedOpt : RenderPackageCached
@@ -387,7 +384,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
 
     static member private handleReloadShaders renderer =
         let (_, _, spritePipeline) = renderer.SpritePipeline
-        let (_, contourPipeline) = renderer.ContourTessellationPipeline
+        let (_, _, _, contourPipeline) = renderer.ContourTessellationPipeline
         Pipeline.Pipeline.reloadShaders spritePipeline renderer.VulkanContext
         Pipeline.Pipeline.reloadShaders contourPipeline renderer.VulkanContext
         SpriteBatch.ReloadShaders renderer.SpriteBatchEnv renderer.VulkanContext
@@ -696,8 +693,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                     viewProjection2d
 
                 // draw contour
-                ContourTessellation.draw
-                    renderer.ContourTessellationDrawIndex
+                ContourTessellation.DrawContourTessellation
                     descriptor.Tessellation
                     descriptor.Transform.Absolute
                     &viewProjectionClipAbsolute
@@ -705,10 +701,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                     &modelViewProjection
                     &descriptor.ClipOpt
                     renderer.Viewport
-                    renderer.ContourTessellationVertices
                     renderer.ContourTessellationPipeline
                     renderer.VulkanContext
-                renderer.ContourTessellationDrawIndex <- inc renderer.ContourTessellationDrawIndex
 
     /// Render text.
     static member renderText
@@ -840,16 +834,15 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                     let modelViewProjection = modelMatrix * viewProjection2d
 
                                     // create and load texture
-                                    let vkc = renderer.VulkanContext
                                     let metadata = Texture.TextureMetadata.make textSurfaceWidth textSurfaceHeight
                                     let textTextureInternal =
                                         Texture.TextureInternal.create
                                             Texture.MipmapNone Texture.AttachmentNone Texture.Texture2d [||]
-                                            Texture.Uncompressed.ImageFormat Texture.Uncompressed.PixelFormat metadata vkc
+                                            Texture.Uncompressed.ImageFormat Texture.Uncompressed.PixelFormat metadata renderer.VulkanContext
                                     
                                     // TODO: DJL: investigate safety of asynchronous upload with regard to memoized access in subsequent frames
                                     // which does not explicitly wait for upload.
-                                    Texture.TextureInternal.uploadAsync vkc.RenderCommandBuffer metadata 0 0 textSurface.pixels textTextureInternal vkc
+                                    Texture.TextureInternal.uploadAsync renderer.VulkanContext.RenderCommandBuffer metadata 0 0 textSurface.pixels textTextureInternal renderer.VulkanContext
                                     let textTexture = Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = textTextureInternal }
                                     
                                     // destroy text surface
@@ -877,29 +870,25 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                             let insetOpt : Box2 voption = ValueNone
                             let color = Color.White
                             Sprite.DrawSprite
-                                (renderer.TextDrawIndex,
-                                    vertices,
-                                    indices,
-                                    absolute,
-                                    &viewProjectionClipAbsolute,
-                                    &viewProjectionClipRelative,
-                                    modelViewProjection,
-                                    &insetOpt,
-                                    &clipOpt,
-                                    &color,
-                                    Unflipped,
-                                    textSurfaceWidth,
-                                    textSurfaceHeight,
-                                    textTexture,
-                                    renderer.UnfilteredSampler,
-                                    renderer.Viewport,
-                                    spriteVertUniform,
-                                    spriteFragUniform,
-                                    pipeline,
-                                    renderer.VulkanContext)
-
-                            // advance text draw index
-                            renderer.TextDrawIndex <- inc renderer.TextDrawIndex
+                                (vertices,
+                                 indices,
+                                 absolute,
+                                 &viewProjectionClipAbsolute,
+                                 &viewProjectionClipRelative,
+                                 modelViewProjection,
+                                 &insetOpt,
+                                 &clipOpt,
+                                 &color,
+                                 Unflipped,
+                                 textSurfaceWidth,
+                                 textSurfaceHeight,
+                                 textTexture,
+                                 renderer.UnfilteredSampler,
+                                 renderer.Viewport,
+                                 spriteVertUniform,
+                                 spriteFragUniform,
+                                 pipeline,
+                                 renderer.VulkanContext)
 
                         | None -> ()
 
@@ -943,13 +932,10 @@ type [<ReferenceEquality>] VulkanRenderer2d =
     
     static member private render eyeCenter eyeSize viewport renderMessages renderer =
 
-        // destroy expired textures from last executed frame
-        Texture.TextureDisposer.disposeFinished renderer.TextureDisposer renderer.VulkanContext
-        
-        // reset text and contour tessellation drawing index
-        renderer.TextDrawIndex <- 0
-        renderer.ContourTessellationDrawIndex <- 0
-        
+        /////////////////
+        // Begin Frame //
+        /////////////////
+
         // invalidate caches and reload fonts when viewport changes
         if renderer.Viewport.DisplayScalar <> viewport.DisplayScalar then
             VulkanRenderer2d.invalidateCaches renderer
@@ -963,34 +949,60 @@ type [<ReferenceEquality>] VulkanRenderer2d =
 
         // update viewport
         renderer.Viewport <- viewport
-        
-        // reload render assets upon request
-        // NOTE: DJL: doing this *before* rendering because you can't record commands with a VkPipeline then destroy it before submission.
+
+        // reload render assets when requested on previous frame
         if renderer.ReloadAssetsRequested then
             VulkanRenderer2d.handleReloadShaders renderer // waits for renders to complete, relevant to all asset reload
             VulkanRenderer2d.handleReloadRenderAssets renderer
             renderer.ReloadAssetsRequested <- false
 
+        // begin texture destroyer frame
+        if renderer.VulkanContext.RenderAllowed then
+            renderer.TextureDestroyer.BeginFrame renderer.VulkanContext
+
         // begin sprite batch frame
-        if renderer.VulkanContext.RenderDesired then
+        if renderer.VulkanContext.RenderAllowed then
             let viewProjectionAbsolute = Viewport.getViewProjection2d true eyeCenter eyeSize renderer.Viewport
             let viewProjectionRelative = Viewport.getViewProjection2d false eyeCenter eyeSize renderer.Viewport
             let viewProjectionClipAbsolute = Viewport.getViewProjectionClip true eyeCenter eyeSize viewport
             let viewProjectionClipRelative = Viewport.getViewProjectionClip false eyeCenter eyeSize viewport
             SpriteBatch.BeginSpriteBatchFrame (&viewProjectionAbsolute, &viewProjectionRelative, &viewProjectionClipAbsolute, &viewProjectionClipRelative, renderer.SpriteBatchEnv)
 
-        // render frame
+        // begin single sprite frame
+        if renderer.VulkanContext.RenderAllowed then
+            match renderer.SpritePipeline with (_, _, pipeline) -> pipeline.BeginFrame ()
+
+        // being contour frame
+        if renderer.VulkanContext.RenderAllowed then
+            match renderer.ContourTessellationPipeline with (_, _, _, pipeline) -> pipeline.BeginFrame ()
+
+        //////////////////
+        // Handle Frame //
+        //////////////////
+
+        // handle render messages
         VulkanRenderer2d.handleRenderMessages renderMessages renderer
-        if renderer.VulkanContext.RenderDesired then
-            VulkanRenderer2d.sortLayeredOperations renderer
+
+        // sort layered operations
+        VulkanRenderer2d.sortLayeredOperations renderer
+
+        // render layered operations
+        if renderer.VulkanContext.RenderAllowed then
             VulkanRenderer2d.renderLayeredOperations eyeCenter eyeSize renderer
+
+        ///////////////
+        // End Frame //
+        ///////////////
+
+        // clear layered operations
         renderer.LayeredOperations.Clear ()
 
         // end sprite batch frame
-        if renderer.VulkanContext.RenderDesired then
+        if renderer.VulkanContext.RenderAllowed then
             SpriteBatch.EndSpriteBatchFrame renderer.Viewport renderer.SpriteBatchEnv
-
-            // sweep up any text textures that went unused this frame
+        
+        // sweep up any text textures that went unused this frame
+        if renderer.VulkanContext.RenderAllowed then
             let textTexturesUnused =
                 renderer.TextTextures
                 |> Seq.filter (fun entry -> not (fst entry.Value).Value)
@@ -998,22 +1010,25 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                 |> Seq.toArray
             for entry in textTexturesUnused do
                 let (_, _, _, textTexture) = snd renderer.TextTextures.[entry]
-                Texture.TextureDisposer.submit textTexture renderer.TextureDisposer
+                renderer.TextureDestroyer.Submit textTexture 
                 renderer.TextTextures.Remove entry |> ignore<bool>
 
-            // mark remaining text textures as unused for next frame
+        // mark remaining text textures as unused for next frame
+        if renderer.VulkanContext.RenderAllowed then
             for entry in renderer.TextTextures.Values do
                 let used = fst entry
                 used.Value <- false
         
-        (* TODO: DJL: enable when spine rendering is working again.
         // sweep up any skeleton renderers that went unused this frame
-        let entriesUnused = renderer.SpineSkeletonRenderers |> Seq.filter (fun entry -> not (fst entry.Value).Value)
-        for entry in entriesUnused do
-            let spineSkeletonId = entry.Key
-            let spineSkeleton = snd entry.Value
-            renderer.SpineSkeletonRenderers.Remove spineSkeletonId |> ignore<bool>
-            spineSkeleton.Destroy ()*)
+        if renderer.VulkanContext.RenderAllowed then
+            (* TODO: DJL: enable when spine rendering is working again.
+            let entriesUnused = renderer.SpineSkeletonRenderers |> Seq.filter (fun entry -> not (fst entry.Value).Value)
+            for entry in entriesUnused do
+                let spineSkeletonId = entry.Key
+                let spineSkeleton = snd entry.Value
+                renderer.SpineSkeletonRenderers.Remove spineSkeletonId |> ignore<bool>
+                spineSkeleton.Destroy ()*)
+            ()
 
     /// Make a VulkanRenderer2d.
     static member make viewport (vkc : Hl.VulkanContext) =
@@ -1025,23 +1040,20 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         // create text resources
         let spritePipeline = Sprite.CreateSpritePipeline vkc
         let textQuad = Sprite.CreateSpriteQuad true vkc
-        let textureDisposer = Texture.TextureDisposer.create ()
+        let textureDestroyer = Texture.TextureDestroyer.create ()
 
         // create sprite batch env
         let spriteBatchEnv = SpriteBatch.CreateSpriteBatchEnv unfilteredSampler filteredSampler vkc
 
         // create contour tessellation pipeline
-        let (contourTesselationVertices, contourTesselationPipeline) = ContourTessellation.createPipeline vkc
+        let contourTesselationPipeline = ContourTessellation.CreateContourTessellationPipeline vkc
         
         // make renderer
         let renderer =
             { VulkanContext = vkc
               Viewport = viewport
-              TextDrawIndex = 0
-              ContourTessellationDrawIndex = 0
               TextQuad = textQuad
-              ContourTessellationVertices = contourTesselationVertices
-              TextureDisposer = textureDisposer
+              TextureDestroyer = textureDestroyer
               UnfilteredSampler = unfilteredSampler
               FilteredSampler = filteredSampler
               TextTextures = dictPlus HashIdentity.Structural []
@@ -1067,25 +1079,18 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         member renderer.CleanUp () =
             
             // destroy vulkan resources
-            let vkc = renderer.VulkanContext
-            let (spriteVertUniform, spriteFragUniform, pipeline) = renderer.SpritePipeline
-            let (vertices, indices) = renderer.TextQuad
-            let (tessellationVertexBuffer, tessellationIndexBuffer) = renderer.ContourTessellationVertices
-            let (tessellationModelViewProjectionUniform, tessellationPipeline) = renderer.ContourTessellationPipeline
-            for (_, _, _, textTexture) in Seq.map snd renderer.TextTextures.Values do textTexture.Destroy vkc
+            let (_, _, spritePipeline) = renderer.SpritePipeline
+            let (textVertexBuffer, textIndexBuffer) = renderer.TextQuad
+            let (_, _, _, tessellationPipeline) = renderer.ContourTessellationPipeline
+            for (_, _, _, textTexture) in Seq.map snd renderer.TextTextures.Values do textTexture.Destroy renderer.VulkanContext
             renderer.TextTextures.Clear ()
-            Texture.TextureDisposer.destroy renderer.TextureDisposer vkc
-            Texture.Sampler.destroy renderer.UnfilteredSampler vkc
-            Texture.Sampler.destroy renderer.FilteredSampler vkc
-            Pipeline.Pipeline.destroy pipeline vkc
-            Pipeline.Pipeline.destroy tessellationPipeline vkc
-            Buffer.Buffer.destroy spriteVertUniform vkc
-            Buffer.Buffer.destroy spriteFragUniform vkc
-            Buffer.Buffer.destroy tessellationModelViewProjectionUniform vkc
-            Buffer.Buffer.destroy tessellationVertexBuffer vkc
-            Buffer.Buffer.destroy tessellationIndexBuffer vkc
-            Buffer.Buffer.destroy vertices vkc
-            Buffer.Buffer.destroy indices vkc
+            Texture.TextureDestroyer.destroy renderer.TextureDestroyer renderer.VulkanContext
+            Texture.Sampler.destroy renderer.UnfilteredSampler renderer.VulkanContext
+            Texture.Sampler.destroy renderer.FilteredSampler renderer.VulkanContext
+            Pipeline.Pipeline.destroy spritePipeline renderer.VulkanContext
+            Pipeline.Pipeline.destroy tessellationPipeline renderer.VulkanContext
+            Buffer.Buffer.destroy textVertexBuffer renderer.VulkanContext
+            Buffer.Buffer.destroy textIndexBuffer renderer.VulkanContext
 
             // destroy sprite batch environment
             SpriteBatch.DestroySpriteBatchEnv renderer.SpriteBatchEnv

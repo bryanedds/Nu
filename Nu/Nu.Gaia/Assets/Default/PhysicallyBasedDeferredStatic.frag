@@ -14,26 +14,25 @@ struct Transform
     vec3 eyeCenter;
 };
 
-layout(binding = 0) buffer readonly TransformBlock
-{
-    Transform transform;
-};
+layout(set = 0, binding = 0) buffer readonly TransformBlock { Transform transform; };
 
-layout(set = 1, binding = 5) uniform texture2D albedoTexture;
-layout(set = 1, binding = 6) uniform texture2D roughnessTexture;
-layout(set = 1, binding = 7) uniform texture2D metallicTexture;
-layout(set = 1, binding = 8) uniform texture2D ambientOcclusionTexture;
-layout(set = 1, binding = 9) uniform texture2D emissionTexture;
-layout(set = 1, binding = 10) uniform texture2D normalTexture;
-layout(set = 1, binding = 11) uniform texture2D heightTexture;
-layout(set = 1, binding = 12) uniform texture2D subdermalTexture;
-layout(set = 1, binding = 13) uniform texture2D finenessTexture;
-layout(set = 1, binding = 14) uniform texture2D scatterTexture;
-layout(set = 1, binding = 15) uniform texture2D clearCoatTexture;
-layout(set = 1, binding = 16) uniform texture2D clearCoatRoughnessTexture;
-layout(set = 1, binding = 17) uniform texture2D clearCoatNormalTexture;
+layout(set = 1, binding = 0) uniform texture2D albedoTexture;
+layout(set = 1, binding = 1) uniform texture2D roughnessTexture;
+layout(set = 1, binding = 2) uniform texture2D metallicTexture;
+layout(set = 1, binding = 3) uniform texture2D ambientOcclusionTexture;
+layout(set = 1, binding = 4) uniform texture2D emissionTexture;
+layout(set = 1, binding = 5) uniform texture2D normalTexture;
+layout(set = 1, binding = 6) uniform texture2D heightTexture;
+layout(set = 1, binding = 7) uniform texture2D subdermalTexture;
+layout(set = 1, binding = 8) uniform texture2D finenessTexture;
+layout(set = 1, binding = 9) uniform texture2D scatterTexture;
+layout(set = 1, binding = 10) uniform texture2D clearCoatTexture;
+layout(set = 1, binding = 11) uniform texture2D clearCoatRoughnessTexture;
+layout(set = 1, binding = 12) uniform texture2D clearCoatNormalTexture;
 
-layout(set = 2, binding = 0) uniform sampler filteredSampler;
+// NOTE: (set = 2, binding = 0) unused in static rendering.
+
+layout(set = 3, binding = 0) uniform sampler filteredSampler;
 
 layout(location = 0) in vec4 positionOut;
 layout(location = 1) in vec2 texCoordsOut;

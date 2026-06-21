@@ -53,41 +53,20 @@ struct Light
     int lightShadowIndices;
 };
 
-struct ShadowMatrix
-{
-    mat4 shadowMatrix;
-};
-
-layout(binding = 0) buffer readonly TransformBlock
-{
-    Transform transform;
-};
-
-layout(binding = 1) buffer readonly LightingBlock
-{
-    Lighting lighting;
-};
-
-layout(binding = 2) buffer readonly LightBlock
-{
-    Light lights[LIGHTS_MAX];
-};
-
-layout(binding = 3) buffer readonly ShadowMatrixBlock
-{
-    ShadowMatrix shadowMatrices[SHADOW_TEXTURES_MAX + SHADOW_CASCADES_MAX * SHADOW_CASCADE_LEVELS];
-};
-
-layout(binding = 4) uniform texture2D depthTexture;
-layout(binding = 5) uniform texture2D albedoTexture;
-layout(binding = 6) uniform texture2D materialTexture;
-layout(binding = 7) uniform texture2D normalPlusTexture;
-layout(binding = 8) uniform texture2D subdermalPlusTexture;
-layout(binding = 9) uniform texture2D scatterPlusTexture;
-layout(binding = 10) uniform texture2D clearCoatPlusTexture;
-layout(binding = 11) uniform texture2DArray shadowTextures;
-layout(binding = 12) uniform textureCube shadowMaps[SHADOW_MAPS_MAX];
-layout(binding = 13) uniform texture2DArray shadowCascades[SHADOW_CASCADES_MAX];
+layout(set = 0, binding = 0) buffer readonly TransformBlock { Transform transform; };
+layout(set = 0, binding = 1) buffer readonly LightingBlock { Lighting lighting; };
+layout(set = 0, binding = 2) buffer readonly LightBlock { Light lights[LIGHTS_MAX]; };
+layout(set = 0, binding = 3) buffer readonly ShadowMatrixBlock { mat4 shadowMatrices[SHADOW_TEXTURES_MAX + SHADOW_CASCADES_MAX * SHADOW_CASCADE_LEVELS]; };
+layout(set = 0, binding = 4) uniform texture2D depthTexture;
+layout(set = 0, binding = 5) uniform texture2D albedoTexture;
+layout(set = 0, binding = 6) uniform texture2D materialTexture;
+layout(set = 0, binding = 7) uniform texture2D normalPlusTexture;
+layout(set = 0, binding = 8) uniform texture2D subdermalPlusTexture;
+layout(set = 0, binding = 9) uniform texture2D scatterPlusTexture;
+layout(set = 0, binding = 10) uniform texture2D clearCoatPlusTexture;
+layout(set = 0, binding = 11) uniform texture2DArray shadowTextures;
+layout(set = 0, binding = 12) uniform textureCube shadowMaps[SHADOW_MAPS_MAX];
+layout(set = 0, binding = 13) uniform texture2DArray shadowCascades[SHADOW_CASCADES_MAX];
 
 layout(set = 1, binding = 0) uniform sampler geometrySampler;
 layout(set = 1, binding = 1) uniform sampler shadowSampler;
@@ -243,7 +222,7 @@ float computeShadowScalarPoint(vec4 position, vec3 lightOrigin, int shadowIndex)
 
 float computeShadowScalarSpot(vec4 position, float lightConeOuter, int shadowIndex)
 {
-    mat4 shadowMatrix = shadowMatrices[shadowIndex].shadowMatrix;
+    mat4 shadowMatrix = shadowMatrices[shadowIndex];
     vec4 positionShadowClip = shadowMatrix * position;
     vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
     if (shadowTexCoordsProj.x >= -1.0 && shadowTexCoordsProj.x < 1.0 &&
@@ -264,7 +243,7 @@ float computeShadowScalarSpot(vec4 position, float lightConeOuter, int shadowInd
 
 float computeShadowScalarDirectional(vec4 position, int shadowIndex)
 {
-    mat4 shadowMatrix = shadowMatrices[shadowIndex].shadowMatrix;
+    mat4 shadowMatrix = shadowMatrices[shadowIndex];
     vec4 positionShadowClip = shadowMatrix * position;
     vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
     if (shadowTexCoordsProj.x >= -1.0 + SHADOW_DIRECTIONAL_SEAM_INSET && shadowTexCoordsProj.x < 1.0 - SHADOW_DIRECTIONAL_SEAM_INSET &&
@@ -286,7 +265,7 @@ float computeShadowScalarCascaded(vec4 position, float shadowCutoff, int shadowI
 {
     for (int i = 0; i < SHADOW_CASCADE_LEVELS; ++i)
     {
-        mat4 shadowMatrix = shadowMatrices[SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + i].shadowMatrix;
+        mat4 shadowMatrix = shadowMatrices[SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + i];
         vec4 positionShadowClip = shadowMatrix * position;
         vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
         if (shadowTexCoordsProj.x >= -1.0 + SHADOW_CASCADE_SEAM_INSET && shadowTexCoordsProj.x < 1.0 - SHADOW_CASCADE_SEAM_INSET &&
@@ -332,7 +311,7 @@ float geometryTravelPoint(vec4 position, int lightIndex, int shadowIndex)
 float geometryTravelSpot(vec4 position, int lightIndex, int shadowIndex)
 {
     // attempt to compute travel average in view space
-    mat4 shadowMatrix = shadowMatrices[shadowIndex].shadowMatrix;
+    mat4 shadowMatrix = shadowMatrices[shadowIndex];
     vec4 positionShadowClip = shadowMatrix * position;
     vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
     if (shadowTexCoordsProj.x >= -1.0 && shadowTexCoordsProj.x < 1.0 &&
@@ -368,7 +347,7 @@ float geometryTravelSpot(vec4 position, int lightIndex, int shadowIndex)
 float geometryTravelDirectional(vec4 position, int lightIndex, int shadowIndex)
 {
     // attempt to compute travel average in view space
-    mat4 shadowMatrix = shadowMatrices[shadowIndex].shadowMatrix;
+    mat4 shadowMatrix = shadowMatrices[shadowIndex];
     vec4 positionShadowClip = shadowMatrix * position;
     vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
     if (shadowTexCoordsProj.x >= -1.0 && shadowTexCoordsProj.x < 1.0 &&
@@ -395,7 +374,7 @@ float geometryTravelCascaded(vec4 position, int lightIndex, int shadowIndex)
     for (int i = 0; i < SHADOW_CASCADE_LEVELS; ++i)
     {
         // attempt to compute travel average in view space
-        mat4 shadowMatrix = shadowMatrices[SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + i].shadowMatrix;
+        mat4 shadowMatrix = shadowMatrices[SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + i];
         vec4 positionShadowClip = shadowMatrix * position;
         vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
         if (shadowTexCoordsProj.x >= -1.0 && shadowTexCoordsProj.x < 1.0 &&

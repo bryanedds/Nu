@@ -11,12 +11,6 @@ open Nu
 [<RequireQualifiedAccess>]
 module Buffer =
 
-    // provides id for a VkBuffer that is globally unique i.e. cannot be reused after VkBuffer is destroyed,
-    // which is essential for tracking descriptor writes
-    let mutable private BufferIdGenerationLock = obj ()
-    let mutable private BufferIdCounter = 0UL
-    let private GenBufferId () = lock BufferIdGenerationLock (fun () -> BufferIdCounter <- inc BufferIdCounter; BufferIdCounter)
-    
     // TODO: DJL: doc comments!
     type BufferType =
         | Staging
@@ -80,10 +74,10 @@ module Buffer =
     
     /// Copy data from the source buffer to the destination buffer.
     let private copyData size source destination (vkc : Hl.VulkanContext) =
-        let cb = Hl.initCommandBufferTransient vkc.TransientCommandPool vkc.Device
+        let commandBuffer = Hl.createTransientCommandBuffer vkc.TransientCommandPool vkc.Device
         let mutable region = VkBufferCopy (size = uint64 size)
-        Vulkan.vkCmdCopyBuffer (cb, source, destination, 1u, asPointer &region)
-        Hl.Queue.executeTransient cb vkc.TransientCommandPool vkc.TransientFence vkc.RenderQueue vkc.Device
+        Vulkan.vkCmdCopyBuffer (commandBuffer, source, destination, 1u, asPointer &region)
+        Hl.Queue.executeTransient commandBuffer vkc.TransientCommandPool vkc.TransientFence vkc.RenderQueue vkc.Device
     
     let private areAligned a b =
         if a = b then true
@@ -117,16 +111,12 @@ module Buffer =
     /// Abstraction for allocated buffer.
     type private BufferSingleton =
         private
-            { Id_ : uint64
-              VkBuffer_ : VkBuffer
+            { VkBuffer_ : VkBuffer
               Allocation_ : Allocation
               Mapping_ : voidptr
               Size_ : int
               UploadEnabled_ : bool }
 
-        /// The id.
-        member this.Id = this.Id_
-        
         /// The VkBuffer.
         member this.VkBuffer = this.VkBuffer_
         
@@ -162,8 +152,7 @@ module Buffer =
             
             // make BufferSingleton
             let bufferSingleton = 
-                { Id_ = GenBufferId ()
-                  VkBuffer_ = vkBuffer
+                { VkBuffer_ = vkBuffer
                   Allocation_ = Manual memory
                   Mapping_ = mapping
                   Size_ = int bufferInfo.size
@@ -187,8 +176,7 @@ module Buffer =
 
             // make BufferSingleton
             let bufferSingleton =
-                { Id_ = GenBufferId ()
-                  VkBuffer_ = vkBuffer
+                { VkBuffer_ = vkBuffer
                   Allocation_ = Vma allocation
                   Mapping_ = allocationInfo.pMappedData
                   Size_ = int bufferInfo.size
@@ -237,7 +225,8 @@ module Buffer =
         /// Destroy buffer and allocation.
         static member destroy (bufferSingleton : BufferSingleton) (vkc : Hl.VulkanContext) =
             match bufferSingleton.Allocation_ with
-            | Vma vmaAllocation -> Vma.vmaDestroyBuffer (vkc.VmaAllocator, bufferSingleton.VkBuffer, vmaAllocation)
+            | Vma vmaAllocation ->
+                Vma.vmaDestroyBuffer (vkc.VmaAllocator, bufferSingleton.VkBuffer, vmaAllocation)
             | Manual manualAllocation ->
                 if bufferSingleton.Mapping_ <> Unchecked.defaultof<voidptr> then Vulkan.vkUnmapMemory (vkc.Device, manualAllocation)
                 Vulkan.vkDestroyBuffer (vkc.Device, bufferSingleton.VkBuffer, nullPtr)
@@ -255,7 +244,6 @@ module Buffer =
         member private this.BufferSingleton = this.BufferSingletons.[this.CurrentIndex]
         member private this.BufferSize = this.BufferSizes.[this.CurrentIndex]
         
-        member this.Id = this.BufferSingleton.Id
         member this.VkBuffer = this.BufferSingleton.VkBuffer
 
         /// Create a BufferSingleton.
@@ -303,85 +291,74 @@ module Buffer =
 
         /// Destroy BufferParallel. Never call this in frame as previous frame(s) may still be using it.
         static member destroy bufferParallel vkc =
-            for i in 0 .. dec bufferParallel.BufferSingletons.Length do BufferSingleton.destroy bufferParallel.BufferSingletons.[i] vkc
+            for i in 0 .. dec bufferParallel.BufferSingletons.Length do
+                BufferSingleton.destroy bufferParallel.BufferSingletons.[i] vkc
 
-    /// The Vulkan buffer interface for Nu, which internally automates parallelization for frames in flight
-    /// and manages a multitude of indexable buffer instances to allow repeated use prior to command submission.
+    /// Represents a dynamically growing multi-buffer with parallel underlying vulkan buffers. Maintains an internal
+    /// cursor that selects the currently active buffer, which is reset via BeginFrame and advanced to the next vulkan
+    /// buffer with Advance. Automatically resizes when usage exceeds its capacity and creates additional buffers when
+    /// the cursor moves beyond current capacity. This type is intended for transient or frequently updated GPU data
+    /// such as storage data, uniform data, and streaming data.
     type Buffer =
         private
             { BufferParallels : BufferParallel List
-              mutable BufferSize : int
-              BufferType : BufferType }
+              mutable BufferCursor : int
+              BufferType : BufferType
+              mutable BufferSize : int }
 
-        /// The VkBuffer at index for current frame in flight, along with its id.
-        member this.Item index =
-            let bufferParallel = this.BufferParallels.[index]
-            (bufferParallel.VkBuffer, bufferParallel.Id)
+        member private this.BufferParallel = this.BufferParallels.[this.BufferCursor]
 
-        /// The first VkBuffer for current frame in flight.
-        member this.VkBuffer = this.BufferParallels.[0].VkBuffer
+        /// Get the vulkan buffer currently at the cursor.
+        member this.VkBuffer = this.BufferParallel.VkBuffer
 
-        /// Buffer count.
-        /// TODO: DJL: probably, this should be limited to buffers being used, i.e. buffers allocated in advance should not be visible to the api.
-        member this.Count = this.BufferParallels.Count
+        /// Begin use of this buffer for the current frame.
+        member this.BeginFrame () = this.BufferCursor <- 0
+
+        /// Advance the cursor.
+        member this.Advance () = this.BufferCursor <- inc this.BufferCursor
         
-        static member private updateCount index (buffer : Buffer) vkc =
-            while index > dec buffer.Count do
-                let bufferParallels = Array.zeroCreate<BufferParallel> 1
-                for i in 0 .. dec bufferParallels.Length do bufferParallels.[i] <- BufferParallel.create buffer.BufferSize buffer.BufferType vkc
-                buffer.BufferParallels.AddRange bufferParallels
-        
-        /// Create Buffer.
+        /// Create a new Buffer.
         static member create bufferSize (bufferType : BufferType) vkc =
-            
-            // create initial buffers
-            let bufferParallels = Array.zeroCreate<BufferParallel> 1 // TODO: DJL: develop advance buffer creation strategy as guided by performance.
-            for i in 0 .. dec bufferParallels.Length do bufferParallels.[i] <- BufferParallel.create bufferSize bufferType vkc
-
-            // make Buffer
-            let buffer =
-                { BufferParallels = List (bufferParallels)
-                  BufferSize = bufferSize
-                  BufferType = bufferType }
-            
-            // fin
-            buffer
+            { BufferParallels = List [BufferParallel.create bufferSize bufferType vkc]
+              BufferCursor = 0
+              BufferType = bufferType
+              BufferSize = bufferSize }
 
         /// Expand buffer size and count as necessary.
-        static member update index size (buffer : Buffer) vkc =
+        static member update size (buffer : Buffer) vkc =
             if size > buffer.BufferSize then buffer.BufferSize <- size
-            Buffer.updateCount index buffer vkc
-            BufferParallel.updateSize buffer.BufferSize buffer.BufferParallels.[index] vkc
-        
-        /// Upload data to Buffer at index.
-        /// TODO: DJL: maybe remove automatic update as previous uploads to same buffer are wiped!
-        /// TODO: DJL: also remove offset shifting and abort with warning instead.
-        static member upload index offset alignment size count data (buffer : Buffer) vkc =
-            let bufferSize = getMinimumBufferSize offset alignment size count
-            Buffer.update index bufferSize buffer vkc
-            BufferParallel.upload offset alignment size count data buffer.BufferParallels.[index] vkc
+            while buffer.BufferCursor > dec buffer.BufferParallels.Count do // TODO: P1: consider doubling capacity instead of just increasing to cursor.
+                let bufferParallel = BufferParallel.create buffer.BufferSize buffer.BufferType vkc
+                buffer.BufferParallels.Add bufferParallel
+            BufferParallel.updateSize buffer.BufferSize buffer.BufferParallel vkc
 
-        /// Upload a value to Buffer at index.
-        static member uploadValue index offset alignment (value : 'a) buffer vkc =
+        /// Upload subdata to Buffer.
+        static member uploadSubdata offset alignment size count data (buffer : Buffer) vkc =
+            let bufferSize = getMinimumBufferSize offset alignment size count
+            Buffer.update bufferSize buffer vkc
+            BufferParallel.upload offset alignment size count data buffer.BufferParallel vkc
+
+        /// Upload a value to Buffer.
+        static member uploadValue (value : 'a) buffer vkc =
             let mutable value = value
-            Buffer.upload index offset alignment sizeof<'a> 1 (asNativeInt &value) buffer vkc
+            Buffer.uploadSubdata 0 0 sizeof<'a> 1 (asNativeInt &value) buffer vkc
         
-        /// Upload an array to Buffer at index.
-        static member uploadArray index offset alignment (array : 'a array) buffer vkc =
+        /// Upload an array to Buffer.
+        static member uploadArray (array : 'a array) buffer vkc =
             use arrayPin = new ArrayPin<_> (array)
-            Buffer.upload index offset alignment sizeof<'a> array.Length arrayPin.NativeInt buffer vkc
+            Buffer.uploadSubdata 0 0 sizeof<'a> array.Length arrayPin.NativeInt buffer vkc
         
         /// Create a staging buffer and stage the data.
         static member stageData size data vkc =
             let buffer = Buffer.create size Staging vkc
-            Buffer.upload 0 0 0 size 1 data buffer vkc
+            Buffer.uploadSubdata 0 0 size 1 data buffer vkc
             buffer
         
         /// Create a vertex buffer with data uploaded via staging buffer.
         static member createVertexStaged size data vkc =
             let stagingBuffer = Buffer.stageData size data vkc
             let vertexBuffer = Buffer.create size (Vertex false) vkc
-            copyData size stagingBuffer.VkBuffer vertexBuffer.VkBuffer vkc
+            copyData size stagingBuffer.BufferParallel.VkBuffer vertexBuffer.BufferParallel.VkBuffer vkc
             Buffer.destroy stagingBuffer vkc
             vertexBuffer
 
@@ -389,7 +366,7 @@ module Buffer =
         static member createIndexStaged size data vkc =
             let stagingBuffer = Buffer.stageData size data vkc
             let indexBuffer = Buffer.create size (Index false) vkc
-            copyData size stagingBuffer.VkBuffer indexBuffer.VkBuffer vkc
+            copyData size stagingBuffer.BufferParallel.VkBuffer indexBuffer.BufferParallel.VkBuffer vkc
             Buffer.destroy stagingBuffer vkc
             indexBuffer
 
@@ -419,4 +396,5 @@ module Buffer =
         
         /// Destroy Buffer.
         static member destroy (buffer : Buffer) vkc =
-            for i in 0 .. dec buffer.Count do BufferParallel.destroy buffer.BufferParallels.[i] vkc
+            for i in 0 .. dec buffer.BufferParallels.Count do
+                BufferParallel.destroy buffer.BufferParallels.[i] vkc

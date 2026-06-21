@@ -5153,10 +5153,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         { VulkanContext : Hl.VulkanContext
           mutable GeometryViewport : Viewport
           mutable WindowViewport : Viewport
-          mutable GeometryRenderPassIndex : int
           LazyTextureQueues : ConcurrentDictionary<Texture.LazyTexture ConcurrentQueue, Texture.LazyTexture ConcurrentQueue>
           TextureServer : Texture.TextureServer
-          TextureDisposer : Texture.TextureDisposer
+          TextureDestroyer : Texture.TextureDestroyer
           FilteredSampler : Texture.Sampler
           CubeMapSampler : Texture.Sampler
           GeometrySampler : Texture.Sampler
@@ -5164,6 +5163,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           ColorSampler : Texture.Sampler
           DepthSampler : Texture.Sampler
           BrdfSampler : Texture.Sampler
+          mutable RenderPassIndex : int
+          GeometryInstanced : PhysicallyBased.PhysicallyBasedGeometry HashSet
           mutable SkyBoxPipeline : SkyBox.SkyBoxPipeline
           mutable IrradiancePipeline : CubeMap.CubeMapPipeline
           mutable EnvironmentFilterPipeline : LightMap.EnvironmentFilterPipeline
@@ -5557,7 +5558,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         | None -> (Color.White, 1.0f, None)
     
     static member private handleReloadShaders renderer =
-        Pipeline.Pipeline.reloadShaders renderer.SkyBoxPipeline.SkyBoxPipeline renderer.VulkanContext
+        Pipeline.Pipeline.reloadShaders renderer.SkyBoxPipeline.Pipeline renderer.VulkanContext
         Pipeline.Pipeline.reloadShaders renderer.IrradiancePipeline.Pipeline renderer.VulkanContext
         Pipeline.Pipeline.reloadShaders renderer.EnvironmentFilterPipeline.Pipeline renderer.VulkanContext
         PhysicallyBased.ReloadPhysicallyBasedShaders renderer.PhysicallyBasedPipelines renderer.VulkanContext
@@ -5764,10 +5765,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 renderer.ReloadAssetsRequested <- true
         userDefinedStaticModelsToDestroy
     
-    
     static member private renderPhysicallyBasedDeferredSurfaces
-        renderPassIndex batchPhase view projection viewProjection bones eyeCenter (parameters : struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List)
-        filteredSampler (surface : PhysicallyBased.PhysicallyBasedSurface) viewport colorAttachments depthAttachment pipeline vkc renderer =
+        batchPhase view projection viewProjection bones eyeCenter (parameters : struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List)
+        filteredSampler (surface : PhysicallyBased.PhysicallyBasedSurface) viewport colorAttachments depthAttachment renderPassIndex pipeline renderer =
                                                                       
         // ensure we have a large enough instance fields array
         let mutable length = renderer.InstanceFields.Length
@@ -5815,14 +5815,17 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
         // draw deferred surfaces
         PhysicallyBased.DrawPhysicallyBasedDeferredSurfaces
-            (renderPassIndex, batchPhase, view, projection, viewProjection, bones, eyeCenter,
+            (batchPhase, view, projection, viewProjection, bones, eyeCenter,
              parameters.Count, renderer.InstanceFields, filteredSampler, surface.SurfaceMaterial, surface.PhysicallyBasedGeometry,
-             viewport, colorAttachments, depthAttachment, pipeline, vkc)
+             viewport, colorAttachments, depthAttachment, renderPassIndex, pipeline, renderer.VulkanContext)
+
+        // track geometry instancing
+        renderer.GeometryInstanced.Add surface.PhysicallyBasedGeometry |> ignore<bool>
 
     static member private renderPhysicallyBasedDeferredSurfacePreBatch
-        renderPassIndex frustumInterior frustumExterior frustumImposter renderPass
+        frustumInterior frustumExterior frustumImposter renderPass
         view projection viewProjection bones eyeCenter (parameters : (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array)
-        filteredSampler (surface : PhysicallyBased.PhysicallyBasedSurface) viewport colorAttachments depthAttachment pipeline vkc renderer =
+        filteredSampler (surface : PhysicallyBased.PhysicallyBasedSurface) viewport colorAttachments depthAttachment renderPassIndex pipeline renderer =
 
         // ensure we have a large enough instance fields array
         let mutable length = renderer.InstanceFields.Length
@@ -5881,28 +5884,31 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
         // draw deferred surfaces
         PhysicallyBased.DrawPhysicallyBasedDeferredSurfaces
-            (renderPassIndex, SingletonPhase, view, projection, viewProjection, bones, eyeCenter,
+            (SingletonPhase, view, projection, viewProjection, bones, eyeCenter,
              i, renderer.InstanceFields, filteredSampler, surface.SurfaceMaterial, surface.PhysicallyBasedGeometry,
-             viewport, colorAttachments, depthAttachment, pipeline, vkc)
+             viewport, colorAttachments, depthAttachment, renderPassIndex, pipeline, renderer.VulkanContext)
+
+        // track geometry instancing
+        renderer.GeometryInstanced.Add surface.PhysicallyBasedGeometry |> ignore<bool>
 
     static member private beginPhysicallyBasedForwardPipeline
-        renderPassIndex viewArray projectionArray viewProjectionArray eyeCenter viewInverseArray projectionInverseArray
+        viewArray projectionArray viewProjectionArray eyeCenter viewInverseArray projectionInverseArray
         lightCutoffMargin lightAmbientColor lightAmbientBrightness lightAmbientBoostCutoff lightAmbientBoostScalar lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity
         fogEnabled fogType fogStart fogFinish fogDensity fogColor ssvfEnabled ssvfIntensity ssvfSteps ssvfAsymmetry ssrrEnabled ssrrIntensity ssrrDetail ssrrRefinementsMax ssrrRayThickness ssrrDistanceCutoff ssrrDistanceCutoffMargin ssrrEdgeHorizontalMargin ssrrEdgeVerticalMargin
-        depthTexture colorTexture brdfTexture irradianceMap environmentFilterMap filteredSampler cubeMapSampler shadowSampler colorSampler depthSampler brdfSampler shadowNear pipeline vkc =
+        depthTexture colorTexture brdfTexture irradianceMap environmentFilterMap filteredSampler cubeMapSampler shadowSampler colorSampler depthSampler brdfSampler shadowNear renderPass pipeline vkc =
 
         // begin shader
         PhysicallyBased.BeginPhysicallyBasedForwardPipeline
-            (renderPassIndex, viewArray, projectionArray, viewProjectionArray, eyeCenter, viewInverseArray, projectionInverseArray,
+            (viewArray, projectionArray, viewProjectionArray, eyeCenter, viewInverseArray, projectionInverseArray,
              lightCutoffMargin, lightAmbientColor, lightAmbientBrightness, lightAmbientBoostCutoff, lightAmbientBoostScalar, lightShadowSamples, lightShadowBias, lightShadowSampleScalar, lightShadowExponent, lightShadowDensity,
              fogEnabled, fogType, fogStart, fogFinish, fogDensity, fogColor, ssvfEnabled, ssvfIntensity, ssvfSteps, ssvfAsymmetry, ssrrEnabled, ssrrIntensity, ssrrDetail, ssrrRefinementsMax, ssrrRayThickness, ssrrDistanceCutoff, ssrrDistanceCutoffMargin, ssrrEdgeHorizontalMargin, ssrrEdgeVerticalMargin,
-             depthTexture, colorTexture, brdfTexture, irradianceMap, environmentFilterMap, filteredSampler, cubeMapSampler, shadowSampler, colorSampler, depthSampler, brdfSampler, shadowNear, pipeline, vkc)
+             depthTexture, colorTexture, brdfTexture, irradianceMap, environmentFilterMap, filteredSampler, cubeMapSampler, shadowSampler, colorSampler, depthSampler, brdfSampler, shadowNear, renderPass, pipeline, vkc)
 
     static member private renderPhysicallyBasedForwardSurfaces
-        renderPassIndex bonesArrays (parameters : struct (Matrix4x4 * Presence * Box2 * MaterialProperties) SList)
+        bonesArrays (parameters : struct (Matrix4x4 * Presence * Box2 * MaterialProperties) SList)
         irradianceMaps environmentFilterMaps shadowTextureArray shadowMaps shadowCascades lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses lightMapsCount lightMapSingletonBlendMargin
         lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices lightsCount shadowMatrices
-        (surface : PhysicallyBased.PhysicallyBasedSurface) depthTest blending viewport colorAttachment depthAttachment pipeline vkc renderer =
+        (surface : PhysicallyBased.PhysicallyBasedSurface) depthTest blending viewport colorAttachment depthAttachment uniformsDescriptorSet samplersDescriptorSet pipeline renderer =
 
         // ensure we have a large enough instance fields array
         let mutable length = renderer.InstanceFields.Length
@@ -5949,12 +5955,19 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 36] <- 0.0f // free
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 37] <- 0.0f // free
 
+        // make these bindings mutable for passing by ref
+        let mutable (uniformsDescriptorSet, samplersDescriptorSet) =
+            (uniformsDescriptorSet, samplersDescriptorSet)
+
         // draw forward surfaces
         PhysicallyBased.DrawPhysicallyBasedForwardSurfaces
-            (renderPassIndex, bonesArrays, parameters.Length, renderer.InstanceFields,
+            (bonesArrays, parameters.Length, renderer.InstanceFields,
              irradianceMaps, environmentFilterMaps, shadowTextureArray, shadowMaps, shadowCascades, lightMapOrigins, lightMapMins, lightMapSizes, lightMapAmbientColors, lightMapAmbientBrightnesses, lightMapsCount, lightMapSingletonBlendMargin,
              lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightTypes, lightConeInners, lightConeOuters, lightDesireFogs, lightShadowIndices, lightsCount, shadowMatrices,
-             surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, depthTest, blending, viewport, colorAttachment, depthAttachment, pipeline, vkc)
+             surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, depthTest, blending, viewport, colorAttachment, depthAttachment, &uniformsDescriptorSet, &samplersDescriptorSet, pipeline, renderer.VulkanContext)
+             
+        // track geometry instancing
+        renderer.GeometryInstanced.Add surface.PhysicallyBasedGeometry |> ignore<bool>
 
     static member private endPhysicallyBasedForwardPipeline pipeline =
 
@@ -6004,8 +6017,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // destroy cached light maps whose originating probe no longer exists
         for lightMapKvp in renderer.LightMaps do
             if not (renderTasks.LightProbes.ContainsKey lightMapKvp.Key) then
-                Texture.TextureDisposer.submit lightMapKvp.Value.IrradianceMap renderer.TextureDisposer
-                Texture.TextureDisposer.submit lightMapKvp.Value.EnvironmentFilterMap renderer.TextureDisposer
+                renderer.TextureDestroyer.Submit lightMapKvp.Value.IrradianceMap 
+                renderer.TextureDestroyer.Submit lightMapKvp.Value.EnvironmentFilterMap 
                 renderer.LightMaps.Remove lightMapKvp.Key |> ignore<bool>
 
         // ensure light maps are synchronized with any light probe changes
@@ -6087,8 +6100,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // setup geometry attachments and depth testing
         // NOTE: DJL: we use the composition z attachment directly to avoid having to find a depth format supporting copy operations,
         // which is problematic on some mesa drivers.
-        let vkc = renderer.VulkanContext
-        let cb = vkc.RenderCommandBuffer
         let geometryResolution = renderer.GeometryViewport.Bounds.Size
         let renderArea = VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)
         let clearColor = VkClearValue (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
@@ -6096,13 +6107,11 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let (depthTexture, albedoTexture, materialTexture, normalPlusTexture, subdermalPlusTexture, scatterPlusTexture, clearCoatPlusTexture, _) = renderer.PhysicallyBasedAttachments.GeometryAttachments
         let geometryImageViewArray = [|depthTexture.ImageView; albedoTexture.ImageView; materialTexture.ImageView; normalPlusTexture.ImageView; subdermalPlusTexture.ImageView; scatterPlusTexture.ImageView; clearCoatPlusTexture.ImageView|]
         let mutable rendering = Hl.makeRenderingInfo geometryImageViewArray (Some compositionZTexture.ImageView) renderArea (Some clearColor)
-        Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
-        Vulkan.vkCmdEndRendering cb
+        Vulkan.vkCmdBeginRendering (renderer.VulkanContext.RenderCommandBuffer, asPointer &rendering)
+        Vulkan.vkCmdEndRendering renderer.VulkanContext.RenderCommandBuffer
         
         // render static surfaces deferred
         // TODO: DJL: find out how this is screwing up the light map test!
-        let pipeline = renderer.PhysicallyBasedPipelines.DeferredStaticPipeline
-        pipeline.BeginRenderPass () // reset index for checking against draw limit
         let mutable i = 0
         for entry in renderTasks.DeferredStatic do
             let batchPhase =
@@ -6110,29 +6119,26 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 | 1 -> SingletonPhase
                 | count -> if i = 0 then StartingPhase elif i = dec count then StoppingPhase else ResumingPhase
             VulkanRenderer3d.renderPhysicallyBasedDeferredSurfaces
-                renderer.GeometryRenderPassIndex batchPhase view geometryProjection geometryViewProjection [||] eyeCenter entry.Value
-                renderer.FilteredSampler entry.Key renderer.GeometryViewport geometryImageViewArray compositionZTexture pipeline renderer.VulkanContext renderer
-            pipeline.Count () // advance draw indicies
+                batchPhase view geometryProjection geometryViewProjection [||] eyeCenter entry.Value
+                renderer.FilteredSampler entry.Key renderer.GeometryViewport geometryImageViewArray compositionZTexture renderer.RenderPassIndex renderer.PhysicallyBasedPipelines.DeferredStaticPipeline renderer
             i <- inc i
 
         // render static surface pre-batches deferred
         for entry in renderTasks.DeferredStaticPreBatches do
             let struct (surface, preBatch) = entry.Value
             VulkanRenderer3d.renderPhysicallyBasedDeferredSurfacePreBatch
-                renderer.GeometryRenderPassIndex frustumInterior frustumExterior frustumImposter renderPass
+                frustumInterior frustumExterior frustumImposter renderPass
                 view geometryProjection geometryViewProjection [||] eyeCenter preBatch
-                renderer.FilteredSampler surface renderer.GeometryViewport geometryImageViewArray compositionZTexture pipeline renderer.VulkanContext renderer
-            pipeline.Count () // advance draw indicies
-
+                renderer.FilteredSampler surface renderer.GeometryViewport geometryImageViewArray compositionZTexture renderer.RenderPassIndex renderer.PhysicallyBasedPipelines.DeferredStaticPipeline renderer
         
         // transition deferred geometry attachments to sampling
-        Texture.Texture.transitionLayoutAsync cb Hl.ColorAttachmentWrite Hl.ShaderRead depthTexture
-        Texture.Texture.transitionLayoutAsync cb Hl.ColorAttachmentWrite Hl.ShaderRead albedoTexture
-        Texture.Texture.transitionLayoutAsync cb Hl.ColorAttachmentWrite Hl.ShaderRead materialTexture
-        Texture.Texture.transitionLayoutAsync cb Hl.ColorAttachmentWrite Hl.ShaderRead normalPlusTexture
-        Texture.Texture.transitionLayoutAsync cb Hl.ColorAttachmentWrite Hl.ShaderRead subdermalPlusTexture
-        Texture.Texture.transitionLayoutAsync cb Hl.ColorAttachmentWrite Hl.ShaderRead scatterPlusTexture
-        Texture.Texture.transitionLayoutAsync cb Hl.ColorAttachmentWrite Hl.ShaderRead clearCoatPlusTexture
+        Texture.Texture.transitionLayoutAsync Hl.ColorAttachmentWrite Hl.ShaderRead depthTexture renderer.VulkanContext.RenderCommandBuffer
+        Texture.Texture.transitionLayoutAsync Hl.ColorAttachmentWrite Hl.ShaderRead albedoTexture renderer.VulkanContext.RenderCommandBuffer
+        Texture.Texture.transitionLayoutAsync Hl.ColorAttachmentWrite Hl.ShaderRead materialTexture renderer.VulkanContext.RenderCommandBuffer
+        Texture.Texture.transitionLayoutAsync Hl.ColorAttachmentWrite Hl.ShaderRead normalPlusTexture renderer.VulkanContext.RenderCommandBuffer
+        Texture.Texture.transitionLayoutAsync Hl.ColorAttachmentWrite Hl.ShaderRead subdermalPlusTexture renderer.VulkanContext.RenderCommandBuffer
+        Texture.Texture.transitionLayoutAsync Hl.ColorAttachmentWrite Hl.ShaderRead scatterPlusTexture renderer.VulkanContext.RenderCommandBuffer
+        Texture.Texture.transitionLayoutAsync Hl.ColorAttachmentWrite Hl.ShaderRead clearCoatPlusTexture renderer.VulkanContext.RenderCommandBuffer
         
         
         // run light mapping pass
@@ -6164,8 +6170,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // setup lighting attachment
         let lightAccumTexture = renderer.PhysicallyBasedAttachments.LightingAttachment
         let mutable rendering = Hl.makeRenderingInfo [|lightAccumTexture.ImageView|] None renderArea (Some clearColor)
-        Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
-        Vulkan.vkCmdEndRendering cb
+        Vulkan.vkCmdBeginRendering (renderer.VulkanContext.RenderCommandBuffer, asPointer &rendering)
+        Vulkan.vkCmdEndRendering renderer.VulkanContext.RenderCommandBuffer
         
         
         // deferred render quad to lighting attachments
@@ -6180,17 +6186,17 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         
         
         // transition sampled attachments to sampling
-        Texture.Texture.transitionLayoutAsync cb Hl.ColorAttachmentWrite Hl.ShaderRead shadowTextureArray
-        for i in 0 .. dec shadowMaps.Length do Texture.Texture.transitionLayoutAsync cb Hl.ColorAttachmentWrite Hl.ShaderRead shadowMaps[i]
-        for i in 0 .. dec shadowCascades.Length do Texture.Texture.transitionLayoutAsync cb Hl.ColorAttachmentWrite Hl.ShaderRead shadowCascades[i]
-        Texture.Texture.transitionLayoutAsync cb Hl.ColorAttachmentWrite Hl.ShaderRead colorTexture
-        Texture.Texture.transitionLayoutAsync cb Hl.ColorAttachmentWrite Hl.ShaderRead depthTexture2
+        Texture.Texture.transitionLayoutAsync Hl.ColorAttachmentWrite Hl.ShaderRead shadowTextureArray renderer.VulkanContext.RenderCommandBuffer
+        for i in 0 .. dec shadowMaps.Length do Texture.Texture.transitionLayoutAsync Hl.ColorAttachmentWrite Hl.ShaderRead shadowMaps[i] renderer.VulkanContext.RenderCommandBuffer
+        for i in 0 .. dec shadowCascades.Length do Texture.Texture.transitionLayoutAsync Hl.ColorAttachmentWrite Hl.ShaderRead shadowCascades[i] renderer.VulkanContext.RenderCommandBuffer
+        Texture.Texture.transitionLayoutAsync Hl.ColorAttachmentWrite Hl.ShaderRead colorTexture renderer.VulkanContext.RenderCommandBuffer
+        Texture.Texture.transitionLayoutAsync Hl.ColorAttachmentWrite Hl.ShaderRead depthTexture2 renderer.VulkanContext.RenderCommandBuffer
         
         
         // setup composition attachment
         let mutable rendering = Hl.makeRenderingInfo [|compositionTexture.ImageView|] None renderArea (Some clearColor)
-        Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
-        Vulkan.vkCmdEndRendering cb
+        Vulkan.vkCmdBeginRendering (renderer.VulkanContext.RenderCommandBuffer, asPointer &rendering)
+        Vulkan.vkCmdEndRendering renderer.VulkanContext.RenderCommandBuffer
         
         
         // deferred render composition quad to composition attachments
@@ -6203,8 +6209,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         match skyBoxOpt with
         | Some (cubeMapColor, cubeMapBrightness, cubeMap, _) ->
             SkyBox.DrawSkyBox
-                (renderer.GeometryRenderPassIndex,
-                 viewSkyBox,
+                (viewSkyBox,
                  windowProjection,
                  windowViewProjectionSkyBox,
                  cubeMapColor,
@@ -6216,7 +6221,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                  compositionTexture,
                  compositionZTexture,
                  renderer.SkyBoxPipeline,
-                 vkc)
+                 renderer.VulkanContext)
         | None -> ()
         
         // forward render surfaces to composition attachment
@@ -6224,18 +6229,13 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             if renderer.RendererConfig.SsrrEnabled && renderer.LightingConfig.SsrrEnabled then 1 else 0
         let forwardSsvfSteps =
             renderer.LightingConfig.SsvfSteps * 2 // HACK: need an increase in forward-rendered steps since they don't get a blur pass.
-        let forwardPipelines =
-            [renderer.PhysicallyBasedPipelines.ForwardStaticPipeline]
-        for pipeline in forwardPipelines do
-            
-            // just hard coding these values until we implement animated
-            VulkanRenderer3d.beginPhysicallyBasedForwardPipeline
-                renderer.GeometryRenderPassIndex view geometryProjection geometryViewProjection eyeCenter viewInverse windowProjectionInverse renderer.LightingConfig.LightCutoffMargin lightAmbientColor lightAmbientBrightness renderer.LightingConfig.LightAmbientBoostCutoff renderer.LightingConfig.LightAmbientBoostScalar
+        let (uniformsDescriptorSet, samplersDescriptorSet) =
+            VulkanRenderer3d.beginPhysicallyBasedForwardPipeline // just hard coding these values until we implement animated
+                view geometryProjection geometryViewProjection eyeCenter viewInverse windowProjectionInverse renderer.LightingConfig.LightCutoffMargin lightAmbientColor lightAmbientBrightness renderer.LightingConfig.LightAmbientBoostCutoff renderer.LightingConfig.LightAmbientBoostScalar
                 renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
                 fogEnabled fogType renderer.LightingConfig.FogStart renderer.LightingConfig.FogFinish renderer.LightingConfig.FogDensity renderer.LightingConfig.FogColor ssvfEnabled renderer.LightingConfig.SsvfIntensity forwardSsvfSteps renderer.LightingConfig.SsvfAsymmetry
                 ssrrEnabled renderer.LightingConfig.SsrrIntensity renderer.LightingConfig.SsrrDetail renderer.LightingConfig.SsrrRefinementsMax renderer.LightingConfig.SsrrRayThickness renderer.LightingConfig.SsrrDistanceCutoff renderer.LightingConfig.SsrrDistanceCutoffMargin renderer.LightingConfig.SsrrEdgeHorizontalMargin renderer.LightingConfig.SsrrEdgeVerticalMargin
-                depthTexture2 colorTexture renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap renderer.FilteredSampler renderer.CubeMapSampler renderer.ShadowSampler renderer.ColorSampler renderer.DepthSampler renderer.BrdfSampler shadowNear pipeline vkc
-            pipeline.BeginRenderPass () // reset index for checking against draw limit
+                depthTexture2 colorTexture renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap renderer.FilteredSampler renderer.CubeMapSampler renderer.ShadowSampler renderer.ColorSampler renderer.DepthSampler renderer.BrdfSampler shadowNear renderer.RenderPassIndex renderer.PhysicallyBasedPipelines.ForwardStaticPipeline renderer.VulkanContext
         for (model, _, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest) in renderTasks.ForwardSorted do
             let (lightMapOrigins, lightMapMins, lightMapSizes, lightMapAmbientColors, lightMapAmbientBrightnesses, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
                 let surfaceBounds = surface.SurfaceBounds.Transform model
@@ -6251,44 +6251,39 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             match pipelineOpt with
             | Some pipeline ->
                 VulkanRenderer3d.renderPhysicallyBasedForwardSurfaces
-                    renderer.GeometryRenderPassIndex bonesArray (SList.singleton (model, presence, texCoordsOffset, properties))
+                    bonesArray (SList.singleton (model, presence, texCoordsOffset, properties))
                     lightMapIrradianceMaps lightMapEnvironmentFilterMaps shadowTextureArray shadowMaps shadowCascades lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses (min lightMapEnvironmentFilterMaps.Length renderTasks.LightMaps.Count) renderer.LightingConfig.LightMapSingletonBlendMargin
                     lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices (min lightIds.Length renderTasks.Lights.Count) renderer.ShadowMatrices
-                    surface depthTest true renderer.GeometryViewport compositionTexture compositionZTexture pipeline vkc renderer
-                
-                // advance draw indicies
-                pipeline.Count ()
+                    surface depthTest true renderer.GeometryViewport compositionTexture compositionZTexture uniformsDescriptorSet samplersDescriptorSet pipeline renderer
             | None -> ()
-        for pipeline in forwardPipelines do
-            VulkanRenderer3d.endPhysicallyBasedForwardPipeline pipeline
-        
-        
+        VulkanRenderer3d.endPhysicallyBasedForwardPipeline renderer.PhysicallyBasedPipelines.ForwardStaticPipeline
+
         // blit from composition attachment to swapchain (just for now)
         // TODO: DJL: blit from final attachment, not composition.
-        Texture.Texture.transitionLayoutAsync cb Hl.ColorAttachmentWrite Hl.TransferSrc compositionTexture
-        Hl.recordTransitionLayout cb true 1 targetLayer 1 VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.TransferDst targetImage
+        Texture.Texture.transitionLayoutAsync Hl.ColorAttachmentWrite Hl.TransferSrc compositionTexture renderer.VulkanContext.RenderCommandBuffer
+        Hl.recordTransitionLayout true 1 targetLayer 1 VkImageAspectFlags.Color Hl.ColorAttachmentWrite Hl.TransferDst targetImage renderer.VulkanContext.RenderCommandBuffer
         let mutable blit = Hl.makeBlit 0 0 0 targetLayer (VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)) targetBounds
-        Vulkan.vkCmdBlitImage (cb, compositionTexture.Image, Hl.TransferSrc.VkImageLayout, targetImage, Hl.TransferDst.VkImageLayout, 1u, asPointer &blit, VkFilter.Linear)
-        Texture.Texture.transitionLayoutAsync cb Hl.TransferSrc Hl.ColorAttachmentWrite compositionTexture
-        Hl.recordTransitionLayout cb true 1 targetLayer 1 VkImageAspectFlags.Color Hl.TransferDst Hl.ColorAttachmentWrite targetImage
+        Vulkan.vkCmdBlitImage (renderer.VulkanContext.RenderCommandBuffer, compositionTexture.Image, Hl.TransferSrc.VkImageLayout, targetImage, Hl.TransferDst.VkImageLayout, 1u, asPointer &blit, VkFilter.Linear)
+        Texture.Texture.transitionLayoutAsync Hl.TransferSrc Hl.ColorAttachmentWrite compositionTexture renderer.VulkanContext.RenderCommandBuffer
+        Hl.recordTransitionLayout true 1 targetLayer 1 VkImageAspectFlags.Color Hl.TransferDst Hl.ColorAttachmentWrite targetImage renderer.VulkanContext.RenderCommandBuffer
         
         // transition sampled attachments back to attachment
-        Texture.Texture.transitionLayoutAsync cb Hl.ShaderRead Hl.ColorAttachmentWrite depthTexture
-        Texture.Texture.transitionLayoutAsync cb Hl.ShaderRead Hl.ColorAttachmentWrite albedoTexture
-        Texture.Texture.transitionLayoutAsync cb Hl.ShaderRead Hl.ColorAttachmentWrite materialTexture
-        Texture.Texture.transitionLayoutAsync cb Hl.ShaderRead Hl.ColorAttachmentWrite normalPlusTexture
-        Texture.Texture.transitionLayoutAsync cb Hl.ShaderRead Hl.ColorAttachmentWrite subdermalPlusTexture
-        Texture.Texture.transitionLayoutAsync cb Hl.ShaderRead Hl.ColorAttachmentWrite scatterPlusTexture
-        Texture.Texture.transitionLayoutAsync cb Hl.ShaderRead Hl.ColorAttachmentWrite clearCoatPlusTexture
-        Texture.Texture.transitionLayoutAsync cb Hl.ShaderRead Hl.ColorAttachmentWrite shadowTextureArray
-        for i in 0 .. dec shadowMaps.Length do Texture.Texture.transitionLayoutAsync cb Hl.ShaderRead Hl.ColorAttachmentWrite shadowMaps[i]
-        for i in 0 .. dec shadowCascades.Length do Texture.Texture.transitionLayoutAsync cb Hl.ShaderRead Hl.ColorAttachmentWrite shadowCascades[i]
-        Texture.Texture.transitionLayoutAsync cb Hl.ShaderRead Hl.ColorAttachmentWrite colorTexture
-        Texture.Texture.transitionLayoutAsync cb Hl.ShaderRead Hl.ColorAttachmentWrite depthTexture2
+        Texture.Texture.transitionLayoutAsync Hl.ShaderRead Hl.ColorAttachmentWrite depthTexture renderer.VulkanContext.RenderCommandBuffer
+        Texture.Texture.transitionLayoutAsync Hl.ShaderRead Hl.ColorAttachmentWrite albedoTexture renderer.VulkanContext.RenderCommandBuffer
+        Texture.Texture.transitionLayoutAsync Hl.ShaderRead Hl.ColorAttachmentWrite materialTexture renderer.VulkanContext.RenderCommandBuffer
+        Texture.Texture.transitionLayoutAsync Hl.ShaderRead Hl.ColorAttachmentWrite normalPlusTexture renderer.VulkanContext.RenderCommandBuffer
+        Texture.Texture.transitionLayoutAsync Hl.ShaderRead Hl.ColorAttachmentWrite subdermalPlusTexture renderer.VulkanContext.RenderCommandBuffer
+        Texture.Texture.transitionLayoutAsync Hl.ShaderRead Hl.ColorAttachmentWrite scatterPlusTexture renderer.VulkanContext.RenderCommandBuffer
+        Texture.Texture.transitionLayoutAsync Hl.ShaderRead Hl.ColorAttachmentWrite clearCoatPlusTexture renderer.VulkanContext.RenderCommandBuffer
+        Texture.Texture.transitionLayoutAsync Hl.ShaderRead Hl.ColorAttachmentWrite shadowTextureArray renderer.VulkanContext.RenderCommandBuffer
+        for i in 0 .. dec shadowMaps.Length do Texture.Texture.transitionLayoutAsync Hl.ShaderRead Hl.ColorAttachmentWrite shadowMaps[i] renderer.VulkanContext.RenderCommandBuffer
+        for i in 0 .. dec shadowCascades.Length do Texture.Texture.transitionLayoutAsync Hl.ShaderRead Hl.ColorAttachmentWrite shadowCascades[i] renderer.VulkanContext.RenderCommandBuffer
+        Texture.Texture.transitionLayoutAsync Hl.ShaderRead Hl.ColorAttachmentWrite colorTexture renderer.VulkanContext.RenderCommandBuffer
+        Texture.Texture.transitionLayoutAsync Hl.ShaderRead Hl.ColorAttachmentWrite depthTexture2 renderer.VulkanContext.RenderCommandBuffer
 
-        // advance geometry render pass index
-        renderer.GeometryRenderPassIndex <- inc renderer.GeometryRenderPassIndex
-    
+        // advance render pass index
+        renderer.RenderPassIndex <- inc renderer.RenderPassIndex
+
     /// Render 3d surfaces.
     static member render
         frustumInterior
@@ -6300,17 +6295,12 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         geometryViewport
         windowViewport
         (renderMessages : _ List)
-        renderer =
+        (renderer : VulkanRenderer3d) =
+        
+        /////////////////
+        // Begin Frame //
+        /////////////////
 
-        // destroy expired textures from last executed frame
-        let vkc = renderer.VulkanContext
-        if vkc.RenderDesired then Texture.TextureDisposer.disposeFinished renderer.TextureDisposer vkc
-        
-        // reset geometry render pass and draw indices
-        renderer.GeometryRenderPassIndex <- 0
-        renderer.PhysicallyBasedPipelines.DeferredStaticPipeline.BeginFrame ()
-        renderer.PhysicallyBasedPipelines.ForwardStaticPipeline.BeginFrame ()
-        
         // update viewports
         if renderer.GeometryViewport <> geometryViewport then
             VulkanRenderer3d.invalidateCaches renderer
@@ -6319,150 +6309,151 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         renderer.WindowViewport <- windowViewport
 
         // update attachment sizes (must happen every frame to cover all frames in flight)
-        PhysicallyBased.UpdatePhysicallyBasedAttachmentsSize (geometryViewport, renderer.PhysicallyBasedAttachments, vkc)
-        
-        // categorize messages
-        let userDefinedStaticModelsToDestroy =
-            VulkanRenderer3d.categorize frustumInterior frustumExterior frustumImposter eyeCenter eyeRotation renderMessages renderer
-        
-        // reload render assets upon request
-        // NOTE: DJL: doing this *before* rendering because you can't record commands with a VkPipeline then destroy it before submission.
+        PhysicallyBased.UpdatePhysicallyBasedAttachmentsSize
+            (geometryViewport, renderer.PhysicallyBasedAttachments, renderer.VulkanContext)
+
+        // reload render assets when requested on previous frame
         if renderer.ReloadAssetsRequested then
             VulkanRenderer3d.handleReloadRenderAssets renderer
             renderer.ReloadAssetsRequested <- false
 
+        // begin texture destroyer frame
+        if renderer.VulkanContext.RenderAllowed then
+            renderer.TextureDestroyer.BeginFrame renderer.VulkanContext
+
+        // begin render pass index frame
+        renderer.RenderPassIndex <- 0
+
+        // begin instance buffer frames as requested on previous frame
+        for geometry in renderer.GeometryInstanced do
+            geometry.InstanceBuffer.BeginFrame ()
+        renderer.GeometryInstanced.Clear ()
+
+        // begin pipeline frames
+        renderer.PhysicallyBasedPipelines.DeferredStaticPipeline.Pipeline.BeginFrame ()
+        renderer.PhysicallyBasedPipelines.DeferredLightingPipeline.Pipeline.BeginFrame ()
+        renderer.PhysicallyBasedPipelines.ForwardStaticPipeline.Pipeline.BeginFrame ()
+        
+        //////////////////
+        // Handle Frame //
+        //////////////////
+        
+        // categorize messages
+        let userDefinedStaticModelsToDestroy =
+            VulkanRenderer3d.categorize frustumInterior frustumExterior frustumImposter eyeCenter eyeRotation renderMessages renderer
+
         // light map pre-passes
-        let cb = vkc.RenderCommandBuffer
-        let mutable lightMapIndex = 0 // must be distinct because LightMapsMax does not include fallback light map (which also does not affect geometry render pass count/max)
-        let mutable irradianceMapIndex = 0
-        let mutable environmentFilterMapIndex = 0
-        if vkc.RenderDesired then
+        if renderer.VulkanContext.RenderAllowed then
             for (renderPass, renderTasks) in renderer.RenderPasses.Pairs do
-                if lightMapIndex < Constants.Render.LightMapsMax then
                 
-                    // fallback light map pre-pass
-                    match VulkanRenderer3d.getLastSkyBoxOpt renderPass renderer |> __c with
-                    | Some (_, _, cubeMap, irradianceAndEnvironmentMapsOptRef : (Texture.Texture * Texture.Texture) option ref) ->
+                // fallback light map pre-pass
+                match VulkanRenderer3d.getLastSkyBoxOpt renderPass renderer |> __c with
+                | Some (_, _, cubeMap, irradianceAndEnvironmentMapsOptRef : (Texture.Texture * Texture.Texture) option ref) ->
 
-                        // render fallback irradiance and env filter maps
-                        if Option.isNone irradianceAndEnvironmentMapsOptRef.Value then
+                    // render fallback irradiance and env filter maps
+                    if Option.isNone irradianceAndEnvironmentMapsOptRef.Value then
 
-                            // render fallback irradiance map
-                            let irradianceMap =
-                                LightMap.CreateIrradianceMap
-                                    (irradianceMapIndex,
-                                     cb,
-                                     false,
-                                     Constants.Render.IrradianceMapResolution,
-                                     CubeMap.CubeMapSurface.make cubeMap renderer.CubeMapGeometry,
-                                     renderer.CubeMapSampler,
-                                     renderer.IrradianceMap.InternalFormat,
-                                     renderer.IrradiancePipeline,
-                                     vkc)
-                            irradianceMapIndex <- inc irradianceMapIndex
+                        // render fallback irradiance map
+                        let irradianceMap =
+                            LightMap.CreateIrradianceMap
+                                (false,
+                                 Constants.Render.IrradianceMapResolution,
+                                 CubeMap.CubeMapSurface.make cubeMap renderer.CubeMapGeometry,
+                                 renderer.CubeMapSampler,
+                                 renderer.IrradianceMap.InternalFormat,
+                                 renderer.IrradiancePipeline,
+                                 renderer.VulkanContext.RenderCommandBuffer,
+                                 renderer.VulkanContext)
 
-                            // render fallback env filter map
-                            let environmentFilterMap =
-                                LightMap.CreateEnvironmentFilterMap
-                                    (environmentFilterMapIndex,
-                                     cb,
-                                     false,
-                                     Constants.Render.EnvironmentFilterResolution,
-                                     CubeMap.CubeMapSurface.make cubeMap renderer.CubeMapGeometry,
-                                     renderer.CubeMapSampler,
-                                     renderer.EnvironmentFilterMap.InternalFormat,
-                                     renderer.EnvironmentFilterPipeline,
-                                     vkc)
-                            environmentFilterMapIndex <- inc environmentFilterMapIndex
+                        // render fallback env filter map
+                        let environmentFilterMap =
+                            LightMap.CreateEnvironmentFilterMap
+                                (false,
+                                 Constants.Render.EnvironmentFilterResolution,
+                                 CubeMap.CubeMapSurface.make cubeMap renderer.CubeMapGeometry,
+                                 renderer.CubeMapSampler,
+                                 renderer.EnvironmentFilterMap.InternalFormat,
+                                 renderer.EnvironmentFilterPipeline,
+                                 renderer.VulkanContext.RenderCommandBuffer,
+                                 renderer.VulkanContext)
 
-                            // add to cache and create light map
-                            irradianceAndEnvironmentMapsOptRef.Value <- Some (irradianceMap, environmentFilterMap)
+                        // add to cache and create light map
+                        irradianceAndEnvironmentMapsOptRef.Value <- Some (irradianceMap, environmentFilterMap)
 
                     // nothing to do
                     | None -> ()
 
-                    // render light map
-                    match renderPass with
-                    | LightMapPass (lightProbeId, _) ->
-                        if renderTasks.LightMapRenders.Contains lightProbeId then
+                // render light map
+                match renderPass with
+                | LightMapPass (lightProbeId, _) ->
+                    if renderTasks.LightMapRenders.Contains lightProbeId then
 
-                            // destroy any existing light map
-                            match renderer.LightMaps.TryGetValue lightProbeId with
-                            | (true, lightMap) ->
-                                Texture.TextureDisposer.submit lightMap.IrradianceMap renderer.TextureDisposer
-                                Texture.TextureDisposer.submit lightMap.EnvironmentFilterMap renderer.TextureDisposer
-                                renderer.LightMaps.Remove lightProbeId |> ignore<bool>
-                            | (false, _) -> ()
+                        // destroy any existing light map
+                        match renderer.LightMaps.TryGetValue lightProbeId with
+                        | (true, lightMap) ->
+                            renderer.TextureDestroyer.Submit lightMap.IrradianceMap 
+                            renderer.TextureDestroyer.Submit lightMap.EnvironmentFilterMap 
+                            renderer.LightMaps.Remove lightProbeId |> ignore<bool>
+                        | (false, _) -> ()
                             
-                            // create new light map
-                            match renderTasks.LightProbes.TryGetValue lightProbeId with
-                            | (true, struct (lightProbeEnabled, lightProbeOrigin, lightProbeAmbientColor, lightProbeAmbientBrightness, lightProbeBounds)) ->
+                        // create new light map
+                        match renderTasks.LightProbes.TryGetValue lightProbeId with
+                        | (true, struct (lightProbeEnabled, lightProbeOrigin, lightProbeAmbientColor, lightProbeAmbientBrightness, lightProbeBounds)) ->
 
-                                // create reflection map
-                                let reflectionMap =
-                                    LightMap.CreateReflectionMap
-                                        (VulkanRenderer3d.renderGeometry frustumInterior frustumExterior frustumImposter renderPass (VulkanRenderer3d.getRenderTasks renderPass renderer) renderer,
-                                         cb,
-                                         Constants.Render.ReflectionMapResolution,
-                                         lightProbeOrigin,
-                                         lightProbeAmbientColor,
-                                         lightProbeAmbientBrightness,
-                                         vkc)
+                            // create reflection map
+                            let reflectionMap =
+                                LightMap.CreateReflectionMap
+                                    (VulkanRenderer3d.renderGeometry frustumInterior frustumExterior frustumImposter renderPass (VulkanRenderer3d.getRenderTasks renderPass renderer) renderer,
+                                     Constants.Render.ReflectionMapResolution,
+                                     lightProbeOrigin,
+                                     lightProbeAmbientColor,
+                                     lightProbeAmbientBrightness,
+                                     renderer.VulkanContext.RenderCommandBuffer,
+                                     renderer.VulkanContext)
 
-                                // create irradiance map
-                                let irradianceMap =
-                                    LightMap.CreateIrradianceMap
-                                        (irradianceMapIndex,
-                                         cb,
-                                         true, // y inverted here because texture produced by drawing is inverted relative to texture uploaded from file
-                                         Constants.Render.IrradianceMapResolution,
-                                         CubeMap.CubeMapSurface.make reflectionMap renderer.CubeMapGeometry,
-                                         renderer.CubeMapSampler,
-                                         renderer.IrradianceMap.InternalFormat,
-                                         renderer.IrradiancePipeline,
-                                         vkc)
-                                irradianceMapIndex <- inc irradianceMapIndex
+                            // create irradiance map
+                            let irradianceMap =
+                                LightMap.CreateIrradianceMap
+                                    (true, // y inverted here because texture produced by drawing is inverted relative to texture uploaded from file
+                                     Constants.Render.IrradianceMapResolution,
+                                     CubeMap.CubeMapSurface.make reflectionMap renderer.CubeMapGeometry,
+                                     renderer.CubeMapSampler,
+                                     renderer.IrradianceMap.InternalFormat,
+                                     renderer.IrradiancePipeline,
+                                     renderer.VulkanContext.RenderCommandBuffer,
+                                     renderer.VulkanContext)
 
-                                // create env filter map
-                                let environmentFilterMap =
-                                    LightMap.CreateEnvironmentFilterMap
-                                        (environmentFilterMapIndex,
-                                         cb,
-                                         true, // y inverted here because texture produced by drawing is inverted relative to texture uploaded from file
-                                         Constants.Render.EnvironmentFilterResolution,
-                                         CubeMap.CubeMapSurface.make reflectionMap renderer.CubeMapGeometry,
-                                         renderer.CubeMapSampler,
-                                         renderer.EnvironmentFilterMap.InternalFormat,
-                                         renderer.EnvironmentFilterPipeline,
-                                         vkc)
-                                environmentFilterMapIndex <- inc environmentFilterMapIndex
+                            // create env filter map
+                            let environmentFilterMap =
+                                LightMap.CreateEnvironmentFilterMap
+                                    (true, // y inverted here because texture produced by drawing is inverted relative to texture uploaded from file
+                                     Constants.Render.EnvironmentFilterResolution,
+                                     CubeMap.CubeMapSurface.make reflectionMap renderer.CubeMapGeometry,
+                                     renderer.CubeMapSampler,
+                                     renderer.EnvironmentFilterMap.InternalFormat,
+                                     renderer.EnvironmentFilterPipeline,
+                                     renderer.VulkanContext.RenderCommandBuffer,
+                                     renderer.VulkanContext)
 
-                                // destroy reflection map
-                                Texture.TextureDisposer.submit reflectionMap renderer.TextureDisposer
+                            // destroy reflection map
+                            renderer.TextureDestroyer.Submit reflectionMap 
 
-                                // create light map
-                                let lightMap = LightMap.CreateLightMap lightProbeEnabled lightProbeOrigin lightProbeAmbientColor lightProbeAmbientBrightness lightProbeBounds irradianceMap environmentFilterMap
+                            // create light map
+                            let lightMap = LightMap.CreateLightMap lightProbeEnabled lightProbeOrigin lightProbeAmbientColor lightProbeAmbientBrightness lightProbeBounds irradianceMap environmentFilterMap
 
-                                // add light map to cache
-                                renderer.LightMaps.[lightProbeId] <- lightMap
+                            // add light map to cache
+                            renderer.LightMaps.[lightProbeId] <- lightMap
 
-                            | (false, _) -> ()
+                        | (false, _) -> ()
                     | _ -> ()
-
-                    lightMapIndex <- inc lightMapIndex
-
-                // light map limit exceeded
-                else Log.warnOnce "The creation of one or more light maps has been aborted because Constants.Render.LightMapsMax is set too low."
-        
         
         // sort spot and directional lights according to how they are utilized by shadows
         let normalPass = NormalPass
         let normalTasks = VulkanRenderer3d.getRenderTasks normalPass renderer
         // TODO: DJL: complete block.
-        
-        // process top-level geometry pass
-        // OPTIMIZATION: we don't process rendering tasks if there are no render messages.
-        if vkc.RenderDesired && renderMessages.Count > 0 then
+
+        // process top-level geometry pass. OPTIMIZATION: don't process rendering tasks when no render messages.
+        if renderer.VulkanContext.RenderAllowed && renderMessages.Count > 0 then
             let view = Viewport.getView3d eyeCenter eyeRotation
             let viewSkyBox = Matrix4x4.CreateFromQuaternion eyeRotation.Inverted
             let frustum = Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView geometryViewport
@@ -6477,15 +6468,19 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                      uint renderer.WindowViewport.Inner.Size.Y)
             VulkanRenderer3d.renderGeometry
                 frustumInterior frustumExterior frustumImposter normalPass normalTasks renderer
-                true None eyeCenter view viewSkyBox frustum geometryProjection geometryViewProjection windowProjection targetBounds 0 vkc.SwapchainImage
+                true None eyeCenter view viewSkyBox frustum geometryProjection geometryViewProjection windowProjection targetBounds 0 renderer.VulkanContext.SwapchainImage
         
+        ///////////////
+        // End Frame //
+        ///////////////
+
         // swap render passes
         for renderTasks in renderer.RenderPasses.Values do if renderTasks.ShadowBufferIndexOpt.IsNone then RenderTasks.clear renderTasks
         for renderTasks in renderer.RenderPasses2.Values do RenderTasks.clear renderTasks
         let renderPasses = renderer.RenderPasses
         renderer.RenderPasses <- renderer.RenderPasses2
         renderer.RenderPasses2 <- renderPasses
-    
+
     /// Make a VulkanRenderer3d.
     static member make geometryViewport windowViewport vkc =
         
@@ -6494,8 +6489,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let textureServer = Texture.TextureServer (lazyTextureQueues, vkc)
         textureServer.Start ()
         
-        // create texture disposer
-        let textureDisposer = Texture.TextureDisposer.create ()
+        // create texture destroyer
+        let textureDestroyer = Texture.TextureDestroyer.create ()
         
         // create samplers
         let filteredSampler = Texture.Sampler.create VkSamplerAddressMode.Repeat VkFilter.Linear VkFilter.Linear true vkc
@@ -6518,7 +6513,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let irradiancePipeline =
             CubeMap.CreateCubeMapPipeline
                 (Constants.Paths.IrradianceShaderFilePath,
-                 Constants.Render.LightMapsMax + 1, // includes fallback light map
                  irradianceFormat.VkFormat,
                  vkc)
         
@@ -6585,35 +6579,31 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             let brdfTextureInternal = Texture.TextureInternal.create Texture.MipmapNone Texture.AttachmentNone Texture.Texture2d [||] Hl.Rg32f Hl.Rg brdfMetadata vkc
             Texture.TextureInternal.uploadArray brdfMetadata 0 0 brdfBuffer Texture.RenderThread brdfTextureInternal vkc
             Texture.EagerTexture { TextureMetadata = brdfMetadata; TextureInternal = brdfTextureInternal }
-        
-        // create default irradiance map
-        let cb = Hl.initCommandBufferTransient vkc.TransientCommandPool vkc.Device
+
+        // create default irradiance map and default environment filter map and set up transiently
+        let commandBuffer = Hl.createTransientCommandBuffer vkc.TransientCommandPool vkc.Device
         let irradianceMap =
             LightMap.CreateIrradianceMap
-                (0,
-                 cb,
-                 false,
+                (false,
                  Constants.Render.IrradianceMapResolution,
                  cubeMapSurface,
                  cubeMapSampler,
                  irradianceFormat,
                  irradiancePipeline,
+                 commandBuffer,
                  vkc)
-        
-        // create default environment filter map
         let environmentFilterMap =
             LightMap.CreateEnvironmentFilterMap
-                (0,
-                 cb,
-                 false,
+                (false,
                  Constants.Render.EnvironmentFilterResolution,
                  cubeMapSurface,
                  cubeMapSampler,
                  environmentFilterFormat,
                  environmentFilterPipeline,
+                 commandBuffer,
                  vkc)
         let fence = Hl.createFence false vkc.Device
-        Hl.Queue.executeTransient cb vkc.TransientCommandPool fence vkc.RenderQueue vkc.Device
+        Hl.Queue.executeTransient commandBuffer vkc.TransientCommandPool fence vkc.RenderQueue vkc.Device
         Vulkan.vkDestroyFence (vkc.Device, fence, nullPtr)
 
         // compute compressed image file extension
@@ -6714,10 +6704,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             { VulkanContext = vkc
               GeometryViewport = geometryViewport
               WindowViewport = windowViewport
-              GeometryRenderPassIndex = 0
               LazyTextureQueues = lazyTextureQueues
               TextureServer = textureServer
-              TextureDisposer = textureDisposer
+              TextureDestroyer = textureDestroyer
               FilteredSampler = filteredSampler
               CubeMapSampler = cubeMapSampler
               GeometrySampler = geometrySampler
@@ -6725,6 +6714,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               ColorSampler = colorSampler
               DepthSampler = depthSampler
               BrdfSampler = brdfSampler
+              RenderPassIndex = 0
+              GeometryInstanced = hashSetPlus HashIdentity.Reference []
               SkyBoxPipeline = skyBoxPipeline
               IrradiancePipeline = irradiancePipeline
               EnvironmentFilterPipeline = environmentFilterPipeline
@@ -6768,51 +6759,49 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         
         member renderer.CleanUp () =
             
-            let vkc = renderer.VulkanContext
+            Texture.Sampler.destroy renderer.FilteredSampler renderer.VulkanContext
+            Texture.Sampler.destroy renderer.CubeMapSampler renderer.VulkanContext
+            Texture.Sampler.destroy renderer.GeometrySampler renderer.VulkanContext
+            Texture.Sampler.destroy renderer.ShadowSampler renderer.VulkanContext
+            Texture.Sampler.destroy renderer.ColorSampler renderer.VulkanContext
+            Texture.Sampler.destroy renderer.DepthSampler renderer.VulkanContext
+            Texture.Sampler.destroy renderer.BrdfSampler renderer.VulkanContext
             
-            Texture.Sampler.destroy renderer.FilteredSampler vkc
-            Texture.Sampler.destroy renderer.CubeMapSampler vkc
-            Texture.Sampler.destroy renderer.GeometrySampler vkc
-            Texture.Sampler.destroy renderer.ShadowSampler vkc
-            Texture.Sampler.destroy renderer.ColorSampler vkc
-            Texture.Sampler.destroy renderer.DepthSampler vkc
-            Texture.Sampler.destroy renderer.BrdfSampler vkc
+            SkyBox.DestroySkyBoxPipeline renderer.SkyBoxPipeline renderer.VulkanContext
+            CubeMap.DestroyCubeMapPipeline (renderer.IrradiancePipeline, renderer.VulkanContext)
+            LightMap.DestroyEnvironmentFilterPipeline (renderer.EnvironmentFilterPipeline, renderer.VulkanContext)
+            PhysicallyBased.DestroyPhysicallyBasedPipelines renderer.PhysicallyBasedPipelines renderer.VulkanContext
             
-            SkyBox.DestroySkyBoxPipeline renderer.SkyBoxPipeline vkc
-            CubeMap.DestroyCubeMapPipeline (renderer.IrradiancePipeline, vkc)
-            LightMap.DestroyEnvironmentFilterPipeline (renderer.EnvironmentFilterPipeline, vkc)
-            PhysicallyBased.DestroyPhysicallyBasedPipelines renderer.PhysicallyBasedPipelines vkc
+            CubeMap.DestroyCubeMapGeometry renderer.CubeMapGeometry renderer.VulkanContext
             
-            CubeMap.DestroyCubeMapGeometry renderer.CubeMapGeometry vkc
+            renderer.CubeMap.Destroy renderer.VulkanContext
+            renderer.WhiteTexture.Destroy renderer.VulkanContext
+            renderer.BlackTexture.Destroy renderer.VulkanContext
+            renderer.BrdfTexture.Destroy renderer.VulkanContext
             
-            renderer.CubeMap.Destroy vkc
-            renderer.WhiteTexture.Destroy vkc
-            renderer.BlackTexture.Destroy vkc
-            renderer.BrdfTexture.Destroy vkc
-            
-            renderer.IrradianceMap.Destroy vkc
-            renderer.EnvironmentFilterMap.Destroy vkc
+            renderer.IrradianceMap.Destroy renderer.VulkanContext
+            renderer.EnvironmentFilterMap.Destroy renderer.VulkanContext
             
             // destroy default physically-based material
-            renderer.PhysicallyBasedMaterial.AlbedoTexture.Destroy vkc
-            renderer.PhysicallyBasedMaterial.RoughnessTexture.Destroy vkc
-            renderer.PhysicallyBasedMaterial.MetallicTexture.Destroy vkc
-            renderer.PhysicallyBasedMaterial.AmbientOcclusionTexture.Destroy vkc
-            renderer.PhysicallyBasedMaterial.EmissionTexture.Destroy vkc
-            renderer.PhysicallyBasedMaterial.NormalTexture.Destroy vkc
-            renderer.PhysicallyBasedMaterial.HeightTexture.Destroy vkc
-            renderer.PhysicallyBasedMaterial.SubdermalTexture.Destroy vkc
-            renderer.PhysicallyBasedMaterial.FinenessTexture.Destroy vkc
-            renderer.PhysicallyBasedMaterial.ScatterTexture.Destroy vkc
-            renderer.PhysicallyBasedMaterial.ClearCoatTexture.Destroy vkc
-            renderer.PhysicallyBasedMaterial.ClearCoatRoughnessTexture.Destroy vkc
-            renderer.PhysicallyBasedMaterial.ClearCoatNormalTexture.Destroy vkc
+            renderer.PhysicallyBasedMaterial.AlbedoTexture.Destroy renderer.VulkanContext
+            renderer.PhysicallyBasedMaterial.RoughnessTexture.Destroy renderer.VulkanContext
+            renderer.PhysicallyBasedMaterial.MetallicTexture.Destroy renderer.VulkanContext
+            renderer.PhysicallyBasedMaterial.AmbientOcclusionTexture.Destroy renderer.VulkanContext
+            renderer.PhysicallyBasedMaterial.EmissionTexture.Destroy renderer.VulkanContext
+            renderer.PhysicallyBasedMaterial.NormalTexture.Destroy renderer.VulkanContext
+            renderer.PhysicallyBasedMaterial.HeightTexture.Destroy renderer.VulkanContext
+            renderer.PhysicallyBasedMaterial.SubdermalTexture.Destroy renderer.VulkanContext
+            renderer.PhysicallyBasedMaterial.FinenessTexture.Destroy renderer.VulkanContext
+            renderer.PhysicallyBasedMaterial.ScatterTexture.Destroy renderer.VulkanContext
+            renderer.PhysicallyBasedMaterial.ClearCoatTexture.Destroy renderer.VulkanContext
+            renderer.PhysicallyBasedMaterial.ClearCoatRoughnessTexture.Destroy renderer.VulkanContext
+            renderer.PhysicallyBasedMaterial.ClearCoatNormalTexture.Destroy renderer.VulkanContext
             
-            Texture.TextureDisposer.destroy renderer.TextureDisposer vkc
+            Texture.TextureDestroyer.destroy renderer.TextureDestroyer renderer.VulkanContext
             
-            PhysicallyBased.DestroyPhysicallyBasedAttachments (renderer.PhysicallyBasedAttachments, vkc)
+            PhysicallyBased.DestroyPhysicallyBasedAttachments (renderer.PhysicallyBasedAttachments, renderer.VulkanContext)
             
-            for lightMap in renderer.LightMaps.Values do LightMap.DestroyLightMap lightMap vkc
+            for lightMap in renderer.LightMaps.Values do LightMap.DestroyLightMap lightMap renderer.VulkanContext
             renderer.LightMaps.Clear ()
             
             // free assets

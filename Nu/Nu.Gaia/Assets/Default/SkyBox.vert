@@ -7,10 +7,7 @@ struct SkyBoxVert
     mat4 viewProjection;
 };
 
-layout(binding = 0) buffer readonly SkyBoxVertBlock
-{
-    SkyBoxVert skyBox;
-};
+layout(set = 0, binding = 0) buffer readonly SkyBoxVertBlock { SkyBoxVert skyBox; };
 
 layout(location = 0) in vec3 position;
 

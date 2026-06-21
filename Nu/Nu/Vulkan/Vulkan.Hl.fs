@@ -39,9 +39,6 @@ module Hl =
     /// The current frame within MaxFramesInFlight.
     /// TODO: DJL: figure out how to prevent potential outside mutation.
     let mutable internal CurrentFrame = 0
-
-    /// The total number of resource descriptors needed.
-    let mutable internal DescriptorsNeeded = 0u
     
     type private SurfaceState =
         | SurfaceReady
@@ -346,13 +343,7 @@ module Hl =
             | SampledImage -> VkDescriptorType.SampledImage
             | UniformBuffer -> VkDescriptorType.UniformBuffer
             | StorageBuffer -> VkDescriptorType.StorageBuffer
-    
-    /// Describes whether descriptors are multiplied for bulk use, and how.
-    type BulkDescriptorMode =
-        | BulkNone
-        | BulkDescriptorIndexed
-        | BulkSetIndexed
-    
+
     /// Check if an image format is supported for attachments, falling back to a standard format where possible.
     let rec CheckAttachmentFormat (vkPhysicalDevice, format : ImageFormat) =
         if not (ImageFormat.supportsAttachment vkPhysicalDevice format) then
@@ -672,7 +663,7 @@ module Hl =
         | Left msg -> Left msg
 
     /// Record command to transition image layout.
-    let recordTransitionLayout cb allLevels mipNumber layer layerCount imageAspect (oldLayout : ImageLayout) (newLayout : ImageLayout) vkImage =
+    let recordTransitionLayout allLevels mipNumber layer layerCount imageAspect (oldLayout : ImageLayout) (newLayout : ImageLayout) vkImage commandBuffer =
         
         // mipNumber means total number of mips or the target mip depending on context
         let mipLevels = if allLevels then mipNumber else 1
@@ -689,7 +680,7 @@ module Hl =
         barrier.image <- vkImage
         barrier.subresourceRange <- makeSubresourceRange mipLevel mipLevels layer layerCount imageAspect
         Vulkan.vkCmdPipelineBarrier
-            (cb,
+            (commandBuffer,
              oldLayout.PipelineStage,
              newLayout.PipelineStage,
              VkDependencyFlags.None,
@@ -782,20 +773,20 @@ module Hl =
         Vulkan.vkWaitForFences (device, 1u, asPointer &fence, true, UInt64.MaxValue) |> check
         Vulkan.vkResetFences (device, 1u, asPointer &fence) |> check
 
-    /// Init recording to a persistent command buffer.
-    let initCommandBuffer cb =
-        Vulkan.vkResetCommandBuffer (cb, VkCommandBufferResetFlags.None) |> check
+    /// Create a persistent command buffer.
+    let createPersistentCommandBuffer commandBuffer =
+        Vulkan.vkResetCommandBuffer (commandBuffer, VkCommandBufferResetFlags.None) |> check
         let mutable cbInfo = VkCommandBufferBeginInfo ()
-        Vulkan.vkBeginCommandBuffer (cb, asPointer &cbInfo) |> check
+        Vulkan.vkBeginCommandBuffer (commandBuffer, asPointer &cbInfo) |> check
     
-    /// Init recording to a transient command buffer.
+    /// Create a transient command buffer.
     /// TODO: DJL: review choice of transient command buffers over normal ones.
-    let initCommandBufferTransient commandPool device =
-        let cb = allocateCommandBuffer commandPool device
+    let createTransientCommandBuffer commandPool device =
+        let commandBuffer = allocateCommandBuffer commandPool device
         let mutable cbInfo = VkCommandBufferBeginInfo (flags = VkCommandBufferUsageFlags.OneTimeSubmit)
-        Vulkan.vkBeginCommandBuffer (cb, asPointer &cbInfo) |> check
-        cb
-    
+        Vulkan.vkBeginCommandBuffer (commandBuffer, asPointer &cbInfo) |> check
+        commandBuffer
+
     /// A command queue that internally synchronizes use across multiple threads.
     type [<ReferenceEquality>] Queue =
         private
@@ -822,11 +813,11 @@ module Hl =
             lock queue.Lock (fun () -> Vulkan.vkQueueWaitIdle queue.VkQueue |> check)
         
         /// Submit persistent command buffer for execution.
-        static member submit cb waitSemaphoresStages (signalSemaphores : VkSemaphore array) signalFence (queue : Queue) =
+        static member submit commandBuffer waitSemaphoresStages (signalSemaphores : VkSemaphore array) signalFence (queue : Queue) =
             lock queue.Lock (fun () ->
 
                 // end command buffer
-                Vulkan.vkEndCommandBuffer cb |> check
+                Vulkan.vkEndCommandBuffer commandBuffer |> check
                 
                 // unpack and pin arrays
                 let (waitSemaphores, waitStages) = Array.unzip waitSemaphoresStages
@@ -835,29 +826,29 @@ module Hl =
                 use signalSemaphoresPin = new ArrayPin<_> (signalSemaphores)
 
                 // submit commands
-                let mutable cb = cb
+                let mutable commandBuffer = commandBuffer
                 let mutable info = VkSubmitInfo ()
                 info.waitSemaphoreCount <- uint waitSemaphores.Length
                 info.pWaitSemaphores <- waitSemaphoresPin.Pointer
                 info.pWaitDstStageMask <- waitStagesPin.Pointer
                 info.commandBufferCount <- 1u
-                info.pCommandBuffers <- asPointer &cb
+                info.pCommandBuffers <- asPointer &commandBuffer
                 info.signalSemaphoreCount <- uint signalSemaphores.Length
                 info.pSignalSemaphores <- signalSemaphoresPin.Pointer
                 Vulkan.vkQueueSubmit (queue.VkQueue, 1u, asPointer &info, signalFence) |> check)
 
         /// Execute and free transient command buffer. Command pool and fence must NOT be shared between threads!
-        static member executeTransient cb commandPool finishFence (queue : Queue) device =
-            let mutable cb = cb
+        static member executeTransient commandBuffer commandPool finishFence (queue : Queue) device =
+            let mutable commandBuffer = commandBuffer
             lock queue.Lock (fun () ->
                 
                 // end command buffer
-                Vulkan.vkEndCommandBuffer cb |> check
+                Vulkan.vkEndCommandBuffer commandBuffer |> check
 
                 // submit commands
                 let mutable info = VkSubmitInfo ()
                 info.commandBufferCount <- 1u
-                info.pCommandBuffers <- asPointer &cb
+                info.pCommandBuffers <- asPointer &commandBuffer
                 Vulkan.vkQueueSubmit (queue.VkQueue, 1u, asPointer &info, finishFence) |> check
 
                 // wait for execution to finish
@@ -865,7 +856,7 @@ module Hl =
                 awaitFence finishFence device
 
                 // free command buffer
-                Vulkan.vkFreeCommandBuffers (device, commandPool, 1u, asPointer &cb))
+                Vulkan.vkFreeCommandBuffers (device, commandPool, 1u, asPointer &commandBuffer))
 
         /// Present swapchain image.
         static member present waitSemaphore vkSwapchain (queue : Queue) =
@@ -890,7 +881,6 @@ module Hl =
     type private PhysicalDevice =
         { VkPhysicalDevice : VkPhysicalDevice
           Properties : VkPhysicalDeviceProperties
-          DescriptorIndexingPropertiesOpt : VkPhysicalDeviceDescriptorIndexingProperties option
           Features : VkPhysicalDeviceFeatures
           Extensions : VkExtensionProperties array
           SurfaceCapabilities : VkSurfaceCapabilitiesKHR // NOTE: DJL: keep this here in case we want to use it for device selection.
@@ -900,7 +890,8 @@ module Hl =
           GraphicsQueueCount : uint }
 
         /// Supports anisotropy.
-        member this.SupportsAnisotropy = this.Features.samplerAnisotropy = VkBool32.True
+        member this.SupportsAnisotropy =
+            this.Features.samplerAnisotropy = VkBool32.True
         
         static member private checkSurface window instance =
             if hasAppBegunBackgrounding () then
@@ -909,18 +900,9 @@ module Hl =
         
         /// Get properties.
         static member private getProperties vkPhysicalDevice =
-            if Constants.Vulkan.DescriptorIndexingEnabled then
-                let mutable diProperties = Unchecked.defaultof<VkPhysicalDeviceDescriptorIndexingProperties>
-                diProperties.sType <- Vulkan.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES // wrapper failed to set the correct sType value
-                let mutable properties = Unchecked.defaultof<VkPhysicalDeviceProperties2>
-                properties.sType <- Vulkan.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2 // wrapper failed to set the correct sType value
-                properties.pNext <- asVoidPtr &diProperties
-                Vulkan.vkGetPhysicalDeviceProperties2 (vkPhysicalDevice, asPointer &properties)
-                (properties.properties, Some diProperties)
-            else
-                let mutable properties = Unchecked.defaultof<VkPhysicalDeviceProperties>
-                Vulkan.vkGetPhysicalDeviceProperties (vkPhysicalDevice, &properties)
-                (properties, None)
+            let mutable properties = Unchecked.defaultof<VkPhysicalDeviceProperties>
+            Vulkan.vkGetPhysicalDeviceProperties (vkPhysicalDevice, &properties)
+            properties
 
         /// Get features.
         static member private getFeatures vkPhysicalDevice =
@@ -998,7 +980,7 @@ module Hl =
 
         /// Attempt to construct PhysicalDevice.
         static member tryCreate vkPhysicalDevice window instance =
-            let (properties, diPropertiesOpt) = PhysicalDevice.getProperties vkPhysicalDevice
+            let properties = PhysicalDevice.getProperties vkPhysicalDevice
             let features = PhysicalDevice.getFeatures vkPhysicalDevice
             let extensions = PhysicalDevice.getExtensions vkPhysicalDevice
             let surfaceFormats = PhysicalDevice.getSurfaceFormats vkPhysicalDevice window instance
@@ -1008,7 +990,6 @@ module Hl =
                 let physicalDevice =
                     { VkPhysicalDevice = vkPhysicalDevice
                       Properties = properties
-                      DescriptorIndexingPropertiesOpt = diPropertiesOpt
                       Features = features
                       Extensions = extensions
                       SurfaceCapabilities = surfaceCapabilities
@@ -1288,7 +1269,7 @@ module Hl =
         /// Create a Swapchain.
         static member create surfaceFormat physicalDevice window device =
             
-            // init swapchain index
+            // swapchain index starts at zero
             let swapchainIndex = 0
             
             // create SwapchainInternal array
@@ -1340,7 +1321,7 @@ module Hl =
     type [<ReferenceEquality>] VulkanContext =
         private
             { mutable WaitingForWindowRestore_ : bool
-              mutable RenderDesired_ : bool
+              mutable RenderAllowed_ : bool
               Instance_ : VkInstance
               DebugMessengerOpt_ : VkDebugUtilsMessengerEXT option
               PhysicalDevice_ : PhysicalDevice
@@ -1359,14 +1340,11 @@ module Hl =
               TransientFence_ : VkFence
               TextureFence_ : VkFence }
 
-        /// Render desired.
-        member this.RenderDesired = this.RenderDesired_
+        /// Whether rendering is permitted in the engine's current state.
+        member this.RenderAllowed = this.RenderAllowed_
         
         /// The physical device.
         member this.VkPhysicalDevice = this.PhysicalDevice_.VkPhysicalDevice
-
-        /// The physical device properties for descriptor indexing.
-        member this.DescriptorIndexingPropertiesOpt = this.PhysicalDevice_.DescriptorIndexingPropertiesOpt
 
         /// Anisotropy supported.
         member this.AnisotropySupported = this.PhysicalDevice_.SupportsAnisotropy
@@ -1449,17 +1427,9 @@ module Hl =
             
             // decide when to log
             if not
-                ((messageType = VkDebugUtilsMessageTypeFlagsEXT.General &&
-                  messageSeverity <= VkDebugUtilsMessageSeverityFlagsEXT.Info) ||
-                 (messageType = VkDebugUtilsMessageTypeFlagsEXT.Performance &&
-                  messageSeverity <= VkDebugUtilsMessageSeverityFlagsEXT.Warning))
-            then Log.custom header message
-            
-            // decide when to fail
-            if
-                (messageType = VkDebugUtilsMessageTypeFlagsEXT.Validation && // at least general errors must be allowed, otherwise Nsight launch may fail
-                 messageSeverity = VkDebugUtilsMessageSeverityFlagsEXT.Error)
-            then failwith "Vulkan error, see Log."
+                (messageType = VkDebugUtilsMessageTypeFlagsEXT.General && messageSeverity <= VkDebugUtilsMessageSeverityFlagsEXT.Info ||
+                 messageType = VkDebugUtilsMessageTypeFlagsEXT.Performance && messageSeverity <= VkDebugUtilsMessageSeverityFlagsEXT.Warning) then
+                Log.custom header message
             
             // finish passively
             ignore pUserData
@@ -1604,21 +1574,8 @@ module Hl =
         /// Create the logical device.
         static member private createLogicalDevice (physicalDevice : PhysicalDevice) =
 
-            // descriptor indexing features
-            let mutable descriptorIndexing = VkPhysicalDeviceDescriptorIndexingFeatures ()
-            descriptorIndexing.shaderUniformBufferArrayNonUniformIndexing <- true
-            descriptorIndexing.shaderStorageBufferArrayNonUniformIndexing <- true
-            descriptorIndexing.shaderSampledImageArrayNonUniformIndexing <- true
-            descriptorIndexing.descriptorBindingUniformBufferUpdateAfterBind <- true
-            descriptorIndexing.descriptorBindingSampledImageUpdateAfterBind <- true
-            descriptorIndexing.descriptorBindingStorageBufferUpdateAfterBind <- true
-            descriptorIndexing.descriptorBindingUpdateUnusedWhilePending <- true
-            descriptorIndexing.descriptorBindingPartiallyBound <- true
-            descriptorIndexing.runtimeDescriptorArray <- true
-            
             // Vulkan 1.3 features
             let mutable vulkan13 = VkPhysicalDeviceVulkan13Features ()
-            if Option.isSome physicalDevice.DescriptorIndexingPropertiesOpt then vulkan13.pNext <- asVoidPtr &descriptorIndexing
             vulkan13.dynamicRendering <- true
             
             // queue create infos
@@ -1744,8 +1701,8 @@ module Hl =
         /// Begin the frame.
         static member beginFrame (windowViewport : Viewport) (vkc : VulkanContext) =
 
-            // ensure that rendering is only permitted after passing all checks below
-            vkc.RenderDesired_ <- false
+            // ensure that rendering is only allowed after passing all checks below
+            vkc.RenderAllowed_ <- false
 
             // ensure current frame is ready
             let mutable fence = vkc.InFlightFence
@@ -1786,15 +1743,15 @@ module Hl =
                                             Swapchain.update vkc.PhysicalDevice_ vkc.RenderQueue_ vkc.PresentQueue_ vkc.Swapchain_ vkc.Device vkc.Instance_
                                         else
                                             check result // NOTE: DJL: this will report a suboptimal swapchain image.
-                                            vkc.RenderDesired_ <- true // permit rendering
+                                            vkc.RenderAllowed_ <- true // permit rendering
 
-            if vkc.RenderDesired_ then
+            if vkc.RenderAllowed_ then
             
                 // begin command recording
-                initCommandBuffer vkc.RenderCommandBuffer
+                createPersistentCommandBuffer vkc.RenderCommandBuffer
                 
                 // transition swapchain image layout to color attachment
-                recordTransitionLayout vkc.RenderCommandBuffer true 1 0 1 VkImageAspectFlags.Color Undefined ColorAttachmentWrite vkc.Swapchain_.Image
+                recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color Undefined ColorAttachmentWrite vkc.Swapchain_.Image vkc.RenderCommandBuffer
                 
                 // clear screen
                 let renderArea = VkRect2D (VkOffset2D.Zero, vkc.Swapchain_.SwapExtent)
@@ -1816,10 +1773,10 @@ module Hl =
 
         /// Present the image back to the swapchain to appear on screen.
         static member present (vkc : VulkanContext) =
-            if vkc.RenderDesired_ then
+            if vkc.RenderAllowed_ then
             
                 // transition swapchain image layout to presentation
-                recordTransitionLayout vkc.RenderCommandBuffer true 1 0 1 VkImageAspectFlags.Color ColorAttachmentWrite Present vkc.Swapchain_.Image
+                recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color ColorAttachmentWrite Present vkc.Swapchain_.Image vkc.RenderCommandBuffer
                 
                 // the *simple* solution: https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation#page_Subpass-dependencies
                 let waitStage = VkPipelineStageFlags.TopOfPipe
@@ -1933,7 +1890,7 @@ module Hl =
                 // make VulkanContext
                 let vulkanContext =
                     { WaitingForWindowRestore_ = windowMinimized
-                      RenderDesired_ = false
+                      RenderAllowed_ = false
                       Instance_ = instance
                       DebugMessengerOpt_ = debugMessengerOpt
                       PhysicalDevice_ = physicalDevice

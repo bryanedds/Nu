@@ -3,7 +3,6 @@
 
 namespace Vortice.Vulkan
 open System
-open System.Numerics
 open Prime
 open Nu
 

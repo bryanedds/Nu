@@ -126,19 +126,19 @@ module Texture =
             | TextureCubeMap -> VkImageViewType.ImageCube
 
     /// Record command to copy buffer to image.
-    let private RecordBufferToImageCopy (cb, width, height, mipLevel, layer, vkBuffer, vkImage) =
-        Hl.recordTransitionLayout cb false mipLevel layer 1 VkImageAspectFlags.Color Hl.Undefined Hl.TransferDst vkImage
+    let private RecordBufferToImageCopy (commandBuffer, width, height, mipLevel, layer, vkBuffer, vkImage) =
+        Hl.recordTransitionLayout false mipLevel layer 1 VkImageAspectFlags.Color Hl.Undefined Hl.TransferDst vkImage commandBuffer
         let mutable region = VkBufferImageCopy ()
         region.imageSubresource <- Hl.makeSubresourceLayers mipLevel layer VkImageAspectFlags.Color
         region.imageExtent <- VkExtent3D (width, height, 1)
         Vulkan.vkCmdCopyBufferToImage
-            (cb, vkBuffer, vkImage,
+            (commandBuffer, vkBuffer, vkImage,
              Hl.TransferDst.VkImageLayout,
              1u, asPointer &region)
-        Hl.recordTransitionLayout cb false mipLevel layer 1 VkImageAspectFlags.Color Hl.TransferDst Hl.ShaderRead vkImage
-    
+        Hl.recordTransitionLayout false mipLevel layer 1 VkImageAspectFlags.Color Hl.TransferDst Hl.ShaderRead vkImage commandBuffer
+
     /// Record commands to generate mipmaps.
-    let private RecordGenerateMipmaps (cb, width, height, mipLevels, layer, vkImage) =
+    let private RecordGenerateMipmaps (commandBuffer, width, height, mipLevels, layer, vkImage) =
         
         // use single barrier for all transfer operations
         let mutable barrier = VkImageMemoryBarrier ()
@@ -153,7 +153,7 @@ module Texture =
         barrier.newLayout <- Hl.TransferDst.VkImageLayout
         barrier.subresourceRange <- Hl.makeSubresourceRange 1 (mipLevels - 1) layer 1 VkImageAspectFlags.Color
         Vulkan.vkCmdPipelineBarrier
-            (cb,
+            (commandBuffer,
              Hl.Undefined.PipelineStage,
              Hl.TransferDst.PipelineStage,
              VkDependencyFlags.None,
@@ -168,17 +168,16 @@ module Texture =
         barrier.subresourceRange.baseMipLevel <- 0u
         barrier.subresourceRange.levelCount <- 1u // only one level at a time from here on
         Vulkan.vkCmdPipelineBarrier
-            (cb,
+            (commandBuffer,
              Hl.ShaderRead.PipelineStage,
              Hl.TransferDst.PipelineStage,
              VkDependencyFlags.None,
              0u, nullPtr, 0u, nullPtr,
              1u, asPointer &barrier)
         
-        // init mipmap dimensions
+        // compute mipmap dimensions
         let mutable mipWidth = width
         let mutable mipHeight = height
-
         for i in 1 .. dec mipLevels do
             
             // transition layout of previous image to be copied from
@@ -188,7 +187,7 @@ module Texture =
             barrier.newLayout <- Hl.TransferSrc.VkImageLayout
             barrier.subresourceRange.baseMipLevel <- uint (i - 1)
             Vulkan.vkCmdPipelineBarrier
-                (cb,
+                (commandBuffer,
                  Hl.TransferDst.PipelineStage,
                  Hl.TransferSrc.PipelineStage,
                  VkDependencyFlags.None,
@@ -203,7 +202,7 @@ module Texture =
                     (i - 1) i layer layer
                     (VkRect2D (0, 0, uint mipWidth, uint mipHeight))
                     (VkRect2D (0, 0, uint nextWidth, uint nextHeight))
-            Vulkan.vkCmdBlitImage (cb, vkImage, Hl.TransferSrc.VkImageLayout, vkImage, Hl.TransferDst.VkImageLayout, 1u, asPointer &blit, VkFilter.Linear)
+            Vulkan.vkCmdBlitImage (commandBuffer, vkImage, Hl.TransferSrc.VkImageLayout, vkImage, Hl.TransferDst.VkImageLayout, 1u, asPointer &blit, VkFilter.Linear)
             
             // transition layout of previous image to be read by shader
             barrier.srcAccessMask <- Hl.TransferSrc.Access
@@ -211,7 +210,7 @@ module Texture =
             barrier.oldLayout <- Hl.TransferSrc.VkImageLayout
             barrier.newLayout <- Hl.ShaderRead.VkImageLayout
             Vulkan.vkCmdPipelineBarrier
-                (cb,
+                (commandBuffer,
                  Hl.TransferSrc.PipelineStage,
                  Hl.ShaderRead.PipelineStage,
                  VkDependencyFlags.None,
@@ -229,7 +228,7 @@ module Texture =
         barrier.newLayout <- Hl.ShaderRead.VkImageLayout
         barrier.subresourceRange.baseMipLevel <- uint (mipLevels - 1)
         Vulkan.vkCmdPipelineBarrier
-            (cb,
+            (commandBuffer,
              Hl.TransferDst.PipelineStage,
              Hl.ShaderRead.PipelineStage,
              VkDependencyFlags.None,
@@ -480,44 +479,34 @@ module Texture =
             (minimalMipmapResolution, minimalMipmapBytes, remainingMipmapBytes)
         else (v2i dds.Width dds.Height, bytes, mipmapBytesArray)
 
-    /// A Vulkan sampler parallelized for frames in flight.
+    /// A Vulkan sampler.
     type Sampler =
         private
-            { Ids : uint64 array
-              VkSamplers : VkSampler array }
+            { VkSampler_ : VkSampler }
 
-        /// The id of the VkSampler for the current frame in flight.
-        member this.Id = this.Ids.[Hl.CurrentFrame]
-        
-        /// The VkSampler for the current frame in flight.
-        member this.VkSampler = this.VkSamplers.[Hl.CurrentFrame]
-        
+        member this.VkSampler =
+            this.VkSampler_
+
         /// Create a Sampler.
         static member create addressMode minFilter magFilter anisoFilter (vkc : Hl.VulkanContext) =
-            let ids = Array.zeroCreate Constants.Vulkan.MaxFramesInFlight
-            let vkSamplers = Array.zeroCreate Constants.Vulkan.MaxFramesInFlight
-            for i in 0 .. dec vkSamplers.Length do
-                let mutable info = VkSamplerCreateInfo ()
-                info.magFilter <- magFilter
-                info.minFilter <- minFilter
-                info.mipmapMode <- VkSamplerMipmapMode.Linear
-                info.addressModeU <- addressMode
-                info.addressModeV <- addressMode
-                info.addressModeW <- addressMode
-                if anisoFilter then
-                    info.anisotropyEnable <- true
-                    info.maxAnisotropy <- min vkc.MaxAnisotropy Constants.Render.TextureAnisotropyMax
-                info.maxLod <- Vulkan.VK_LOD_CLAMP_NONE
-                let mutable vkSampler = Unchecked.defaultof<VkSampler>
-                Vulkan.vkCreateSampler (vkc.Device, &info, nullPtr, &vkSampler) |> Hl.check
-                ids.[i] <- GenTextureId ()
-                vkSamplers.[i] <- vkSampler
-            { Ids = ids
-              VkSamplers = vkSamplers }
-        
+            let mutable info = VkSamplerCreateInfo ()
+            info.magFilter <- magFilter
+            info.minFilter <- minFilter
+            info.mipmapMode <- VkSamplerMipmapMode.Linear
+            info.addressModeU <- addressMode
+            info.addressModeV <- addressMode
+            info.addressModeW <- addressMode
+            if anisoFilter then
+                info.anisotropyEnable <- true
+                info.maxAnisotropy <- min vkc.MaxAnisotropy Constants.Render.TextureAnisotropyMax
+            info.maxLod <- Vulkan.VK_LOD_CLAMP_NONE
+            let mutable vkSampler = Unchecked.defaultof<VkSampler>
+            Vulkan.vkCreateSampler (vkc.Device, &info, nullPtr, &vkSampler) |> Hl.check
+            { VkSampler_ = vkSampler }
+
         /// Destroy a Sampler.
         static member destroy sampler (vkc : Hl.VulkanContext) =
-            for i in 0 .. dec sampler.VkSamplers.Length do Vulkan.vkDestroySampler (vkc.Device, sampler.VkSamplers.[i], nullPtr)
+            Vulkan.vkDestroySampler (vkc.Device, sampler.VkSampler_, nullPtr)
     
     /// A Vulkan texture's metadata.
     type TextureMetadata =
@@ -570,7 +559,7 @@ module Texture =
             (image, allocation)
 
         static member create pixelFormat (internalFormat : Hl.ImageFormat) metadata mipLevels (attachmentMode : AttachmentMode) (textureType : TextureType) usageFlags (vkc : Hl.VulkanContext) =
-            
+
             // create image and image views
             let extent = VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
             let (image, allocation) = TextureSingleton.createImage internalFormat.VkFormat extent mipLevels textureType usageFlags vkc
@@ -591,12 +580,12 @@ module Texture =
             | AttachmentColor _
             | AttachmentDepth _ ->
                 let (queue, pool, fence) = TextureLoadThread.getResources RenderThread vkc
-                let cb = Hl.initCommandBufferTransient pool vkc.Device
+                let commandBuffer = Hl.createTransientCommandBuffer pool vkc.Device
                 match attachmentMode with
-                | AttachmentColor _ -> Hl.recordTransitionLayout cb true mipLevels 0 textureType.Layers internalFormat.VkImageAspectFlags Hl.Undefined Hl.ColorAttachmentWrite image
-                | AttachmentDepth _ -> Hl.recordTransitionLayout cb true mipLevels 0 textureType.Layers internalFormat.VkImageAspectFlags Hl.Undefined Hl.DepthAttachment image
+                | AttachmentColor _ -> Hl.recordTransitionLayout true mipLevels 0 textureType.Layers internalFormat.VkImageAspectFlags Hl.Undefined Hl.ColorAttachmentWrite image commandBuffer
+                | AttachmentDepth _ -> Hl.recordTransitionLayout true mipLevels 0 textureType.Layers internalFormat.VkImageAspectFlags Hl.Undefined Hl.DepthAttachment image commandBuffer
                 | _ -> ()
-                Hl.Queue.executeTransient cb pool fence queue vkc.Device
+                Hl.Queue.executeTransient commandBuffer pool fence queue vkc.Device
             | _ -> ()
             
             // fin
@@ -745,22 +734,22 @@ module Texture =
                 textureInternal.Textures_.[textureInternal.CurrentIndex] <- TextureSingleton.create textureInternal.PixelFormat_ textureInternal.InternalFormat_ metadata textureInternal.MipLevels textureInternal.AttachmentMode_ textureInternal.TextureType_ textureInternal.ImageUsages_ vkc
         
         /// Record commands to upload pixel data to TextureInternal. Can only be done once.
-        static member uploadAsync cb metadata mipLevel layer pixels (textureInternal : TextureInternal) (vkc : Hl.VulkanContext) =
+        static member uploadAsync commandBuffer metadata mipLevel layer pixels (textureInternal : TextureInternal) (vkc : Hl.VulkanContext) =
             match textureInternal.AttachmentMode_ with
             | AttachmentNone ->
                 let uploadSize = Hl.ImageFormat.getImageSize metadata.TextureWidth metadata.TextureHeight textureInternal.InternalFormat_
                 let stagingBuffer = Buffer.Buffer.stageData uploadSize pixels vkc
                 textureInternal.Texture.StagingBuffers.Add stagingBuffer    
-                RecordBufferToImageCopy (cb, metadata.TextureWidth, metadata.TextureHeight, mipLevel, layer, stagingBuffer.VkBuffer, textureInternal.Image)
+                RecordBufferToImageCopy (commandBuffer, metadata.TextureWidth, metadata.TextureHeight, mipLevel, layer, stagingBuffer.VkBuffer, textureInternal.Image)
             | AttachmentColor _
             | AttachmentDepth _ -> Log.warn "Upload not supported for attachment texture."
 
         /// Upload pixel data to TextureInternal. Can only be done once.
         static member upload metadata mipLevel layer pixels thread (textureInternal : TextureInternal) (vkc : Hl.VulkanContext) =
             let (queue, pool, fence) = TextureLoadThread.getResources thread vkc
-            let cb = Hl.initCommandBufferTransient pool vkc.Device
-            TextureInternal.uploadAsync cb metadata mipLevel layer pixels textureInternal vkc
-            Hl.Queue.executeTransient cb pool fence queue vkc.Device
+            let commandBuffer = Hl.createTransientCommandBuffer pool vkc.Device
+            TextureInternal.uploadAsync commandBuffer metadata mipLevel layer pixels textureInternal vkc
+            Hl.Queue.executeTransient commandBuffer pool fence queue vkc.Device
             
             // destroy staging buffer (only) if it was created by async function in synchronous context to prevent massive waste of vram
             if textureInternal.AttachmentMode_.IsAttachmentNone then
@@ -769,9 +758,9 @@ module Texture =
                 textureInternal.Texture.StagingBuffers.RemoveAt lastIndex
         
         /// Record commands to upload array of pixel data to TextureInternal. Can only be done once.
-        static member uploadArrayAsync cb metadata mipLevel layer (array : 'a array) textureInternal vkc =
+        static member uploadArrayAsync commandBuffer metadata mipLevel layer (array : 'a array) textureInternal vkc =
             use arrayPin = new ArrayPin<_> (array)
-            TextureInternal.uploadAsync cb metadata mipLevel layer arrayPin.NativeInt textureInternal vkc
+            TextureInternal.uploadAsync commandBuffer metadata mipLevel layer arrayPin.NativeInt textureInternal vkc
         
         /// Upload array of pixel data to TextureInternal. Can only be done once.
         static member uploadArray metadata mipLevel layer (array : 'a array) thread textureInternal vkc =
@@ -783,9 +772,9 @@ module Texture =
         static member generateMipmaps metadata layer thread (textureInternal : TextureInternal) (vkc : Hl.VulkanContext) =
             if textureInternal.MipLevels > 1 then
                 let (queue, pool, fence) = TextureLoadThread.getResources thread vkc
-                let cb = Hl.initCommandBufferTransient pool vkc.Device
-                RecordGenerateMipmaps (cb, metadata.TextureWidth, metadata.TextureHeight, textureInternal.MipLevels, layer, textureInternal.Image)
-                Hl.Queue.executeTransient cb pool fence queue vkc.Device
+                let commandBuffer = Hl.createTransientCommandBuffer pool vkc.Device
+                RecordGenerateMipmaps (commandBuffer, metadata.TextureWidth, metadata.TextureHeight, textureInternal.MipLevels, layer, textureInternal.Image)
+                Hl.Queue.executeTransient commandBuffer pool fence queue vkc.Device
             else Log.warn "Mipmap generation attempted on texture with only one mip level."
         
         /// Create an empty TextureInternal.
@@ -1126,8 +1115,8 @@ module Texture =
             | LazyTexture lazyTexture -> TextureInternal.updateSize metadata lazyTexture.TextureInternal vkc
         
         /// Asynchronously transition the layout of the current texture.
-        static member transitionLayoutAsync cb srcLayout dstLayout (texture : Texture) =
-            Hl.recordTransitionLayout cb true texture.MipLevels 0 texture.Layers texture.InternalFormat.VkImageAspectFlags srcLayout dstLayout texture.Image
+        static member transitionLayoutAsync srcLayout dstLayout (texture : Texture) commandBuffer =
+            Hl.recordTransitionLayout true texture.MipLevels 0 texture.Layers texture.InternalFormat.VkImageAspectFlags srcLayout dstLayout texture.Image commandBuffer
         
         override this.GetHashCode () =
             Texture.hash this
@@ -1142,32 +1131,32 @@ module Texture =
                 Texture.equals this that
 
     /// A container for textures to be destroyed once their frame has executed.
-    type TextureDisposer =
+    type TextureDestroyer =
         private
             { Textures : Texture List array }
 
         /// Destroy all textures from latest finished frame. Must be called before submitting new textures to avoid premature destruction.
-        static member disposeFinished textureDisposer vkc =
-            for i in 0 .. dec textureDisposer.Textures.[Hl.CurrentFrame].Count do
-                textureDisposer.Textures.[Hl.CurrentFrame].[i].Destroy vkc
-            textureDisposer.Textures.[Hl.CurrentFrame].Clear ()
+        member this.BeginFrame vkc =
+            for i in 0 .. dec this.Textures.[Hl.CurrentFrame].Count do
+                this.Textures.[Hl.CurrentFrame].[i].Destroy vkc
+            this.Textures.[Hl.CurrentFrame].Clear ()
 
         /// Submit texture for destruction once the current frame has finished execution.
-        static member submit texture textureDisposer =
-            textureDisposer.Textures.[Hl.CurrentFrame].Add texture
-        
-        /// Create a TextureDisposer.
+        member this.Submit texture =
+            this.Textures.[Hl.CurrentFrame].Add texture
+
+        /// Create a TextureDestroyer.
         static member create () =
             let textures = Array.zeroCreate<List<Texture>> Constants.Vulkan.MaxFramesInFlight
             for i in 0 .. dec textures.Length do textures.[i] <- List ()
             { Textures = textures }
-        
-        /// Destroy a TextureDisposer.
-        static member destroy textureDisposer vkc =
-            for i in 0 .. dec textureDisposer.Textures.Length do
-                for j in 0 .. dec textureDisposer.Textures.[i].Count do
-                    textureDisposer.Textures.[i].[j].Destroy vkc
-    
+
+        /// Destroy a TextureDestroyer.
+        static member destroy textureDestroyer vkc =
+            for i in 0 .. dec textureDestroyer.Textures.Length do
+                for j in 0 .. dec textureDestroyer.Textures.[i].Count do
+                    textureDestroyer.Textures.[i].[j].Destroy vkc
+
     /// Memoizes and optionally threads texture loads.
     type TextureClient (lazyTextureQueuesOpt : ConcurrentDictionary<_, _> option) =
         let textures = Dictionary<string, Texture> HashIdentity.Structural

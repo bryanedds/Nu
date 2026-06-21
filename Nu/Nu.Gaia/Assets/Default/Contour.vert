@@ -5,13 +5,11 @@ struct VectorPath
     mat4 modelViewProjection;
 };
 
-layout(binding = 0) buffer readonly VectorPathBlock
-{
-    VectorPath vectorPath;
-};
+layout(set = 0, binding = 0) buffer readonly VectorPathBlock { VectorPath vectorPath; };
 
 layout (location = 0) in vec2 position;
 layout (location = 1) in vec4 color;
+
 layout (location = 0) out vec4 fragColor;
 
 void main()

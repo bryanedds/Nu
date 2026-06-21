@@ -1740,7 +1740,11 @@ module MathOperators =
 
 namespace Nu
 open System
+open System.Numerics
 open Prime
+
+/// The single inhabitant type / value for use where unit / () won't suffice, such as for a dictionary key.
+type Unit = Unit
 
 /// The result of an intersection-detecting operation.
 type [<Struct>] Intersection =

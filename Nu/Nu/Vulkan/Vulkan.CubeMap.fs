@@ -7,7 +7,6 @@ open System.Collections.Generic
 open System.IO
 open System.Numerics
 open System.Runtime.InteropServices
-open FSharp.NativeInterop
 open Prime
 open Nu
 
@@ -235,39 +234,38 @@ module CubeMap =
           Pipeline : Pipeline.Pipeline }
     
     /// Create a CubeMapPipeline.
-    let CreateCubeMapPipeline (shaderPath, maxCubes, colorAttachmentFormat, vkc : Hl.VulkanContext) =
+    let CreateCubeMapPipeline (shaderPath, colorAttachmentFormat, vkc : Hl.VulkanContext) =
+
+        // create uniform buffer
+        let transformUniform = Buffer.Buffer.create sizeof<Transform> Buffer.Storage vkc
 
         // create pipeline
         let pipeline =
             Pipeline.Pipeline.create
-                shaderPath 0 [|Pipeline.NoBlend|] [|false|]
+                shaderPath [|Pipeline.NoBlend|] [|false|]
                 [|Pipeline.vertex 0 VertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Hl.Single3 0|]|]
-                [|Pipeline.descriptorSet Hl.BulkNone (6 * maxCubes)
-                    [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage 1
-                      Pipeline.descriptor 1 Hl.SampledImage Hl.FragmentStage 1|]
-                  Pipeline.descriptorSet Hl.BulkNone 1
+                [|Pipeline.descriptorSet<int>
+                    [|Pipeline.descriptor 0 Hl.StorageBuffer Hl.VertexStage 1|]
+                  Pipeline.descriptorSet<Texture.Texture>
+                    [|Pipeline.descriptor 0 Hl.SampledImage Hl.FragmentStage 1|]
+                  Pipeline.descriptorSet<Texture.Sampler>
                     [|Pipeline.descriptor 0 Hl.Sampler Hl.FragmentStage 1|]|]
                 [||] [|colorAttachmentFormat|]
                 None // NOTE: DJL: not porting currently meaningless depth test as it imposes complexity cost in vulkan.
+                [|transformUniform|]
                 vkc
-
-        // create uniform buffer
-        let transformUniform = Buffer.Buffer.create sizeof<Transform> Buffer.Storage vkc
 
         // fin
         { TransformUniform = transformUniform; Pipeline = pipeline }
     
     /// Destroy a CubeMapPipeline.
     let DestroyCubeMapPipeline (cubeMapPipeline, vkc) =
-        Buffer.Buffer.destroy cubeMapPipeline.TransformUniform vkc
         Pipeline.Pipeline.destroy cubeMapPipeline.Pipeline vkc
     
     /// Draw a cube map.
     let DrawCubeMap
-        (drawIndex : int,
-         cb : VkCommandBuffer,
-         invertY : bool,
+        (invertY : bool,
          view : Matrix4x4,
          projection : Matrix4x4,
          viewProjection : Matrix4x4,
@@ -277,61 +275,58 @@ module CubeMap =
          resolution : int,
          colorAttachment : VkImageView,
          pipeline : CubeMapPipeline,
+         commandBuffer : VkCommandBuffer,
          vkc : Hl.VulkanContext) =
 
-        // bind uniforms
-        let mutable transform = Transform ()
-        transform.view <- view
-        transform.projection <- projection
-        transform.viewProjection <- viewProjection
-        Buffer.Buffer.uploadValue drawIndex 0 0 transform pipeline.TransformUniform vkc
-        Pipeline.Pipeline.writeDescriptorStorageBuffer 0 0 drawIndex 0 pipeline.TransformUniform.[drawIndex] pipeline.Pipeline vkc
-
-        // bind texture
-        Pipeline.Pipeline.writeDescriptorSampledImage 0 1 drawIndex 0 cubeMap pipeline.Pipeline vkc
-        Pipeline.Pipeline.writeDescriptorSampler 1 0 0 0 sampler pipeline.Pipeline vkc
-
-        // make viewport and scissor
+        // only draw if render area is valid
         let mutable renderArea = VkRect2D (0, 0, uint resolution, uint resolution)
         let mutable vkViewport = Hl.makeViewport invertY renderArea
-        let mutable scissor = renderArea
-
-        // only draw if scissor (and therefore also viewport) is valid
-        if Hl.validateRect scissor then
+        if Hl.validateRect renderArea then
 
             // only draw if required vkPipeline exists
             match Pipeline.Pipeline.tryGetVkPipeline Pipeline.NoBlend false pipeline.Pipeline with
             | Some vkPipeline ->
-            
-                // init render
+
+                // specify transform
+                let mutable transformDescriptorSet = pipeline.Pipeline.SpecifyDescriptorSet 0 pipeline.Pipeline.DrawIndex vkc $ fun vkSet ->
+                    let transform = Transform (view = view, projection = projection, viewProjection = viewProjection)
+                    Buffer.Buffer.uploadValue transform pipeline.TransformUniform vkc
+                    Pipeline.Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.TransformUniform vkSet vkc
+
+                // specify material
+                let mutable materialDescriptorSet = pipeline.Pipeline.SpecifyDescriptorSet 1 cubeMap vkc $ fun vkSet ->
+                    Pipeline.Pipeline.writeDescriptorSampledImage 0 0 cubeMap vkSet vkc
+
+                // specify sampler
+                let mutable samplerDescriptorSet = pipeline.Pipeline.SpecifyDescriptorSet 2 sampler vkc $ fun vkSet ->
+                    Pipeline.Pipeline.writeDescriptorSampler 0 0 sampler vkSet vkc
+
+                // set up render
                 let mutable rendering = Hl.makeRenderingInfo [|colorAttachment|] None renderArea None
-                Vulkan.vkCmdBeginRendering (cb, asPointer &rendering)
+                Vulkan.vkCmdBeginRendering (commandBuffer, asPointer &rendering)
+                Vulkan.vkCmdBindPipeline (commandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
+                Vulkan.vkCmdSetViewport (commandBuffer, 0u, 1u, asPointer &vkViewport)
+                Vulkan.vkCmdSetScissor (commandBuffer, 0u, 1u, asPointer &renderArea)
 
-                // bind pipeline
-                Vulkan.vkCmdBindPipeline (cb, VkPipelineBindPoint.Graphics, vkPipeline)
-
-                // set viewport and scissor
-                Vulkan.vkCmdSetViewport (cb, 0u, 1u, asPointer &vkViewport)
-                Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)
-                
                 // bind vertex and index buffer
                 let mutable vertexBuffer = geometry.VertexBuffer.VkBuffer
                 let mutable vertexOffset = 0UL
-                Vulkan.vkCmdBindVertexBuffers (cb, 0u, 1u, asPointer &vertexBuffer, asPointer &vertexOffset)
-                Vulkan.vkCmdBindIndexBuffer (cb, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
+                Vulkan.vkCmdBindVertexBuffers (commandBuffer, 0u, 1u, asPointer &vertexBuffer, asPointer &vertexOffset)
+                Vulkan.vkCmdBindIndexBuffer (commandBuffer, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
 
                 // bind descriptor sets
-                let mutable mainDescriptorSet = pipeline.Pipeline.VkDescriptorSet 0 drawIndex
-                let mutable samplerDescriptorSet = pipeline.Pipeline.VkDescriptorSet 1 0
-                Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, asPointer &mainDescriptorSet, 0u, nullPtr)
-                Vulkan.vkCmdBindDescriptorSets (cb, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, asPointer &samplerDescriptorSet, 0u, nullPtr)
+                Vulkan.vkCmdBindDescriptorSets (commandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, asPointer &transformDescriptorSet, 0u, nullPtr)
+                Vulkan.vkCmdBindDescriptorSets (commandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, asPointer &materialDescriptorSet, 0u, nullPtr)
+                Vulkan.vkCmdBindDescriptorSets (commandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 2u, 1u, asPointer &samplerDescriptorSet, 0u, nullPtr)
                 
                 // draw
-                Vulkan.vkCmdDrawIndexed (cb, uint geometry.ElementCount, 1u, 0u, 0, 0u)
-                Hl.reportDrawCall 1
+                Vulkan.vkCmdDrawIndexed (commandBuffer, uint geometry.ElementCount, 1u, 0u, 0, 0u)
         
-                // end render
-                Vulkan.vkCmdEndRendering cb
+                // tear down render
+                Vulkan.vkCmdEndRendering commandBuffer
+
+                // advance pipeline
+                pipeline.Pipeline.Advance 1
 
             // abort
             | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."

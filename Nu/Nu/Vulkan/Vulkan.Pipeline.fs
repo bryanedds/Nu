@@ -28,36 +28,29 @@ module Pipeline =
             | Transparent ->
                 Hl.makeBlendAttachment
                     (Some
-                         (VkBlendFactor.SrcAlpha, VkBlendFactor.OneMinusSrcAlpha,
-                          VkBlendFactor.One, VkBlendFactor.Zero))
+                        (VkBlendFactor.SrcAlpha, VkBlendFactor.OneMinusSrcAlpha,
+                         VkBlendFactor.One, VkBlendFactor.Zero))
             | Additive ->
                 Hl.makeBlendAttachment
                     (Some
-                         (VkBlendFactor.SrcAlpha, VkBlendFactor.One,
-                          VkBlendFactor.One, VkBlendFactor.Zero))
+                        (VkBlendFactor.SrcAlpha, VkBlendFactor.One,
+                         VkBlendFactor.One, VkBlendFactor.Zero))
             | Overwrite ->
                 Hl.makeBlendAttachment
                     (Some
-                         (VkBlendFactor.One, VkBlendFactor.Zero,
-                          VkBlendFactor.One, VkBlendFactor.Zero))
+                        (VkBlendFactor.One, VkBlendFactor.Zero,
+                         VkBlendFactor.One, VkBlendFactor.Zero))
             | ImGui ->
                 Hl.makeBlendAttachment
                     (Some
-                         (VkBlendFactor.SrcAlpha, VkBlendFactor.OneMinusSrcAlpha,
-                          VkBlendFactor.One, VkBlendFactor.OneMinusSrcAlpha))
+                        (VkBlendFactor.SrcAlpha, VkBlendFactor.OneMinusSrcAlpha,
+                         VkBlendFactor.One, VkBlendFactor.OneMinusSrcAlpha))
 
     /// Describes a vertex attribute in the context of a vertex binding.
     type VertexAttribute =
         { Location : int
           Format : Hl.VertexAttribFormat
           Offset : int }
-
-    /// Describes a vertex attribute in the context of a vertex binding.
-    [<DebuggerHidden; DebuggerStepThrough>]
-    let attribute location format offset =
-        { Location = location
-          Format = format
-          Offset = offset }
     
     /// Describes a binding for a vertex and its attributes.
     type VertexBinding =
@@ -65,14 +58,6 @@ module Pipeline =
           Stride : int
           InputRate : VkVertexInputRate
           Attributes : VertexAttribute array }
-
-    /// Describes a binding for a vertex and its attributes.
-    [<DebuggerHidden; DebuggerStepThrough>]
-    let vertex binding stride inputRate attributes =
-        { Binding = binding
-          Stride = stride
-          InputRate = inputRate
-          Attributes = attributes }
     
     /// Describes a binding for a resource descriptor (aka uniform).
     type DescriptorBinding =
@@ -81,6 +66,131 @@ module Pipeline =
           ShaderStage : Hl.ShaderStage
           DescriptorCount : int }
 
+    type DescriptorSet =
+        interface
+            abstract Specify : obj -> Hl.VulkanContext -> (VkDescriptorSet -> unit) -> VkDescriptorSet
+            abstract BeginFrame : unit -> unit
+            abstract Destroy : Hl.VulkanContext -> unit
+            end
+
+    and DescriptorSet<'k when 'k : equality> =
+        private
+            { DescriptorSetDefinition_ : DescriptorSetDefinition
+              VkDescriptorSetLayout_ : VkDescriptorSetLayout
+              VkDescriptorPools_ : VkDescriptorPool List
+              VkDescriptorSets_ : Dictionary<'k, VkDescriptorSet> array
+              mutable VkDescriptorSetsAvailable_ : VkDescriptorSet Queue array }
+
+        static member private createDescriptorPool (capacity : int) (descriptorSetDefinition : DescriptorSetDefinition) (vkc : Hl.VulkanContext) =
+
+            // derive pool sizes merged by descriptor type
+            let poolSizes =
+                descriptorSetDefinition.DescriptorBindings
+                |> Array.groupBy (fun b -> b.DescriptorType.VkDescriptorType) 
+                |> Array.map (fun (bindingType, bindings) ->
+                    let totalCount = Array.sumBy (fun b -> b.DescriptorCount) bindings
+                    let mutable poolSize = VkDescriptorPoolSize ()
+                    poolSize.``type`` <- bindingType
+                    poolSize.descriptorCount <- uint (totalCount * capacity)
+                    poolSize)
+            use poolSizesPin = new ArrayPin<_> (poolSizes)
+
+            // create descriptor pool
+            let mutable info = VkDescriptorPoolCreateInfo ()
+            info.maxSets <- uint capacity
+            info.poolSizeCount <- uint poolSizes.Length
+            info.pPoolSizes <- poolSizesPin.Pointer
+            let mutable descriptorPool = Unchecked.defaultof<VkDescriptorPool>
+            Vulkan.vkCreateDescriptorPool (vkc.Device, &info, nullPtr, &descriptorPool) |> Hl.check
+            descriptorPool
+
+        static member private allocateVkDescriptorSets capacity descriptorSetDefinitions descriptorSetLayout vkc =
+            let vkDescriptorPool = DescriptorSet.createDescriptorPool (capacity * Constants.Vulkan.MaxFramesInFlight) descriptorSetDefinitions vkc
+            let vkDescriptorSetLayouts = Array.create<VkDescriptorSetLayout> (capacity * Constants.Vulkan.MaxFramesInFlight) descriptorSetLayout
+            use vkDescriptorSetLayoutsPin = new ArrayPin<_> (vkDescriptorSetLayouts)
+            let mutable info = VkDescriptorSetAllocateInfo ()
+            info.descriptorPool <- vkDescriptorPool
+            info.descriptorSetCount <- uint vkDescriptorSetLayouts.Length
+            info.pSetLayouts <- vkDescriptorSetLayoutsPin.Pointer
+            let vkDescriptorSets = Array.zeroCreate<VkDescriptorSet> (capacity * Constants.Vulkan.MaxFramesInFlight)
+            use vkDescriptorSetsPin = new ArrayPin<_> (vkDescriptorSets)
+            Vulkan.vkAllocateDescriptorSets (vkc.Device, asPointer &info, vkDescriptorSetsPin.Pointer) |> Hl.check
+            let vkDescriptorSets = vkDescriptorSets |> Array.chunkBySize capacity |> Array.map Queue
+            (vkDescriptorPool, vkDescriptorSets)
+
+        static member create<'a when 'a : equality> capacity (descriptorSetDefinition : 'a DescriptorSetDefinition) vkDescriptorSetLayout (vkc : Hl.VulkanContext) : 'a DescriptorSet =
+
+            // allocate pool and use its descriptor sets
+            let (vkDescriptorPool, vkDescriptorSets) =
+                DescriptorSet<_>.allocateVkDescriptorSets capacity descriptorSetDefinition vkDescriptorSetLayout vkc
+
+            // make DescriptorSet
+            let descriptorSet =
+                { DescriptorSetDefinition_ = descriptorSetDefinition
+                  VkDescriptorSetLayout_ = vkDescriptorSetLayout
+                  VkDescriptorPools_ = List [vkDescriptorPool]
+                  VkDescriptorSets_ = Array.init Constants.Vulkan.MaxFramesInFlight (fun _ -> dictPlus<'a, VkDescriptorSet> HashIdentity.Structural [])
+                  VkDescriptorSetsAvailable_ = vkDescriptorSets }
+
+            // fin
+            descriptorSet
+
+        interface DescriptorSet with
+
+            member this.BeginFrame () =
+                for entry in this.VkDescriptorSets_.[Hl.CurrentFrame] do
+                    this.VkDescriptorSetsAvailable_.[Hl.CurrentFrame].Enqueue entry.Value
+                this.VkDescriptorSets_.[Hl.CurrentFrame].Clear ()
+
+            member this.Specify (keyObj : obj) (vkc : Hl.VulkanContext) (specify : VkDescriptorSet -> unit) : VkDescriptorSet =
+                let key = keyObj :?> 'k
+                match this.VkDescriptorSets_.[Hl.CurrentFrame].TryGetValue key with
+                | (false, _) ->
+                    let mutable vkDescriptorSet = Unchecked.defaultof<_>
+                    let found = this.VkDescriptorSetsAvailable_.[Hl.CurrentFrame].TryDequeue &vkDescriptorSet
+                    if not found then
+                        let count = this.VkDescriptorSets_.[Hl.CurrentFrame].Count
+                        let (vkDescriptorPool, vkDescriptorSets) =
+                            DescriptorSet<_>.allocateVkDescriptorSets count this.DescriptorSetDefinition_ this.VkDescriptorSetLayout_ vkc
+                        this.VkDescriptorPools_.Add vkDescriptorPool
+                        this.VkDescriptorSetsAvailable_ <- vkDescriptorSets
+                        vkDescriptorSet <- this.VkDescriptorSetsAvailable_.[Hl.CurrentFrame].Dequeue ()
+                    this.VkDescriptorSets_.[Hl.CurrentFrame].Add (key, vkDescriptorSet)
+                    specify vkDescriptorSet
+                    vkDescriptorSet
+                | (true, vkDescriptorSet) -> vkDescriptorSet
+
+            member this.Destroy vkc =
+                for pool in this.VkDescriptorPools_ do Vulkan.vkDestroyDescriptorPool (vkc.Device, pool, nullPtr)
+
+    and DescriptorSetDefinition =
+        interface
+            abstract DescriptorBindings : DescriptorBinding array
+            abstract CreateDescriptorSet : VkDescriptorSetLayout -> Hl.VulkanContext -> DescriptorSet
+            end
+    
+    /// Describes a descriptor set.
+    and DescriptorSetDefinition<'k when 'k : equality> =
+        { DescriptorBindings : DescriptorBinding array }
+        interface DescriptorSetDefinition with
+            member this.DescriptorBindings = this.DescriptorBindings
+            member this.CreateDescriptorSet layout vkc = DescriptorSet<_>.create<'k> Constants.Vulkan.DescriptorSetCountDefault this layout vkc
+
+    /// Describes a vertex attribute in the context of a vertex binding.
+    [<DebuggerHidden; DebuggerStepThrough>]
+    let attribute location format offset =
+        { Location = location
+          Format = format
+          Offset = offset }
+
+    /// Describes a binding for a vertex and its attributes.
+    [<DebuggerHidden; DebuggerStepThrough>]
+    let vertex binding stride inputRate attributes =
+        { Binding = binding
+          Stride = stride
+          InputRate = inputRate
+          Attributes = attributes }
+
     /// Describes a binding for a resource descriptor (aka uniform).
     [<DebuggerHidden; DebuggerStepThrough>]
     let descriptor binding descriptorType shaderStage descriptorCount =
@@ -88,20 +198,17 @@ module Pipeline =
           DescriptorType = descriptorType
           ShaderStage = shaderStage
           DescriptorCount = descriptorCount }
-    
-    /// Describes a descriptor set.
-    type DescriptorSetDefinition =
-        { BulkMode : Hl.BulkDescriptorMode
-          SetCount : int
-          Descriptors : DescriptorBinding array }
 
     /// Describes a descriptor set.
     [<DebuggerHidden; DebuggerStepThrough>]
-    let descriptorSet bulkMode setCount descriptors =
-        { BulkMode = bulkMode
-          SetCount = setCount
-          Descriptors = descriptors }
-    
+    let descriptorSet<'k when 'k : equality> descriptorBindings : 'k DescriptorSetDefinition =
+#if DEBUG
+        let ty = typeof<'k>
+        if ty = typeof<obj> then failwith "Unexpected key type 'obj'. You probably forgot to explicitly specify descriptorSet type!"
+        if ty = typeof<unit> then failwith "Unexpected key type 'unit'. You have to use the 'Unit' type instead since null semantics make 'unit' unusable as a key."
+#endif
+        { DescriptorBindings = descriptorBindings }
+
     /// Describes a push constant.
     type PushConstant =
         { Offset : int
@@ -128,324 +235,54 @@ module Pipeline =
         | NeverPassTest -> VkCompareOp.Never
         | AlwaysPassTest -> VkCompareOp.Always
     
-    // NOTE: DJL: these identifiers *must* be manually generated to ensure uniqueness across time as object handles can be reused after object destruction.
-    // id reuse can lead to outdated descriptors pointing to possibly destroyed resources. this has caused a severe text rendering bug that only seems to
-    // emerge with validation disabled.
-    type private DescriptorSetState =
-        private
-            { BuffersWritten : uint64 List array
-              ImageViewsWritten : uint64 List array
-              SamplersWritten : uint64 List array }
-
-        member this.GetBuffer binding index =
-            while this.BuffersWritten.[binding].Count <= index do this.BuffersWritten.[binding].Add 0UL
-            this.BuffersWritten.[binding].[index]
-        
-        member this.GetImageView binding index =
-            while this.ImageViewsWritten.[binding].Count <= index do this.ImageViewsWritten.[binding].Add 0UL
-            this.ImageViewsWritten.[binding].[index]
-        
-        member this.GetSampler binding index =
-            while this.SamplersWritten.[binding].Count <= index do this.SamplersWritten.[binding].Add 0UL
-            this.SamplersWritten.[binding].[index]
-
-        member this.SetBuffer binding index handle =
-            while this.BuffersWritten.[binding].Count <= index do this.BuffersWritten.[binding].Add 0UL
-            this.BuffersWritten.[binding].[index] <- handle
-        
-        member this.SetImageView binding index handle =
-            while this.ImageViewsWritten.[binding].Count <= index do this.ImageViewsWritten.[binding].Add 0UL
-            this.ImageViewsWritten.[binding].[index] <- handle
-        
-        member this.SetSampler binding index handle =
-            while this.SamplersWritten.[binding].Count <= index do this.SamplersWritten.[binding].Add 0UL
-            this.SamplersWritten.[binding].[index] <- handle
-        
-        static member create bindingsLength =
-            let buffersWritten = Array.zeroCreate bindingsLength
-            let imageViewsWritten = Array.zeroCreate bindingsLength
-            let samplersWritten = Array.zeroCreate bindingsLength
-            for i in 0 .. dec bindingsLength do
-                buffersWritten.[i] <- List ()
-                imageViewsWritten.[i] <- List ()
-                samplersWritten.[i] <- List ()
-            { BuffersWritten = buffersWritten
-              ImageViewsWritten = imageViewsWritten
-              SamplersWritten = samplersWritten }
-    
-    type private DescriptorSet =
-        private
-            { VkDescriptorSets_ : VkDescriptorSet array array
-              DescriptorSetStates_ : DescriptorSetState array array
-              DescriptorLimits_ : int array }
-
-        member private this.DescriptorSetState index = this.DescriptorSetStates_.[Hl.CurrentFrame].[index]
-        member this.VkDescriptorSet index = this.VkDescriptorSets_.[Hl.CurrentFrame].[index]
-
-        static member private allocateVkDescriptorSets count descriptorSetLayout descriptorPool device =
-            let descriptorSetLayouts = Array.zeroCreate<VkDescriptorSetLayout> (count * Constants.Vulkan.MaxFramesInFlight)
-            use descriptorSetLayoutsPin = new ArrayPin<_> (descriptorSetLayouts)
-            for i in 0 .. dec descriptorSetLayouts.Length do descriptorSetLayouts.[i] <- descriptorSetLayout
-            let mutable info = VkDescriptorSetAllocateInfo ()
-            info.descriptorPool <- descriptorPool
-            info.descriptorSetCount <- uint descriptorSetLayouts.Length
-            info.pSetLayouts <- descriptorSetLayoutsPin.Pointer
-            let vkDescriptorSets = Array.zeroCreate<VkDescriptorSet> (count * Constants.Vulkan.MaxFramesInFlight)
-            use vkDescriptorSetsPin = new ArrayPin<_> (vkDescriptorSets)
-            Vulkan.vkAllocateDescriptorSets (device, asPointer &info, vkDescriptorSetsPin.Pointer) |> Hl.check
-            vkDescriptorSets
-        
-        static member writeDescriptorBuffer descriptorType (binding : int) setIndex (descriptorIndex : int) (buffer : VkBuffer * uint64) (descriptorSet : DescriptorSet) (vkc : Hl.VulkanContext) =
-            
-            // only proceed if within limit
-            if descriptorIndex < descriptorSet.DescriptorLimits_.[binding] then
-            
-                // only proceed if buffer not already written
-                let (vkBuffer, bufferId) = buffer
-                if (descriptorSet.DescriptorSetState setIndex).GetBuffer binding descriptorIndex <> bufferId then
-            
-                    // buffer info
-                    let mutable info = VkDescriptorBufferInfo ()
-                    info.buffer <- vkBuffer
-                    info.range <- Vulkan.VK_WHOLE_SIZE
-                
-                    // write descriptor set
-                    let mutable write = VkWriteDescriptorSet ()
-                    write.dstSet <- descriptorSet.VkDescriptorSet setIndex
-                    write.dstBinding <- uint binding
-                    write.dstArrayElement <- uint descriptorIndex
-                    write.descriptorCount <- 1u
-                    write.descriptorType <- descriptorType
-                    write.pBufferInfo <- asPointer &info
-                    Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
-
-                    // record written buffer
-                    (descriptorSet.DescriptorSetState setIndex).SetBuffer binding descriptorIndex bufferId
-            
-            // warn if limit exceeded
-            else Log.warnOnce "Attempted buffer write to descriptor set has exceeded descriptor count. You may have failed to pass the correct descriptor count at pipeline creation."
-
-        static member writeDescriptorSampledImage (binding : int) setIndex (descriptorIndex : int) (texture : Texture.Texture) (descriptorSet : DescriptorSet) (vkc : Hl.VulkanContext) =
-            
-            // only proceed if within limit
-            if descriptorIndex < descriptorSet.DescriptorLimits_.[binding] then
-            
-                // only proceed if image view not already written
-                if (descriptorSet.DescriptorSetState setIndex).GetImageView binding descriptorIndex <> texture.Id then
-                
-                    // image info
-                    let mutable info = VkDescriptorImageInfo ()
-                    info.imageView <- texture.ImageView
-                    info.imageLayout <- Hl.ShaderRead.VkImageLayout
-
-                    // write descriptor set
-                    let mutable write = VkWriteDescriptorSet ()
-                    write.dstSet <- descriptorSet.VkDescriptorSet setIndex
-                    write.dstBinding <- uint binding
-                    write.dstArrayElement <- uint descriptorIndex
-                    write.descriptorCount <- 1u
-                    write.descriptorType <- VkDescriptorType.SampledImage
-                    write.pImageInfo <- asPointer &info
-                    Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
-
-                    // record written image view
-                    (descriptorSet.DescriptorSetState setIndex).SetImageView binding descriptorIndex texture.Id
-
-            // warn if limit exceeded
-            else Log.warnOnce "Attempted sampled image write to descriptor set has exceeded descriptor count. You may have failed to pass the correct descriptor count at pipeline creation."
-        
-        static member writeDescriptorSampler (binding : int) setIndex (descriptorIndex : int) (sampler : Texture.Sampler) (descriptorSet : DescriptorSet) (vkc : Hl.VulkanContext) =
-            
-            // only proceed if within limit
-            if descriptorIndex < descriptorSet.DescriptorLimits_.[binding] then
-            
-                // only proceed if sampler not already written
-                if (descriptorSet.DescriptorSetState setIndex).GetSampler binding descriptorIndex <> sampler.Id then
-                
-                    // image info
-                    let mutable info = VkDescriptorImageInfo ()
-                    info.sampler <- sampler.VkSampler
-
-                    // write descriptor set
-                    let mutable write = VkWriteDescriptorSet ()
-                    write.dstSet <- descriptorSet.VkDescriptorSet setIndex
-                    write.dstBinding <- uint binding
-                    write.dstArrayElement <- uint descriptorIndex
-                    write.descriptorCount <- 1u
-                    write.descriptorType <- VkDescriptorType.Sampler
-                    write.pImageInfo <- asPointer &info
-                    Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
-
-                    // record written sampler
-                    (descriptorSet.DescriptorSetState setIndex).SetSampler binding descriptorIndex sampler.Id
-
-            // warn if limit exceeded
-            else Log.warnOnce "Attempted sampler write to descriptor set has exceeded descriptor count. You may have failed to pass the correct descriptor count at pipeline creation."
-        
-        static member writeDescriptorCombinedImageSampler (binding : int) setIndex (descriptorIndex : int) (texture : Texture.Texture) (sampler : Texture.Sampler) (descriptorSet : DescriptorSet) (vkc : Hl.VulkanContext) =
-            
-            // only proceed if within limit
-            if descriptorIndex < descriptorSet.DescriptorLimits_.[binding] then
-            
-                // only proceed if image view or sampler not already written
-                if (descriptorSet.DescriptorSetState setIndex).GetImageView binding descriptorIndex <> texture.Id ||
-                   (descriptorSet.DescriptorSetState setIndex).GetSampler binding descriptorIndex <> sampler.Id
-                then
-            
-                    // image info
-                    let mutable info = VkDescriptorImageInfo ()
-                    info.sampler <- sampler.VkSampler
-                    info.imageView <- texture.ImageView
-                    info.imageLayout <- Hl.ShaderRead.VkImageLayout
-
-                    // write descriptor set
-                    let mutable write = VkWriteDescriptorSet ()
-                    write.dstSet <- descriptorSet.VkDescriptorSet setIndex
-                    write.dstBinding <- uint binding
-                    write.dstArrayElement <- uint descriptorIndex
-                    write.descriptorCount <- 1u
-                    write.descriptorType <- VkDescriptorType.CombinedImageSampler
-                    write.pImageInfo <- asPointer &info
-                    Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
-
-                    // record written image view and sampler
-                    (descriptorSet.DescriptorSetState setIndex).SetImageView binding descriptorIndex texture.Id
-                    (descriptorSet.DescriptorSetState setIndex).SetSampler binding descriptorIndex sampler.Id
-
-            // warn if limit exceeded
-            else Log.warnOnce "Attempted combined image sampler write to descriptor set has exceeded descriptor count. You may have failed to pass the correct descriptor count at pipeline creation."
-        
-        static member create count (descriptorBindings : VkDescriptorSetLayoutBinding array) descriptorSetLayout descriptorPool device =
-
-            // allocate vkDescriptorSets
-            let vkDescriptorSets = DescriptorSet.allocateVkDescriptorSets count descriptorSetLayout descriptorPool device
-            let vkDescriptorSets = Array.chunkBySize count vkDescriptorSets
-
-            // create descriptor set states
-            let highestBinding = Array.maxBy (fun (layoutBinding : VkDescriptorSetLayoutBinding) -> layoutBinding.binding) descriptorBindings
-            let descriptorSetStates = Array.zeroCreate<DescriptorSetState> (count * Constants.Vulkan.MaxFramesInFlight)
-            for i in 0 .. dec descriptorSetStates.Length do
-                descriptorSetStates.[i] <- DescriptorSetState.create (int highestBinding.binding + 1)
-            let descriptorSetStates = Array.chunkBySize count descriptorSetStates
-
-            // store descriptor limits
-            let descriptorLimits = Array.zeroCreate<int> (int highestBinding.binding + 1)
-            for i in 0 .. dec descriptorBindings.Length do
-                let binding = descriptorBindings.[i]
-                descriptorLimits.[int binding.binding] <- int binding.descriptorCount
-            
-            // make DescriptorSet
-            let descriptorSet =
-                { VkDescriptorSets_ = vkDescriptorSets
-                  DescriptorSetStates_ = descriptorSetStates
-                  DescriptorLimits_ = descriptorLimits }
-            
-            // fin
-            descriptorSet
-    
     /// An abstraction of a rendering pipeline.
     type Pipeline =
         private
             { mutable VkPipelines_ : Map<Blend * bool, VkPipeline> // TODO: P0: make sure no allocation happens on look-up.
-              DescriptorPool_ : VkDescriptorPool
+              Buffers_ : Buffer.Buffer array
               DescriptorSets_ : DescriptorSet array
-              PipelineLayout_ : VkPipelineLayout
-              DescriptorSetLayouts_ : VkDescriptorSetLayout array
+              VkPipelineLayout_ : VkPipelineLayout
+              VkDescriptorSetLayouts_ : VkDescriptorSetLayout array
               ShaderPath_ : string
               PipelineSettings_ : (Blend * bool) array
-              VertexBindings_ : VkVertexInputBindingDescription array
-              VertexAttributes_ : VkVertexInputAttributeDescription array
-              ColorAttachmentFormats_ : VkFormat array
-              DepthTestFormatOpt_ : VkFormat option
-              BulkDrawLimit_ : int }
+              VkVertexBindings_ : VkVertexInputBindingDescription array
+              VkVertexAttributes_ : VkVertexInputAttributeDescription array
+              VkColorAttachmentFormats_ : VkFormat array
+              VkDepthTestFormatOpt_ : VkFormat option
+              mutable DrawIndex_ : int }
 
         /// The pipeline layout.
-        member this.PipelineLayout = this.PipelineLayout_
+        member this.PipelineLayout = this.VkPipelineLayout_
 
-        /// The maximum number of arbitrarily repeated draws, only applicable with descriptor indexing.
-        member this.BulkDrawLimit = this.BulkDrawLimit_
-        
+        /// The current draw index.
+        member this.DrawIndex = this.DrawIndex_
+
+        /// Begin use of the pipeline this frame.
+        member this.BeginFrame () =
+            for buffer in this.Buffers_ do buffer.BeginFrame ()
+            for set in this.DescriptorSets_ do set.BeginFrame ()
+            this.DrawIndex_ <- 0
+
+        /// Advance the state of the pipeline for additional drawing.
+        member this.Advance drawInstances =
+            this.DrawIndex_ <- inc this.DrawIndex_
+            Hl.reportDrawCall drawInstances
+
         /// The descriptor set of the given number for the current frame.
-        member this.VkDescriptorSet setNumber setIndex = this.DescriptorSets_.[setNumber].VkDescriptorSet setIndex
-        
-        /// Create the descriptor pool.
-        static member private createDescriptorPool bulkDrawLimit (descriptorSetDefinitions : DescriptorSetDefinition array) (vkc : Hl.VulkanContext) =
-            
-            // process each descriptor set definition
-            let resourceBindingsSets = Array.zeroCreate descriptorSetDefinitions.Length
-            for i in 0 .. dec descriptorSetDefinitions.Length do
-                resourceBindingsSets.[i] <-
-                    Array.map
-                        (fun binding ->
-                             let bulk = if descriptorSetDefinitions.[i].BulkMode.IsBulkNone then 1 else bulkDrawLimit
-                             let totalCount = bulk * binding.DescriptorCount * descriptorSetDefinitions.[i].SetCount * Constants.Vulkan.MaxFramesInFlight
-                             (binding.DescriptorType.VkDescriptorType, uint totalCount))
-                        descriptorSetDefinitions.[i].Descriptors
-            
-            // derive pool sizes
-            let resourceBindings = Array.concat resourceBindingsSets
-            let poolSizes = Array.zeroCreate<VkDescriptorPoolSize> resourceBindings.Length
-            use poolSizesPin = new ArrayPin<_> (poolSizes)
-            for i in [0 .. dec resourceBindings.Length] do
-                let mutable poolSize = VkDescriptorPoolSize ()
-                poolSize.``type`` <- fst resourceBindings.[i]
-                poolSize.descriptorCount <- snd resourceBindings.[i]
-                poolSizes.[i] <- poolSize
-            
-            // count total descriptor usage and fail when hardware limit exceeded
-            Hl.DescriptorsNeeded <- Hl.DescriptorsNeeded + Array.sumBy (fun x -> snd x) resourceBindings
-            match vkc.DescriptorIndexingPropertiesOpt with
-            | Some properties ->
-                if Hl.DescriptorsNeeded > properties.maxUpdateAfterBindDescriptorsInAllPools
-                then Log.fail "The current hardware cannot support the currently configured drawing maxes. Consider tuning down unneeded maxes, especially 3D drawing and light maps."
-            | None -> ()
-            
-            // calculate total descriptor sets
-            let setCount setDef = if setDef.BulkMode.IsBulkSetIndexed then setDef.SetCount * bulkDrawLimit else setDef.SetCount
-            let maxSets = Array.sumBy setCount descriptorSetDefinitions * Constants.Vulkan.MaxFramesInFlight
-            
-            // create descriptor pool
-            // NOTE: DJL: all descriptor pools should enable update after bind to avoid the *other*
-            // maxes which a) would complicate calculations like above and b) may be lower. See
-            // https://docs.vulkan.org/refpages/latest/refpages/source/VkPhysicalDeviceDescriptorIndexingProperties.html.
-            let mutable info = VkDescriptorPoolCreateInfo ()
-            if Option.isSome vkc.DescriptorIndexingPropertiesOpt then info.flags <- VkDescriptorPoolCreateFlags.UpdateAfterBind
-            info.maxSets <- uint maxSets
-            info.poolSizeCount <- uint poolSizes.Length
-            info.pPoolSizes <- poolSizesPin.Pointer
-            let mutable descriptorPool = Unchecked.defaultof<VkDescriptorPool>
-            Vulkan.vkCreateDescriptorPool (vkc.Device, &info, nullPtr, &descriptorPool) |> Hl.check
-            descriptorPool
+        static member getDescriptorSet set pipeline = pipeline.DescriptorSets_.[set]
 
         /// Create the descriptor set layout.
-        static member private createDescriptorSetLayout descriptorIndexing (resourceBindings : VkDescriptorSetLayoutBinding array) device =
-            
-            // bit of boilerplate for descriptor indexing
-            let bindingFlags =
-                VkDescriptorBindingFlags.UpdateAfterBind |||
-                VkDescriptorBindingFlags.UpdateUnusedWhilePending |||
-                VkDescriptorBindingFlags.PartiallyBound
-            let bindingFlagsArray = Array.create resourceBindings.Length bindingFlags
-            use bindingFlagsArrayPin = new ArrayPin<_> (bindingFlagsArray) // must be in scope for create function
-            let mutable bfInfo = VkDescriptorSetLayoutBindingFlagsCreateInfo ()
-            bfInfo.bindingCount <- uint bindingFlagsArray.Length
-            bfInfo.pBindingFlags <- bindingFlagsArrayPin.Pointer
-            
-            // create descriptor set layout
+        static member private createDescriptorSetLayout (resourceBindings : VkDescriptorSetLayoutBinding array) (vkc : Hl.VulkanContext) =
             use resourceBindingsPin = new ArrayPin<_> (resourceBindings)
             let mutable info = VkDescriptorSetLayoutCreateInfo ()
-            if descriptorIndexing then
-                if not Constants.Vulkan.DescriptorIndexingEnabled then Log.errorOnce "Descriptor indexing not enabled."
-                info.flags <- VkDescriptorSetLayoutCreateFlags.UpdateAfterBindPool
-                info.pNext <- asVoidPtr &bfInfo
             info.bindingCount <- uint resourceBindings.Length
             info.pBindings <- resourceBindingsPin.Pointer
             let mutable descriptorSetLayout = Unchecked.defaultof<VkDescriptorSetLayout>
-            Vulkan.vkCreateDescriptorSetLayout (device, &info, nullPtr, &descriptorSetLayout) |> Hl.check
+            Vulkan.vkCreateDescriptorSetLayout (vkc.Device, &info, nullPtr, &descriptorSetLayout) |> Hl.check
             descriptorSetLayout
 
         /// Create the pipeline layout.
-        static member private createPipelineLayout (descriptorSetLayouts : VkDescriptorSetLayout array) (pushConstantRanges : VkPushConstantRange array) device =
+        static member private createVkPipelineLayout (descriptorSetLayouts : VkDescriptorSetLayout array) (pushConstantRanges : VkPushConstantRange array) (vkc : Hl.VulkanContext) =
             use descriptorSetLayoutsPin = new ArrayPin<_> (descriptorSetLayouts)
             use pushConstantRangesPin = new ArrayPin<_> (pushConstantRanges)
             let mutable info = VkPipelineLayoutCreateInfo ()
@@ -453,9 +290,9 @@ module Pipeline =
             info.pSetLayouts <- descriptorSetLayoutsPin.Pointer
             info.pushConstantRangeCount <- uint pushConstantRanges.Length
             info.pPushConstantRanges <- pushConstantRangesPin.Pointer
-            let mutable pipelineLayout = Unchecked.defaultof<VkPipelineLayout>
-            Vulkan.vkCreatePipelineLayout (device, &info, nullPtr, &pipelineLayout) |> Hl.check
-            pipelineLayout
+            let mutable vkPipelineLayout = Unchecked.defaultof<VkPipelineLayout>
+            Vulkan.vkCreatePipelineLayout (vkc.Device, &info, nullPtr, &vkPipelineLayout) |> Hl.check
+            vkPipelineLayout
         
         /// Try to create the VkPipelines.
         static member private tryCreateVkPipelines
@@ -466,12 +303,12 @@ module Pipeline =
             pipelineLayout
             (colorAttachmentFormats : VkFormat array)
             depthTestFormatOpt
-            device =
+            (vkc : Hl.VulkanContext) =
             
             // try to create shader modules
             let moduleResults =
-                (Hl.tryCreateShaderModuleFromGlsl (shaderPath + ".vert") ShaderKind.VertexShader device,
-                 Hl.tryCreateShaderModuleFromGlsl (shaderPath + ".frag") ShaderKind.FragmentShader device)
+                (Hl.tryCreateShaderModuleFromGlsl (shaderPath + ".vert") ShaderKind.VertexShader vkc.Device,
+                 Hl.tryCreateShaderModuleFromGlsl (shaderPath + ".frag") ShaderKind.FragmentShader vkc.Device)
 
             // only proceed if shader module creation successful
             match moduleResults with
@@ -584,11 +421,11 @@ module Pipeline =
                 // TODO: DJL: consider pipeline cache.
                 let vkPipelines = Array.zeroCreate<VkPipeline> pipelineSettings.Length
                 use vkPipelinesPin = new ArrayPin<_> (vkPipelines)
-                Vulkan.vkCreateGraphicsPipelines (device, VkPipelineCache.Null, uint vkPipelines.Length, infos, nullPtr, vkPipelinesPin.Pointer) |> Hl.check
+                Vulkan.vkCreateGraphicsPipelines (vkc.Device, VkPipelineCache.Null, uint vkPipelines.Length, infos, nullPtr, vkPipelinesPin.Pointer) |> Hl.check
                 
                 // destroy shader modules
-                Vulkan.vkDestroyShaderModule (device, vertModule, nullPtr)
-                Vulkan.vkDestroyShaderModule (device, fragModule, nullPtr)
+                Vulkan.vkDestroyShaderModule (vkc.Device, vertModule, nullPtr)
+                Vulkan.vkDestroyShaderModule (vkc.Device, fragModule, nullPtr)
                 
                 // pack vulkan pipelines with settings
                 let vkPipelinesPacked = Array.zip pipelineSettings vkPipelines |> Map.ofArray
@@ -597,45 +434,116 @@ module Pipeline =
             // abort
             | (vertModuleResult, fragModuleResult) ->
                 match vertModuleResult with
-                | Right vertModule -> Vulkan.vkDestroyShaderModule (device, vertModule, nullPtr)
+                | Right vertModule -> Vulkan.vkDestroyShaderModule (vkc.Device, vertModule, nullPtr)
                 | Left msg -> Log.warn msg
                 match fragModuleResult with
-                | Right fragModule -> Vulkan.vkDestroyShaderModule (device, fragModule, nullPtr)
+                | Right fragModule -> Vulkan.vkDestroyShaderModule (vkc.Device, fragModule, nullPtr)
                 | Left msg -> Log.warn msg
                 Log.warn "VkPipeline creation aborted."
                 Map.empty
-        
+
         static member private destroyVkPipelines pipeline (vkc : Hl.VulkanContext) =
             Map.iter (fun _ vkPipeline -> Vulkan.vkDestroyPipeline (vkc.Device, vkPipeline, nullPtr)) pipeline.VkPipelines_
         
         /// Try to get the VkPipeline built for the given settings.
         static member tryGetVkPipeline blend cullFace pipeline =
             Map.tryFind (blend, cullFace) pipeline.VkPipelines_
-        
-        /// Write a uniform buffer to the descriptor set. Must be used in-frame.
-        static member writeDescriptorUniformBuffer setNumber (binding : int) setIndex (descriptorIndex : int) (buffer : VkBuffer * uint64) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
-            DescriptorSet.writeDescriptorBuffer VkDescriptorType.UniformBuffer binding setIndex (descriptorIndex : int) buffer pipeline.DescriptorSets_.[setNumber] vkc
 
-        /// Write a storage buffer to the descriptor set. Must be used in-frame.
-        static member writeDescriptorStorageBuffer setNumber (binding : int) setIndex (descriptorIndex : int) (buffer : VkBuffer * uint64) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
-            DescriptorSet.writeDescriptorBuffer VkDescriptorType.StorageBuffer binding setIndex (descriptorIndex : int) buffer pipeline.DescriptorSets_.[setNumber] vkc
+        static member writeDescriptorStorageBuffer (binding : int) (descriptorIndex : int) (buffer : Buffer.Buffer) vkDescriptorSet (vkc : Hl.VulkanContext) =
 
-        /// Write a sampled image to the descriptor set. Must be used in-frame.
-        static member writeDescriptorSampledImage setNumber (binding : int) setIndex (descriptorIndex : int) (texture : Texture.Texture) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
-            DescriptorSet.writeDescriptorSampledImage binding setIndex descriptorIndex texture pipeline.DescriptorSets_.[setNumber] vkc
+            // buffer info
+            let mutable info = VkDescriptorBufferInfo ()
+            info.buffer <- buffer.VkBuffer
+            info.range <- Vulkan.VK_WHOLE_SIZE
+
+            // write descriptor set
+            let mutable write = VkWriteDescriptorSet ()
+            write.dstSet <- vkDescriptorSet
+            write.dstBinding <- uint binding
+            write.dstArrayElement <- uint descriptorIndex
+            write.descriptorCount <- 1u
+            write.descriptorType <- VkDescriptorType.StorageBuffer
+            write.pBufferInfo <- asPointer &info
+            Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
+
+            // advance buffer
+            buffer.Advance ()
+
+        static member writeDescriptorSampledImage (binding : int) (descriptorIndex : int) (texture : Texture.Texture) vkDescriptorSet (vkc : Hl.VulkanContext) =
+
+            // image info
+            let mutable info = VkDescriptorImageInfo ()
+            info.imageView <- texture.ImageView
+            info.imageLayout <- Hl.ShaderRead.VkImageLayout
+
+            // write descriptor set
+            let mutable write = VkWriteDescriptorSet ()
+            write.dstSet <- vkDescriptorSet
+            write.dstBinding <- uint binding
+            write.dstArrayElement <- uint descriptorIndex
+            write.descriptorCount <- 1u
+            write.descriptorType <- VkDescriptorType.SampledImage
+            write.pImageInfo <- asPointer &info
+            Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
+
+        static member writeDescriptorSampledImages (binding : int) (descriptorIndex : int) (textures : Texture.Texture array) vkDescriptorSet (vkc : Hl.VulkanContext) =
+
+            // image infos
+            let infos = Array.zeroCreate<VkDescriptorImageInfo> textures.Length
+            use infosPin = new ArrayPin<_> (infos)
+            for i in 0 .. dec textures.Length do
+                let mutable info = VkDescriptorImageInfo ()
+                info.imageView <- textures.[i].ImageView
+                info.imageLayout <- Hl.ShaderRead.VkImageLayout
+                infos.[i] <- info
+
+            // write descriptor set
+            let mutable write = VkWriteDescriptorSet ()
+            write.dstSet <- vkDescriptorSet
+            write.dstBinding <- uint binding
+            write.dstArrayElement <- uint descriptorIndex
+            write.descriptorCount <- uint textures.Length
+            write.descriptorType <- VkDescriptorType.SampledImage
+            write.pImageInfo <- infosPin.Pointer
+            Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
+
+        static member writeDescriptorSampler (binding : int) (descriptorIndex : int) (sampler : Texture.Sampler) vkDescriptorSet (vkc : Hl.VulkanContext) =
+            
+            // image info
+            let mutable info = VkDescriptorImageInfo ()
+            info.sampler <- sampler.VkSampler
+
+            // write descriptor set
+            let mutable write = VkWriteDescriptorSet ()
+            write.dstSet <- vkDescriptorSet
+            write.dstBinding <- uint binding
+            write.dstArrayElement <- uint descriptorIndex
+            write.descriptorCount <- 1u
+            write.descriptorType <- VkDescriptorType.Sampler
+            write.pImageInfo <- asPointer &info
+            Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
         
-        /// Write a sampler to the descriptor set. Must be used in-frame.
-        static member writeDescriptorSampler setNumber (binding : int) setIndex (descriptorIndex : int) (sampler : Texture.Sampler) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
-            DescriptorSet.writeDescriptorSampler binding setIndex descriptorIndex sampler pipeline.DescriptorSets_.[setNumber] vkc
-        
-        /// Write a combined image sampler to the descriptor set. Must be used in-frame.
-        static member writeDescriptorCombinedImageSampler setNumber (binding : int) setIndex (descriptorIndex : int) (texture : Texture.Texture) (sampler : Texture.Sampler) (pipeline : Pipeline) (vkc : Hl.VulkanContext) =
-            DescriptorSet.writeDescriptorCombinedImageSampler binding setIndex descriptorIndex texture sampler pipeline.DescriptorSets_.[setNumber] vkc
-        
+        static member writeDescriptorCombinedImageSampler (binding : int) (descriptorIndex : int) (texture : Texture.Texture) (sampler : Texture.Sampler) vkDescriptorSet (vkc : Hl.VulkanContext) =
+
+            // image info
+            let mutable info = VkDescriptorImageInfo ()
+            info.sampler <- sampler.VkSampler
+            info.imageView <- texture.ImageView
+            info.imageLayout <- Hl.ShaderRead.VkImageLayout
+
+            // write descriptor set
+            let mutable write = VkWriteDescriptorSet ()
+            write.dstSet <- vkDescriptorSet
+            write.dstBinding <- uint binding
+            write.dstArrayElement <- uint descriptorIndex
+            write.descriptorCount <- 1u
+            write.descriptorType <- VkDescriptorType.CombinedImageSampler
+            write.pImageInfo <- asPointer &info
+            Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
+
         /// Create a Pipeline.
-        static member create
+        static member create<'k when 'k : equality>
             shaderPath
-            bulkDrawLimit
             (blends : Blend array)
             (cullModes : bool array)
             (vertexBindings : VertexBinding array)
@@ -643,6 +551,7 @@ module Pipeline =
             (pushConstants : PushConstant array)
             colorAttachmentFormats
             depthTestFormatOpt
+            buffers
             (vkc : Hl.VulkanContext) =
             
             // convert vertex and push constant data to vulkan objects
@@ -659,42 +568,36 @@ module Pipeline =
             let descriptorSetLayouts = Array.zeroCreate descriptorSetDefinitions.Length
             for i in 0 .. dec descriptorSetDefinitions.Length do
                 layoutBindingsSets.[i] <-
-                    Array.map
-                        (fun binding ->
-                             let descriptorCount = if descriptorSetDefinitions.[i].BulkMode.IsBulkDescriptorIndexed then binding.DescriptorCount * bulkDrawLimit else binding.DescriptorCount
-                             Hl.makeDescriptorBinding binding.Binding binding.DescriptorType descriptorCount binding.ShaderStage)
-                        descriptorSetDefinitions.[i].Descriptors
-                descriptorSetLayouts.[i] <- Pipeline.createDescriptorSetLayout descriptorSetDefinitions.[i].BulkMode.IsBulkDescriptorIndexed layoutBindingsSets.[i] vkc.Device
-            
-            // create descriptor pool
-            let descriptorPool = Pipeline.createDescriptorPool bulkDrawLimit descriptorSetDefinitions vkc
+                    descriptorSetDefinitions.[i].DescriptorBindings
+                    |> Array.map (fun binding -> Hl.makeDescriptorBinding binding.Binding binding.DescriptorType binding.DescriptorCount binding.ShaderStage)
+                descriptorSetLayouts.[i] <- Pipeline.createDescriptorSetLayout layoutBindingsSets.[i] vkc
             
             // create descriptor sets
             let descriptorSets = Array.zeroCreate descriptorSetDefinitions.Length
             for i in 0 .. dec descriptorSetDefinitions.Length do
-                let setCount = if descriptorSetDefinitions.[i].BulkMode.IsBulkSetIndexed then descriptorSetDefinitions.[i].SetCount * bulkDrawLimit else descriptorSetDefinitions.[i].SetCount
-                descriptorSets.[i] <- DescriptorSet.create setCount layoutBindingsSets.[i] descriptorSetLayouts.[i] descriptorPool vkc.Device
+                let definition = descriptorSetDefinitions.[i]
+                descriptorSets.[i] <- definition.CreateDescriptorSet descriptorSetLayouts.[i] vkc
             
             // create pipeline layout and vkPipelines
             if blends.Length < 1 then Log.fail "No pipeline blend was specified."
             let pipelineSettings = Array.allPairs blends cullModes
-            let pipelineLayout = Pipeline.createPipelineLayout descriptorSetLayouts pushConstantRanges vkc.Device
-            let vkPipelines = Pipeline.tryCreateVkPipelines shaderPath pipelineSettings vertexBindingDescriptions vertexAttributes pipelineLayout colorAttachmentFormats depthTestFormatOpt vkc.Device
+            let vkPipelineLayout = Pipeline.createVkPipelineLayout descriptorSetLayouts pushConstantRanges vkc
+            let vkPipelines = Pipeline.tryCreateVkPipelines shaderPath pipelineSettings vertexBindingDescriptions vertexAttributes vkPipelineLayout colorAttachmentFormats depthTestFormatOpt vkc
             
             // make Pipeline
             let pipeline =
                 { VkPipelines_ = vkPipelines
-                  DescriptorPool_ = descriptorPool
+                  Buffers_ = buffers
                   DescriptorSets_ = descriptorSets
-                  PipelineLayout_ = pipelineLayout
-                  DescriptorSetLayouts_ = descriptorSetLayouts
+                  VkPipelineLayout_ = vkPipelineLayout
+                  VkDescriptorSetLayouts_ = descriptorSetLayouts
                   ShaderPath_ = shaderPath
                   PipelineSettings_ = pipelineSettings
-                  VertexBindings_ = vertexBindingDescriptions
-                  VertexAttributes_ = vertexAttributes
-                  ColorAttachmentFormats_ = colorAttachmentFormats
-                  DepthTestFormatOpt_ = depthTestFormatOpt
-                  BulkDrawLimit_ = bulkDrawLimit }
+                  VkVertexBindings_ = vertexBindingDescriptions
+                  VkVertexAttributes_ = vertexAttributes
+                  VkColorAttachmentFormats_ = colorAttachmentFormats
+                  VkDepthTestFormatOpt_ = depthTestFormatOpt
+                  DrawIndex_ = 0 }
 
             // fin
             pipeline
@@ -707,16 +610,24 @@ module Pipeline =
                 Pipeline.tryCreateVkPipelines
                     pipeline.ShaderPath_
                     pipeline.PipelineSettings_
-                    pipeline.VertexBindings_
-                    pipeline.VertexAttributes_
-                    pipeline.PipelineLayout_
-                    pipeline.ColorAttachmentFormats_
-                    pipeline.DepthTestFormatOpt_
-                    vkc.Device
+                    pipeline.VkVertexBindings_
+                    pipeline.VkVertexAttributes_
+                    pipeline.VkPipelineLayout_
+                    pipeline.VkColorAttachmentFormats_
+                    pipeline.VkDepthTestFormatOpt_
+                    vkc
         
         /// Destroy a Pipeline.
         static member destroy pipeline (vkc : Hl.VulkanContext) =
             Pipeline.destroyVkPipelines pipeline vkc
-            Vulkan.vkDestroyDescriptorPool (vkc.Device, pipeline.DescriptorPool_, nullPtr)
             Vulkan.vkDestroyPipelineLayout (vkc.Device, pipeline.PipelineLayout, nullPtr)
-            for i in 0 .. dec pipeline.DescriptorSetLayouts_.Length do Vulkan.vkDestroyDescriptorSetLayout (vkc.Device, pipeline.DescriptorSetLayouts_.[i], nullPtr)
+            for vkLayout in pipeline.VkDescriptorSetLayouts_ do Vulkan.vkDestroyDescriptorSetLayout (vkc.Device, vkLayout, nullPtr)
+            for buffer in pipeline.Buffers_ do Buffer.Buffer.destroy buffer vkc
+            for set in pipeline.DescriptorSets_ do set.Destroy vkc
+
+        /// Specify a descriptor set.
+        /// This is a member merely for calling convenience.
+        /// NOTE: this definition has to remain at the bottom of this type for F# compilation reasons.
+        member this.SpecifyDescriptorSet<'k when 'k : equality> set (key : 'k) vkc specify =
+            let descriptorSet = Pipeline.getDescriptorSet set this
+            descriptorSet.Specify key vkc specify
