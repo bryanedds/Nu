@@ -10,7 +10,11 @@
         <ItemGroup>
             <GaiaProject Include="../../Projects/*/*.fsproj" />
         </ItemGroup>
-        <MSBuild Projects="@(GaiaProject)" Targets="Restore;Build" BuildInParallel="true" />
+        <!-- Supply TargetFrameworks to avoid building mobile target frameworks for desktop Gaia.
+             Using TargetFrameworks (plural) overrides projects with <TargetFrameworks> (e.g. Sand Box 2d),
+             limiting them to only the desktop framework. Projects with <TargetFramework> (singular)
+             will also respect this override. -->
+        <MSBuild Projects="@(GaiaProject)" Targets="Build" BuildInParallel="true" Properties="TargetFrameworks=$(TargetFramework)" />
     </Target>
 
     <ItemGroup>

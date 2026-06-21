@@ -201,7 +201,9 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Update="FSharp.Core" Version="10.1.300" />
+        <!-- If this version conflicts with Nu.Gaia's FSharp.Compiler.Service's pinned version,
+             building Gaia will fail -->
+        <PackageReference Update="FSharp.Core" Version="10.1.204" />
     </ItemGroup>
 
 </Project>
