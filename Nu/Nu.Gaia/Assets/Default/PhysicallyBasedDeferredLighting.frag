@@ -14,14 +14,14 @@ const float SHADOW_CASCADE_DENSITY_BONUS = 0.5;
 const float SHADOW_FOV_MAX = 2.1;
 const float CLEAR_COAT_REFRACTIVE_INDEX = 1.5; // typical for automotive clear coat
 
-struct Transform
+struct Eye
 {
+    vec3 center;
     mat4 view;
-    mat4 projection;
-    mat4 viewProjection;
     mat4 viewInverse;
+    mat4 projection;
     mat4 projectionInverse;
-    vec3 eyeCenter;
+    mat4 viewProjection;
 };
 
 struct Lighting
@@ -53,7 +53,7 @@ struct Light
     int lightShadowIndices;
 };
 
-layout(set = 0, binding = 0) buffer readonly TransformBlock { Transform transform; };
+layout(set = 0, binding = 0) buffer readonly EyeBlock { Eye eye; };
 layout(set = 0, binding = 1) buffer readonly LightingBlock { Lighting lighting; };
 layout(set = 0, binding = 2) buffer readonly LightBlock { Light lights[LIGHTS_MAX]; };
 layout(set = 0, binding = 3) buffer readonly ShadowMatrixBlock { mat4 shadowMatrices[SHADOW_TEXTURES_MAX + SHADOW_CASCADES_MAX * SHADOW_CASCADE_LEVELS]; };
@@ -111,9 +111,9 @@ vec4 depthToPosition(float depth, vec2 texCoords)
 {
     float z = depth * 2.0 - 1.0;
     vec4 positionClip = vec4(texCoords * 2.0 - 1.0, z, 1.0);
-    vec4 positionView = transform.projectionInverse * positionClip;
+    vec4 positionView = eye.projectionInverse * positionClip;
     positionView /= positionView.w;
-    return transform.viewInverse * positionView;
+    return eye.viewInverse * positionView;
 }
 
 float depthViewToDepthBuffer(float near, float far, float depthView)
@@ -508,7 +508,7 @@ void main()
         vec3 clearCoatNormal = decodeOctahedral(clearCoatPlus.ba);
 
         // accumulate light
-        vec3 v = normalize(transform.eyeCenter - position.xyz);
+        vec3 v = normalize(eye.center - position.xyz);
         float nDotV = saturate(dot(normal, v));
         vec3 f0 = mix(vec3(0.04), albedo, metallic); // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
         for (int i = 0; i < lighting.lightsCount; ++i)

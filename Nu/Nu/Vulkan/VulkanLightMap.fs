@@ -8,12 +8,6 @@ open System.Runtime.InteropServices
 open Vortice.Vulkan
 open Prime
 open Nu
-    
-[<Struct; StructLayout (LayoutKind.Explicit)>]
-type LightMapTransform =
-    [<FieldOffset(0)>] val mutable view : Matrix4x4
-    [<FieldOffset(64)>] val mutable projection : Matrix4x4
-    [<FieldOffset(128)>] val mutable viewProjection : Matrix4x4
 
 [<Struct; StructLayout (LayoutKind.Explicit)>]
 type EnvironmentFilter =
@@ -22,7 +16,7 @@ type EnvironmentFilter =
 
 /// Describes an environment filter pipeline that's loaded into GPU.
 type EnvironmentFilterPipeline =
-    { TransformUniform : Nu.Vulkan.Buffer
+    { EyeUniform : Nu.Vulkan.Buffer
       EnvironmentFilterUniform : Nu.Vulkan.Buffer
       Pipeline : Pipeline }
 
@@ -72,6 +66,7 @@ module LightMapping =
             let eyeRotationMatrix = Matrix4x4.CreateLookAt (v3Zero, eyeForward, eyeUp)
             let eyeRotation = Quaternion.CreateFromRotationMatrix eyeRotationMatrix
             let view = Matrix4x4.CreateLookAt (origin, origin + eyeForward, eyeUp)
+            let viewInverse = view.Inverted
             let viewSkyBox =
                 match i with
                 | 2 -> // NOTE: special case for sky box top.
@@ -83,11 +78,15 @@ module LightMapping =
                     let eyeRotationMatrix = Matrix4x4.CreateLookAt (v3Zero, eyeForward, eyeUp)
                     Matrix4x4.Transpose eyeRotationMatrix
                 | _ -> Matrix4x4.Transpose eyeRotationMatrix
+            let viewSkyBoxInverse = viewSkyBox.Inverted
             let frustum = Viewport.getFrustum origin eyeRotation MathF.PI_OVER_2 geometryViewport
             let projection = Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, geometryViewport.DistanceNear, geometryViewport.DistanceFar)
+            let projectionInverse = projection.Inverted
             let viewProjection = view * projection
             let bounds = VkRect2D (0, 0, uint resolution, uint resolution)
-            render false lightAmbientOverride origin view viewSkyBox frustum projection viewProjection projection bounds i reflectionCubeMapParallel.Image
+            render
+                false lightAmbientOverride origin view viewInverse viewSkyBox viewSkyBoxInverse frustum projection projectionInverse viewProjection projection projectionInverse viewProjection
+                bounds i reflectionCubeMapParallel.Image
 
             // take a snapshot for testing
             // TODO: DJL: implement.
@@ -118,14 +117,17 @@ module LightMapping =
               Matrix4x4.CreateLookAt (v3Zero, v3Back, v3Down)
               Matrix4x4.CreateLookAt (v3Zero, v3Forward, v3Down)|]
         let projection = Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, 0.1f, 10.0f)
+        let projectionInverse = projection.Inverted
 
         // render faces to irradiance cube map
         for i in 0 .. dec 6 do
 
             // render face
+            let eyeCenter = v3Zero // assuming output
             let view = views.[i]
+            let viewInverse = view.Inverted
             let viewProjection = view * projection
-            CubeMap.drawCubeMap view projection viewProjection invertY cubeMapSurface.CubeMap sampler cubeMapSurface.CubeMapGeometry resolution cubeMap.SubViews.[0, i] irradiancePipeline commandBuffer vkc
+            CubeMap.drawCubeMap eyeCenter view viewInverse projection projectionInverse viewProjection invertY cubeMapSurface.CubeMap sampler cubeMapSurface.CubeMapGeometry resolution cubeMap.SubViews.[0, i] irradiancePipeline commandBuffer vkc
 
             // take a snapshot for testing
             // TODO: DJL: implement.
@@ -141,7 +143,7 @@ module LightMapping =
     let createEnvironmentFilterPipeline shaderPath colorAttachmentFormat (vkc : VulkanContext) =
 
         // create uniform buffers
-        let transformUniform = Buffer.create sizeof<Transform> Storage vkc
+        let eyeUniform = Buffer.create sizeof<Eye> Storage vkc
         let environmentFilterUniform = Buffer.create sizeof<EnvironmentFilter> Storage vkc
 
         // create pipeline
@@ -158,11 +160,11 @@ module LightMapping =
                   Pipeline.descriptorSet<Sampler>
                     [|Pipeline.descriptor 0 Sampler FragmentStage 1|]|]
                 [||] [|colorAttachmentFormat|] None
-                [|transformUniform; environmentFilterUniform|]
+                [|eyeUniform; environmentFilterUniform|]
                 vkc
 
         // fin
-        { TransformUniform = transformUniform; EnvironmentFilterUniform = environmentFilterUniform; Pipeline = pipeline }
+        { EyeUniform = eyeUniform; EnvironmentFilterUniform = environmentFilterUniform; Pipeline = pipeline }
     
     /// Destroy an EnvironmentFilterPipeline.
     let destroyEnvironmentFilterPipeline environmentFilterPipeline vkc =
@@ -170,8 +172,11 @@ module LightMapping =
     
     /// Draw an environment filter.
     let drawEnvironmentFilter
+        (eyeCenter : Vector3)
         (view : Matrix4x4)
+        (viewInverse : Matrix4x4)
         (projection : Matrix4x4)
+        (projectionInverse : Matrix4x4)
         (viewProjection : Matrix4x4)
         (invertY : bool)
         (roughness : single)
@@ -196,10 +201,10 @@ module LightMapping =
                 // specify uniforms
                 let mutable uniformDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.Pipeline.DrawIndex pipeline.Pipeline vkc $ fun vkSet ->
 
-                    // specify transform
-                    let transform = LightMapTransform (view = view, projection = projection, viewProjection = viewProjection)
-                    Buffer.uploadValue transform pipeline.TransformUniform vkc
-                    Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.TransformUniform vkSet vkc
+                    // specify eye
+                    let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
+                    Buffer.uploadValue eye pipeline.EyeUniform vkc
+                    Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.EyeUniform vkSet vkc
 
                     // specify environment filter
                     let environmentFilter = EnvironmentFilter (roughness = roughness, resolution = resolution)
@@ -264,6 +269,7 @@ module LightMapping =
               Matrix4x4.CreateLookAt (v3Zero, v3Back, v3Down)
               Matrix4x4.CreateLookAt (v3Zero, v3Forward, v3Down)|]
         let projection = Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, 0.1f, 10.0f)
+        let projectionInverse = projection.Inverted
 
         // render environment filter cube map mips
         for mip in 0 .. dec Constants.Render.EnvironmentFilterMips do
@@ -272,11 +278,16 @@ module LightMapping =
             for i in 0 .. dec 6 do
 
                 // draw mip face
+                let eyeCenter = v3Zero // assuming origin
                 let view = views.[i]
+                let viewInverse = view.Inverted
                 let viewProjection = view * projection
                 drawEnvironmentFilter
+                    eyeCenter
                     view
+                    viewInverse
                     projection
+                    projectionInverse
                     viewProjection
                     invertY
                     mipRoughness

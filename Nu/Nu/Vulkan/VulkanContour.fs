@@ -92,8 +92,8 @@ module ContourTessellation =
                     Pipeline.writeDescriptorStorageBuffer 0 0 modelViewProjectionUniform vkSet vkc
 
                 // set up render
-                let mutable rendering = Hl.makeRenderingInfo [|vkc.SwapchainImageView|] None renderArea None
-                Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &rendering)
+                let mutable renderingInfo = Hl.makeRenderingInfo [|vkc.SwapchainImageView|] None renderArea None
+                Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &renderingInfo)
                 Vulkan.vkCmdBindPipeline (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
                 Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, asPointer &vkViewport)
                 Vulkan.vkCmdSetScissor (vkc.RenderCommandBuffer, 0u, 1u, asPointer &scissor)

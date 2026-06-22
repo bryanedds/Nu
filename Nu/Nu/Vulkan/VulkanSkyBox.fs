@@ -10,20 +10,14 @@ open Prime
 open Nu
 
 [<Struct; StructLayout (LayoutKind.Explicit)>]
-type SkyBoxVert =
-    [<FieldOffset(0)>] val mutable view : Matrix4x4
-    [<FieldOffset(64)>] val mutable projection : Matrix4x4
-    [<FieldOffset(128)>] val mutable viewProjection : Matrix4x4
-
-[<Struct; StructLayout (LayoutKind.Explicit)>]
-type SkyBoxFrag =
+type SkyBox =
     [<FieldOffset(0)>] val mutable color : Vector3
     [<FieldOffset(12)>] val mutable brightness : single
 
 /// Describes a sky box pipeline that's loaded into GPU.
 type SkyBoxPipeline =
-    { SkyBoxVertUniform : Nu.Vulkan.Buffer
-      SkyBoxFragUniform : Nu.Vulkan.Buffer
+    { EyeUniform : Nu.Vulkan.Buffer
+      SkyBoxPropertiesUniform : Nu.Vulkan.Buffer
       Pipeline : Pipeline }
 
 [<RequireQualifiedAccess>]
@@ -33,8 +27,8 @@ module SkyBox =
     let createSkyBoxPipeline colorAttachmentFormat depthAttachmentFormat (vkc : VulkanContext) =
 
         // create uniform buffers
-        let skyBoxVertUniform = Buffer.create sizeof<SkyBoxVert> Storage vkc
-        let skyBoxFragUniform = Buffer.create sizeof<SkyBoxFrag> Storage vkc
+        let eyeUniform = Buffer.create sizeof<Eye> Storage vkc
+        let skyBoxPropertiesUniform = Buffer.create sizeof<SkyBox> Storage vkc
 
         // create pipeline
         let pipeline =
@@ -51,12 +45,12 @@ module SkyBox =
                   Pipeline.descriptorSet<Sampler>
                     [|Pipeline.descriptor 0 Sampler FragmentStage 1|]|]
                 [||] [|colorAttachmentFormat|] (Some depthAttachmentFormat)
-                [|skyBoxVertUniform; skyBoxFragUniform|] vkc
+                [|eyeUniform; skyBoxPropertiesUniform|] vkc
         
         // make SkyBoxPipeline
         let skyBoxPipeline =
-            { SkyBoxVertUniform = skyBoxVertUniform
-              SkyBoxFragUniform = skyBoxFragUniform
+            { EyeUniform = eyeUniform
+              SkyBoxPropertiesUniform = skyBoxPropertiesUniform
               Pipeline = pipeline }
 
         // fin
@@ -68,8 +62,11 @@ module SkyBox =
 
     /// Draw a sky box.
     let drawSkyBox
+        (eyeCenter : Vector3)
         (view : Matrix4x4)
+        (viewInverse : Matrix4x4)
         (projection : Matrix4x4)
+        (projectionInverse : Matrix4x4)
         (viewProjection : Matrix4x4)
         (color : Color)
         (brightness : single)
@@ -93,12 +90,16 @@ module SkyBox =
 
                 // specify uniforms
                 let mutable uniformDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.Pipeline.DrawIndex pipeline.Pipeline vkc $ fun vkSet ->
-                    let skyBoxVert = SkyBoxVert (view = view, projection = projection, viewProjection = viewProjection)
-                    let skyBoxFrag = SkyBoxFrag (color = color.V3, brightness = brightness)
-                    Buffer.uploadValue skyBoxVert pipeline.SkyBoxVertUniform vkc
-                    Buffer.uploadValue skyBoxFrag pipeline.SkyBoxFragUniform vkc
-                    Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.SkyBoxVertUniform vkSet vkc
-                    Pipeline.writeDescriptorStorageBuffer 1 0 pipeline.SkyBoxFragUniform vkSet vkc
+                    
+                    // specify eye
+                    let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
+                    Buffer.uploadValue eye pipeline.EyeUniform vkc
+                    Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.EyeUniform vkSet vkc
+
+                    // specify sky box
+                    let skyBox = SkyBox (color = color.V3, brightness = brightness)
+                    Buffer.uploadValue skyBox pipeline.SkyBoxPropertiesUniform vkc
+                    Pipeline.writeDescriptorStorageBuffer 1 0 pipeline.SkyBoxPropertiesUniform vkSet vkc
 
                 // specify material
                 let mutable materialDescriptorSet = Pipeline.specifyDescriptorSet 1 cubeMap pipeline.Pipeline vkc $ fun vkSet ->

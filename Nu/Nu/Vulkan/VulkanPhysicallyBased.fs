@@ -13,15 +13,6 @@ open Prime
 open Nu
 
 [<Struct; StructLayout (LayoutKind.Explicit)>]
-type PhysicallyBasedTransform =
-    [<FieldOffset(0)>] val mutable view : Matrix4x4
-    [<FieldOffset(64)>] val mutable projection : Matrix4x4
-    [<FieldOffset(128)>] val mutable viewProjection : Matrix4x4
-    [<FieldOffset(192)>] val mutable viewInverse : Matrix4x4
-    [<FieldOffset(256)>] val mutable projectionInverse : Matrix4x4
-    [<FieldOffset(320)>] val mutable eyeCenter : Vector3
-
-[<Struct; StructLayout (LayoutKind.Explicit)>]
 type Lighting =
     [<FieldOffset(0)>] val mutable lightCutoffMargin : single
     [<FieldOffset(16)>] val mutable lightAmbientColor : Vector3
@@ -492,7 +483,7 @@ type PhysicallyBasedModel =
 
 /// Describes a physically-based pipeline that's loaded into GPU.
 type PhysicallyBasedPipeline =
-    { TransformUniform : Nu.Vulkan.Buffer
+    { EyeUniform : Nu.Vulkan.Buffer
       LightingUniform : Nu.Vulkan.Buffer
       BoneUniform : Nu.Vulkan.Buffer
       LightMapUniform : Nu.Vulkan.Buffer
@@ -503,7 +494,7 @@ type PhysicallyBasedPipeline =
 
 /// Describes the lighting pass of a deferred physically-based pipeline that's loaded into GPU.
 type PhysicallyBasedDeferredLightingPipeline =
-    { TransformUniform : Nu.Vulkan.Buffer
+    { EyeUniform : Nu.Vulkan.Buffer
       LightingUniform : Nu.Vulkan.Buffer
       LightUniform : Nu.Vulkan.Buffer
       ShadowMatrixUniform : Nu.Vulkan.Buffer
@@ -1310,7 +1301,7 @@ module PhysicallyBased =
     let createPhysicallyBasedPipeline lightMapsMax lightsMax shaderPath blends cullModes vertexBindings colorAttachmentFormats depthTestOpt vkc =
 
         // create set 0 uniform buffers
-        let transformUniform = Buffer.create sizeof<Transform> Storage vkc
+        let eyeUniform = Buffer.create sizeof<Eye> Storage vkc
         let lightingUniform = Buffer.create sizeof<Lighting> Storage vkc
         
         // create set 2 uniform buffers
@@ -1375,7 +1366,7 @@ module PhysicallyBased =
                       Pipeline.descriptor 5 Sampler FragmentStage 1|]|]
                 
                 [||] colorAttachmentFormats depthTestOpt
-                [|transformUniform
+                [|eyeUniform
                   lightingUniform
                   boneUniform
                   lightMapUniform
@@ -1386,7 +1377,7 @@ module PhysicallyBased =
 
         // make PhysicallyBasedPipeline
         let physicallyBasedPipeline =
-            { TransformUniform = transformUniform
+            { EyeUniform = eyeUniform
               LightingUniform = lightingUniform
               BoneUniform = boneUniform
               LightMapUniform = lightMapUniform
@@ -1407,7 +1398,7 @@ module PhysicallyBased =
 
         // create uniform buffers
         let shadowMatrixMax = Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels
-        let transformUniform = Buffer.create sizeof<Transform> Storage vkc
+        let eyeUniform = Buffer.create sizeof<Eye> Storage vkc
         let lightingUniform = Buffer.create sizeof<Lighting2> Storage vkc
         let lightUniform = Buffer.create (lightsMax * sizeof<Light>) Storage vkc
         let shadowMatrixUniform = Buffer.create (shadowMatrixMax * sizeof<Matrix4x4>) Storage vkc
@@ -1440,12 +1431,12 @@ module PhysicallyBased =
                     [|Pipeline.descriptor 0 Sampler FragmentStage 1
                       Pipeline.descriptor 1 Sampler FragmentStage 1|]|]
                 [||] colorAttachmentFormat None
-                [|transformUniform; lightingUniform; lightUniform; shadowMatrixUniform|]
+                [|eyeUniform; lightingUniform; lightUniform; shadowMatrixUniform|]
                 vkc
 
         // make PhysicallyBasedDeferredLightingPipeline
         let physicallyBasedDeferredLightingPipeline =
-            { TransformUniform = transformUniform
+            { EyeUniform = eyeUniform
               LightingUniform = lightingUniform
               LightUniform = lightUniform
               ShadowMatrixUniform = shadowMatrixUniform
@@ -1460,33 +1451,29 @@ module PhysicallyBased =
 
     /// Draw a batch of physically-based deferred surfaces.
     let beginPhysicallyBasedDeferredPipeline
-        (view : Matrix4x4)
-        (projection : Matrix4x4)
-        (viewProjection : Matrix4x4)
         (eyeCenter : Vector3)
+        (view : Matrix4x4)
+        (viewInverse : Matrix4x4)
+        (projection : Matrix4x4)
+        (projectionInverse : Matrix4x4)
+        (viewProjection : Matrix4x4)
         (filteredSampler : Sampler)
         (renderPassIndex : int)
         (pipeline : PhysicallyBasedPipeline)
         (vkc : VulkanContext) =
 
-        // specify tranform
-        let mutable transformDescriptorSet = Pipeline.specifyDescriptorSet 0 renderPassIndex pipeline.Pipeline vkc $ fun vkSet ->
-            let mutable transform = PhysicallyBasedTransform ()
-            transform.view <- view
-            transform.projection <- projection
-            transform.viewProjection <- viewProjection
-            transform.viewInverse <- view.Inverted
-            transform.projectionInverse <- projection.Inverted
-            transform.eyeCenter <- eyeCenter
-            Buffer.uploadValue transform pipeline.TransformUniform vkc
-            Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.TransformUniform vkSet vkc
+        // specify eye
+        let mutable eyeDescriptorSet = Pipeline.specifyDescriptorSet 0 renderPassIndex pipeline.Pipeline vkc $ fun vkSet ->
+            let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
+            Buffer.uploadValue eye pipeline.EyeUniform vkc
+            Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.EyeUniform vkSet vkc
 
         // specify samplers
         let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 3 Unit pipeline.Pipeline vkc $ fun vkSet ->
             Pipeline.writeDescriptorSampler 0 0 filteredSampler vkSet vkc
 
         // fin
-        (transformDescriptorSet, samplerDescriptorSet)
+        (eyeDescriptorSet, samplerDescriptorSet)
 
     /// Draw a batch of physically-based deferred surfaces.
     let drawPhysicallyBasedDeferredSurfaces
@@ -1498,7 +1485,7 @@ module PhysicallyBased =
         (viewport : Viewport)
         (colorAttachments : VkImageView array)
         (depthAttachment : Texture)
-        (transformDescriptorSet : VkDescriptorSet)
+        (eyeDescriptorSet : VkDescriptorSet)
         (samplerDescriptorSet : VkDescriptorSet)
         (pipeline : PhysicallyBasedPipeline)
         (vkc : VulkanContext) =
@@ -1559,8 +1546,8 @@ module PhysicallyBased =
                     Vulkan.vkCmdBindIndexBuffer (vkc.RenderCommandBuffer, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
 
                     // bind descriptor sets
-                    let mutable (transformDescriptorSet, samplerDescriptorSet) = (transformDescriptorSet, samplerDescriptorSet)
-                    Vulkan.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, asPointer &transformDescriptorSet, 0u, nullPtr)
+                    let mutable (eyeDescriptorSet, samplerDescriptorSet) = (eyeDescriptorSet, samplerDescriptorSet)
+                    Vulkan.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, asPointer &eyeDescriptorSet, 0u, nullPtr)
                     Vulkan.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, asPointer &materialDescriptorSet, 0u, nullPtr)
                     Vulkan.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 2u, 1u, asPointer &dynamicDescriptorSet, 0u, nullPtr)
                     Vulkan.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 3u, 1u, asPointer &samplerDescriptorSet, 0u, nullPtr)
@@ -1582,12 +1569,12 @@ module PhysicallyBased =
 
     /// Begin the process of drawing with a forward pipeline.
     let beginPhysicallyBasedForwardPipeline
-        (view : Matrix4x4)
-        (projection : Matrix4x4)
-        (viewProjection : Matrix4x4)
         (eyeCenter : Vector3)
+        (view : Matrix4x4)
         (viewInverse : Matrix4x4)
+        (projection : Matrix4x4)
         (projectionInverse : Matrix4x4)
+        (viewProjection : Matrix4x4)
         (lightCutoffMargin : single)
         (lightAmbientColor : Color)
         (lightAmbientBrightness : single)
@@ -1634,18 +1621,12 @@ module PhysicallyBased =
         (vkc : VulkanContext) =
 
         // specify uniforms
-        let mutable uniformsDescriptorSet = Pipeline.specifyDescriptorSet 0 renderPassIndex pipeline.Pipeline vkc $ fun vkSet ->
+        let mutable eyeDescriptorSet = Pipeline.specifyDescriptorSet 0 renderPassIndex pipeline.Pipeline vkc $ fun vkSet ->
 
             // specify transform
-            let mutable transform = PhysicallyBasedTransform ()
-            transform.view <- view
-            transform.projection <- projection
-            transform.viewProjection <- viewProjection
-            transform.viewInverse <- viewInverse
-            transform.projectionInverse <- projectionInverse
-            transform.eyeCenter <- eyeCenter
-            Buffer.uploadValue transform pipeline.TransformUniform vkc
-            Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.TransformUniform vkSet vkc
+            let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
+            Buffer.uploadValue eye pipeline.EyeUniform vkc
+            Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.EyeUniform vkSet vkc
 
             // specify lighting
             let mutable lighting = Lighting ()
@@ -1699,7 +1680,7 @@ module PhysicallyBased =
             Pipeline.writeDescriptorSampler 5 0 brdfSampler vkSet vkc
 
         // fin
-        (uniformsDescriptorSet, samplersDescriptorSet)
+        (eyeDescriptorSet, samplersDescriptorSet)
 
     /// End the process of drawing with a deferred pipeline.
     let endPhysicallyBasedDeferredPipeline (_ : PhysicallyBasedPipeline) =
@@ -1886,6 +1867,7 @@ module PhysicallyBased =
         (viewInverse : Matrix4x4)
         (projection : Matrix4x4)
         (projectionInverse : Matrix4x4)
+        (viewProjection : Matrix4x4)
         (lightCutoffMargin : single)
         (lightShadowSamples : int)
         (lightShadowBias : single)

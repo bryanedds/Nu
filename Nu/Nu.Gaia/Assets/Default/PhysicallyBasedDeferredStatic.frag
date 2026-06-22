@@ -4,17 +4,17 @@ const float GAMMA = 2.2;
 const float SAA_VARIANCE = 0.1; // TODO: consider exposing as lighting config property.
 const float SAA_THRESHOLD = 0.1; // TODO: consider exposing as lighting config property.
 
-struct Transform
+struct Eye
 {
+    vec3 center;
     mat4 view;
-    mat4 projection;
-    mat4 viewProjection;
     mat4 viewInverse;
+    mat4 projection;
     mat4 projectionInverse;
-    vec3 eyeCenter;
+    mat4 viewProjection;
 };
 
-layout(set = 0, binding = 0) buffer readonly TransformBlock { Transform transform; };
+layout(set = 0, binding = 0) buffer readonly EyeBlock { Eye eye; };
 
 layout(set = 1, binding = 0) uniform texture2D albedoTexture;
 layout(set = 1, binding = 1) uniform texture2D roughnessTexture;
@@ -106,7 +106,7 @@ void main()
     mat3 toTangent = transpose(toWorld);
 
     // compute tex coords in parallax space
-    vec3 eyeCenterTangent = toTangent * transform.eyeCenter;
+    vec3 eyeCenterTangent = toTangent * eye.center;
     vec3 positionTangent = toTangent * positionOut.xyz;
     vec3 toEyeTangent = normalize(eyeCenterTangent - positionTangent);
     float height = texture(sampler2D(heightTexture, filteredSampler), texCoordsOut).x * heightPlusOut.x;

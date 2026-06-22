@@ -12,10 +12,13 @@ open Prime
 open Nu
 
 [<Struct; StructLayout (LayoutKind.Explicit)>]
-type CubeMapTransform =
-    [<FieldOffset(0)>] val mutable view : Matrix4x4
-    [<FieldOffset(64)>] val mutable projection : Matrix4x4
-    [<FieldOffset(128)>] val mutable viewProjection : Matrix4x4
+type Eye =
+    [<FieldOffset(0)>] val mutable center : Vector3
+    [<FieldOffset(16)>] val mutable view : Matrix4x4
+    [<FieldOffset(80)>] val mutable viewInverse : Matrix4x4
+    [<FieldOffset(144)>] val mutable projection : Matrix4x4
+    [<FieldOffset(208)>] val mutable projectionInverse : Matrix4x4
+    [<FieldOffset(272)>] val mutable viewProjection : Matrix4x4
 
 /// Describes some cube map geometry that's loaded into VRAM.
 type CubeMapGeometry =
@@ -270,8 +273,11 @@ module CubeMap =
     
     /// Draw a cube map.
     let drawCubeMap
+        (eyeCenter : Vector3)
         (view : Matrix4x4)
+        (viewInverse : Matrix4x4)
         (projection : Matrix4x4)
+        (projectionInverse : Matrix4x4)
         (viewProjection : Matrix4x4)
         (invertY : bool)
         (cubeMap : Texture)
@@ -294,8 +300,8 @@ module CubeMap =
 
                 // specify transform
                 let mutable transformDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.Pipeline.DrawIndex pipeline.Pipeline vkc $ fun vkSet ->
-                    let transform = CubeMapTransform (view = view, projection = projection, viewProjection = viewProjection)
-                    Buffer.uploadValue transform pipeline.TransformUniform vkc
+                    let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
+                    Buffer.uploadValue eye pipeline.TransformUniform vkc
                     Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.TransformUniform vkSet vkc
 
                 // specify material
@@ -338,6 +344,7 @@ module CubeMap =
 
 /// Memoizes cube map loads (and may at some point potentially thread them).
 type CubeMapClient () =
+
     let cubeMaps = Dictionary HashIdentity.Structural
 
     /// Memoized cube maps.
