@@ -8,9 +8,36 @@ open System.Runtime.InteropServices
 open Vortice.Vulkan
 open Prime
 open Nu
+    
+[<Struct; StructLayout(LayoutKind.Explicit)>]
+type LightMapTransform =
+    [<FieldOffset(0)>] val mutable view : Matrix4x4
+    [<FieldOffset(64)>] val mutable projection : Matrix4x4
+    [<FieldOffset(128)>] val mutable viewProjection : Matrix4x4
+
+[<Struct; StructLayout(LayoutKind.Explicit)>]
+type EnvironmentFilter =
+    [<FieldOffset(0)>] val mutable roughness : single
+    [<FieldOffset(4)>] val mutable resolution : single
+
+/// Describes an environment filter pipeline that's loaded into GPU.
+type EnvironmentFilterPipeline =
+    { TransformUniform : Nu.Vulkan.Buffer
+      EnvironmentFilterUniform : Nu.Vulkan.Buffer
+      Pipeline : Pipeline }
+
+/// A collection of maps consisting a light map.
+type [<Struct>] LightMapping =
+    { Enabled : bool
+      Origin : Vector3
+      Bounds : Box3
+      AmbientColor : Color
+      AmbientBrightness : single
+      IrradianceMap : Texture
+      EnvironmentFilterMap : Texture }
 
 [<RequireQualifiedAccess>]
-module LightMap =
+module LightMapping =
 
     /// Create a reflection map.
     let CreateReflectionMap (render, resolution, origin, ambientColor, ambientBrightness, commandBuffer, vkc) =
@@ -73,7 +100,7 @@ module LightMap =
         // fin
         reflectionCubeMap
 
-    let CreateIrradianceMap (invertY, resolution, cubeMapSurface : CubeMap.CubeMapSurface, sampler, colorFormat, irradiancePipeline, commandBuffer, vkc) =
+    let CreateIrradianceMap (invertY, resolution, cubeMapSurface : CubeMapSurface, sampler, colorFormat, irradiancePipeline, commandBuffer, vkc) =
 
         // create irradiance cube map
         let metadata = TextureMetadata.make resolution resolution
@@ -110,23 +137,6 @@ module LightMap =
         
         // fin
         cubeMap
-    
-    [<Struct; StructLayout(LayoutKind.Explicit)>]
-    type Transform =
-        [<FieldOffset(0)>] val mutable view : Matrix4x4
-        [<FieldOffset(64)>] val mutable projection : Matrix4x4
-        [<FieldOffset(128)>] val mutable viewProjection : Matrix4x4
-    
-    [<Struct; StructLayout(LayoutKind.Explicit)>]
-    type EnvironmentFilter =
-        [<FieldOffset(0)>] val mutable roughness : single
-        [<FieldOffset(4)>] val mutable resolution : single
-    
-    /// Describes an environment filter pipeline that's loaded into GPU.
-    type EnvironmentFilterPipeline =
-        { TransformUniform : Nu.Vulkan.Buffer
-          EnvironmentFilterUniform : Nu.Vulkan.Buffer
-          Pipeline : Pipeline }
     
     /// Create an EnvironmentFilterPipeline.
     let CreateEnvironmentFilterPipeline (shaderPath, colorAttachmentFormat, vkc : VulkanContext) =
@@ -169,7 +179,7 @@ module LightMap =
          resolution : single,
          cubeMap : Texture,
          sampler : Sampler,
-         geometry : CubeMap.CubeMapGeometry,
+         geometry : CubeMapGeometry,
          colorAttachment : VkImageView,
          pipeline : EnvironmentFilterPipeline,
          commandBuffer : VkCommandBuffer,
@@ -188,7 +198,7 @@ module LightMap =
                 let mutable uniformDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.Pipeline.DrawIndex pipeline.Pipeline vkc $ fun vkSet ->
 
                     // specify transform
-                    let transform = Transform (view = view, projection = projection, viewProjection = viewProjection)
+                    let transform = LightMapTransform (view = view, projection = projection, viewProjection = viewProjection)
                     Buffer.uploadValue transform pipeline.TransformUniform vkc
                     Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.TransformUniform vkSet vkc
 
@@ -236,7 +246,7 @@ module LightMap =
             | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
     
     /// Create an environment filter map.
-    let CreateEnvironmentFilterMap (invertY, resolution, environmentFilterSurface : CubeMap.CubeMapSurface, sampler, colorFormat, environmentFilterPipeline, commandBuffer, vkc) =
+    let CreateEnvironmentFilterMap (invertY, resolution, environmentFilterSurface : CubeMapSurface, sampler, colorFormat, environmentFilterPipeline, commandBuffer, vkc) =
 
         // create environment filter cube map
         let metadata = TextureMetadata.make resolution resolution
@@ -289,16 +299,6 @@ module LightMap =
 
         // fin
         cubeMap
-
-    /// A collection of maps consisting a light map.
-    type [<Struct>] LightMap =
-        { Enabled : bool
-          Origin : Vector3
-          Bounds : Box3
-          AmbientColor : Color
-          AmbientBrightness : single
-          IrradianceMap : Texture
-          EnvironmentFilterMap : Texture }
 
     /// Create a light map with existing irradiance and environment filter maps.
     let CreateLightMap enabled origin ambientColor ambientBrightness bounds irradianceMap environmentFilterMap =

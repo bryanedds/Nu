@@ -12,504 +12,511 @@ open Vortice.Vulkan
 open Prime
 open Nu
 
+/// A set of physically-based attachments that support a given viewport.
+type PhysicallyBasedAttachments =
+    { ShadowTextureArrayAttachments : Texture * Texture
+      ShadowMapAttachmentsArray : (Texture * Texture) array
+      ShadowCascadeArrayAttachmentsArray : (Texture * Texture) array
+      GeometryAttachments : Texture * Texture * Texture * Texture * Texture * Texture * Texture * Texture
+      LightingAttachment : Texture
+      ColoringAttachments : Texture * Texture
+      CompositionAttachments : Texture * Texture }
+
+/// Describes the configurable properties of a physically-based material.
+type PhysicallyBasedMaterialProperties =
+    { Albedo : Color
+      Roughness : single
+      Metallic : single
+      AmbientOcclusion : single
+      Emission : single
+      Height : single
+      IgnoreLightMaps : bool
+      OpaqueDistance : single
+      FinenessOffset : single
+      ScatterType : ScatterType
+      SpecularScalar : single
+      SubsurfaceCutoff : single
+      SubsurfaceCutoffMargin : single
+      RefractiveIndex : single
+      ClearCoat : single
+      ClearCoatRoughness : single }
+
+    /// The empty material properties.
+    static member empty =
+        { Albedo = Color.Zero
+          Roughness = 0.0f
+          Metallic = 0.0f
+          AmbientOcclusion = 0.0f
+          Emission = 0.0f
+          Height = 0.0f
+          IgnoreLightMaps = false
+          OpaqueDistance = 0.0f
+          FinenessOffset = 0.0f
+          ScatterType = NoScatter
+          SpecularScalar = 0.0f
+          SubsurfaceCutoff = 0.0f
+          SubsurfaceCutoffMargin = 0.0f
+          RefractiveIndex = 0.0f
+          ClearCoat = 0.0f
+          ClearCoatRoughness = 0.0f }
+
+/// Describes a physically-based material.
+type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial =
+    { AlbedoTexture : Texture
+      RoughnessTexture : Texture
+      MetallicTexture : Texture
+      AmbientOcclusionTexture : Texture
+      EmissionTexture : Texture
+      NormalTexture : Texture
+      HeightTexture : Texture
+      SubdermalTexture : Texture
+      FinenessTexture : Texture
+      ScatterTexture : Texture
+      ClearCoatTexture : Texture
+      ClearCoatRoughnessTexture : Texture
+      ClearCoatNormalTexture : Texture
+      TwoSided : bool
+      Clipped : bool
+      Names : string }
+
+    /// The empty material.
+    static member empty =
+        { AlbedoTexture = Texture.EmptyTexture
+          RoughnessTexture = Texture.EmptyTexture
+          MetallicTexture = Texture.EmptyTexture
+          AmbientOcclusionTexture = Texture.EmptyTexture
+          EmissionTexture = Texture.EmptyTexture
+          NormalTexture = Texture.EmptyTexture
+          HeightTexture = Texture.EmptyTexture
+          SubdermalTexture = Texture.EmptyTexture
+          FinenessTexture = Texture.EmptyTexture
+          ScatterTexture = Texture.EmptyTexture
+          ClearCoatTexture = Texture.EmptyTexture
+          ClearCoatRoughnessTexture = Texture.EmptyTexture
+          ClearCoatNormalTexture = Texture.EmptyTexture
+          TwoSided = false
+          Clipped = false
+          Names = "" }
+
+    /// Compute hash.
+    static member hash material =
+        (hash material.AlbedoTexture <<<            00) ^^^
+        (hash material.RoughnessTexture <<<         02) ^^^
+        (hash material.MetallicTexture <<<          04) ^^^
+        (hash material.AmbientOcclusionTexture <<<  06) ^^^
+        (hash material.EmissionTexture <<<          08) ^^^
+        (hash material.NormalTexture <<<            10) ^^^
+        (hash material.HeightTexture <<<            12) ^^^
+        (hash material.SubdermalTexture <<<         14) ^^^
+        (hash material.FinenessTexture <<<          16) ^^^
+        (hash material.ScatterTexture <<<           18) ^^^
+        (hash material.TwoSided <<<                 20) ^^^
+        (hash material.Clipped <<<                  22) ^^^
+        (hash material.Names <<<                    24)
+
+    /// Determing equality.
+    static member equals left right =
+        refEq left right && // OPTIMIZATION: first check ref equality.
+        left.AlbedoTexture = right.AlbedoTexture &&
+        left.RoughnessTexture = right.RoughnessTexture &&
+        left.MetallicTexture = right.MetallicTexture &&
+        left.AmbientOcclusionTexture = right.AmbientOcclusionTexture &&
+        left.EmissionTexture = right.EmissionTexture &&
+        left.NormalTexture = right.NormalTexture &&
+        left.HeightTexture = right.HeightTexture &&
+        left.SubdermalTexture = right.SubdermalTexture &&
+        left.FinenessTexture = right.FinenessTexture &&
+        left.ScatterTexture = right.ScatterTexture &&
+        left.TwoSided = right.TwoSided &&
+        left.Clipped = right.Clipped &&
+        left.Names = right.Names
+
+    override this.GetHashCode () = 
+        PhysicallyBasedMaterial.hash this
+
+    override this.Equals that =
+        match that with
+        | :? PhysicallyBasedMaterial as that -> PhysicallyBasedMaterial.equals this that
+        | _ -> false
+
+/// Describes some physically-based geometry that's loaded into VRAM.
+type PhysicallyBasedGeometry =
+    { Bounds : Box3
+      PrimitiveTopology : VkPrimitiveTopology
+      ElementCount : int
+      Vertices : Vector3 array
+      Indices : int array
+      mutable TrianglesCached : Vector3 array option
+      VertexBuffer : Nu.Vulkan.Buffer
+      InstanceBuffer : Nu.Vulkan.Buffer
+      IndexBuffer : Nu.Vulkan.Buffer }
+
+    /// Lazily access triangles, building them from Vertices and Indices if needed.
+    member this.Triangles =
+        match this.TrianglesCached with
+        | None ->
+            assert (this.PrimitiveTopology = VkPrimitiveTopology.TriangleList) // should hold since we use Assimp.PostProcessSteps.Triangulate
+            let triangles =
+                [|for points in Array.chunkBySize 3 this.Indices do
+                    this.Vertices.[points.[0]]
+                    this.Vertices.[points.[1]]
+                    this.Vertices.[points.[2]]|]
+            this.TrianglesCached <- Some triangles
+            triangles
+        | Some triangles -> triangles
+
+/// Describes a renderable physically-based surface.
+type [<CustomEquality; NoComparison>] PhysicallyBasedSurface =
+    { HashCode : int
+      SurfaceNames : string array
+      SurfaceMatrixIsIdentity : bool // OPTIMIZATION: avoid matrix multiply when unnecessary.
+      SurfaceMatrix : Matrix4x4
+      SurfaceBounds : Box3
+      SurfaceMaterialProperties : PhysicallyBasedMaterialProperties
+      SurfaceMaterial : PhysicallyBasedMaterial
+      SurfaceMaterialIndex : int
+      SurfaceNode : Assimp.Node
+      PhysicallyBasedGeometry : PhysicallyBasedGeometry }
+
+    static member inline hash surface =
+        surface.HashCode
+
+    static member equals left right =
+        refEq left right || // OPTIMIZATION: first check ref equality.
+        left.HashCode = right.HashCode && // OPTIMIZATION: check hash equality to bail as quickly as possible.
+        left.SurfaceMaterial = right.SurfaceMaterial &&
+        refEq left.PhysicallyBasedGeometry right.PhysicallyBasedGeometry
+
+    static member comparer =
+        HashIdentity.FromFunctions PhysicallyBasedSurface.hash PhysicallyBasedSurface.equals
+
+    static member extractPresence presenceDefault (sceneOpt : Assimp.Scene option) surface =
+        match surface.SurfaceNode.PresenceOpt with
+        | ValueNone ->
+            match sceneOpt with
+            | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
+                let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                ValueOption.defaultValue presenceDefault material.PresenceOpt
+            | Some _ | None -> presenceDefault
+        | ValueSome presence -> presence
+
+    static member extractRenderStyle renderStyleDefault (sceneOpt : Assimp.Scene option) surface =
+        match surface.SurfaceNode.RenderStyleOpt with
+        | ValueNone ->
+            match sceneOpt with
+            | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
+                let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                ValueOption.defaultValue renderStyleDefault material.RenderStyleOpt
+            | Some _ | None -> renderStyleDefault
+        | ValueSome renderStyle -> renderStyle
+
+    static member extractIgnoreLightMaps ignoreLightMapsDefault (sceneOpt : Assimp.Scene option) surface =
+        match surface.SurfaceNode.IgnoreLightMapsOpt with
+        | ValueNone ->
+            match sceneOpt with
+            | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
+                let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                ValueOption.defaultValue ignoreLightMapsDefault material.IgnoreLightMapsOpt
+            | Some _ | None -> ignoreLightMapsDefault
+        | ValueSome ignoreLightMaps -> ignoreLightMaps
+
+    static member extractOpaqueDistance opaqueDistanceDefault (sceneOpt : Assimp.Scene option) surface =
+        match surface.SurfaceNode.OpaqueDistanceOpt with
+        | ValueNone ->
+            match sceneOpt with
+            | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
+                let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                ValueOption.defaultValue opaqueDistanceDefault material.OpaqueDistanceOpt
+            | Some _ | None -> opaqueDistanceDefault
+        | ValueSome opaqueDistance -> opaqueDistance
+
+    static member extractFinenessOffset finenessOffsetDefault (sceneOpt : Assimp.Scene option) surface =
+        match surface.SurfaceNode.FinenessOffsetOpt with
+        | ValueNone ->
+            match sceneOpt with
+            | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
+                let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                ValueOption.defaultValue finenessOffsetDefault material.FinenessOffsetOpt
+            | Some _ | None -> finenessOffsetDefault
+        | ValueSome finenessOffset -> finenessOffset
+
+    static member extractScatterType scatterTypeDefault (sceneOpt : Assimp.Scene option) surface =
+        match surface.SurfaceNode.ScatterTypeOpt with
+        | ValueNone ->
+            match sceneOpt with
+            | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
+                let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                ValueOption.defaultValue scatterTypeDefault material.ScatterTypeOpt
+            | Some _ | None -> scatterTypeDefault
+        | ValueSome scatterType -> scatterType
+
+    static member extractSpecularScalar specularScalarDefault (sceneOpt : Assimp.Scene option) surface =
+        match surface.SurfaceNode.SpecularScalarOpt with
+        | ValueNone ->
+            match sceneOpt with
+            | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
+                let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                ValueOption.defaultValue specularScalarDefault material.SpecularScalarOpt
+            | Some _ | None -> specularScalarDefault
+        | ValueSome specularScalar -> specularScalar
+
+    static member extractSubsurfaceCutoff subsurfaceCutoffDefault (sceneOpt : Assimp.Scene option) surface =
+        match surface.SurfaceNode.SubsurfaceCutoffOpt with
+        | ValueNone ->
+            match sceneOpt with
+            | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
+                let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                ValueOption.defaultValue subsurfaceCutoffDefault material.SubsurfaceCutoffOpt
+            | Some _ | None -> subsurfaceCutoffDefault
+        | ValueSome subsurfaceCutoff -> subsurfaceCutoff
+
+    static member extractSubsurfaceCutoffMargin subsurfaceCutoffMarginDefault (sceneOpt : Assimp.Scene option) surface =
+        match surface.SurfaceNode.SubsurfaceCutoffMarginOpt with
+        | ValueNone ->
+            match sceneOpt with
+            | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
+                let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                ValueOption.defaultValue subsurfaceCutoffMarginDefault material.SubsurfaceCutoffMarginOpt
+            | Some _ | None -> subsurfaceCutoffMarginDefault
+        | ValueSome subsurfaceCutoffMargin -> subsurfaceCutoffMargin
+
+    static member extractRefractiveIndex refractiveIndexDefault (sceneOpt : Assimp.Scene option) surface =
+        match surface.SurfaceNode.RefractiveIndexOpt with
+        | ValueNone ->
+            match sceneOpt with
+            | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
+                let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                ValueOption.defaultValue refractiveIndexDefault material.RefractiveIndexOpt
+            | Some _ | None -> refractiveIndexDefault
+        | ValueSome refractiveIndex -> refractiveIndex
+
+    static member extractClearCoat clearCoatDefault (sceneOpt : Assimp.Scene option) surface =
+        match surface.SurfaceNode.ClearCoatOpt with
+        | ValueNone ->
+            match sceneOpt with
+            | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
+                let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                ValueOption.defaultValue clearCoatDefault material.ClearCoatOpt
+            | Some _ | None -> clearCoatDefault
+        | ValueSome clearCoat -> clearCoat
+
+    static member extractClearCoatRoughness clearCoatRoughnessDefault (sceneOpt : Assimp.Scene option) surface =
+        match surface.SurfaceNode.ClearCoatRoughnessOpt with
+        | ValueNone ->
+            match sceneOpt with
+            | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
+                let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                ValueOption.defaultValue clearCoatRoughnessDefault material.ClearCoatRoughnessOpt
+            | Some _ | None -> clearCoatRoughnessDefault
+        | ValueSome clearCoatRoughness -> clearCoatRoughness
+
+    static member extractNavShape shapeDefault (sceneOpt : Assimp.Scene option) surface =
+        match surface.SurfaceNode.NavShapeOpt with
+        | ValueNone ->
+            match sceneOpt with
+            | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
+                let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                ValueOption.defaultValue shapeDefault material.NavShapeOpt
+            | Some _ | None -> shapeDefault
+        | ValueSome shape -> shape
+
+    static member make names (surfaceMatrix : Matrix4x4) bounds properties material materialIndex surfaceNode geometry =
+        let hashCode =
+            hash material ^^^
+            Runtime.CompilerServices.RuntimeHelpers.GetHashCode geometry
+        { HashCode = hashCode
+          SurfaceNames = names
+          SurfaceMatrixIsIdentity = surfaceMatrix.IsIdentity
+          SurfaceMatrix = surfaceMatrix
+          SurfaceBounds = bounds
+          SurfaceMaterialProperties = properties
+          SurfaceMaterial = material
+          SurfaceMaterialIndex = materialIndex
+          SurfaceNode = surfaceNode
+          PhysicallyBasedGeometry = geometry }
+
+    member this.Equals that =
+        PhysicallyBasedSurface.equals this that
+
+    override this.Equals (thatObj : obj) =
+        match thatObj with
+        | :? PhysicallyBasedSurface as that -> PhysicallyBasedSurface.equals this that
+        | _ -> false
+
+    override this.GetHashCode () =
+        this.HashCode
+
+[<RequireQualifiedAccess>]
+module PhysicallyBasedSurfaceFns =
+    let extractPresence = PhysicallyBasedSurface.extractPresence
+    let extractRenderStyle = PhysicallyBasedSurface.extractRenderStyle
+    let extractIgnoreLightMaps = PhysicallyBasedSurface.extractIgnoreLightMaps
+    let extractOpaqueDistance = PhysicallyBasedSurface.extractOpaqueDistance
+    let extractFinenessOffset = PhysicallyBasedSurface.extractFinenessOffset
+    let extractScatterType = PhysicallyBasedSurface.extractScatterType
+    let extractSpecularScalar = PhysicallyBasedSurface.extractSpecularScalar
+    let extractSubsurfaceCutoff = PhysicallyBasedSurface.extractSubsurfaceCutoff
+    let extractSubsurfaceCutoffMargin = PhysicallyBasedSurface.extractSubsurfaceCutoffMargin
+    let extractRefractiveIndex = PhysicallyBasedSurface.extractRefractiveIndex
+    let extractClearCoat = PhysicallyBasedSurface.extractClearCoat
+    let extractClearCoatRoughness = PhysicallyBasedSurface.extractClearCoatRoughness
+    let extractNavShape = PhysicallyBasedSurface.extractNavShape
+    let hash = PhysicallyBasedSurface.hash
+    let equals = PhysicallyBasedSurface.equals
+    let comparer = PhysicallyBasedSurface.comparer
+    let make = PhysicallyBasedSurface.make
+
+/// A light probe inside a physically-based static model.
+type PhysicallyBasedLightProbe =
+    { LightProbeNames : string array
+      LightProbeMatrixIsIdentity : bool
+      LightProbeMatrix : Matrix4x4
+      LightProbeBounds : Box3 }
+
+/// A light inside a physically-based static model.
+type PhysicallyBasedLight =
+    { LightNames : string array
+      LightMatrixIsIdentity : bool
+      LightMatrix : Matrix4x4
+      LightColor : Color
+      LightBrightness : single
+      LightAttenuationLinear : single
+      LightAttenuationQuadratic : single
+      LightCutoff : single
+      LightType : LightType
+      LightDesireShadows : bool }
+
+/// A part of a physically-based hierarchy.
+type PhysicallyBasedPart =
+    | PhysicallyBasedNode of string array
+    | PhysicallyBasedLightProbe of PhysicallyBasedLightProbe
+    | PhysicallyBasedLight of PhysicallyBasedLight
+    | PhysicallyBasedSurface of PhysicallyBasedSurface
+
+/// A physically-based model.
+type PhysicallyBasedModel =
+    { Animated : bool
+      Bounds : Box3
+      LightProbes : PhysicallyBasedLightProbe array
+      Lights : PhysicallyBasedLight array
+      Surfaces : PhysicallyBasedSurface array
+      SceneOpt : Assimp.Scene option
+      PhysicallyBasedHierarchy : PhysicallyBasedPart array TreeNode }
+
+[<Struct; StructLayout(LayoutKind.Explicit)>]
+type PhysicallyBasedTransform =
+    [<FieldOffset(0)>] val mutable view : Matrix4x4
+    [<FieldOffset(64)>] val mutable projection : Matrix4x4
+    [<FieldOffset(128)>] val mutable viewProjection : Matrix4x4
+    [<FieldOffset(192)>] val mutable viewInverse : Matrix4x4
+    [<FieldOffset(256)>] val mutable projectionInverse : Matrix4x4
+    [<FieldOffset(320)>] val mutable eyeCenter : Vector3
+
+[<Struct; StructLayout(LayoutKind.Explicit)>]
+type Lighting =
+    [<FieldOffset(0)>] val mutable lightCutoffMargin : single
+    [<FieldOffset(16)>] val mutable lightAmbientColor : Vector3
+    [<FieldOffset(28)>] val mutable lightAmbientBrightness : single
+    [<FieldOffset(32)>] val mutable lightAmbientBoostCutoff : single
+    [<FieldOffset(36)>] val mutable lightAmbientBoostScalar : single
+    [<FieldOffset(40)>] val mutable lightShadowSamples : int
+    [<FieldOffset(44)>] val mutable lightShadowBias : single
+    [<FieldOffset(48)>] val mutable lightShadowSampleScalar : single
+    [<FieldOffset(52)>] val mutable lightShadowExponent : single
+    [<FieldOffset(56)>] val mutable lightShadowDensity : single
+    [<FieldOffset(60)>] val mutable fogEnabled : int
+    [<FieldOffset(64)>] val mutable fogType : int
+    [<FieldOffset(68)>] val mutable fogStart : single
+    [<FieldOffset(72)>] val mutable fogFinish : single
+    [<FieldOffset(76)>] val mutable fogDensity : single
+    [<FieldOffset(80)>] val mutable fogColor : Vector4
+    [<FieldOffset(96)>] val mutable ssvfEnabled : int
+    [<FieldOffset(100)>] val mutable ssvfIntensity : single
+    [<FieldOffset(104)>] val mutable ssvfSteps : int
+    [<FieldOffset(108)>] val mutable ssvfAsymmetry : single
+    [<FieldOffset(112)>] val mutable ssrrEnabled : int
+    [<FieldOffset(116)>] val mutable ssrrIntensity : single
+    [<FieldOffset(120)>] val mutable ssrrDetail : single
+    [<FieldOffset(124)>] val mutable ssrrRefinementsMax : int
+    [<FieldOffset(128)>] val mutable ssrrRayThickness : single
+    [<FieldOffset(132)>] val mutable ssrrDistanceCutoff : single
+    [<FieldOffset(136)>] val mutable ssrrDistanceCutoffMargin : single
+    [<FieldOffset(140)>] val mutable ssrrEdgeHorizontalMargin : single
+    [<FieldOffset(144)>] val mutable ssrrEdgeVerticalMargin : single
+    [<FieldOffset(148)>] val mutable shadowNear : single
+
+[<Struct; StructLayout(LayoutKind.Explicit)>]
+type Lighting2 =
+    [<FieldOffset(0)>] val mutable lightCutoffMargin : single
+    [<FieldOffset(4)>] val mutable lightShadowSamples : int
+    [<FieldOffset(8)>] val mutable lightShadowBias : single
+    [<FieldOffset(12)>] val mutable lightShadowSampleScalar : single
+    [<FieldOffset(16)>] val mutable lightShadowExponent : single
+    [<FieldOffset(20)>] val mutable lightShadowDensity : single
+    [<FieldOffset(24)>] val mutable sssEnabled : int
+    [<FieldOffset(28)>] val mutable lightsCount : int
+    [<FieldOffset(32)>] val mutable shadowNear : single
+
+[<Struct; StructLayout(LayoutKind.Explicit)>]
+type Bone =
+    [<FieldOffset(0)>] val mutable bone : Matrix4x4
+
+[<Struct; StructLayout(LayoutKind.Explicit)>]
+type LightMap =
+    [<FieldOffset(0)>] val mutable lightMapOrigins : Vector3
+    [<FieldOffset(16)>] val mutable lightMapMins : Vector3
+    [<FieldOffset(32)>] val mutable lightMapSizes : Vector3
+    [<FieldOffset(48)>] val mutable lightMapAmbientColors : Vector3
+    [<FieldOffset(60)>] val mutable lightMapAmbientBrightnesses : single
+
+[<Struct; StructLayout(LayoutKind.Explicit)>]
+type LightsGeneral =
+    [<FieldOffset(0)>] val mutable lightMapsCount : int
+    [<FieldOffset(4)>] val mutable lightMapSingletonBlendMargin : single
+    [<FieldOffset(8)>] val mutable lightsCount : int
+
+[<Struct; StructLayout(LayoutKind.Explicit)>]
+type Light =
+    [<FieldOffset(0)>] val mutable lightOrigins : Vector3
+    [<FieldOffset(16)>] val mutable lightDirections : Vector3
+    [<FieldOffset(32)>] val mutable lightColors : Vector3
+    [<FieldOffset(44)>] val mutable lightBrightnesses : single
+    [<FieldOffset(48)>] val mutable lightAttenuationLinears : single
+    [<FieldOffset(52)>] val mutable lightAttenuationQuadratics : single
+    [<FieldOffset(56)>] val mutable lightCutoffs : single
+    [<FieldOffset(60)>] val mutable lightTypes : int
+    [<FieldOffset(64)>] val mutable lightConeInners : single
+    [<FieldOffset(68)>] val mutable lightConeOuters : single
+    [<FieldOffset(72)>] val mutable lightDesireFogs : int
+    [<FieldOffset(76)>] val mutable lightShadowIndices : int
+
+/// Describes a physically-based pipeline that's loaded into GPU.
+type PhysicallyBasedPipeline =
+    { TransformUniform : Nu.Vulkan.Buffer
+      LightingUniform : Nu.Vulkan.Buffer
+      BoneUniform : Nu.Vulkan.Buffer
+      LightMapUniform : Nu.Vulkan.Buffer
+      LightsGeneralUniform : Nu.Vulkan.Buffer
+      LightUniform : Nu.Vulkan.Buffer
+      ShadowMatrixUniform : Nu.Vulkan.Buffer
+      Pipeline : Pipeline }
+
+/// Describes the lighting pass of a deferred physically-based pipeline that's loaded into GPU.
+type PhysicallyBasedDeferredLightingPipeline =
+    { TransformUniform : Nu.Vulkan.Buffer
+      LightingUniform : Nu.Vulkan.Buffer
+      LightUniform : Nu.Vulkan.Buffer
+      ShadowMatrixUniform : Nu.Vulkan.Buffer
+      Pipeline : Pipeline }
+
+/// Physically-based pipelines.
+type PhysicallyBasedPipelines =
+    { DeferredStaticPipeline : PhysicallyBasedPipeline
+      DeferredLightingPipeline : PhysicallyBasedDeferredLightingPipeline
+      ForwardStaticPipeline : PhysicallyBasedPipeline }
+
 [<RequireQualifiedAccess>]
 module PhysicallyBased =
-
-    /// A set of physically-based attachments that support a given viewport.
-    type PhysicallyBasedAttachments =
-        { ShadowTextureArrayAttachments : Texture * Texture
-          ShadowMapAttachmentsArray : (Texture * Texture) array
-          ShadowCascadeArrayAttachmentsArray : (Texture * Texture) array
-          GeometryAttachments : Texture * Texture * Texture * Texture * Texture * Texture * Texture * Texture
-          LightingAttachment : Texture
-          ColoringAttachments : Texture * Texture
-          CompositionAttachments : Texture * Texture }
-    
-    /// Describes the configurable properties of a physically-based material.
-    type PhysicallyBasedMaterialProperties =
-        { Albedo : Color
-          Roughness : single
-          Metallic : single
-          AmbientOcclusion : single
-          Emission : single
-          Height : single
-          IgnoreLightMaps : bool
-          OpaqueDistance : single
-          FinenessOffset : single
-          ScatterType : ScatterType
-          SpecularScalar : single
-          SubsurfaceCutoff : single
-          SubsurfaceCutoffMargin : single
-          RefractiveIndex : single
-          ClearCoat : single
-          ClearCoatRoughness : single }
-
-        /// The empty material properties.
-        static member empty =
-            { Albedo = Color.Zero
-              Roughness = 0.0f
-              Metallic = 0.0f
-              AmbientOcclusion = 0.0f
-              Emission = 0.0f
-              Height = 0.0f
-              IgnoreLightMaps = false
-              OpaqueDistance = 0.0f
-              FinenessOffset = 0.0f
-              ScatterType = NoScatter
-              SpecularScalar = 0.0f
-              SubsurfaceCutoff = 0.0f
-              SubsurfaceCutoffMargin = 0.0f
-              RefractiveIndex = 0.0f
-              ClearCoat = 0.0f
-              ClearCoatRoughness = 0.0f }
-
-    /// Describes a physically-based material.
-    type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial =
-        { AlbedoTexture : Texture
-          RoughnessTexture : Texture
-          MetallicTexture : Texture
-          AmbientOcclusionTexture : Texture
-          EmissionTexture : Texture
-          NormalTexture : Texture
-          HeightTexture : Texture
-          SubdermalTexture : Texture
-          FinenessTexture : Texture
-          ScatterTexture : Texture
-          ClearCoatTexture : Texture
-          ClearCoatRoughnessTexture : Texture
-          ClearCoatNormalTexture : Texture
-          TwoSided : bool
-          Clipped : bool
-          Names : string }
-
-        /// The empty material.
-        static member empty =
-            { AlbedoTexture = Texture.EmptyTexture
-              RoughnessTexture = Texture.EmptyTexture
-              MetallicTexture = Texture.EmptyTexture
-              AmbientOcclusionTexture = Texture.EmptyTexture
-              EmissionTexture = Texture.EmptyTexture
-              NormalTexture = Texture.EmptyTexture
-              HeightTexture = Texture.EmptyTexture
-              SubdermalTexture = Texture.EmptyTexture
-              FinenessTexture = Texture.EmptyTexture
-              ScatterTexture = Texture.EmptyTexture
-              ClearCoatTexture = Texture.EmptyTexture
-              ClearCoatRoughnessTexture = Texture.EmptyTexture
-              ClearCoatNormalTexture = Texture.EmptyTexture
-              TwoSided = false
-              Clipped = false
-              Names = "" }
-
-        /// Compute hash.
-        static member hash material =
-            (hash material.AlbedoTexture <<<            00) ^^^
-            (hash material.RoughnessTexture <<<         02) ^^^
-            (hash material.MetallicTexture <<<          04) ^^^
-            (hash material.AmbientOcclusionTexture <<<  06) ^^^
-            (hash material.EmissionTexture <<<          08) ^^^
-            (hash material.NormalTexture <<<            10) ^^^
-            (hash material.HeightTexture <<<            12) ^^^
-            (hash material.SubdermalTexture <<<         14) ^^^
-            (hash material.FinenessTexture <<<          16) ^^^
-            (hash material.ScatterTexture <<<           18) ^^^
-            (hash material.TwoSided <<<                 20) ^^^
-            (hash material.Clipped <<<                  22) ^^^
-            (hash material.Names <<<                    24)
-
-        /// Determing equality.
-        static member equals left right =
-            refEq left right && // OPTIMIZATION: first check ref equality.
-            left.AlbedoTexture = right.AlbedoTexture &&
-            left.RoughnessTexture = right.RoughnessTexture &&
-            left.MetallicTexture = right.MetallicTexture &&
-            left.AmbientOcclusionTexture = right.AmbientOcclusionTexture &&
-            left.EmissionTexture = right.EmissionTexture &&
-            left.NormalTexture = right.NormalTexture &&
-            left.HeightTexture = right.HeightTexture &&
-            left.SubdermalTexture = right.SubdermalTexture &&
-            left.FinenessTexture = right.FinenessTexture &&
-            left.ScatterTexture = right.ScatterTexture &&
-            left.TwoSided = right.TwoSided &&
-            left.Clipped = right.Clipped &&
-            left.Names = right.Names
-
-        override this.GetHashCode () = 
-            PhysicallyBasedMaterial.hash this
-
-        override this.Equals that =
-            match that with
-            | :? PhysicallyBasedMaterial as that -> PhysicallyBasedMaterial.equals this that
-            | _ -> false
-
-    /// Describes some physically-based geometry that's loaded into VRAM.
-    type PhysicallyBasedGeometry =
-        { Bounds : Box3
-          PrimitiveTopology : VkPrimitiveTopology
-          ElementCount : int
-          Vertices : Vector3 array
-          Indices : int array
-          mutable TrianglesCached : Vector3 array option
-          VertexBuffer : Nu.Vulkan.Buffer
-          InstanceBuffer : Nu.Vulkan.Buffer
-          IndexBuffer : Nu.Vulkan.Buffer }
-
-        /// Lazily access triangles, building them from Vertices and Indices if needed.
-        member this.Triangles =
-            match this.TrianglesCached with
-            | None ->
-                assert (this.PrimitiveTopology = VkPrimitiveTopology.TriangleList) // should hold since we use Assimp.PostProcessSteps.Triangulate
-                let triangles =
-                    [|for points in Array.chunkBySize 3 this.Indices do
-                        this.Vertices.[points.[0]]
-                        this.Vertices.[points.[1]]
-                        this.Vertices.[points.[2]]|]
-                this.TrianglesCached <- Some triangles
-                triangles
-            | Some triangles -> triangles
-
-    /// Describes a renderable physically-based surface.
-    type [<CustomEquality; NoComparison>] PhysicallyBasedSurface =
-        { HashCode : int
-          SurfaceNames : string array
-          SurfaceMatrixIsIdentity : bool // OPTIMIZATION: avoid matrix multiply when unnecessary.
-          SurfaceMatrix : Matrix4x4
-          SurfaceBounds : Box3
-          SurfaceMaterialProperties : PhysicallyBasedMaterialProperties
-          SurfaceMaterial : PhysicallyBasedMaterial
-          SurfaceMaterialIndex : int
-          SurfaceNode : Assimp.Node
-          PhysicallyBasedGeometry : PhysicallyBasedGeometry }
-
-        static member inline hash surface =
-            surface.HashCode
-
-        static member equals left right =
-            refEq left right || // OPTIMIZATION: first check ref equality.
-            left.HashCode = right.HashCode && // OPTIMIZATION: check hash equality to bail as quickly as possible.
-            left.SurfaceMaterial = right.SurfaceMaterial &&
-            refEq left.PhysicallyBasedGeometry right.PhysicallyBasedGeometry
-
-        static member comparer =
-            HashIdentity.FromFunctions PhysicallyBasedSurface.hash PhysicallyBasedSurface.equals
-
-        static member extractPresence presenceDefault (sceneOpt : Assimp.Scene option) surface =
-            match surface.SurfaceNode.PresenceOpt with
-            | ValueNone ->
-                match sceneOpt with
-                | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
-                    let material = scene.Materials.[surface.SurfaceMaterialIndex]
-                    ValueOption.defaultValue presenceDefault material.PresenceOpt
-                | Some _ | None -> presenceDefault
-            | ValueSome presence -> presence
-
-        static member extractRenderStyle renderStyleDefault (sceneOpt : Assimp.Scene option) surface =
-            match surface.SurfaceNode.RenderStyleOpt with
-            | ValueNone ->
-                match sceneOpt with
-                | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
-                    let material = scene.Materials.[surface.SurfaceMaterialIndex]
-                    ValueOption.defaultValue renderStyleDefault material.RenderStyleOpt
-                | Some _ | None -> renderStyleDefault
-            | ValueSome renderStyle -> renderStyle
-
-        static member extractIgnoreLightMaps ignoreLightMapsDefault (sceneOpt : Assimp.Scene option) surface =
-            match surface.SurfaceNode.IgnoreLightMapsOpt with
-            | ValueNone ->
-                match sceneOpt with
-                | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
-                    let material = scene.Materials.[surface.SurfaceMaterialIndex]
-                    ValueOption.defaultValue ignoreLightMapsDefault material.IgnoreLightMapsOpt
-                | Some _ | None -> ignoreLightMapsDefault
-            | ValueSome ignoreLightMaps -> ignoreLightMaps
-
-        static member extractOpaqueDistance opaqueDistanceDefault (sceneOpt : Assimp.Scene option) surface =
-            match surface.SurfaceNode.OpaqueDistanceOpt with
-            | ValueNone ->
-                match sceneOpt with
-                | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
-                    let material = scene.Materials.[surface.SurfaceMaterialIndex]
-                    ValueOption.defaultValue opaqueDistanceDefault material.OpaqueDistanceOpt
-                | Some _ | None -> opaqueDistanceDefault
-            | ValueSome opaqueDistance -> opaqueDistance
-
-        static member extractFinenessOffset finenessOffsetDefault (sceneOpt : Assimp.Scene option) surface =
-            match surface.SurfaceNode.FinenessOffsetOpt with
-            | ValueNone ->
-                match sceneOpt with
-                | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
-                    let material = scene.Materials.[surface.SurfaceMaterialIndex]
-                    ValueOption.defaultValue finenessOffsetDefault material.FinenessOffsetOpt
-                | Some _ | None -> finenessOffsetDefault
-            | ValueSome finenessOffset -> finenessOffset
-
-        static member extractScatterType scatterTypeDefault (sceneOpt : Assimp.Scene option) surface =
-            match surface.SurfaceNode.ScatterTypeOpt with
-            | ValueNone ->
-                match sceneOpt with
-                | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
-                    let material = scene.Materials.[surface.SurfaceMaterialIndex]
-                    ValueOption.defaultValue scatterTypeDefault material.ScatterTypeOpt
-                | Some _ | None -> scatterTypeDefault
-            | ValueSome scatterType -> scatterType
-
-        static member extractSpecularScalar specularScalarDefault (sceneOpt : Assimp.Scene option) surface =
-            match surface.SurfaceNode.SpecularScalarOpt with
-            | ValueNone ->
-                match sceneOpt with
-                | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
-                    let material = scene.Materials.[surface.SurfaceMaterialIndex]
-                    ValueOption.defaultValue specularScalarDefault material.SpecularScalarOpt
-                | Some _ | None -> specularScalarDefault
-            | ValueSome specularScalar -> specularScalar
-
-        static member extractSubsurfaceCutoff subsurfaceCutoffDefault (sceneOpt : Assimp.Scene option) surface =
-            match surface.SurfaceNode.SubsurfaceCutoffOpt with
-            | ValueNone ->
-                match sceneOpt with
-                | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
-                    let material = scene.Materials.[surface.SurfaceMaterialIndex]
-                    ValueOption.defaultValue subsurfaceCutoffDefault material.SubsurfaceCutoffOpt
-                | Some _ | None -> subsurfaceCutoffDefault
-            | ValueSome subsurfaceCutoff -> subsurfaceCutoff
-
-        static member extractSubsurfaceCutoffMargin subsurfaceCutoffMarginDefault (sceneOpt : Assimp.Scene option) surface =
-            match surface.SurfaceNode.SubsurfaceCutoffMarginOpt with
-            | ValueNone ->
-                match sceneOpt with
-                | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
-                    let material = scene.Materials.[surface.SurfaceMaterialIndex]
-                    ValueOption.defaultValue subsurfaceCutoffMarginDefault material.SubsurfaceCutoffMarginOpt
-                | Some _ | None -> subsurfaceCutoffMarginDefault
-            | ValueSome subsurfaceCutoffMargin -> subsurfaceCutoffMargin
-
-        static member extractRefractiveIndex refractiveIndexDefault (sceneOpt : Assimp.Scene option) surface =
-            match surface.SurfaceNode.RefractiveIndexOpt with
-            | ValueNone ->
-                match sceneOpt with
-                | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
-                    let material = scene.Materials.[surface.SurfaceMaterialIndex]
-                    ValueOption.defaultValue refractiveIndexDefault material.RefractiveIndexOpt
-                | Some _ | None -> refractiveIndexDefault
-            | ValueSome refractiveIndex -> refractiveIndex
-
-        static member extractClearCoat clearCoatDefault (sceneOpt : Assimp.Scene option) surface =
-            match surface.SurfaceNode.ClearCoatOpt with
-            | ValueNone ->
-                match sceneOpt with
-                | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
-                    let material = scene.Materials.[surface.SurfaceMaterialIndex]
-                    ValueOption.defaultValue clearCoatDefault material.ClearCoatOpt
-                | Some _ | None -> clearCoatDefault
-            | ValueSome clearCoat -> clearCoat
-
-        static member extractClearCoatRoughness clearCoatRoughnessDefault (sceneOpt : Assimp.Scene option) surface =
-            match surface.SurfaceNode.ClearCoatRoughnessOpt with
-            | ValueNone ->
-                match sceneOpt with
-                | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
-                    let material = scene.Materials.[surface.SurfaceMaterialIndex]
-                    ValueOption.defaultValue clearCoatRoughnessDefault material.ClearCoatRoughnessOpt
-                | Some _ | None -> clearCoatRoughnessDefault
-            | ValueSome clearCoatRoughness -> clearCoatRoughness
-
-        static member extractNavShape shapeDefault (sceneOpt : Assimp.Scene option) surface =
-            match surface.SurfaceNode.NavShapeOpt with
-            | ValueNone ->
-                match sceneOpt with
-                | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
-                    let material = scene.Materials.[surface.SurfaceMaterialIndex]
-                    ValueOption.defaultValue shapeDefault material.NavShapeOpt
-                | Some _ | None -> shapeDefault
-            | ValueSome shape -> shape
-
-        static member make names (surfaceMatrix : Matrix4x4) bounds properties material materialIndex surfaceNode geometry =
-            let hashCode =
-                hash material ^^^
-                Runtime.CompilerServices.RuntimeHelpers.GetHashCode geometry
-            { HashCode = hashCode
-              SurfaceNames = names
-              SurfaceMatrixIsIdentity = surfaceMatrix.IsIdentity
-              SurfaceMatrix = surfaceMatrix
-              SurfaceBounds = bounds
-              SurfaceMaterialProperties = properties
-              SurfaceMaterial = material
-              SurfaceMaterialIndex = materialIndex
-              SurfaceNode = surfaceNode
-              PhysicallyBasedGeometry = geometry }
-
-        member this.Equals that =
-            PhysicallyBasedSurface.equals this that
-
-        override this.Equals (thatObj : obj) =
-            match thatObj with
-            | :? PhysicallyBasedSurface as that -> PhysicallyBasedSurface.equals this that
-            | _ -> false
-
-        override this.GetHashCode () =
-            this.HashCode
-
-    module internal PhysicallyBasedSurfaceFns =
-        let extractPresence = PhysicallyBasedSurface.extractPresence
-        let extractRenderStyle = PhysicallyBasedSurface.extractRenderStyle
-        let extractIgnoreLightMaps = PhysicallyBasedSurface.extractIgnoreLightMaps
-        let extractOpaqueDistance = PhysicallyBasedSurface.extractOpaqueDistance
-        let extractFinenessOffset = PhysicallyBasedSurface.extractFinenessOffset
-        let extractScatterType = PhysicallyBasedSurface.extractScatterType
-        let extractSpecularScalar = PhysicallyBasedSurface.extractSpecularScalar
-        let extractSubsurfaceCutoff = PhysicallyBasedSurface.extractSubsurfaceCutoff
-        let extractSubsurfaceCutoffMargin = PhysicallyBasedSurface.extractSubsurfaceCutoffMargin
-        let extractRefractiveIndex = PhysicallyBasedSurface.extractRefractiveIndex
-        let extractClearCoat = PhysicallyBasedSurface.extractClearCoat
-        let extractClearCoatRoughness = PhysicallyBasedSurface.extractClearCoatRoughness
-        let extractNavShape = PhysicallyBasedSurface.extractNavShape
-        let hash = PhysicallyBasedSurface.hash
-        let equals = PhysicallyBasedSurface.equals
-        let comparer = PhysicallyBasedSurface.comparer
-        let make = PhysicallyBasedSurface.make
-
-    /// A light probe inside a physically-based static model.
-    type PhysicallyBasedLightProbe =
-        { LightProbeNames : string array
-          LightProbeMatrixIsIdentity : bool
-          LightProbeMatrix : Matrix4x4
-          LightProbeBounds : Box3 }
-
-    /// A light inside a physically-based static model.
-    type PhysicallyBasedLight =
-        { LightNames : string array
-          LightMatrixIsIdentity : bool
-          LightMatrix : Matrix4x4
-          LightColor : Color
-          LightBrightness : single
-          LightAttenuationLinear : single
-          LightAttenuationQuadratic : single
-          LightCutoff : single
-          LightType : LightType
-          LightDesireShadows : bool }
-
-    /// A part of a physically-based hierarchy.
-    type PhysicallyBasedPart =
-        | PhysicallyBasedNode of string array
-        | PhysicallyBasedLightProbe of PhysicallyBasedLightProbe
-        | PhysicallyBasedLight of PhysicallyBasedLight
-        | PhysicallyBasedSurface of PhysicallyBasedSurface
-
-    /// A physically-based model.
-    type PhysicallyBasedModel =
-        { Animated : bool
-          Bounds : Box3
-          LightProbes : PhysicallyBasedLightProbe array
-          Lights : PhysicallyBasedLight array
-          Surfaces : PhysicallyBasedSurface array
-          SceneOpt : Assimp.Scene option
-          PhysicallyBasedHierarchy : PhysicallyBasedPart array TreeNode }
-
-    [<Struct; StructLayout(LayoutKind.Explicit)>]
-    type Transform =
-        [<FieldOffset(0)>] val mutable view : Matrix4x4
-        [<FieldOffset(64)>] val mutable projection : Matrix4x4
-        [<FieldOffset(128)>] val mutable viewProjection : Matrix4x4
-        [<FieldOffset(192)>] val mutable viewInverse : Matrix4x4
-        [<FieldOffset(256)>] val mutable projectionInverse : Matrix4x4
-        [<FieldOffset(320)>] val mutable eyeCenter : Vector3
-
-    [<Struct; StructLayout(LayoutKind.Explicit)>]
-    type Lighting =
-        [<FieldOffset(0)>] val mutable lightCutoffMargin : single
-        [<FieldOffset(16)>] val mutable lightAmbientColor : Vector3
-        [<FieldOffset(28)>] val mutable lightAmbientBrightness : single
-        [<FieldOffset(32)>] val mutable lightAmbientBoostCutoff : single
-        [<FieldOffset(36)>] val mutable lightAmbientBoostScalar : single
-        [<FieldOffset(40)>] val mutable lightShadowSamples : int
-        [<FieldOffset(44)>] val mutable lightShadowBias : single
-        [<FieldOffset(48)>] val mutable lightShadowSampleScalar : single
-        [<FieldOffset(52)>] val mutable lightShadowExponent : single
-        [<FieldOffset(56)>] val mutable lightShadowDensity : single
-        [<FieldOffset(60)>] val mutable fogEnabled : int
-        [<FieldOffset(64)>] val mutable fogType : int
-        [<FieldOffset(68)>] val mutable fogStart : single
-        [<FieldOffset(72)>] val mutable fogFinish : single
-        [<FieldOffset(76)>] val mutable fogDensity : single
-        [<FieldOffset(80)>] val mutable fogColor : Vector4
-        [<FieldOffset(96)>] val mutable ssvfEnabled : int
-        [<FieldOffset(100)>] val mutable ssvfIntensity : single
-        [<FieldOffset(104)>] val mutable ssvfSteps : int
-        [<FieldOffset(108)>] val mutable ssvfAsymmetry : single
-        [<FieldOffset(112)>] val mutable ssrrEnabled : int
-        [<FieldOffset(116)>] val mutable ssrrIntensity : single
-        [<FieldOffset(120)>] val mutable ssrrDetail : single
-        [<FieldOffset(124)>] val mutable ssrrRefinementsMax : int
-        [<FieldOffset(128)>] val mutable ssrrRayThickness : single
-        [<FieldOffset(132)>] val mutable ssrrDistanceCutoff : single
-        [<FieldOffset(136)>] val mutable ssrrDistanceCutoffMargin : single
-        [<FieldOffset(140)>] val mutable ssrrEdgeHorizontalMargin : single
-        [<FieldOffset(144)>] val mutable ssrrEdgeVerticalMargin : single
-        [<FieldOffset(148)>] val mutable shadowNear : single
-    
-    [<Struct; StructLayout(LayoutKind.Explicit)>]
-    type Lighting2 =
-        [<FieldOffset(0)>] val mutable lightCutoffMargin : single
-        [<FieldOffset(4)>] val mutable lightShadowSamples : int
-        [<FieldOffset(8)>] val mutable lightShadowBias : single
-        [<FieldOffset(12)>] val mutable lightShadowSampleScalar : single
-        [<FieldOffset(16)>] val mutable lightShadowExponent : single
-        [<FieldOffset(20)>] val mutable lightShadowDensity : single
-        [<FieldOffset(24)>] val mutable sssEnabled : int
-        [<FieldOffset(28)>] val mutable lightsCount : int
-        [<FieldOffset(32)>] val mutable shadowNear : single
-    
-    [<Struct; StructLayout(LayoutKind.Explicit)>]
-    type Bone =
-        [<FieldOffset(0)>] val mutable bone : Matrix4x4
-    
-    [<Struct; StructLayout(LayoutKind.Explicit)>]
-    type LightMap =
-        [<FieldOffset(0)>] val mutable lightMapOrigins : Vector3
-        [<FieldOffset(16)>] val mutable lightMapMins : Vector3
-        [<FieldOffset(32)>] val mutable lightMapSizes : Vector3
-        [<FieldOffset(48)>] val mutable lightMapAmbientColors : Vector3
-        [<FieldOffset(60)>] val mutable lightMapAmbientBrightnesses : single
-    
-    [<Struct; StructLayout(LayoutKind.Explicit)>]
-    type LightsGeneral =
-        [<FieldOffset(0)>] val mutable lightMapsCount : int
-        [<FieldOffset(4)>] val mutable lightMapSingletonBlendMargin : single
-        [<FieldOffset(8)>] val mutable lightsCount : int
-    
-    [<Struct; StructLayout(LayoutKind.Explicit)>]
-    type Light =
-        [<FieldOffset(0)>] val mutable lightOrigins : Vector3
-        [<FieldOffset(16)>] val mutable lightDirections : Vector3
-        [<FieldOffset(32)>] val mutable lightColors : Vector3
-        [<FieldOffset(44)>] val mutable lightBrightnesses : single
-        [<FieldOffset(48)>] val mutable lightAttenuationLinears : single
-        [<FieldOffset(52)>] val mutable lightAttenuationQuadratics : single
-        [<FieldOffset(56)>] val mutable lightCutoffs : single
-        [<FieldOffset(60)>] val mutable lightTypes : int
-        [<FieldOffset(64)>] val mutable lightConeInners : single
-        [<FieldOffset(68)>] val mutable lightConeOuters : single
-        [<FieldOffset(72)>] val mutable lightDesireFogs : int
-        [<FieldOffset(76)>] val mutable lightShadowIndices : int
-    
-    /// Describes a physically-based pipeline that's loaded into GPU.
-    type PhysicallyBasedPipeline =
-        { TransformUniform : Nu.Vulkan.Buffer
-          LightingUniform : Nu.Vulkan.Buffer
-          BoneUniform : Nu.Vulkan.Buffer
-          LightMapUniform : Nu.Vulkan.Buffer
-          LightsGeneralUniform : Nu.Vulkan.Buffer
-          LightUniform : Nu.Vulkan.Buffer
-          ShadowMatrixUniform : Nu.Vulkan.Buffer
-          Pipeline : Pipeline }
-
-    /// Describes the lighting pass of a deferred physically-based pipeline that's loaded into GPU.
-    type PhysicallyBasedDeferredLightingPipeline =
-        { TransformUniform : Nu.Vulkan.Buffer
-          LightingUniform : Nu.Vulkan.Buffer
-          LightUniform : Nu.Vulkan.Buffer
-          ShadowMatrixUniform : Nu.Vulkan.Buffer
-          Pipeline : Pipeline }
     
     /// Create the attachments required for physically-based rendering.
     let CreatePhysicallyBasedAttachments (geometryViewport : Viewport, vkc) =
@@ -619,7 +626,7 @@ module PhysicallyBased =
         let albedoTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression albedoTextureSlotFilePath, dirPrefix + albedoTextureSlotFilePath, RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression albedoTextureSlotFilePath, dirPrefix + albedoTextureSlotFilePath, RenderThread, vkc) with
                 | Right texture -> texture
                 | Left _ -> defaultMaterial.AlbedoTexture
             | None -> defaultMaterial.AlbedoTexture
@@ -675,28 +682,28 @@ module PhysicallyBased =
         let roughnessTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression roughnessTextureSlot.FilePath, dirPrefix + roughnessTextureSlot.FilePath, RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression roughnessTextureSlot.FilePath, dirPrefix + roughnessTextureSlot.FilePath, RenderThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression gTextureFilePath, dirPrefix + gTextureFilePath, RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression gTextureFilePath, dirPrefix + gTextureFilePath, RenderThread, vkc) with
                     | Right texture -> texture
                     | Left _ ->
-                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression sTextureFilePath, dirPrefix + sTextureFilePath, RenderThread, vkc) with
+                        match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression sTextureFilePath, dirPrefix + sTextureFilePath, RenderThread, vkc) with
                         | Right texture -> texture
                         | Left _ ->
-                            match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression g_mTextureFilePath, dirPrefix + g_mTextureFilePath, RenderThread, vkc) with
+                            match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression g_mTextureFilePath, dirPrefix + g_mTextureFilePath, RenderThread, vkc) with
                             | Right texture -> texture
                             | Left _ ->
-                                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression g_m_aoTextureFilePath, dirPrefix + g_m_aoTextureFilePath, RenderThread, vkc) with
+                                match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression g_m_aoTextureFilePath, dirPrefix + g_m_aoTextureFilePath, RenderThread, vkc) with
                                 | Right texture -> texture
                                 | Left _ ->
-                                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression roughnessTextureFilePath, dirPrefix + roughnessTextureFilePath, RenderThread, vkc) with
+                                    match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression roughnessTextureFilePath, dirPrefix + roughnessTextureFilePath, RenderThread, vkc) with
                                     | Right texture -> texture
                                     | Left _ ->
-                                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression rmTextureFilePath, dirPrefix + rmTextureFilePath, RenderThread, vkc) with
+                                        match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression rmTextureFilePath, dirPrefix + rmTextureFilePath, RenderThread, vkc) with
                                         | Right texture -> texture
                                         | Left _ ->
-                                            match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression rmaTextureFilePath, dirPrefix + rmaTextureFilePath, RenderThread, vkc) with
+                                            match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression rmaTextureFilePath, dirPrefix + rmaTextureFilePath, RenderThread, vkc) with
                                             | Right texture -> texture
                                             | Left _ -> defaultMaterial.RoughnessTexture
             | None -> defaultMaterial.RoughnessTexture
@@ -710,28 +717,28 @@ module PhysicallyBased =
         let metallicTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression metallicTextureSlot.FilePath, dirPrefix + metallicTextureSlot.FilePath, RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression metallicTextureSlot.FilePath, dirPrefix + metallicTextureSlot.FilePath, RenderThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression mTextureFilePath, dirPrefix + mTextureFilePath, RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression mTextureFilePath, dirPrefix + mTextureFilePath, RenderThread, vkc) with
                     | Right texture -> texture
                     | Left _ ->
-                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression g_mTextureFilePath, dirPrefix + g_mTextureFilePath, RenderThread, vkc) with
+                        match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression g_mTextureFilePath, dirPrefix + g_mTextureFilePath, RenderThread, vkc) with
                         | Right texture -> texture
                         | Left _ ->
-                            match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression g_m_aoTextureFilePath, dirPrefix + g_m_aoTextureFilePath, RenderThread, vkc) with
+                            match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression g_m_aoTextureFilePath, dirPrefix + g_m_aoTextureFilePath, RenderThread, vkc) with
                             | Right texture -> texture
                             | Left _ ->
-                                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression metallicTextureFilePath, dirPrefix + metallicTextureFilePath, RenderThread, vkc) with
+                                match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression metallicTextureFilePath, dirPrefix + metallicTextureFilePath, RenderThread, vkc) with
                                 | Right texture -> texture
                                 | Left _ ->
-                                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression metalnessTextureFilePath, dirPrefix + metalnessTextureFilePath, RenderThread, vkc) with
+                                    match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression metalnessTextureFilePath, dirPrefix + metalnessTextureFilePath, RenderThread, vkc) with
                                     | Right texture -> texture
                                     | Left _ ->
-                                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression rmTextureFilePath, dirPrefix + rmTextureFilePath, RenderThread, vkc) with
+                                        match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression rmTextureFilePath, dirPrefix + rmTextureFilePath, RenderThread, vkc) with
                                         | Right texture -> texture
                                         | Left _ ->
-                                            match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression rmaTextureFilePath, dirPrefix + rmaTextureFilePath, RenderThread, vkc) with
+                                            match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression rmaTextureFilePath, dirPrefix + rmaTextureFilePath, RenderThread, vkc) with
                                             | Right texture -> texture
                                             | Left _ -> defaultMaterial.MetallicTexture
             | None -> defaultMaterial.MetallicTexture
@@ -748,25 +755,25 @@ module PhysicallyBased =
         let ambientOcclusionTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression ambientOcclusionTextureSlotFilePath, dirPrefix + ambientOcclusionTextureSlotFilePath, RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression ambientOcclusionTextureSlotFilePath, dirPrefix + ambientOcclusionTextureSlotFilePath, RenderThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression aoTextureFilePath, dirPrefix + aoTextureFilePath, RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression aoTextureFilePath, dirPrefix + aoTextureFilePath, RenderThread, vkc) with
                     | Right texture -> texture
                     | Left _ ->
-                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression g_m_aoTextureFilePath, dirPrefix + g_m_aoTextureFilePath, RenderThread, vkc) with
+                        match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression g_m_aoTextureFilePath, dirPrefix + g_m_aoTextureFilePath, RenderThread, vkc) with
                         | Right texture -> texture
                         | Left _ ->
-                            match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression ambientOcclusionTextureFilePath, dirPrefix + ambientOcclusionTextureFilePath, RenderThread, vkc) with
+                            match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression ambientOcclusionTextureFilePath, dirPrefix + ambientOcclusionTextureFilePath, RenderThread, vkc) with
                             | Right texture -> texture
                             | Left _ ->
-                                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression occlusionTextureFilePath, dirPrefix + occlusionTextureFilePath, RenderThread, vkc) with
+                                match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression occlusionTextureFilePath, dirPrefix + occlusionTextureFilePath, RenderThread, vkc) with
                                 | Right texture -> texture
                                 | Left _ ->
-                                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression aoTextureFilePath', dirPrefix + aoTextureFilePath', RenderThread, vkc) with
+                                    match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression aoTextureFilePath', dirPrefix + aoTextureFilePath', RenderThread, vkc) with
                                     | Right texture -> texture
                                     | Left _ ->
-                                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression rmaTextureFilePath, dirPrefix + rmaTextureFilePath, RenderThread, vkc) with
+                                        match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression rmaTextureFilePath, dirPrefix + rmaTextureFilePath, RenderThread, vkc) with
                                         | Right texture -> texture
                                         | Left _ -> defaultMaterial.AmbientOcclusionTexture
             | None -> defaultMaterial.AmbientOcclusionTexture
@@ -780,16 +787,16 @@ module PhysicallyBased =
         let emissionTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression emissionTextureSlot.FilePath, dirPrefix + emissionTextureSlot.FilePath, RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression emissionTextureSlot.FilePath, dirPrefix + emissionTextureSlot.FilePath, RenderThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression eTextureFilePath, dirPrefix + eTextureFilePath, RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression eTextureFilePath, dirPrefix + eTextureFilePath, RenderThread, vkc) with
                     | Right texture -> texture
                     | Left _ ->
-                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression emissiveTextureFilePath, dirPrefix + emissiveTextureFilePath, RenderThread, vkc) with
+                        match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression emissiveTextureFilePath, dirPrefix + emissiveTextureFilePath, RenderThread, vkc) with
                         | Right texture -> texture
                         | Left _ ->
-                            match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression emissionTextureFilePath, dirPrefix + emissionTextureFilePath, RenderThread, vkc) with
+                            match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression emissionTextureFilePath, dirPrefix + emissionTextureFilePath, RenderThread, vkc) with
                             | Right texture -> texture
                             | Left _ -> defaultMaterial.EmissionTexture
             | None -> defaultMaterial.EmissionTexture
@@ -802,13 +809,13 @@ module PhysicallyBased =
         let normalTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression normalTextureSlot.FilePath, dirPrefix + normalTextureSlot.FilePath, RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression normalTextureSlot.FilePath, dirPrefix + normalTextureSlot.FilePath, RenderThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression nTextureFilePath, dirPrefix + nTextureFilePath, RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression nTextureFilePath, dirPrefix + nTextureFilePath, RenderThread, vkc) with
                     | Right texture -> texture
                     | Left _ ->
-                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression normalTextureFilePath, dirPrefix + normalTextureFilePath, RenderThread, vkc) with
+                        match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression normalTextureFilePath, dirPrefix + normalTextureFilePath, RenderThread, vkc) with
                         | Right texture -> texture
                         | Left _ -> defaultMaterial.NormalTexture
             | None -> defaultMaterial.NormalTexture
@@ -822,13 +829,13 @@ module PhysicallyBased =
         let heightTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression heightTextureSlot.FilePath, dirPrefix + heightTextureSlot.FilePath, RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression heightTextureSlot.FilePath, dirPrefix + heightTextureSlot.FilePath, RenderThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression hTextureFilePath, dirPrefix + hTextureFilePath, RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression hTextureFilePath, dirPrefix + hTextureFilePath, RenderThread, vkc) with
                     | Right texture -> texture
                     | Left _ ->
-                        match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression heightTextureFilePath, dirPrefix + heightTextureFilePath, RenderThread, vkc) with
+                        match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression heightTextureFilePath, dirPrefix + heightTextureFilePath, RenderThread, vkc) with
                         | Right texture -> texture
                         | Left _ -> defaultMaterial.HeightTexture
             | None -> defaultMaterial.HeightTexture
@@ -849,10 +856,10 @@ module PhysicallyBased =
         let subdermalTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression subdermalTextureFilePath, dirPrefix + subdermalTextureFilePath, RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression subdermalTextureFilePath, dirPrefix + subdermalTextureFilePath, RenderThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression subdermalTextureFilePath', dirPrefix + subdermalTextureFilePath', RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression subdermalTextureFilePath', dirPrefix + subdermalTextureFilePath', RenderThread, vkc) with
                     | Right texture -> texture
                     | Left _ -> defaultMaterial.SubdermalTexture
             | None -> defaultMaterial.SubdermalTexture
@@ -862,10 +869,10 @@ module PhysicallyBased =
         let finenessTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression finenessTextureFilePath, dirPrefix + finenessTextureFilePath, RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression finenessTextureFilePath, dirPrefix + finenessTextureFilePath, RenderThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression finenessTextureFilePath', dirPrefix + finenessTextureFilePath', RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression finenessTextureFilePath', dirPrefix + finenessTextureFilePath', RenderThread, vkc) with
                     | Right texture -> texture
                     | Left _ -> defaultMaterial.FinenessTexture
             | None -> defaultMaterial.FinenessTexture
@@ -875,10 +882,10 @@ module PhysicallyBased =
         let scatterTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression scatterTextureFilePath, dirPrefix + scatterTextureFilePath, RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression scatterTextureFilePath, dirPrefix + scatterTextureFilePath, RenderThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression scatterTextureFilePath', dirPrefix + scatterTextureFilePath', RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression scatterTextureFilePath', dirPrefix + scatterTextureFilePath', RenderThread, vkc) with
                     | Right texture -> texture
                     | Left _ -> defaultMaterial.ScatterTexture
             | None -> defaultMaterial.ScatterTexture
@@ -912,10 +919,10 @@ module PhysicallyBased =
         let clearCoatTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression clearCoatTextureFilePath, dirPrefix + clearCoatTextureFilePath, RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression clearCoatTextureFilePath, dirPrefix + clearCoatTextureFilePath, RenderThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression clearCoatTextureFilePath', dirPrefix + clearCoatTextureFilePath', RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression clearCoatTextureFilePath', dirPrefix + clearCoatTextureFilePath', RenderThread, vkc) with
                     | Right texture -> texture
                     | Left _ -> defaultMaterial.ClearCoatTexture
             | None -> defaultMaterial.ClearCoatTexture
@@ -925,10 +932,10 @@ module PhysicallyBased =
         let clearCoatRoughnessTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression clearCoatRoughnessTextureFilePath, dirPrefix + clearCoatRoughnessTextureFilePath, RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression clearCoatRoughnessTextureFilePath, dirPrefix + clearCoatRoughnessTextureFilePath, RenderThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression clearCoatRoughnessTextureFilePath', dirPrefix + clearCoatRoughnessTextureFilePath', RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression clearCoatRoughnessTextureFilePath', dirPrefix + clearCoatRoughnessTextureFilePath', RenderThread, vkc) with
                     | Right texture -> texture
                     | Left _ -> defaultMaterial.ClearCoatRoughnessTexture
             | None -> defaultMaterial.ClearCoatRoughnessTexture
@@ -937,10 +944,10 @@ module PhysicallyBased =
         let clearCoatNormalTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression clearCoatNormalTextureFilePath, dirPrefix + clearCoatNormalTextureFilePath, RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression clearCoatNormalTextureFilePath, dirPrefix + clearCoatNormalTextureFilePath, RenderThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Texture.InferCompression clearCoatNormalTextureFilePath', dirPrefix + clearCoatNormalTextureFilePath', RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression clearCoatNormalTextureFilePath', dirPrefix + clearCoatNormalTextureFilePath', RenderThread, vkc) with
                     | Right texture -> texture
                     | Left _ -> defaultMaterial.ClearCoatNormalTexture
             | None -> defaultMaterial.ClearCoatNormalTexture
@@ -1473,7 +1480,7 @@ module PhysicallyBased =
 
         // specify tranform
         let mutable transformDescriptorSet = Pipeline.specifyDescriptorSet 0 renderPassIndex pipeline.Pipeline vkc $ fun vkSet ->
-            let mutable transform = Transform ()
+            let mutable transform = PhysicallyBasedTransform ()
             transform.view <- view
             transform.projection <- projection
             transform.viewProjection <- viewProjection
@@ -1638,7 +1645,7 @@ module PhysicallyBased =
         let mutable uniformsDescriptorSet = Pipeline.specifyDescriptorSet 0 renderPassIndex pipeline.Pipeline vkc $ fun vkSet ->
 
             // specify transform
-            let mutable transform = Transform ()
+            let mutable transform = PhysicallyBasedTransform ()
             transform.view <- view
             transform.projection <- projection
             transform.viewProjection <- viewProjection
@@ -2028,121 +2035,6 @@ module PhysicallyBased =
         for surface in model.Surfaces do
             DestroyPhysicallyBasedGeometry (surface.PhysicallyBasedGeometry, vkc)
 
-    /// Memoizes physically-based scene loads.
-    type PhysicallyBasedSceneClient () =
-
-        /// Attempt to create physically-based model from a model file with assimp.
-        /// Thread-safe if vkcOpt = None.
-        member this.TryCreatePhysicallyBasedModel (vkcOpt, filePath, defaultMaterial, textureClient) =
-
-            // attempt to import from assimp scene
-            match AssimpContext.TryGetScene filePath with
-            | Right scene ->
-                let dirPath = PathF.GetDirectoryName filePath
-                match TryCreatePhysicallyBasedMaterials (vkcOpt, dirPath, defaultMaterial, textureClient, scene) with
-                | Right materials ->
-                    let animated = scene.Animations.Count <> 0
-                    let geometries =
-                        if animated
-                        then CreatePhysicallyBasedAnimatedGeometries (vkcOpt, scene)
-                        else CreatePhysicallyBasedStaticGeometries (vkcOpt, scene)
-
-                    // collect light nodes
-                    let lightNodes =
-                        [|for i in 0 .. dec scene.LightCount do
-                            let light = scene.Lights.[i]
-                            let node = scene.RootNode.FindNode light.Name
-                            yield (light, node)|]
-
-                    // construct bounds and hierarchy
-                    // TODO: P1: consider sanitizing incoming names. Corrupted or incompatible names cause subtle hierarchy bugs.
-                    let lightProbes = SList.make ()
-                    let lights = SList.make ()
-                    let surfaces = SList.make ()
-                    let mutable bounds = box3Zero
-                    let hierarchy =
-                        scene.RootNode.Map ([||], m4Identity, fun node names transform ->
-
-                            [|// collect node
-                              yield PhysicallyBasedNode names
-
-                              // attempt to collect light probe
-                              let lastNameLower = Array.last(names).ToLowerInvariant()
-                              if lastNameLower.Contains "probe" && not (lastNameLower.Contains "probes") then
-                                let names = Array.append names [|"LightProbe"|]
-                                let lightProbeOrigin = transform.Translation
-                                let lightProbeBounds =
-                                    box3
-                                        (v3Dup Constants.Render.LightProbeSizeDefault * -0.5f + lightProbeOrigin)
-                                        (v3Dup Constants.Render.LightProbeSizeDefault)
-                                let lightProbe =
-                                    { LightProbeNames = names
-                                      LightProbeMatrixIsIdentity = transform.IsIdentity
-                                      LightProbeMatrix = transform
-                                      LightProbeBounds = lightProbeBounds }
-                                lightProbes.Add lightProbe
-                                yield PhysicallyBasedLightProbe lightProbe
-
-                              // collect light
-                              // NOTE: this is an n^2 algorithm to deal with nodes having no light information
-                              for i in 0 .. dec lightNodes.Length do
-                                let (light, lightNode) = lightNodes.[i]
-                                if lightNode = node then
-                                    let names = Array.append names [|"Light" + if i > 0 then string i else ""|]
-                                    let lightMatrix = Assimp.ExportMatrix node.TransformWorld
-                                    let color = color (min 1.0f light.ColorDiffuse.R) (min 1.0f light.ColorDiffuse.G) (min 1.0f light.ColorDiffuse.B) 1.0f
-                                    let lightType =
-                                        match light.LightType with
-                                        | Assimp.LightSourceType.Spot -> SpotLight (light.AngleInnerCone, light.AngleOuterCone)
-                                        | _ -> PointLight // default to point light
-                                    let physicallyBasedLight =
-                                        { LightNames = names
-                                          LightMatrixIsIdentity = lightMatrix.IsIdentity
-                                          LightMatrix = lightMatrix
-                                          LightColor = color
-                                          LightBrightness = Constants.Render.BrightnessDefault // TODO: figure out if we can populate this properly.
-                                          LightAttenuationLinear = if light.AttenuationLinear > 0.0f then light.AttenuationLinear else Constants.Render.AttenuationLinearDefault
-                                          LightAttenuationQuadratic = if light.AttenuationQuadratic > 0.0f then light.AttenuationQuadratic else Constants.Render.AttenuationQuadraticDefault
-                                          LightCutoff = Constants.Render.LightCutoffDefault // TODO: figure out if we can populate this properly.
-                                          LightType = lightType
-                                          LightDesireShadows = false }
-                                    lights.Add physicallyBasedLight
-                                    yield PhysicallyBasedLight physicallyBasedLight
-
-                              // collect surfaces
-                              for i in 0 .. dec node.MeshIndices.Count do
-                                let names = Array.append names [|"Geometry" + if i > 0 then string (inc i) else ""|]
-                                let meshIndex = node.MeshIndices.[i]
-                                let materialIndex = scene.Meshes.[meshIndex].MaterialIndex
-                                let (properties, material) = materials.[materialIndex]
-                                let geometry = geometries.[meshIndex]
-                                let surface = PhysicallyBasedSurface.make names transform geometry.Bounds properties material materialIndex node geometry
-                                bounds <- bounds.Combine (geometry.Bounds.Transform transform)
-                                surfaces.Add surface
-                                yield PhysicallyBasedSurface surface|]
-                            |> TreeNode)
-
-                    // fin
-                    Right
-                        { Animated = animated
-                          Bounds = bounds
-                          LightProbes = Array.ofSeq lightProbes
-                          Lights = Array.ofSeq lights
-                          Surfaces = Array.ofSeq surfaces
-                          SceneOpt = Some scene
-                          PhysicallyBasedHierarchy = hierarchy }
-
-                // error
-                | Left error -> Left ("Could not load materials for static model in file name '" + filePath + "' due to: " + error)
-            | Left error -> Left error
-
-
-    /// Physically-based pipelines.
-    type PhysicallyBasedPipelines =
-        { DeferredStaticPipeline : PhysicallyBasedPipeline
-          DeferredLightingPipeline : PhysicallyBasedDeferredLightingPipeline
-          ForwardStaticPipeline : PhysicallyBasedPipeline }
-
     let CreatePhysicallyBasedPipelines
         (lightMapsMax,
          lightsMax,
@@ -2224,3 +2116,111 @@ module PhysicallyBased =
         DestroyPhysicallyBasedPipeline physicallyBasedPipelines.DeferredStaticPipeline vkc
         DestroyPhysicallyBasedDeferredLightingPipeline physicallyBasedPipelines.DeferredLightingPipeline vkc
         DestroyPhysicallyBasedPipeline physicallyBasedPipelines.ForwardStaticPipeline vkc
+
+/// Memoizes physically-based scene loads.
+type PhysicallyBasedSceneClient () =
+
+    /// Attempt to create physically-based model from a model file with assimp.
+    /// Thread-safe if vkcOpt = None.
+    member this.TryCreatePhysicallyBasedModel (vkcOpt, filePath, defaultMaterial, textureClient) =
+
+        // attempt to import from assimp scene
+        match AssimpContext.TryGetScene filePath with
+        | Right scene ->
+            let dirPath = PathF.GetDirectoryName filePath
+            match PhysicallyBased.TryCreatePhysicallyBasedMaterials (vkcOpt, dirPath, defaultMaterial, textureClient, scene) with
+            | Right materials ->
+                let animated = scene.Animations.Count <> 0
+                let geometries =
+                    if animated
+                    then PhysicallyBased.CreatePhysicallyBasedAnimatedGeometries (vkcOpt, scene)
+                    else PhysicallyBased.CreatePhysicallyBasedStaticGeometries (vkcOpt, scene)
+
+                // collect light nodes
+                let lightNodes =
+                    [|for i in 0 .. dec scene.LightCount do
+                        let light = scene.Lights.[i]
+                        let node = scene.RootNode.FindNode light.Name
+                        yield (light, node)|]
+
+                // construct bounds and hierarchy
+                // TODO: P1: consider sanitizing incoming names. Corrupted or incompatible names cause subtle hierarchy bugs.
+                let lightProbes = SList.make ()
+                let lights = SList.make ()
+                let surfaces = SList.make ()
+                let mutable bounds = box3Zero
+                let hierarchy =
+                    scene.RootNode.Map ([||], m4Identity, fun node names transform ->
+
+                        [|// collect node
+                          yield PhysicallyBasedNode names
+
+                          // attempt to collect light probe
+                          let lastNameLower = Array.last(names).ToLowerInvariant()
+                          if lastNameLower.Contains "probe" && not (lastNameLower.Contains "probes") then
+                            let names = Array.append names [|"LightProbe"|]
+                            let lightProbeOrigin = transform.Translation
+                            let lightProbeBounds =
+                                box3
+                                    (v3Dup Constants.Render.LightProbeSizeDefault * -0.5f + lightProbeOrigin)
+                                    (v3Dup Constants.Render.LightProbeSizeDefault)
+                            let lightProbe =
+                                { LightProbeNames = names
+                                  LightProbeMatrixIsIdentity = transform.IsIdentity
+                                  LightProbeMatrix = transform
+                                  LightProbeBounds = lightProbeBounds }
+                            lightProbes.Add lightProbe
+                            yield PhysicallyBasedLightProbe lightProbe
+
+                          // collect light
+                          // NOTE: this is an n^2 algorithm to deal with nodes having no light information
+                          for i in 0 .. dec lightNodes.Length do
+                            let (light, lightNode) = lightNodes.[i]
+                            if lightNode = node then
+                                let names = Array.append names [|"Light" + if i > 0 then string i else ""|]
+                                let lightMatrix = Assimp.ExportMatrix node.TransformWorld
+                                let color = color (min 1.0f light.ColorDiffuse.R) (min 1.0f light.ColorDiffuse.G) (min 1.0f light.ColorDiffuse.B) 1.0f
+                                let lightType =
+                                    match light.LightType with
+                                    | Assimp.LightSourceType.Spot -> SpotLight (light.AngleInnerCone, light.AngleOuterCone)
+                                    | _ -> PointLight // default to point light
+                                let physicallyBasedLight =
+                                    { LightNames = names
+                                      LightMatrixIsIdentity = lightMatrix.IsIdentity
+                                      LightMatrix = lightMatrix
+                                      LightColor = color
+                                      LightBrightness = Constants.Render.BrightnessDefault // TODO: figure out if we can populate this properly.
+                                      LightAttenuationLinear = if light.AttenuationLinear > 0.0f then light.AttenuationLinear else Constants.Render.AttenuationLinearDefault
+                                      LightAttenuationQuadratic = if light.AttenuationQuadratic > 0.0f then light.AttenuationQuadratic else Constants.Render.AttenuationQuadraticDefault
+                                      LightCutoff = Constants.Render.LightCutoffDefault // TODO: figure out if we can populate this properly.
+                                      LightType = lightType
+                                      LightDesireShadows = false }
+                                lights.Add physicallyBasedLight
+                                yield PhysicallyBasedLight physicallyBasedLight
+
+                          // collect surfaces
+                          for i in 0 .. dec node.MeshIndices.Count do
+                            let names = Array.append names [|"Geometry" + if i > 0 then string (inc i) else ""|]
+                            let meshIndex = node.MeshIndices.[i]
+                            let materialIndex = scene.Meshes.[meshIndex].MaterialIndex
+                            let (properties, material) = materials.[materialIndex]
+                            let geometry = geometries.[meshIndex]
+                            let surface = PhysicallyBasedSurface.make names transform geometry.Bounds properties material materialIndex node geometry
+                            bounds <- bounds.Combine (geometry.Bounds.Transform transform)
+                            surfaces.Add surface
+                            yield PhysicallyBasedSurface surface|]
+                        |> TreeNode)
+
+                // fin
+                Right
+                    { Animated = animated
+                      Bounds = bounds
+                      LightProbes = Array.ofSeq lightProbes
+                      Lights = Array.ofSeq lights
+                      Surfaces = Array.ofSeq surfaces
+                      SceneOpt = Some scene
+                      PhysicallyBasedHierarchy = hierarchy }
+
+            // error
+            | Left error -> Left ("Could not load materials for static model in file name '" + filePath + "' due to: " + error)
+        | Left error -> Left error

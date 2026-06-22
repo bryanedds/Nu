@@ -9,18 +9,18 @@ open Vortice.Vulkan
 open Prime
 open Nu
 
-[<RequireQualifiedAccess>]
-module Sprite =
+[<Struct; StructLayout(LayoutKind.Explicit)>]
+type SpriteVert =
+    [<FieldOffset(0)>] val mutable modelViewProjection : Matrix4x4
+    [<FieldOffset(64)>] val mutable texCoords4 : Vector4
+    
+[<Struct; StructLayout(LayoutKind.Explicit)>]
+type SpriteFrag =
+    [<FieldOffset(0)>] val mutable color : Vector4
 
-    [<Struct; StructLayout(LayoutKind.Explicit)>]
-    type SpriteVert =
-        [<FieldOffset(0)>] val mutable modelViewProjection : Matrix4x4
-        [<FieldOffset(64)>] val mutable texCoords4 : Vector4
-    
-    [<Struct; StructLayout(LayoutKind.Explicit)>]
-    type SpriteFrag =
-        [<FieldOffset(0)>] val mutable color : Vector4
-    
+[<RequireQualifiedAccess>]
+module SpriteSingleton =
+
     let VertexSize = sizeof<single> * 2
     
     /// Create a sprite pipeline.

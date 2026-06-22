@@ -132,6 +132,6 @@ type RenderAsset =
     | RawAsset
     | TextureAsset of Texture : Texture
     | FontAsset of FontSizeDefault : single * Font : TTF_Font nativeptr
-    | CubeMapAsset of FilePaths : CubeMap.CubeMapKey * CubeMap : Texture * IrradianceAndEnvironmentMapOptRef : (Texture * Texture) option ref
-    | StaticModelAsset of UserDefined : bool * StaticModel : PhysicallyBased.PhysicallyBasedModel
-    | AnimatedModelAsset of AnimatedModel : PhysicallyBased.PhysicallyBasedModel
+    | CubeMapAsset of FilePaths : CubeMapKey * CubeMap : Texture * IrradianceAndEnvironmentMapOptRef : (Texture * Texture) option ref
+    | StaticModelAsset of UserDefined : bool * StaticModel : PhysicallyBasedModel
+    | AnimatedModelAsset of AnimatedModel : PhysicallyBasedModel

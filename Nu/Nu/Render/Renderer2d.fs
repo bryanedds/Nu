@@ -192,7 +192,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
           UnfilteredSampler : Sampler
           FilteredSampler : Sampler
           TextTextures : Dictionary<obj, bool ref * (int * int * Matrix4x4 * Texture)>
-          SpriteBatchEnv : SpriteBatch.SpriteBatchEnv
+          SpriteBatchEnv : SpriteBatchEnv
           SpritePipeline : Nu.Vulkan.Buffer * Nu.Vulkan.Buffer * Pipeline
           ContourTessellationPipeline : Nu.Vulkan.Buffer * Nu.Vulkan.Buffer * Nu.Vulkan.Buffer * Pipeline
           RenderPackages : Packages<RenderAsset, AssetClient>
@@ -228,7 +228,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         match PathF.GetExtensionLower asset.FilePath with
         | ImageExtension _ ->
             let textureEir =
-                if Texture.InferFiltered2d asset.FilePath
+                if Hl.InferFiltered2d asset.FilePath
                 then assetClient.TextureClient.TryCreateTextureFiltered (false, Uncompressed, asset.FilePath, RenderThread, renderer.VulkanContext)
                 else assetClient.TextureClient.TryCreateTextureUnfiltered (false, asset.FilePath, RenderThread, renderer.VulkanContext)
             match textureEir with
@@ -270,8 +270,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                     let assetClient =
                         AssetClient
                             (TextureClient None,
-                             CubeMap.CubeMapClient (),
-                             PhysicallyBased.PhysicallyBasedSceneClient ())
+                             CubeMapClient (),
+                             PhysicallyBasedSceneClient ())
                     let renderPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = assetClient }
                     renderer.RenderPackages[packageName] <- renderPackage
                     renderPackage
@@ -870,7 +870,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                             let (spriteVertUniform, spriteFragUniform, pipeline) = renderer.SpritePipeline
                             let insetOpt : Box2 voption = ValueNone
                             let color = Color.White
-                            Sprite.DrawSprite
+                            SpriteSingleton.DrawSprite
                                 (vertices,
                                  indices,
                                  absolute,
@@ -1039,8 +1039,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         let filteredSampler = Sampler.create VkSamplerAddressMode.Repeat VkFilter.Linear VkFilter.Linear true vkc
         
         // create text resources
-        let spritePipeline = Sprite.CreateSpritePipeline vkc
-        let textQuad = Sprite.CreateSpriteQuad true vkc
+        let spritePipeline = SpriteSingleton.CreateSpritePipeline vkc
+        let textQuad = SpriteSingleton.CreateSpriteQuad true vkc
         let textureDestroyer = TextureDestroyer.create ()
 
         // create sprite batch env

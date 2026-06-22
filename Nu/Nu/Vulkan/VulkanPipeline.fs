@@ -138,24 +138,24 @@ and DescriptorSet<'k when 'k : equality> =
     interface DescriptorSet with
 
         member this.BeginFrame () =
-            for entry in this.VkDescriptorSets_.[HlInternal.CurrentFrame] do
-                this.VkDescriptorSetsAvailable_.[HlInternal.CurrentFrame].Enqueue entry.Value
-            this.VkDescriptorSets_.[HlInternal.CurrentFrame].Clear ()
+            for entry in this.VkDescriptorSets_.[Hl.CurrentFrame] do
+                this.VkDescriptorSetsAvailable_.[Hl.CurrentFrame].Enqueue entry.Value
+            this.VkDescriptorSets_.[Hl.CurrentFrame].Clear ()
 
         member this.Specify (keyObj : obj) (vkc : VulkanContext) (specify : VkDescriptorSet -> unit) : VkDescriptorSet =
             let key = keyObj :?> 'k
-            match this.VkDescriptorSets_.[HlInternal.CurrentFrame].TryGetValue key with
+            match this.VkDescriptorSets_.[Hl.CurrentFrame].TryGetValue key with
             | (false, _) ->
                 let mutable vkDescriptorSet = Unchecked.defaultof<_>
-                let found = this.VkDescriptorSetsAvailable_.[HlInternal.CurrentFrame].TryDequeue &vkDescriptorSet
+                let found = this.VkDescriptorSetsAvailable_.[Hl.CurrentFrame].TryDequeue &vkDescriptorSet
                 if not found then
-                    let count = this.VkDescriptorSets_.[HlInternal.CurrentFrame].Count
+                    let count = this.VkDescriptorSets_.[Hl.CurrentFrame].Count
                     let (vkDescriptorPool, vkDescriptorSets) =
                         DescriptorSet<_>.allocateVkDescriptorSets count this.DescriptorSetDefinition_ this.VkDescriptorSetLayout_ vkc
                     this.VkDescriptorPools_.Add vkDescriptorPool
                     this.VkDescriptorSetsAvailable_ <- vkDescriptorSets
-                    vkDescriptorSet <- this.VkDescriptorSetsAvailable_.[HlInternal.CurrentFrame].Dequeue ()
-                this.VkDescriptorSets_.[HlInternal.CurrentFrame].Add (key, vkDescriptorSet)
+                    vkDescriptorSet <- this.VkDescriptorSetsAvailable_.[Hl.CurrentFrame].Dequeue ()
+                this.VkDescriptorSets_.[Hl.CurrentFrame].Add (key, vkDescriptorSet)
                 specify vkDescriptorSet
                 vkDescriptorSet
             | (true, vkDescriptorSet) -> vkDescriptorSet

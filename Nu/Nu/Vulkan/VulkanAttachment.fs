@@ -19,7 +19,7 @@ module Attachment =
         let textureParallel =
             TextureParallel.create
                 MipmapNone (AttachmentColor true) textureType optionalUsages
-                (Hl.CheckAttachmentFormat (vkc.VkPhysicalDevice, internalFormat)) pixelFormat metadata vkc
+                (Hl.checkAttachmentFormat (vkc.VkPhysicalDevice, internalFormat)) pixelFormat metadata vkc
         EagerTexture { TextureMetadata = TextureMetadata.empty; TextureParallel = textureParallel }
     
     /// Create depth attachment.
@@ -28,7 +28,7 @@ module Attachment =
         let textureParallel =
             TextureParallel.create
                 MipmapNone (AttachmentDepth true) Texture2d optionalUsages
-                (Hl.CheckAttachmentFormat (vkc.VkPhysicalDevice, D32f)) Depth metadata vkc
+                (Hl.checkAttachmentFormat (vkc.VkPhysicalDevice, D32f)) Depth metadata vkc
         EagerTexture { TextureMetadata = TextureMetadata.empty; TextureParallel = textureParallel }
     
     /// Create general-purpose attachments.

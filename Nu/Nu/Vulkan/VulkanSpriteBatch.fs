@@ -9,67 +9,67 @@ open Vortice.Vulkan
 open Prime
 open Nu
 
+[<Struct; StructLayout(LayoutKind.Explicit)>]
+type Sprite =
+    [<FieldOffset(0)>] val mutable perimeter : Vector4
+    [<FieldOffset(16)>] val mutable pivot : Vector2
+    [<FieldOffset(24)>] val mutable rotation : single
+    [<FieldOffset(32)>] val mutable texCoords : Vector4
+    [<FieldOffset(48)>] val mutable color : Vector4
+    
+[<Struct; StructLayout(LayoutKind.Explicit)>]
+type ViewProjection =
+    [<FieldOffset(0)>] val mutable viewProjection : Matrix4x4
+    
+type [<Struct>] SpriteBatchState =
+    { Absolute : bool
+      ClipOpt : Box2 voption
+      Blend : VulkanBlend
+      TextureOpt : Texture voption }
+
+    static member inline changed state state2 =
+        state.Absolute <> state2.Absolute ||
+        (match struct (state.ClipOpt, state2.ClipOpt) with
+         | struct (ValueSome _, ValueNone) -> true
+         | struct (ValueNone, ValueSome _) -> true
+         | struct (ValueNone, ValueNone) -> false
+         | struct (ValueSome c, ValueSome c2) -> c <> c2) ||
+        state.Blend <> state2.Blend ||
+        (match struct (state.TextureOpt, state2.TextureOpt) with
+         | struct (ValueSome _, ValueNone) -> true
+         | struct (ValueNone, ValueSome _) -> true
+         | struct (ValueNone, ValueNone) -> false
+         | struct (ValueSome t, ValueSome t2) -> t <> t2)
+
+    static member inline make absolute clipOpt blend texture =
+        { Absolute = absolute; ClipOpt = clipOpt; Blend = blend; TextureOpt = ValueSome texture }
+
+    static member defaultState =
+        { Absolute = false; ClipOpt = ValueNone; Blend = VulkanTransparent; TextureOpt = ValueNone }
+
+/// The environment that contains the internal state required for batching sprites.
+type [<ReferenceEquality>] SpriteBatchEnv =
+    private
+        { mutable SpriteIndex : int
+          mutable ViewProjection2dAbsolute : Matrix4x4
+          mutable ViewProjection2dRelative : Matrix4x4
+          mutable ViewProjectionClipAbsolute : Matrix4x4
+          mutable ViewProjectionClipRelative : Matrix4x4
+          VulkanContext : VulkanContext
+          Pipeline : Pipeline
+          UnfilteredSampler : Sampler
+          FilteredSampler : Sampler
+          SpritesUniform : Nu.Vulkan.Buffer
+          ViewProjectionUniform : Nu.Vulkan.Buffer
+          Perimeters : Vector4 array
+          Pivots : Vector2 array
+          Rotations : single array
+          TexCoordses : Vector4 array
+          Colors : Vector4 array
+          mutable State : SpriteBatchState }
+
 [<RequireQualifiedAccess>]
 module SpriteBatch =
-
-    [<Struct; StructLayout(LayoutKind.Explicit)>]
-    type Sprite =
-        [<FieldOffset(0)>] val mutable perimeter : Vector4
-        [<FieldOffset(16)>] val mutable pivot : Vector2
-        [<FieldOffset(24)>] val mutable rotation : single
-        [<FieldOffset(32)>] val mutable texCoords : Vector4
-        [<FieldOffset(48)>] val mutable color : Vector4
-    
-    [<Struct; StructLayout(LayoutKind.Explicit)>]
-    type ViewProjection =
-        [<FieldOffset(0)>] val mutable viewProjection : Matrix4x4
-    
-    type [<Struct>] private SpriteBatchState =
-        { Absolute : bool
-          ClipOpt : Box2 voption
-          Blend : VulkanBlend
-          TextureOpt : Texture voption }
-
-        static member inline changed state state2 =
-            state.Absolute <> state2.Absolute ||
-            (match struct (state.ClipOpt, state2.ClipOpt) with
-             | struct (ValueSome _, ValueNone) -> true
-             | struct (ValueNone, ValueSome _) -> true
-             | struct (ValueNone, ValueNone) -> false
-             | struct (ValueSome c, ValueSome c2) -> c <> c2) ||
-            state.Blend <> state2.Blend ||
-            (match struct (state.TextureOpt, state2.TextureOpt) with
-             | struct (ValueSome _, ValueNone) -> true
-             | struct (ValueNone, ValueSome _) -> true
-             | struct (ValueNone, ValueNone) -> false
-             | struct (ValueSome t, ValueSome t2) -> t <> t2)
-
-        static member inline make absolute clipOpt blend texture =
-            { Absolute = absolute; ClipOpt = clipOpt; Blend = blend; TextureOpt = ValueSome texture }
-
-        static member defaultState =
-            { Absolute = false; ClipOpt = ValueNone; Blend = VulkanTransparent; TextureOpt = ValueNone }
-
-    /// The environment that contains the internal state required for batching sprites.
-    type [<ReferenceEquality>] SpriteBatchEnv =
-        private
-            { mutable SpriteIndex : int
-              mutable ViewProjection2dAbsolute : Matrix4x4
-              mutable ViewProjection2dRelative : Matrix4x4
-              mutable ViewProjectionClipAbsolute : Matrix4x4
-              mutable ViewProjectionClipRelative : Matrix4x4
-              VulkanContext : VulkanContext
-              Pipeline : Pipeline
-              UnfilteredSampler : Sampler
-              FilteredSampler : Sampler
-              SpritesUniform : Nu.Vulkan.Buffer
-              ViewProjectionUniform : Nu.Vulkan.Buffer
-              Perimeters : Vector4 array
-              Pivots : Vector2 array
-              Rotations : single array
-              TexCoordses : Vector4 array
-              Colors : Vector4 array
-              mutable State : SpriteBatchState }
 
     /// Create a sprite batch pipeline.
     let private CreateSpriteBatchPipeline (vkc : VulkanContext) =

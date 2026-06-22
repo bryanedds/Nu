@@ -245,10 +245,11 @@ type BufferParallel =
           BufferType_ : BufferType }
 
     member private this.IsParallel = this.BufferType_.IsParallel
-    member private this.CurrentIndex = if this.IsParallel then HlInternal.CurrentFrame else 0
+    member private this.CurrentIndex = if this.IsParallel then Hl.CurrentFrame else 0
     member private this.BufferSingleton = this.BufferSingletons_.[this.CurrentIndex]
     member private this.BufferSize = this.BufferSizes_.[this.CurrentIndex]
-    
+
+    /// The currently selected vulkan buffer.
     member this.VkBuffer = this.BufferSingleton.VkBuffer
 
     /// Create a BufferSingleton.

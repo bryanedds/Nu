@@ -33,8 +33,8 @@ type Metadata =
     | TextureMetadata of TextureMetadata
     | TileMapMetadata of TileMapMetadata
     | SpineSkeletonMetadata of SpineSkeletonMetadata
-    | StaticModelMetadata of PhysicallyBased.PhysicallyBasedModel
-    | AnimatedModelMetadata of PhysicallyBased.PhysicallyBasedModel
+    | StaticModelMetadata of PhysicallyBasedModel
+    | AnimatedModelMetadata of PhysicallyBasedModel
     | SoundMetadata
     | SongMetadata
 
@@ -84,7 +84,7 @@ module Metadata =
                 Some (TextureMetadata.make image.Width image.Height)
             else
                 Log.infoOnce "Slow path used to load texture metadata."
-                match Texture.TryCreateTextureData (true, filePath) with
+                match Hl.TryCreateTextureData (true, filePath) with
                 | Some textureData ->
                     let metadata = textureData.Metadata
                     textureData.Dispose ()
@@ -155,8 +155,8 @@ module Metadata =
     let private tryGenerateModelMetadata (asset : Asset) =
         if File.Exists asset.FilePath then
             let textureClient = TextureClient None // unused. TODO: consider making this opt.
-            let sceneClient = PhysicallyBased.PhysicallyBasedSceneClient () // unused. TODO: consider making this opt.
-            match sceneClient.TryCreatePhysicallyBasedModel (None, asset.FilePath, PhysicallyBased.PhysicallyBasedMaterial.empty, textureClient) with
+            let sceneClient = PhysicallyBasedSceneClient () // unused. TODO: consider making this opt.
+            match sceneClient.TryCreatePhysicallyBasedModel (None, asset.FilePath, PhysicallyBasedMaterial.empty, textureClient) with
             | Right model ->
                 if model.Animated
                 then Some (AnimatedModelMetadata model)

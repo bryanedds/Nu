@@ -12,7 +12,7 @@ open Prime
 open Nu.Vulkan
 
 /// Provides asset clients for direct usage.
-type AssetClient (textureClient : TextureClient, cubeMapClient : CubeMap.CubeMapClient, sceneClient : PhysicallyBased.PhysicallyBasedSceneClient) =
+type AssetClient (textureClient : TextureClient, cubeMapClient : CubeMapClient, sceneClient : PhysicallyBasedSceneClient) =
 
     /// The texture client.
     member this.TextureClient = textureClient
@@ -41,7 +41,7 @@ type AssetClient (textureClient : TextureClient, cubeMapClient : CubeMap.CubeMap
         let textureDataLoadOps =
             [for textureAsset in textureAssets do
                 vsync {
-                    match Texture.TryCreateTextureData (not is2d, textureAsset.FilePath) with
+                    match Hl.TryCreateTextureData (not is2d, textureAsset.FilePath) with
                     | Some textureData -> return Right (textureAsset.FilePath, textureData)
                     | None -> return Left ("Error creating texture data from '" + textureAsset.FilePath + "'") }]
 
@@ -63,18 +63,18 @@ type AssetClient (textureClient : TextureClient, cubeMapClient : CubeMap.CubeMap
                 let texture =
                     if is2d then
                         let (metadata, textureParallel) =
-                            if Texture.InferFiltered2d filePath
-                            then Texture.CreateTextureVulkanFromData (true, Uncompressed, textureData, RenderThread, vkc)
-                            else Texture.CreateTextureVulkanFromData (false, Uncompressed, textureData, RenderThread, vkc)
+                            if Hl.InferFiltered2d filePath
+                            then Hl.CreateTextureVulkanFromData (true, Uncompressed, textureData, RenderThread, vkc)
+                            else Hl.CreateTextureVulkanFromData (false, Uncompressed, textureData, RenderThread, vkc)
                         EagerTexture { TextureMetadata = metadata; TextureParallel = textureParallel }
                     elif textureData.LazyLoadable then
-                        let (metadata, textureParallel) = Texture.CreateTextureVulkanFromData (true, Texture.InferCompression filePath, textureData, RenderThread, vkc)
+                        let (metadata, textureParallel) = Hl.CreateTextureVulkanFromData (true, Hl.InferCompression filePath, textureData, RenderThread, vkc)
                         let lazyTexture = new LazyTexture (filePath, metadata, textureParallel)
                         textureClient.LazyTextureQueue.Enqueue lazyTexture
                         LazyTexture lazyTexture
                     else
                         Log.infoOnce "One or more textures for non-2D usage are not streamable; consider using the BlockCompress refinement with them for more efficient loading."
-                        let (metadata, textureParallel) = Texture.CreateTextureVulkanFromData (true, Texture.InferCompression filePath, textureData, RenderThread, vkc)
+                        let (metadata, textureParallel) = Hl.CreateTextureVulkanFromData (true, Hl.InferCompression filePath, textureData, RenderThread, vkc)
                         EagerTexture { TextureMetadata = metadata; TextureParallel = textureParallel }
                 textureClient.Textures[filePath] <- texture
             | Left error -> Log.info error

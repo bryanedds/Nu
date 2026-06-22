@@ -20,24 +20,41 @@ open Vortice.Vulkan
 open Prime
 open Nu
 
-// NOTE: on Nu's texturing nomenclature -
-// Texture | Texture2d =    2d texture
-// Texture3d =              3d texture
-// (Cube|_)Map =            cube map
-[<RequireQualifiedAccess>]
-module internal TextureInternal =
+////////////////////////////////////////////
+// NOTE: on Nu's texturing nomenclature - //
+// Texture | Texture2d =    2d texture    //
+// Texture3d =              3d texture    //
+// (Cube|_)Map =            cube map      //
+////////////////////////////////////////////
 
-    // provides id for a texture on the gpu that is globally unique i.e. cannot be reused after texture is destroyed,
-    // which is essential for tracking descriptor writes
-    let mutable private TextureIdGenerationLock = obj ()
-    let mutable private TextureIdCounter = 0UL
-    let internal GenTextureId () = lock TextureIdGenerationLock (fun () -> TextureIdCounter <- inc TextureIdCounter; TextureIdCounter)
-    
-    /// The forward-declared empty texture value.
-    /// Initialized in RendererProcesses.
-    /// NOTE: if performance issues arise from checking / casting this, maybe use ValueOption or null directly.
-    /// TODO: see if instead of exposing mutability of this directly, we should define Init and CleanUp fns.
-    let mutable internal EmptyOpt : obj option = None
+/// A Vulkan sampler.
+type Sampler =
+    private
+        { VkSampler_ : VkSampler }
+
+    member this.VkSampler =
+        this.VkSampler_
+
+    /// Create a Sampler.
+    static member create addressMode minFilter magFilter anisoFilter (vkc : VulkanContext) =
+        let mutable info = VkSamplerCreateInfo ()
+        info.magFilter <- magFilter
+        info.minFilter <- minFilter
+        info.mipmapMode <- VkSamplerMipmapMode.Linear
+        info.addressModeU <- addressMode
+        info.addressModeV <- addressMode
+        info.addressModeW <- addressMode
+        if anisoFilter then
+            info.anisotropyEnable <- true
+            info.maxAnisotropy <- min vkc.MaxAnisotropy Constants.Render.TextureAnisotropyMax
+        info.maxLod <- Vulkan.VK_LOD_CLAMP_NONE
+        let mutable vkSampler = Unchecked.defaultof<VkSampler>
+        Vulkan.vkCreateSampler (vkc.Device, &info, nullPtr, &vkSampler) |> Hl.check
+        { VkSampler_ = vkSampler }
+
+    /// Destroy a Sampler.
+    static member destroy sampler (vkc : VulkanContext) =
+        Vulkan.vkDestroySampler (vkc.Device, sampler.VkSampler_, nullPtr)
 
 /// The thread on which a texture is loaded.
 type TextureLoadThread =
@@ -126,392 +143,6 @@ type TextureType =
         | Texture2dArray _ -> VkImageViewType.Image2DArray
         | TextureCubeMap -> VkImageViewType.ImageCube
 
-[<RequireQualifiedAccess>]
-module Texture =
-
-    /// Record command to copy buffer to image.
-    let RecordBufferToImageCopy (commandBuffer, width, height, mipLevel, layer, vkBuffer, vkImage) =
-        Hl.recordTransitionLayout false mipLevel layer 1 VkImageAspectFlags.Color Undefined TransferDst vkImage commandBuffer
-        let mutable region = VkBufferImageCopy ()
-        region.imageSubresource <- Hl.makeSubresourceLayers mipLevel layer VkImageAspectFlags.Color
-        region.imageExtent <- VkExtent3D (width, height, 1)
-        Vulkan.vkCmdCopyBufferToImage
-            (commandBuffer, vkBuffer, vkImage,
-             TransferDst.VkImageLayout,
-             1u, asPointer &region)
-        Hl.recordTransitionLayout false mipLevel layer 1 VkImageAspectFlags.Color TransferDst ShaderRead vkImage commandBuffer
-
-    /// Record commands to generate mipmaps.
-    let RecordGenerateMipmaps (commandBuffer, width, height, mipLevels, layer, vkImage) =
-        
-        // use single barrier for all transfer operations
-        let mutable barrier = VkImageMemoryBarrier ()
-        barrier.srcQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
-        barrier.dstQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
-        barrier.image <- vkImage
-        
-        // transition mipmap images from undefined as they haven't been touched yet
-        barrier.srcAccessMask <- Undefined.Access
-        barrier.dstAccessMask <- TransferDst.Access
-        barrier.oldLayout <- Undefined.VkImageLayout
-        barrier.newLayout <- TransferDst.VkImageLayout
-        barrier.subresourceRange <- Hl.makeSubresourceRange 1 (mipLevels - 1) layer 1 VkImageAspectFlags.Color
-        Vulkan.vkCmdPipelineBarrier
-            (commandBuffer,
-             Undefined.PipelineStage,
-             TransferDst.PipelineStage,
-             VkDependencyFlags.None,
-             0u, nullPtr, 0u, nullPtr,
-             1u, asPointer &barrier)
-        
-        // transition original image separately as it's already set to shader read
-        barrier.srcAccessMask <- ShaderRead.Access
-        barrier.dstAccessMask <- TransferDst.Access
-        barrier.oldLayout <- ShaderRead.VkImageLayout
-        barrier.newLayout <- TransferDst.VkImageLayout
-        barrier.subresourceRange.baseMipLevel <- 0u
-        barrier.subresourceRange.levelCount <- 1u // only one level at a time from here on
-        Vulkan.vkCmdPipelineBarrier
-            (commandBuffer,
-             ShaderRead.PipelineStage,
-             TransferDst.PipelineStage,
-             VkDependencyFlags.None,
-             0u, nullPtr, 0u, nullPtr,
-             1u, asPointer &barrier)
-        
-        // compute mipmap dimensions
-        let mutable mipWidth = width
-        let mutable mipHeight = height
-        for i in 1 .. dec mipLevels do
-            
-            // transition layout of previous image to be copied from
-            barrier.srcAccessMask <- TransferDst.Access
-            barrier.dstAccessMask <- TransferSrc.Access
-            barrier.oldLayout <- TransferDst.VkImageLayout
-            barrier.newLayout <- TransferSrc.VkImageLayout
-            barrier.subresourceRange.baseMipLevel <- uint (i - 1)
-            Vulkan.vkCmdPipelineBarrier
-                (commandBuffer,
-                 TransferDst.PipelineStage,
-                 TransferSrc.PipelineStage,
-                 VkDependencyFlags.None,
-                 0u, nullPtr, 0u, nullPtr,
-                 1u, asPointer &barrier)
-            
-            // generate the next mipmap image from the previous one
-            let nextWidth = if mipWidth > 1 then mipWidth / 2 else 1
-            let nextHeight = if mipHeight > 1 then mipHeight / 2 else 1
-            let mutable blit =
-                Hl.makeBlit
-                    (i - 1) i layer layer
-                    (VkRect2D (0, 0, uint mipWidth, uint mipHeight))
-                    (VkRect2D (0, 0, uint nextWidth, uint nextHeight))
-            Vulkan.vkCmdBlitImage (commandBuffer, vkImage, TransferSrc.VkImageLayout, vkImage, TransferDst.VkImageLayout, 1u, asPointer &blit, VkFilter.Linear)
-            
-            // transition layout of previous image to be read by shader
-            barrier.srcAccessMask <- TransferSrc.Access
-            barrier.dstAccessMask <- ShaderRead.Access
-            barrier.oldLayout <- TransferSrc.VkImageLayout
-            barrier.newLayout <- ShaderRead.VkImageLayout
-            Vulkan.vkCmdPipelineBarrier
-                (commandBuffer,
-                 TransferSrc.PipelineStage,
-                 ShaderRead.PipelineStage,
-                 VkDependencyFlags.None,
-                 0u, nullPtr, 0u, nullPtr,
-                 1u, asPointer &barrier)
-            
-            // update mipmap dimensions
-            mipWidth <- nextWidth
-            mipHeight <- nextHeight
-        
-        // transition final mip image left unfinished by loop
-        barrier.srcAccessMask <- TransferDst.Access
-        barrier.dstAccessMask <- ShaderRead.Access
-        barrier.oldLayout <- TransferDst.VkImageLayout
-        barrier.newLayout <- ShaderRead.VkImageLayout
-        barrier.subresourceRange.baseMipLevel <- uint (mipLevels - 1)
-        Vulkan.vkCmdPipelineBarrier
-            (commandBuffer,
-             TransferDst.PipelineStage,
-             ShaderRead.PipelineStage,
-             VkDependencyFlags.None,
-             0u, nullPtr, 0u, nullPtr,
-             1u, asPointer &barrier)
-    
-    /// Infer that an asset with the given file path should be filtered in a 2D rendering context.
-    let InferFiltered2d (filePath : string) =
-        let name = PathF.GetFileNameWithoutExtension filePath
-        name.EndsWith "_f" ||
-        name.EndsWith "Filtered"
-    
-    /// Infer the type of block compression that an asset with the given file path should utilize.
-    let InferCompression (filePath : string) =
-        let name = PathF.GetFileNameWithoutExtension filePath
-        if  name.EndsWith "_f" ||
-            name.EndsWith "_hm" ||
-            name.EndsWith "_b" ||
-            name.EndsWith "_t" ||
-            name.EndsWith "_u" ||
-            name.EndsWith "Face" ||
-            name.EndsWith "HeightMap" ||
-            name.EndsWith "Blend" ||
-            name.EndsWith "Tint" ||
-            name.EndsWith "Uncompressed" then Uncompressed
-        elif
-            name.EndsWith "_n" ||
-            name.EndsWith "_normal" ||
-            name.EndsWith "Normal" then NormalCompression
-        else ColorCompression
-
-    /// Detect that a dds file uses a compressed representation.
-    let DetectCompressionDds (dds : DdsFile) =
-        let format = dds.header.ddsPixelFormat.DxgiFormat
-        let formatStr = string format
-        formatStr.StartsWith "DxgiFormatBc" ||
-        formatStr.StartsWith "DxgiFormatAtc"
-
-    /// Detect that a ktx file uses a compressed representation.
-    let DetectCompressionKtx (ktx : KtxFile) =
-        let format = ktx.header.GlInternalFormat
-        let formatStr = string format
-        formatStr.StartsWith "GlCompressed"
-
-    /// Write the binary header of a ktx file.
-    /// Implementation based on https://registry.khronos.org/KTX/specs/1.0/ktxspec.v1.html
-    let WriteKtxHeader (resolution : Vector2i, mipmapLevels, compressed, writer : BinaryWriter) =
-        writer.Write                                                        // ktx identifier
-            [|0xABuy; 0x4Buy; 0x54uy; 0x58uy                                //
-              0x20uy; 0x31uy; 0x31uy; 0xBBuy                                //
-              0x0Duy; 0x0Auy; 0x1Auy; 0x0Auy|]                              //
-        writer.Write 0x04030201u                                            // endianness
-        if compressed                                                       // glType
-        then writer.Write 0x0u                                              // (zero when compressed)
-        else writer.Write (uint OpenGL.Gl.UNSIGNED_BYTE)                    //
-        writer.Write 1u                                                     // glTypeSize
-        if compressed                                                       // glFormat
-        then writer.Write 0x0u                                              // (zero when compressed)
-        else writer.Write (uint OpenGL.PixelFormat.Bgra)                    //
-        if compressed                                                       // glInternalFormat
-        then writer.Write (uint OpenGL.InternalFormat.CompressedRgbaAstc4x4)//
-        else writer.Write (uint OpenGL.InternalFormat.Rgba8)                //
-        writer.Write (uint OpenGL.PixelFormat.Bgra)                         // glBaseInternalFormat
-        writer.Write (uint32 resolution.X)                                  // width
-        writer.Write (uint32 resolution.Y)                                  // height
-        writer.Write 1u                                                     // depth
-        writer.Write 0u                                                     // array elements
-        writer.Write 1u                                                     // faces
-        writer.Write (uint32 mipmapLevels)                                  // mip levels
-        writer.Write 0u                                                     // key-value data size
-
-    /// Attempt to generate uncompressed astc bytes an MagickImage to astc bytes.
-    let TryGenerateUncompressedImage (image : MagickImage) =
-        let pixelBytes = image.GetPixels().ToByteArray(PixelMapping.RGBA)
-        let resolution = v2i (int image.Width) (int image.Height)
-        Some (resolution, pixelBytes)
-
-    /// Attempt to generate uncompressed astc mipmap bytes from a MagickImage.
-    let TryGenerateUncompressedMipmaps (image : MagickImage) =
-        let mutable (width, height) = (image.Width, image.Height)
-        let mipmapOpts =
-            [while width >= 1u && height >= 1u do
-                width <- width / 2u
-                height <- height / 2u
-                let mip = image.Clone () :?> MagickImage
-                mip.Resize (width, height)
-                TryGenerateUncompressedImage mip]
-        match List.definitizePlus mipmapOpts with
-        | (true, mipmaps) -> Some mipmaps
-        | (false, _) -> None
-
-    /// Attempt to compress a MagickImage to astc bytes.
-    let TryCompressImage (image : MagickImage) =
-
-        // attempt to configure astc encoder
-        let pixelBytes = image.GetPixels().ToByteArray(PixelMapping.RGBA)
-        let blockSize = 4u
-        let mutable config = AstcencConfig ()
-        let status = Astcenc.AstcencConfigInit (AstcencProfile.AstcencPrfLdr, blockSize, blockSize, 1u, Astcenc.AstcencPreMedium, Unchecked.defaultof<AstcencFlags>, &config)
-        if status = AstcencError.AstcencSuccess then
-
-            // attempt to initialize astc encoder
-            let mutable context = AstcencContext ()
-            let status = Astcenc.AstcencContextAlloc(ref config, 1u, &context)
-            if status = AstcencError.AstcencSuccess then
-
-                // attempt to compress astc image
-                let mutable astcImage = AstcencImage (dimX = image.Width, dimY = image.Height, dimZ = 1u, dataType = AstcencType.AstcencTypeU8, data = pixelBytes)
-                let swizzle = AstcencSwizzle (r = AstcencSwz.AstcencSwzR, g = AstcencSwz.AstcencSwzG, b = AstcencSwz.AstcencSwzB, a = AstcencSwz.AstcencSwzA)
-                let blockCountX = (uint image.Width + blockSize - 1u) / blockSize
-                let blockCountY = (uint image.Height + blockSize - 1u) / blockSize
-                let compressedLength = blockCountX * blockCountY * 16u
-                let compressedData = Array.zeroCreate<byte> (int compressedLength)
-                let status = Astcenc.AstcencCompressImage (context, &astcImage, swizzle, compressedData.AsSpan (), 0u)
-                if status = AstcencError.AstcencSuccess
-                then Some (v2i (int image.Width) (int image.Height), compressedData)
-                else None
-
-            // failure
-            else None
-
-        // failure
-        else None
-
-    /// Attempt to compress astc mipmap bytes from a MagickImage.
-    let TryCompressMipmaps (image : MagickImage) =
-        let mutable (width, height) = (image.Width, image.Height)
-        let mipmapOpts =
-            [while width >= 8u && height >= 8u do
-                width <- width / 2u
-                height <- height / 2u
-                let mip = image.Clone () :?> MagickImage
-                mip.Resize (width, height)
-                TryCompressImage mip]
-        match List.definitizePlus mipmapOpts with
-        | (true, mipmaps) -> Some mipmaps
-        | (false, _) -> None
-
-    /// Attempt to format an uncompressed pfim image texture (non-mipmap).
-    let TryFormatUncompressedPfimageTexture (format, height, stride, data : byte array) =
-        match format with
-        | ImageFormat.Rgb24 ->
-            let converted =
-                [|let mutable y = 0
-                  while y < height do
-                    let mutable x = 0
-                    while x < stride - 2 do
-                        let i = x + stride * y
-                        data.[i]; data.[i+1]; data.[i+2]; 255uy
-                        x <- x + 3
-                    y <- inc y|]
-            Some converted
-        | ImageFormat.Rgba32 ->
-            let converted =
-                [|let mutable y = 0
-                  while y < height do
-                    let mutable x = 0
-                    while x < stride - 3 do
-                        let i = x + stride * y
-                        data.[i]; data.[i+1]; data.[i+2]; data.[i+3]
-                        x <- x + 4
-                    y <- inc y|]
-            Some converted
-        | _ -> Log.info ("Unsupported image format '" + scstring format + "'."); None
-        
-    /// Attempt to format an uncompressed pfim image mipmap.
-    let FormatUncompressedPfimageMipmap (format, mipmap : MipMapOffset, data : byte array) =
-        match format with
-        | ImageFormat.Rgb24 ->
-            let converted =
-                [|let mutable y = 0
-                  while y < mipmap.Height do
-                    let mutable x = 0
-                    while x < mipmap.Stride - 2 do
-                        let i = x + mipmap.Stride * y + mipmap.DataOffset
-                        data.[i]; data.[i+1]; data.[i+2]; 255uy
-                        x <- x + 3
-                    y <- inc y|]
-            (v2i mipmap.Width mipmap.Height, converted)
-        | ImageFormat.Rgba32 ->
-            let converted =
-                [|let mutable y = 0
-                  while y < mipmap.Height do
-                    let mutable x = 0
-                    while x < mipmap.Stride - 3 do
-                        let i = x + mipmap.Stride * y + mipmap.DataOffset
-                        data.[i]; data.[i+1]; data.[i+2]; data.[i+3]
-                        x <- x + 4
-                    y <- inc y|]
-            (v2i mipmap.Width mipmap.Height, converted)
-        | _ -> failwithumf ()
-
-    /// Attempt to format an uncompressed pfim image.
-    let TryFormatUncompressedPfimage (minimal, image : IImage) =
-        let minimal = minimal && image.MipMaps.Length >= 1 // NOTE: at least one mipmap is needed for minimal load.
-        let data = image.Data // OPTIMIZATION: pulling all values out of image to avoid slow property calls.
-        let format = image.Format
-        let height = image.Height
-        let stride = image.Stride
-        let mipmaps = image.MipMaps
-        let bytesOpt =
-            if not minimal
-            then TryFormatUncompressedPfimageTexture (format, height, stride, data)
-            else Some [||]
-        match bytesOpt with
-        | Some bytes ->
-            let minimalMipmapIndex =
-                if minimal
-                then min (dec mipmaps.Length) (dec Constants.Render.TextureMinimalMipmapIndex)
-                else 0
-            let mipmapBytesArray =
-                [|for i in minimalMipmapIndex .. dec mipmaps.Length do
-                    FormatUncompressedPfimageMipmap (format, mipmaps.[i], data)|]
-            if minimal then
-                let (minimalMipmapResolution, minimalMipmapBytes) = mipmapBytesArray.[0]
-                let remainingMipmapBytes = if minimalMipmapBytes.Length > 1 then Array.tail mipmapBytesArray else [||]
-                Some (minimalMipmapResolution, minimalMipmapBytes, remainingMipmapBytes)
-            else Some (v2i image.Width image.Height, bytes, mipmapBytesArray)
-        | None -> None
-
-    /// Attempt to format compressed pfim image data.
-    let FormatCompressedPfdds (minimal, dds : Dds) =
-        let minimal = minimal && dds.Header.MipMapCount >= 3u // NOTE: at least three mipmaps are needed for minimal load since the last 2 are not valid when compressed.
-        let mutable dims = v2i dds.Width dds.Height
-        let mutable size = ((dims.X + 3) / 4) * ((dims.Y + 3) / 4) * 16
-        let mutable index = 0
-        let bytes =
-            if not minimal
-            then dds.Data.AsSpan(index, size).ToArray()
-            else [||]
-        let minimalMipmapIndex =
-            if minimal
-            then min dds.Header.MipMapCount (uint Constants.Render.TextureMinimalMipmapIndex)
-            else 1u
-        let mipmapBytesArray =
-            if dds.Header.MipMapCount >= 2u then
-                [|for i in 1u .. dds.Header.MipMapCount do
-                    dims <- dims / 2
-                    index <- index + size
-                    size <- size / 4
-                    if  i >= minimalMipmapIndex &&
-                        size >= 16 then // NOTE: as mentioned above, mipmap with size < 16 can exist but isn't valid when compressed.
-                        (dims, dds.Data.AsSpan(index, size).ToArray())|]
-            else [||]
-        if minimal then
-            let (minimalMipmapResolution, minimalMipmapBytes) = mipmapBytesArray.[0]
-            let remainingMipmapBytes = if minimalMipmapBytes.Length > 1 then Array.tail mipmapBytesArray else [||]
-            (minimalMipmapResolution, minimalMipmapBytes, remainingMipmapBytes)
-        else (v2i dds.Width dds.Height, bytes, mipmapBytesArray)
-
-/// A Vulkan sampler.
-type Sampler =
-    private
-        { VkSampler_ : VkSampler }
-
-    member this.VkSampler =
-        this.VkSampler_
-
-    /// Create a Sampler.
-    static member create addressMode minFilter magFilter anisoFilter (vkc : VulkanContext) =
-        let mutable info = VkSamplerCreateInfo ()
-        info.magFilter <- magFilter
-        info.minFilter <- minFilter
-        info.mipmapMode <- VkSamplerMipmapMode.Linear
-        info.addressModeU <- addressMode
-        info.addressModeV <- addressMode
-        info.addressModeW <- addressMode
-        if anisoFilter then
-            info.anisotropyEnable <- true
-            info.maxAnisotropy <- min vkc.MaxAnisotropy Constants.Render.TextureAnisotropyMax
-        info.maxLod <- Vulkan.VK_LOD_CLAMP_NONE
-        let mutable vkSampler = Unchecked.defaultof<VkSampler>
-        Vulkan.vkCreateSampler (vkc.Device, &info, nullPtr, &vkSampler) |> Hl.check
-        { VkSampler_ = vkSampler }
-
-    /// Destroy a Sampler.
-    static member destroy sampler (vkc : VulkanContext) =
-        Vulkan.vkDestroySampler (vkc.Device, sampler.VkSampler_, nullPtr)
-
 /// A Vulkan texture's metadata.
 type TextureMetadata =
     { TextureWidth : int
@@ -532,6 +163,43 @@ type TextureMetadata =
           TextureHeight = 0
           TextureTexelWidth = 0.0f
           TextureTexelHeight = 0.0f }
+
+/// Describes data loaded from a texture.
+type TextureData =
+    | TextureDataDotNet of Metadata : TextureMetadata * Bytes : byte array
+    | TextureDataMipmap of Metadata : TextureMetadata * BlockCompressed : bool * Bytes : byte array * Mipmaps : (Vector2i * byte array) array
+    | TextureDataNative of Metadata : TextureMetadata * TextureDataPtr : nativeint * Disposer : IDisposable
+    
+    /// Whether the texture can be loaded lazily.
+    member this.LazyLoadable =
+        match this with
+        | TextureDataDotNet (_, _) -> false
+        | TextureDataMipmap (_, _, _, _) -> true
+        | TextureDataNative (_, _, _) -> false
+    
+    /// The metadata portion of this texture data.
+    member this.Metadata =
+        match this with
+        | TextureDataDotNet (metadata, _) -> metadata
+        | TextureDataMipmap (metadata, _, _, _) -> metadata
+        | TextureDataNative (metadata, _, _) -> metadata
+    
+    /// The texture byte data.
+    member this.Bytes =
+        match this with
+        | TextureDataDotNet (_, bytes) -> (false, bytes)
+        | TextureDataMipmap (_, compressed, bytes, _) -> (compressed, bytes)
+        | TextureDataNative (metadata, textureDataPtr, _) ->
+            let bytes = Array.zeroCreate<byte> (metadata.TextureWidth * metadata.TextureHeight * sizeof<uint>)
+            Marshal.Copy (textureDataPtr, bytes, 0, bytes.Length)
+            (false, bytes)
+    
+    /// Manual disposal.
+    member this.Dispose () =
+        match this with
+        | TextureDataDotNet (_, _) -> ()
+        | TextureDataMipmap (_, _, _, _) -> ()
+        | TextureDataNative (_, _, disposer) -> disposer.Dispose ()
 
 type TextureSingleton =
     { Id : uint64
@@ -593,7 +261,7 @@ type TextureSingleton =
         | _ -> ()
         
         // fin
-        { Id = TextureInternal.GenTextureId ()
+        { Id = Hl.GenTextureId ()
           Image = image
           Allocation = allocation
           ImageView = imageView
@@ -610,6 +278,366 @@ type TextureSingleton =
         for i in 0 .. dec textureSingleton.StagingBuffers.Count do
             Buffer.destroy textureSingleton.StagingBuffers.[i] vkc
 
+[<AutoOpen>]
+module TextureModule =
+
+    [<RequireQualifiedAccess>]
+    module Hl =
+
+        /// Record command to copy buffer to image.
+        let RecordBufferToImageCopy (commandBuffer, width, height, mipLevel, layer, vkBuffer, vkImage) =
+            Hl.recordTransitionLayout false mipLevel layer 1 VkImageAspectFlags.Color Undefined TransferDst vkImage commandBuffer
+            let mutable region = VkBufferImageCopy ()
+            region.imageSubresource <- Hl.makeSubresourceLayers mipLevel layer VkImageAspectFlags.Color
+            region.imageExtent <- VkExtent3D (width, height, 1)
+            Vulkan.vkCmdCopyBufferToImage
+                (commandBuffer, vkBuffer, vkImage,
+                 TransferDst.VkImageLayout,
+                 1u, asPointer &region)
+            Hl.recordTransitionLayout false mipLevel layer 1 VkImageAspectFlags.Color TransferDst ShaderRead vkImage commandBuffer
+
+        /// Record commands to generate mipmaps.
+        let RecordGenerateMipmaps (commandBuffer, width, height, mipLevels, layer, vkImage) =
+
+            // use single barrier for all transfer operations
+            let mutable barrier = VkImageMemoryBarrier ()
+            barrier.srcQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
+            barrier.dstQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
+            barrier.image <- vkImage
+
+            // transition mipmap images from undefined as they haven't been touched yet
+            barrier.srcAccessMask <- Undefined.Access
+            barrier.dstAccessMask <- TransferDst.Access
+            barrier.oldLayout <- Undefined.VkImageLayout
+            barrier.newLayout <- TransferDst.VkImageLayout
+            barrier.subresourceRange <- Hl.makeSubresourceRange 1 (mipLevels - 1) layer 1 VkImageAspectFlags.Color
+            Vulkan.vkCmdPipelineBarrier
+                (commandBuffer,
+                 Undefined.PipelineStage,
+                 TransferDst.PipelineStage,
+                 VkDependencyFlags.None,
+                 0u, nullPtr, 0u, nullPtr,
+                 1u, asPointer &barrier)
+
+            // transition original image separately as it's already set to shader read
+            barrier.srcAccessMask <- ShaderRead.Access
+            barrier.dstAccessMask <- TransferDst.Access
+            barrier.oldLayout <- ShaderRead.VkImageLayout
+            barrier.newLayout <- TransferDst.VkImageLayout
+            barrier.subresourceRange.baseMipLevel <- 0u
+            barrier.subresourceRange.levelCount <- 1u // only one level at a time from here on
+            Vulkan.vkCmdPipelineBarrier
+                (commandBuffer,
+                 ShaderRead.PipelineStage,
+                 TransferDst.PipelineStage,
+                 VkDependencyFlags.None,
+                 0u, nullPtr, 0u, nullPtr,
+                 1u, asPointer &barrier)
+
+            // compute mipmap dimensions
+            let mutable mipWidth = width
+            let mutable mipHeight = height
+            for i in 1 .. dec mipLevels do
+
+                // transition layout of previous image to be copied from
+                barrier.srcAccessMask <- TransferDst.Access
+                barrier.dstAccessMask <- TransferSrc.Access
+                barrier.oldLayout <- TransferDst.VkImageLayout
+                barrier.newLayout <- TransferSrc.VkImageLayout
+                barrier.subresourceRange.baseMipLevel <- uint (i - 1)
+                Vulkan.vkCmdPipelineBarrier
+                    (commandBuffer,
+                     TransferDst.PipelineStage,
+                     TransferSrc.PipelineStage,
+                     VkDependencyFlags.None,
+                     0u, nullPtr, 0u, nullPtr,
+                     1u, asPointer &barrier)
+
+                // generate the next mipmap image from the previous one
+                let nextWidth = if mipWidth > 1 then mipWidth / 2 else 1
+                let nextHeight = if mipHeight > 1 then mipHeight / 2 else 1
+                let mutable blit =
+                    Hl.makeBlit
+                        (i - 1) i layer layer
+                        (VkRect2D (0, 0, uint mipWidth, uint mipHeight))
+                        (VkRect2D (0, 0, uint nextWidth, uint nextHeight))
+                Vulkan.vkCmdBlitImage (commandBuffer, vkImage, TransferSrc.VkImageLayout, vkImage, TransferDst.VkImageLayout, 1u, asPointer &blit, VkFilter.Linear)
+
+                // transition layout of previous image to be read by shader
+                barrier.srcAccessMask <- TransferSrc.Access
+                barrier.dstAccessMask <- ShaderRead.Access
+                barrier.oldLayout <- TransferSrc.VkImageLayout
+                barrier.newLayout <- ShaderRead.VkImageLayout
+                Vulkan.vkCmdPipelineBarrier
+                    (commandBuffer,
+                     TransferSrc.PipelineStage,
+                     ShaderRead.PipelineStage,
+                     VkDependencyFlags.None,
+                     0u, nullPtr, 0u, nullPtr,
+                     1u, asPointer &barrier)
+
+                // update mipmap dimensions
+                mipWidth <- nextWidth
+                mipHeight <- nextHeight
+
+            // transition final mip image left unfinished by loop
+            barrier.srcAccessMask <- TransferDst.Access
+            barrier.dstAccessMask <- ShaderRead.Access
+            barrier.oldLayout <- TransferDst.VkImageLayout
+            barrier.newLayout <- ShaderRead.VkImageLayout
+            barrier.subresourceRange.baseMipLevel <- uint (mipLevels - 1)
+            Vulkan.vkCmdPipelineBarrier
+                (commandBuffer,
+                 TransferDst.PipelineStage,
+                 ShaderRead.PipelineStage,
+                 VkDependencyFlags.None,
+                 0u, nullPtr, 0u, nullPtr,
+                 1u, asPointer &barrier)
+
+        /// Infer that an asset with the given file path should be filtered in a 2D rendering context.
+        let InferFiltered2d (filePath : string) =
+            let name = PathF.GetFileNameWithoutExtension filePath
+            name.EndsWith "_f" ||
+            name.EndsWith "Filtered"
+        
+        /// Infer the type of block compression that an asset with the given file path should utilize.
+        let InferCompression (filePath : string) =
+            let name = PathF.GetFileNameWithoutExtension filePath
+            if  name.EndsWith "_f" ||
+                name.EndsWith "_hm" ||
+                name.EndsWith "_b" ||
+                name.EndsWith "_t" ||
+                name.EndsWith "_u" ||
+                name.EndsWith "Face" ||
+                name.EndsWith "HeightMap" ||
+                name.EndsWith "Blend" ||
+                name.EndsWith "Tint" ||
+                name.EndsWith "Uncompressed" then Uncompressed
+            elif
+                name.EndsWith "_n" ||
+                name.EndsWith "_normal" ||
+                name.EndsWith "Normal" then NormalCompression
+            else ColorCompression
+
+        /// Detect that a dds file uses a compressed representation.
+        let DetectCompressionDds (dds : DdsFile) =
+            let format = dds.header.ddsPixelFormat.DxgiFormat
+            let formatStr = string format
+            formatStr.StartsWith "DxgiFormatBc" ||
+            formatStr.StartsWith "DxgiFormatAtc"
+
+        /// Detect that a ktx file uses a compressed representation.
+        let DetectCompressionKtx (ktx : KtxFile) =
+            let format = ktx.header.GlInternalFormat
+            let formatStr = string format
+            formatStr.StartsWith "GlCompressed"
+
+        /// Write the binary header of a ktx file.
+        /// Implementation based on https://registry.khronos.org/KTX/specs/1.0/ktxspec.v1.html
+        let WriteKtxHeader (resolution : Vector2i, mipmapLevels, compressed, writer : BinaryWriter) =
+            writer.Write                                                        // ktx identifier
+                [|0xABuy; 0x4Buy; 0x54uy; 0x58uy                                //
+                  0x20uy; 0x31uy; 0x31uy; 0xBBuy                                //
+                  0x0Duy; 0x0Auy; 0x1Auy; 0x0Auy|]                              //
+            writer.Write 0x04030201u                                            // endianness
+            if compressed                                                       // glType
+            then writer.Write 0x0u                                              // (zero when compressed)
+            else writer.Write (uint OpenGL.Gl.UNSIGNED_BYTE)                    //
+            writer.Write 1u                                                     // glTypeSize
+            if compressed                                                       // glFormat
+            then writer.Write 0x0u                                              // (zero when compressed)
+            else writer.Write (uint OpenGL.PixelFormat.Bgra)                    //
+            if compressed                                                       // glInternalFormat
+            then writer.Write (uint OpenGL.InternalFormat.CompressedRgbaAstc4x4)//
+            else writer.Write (uint OpenGL.InternalFormat.Rgba8)                //
+            writer.Write (uint OpenGL.PixelFormat.Bgra)                         // glBaseInternalFormat
+            writer.Write (uint32 resolution.X)                                  // width
+            writer.Write (uint32 resolution.Y)                                  // height
+            writer.Write 1u                                                     // depth
+            writer.Write 0u                                                     // array elements
+            writer.Write 1u                                                     // faces
+            writer.Write (uint32 mipmapLevels)                                  // mip levels
+            writer.Write 0u                                                     // key-value data size
+
+        /// Attempt to generate uncompressed astc bytes an MagickImage to astc bytes.
+        let TryGenerateUncompressedImage (image : MagickImage) =
+            let pixelBytes = image.GetPixels().ToByteArray(PixelMapping.RGBA)
+            let resolution = v2i (int image.Width) (int image.Height)
+            Some (resolution, pixelBytes)
+
+        /// Attempt to generate uncompressed astc mipmap bytes from a MagickImage.
+        let TryGenerateUncompressedMipmaps (image : MagickImage) =
+            let mutable (width, height) = (image.Width, image.Height)
+            let mipmapOpts =
+                [while width >= 1u && height >= 1u do
+                    width <- width / 2u
+                    height <- height / 2u
+                    let mip = image.Clone () :?> MagickImage
+                    mip.Resize (width, height)
+                    TryGenerateUncompressedImage mip]
+            match List.definitizePlus mipmapOpts with
+            | (true, mipmaps) -> Some mipmaps
+            | (false, _) -> None
+
+        /// Attempt to compress a MagickImage to astc bytes.
+        let TryCompressImage (image : MagickImage) =
+    
+            // attempt to configure astc encoder
+            let pixelBytes = image.GetPixels().ToByteArray(PixelMapping.RGBA)
+            let blockSize = 4u
+            let mutable config = AstcencConfig ()
+            let status = Astcenc.AstcencConfigInit (AstcencProfile.AstcencPrfLdr, blockSize, blockSize, 1u, Astcenc.AstcencPreMedium, Unchecked.defaultof<AstcencFlags>, &config)
+            if status = AstcencError.AstcencSuccess then
+    
+                // attempt to initialize astc encoder
+                let mutable context = AstcencContext ()
+                let status = Astcenc.AstcencContextAlloc(ref config, 1u, &context)
+                if status = AstcencError.AstcencSuccess then
+    
+                    // attempt to compress astc image
+                    let mutable astcImage = AstcencImage (dimX = image.Width, dimY = image.Height, dimZ = 1u, dataType = AstcencType.AstcencTypeU8, data = pixelBytes)
+                    let swizzle = AstcencSwizzle (r = AstcencSwz.AstcencSwzR, g = AstcencSwz.AstcencSwzG, b = AstcencSwz.AstcencSwzB, a = AstcencSwz.AstcencSwzA)
+                    let blockCountX = (uint image.Width + blockSize - 1u) / blockSize
+                    let blockCountY = (uint image.Height + blockSize - 1u) / blockSize
+                    let compressedLength = blockCountX * blockCountY * 16u
+                    let compressedData = Array.zeroCreate<byte> (int compressedLength)
+                    let status = Astcenc.AstcencCompressImage (context, &astcImage, swizzle, compressedData.AsSpan (), 0u)
+                    if status = AstcencError.AstcencSuccess
+                    then Some (v2i (int image.Width) (int image.Height), compressedData)
+                    else None
+    
+                // failure
+                else None
+    
+            // failure
+            else None
+
+        /// Attempt to compress astc mipmap bytes from a MagickImage.
+        let TryCompressMipmaps (image : MagickImage) =
+            let mutable (width, height) = (image.Width, image.Height)
+            let mipmapOpts =
+                [while width >= 8u && height >= 8u do
+                    width <- width / 2u
+                    height <- height / 2u
+                    let mip = image.Clone () :?> MagickImage
+                    mip.Resize (width, height)
+                    TryCompressImage mip]
+            match List.definitizePlus mipmapOpts with
+            | (true, mipmaps) -> Some mipmaps
+            | (false, _) -> None
+
+        /// Attempt to format an uncompressed pfim image texture (non-mipmap).
+        let TryFormatUncompressedPfimageTexture (format, height, stride, data : byte array) =
+            match format with
+            | ImageFormat.Rgb24 ->
+                let converted =
+                    [|let mutable y = 0
+                      while y < height do
+                        let mutable x = 0
+                        while x < stride - 2 do
+                            let i = x + stride * y
+                            data.[i]; data.[i+1]; data.[i+2]; 255uy
+                            x <- x + 3
+                        y <- inc y|]
+                Some converted
+            | ImageFormat.Rgba32 ->
+                let converted =
+                    [|let mutable y = 0
+                      while y < height do
+                        let mutable x = 0
+                        while x < stride - 3 do
+                            let i = x + stride * y
+                            data.[i]; data.[i+1]; data.[i+2]; data.[i+3]
+                            x <- x + 4
+                        y <- inc y|]
+                Some converted
+            | _ -> Log.info ("Unsupported image format '" + scstring format + "'."); None
+
+        /// Attempt to format an uncompressed pfim image mipmap.
+        let FormatUncompressedPfimageMipmap (format, mipmap : MipMapOffset, data : byte array) =
+            match format with
+            | ImageFormat.Rgb24 ->
+                let converted =
+                    [|let mutable y = 0
+                      while y < mipmap.Height do
+                        let mutable x = 0
+                        while x < mipmap.Stride - 2 do
+                            let i = x + mipmap.Stride * y + mipmap.DataOffset
+                            data.[i]; data.[i+1]; data.[i+2]; 255uy
+                            x <- x + 3
+                        y <- inc y|]
+                (v2i mipmap.Width mipmap.Height, converted)
+            | ImageFormat.Rgba32 ->
+                let converted =
+                    [|let mutable y = 0
+                      while y < mipmap.Height do
+                        let mutable x = 0
+                        while x < mipmap.Stride - 3 do
+                            let i = x + mipmap.Stride * y + mipmap.DataOffset
+                            data.[i]; data.[i+1]; data.[i+2]; data.[i+3]
+                            x <- x + 4
+                        y <- inc y|]
+                (v2i mipmap.Width mipmap.Height, converted)
+            | _ -> failwithumf ()
+
+        /// Attempt to format an uncompressed pfim image.
+        let TryFormatUncompressedPfimage (minimal, image : IImage) =
+            let minimal = minimal && image.MipMaps.Length >= 1 // NOTE: at least one mipmap is needed for minimal load.
+            let data = image.Data // OPTIMIZATION: pulling all values out of image to avoid slow property calls.
+            let format = image.Format
+            let height = image.Height
+            let stride = image.Stride
+            let mipmaps = image.MipMaps
+            let bytesOpt =
+                if not minimal
+                then TryFormatUncompressedPfimageTexture (format, height, stride, data)
+                else Some [||]
+            match bytesOpt with
+            | Some bytes ->
+                let minimalMipmapIndex =
+                    if minimal
+                    then min (dec mipmaps.Length) (dec Constants.Render.TextureMinimalMipmapIndex)
+                    else 0
+                let mipmapBytesArray =
+                    [|for i in minimalMipmapIndex .. dec mipmaps.Length do
+                        FormatUncompressedPfimageMipmap (format, mipmaps.[i], data)|]
+                if minimal then
+                    let (minimalMipmapResolution, minimalMipmapBytes) = mipmapBytesArray.[0]
+                    let remainingMipmapBytes = if minimalMipmapBytes.Length > 1 then Array.tail mipmapBytesArray else [||]
+                    Some (minimalMipmapResolution, minimalMipmapBytes, remainingMipmapBytes)
+                else Some (v2i image.Width image.Height, bytes, mipmapBytesArray)
+            | None -> None
+
+        /// Attempt to format compressed pfim image data.
+        let FormatCompressedPfdds (minimal, dds : Dds) =
+            let minimal = minimal && dds.Header.MipMapCount >= 3u // NOTE: at least three mipmaps are needed for minimal load since the last 2 are not valid when compressed.
+            let mutable dims = v2i dds.Width dds.Height
+            let mutable size = ((dims.X + 3) / 4) * ((dims.Y + 3) / 4) * 16
+            let mutable index = 0
+            let bytes =
+                if not minimal
+                then dds.Data.AsSpan(index, size).ToArray()
+                else [||]
+            let minimalMipmapIndex =
+                if minimal
+                then min dds.Header.MipMapCount (uint Constants.Render.TextureMinimalMipmapIndex)
+                else 1u
+            let mipmapBytesArray =
+                if dds.Header.MipMapCount >= 2u then
+                    [|for i in 1u .. dds.Header.MipMapCount do
+                        dims <- dims / 2
+                        index <- index + size
+                        size <- size / 4
+                        if  i >= minimalMipmapIndex &&
+                            size >= 16 then // NOTE: as mentioned above, mipmap with size < 16 can exist but isn't valid when compressed.
+                            (dims, dds.Data.AsSpan(index, size).ToArray())|]
+                else [||]
+            if minimal then
+                let (minimalMipmapResolution, minimalMipmapBytes) = mipmapBytesArray.[0]
+                let remainingMipmapBytes = if minimalMipmapBytes.Length > 1 then Array.tail mipmapBytesArray else [||]
+                (minimalMipmapResolution, minimalMipmapBytes, remainingMipmapBytes)
+            else (v2i dds.Width dds.Height, bytes, mipmapBytesArray)
+
 /// An abstraction of a texture as managed by Vulkan.
 type [<CustomEquality; NoComparison>] TextureParallel =
     private
@@ -622,7 +650,7 @@ type [<CustomEquality; NoComparison>] TextureParallel =
           TextureType_ : TextureType }
 
     member private this.IsParallel = this.AttachmentMode_.IsParallel
-    member private this.CurrentIndex = if this.IsParallel then HlInternal.CurrentFrame else 0
+    member private this.CurrentIndex = if this.IsParallel then Hl.CurrentFrame else 0
     member private this.Texture = this.Textures_.[this.CurrentIndex]
     member private this.ImageSize = this.Texture.ImageSize
     
@@ -744,7 +772,7 @@ type [<CustomEquality; NoComparison>] TextureParallel =
             let uploadSize = ImageFormat.getImageSize metadata.TextureWidth metadata.TextureHeight textureParallel.InternalFormat_
             let stagingBuffer = Buffer.stageData uploadSize pixels vkc
             textureParallel.Texture.StagingBuffers.Add stagingBuffer    
-            Texture.RecordBufferToImageCopy (commandBuffer, metadata.TextureWidth, metadata.TextureHeight, mipLevel, layer, stagingBuffer.VkBuffer, textureParallel.Image)
+            Hl.RecordBufferToImageCopy (commandBuffer, metadata.TextureWidth, metadata.TextureHeight, mipLevel, layer, stagingBuffer.VkBuffer, textureParallel.Image)
         | AttachmentColor _
         | AttachmentDepth _ -> Log.warn "Upload not supported for attachment texture."
 
@@ -777,7 +805,7 @@ type [<CustomEquality; NoComparison>] TextureParallel =
         if textureParallel.MipLevels > 1 then
             let (queue, pool, fence) = TextureLoadThread.getResources thread vkc
             let commandBuffer = Hl.createTransientCommandBuffer pool vkc.Device
-            Texture.RecordGenerateMipmaps (commandBuffer, metadata.TextureWidth, metadata.TextureHeight, textureParallel.MipLevels, layer, textureParallel.Image)
+            Hl.RecordGenerateMipmaps (commandBuffer, metadata.TextureWidth, metadata.TextureHeight, textureParallel.MipLevels, layer, textureParallel.Image)
             Queue.executeTransient commandBuffer pool fence queue vkc.Device
         else Log.warn "Mipmap generation attempted on texture with only one mip level."
     
@@ -794,52 +822,15 @@ type [<CustomEquality; NoComparison>] TextureParallel =
 
     /// Represents the empty texture used in Vulkan.
     static member empty =
-        match TextureInternal.EmptyOpt with
+        match Hl.EmptyTextureOpt with
         | Some (:? TextureParallel as empty) -> empty
         | Some _ | None -> failwith "TextureParallel.empty not initialized properly."
 
-/// Describes data loaded from a texture.
-type TextureData =
-    | TextureDataDotNet of Metadata : TextureMetadata * Bytes : byte array
-    | TextureDataMipmap of Metadata : TextureMetadata * BlockCompressed : bool * Bytes : byte array * Mipmaps : (Vector2i * byte array) array
-    | TextureDataNative of Metadata : TextureMetadata * TextureDataPtr : nativeint * Disposer : IDisposable
-    
-    /// Whether the texture can be loaded lazily.
-    member this.LazyLoadable =
-        match this with
-        | TextureDataDotNet (_, _) -> false
-        | TextureDataMipmap (_, _, _, _) -> true
-        | TextureDataNative (_, _, _) -> false
-    
-    /// The metadata portion of this texture data.
-    member this.Metadata =
-        match this with
-        | TextureDataDotNet (metadata, _) -> metadata
-        | TextureDataMipmap (metadata, _, _, _) -> metadata
-        | TextureDataNative (metadata, _, _) -> metadata
-    
-    /// The texture byte data.
-    member this.Bytes =
-        match this with
-        | TextureDataDotNet (_, bytes) -> (false, bytes)
-        | TextureDataMipmap (_, compressed, bytes, _) -> (compressed, bytes)
-        | TextureDataNative (metadata, textureDataPtr, _) ->
-            let bytes = Array.zeroCreate<byte> (metadata.TextureWidth * metadata.TextureHeight * sizeof<uint>)
-            Marshal.Copy (textureDataPtr, bytes, 0, bytes.Length)
-            (false, bytes)
-    
-    /// Manual disposal.
-    member this.Dispose () =
-        match this with
-        | TextureDataDotNet (_, _) -> ()
-        | TextureDataMipmap (_, _, _, _) -> ()
-        | TextureDataNative (_, _, disposer) -> disposer.Dispose ()
-
-[<AutoOpen; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-module TextureModule =
+[<AutoOpen>]
+module TextureModule2 =
 
     [<RequireQualifiedAccess>]
-    module Texture =
+    module Hl =
 
         /// Create a Vulkan texture from existing texture data.
         /// NOTE: this function will dispose textureData.
@@ -861,7 +852,7 @@ module TextureModule =
                         if compression.IsUncompressed then Log.info "Potential inadvertent block-compression of texture (place a breakpoint here for more detail)."
                         compression
                     else Uncompressed
-            
+        
                 // if pregenerated mipmap images are available then that determines texture mipmaps, otherwise determined by parameter as usual
                 let mipmapMode =
                     if mipmapBytesArray.Length > 0 then MipmapManual (inc mipmapBytesArray.Length)
@@ -883,7 +874,7 @@ module TextureModule =
                         TextureParallel.uploadArray metadata (inc mipmapIndex) 0 mipmapBytes thread textureParallel vkc
                         mipmapIndex <- inc mipmapIndex
                 | MipmapAuto -> TextureParallel.generateMipmaps metadata 0 thread textureParallel vkc
-            
+        
                 // fin
                 (metadata, textureParallel)
 
@@ -908,11 +899,11 @@ module TextureModule =
                         use fileStream = File.OpenRead filePath
                         use dds = Dds.Create (fileStream, config)
                         if dds.Compressed then
-                            let (resolution, bytes, mipmapBytesArray) = Texture.FormatCompressedPfdds (minimal, dds)
+                            let (resolution, bytes, mipmapBytesArray) = Hl.FormatCompressedPfdds (minimal, dds)
                             let metadata = TextureMetadata.make resolution.X resolution.Y
                             Some (TextureDataMipmap (metadata, true, bytes, mipmapBytesArray))
                         else
-                            match Texture.TryFormatUncompressedPfimage (minimal, dds) with
+                            match Hl.TryFormatUncompressedPfimage (minimal, dds) with
                             | Some (resolution, bytes, mipmapBytesArray) ->
                                 let metadata = TextureMetadata.make resolution.X resolution.Y
                                 Some (TextureDataMipmap (metadata, false, bytes, mipmapBytesArray))
@@ -923,7 +914,7 @@ module TextureModule =
                 elif fileExtension = ".ktx" then
                     try use fileStream = File.OpenRead filePath
                         let ktx = KtxFile.Load fileStream
-                        let compressed = Texture.DetectCompressionKtx ktx
+                        let compressed = Hl.DetectCompressionKtx ktx
                         let bytesArray =
                             ktx.MipMaps
                             |> Array.ofSeq
@@ -950,11 +941,11 @@ module TextureModule =
                             let metadata = TextureMetadata.make resolution.X resolution.Y
                             Some (TextureDataMipmap (metadata, compressed, bytes, Array.tail bytesArray))
                     with _ -> None
-            
+        
                 // attempt to load data as tga
                 elif fileExtension = ".tga" then
                     try let image = Pfimage.FromFile filePath
-                        match Texture.TryFormatUncompressedPfimage (false, image) with
+                        match Hl.TryFormatUncompressedPfimage (false, image) with
                         | Some (resolution, bytes, _) ->
                             let metadata = TextureMetadata.make resolution.X resolution.Y
                             Some (TextureDataDotNet (metadata, bytes))
@@ -1010,10 +1001,10 @@ type [<Struct; NoEquality; NoComparison>] EagerTexture =
         TextureParallel.destroy this.TextureParallel vkc
 
 /// A texture that can be loaded from another thread.
-type LazyTexture (filePath : string, minimalMetadata : TextureMetadata, minimalTextureInternal : TextureParallel) =
+type LazyTexture (filePath : string, minimalMetadata : TextureMetadata, minimalTextureParallel : TextureParallel) =
 
     let [<VolatileField>] mutable fullServeAttempted = false
-    let [<VolatileField>] mutable fullMetadataAndTextureInternalOpt = ValueNone
+    let [<VolatileField>] mutable fullMetadataAndTextureParallelOpt = ValueNone
     let [<VolatileField>] mutable destroyed = false
     let destructionLock = obj ()
 
@@ -1026,7 +1017,7 @@ type LazyTexture (filePath : string, minimalMetadata : TextureMetadata, minimalT
     member this.TextureMetadata =
         if destroyed then failwith "Accessing field of destroyed texture."
         if fullServeAttempted then
-            match fullMetadataAndTextureInternalOpt with
+            match fullMetadataAndTextureParallelOpt with
             | ValueSome (metadata, _) -> metadata
             | ValueNone -> minimalMetadata
         else minimalMetadata
@@ -1034,20 +1025,20 @@ type LazyTexture (filePath : string, minimalMetadata : TextureMetadata, minimalT
     member this.TextureParallel =
         if destroyed then failwith "Accessing field of destroyed texture."
         if fullServeAttempted then
-            match fullMetadataAndTextureInternalOpt with
+            match fullMetadataAndTextureParallelOpt with
             | ValueSome (_, textureParallel) -> textureParallel
-            | ValueNone -> minimalTextureInternal
-        else minimalTextureInternal
+            | ValueNone -> minimalTextureParallel
+        else minimalTextureParallel
 
     member this.Destroy vkc =
         lock destructionLock $ fun () ->
             if not destroyed then
-                TextureParallel.destroy minimalTextureInternal vkc
+                TextureParallel.destroy minimalTextureParallel vkc
                 if fullServeAttempted then
-                    match fullMetadataAndTextureInternalOpt with
-                    | ValueSome (_, fullTextureInternal) ->
-                        TextureParallel.destroy fullTextureInternal vkc
-                        fullMetadataAndTextureInternalOpt <- ValueNone
+                    match fullMetadataAndTextureParallelOpt with
+                    | ValueSome (_, fullTextureParallel) ->
+                        TextureParallel.destroy fullTextureParallel vkc
+                        fullMetadataAndTextureParallelOpt <- ValueNone
                     | ValueNone -> ()
                     fullServeAttempted <- false
                 destroyed <- true
@@ -1057,8 +1048,8 @@ type LazyTexture (filePath : string, minimalMetadata : TextureMetadata, minimalT
     member internal this.TryServe vkc =
         lock destructionLock $ fun () ->
             if not destroyed && not fullServeAttempted then
-                match Texture.TryCreateTextureVulkan (false, false, Texture.InferCompression filePath, filePath, TextureStreamingThread, vkc) with
-                | Right (metadata, textureParallel) -> fullMetadataAndTextureInternalOpt <- ValueSome (metadata, textureParallel)
+                match Hl.TryCreateTextureVulkan (false, false, Hl.InferCompression filePath, filePath, TextureStreamingThread, vkc) with
+                | Right (metadata, textureParallel) -> fullMetadataAndTextureParallelOpt <- ValueSome (metadata, textureParallel)
                 | Left error -> Log.info ("Could not serve lazy texture due to:" + error)
                 fullServeAttempted <- true
 
@@ -1141,19 +1132,20 @@ type [<CustomEquality; NoComparison>] Texture =
             Texture.equals this that
 
 /// A container for textures to be destroyed once their frame has executed.
+/// TODO: P0: rename to TextureDisposal?
 type TextureDestroyer =
     private
         { Textures_ : Texture List array }
 
     /// Destroy all textures from latest finished frame. Must be called before submitting new textures to avoid premature destruction.
     member this.BeginFrame vkc =
-        for i in 0 .. dec this.Textures_.[HlInternal.CurrentFrame].Count do
-            this.Textures_.[HlInternal.CurrentFrame].[i].Destroy vkc
-        this.Textures_.[HlInternal.CurrentFrame].Clear ()
+        for i in 0 .. dec this.Textures_.[Hl.CurrentFrame].Count do
+            this.Textures_.[Hl.CurrentFrame].[i].Destroy vkc
+        this.Textures_.[Hl.CurrentFrame].Clear ()
 
     /// Submit texture for destruction once the current frame has finished execution.
     member this.Submit texture =
-        this.Textures_.[HlInternal.CurrentFrame].Add texture
+        this.Textures_.[Hl.CurrentFrame].Add texture
     
     /// Create a TextureDisposer.
     static member create () =
@@ -1189,7 +1181,7 @@ type TextureClient (lazyTextureQueuesOpt : ConcurrentDictionary<_, _> option) =
         | (false, _) ->
 
             // attempt to create texture
-            match Texture.TryCreateTextureVulkan (desireLazy, mipmaps, compression, filePath, thread, vkc) with
+            match Hl.TryCreateTextureVulkan (desireLazy, mipmaps, compression, filePath, thread, vkc) with
             | Right (metadata, textureParallel) ->
                 let texture =
                     if  desireLazy &&

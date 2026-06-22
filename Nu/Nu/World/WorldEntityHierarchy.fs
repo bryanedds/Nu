@@ -41,7 +41,7 @@ module WorldEntityHierarchyExtensions =
                 staticModelMetadata.PhysicallyBasedHierarchy.Traverse (fun nodes ->
                     for node in nodes do
                         match node with
-                        | Nu.Vulkan.PhysicallyBased.PhysicallyBasedNode names ->
+                        | Nu.Vulkan.PhysicallyBasedNode names ->
                             let (mountToParent, surnames, group) =
                                 match parent with
                                 | Left group -> (names.Length > 0, names, group)
@@ -51,7 +51,7 @@ module WorldEntityHierarchyExtensions =
                             child.SetPresence presenceConferred world
                             child.SetStatic true world
                             child.AutoBounds world
-                        | Nu.Vulkan.PhysicallyBased.PhysicallyBasedLightProbe lightProbe ->
+                        | Nu.Vulkan.PhysicallyBasedLightProbe lightProbe ->
                             let (mountToParent, surnames, group) =
                                 match parent with
                                 | Left group -> (lightProbe.LightProbeNames.Length > 0, lightProbe.LightProbeNames, group)
@@ -62,7 +62,7 @@ module WorldEntityHierarchyExtensions =
                             child.SetPositionLocal lightProbe.LightProbeMatrix.Translation world
                             child.SetStatic true world
                             child.AutoBounds world
-                        | Nu.Vulkan.PhysicallyBased.PhysicallyBasedLight light ->
+                        | Nu.Vulkan.PhysicallyBasedLight light ->
                             let (mountToParent, surnames, group) =
                                 match parent with
                                 | Left group -> (light.LightNames.Length > 0, light.LightNames, group)
@@ -82,7 +82,7 @@ module WorldEntityHierarchyExtensions =
                             child.SetPresence presenceConferred world
                             child.SetStatic true world
                             child.AutoBounds world
-                        | Nu.Vulkan.PhysicallyBased.PhysicallyBasedSurface surface ->
+                        | Nu.Vulkan.PhysicallyBasedSurface surface ->
                             let (mountToParent, surnames, group) =
                                 match parent with
                                 | Left group -> (surface.SurfaceNames.Length > 0, surface.SurfaceNames, group)
@@ -99,7 +99,7 @@ module WorldEntityHierarchyExtensions =
                                     //let concave = Vortice.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractConcave concave staticModelMetadata.SceneOpt surface
                                     let surfaceShape = { surfaceShape with Profile = profile }
                                     child.SetBodyShape (StaticModelSurfaceShape surfaceShape) world
-                                    let navShape = Nu.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractNavShape ContourNavShape staticModelMetadata.SceneOpt surface
+                                    let navShape = Nu.Vulkan.PhysicallyBasedSurfaceFns.extractNavShape ContourNavShape staticModelMetadata.SceneOpt surface
                                     child.SetNavShape navShape world
                                     child
                                 else World.createEntity<StaticModelSurfaceDispatcher> mountOpt DefaultOverlay (Some surnames) group world
@@ -109,18 +109,18 @@ module WorldEntityHierarchyExtensions =
                                 if Matrix4x4.Decompose (transform, &scale, &rotation, &position)
                                 then (position, rotation, scale, world)
                                 else (transform.Translation, quatIdentity, transform.Scale, world) // use translation and scale, even from invalid transform
-                            let presence = Nu.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractPresence presenceConferred staticModelMetadata.SceneOpt surface
-                            let renderStyle = Nu.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractRenderStyle Deferred staticModelMetadata.SceneOpt surface
-                            let ignoreLightMaps = Nu.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractIgnoreLightMaps Constants.Render.IgnoreLightMapsDefault staticModelMetadata.SceneOpt surface
-                            let opaqueDistance = Nu.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractOpaqueDistance Constants.Render.OpaqueDistanceDefault staticModelMetadata.SceneOpt surface
-                            let finenessOffset = Nu.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractFinenessOffset Constants.Render.FinenessOffsetDefault staticModelMetadata.SceneOpt surface
-                            let scatterType = Nu.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractScatterType Constants.Render.ScatterTypeDefault staticModelMetadata.SceneOpt surface
-                            let specularScalar = Nu.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractSpecularScalar Constants.Render.SpecularScalarDefault staticModelMetadata.SceneOpt surface
-                            let subsurfaceCutoff = Nu.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractSubsurfaceCutoff Constants.Render.SubsurfaceCutoffDefault staticModelMetadata.SceneOpt surface
-                            let subsurfaceCutoffMargin = Nu.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractSubsurfaceCutoffMargin Constants.Render.SubsurfaceCutoffMarginDefault staticModelMetadata.SceneOpt surface
-                            let refractiveIndex = Nu.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractRefractiveIndex Constants.Render.RefractiveIndexDefault staticModelMetadata.SceneOpt surface
-                            let clearCoat = Nu.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractClearCoat Constants.Render.ClearCoatDefault staticModelMetadata.SceneOpt surface
-                            let clearCoatRoughness = Nu.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractClearCoatRoughness Constants.Render.ClearCoatRoughnessDefault staticModelMetadata.SceneOpt surface
+                            let presence = Nu.Vulkan.PhysicallyBasedSurfaceFns.extractPresence presenceConferred staticModelMetadata.SceneOpt surface
+                            let renderStyle = Nu.Vulkan.PhysicallyBasedSurfaceFns.extractRenderStyle Deferred staticModelMetadata.SceneOpt surface
+                            let ignoreLightMaps = Nu.Vulkan.PhysicallyBasedSurfaceFns.extractIgnoreLightMaps Constants.Render.IgnoreLightMapsDefault staticModelMetadata.SceneOpt surface
+                            let opaqueDistance = Nu.Vulkan.PhysicallyBasedSurfaceFns.extractOpaqueDistance Constants.Render.OpaqueDistanceDefault staticModelMetadata.SceneOpt surface
+                            let finenessOffset = Nu.Vulkan.PhysicallyBasedSurfaceFns.extractFinenessOffset Constants.Render.FinenessOffsetDefault staticModelMetadata.SceneOpt surface
+                            let scatterType = Nu.Vulkan.PhysicallyBasedSurfaceFns.extractScatterType Constants.Render.ScatterTypeDefault staticModelMetadata.SceneOpt surface
+                            let specularScalar = Nu.Vulkan.PhysicallyBasedSurfaceFns.extractSpecularScalar Constants.Render.SpecularScalarDefault staticModelMetadata.SceneOpt surface
+                            let subsurfaceCutoff = Nu.Vulkan.PhysicallyBasedSurfaceFns.extractSubsurfaceCutoff Constants.Render.SubsurfaceCutoffDefault staticModelMetadata.SceneOpt surface
+                            let subsurfaceCutoffMargin = Nu.Vulkan.PhysicallyBasedSurfaceFns.extractSubsurfaceCutoffMargin Constants.Render.SubsurfaceCutoffMarginDefault staticModelMetadata.SceneOpt surface
+                            let refractiveIndex = Nu.Vulkan.PhysicallyBasedSurfaceFns.extractRefractiveIndex Constants.Render.RefractiveIndexDefault staticModelMetadata.SceneOpt surface
+                            let clearCoat = Nu.Vulkan.PhysicallyBasedSurfaceFns.extractClearCoat Constants.Render.ClearCoatDefault staticModelMetadata.SceneOpt surface
+                            let clearCoatRoughness = Nu.Vulkan.PhysicallyBasedSurfaceFns.extractClearCoatRoughness Constants.Render.ClearCoatRoughnessDefault staticModelMetadata.SceneOpt surface
                             child.SetPositionLocal position world
                             child.SetRotationLocal rotation world
                             child.SetScaleLocal scale world
@@ -177,7 +177,7 @@ module WorldEntityHierarchyExtensions =
             let frozenEntities = List ()
             let frozenPreBatches =
                 Dictionary<
-                    bool * Material * Nu.Vulkan.PhysicallyBased.PhysicallyBasedSurface * DepthTest * RenderType,
+                    bool * Material * Nu.Vulkan.PhysicallyBasedSurface * DepthTest * RenderType,
                     Guid * StaticModel AssetTag * int * (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) List> ()
             let frozenShapes = List ()
             let rec getFrozenArtifacts (entity : Entity) =
@@ -231,14 +231,14 @@ module WorldEntityHierarchyExtensions =
                                 let surface = metadata.Surfaces[surfaceIndex]
                                 let surfaceMatrix = if surface.SurfaceMatrixIsIdentity then affineMatrix else surface.SurfaceMatrix * affineMatrix
                                 let surfaceBounds = surface.SurfaceBounds.Transform surfaceMatrix
-                                let presence = Nu.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractPresence transform.Presence metadata.SceneOpt surface
-                                let renderStyle = Nu.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractRenderStyle (entity.GetRenderStyle world) metadata.SceneOpt surface
+                                let presence = Nu.Vulkan.PhysicallyBasedSurfaceFns.extractPresence transform.Presence metadata.SceneOpt surface
+                                let renderStyle = Nu.Vulkan.PhysicallyBasedSurfaceFns.extractRenderStyle (entity.GetRenderStyle world) metadata.SceneOpt surface
                                 let renderType = match renderStyle with Deferred -> DeferredRenderType | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
-                                let ignoreLightMaps = Nu.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractIgnoreLightMaps properties.IgnoreLightMaps metadata.SceneOpt surface
+                                let ignoreLightMaps = Nu.Vulkan.PhysicallyBasedSurfaceFns.extractIgnoreLightMaps properties.IgnoreLightMaps metadata.SceneOpt surface
                                 let properties = if ignoreLightMaps <> properties.IgnoreLightMaps then { properties with IgnoreLightMapsOpt = ValueSome ignoreLightMaps } else properties
-                                let finenessOffset = Nu.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractFinenessOffset properties.FinenessOffset metadata.SceneOpt surface
+                                let finenessOffset = Nu.Vulkan.PhysicallyBasedSurfaceFns.extractFinenessOffset properties.FinenessOffset metadata.SceneOpt surface
                                 let properties = if finenessOffset <> properties.FinenessOffset then { properties with FinenessOffsetOpt = ValueSome finenessOffset } else properties
-                                let scatterType = Nu.Vulkan.PhysicallyBased.PhysicallyBasedSurfaceFns.extractScatterType properties.ScatterType metadata.SceneOpt surface
+                                let scatterType = Nu.Vulkan.PhysicallyBasedSurfaceFns.extractScatterType properties.ScatterType metadata.SceneOpt surface
                                 let properties = if scatterType <> properties.ScatterType then { properties with ScatterTypeOpt = ValueSome scatterType } else properties
                                 let material =
                                     if surfaceMaterialsPopulated then

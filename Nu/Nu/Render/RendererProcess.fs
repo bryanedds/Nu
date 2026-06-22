@@ -97,16 +97,16 @@ type RendererInline () =
                         | Some vkc -> vkc
                         | None -> Log.fail "Could not create Vulkan context." // TODO: P0: handle failure more gracefully here?
 
-                    // create and populate empty TextureInternal
-                    let empty = 
+                    // create and populate the empty texture
+                    let emptyTexture =
                         let defaultImageTag = AssetTag.make Assets.Default.PackageName Assets.Default.ImageName
                         match Metadata.tryGetFilePath defaultImageTag with
                         | Some filePath ->
-                            match Texture.TryCreateTextureVulkan (true, false, Uncompressed, filePath, RenderThread, vkc) with
-                            | Right (_, textureInternal) -> textureInternal
+                            match Hl.TryCreateTextureVulkan (true, false, Uncompressed, filePath, RenderThread, vkc) with
+                            | Right (_, textureParallel) -> textureParallel
                             | Left _ -> TextureParallel.createEmpty vkc
                         | None -> TextureParallel.createEmpty vkc
-                    TextureInternal.EmptyOpt <- Some empty
+                    Hl.EmptyTextureOpt <- Some emptyTexture
 
                     // create 3d renderer
                     let renderer3d = VulkanRenderer3d.make geometryViewport windowViewport vkc :> Renderer3d
@@ -363,16 +363,16 @@ type RendererThread () =
 
     member private rt.Run fonts geometryViewport windowViewport vkc =
 
-        // create and populate empty TextureInternal
-        let empty = 
+        // create and populate the empty texture
+        let emptyTexture = 
             let defaultImageTag = AssetTag.make Assets.Default.PackageName Assets.Default.ImageName
             match Metadata.tryGetFilePath defaultImageTag with
             | Some filePath ->
-                match Texture.TryCreateTextureVulkan (true, false, Uncompressed, filePath, RenderThread, vkc) with
-                | Right (_, textureInternal) -> textureInternal
+                match Hl.TryCreateTextureVulkan (true, false, Uncompressed, filePath, RenderThread, vkc) with
+                | Right (_, textureParallel) -> textureParallel
                 | Left _ -> TextureParallel.createEmpty vkc
             | None -> TextureParallel.createEmpty vkc
-        TextureInternal.EmptyOpt <- Some empty
+        Hl.EmptyTextureOpt <- Some emptyTexture
 
         // create 3d renderer
         let renderer3d = VulkanRenderer3d.make geometryViewport windowViewport vkc :> Renderer3d

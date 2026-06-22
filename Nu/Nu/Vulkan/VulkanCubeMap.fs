@@ -11,6 +11,39 @@ open Vortice.Vulkan
 open Prime
 open Nu
 
+/// Describes some cube map geometry that's loaded into VRAM.
+type CubeMapGeometry =
+    { Bounds : Box3
+      PrimitiveTopology : VkPrimitiveTopology
+      ElementCount : int
+      Vertices : Vector3 array
+      VertexBuffer : Nu.Vulkan.Buffer
+      IndexBuffer : Nu.Vulkan.Buffer }
+
+/// Describes a renderable cube map surface.
+type [<Struct>] CubeMapSurface =
+    { CubeMap : Texture
+      CubeMapGeometry : CubeMapGeometry }
+
+    static member make cubeMap geometry =
+        { CubeMap = cubeMap;
+          CubeMapGeometry = geometry }
+
+[<Struct; StructLayout(LayoutKind.Explicit)>]
+type CubeMapTransform =
+    [<FieldOffset(0)>] val mutable view : Matrix4x4
+    [<FieldOffset(64)>] val mutable projection : Matrix4x4
+    [<FieldOffset(128)>] val mutable viewProjection : Matrix4x4
+
+/// Describes a cube map pipeline that's loaded into GPU.
+type CubeMapPipeline =
+    { TransformUniform : Nu.Vulkan.Buffer
+      Pipeline : Pipeline }
+
+/// The key identifying a cube map.
+type CubeMapKey =
+    string * string * string * string * string * string
+
 [<RequireQualifiedAccess>]
 module CubeMap =
 
@@ -35,41 +68,41 @@ module CubeMap =
                         | BcCompression -> PathF.ChangeExtension (faceFilePath, ".dds")
                         | AstcCompression -> PathF.ChangeExtension (faceFilePath, ".ktx")
                     else faceFilePath
-                match Texture.TryCreateTextureData (false, faceFilePath) with
+                match Hl.TryCreateTextureData (false, faceFilePath) with
                 | Some textureData ->
                     match textureData with
                     | TextureData.TextureDataDotNet (metadata, bytes) ->
-                        let textureInternal =
+                        let textureParallel =
                             match textureParallelOpt with
-                            | Some textureInternal -> textureInternal
+                            | Some textureParallel -> textureParallel
                             | None ->
                                 TextureParallel.create
                                     MipmapNone AttachmentNone TextureCubeMap [||]
                                     Uncompressed.ImageFormat Uncompressed.PixelFormat metadata vkc
-                        textureParallelOpt <- Some textureInternal
-                        TextureParallel.uploadArray metadata 0 i bytes thread textureInternal vkc
+                        textureParallelOpt <- Some textureParallel
+                        TextureParallel.uploadArray metadata 0 i bytes thread textureParallel vkc
                     | TextureData.TextureDataMipmap (metadata, compressed, bytes, _) ->
-                        let textureInternal =
+                        let textureParallel =
                             match textureParallelOpt with
-                            | Some textureInternal -> textureInternal
+                            | Some textureParallel -> textureParallel
                             | None ->
                                 let compression = if compressed then ColorCompression else Uncompressed
                                 TextureParallel.create
                                     MipmapNone AttachmentNone TextureCubeMap [||]
                                     compression.ImageFormat compression.PixelFormat metadata vkc
-                        textureParallelOpt <- Some textureInternal
-                        TextureParallel.uploadArray metadata 0 i bytes thread textureInternal vkc
+                        textureParallelOpt <- Some textureParallel
+                        TextureParallel.uploadArray metadata 0 i bytes thread textureParallel vkc
                     | TextureData.TextureDataNative (metadata, bytesPtr, disposer) ->
                         use _ = disposer
-                        let textureInternal =
+                        let textureParallel =
                             match textureParallelOpt with
-                            | Some textureInternal -> textureInternal
+                            | Some textureParallel -> textureParallel
                             | None ->
                                 TextureParallel.create
                                     MipmapNone AttachmentNone TextureCubeMap [||]
                                     Uncompressed.ImageFormat Uncompressed.PixelFormat metadata vkc
-                        textureParallelOpt <- Some textureInternal
-                        TextureParallel.upload metadata 0 i bytesPtr thread textureInternal vkc
+                        textureParallelOpt <- Some textureParallel
+                        TextureParallel.upload metadata 0 i bytesPtr thread textureParallel vkc
                 | None -> errorOpt <- Some ("Could not create surface for image from '" + faceFilePath + "'")
 
         // attempt to finalize cube map
@@ -83,24 +116,6 @@ module CubeMap =
             | Some vulkanTexture -> TextureParallel.destroy vulkanTexture vkc
             | None -> ()
             Left error
-
-    /// Describes some cube map geometry that's loaded into VRAM.
-    type CubeMapGeometry =
-        { Bounds : Box3
-          PrimitiveTopology : VkPrimitiveTopology
-          ElementCount : int
-          Vertices : Vector3 array
-          VertexBuffer : Nu.Vulkan.Buffer
-          IndexBuffer : Nu.Vulkan.Buffer }
-
-    /// Describes a renderable cube map surface.
-    type [<Struct>] CubeMapSurface =
-        { CubeMap : Texture
-          CubeMapGeometry : CubeMapGeometry }
-
-        static member make cubeMap geometry =
-            { CubeMap = cubeMap;
-              CubeMapGeometry = geometry }
 
     /// Create a mesh for a cube map.
     let CreateCubeMapMesh () =
@@ -222,17 +237,6 @@ module CubeMap =
     let DestroyCubeMapGeometry geometry vkc =
         Buffer.destroy geometry.VertexBuffer vkc
         Buffer.destroy geometry.IndexBuffer vkc
-
-    [<Struct; StructLayout(LayoutKind.Explicit)>]
-    type Transform =
-        [<FieldOffset(0)>] val mutable view : Matrix4x4
-        [<FieldOffset(64)>] val mutable projection : Matrix4x4
-        [<FieldOffset(128)>] val mutable viewProjection : Matrix4x4
-
-    /// Describes a cube map pipeline that's loaded into GPU.
-    type CubeMapPipeline =
-        { TransformUniform : Nu.Vulkan.Buffer
-          Pipeline : Pipeline }
     
     /// Create a CubeMapPipeline.
     let CreateCubeMapPipeline (shaderPath, colorAttachmentFormat, vkc : VulkanContext) =
@@ -290,7 +294,7 @@ module CubeMap =
 
                 // specify transform
                 let mutable transformDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.Pipeline.DrawIndex pipeline.Pipeline vkc $ fun vkSet ->
-                    let transform = Transform (view = view, projection = projection, viewProjection = viewProjection)
+                    let transform = CubeMapTransform (view = view, projection = projection, viewProjection = viewProjection)
                     Buffer.uploadValue transform pipeline.TransformUniform vkc
                     Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.TransformUniform vkSet vkc
 
@@ -332,31 +336,27 @@ module CubeMap =
             // abort
             | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
 
-    /// The key identifying a cube map.
-    type CubeMapKey =
-        string * string * string * string * string * string
+/// Memoizes cube map loads (and may at some point potentially thread them).
+type CubeMapClient () =
+    let cubeMaps = Dictionary HashIdentity.Structural
 
-    /// Memoizes cube map loads (and may at some point potentially thread them).
-    type CubeMapClient () =
-        let cubeMaps = Dictionary HashIdentity.Structural
+    /// Memoized cube maps.
+    member this.CubeMaps = cubeMaps
 
-        /// Memoized cube maps.
-        member this.CubeMaps = cubeMaps
+    /// Attempt to create a cube map from 6 files.
+    member this.TryCreateCubeMap cubeMapKey thread vkc =
 
-        /// Attempt to create a cube map from 6 files.
-        member this.TryCreateCubeMap cubeMapKey thread vkc =
+        // memoize cube map
+        match cubeMaps.TryGetValue cubeMapKey with
+        | (false, _) ->
 
-            // memoize cube map
-            match cubeMaps.TryGetValue cubeMapKey with
-            | (false, _) ->
+            // attempt to create cube map
+            let (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath) = cubeMapKey
+            match CubeMap.TryCreateCubeMap (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath, thread, vkc) with
+            | Right cubeMap ->
+                cubeMaps.Add (cubeMapKey, cubeMap)
+                Right cubeMap
+            | Left error -> Left error
 
-                // attempt to create cube map
-                let (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath) = cubeMapKey
-                match TryCreateCubeMap (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath, thread, vkc) with
-                | Right cubeMap ->
-                    cubeMaps.Add (cubeMapKey, cubeMap)
-                    Right cubeMap
-                | Left error -> Left error
-
-            // already exists
-            | (true, cubeMap) -> Right cubeMap
+        // already exists
+        | (true, cubeMap) -> Right cubeMap

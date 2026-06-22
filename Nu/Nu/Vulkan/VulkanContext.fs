@@ -11,6 +11,520 @@ open SDL
 open Vortice.Vulkan
 open Prime
 open Nu
+
+/// A command queue that internally synchronizes use across multiple threads.
+/// TODO: P0: rename this to CommandQueue?
+type [<ReferenceEquality>] Queue =
+    private
+        { VkQueue : VkQueue
+          Lock : obj }
+
+    /// Create a Queue.
+    static member create queueFamilyIndex queueIndex device =
+    
+        // get VkQueue
+        let mutable vkQueue = Unchecked.defaultof<VkQueue>
+        Vulkan.vkGetDeviceQueue (device, queueFamilyIndex, queueIndex, &vkQueue)
+
+        // make Queue
+        let queue =
+            { VkQueue = vkQueue
+              Lock = obj () }
+
+        // fin
+        queue
+
+    /// Wait for Queue to finish execution.
+    static member waitIdle queue =
+        lock queue.Lock (fun () -> Vulkan.vkQueueWaitIdle queue.VkQueue |> Hl.check)
+
+    /// Submit persistent command buffer for execution.
+    static member submit commandBuffer waitSemaphoresStages (signalSemaphores : VkSemaphore array) signalFence (queue : Queue) =
+        lock queue.Lock (fun () ->
+
+            // end command buffer
+            Vulkan.vkEndCommandBuffer commandBuffer |> Hl.check
+        
+            // unpack and pin arrays
+            let (waitSemaphores, waitStages) = Array.unzip waitSemaphoresStages
+            use waitSemaphoresPin = new ArrayPin<_> (waitSemaphores)
+            use waitStagesPin = new ArrayPin<_> (waitStages)
+            use signalSemaphoresPin = new ArrayPin<_> (signalSemaphores)
+
+            // submit commands
+            let mutable commandBuffer = commandBuffer
+            let mutable info = VkSubmitInfo ()
+            info.waitSemaphoreCount <- uint waitSemaphores.Length
+            info.pWaitSemaphores <- waitSemaphoresPin.Pointer
+            info.pWaitDstStageMask <- waitStagesPin.Pointer
+            info.commandBufferCount <- 1u
+            info.pCommandBuffers <- asPointer &commandBuffer
+            info.signalSemaphoreCount <- uint signalSemaphores.Length
+            info.pSignalSemaphores <- signalSemaphoresPin.Pointer
+            Vulkan.vkQueueSubmit (queue.VkQueue, 1u, asPointer &info, signalFence) |> Hl.check)
+
+    /// Execute and free transient command buffer. Command pool and fence must NOT be shared between threads!
+    static member executeTransient commandBuffer commandPool finishFence (queue : Queue) device =
+        let mutable commandBuffer = commandBuffer
+        lock queue.Lock (fun () ->
+        
+            // end command buffer
+            Vulkan.vkEndCommandBuffer commandBuffer |> Hl.check
+
+            // submit commands
+            let mutable info = VkSubmitInfo ()
+            info.commandBufferCount <- 1u
+            info.pCommandBuffers <- asPointer &commandBuffer
+            Vulkan.vkQueueSubmit (queue.VkQueue, 1u, asPointer &info, finishFence) |> Hl.check
+
+            // wait for execution to finish
+            // NOTE: DJL: must ALSO be thread safe!
+            Hl.awaitFence finishFence device
+
+            // free command buffer
+            Vulkan.vkFreeCommandBuffers (device, commandPool, 1u, asPointer &commandBuffer))
+
+    /// Present swapchain image.
+    static member present waitSemaphore vkSwapchain (queue : Queue) =
+
+        // try to present image
+        let result =
+            lock queue.Lock (fun () ->
+                let mutable waitSemaphore = waitSemaphore
+                let mutable vkSwapchain = vkSwapchain
+                let mutable info = VkPresentInfoKHR ()
+                info.waitSemaphoreCount <- 1u
+                info.pWaitSemaphores <- asPointer &waitSemaphore
+                info.swapchainCount <- 1u
+                info.pSwapchains <- asPointer &vkSwapchain
+                info.pImageIndices <- asPointer &Hl.ImageIndex
+                Vulkan.vkQueuePresentKHR (queue.VkQueue, asPointer &info))
+    
+        // return result
+        result
+
+/// A physical device and associated data.
+type PhysicalDevice =
+    { VkPhysicalDevice : VkPhysicalDevice
+      Properties : VkPhysicalDeviceProperties
+      Features : VkPhysicalDeviceFeatures
+      Extensions : VkExtensionProperties array
+      SurfaceCapabilities : VkSurfaceCapabilitiesKHR // NOTE: DJL: keep this here in case we want to use it for device selection.
+      SurfaceFormats : VkSurfaceFormatKHR array
+      GraphicsQueueFamily : uint
+      PresentQueueFamily : uint
+      GraphicsQueueCount : uint }
+
+    /// Supports anisotropy.
+    member this.SupportsAnisotropy =
+        this.Features.samplerAnisotropy = VkBool32.True
+    
+    static member private checkSurface window instance =
+        if Hl.hasAppBegunBackgrounding () then
+            Hl.destroyVulkanSurface instance
+            Hl.createVulkanSurface window instance
+    
+    /// Get properties.
+    static member private getProperties vkPhysicalDevice =
+        let mutable properties = Unchecked.defaultof<VkPhysicalDeviceProperties>
+        Vulkan.vkGetPhysicalDeviceProperties (vkPhysicalDevice, &properties)
+        properties
+
+    /// Get features.
+    static member private getFeatures vkPhysicalDevice =
+        let mutable features = Unchecked.defaultof<VkPhysicalDeviceFeatures>
+        Vulkan.vkGetPhysicalDeviceFeatures (vkPhysicalDevice, &features)
+        features
+    
+    /// Get available extensions.
+    static member private getExtensions vkPhysicalDevice =
+        let mutable extensionCount = 0u
+        Vulkan.vkEnumerateDeviceExtensionProperties (vkPhysicalDevice, nullPtr, asPointer &extensionCount, nullPtr) |> Hl.check
+        let extensions = Array.zeroCreate<VkExtensionProperties> (int extensionCount)
+        use extensionsPin = new ArrayPin<_> (extensions)
+        Vulkan.vkEnumerateDeviceExtensionProperties (vkPhysicalDevice, nullPtr, asPointer &extensionCount, extensionsPin.Pointer) |> Hl.check
+        extensions
+
+    /// Get available surface formats.
+    static member private getSurfaceFormats vkPhysicalDevice window instance =
+        PhysicalDevice.checkSurface window instance
+        let mutable formatCount = 0u
+        Vulkan.vkGetPhysicalDeviceSurfaceFormatsKHR (vkPhysicalDevice, Hl.Surface, asPointer &formatCount, nullPtr) |> Hl.check
+        let formats = Array.zeroCreate<VkSurfaceFormatKHR> (int formatCount)
+        use formatsPin = new ArrayPin<_> (formats)
+        Vulkan.vkGetPhysicalDeviceSurfaceFormatsKHR (vkPhysicalDevice, Hl.Surface, asPointer &formatCount, formatsPin.Pointer) |> Hl.check
+        formats
+
+    /// Get surface capabilities.
+    static member private getSurfaceCapabilities vkPhysicalDevice window instance =
+        PhysicalDevice.checkSurface window instance
+        let mutable capabilities = Unchecked.defaultof<VkSurfaceCapabilitiesKHR>
+        Vulkan.vkGetPhysicalDeviceSurfaceCapabilitiesKHR (vkPhysicalDevice, Hl.Surface, &capabilities) |> Hl.check
+        capabilities
+    
+    /// Attempt to get the queue families.
+    static member private tryGetQueueFamilies vkPhysicalDevice window instance =
+
+        // check surface is still valid
+        PhysicalDevice.checkSurface window instance
+        
+        // get queue families' properties
+        let mutable queueFamilyCount = 0u
+        Vulkan.vkGetPhysicalDeviceQueueFamilyProperties (vkPhysicalDevice, asPointer &queueFamilyCount, nullPtr)
+        let queueFamilyProps = Array.zeroCreate<VkQueueFamilyProperties> (int queueFamilyCount)
+        use queueFamilyPropsPin = new ArrayPin<_> (queueFamilyProps)
+        Vulkan.vkGetPhysicalDeviceQueueFamilyProperties (vkPhysicalDevice, asPointer &queueFamilyCount, queueFamilyPropsPin.Pointer)
+
+        // NOTE: DJL: it is *essential* to use the *first* compatible queue families in the array, *not* the last, as per the tutorial and vortice vulkan sample.
+        // I discovered this by accident because the queue families on my AMD behaved exactly the same as the queue families on this one:
+        // https://computergraphics.stackexchange.com/questions/9707/queue-from-a-family-queue-that-supports-presentation-doesnt-work-vulkan
+        // general lesson: trust level for vendors is too low for deviation from common practices to be advisable.
+        let mutable graphicsQueueFamilyOpt = None
+        let mutable presentQueueFamilyOpt = None
+        for i in 0 .. dec queueFamilyProps.Length do
+
+            // try get graphics queue family
+            // NOTE: DJL: for reason described above, do not attempt to derive transfer queue from seperate family.
+            match graphicsQueueFamilyOpt with
+            | None ->
+                let props = queueFamilyProps.[i]
+                if props.queueFlags &&& VkQueueFlags.Graphics <> VkQueueFlags.None then
+                    graphicsQueueFamilyOpt <- Some (uint i, props.queueCount)
+            | Some _ -> ()
+
+            // try get present queue family
+            match presentQueueFamilyOpt with
+            | None ->
+                let mutable presentSupport = VkBool32.False
+                Vulkan.vkGetPhysicalDeviceSurfaceSupportKHR (vkPhysicalDevice, uint i, Hl.Surface, &presentSupport) |> Hl.check
+                if (presentSupport = VkBool32.True) then
+                    presentQueueFamilyOpt <- Some (uint i)
+            | Some _ -> ()
+
+        // fin
+        (graphicsQueueFamilyOpt, presentQueueFamilyOpt)
+
+    /// Attempt to construct PhysicalDevice.
+    static member tryCreate vkPhysicalDevice window instance =
+        let properties = PhysicalDevice.getProperties vkPhysicalDevice
+        let features = PhysicalDevice.getFeatures vkPhysicalDevice
+        let extensions = PhysicalDevice.getExtensions vkPhysicalDevice
+        let surfaceFormats = PhysicalDevice.getSurfaceFormats vkPhysicalDevice window instance
+        let surfaceCapabilities = PhysicalDevice.getSurfaceCapabilities vkPhysicalDevice window instance
+        match PhysicalDevice.tryGetQueueFamilies vkPhysicalDevice window instance with
+        | (Some (graphicsQueueFamily, graphicsQueueCount), Some presentQueueFamily) ->
+            let physicalDevice =
+                { VkPhysicalDevice = vkPhysicalDevice
+                  Properties = properties
+                  Features = features
+                  Extensions = extensions
+                  SurfaceCapabilities = surfaceCapabilities
+                  SurfaceFormats = surfaceFormats
+                  GraphicsQueueFamily = graphicsQueueFamily
+                  PresentQueueFamily = presentQueueFamily
+                  GraphicsQueueCount = graphicsQueueCount }
+            Some physicalDevice
+        | (_, _) -> None
+
+/// A single swapchain and its assets.
+type SwapchainSingleton =
+    { VkSwapchain : VkSwapchainKHR
+      Images : VkImage array
+      ImageViews : VkImageView array
+      RenderFinishedSemaphores : VkSemaphore array
+      SwapExtent : VkExtent2D }
+
+    /// Try create the VkSwapchain.
+    static member private tryCreateVkSwapchain (surfaceFormat : VkSurfaceFormatKHR) oldVkSwapchainOpt physicalDevice window device =
+        match Hl.tryGetSurfaceCapabilities physicalDevice.VkPhysicalDevice with
+        | Some capabilities ->
+        
+            // decide the minimum number of images in the swapchain. Sellers, Vulkan Programming Guide p. 144, recommends
+            // at least 3 for performance, but to keep latency low let's start with the more conservative recommendation of
+            // https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Swap_chain#page_Creating-the-swap-chain.
+            let minImageCount =
+                if capabilities.maxImageCount = 0u
+                then capabilities.minImageCount + 1u
+                else min (capabilities.minImageCount + 1u) capabilities.maxImageCount
+
+            // get swap extent
+            let swapExtent = Hl.getSwapExtent capabilities window
+            
+            // in case graphics and present queue families differ
+            // TODO: as part of optimization, the sharing mode in this case should probably be VkSharingMode.Exclusive (see below).
+            let indicesArray = [|physicalDevice.GraphicsQueueFamily; physicalDevice.PresentQueueFamily|]
+            use indicesArrayPin = new ArrayPin<_> (indicesArray)
+
+            // create swapchain
+            let mutable info = VkSwapchainCreateInfoKHR ()
+            info.surface <- Hl.Surface
+            info.minImageCount <- minImageCount
+            info.imageFormat <- surfaceFormat.format
+            info.imageColorSpace <- surfaceFormat.colorSpace
+            info.imageExtent <- swapExtent
+            info.imageArrayLayers <- 1u
+            info.imageUsage <- VkImageUsageFlags.ColorAttachment ||| VkImageUsageFlags.TransferDst
+            if (physicalDevice.GraphicsQueueFamily = physicalDevice.PresentQueueFamily) then
+                info.imageSharingMode <- VkSharingMode.Exclusive
+            else
+                info.imageSharingMode <- VkSharingMode.Concurrent
+                info.queueFamilyIndexCount <- 2u
+                info.pQueueFamilyIndices <- indicesArrayPin.Pointer
+            info.preTransform <- capabilities.currentTransform
+            info.compositeAlpha <- VkCompositeAlphaFlagsKHR.Opaque
+            info.presentMode <- VkPresentModeKHR.Fifo // NOTE: guaranteed by the spec and seems most appropriate for Nu.
+            info.clipped <- true
+            info.oldSwapchain <- oldVkSwapchainOpt
+            let mutable vkSwapchain = Unchecked.defaultof<VkSwapchainKHR>
+            let result = Vulkan.vkCreateSwapchainKHR (device, &info, nullPtr, &vkSwapchain)
+            
+            if result <> VkResult.ErrorSurfaceLostKHR then
+                Hl.check result
+                Some (vkSwapchain, swapExtent)
+            else
+                Hl.SurfaceState <- SurfaceLost
+                None
+
+        | None -> None
+
+    /// Get swapchain images.
+    static member private getSwapchainImages vkSwapchain device =
+        let mutable imageCount = 0u
+        Vulkan.vkGetSwapchainImagesKHR (device, vkSwapchain, asPointer &imageCount, nullPtr) |> Hl.check
+        let images = Array.zeroCreate<VkImage> (int imageCount)
+        use imagesPin = new ArrayPin<_> (images)
+        Vulkan.vkGetSwapchainImagesKHR (device, vkSwapchain, asPointer &imageCount, imagesPin.Pointer) |> Hl.check
+        images
+
+    /// Create the image views.
+    static member private createImageViews format (images : VkImage array) device =
+        let imageViews = Array.zeroCreate<VkImageView> images.Length
+        for i in 0 .. dec imageViews.Length do imageViews.[i] <- Hl.createImageView Rgba format 0 1 0 1 VkImageViewType.Image2D VkImageAspectFlags.Color images.[i] device
+        imageViews
+    
+    /// Create render finished semaphores.
+    static member private createRenderFinishedSemaphores imageCount device =
+        let semaphores = Array.zeroCreate<VkSemaphore> imageCount
+        for i in 0 .. dec semaphores.Length do semaphores.[i] <- Hl.createSemaphore device
+        semaphores
+    
+    /// Try create a SwapchainSingleton.
+    static member tryCreate surfaceFormat oldVkSwapchainOpt physicalDevice window device =
+        
+        // try create vkSwapchain and its assets
+        match SwapchainSingleton.tryCreateVkSwapchain surfaceFormat oldVkSwapchainOpt physicalDevice window device with
+        | Some (vkSwapchain, swapExtent) ->
+            let images = SwapchainSingleton.getSwapchainImages vkSwapchain device
+            let imageViews = SwapchainSingleton.createImageViews surfaceFormat.format images device
+
+            // render finished semaphores based on swapchain images rather than frames in flight to address
+            // safety issue described in https://docs.vulkan.org/guide/latest/swapchain_semaphore_reuse.html.
+            // these should naturally be associated with the vkSwapchain itself, especially to prevent validation
+            // errors triggered by reuse of semaphores that "may still be in use" by obsolete vkSwapchains.
+            let renderFinishedSemaphores = SwapchainSingleton.createRenderFinishedSemaphores images.Length device
+
+            // make SwapchainSingleton
+            let swapchainSingleton =
+                { VkSwapchain = vkSwapchain
+                  Images = images
+                  ImageViews = imageViews
+                  RenderFinishedSemaphores = renderFinishedSemaphores
+                  SwapExtent = swapExtent }
+
+            // fin
+            Some swapchainSingleton
+        | None -> None
+    
+    /// Destroy a SwapchainSingleton.
+    static member destroy renderQueue presentQueue swapchainSingleton device =
+        
+        // TODO: DJL: this is not sufficient to ensure resources not still in use, that requires an extension!!
+        // https://docs.vulkan.org/guide/latest/swapchain_semaphore_reuse.html#_vk_ext_swapchain_maintenance1_extension
+        Queue.waitIdle renderQueue
+        Queue.waitIdle presentQueue
+        for i in 0 .. dec swapchainSingleton.ImageViews.Length do Vulkan.vkDestroyImageView (device, swapchainSingleton.ImageViews.[i], nullPtr)
+        Vulkan.vkDestroySwapchainKHR (device, swapchainSingleton.VkSwapchain, nullPtr)
+        for i in 0 .. dec swapchainSingleton.RenderFinishedSemaphores.Length do Vulkan.vkDestroySemaphore (device, swapchainSingleton.RenderFinishedSemaphores.[i], nullPtr)
+
+/// A swapchain and its assets that may be refreshed for a different screen size.
+type Swapchain =
+    { SwapchainSingletonOpts_ : SwapchainSingleton option array
+      Window_ : SDL_Window nativeptr
+      SurfaceFormat_ : VkSurfaceFormatKHR
+      mutable SwapchainIndex_ : int }
+
+    /// The current SwapchainSingletonOpt.
+    member this.SwapchainSingletonOpt = this.SwapchainSingletonOpts_.[this.SwapchainIndex_]
+    
+    /// The Vulkan swapchain itself.
+    member this.VkSwapchain = (Option.get this.SwapchainSingletonOpts_.[this.SwapchainIndex_]).VkSwapchain
+
+    /// The number of swapchain images.
+    member this.ImageCount = (Option.get this.SwapchainSingletonOpts_.[this.SwapchainIndex_]).Images.Length
+    
+    /// The current swapchain image.
+    member this.Image = (Option.get this.SwapchainSingletonOpts_.[this.SwapchainIndex_]).Images.[int Hl.ImageIndex]
+
+    /// The image view for the current swapchain image.
+    member this.ImageView = (Option.get this.SwapchainSingletonOpts_.[this.SwapchainIndex_]).ImageViews.[int Hl.ImageIndex]
+    
+    /// The render finished semaphore for the current swapchain image.
+    member this.RenderFinishedSemaphore = (Option.get this.SwapchainSingletonOpts_.[this.SwapchainIndex_]).RenderFinishedSemaphores.[int Hl.ImageIndex]
+
+    /// The swap extent of the current vkSwapchain.
+    member this.SwapExtent = (Option.get this.SwapchainSingletonOpts_.[this.SwapchainIndex_]).SwapExtent
+
+    static member private clear renderQueue presentQueue swapchain device =
+        for i in 0 .. dec swapchain.SwapchainSingletonOpts_.Length do
+            match swapchain.SwapchainSingletonOpts_.[i] with
+            | Some swapchainSingleton ->
+                SwapchainSingleton.destroy renderQueue presentQueue swapchainSingleton device
+                swapchain.SwapchainSingletonOpts_.[i] <- None
+            | None -> ()
+    
+    static member private destroySurface renderQueue presentQueue swapchain device instance =
+        Swapchain.clear renderQueue presentQueue swapchain device // must do this first
+        Hl.destroyVulkanSurface instance
+    
+    static member private tryCreateSurfaceAndSwapchainSingleton physicalDevice renderQueue presentQueue swapchain device instance =
+        
+        // check if app is back in foreground
+        if Hl.IsAppInForeground then
+            
+            // create surface
+            Hl.tryCreateVulkanSurface swapchain.Window_ instance
+            
+            // ensure surface creation was successful
+            if Hl.SurfaceState = SurfaceReady then
+                
+                // check if pause triggered during surface creation
+                if not (Hl.hasAppBegunBackgrounding ()) then
+                
+                    // check window not minimized
+                    if not (Swapchain.isWindowMinimized swapchain.Window_) then
+
+                        // try create SwapchainSingleton
+                        let swapchainSingletonOpt = SwapchainSingleton.tryCreate swapchain.SurfaceFormat_ VkSwapchainKHR.Null physicalDevice swapchain.Window_ device
+                        swapchain.SwapchainSingletonOpts_.[swapchain.SwapchainIndex_] <- swapchainSingletonOpt
+                        
+                        // destroy surface if lost again or if pause triggered during swapchain creation
+                        if Hl.SurfaceState = SurfaceLost || Hl.hasAppBegunBackgrounding ()
+                        then Swapchain.destroySurface renderQueue presentQueue swapchain device instance
+
+                // abort
+                else Swapchain.destroySurface renderQueue presentQueue swapchain device instance
+    
+    /// Check if window is minimized.
+    static member isWindowMinimized window =
+        SDL3.SDL_GetWindowFlags window &&& SDL_WindowFlags.SDL_WINDOW_MINIMIZED <> LanguagePrimitives.EnumOfValue 0UL
+    
+    /// Check if window has been resized or surface lost.
+    static member isWindowResizedOrSurfaceLost vkPhysicalDevice (swapchain : Swapchain) =
+        match Hl.tryGetSurfaceCapabilities vkPhysicalDevice with
+        | Some capabilities -> swapchain.SwapExtent <> Hl.getSwapExtent capabilities swapchain.Window_
+        | None -> true
+
+    /// Update the swapchain.
+    static member update physicalDevice renderQueue presentQueue swapchain device instance =
+        
+        // NOTE: DJL: by design, this method should know exactly what to do based on the current and changing state of
+        // the surface and app backgrounding, anticipated or not, regardless of the calling context, which just needs 
+        // to detect *if* method must be called. It should have a valid and appropriate result whatever the environment
+        // throws at it.
+        
+        // handle surface state
+        match Hl.SurfaceState with
+        
+        // attempt to recreate the swapchain, destroying the surface if suddenly lost or if app has/will enter background
+        | SurfaceReady ->
+        
+            // check if app has or will enter background, if not then just try recreate swapchain
+            if not (Hl.hasAppBegunBackgrounding ()) then
+            
+                // use current VkSwapchain to create new one
+                let oldVkSwapchainOpt =
+                    match swapchain.SwapchainSingletonOpts_.[swapchain.SwapchainIndex_] with
+                    | Some swapchainSingleton -> if swapchain.SwapchainSingletonOpts_.Length > 1 then swapchainSingleton.VkSwapchain else VkSwapchainKHR.Null
+                    | None -> VkSwapchainKHR.Null
+
+                // advance swapchain index
+                if Option.isSome swapchain.SwapchainSingletonOpts_.[swapchain.SwapchainIndex_] then
+                    swapchain.SwapchainIndex_ <- (inc swapchain.SwapchainIndex_) % swapchain.SwapchainSingletonOpts_.Length
+
+                // destroy SwapchainSingleton at new index if present
+                match swapchain.SwapchainSingletonOpts_.[swapchain.SwapchainIndex_] with
+                | Some swapchainSingleton ->
+                    SwapchainSingleton.destroy renderQueue presentQueue swapchainSingleton device
+                    swapchain.SwapchainSingletonOpts_.[swapchain.SwapchainIndex_] <- None
+                | None -> ()
+                
+                // check once more for app pause (triggered during swapchain destruction) before attempting swapchain creation
+                if not (Hl.hasAppBegunBackgrounding ()) then
+                
+                    // check window not minimized
+                    if not (Swapchain.isWindowMinimized swapchain.Window_) then
+                    
+                        // try create new swapchain internal
+                        let swapchainSingletonOpt = SwapchainSingleton.tryCreate swapchain.SurfaceFormat_ oldVkSwapchainOpt physicalDevice swapchain.Window_ device
+                        swapchain.SwapchainSingletonOpts_.[swapchain.SwapchainIndex_] <- swapchainSingletonOpt
+
+                        // if surface is lost here (or pause triggered during pipeline creation!), destroy and attempt to recover on the spot
+                        if Hl.SurfaceState = SurfaceLost || Hl.hasAppBegunBackgrounding () then
+                            Swapchain.destroySurface renderQueue presentQueue swapchain device instance
+                            Swapchain.tryCreateSurfaceAndSwapchainSingleton physicalDevice renderQueue presentQueue swapchain device instance
+
+                // destroy surface and recreate if already possible
+                else
+                    Swapchain.destroySurface renderQueue presentQueue swapchain device instance
+                    Swapchain.tryCreateSurfaceAndSwapchainSingleton physicalDevice renderQueue presentQueue swapchain device instance
+
+            // destroy surface and recreate if already possible
+            else
+                Swapchain.destroySurface renderQueue presentQueue swapchain device instance
+                Swapchain.tryCreateSurfaceAndSwapchainSingleton physicalDevice renderQueue presentQueue swapchain device instance
+
+        // handle surface loss and attempt to recreate surface and swapchain immediately
+        | SurfaceLost ->
+            Swapchain.destroySurface renderQueue presentQueue swapchain device instance
+            Swapchain.tryCreateSurfaceAndSwapchainSingleton physicalDevice renderQueue presentQueue swapchain device instance
+
+        // attempt to recreate surface and swapchain when app is in foreground
+        | SurfaceDestroyed ->
+            Swapchain.tryCreateSurfaceAndSwapchainSingleton physicalDevice renderQueue presentQueue swapchain device instance
+    
+    /// Create a Swapchain.
+    static member create surfaceFormat physicalDevice window device =
+        
+        // swapchain index starts at zero
+        let swapchainIndex = 0
+        
+        // create SwapchainSingleton array
+        // NOTE: DJL: must allow for frames in flight plus 1 to prevent destroying semaphores while still in use
+        // because swapchain can be refreshed at the end of one frame AND at the beginning of the next,
+        // but can still only be refreshed once per frame.
+        let swapchainSingletonOpts = Array.create (Constants.Vulkan.MaxFramesInFlight + 1) None
+        
+        // check if window is minimized at startup
+        let windowMinimized = Swapchain.isWindowMinimized window
+        
+        // try create first SwapchainSingleton if window is not minimized or app paused
+        if not (windowMinimized || Hl.hasAppBegunBackgrounding ()) then
+            let swapchainSingletonOpt = SwapchainSingleton.tryCreate surfaceFormat VkSwapchainKHR.Null physicalDevice window device
+            swapchainSingletonOpts.[swapchainIndex] <- swapchainSingletonOpt
+
+        // make Swapchain
+        let swapchain =
+            { SwapchainSingletonOpts_ = swapchainSingletonOpts
+              Window_ = window
+              SurfaceFormat_ = surfaceFormat
+              SwapchainIndex_ = swapchainIndex }
+
+        // fin
+        (swapchain, windowMinimized)
+    
+    /// Destroy a Swapchain.
+    static member destroy swapchain device =
+        Swapchain.clear swapchain device
     
 /// Exposes the vulkan handles that must be globally accessible within the renderer.
 type [<ReferenceEquality>] VulkanContext =
@@ -60,7 +574,7 @@ type [<ReferenceEquality>] VulkanContext =
     member this.TextureCommandPool = this.TextureCommandPool_
     
     /// The render command buffer for the current frame.
-    member this.RenderCommandBuffer = this.RenderCommandBuffers_.[HlInternal.CurrentFrame]
+    member this.RenderCommandBuffer = this.RenderCommandBuffers_.[Hl.CurrentFrame]
 
     /// The render command queue.
     member this.RenderQueue = this.RenderQueue_
@@ -69,13 +583,13 @@ type [<ReferenceEquality>] VulkanContext =
     member this.TextureQueue = this.TextureQueue_
 
     /// The image available semaphore for the current frame.
-    member this.ImageAvailableSemaphore = this.ImageAvailableSemaphores_.[HlInternal.CurrentFrame]
+    member this.ImageAvailableSemaphore = this.ImageAvailableSemaphores_.[Hl.CurrentFrame]
 
     /// The render finished semaphore for the current frame.
     member this.RenderFinishedSemaphore = this.Swapchain_.RenderFinishedSemaphore
 
     /// The in flight fence for the current frame.
-    member this.InFlightFence = this.InFlightFences_.[HlInternal.CurrentFrame]
+    member this.InFlightFence = this.InFlightFences_.[Hl.CurrentFrame]
 
     /// The texture fence.
     member this.TextureFence = this.TextureFence_
@@ -161,8 +675,8 @@ type [<ReferenceEquality>] VulkanContext =
         // TODO: DJL: try to automatically prevent validation from interfering with Nsight, starting with VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT.
         let validationLayer = "VK_LAYER_KHRONOS_validation"
         let validationLayerExists = Array.exists (fun x -> Hl.getLayerName x = validationLayer) layers
-        if HlInternal.ValidationLayersEnabled && not validationLayerExists then Log.info (validationLayer + " is not available. Vulkan programmers must install the Vulkan SDK to enable validation.")
-        HlInternal.ValidationLayersActivated <- HlInternal.ValidationLayersEnabled && validationLayerExists
+        if Hl.ValidationLayersEnabled && not validationLayerExists then Log.info (validationLayer + " is not available. Vulkan programmers must install the Vulkan SDK to enable validation.")
+        Hl.ValidationLayersActivated <- Hl.ValidationLayersEnabled && validationLayerExists
         use layerWrap = new StringArrayWrap ([|validationLayer|]) // must remain in scope until vkCreateInstance
 
         // get sdl extensions
@@ -174,7 +688,7 @@ type [<ReferenceEquality>] VulkanContext =
         // choose extensions
         use debugUtilsWrap = new StringWrap (Vulkan.VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
         let extensions =
-            Array.init (sdlExtensionCountInt + if HlInternal.ValidationLayersActivated then 1 else 0)
+            Array.init (sdlExtensionCountInt + if Hl.ValidationLayersActivated then 1 else 0)
                 (fun i -> if i < sdlExtensionCountInt then NativePtr.get sdlExtensions i else debugUtilsWrap.Pointer)
         use extensionsPin = new ArrayPin<_> (extensions)
             
@@ -192,7 +706,7 @@ type [<ReferenceEquality>] VulkanContext =
         info.pApplicationInfo <- asPointer &aInfo
         info.enabledExtensionCount <- uint extensions.Length
         info.ppEnabledExtensionNames <- extensionsPin.Pointer
-        if HlInternal.ValidationLayersActivated then
+        if Hl.ValidationLayersActivated then
             let mutable debugInfo = debugInfo
             info.pNext <- asVoidPtr &debugInfo
             info.enabledLayerCount <- 1u
@@ -203,7 +717,7 @@ type [<ReferenceEquality>] VulkanContext =
 
     // TODO: DJL: try separate this from validation status, same for create instance debug.
     static member private tryCreateDebugMessenger info instance =
-        if HlInternal.ValidationLayersActivated then
+        if Hl.ValidationLayersActivated then
             let mutable debugMessenger = Unchecked.defaultof<VkDebugUtilsMessengerEXT>
             Vulkan.vkCreateDebugUtilsMessengerEXT (instance, &info, nullPtr, &debugMessenger) |> Hl.check
             Some debugMessenger
@@ -384,13 +898,13 @@ type [<ReferenceEquality>] VulkanContext =
         // update the swapchain if window is not minimized, which happens a) when the window size simply changes
         // and b) when minimization ends as detected above; must also check for backgrounding in case minimization
         // occurs first so backgrounding can still be handled straight away
-        if not vkc.WaitingForWindowRestore_ || HlInternal.hasAppBegunBackgrounding ()
+        if not vkc.WaitingForWindowRestore_ || Hl.hasAppBegunBackgrounding ()
         then Swapchain.update vkc.PhysicalDevice_ vkc.RenderQueue_ vkc.PresentQueue_ vkc.Swapchain_ vkc.Device vkc.Instance_
     
     /// Wait for app to return to foreground.
     static member private handleBackgrounding vkc =
         vkc.WaitingForWindowRestore_ <- Swapchain.isWindowMinimized vkc.Swapchain_.Window_
-        if HlInternal.IsAppInForeground && not vkc.WaitingForWindowRestore_
+        if Hl.IsAppInForeground && not vkc.WaitingForWindowRestore_
         then Swapchain.update vkc.PhysicalDevice_ vkc.RenderQueue_ vkc.PresentQueue_ vkc.Swapchain_ vkc.Device vkc.Instance_
     
     /// Begin the frame.
@@ -404,15 +918,15 @@ type [<ReferenceEquality>] VulkanContext =
         Vulkan.vkWaitForFences (vkc.Device, 1u, asPointer &fence, true, UInt64.MaxValue) |> Hl.check
 
         // the cascade of checks needed to handle window behavior, avoiding 'elif' statements for maximum understandability
-        
+
         // check if current swapchain is non-existent, typically because app has been backgrounded
-        if Option.isNone vkc.Swapchain_.SwapchainInternalOpt then VulkanContext.handleBackgrounding vkc
+        if Option.isNone vkc.Swapchain_.SwapchainSingletonOpt then VulkanContext.handleBackgrounding vkc
         else
             // check for handling of minimized window from previous frame(s); if *still* minimized then do nothing; if restored then refresh swapchain
             if vkc.WaitingForWindowRestore_ then VulkanContext.handleWindowSize vkc
             else
                 // check if app backgrounding has been triggered, if so then teardown the surface and swapchain
-                if HlInternal.hasAppBegunBackgrounding () then Swapchain.update vkc.PhysicalDevice_ vkc.RenderQueue_ vkc.PresentQueue_ vkc.Swapchain_ vkc.Device vkc.Instance_
+                if Hl.hasAppBegunBackgrounding () then Swapchain.update vkc.PhysicalDevice_ vkc.RenderQueue_ vkc.PresentQueue_ vkc.Swapchain_ vkc.Device vkc.Instance_
                 else
                     // check if screen *has become* minimized, if so then set WaitingForWindowRestore_ and don't render
                     if Swapchain.isWindowMinimized vkc.Swapchain_.Window_ then VulkanContext.handleWindowSize vkc
@@ -429,12 +943,12 @@ type [<ReferenceEquality>] VulkanContext =
                             then
                                 // try to acquire image from swapchain to draw onto
                                 // NOTE: DJL: due to semaphore, if this is successful, the render *must* proceed!
-                                let result = Vulkan.vkAcquireNextImageKHR (vkc.Device, vkc.Swapchain_.VkSwapchain, UInt64.MaxValue, vkc.ImageAvailableSemaphore, VkFence.Null, &HlInternal.ImageIndex)
+                                let result = Vulkan.vkAcquireNextImageKHR (vkc.Device, vkc.Swapchain_.VkSwapchain, UInt64.MaxValue, vkc.ImageAvailableSemaphore, VkFence.Null, &Hl.ImageIndex)
                                 if result = VkResult.ErrorOutOfDateKHR then VulkanContext.handleWindowSize vkc // refresh swapchain if out of date
                                 else
                                     // destroy surface if lost
                                     if result = VkResult.ErrorSurfaceLostKHR then
-                                        HlInternal.SurfaceState <- SurfaceLost
+                                        Hl.SurfaceState <- SurfaceLost
                                         Swapchain.update vkc.PhysicalDevice_ vkc.RenderQueue_ vkc.PresentQueue_ vkc.Swapchain_ vkc.Device vkc.Instance_
                                     else
                                         Hl.check result // NOTE: DJL: this will report a suboptimal swapchain image.
@@ -482,7 +996,7 @@ type [<ReferenceEquality>] VulkanContext =
             Queue.submit vkc.RenderCommandBuffer [|vkc.ImageAvailableSemaphore, waitStage|] [|vkc.RenderFinishedSemaphore|] fence vkc.RenderQueue
             
             // one more check for app backgrounding before we present
-            if not (HlInternal.hasAppBegunBackgrounding ()) then
+            if not (Hl.hasAppBegunBackgrounding ()) then
             
                 // try to present image
                 let result = Queue.present vkc.RenderFinishedSemaphore vkc.Swapchain_.VkSwapchain vkc.PresentQueue_
@@ -492,7 +1006,7 @@ type [<ReferenceEquality>] VulkanContext =
                 
                 // destroy surface if lost
                 elif result = VkResult.ErrorSurfaceLostKHR then
-                    HlInternal.SurfaceState <- SurfaceLost
+                    Hl.SurfaceState <- SurfaceLost
                     Swapchain.update vkc.PhysicalDevice_ vkc.RenderQueue_ vkc.PresentQueue_ vkc.Swapchain_ vkc.Device vkc.Instance_
                 else Hl.check result
 
@@ -501,7 +1015,7 @@ type [<ReferenceEquality>] VulkanContext =
 
         // advance frame in flight
         // NOTE: DJL: this MUST happen EVERY frame regardless of RenderDesired_ otherwise fence security is broken.
-        HlInternal.CurrentFrame <- inc HlInternal.CurrentFrame % Constants.Vulkan.MaxFramesInFlight
+        Hl.CurrentFrame <- inc Hl.CurrentFrame % Constants.Vulkan.MaxFramesInFlight
 
     /// Wait for all device operations to complete before cleaning up resources.
     static member waitIdle (vkc : VulkanContext) =

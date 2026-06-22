@@ -12,96 +12,6 @@ open Vortice.Vulkan
 open Prime
 open Nu
 
-type internal SurfaceState =
-    | SurfaceReady
-    | SurfaceLost
-    | SurfaceDestroyed
-
-/// Represents a strict cycle ensuring that any presentation resources (surface and swapchains) that exist or are being created during the onset
-/// of app backgrounding on a mobile device are torn down/cancelled.
-/// TODO: DJL: encapsulate most of this stuff into a Surface abstraction as it should not be visible to Swapchain and VulkanContext.
-type internal BackgroundingResponseState =
-    | PresentationSetupInitiated // setup of presentation resources has begun and may be complete
-    | PresentationTeardownPending // presentation resources can no longer be trusted as app has commenced backgrounding
-    | PresentationTeardownComplete // presentation resources have been destroyed and restoration will commence when app is back in foreground
-
-[<RequireQualifiedAccess>]
-module internal HlInternal =
-
-    // TODO: DJL: all these free-floating variables, types and functions have become a
-    // bit of a mess and need to be reordered, not to mention the inconsistent casing.
-    
-    let mutable internal DrawReportLock = obj ()
-    let mutable internal DrawCallCount = 0
-    let mutable internal DrawInstanceCount = 0
-
-    let internal ValidationLayersEnabled =
-#if DEBUG
-        true
-#else
-        false
-#endif
-
-    let mutable internal ValidationLayersActivated = false
-
-    // provides id for a texture on the gpu that is globally unique i.e. cannot be reused after texture is destroyed,
-    // which is essential for tracking descriptor writes
-    let mutable private TextureIdGenerationLock = obj ()
-    let mutable private TextureIdCounter = 0UL
-    let internal GenTextureId () = lock TextureIdGenerationLock (fun () -> TextureIdCounter <- inc TextureIdCounter; TextureIdCounter)
-    
-    /// Index of the current Swapchain image.
-    let mutable internal ImageIndex = 0u
-
-    /// The current frame within MaxFramesInFlight.
-    /// TODO: DJL: figure out how to prevent potential outside mutation.
-    let mutable internal CurrentFrame = 0
-
-    /// The forward-declared empty texture value.
-    /// Initialized in RendererProcesses.
-    /// NOTE: if performance issues arise from checking / casting this, maybe use ValueOption or null directly.
-    /// TODO: see if instead of exposing mutability of this directly, we should define Init and CleanUp fns.
-    let mutable internal EmptyOpt : obj option = None
-
-    let mutable internal SurfaceState = SurfaceDestroyed
-    let mutable internal Surface = Unchecked.defaultof<VkSurfaceKHR>
-    
-    // presentation teardown in response to app backgrounding follows BackgroundingResponseState cycle,
-    // whereas presentation setup need only care whether app is *currently* in foreground
-    let mutable private BackgroundingResponseState = PresentationTeardownComplete
-    let mutable internal IsAppInForeground = true
-    
-    // thread-safe access to BackgroundingResponseState as it's essentially a semaphore that needs to be set by callback *and* render thread
-    let mutable private BackgroundingResponseStateLock = obj ()
-    let internal setPresentationSetupInitiated () = lock BackgroundingResponseStateLock (fun () -> BackgroundingResponseState <- PresentationSetupInitiated)
-    let internal setPresentationTeardownComplete () = lock BackgroundingResponseStateLock (fun () -> BackgroundingResponseState <- PresentationTeardownComplete)
-
-    /// Has app been SET for backgrounding (i.e. not necessarily IN background yet/still), invalidating existing surface.
-    let internal hasAppBegunBackgrounding () = lock BackgroundingResponseStateLock (fun () -> BackgroundingResponseState = PresentationTeardownPending)
-
-    // callback to inform render loop about app backgrounding
-    // official documentation for android case: https://github.com/libsdl-org/SDL/blob/main/docs/README-android.md#activity-lifecycle
-    let private handleBackgrounding (userData : voidptr) (event : SDL_Event nativeptr) : SDLBool =
-        ignore userData
-        let event = NativePtr.toByRef event
-        match event.Type with
-        | SDL_EventType.SDL_EVENT_WILL_ENTER_BACKGROUND ->
-            IsAppInForeground <- false
-            lock BackgroundingResponseStateLock (fun () ->
-                if BackgroundingResponseState = PresentationSetupInitiated then BackgroundingResponseState <- PresentationTeardownPending)
-            true
-        | SDL_EventType.SDL_EVENT_DID_ENTER_FOREGROUND ->
-            IsAppInForeground <- true
-            true
-        | _ -> true
-
-    // set up delegate for app backgrounding callback
-    // TODO: DJL: for mobile devices: https://learn.microsoft.com/en-us/dotnet/standard/native-interop/calling-conventions#when-you-can-omit-the-calling-convention.
-    [<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
-    type private BackgroundingDelegate = delegate of userData : voidptr * event : SDL_Event nativeptr -> SDLBool
-    let private backgroundingDelegate = BackgroundingDelegate handleBackgrounding
-    let internal backgroundingCallback = Marshal.GetFunctionPointerForDelegate<BackgroundingDelegate> backgroundingDelegate
-
 /// The format of an image.
 type ImageFormat =
     | Rgba8
@@ -271,30 +181,12 @@ type ImageLayout =
     
 /// The format of a vertex attribute.
 type VertexAttribFormat =
-    | Int
-    | Int2
-    | Int3
-    | Int4
-    | Uint
-    | Uint2
-    | Uint3
-    | Uint4
-    | Quarter
-    | Quarter2
-    | Quarter3
-    | Quarter4
-    | Half
-    | Half2
-    | Half3
-    | Half4
-    | Single
-    | Single2
-    | Single3
-    | Single4
-    | Double
-    | Double2
-    | Double3
-    | Double4
+    | Int       | Int2      | Int3      | Int4
+    | Uint      | Uint2     | Uint3     | Uint4
+    | Quarter   | Quarter2  | Quarter3  | Quarter4
+    | Half      | Half2     | Half3     | Half4
+    | Single    | Single2   | Single3   | Single4
+    | Double    | Double2   | Double3   | Double4
 
     /// The VkFormat.
     member this.VkFormat =
@@ -354,11 +246,115 @@ type DescriptorType =
         | UniformBuffer -> VkDescriptorType.UniformBuffer
         | StorageBuffer -> VkDescriptorType.StorageBuffer
 
+type internal SurfaceState =
+    | SurfaceReady
+    | SurfaceLost
+    | SurfaceDestroyed
+
+/// Represents a strict cycle ensuring that any presentation resources (surface and swapchains) that exist or are being created during the onset
+/// of app backgrounding on a mobile device are torn down/cancelled.
+/// TODO: DJL: encapsulate most of this stuff into a Surface abstraction as it should not be visible to Swapchain and VulkanContext.
+type internal BackgroundingResponseState =
+    | PresentationSetupInitiated // setup of presentation resources has begun and may be complete
+    | PresentationTeardownPending // presentation resources can no longer be trusted as app has commenced backgrounding
+    | PresentationTeardownComplete // presentation resources have been destroyed and restoration will commence when app is back in foreground
+
+// TODO: DJL: for mobile devices: https://learn.microsoft.com/en-us/dotnet/standard/native-interop/calling-conventions#when-you-can-omit-the-calling-convention.
+[<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
+type internal DebugDelegate =
+    delegate of VkDebugUtilsMessageSeverityFlagsEXT * VkDebugUtilsMessageTypeFlagsEXT * nativeint * nativeint -> uint32
+
+// https://github.com/amerkoleci/Vortice.Vulkan/blob/32035603790b64f4c96a979193a7e1391d34a428/src/Vortice.Vulkan/Generated/Structures.cs#L14978
+// VkDebugUtilsMessengerCreateInfoEXT with pfnUserCallback as "real" nativeint instead of "fake" nativeint which is actually a function pointer type
+// TODO: report this F# compiler bug that allows assigning to "fake" nativeint to compile without error but causes a crash at runtime
+type [<Struct>] internal VkDebugUtilsMessengerCreateInfoEXT_hack =
+    val mutable sType : VkStructureType
+    val mutable pNext : nativeint
+    val mutable flags : VkDebugUtilsMessengerCreateFlagsEXT
+    val mutable messageSeverity : VkDebugUtilsMessageSeverityFlagsEXT
+    val mutable messageType : VkDebugUtilsMessageTypeFlagsEXT
+    val mutable pfnUserCallback : nativeint // "real" nativeint
+    val mutable pUserData : nativeint
+
 [<RequireQualifiedAccess>]
 module Hl =
 
+    // TODO: DJL: all these free-floating variables, types and functions have become a
+    // bit of a mess and need to be reordered, not to mention the inconsistent casing.
+    
+    let mutable internal DrawReportLock = obj ()
+    let mutable internal DrawCallCount = 0
+    let mutable internal DrawInstanceCount = 0
+
+    let internal ValidationLayersEnabled =
+#if DEBUG
+        true
+#else
+        false
+#endif
+
+    let mutable internal ValidationLayersActivated = false
+
+    // provides id for a texture on the gpu that is globally unique i.e. cannot be reused after texture is destroyed,
+    // which is essential for tracking descriptor writes
+    let mutable private TextureIdGenerationLock = obj ()
+    let mutable private TextureIdCounter = 0UL
+    let internal GenTextureId () = lock TextureIdGenerationLock (fun () -> TextureIdCounter <- inc TextureIdCounter; TextureIdCounter)
+    
+    /// Index of the current Swapchain image.
+    let mutable internal ImageIndex = 0u
+
+    /// The current frame within MaxFramesInFlight.
+    /// TODO: DJL: figure out how to prevent potential outside mutation.
+    let mutable internal CurrentFrame = 0
+
+    /// The forward-declared empty texture value.
+    /// Initialized in RendererProcesses.
+    /// NOTE: if performance issues arise from checking / casting this, maybe use ValueOption or null directly.
+    /// TODO: see if instead of exposing mutability of this directly, we should define Init and CleanUp fns.
+    let mutable internal EmptyTextureOpt : obj option = None
+
+    let mutable internal SurfaceState = SurfaceDestroyed
+    let mutable internal Surface = Unchecked.defaultof<VkSurfaceKHR>
+    
+    // presentation teardown in response to app backgrounding follows BackgroundingResponseState cycle,
+    // whereas presentation setup need only care whether app is *currently* in foreground
+    let mutable private BackgroundingResponseState = PresentationTeardownComplete
+    let mutable internal IsAppInForeground = true
+    
+    // thread-safe access to BackgroundingResponseState as it's essentially a semaphore that needs to be set by callback *and* render thread
+    let mutable private BackgroundingResponseStateLock = obj ()
+    let internal setPresentationSetupInitiated () = lock BackgroundingResponseStateLock (fun () -> BackgroundingResponseState <- PresentationSetupInitiated)
+    let internal setPresentationTeardownComplete () = lock BackgroundingResponseStateLock (fun () -> BackgroundingResponseState <- PresentationTeardownComplete)
+
+    /// Has app been SET for backgrounding (i.e. not necessarily IN background yet/still), invalidating existing surface.
+    let internal hasAppBegunBackgrounding () = lock BackgroundingResponseStateLock (fun () -> BackgroundingResponseState = PresentationTeardownPending)
+
+    // callback to inform render loop about app backgrounding
+    // official documentation for android case: https://github.com/libsdl-org/SDL/blob/main/docs/README-android.md#activity-lifecycle
+    let private handleBackgrounding (userData : voidptr) (event : SDL_Event nativeptr) : SDLBool =
+        ignore userData
+        let event = NativePtr.toByRef event
+        match event.Type with
+        | SDL_EventType.SDL_EVENT_WILL_ENTER_BACKGROUND ->
+            IsAppInForeground <- false
+            lock BackgroundingResponseStateLock (fun () ->
+                if BackgroundingResponseState = PresentationSetupInitiated then BackgroundingResponseState <- PresentationTeardownPending)
+            true
+        | SDL_EventType.SDL_EVENT_DID_ENTER_FOREGROUND ->
+            IsAppInForeground <- true
+            true
+        | _ -> true
+
+    // set up delegate for app backgrounding callback
+    // TODO: DJL: for mobile devices: https://learn.microsoft.com/en-us/dotnet/standard/native-interop/calling-conventions#when-you-can-omit-the-calling-convention.
+    [<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
+    type private BackgroundingDelegate = delegate of userData : voidptr * event : SDL_Event nativeptr -> SDLBool
+    let private backgroundingDelegate = BackgroundingDelegate handleBackgrounding
+    let internal backgroundingCallback = Marshal.GetFunctionPointerForDelegate<BackgroundingDelegate> backgroundingDelegate
+
     /// Check if an image format is supported for attachments, falling back to a standard format where possible.
-    let rec CheckAttachmentFormat (vkPhysicalDevice, format : ImageFormat) =
+    let rec checkAttachmentFormat (vkPhysicalDevice, format : ImageFormat) =
         if not (ImageFormat.supportsAttachment vkPhysicalDevice format) then
             
             // NOTE: DJL: format fallbacks must not be ints for blit conversion.
@@ -369,7 +365,7 @@ module Hl =
                 | Astc ->
                     Log.fail ("Compressed image formats are not supported for attachment textures.")
                 | Rgb16f ->
-                    CheckAttachmentFormat (vkPhysicalDevice, Rgba16f)
+                    checkAttachmentFormat (vkPhysicalDevice, Rgba16f)
                 | Rgba8 (* standard *)
                 | Rgba16f (* standard *)
                 | Rg32f (* standard *)
@@ -379,15 +375,15 @@ module Hl =
                     // NOTE: DJL: for spec requirements, see https://docs.vulkan.org/spec/latest/chapters/formats.html#features-required-format-support.
                     Log.fail ("Vulkan attachment image format '" + scstring format.VkFormat + "' support is absent but required. Further, it's a requirement in the Vulkan specification!")
                 | D32f ->
-                    CheckAttachmentFormat (vkPhysicalDevice, D32fs8ui)
+                    checkAttachmentFormat (vkPhysicalDevice, D32fs8ui)
                 | D32fs8ui ->
-                    CheckAttachmentFormat (vkPhysicalDevice, D24s8ui)
+                    checkAttachmentFormat (vkPhysicalDevice, D24s8ui)
                 | D24s8ui ->
-                    CheckAttachmentFormat (vkPhysicalDevice, X8d24Pack32)
+                    checkAttachmentFormat (vkPhysicalDevice, X8d24Pack32)
                 | X8d24Pack32 ->
-                    CheckAttachmentFormat (vkPhysicalDevice, D16)
+                    checkAttachmentFormat (vkPhysicalDevice, D16)
                 | D16 ->
-                    CheckAttachmentFormat (vkPhysicalDevice, D16s8ui)
+                    checkAttachmentFormat (vkPhysicalDevice, D16s8ui)
                 | D16s8ui ->
                     Log.fail "Could not find a suitable format for depth attachment textures."
             Log.warn ("Falling back to " + scstring formatFallback.VkFormat + " attachment format due to unavailability of " + scstring format.VkFormat + " attachment format.")
@@ -579,44 +575,44 @@ module Hl =
         result
 
     let internal tryCreateVulkanSurface window instance =
-        match HlInternal.SurfaceState with
+        match SurfaceState with
         | SurfaceDestroyed ->
         
             // inform the backgrounding callback that we begin the process of creating the surface and swapchain
             // that may need to be aborted/destroyed at any point before *or* after completion due to a
             // backgrounding event, hence setup *initiated*
-            HlInternal.setPresentationSetupInitiated ()
+            setPresentationSetupInitiated ()
             let mutable surfacePtr = Unchecked.defaultof<VkSurfaceKHR_T nativeptr>
             let instance = NativePtr.ofNativeInt (VkInstance.op_Implicit instance)
             if not (SDL3.SDL_Vulkan_CreateSurface (window, instance, NativePtr.nullPtr, &&surfacePtr)) then
                 Log.error (SDL3.SDL_GetError ())
-                HlInternal.setPresentationTeardownComplete () // inform callback to scratch that
+                setPresentationTeardownComplete () // inform callback to scratch that
             else
-                HlInternal.Surface <- NativePtr.toNativeInt surfacePtr |> uint64 |> VkSurfaceKHR.op_Implicit
-                HlInternal.SurfaceState <- SurfaceReady
+                Surface <- NativePtr.toNativeInt surfacePtr |> uint64 |> VkSurfaceKHR.op_Implicit
+                SurfaceState <- SurfaceReady
         | SurfaceReady -> Log.error "Attempted creation of Vulkan surface when existing surface has not been destroyed!"
         | SurfaceLost -> Log.error "Attempted creation of Vulkan surface when existing surface has been lost but not destroyed!"
 
     let internal createVulkanSurface window instance =
     
         // wait for app to enter foreground if not already
-        while not HlInternal.IsAppInForeground do ()
+        while not IsAppInForeground do ()
         tryCreateVulkanSurface window instance
 
         // cannot tolerate failure as this function is intended to guarantee surface creation, otherwise must set up a retry mechanism
-        if HlInternal.SurfaceState.IsSurfaceDestroyed then Log.fail "Vulkan surface creation failed."
+        if SurfaceState.IsSurfaceDestroyed then Log.fail "Vulkan surface creation failed."
 
     let internal destroyVulkanSurface instance =
-        match HlInternal.SurfaceState with
+        match SurfaceState with
         | SurfaceReady
         | SurfaceLost ->
-            Vulkan.vkDestroySurfaceKHR (instance, HlInternal.Surface, nullPtr)
-            HlInternal.SurfaceState <- SurfaceDestroyed
+            Vulkan.vkDestroySurfaceKHR (instance, Surface, nullPtr)
+            SurfaceState <- SurfaceDestroyed
 
             // inform the backgrounding callback that the required teardown of presentation is complete
             // so no action is required if another backgrounding event is triggered prior to recreation;
             // this must correspond exactly with SurfaceDestroyed, which is used by Swapchain
-            HlInternal.setPresentationTeardownComplete ()
+            setPresentationTeardownComplete ()
         | SurfaceDestroyed ->
             Log.error "Attempted destruction of Vulkan surface that has already been destroyed!"
 
@@ -633,23 +629,23 @@ module Hl =
 
     /// Report the fact that a draw call has just been made with the given number of instances.
     let reportDrawCall drawInstances =
-        lock HlInternal.DrawReportLock (fun () ->
-            HlInternal.DrawCallCount <- inc HlInternal.DrawCallCount
-            HlInternal.DrawInstanceCount <- HlInternal.DrawInstanceCount + drawInstances)
+        lock DrawReportLock (fun () ->
+            DrawCallCount <- inc DrawCallCount
+            DrawInstanceCount <- DrawInstanceCount + drawInstances)
 
     /// Reset the running number of draw calls.
     let resetDrawCalls () =
-        lock HlInternal.DrawReportLock (fun () ->
-            HlInternal.DrawCallCount <- 0
-            HlInternal.DrawInstanceCount <- 0)
+        lock DrawReportLock (fun () ->
+            DrawCallCount <- 0
+            DrawInstanceCount <- 0)
 
     /// Get the running number of draw calls.
     let getDrawCallCount () =
-        lock HlInternal.DrawReportLock (fun () -> HlInternal.DrawCallCount)
+        lock DrawReportLock (fun () -> DrawCallCount)
 
     /// Get the running number of draw calls.
     let getDrawInstanceCount () =
-        lock HlInternal.DrawReportLock (fun () -> HlInternal.DrawInstanceCount)
+        lock DrawReportLock (fun () -> DrawInstanceCount)
 
     /// Try to compile GLSL file to SPIR-V code.
     let tryCompileShader shaderPath shaderKind =
@@ -703,12 +699,12 @@ module Hl =
     /// Try get surface capabilities.
     let internal tryGetSurfaceCapabilities vkPhysicalDevice =
         let mutable capabilities = Unchecked.defaultof<VkSurfaceCapabilitiesKHR>
-        let result = Vulkan.vkGetPhysicalDeviceSurfaceCapabilitiesKHR (vkPhysicalDevice, HlInternal.Surface, &capabilities)
+        let result = Vulkan.vkGetPhysicalDeviceSurfaceCapabilitiesKHR (vkPhysicalDevice, Surface, &capabilities)
         if result <> VkResult.ErrorSurfaceLostKHR then
             check result
             Some capabilities
         else
-            HlInternal.SurfaceState <- SurfaceLost
+            SurfaceState <- SurfaceLost
             None
 
     /// Get swap extent.
@@ -737,7 +733,7 @@ module Hl =
             VkExtent2D (width, height)
     
     /// Create an image view.
-    let createImageView pixelFormat vkFormat mipLevel mipCount layer layerCount viewType imageAspect image device =
+    let createImageView pixelFormat vkFormat mipLevel mipCount (layer : int) (layerCount : int) viewType imageAspect image device =
         let mutable info = VkImageViewCreateInfo ()
         info.image <- image
         info.viewType <- viewType
@@ -799,534 +795,3 @@ module Hl =
         let mutable cbInfo = VkCommandBufferBeginInfo (flags = VkCommandBufferUsageFlags.OneTimeSubmit)
         Vulkan.vkBeginCommandBuffer (commandBuffer, asPointer &cbInfo) |> check
         commandBuffer
-
-/// A command queue that internally synchronizes use across multiple threads.
-/// TODO: P0: rename this to CommandQueue?
-type [<ReferenceEquality>] Queue =
-    private
-        { VkQueue : VkQueue
-          Lock : obj }
-
-    /// Create a Queue.
-    static member create queueFamilyIndex queueIndex device =
-    
-        // get VkQueue
-        let mutable vkQueue = Unchecked.defaultof<VkQueue>
-        Vulkan.vkGetDeviceQueue (device, queueFamilyIndex, queueIndex, &vkQueue)
-
-        // make Queue
-        let queue =
-            { VkQueue = vkQueue
-              Lock = obj () }
-
-        // fin
-        queue
-
-    /// Wait for Queue to finish execution.
-    static member waitIdle queue =
-        lock queue.Lock (fun () -> Vulkan.vkQueueWaitIdle queue.VkQueue |> Hl.check)
-
-    /// Submit persistent command buffer for execution.
-    static member submit commandBuffer waitSemaphoresStages (signalSemaphores : VkSemaphore array) signalFence (queue : Queue) =
-        lock queue.Lock (fun () ->
-
-            // end command buffer
-            Vulkan.vkEndCommandBuffer commandBuffer |> Hl.check
-        
-            // unpack and pin arrays
-            let (waitSemaphores, waitStages) = Array.unzip waitSemaphoresStages
-            use waitSemaphoresPin = new ArrayPin<_> (waitSemaphores)
-            use waitStagesPin = new ArrayPin<_> (waitStages)
-            use signalSemaphoresPin = new ArrayPin<_> (signalSemaphores)
-
-            // submit commands
-            let mutable commandBuffer = commandBuffer
-            let mutable info = VkSubmitInfo ()
-            info.waitSemaphoreCount <- uint waitSemaphores.Length
-            info.pWaitSemaphores <- waitSemaphoresPin.Pointer
-            info.pWaitDstStageMask <- waitStagesPin.Pointer
-            info.commandBufferCount <- 1u
-            info.pCommandBuffers <- asPointer &commandBuffer
-            info.signalSemaphoreCount <- uint signalSemaphores.Length
-            info.pSignalSemaphores <- signalSemaphoresPin.Pointer
-            Vulkan.vkQueueSubmit (queue.VkQueue, 1u, asPointer &info, signalFence) |> Hl.check)
-
-    /// Execute and free transient command buffer. Command pool and fence must NOT be shared between threads!
-    static member executeTransient commandBuffer commandPool finishFence (queue : Queue) device =
-        let mutable commandBuffer = commandBuffer
-        lock queue.Lock (fun () ->
-        
-            // end command buffer
-            Vulkan.vkEndCommandBuffer commandBuffer |> Hl.check
-
-            // submit commands
-            let mutable info = VkSubmitInfo ()
-            info.commandBufferCount <- 1u
-            info.pCommandBuffers <- asPointer &commandBuffer
-            Vulkan.vkQueueSubmit (queue.VkQueue, 1u, asPointer &info, finishFence) |> Hl.check
-
-            // wait for execution to finish
-            // NOTE: DJL: must ALSO be thread safe!
-            Hl.awaitFence finishFence device
-
-            // free command buffer
-            Vulkan.vkFreeCommandBuffers (device, commandPool, 1u, asPointer &commandBuffer))
-
-    /// Present swapchain image.
-    static member present waitSemaphore vkSwapchain (queue : Queue) =
-
-        // try to present image
-        let result =
-            lock queue.Lock (fun () ->
-                let mutable waitSemaphore = waitSemaphore
-                let mutable vkSwapchain = vkSwapchain
-                let mutable info = VkPresentInfoKHR ()
-                info.waitSemaphoreCount <- 1u
-                info.pWaitSemaphores <- asPointer &waitSemaphore
-                info.swapchainCount <- 1u
-                info.pSwapchains <- asPointer &vkSwapchain
-                info.pImageIndices <- asPointer &HlInternal.ImageIndex
-                Vulkan.vkQueuePresentKHR (queue.VkQueue, asPointer &info))
-    
-        // return result
-        result
-
-/// A physical device and associated data.
-type internal PhysicalDevice =
-    { VkPhysicalDevice : VkPhysicalDevice
-      Properties : VkPhysicalDeviceProperties
-      Features : VkPhysicalDeviceFeatures
-      Extensions : VkExtensionProperties array
-      SurfaceCapabilities : VkSurfaceCapabilitiesKHR // NOTE: DJL: keep this here in case we want to use it for device selection.
-      SurfaceFormats : VkSurfaceFormatKHR array
-      GraphicsQueueFamily : uint
-      PresentQueueFamily : uint
-      GraphicsQueueCount : uint }
-
-    /// Supports anisotropy.
-    member this.SupportsAnisotropy =
-        this.Features.samplerAnisotropy = VkBool32.True
-    
-    static member private checkSurface window instance =
-        if HlInternal.hasAppBegunBackgrounding () then
-            Hl.destroyVulkanSurface instance
-            Hl.createVulkanSurface window instance
-    
-    /// Get properties.
-    static member private getProperties vkPhysicalDevice =
-        let mutable properties = Unchecked.defaultof<VkPhysicalDeviceProperties>
-        Vulkan.vkGetPhysicalDeviceProperties (vkPhysicalDevice, &properties)
-        properties
-
-    /// Get features.
-    static member private getFeatures vkPhysicalDevice =
-        let mutable features = Unchecked.defaultof<VkPhysicalDeviceFeatures>
-        Vulkan.vkGetPhysicalDeviceFeatures (vkPhysicalDevice, &features)
-        features
-    
-    /// Get available extensions.
-    static member private getExtensions vkPhysicalDevice =
-        let mutable extensionCount = 0u
-        Vulkan.vkEnumerateDeviceExtensionProperties (vkPhysicalDevice, nullPtr, asPointer &extensionCount, nullPtr) |> Hl.check
-        let extensions = Array.zeroCreate<VkExtensionProperties> (int extensionCount)
-        use extensionsPin = new ArrayPin<_> (extensions)
-        Vulkan.vkEnumerateDeviceExtensionProperties (vkPhysicalDevice, nullPtr, asPointer &extensionCount, extensionsPin.Pointer) |> Hl.check
-        extensions
-
-    /// Get available surface formats.
-    static member private getSurfaceFormats vkPhysicalDevice window instance =
-        PhysicalDevice.checkSurface window instance
-        let mutable formatCount = 0u
-        Vulkan.vkGetPhysicalDeviceSurfaceFormatsKHR (vkPhysicalDevice, HlInternal.Surface, asPointer &formatCount, nullPtr) |> Hl.check
-        let formats = Array.zeroCreate<VkSurfaceFormatKHR> (int formatCount)
-        use formatsPin = new ArrayPin<_> (formats)
-        Vulkan.vkGetPhysicalDeviceSurfaceFormatsKHR (vkPhysicalDevice, HlInternal.Surface, asPointer &formatCount, formatsPin.Pointer) |> Hl.check
-        formats
-
-    /// Get surface capabilities.
-    static member private getSurfaceCapabilities vkPhysicalDevice window instance =
-        PhysicalDevice.checkSurface window instance
-        let mutable capabilities = Unchecked.defaultof<VkSurfaceCapabilitiesKHR>
-        Vulkan.vkGetPhysicalDeviceSurfaceCapabilitiesKHR (vkPhysicalDevice, HlInternal.Surface, &capabilities) |> Hl.check
-        capabilities
-    
-    /// Attempt to get the queue families.
-    static member private tryGetQueueFamilies vkPhysicalDevice window instance =
-
-        // check surface is still valid
-        PhysicalDevice.checkSurface window instance
-        
-        // get queue families' properties
-        let mutable queueFamilyCount = 0u
-        Vulkan.vkGetPhysicalDeviceQueueFamilyProperties (vkPhysicalDevice, asPointer &queueFamilyCount, nullPtr)
-        let queueFamilyProps = Array.zeroCreate<VkQueueFamilyProperties> (int queueFamilyCount)
-        use queueFamilyPropsPin = new ArrayPin<_> (queueFamilyProps)
-        Vulkan.vkGetPhysicalDeviceQueueFamilyProperties (vkPhysicalDevice, asPointer &queueFamilyCount, queueFamilyPropsPin.Pointer)
-
-        // NOTE: DJL: it is *essential* to use the *first* compatible queue families in the array, *not* the last, as per the tutorial and vortice vulkan sample.
-        // I discovered this by accident because the queue families on my AMD behaved exactly the same as the queue families on this one:
-        // https://computergraphics.stackexchange.com/questions/9707/queue-from-a-family-queue-that-supports-presentation-doesnt-work-vulkan
-        // general lesson: trust level for vendors is too low for deviation from common practices to be advisable.
-        let mutable graphicsQueueFamilyOpt = None
-        let mutable presentQueueFamilyOpt = None
-        for i in 0 .. dec queueFamilyProps.Length do
-
-            // try get graphics queue family
-            // NOTE: DJL: for reason described above, do not attempt to derive transfer queue from seperate family.
-            match graphicsQueueFamilyOpt with
-            | None ->
-                let props = queueFamilyProps.[i]
-                if props.queueFlags &&& VkQueueFlags.Graphics <> VkQueueFlags.None then
-                    graphicsQueueFamilyOpt <- Some (uint i, props.queueCount)
-            | Some _ -> ()
-
-            // try get present queue family
-            match presentQueueFamilyOpt with
-            | None ->
-                let mutable presentSupport = VkBool32.False
-                Vulkan.vkGetPhysicalDeviceSurfaceSupportKHR (vkPhysicalDevice, uint i, HlInternal.Surface, &presentSupport) |> Hl.check
-                if (presentSupport = VkBool32.True) then
-                    presentQueueFamilyOpt <- Some (uint i)
-            | Some _ -> ()
-
-        // fin
-        (graphicsQueueFamilyOpt, presentQueueFamilyOpt)
-
-    /// Attempt to construct PhysicalDevice.
-    static member tryCreate vkPhysicalDevice window instance =
-        let properties = PhysicalDevice.getProperties vkPhysicalDevice
-        let features = PhysicalDevice.getFeatures vkPhysicalDevice
-        let extensions = PhysicalDevice.getExtensions vkPhysicalDevice
-        let surfaceFormats = PhysicalDevice.getSurfaceFormats vkPhysicalDevice window instance
-        let surfaceCapabilities = PhysicalDevice.getSurfaceCapabilities vkPhysicalDevice window instance
-        match PhysicalDevice.tryGetQueueFamilies vkPhysicalDevice window instance with
-        | (Some (graphicsQueueFamily, graphicsQueueCount), Some presentQueueFamily) ->
-            let physicalDevice =
-                { VkPhysicalDevice = vkPhysicalDevice
-                  Properties = properties
-                  Features = features
-                  Extensions = extensions
-                  SurfaceCapabilities = surfaceCapabilities
-                  SurfaceFormats = surfaceFormats
-                  GraphicsQueueFamily = graphicsQueueFamily
-                  PresentQueueFamily = presentQueueFamily
-                  GraphicsQueueCount = graphicsQueueCount }
-            Some physicalDevice
-        | (_, _) -> None
-
-/// A single swapchain and its assets.
-type internal SwapchainInternal =
-    { VkSwapchain : VkSwapchainKHR
-      Images : VkImage array
-      ImageViews : VkImageView array
-      RenderFinishedSemaphores : VkSemaphore array
-      SwapExtent : VkExtent2D }
-
-    /// Try create the VkSwapchain.
-    static member private tryCreateVkSwapchain (surfaceFormat : VkSurfaceFormatKHR) oldVkSwapchainOpt physicalDevice window device =
-        match Hl.tryGetSurfaceCapabilities physicalDevice.VkPhysicalDevice with
-        | Some capabilities ->
-        
-            // decide the minimum number of images in the swapchain. Sellers, Vulkan Programming Guide p. 144, recommends
-            // at least 3 for performance, but to keep latency low let's start with the more conservative recommendation of
-            // https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Swap_chain#page_Creating-the-swap-chain.
-            let minImageCount =
-                if capabilities.maxImageCount = 0u
-                then capabilities.minImageCount + 1u
-                else min (capabilities.minImageCount + 1u) capabilities.maxImageCount
-
-            // get swap extent
-            let swapExtent = Hl.getSwapExtent capabilities window
-            
-            // in case graphics and present queue families differ
-            // TODO: as part of optimization, the sharing mode in this case should probably be VkSharingMode.Exclusive (see below).
-            let indicesArray = [|physicalDevice.GraphicsQueueFamily; physicalDevice.PresentQueueFamily|]
-            use indicesArrayPin = new ArrayPin<_> (indicesArray)
-
-            // create swapchain
-            let mutable info = VkSwapchainCreateInfoKHR ()
-            info.surface <- HlInternal.Surface
-            info.minImageCount <- minImageCount
-            info.imageFormat <- surfaceFormat.format
-            info.imageColorSpace <- surfaceFormat.colorSpace
-            info.imageExtent <- swapExtent
-            info.imageArrayLayers <- 1u
-            info.imageUsage <- VkImageUsageFlags.ColorAttachment ||| VkImageUsageFlags.TransferDst
-            if (physicalDevice.GraphicsQueueFamily = physicalDevice.PresentQueueFamily) then
-                info.imageSharingMode <- VkSharingMode.Exclusive
-            else
-                info.imageSharingMode <- VkSharingMode.Concurrent
-                info.queueFamilyIndexCount <- 2u
-                info.pQueueFamilyIndices <- indicesArrayPin.Pointer
-            info.preTransform <- capabilities.currentTransform
-            info.compositeAlpha <- VkCompositeAlphaFlagsKHR.Opaque
-            info.presentMode <- VkPresentModeKHR.Fifo // NOTE: guaranteed by the spec and seems most appropriate for Nu.
-            info.clipped <- true
-            info.oldSwapchain <- oldVkSwapchainOpt
-            let mutable vkSwapchain = Unchecked.defaultof<VkSwapchainKHR>
-            let result = Vulkan.vkCreateSwapchainKHR (device, &info, nullPtr, &vkSwapchain)
-            
-            if result <> VkResult.ErrorSurfaceLostKHR then
-                Hl.check result
-                Some (vkSwapchain, swapExtent)
-            else
-                HlInternal.SurfaceState <- SurfaceLost
-                None
-
-        | None -> None
-
-    /// Get swapchain images.
-    static member private getSwapchainImages vkSwapchain device =
-        let mutable imageCount = 0u
-        Vulkan.vkGetSwapchainImagesKHR (device, vkSwapchain, asPointer &imageCount, nullPtr) |> Hl.check
-        let images = Array.zeroCreate<VkImage> (int imageCount)
-        use imagesPin = new ArrayPin<_> (images)
-        Vulkan.vkGetSwapchainImagesKHR (device, vkSwapchain, asPointer &imageCount, imagesPin.Pointer) |> Hl.check
-        images
-
-    /// Create the image views.
-    static member private createImageViews format (images : VkImage array) device =
-        let imageViews = Array.zeroCreate<VkImageView> images.Length
-        for i in 0 .. dec imageViews.Length do imageViews.[i] <- Hl.createImageView Rgba format 0 1 0 1 VkImageViewType.Image2D VkImageAspectFlags.Color images.[i] device
-        imageViews
-    
-    /// Create render finished semaphores.
-    static member private createRenderFinishedSemaphores imageCount device =
-        let semaphores = Array.zeroCreate<VkSemaphore> imageCount
-        for i in 0 .. dec semaphores.Length do semaphores.[i] <- Hl.createSemaphore device
-        semaphores
-    
-    /// Try create a SwapchainInternal.
-    static member tryCreate surfaceFormat oldVkSwapchainOpt physicalDevice window device =
-        
-        // try create vkSwapchain and its assets
-        match SwapchainInternal.tryCreateVkSwapchain surfaceFormat oldVkSwapchainOpt physicalDevice window device with
-        | Some (vkSwapchain, swapExtent) ->
-            let images = SwapchainInternal.getSwapchainImages vkSwapchain device
-            let imageViews = SwapchainInternal.createImageViews surfaceFormat.format images device
-
-            // render finished semaphores based on swapchain images rather than frames in flight to address
-            // safety issue described in https://docs.vulkan.org/guide/latest/swapchain_semaphore_reuse.html.
-            // these should naturally be associated with the vkSwapchain itself, especially to prevent validation
-            // errors triggered by reuse of semaphores that "may still be in use" by obsolete vkSwapchains.
-            let renderFinishedSemaphores = SwapchainInternal.createRenderFinishedSemaphores images.Length device
-
-            // make SwapchainInternal
-            let swapchainInternal =
-                { VkSwapchain = vkSwapchain
-                  Images = images
-                  ImageViews = imageViews
-                  RenderFinishedSemaphores = renderFinishedSemaphores
-                  SwapExtent = swapExtent }
-
-            // fin
-            Some swapchainInternal
-        | None -> None
-    
-    /// Destroy a SwapchainInternal.
-    static member destroy renderQueue presentQueue swapchainInternal device =
-        
-        // TODO: DJL: this is not sufficient to ensure resources not still in use, that requires an extension!!
-        // https://docs.vulkan.org/guide/latest/swapchain_semaphore_reuse.html#_vk_ext_swapchain_maintenance1_extension
-        Queue.waitIdle renderQueue
-        Queue.waitIdle presentQueue
-        for i in 0 .. dec swapchainInternal.ImageViews.Length do Vulkan.vkDestroyImageView (device, swapchainInternal.ImageViews.[i], nullPtr)
-        Vulkan.vkDestroySwapchainKHR (device, swapchainInternal.VkSwapchain, nullPtr)
-        for i in 0 .. dec swapchainInternal.RenderFinishedSemaphores.Length do Vulkan.vkDestroySemaphore (device, swapchainInternal.RenderFinishedSemaphores.[i], nullPtr)
-
-/// A swapchain and its assets that may be refreshed for a different screen size.
-type internal Swapchain =
-    { SwapchainInternalOpts_ : SwapchainInternal option array
-      Window_ : SDL_Window nativeptr
-      SurfaceFormat_ : VkSurfaceFormatKHR
-      mutable SwapchainIndex_ : int }
-
-    /// The current SwapchainInternalOpt.
-    member this.SwapchainInternalOpt = this.SwapchainInternalOpts_.[this.SwapchainIndex_]
-    
-    /// The Vulkan swapchain itself.
-    member this.VkSwapchain = (Option.get this.SwapchainInternalOpts_.[this.SwapchainIndex_]).VkSwapchain
-
-    /// The number of swapchain images.
-    member this.ImageCount = (Option.get this.SwapchainInternalOpts_.[this.SwapchainIndex_]).Images.Length
-    
-    /// The current swapchain image.
-    member this.Image = (Option.get this.SwapchainInternalOpts_.[this.SwapchainIndex_]).Images.[int HlInternal.ImageIndex]
-
-    /// The image view for the current swapchain image.
-    member this.ImageView = (Option.get this.SwapchainInternalOpts_.[this.SwapchainIndex_]).ImageViews.[int HlInternal.ImageIndex]
-    
-    /// The render finished semaphore for the current swapchain image.
-    member this.RenderFinishedSemaphore = (Option.get this.SwapchainInternalOpts_.[this.SwapchainIndex_]).RenderFinishedSemaphores.[int HlInternal.ImageIndex]
-
-    /// The swap extent of the current vkSwapchain.
-    member this.SwapExtent = (Option.get this.SwapchainInternalOpts_.[this.SwapchainIndex_]).SwapExtent
-
-    static member private clear renderQueue presentQueue swapchain device =
-        for i in 0 .. dec swapchain.SwapchainInternalOpts_.Length do
-            match swapchain.SwapchainInternalOpts_.[i] with
-            | Some swapchainInternal ->
-                SwapchainInternal.destroy renderQueue presentQueue swapchainInternal device
-                swapchain.SwapchainInternalOpts_.[i] <- None
-            | None -> ()
-    
-    static member private destroySurface renderQueue presentQueue swapchain device instance =
-        Swapchain.clear renderQueue presentQueue swapchain device // must do this first
-        Hl.destroyVulkanSurface instance
-    
-    static member private tryCreateSurfaceAndSwapchainInternal physicalDevice renderQueue presentQueue swapchain device instance =
-        
-        // check if app is back in foreground
-        if HlInternal.IsAppInForeground then
-            
-            // create surface
-            Hl.tryCreateVulkanSurface swapchain.Window_ instance
-            
-            // ensure surface creation was successful
-            if HlInternal.SurfaceState = SurfaceReady then
-                
-                // check if pause triggered during surface creation
-                if not (HlInternal.hasAppBegunBackgrounding ()) then
-                
-                    // check window not minimized
-                    if not (Swapchain.isWindowMinimized swapchain.Window_) then
-
-                        // try create SwapchainInternal
-                        let swapchainInternalOpt = SwapchainInternal.tryCreate swapchain.SurfaceFormat_ VkSwapchainKHR.Null physicalDevice swapchain.Window_ device
-                        swapchain.SwapchainInternalOpts_.[swapchain.SwapchainIndex_] <- swapchainInternalOpt
-                        
-                        // destroy surface if lost again or if pause triggered during swapchain creation
-                        if HlInternal.SurfaceState = SurfaceLost || HlInternal.hasAppBegunBackgrounding ()
-                        then Swapchain.destroySurface renderQueue presentQueue swapchain device instance
-
-                // abort
-                else Swapchain.destroySurface renderQueue presentQueue swapchain device instance
-    
-    /// Check if window is minimized.
-    static member isWindowMinimized window =
-        SDL3.SDL_GetWindowFlags window &&& SDL_WindowFlags.SDL_WINDOW_MINIMIZED <> LanguagePrimitives.EnumOfValue 0UL
-    
-    /// Check if window has been resized or surface lost.
-    static member isWindowResizedOrSurfaceLost vkPhysicalDevice (swapchain : Swapchain) =
-        match Hl.tryGetSurfaceCapabilities vkPhysicalDevice with
-        | Some capabilities -> swapchain.SwapExtent <> Hl.getSwapExtent capabilities swapchain.Window_
-        | None -> true
-
-    /// Update the swapchain.
-    static member update physicalDevice renderQueue presentQueue swapchain device instance =
-        
-        // NOTE: DJL: by design, this method should know exactly what to do based on the current and changing state of
-        // the surface and app backgrounding, anticipated or not, regardless of the calling context, which just needs 
-        // to detect *if* method must be called. It should have a valid and appropriate result whatever the environment
-        // throws at it.
-        
-        // handle surface state
-        match HlInternal.SurfaceState with
-        
-        // attempt to recreate the swapchain, destroying the surface if suddenly lost or if app has/will enter background
-        | SurfaceReady ->
-        
-            // check if app has or will enter background, if not then just try recreate swapchain
-            if not (HlInternal.hasAppBegunBackgrounding ()) then
-            
-                // use current VkSwapchain to create new one
-                let oldVkSwapchainOpt =
-                    match swapchain.SwapchainInternalOpts_.[swapchain.SwapchainIndex_] with
-                    | Some swapchainInternal -> if swapchain.SwapchainInternalOpts_.Length > 1 then swapchainInternal.VkSwapchain else VkSwapchainKHR.Null
-                    | None -> VkSwapchainKHR.Null
-
-                // advance swapchain index
-                if Option.isSome swapchain.SwapchainInternalOpts_.[swapchain.SwapchainIndex_] then
-                    swapchain.SwapchainIndex_ <- (inc swapchain.SwapchainIndex_) % swapchain.SwapchainInternalOpts_.Length
-
-                // destroy SwapchainInternal at new index if present
-                match swapchain.SwapchainInternalOpts_.[swapchain.SwapchainIndex_] with
-                | Some swapchainInternal ->
-                    SwapchainInternal.destroy renderQueue presentQueue swapchainInternal device
-                    swapchain.SwapchainInternalOpts_.[swapchain.SwapchainIndex_] <- None
-                | None -> ()
-                
-                // check once more for app pause (triggered during swapchain destruction) before attempting swapchain creation
-                if not (HlInternal.hasAppBegunBackgrounding ()) then
-                
-                    // check window not minimized
-                    if not (Swapchain.isWindowMinimized swapchain.Window_) then
-                    
-                        // try create new swapchain internal
-                        let swapchainInternalOpt = SwapchainInternal.tryCreate swapchain.SurfaceFormat_ oldVkSwapchainOpt physicalDevice swapchain.Window_ device
-                        swapchain.SwapchainInternalOpts_.[swapchain.SwapchainIndex_] <- swapchainInternalOpt
-
-                        // if surface is lost here (or pause triggered during pipeline creation!), destroy and attempt to recover on the spot
-                        if HlInternal.SurfaceState = SurfaceLost || HlInternal.hasAppBegunBackgrounding () then
-                            Swapchain.destroySurface renderQueue presentQueue swapchain device instance
-                            Swapchain.tryCreateSurfaceAndSwapchainInternal physicalDevice renderQueue presentQueue swapchain device instance
-
-                // destroy surface and recreate if already possible
-                else
-                    Swapchain.destroySurface renderQueue presentQueue swapchain device instance
-                    Swapchain.tryCreateSurfaceAndSwapchainInternal physicalDevice renderQueue presentQueue swapchain device instance
-
-            // destroy surface and recreate if already possible
-            else
-                Swapchain.destroySurface renderQueue presentQueue swapchain device instance
-                Swapchain.tryCreateSurfaceAndSwapchainInternal physicalDevice renderQueue presentQueue swapchain device instance
-
-        // handle surface loss and attempt to recreate surface and swapchain immediately
-        | SurfaceLost ->
-            Swapchain.destroySurface renderQueue presentQueue swapchain device instance
-            Swapchain.tryCreateSurfaceAndSwapchainInternal physicalDevice renderQueue presentQueue swapchain device instance
-
-        // attempt to recreate surface and swapchain when app is in foreground
-        | SurfaceDestroyed ->
-            Swapchain.tryCreateSurfaceAndSwapchainInternal physicalDevice renderQueue presentQueue swapchain device instance
-    
-    /// Create a Swapchain.
-    static member create surfaceFormat physicalDevice window device =
-        
-        // swapchain index starts at zero
-        let swapchainIndex = 0
-        
-        // create SwapchainInternal array
-        // NOTE: DJL: must allow for frames in flight plus 1 to prevent destroying semaphores while still in use
-        // because swapchain can be refreshed at the end of one frame AND at the beginning of the next,
-        // but can still only be refreshed once per frame.
-        let swapchainInternalOpts = Array.create (Constants.Vulkan.MaxFramesInFlight + 1) None
-        
-        // check if window is minimized at startup
-        let windowMinimized = Swapchain.isWindowMinimized window
-        
-        // try create first SwapchainInternal if window is not minimized or app paused
-        if not (windowMinimized || HlInternal.hasAppBegunBackgrounding ()) then
-            let swapchainInternalOpt = SwapchainInternal.tryCreate surfaceFormat VkSwapchainKHR.Null physicalDevice window device
-            swapchainInternalOpts.[swapchainIndex] <- swapchainInternalOpt
-
-        // make Swapchain
-        let swapchain =
-            { SwapchainInternalOpts_ = swapchainInternalOpts
-              Window_ = window
-              SurfaceFormat_ = surfaceFormat
-              SwapchainIndex_ = swapchainIndex }
-
-        // fin
-        (swapchain, windowMinimized)
-    
-    /// Destroy a Swapchain.
-    static member destroy swapchain device =
-        Swapchain.clear swapchain device
-
-// TODO: DJL: for mobile devices: https://learn.microsoft.com/en-us/dotnet/standard/native-interop/calling-conventions#when-you-can-omit-the-calling-convention.
-[<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
-type internal DebugDelegate =
-    delegate of VkDebugUtilsMessageSeverityFlagsEXT * VkDebugUtilsMessageTypeFlagsEXT * nativeint * nativeint -> uint32
-
-// https://github.com/amerkoleci/Vortice.Vulkan/blob/32035603790b64f4c96a979193a7e1391d34a428/src/Vortice.Vulkan/Generated/Structures.cs#L14978
-// VkDebugUtilsMessengerCreateInfoEXT with pfnUserCallback as "real" nativeint instead of "fake" nativeint which is actually a function pointer type
-// TODO: report this F# compiler bug that allows assigning to "fake" nativeint to compile without error but causes a crash at runtime
-type [<Struct>] private VkDebugUtilsMessengerCreateInfoEXT_hack =
-    val mutable sType : VkStructureType
-    val mutable pNext : nativeint
-    val mutable flags : VkDebugUtilsMessengerCreateFlagsEXT
-    val mutable messageSeverity : VkDebugUtilsMessageSeverityFlagsEXT
-    val mutable messageType : VkDebugUtilsMessageTypeFlagsEXT
-    val mutable pfnUserCallback : nativeint // "real" nativeint
-    val mutable pUserData : nativeint
