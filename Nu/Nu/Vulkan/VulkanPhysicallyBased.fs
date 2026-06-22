@@ -1524,9 +1524,10 @@ module PhysicallyBased =
 
                     // specify dynamic
                     let mutable dynamicDescriptorSet = Pipeline.specifyDescriptorSet 2 pipeline.Pipeline.DrawIndex pipeline.Pipeline vkc $ fun vkSet ->
-                        use bonesPin = new ArrayPin<_> (bones)
-                        Buffer.uploadSubdata 0 0 sizeof<Bone> (min bones.Length Constants.Render.BonesMax) bonesPin.NativeInt pipeline.BoneUniform vkc
-                        Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.BoneUniform vkSet vkc
+                        //use bonesPin = new ArrayPin<_> (bones)
+                        //Buffer.uploadSubdata 0 0 sizeof<Bone> (min bones.Length Constants.Render.BonesMax) bonesPin.NativeInt pipeline.BoneUniform vkc
+                        //Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.BoneUniform vkSet vkc
+                        ()
 
                     // set up render
                     let mutable rendering = Hl.makeRenderingInfo colorAttachments (Some depthAttachment.ImageView) renderArea None
@@ -1757,9 +1758,9 @@ module PhysicallyBased =
                 let mutable dynamicDescriptorSet = Pipeline.specifyDescriptorSet 2 pipeline.Pipeline.DrawIndex pipeline.Pipeline vkc $ fun vkSet ->
 
                     // specify bones
-                    use bonesPin = new ArrayPin<_> (bones)
-                    Buffer.uploadSubdata 0 0 sizeof<Bone> (min bones.Length Constants.Render.BonesMax) bonesPin.NativeInt pipeline.BoneUniform vkc
-                    Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.BoneUniform vkSet vkc
+                    //use bonesPin = new ArrayPin<_> (bones)
+                    //Buffer.uploadSubdata 0 0 sizeof<Bone> (min bones.Length Constants.Render.BonesMax) bonesPin.NativeInt pipeline.BoneUniform vkc
+                    //Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.BoneUniform vkSet vkc
 
                     // specify light maps
                     for i in 0 .. dec Constants.Render.LightMapsMaxForward do
@@ -1805,7 +1806,7 @@ module PhysicallyBased =
                     // specify shadow matrices
                     for i in 0 .. dec (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels) do
                         let mutable shadowMatrix = m4Zero
-                        let shadowMatrixPin = new ArrayPin<_> ([|shadowMatrix|])
+                        use shadowMatrixPin = new ArrayPin<_> ([|shadowMatrix|])
                         if shadowMatrices.Length < i then shadowMatrix <- shadowMatrices.[i]
                         Buffer.uploadSubdata (i * sizeof<Matrix4x4>) 0 sizeof<Matrix4x4> 1 shadowMatrixPin.NativeInt pipeline.ShadowMatrixUniform vkc
                     Pipeline.writeDescriptorStorageBuffer 4 0 pipeline.ShadowMatrixUniform vkSet vkc
