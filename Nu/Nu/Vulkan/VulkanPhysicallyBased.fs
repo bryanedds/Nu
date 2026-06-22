@@ -1572,10 +1572,10 @@ module PhysicallyBased =
                     Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
                     
                     // advance instancing
-                    geometry.InstanceBuffer.Advance ()
+                    Buffer.advance geometry.InstanceBuffer
 
                     // advance pipeline
-                    pipeline.Pipeline.Advance surfacesCount
+                    Pipeline.advance surfacesCount pipeline.Pipeline
 
                 // abort
                 | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
@@ -1867,10 +1867,10 @@ module PhysicallyBased =
                 Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
                 // advance instancing
-                geometry.InstanceBuffer.Advance ()
+                Buffer.advance geometry.InstanceBuffer
 
                 // advance pipeline
-                pipeline.Pipeline.Advance surfacesCount
+                Pipeline.advance surfacesCount pipeline.Pipeline
 
             // abort
             | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."

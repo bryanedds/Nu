@@ -239,7 +239,7 @@ module LightMapping =
                 Vulkan.vkCmdEndRendering commandBuffer
 
                 // advance pipeline
-                pipeline.Pipeline.Advance 1
+                Pipeline.advance 1 pipeline.Pipeline
 
             // abort
             | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."

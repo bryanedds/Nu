@@ -68,8 +68,8 @@ type DescriptorBinding =
 
 type DescriptorSet =
     interface
-        abstract Specify : obj -> VulkanContext -> (VkDescriptorSet -> unit) -> VkDescriptorSet // TODO: P0: attempt to get rid of boxing here!
         abstract BeginFrame : unit -> unit
+        abstract Specify : obj -> VulkanContext -> (VkDescriptorSet -> unit) -> VkDescriptorSet // TODO: P0: attempt to get rid of boxing here!
         abstract Destroy : VulkanContext -> unit
         end
 
@@ -205,14 +205,14 @@ type Pipeline =
     member this.DrawIndex = this.DrawIndex_
 
     /// Begin use of the pipeline this frame.
-    member this.BeginFrame () =
-        for buffer in this.Buffers_ do buffer.BeginFrame ()
-        for set in this.DescriptorSets_ do set.BeginFrame ()
-        this.DrawIndex_ <- 0
+    static member beginFrame pipeline =
+        for buffer in pipeline.Buffers_ do Buffer.beginFrame buffer
+        for set in pipeline.DescriptorSets_ do set.BeginFrame ()
+        pipeline.DrawIndex_ <- 0
 
     /// Advance the state of the pipeline for additional drawing.
-    member this.Advance drawInstances =
-        this.DrawIndex_ <- inc this.DrawIndex_
+    static member advance drawInstances pipeline =
+        pipeline.DrawIndex_ <- inc pipeline.DrawIndex_
         Hl.reportDrawCall drawInstances
 
     /// The descriptor set of the given number for the current frame.
@@ -415,7 +415,7 @@ type Pipeline =
         Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
 
         // advance buffer
-        buffer.Advance ()
+        Buffer.advance buffer
 
     static member writeDescriptorSampledImage (binding : int) (descriptorIndex : int) (texture : Texture) vkDescriptorSet (vkc : VulkanContext) =
 

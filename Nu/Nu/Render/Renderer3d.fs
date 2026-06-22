@@ -6019,8 +6019,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // destroy cached light maps whose originating probe no longer exists
         for lightMapKvp in renderer.LightMaps do
             if not (renderTasks.LightProbes.ContainsKey lightMapKvp.Key) then
-                renderer.TextureDestroyer.Submit lightMapKvp.Value.IrradianceMap 
-                renderer.TextureDestroyer.Submit lightMapKvp.Value.EnvironmentFilterMap 
+                TextureDestroyer.submit lightMapKvp.Value.IrradianceMap renderer.TextureDestroyer
+                TextureDestroyer.submit lightMapKvp.Value.EnvironmentFilterMap renderer.TextureDestroyer
                 renderer.LightMaps.Remove lightMapKvp.Key |> ignore<bool>
 
         // ensure light maps are synchronized with any light probe changes
@@ -6318,20 +6318,20 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
         // begin texture destroyer frame
         if renderer.VulkanContext.RenderAllowed then
-            renderer.TextureDestroyer.BeginFrame renderer.VulkanContext
+            TextureDestroyer.beginFrame renderer.TextureDestroyer renderer.VulkanContext
 
         // begin render pass index frame
         renderer.RenderPassIndex <- 0
 
         // begin instance buffer frames as requested on previous frame
         for geometry in renderer.GeometryInstanced do
-            geometry.InstanceBuffer.BeginFrame ()
+            Buffer.beginFrame geometry.InstanceBuffer
         renderer.GeometryInstanced.Clear ()
 
         // begin pipeline frames
-        renderer.PhysicallyBasedPipelines.DeferredStaticPipeline.Pipeline.BeginFrame ()
-        renderer.PhysicallyBasedPipelines.DeferredLightingPipeline.Pipeline.BeginFrame ()
-        renderer.PhysicallyBasedPipelines.ForwardStaticPipeline.Pipeline.BeginFrame ()
+        Pipeline.beginFrame renderer.PhysicallyBasedPipelines.DeferredStaticPipeline.Pipeline
+        Pipeline.beginFrame renderer.PhysicallyBasedPipelines.DeferredLightingPipeline.Pipeline
+        Pipeline.beginFrame renderer.PhysicallyBasedPipelines.ForwardStaticPipeline.Pipeline
         
         //////////////////
         // Handle Frame //
@@ -6390,8 +6390,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                         // destroy any existing light map
                         match renderer.LightMaps.TryGetValue lightProbeId with
                         | (true, lightMap) ->
-                            renderer.TextureDestroyer.Submit lightMap.IrradianceMap 
-                            renderer.TextureDestroyer.Submit lightMap.EnvironmentFilterMap 
+                            TextureDestroyer.submit lightMap.IrradianceMap renderer.TextureDestroyer
+                            TextureDestroyer.submit lightMap.EnvironmentFilterMap renderer.TextureDestroyer
                             renderer.LightMaps.Remove lightProbeId |> ignore<bool>
                         | (false, _) -> ()
                             
@@ -6435,7 +6435,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                                     renderer.VulkanContext
 
                             // destroy reflection map
-                            renderer.TextureDestroyer.Submit reflectionMap 
+                            TextureDestroyer.submit reflectionMap renderer.TextureDestroyer
 
                             // create light map
                             let lightMap = LightMapping.createLightMap lightProbeEnabled lightProbeOrigin lightProbeAmbientColor lightProbeAmbientBrightness lightProbeBounds irradianceMap environmentFilterMap

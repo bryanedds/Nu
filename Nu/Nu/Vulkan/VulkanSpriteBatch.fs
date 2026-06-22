@@ -186,7 +186,7 @@ module SpriteBatch =
                     Vulkan.vkCmdEndRendering env.VulkanContext.RenderCommandBuffer
 
                     // advance pipeline
-                    env.Pipeline.Advance env.SpriteIndex
+                    Pipeline.advance env.SpriteIndex env.Pipeline
 
                 // abort
                 | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
@@ -208,7 +208,7 @@ module SpriteBatch =
          viewProjectionClipAbsolute : Matrix4x4 inref,
          viewProjectionClipRelative : Matrix4x4 inref,
          env) =
-        env.Pipeline.BeginFrame ()
+        Pipeline.beginFrame env.Pipeline
         env.ViewProjection2dAbsolute <- viewProjection2dAbsolute
         env.ViewProjection2dRelative <- viewProjection2dRelative
         env.ViewProjectionClipAbsolute <- viewProjectionClipAbsolute

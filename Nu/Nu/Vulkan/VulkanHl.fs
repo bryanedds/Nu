@@ -819,6 +819,7 @@ module Hl =
         Vulkan.vkBeginCommandBuffer (commandBuffer, asPointer &cbInfo) |> check
         commandBuffer
 
+    ///
     let findMemoryType typeFilter properties physicalDevice =
 
         // get memory types

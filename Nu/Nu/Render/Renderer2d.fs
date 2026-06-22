@@ -959,7 +959,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
 
         // begin texture destroyer frame
         if renderer.VulkanContext.RenderAllowed then
-            renderer.TextureDestroyer.BeginFrame renderer.VulkanContext
+            TextureDestroyer.beginFrame renderer.TextureDestroyer renderer.VulkanContext
 
         // begin sprite batch frame
         if renderer.VulkanContext.RenderAllowed then
@@ -971,11 +971,11 @@ type [<ReferenceEquality>] VulkanRenderer2d =
 
         // begin single sprite frame
         if renderer.VulkanContext.RenderAllowed then
-            match renderer.SpritePipeline with (_, _, pipeline) -> pipeline.BeginFrame ()
+            match renderer.SpritePipeline with (_, _, pipeline) -> Pipeline.beginFrame pipeline
 
         // being contour frame
         if renderer.VulkanContext.RenderAllowed then
-            match renderer.ContourTessellationPipeline with (_, _, _, pipeline) -> pipeline.BeginFrame ()
+            match renderer.ContourTessellationPipeline with (_, _, _, pipeline) -> Pipeline.beginFrame pipeline
 
         //////////////////
         // Handle Frame //
@@ -1011,7 +1011,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                 |> Seq.toArray
             for entry in textTexturesUnused do
                 let (_, _, _, textTexture) = snd renderer.TextTextures.[entry]
-                renderer.TextureDestroyer.Submit textTexture 
+                TextureDestroyer.submit textTexture renderer.TextureDestroyer
                 renderer.TextTextures.Remove entry |> ignore<bool>
 
         // mark remaining text textures as unused for next frame

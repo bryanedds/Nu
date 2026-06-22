@@ -448,8 +448,8 @@ type VulkanRendererImGui
             let textureIdBlacklist = hashSetPlus HashIdentity.Structural []
 
             // begin buffer usage
-            vertexBuffer.BeginFrame ()
-            indexBuffer.BeginFrame ()
+            Buffer.beginFrame vertexBuffer
+            Buffer.beginFrame indexBuffer
 
             // handle render messages
             for renderMessage in renderMessages do
@@ -594,7 +594,7 @@ type VulkanRendererImGui
                                     Vulkan.vkCmdDrawIndexed (vkc.RenderCommandBuffer, pcmd.ElemCount, 1u, pcmd.IdxOffset + uint globalIdxOffset, int pcmd.VtxOffset + globalVtxOffset, 0u)
 
                                     // advance pipeline
-                                    pipeline.Advance 1
+                                    Pipeline.advance 1 pipeline
 
                             // otherwise we don't have a way to handle user callbacks, so throw in that case
                             else Log.warn "Encountered ImGui user callback; ignoring."

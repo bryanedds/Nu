@@ -245,8 +245,8 @@ type BufferParallel =
             BufferSingleton.destroy bufferParallel.BufferSingletons_.[i] vkc
 
 /// Represents a dynamically growing multibuffer with parallel underlying vulkan buffers. Maintains an internal
-/// cursor that selects the currently active buffer, which is reset via BeginFrame and advanced to the next vulkan
-/// buffer with Advance. Automatically resizes when usage exceeds its capacity and creates additional buffers when
+/// cursor that selects the currently active buffer, which is reset via beginFrame and advanced to the next vulkan
+/// buffer with advance. Automatically resizes when usage exceeds its capacity and creates additional buffers when
 /// the cursor moves beyond current capacity. This type is intended for transient or frequently updated GPU data
 /// such as storage data, uniform data, and streaming data.
 /// TODO: P0: rename this to BufferStream or BufferMulti since we otherwise have to qualify it to disambiguate from
@@ -264,10 +264,12 @@ type Buffer =
     member this.VkBuffer = this.BufferParallel.VkBuffer
 
     /// Begin use of this buffer for the current frame.
-    member this.BeginFrame () = this.BufferCursor_ <- 0
+    static member beginFrame buffer =
+        buffer.BufferCursor_ <- 0
 
     /// Advance the cursor.
-    member this.Advance () = this.BufferCursor_ <- inc this.BufferCursor_
+    static member advance buffer =
+        buffer.BufferCursor_ <- inc buffer.BufferCursor_
 
     /// Copy data from the source buffer to the destination buffer.
     static member copyData size source destination (vkc : VulkanContext) =

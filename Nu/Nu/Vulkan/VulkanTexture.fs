@@ -1138,21 +1138,21 @@ type TextureDestroyer =
         { Textures_ : Texture List array }
 
     /// Destroy all textures from latest finished frame. Must be called before submitting new textures to avoid premature destruction.
-    member this.BeginFrame vkc =
-        for i in 0 .. dec this.Textures_.[Hl.CurrentFrame].Count do
-            this.Textures_.[Hl.CurrentFrame].[i].Destroy vkc
-        this.Textures_.[Hl.CurrentFrame].Clear ()
+    static member beginFrame textureDestroyer vkc =
+        for i in 0 .. dec textureDestroyer.Textures_.[Hl.CurrentFrame].Count do
+            textureDestroyer.Textures_.[Hl.CurrentFrame].[i].Destroy vkc
+        textureDestroyer.Textures_.[Hl.CurrentFrame].Clear ()
 
     /// Submit texture for destruction once the current frame has finished execution.
-    member this.Submit texture =
-        this.Textures_.[Hl.CurrentFrame].Add texture
-    
+    static member submit texture textureDestroyer =
+        textureDestroyer.Textures_.[Hl.CurrentFrame].Add texture
+
     /// Create a TextureDestroyer.
     static member create () =
         let textures = Array.zeroCreate<List<Texture>> Constants.Vulkan.MaxFramesInFlight
         for i in 0 .. dec textures.Length do textures.[i] <- List ()
         { Textures_ = textures }
-    
+
     /// Destroy a TextureDestroyer.
     static member destroy textureDestroyer vkc =
         for i in 0 .. dec textureDestroyer.Textures_.Length do
