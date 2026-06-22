@@ -437,13 +437,12 @@ type Pipeline =
     static member writeDescriptorSampledImages (binding : int) (descriptorIndex : int) (textures : Texture array) vkDescriptorSet (vkc : VulkanContext) =
 
         // image infos
-        let infos = Array.zeroCreate<VkDescriptorImageInfo> textures.Length
-        use infosPin = new ArrayPin<_> (infos)
+        let infosPtr = NativePtr.stackalloc<VkDescriptorImageInfo> textures.Length
         for i in 0 .. dec textures.Length do
             let mutable info = VkDescriptorImageInfo ()
             info.imageView <- textures.[i].ImageView
             info.imageLayout <- ShaderRead.VkImageLayout
-            infos.[i] <- info
+            NativePtr.set infosPtr i info
 
         // write descriptor set
         let mutable write = VkWriteDescriptorSet ()
@@ -452,7 +451,7 @@ type Pipeline =
         write.dstArrayElement <- uint descriptorIndex
         write.descriptorCount <- uint textures.Length
         write.descriptorType <- VkDescriptorType.SampledImage
-        write.pImageInfo <- infosPin.Pointer
+        write.pImageInfo <- infosPtr
         Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
 
     static member writeDescriptorSampler (binding : int) (descriptorIndex : int) (sampler : Sampler) vkDescriptorSet (vkc : VulkanContext) =
