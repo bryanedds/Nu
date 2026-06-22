@@ -552,7 +552,7 @@ type Pipeline =
     
     /// Try to recreate VkPipelines with updated shaders.
     static member reloadShaders pipeline (vkc : VulkanContext) =
-        Queue.waitIdle vkc.RenderQueue // VkPipeline may still be in use by previous frame
+        CommandQueue.waitIdle vkc.RenderQueue // VkPipeline may still be in use by previous frame
         Pipeline.destroyVkPipelines pipeline vkc
         pipeline.VkPipelines_ <-
             Pipeline.tryCreateVkPipelines

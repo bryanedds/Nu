@@ -392,11 +392,11 @@ module Hl =
 
     /// Convert VkExtensionProperties.extensionName to a string.
     /// TODO: see if we can inline functions like these once F# supports C#'s representation of this fixed buffer type.
-    let internal getExtensionName (extensionProps : VkExtensionProperties) =
+    let getExtensionName (extensionProps : VkExtensionProperties) =
         NativePtr.fixedBufferToString extensionProps.extensionName
 
     /// Convert VkLayerProperties.layerName to a string.
-    let internal getLayerName (layerProps : VkLayerProperties) =
+    let getLayerName (layerProps : VkLayerProperties) =
         NativePtr.fixedBufferToString layerProps.layerName
 
     /// Make a VkComponentMapping.
@@ -574,7 +574,7 @@ module Hl =
         result.extent.height <- uint extentHeight
         result
 
-    let internal tryCreateVulkanSurface window instance =
+    let tryCreateVulkanSurface window instance =
         match SurfaceState with
         | SurfaceDestroyed ->
         
@@ -593,7 +593,7 @@ module Hl =
         | SurfaceReady -> Log.error "Attempted creation of Vulkan surface when existing surface has not been destroyed!"
         | SurfaceLost -> Log.error "Attempted creation of Vulkan surface when existing surface has been lost but not destroyed!"
 
-    let internal createVulkanSurface window instance =
+    let createVulkanSurface window instance =
     
         // wait for app to enter foreground if not already
         while not IsAppInForeground do ()
@@ -602,7 +602,7 @@ module Hl =
         // cannot tolerate failure as this function is intended to guarantee surface creation, otherwise must set up a retry mechanism
         if SurfaceState.IsSurfaceDestroyed then Log.fail "Vulkan surface creation failed."
 
-    let internal destroyVulkanSurface instance =
+    let destroyVulkanSurface instance =
         match SurfaceState with
         | SurfaceReady
         | SurfaceLost ->
@@ -697,7 +697,7 @@ module Hl =
              1u, asPointer &barrier)
 
     /// Try get surface capabilities.
-    let internal tryGetSurfaceCapabilities vkPhysicalDevice =
+    let tryGetSurfaceCapabilities vkPhysicalDevice =
         let mutable capabilities = Unchecked.defaultof<VkSurfaceCapabilitiesKHR>
         let result = Vulkan.vkGetPhysicalDeviceSurfaceCapabilitiesKHR (vkPhysicalDevice, Surface, &capabilities)
         if result <> VkResult.ErrorSurfaceLostKHR then
@@ -708,7 +708,7 @@ module Hl =
             None
 
     /// Get swap extent.
-    let internal getSwapExtent (capabilities : VkSurfaceCapabilitiesKHR) window =
+    let getSwapExtent (capabilities : VkSurfaceCapabilitiesKHR) window =
 
         // check if window size is fixed or variable
         if capabilities.currentExtent.width <> UInt32.MaxValue
@@ -795,3 +795,48 @@ module Hl =
         let mutable cbInfo = VkCommandBufferBeginInfo (flags = VkCommandBufferUsageFlags.OneTimeSubmit)
         Vulkan.vkBeginCommandBuffer (commandBuffer, asPointer &cbInfo) |> check
         commandBuffer
+
+    let findMemoryType typeFilter properties physicalDevice =
+
+        // get memory types
+        let mutable memProperties = Unchecked.defaultof<VkPhysicalDeviceMemoryProperties>
+        Vulkan.vkGetPhysicalDeviceMemoryProperties (physicalDevice, &memProperties)
+        let memoryTypes = NativePtr.fixedBufferToArray<VkMemoryType> (int memProperties.memoryTypeCount) memProperties.memoryTypes
+
+        // try find suitable memory type
+        let mutable memoryTypeOpt = None
+        for i in 0 .. dec memoryTypes.Length do
+            match memoryTypeOpt with
+            | None when typeFilter &&& (1u <<< i) <> 0u && memoryTypes.[i].propertyFlags &&& properties = properties ->
+                memoryTypeOpt <- Some (uint i)
+            | Some _ | None -> ()
+
+        // fin
+        match memoryTypeOpt with
+        | Some memoryType -> memoryType
+        | None -> Log.fail "Failed to find suitable memory type!"
+
+    let areAligned a b =
+        if a = b then true
+        elif a > b then a % b = 0
+        else b % a = 0
+
+    // TODO: DJL: perhaps calculating this stuff manually is a bad idea?
+    let getStride alignment size =
+        if size = 0 then size // just to prevent division by 0; size should be > 0
+        elif alignment = 0 then size
+        elif alignment = size then size
+        elif size > alignment && size % alignment = 0 then size
+        elif alignment % size = 0 then size
+        else (size / alignment + 1) * alignment // stride = lowest multiple of alignment that contains size
+
+    let alignOffset offset alignment =
+        if alignment = 0 then offset // no alignment
+        elif offset = 0 then offset // no offset to align
+        elif areAligned offset alignment then offset // offset already aligned
+        else (offset / alignment + 1) * alignment // offset shifted forward to align
+
+    let getMinimumBufferSize offset alignment size count =
+        let stride = getStride alignment size
+        let offset = alignOffset offset alignment
+        offset + stride * count

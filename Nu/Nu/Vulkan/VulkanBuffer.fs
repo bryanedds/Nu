@@ -9,66 +9,13 @@ open Vortice.Vulkan
 open Prime
 open Nu
 
-[<AutoOpen>]
-module BufferModule =
-
-    [<RequireQualifiedAccess>]
-    module Hl =
-
-        let findMemoryType typeFilter properties physicalDevice =
-
-            // get memory types
-            let mutable memProperties = Unchecked.defaultof<VkPhysicalDeviceMemoryProperties>
-            Vulkan.vkGetPhysicalDeviceMemoryProperties (physicalDevice, &memProperties)
-            let memoryTypes = NativePtr.fixedBufferToArray<VkMemoryType> (int memProperties.memoryTypeCount) memProperties.memoryTypes
-
-            // try find suitable memory type
-            let mutable memoryTypeOpt = None
-            for i in 0 .. dec memoryTypes.Length do
-                match memoryTypeOpt with
-                | None when typeFilter &&& (1u <<< i) <> 0u && memoryTypes.[i].propertyFlags &&& properties = properties ->
-                    memoryTypeOpt <- Some (uint i)
-                | Some _ | None -> ()
-
-            // fin
-            match memoryTypeOpt with
-            | Some memoryType -> memoryType
-            | None -> Log.fail "Failed to find suitable memory type!"
-
-        /// Copy data from the source buffer to the destination buffer.
-        let copyData size source destination (vkc : VulkanContext) =
-            let commandBuffer = Hl.createTransientCommandBuffer vkc.TransientCommandPool vkc.Device
-            let mutable region = VkBufferCopy (size = uint64 size)
-            Vulkan.vkCmdCopyBuffer (commandBuffer, source, destination, 1u, asPointer &region)
-            Queue.executeTransient commandBuffer vkc.TransientCommandPool vkc.TransientFence vkc.RenderQueue vkc.Device
-    
-        let areAligned a b =
-            if a = b then true
-            elif a > b then a % b = 0
-            else b % a = 0
-    
-        // TODO: DJL: perhaps calculating this stuff manually is a bad idea?
-        let getStride alignment size =
-            if size = 0 then size // just to prevent division by 0; size should be > 0
-            elif alignment = 0 then size
-            elif alignment = size then size
-            elif size > alignment && size % alignment = 0 then size
-            elif alignment % size = 0 then size
-            else (size / alignment + 1) * alignment // stride = lowest multiple of alignment that contains size
-
-        let alignOffset offset alignment =
-            if alignment = 0 then offset // no alignment
-            elif offset = 0 then offset // no offset to align
-            elif areAligned offset alignment then offset // offset already aligned
-            else (offset / alignment + 1) * alignment // offset shifted forward to align
-
-        let getMinimumBufferSize offset alignment size count =
-            let stride = getStride alignment size
-            let offset = alignOffset offset alignment
-            offset + stride * count
-
 // TODO: DJL: doc comments!
 // TODO: P0: rename this to BufferStreamType or BufferMultiType?
+
+type Allocation =
+    | Vma of VmaAllocation
+    | Manual of VkDeviceMemory
+
 type BufferType =
     | Staging
     | Vertex of UploadEnabled : bool
@@ -83,14 +30,14 @@ type BufferType =
         | Index uploadEnabled -> uploadEnabled
         | Uniform -> true
         | Storage -> true
-    
+
     static member private makeInfoInternal size usage =
         let mutable info = VkBufferCreateInfo ()
         info.size <- uint64 size
         info.usage <- usage
         info.sharingMode <- VkSharingMode.Exclusive
         info
-    
+
     static member makeInfo size bufferType =
         match bufferType with
         | Staging -> BufferType.makeInfoInternal size VkBufferUsageFlags.TransferSrc
@@ -108,10 +55,6 @@ type BufferType =
             BufferType.makeInfoInternal size usage
         | Uniform -> BufferType.makeInfoInternal size VkBufferUsageFlags.UniformBuffer
         | Storage -> BufferType.makeInfoInternal size VkBufferUsageFlags.StorageBuffer
-
-type Allocation =
-    | Vma of VmaAllocation
-    | Manual of VkDeviceMemory
 
 /// Abstraction for allocated buffer.
 type BufferSingleton =
@@ -324,6 +267,13 @@ type Buffer =
 
     /// Advance the cursor.
     member this.Advance () = this.BufferCursor_ <- inc this.BufferCursor_
+
+    /// Copy data from the source buffer to the destination buffer.
+    static member copyData size source destination (vkc : VulkanContext) =
+        let commandBuffer = Hl.createTransientCommandBuffer vkc.TransientCommandPool vkc.Device
+        let mutable region = VkBufferCopy (size = uint64 size)
+        Vulkan.vkCmdCopyBuffer (commandBuffer, source, destination, 1u, asPointer &region)
+        CommandQueue.executeTransient commandBuffer vkc.TransientCommandPool vkc.TransientFence vkc.RenderQueue vkc.Device
     
     /// Create a new Buffer.
     static member create bufferSize (bufferType : BufferType) vkc =
@@ -366,7 +316,7 @@ type Buffer =
     static member createVertexStaged size data vkc =
         let stagingBuffer = Buffer.stageData size data vkc
         let vertexBuffer = Buffer.create size (Vertex false) vkc
-        Hl.copyData size stagingBuffer.BufferParallel.VkBuffer vertexBuffer.BufferParallel.VkBuffer vkc
+        Buffer.copyData size stagingBuffer.BufferParallel.VkBuffer vertexBuffer.BufferParallel.VkBuffer vkc
         Buffer.destroy stagingBuffer vkc
         vertexBuffer
 
@@ -374,7 +324,7 @@ type Buffer =
     static member createIndexStaged size data vkc =
         let stagingBuffer = Buffer.stageData size data vkc
         let indexBuffer = Buffer.create size (Index false) vkc
-        Hl.copyData size stagingBuffer.BufferParallel.VkBuffer indexBuffer.BufferParallel.VkBuffer vkc
+        Buffer.copyData size stagingBuffer.BufferParallel.VkBuffer indexBuffer.BufferParallel.VkBuffer vkc
         Buffer.destroy stagingBuffer vkc
         indexBuffer
 

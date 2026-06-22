@@ -360,7 +360,7 @@ type VulkanRendererImGui
     let mutable textureIdCounter = 0u
     
     member private renderer.DestroyAssetTextures (destroyedTextureIdsOpt : uint32 HashSet option) =
-        Queue.waitIdle vkc.RenderQueue
+        CommandQueue.waitIdle vkc.RenderQueue
         for assetTextureOpt in assetTextureOpts.Values do
             match assetTextureOpt with
             | ValueSome textureId ->

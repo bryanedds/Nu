@@ -6610,7 +6610,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                  commandBuffer,
                  vkc)
         let fence = Hl.createFence false vkc.Device
-        Queue.executeTransient commandBuffer vkc.TransientCommandPool fence vkc.RenderQueue vkc.Device
+        CommandQueue.executeTransient commandBuffer vkc.TransientCommandPool fence vkc.RenderQueue vkc.Device
         Vulkan.vkDestroyFence (vkc.Device, fence, nullPtr)
 
         // compute compressed image file extension

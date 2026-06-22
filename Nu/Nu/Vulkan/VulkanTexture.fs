@@ -257,7 +257,7 @@ type TextureSingleton =
             | AttachmentColor _ -> Hl.recordTransitionLayout true mipLevels 0 textureType.Layers internalFormat.VkImageAspectFlags Undefined ColorAttachmentWrite image commandBuffer
             | AttachmentDepth _ -> Hl.recordTransitionLayout true mipLevels 0 textureType.Layers internalFormat.VkImageAspectFlags Undefined DepthAttachment image commandBuffer
             | _ -> ()
-            Queue.executeTransient commandBuffer pool fence queue vkc.Device
+            CommandQueue.executeTransient commandBuffer pool fence queue vkc.Device
         | _ -> ()
         
         // fin
@@ -781,7 +781,7 @@ type [<CustomEquality; NoComparison>] TextureParallel =
         let (queue, pool, fence) = TextureLoadThread.getResources thread vkc
         let commandBuffer = Hl.createTransientCommandBuffer pool vkc.Device
         TextureParallel.uploadAsync commandBuffer metadata mipLevel layer pixels textureParallel vkc
-        Queue.executeTransient commandBuffer pool fence queue vkc.Device
+        CommandQueue.executeTransient commandBuffer pool fence queue vkc.Device
         
         // destroy staging buffer (only) if it was created by async function in synchronous context to prevent massive waste of vram
         if textureParallel.AttachmentMode_.IsAttachmentNone then
@@ -806,7 +806,7 @@ type [<CustomEquality; NoComparison>] TextureParallel =
             let (queue, pool, fence) = TextureLoadThread.getResources thread vkc
             let commandBuffer = Hl.createTransientCommandBuffer pool vkc.Device
             Hl.RecordGenerateMipmaps (commandBuffer, metadata.TextureWidth, metadata.TextureHeight, textureParallel.MipLevels, layer, textureParallel.Image)
-            Queue.executeTransient commandBuffer pool fence queue vkc.Device
+            CommandQueue.executeTransient commandBuffer pool fence queue vkc.Device
         else Log.warn "Mipmap generation attempted on texture with only one mip level."
     
     /// Create an empty TextureParallel.

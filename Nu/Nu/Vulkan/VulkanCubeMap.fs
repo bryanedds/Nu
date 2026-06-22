@@ -11,6 +11,12 @@ open Vortice.Vulkan
 open Prime
 open Nu
 
+[<Struct; StructLayout(LayoutKind.Explicit)>]
+type CubeMapTransform =
+    [<FieldOffset(0)>] val mutable view : Matrix4x4
+    [<FieldOffset(64)>] val mutable projection : Matrix4x4
+    [<FieldOffset(128)>] val mutable viewProjection : Matrix4x4
+
 /// Describes some cube map geometry that's loaded into VRAM.
 type CubeMapGeometry =
     { Bounds : Box3
@@ -28,12 +34,6 @@ type [<Struct>] CubeMapSurface =
     static member make cubeMap geometry =
         { CubeMap = cubeMap;
           CubeMapGeometry = geometry }
-
-[<Struct; StructLayout(LayoutKind.Explicit)>]
-type CubeMapTransform =
-    [<FieldOffset(0)>] val mutable view : Matrix4x4
-    [<FieldOffset(64)>] val mutable projection : Matrix4x4
-    [<FieldOffset(128)>] val mutable viewProjection : Matrix4x4
 
 /// Describes a cube map pipeline that's loaded into GPU.
 type CubeMapPipeline =

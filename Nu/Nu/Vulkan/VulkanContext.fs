@@ -13,8 +13,7 @@ open Prime
 open Nu
 
 /// A command queue that internally synchronizes use across multiple threads.
-/// TODO: P0: rename this to CommandQueue?
-type [<ReferenceEquality>] Queue =
+type [<ReferenceEquality>] CommandQueue =
     private
         { VkQueue : VkQueue
           Lock : obj }
@@ -39,8 +38,8 @@ type [<ReferenceEquality>] Queue =
         lock queue.Lock (fun () -> Vulkan.vkQueueWaitIdle queue.VkQueue |> Hl.check)
 
     /// Submit persistent command buffer for execution.
-    static member submit commandBuffer waitSemaphoresStages (signalSemaphores : VkSemaphore array) signalFence (queue : Queue) =
-        lock queue.Lock (fun () ->
+    static member submit commandBuffer waitSemaphoresStages (signalSemaphores : VkSemaphore array) signalFence (commandQueue : CommandQueue) =
+        lock commandQueue.Lock (fun () ->
 
             // end command buffer
             Vulkan.vkEndCommandBuffer commandBuffer |> Hl.check
@@ -61,12 +60,12 @@ type [<ReferenceEquality>] Queue =
             info.pCommandBuffers <- asPointer &commandBuffer
             info.signalSemaphoreCount <- uint signalSemaphores.Length
             info.pSignalSemaphores <- signalSemaphoresPin.Pointer
-            Vulkan.vkQueueSubmit (queue.VkQueue, 1u, asPointer &info, signalFence) |> Hl.check)
+            Vulkan.vkQueueSubmit (commandQueue.VkQueue, 1u, asPointer &info, signalFence) |> Hl.check)
 
     /// Execute and free transient command buffer. Command pool and fence must NOT be shared between threads!
-    static member executeTransient commandBuffer commandPool finishFence (queue : Queue) device =
+    static member executeTransient commandBuffer commandPool finishFence (commandQueue : CommandQueue) device =
         let mutable commandBuffer = commandBuffer
-        lock queue.Lock (fun () ->
+        lock commandQueue.Lock (fun () ->
         
             // end command buffer
             Vulkan.vkEndCommandBuffer commandBuffer |> Hl.check
@@ -75,7 +74,7 @@ type [<ReferenceEquality>] Queue =
             let mutable info = VkSubmitInfo ()
             info.commandBufferCount <- 1u
             info.pCommandBuffers <- asPointer &commandBuffer
-            Vulkan.vkQueueSubmit (queue.VkQueue, 1u, asPointer &info, finishFence) |> Hl.check
+            Vulkan.vkQueueSubmit (commandQueue.VkQueue, 1u, asPointer &info, finishFence) |> Hl.check
 
             // wait for execution to finish
             // NOTE: DJL: must ALSO be thread safe!
@@ -85,11 +84,11 @@ type [<ReferenceEquality>] Queue =
             Vulkan.vkFreeCommandBuffers (device, commandPool, 1u, asPointer &commandBuffer))
 
     /// Present swapchain image.
-    static member present waitSemaphore vkSwapchain (queue : Queue) =
+    static member present waitSemaphore vkSwapchain (commandQueue : CommandQueue) =
 
         // try to present image
         let result =
-            lock queue.Lock (fun () ->
+            lock commandQueue.Lock (fun () ->
                 let mutable waitSemaphore = waitSemaphore
                 let mutable vkSwapchain = vkSwapchain
                 let mutable info = VkPresentInfoKHR ()
@@ -98,7 +97,7 @@ type [<ReferenceEquality>] Queue =
                 info.swapchainCount <- 1u
                 info.pSwapchains <- asPointer &vkSwapchain
                 info.pImageIndices <- asPointer &Hl.ImageIndex
-                Vulkan.vkQueuePresentKHR (queue.VkQueue, asPointer &info))
+                Vulkan.vkQueuePresentKHR (commandQueue.VkQueue, asPointer &info))
     
         // return result
         result
@@ -340,18 +339,19 @@ type SwapchainSingleton =
         
         // TODO: DJL: this is not sufficient to ensure resources not still in use, that requires an extension!!
         // https://docs.vulkan.org/guide/latest/swapchain_semaphore_reuse.html#_vk_ext_swapchain_maintenance1_extension
-        Queue.waitIdle renderQueue
-        Queue.waitIdle presentQueue
+        CommandQueue.waitIdle renderQueue
+        CommandQueue.waitIdle presentQueue
         for i in 0 .. dec swapchainSingleton.ImageViews.Length do Vulkan.vkDestroyImageView (device, swapchainSingleton.ImageViews.[i], nullPtr)
         Vulkan.vkDestroySwapchainKHR (device, swapchainSingleton.VkSwapchain, nullPtr)
         for i in 0 .. dec swapchainSingleton.RenderFinishedSemaphores.Length do Vulkan.vkDestroySemaphore (device, swapchainSingleton.RenderFinishedSemaphores.[i], nullPtr)
 
 /// A swapchain and its assets that may be refreshed for a different screen size.
 type Swapchain =
-    { SwapchainSingletonOpts_ : SwapchainSingleton option array
-      Window_ : SDL_Window nativeptr
-      SurfaceFormat_ : VkSurfaceFormatKHR
-      mutable SwapchainIndex_ : int }
+    private
+        { SwapchainSingletonOpts_ : SwapchainSingleton option array
+          Window_ : SDL_Window nativeptr
+          SurfaceFormat_ : VkSurfaceFormatKHR
+          mutable SwapchainIndex_ : int }
 
     /// The current SwapchainSingletonOpt.
     member this.SwapchainSingletonOpt = this.SwapchainSingletonOpts_.[this.SwapchainIndex_]
@@ -541,9 +541,9 @@ type [<ReferenceEquality>] VulkanContext =
           TransientCommandPool_ : VkCommandPool
           TextureCommandPool_ : VkCommandPool
           RenderCommandBuffers_ : VkCommandBuffer array
-          RenderQueue_ : Queue
-          PresentQueue_ : Queue
-          TextureQueue_ : Queue
+          RenderQueue_ : CommandQueue
+          PresentQueue_ : CommandQueue
+          TextureQueue_ : CommandQueue
           ImageAvailableSemaphores_ : VkSemaphore array
           InFlightFences_ : VkFence array
           TransientFence_ : VkFence
@@ -887,7 +887,7 @@ type [<ReferenceEquality>] VulkanContext =
         let fences = Array.zeroCreate<VkFence> Constants.Vulkan.MaxFramesInFlight
         for i in 0 .. dec fences.Length do fences.[i] <- Hl.createFence true device
         fences
-    
+
     /// Handle changes in window size, and check for minimization.
     static member private handleWindowSize vkc =
         
@@ -993,13 +993,13 @@ type [<ReferenceEquality>] VulkanContext =
             // reset fence and flush commands
             let mutable fence = vkc.InFlightFence
             Vulkan.vkResetFences (vkc.Device, 1u, asPointer &fence) |> Hl.check
-            Queue.submit vkc.RenderCommandBuffer [|vkc.ImageAvailableSemaphore, waitStage|] [|vkc.RenderFinishedSemaphore|] fence vkc.RenderQueue
+            CommandQueue.submit vkc.RenderCommandBuffer [|vkc.ImageAvailableSemaphore, waitStage|] [|vkc.RenderFinishedSemaphore|] fence vkc.RenderQueue
             
             // one more check for app backgrounding before we present
             if not (Hl.hasAppBegunBackgrounding ()) then
             
                 // try to present image
-                let result = Queue.present vkc.RenderFinishedSemaphore vkc.Swapchain_.VkSwapchain vkc.PresentQueue_
+                let result = CommandQueue.present vkc.RenderFinishedSemaphore vkc.Swapchain_.VkSwapchain vkc.PresentQueue_
 
                 // refresh swapchain if framebuffer out of date or suboptimal
                 if result = VkResult.ErrorOutOfDateKHR || result = VkResult.SuboptimalKHR then VulkanContext.handleWindowSize vkc
@@ -1021,9 +1021,9 @@ type [<ReferenceEquality>] VulkanContext =
     static member waitIdle (vkc : VulkanContext) =
         
         // never call vkDeviceWaitIdle as its implementation compromises queue thread safety
-        Queue.waitIdle vkc.RenderQueue_
-        Queue.waitIdle vkc.PresentQueue_
-        Queue.waitIdle vkc.TextureQueue_
+        CommandQueue.waitIdle vkc.RenderQueue_
+        CommandQueue.waitIdle vkc.PresentQueue_
+        CommandQueue.waitIdle vkc.TextureQueue_
 
     /// Attempt to create a VulkanContext.
     /// NOTE: this procedure is intended to be invoked from the main thread to satisfy the requirements of Mac and
@@ -1062,18 +1062,18 @@ type [<ReferenceEquality>] VulkanContext =
             let allocator = VulkanContext.createVmaAllocator physicalDevice device instance
 
             // create render queue
-            let renderQueue = Queue.create physicalDevice.GraphicsQueueFamily 0u device
+            let renderQueue = CommandQueue.create physicalDevice.GraphicsQueueFamily 0u device
             
             // create seperate present queue if graphics queue family does not support presentation
             let presentQueue =
                 if physicalDevice.GraphicsQueueFamily <> physicalDevice.PresentQueueFamily
-                then Queue.create physicalDevice.PresentQueueFamily 0u device
+                then CommandQueue.create physicalDevice.PresentQueueFamily 0u device
                 else renderQueue
             
             // create seperate queue for texture server thread if available
             let textureQueue =
                 if physicalDevice.GraphicsQueueCount > 1u
-                then Queue.create physicalDevice.GraphicsQueueFamily 1u device
+                then CommandQueue.create physicalDevice.GraphicsQueueFamily 1u device
                 else renderQueue
             
             // setup execution for rendering on render thread
