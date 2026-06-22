@@ -5308,7 +5308,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
     static member private tryLoadModelAsset (assetClient : AssetClient) (asset : Asset) renderer =
         VulkanRenderer3d.invalidateCaches renderer
-        match assetClient.SceneClient.TryCreatePhysicallyBasedModel (Some renderer.VulkanContext) asset.FilePath renderer.PhysicallyBasedMaterial assetClient.TextureClient with
+        match assetClient.SceneClient.TryCreatePhysicallyBasedModel asset.FilePath renderer.PhysicallyBasedMaterial assetClient.TextureClient (Some renderer.VulkanContext) with
         | Right model -> Some model
         | Left error -> Log.info ("Could not load model '" + asset.FilePath + "' due to: " + error); None
 
@@ -5452,7 +5452,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                                 let surfaces =
                                     [|for surface in staticModel.Surfaces do
                                         let material = scene.Materials.[surface.SurfaceMaterialIndex]
-                                        let (_, material) = PhysicallyBased.createPhysicallyBasedMaterial (Some renderer.VulkanContext) dirPath renderer.PhysicallyBasedMaterial renderPackage.PackageState.TextureClient material
+                                        let (_, material) = PhysicallyBased.createPhysicallyBasedMaterial dirPath renderer.PhysicallyBasedMaterial renderPackage.PackageState.TextureClient material (Some renderer.VulkanContext)
                                         { surface with SurfaceMaterial = material }|]
                                 StaticModelAsset (userDefined, { staticModel with Surfaces = surfaces })
                             | Some _ | None -> renderAsset
@@ -5462,7 +5462,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                                 let surfaces =
                                     [|for surface in animatedModel.Surfaces do
                                         let material = scene.Materials.[surface.SurfaceMaterialIndex]
-                                        let (_, material) = PhysicallyBased.createPhysicallyBasedMaterial (Some renderer.VulkanContext) dirPath renderer.PhysicallyBasedMaterial renderPackage.PackageState.TextureClient material
+                                        let (_, material) = PhysicallyBased.createPhysicallyBasedMaterial dirPath renderer.PhysicallyBasedMaterial renderPackage.PackageState.TextureClient material (Some renderer.VulkanContext)
                                         { surface with SurfaceMaterial = material }|]
                                 AnimatedModelAsset { animatedModel with Surfaces = surfaces }
                             | None -> renderAsset

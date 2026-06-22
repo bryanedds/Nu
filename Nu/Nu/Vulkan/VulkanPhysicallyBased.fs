@@ -591,7 +591,7 @@ module PhysicallyBased =
     /// Uses file name-based inferences to look for texture files in case the ones that were hard-coded in the model
     /// files can't be located.
     /// Thread-safe if vkcOpt = None.
-    let createPhysicallyBasedMaterial vkcOpt dirPath defaultMaterial (textureClient : TextureClient) (material : Assimp.Material) =
+    let createPhysicallyBasedMaterial dirPath defaultMaterial (textureClient : TextureClient) (material : Assimp.Material) vkcOpt =
 
         // compute the directory string to prefix to a local asset file path
         let dirPrefix = if dirPath <> "" then dirPath + "/" else ""
@@ -1132,7 +1132,7 @@ module PhysicallyBased =
         (vertexData, indexData, bounds)
 
     /// Create physically-based static geometry from a mesh.
-    let createPhysicallyBasedStaticGeometry vkcOpt primitiveTopology (vertexData : single Memory) (indexData : int Memory) bounds =
+    let createPhysicallyBasedStaticGeometry primitiveTopology (vertexData : single Memory) (indexData : int Memory) bounds vkcOpt =
 
         // make buffers
         let (vertices, indices, vertexBuffer, instanceBuffer, indexBuffer) =
@@ -1187,12 +1187,12 @@ module PhysicallyBased =
         geometry
 
     /// Create physically-based static geometry from an assimp mesh.
-    let createPhysicallyBasedStaticGeometryFromMesh vkcOpt indexData (mesh : Assimp.Mesh) =
+    let createPhysicallyBasedStaticGeometryFromMesh indexData (mesh : Assimp.Mesh) vkcOpt =
         match createPhysicallyBasedStaticMesh indexData mesh with
-        | (vertexData, indexData, bounds) -> createPhysicallyBasedStaticGeometry vkcOpt VkPrimitiveTopology.TriangleList (vertexData.AsMemory ()) (indexData.AsMemory ()) bounds
+        | (vertexData, indexData, bounds) -> createPhysicallyBasedStaticGeometry VkPrimitiveTopology.TriangleList (vertexData.AsMemory ()) (indexData.AsMemory ()) bounds vkcOpt
     
     /// Create physically-based animated geometry from a mesh.
-    let createPhysicallyBasedAnimatedGeometry vkcOpt primitiveTopology (vertexData : single Memory) (indexData : int Memory) bounds =
+    let createPhysicallyBasedAnimatedGeometry primitiveTopology (vertexData : single Memory) (indexData : int Memory) bounds vkcOpt =
 
         // make buffers
         let (vertices, indices, vertexBuffer, instanceBuffer, indexBuffer) =
@@ -1247,18 +1247,18 @@ module PhysicallyBased =
         geometry
 
     /// Create physically-based animated geometry from an assimp mesh.
-    let createPhysicallyBasedAnimatedGeometryFromMesh vkcOpt indexData (mesh : Assimp.Mesh) =
+    let createPhysicallyBasedAnimatedGeometryFromMesh indexData (mesh : Assimp.Mesh) vkcOpt =
         match createPhysicallyBasedAnimatedMesh indexData mesh with
-        | (vertexData, indexData, bounds) -> createPhysicallyBasedAnimatedGeometry vkcOpt VkPrimitiveTopology.TriangleList (vertexData.AsMemory ()) (indexData.AsMemory ()) bounds
+        | (vertexData, indexData, bounds) -> createPhysicallyBasedAnimatedGeometry VkPrimitiveTopology.TriangleList (vertexData.AsMemory ()) (indexData.AsMemory ()) bounds vkcOpt
     
     /// Attempt to create physically-based material from an assimp scene.
     /// Thread-safe if vkcOpt = None.
-    let tryCreatePhysicallyBasedMaterials vkcOpt dirPath defaultMaterial textureClient (scene : Assimp.Scene) =
+    let tryCreatePhysicallyBasedMaterials dirPath defaultMaterial textureClient (scene : Assimp.Scene) vkcOpt =
         let mutable errorOpt = None
         let propertiesAndMaterials = Array.zeroCreate scene.Materials.Count
         for i in 0 .. dec scene.Materials.Count do
             if Option.isNone errorOpt then
-                let (properties, material) = createPhysicallyBasedMaterial vkcOpt dirPath defaultMaterial textureClient scene.Materials.[i]
+                let (properties, material) = createPhysicallyBasedMaterial dirPath defaultMaterial textureClient scene.Materials.[i] vkcOpt
                 propertiesAndMaterials.[i] <- (properties, material)
         match errorOpt with
         | Some error -> Left error
@@ -1266,7 +1266,7 @@ module PhysicallyBased =
 
     /// Create physically-based static geometries from an assimp scene.
     /// OPTIMIZATION: duplicate geometry is detected and deduplicated here, which does have some run-time cost.
-    let createPhysicallyBasedStaticGeometries vkcOpt (scene : Assimp.Scene) =
+    let createPhysicallyBasedStaticGeometries (scene : Assimp.Scene) vkcOpt =
         let meshAndGeometryLists = Dictionary<int * int * Assimp.BoundingBox, (Assimp.Mesh * PhysicallyBasedGeometry) List> HashIdentity.Structural
         let geometries = SList.make ()
         for i in 0 .. dec scene.Meshes.Count do
@@ -1287,7 +1287,7 @@ module PhysicallyBased =
                         found <- true
             | None -> ()
             if not found then
-                let geometry = createPhysicallyBasedStaticGeometryFromMesh vkcOpt indexData mesh
+                let geometry = createPhysicallyBasedStaticGeometryFromMesh indexData mesh vkcOpt
                 match meshAndGeometryListOpt with
                 | Some meshesAndGeometries -> meshesAndGeometries.Add (mesh, geometry)
                 | None -> meshAndGeometryLists.[(mesh.VertexCount, mesh.FaceCount, mesh.BoundingBox)] <- List [(mesh, geometry)]
@@ -1296,13 +1296,13 @@ module PhysicallyBased =
 
     /// Create physically-based animated geometries from an assimp scene.
     /// TODO: consider deduplicating geometry like in CreatePhysicallyBasedStaticGeometries?
-    let createPhysicallyBasedAnimatedGeometries vkcOpt (scene : Assimp.Scene) =
+    let createPhysicallyBasedAnimatedGeometries (scene : Assimp.Scene) vkcOpt =
         let geometries = SList.make ()
         for i in 0 .. dec scene.Meshes.Count do
             let indexDataEntry = scene.Metadata.["IndexData" + string i]
             let indexData = indexDataEntry.Data :?> int array
             let mesh = scene.Meshes.[i]
-            let geometry = createPhysicallyBasedAnimatedGeometryFromMesh vkcOpt indexData mesh
+            let geometry = createPhysicallyBasedAnimatedGeometryFromMesh indexData mesh vkcOpt
             geometries.Add geometry
         geometries
 
@@ -2111,19 +2111,19 @@ type PhysicallyBasedSceneClient () =
 
     /// Attempt to create physically-based model from a model file with assimp.
     /// Thread-safe if vkcOpt = None.
-    member this.TryCreatePhysicallyBasedModel vkcOpt filePath defaultMaterial textureClient =
+    member this.TryCreatePhysicallyBasedModel filePath defaultMaterial textureClient vkcOpt =
 
         // attempt to import from assimp scene
         match AssimpContext.TryGetScene filePath with
         | Right scene ->
             let dirPath = PathF.GetDirectoryName filePath
-            match PhysicallyBased.tryCreatePhysicallyBasedMaterials vkcOpt dirPath defaultMaterial textureClient scene with
+            match PhysicallyBased.tryCreatePhysicallyBasedMaterials dirPath defaultMaterial textureClient scene vkcOpt with
             | Right materials ->
                 let animated = scene.Animations.Count <> 0
                 let geometries =
                     if animated
-                    then PhysicallyBased.createPhysicallyBasedAnimatedGeometries vkcOpt scene
-                    else PhysicallyBased.createPhysicallyBasedStaticGeometries vkcOpt scene
+                    then PhysicallyBased.createPhysicallyBasedAnimatedGeometries scene vkcOpt
+                    else PhysicallyBased.createPhysicallyBasedStaticGeometries scene vkcOpt
 
                 // collect light nodes
                 let lightNodes =
