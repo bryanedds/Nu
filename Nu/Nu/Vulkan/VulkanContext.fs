@@ -388,8 +388,8 @@ type Swapchain =
     
     static member private tryCreateSurfaceAndSwapchainSingleton physicalDevice renderQueue presentQueue swapchain device instance =
         
-        // check if app is back in foreground
-        if Hl.ApplicationInForeground then
+        // check if app is not in background
+        if not (Hl.getBackgrounded ()) then
             
             // create surface
             Hl.tryCreateVulkanSurface swapchain.Window_ instance
@@ -904,8 +904,9 @@ type [<ReferenceEquality>] VulkanContext =
     /// Wait for app to return to foreground.
     static member private handleBackgrounding vkc =
         vkc.WaitingForWindowRestore_ <- Swapchain.isWindowMinimized vkc.Swapchain_.Window_
-        if Hl.ApplicationInForeground && not vkc.WaitingForWindowRestore_
-        then Swapchain.update vkc.PhysicalDevice_ vkc.RenderQueue_ vkc.PresentQueue_ vkc.Swapchain_ vkc.Device vkc.Instance_
+        if  not (Hl.getBackgrounded ()) &&
+            not vkc.WaitingForWindowRestore_ then
+            Swapchain.update vkc.PhysicalDevice_ vkc.RenderQueue_ vkc.PresentQueue_ vkc.Swapchain_ vkc.Device vkc.Instance_
     
     /// Begin the frame.
     static member beginFrame (windowViewport : Viewport) (vkc : VulkanContext) =

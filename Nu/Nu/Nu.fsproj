@@ -56,9 +56,6 @@
         <Compile Include="Transform\Transform.fs" />
         <Compile Include="Contour\Contour.fs" />
         <Compile Include="Assimp\Assimp.fs" />
-        <Compile Include="Sdl\SdlInputBindings.fs" />
-        <Compile Include="Sdl\SdlInput.fs" />
-        <Compile Include="Sdl\Sdl.fs" />
         <Compile Include="Vulkan\VulkanHl.fs" />
         <Compile Include="Vulkan\VulkanContext.fs" />
         <Compile Include="Vulkan\VulkanBuffer.fs" />
@@ -83,6 +80,9 @@
         <Compile Include="OpenGL\OpenGL.Filter.fs" />
         <Compile Include="OpenGL\OpenGL.SkyBox.fs" />
         <Compile Include="OpenGL\OpenGL.PhysicallyBased.fs" />
+        <Compile Include="Sdl\SdlInputBindings.fs" />
+        <Compile Include="Sdl\SdlInput.fs" />
+        <Compile Include="Sdl\Sdl.fs" />
         <Compile Include="ImGui\ImGuiInterop.fs" />
         <Compile Include="ImGui\ImGuiIOPtr.fs" />
         <Compile Include="ImGui\ImGui.fs" />

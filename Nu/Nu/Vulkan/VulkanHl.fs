@@ -4,6 +4,7 @@
 namespace Nu.Vulkan
 open System
 open System.Runtime.InteropServices
+open System.Threading
 open System.IO
 open FSharp.NativeInterop
 open SDL
@@ -586,6 +587,8 @@ module Hl =
         result
 
     let tryCreateVulkanSurface window instance =
+
+        // attempt to recreate surface if destroyed
         match SurfaceState with
         | SurfaceDestroyed ->
         
@@ -601,17 +604,24 @@ module Hl =
             else
                 Surface <- NativePtr.toNativeInt surfacePtr |> uint64 |> VkSurfaceKHR.op_Implicit
                 SurfaceState <- SurfaceReady
+
         | SurfaceReady -> Log.error "Attempted creation of Vulkan surface when existing surface has not been destroyed!"
         | SurfaceLost -> Log.error "Attempted creation of Vulkan surface when existing surface has been lost but not destroyed!"
+
+        // "success" is not having a destroyed surface
+        not (SurfaceState.IsSurfaceDestroyed)
 
     let createVulkanSurface window instance =
     
         // wait for app to enter foreground if not already
-        while not ApplicationInForeground do ()
-        tryCreateVulkanSurface window instance
+        while getBackgrounded () do
+            Thread.Yield () |> ignore<bool>
 
-        // cannot tolerate failure as this function is intended to guarantee surface creation, otherwise must set up a retry mechanism
-        if SurfaceState.IsSurfaceDestroyed then Log.fail "Vulkan surface creation failed."
+        // attempt to recreate vulkan surface
+        // cannot tolerate failure as this function is intended to guarantee surface creation, otherwise must set up
+        // a retry mechanism
+        if not (tryCreateVulkanSurface window instance) then
+            Log.fail "Vulkan surface creation failed."
 
     let destroyVulkanSurface instance =
         match SurfaceState with
