@@ -40,7 +40,7 @@ type [<Struct>] CubeMapSurface =
 
 /// Describes a cube map pipeline that's loaded into GPU.
 type CubeMapPipeline =
-    { TransformUniform : Nu.Vulkan.Buffer
+    { EyeUniform : Nu.Vulkan.Buffer
       Pipeline : Pipeline }
 
 /// The key identifying a cube map.
@@ -265,7 +265,7 @@ module CubeMap =
                 vkc
 
         // fin
-        { TransformUniform = transformUniform; Pipeline = pipeline }
+        { EyeUniform = transformUniform; Pipeline = pipeline }
     
     /// Destroy a CubeMapPipeline.
     let destroyCubeMapPipeline cubeMapPipeline vkc =
@@ -298,11 +298,11 @@ module CubeMap =
             match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
             | Some vkPipeline ->
 
-                // specify transform
-                let mutable transformDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.Pipeline.DrawIndex pipeline.Pipeline vkc $ fun vkSet ->
+                // specify eye
+                let mutable eyeDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.Pipeline.DrawIndex pipeline.Pipeline vkc $ fun vkSet ->
                     let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
-                    Buffer.uploadValue eye pipeline.TransformUniform vkc
-                    Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.TransformUniform vkSet vkc
+                    Buffer.uploadValue eye pipeline.EyeUniform vkc
+                    Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.EyeUniform vkSet vkc
 
                 // specify material
                 let mutable materialDescriptorSet = Pipeline.specifyDescriptorSet 1 cubeMap pipeline.Pipeline vkc $ fun vkSet ->
@@ -326,7 +326,7 @@ module CubeMap =
                 Vulkan.vkCmdBindIndexBuffer (commandBuffer, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
 
                 // bind descriptor sets
-                Vulkan.vkCmdBindDescriptorSets (commandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, asPointer &transformDescriptorSet, 0u, nullPtr)
+                Vulkan.vkCmdBindDescriptorSets (commandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, asPointer &eyeDescriptorSet, 0u, nullPtr)
                 Vulkan.vkCmdBindDescriptorSets (commandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, asPointer &materialDescriptorSet, 0u, nullPtr)
                 Vulkan.vkCmdBindDescriptorSets (commandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 2u, 1u, asPointer &samplerDescriptorSet, 0u, nullPtr)
 
