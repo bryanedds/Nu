@@ -72,7 +72,7 @@ type [<ReferenceEquality>] SpriteBatchEnv =
 module SpriteBatch =
 
     /// Create a sprite batch pipeline.
-    let private CreateSpriteBatchPipeline (vkc : VulkanContext) =
+    let private createSpriteBatchPipeline (vkc : VulkanContext) =
 
         // create uniforms
         let spritesUniform = Buffer.create (Constants.Render.SpriteBatchSize * sizeof<Sprite>) Storage vkc
@@ -97,13 +97,13 @@ module SpriteBatch =
         (spritesUniform, viewProjectionUniform, pipeline)
     
     /// Reload the shaders used by the environment.
-    let ReloadShaders env vkc =
+    let reloadShaders env vkc =
         Pipeline.reloadShaders env.Pipeline vkc
     
-    let private BeginSpriteBatch state env =
+    let private beginSpriteBatch state env =
         env.State <- state
 
-    let private EndSpriteBatch (viewport : Viewport) env =
+    let private endSpriteBatch (viewport : Viewport) env =
 
         // ensure something to draw
         match env.State.TextureOpt with
@@ -197,12 +197,12 @@ module SpriteBatch =
         // not ready
         | ValueSome _ | ValueNone -> ()
 
-    let private RestartSpriteBatch state viewport env =
-        EndSpriteBatch viewport env
-        BeginSpriteBatch state env
+    let private restartSpriteBatch state viewport env =
+        endSpriteBatch viewport env
+        beginSpriteBatch state env
 
     /// Begin a new sprite batch frame.
-    let BeginSpriteBatchFrame
+    let beginSpriteBatchFrame
         (viewProjection2dAbsolute : Matrix4x4 inref,
          viewProjection2dRelative : Matrix4x4 inref,
          viewProjectionClipAbsolute : Matrix4x4 inref,
@@ -213,24 +213,24 @@ module SpriteBatch =
         env.ViewProjection2dRelative <- viewProjection2dRelative
         env.ViewProjectionClipAbsolute <- viewProjectionClipAbsolute
         env.ViewProjectionClipRelative <- viewProjectionClipRelative
-        BeginSpriteBatch SpriteBatchState.defaultState env
+        beginSpriteBatch SpriteBatchState.defaultState env
 
     /// End the current sprite batch frame, if any.
-    let EndSpriteBatchFrame viewport env =
-        EndSpriteBatch viewport env
+    let endSpriteBatchFrame viewport env =
+        endSpriteBatch viewport env
 
     /// Forcibly end the current sprite batch frame, if any, run the given fn, then restart the sprite batch frame.
     let InterruptSpriteBatchFrame fn viewport env =
         let state = env.State
-        EndSpriteBatch viewport env
+        endSpriteBatch viewport env
         fn ()
-        BeginSpriteBatch state env
+        beginSpriteBatch state env
 
     let
 #if !DEBUG
         inline
 #endif
-        private PopulateSpriteBatchVertex (perimeter : Box2) (pivot : Vector2) (rotation : single) (texCoords : Box2) (color : Color) env =
+        private populateSpriteBatchVertex (perimeter : Box2) (pivot : Vector2) (rotation : single) (texCoords : Box2) (color : Color) env =
         env.Perimeters.[env.SpriteIndex] <- v4 perimeter.Min.X perimeter.Min.Y perimeter.Size.X perimeter.Size.Y
         env.Pivots.[env.SpriteIndex] <- pivot
         env.Rotations.[env.SpriteIndex] <- rotation
@@ -238,26 +238,26 @@ module SpriteBatch =
         env.Colors.[env.SpriteIndex] <- color.V4
 
     /// Submit a sprite to the appropriate sprite batch.
-    let SubmitSpriteBatchSprite (absolute, min : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2 inref, clipOpt : (Box2 voption) inref, color : Color inref, blend, texture : Texture, viewport, env) =
+    let submitSpriteBatchSprite (absolute, min : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2 inref, clipOpt : (Box2 voption) inref, color : Color inref, blend, texture : Texture, viewport, env) =
 
         // adjust to potential sprite batch state changes
         let state = SpriteBatchState.make absolute clipOpt blend texture
         if  SpriteBatchState.changed state env.State ||
             env.SpriteIndex = Constants.Render.SpriteBatchSize then
-            RestartSpriteBatch state viewport env
+            restartSpriteBatch state viewport env
 
         // populate vertices
         let perimeter = box2 min size
-        PopulateSpriteBatchVertex perimeter pivot rotation texCoords color env
+        populateSpriteBatchVertex perimeter pivot rotation texCoords color env
 
         // advance sprite index
         env.SpriteIndex <- inc env.SpriteIndex
 
     /// Destroy the given sprite batch environment.
-    let CreateSpriteBatchEnv unfilteredSampler filteredSampler vkc =
+    let createSpriteBatchEnv unfilteredSampler filteredSampler vkc =
         
         // create pipeline
-        let (spritesUniform, viewProjectionUniform, pipeline) = CreateSpriteBatchPipeline vkc
+        let (spritesUniform, viewProjectionUniform, pipeline) = createSpriteBatchPipeline vkc
 
         // create env
         { SpriteIndex = 0;
@@ -273,5 +273,5 @@ module SpriteBatch =
           State = SpriteBatchState.defaultState }
 
     /// Destroy the given sprite batch environment.
-    let DestroySpriteBatchEnv env =
+    let destroySpriteBatchEnv env =
         Pipeline.destroy env.Pipeline env.VulkanContext

@@ -518,37 +518,41 @@ type PhysicallyBasedPipelines =
 [<RequireQualifiedAccess>]
 module PhysicallyBased =
     
+    let StaticTexCoordsOffset = (3 (*position*)) * sizeof<single>
+    let StaticNormalOffset =    (3 (*position*) + 2 (*tex coords*)) * sizeof<single>
+    let StaticVertexSize =      (3 (*position*) + 2 (*tex coords*) + 3 (*normal*)) * sizeof<single>
+
     /// Create the attachments required for physically-based rendering.
-    let CreatePhysicallyBasedAttachments (geometryViewport : Viewport, vkc) =
+    let createPhysicallyBasedAttachments (geometryViewport : Viewport, vkc) =
         
         // create shadow texture array attachments
         let shadowTextureArrayAttachments =
             let shadowResolution = geometryViewport.ShadowTextureResolution
-            Attachment.CreateShadowTextureArrayAttachments (shadowResolution.X, shadowResolution.Y, Constants.Render.ShadowTexturesMax, vkc)
+            Attachment.createShadowTextureArrayAttachments (shadowResolution.X, shadowResolution.Y, Constants.Render.ShadowTexturesMax, vkc)
         
         // create shadow map attachments array
         let shadowMapAttachmentsArray =
             [|for _ in 0 .. dec Constants.Render.ShadowMapsMax do
                 let shadowResolution = geometryViewport.ShadowMapResolution
-                Attachment.CreateShadowMapAttachments (shadowResolution.X, shadowResolution.Y, vkc)|]
+                Attachment.createShadowMapAttachments (shadowResolution.X, shadowResolution.Y, vkc)|]
 
         // create shadow cascade array attachments array
         let shadowCascadeArrayAttachmentsArray =
             [|for _ in 0 .. dec Constants.Render.ShadowCascadesMax do
                 let shadowResolution = geometryViewport.ShadowCascadeResolution
-                Attachment.CreateShadowCascadeArrayAttachments (shadowResolution.X, shadowResolution.Y, Constants.Render.ShadowCascadeLevels, vkc)|]
+                Attachment.createShadowCascadeArrayAttachments (shadowResolution.X, shadowResolution.Y, Constants.Render.ShadowCascadeLevels, vkc)|]
 
         // create geometry attachments
-        let geometryAttachments = Attachment.CreateGeometryAttachments (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, vkc)
+        let geometryAttachments = Attachment.createGeometryAttachments (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, vkc)
         
         // create lighting attachment
-        let lightingAttachment = Attachment.CreateLightingAttachment (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, vkc)
+        let lightingAttachment = Attachment.createLightingAttachment (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, vkc)
         
         // create coloring attachments
-        let coloringAttachments = Attachment.CreateColoringAttachments (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, vkc)
+        let coloringAttachments = Attachment.createColoringAttachments (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, vkc)
 
         // create composition attachments
-        let compositionAttachments = Attachment.CreateGeneralAttachments (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, vkc)
+        let compositionAttachments = Attachment.createGeneralAttachments (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, vkc)
 
         // make record
         { ShadowTextureArrayAttachments = shadowTextureArrayAttachments
@@ -560,34 +564,34 @@ module PhysicallyBased =
           CompositionAttachments = compositionAttachments }
 
     /// Update the size of the attachments. Must be used every frame.
-    let UpdatePhysicallyBasedAttachmentsSize (geometryViewport : Viewport, attachments : PhysicallyBasedAttachments, vkc) =
-        Attachment.UpdateShadowTextureArrayAttachmentsSize (geometryViewport.ShadowTextureResolution.X, geometryViewport.ShadowTextureResolution.Y, attachments.ShadowTextureArrayAttachments, vkc)
+    let updatePhysicallyBasedAttachmentsSize (geometryViewport : Viewport, attachments : PhysicallyBasedAttachments, vkc) =
+        Attachment.updateShadowTextureArrayAttachmentsSize (geometryViewport.ShadowTextureResolution.X, geometryViewport.ShadowTextureResolution.Y, attachments.ShadowTextureArrayAttachments, vkc)
         for i in 0 .. dec attachments.ShadowMapAttachmentsArray.Length do
-            Attachment.UpdateShadowMapAttachmentsSize (geometryViewport.ShadowMapResolution.X, geometryViewport.ShadowMapResolution.Y, attachments.ShadowMapAttachmentsArray[i], vkc)
+            Attachment.updateShadowMapAttachmentsSize (geometryViewport.ShadowMapResolution.X, geometryViewport.ShadowMapResolution.Y, attachments.ShadowMapAttachmentsArray[i], vkc)
         for i in 0 .. dec attachments.ShadowCascadeArrayAttachmentsArray.Length do
-            Attachment.UpdateShadowCascadeArrayAttachmentsSize (geometryViewport.ShadowCascadeResolution.X, geometryViewport.ShadowCascadeResolution.Y, attachments.ShadowCascadeArrayAttachmentsArray.[i], vkc)
-        Attachment.UpdateGeometryAttachmentsSize (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, attachments.GeometryAttachments, vkc)
-        Attachment.UpdateLightingAttachmentSize (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, attachments.LightingAttachment, vkc)
-        Attachment.UpdateColoringAttachmentsSize (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, attachments.ColoringAttachments, vkc)
-        Attachment.UpdateGeneralAttachmentsSize (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, attachments.CompositionAttachments, vkc)
+            Attachment.updateShadowCascadeArrayAttachmentsSize (geometryViewport.ShadowCascadeResolution.X, geometryViewport.ShadowCascadeResolution.Y, attachments.ShadowCascadeArrayAttachmentsArray.[i], vkc)
+        Attachment.updateGeometryAttachmentsSize (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, attachments.GeometryAttachments, vkc)
+        Attachment.updateLightingAttachmentSize (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, attachments.LightingAttachment, vkc)
+        Attachment.updateColoringAttachmentsSize (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, attachments.ColoringAttachments, vkc)
+        Attachment.updateGeneralAttachmentsSize (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, attachments.CompositionAttachments, vkc)
     
     /// Destroy the physically-based attachments.
-    let DestroyPhysicallyBasedAttachments (attachments : PhysicallyBasedAttachments, vkc) =
-        Attachment.DestroyShadowTextureArrayAttachments (attachments.ShadowTextureArrayAttachments, vkc)
+    let destroyPhysicallyBasedAttachments (attachments : PhysicallyBasedAttachments, vkc) =
+        Attachment.destroyShadowTextureArrayAttachments (attachments.ShadowTextureArrayAttachments, vkc)
         for i in 0 .. dec attachments.ShadowMapAttachmentsArray.Length do
-            Attachment.DestroyShadowMapAttachments (attachments.ShadowMapAttachmentsArray.[i], vkc)
+            Attachment.destroyShadowMapAttachments (attachments.ShadowMapAttachmentsArray.[i], vkc)
         for i in 0 .. dec attachments.ShadowCascadeArrayAttachmentsArray.Length do
-            Attachment.DestroyShadowCascadeArrayAttachments (attachments.ShadowCascadeArrayAttachmentsArray.[i], vkc)
-        Attachment.DestroyGeometryAttachments (attachments.GeometryAttachments, vkc)
-        Attachment.DestroyLightingAttachment (attachments.LightingAttachment, vkc)
-        Attachment.DestroyColoringAttachments (attachments.ColoringAttachments, vkc)
-        Attachment.DestroyGeneralAttachments (attachments.CompositionAttachments, vkc)
+            Attachment.destroyShadowCascadeArrayAttachments (attachments.ShadowCascadeArrayAttachmentsArray.[i], vkc)
+        Attachment.destroyGeometryAttachments (attachments.GeometryAttachments, vkc)
+        Attachment.destroyLightingAttachment (attachments.LightingAttachment, vkc)
+        Attachment.destroyColoringAttachments (attachments.ColoringAttachments, vkc)
+        Attachment.destroyGeneralAttachments (attachments.CompositionAttachments, vkc)
     
     /// Create physically-based material from an assimp mesh, falling back on defaults in case of missing textures.
     /// Uses file name-based inferences to look for texture files in case the ones that were hard-coded in the model
     /// files can't be located.
     /// Thread-safe if vkcOpt = None.
-    let CreatePhysicallyBasedMaterial (vkcOpt, dirPath, defaultMaterial, textureClient : TextureClient, material : Assimp.Material) =
+    let createPhysicallyBasedMaterial (vkcOpt, dirPath, defaultMaterial, textureClient : TextureClient, material : Assimp.Material) =
 
         // compute the directory string to prefix to a local asset file path
         let dirPrefix = if dirPath <> "" then dirPath + "/" else ""
@@ -626,7 +630,7 @@ module PhysicallyBased =
         let albedoTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression albedoTextureSlotFilePath, dirPrefix + albedoTextureSlotFilePath, RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression albedoTextureSlotFilePath, dirPrefix + albedoTextureSlotFilePath, RenderThread, vkc) with
                 | Right texture -> texture
                 | Left _ -> defaultMaterial.AlbedoTexture
             | None -> defaultMaterial.AlbedoTexture
@@ -682,28 +686,28 @@ module PhysicallyBased =
         let roughnessTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression roughnessTextureSlot.FilePath, dirPrefix + roughnessTextureSlot.FilePath, RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression roughnessTextureSlot.FilePath, dirPrefix + roughnessTextureSlot.FilePath, RenderThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression gTextureFilePath, dirPrefix + gTextureFilePath, RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression gTextureFilePath, dirPrefix + gTextureFilePath, RenderThread, vkc) with
                     | Right texture -> texture
                     | Left _ ->
-                        match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression sTextureFilePath, dirPrefix + sTextureFilePath, RenderThread, vkc) with
+                        match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression sTextureFilePath, dirPrefix + sTextureFilePath, RenderThread, vkc) with
                         | Right texture -> texture
                         | Left _ ->
-                            match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression g_mTextureFilePath, dirPrefix + g_mTextureFilePath, RenderThread, vkc) with
+                            match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression g_mTextureFilePath, dirPrefix + g_mTextureFilePath, RenderThread, vkc) with
                             | Right texture -> texture
                             | Left _ ->
-                                match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression g_m_aoTextureFilePath, dirPrefix + g_m_aoTextureFilePath, RenderThread, vkc) with
+                                match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression g_m_aoTextureFilePath, dirPrefix + g_m_aoTextureFilePath, RenderThread, vkc) with
                                 | Right texture -> texture
                                 | Left _ ->
-                                    match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression roughnessTextureFilePath, dirPrefix + roughnessTextureFilePath, RenderThread, vkc) with
+                                    match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression roughnessTextureFilePath, dirPrefix + roughnessTextureFilePath, RenderThread, vkc) with
                                     | Right texture -> texture
                                     | Left _ ->
-                                        match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression rmTextureFilePath, dirPrefix + rmTextureFilePath, RenderThread, vkc) with
+                                        match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression rmTextureFilePath, dirPrefix + rmTextureFilePath, RenderThread, vkc) with
                                         | Right texture -> texture
                                         | Left _ ->
-                                            match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression rmaTextureFilePath, dirPrefix + rmaTextureFilePath, RenderThread, vkc) with
+                                            match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression rmaTextureFilePath, dirPrefix + rmaTextureFilePath, RenderThread, vkc) with
                                             | Right texture -> texture
                                             | Left _ -> defaultMaterial.RoughnessTexture
             | None -> defaultMaterial.RoughnessTexture
@@ -717,28 +721,28 @@ module PhysicallyBased =
         let metallicTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression metallicTextureSlot.FilePath, dirPrefix + metallicTextureSlot.FilePath, RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression metallicTextureSlot.FilePath, dirPrefix + metallicTextureSlot.FilePath, RenderThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression mTextureFilePath, dirPrefix + mTextureFilePath, RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression mTextureFilePath, dirPrefix + mTextureFilePath, RenderThread, vkc) with
                     | Right texture -> texture
                     | Left _ ->
-                        match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression g_mTextureFilePath, dirPrefix + g_mTextureFilePath, RenderThread, vkc) with
+                        match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression g_mTextureFilePath, dirPrefix + g_mTextureFilePath, RenderThread, vkc) with
                         | Right texture -> texture
                         | Left _ ->
-                            match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression g_m_aoTextureFilePath, dirPrefix + g_m_aoTextureFilePath, RenderThread, vkc) with
+                            match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression g_m_aoTextureFilePath, dirPrefix + g_m_aoTextureFilePath, RenderThread, vkc) with
                             | Right texture -> texture
                             | Left _ ->
-                                match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression metallicTextureFilePath, dirPrefix + metallicTextureFilePath, RenderThread, vkc) with
+                                match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression metallicTextureFilePath, dirPrefix + metallicTextureFilePath, RenderThread, vkc) with
                                 | Right texture -> texture
                                 | Left _ ->
-                                    match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression metalnessTextureFilePath, dirPrefix + metalnessTextureFilePath, RenderThread, vkc) with
+                                    match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression metalnessTextureFilePath, dirPrefix + metalnessTextureFilePath, RenderThread, vkc) with
                                     | Right texture -> texture
                                     | Left _ ->
-                                        match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression rmTextureFilePath, dirPrefix + rmTextureFilePath, RenderThread, vkc) with
+                                        match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression rmTextureFilePath, dirPrefix + rmTextureFilePath, RenderThread, vkc) with
                                         | Right texture -> texture
                                         | Left _ ->
-                                            match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression rmaTextureFilePath, dirPrefix + rmaTextureFilePath, RenderThread, vkc) with
+                                            match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression rmaTextureFilePath, dirPrefix + rmaTextureFilePath, RenderThread, vkc) with
                                             | Right texture -> texture
                                             | Left _ -> defaultMaterial.MetallicTexture
             | None -> defaultMaterial.MetallicTexture
@@ -755,25 +759,25 @@ module PhysicallyBased =
         let ambientOcclusionTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression ambientOcclusionTextureSlotFilePath, dirPrefix + ambientOcclusionTextureSlotFilePath, RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression ambientOcclusionTextureSlotFilePath, dirPrefix + ambientOcclusionTextureSlotFilePath, RenderThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression aoTextureFilePath, dirPrefix + aoTextureFilePath, RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression aoTextureFilePath, dirPrefix + aoTextureFilePath, RenderThread, vkc) with
                     | Right texture -> texture
                     | Left _ ->
-                        match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression g_m_aoTextureFilePath, dirPrefix + g_m_aoTextureFilePath, RenderThread, vkc) with
+                        match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression g_m_aoTextureFilePath, dirPrefix + g_m_aoTextureFilePath, RenderThread, vkc) with
                         | Right texture -> texture
                         | Left _ ->
-                            match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression ambientOcclusionTextureFilePath, dirPrefix + ambientOcclusionTextureFilePath, RenderThread, vkc) with
+                            match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression ambientOcclusionTextureFilePath, dirPrefix + ambientOcclusionTextureFilePath, RenderThread, vkc) with
                             | Right texture -> texture
                             | Left _ ->
-                                match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression occlusionTextureFilePath, dirPrefix + occlusionTextureFilePath, RenderThread, vkc) with
+                                match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression occlusionTextureFilePath, dirPrefix + occlusionTextureFilePath, RenderThread, vkc) with
                                 | Right texture -> texture
                                 | Left _ ->
-                                    match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression aoTextureFilePath', dirPrefix + aoTextureFilePath', RenderThread, vkc) with
+                                    match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression aoTextureFilePath', dirPrefix + aoTextureFilePath', RenderThread, vkc) with
                                     | Right texture -> texture
                                     | Left _ ->
-                                        match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression rmaTextureFilePath, dirPrefix + rmaTextureFilePath, RenderThread, vkc) with
+                                        match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression rmaTextureFilePath, dirPrefix + rmaTextureFilePath, RenderThread, vkc) with
                                         | Right texture -> texture
                                         | Left _ -> defaultMaterial.AmbientOcclusionTexture
             | None -> defaultMaterial.AmbientOcclusionTexture
@@ -787,16 +791,16 @@ module PhysicallyBased =
         let emissionTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression emissionTextureSlot.FilePath, dirPrefix + emissionTextureSlot.FilePath, RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression emissionTextureSlot.FilePath, dirPrefix + emissionTextureSlot.FilePath, RenderThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression eTextureFilePath, dirPrefix + eTextureFilePath, RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression eTextureFilePath, dirPrefix + eTextureFilePath, RenderThread, vkc) with
                     | Right texture -> texture
                     | Left _ ->
-                        match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression emissiveTextureFilePath, dirPrefix + emissiveTextureFilePath, RenderThread, vkc) with
+                        match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression emissiveTextureFilePath, dirPrefix + emissiveTextureFilePath, RenderThread, vkc) with
                         | Right texture -> texture
                         | Left _ ->
-                            match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression emissionTextureFilePath, dirPrefix + emissionTextureFilePath, RenderThread, vkc) with
+                            match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression emissionTextureFilePath, dirPrefix + emissionTextureFilePath, RenderThread, vkc) with
                             | Right texture -> texture
                             | Left _ -> defaultMaterial.EmissionTexture
             | None -> defaultMaterial.EmissionTexture
@@ -809,13 +813,13 @@ module PhysicallyBased =
         let normalTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression normalTextureSlot.FilePath, dirPrefix + normalTextureSlot.FilePath, RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression normalTextureSlot.FilePath, dirPrefix + normalTextureSlot.FilePath, RenderThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression nTextureFilePath, dirPrefix + nTextureFilePath, RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression nTextureFilePath, dirPrefix + nTextureFilePath, RenderThread, vkc) with
                     | Right texture -> texture
                     | Left _ ->
-                        match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression normalTextureFilePath, dirPrefix + normalTextureFilePath, RenderThread, vkc) with
+                        match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression normalTextureFilePath, dirPrefix + normalTextureFilePath, RenderThread, vkc) with
                         | Right texture -> texture
                         | Left _ -> defaultMaterial.NormalTexture
             | None -> defaultMaterial.NormalTexture
@@ -829,13 +833,13 @@ module PhysicallyBased =
         let heightTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression heightTextureSlot.FilePath, dirPrefix + heightTextureSlot.FilePath, RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression heightTextureSlot.FilePath, dirPrefix + heightTextureSlot.FilePath, RenderThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression hTextureFilePath, dirPrefix + hTextureFilePath, RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression hTextureFilePath, dirPrefix + hTextureFilePath, RenderThread, vkc) with
                     | Right texture -> texture
                     | Left _ ->
-                        match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression heightTextureFilePath, dirPrefix + heightTextureFilePath, RenderThread, vkc) with
+                        match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression heightTextureFilePath, dirPrefix + heightTextureFilePath, RenderThread, vkc) with
                         | Right texture -> texture
                         | Left _ -> defaultMaterial.HeightTexture
             | None -> defaultMaterial.HeightTexture
@@ -856,10 +860,10 @@ module PhysicallyBased =
         let subdermalTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression subdermalTextureFilePath, dirPrefix + subdermalTextureFilePath, RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression subdermalTextureFilePath, dirPrefix + subdermalTextureFilePath, RenderThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression subdermalTextureFilePath', dirPrefix + subdermalTextureFilePath', RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression subdermalTextureFilePath', dirPrefix + subdermalTextureFilePath', RenderThread, vkc) with
                     | Right texture -> texture
                     | Left _ -> defaultMaterial.SubdermalTexture
             | None -> defaultMaterial.SubdermalTexture
@@ -869,10 +873,10 @@ module PhysicallyBased =
         let finenessTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression finenessTextureFilePath, dirPrefix + finenessTextureFilePath, RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression finenessTextureFilePath, dirPrefix + finenessTextureFilePath, RenderThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression finenessTextureFilePath', dirPrefix + finenessTextureFilePath', RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression finenessTextureFilePath', dirPrefix + finenessTextureFilePath', RenderThread, vkc) with
                     | Right texture -> texture
                     | Left _ -> defaultMaterial.FinenessTexture
             | None -> defaultMaterial.FinenessTexture
@@ -882,10 +886,10 @@ module PhysicallyBased =
         let scatterTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression scatterTextureFilePath, dirPrefix + scatterTextureFilePath, RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression scatterTextureFilePath, dirPrefix + scatterTextureFilePath, RenderThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression scatterTextureFilePath', dirPrefix + scatterTextureFilePath', RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression scatterTextureFilePath', dirPrefix + scatterTextureFilePath', RenderThread, vkc) with
                     | Right texture -> texture
                     | Left _ -> defaultMaterial.ScatterTexture
             | None -> defaultMaterial.ScatterTexture
@@ -919,10 +923,10 @@ module PhysicallyBased =
         let clearCoatTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression clearCoatTextureFilePath, dirPrefix + clearCoatTextureFilePath, RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression clearCoatTextureFilePath, dirPrefix + clearCoatTextureFilePath, RenderThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression clearCoatTextureFilePath', dirPrefix + clearCoatTextureFilePath', RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression clearCoatTextureFilePath', dirPrefix + clearCoatTextureFilePath', RenderThread, vkc) with
                     | Right texture -> texture
                     | Left _ -> defaultMaterial.ClearCoatTexture
             | None -> defaultMaterial.ClearCoatTexture
@@ -932,10 +936,10 @@ module PhysicallyBased =
         let clearCoatRoughnessTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression clearCoatRoughnessTextureFilePath, dirPrefix + clearCoatRoughnessTextureFilePath, RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression clearCoatRoughnessTextureFilePath, dirPrefix + clearCoatRoughnessTextureFilePath, RenderThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression clearCoatRoughnessTextureFilePath', dirPrefix + clearCoatRoughnessTextureFilePath', RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression clearCoatRoughnessTextureFilePath', dirPrefix + clearCoatRoughnessTextureFilePath', RenderThread, vkc) with
                     | Right texture -> texture
                     | Left _ -> defaultMaterial.ClearCoatRoughnessTexture
             | None -> defaultMaterial.ClearCoatRoughnessTexture
@@ -944,10 +948,10 @@ module PhysicallyBased =
         let clearCoatNormalTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression clearCoatNormalTextureFilePath, dirPrefix + clearCoatNormalTextureFilePath, RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression clearCoatNormalTextureFilePath, dirPrefix + clearCoatNormalTextureFilePath, RenderThread, vkc) with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Hl.InferCompression clearCoatNormalTextureFilePath', dirPrefix + clearCoatNormalTextureFilePath', RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression clearCoatNormalTextureFilePath', dirPrefix + clearCoatNormalTextureFilePath', RenderThread, vkc) with
                     | Right texture -> texture
                     | Left _ -> defaultMaterial.ClearCoatNormalTexture
             | None -> defaultMaterial.ClearCoatNormalTexture
@@ -1020,7 +1024,7 @@ module PhysicallyBased =
         (properties, material)
 
     /// Create physically-based static mesh from an assimp mesh.
-    let CreatePhysicallyBasedStaticMesh (indexData, mesh : Assimp.Mesh) =
+    let createPhysicallyBasedStaticMesh (indexData, mesh : Assimp.Mesh) =
 
         // populate vertex data and bounds
         let vertexData = Array.zeroCreate<single> (mesh.Vertices.Count * 8)
@@ -1051,7 +1055,7 @@ module PhysicallyBased =
         (vertexData, indexData, bounds)
 
     /// Create physically-based animated mesh from an assimp mesh.
-    let CreatePhysicallyBasedAnimatedMesh (indexData, mesh : Assimp.Mesh) =
+    let createPhysicallyBasedAnimatedMesh (indexData, mesh : Assimp.Mesh) =
 
         // populate vertex data (except bone) and bounds
         let vertexData = Array.zeroCreate<single> (mesh.Vertices.Count * 16)
@@ -1126,13 +1130,9 @@ module PhysicallyBased =
 
         // fin
         (vertexData, indexData, bounds)
-    
-    let StaticTexCoordsOffset = (3 (*position*)) * sizeof<single>
-    let StaticNormalOffset =    (3 (*position*) + 2 (*tex coords*)) * sizeof<single>
-    let StaticVertexSize =      (3 (*position*) + 2 (*tex coords*) + 3 (*normal*)) * sizeof<single>
-    
+
     /// Create physically-based static geometry from a mesh.
-    let CreatePhysicallyBasedStaticGeometry (vkcOpt, primitiveTopology, vertexData : single Memory, indexData : int Memory, bounds) =
+    let createPhysicallyBasedStaticGeometry (vkcOpt, primitiveTopology, vertexData : single Memory, indexData : int Memory, bounds) =
 
         // make buffers
         let (vertices, indices, vertexBuffer, instanceBuffer, indexBuffer) =
@@ -1187,12 +1187,12 @@ module PhysicallyBased =
         geometry
 
     /// Create physically-based static geometry from an assimp mesh.
-    let CreatePhysicallyBasedStaticGeometryFromMesh (vkcOpt, indexData, mesh : Assimp.Mesh) =
-        match CreatePhysicallyBasedStaticMesh (indexData, mesh) with
-        | (vertexData, indexData, bounds) -> CreatePhysicallyBasedStaticGeometry (vkcOpt, VkPrimitiveTopology.TriangleList, vertexData.AsMemory (), indexData.AsMemory (), bounds)
+    let createPhysicallyBasedStaticGeometryFromMesh (vkcOpt, indexData, mesh : Assimp.Mesh) =
+        match createPhysicallyBasedStaticMesh (indexData, mesh) with
+        | (vertexData, indexData, bounds) -> createPhysicallyBasedStaticGeometry (vkcOpt, VkPrimitiveTopology.TriangleList, vertexData.AsMemory (), indexData.AsMemory (), bounds)
     
     /// Create physically-based animated geometry from a mesh.
-    let CreatePhysicallyBasedAnimatedGeometry (vkcOpt, primitiveTopology, vertexData : single Memory, indexData : int Memory, bounds) =
+    let createPhysicallyBasedAnimatedGeometry (vkcOpt, primitiveTopology, vertexData : single Memory, indexData : int Memory, bounds) =
 
         // make buffers
         let (vertices, indices, vertexBuffer, instanceBuffer, indexBuffer) =
@@ -1247,18 +1247,18 @@ module PhysicallyBased =
         geometry
 
     /// Create physically-based animated geometry from an assimp mesh.
-    let CreatePhysicallyBasedAnimatedGeometryFromMesh (vkcOpt, indexData, mesh : Assimp.Mesh) =
-        match CreatePhysicallyBasedAnimatedMesh (indexData, mesh) with
-        | (vertexData, indexData, bounds) -> CreatePhysicallyBasedAnimatedGeometry (vkcOpt, VkPrimitiveTopology.TriangleList, vertexData.AsMemory (), indexData.AsMemory (), bounds)
+    let createPhysicallyBasedAnimatedGeometryFromMesh (vkcOpt, indexData, mesh : Assimp.Mesh) =
+        match createPhysicallyBasedAnimatedMesh (indexData, mesh) with
+        | (vertexData, indexData, bounds) -> createPhysicallyBasedAnimatedGeometry (vkcOpt, VkPrimitiveTopology.TriangleList, vertexData.AsMemory (), indexData.AsMemory (), bounds)
     
     /// Attempt to create physically-based material from an assimp scene.
     /// Thread-safe if vkcOpt = None.
-    let TryCreatePhysicallyBasedMaterials (vkcOpt, dirPath, defaultMaterial, textureClient, scene : Assimp.Scene) =
+    let tryCreatePhysicallyBasedMaterials (vkcOpt, dirPath, defaultMaterial, textureClient, scene : Assimp.Scene) =
         let mutable errorOpt = None
         let propertiesAndMaterials = Array.zeroCreate scene.Materials.Count
         for i in 0 .. dec scene.Materials.Count do
             if Option.isNone errorOpt then
-                let (properties, material) = CreatePhysicallyBasedMaterial (vkcOpt, dirPath, defaultMaterial, textureClient, scene.Materials.[i])
+                let (properties, material) = createPhysicallyBasedMaterial (vkcOpt, dirPath, defaultMaterial, textureClient, scene.Materials.[i])
                 propertiesAndMaterials.[i] <- (properties, material)
         match errorOpt with
         | Some error -> Left error
@@ -1266,7 +1266,7 @@ module PhysicallyBased =
 
     /// Create physically-based static geometries from an assimp scene.
     /// OPTIMIZATION: duplicate geometry is detected and deduplicated here, which does have some run-time cost.
-    let CreatePhysicallyBasedStaticGeometries (vkcOpt, scene : Assimp.Scene) =
+    let createPhysicallyBasedStaticGeometries (vkcOpt, scene : Assimp.Scene) =
         let meshAndGeometryLists = Dictionary<int * int * Assimp.BoundingBox, (Assimp.Mesh * PhysicallyBasedGeometry) List> HashIdentity.Structural
         let geometries = SList.make ()
         for i in 0 .. dec scene.Meshes.Count do
@@ -1287,7 +1287,7 @@ module PhysicallyBased =
                         found <- true
             | None -> ()
             if not found then
-                let geometry = CreatePhysicallyBasedStaticGeometryFromMesh (vkcOpt, indexData, mesh)
+                let geometry = createPhysicallyBasedStaticGeometryFromMesh (vkcOpt, indexData, mesh)
                 match meshAndGeometryListOpt with
                 | Some meshesAndGeometries -> meshesAndGeometries.Add (mesh, geometry)
                 | None -> meshAndGeometryLists.[(mesh.VertexCount, mesh.FaceCount, mesh.BoundingBox)] <- List [(mesh, geometry)]
@@ -1296,18 +1296,18 @@ module PhysicallyBased =
 
     /// Create physically-based animated geometries from an assimp scene.
     /// TODO: consider deduplicating geometry like in CreatePhysicallyBasedStaticGeometries?
-    let CreatePhysicallyBasedAnimatedGeometries (vkcOpt, scene : Assimp.Scene) =
+    let createPhysicallyBasedAnimatedGeometries (vkcOpt, scene : Assimp.Scene) =
         let geometries = SList.make ()
         for i in 0 .. dec scene.Meshes.Count do
             let indexDataEntry = scene.Metadata.["IndexData" + string i]
             let indexData = indexDataEntry.Data :?> int array
             let mesh = scene.Meshes.[i]
-            let geometry = CreatePhysicallyBasedAnimatedGeometryFromMesh (vkcOpt, indexData, mesh)
+            let geometry = createPhysicallyBasedAnimatedGeometryFromMesh (vkcOpt, indexData, mesh)
             geometries.Add geometry
         geometries
 
     /// Create a physically-based pipeline.
-    let CreatePhysicallyBasedPipeline
+    let createPhysicallyBasedPipeline
         (lightMapsMax,
          lightsMax,
          shaderPath,
@@ -1408,11 +1408,11 @@ module PhysicallyBased =
         physicallyBasedPipeline
     
     /// Destroy PhysicallyBasedPipeline.
-    let DestroyPhysicallyBasedPipeline (physicallyBasedPipeline : PhysicallyBasedPipeline) vkc =
+    let destroyPhysicallyBasedPipeline (physicallyBasedPipeline : PhysicallyBasedPipeline) vkc =
         Pipeline.destroy physicallyBasedPipeline.Pipeline vkc
     
     /// Create a PhysicallyBasedDeferredLightingPipeline.
-    let CreatePhysicallyBasedDeferredLightingPipeline (lightsMax, colorAttachmentFormat, vkc) =
+    let createPhysicallyBasedDeferredLightingPipeline (lightsMax, colorAttachmentFormat, vkc) =
 
         // create uniform buffers
         let shadowMatrixMax = Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels
@@ -1464,11 +1464,11 @@ module PhysicallyBased =
         physicallyBasedDeferredLightingPipeline
     
     /// Destroy PhysicallyBasedDeferredLightingPipeline.
-    let DestroyPhysicallyBasedDeferredLightingPipeline (pipeline : PhysicallyBasedDeferredLightingPipeline) vkc =
+    let destroyPhysicallyBasedDeferredLightingPipeline (pipeline : PhysicallyBasedDeferredLightingPipeline) vkc =
         Pipeline.destroy pipeline.Pipeline vkc
 
     /// Draw a batch of physically-based deferred surfaces.
-    let BeginPhysicallyBasedDeferredPipeline
+    let beginPhysicallyBasedDeferredPipeline
         (view : Matrix4x4,
          projection : Matrix4x4,
          viewProjection : Matrix4x4,
@@ -1498,7 +1498,7 @@ module PhysicallyBased =
         (transformDescriptorSet, samplerDescriptorSet)
 
     /// Draw a batch of physically-based deferred surfaces.
-    let DrawPhysicallyBasedDeferredSurfaces
+    let drawPhysicallyBasedDeferredSurfaces
         (bones : Matrix4x4 array,
          surfacesCount : int,
          instanceFields : single array,
@@ -1589,7 +1589,7 @@ module PhysicallyBased =
                 | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
 
     /// Begin the process of drawing with a forward pipeline.
-    let BeginPhysicallyBasedForwardPipeline
+    let beginPhysicallyBasedForwardPipeline
         (view : Matrix4x4,
          projection : Matrix4x4,
          viewProjection : Matrix4x4,
@@ -1710,11 +1710,11 @@ module PhysicallyBased =
         (uniformsDescriptorSet, samplersDescriptorSet)
 
     /// End the process of drawing with a deferred pipeline.
-    let EndPhysicallyBasedDeferredPipeline (_ : PhysicallyBasedPipeline) =
+    let endPhysicallyBasedDeferredPipeline (_ : PhysicallyBasedPipeline) =
         () // nothing to do
 
     /// Draw a batch of physically-based forward surfaces.
-    let DrawPhysicallyBasedForwardSurfaces
+    let drawPhysicallyBasedForwardSurfaces
         (bones : Matrix4x4 array,
          surfacesCount : int,
          instanceFields : single array,
@@ -1883,11 +1883,11 @@ module PhysicallyBased =
             | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
 
     /// End the process of drawing with a forward pipeline.
-    let EndPhysicallyBasedForwardPipeline (_ : PhysicallyBasedPipeline) =
+    let endPhysicallyBasedForwardPipeline (_ : PhysicallyBasedPipeline) =
         () // nothing to do
 
     /// Draw the lighting pass of a deferred physically-based surface.
-    let DrawPhysicallyBasedDeferredLightingSurface
+    let drawPhysicallyBasedDeferredLightingSurface
         (eyeCenter : Vector3,
          view : Matrix4x4,
          viewInverse : Matrix4x4,
@@ -2025,17 +2025,17 @@ module PhysicallyBased =
         Hl.reportDrawCall 1
 
     /// Destroy physically-based geometry resources.
-    let DestroyPhysicallyBasedGeometry (geometry, vkc) =
+    let destroyPhysicallyBasedGeometry (geometry, vkc) =
         Buffer.destroy geometry.VertexBuffer vkc
         Buffer.destroy geometry.InstanceBuffer vkc
         Buffer.destroy geometry.IndexBuffer vkc
 
     /// Destroy physically-based model resources.
-    let DestroyPhysicallyBasedModel (model : PhysicallyBasedModel, vkc) =
+    let destroyPhysicallyBasedModel (model : PhysicallyBasedModel, vkc) =
         for surface in model.Surfaces do
-            DestroyPhysicallyBasedGeometry (surface.PhysicallyBasedGeometry, vkc)
+            destroyPhysicallyBasedGeometry (surface.PhysicallyBasedGeometry, vkc)
 
-    let CreatePhysicallyBasedPipelines
+    let createPhysicallyBasedPipelines
         (lightMapsMax,
          lightsMax,
          attachments,
@@ -2065,7 +2065,7 @@ module PhysicallyBased =
         let (depth, albedo, material, normalPlus, subdermalPlus, scatterPlus, clearCoatPlus, _) = attachments.GeometryAttachments
         let (composition, compositionZ) = attachments.CompositionAttachments
         let deferredStaticPipeline =
-            CreatePhysicallyBasedPipeline
+            createPhysicallyBasedPipeline
                 (lightMapsMax,
                  lightsMax,
                  Constants.Paths.PhysicallyBasedDeferredStaticShaderFilePath,
@@ -2083,11 +2083,11 @@ module PhysicallyBased =
                  vkc)
         
         // create deferred lighting pipeline
-        let deferredLightingPipeline = CreatePhysicallyBasedDeferredLightingPipeline (lightsMax, [|attachments.LightingAttachment.VkFormat|], vkc)
+        let deferredLightingPipeline = createPhysicallyBasedDeferredLightingPipeline (lightsMax, [|attachments.LightingAttachment.VkFormat|], vkc)
         
         // create forward static pipeline
         let forwardStaticPipeline =
-            CreatePhysicallyBasedPipeline
+            createPhysicallyBasedPipeline
                 (Constants.Render.LightMapsMaxForward,
                  Constants.Render.LightsMaxForward,
                  Constants.Paths.PhysicallyBasedForwardStaticShaderFilePath,
@@ -2107,15 +2107,15 @@ module PhysicallyBased =
         // fin
         physicallyBasedPipelines
     
-    let ReloadPhysicallyBasedShaders physicallyBasedPipelines vkc =
+    let reloadPhysicallyBasedShaders physicallyBasedPipelines vkc =
         Pipeline.reloadShaders physicallyBasedPipelines.DeferredStaticPipeline.Pipeline vkc
         Pipeline.reloadShaders physicallyBasedPipelines.DeferredLightingPipeline.Pipeline vkc
         Pipeline.reloadShaders physicallyBasedPipelines.ForwardStaticPipeline.Pipeline vkc
     
-    let DestroyPhysicallyBasedPipelines physicallyBasedPipelines vkc =
-        DestroyPhysicallyBasedPipeline physicallyBasedPipelines.DeferredStaticPipeline vkc
-        DestroyPhysicallyBasedDeferredLightingPipeline physicallyBasedPipelines.DeferredLightingPipeline vkc
-        DestroyPhysicallyBasedPipeline physicallyBasedPipelines.ForwardStaticPipeline vkc
+    let destroyPhysicallyBasedPipelines physicallyBasedPipelines vkc =
+        destroyPhysicallyBasedPipeline physicallyBasedPipelines.DeferredStaticPipeline vkc
+        destroyPhysicallyBasedDeferredLightingPipeline physicallyBasedPipelines.DeferredLightingPipeline vkc
+        destroyPhysicallyBasedPipeline physicallyBasedPipelines.ForwardStaticPipeline vkc
 
 /// Memoizes physically-based scene loads.
 type PhysicallyBasedSceneClient () =
@@ -2128,13 +2128,13 @@ type PhysicallyBasedSceneClient () =
         match AssimpContext.TryGetScene filePath with
         | Right scene ->
             let dirPath = PathF.GetDirectoryName filePath
-            match PhysicallyBased.TryCreatePhysicallyBasedMaterials (vkcOpt, dirPath, defaultMaterial, textureClient, scene) with
+            match PhysicallyBased.tryCreatePhysicallyBasedMaterials (vkcOpt, dirPath, defaultMaterial, textureClient, scene) with
             | Right materials ->
                 let animated = scene.Animations.Count <> 0
                 let geometries =
                     if animated
-                    then PhysicallyBased.CreatePhysicallyBasedAnimatedGeometries (vkcOpt, scene)
-                    else PhysicallyBased.CreatePhysicallyBasedStaticGeometries (vkcOpt, scene)
+                    then PhysicallyBased.createPhysicallyBasedAnimatedGeometries (vkcOpt, scene)
+                    else PhysicallyBased.createPhysicallyBasedStaticGeometries (vkcOpt, scene)
 
                 // collect light nodes
                 let lightNodes =

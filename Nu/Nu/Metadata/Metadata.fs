@@ -84,7 +84,7 @@ module Metadata =
                 Some (TextureMetadata.make image.Width image.Height)
             else
                 Log.infoOnce "Slow path used to load texture metadata."
-                match Hl.TryCreateTextureData (true, filePath) with
+                match Hl.tryCreateTextureData (true, filePath) with
                 | Some textureData ->
                     let metadata = textureData.Metadata
                     textureData.Dispose ()

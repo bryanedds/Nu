@@ -391,12 +391,9 @@ type Swapchain =
         // check if app is not in background
         if not (Hl.getBackgrounded ()) then
             
-            // create surface
-            Hl.tryCreateVulkanSurface swapchain.Window_ instance
-            
             // ensure surface creation was successful
-            if Hl.SurfaceState = SurfaceReady then
-                
+            if Hl.tryCreateVulkanSurface swapchain.Window_ instance = SurfaceReady then
+
                 // check if pause triggered during surface creation
                 if not (Hl.getBackgroundingRequested ()) then
                 

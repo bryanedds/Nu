@@ -91,10 +91,8 @@ type TextureCompression =
     /// The Vulkan pixel format corresponding to this block compression.
     member this.PixelFormat =
         match this with
-        | Uncompressed ->
-            Bgra
-        | ColorCompression | NormalCompression ->
-            Rgba
+        | Uncompressed -> Bgra
+        | ColorCompression | NormalCompression -> Rgba
 
 /// Determines whether a texture has mipmaps, and whether they are handled manually or automatically.
 type MipmapMode =
@@ -283,7 +281,7 @@ module TextureModule =
     module Hl =
 
         /// Record command to copy buffer to image.
-        let RecordBufferToImageCopy (commandBuffer, width, height, mipLevel, layer, vkBuffer, vkImage) =
+        let recordBufferToImageCopy (commandBuffer, width, height, mipLevel, layer, vkBuffer, vkImage) =
             Hl.recordTransitionLayout false mipLevel layer 1 VkImageAspectFlags.Color Undefined TransferDst vkImage commandBuffer
             let mutable region = VkBufferImageCopy ()
             region.imageSubresource <- Hl.makeSubresourceLayers mipLevel layer VkImageAspectFlags.Color
@@ -295,7 +293,7 @@ module TextureModule =
             Hl.recordTransitionLayout false mipLevel layer 1 VkImageAspectFlags.Color TransferDst ShaderRead vkImage commandBuffer
 
         /// Record commands to generate mipmaps.
-        let RecordGenerateMipmaps (commandBuffer, width, height, mipLevels, layer, vkImage) =
+        let recordGenerateMipmaps (commandBuffer, width, height, mipLevels, layer, vkImage) =
 
             // use single barrier for all transfer operations
             let mutable barrier = VkImageMemoryBarrier ()
@@ -393,13 +391,13 @@ module TextureModule =
                  1u, asPointer &barrier)
 
         /// Infer that an asset with the given file path should be filtered in a 2D rendering context.
-        let InferFiltered2d (filePath : string) =
+        let inferTextureFiltered2d (filePath : string) =
             let name = PathF.GetFileNameWithoutExtension filePath
             name.EndsWith "_f" ||
             name.EndsWith "Filtered"
         
         /// Infer the type of block compression that an asset with the given file path should utilize.
-        let InferCompression (filePath : string) =
+        let inferTextureCompression (filePath : string) =
             let name = PathF.GetFileNameWithoutExtension filePath
             if  name.EndsWith "_f" ||
                 name.EndsWith "_hm" ||
@@ -418,21 +416,21 @@ module TextureModule =
             else ColorCompression
 
         /// Detect that a dds file uses a compressed representation.
-        let DetectCompressionDds (dds : DdsFile) =
+        let detectTextureCompressionDds (dds : DdsFile) =
             let format = dds.header.ddsPixelFormat.DxgiFormat
             let formatStr = string format
             formatStr.StartsWith "DxgiFormatBc" ||
             formatStr.StartsWith "DxgiFormatAtc"
 
         /// Detect that a ktx file uses a compressed representation.
-        let DetectCompressionKtx (ktx : KtxFile) =
+        let detectTextureCompressionKtx (ktx : KtxFile) =
             let format = ktx.header.GlInternalFormat
             let formatStr = string format
             formatStr.StartsWith "GlCompressed"
 
         /// Write the binary header of a ktx file.
         /// Implementation based on https://registry.khronos.org/KTX/specs/1.0/ktxspec.v1.html
-        let WriteKtxHeader (resolution : Vector2i, mipmapLevels, compressed, writer : BinaryWriter) =
+        let writeKtxHeader (resolution : Vector2i, mipmapLevels, compressed, writer : BinaryWriter) =
             writer.Write                                                        // ktx identifier
                 [|0xABuy; 0x4Buy; 0x54uy; 0x58uy                                //
                   0x20uy; 0x31uy; 0x31uy; 0xBBuy                                //
@@ -458,13 +456,13 @@ module TextureModule =
             writer.Write 0u                                                     // key-value data size
 
         /// Attempt to generate uncompressed astc bytes an MagickImage to astc bytes.
-        let TryGenerateUncompressedImage (image : MagickImage) =
+        let tryGenerateUncompressedImage (image : MagickImage) =
             let pixelBytes = image.GetPixels().ToByteArray(PixelMapping.RGBA)
             let resolution = v2i (int image.Width) (int image.Height)
             Some (resolution, pixelBytes)
 
         /// Attempt to generate uncompressed astc mipmap bytes from a MagickImage.
-        let TryGenerateUncompressedMipmaps (image : MagickImage) =
+        let tryGenerateUncompressedMipmaps (image : MagickImage) =
             let mutable (width, height) = (image.Width, image.Height)
             let mipmapOpts =
                 [while width >= 1u && height >= 1u do
@@ -472,13 +470,13 @@ module TextureModule =
                     height <- height / 2u
                     let mip = image.Clone () :?> MagickImage
                     mip.Resize (width, height)
-                    TryGenerateUncompressedImage mip]
+                    tryGenerateUncompressedImage mip]
             match List.definitizePlus mipmapOpts with
             | (true, mipmaps) -> Some mipmaps
             | (false, _) -> None
 
         /// Attempt to compress a MagickImage to astc bytes.
-        let TryCompressImage (image : MagickImage) =
+        let tryCompressImage (image : MagickImage) =
     
             // attempt to configure astc encoder
             let pixelBytes = image.GetPixels().ToByteArray(PixelMapping.RGBA)
@@ -511,7 +509,7 @@ module TextureModule =
             else None
 
         /// Attempt to compress astc mipmap bytes from a MagickImage.
-        let TryCompressMipmaps (image : MagickImage) =
+        let tryCompressMipmaps (image : MagickImage) =
             let mutable (width, height) = (image.Width, image.Height)
             let mipmapOpts =
                 [while width >= 8u && height >= 8u do
@@ -519,13 +517,13 @@ module TextureModule =
                     height <- height / 2u
                     let mip = image.Clone () :?> MagickImage
                     mip.Resize (width, height)
-                    TryCompressImage mip]
+                    tryCompressImage mip]
             match List.definitizePlus mipmapOpts with
             | (true, mipmaps) -> Some mipmaps
             | (false, _) -> None
 
         /// Attempt to format an uncompressed pfim image texture (non-mipmap).
-        let TryFormatUncompressedPfimageTexture (format, height, stride, data : byte array) =
+        let tryFormatUncompressedPfimageTexture (format, height, stride, data : byte array) =
             match format with
             | ImageFormat.Rgb24 ->
                 let converted =
@@ -551,8 +549,8 @@ module TextureModule =
                 Some converted
             | _ -> Log.info ("Unsupported image format '" + scstring format + "'."); None
 
-        /// Attempt to format an uncompressed pfim image mipmap.
-        let FormatUncompressedPfimageMipmap (format, mipmap : MipMapOffset, data : byte array) =
+        /// Format an uncompressed pfim image mipmap.
+        let formatUncompressedPfimageMipmap (format, mipmap : MipMapOffset, data : byte array) =
             match format with
             | ImageFormat.Rgb24 ->
                 let converted =
@@ -579,7 +577,7 @@ module TextureModule =
             | _ -> failwithumf ()
 
         /// Attempt to format an uncompressed pfim image.
-        let TryFormatUncompressedPfimage (minimal, image : IImage) =
+        let tryFormatUncompressedPfimage (minimal, image : IImage) =
             let minimal = minimal && image.MipMaps.Length >= 1 // NOTE: at least one mipmap is needed for minimal load.
             let data = image.Data // OPTIMIZATION: pulling all values out of image to avoid slow property calls.
             let format = image.Format
@@ -588,7 +586,7 @@ module TextureModule =
             let mipmaps = image.MipMaps
             let bytesOpt =
                 if not minimal
-                then TryFormatUncompressedPfimageTexture (format, height, stride, data)
+                then tryFormatUncompressedPfimageTexture (format, height, stride, data)
                 else Some [||]
             match bytesOpt with
             | Some bytes ->
@@ -598,7 +596,7 @@ module TextureModule =
                     else 0
                 let mipmapBytesArray =
                     [|for i in minimalMipmapIndex .. dec mipmaps.Length do
-                        FormatUncompressedPfimageMipmap (format, mipmaps.[i], data)|]
+                        formatUncompressedPfimageMipmap (format, mipmaps.[i], data)|]
                 if minimal then
                     let (minimalMipmapResolution, minimalMipmapBytes) = mipmapBytesArray.[0]
                     let remainingMipmapBytes = if minimalMipmapBytes.Length > 1 then Array.tail mipmapBytesArray else [||]
@@ -606,8 +604,8 @@ module TextureModule =
                 else Some (v2i image.Width image.Height, bytes, mipmapBytesArray)
             | None -> None
 
-        /// Attempt to format compressed pfim image data.
-        let FormatCompressedPfdds (minimal, dds : Dds) =
+        /// Format compressed pfim image data.
+        let formatCompressedPfdds (minimal, dds : Dds) =
             let minimal = minimal && dds.Header.MipMapCount >= 3u // NOTE: at least three mipmaps are needed for minimal load since the last 2 are not valid when compressed.
             let mutable dims = v2i dds.Width dds.Height
             let mutable size = ((dims.X + 3) / 4) * ((dims.Y + 3) / 4) * 16
@@ -746,7 +744,7 @@ type [<CustomEquality; NoComparison>] TextureParallel =
         
         // make TextureParallel
         let textureParallel =
-            { Id_ = Hl.GenTextureId ()
+            { Id_ = Hl.genTextureId ()
               Textures_ = textures
               InternalFormat_ = internalFormat
               PixelFormat_ = pixelFormat
@@ -771,7 +769,7 @@ type [<CustomEquality; NoComparison>] TextureParallel =
             let uploadSize = ImageFormat.getImageSize metadata.TextureWidth metadata.TextureHeight textureParallel.InternalFormat_
             let stagingBuffer = Buffer.stageData uploadSize pixels vkc
             textureParallel.Texture.StagingBuffers.Add stagingBuffer    
-            Hl.RecordBufferToImageCopy (commandBuffer, metadata.TextureWidth, metadata.TextureHeight, mipLevel, layer, stagingBuffer.VkBuffer, textureParallel.Image)
+            Hl.recordBufferToImageCopy (commandBuffer, metadata.TextureWidth, metadata.TextureHeight, mipLevel, layer, stagingBuffer.VkBuffer, textureParallel.Image)
         | AttachmentColor _
         | AttachmentDepth _ -> Log.warn "Upload not supported for attachment texture."
 
@@ -804,7 +802,7 @@ type [<CustomEquality; NoComparison>] TextureParallel =
         if textureParallel.MipLevels > 1 then
             let (queue, pool, fence) = TextureLoadThread.getResources thread vkc
             let commandBuffer = Hl.createTransientCommandBuffer pool vkc.Device
-            Hl.RecordGenerateMipmaps (commandBuffer, metadata.TextureWidth, metadata.TextureHeight, textureParallel.MipLevels, layer, textureParallel.Image)
+            Hl.recordGenerateMipmaps (commandBuffer, metadata.TextureWidth, metadata.TextureHeight, textureParallel.MipLevels, layer, textureParallel.Image)
             CommandQueue.executeTransient commandBuffer pool fence queue vkc.Device
         else Log.warn "Mipmap generation attempted on texture with only one mip level."
     
@@ -833,7 +831,7 @@ module TextureModule2 =
 
         /// Create a Vulkan texture from existing texture data.
         /// NOTE: this function will dispose textureData.
-        let CreateTextureVulkanFromData (mipmaps, compression : TextureCompression, textureData, thread, vkc) =
+        let createTextureVulkanFromData (mipmaps, compression : TextureCompression, textureData, thread, vkc) =
 
             // upload data to vulkan as appropriate
             match textureData with
@@ -887,7 +885,7 @@ module TextureModule2 =
 
         /// Attempt to create uploadable texture data from the given file path.
         /// Don't forget to dispose the last field when finished with the texture data.
-        let TryCreateTextureData (minimal, filePath : string) =
+        let tryCreateTextureData (minimal, filePath : string) =
             if File.Exists filePath then
 
                 // attempt to load data as dds (compressed or uncompressed)
@@ -898,11 +896,11 @@ module TextureModule2 =
                         use fileStream = File.OpenRead filePath
                         use dds = Dds.Create (fileStream, config)
                         if dds.Compressed then
-                            let (resolution, bytes, mipmapBytesArray) = Hl.FormatCompressedPfdds (minimal, dds)
+                            let (resolution, bytes, mipmapBytesArray) = Hl.formatCompressedPfdds (minimal, dds)
                             let metadata = TextureMetadata.make resolution.X resolution.Y
                             Some (TextureDataMipmap (metadata, true, bytes, mipmapBytesArray))
                         else
-                            match Hl.TryFormatUncompressedPfimage (minimal, dds) with
+                            match Hl.tryFormatUncompressedPfimage (minimal, dds) with
                             | Some (resolution, bytes, mipmapBytesArray) ->
                                 let metadata = TextureMetadata.make resolution.X resolution.Y
                                 Some (TextureDataMipmap (metadata, false, bytes, mipmapBytesArray))
@@ -913,7 +911,7 @@ module TextureModule2 =
                 elif fileExtension = ".ktx" then
                     try use fileStream = File.OpenRead filePath
                         let ktx = KtxFile.Load fileStream
-                        let compressed = Hl.DetectCompressionKtx ktx
+                        let compressed = Hl.detectTextureCompressionKtx ktx
                         let bytesArray =
                             ktx.MipMaps
                             |> Array.ofSeq
@@ -944,7 +942,7 @@ module TextureModule2 =
                 // attempt to load data as tga
                 elif fileExtension = ".tga" then
                     try let image = Pfimage.FromFile filePath
-                        match Hl.TryFormatUncompressedPfimage (false, image) with
+                        match Hl.tryFormatUncompressedPfimage (false, image) with
                         | Some (resolution, bytes, _) ->
                             let metadata = TextureMetadata.make resolution.X resolution.Y
                             Some (TextureDataDotNet (metadata, bytes))
@@ -983,10 +981,10 @@ module TextureModule2 =
             else None
 
         /// Attempt to create a Vulkan texture from a file.
-        let TryCreateTextureVulkan (minimal, mipmaps, compression : TextureCompression, filePath, thread, vkc) =
-            match TryCreateTextureData (minimal, filePath) with
+        let tryCreateTextureVulkan (minimal, mipmaps, compression : TextureCompression, filePath, thread, vkc) =
+            match tryCreateTextureData (minimal, filePath) with
             | Some textureData ->
-                let (metadata, textureParallel) = CreateTextureVulkanFromData (mipmaps, compression, textureData, thread, vkc)
+                let (metadata, textureParallel) = createTextureVulkanFromData (mipmaps, compression, textureData, thread, vkc)
                 Right (metadata, textureParallel)
             | None -> Left ("Missing file or unloadable texture data '" + filePath + "'.")
 
@@ -1051,7 +1049,7 @@ type LazyTexture (filePath : string, minimalMetadata : TextureMetadata, minimalT
     member internal this.TryServe vkc =
         lock destructionLock $ fun () ->
             if not destroyed && not fullServeAttempted then
-                match Hl.TryCreateTextureVulkan (false, false, Hl.InferCompression filePath, filePath, TextureStreamingThread, vkc) with
+                match Hl.tryCreateTextureVulkan (false, false, Hl.inferTextureCompression filePath, filePath, TextureStreamingThread, vkc) with
                 | Right (metadata, textureParallel) -> fullMetadataAndTextureParallelOpt <- ValueSome (metadata, textureParallel)
                 | Left error -> Log.info ("Could not serve lazy texture due to:" + error)
                 fullServeAttempted <- true
@@ -1184,7 +1182,7 @@ type TextureClient (lazyTextureQueuesOpt : ConcurrentDictionary<_, _> option) =
         | (false, _) ->
 
             // attempt to create texture
-            match Hl.TryCreateTextureVulkan (desireLazy, mipmaps, compression, filePath, thread, vkc) with
+            match Hl.tryCreateTextureVulkan (desireLazy, mipmaps, compression, filePath, thread, vkc) with
             | Right (metadata, textureParallel) ->
                 let texture =
                     if  desireLazy &&

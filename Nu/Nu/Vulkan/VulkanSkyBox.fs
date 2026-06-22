@@ -30,7 +30,7 @@ type SkyBoxPipeline =
 module SkyBox =
 
     /// Create a SkyBoxPipeline.
-    let CreateSkyBoxPipeline colorAttachmentFormat depthAttachmentFormat (vkc : VulkanContext) =
+    let createSkyBoxPipeline colorAttachmentFormat depthAttachmentFormat (vkc : VulkanContext) =
 
         // create uniform buffers
         let skyBoxVertUniform = Buffer.create sizeof<SkyBoxVert> Storage vkc
@@ -63,11 +63,11 @@ module SkyBox =
         skyBoxPipeline
 
     /// Destroy a SkyBoxPipeline.
-    let DestroySkyBoxPipeline skyBoxPipeline vkc =
+    let destroySkyBoxPipeline skyBoxPipeline vkc =
         Pipeline.destroy skyBoxPipeline.Pipeline vkc
 
     /// Draw a sky box.
-    let DrawSkyBox
+    let drawSkyBox
         (view : Matrix4x4,
          projection : Matrix4x4,
          viewProjection : Matrix4x4,

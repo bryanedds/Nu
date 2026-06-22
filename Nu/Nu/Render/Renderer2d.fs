@@ -228,7 +228,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         match PathF.GetExtensionLower asset.FilePath with
         | ImageExtension _ ->
             let textureEir =
-                if Hl.InferFiltered2d asset.FilePath
+                if Hl.inferTextureFiltered2d asset.FilePath
                 then assetClient.TextureClient.TryCreateTextureFiltered (false, Uncompressed, asset.FilePath, RenderThread, renderer.VulkanContext)
                 else assetClient.TextureClient.TryCreateTextureUnfiltered (false, asset.FilePath, RenderThread, renderer.VulkanContext)
             match textureEir with
@@ -388,7 +388,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         let (_, _, _, contourPipeline) = renderer.ContourTessellationPipeline
         Pipeline.reloadShaders spritePipeline renderer.VulkanContext
         Pipeline.reloadShaders contourPipeline renderer.VulkanContext
-        SpriteBatch.ReloadShaders renderer.SpriteBatchEnv renderer.VulkanContext
+        SpriteBatch.reloadShaders renderer.SpriteBatchEnv renderer.VulkanContext
 
     static member private handleReloadRenderAssets renderer =
         VulkanRenderer2d.invalidateCaches renderer
@@ -476,11 +476,11 @@ type [<ReferenceEquality>] VulkanRenderer2d =
 
         // attempt to draw regular sprite
         if color.A <> 0.0f then
-            SpriteBatch.SubmitSpriteBatchSprite (absolute, min, size, pivot, rotation, &texCoords, &clipOpt, &color, pipelineBlend, texture, renderer.Viewport, renderer.SpriteBatchEnv)
+            SpriteBatch.submitSpriteBatchSprite (absolute, min, size, pivot, rotation, &texCoords, &clipOpt, &color, pipelineBlend, texture, renderer.Viewport, renderer.SpriteBatchEnv)
 
         // attempt to draw emission sprite
         if emission.A <> 0.0f then
-            SpriteBatch.SubmitSpriteBatchSprite (absolute, min, size, pivot, rotation, &texCoords, &clipOpt, &emission, VulkanAdditive, texture, renderer.Viewport, renderer.SpriteBatchEnv)
+            SpriteBatch.submitSpriteBatchSprite (absolute, min, size, pivot, rotation, &texCoords, &clipOpt, &emission, VulkanAdditive, texture, renderer.Viewport, renderer.SpriteBatchEnv)
 
     /// Render sprite.
     static member renderSprite
@@ -694,7 +694,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                     viewProjection2d
 
                 // draw contour
-                ContourTessellation.DrawContourTessellation
+                ContourTessellation.drawContourTessellation
                     descriptor.Tessellation
                     descriptor.Transform.Absolute
                     &viewProjectionClipAbsolute
@@ -870,7 +870,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                             let (spriteVertUniform, spriteFragUniform, pipeline) = renderer.SpritePipeline
                             let insetOpt : Box2 voption = ValueNone
                             let color = Color.White
-                            SpriteSingleton.DrawSprite
+                            SpriteSingleton.drawSprite
                                 (vertices,
                                  indices,
                                  absolute,
@@ -967,7 +967,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             let viewProjectionRelative = Viewport.getViewProjection2d false eyeCenter eyeSize renderer.Viewport
             let viewProjectionClipAbsolute = Viewport.getViewProjectionClip true eyeCenter eyeSize viewport
             let viewProjectionClipRelative = Viewport.getViewProjectionClip false eyeCenter eyeSize viewport
-            SpriteBatch.BeginSpriteBatchFrame (&viewProjectionAbsolute, &viewProjectionRelative, &viewProjectionClipAbsolute, &viewProjectionClipRelative, renderer.SpriteBatchEnv)
+            SpriteBatch.beginSpriteBatchFrame (&viewProjectionAbsolute, &viewProjectionRelative, &viewProjectionClipAbsolute, &viewProjectionClipRelative, renderer.SpriteBatchEnv)
 
         // begin single sprite frame
         if renderer.VulkanContext.RenderAllowed then
@@ -1000,7 +1000,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
 
         // end sprite batch frame
         if renderer.VulkanContext.RenderAllowed then
-            SpriteBatch.EndSpriteBatchFrame renderer.Viewport renderer.SpriteBatchEnv
+            SpriteBatch.endSpriteBatchFrame renderer.Viewport renderer.SpriteBatchEnv
         
         // sweep up any text textures that went unused this frame
         if renderer.VulkanContext.RenderAllowed then
@@ -1039,15 +1039,15 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         let filteredSampler = Sampler.create VkSamplerAddressMode.Repeat VkFilter.Linear VkFilter.Linear true vkc
         
         // create text resources
-        let spritePipeline = SpriteSingleton.CreateSpritePipeline vkc
-        let textQuad = SpriteSingleton.CreateSpriteQuad true vkc
+        let spritePipeline = SpriteSingleton.createSpritePipeline vkc
+        let textQuad = SpriteSingleton.createSpriteQuad true vkc
         let textureDestroyer = TextureDestroyer.create ()
 
         // create sprite batch env
-        let spriteBatchEnv = SpriteBatch.CreateSpriteBatchEnv unfilteredSampler filteredSampler vkc
+        let spriteBatchEnv = SpriteBatch.createSpriteBatchEnv unfilteredSampler filteredSampler vkc
 
         // create contour tessellation pipeline
-        let contourTesselationPipeline = ContourTessellation.CreateContourTessellationPipeline vkc
+        let contourTesselationPipeline = ContourTessellation.createContourTessellationPipeline vkc
         
         // make renderer
         let renderer =
@@ -1094,7 +1094,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             Nu.Vulkan.Buffer.destroy textIndexBuffer renderer.VulkanContext
 
             // destroy sprite batch environment
-            SpriteBatch.DestroySpriteBatchEnv renderer.SpriteBatchEnv
+            SpriteBatch.destroySpriteBatchEnv renderer.SpriteBatchEnv
 
             (* TODO: DJL: free spine skeleton resources.
             // free sprite skeleton renderers

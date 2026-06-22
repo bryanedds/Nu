@@ -100,7 +100,7 @@ module LightMapping =
         // fin
         reflectionCubeMap
 
-    let CreateIrradianceMap (invertY, resolution, cubeMapSurface : CubeMapSurface, sampler, colorFormat, irradiancePipeline, commandBuffer, vkc) =
+    let createIrradianceMap (invertY, resolution, cubeMapSurface : CubeMapSurface, sampler, colorFormat, irradiancePipeline, commandBuffer, vkc) =
 
         // create irradiance cube map
         let metadata = TextureMetadata.make resolution resolution
@@ -126,7 +126,7 @@ module LightMapping =
             // render face
             let view = views.[i]
             let viewProjection = view * projection
-            CubeMap.DrawCubeMap (invertY, view, projection, viewProjection, cubeMapSurface.CubeMap, sampler, cubeMapSurface.CubeMapGeometry, resolution, cubeMap.SubViews.[0, i], irradiancePipeline, commandBuffer, vkc)
+            CubeMap.drawCubeMap (invertY, view, projection, viewProjection, cubeMapSurface.CubeMap, sampler, cubeMapSurface.CubeMapGeometry, resolution, cubeMap.SubViews.[0, i], irradiancePipeline, commandBuffer, vkc)
 
             // take a snapshot for testing
             // TODO: DJL: implement.
@@ -139,7 +139,7 @@ module LightMapping =
         cubeMap
     
     /// Create an EnvironmentFilterPipeline.
-    let CreateEnvironmentFilterPipeline (shaderPath, colorAttachmentFormat, vkc : VulkanContext) =
+    let createEnvironmentFilterPipeline (shaderPath, colorAttachmentFormat, vkc : VulkanContext) =
 
         // create uniform buffers
         let transformUniform = Buffer.create sizeof<Transform> Storage vkc
@@ -166,11 +166,11 @@ module LightMapping =
         { TransformUniform = transformUniform; EnvironmentFilterUniform = environmentFilterUniform; Pipeline = pipeline }
     
     /// Destroy an EnvironmentFilterPipeline.
-    let DestroyEnvironmentFilterPipeline (environmentFilterPipeline, vkc) =
+    let destroyEnvironmentFilterPipeline (environmentFilterPipeline, vkc) =
         Pipeline.destroy environmentFilterPipeline.Pipeline vkc
     
     /// Draw an environment filter.
-    let DrawEnvironmentFilter
+    let drawEnvironmentFilter
         (invertY : bool,
          view : Matrix4x4,
          projection : Matrix4x4,
@@ -246,7 +246,7 @@ module LightMapping =
             | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
     
     /// Create an environment filter map.
-    let CreateEnvironmentFilterMap (invertY, resolution, environmentFilterSurface : CubeMapSurface, sampler, colorFormat, environmentFilterPipeline, commandBuffer, vkc) =
+    let createEnvironmentFilterMap (invertY, resolution, environmentFilterSurface : CubeMapSurface, sampler, colorFormat, environmentFilterPipeline, commandBuffer, vkc) =
 
         // create environment filter cube map
         let metadata = TextureMetadata.make resolution resolution
@@ -275,7 +275,7 @@ module LightMapping =
                 // draw mip face
                 let view = views.[i]
                 let viewProjection = view * projection
-                DrawEnvironmentFilter
+                drawEnvironmentFilter
                     (invertY,
                      view,
                      projection,
@@ -301,7 +301,7 @@ module LightMapping =
         cubeMap
 
     /// Create a light map with existing irradiance and environment filter maps.
-    let CreateLightMap enabled origin ambientColor ambientBrightness bounds irradianceMap environmentFilterMap =
+    let createLightMap enabled origin ambientColor ambientBrightness bounds irradianceMap environmentFilterMap =
         { Enabled = enabled
           Origin = origin
           AmbientColor = ambientColor
@@ -311,6 +311,6 @@ module LightMapping =
           EnvironmentFilterMap = environmentFilterMap }
 
     /// Destroy a light map, including its irradiance environment filter maps.
-    let DestroyLightMap lightMap vkc =
+    let destroyLightMap lightMap vkc =
         lightMap.IrradianceMap.Destroy vkc
         lightMap.EnvironmentFilterMap.Destroy vkc

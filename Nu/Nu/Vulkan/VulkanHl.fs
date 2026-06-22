@@ -247,7 +247,8 @@ type DescriptorType =
         | UniformBuffer -> VkDescriptorType.UniformBuffer
         | StorageBuffer -> VkDescriptorType.StorageBuffer
 
-type internal SurfaceState =
+///
+type SurfaceState =
     | SurfaceReady
     | SurfaceLost
     | SurfaceDestroyed
@@ -363,7 +364,7 @@ module Hl =
     let internal getBackgrounded () =
         Backgrounded
 
-    let internal GenTextureId () =
+    let internal genTextureId () =
         lock TextureIdGenerationLock (fun () -> TextureIdCounter <- inc TextureIdCounter; TextureIdCounter)
 
     /// Check if an image format is supported for attachments, falling back to a standard format where possible.
@@ -607,9 +608,7 @@ module Hl =
 
         | SurfaceReady -> Log.error "Attempted creation of Vulkan surface when existing surface has not been destroyed!"
         | SurfaceLost -> Log.error "Attempted creation of Vulkan surface when existing surface has been lost but not destroyed!"
-
-        // "success" is not having a destroyed surface
-        not (SurfaceState.IsSurfaceDestroyed)
+        SurfaceState
 
     let createVulkanSurface window instance =
     
@@ -620,7 +619,7 @@ module Hl =
         // attempt to recreate vulkan surface
         // cannot tolerate failure as this function is intended to guarantee surface creation, otherwise must set up
         // a retry mechanism
-        if not (tryCreateVulkanSurface window instance) then
+        if (tryCreateVulkanSurface window instance).IsSurfaceDestroyed then
             Log.fail "Vulkan surface creation failed."
 
     let destroyVulkanSurface instance =

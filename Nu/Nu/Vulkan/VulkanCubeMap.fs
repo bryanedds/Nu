@@ -47,10 +47,13 @@ type CubeMapKey =
 [<RequireQualifiedAccess>]
 module CubeMap =
 
+    let VertexSize =
+        (3 (*position*)) * sizeof<single>
+
     /// Attempt to create a cube map from 6 files.
     /// Uses file name-based inferences to look for texture files in case the ones that were hard-coded in the included
     /// files can't be located.
-    let TryCreateCubeMap (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath, thread, vkc) =
+    let tryCreateCubeMap (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath, thread, vkc) =
 
         // load faces into cube map
         // NOTE: DJL: opengl seems to allow individual faces to differ in compression or maybe even size, but vulkan does not, so these are now determined by the first face.
@@ -68,7 +71,7 @@ module CubeMap =
                         | BcCompression -> PathF.ChangeExtension (faceFilePath, ".dds")
                         | AstcCompression -> PathF.ChangeExtension (faceFilePath, ".ktx")
                     else faceFilePath
-                match Hl.TryCreateTextureData (false, faceFilePath) with
+                match Hl.tryCreateTextureData (false, faceFilePath) with
                 | Some textureData ->
                     match textureData with
                     | TextureData.TextureDataDotNet (metadata, bytes) ->
@@ -118,7 +121,7 @@ module CubeMap =
             Left error
 
     /// Create a mesh for a cube map.
-    let CreateCubeMapMesh () =
+    let createCubeMapMesh () =
 
         // make vertex data
         let vertexData =
@@ -182,12 +185,9 @@ module CubeMap =
 
         // fin
         (vertexData, indexData, bounds)
-
-    let VertexSize =
-        (3 (*position*)) * sizeof<single>
     
     /// Create cube map geometry from a mesh.
-    let CreateCubeMapGeometryFromMesh (renderable, vertexData : single Memory, indexData : int Memory, bounds, vkc) =
+    let createCubeMapGeometryFromMesh (renderable, vertexData : single Memory, indexData : int Memory, bounds, vkc) =
 
         // make buffers
         let (vertices, vertexBuffer, indexBuffer) =
@@ -229,17 +229,17 @@ module CubeMap =
         geometry
 
     /// Create cube map geometry.
-    let CreateCubeMapGeometry renderable vkc =
-        let (vertexData, indexData, bounds) = CreateCubeMapMesh ()
-        CreateCubeMapGeometryFromMesh (renderable, vertexData.AsMemory (), indexData.AsMemory (), bounds, vkc)
+    let createCubeMapGeometry renderable vkc =
+        let (vertexData, indexData, bounds) = createCubeMapMesh ()
+        createCubeMapGeometryFromMesh (renderable, vertexData.AsMemory (), indexData.AsMemory (), bounds, vkc)
 
     /// Destroy cube map geometry.
-    let DestroyCubeMapGeometry geometry vkc =
+    let destroyCubeMapGeometry geometry vkc =
         Buffer.destroy geometry.VertexBuffer vkc
         Buffer.destroy geometry.IndexBuffer vkc
     
     /// Create a CubeMapPipeline.
-    let CreateCubeMapPipeline (shaderPath, colorAttachmentFormat, vkc : VulkanContext) =
+    let createCubeMapPipeline (shaderPath, colorAttachmentFormat, vkc : VulkanContext) =
 
         // create uniform buffer
         let transformUniform = Buffer.create sizeof<Transform> Storage vkc
@@ -265,11 +265,11 @@ module CubeMap =
         { TransformUniform = transformUniform; Pipeline = pipeline }
     
     /// Destroy a CubeMapPipeline.
-    let DestroyCubeMapPipeline (cubeMapPipeline, vkc) =
+    let destroyCubeMapPipeline (cubeMapPipeline, vkc) =
         Pipeline.destroy cubeMapPipeline vkc
     
     /// Draw a cube map.
-    let DrawCubeMap
+    let drawCubeMap
         (invertY : bool,
          view : Matrix4x4,
          projection : Matrix4x4,
@@ -352,7 +352,7 @@ type CubeMapClient () =
 
             // attempt to create cube map
             let (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath) = cubeMapKey
-            match CubeMap.TryCreateCubeMap (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath, thread, vkc) with
+            match CubeMap.tryCreateCubeMap (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath, thread, vkc) with
             | Right cubeMap ->
                 cubeMaps.Add (cubeMapKey, cubeMap)
                 Right cubeMap

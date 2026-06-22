@@ -1364,7 +1364,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
     static member private tryLoadTextureAsset (assetClient : AssetClient) (asset : Asset) renderer =
         GlRenderer3d.invalidateCaches renderer
-        match assetClient.TextureClient.TryCreateTextureFiltered (true, OpenGL.Texture.InferCompression asset.FilePath, asset.FilePath) with
+        match assetClient.TextureClient.TryCreateTextureFiltered (true, OpenGL.Texture.inferTextureCompression asset.FilePath, asset.FilePath) with
         | Right texture ->
             Some texture
         | Left error ->
@@ -5282,7 +5282,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
     static member private tryLoadTextureAsset (assetClient : AssetClient) (asset : Asset) renderer =
         VulkanRenderer3d.invalidateCaches renderer
-        match assetClient.TextureClient.TryCreateTextureFiltered (true, Hl.InferCompression asset.FilePath, asset.FilePath, RenderThread, renderer.VulkanContext) with
+        match assetClient.TextureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression asset.FilePath, asset.FilePath, RenderThread, renderer.VulkanContext) with
         | Right texture ->
             Some texture
         | Left error ->
@@ -5355,8 +5355,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 irradiance.Destroy renderer.VulkanContext
                 environment.Destroy renderer.VulkanContext
             | None -> ()
-        | StaticModelAsset (_, model) -> PhysicallyBased.DestroyPhysicallyBasedModel (model, renderer.VulkanContext)
-        | AnimatedModelAsset model -> PhysicallyBased.DestroyPhysicallyBasedModel (model, renderer.VulkanContext)
+        | StaticModelAsset (_, model) -> PhysicallyBased.destroyPhysicallyBasedModel (model, renderer.VulkanContext)
+        | AnimatedModelAsset model -> PhysicallyBased.destroyPhysicallyBasedModel (model, renderer.VulkanContext)
 
     static member private tryLoadRenderPackage packageName renderer =
 
@@ -5452,7 +5452,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                                 let surfaces =
                                     [|for surface in staticModel.Surfaces do
                                         let material = scene.Materials.[surface.SurfaceMaterialIndex]
-                                        let (_, material) = PhysicallyBased.CreatePhysicallyBasedMaterial (Some renderer.VulkanContext, dirPath, renderer.PhysicallyBasedMaterial, renderPackage.PackageState.TextureClient, material)
+                                        let (_, material) = PhysicallyBased.createPhysicallyBasedMaterial (Some renderer.VulkanContext, dirPath, renderer.PhysicallyBasedMaterial, renderPackage.PackageState.TextureClient, material)
                                         { surface with SurfaceMaterial = material }|]
                                 StaticModelAsset (userDefined, { staticModel with Surfaces = surfaces })
                             | Some _ | None -> renderAsset
@@ -5462,7 +5462,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                                 let surfaces =
                                     [|for surface in animatedModel.Surfaces do
                                         let material = scene.Materials.[surface.SurfaceMaterialIndex]
-                                        let (_, material) = PhysicallyBased.CreatePhysicallyBasedMaterial (Some renderer.VulkanContext, dirPath, renderer.PhysicallyBasedMaterial, renderPackage.PackageState.TextureClient, material)
+                                        let (_, material) = PhysicallyBased.createPhysicallyBasedMaterial (Some renderer.VulkanContext, dirPath, renderer.PhysicallyBasedMaterial, renderPackage.PackageState.TextureClient, material)
                                         { surface with SurfaceMaterial = material }|]
                                 AnimatedModelAsset { animatedModel with Surfaces = surfaces }
                             | None -> renderAsset
@@ -5561,7 +5561,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         Pipeline.reloadShaders renderer.SkyBoxPipeline.Pipeline renderer.VulkanContext
         Pipeline.reloadShaders renderer.IrradiancePipeline.Pipeline renderer.VulkanContext
         Pipeline.reloadShaders renderer.EnvironmentFilterPipeline.Pipeline renderer.VulkanContext
-        PhysicallyBased.ReloadPhysicallyBasedShaders renderer.PhysicallyBasedPipelines renderer.VulkanContext
+        PhysicallyBased.reloadPhysicallyBasedShaders renderer.PhysicallyBasedPipelines renderer.VulkanContext
     
     static member private handleLoadRenderPackage hintPackageName renderer =
         VulkanRenderer3d.tryLoadRenderPackage hintPackageName renderer
@@ -5767,7 +5767,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
     
     static member private beginPhysicallyBasedDeferredPipeline
         view projection viewProjection eyeCenter filteredSampler renderPassIndex pipeline renderer =
-        PhysicallyBased.BeginPhysicallyBasedDeferredPipeline
+        PhysicallyBased.beginPhysicallyBasedDeferredPipeline
             (view, projection, viewProjection, eyeCenter, filteredSampler, renderPassIndex, pipeline, renderer.VulkanContext)
 
     static member private renderPhysicallyBasedDeferredSurfaces
@@ -5823,7 +5823,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             (transformDescriptorSet, samplerDescriptorSet)
 
         // draw deferred surfaces
-        PhysicallyBased.DrawPhysicallyBasedDeferredSurfaces
+        PhysicallyBased.drawPhysicallyBasedDeferredSurfaces
             (bones, parameters.Count, renderer.InstanceFields, surface.SurfaceMaterial, surface.PhysicallyBasedGeometry,
              viewport, colorAttachments, depthAttachment, &transformDescriptorSet, &samplerDescriptorSet, pipeline, renderer.VulkanContext)
 
@@ -5894,7 +5894,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             (transformDescriptorSet, samplerDescriptorSet)
 
         // draw deferred surfaces
-        PhysicallyBased.DrawPhysicallyBasedDeferredSurfaces
+        PhysicallyBased.drawPhysicallyBasedDeferredSurfaces
             (bones, i, renderer.InstanceFields, surface.SurfaceMaterial, surface.PhysicallyBasedGeometry,
              viewport, colorAttachments, depthAttachment, &transformDescriptorSet, &samplerDescriptorSet, pipeline, renderer.VulkanContext)
 
@@ -5902,7 +5902,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         renderer.GeometryInstanced.Add surface.PhysicallyBasedGeometry |> ignore<bool>
 
     static member private endPhysicallyBasedDeferredPipeline pipeline =
-        PhysicallyBased.EndPhysicallyBasedDeferredPipeline pipeline
+        PhysicallyBased.endPhysicallyBasedDeferredPipeline pipeline
 
     static member private beginPhysicallyBasedForwardPipeline
         viewArray projectionArray viewProjectionArray eyeCenter viewInverseArray projectionInverseArray
@@ -5911,7 +5911,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         depthTexture colorTexture brdfTexture irradianceMap environmentFilterMap filteredSampler cubeMapSampler shadowSampler colorSampler depthSampler brdfSampler shadowNear renderPass pipeline vkc =
 
         // begin shader
-        PhysicallyBased.BeginPhysicallyBasedForwardPipeline
+        PhysicallyBased.beginPhysicallyBasedForwardPipeline
             (viewArray, projectionArray, viewProjectionArray, eyeCenter, viewInverseArray, projectionInverseArray,
              lightCutoffMargin, lightAmbientColor, lightAmbientBrightness, lightAmbientBoostCutoff, lightAmbientBoostScalar, lightShadowSamples, lightShadowBias, lightShadowSampleScalar, lightShadowExponent, lightShadowDensity,
              fogEnabled, fogType, fogStart, fogFinish, fogDensity, fogColor, ssvfEnabled, ssvfIntensity, ssvfSteps, ssvfAsymmetry, ssrrEnabled, ssrrIntensity, ssrrDetail, ssrrRefinementsMax, ssrrRayThickness, ssrrDistanceCutoff, ssrrDistanceCutoffMargin, ssrrEdgeHorizontalMargin, ssrrEdgeVerticalMargin,
@@ -5973,7 +5973,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             (uniformsDescriptorSet, samplersDescriptorSet)
 
         // draw forward surfaces
-        PhysicallyBased.DrawPhysicallyBasedForwardSurfaces
+        PhysicallyBased.drawPhysicallyBasedForwardSurfaces
             (bonesArrays, parameters.Length, renderer.InstanceFields,
              irradianceMaps, environmentFilterMaps, shadowTextureArray, shadowMaps, shadowCascades, lightMapOrigins, lightMapMins, lightMapSizes, lightMapAmbientColors, lightMapAmbientBrightnesses, lightMapsCount, lightMapSingletonBlendMargin,
              lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightTypes, lightConeInners, lightConeOuters, lightDesireFogs, lightShadowIndices, lightsCount, shadowMatrices,
@@ -5983,7 +5983,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         renderer.GeometryInstanced.Add surface.PhysicallyBasedGeometry |> ignore<bool>
 
     static member private endPhysicallyBasedForwardPipeline pipeline =
-        PhysicallyBased.EndPhysicallyBasedForwardPipeline pipeline
+        PhysicallyBased.endPhysicallyBasedForwardPipeline pipeline
 
     static member private renderGeometry
         frustumInterior
@@ -6021,8 +6021,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     match irradianceAndEnvironmentMapsOptRef.Value with
                     | Some irradianceAndEnvironmentMaps -> irradianceAndEnvironmentMaps
                     | None -> (renderer.IrradianceMap, renderer.EnvironmentFilterMap)
-                LightMapping.CreateLightMap true v3Zero ambientColor ambientBrightness box3Zero irradianceMap environmentFilterMap
-            | None -> LightMapping.CreateLightMap true v3Zero Color.White 1.0f box3Zero renderer.IrradianceMap renderer.EnvironmentFilterMap
+                LightMapping.createLightMap true v3Zero ambientColor ambientBrightness box3Zero irradianceMap environmentFilterMap
+            | None -> LightMapping.createLightMap true v3Zero Color.White 1.0f box3Zero renderer.IrradianceMap renderer.EnvironmentFilterMap
         
         // destroy cached light maps whose originating probe no longer exists
         for lightMapKvp in renderer.LightMaps do
@@ -6222,7 +6222,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // attempt to render sky box to composition attachment
         match skyBoxOpt with
         | Some (cubeMapColor, cubeMapBrightness, cubeMap, _) ->
-            SkyBox.DrawSkyBox 
+            SkyBox.drawSkyBox
                 (viewSkyBox, windowProjection, windowViewProjectionSkyBox, cubeMapColor, cubeMapBrightness, cubeMap, renderer.CubeMapGeometry, renderer.CubeMapSampler,
                  renderer.GeometryViewport, compositionTexture, compositionZTexture, renderer.SkyBoxPipeline, renderer.VulkanContext)
         | None -> ()
@@ -6316,7 +6316,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         renderer.WindowViewport <- windowViewport
 
         // update attachment sizes (must happen every frame to cover all frames in flight)
-        PhysicallyBased.UpdatePhysicallyBasedAttachmentsSize
+        PhysicallyBased.updatePhysicallyBasedAttachmentsSize
             (geometryViewport, renderer.PhysicallyBasedAttachments, renderer.VulkanContext)
 
         // reload render assets when requested on previous frame
@@ -6362,7 +6362,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
                         // render fallback irradiance map
                         let irradianceMap =
-                            LightMapping.CreateIrradianceMap
+                            LightMapping.createIrradianceMap
                                 (false,
                                  Constants.Render.IrradianceMapResolution,
                                  CubeMapSurface.make cubeMap renderer.CubeMapGeometry,
@@ -6374,7 +6374,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
                         // render fallback env filter map
                         let environmentFilterMap =
-                            LightMapping.CreateEnvironmentFilterMap
+                            LightMapping.createEnvironmentFilterMap
                                 (false,
                                  Constants.Render.EnvironmentFilterResolution,
                                  CubeMapSurface.make cubeMap renderer.CubeMapGeometry,
@@ -6420,7 +6420,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
                             // create irradiance map
                             let irradianceMap =
-                                LightMapping.CreateIrradianceMap
+                                LightMapping.createIrradianceMap
                                     (true, // y inverted here because texture produced by drawing is inverted relative to texture uploaded from file
                                      Constants.Render.IrradianceMapResolution,
                                      CubeMapSurface.make reflectionMap renderer.CubeMapGeometry,
@@ -6432,7 +6432,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
                             // create env filter map
                             let environmentFilterMap =
-                                LightMapping.CreateEnvironmentFilterMap
+                                LightMapping.createEnvironmentFilterMap
                                     (true, // y inverted here because texture produced by drawing is inverted relative to texture uploaded from file
                                      Constants.Render.EnvironmentFilterResolution,
                                      CubeMapSurface.make reflectionMap renderer.CubeMapGeometry,
@@ -6446,7 +6446,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                             renderer.TextureDestroyer.Submit reflectionMap 
 
                             // create light map
-                            let lightMap = LightMapping.CreateLightMap lightProbeEnabled lightProbeOrigin lightProbeAmbientColor lightProbeAmbientBrightness lightProbeBounds irradianceMap environmentFilterMap
+                            let lightMap = LightMapping.createLightMap lightProbeEnabled lightProbeOrigin lightProbeAmbientColor lightProbeAmbientBrightness lightProbeBounds irradianceMap environmentFilterMap
 
                             // add light map to cache
                             renderer.LightMaps.[lightProbeId] <- lightMap
@@ -6509,27 +6509,27 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let brdfSampler = Sampler.create VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false vkc
         
         // create physically-based attachments using the geometry viewport
-        let physicallyBasedAttachments = PhysicallyBased.CreatePhysicallyBasedAttachments (geometryViewport, vkc)
+        let physicallyBasedAttachments = PhysicallyBased.createPhysicallyBasedAttachments (geometryViewport, vkc)
         
         // create sky box pipeline
         let (compositionAttachment, compositionDepthAttachment) = physicallyBasedAttachments.CompositionAttachments
-        let skyBoxPipeline = SkyBox.CreateSkyBoxPipeline compositionAttachment.VkFormat compositionDepthAttachment.VkFormat vkc
+        let skyBoxPipeline = SkyBox.createSkyBoxPipeline compositionAttachment.VkFormat compositionDepthAttachment.VkFormat vkc
         
         // create irradiance pipeline
         let irradianceFormat = Rgba16f
         let irradiancePipeline =
-            CubeMap.CreateCubeMapPipeline
+            CubeMap.createCubeMapPipeline
                 (Constants.Paths.IrradianceShaderFilePath,
                  irradianceFormat.VkFormat,
                  vkc)
         
         // create environment filter pipeline
         let environmentFilterFormat = Rgba16f
-        let environmentFilterPipeline = LightMapping.CreateEnvironmentFilterPipeline (Constants.Paths.EnvironmentFilterShaderFilePath, environmentFilterFormat.VkFormat, vkc)
+        let environmentFilterPipeline = LightMapping.createEnvironmentFilterPipeline (Constants.Paths.EnvironmentFilterShaderFilePath, environmentFilterFormat.VkFormat, vkc)
         
         // create physically-based pipelines
         let physicallyBasedPipelines =
-            PhysicallyBased.CreatePhysicallyBasedPipelines
+            PhysicallyBased.createPhysicallyBasedPipelines
                 (Constants.Render.LightMapsMaxDeferred,
                  Constants.Render.LightsMaxDeferred,
                  physicallyBasedAttachments,
@@ -6542,25 +6542,25 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // create white cube map
         let cubeMap =
             let white = "Assets/Default/White.png"
-            match CubeMap.TryCreateCubeMap (white, white, white, white, white, white, RenderThread, vkc) with
+            match CubeMap.tryCreateCubeMap (white, white, white, white, white, white, RenderThread, vkc) with
             | Right cubeMap -> cubeMap
             | Left error -> failwith error
         
         // create cube map geometry
-        let cubeMapGeometry = CubeMap.CreateCubeMapGeometry true vkc
+        let cubeMapGeometry = CubeMap.createCubeMapGeometry true vkc
         
         // create cube map surface
         let cubeMapSurface = CubeMapSurface.make cubeMap cubeMapGeometry
         
         // create white texture
         let whiteTexture =
-            match Hl.TryCreateTextureVulkan (false, true, Uncompressed, "Assets/Default/White.png", RenderThread, vkc) with
+            match Hl.tryCreateTextureVulkan (false, true, Uncompressed, "Assets/Default/White.png", RenderThread, vkc) with
             | Right (metadata, textureParallel) -> EagerTexture { TextureMetadata = metadata; TextureParallel = textureParallel }
             | Left error -> failwith ("Could not load white texture due to: " + error)
 
         // create black texture
         let blackTexture =
-            match Hl.TryCreateTextureVulkan (false, true, Uncompressed, "Assets/Default/Black.png", RenderThread, vkc) with
+            match Hl.tryCreateTextureVulkan (false, true, Uncompressed, "Assets/Default/Black.png", RenderThread, vkc) with
             | Right (metadata, textureParallel) -> EagerTexture { TextureMetadata = metadata; TextureParallel = textureParallel }
             | Left error -> failwith ("Could not load black texture due to: " + error)
         
@@ -6590,7 +6590,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // create default irradiance map and default environment filter map and set up transiently
         let commandBuffer = Hl.createTransientCommandBuffer vkc.TransientCommandPool vkc.Device
         let irradianceMap =
-            LightMapping.CreateIrradianceMap
+            LightMapping.createIrradianceMap
                 (false,
                  Constants.Render.IrradianceMapResolution,
                  cubeMapSurface,
@@ -6600,7 +6600,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                  commandBuffer,
                  vkc)
         let environmentFilterMap =
-            LightMapping.CreateEnvironmentFilterMap
+            LightMapping.createEnvironmentFilterMap
                 (false,
                  Constants.Render.EnvironmentFilterResolution,
                  cubeMapSurface,
@@ -6621,58 +6621,58 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         
         // get albedo metadata and texture
         let albedoTexture =
-            match Hl.TryCreateTextureVulkan (false, true, ColorCompression, "Assets/Default/MaterialAlbedo" + ext, RenderThread, vkc) with
+            match Hl.tryCreateTextureVulkan (false, true, ColorCompression, "Assets/Default/MaterialAlbedo" + ext, RenderThread, vkc) with
             | Right (metadata, vulkanTexture) -> EagerTexture { TextureMetadata = metadata; TextureParallel = vulkanTexture }
             | Left error -> failwith ("Could not load albedo material texture due to: " + error)
 
         // create default physically-based material
         let physicallyBasedMaterial : PhysicallyBasedMaterial =
             let roughnessTexture =
-                match Hl.TryCreateTextureVulkan (false, true, ColorCompression, "Assets/Default/MaterialRoughness" + ext, RenderThread, vkc) with
+                match Hl.tryCreateTextureVulkan (false, true, ColorCompression, "Assets/Default/MaterialRoughness" + ext, RenderThread, vkc) with
                 | Right (metadata, vulkanTexture) -> EagerTexture { TextureMetadata = metadata; TextureParallel = vulkanTexture }
                 | Left error -> failwith ("Could not load material roughness texture due to: " + error)
             let metallicTexture =
-                match Hl.TryCreateTextureVulkan (false, true, ColorCompression, "Assets/Default/MaterialMetallic" + ext, RenderThread, vkc) with
+                match Hl.tryCreateTextureVulkan (false, true, ColorCompression, "Assets/Default/MaterialMetallic" + ext, RenderThread, vkc) with
                 | Right (metadata, vulkanTexture) -> EagerTexture { TextureMetadata = metadata; TextureParallel = vulkanTexture }
                 | Left error -> failwith ("Could not load material metallic texture due to: " + error)
             let ambientOcclusionTexture =
-                match Hl.TryCreateTextureVulkan (false, true, ColorCompression, "Assets/Default/MaterialAmbientOcclusion" + ext, RenderThread, vkc) with
+                match Hl.tryCreateTextureVulkan (false, true, ColorCompression, "Assets/Default/MaterialAmbientOcclusion" + ext, RenderThread, vkc) with
                 | Right (metadata, vulkanTexture) -> EagerTexture { TextureMetadata = metadata; TextureParallel = vulkanTexture }
                 | Left error -> failwith ("Could not load material ambient occlusion texture due to: " + error)
             let emissionTexture =
-                match Hl.TryCreateTextureVulkan (false, true, ColorCompression, "Assets/Default/MaterialEmission" + ext, RenderThread, vkc) with
+                match Hl.tryCreateTextureVulkan (false, true, ColorCompression, "Assets/Default/MaterialEmission" + ext, RenderThread, vkc) with
                 | Right (metadata, vulkanTexture) -> EagerTexture { TextureMetadata = metadata; TextureParallel = vulkanTexture }
                 | Left error -> failwith ("Could not load material emission texture due to: " + error)
             let normalTexture =
-                match Hl.TryCreateTextureVulkan (false, true, NormalCompression, "Assets/Default/MaterialNormal" + ext, RenderThread, vkc) with
+                match Hl.tryCreateTextureVulkan (false, true, NormalCompression, "Assets/Default/MaterialNormal" + ext, RenderThread, vkc) with
                 | Right (metadata, vulkanTexture) -> EagerTexture { TextureMetadata = metadata; TextureParallel = vulkanTexture }
                 | Left error -> failwith ("Could not load material normal texture due to: " + error)
             let heightTexture =
-                match Hl.TryCreateTextureVulkan (false, true, ColorCompression, "Assets/Default/MaterialHeight" + ext, RenderThread, vkc) with
+                match Hl.tryCreateTextureVulkan (false, true, ColorCompression, "Assets/Default/MaterialHeight" + ext, RenderThread, vkc) with
                 | Right (metadata, vulkanTexture) -> EagerTexture { TextureMetadata = metadata; TextureParallel = vulkanTexture }
                 | Left error -> failwith ("Could not load material height texture due to: " + error)
             let subdermalTexture =
-                match Hl.TryCreateTextureVulkan (false, true, ColorCompression, "Assets/Default/MaterialSubdermal" + ext, RenderThread, vkc) with
+                match Hl.tryCreateTextureVulkan (false, true, ColorCompression, "Assets/Default/MaterialSubdermal" + ext, RenderThread, vkc) with
                 | Right (metadata, vulkanTexture) -> EagerTexture { TextureMetadata = metadata; TextureParallel = vulkanTexture }
                 | Left error -> failwith ("Could not load material subdermal texture due to: " + error)
             let finenessTexture =
-                match Hl.TryCreateTextureVulkan (false, true, ColorCompression, "Assets/Default/MaterialFineness" + ext, RenderThread, vkc) with
+                match Hl.tryCreateTextureVulkan (false, true, ColorCompression, "Assets/Default/MaterialFineness" + ext, RenderThread, vkc) with
                 | Right (metadata, vulkanTexture) -> EagerTexture { TextureMetadata = metadata; TextureParallel = vulkanTexture }
                 | Left error -> failwith ("Could not load material fineness texture due to: " + error)
             let scatterTexture =
-                match Hl.TryCreateTextureVulkan (false, true, ColorCompression, "Assets/Default/MaterialSubdermal" + ext, RenderThread, vkc) with
+                match Hl.tryCreateTextureVulkan (false, true, ColorCompression, "Assets/Default/MaterialSubdermal" + ext, RenderThread, vkc) with
                 | Right (metadata, vulkanTexture) -> EagerTexture { TextureMetadata = metadata; TextureParallel = vulkanTexture }
                 | Left error -> failwith ("Could not load material scatter texture due to: " + error)
             let clearCoatTexture =
-                match Hl.TryCreateTextureVulkan (false, true, ColorCompression, "Assets/Default/MaterialClearCoat" + ext, RenderThread, vkc) with
+                match Hl.tryCreateTextureVulkan (false, true, ColorCompression, "Assets/Default/MaterialClearCoat" + ext, RenderThread, vkc) with
                 | Right (metadata, vulkanTexture) -> EagerTexture { TextureMetadata = metadata; TextureParallel = vulkanTexture }
                 | Left error -> failwith ("Could not load material clear coat texture due to: " + error)
             let clearCoatRoughnessTexture =
-                match Hl.TryCreateTextureVulkan (false, true, ColorCompression, "Assets/Default/MaterialClearCoatRoughness" + ext, RenderThread, vkc) with
+                match Hl.tryCreateTextureVulkan (false, true, ColorCompression, "Assets/Default/MaterialClearCoatRoughness" + ext, RenderThread, vkc) with
                 | Right (metadata, vulkanTexture) -> EagerTexture { TextureMetadata = metadata; TextureParallel = vulkanTexture }
                 | Left error -> failwith ("Could not load material clear coat roughness texture due to: " + error)
             let clearCoatNormalTexture =
-                match Hl.TryCreateTextureVulkan (false, true, NormalCompression, "Assets/Default/MaterialClearCoatNormal" + ext, RenderThread, vkc) with
+                match Hl.tryCreateTextureVulkan (false, true, NormalCompression, "Assets/Default/MaterialClearCoatNormal" + ext, RenderThread, vkc) with
                 | Right (metadata, vulkanTexture) -> EagerTexture { TextureMetadata = metadata; TextureParallel = vulkanTexture }
                 | Left error -> failwith ("Could not load material clear coat normal texture due to: " + error)
             { AlbedoTexture = albedoTexture
@@ -6774,12 +6774,12 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             Sampler.destroy renderer.DepthSampler renderer.VulkanContext
             Sampler.destroy renderer.BrdfSampler renderer.VulkanContext
             
-            SkyBox.DestroySkyBoxPipeline renderer.SkyBoxPipeline renderer.VulkanContext
-            CubeMap.DestroyCubeMapPipeline (renderer.IrradiancePipeline.Pipeline, renderer.VulkanContext)
-            LightMapping.DestroyEnvironmentFilterPipeline (renderer.EnvironmentFilterPipeline, renderer.VulkanContext)
-            PhysicallyBased.DestroyPhysicallyBasedPipelines renderer.PhysicallyBasedPipelines renderer.VulkanContext
+            SkyBox.destroySkyBoxPipeline renderer.SkyBoxPipeline renderer.VulkanContext
+            CubeMap.destroyCubeMapPipeline (renderer.IrradiancePipeline.Pipeline, renderer.VulkanContext)
+            LightMapping.destroyEnvironmentFilterPipeline (renderer.EnvironmentFilterPipeline, renderer.VulkanContext)
+            PhysicallyBased.destroyPhysicallyBasedPipelines renderer.PhysicallyBasedPipelines renderer.VulkanContext
             
-            CubeMap.DestroyCubeMapGeometry renderer.CubeMapGeometry renderer.VulkanContext
+            CubeMap.destroyCubeMapGeometry renderer.CubeMapGeometry renderer.VulkanContext
             
             renderer.CubeMap.Destroy renderer.VulkanContext
             renderer.WhiteTexture.Destroy renderer.VulkanContext
@@ -6806,9 +6806,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             
             TextureDestroyer.destroy renderer.TextureDestroyer renderer.VulkanContext
             
-            PhysicallyBased.DestroyPhysicallyBasedAttachments (renderer.PhysicallyBasedAttachments, renderer.VulkanContext)
+            PhysicallyBased.destroyPhysicallyBasedAttachments (renderer.PhysicallyBasedAttachments, renderer.VulkanContext)
             
-            for lightMap in renderer.LightMaps.Values do LightMapping.DestroyLightMap lightMap renderer.VulkanContext
+            for lightMap in renderer.LightMaps.Values do LightMapping.destroyLightMap lightMap renderer.VulkanContext
             renderer.LightMaps.Clear ()
             
             // free assets

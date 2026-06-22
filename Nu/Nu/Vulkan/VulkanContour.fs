@@ -14,7 +14,7 @@ open Nu
 module ContourTessellation =
 
     /// Create pipeline for vector graphics contour rendering.
-    let CreateContourTessellationPipeline vkc =
+    let createContourTessellationPipeline vkc =
 
         // create buffers
         let count = 1024 // TODO: P1: make constant.
@@ -41,7 +41,7 @@ module ContourTessellation =
         (vertexBuffer, indexBuffer, modelViewProjectionUniform, pipeline)
 
     /// Draw a contour tessellation.
-    let DrawContourTessellation
+    let drawContourTessellation
         tessellation
         (absolute : bool)
         (viewProjectionClipAbsolute : Matrix4x4 inref)
