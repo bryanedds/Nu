@@ -14,14 +14,14 @@ const float SHADOW_CASCADE_DENSITY_BONUS = 0.5;
 const float SHADOW_FOV_MAX = 2.1;
 const float CLEAR_COAT_REFRACTIVE_INDEX = 1.5; // typical for automotive clear coat
 
-struct Transform
+struct Eye
 {
+    vec3 center;
     mat4 view;
-    mat4 projection;
-    mat4 viewProjection;
     mat4 viewInverse;
+    mat4 projection;
     mat4 projectionInverse;
-    vec3 eyeCenter;
+    mat4 viewProjection;
 };
 
 struct Lighting
@@ -53,41 +53,20 @@ struct Light
     int lightShadowIndices;
 };
 
-struct ShadowMatrix
-{
-    mat4 shadowMatrix;
-};
-
-layout(binding = 0) buffer readonly TransformBlock
-{
-    Transform transform;
-};
-
-layout(binding = 1) buffer readonly LightingBlock
-{
-    Lighting lighting;
-};
-
-layout(binding = 2) buffer readonly LightBlock
-{
-    Light lights[LIGHTS_MAX];
-};
-
-layout(binding = 3) buffer readonly ShadowMatrixBlock
-{
-    ShadowMatrix shadowMatrices[SHADOW_TEXTURES_MAX + SHADOW_CASCADES_MAX * SHADOW_CASCADE_LEVELS];
-};
-
-layout(binding = 4) uniform texture2D depthTexture;
-layout(binding = 5) uniform texture2D albedoTexture;
-layout(binding = 6) uniform texture2D materialTexture;
-layout(binding = 7) uniform texture2D normalPlusTexture;
-layout(binding = 8) uniform texture2D subdermalPlusTexture;
-layout(binding = 9) uniform texture2D scatterPlusTexture;
-layout(binding = 10) uniform texture2D clearCoatPlusTexture;
-layout(binding = 11) uniform texture2DArray shadowTextures;
-layout(binding = 12) uniform textureCube shadowMaps[SHADOW_MAPS_MAX];
-layout(binding = 13) uniform texture2DArray shadowCascades[SHADOW_CASCADES_MAX];
+layout(set = 0, binding = 0) buffer readonly EyeBlock { Eye eye; };
+layout(set = 0, binding = 1) buffer readonly LightingBlock { Lighting lighting; };
+layout(set = 0, binding = 2) buffer readonly LightBlock { Light lights[LIGHTS_MAX]; };
+layout(set = 0, binding = 3) buffer readonly ShadowMatrixBlock { mat4 shadowMatrices[SHADOW_TEXTURES_MAX + SHADOW_CASCADES_MAX * SHADOW_CASCADE_LEVELS]; };
+layout(set = 0, binding = 4) uniform texture2D depthTexture;
+layout(set = 0, binding = 5) uniform texture2D albedoTexture;
+layout(set = 0, binding = 6) uniform texture2D materialTexture;
+layout(set = 0, binding = 7) uniform texture2D normalPlusTexture;
+layout(set = 0, binding = 8) uniform texture2D subdermalPlusTexture;
+layout(set = 0, binding = 9) uniform texture2D scatterPlusTexture;
+layout(set = 0, binding = 10) uniform texture2D clearCoatPlusTexture;
+layout(set = 0, binding = 11) uniform texture2DArray shadowTextures;
+layout(set = 0, binding = 12) uniform textureCube shadowMaps[SHADOW_MAPS_MAX];
+layout(set = 0, binding = 13) uniform texture2DArray shadowCascades[SHADOW_CASCADES_MAX];
 
 layout(set = 1, binding = 0) uniform sampler geometrySampler;
 layout(set = 1, binding = 1) uniform sampler shadowSampler;
@@ -132,9 +111,9 @@ vec4 depthToPosition(float depth, vec2 texCoords)
 {
     float z = depth * 2.0 - 1.0;
     vec4 positionClip = vec4(texCoords * 2.0 - 1.0, z, 1.0);
-    vec4 positionView = transform.projectionInverse * positionClip;
+    vec4 positionView = eye.projectionInverse * positionClip;
     positionView /= positionView.w;
-    return transform.viewInverse * positionView;
+    return eye.viewInverse * positionView;
 }
 
 float depthViewToDepthBuffer(float near, float far, float depthView)
@@ -243,7 +222,7 @@ float computeShadowScalarPoint(vec4 position, vec3 lightOrigin, int shadowIndex)
 
 float computeShadowScalarSpot(vec4 position, float lightConeOuter, int shadowIndex)
 {
-    mat4 shadowMatrix = shadowMatrices[shadowIndex].shadowMatrix;
+    mat4 shadowMatrix = shadowMatrices[shadowIndex];
     vec4 positionShadowClip = shadowMatrix * position;
     vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
     if (shadowTexCoordsProj.x >= -1.0 && shadowTexCoordsProj.x < 1.0 &&
@@ -264,7 +243,7 @@ float computeShadowScalarSpot(vec4 position, float lightConeOuter, int shadowInd
 
 float computeShadowScalarDirectional(vec4 position, int shadowIndex)
 {
-    mat4 shadowMatrix = shadowMatrices[shadowIndex].shadowMatrix;
+    mat4 shadowMatrix = shadowMatrices[shadowIndex];
     vec4 positionShadowClip = shadowMatrix * position;
     vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
     if (shadowTexCoordsProj.x >= -1.0 + SHADOW_DIRECTIONAL_SEAM_INSET && shadowTexCoordsProj.x < 1.0 - SHADOW_DIRECTIONAL_SEAM_INSET &&
@@ -286,7 +265,7 @@ float computeShadowScalarCascaded(vec4 position, float shadowCutoff, int shadowI
 {
     for (int i = 0; i < SHADOW_CASCADE_LEVELS; ++i)
     {
-        mat4 shadowMatrix = shadowMatrices[SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + i].shadowMatrix;
+        mat4 shadowMatrix = shadowMatrices[SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + i];
         vec4 positionShadowClip = shadowMatrix * position;
         vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
         if (shadowTexCoordsProj.x >= -1.0 + SHADOW_CASCADE_SEAM_INSET && shadowTexCoordsProj.x < 1.0 - SHADOW_CASCADE_SEAM_INSET &&
@@ -332,7 +311,7 @@ float geometryTravelPoint(vec4 position, int lightIndex, int shadowIndex)
 float geometryTravelSpot(vec4 position, int lightIndex, int shadowIndex)
 {
     // attempt to compute travel average in view space
-    mat4 shadowMatrix = shadowMatrices[shadowIndex].shadowMatrix;
+    mat4 shadowMatrix = shadowMatrices[shadowIndex];
     vec4 positionShadowClip = shadowMatrix * position;
     vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
     if (shadowTexCoordsProj.x >= -1.0 && shadowTexCoordsProj.x < 1.0 &&
@@ -368,7 +347,7 @@ float geometryTravelSpot(vec4 position, int lightIndex, int shadowIndex)
 float geometryTravelDirectional(vec4 position, int lightIndex, int shadowIndex)
 {
     // attempt to compute travel average in view space
-    mat4 shadowMatrix = shadowMatrices[shadowIndex].shadowMatrix;
+    mat4 shadowMatrix = shadowMatrices[shadowIndex];
     vec4 positionShadowClip = shadowMatrix * position;
     vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
     if (shadowTexCoordsProj.x >= -1.0 && shadowTexCoordsProj.x < 1.0 &&
@@ -395,7 +374,7 @@ float geometryTravelCascaded(vec4 position, int lightIndex, int shadowIndex)
     for (int i = 0; i < SHADOW_CASCADE_LEVELS; ++i)
     {
         // attempt to compute travel average in view space
-        mat4 shadowMatrix = shadowMatrices[SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + i].shadowMatrix;
+        mat4 shadowMatrix = shadowMatrices[SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + i];
         vec4 positionShadowClip = shadowMatrix * position;
         vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
         if (shadowTexCoordsProj.x >= -1.0 && shadowTexCoordsProj.x < 1.0 &&
@@ -529,7 +508,7 @@ void main()
         vec3 clearCoatNormal = decodeOctahedral(clearCoatPlus.ba);
 
         // accumulate light
-        vec3 v = normalize(transform.eyeCenter - position.xyz);
+        vec3 v = normalize(eye.center - position.xyz);
         float nDotV = saturate(dot(normal, v));
         vec3 f0 = mix(vec3(0.04), albedo, metallic); // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
         for (int i = 0; i < lighting.lightsCount; ++i)

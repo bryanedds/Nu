@@ -1,19 +1,16 @@
 #version 450 core
 
-struct SkyBoxFrag
+struct SkyBox
 {
     vec3 color;
     float brightness;
 };
 
-layout(binding = 1) buffer readonly SkyBoxFragBlock
-{
-    SkyBoxFrag skyBox;
-};
+layout(set = 0, binding = 1) buffer readonly SkyBoxBlock { SkyBox skyBox; };
 
-layout(binding = 2) uniform textureCube cubeMap;
+layout(set = 1, binding = 0) uniform textureCube cubeMap;
 
-layout(set = 1, binding = 0) uniform sampler samp;
+layout(set = 2, binding = 0) uniform sampler samp;
 
 layout(location = 0) in vec3 texCoordsOut;
 

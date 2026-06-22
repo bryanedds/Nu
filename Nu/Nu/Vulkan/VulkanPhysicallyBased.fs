@@ -1766,7 +1766,7 @@ module PhysicallyBased =
                     let mutable lightMap = LightMap ()
                     use lightMapPtr = fixed &lightMap
                     for i in 0 .. dec Constants.Render.LightMapsMaxForward do
-                        if lightMapOrigins.Length > i then
+                        if i < lightMapOrigins.Length then
                             lightMap.lightMapOrigins <- lightMapOrigins.[i]
                             lightMap.lightMapMins <- lightMapMins.[i]
                             lightMap.lightMapSizes <- lightMapSizes.[i]
@@ -1787,7 +1787,7 @@ module PhysicallyBased =
                     let mutable light = Light ()
                     use lightPtr = fixed &light
                     for i in 0 .. dec Constants.Render.LightsMaxForward do
-                        if lightOrigins.Length < i then
+                        if i < lightOrigins.Length then
                             light.lightOrigins <- lightOrigins.[i]
                             light.lightDirections <- lightDirections.[i]
                             light.lightColors <- lightColors.[i].V3
@@ -1807,7 +1807,7 @@ module PhysicallyBased =
                     let mutable shadowMatrix = m4Zero
                     let shadowMatrixPtr = fixed &shadowMatrix
                     for i in 0 .. dec (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels) do
-                        if shadowMatrices.Length < i then shadowMatrix <- shadowMatrices.[i]
+                        if i < shadowMatrices.Length then shadowMatrix <- shadowMatrices.[i]
                         Buffer.uploadSubdata (i * sizeof<Matrix4x4>) 0 sizeof<Matrix4x4> 1 (NativePtr.toNativeInt shadowMatrixPtr) pipeline.ShadowMatrixUniform vkc
                     Pipeline.writeDescriptorStorageBuffer 4 0 pipeline.ShadowMatrixUniform vkSet vkc
 
