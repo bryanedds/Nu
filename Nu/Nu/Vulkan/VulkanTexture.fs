@@ -1175,7 +1175,7 @@ type TextureClient (lazyTextureQueuesOpt : ConcurrentDictionary<_, _> option) =
     member this.LazyTextureQueue = lazyTextureQueue
 
     /// Attempt to create a memoized texture from a file.
-    member this.TryCreateTexture (desireLazy, mipmaps, compression, filePath : string, thread, vkc) =
+    member this.TryCreateTexture desireLazy mipmaps compression (filePath : string) thread vkc =
 
         // memoize texture
         match textures.TryGetValue filePath with
@@ -1200,12 +1200,12 @@ type TextureClient (lazyTextureQueuesOpt : ConcurrentDictionary<_, _> option) =
 
     /// Attempt to create a filtered memoized texture from a file.
     /// TODO: DJL: maybe rename these methods as they no longer describe actual filtering.
-    member this.TryCreateTextureFiltered (desireLazy, compression, filePath, thread, vkc) =
-        this.TryCreateTexture (desireLazy, true, compression, filePath, thread, vkc)
+    member this.TryCreateTextureFiltered desireLazy compression filePath thread vkc =
+        this.TryCreateTexture desireLazy true compression filePath thread vkc
     
     /// Attempt to create an unfiltered memoized texture from a file.
-    member this.TryCreateTextureUnfiltered (desireLazy, filePath, thread, vkc) =
-        this.TryCreateTexture (desireLazy, false, Uncompressed, filePath, thread, vkc)
+    member this.TryCreateTextureUnfiltered desireLazy filePath thread vkc =
+        this.TryCreateTexture desireLazy false Uncompressed filePath thread vkc
 
 /// Populate the vulkan textures and handles of lazy textures in a threaded manner.
 /// TODO: abstract this to interface that can represent either inline or threaded implementation.

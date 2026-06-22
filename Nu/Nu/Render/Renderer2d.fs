@@ -229,8 +229,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         | ImageExtension _ ->
             let textureEir =
                 if Hl.inferTextureFiltered2d asset.FilePath
-                then assetClient.TextureClient.TryCreateTextureFiltered (false, Uncompressed, asset.FilePath, RenderThread, renderer.VulkanContext)
-                else assetClient.TextureClient.TryCreateTextureUnfiltered (false, asset.FilePath, RenderThread, renderer.VulkanContext)
+                then assetClient.TextureClient.TryCreateTextureFiltered false Uncompressed asset.FilePath RenderThread renderer.VulkanContext
+                else assetClient.TextureClient.TryCreateTextureUnfiltered false asset.FilePath RenderThread renderer.VulkanContext
             match textureEir with
             | Right texture ->
                 Some (TextureAsset texture)

@@ -43,7 +43,7 @@ module ContourTessellation =
 
     /// Draw a contour tessellation.
     let drawContourTessellation
-        (tessellation,
+        (tessellation : ContourTessellation,
          absolute : bool,
          viewProjectionClipAbsolute : Matrix4x4 inref,
          viewProjectionClipRelative : Matrix4x4 inref,

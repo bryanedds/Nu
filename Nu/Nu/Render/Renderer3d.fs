@@ -5282,7 +5282,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
     static member private tryLoadTextureAsset (assetClient : AssetClient) (asset : Asset) renderer =
         VulkanRenderer3d.invalidateCaches renderer
-        match assetClient.TextureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression asset.FilePath, asset.FilePath, RenderThread, renderer.VulkanContext) with
+        match assetClient.TextureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression asset.FilePath) asset.FilePath RenderThread renderer.VulkanContext with
         | Right texture ->
             Some texture
         | Left error ->

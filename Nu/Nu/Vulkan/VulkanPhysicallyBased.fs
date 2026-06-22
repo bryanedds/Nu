@@ -630,7 +630,7 @@ module PhysicallyBased =
         let albedoTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression albedoTextureSlotFilePath, dirPrefix + albedoTextureSlotFilePath, RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression albedoTextureSlotFilePath) (dirPrefix + albedoTextureSlotFilePath) RenderThread vkc with
                 | Right texture -> texture
                 | Left _ -> defaultMaterial.AlbedoTexture
             | None -> defaultMaterial.AlbedoTexture
@@ -686,28 +686,28 @@ module PhysicallyBased =
         let roughnessTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression roughnessTextureSlot.FilePath, dirPrefix + roughnessTextureSlot.FilePath, RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression roughnessTextureSlot.FilePath) (dirPrefix + roughnessTextureSlot.FilePath) RenderThread vkc with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression gTextureFilePath, dirPrefix + gTextureFilePath, RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression gTextureFilePath) (dirPrefix + gTextureFilePath) RenderThread vkc with
                     | Right texture -> texture
                     | Left _ ->
-                        match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression sTextureFilePath, dirPrefix + sTextureFilePath, RenderThread, vkc) with
+                        match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression sTextureFilePath) (dirPrefix + sTextureFilePath) RenderThread vkc with
                         | Right texture -> texture
                         | Left _ ->
-                            match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression g_mTextureFilePath, dirPrefix + g_mTextureFilePath, RenderThread, vkc) with
+                            match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression g_mTextureFilePath) (dirPrefix + g_mTextureFilePath) RenderThread vkc with
                             | Right texture -> texture
                             | Left _ ->
-                                match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression g_m_aoTextureFilePath, dirPrefix + g_m_aoTextureFilePath, RenderThread, vkc) with
+                                match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression g_m_aoTextureFilePath) (dirPrefix + g_m_aoTextureFilePath) RenderThread vkc with
                                 | Right texture -> texture
                                 | Left _ ->
-                                    match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression roughnessTextureFilePath, dirPrefix + roughnessTextureFilePath, RenderThread, vkc) with
+                                    match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression roughnessTextureFilePath) (dirPrefix + roughnessTextureFilePath) RenderThread vkc with
                                     | Right texture -> texture
                                     | Left _ ->
-                                        match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression rmTextureFilePath, dirPrefix + rmTextureFilePath, RenderThread, vkc) with
+                                        match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression rmTextureFilePath) (dirPrefix + rmTextureFilePath) RenderThread vkc with
                                         | Right texture -> texture
                                         | Left _ ->
-                                            match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression rmaTextureFilePath, dirPrefix + rmaTextureFilePath, RenderThread, vkc) with
+                                            match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression rmaTextureFilePath) (dirPrefix + rmaTextureFilePath) RenderThread vkc with
                                             | Right texture -> texture
                                             | Left _ -> defaultMaterial.RoughnessTexture
             | None -> defaultMaterial.RoughnessTexture
@@ -721,28 +721,28 @@ module PhysicallyBased =
         let metallicTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression metallicTextureSlot.FilePath, dirPrefix + metallicTextureSlot.FilePath, RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression metallicTextureSlot.FilePath) (dirPrefix + metallicTextureSlot.FilePath) RenderThread vkc with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression mTextureFilePath, dirPrefix + mTextureFilePath, RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression mTextureFilePath) (dirPrefix + mTextureFilePath) RenderThread vkc with
                     | Right texture -> texture
                     | Left _ ->
-                        match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression g_mTextureFilePath, dirPrefix + g_mTextureFilePath, RenderThread, vkc) with
+                        match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression g_mTextureFilePath) (dirPrefix + g_mTextureFilePath) RenderThread vkc with
                         | Right texture -> texture
                         | Left _ ->
-                            match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression g_m_aoTextureFilePath, dirPrefix + g_m_aoTextureFilePath, RenderThread, vkc) with
+                            match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression g_m_aoTextureFilePath) (dirPrefix + g_m_aoTextureFilePath) RenderThread vkc with
                             | Right texture -> texture
                             | Left _ ->
-                                match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression metallicTextureFilePath, dirPrefix + metallicTextureFilePath, RenderThread, vkc) with
+                                match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression metallicTextureFilePath) (dirPrefix + metallicTextureFilePath) RenderThread vkc with
                                 | Right texture -> texture
                                 | Left _ ->
-                                    match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression metalnessTextureFilePath, dirPrefix + metalnessTextureFilePath, RenderThread, vkc) with
+                                    match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression metalnessTextureFilePath) (dirPrefix + metalnessTextureFilePath) RenderThread vkc with
                                     | Right texture -> texture
                                     | Left _ ->
-                                        match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression rmTextureFilePath, dirPrefix + rmTextureFilePath, RenderThread, vkc) with
+                                        match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression rmTextureFilePath) (dirPrefix + rmTextureFilePath) RenderThread vkc with
                                         | Right texture -> texture
                                         | Left _ ->
-                                            match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression rmaTextureFilePath, dirPrefix + rmaTextureFilePath, RenderThread, vkc) with
+                                            match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression rmaTextureFilePath) (dirPrefix + rmaTextureFilePath) RenderThread vkc with
                                             | Right texture -> texture
                                             | Left _ -> defaultMaterial.MetallicTexture
             | None -> defaultMaterial.MetallicTexture
@@ -759,25 +759,25 @@ module PhysicallyBased =
         let ambientOcclusionTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression ambientOcclusionTextureSlotFilePath, dirPrefix + ambientOcclusionTextureSlotFilePath, RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression ambientOcclusionTextureSlotFilePath) (dirPrefix + ambientOcclusionTextureSlotFilePath) RenderThread vkc with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression aoTextureFilePath, dirPrefix + aoTextureFilePath, RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression aoTextureFilePath) (dirPrefix + aoTextureFilePath) RenderThread vkc with
                     | Right texture -> texture
                     | Left _ ->
-                        match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression g_m_aoTextureFilePath, dirPrefix + g_m_aoTextureFilePath, RenderThread, vkc) with
+                        match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression g_m_aoTextureFilePath) (dirPrefix + g_m_aoTextureFilePath) RenderThread vkc with
                         | Right texture -> texture
                         | Left _ ->
-                            match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression ambientOcclusionTextureFilePath, dirPrefix + ambientOcclusionTextureFilePath, RenderThread, vkc) with
+                            match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression ambientOcclusionTextureFilePath) (dirPrefix + ambientOcclusionTextureFilePath) RenderThread vkc with
                             | Right texture -> texture
                             | Left _ ->
-                                match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression occlusionTextureFilePath, dirPrefix + occlusionTextureFilePath, RenderThread, vkc) with
+                                match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression occlusionTextureFilePath) (dirPrefix + occlusionTextureFilePath) RenderThread vkc with
                                 | Right texture -> texture
                                 | Left _ ->
-                                    match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression aoTextureFilePath', dirPrefix + aoTextureFilePath', RenderThread, vkc) with
+                                    match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression aoTextureFilePath') (dirPrefix + aoTextureFilePath') RenderThread vkc with
                                     | Right texture -> texture
                                     | Left _ ->
-                                        match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression rmaTextureFilePath, dirPrefix + rmaTextureFilePath, RenderThread, vkc) with
+                                        match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression rmaTextureFilePath) (dirPrefix + rmaTextureFilePath) RenderThread vkc with
                                         | Right texture -> texture
                                         | Left _ -> defaultMaterial.AmbientOcclusionTexture
             | None -> defaultMaterial.AmbientOcclusionTexture
@@ -791,16 +791,16 @@ module PhysicallyBased =
         let emissionTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression emissionTextureSlot.FilePath, dirPrefix + emissionTextureSlot.FilePath, RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression emissionTextureSlot.FilePath) (dirPrefix + emissionTextureSlot.FilePath) RenderThread vkc with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression eTextureFilePath, dirPrefix + eTextureFilePath, RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression eTextureFilePath) (dirPrefix + eTextureFilePath) RenderThread vkc with
                     | Right texture -> texture
                     | Left _ ->
-                        match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression emissiveTextureFilePath, dirPrefix + emissiveTextureFilePath, RenderThread, vkc) with
+                        match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression emissiveTextureFilePath) (dirPrefix + emissiveTextureFilePath) RenderThread vkc with
                         | Right texture -> texture
                         | Left _ ->
-                            match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression emissionTextureFilePath, dirPrefix + emissionTextureFilePath, RenderThread, vkc) with
+                            match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression emissionTextureFilePath) (dirPrefix + emissionTextureFilePath) RenderThread vkc with
                             | Right texture -> texture
                             | Left _ -> defaultMaterial.EmissionTexture
             | None -> defaultMaterial.EmissionTexture
@@ -813,13 +813,13 @@ module PhysicallyBased =
         let normalTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression normalTextureSlot.FilePath, dirPrefix + normalTextureSlot.FilePath, RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression normalTextureSlot.FilePath) (dirPrefix + normalTextureSlot.FilePath) RenderThread vkc with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression nTextureFilePath, dirPrefix + nTextureFilePath, RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression nTextureFilePath) (dirPrefix + nTextureFilePath) RenderThread vkc with
                     | Right texture -> texture
                     | Left _ ->
-                        match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression normalTextureFilePath, dirPrefix + normalTextureFilePath, RenderThread, vkc) with
+                        match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression normalTextureFilePath) (dirPrefix + normalTextureFilePath) RenderThread vkc with
                         | Right texture -> texture
                         | Left _ -> defaultMaterial.NormalTexture
             | None -> defaultMaterial.NormalTexture
@@ -833,13 +833,13 @@ module PhysicallyBased =
         let heightTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression heightTextureSlot.FilePath, dirPrefix + heightTextureSlot.FilePath, RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression heightTextureSlot.FilePath) (dirPrefix + heightTextureSlot.FilePath) RenderThread vkc with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression hTextureFilePath, dirPrefix + hTextureFilePath, RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression hTextureFilePath) (dirPrefix + hTextureFilePath) RenderThread vkc with
                     | Right texture -> texture
                     | Left _ ->
-                        match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression heightTextureFilePath, dirPrefix + heightTextureFilePath, RenderThread, vkc) with
+                        match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression heightTextureFilePath) (dirPrefix + heightTextureFilePath) RenderThread vkc with
                         | Right texture -> texture
                         | Left _ -> defaultMaterial.HeightTexture
             | None -> defaultMaterial.HeightTexture
@@ -860,10 +860,10 @@ module PhysicallyBased =
         let subdermalTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression subdermalTextureFilePath, dirPrefix + subdermalTextureFilePath, RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression subdermalTextureFilePath) (dirPrefix + subdermalTextureFilePath) RenderThread vkc with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression subdermalTextureFilePath', dirPrefix + subdermalTextureFilePath', RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression subdermalTextureFilePath') (dirPrefix + subdermalTextureFilePath') RenderThread vkc with
                     | Right texture -> texture
                     | Left _ -> defaultMaterial.SubdermalTexture
             | None -> defaultMaterial.SubdermalTexture
@@ -873,10 +873,10 @@ module PhysicallyBased =
         let finenessTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression finenessTextureFilePath, dirPrefix + finenessTextureFilePath, RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression finenessTextureFilePath) (dirPrefix + finenessTextureFilePath) RenderThread vkc with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression finenessTextureFilePath', dirPrefix + finenessTextureFilePath', RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression finenessTextureFilePath') (dirPrefix + finenessTextureFilePath') RenderThread vkc with
                     | Right texture -> texture
                     | Left _ -> defaultMaterial.FinenessTexture
             | None -> defaultMaterial.FinenessTexture
@@ -886,10 +886,10 @@ module PhysicallyBased =
         let scatterTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression scatterTextureFilePath, dirPrefix + scatterTextureFilePath, RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression scatterTextureFilePath) (dirPrefix + scatterTextureFilePath) RenderThread vkc with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression scatterTextureFilePath', dirPrefix + scatterTextureFilePath', RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression scatterTextureFilePath') (dirPrefix + scatterTextureFilePath') RenderThread vkc with
                     | Right texture -> texture
                     | Left _ -> defaultMaterial.ScatterTexture
             | None -> defaultMaterial.ScatterTexture
@@ -923,10 +923,10 @@ module PhysicallyBased =
         let clearCoatTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression clearCoatTextureFilePath, dirPrefix + clearCoatTextureFilePath, RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression clearCoatTextureFilePath) (dirPrefix + clearCoatTextureFilePath) RenderThread vkc with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression clearCoatTextureFilePath', dirPrefix + clearCoatTextureFilePath', RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression clearCoatTextureFilePath') (dirPrefix + clearCoatTextureFilePath') RenderThread vkc with
                     | Right texture -> texture
                     | Left _ -> defaultMaterial.ClearCoatTexture
             | None -> defaultMaterial.ClearCoatTexture
@@ -936,10 +936,10 @@ module PhysicallyBased =
         let clearCoatRoughnessTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression clearCoatRoughnessTextureFilePath, dirPrefix + clearCoatRoughnessTextureFilePath, RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression clearCoatRoughnessTextureFilePath) (dirPrefix + clearCoatRoughnessTextureFilePath) RenderThread vkc with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression clearCoatRoughnessTextureFilePath', dirPrefix + clearCoatRoughnessTextureFilePath', RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression clearCoatRoughnessTextureFilePath') (dirPrefix + clearCoatRoughnessTextureFilePath') RenderThread vkc with
                     | Right texture -> texture
                     | Left _ -> defaultMaterial.ClearCoatRoughnessTexture
             | None -> defaultMaterial.ClearCoatRoughnessTexture
@@ -948,10 +948,10 @@ module PhysicallyBased =
         let clearCoatNormalTexture =
             match vkcOpt with
             | Some vkc ->
-                match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression clearCoatNormalTextureFilePath, dirPrefix + clearCoatNormalTextureFilePath, RenderThread, vkc) with
+                match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression clearCoatNormalTextureFilePath) (dirPrefix + clearCoatNormalTextureFilePath) RenderThread vkc with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered (true, Hl.inferTextureCompression clearCoatNormalTextureFilePath', dirPrefix + clearCoatNormalTextureFilePath', RenderThread, vkc) with
+                    match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression clearCoatNormalTextureFilePath') (dirPrefix + clearCoatNormalTextureFilePath') RenderThread vkc with
                     | Right texture -> texture
                     | Left _ -> defaultMaterial.ClearCoatNormalTexture
             | None -> defaultMaterial.ClearCoatNormalTexture

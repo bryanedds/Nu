@@ -279,7 +279,8 @@ type [<Struct>] internal VkDebugUtilsMessengerCreateInfoEXT_hack =
     val mutable pUserData : nativeint
 
 [<UnmanagedFunctionPointer (CallingConvention.Cdecl)>]
-type internal BackgroundingDelegate = delegate of userData : voidptr * event : SDL_Event nativeptr -> SDLBool    
+type internal BackgroundingDelegate =
+    delegate of userData : voidptr * event : SDL_Event nativeptr -> SDLBool    
 
 [<RequireQualifiedAccess>]
 module Hl =
