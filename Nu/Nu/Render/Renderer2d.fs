@@ -1039,7 +1039,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         let filteredSampler = Sampler.create VkSamplerAddressMode.Repeat VkFilter.Linear VkFilter.Linear true vkc
         
         // create text resources
-        let spritePipeline = SpriteSingleton.createSpritePipeline vkc
+        let spriteSingletonPipeline = SpriteSingleton.createSpritePipeline vkc
         let textQuad = SpriteSingleton.createSpriteQuad true vkc
         let textureDumpster = TextureDumpster.create ()
 
@@ -1059,7 +1059,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
               FilteredSampler = filteredSampler
               TextTextures = dictPlus HashIdentity.Structural []
               SpriteBatchEnv = spriteBatchEnv
-              SpritePipeline = spritePipeline
+              SpritePipeline = spriteSingletonPipeline
               ContourTessellationPipeline = contourTesselationPipeline
               RenderPackages = dictPlus StringComparer.Ordinal []
               SpineSkeletonRenderers = dictPlus HashIdentity.Structural []
