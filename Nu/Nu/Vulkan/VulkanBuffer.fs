@@ -4,18 +4,19 @@
 namespace Nu.Vulkan
 open System
 open System.Collections.Generic
+open System.Numerics
 open FSharp.NativeInterop
 open Vortice.Vulkan
 open Prime
 open Nu
 
 // TODO: DJL: doc comments!
-// TODO: P0: rename this to BufferStreamType or BufferMultiType?
 
 type Allocation =
     | Vma of VmaAllocation
     | Manual of VkDeviceMemory
 
+// TODO: P0: rename this to BufferStreamType or BufferMultiType?
 type BufferType =
     | Staging
     | Vertex of UploadEnabled : bool
@@ -148,8 +149,8 @@ type BufferSingleton =
     static member upload offset alignment size count data bufferSingleton (vkc : VulkanContext) =
         if bufferSingleton.UploadEnabled_ then
             if size > 0 then
-                let stride = Hl.getStride alignment size
-                let offset = Hl.alignOffset offset alignment
+                let stride = Math.Stride (alignment, size)
+                let offset = Math.AlignOffset (offset, alignment)
                 if offset + stride * count <= bufferSingleton.Size_ then
                     
                     // upload as single blob if possible, otherwise upload one value at a time to create padding
@@ -292,7 +293,7 @@ type Buffer =
 
     /// Upload subdata to Buffer.
     static member uploadSubdata offset alignment size count data (buffer : Buffer) vkc =
-        let bufferSize = Hl.getMinimumBufferSize offset alignment size count
+        let bufferSize = Math.MinimumBufferSize (offset, alignment, size, count)
         Buffer.update bufferSize buffer vkc
         BufferParallel.upload offset alignment size count data buffer.BufferParallel vkc
 

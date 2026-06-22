@@ -68,19 +68,19 @@ module SkyBox =
 
     /// Draw a sky box.
     let drawSkyBox
-        (view : Matrix4x4,
-         projection : Matrix4x4,
-         viewProjection : Matrix4x4,
-         color : Color,
-         brightness : single,
-         cubeMap : Texture,
-         geometry : CubeMapGeometry,
-         sampler : Sampler,
-         viewport : Viewport,
-         colorAttachment : Texture,
-         depthAttachment : Texture,
-         pipeline : SkyBoxPipeline,
-         vkc : VulkanContext) =
+        (view : Matrix4x4)
+        (projection : Matrix4x4)
+        (viewProjection : Matrix4x4)
+        (color : Color)
+        (brightness : single)
+        (cubeMap : Texture)
+        (geometry : CubeMapGeometry)
+        (sampler : Sampler)
+        (viewport : Viewport)
+        (colorAttachment : Texture)
+        (depthAttachment : Texture)
+        (pipeline : SkyBoxPipeline)
+        (vkc : VulkanContext) =
 
         // only draw if scissor (and therefore also viewport) is valid
         let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)

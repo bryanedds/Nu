@@ -12,6 +12,93 @@ open Vortice.Vulkan
 open Prime
 open Nu
 
+[<Struct; StructLayout(LayoutKind.Explicit)>]
+type PhysicallyBasedTransform =
+    [<FieldOffset(0)>] val mutable view : Matrix4x4
+    [<FieldOffset(64)>] val mutable projection : Matrix4x4
+    [<FieldOffset(128)>] val mutable viewProjection : Matrix4x4
+    [<FieldOffset(192)>] val mutable viewInverse : Matrix4x4
+    [<FieldOffset(256)>] val mutable projectionInverse : Matrix4x4
+    [<FieldOffset(320)>] val mutable eyeCenter : Vector3
+
+[<Struct; StructLayout(LayoutKind.Explicit)>]
+type Lighting =
+    [<FieldOffset(0)>] val mutable lightCutoffMargin : single
+    [<FieldOffset(16)>] val mutable lightAmbientColor : Vector3
+    [<FieldOffset(28)>] val mutable lightAmbientBrightness : single
+    [<FieldOffset(32)>] val mutable lightAmbientBoostCutoff : single
+    [<FieldOffset(36)>] val mutable lightAmbientBoostScalar : single
+    [<FieldOffset(40)>] val mutable lightShadowSamples : int
+    [<FieldOffset(44)>] val mutable lightShadowBias : single
+    [<FieldOffset(48)>] val mutable lightShadowSampleScalar : single
+    [<FieldOffset(52)>] val mutable lightShadowExponent : single
+    [<FieldOffset(56)>] val mutable lightShadowDensity : single
+    [<FieldOffset(60)>] val mutable fogEnabled : int
+    [<FieldOffset(64)>] val mutable fogType : int
+    [<FieldOffset(68)>] val mutable fogStart : single
+    [<FieldOffset(72)>] val mutable fogFinish : single
+    [<FieldOffset(76)>] val mutable fogDensity : single
+    [<FieldOffset(80)>] val mutable fogColor : Vector4
+    [<FieldOffset(96)>] val mutable ssvfEnabled : int
+    [<FieldOffset(100)>] val mutable ssvfIntensity : single
+    [<FieldOffset(104)>] val mutable ssvfSteps : int
+    [<FieldOffset(108)>] val mutable ssvfAsymmetry : single
+    [<FieldOffset(112)>] val mutable ssrrEnabled : int
+    [<FieldOffset(116)>] val mutable ssrrIntensity : single
+    [<FieldOffset(120)>] val mutable ssrrDetail : single
+    [<FieldOffset(124)>] val mutable ssrrRefinementsMax : int
+    [<FieldOffset(128)>] val mutable ssrrRayThickness : single
+    [<FieldOffset(132)>] val mutable ssrrDistanceCutoff : single
+    [<FieldOffset(136)>] val mutable ssrrDistanceCutoffMargin : single
+    [<FieldOffset(140)>] val mutable ssrrEdgeHorizontalMargin : single
+    [<FieldOffset(144)>] val mutable ssrrEdgeVerticalMargin : single
+    [<FieldOffset(148)>] val mutable shadowNear : single
+
+[<Struct; StructLayout(LayoutKind.Explicit)>]
+type Lighting2 =
+    [<FieldOffset(0)>] val mutable lightCutoffMargin : single
+    [<FieldOffset(4)>] val mutable lightShadowSamples : int
+    [<FieldOffset(8)>] val mutable lightShadowBias : single
+    [<FieldOffset(12)>] val mutable lightShadowSampleScalar : single
+    [<FieldOffset(16)>] val mutable lightShadowExponent : single
+    [<FieldOffset(20)>] val mutable lightShadowDensity : single
+    [<FieldOffset(24)>] val mutable sssEnabled : int
+    [<FieldOffset(28)>] val mutable lightsCount : int
+    [<FieldOffset(32)>] val mutable shadowNear : single
+
+[<Struct; StructLayout(LayoutKind.Explicit)>]
+type Bone =
+    [<FieldOffset(0)>] val mutable bone : Matrix4x4
+
+[<Struct; StructLayout(LayoutKind.Explicit)>]
+type LightMap =
+    [<FieldOffset(0)>] val mutable lightMapOrigins : Vector3
+    [<FieldOffset(16)>] val mutable lightMapMins : Vector3
+    [<FieldOffset(32)>] val mutable lightMapSizes : Vector3
+    [<FieldOffset(48)>] val mutable lightMapAmbientColors : Vector3
+    [<FieldOffset(60)>] val mutable lightMapAmbientBrightnesses : single
+
+[<Struct; StructLayout(LayoutKind.Explicit)>]
+type LightsGeneral =
+    [<FieldOffset(0)>] val mutable lightMapsCount : int
+    [<FieldOffset(4)>] val mutable lightMapSingletonBlendMargin : single
+    [<FieldOffset(8)>] val mutable lightsCount : int
+
+[<Struct; StructLayout(LayoutKind.Explicit)>]
+type Light =
+    [<FieldOffset(0)>] val mutable lightOrigins : Vector3
+    [<FieldOffset(16)>] val mutable lightDirections : Vector3
+    [<FieldOffset(32)>] val mutable lightColors : Vector3
+    [<FieldOffset(44)>] val mutable lightBrightnesses : single
+    [<FieldOffset(48)>] val mutable lightAttenuationLinears : single
+    [<FieldOffset(52)>] val mutable lightAttenuationQuadratics : single
+    [<FieldOffset(56)>] val mutable lightCutoffs : single
+    [<FieldOffset(60)>] val mutable lightTypes : int
+    [<FieldOffset(64)>] val mutable lightConeInners : single
+    [<FieldOffset(68)>] val mutable lightConeOuters : single
+    [<FieldOffset(72)>] val mutable lightDesireFogs : int
+    [<FieldOffset(76)>] val mutable lightShadowIndices : int
+
 /// A set of physically-based attachments that support a given viewport.
 type PhysicallyBasedAttachments =
     { ShadowTextureArrayAttachments : Texture * Texture
@@ -403,93 +490,6 @@ type PhysicallyBasedModel =
       SceneOpt : Assimp.Scene option
       PhysicallyBasedHierarchy : PhysicallyBasedPart array TreeNode }
 
-[<Struct; StructLayout(LayoutKind.Explicit)>]
-type PhysicallyBasedTransform =
-    [<FieldOffset(0)>] val mutable view : Matrix4x4
-    [<FieldOffset(64)>] val mutable projection : Matrix4x4
-    [<FieldOffset(128)>] val mutable viewProjection : Matrix4x4
-    [<FieldOffset(192)>] val mutable viewInverse : Matrix4x4
-    [<FieldOffset(256)>] val mutable projectionInverse : Matrix4x4
-    [<FieldOffset(320)>] val mutable eyeCenter : Vector3
-
-[<Struct; StructLayout(LayoutKind.Explicit)>]
-type Lighting =
-    [<FieldOffset(0)>] val mutable lightCutoffMargin : single
-    [<FieldOffset(16)>] val mutable lightAmbientColor : Vector3
-    [<FieldOffset(28)>] val mutable lightAmbientBrightness : single
-    [<FieldOffset(32)>] val mutable lightAmbientBoostCutoff : single
-    [<FieldOffset(36)>] val mutable lightAmbientBoostScalar : single
-    [<FieldOffset(40)>] val mutable lightShadowSamples : int
-    [<FieldOffset(44)>] val mutable lightShadowBias : single
-    [<FieldOffset(48)>] val mutable lightShadowSampleScalar : single
-    [<FieldOffset(52)>] val mutable lightShadowExponent : single
-    [<FieldOffset(56)>] val mutable lightShadowDensity : single
-    [<FieldOffset(60)>] val mutable fogEnabled : int
-    [<FieldOffset(64)>] val mutable fogType : int
-    [<FieldOffset(68)>] val mutable fogStart : single
-    [<FieldOffset(72)>] val mutable fogFinish : single
-    [<FieldOffset(76)>] val mutable fogDensity : single
-    [<FieldOffset(80)>] val mutable fogColor : Vector4
-    [<FieldOffset(96)>] val mutable ssvfEnabled : int
-    [<FieldOffset(100)>] val mutable ssvfIntensity : single
-    [<FieldOffset(104)>] val mutable ssvfSteps : int
-    [<FieldOffset(108)>] val mutable ssvfAsymmetry : single
-    [<FieldOffset(112)>] val mutable ssrrEnabled : int
-    [<FieldOffset(116)>] val mutable ssrrIntensity : single
-    [<FieldOffset(120)>] val mutable ssrrDetail : single
-    [<FieldOffset(124)>] val mutable ssrrRefinementsMax : int
-    [<FieldOffset(128)>] val mutable ssrrRayThickness : single
-    [<FieldOffset(132)>] val mutable ssrrDistanceCutoff : single
-    [<FieldOffset(136)>] val mutable ssrrDistanceCutoffMargin : single
-    [<FieldOffset(140)>] val mutable ssrrEdgeHorizontalMargin : single
-    [<FieldOffset(144)>] val mutable ssrrEdgeVerticalMargin : single
-    [<FieldOffset(148)>] val mutable shadowNear : single
-
-[<Struct; StructLayout(LayoutKind.Explicit)>]
-type Lighting2 =
-    [<FieldOffset(0)>] val mutable lightCutoffMargin : single
-    [<FieldOffset(4)>] val mutable lightShadowSamples : int
-    [<FieldOffset(8)>] val mutable lightShadowBias : single
-    [<FieldOffset(12)>] val mutable lightShadowSampleScalar : single
-    [<FieldOffset(16)>] val mutable lightShadowExponent : single
-    [<FieldOffset(20)>] val mutable lightShadowDensity : single
-    [<FieldOffset(24)>] val mutable sssEnabled : int
-    [<FieldOffset(28)>] val mutable lightsCount : int
-    [<FieldOffset(32)>] val mutable shadowNear : single
-
-[<Struct; StructLayout(LayoutKind.Explicit)>]
-type Bone =
-    [<FieldOffset(0)>] val mutable bone : Matrix4x4
-
-[<Struct; StructLayout(LayoutKind.Explicit)>]
-type LightMap =
-    [<FieldOffset(0)>] val mutable lightMapOrigins : Vector3
-    [<FieldOffset(16)>] val mutable lightMapMins : Vector3
-    [<FieldOffset(32)>] val mutable lightMapSizes : Vector3
-    [<FieldOffset(48)>] val mutable lightMapAmbientColors : Vector3
-    [<FieldOffset(60)>] val mutable lightMapAmbientBrightnesses : single
-
-[<Struct; StructLayout(LayoutKind.Explicit)>]
-type LightsGeneral =
-    [<FieldOffset(0)>] val mutable lightMapsCount : int
-    [<FieldOffset(4)>] val mutable lightMapSingletonBlendMargin : single
-    [<FieldOffset(8)>] val mutable lightsCount : int
-
-[<Struct; StructLayout(LayoutKind.Explicit)>]
-type Light =
-    [<FieldOffset(0)>] val mutable lightOrigins : Vector3
-    [<FieldOffset(16)>] val mutable lightDirections : Vector3
-    [<FieldOffset(32)>] val mutable lightColors : Vector3
-    [<FieldOffset(44)>] val mutable lightBrightnesses : single
-    [<FieldOffset(48)>] val mutable lightAttenuationLinears : single
-    [<FieldOffset(52)>] val mutable lightAttenuationQuadratics : single
-    [<FieldOffset(56)>] val mutable lightCutoffs : single
-    [<FieldOffset(60)>] val mutable lightTypes : int
-    [<FieldOffset(64)>] val mutable lightConeInners : single
-    [<FieldOffset(68)>] val mutable lightConeOuters : single
-    [<FieldOffset(72)>] val mutable lightDesireFogs : int
-    [<FieldOffset(76)>] val mutable lightShadowIndices : int
-
 /// Describes a physically-based pipeline that's loaded into GPU.
 type PhysicallyBasedPipeline =
     { TransformUniform : Nu.Vulkan.Buffer
@@ -523,36 +523,36 @@ module PhysicallyBased =
     let StaticVertexSize =      (3 (*position*) + 2 (*tex coords*) + 3 (*normal*)) * sizeof<single>
 
     /// Create the attachments required for physically-based rendering.
-    let createPhysicallyBasedAttachments (geometryViewport : Viewport, vkc) =
+    let createPhysicallyBasedAttachments (geometryViewport : Viewport) vkc =
         
         // create shadow texture array attachments
         let shadowTextureArrayAttachments =
             let shadowResolution = geometryViewport.ShadowTextureResolution
-            Attachment.createShadowTextureArrayAttachments (shadowResolution.X, shadowResolution.Y, Constants.Render.ShadowTexturesMax, vkc)
+            Attachment.createShadowTextureArrayAttachments shadowResolution.X shadowResolution.Y Constants.Render.ShadowTexturesMax vkc
         
         // create shadow map attachments array
         let shadowMapAttachmentsArray =
             [|for _ in 0 .. dec Constants.Render.ShadowMapsMax do
                 let shadowResolution = geometryViewport.ShadowMapResolution
-                Attachment.createShadowMapAttachments (shadowResolution.X, shadowResolution.Y, vkc)|]
+                Attachment.createShadowMapAttachments shadowResolution.X shadowResolution.Y vkc|]
 
         // create shadow cascade array attachments array
         let shadowCascadeArrayAttachmentsArray =
             [|for _ in 0 .. dec Constants.Render.ShadowCascadesMax do
                 let shadowResolution = geometryViewport.ShadowCascadeResolution
-                Attachment.createShadowCascadeArrayAttachments (shadowResolution.X, shadowResolution.Y, Constants.Render.ShadowCascadeLevels, vkc)|]
+                Attachment.createShadowCascadeArrayAttachments shadowResolution.X shadowResolution.Y Constants.Render.ShadowCascadeLevels vkc|]
 
         // create geometry attachments
-        let geometryAttachments = Attachment.createGeometryAttachments (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, vkc)
+        let geometryAttachments = Attachment.createGeometryAttachments geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y vkc
         
         // create lighting attachment
-        let lightingAttachment = Attachment.createLightingAttachment (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, vkc)
+        let lightingAttachment = Attachment.createLightingAttachment geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y vkc
         
         // create coloring attachments
-        let coloringAttachments = Attachment.createColoringAttachments (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, vkc)
+        let coloringAttachments = Attachment.createColoringAttachments geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y vkc
 
         // create composition attachments
-        let compositionAttachments = Attachment.createGeneralAttachments (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, vkc)
+        let compositionAttachments = Attachment.createGeneralAttachments geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y vkc
 
         // make record
         { ShadowTextureArrayAttachments = shadowTextureArrayAttachments
@@ -564,34 +564,34 @@ module PhysicallyBased =
           CompositionAttachments = compositionAttachments }
 
     /// Update the size of the attachments. Must be used every frame.
-    let updatePhysicallyBasedAttachmentsSize (geometryViewport : Viewport, attachments : PhysicallyBasedAttachments, vkc) =
-        Attachment.updateShadowTextureArrayAttachmentsSize (geometryViewport.ShadowTextureResolution.X, geometryViewport.ShadowTextureResolution.Y, attachments.ShadowTextureArrayAttachments, vkc)
+    let updatePhysicallyBasedAttachmentsSize (geometryViewport : Viewport) (attachments : PhysicallyBasedAttachments) vkc =
+        Attachment.updateShadowTextureArrayAttachmentsSize geometryViewport.ShadowTextureResolution.X geometryViewport.ShadowTextureResolution.Y attachments.ShadowTextureArrayAttachments vkc
         for i in 0 .. dec attachments.ShadowMapAttachmentsArray.Length do
-            Attachment.updateShadowMapAttachmentsSize (geometryViewport.ShadowMapResolution.X, geometryViewport.ShadowMapResolution.Y, attachments.ShadowMapAttachmentsArray[i], vkc)
+            Attachment.updateShadowMapAttachmentsSize geometryViewport.ShadowMapResolution.X geometryViewport.ShadowMapResolution.Y attachments.ShadowMapAttachmentsArray[i] vkc
         for i in 0 .. dec attachments.ShadowCascadeArrayAttachmentsArray.Length do
-            Attachment.updateShadowCascadeArrayAttachmentsSize (geometryViewport.ShadowCascadeResolution.X, geometryViewport.ShadowCascadeResolution.Y, attachments.ShadowCascadeArrayAttachmentsArray.[i], vkc)
-        Attachment.updateGeometryAttachmentsSize (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, attachments.GeometryAttachments, vkc)
-        Attachment.updateLightingAttachmentSize (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, attachments.LightingAttachment, vkc)
-        Attachment.updateColoringAttachmentsSize (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, attachments.ColoringAttachments, vkc)
-        Attachment.updateGeneralAttachmentsSize (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y, attachments.CompositionAttachments, vkc)
+            Attachment.updateShadowCascadeArrayAttachmentsSize geometryViewport.ShadowCascadeResolution.X geometryViewport.ShadowCascadeResolution.Y attachments.ShadowCascadeArrayAttachmentsArray.[i] vkc
+        Attachment.updateGeometryAttachmentsSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.GeometryAttachments vkc
+        Attachment.updateLightingAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.LightingAttachment vkc
+        Attachment.updateColoringAttachmentsSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.ColoringAttachments vkc
+        Attachment.updateGeneralAttachmentsSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.CompositionAttachments vkc
     
     /// Destroy the physically-based attachments.
-    let destroyPhysicallyBasedAttachments (attachments : PhysicallyBasedAttachments, vkc) =
-        Attachment.destroyShadowTextureArrayAttachments (attachments.ShadowTextureArrayAttachments, vkc)
+    let destroyPhysicallyBasedAttachments (attachments : PhysicallyBasedAttachments) vkc =
+        Attachment.destroyShadowTextureArrayAttachments attachments.ShadowTextureArrayAttachments vkc
         for i in 0 .. dec attachments.ShadowMapAttachmentsArray.Length do
-            Attachment.destroyShadowMapAttachments (attachments.ShadowMapAttachmentsArray.[i], vkc)
+            Attachment.destroyShadowMapAttachments attachments.ShadowMapAttachmentsArray.[i] vkc
         for i in 0 .. dec attachments.ShadowCascadeArrayAttachmentsArray.Length do
-            Attachment.destroyShadowCascadeArrayAttachments (attachments.ShadowCascadeArrayAttachmentsArray.[i], vkc)
-        Attachment.destroyGeometryAttachments (attachments.GeometryAttachments, vkc)
-        Attachment.destroyLightingAttachment (attachments.LightingAttachment, vkc)
-        Attachment.destroyColoringAttachments (attachments.ColoringAttachments, vkc)
-        Attachment.destroyGeneralAttachments (attachments.CompositionAttachments, vkc)
+            Attachment.destroyShadowCascadeArrayAttachments attachments.ShadowCascadeArrayAttachmentsArray.[i] vkc
+        Attachment.destroyGeometryAttachments attachments.GeometryAttachments vkc
+        Attachment.destroyLightingAttachment attachments.LightingAttachment vkc
+        Attachment.destroyColoringAttachments attachments.ColoringAttachments vkc
+        Attachment.destroyGeneralAttachments attachments.CompositionAttachments vkc
     
     /// Create physically-based material from an assimp mesh, falling back on defaults in case of missing textures.
     /// Uses file name-based inferences to look for texture files in case the ones that were hard-coded in the model
     /// files can't be located.
     /// Thread-safe if vkcOpt = None.
-    let createPhysicallyBasedMaterial (vkcOpt, dirPath, defaultMaterial, textureClient : TextureClient, material : Assimp.Material) =
+    let createPhysicallyBasedMaterial vkcOpt dirPath defaultMaterial (textureClient : TextureClient) (material : Assimp.Material) =
 
         // compute the directory string to prefix to a local asset file path
         let dirPrefix = if dirPath <> "" then dirPath + "/" else ""
@@ -1024,7 +1024,7 @@ module PhysicallyBased =
         (properties, material)
 
     /// Create physically-based static mesh from an assimp mesh.
-    let createPhysicallyBasedStaticMesh (indexData, mesh : Assimp.Mesh) =
+    let createPhysicallyBasedStaticMesh indexData (mesh : Assimp.Mesh) =
 
         // populate vertex data and bounds
         let vertexData = Array.zeroCreate<single> (mesh.Vertices.Count * 8)
@@ -1055,7 +1055,7 @@ module PhysicallyBased =
         (vertexData, indexData, bounds)
 
     /// Create physically-based animated mesh from an assimp mesh.
-    let createPhysicallyBasedAnimatedMesh (indexData, mesh : Assimp.Mesh) =
+    let createPhysicallyBasedAnimatedMesh indexData (mesh : Assimp.Mesh) =
 
         // populate vertex data (except bone) and bounds
         let vertexData = Array.zeroCreate<single> (mesh.Vertices.Count * 16)
@@ -1132,7 +1132,7 @@ module PhysicallyBased =
         (vertexData, indexData, bounds)
 
     /// Create physically-based static geometry from a mesh.
-    let createPhysicallyBasedStaticGeometry (vkcOpt, primitiveTopology, vertexData : single Memory, indexData : int Memory, bounds) =
+    let createPhysicallyBasedStaticGeometry vkcOpt primitiveTopology (vertexData : single Memory) (indexData : int Memory) bounds =
 
         // make buffers
         let (vertices, indices, vertexBuffer, instanceBuffer, indexBuffer) =
@@ -1187,12 +1187,12 @@ module PhysicallyBased =
         geometry
 
     /// Create physically-based static geometry from an assimp mesh.
-    let createPhysicallyBasedStaticGeometryFromMesh (vkcOpt, indexData, mesh : Assimp.Mesh) =
-        match createPhysicallyBasedStaticMesh (indexData, mesh) with
-        | (vertexData, indexData, bounds) -> createPhysicallyBasedStaticGeometry (vkcOpt, VkPrimitiveTopology.TriangleList, vertexData.AsMemory (), indexData.AsMemory (), bounds)
+    let createPhysicallyBasedStaticGeometryFromMesh vkcOpt indexData (mesh : Assimp.Mesh) =
+        match createPhysicallyBasedStaticMesh indexData mesh with
+        | (vertexData, indexData, bounds) -> createPhysicallyBasedStaticGeometry vkcOpt VkPrimitiveTopology.TriangleList (vertexData.AsMemory ()) (indexData.AsMemory ()) bounds
     
     /// Create physically-based animated geometry from a mesh.
-    let createPhysicallyBasedAnimatedGeometry (vkcOpt, primitiveTopology, vertexData : single Memory, indexData : int Memory, bounds) =
+    let createPhysicallyBasedAnimatedGeometry vkcOpt primitiveTopology (vertexData : single Memory) (indexData : int Memory) bounds =
 
         // make buffers
         let (vertices, indices, vertexBuffer, instanceBuffer, indexBuffer) =
@@ -1247,18 +1247,18 @@ module PhysicallyBased =
         geometry
 
     /// Create physically-based animated geometry from an assimp mesh.
-    let createPhysicallyBasedAnimatedGeometryFromMesh (vkcOpt, indexData, mesh : Assimp.Mesh) =
-        match createPhysicallyBasedAnimatedMesh (indexData, mesh) with
-        | (vertexData, indexData, bounds) -> createPhysicallyBasedAnimatedGeometry (vkcOpt, VkPrimitiveTopology.TriangleList, vertexData.AsMemory (), indexData.AsMemory (), bounds)
+    let createPhysicallyBasedAnimatedGeometryFromMesh vkcOpt indexData (mesh : Assimp.Mesh) =
+        match createPhysicallyBasedAnimatedMesh indexData mesh with
+        | (vertexData, indexData, bounds) -> createPhysicallyBasedAnimatedGeometry vkcOpt VkPrimitiveTopology.TriangleList (vertexData.AsMemory ()) (indexData.AsMemory ()) bounds
     
     /// Attempt to create physically-based material from an assimp scene.
     /// Thread-safe if vkcOpt = None.
-    let tryCreatePhysicallyBasedMaterials (vkcOpt, dirPath, defaultMaterial, textureClient, scene : Assimp.Scene) =
+    let tryCreatePhysicallyBasedMaterials vkcOpt dirPath defaultMaterial textureClient (scene : Assimp.Scene) =
         let mutable errorOpt = None
         let propertiesAndMaterials = Array.zeroCreate scene.Materials.Count
         for i in 0 .. dec scene.Materials.Count do
             if Option.isNone errorOpt then
-                let (properties, material) = createPhysicallyBasedMaterial (vkcOpt, dirPath, defaultMaterial, textureClient, scene.Materials.[i])
+                let (properties, material) = createPhysicallyBasedMaterial vkcOpt dirPath defaultMaterial textureClient scene.Materials.[i]
                 propertiesAndMaterials.[i] <- (properties, material)
         match errorOpt with
         | Some error -> Left error
@@ -1266,7 +1266,7 @@ module PhysicallyBased =
 
     /// Create physically-based static geometries from an assimp scene.
     /// OPTIMIZATION: duplicate geometry is detected and deduplicated here, which does have some run-time cost.
-    let createPhysicallyBasedStaticGeometries (vkcOpt, scene : Assimp.Scene) =
+    let createPhysicallyBasedStaticGeometries vkcOpt (scene : Assimp.Scene) =
         let meshAndGeometryLists = Dictionary<int * int * Assimp.BoundingBox, (Assimp.Mesh * PhysicallyBasedGeometry) List> HashIdentity.Structural
         let geometries = SList.make ()
         for i in 0 .. dec scene.Meshes.Count do
@@ -1287,7 +1287,7 @@ module PhysicallyBased =
                         found <- true
             | None -> ()
             if not found then
-                let geometry = createPhysicallyBasedStaticGeometryFromMesh (vkcOpt, indexData, mesh)
+                let geometry = createPhysicallyBasedStaticGeometryFromMesh vkcOpt indexData mesh
                 match meshAndGeometryListOpt with
                 | Some meshesAndGeometries -> meshesAndGeometries.Add (mesh, geometry)
                 | None -> meshAndGeometryLists.[(mesh.VertexCount, mesh.FaceCount, mesh.BoundingBox)] <- List [(mesh, geometry)]
@@ -1296,27 +1296,18 @@ module PhysicallyBased =
 
     /// Create physically-based animated geometries from an assimp scene.
     /// TODO: consider deduplicating geometry like in CreatePhysicallyBasedStaticGeometries?
-    let createPhysicallyBasedAnimatedGeometries (vkcOpt, scene : Assimp.Scene) =
+    let createPhysicallyBasedAnimatedGeometries vkcOpt (scene : Assimp.Scene) =
         let geometries = SList.make ()
         for i in 0 .. dec scene.Meshes.Count do
             let indexDataEntry = scene.Metadata.["IndexData" + string i]
             let indexData = indexDataEntry.Data :?> int array
             let mesh = scene.Meshes.[i]
-            let geometry = createPhysicallyBasedAnimatedGeometryFromMesh (vkcOpt, indexData, mesh)
+            let geometry = createPhysicallyBasedAnimatedGeometryFromMesh vkcOpt indexData mesh
             geometries.Add geometry
         geometries
 
     /// Create a physically-based pipeline.
-    let createPhysicallyBasedPipeline
-        (lightMapsMax,
-         lightsMax,
-         shaderPath,
-         blends,
-         cullModes,
-         vertexBindings,
-         colorAttachmentFormats,
-         depthTestOpt,
-         vkc) =
+    let createPhysicallyBasedPipeline lightMapsMax lightsMax shaderPath blends cullModes vertexBindings colorAttachmentFormats depthTestOpt vkc =
 
         // create set 0 uniform buffers
         let transformUniform = Buffer.create sizeof<Transform> Storage vkc
@@ -1412,7 +1403,7 @@ module PhysicallyBased =
         Pipeline.destroy physicallyBasedPipeline.Pipeline vkc
     
     /// Create a PhysicallyBasedDeferredLightingPipeline.
-    let createPhysicallyBasedDeferredLightingPipeline (lightsMax, colorAttachmentFormat, vkc) =
+    let createPhysicallyBasedDeferredLightingPipeline lightsMax colorAttachmentFormat vkc =
 
         // create uniform buffers
         let shadowMatrixMax = Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels
@@ -1469,14 +1460,14 @@ module PhysicallyBased =
 
     /// Draw a batch of physically-based deferred surfaces.
     let beginPhysicallyBasedDeferredPipeline
-        (view : Matrix4x4,
-         projection : Matrix4x4,
-         viewProjection : Matrix4x4,
-         eyeCenter : Vector3,
-         filteredSampler : Sampler,
-         renderPassIndex : int,
-         pipeline : PhysicallyBasedPipeline,
-         vkc : VulkanContext) =
+        (view : Matrix4x4)
+        (projection : Matrix4x4)
+        (viewProjection : Matrix4x4)
+        (eyeCenter : Vector3)
+        (filteredSampler : Sampler)
+        (renderPassIndex : int)
+        (pipeline : PhysicallyBasedPipeline)
+        (vkc : VulkanContext) =
 
         // specify tranform
         let mutable transformDescriptorSet = Pipeline.specifyDescriptorSet 0 renderPassIndex pipeline.Pipeline vkc $ fun vkSet ->
@@ -1499,18 +1490,18 @@ module PhysicallyBased =
 
     /// Draw a batch of physically-based deferred surfaces.
     let drawPhysicallyBasedDeferredSurfaces
-        (bones : Matrix4x4 array,
-         surfacesCount : int,
-         instanceFields : single array,
-         material : PhysicallyBasedMaterial,
-         geometry : PhysicallyBasedGeometry,
-         viewport : Viewport,
-         colorAttachments : VkImageView array,
-         depthAttachment : Texture,
-         transformDescriptorSet : VkDescriptorSet byref,
-         samplerDescriptorSet : VkDescriptorSet byref,
-         pipeline : PhysicallyBasedPipeline,
-         vkc : VulkanContext) =
+        (bones : Matrix4x4 array)
+        (surfacesCount : int)
+        (instanceFields : single array)
+        (material : PhysicallyBasedMaterial)
+        (geometry : PhysicallyBasedGeometry)
+        (viewport : Viewport)
+        (colorAttachments : VkImageView array)
+        (depthAttachment : Texture)
+        (transformDescriptorSet : VkDescriptorSet)
+        (samplerDescriptorSet : VkDescriptorSet)
+        (pipeline : PhysicallyBasedPipeline)
+        (vkc : VulkanContext) =
 
         // only draw if render area is valid
         let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
@@ -1568,6 +1559,7 @@ module PhysicallyBased =
                     Vulkan.vkCmdBindIndexBuffer (vkc.RenderCommandBuffer, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
 
                     // bind descriptor sets
+                    let mutable (transformDescriptorSet, samplerDescriptorSet) = (transformDescriptorSet, samplerDescriptorSet)
                     Vulkan.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, asPointer &transformDescriptorSet, 0u, nullPtr)
                     Vulkan.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, asPointer &materialDescriptorSet, 0u, nullPtr)
                     Vulkan.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 2u, 1u, asPointer &dynamicDescriptorSet, 0u, nullPtr)
@@ -1590,56 +1582,56 @@ module PhysicallyBased =
 
     /// Begin the process of drawing with a forward pipeline.
     let beginPhysicallyBasedForwardPipeline
-        (view : Matrix4x4,
-         projection : Matrix4x4,
-         viewProjection : Matrix4x4,
-         eyeCenter : Vector3,
-         viewInverse : Matrix4x4,
-         projectionInverse : Matrix4x4,
-         lightCutoffMargin : single,
-         lightAmbientColor : Color,
-         lightAmbientBrightness : single,
-         lightAmbientBoostCutoff : single,
-         lightAmbientBoostScalar : single,
-         lightShadowSamples : int,
-         lightShadowBias : single,
-         lightShadowSampleScalar : single,
-         lightShadowExponent : single,
-         lightShadowDensity : single,
-         fogEnabled : int,
-         fogType : int,
-         fogStart : single,
-         fogFinish : single,
-         fogDensity : single,
-         fogColor : Color,
-         ssvfEnabled : int,
-         ssvfIntensity : single,
-         ssvfSteps : int,
-         ssvfAsymmetry : single,
-         ssrrEnabled : int,
-         ssrrIntensity : single,
-         ssrrDetail : single,
-         ssrrRefinementsMax : int,
-         ssrrRayThickness : single,
-         ssrrDistanceCutoff : single,
-         ssrrDistanceCutoffMargin : single,
-         ssrrEdgeHorizontalMargin : single,
-         ssrrEdgeVerticalMargin : single,
-         depthTexture : Texture,
-         colorTexture : Texture,
-         brdfTexture : Texture,
-         irradianceMap : Texture,
-         environmentFilterMap : Texture,
-         filteredSampler : Sampler,
-         cubeMapSampler : Sampler,
-         shadowSampler : Sampler,
-         colorSampler : Sampler,
-         depthSampler : Sampler,
-         brdfSampler : Sampler,
-         shadowNear : single,
-         renderPassIndex : int,
-         pipeline : PhysicallyBasedPipeline,
-         vkc : VulkanContext) =
+        (view : Matrix4x4)
+        (projection : Matrix4x4)
+        (viewProjection : Matrix4x4)
+        (eyeCenter : Vector3)
+        (viewInverse : Matrix4x4)
+        (projectionInverse : Matrix4x4)
+        (lightCutoffMargin : single)
+        (lightAmbientColor : Color)
+        (lightAmbientBrightness : single)
+        (lightAmbientBoostCutoff : single)
+        (lightAmbientBoostScalar : single)
+        (lightShadowSamples : int)
+        (lightShadowBias : single)
+        (lightShadowSampleScalar : single)
+        (lightShadowExponent : single)
+        (lightShadowDensity : single)
+        (fogEnabled : int)
+        (fogType : int)
+        (fogStart : single)
+        (fogFinish : single)
+        (fogDensity : single)
+        (fogColor : Color)
+        (ssvfEnabled : int)
+        (ssvfIntensity : single)
+        (ssvfSteps : int)
+        (ssvfAsymmetry : single)
+        (ssrrEnabled : int)
+        (ssrrIntensity : single)
+        (ssrrDetail : single)
+        (ssrrRefinementsMax : int)
+        (ssrrRayThickness : single)
+        (ssrrDistanceCutoff : single)
+        (ssrrDistanceCutoffMargin : single)
+        (ssrrEdgeHorizontalMargin : single)
+        (ssrrEdgeVerticalMargin : single)
+        (depthTexture : Texture)
+        (colorTexture : Texture)
+        (brdfTexture : Texture)
+        (irradianceMap : Texture)
+        (environmentFilterMap : Texture)
+        (filteredSampler : Sampler)
+        (cubeMapSampler : Sampler)
+        (shadowSampler : Sampler)
+        (colorSampler : Sampler)
+        (depthSampler : Sampler)
+        (brdfSampler : Sampler)
+        (shadowNear : single)
+        (renderPassIndex : int)
+        (pipeline : PhysicallyBasedPipeline)
+        (vkc : VulkanContext) =
 
         // specify uniforms
         let mutable uniformsDescriptorSet = Pipeline.specifyDescriptorSet 0 renderPassIndex pipeline.Pipeline vkc $ fun vkSet ->
@@ -1715,46 +1707,46 @@ module PhysicallyBased =
 
     /// Draw a batch of physically-based forward surfaces.
     let drawPhysicallyBasedForwardSurfaces
-        (bones : Matrix4x4 array,
-         surfacesCount : int,
-         instanceFields : single array,
-         irradianceMaps : Texture array,
-         environmentFilterMaps : Texture array,
-         shadowTextureArray : Texture,
-         shadowMaps : Texture array,
-         shadowCascades : Texture array,
-         lightMapOrigins : Vector3 array,
-         lightMapMins : Vector3 array,
-         lightMapSizes : Vector3 array,
-         lightMapAmbientColors : Color array,
-         lightMapAmbientBrightnesses : single array,
-         lightMapsCount : int,
-         lightMapSingletonBlendMargin : single,
-         lightOrigins : Vector3 array,
-         lightDirections : Vector3 array,
-         lightColors : Color array,
-         lightBrightnesses : single array,
-         lightAttenuationLinears : single array,
-         lightAttenuationQuadratics : single array,
-         lightCutoffs : single array,
-         lightTypes : int array,
-         lightConeInners : single array,
-         lightConeOuters : single array,
-         lightDesireFogs : int array,
-         lightShadowIndices : int array,
-         lightsCount : int,
-         shadowMatrices : Matrix4x4 array,
-         material : PhysicallyBasedMaterial,
-         geometry : PhysicallyBasedGeometry,
-         depthTest : DepthTest,
-         blending : bool,
-         viewport : Viewport,
-         colorAttachment : Texture,
-         depthAttachment : Texture,
-         uniformsDescriptorSet : VkDescriptorSet byref,
-         samplersDescriptorSet : VkDescriptorSet byref,
-         pipeline : PhysicallyBasedPipeline,
-         vkc : VulkanContext) =
+        (bones : Matrix4x4 array)
+        (surfacesCount : int)
+        (instanceFields : single array)
+        (irradianceMaps : Texture array)
+        (environmentFilterMaps : Texture array)
+        (shadowTextureArray : Texture)
+        (shadowMaps : Texture array)
+        (shadowCascades : Texture array)
+        (lightMapOrigins : Vector3 array)
+        (lightMapMins : Vector3 array)
+        (lightMapSizes : Vector3 array)
+        (lightMapAmbientColors : Color array)
+        (lightMapAmbientBrightnesses : single array)
+        (lightMapsCount : int)
+        (lightMapSingletonBlendMargin : single)
+        (lightOrigins : Vector3 array)
+        (lightDirections : Vector3 array)
+        (lightColors : Color array)
+        (lightBrightnesses : single array)
+        (lightAttenuationLinears : single array)
+        (lightAttenuationQuadratics : single array)
+        (lightCutoffs : single array)
+        (lightTypes : int array)
+        (lightConeInners : single array)
+        (lightConeOuters : single array)
+        (lightDesireFogs : int array)
+        (lightShadowIndices : int array)
+        (lightsCount : int)
+        (shadowMatrices : Matrix4x4 array)
+        (material : PhysicallyBasedMaterial)
+        (geometry : PhysicallyBasedGeometry)
+        (depthTest : DepthTest)
+        (blending : bool)
+        (viewport : Viewport)
+        (colorAttachment : Texture)
+        (depthAttachment : Texture)
+        (uniformsDescriptorSet : VkDescriptorSet)
+        (samplersDescriptorSet : VkDescriptorSet)
+        (pipeline : PhysicallyBasedPipeline)
+        (vkc : VulkanContext) =
         
         // only draw if render area is valid
         let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
@@ -1862,6 +1854,7 @@ module PhysicallyBased =
                 Vulkan.vkCmdBindIndexBuffer (vkc.RenderCommandBuffer, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
 
                 // bind descriptor sets
+                let mutable (uniformsDescriptorSet, samplersDescriptorSet) = (uniformsDescriptorSet, samplersDescriptorSet)
                 Vulkan.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, asPointer &uniformsDescriptorSet, 0u, nullPtr)
                 Vulkan.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, asPointer &materialDescriptorSet, 0u, nullPtr)
                 Vulkan.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 2u, 1u, asPointer &dynamicDescriptorSet, 0u, nullPtr)
@@ -1888,46 +1881,46 @@ module PhysicallyBased =
 
     /// Draw the lighting pass of a deferred physically-based surface.
     let drawPhysicallyBasedDeferredLightingSurface
-        (eyeCenter : Vector3,
-         view : Matrix4x4,
-         viewInverse : Matrix4x4,
-         projection : Matrix4x4,
-         projectionInverse : Matrix4x4,
-         lightCutoffMargin : single,
-         lightShadowSamples : int,
-         lightShadowBias : single,
-         lightShadowSampleScalar : single,
-         lightShadowExponent : single,
-         lightShadowDensity : single,
-         sssEnabled : int,
-         depthTexture : Texture,
-         albedoTexture : Texture,
-         materialTexture : Texture,
-         normalPlusTexture : Texture,
-         subdermalPlusTexture : Texture,
-         scatterPlusTexture : Texture,
-         clearCoatPlusTexture : Texture,
-         shadowTextureArray : Texture,
-         shadowMaps : Texture array,
-         shadowCascades : Texture array,
-         lightOrigins : Vector3 array,
-         lightDirections : Vector3 array,
-         lightColors : Color array,
-         lightBrightnesses : single array,
-         lightAttenuationLinears : single array,
-         lightAttenuationQuadratics : single array,
-         lightCutoffs : single array,
-         lightTypes : int array,
-         lightConeInners : single array,
-         lightConeOuters : single array,
-         lightShadowIndices : int array,
-         lightsCount : int,
-         shadowNear : single,
-         shadowMatrices : single array array,
-         renderPassIndex : int,
-         geometry : PhysicallyBasedGeometry,
-         pipeline : PhysicallyBasedDeferredLightingPipeline,
-         vkc : VulkanContext) =
+        (eyeCenter : Vector3)
+        (view : Matrix4x4)
+        (viewInverse : Matrix4x4)
+        (projection : Matrix4x4)
+        (projectionInverse : Matrix4x4)
+        (lightCutoffMargin : single)
+        (lightShadowSamples : int)
+        (lightShadowBias : single)
+        (lightShadowSampleScalar : single)
+        (lightShadowExponent : single)
+        (lightShadowDensity : single)
+        (sssEnabled : int)
+        (depthTexture : Texture)
+        (albedoTexture : Texture)
+        (materialTexture : Texture)
+        (normalPlusTexture : Texture)
+        (subdermalPlusTexture : Texture)
+        (scatterPlusTexture : Texture)
+        (clearCoatPlusTexture : Texture)
+        (shadowTextureArray : Texture)
+        (shadowMaps : Texture array)
+        (shadowCascades : Texture array)
+        (lightOrigins : Vector3 array)
+        (lightDirections : Vector3 array)
+        (lightColors : Color array)
+        (lightBrightnesses : single array)
+        (lightAttenuationLinears : single array)
+        (lightAttenuationQuadratics : single array)
+        (lightCutoffs : single array)
+        (lightTypes : int array)
+        (lightConeInners : single array)
+        (lightConeOuters : single array)
+        (lightShadowIndices : int array)
+        (lightsCount : int)
+        (shadowNear : single)
+        (shadowMatrices : single array array)
+        (renderPassIndex : int)
+        (geometry : PhysicallyBasedGeometry)
+        (pipeline : PhysicallyBasedDeferredLightingPipeline)
+        (vkc : VulkanContext) =
 
     //    // bind uniforms
     //    let mutable transform = Transform ()
@@ -2025,21 +2018,17 @@ module PhysicallyBased =
         Hl.reportDrawCall 1
 
     /// Destroy physically-based geometry resources.
-    let destroyPhysicallyBasedGeometry (geometry, vkc) =
+    let destroyPhysicallyBasedGeometry geometry vkc =
         Buffer.destroy geometry.VertexBuffer vkc
         Buffer.destroy geometry.InstanceBuffer vkc
         Buffer.destroy geometry.IndexBuffer vkc
 
     /// Destroy physically-based model resources.
-    let destroyPhysicallyBasedModel (model : PhysicallyBasedModel, vkc) =
+    let destroyPhysicallyBasedModel (model : PhysicallyBasedModel) vkc =
         for surface in model.Surfaces do
-            destroyPhysicallyBasedGeometry (surface.PhysicallyBasedGeometry, vkc)
+            destroyPhysicallyBasedGeometry surface.PhysicallyBasedGeometry vkc
 
-    let createPhysicallyBasedPipelines
-        (lightMapsMax,
-         lightsMax,
-         attachments,
-         vkc) =
+    let createPhysicallyBasedPipelines lightMapsMax lightsMax attachments vkc =
 
         // static vertices
         let staticVertices =
@@ -2066,37 +2055,37 @@ module PhysicallyBased =
         let (composition, compositionZ) = attachments.CompositionAttachments
         let deferredStaticPipeline =
             createPhysicallyBasedPipeline
-                (lightMapsMax,
-                 lightsMax,
-                 Constants.Paths.PhysicallyBasedDeferredStaticShaderFilePath,
-                 [|VulkanUnblended|],
-                 [|false; true|],
-                 staticVertices,
-                 [|depth.VkFormat
-                   albedo.VkFormat
-                   material.VkFormat
-                   normalPlus.VkFormat
-                   subdermalPlus.VkFormat
-                   scatterPlus.VkFormat
-                   clearCoatPlus.VkFormat|],
-                 (Some compositionZ.VkFormat),
-                 vkc)
+                lightMapsMax
+                lightsMax
+                Constants.Paths.PhysicallyBasedDeferredStaticShaderFilePath
+                [|VulkanUnblended|]
+                [|false; true|]
+                staticVertices
+                [|depth.VkFormat
+                  albedo.VkFormat
+                  material.VkFormat
+                  normalPlus.VkFormat
+                  subdermalPlus.VkFormat
+                  scatterPlus.VkFormat
+                  clearCoatPlus.VkFormat|]
+                (Some compositionZ.VkFormat)
+                vkc
         
         // create deferred lighting pipeline
-        let deferredLightingPipeline = createPhysicallyBasedDeferredLightingPipeline (lightsMax, [|attachments.LightingAttachment.VkFormat|], vkc)
+        let deferredLightingPipeline = createPhysicallyBasedDeferredLightingPipeline lightsMax [|attachments.LightingAttachment.VkFormat|] vkc
         
         // create forward static pipeline
         let forwardStaticPipeline =
             createPhysicallyBasedPipeline
-                (Constants.Render.LightMapsMaxForward,
-                 Constants.Render.LightsMaxForward,
-                 Constants.Paths.PhysicallyBasedForwardStaticShaderFilePath,
-                 [|VulkanUnblended; VulkanTransparent|],
-                 [|false; true|],
-                 staticVertices,
-                 [|composition.VkFormat|],
-                 (Some compositionZ.VkFormat),
-                 vkc)
+                Constants.Render.LightMapsMaxForward
+                Constants.Render.LightsMaxForward
+                Constants.Paths.PhysicallyBasedForwardStaticShaderFilePath
+                [|VulkanUnblended; VulkanTransparent|]
+                [|false; true|]
+                staticVertices
+                [|composition.VkFormat|]
+                (Some compositionZ.VkFormat)
+                vkc
         
         // create PhysicallyBasedPipelines
         let physicallyBasedPipelines =
@@ -2122,19 +2111,19 @@ type PhysicallyBasedSceneClient () =
 
     /// Attempt to create physically-based model from a model file with assimp.
     /// Thread-safe if vkcOpt = None.
-    member this.TryCreatePhysicallyBasedModel (vkcOpt, filePath, defaultMaterial, textureClient) =
+    member this.TryCreatePhysicallyBasedModel vkcOpt filePath defaultMaterial textureClient =
 
         // attempt to import from assimp scene
         match AssimpContext.TryGetScene filePath with
         | Right scene ->
             let dirPath = PathF.GetDirectoryName filePath
-            match PhysicallyBased.tryCreatePhysicallyBasedMaterials (vkcOpt, dirPath, defaultMaterial, textureClient, scene) with
+            match PhysicallyBased.tryCreatePhysicallyBasedMaterials vkcOpt dirPath defaultMaterial textureClient scene with
             | Right materials ->
                 let animated = scene.Animations.Count <> 0
                 let geometries =
                     if animated
-                    then PhysicallyBased.createPhysicallyBasedAnimatedGeometries (vkcOpt, scene)
-                    else PhysicallyBased.createPhysicallyBasedStaticGeometries (vkcOpt, scene)
+                    then PhysicallyBased.createPhysicallyBasedAnimatedGeometries vkcOpt scene
+                    else PhysicallyBased.createPhysicallyBasedStaticGeometries vkcOpt scene
 
                 // collect light nodes
                 let lightNodes =

@@ -465,7 +465,7 @@ type VulkanRendererImGui
                 if not (assetTextureOpts.ContainsKey assetTag) then
                     match Metadata.tryGetFilePath assetTag with
                     | Some filePath ->
-                        match Hl.tryCreateTextureVulkan (true, false, Hl.inferTextureCompression filePath, filePath, RenderThread, vkc) with
+                        match Hl.tryCreateTextureVulkan true false (Hl.inferTextureCompression filePath) filePath RenderThread vkc with
                         | Right (_, textureParallel) ->
                             let texture = EagerTexture { TextureMetadata = TextureMetadata.empty; TextureParallel = textureParallel }
                             let textureId = textureIdCounter

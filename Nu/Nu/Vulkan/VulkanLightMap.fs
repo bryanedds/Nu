@@ -40,7 +40,7 @@ type [<Struct>] LightMapping =
 module LightMapping =
 
     /// Create a reflection map.
-    let CreateReflectionMap (render, resolution, origin, ambientColor, ambientBrightness, commandBuffer, vkc) =
+    let createReflectionMap render resolution origin ambientColor ambientBrightness commandBuffer vkc =
 
         // create reflection cube map
         let metadata = TextureMetadata.make resolution resolution
@@ -91,8 +91,7 @@ module LightMapping =
 
             // take a snapshot for testing
             // TODO: DJL: implement.
-            //Hl.SaveFramebufferRgbaToBitmap (resolution, resolution, "Reflection." + string reflectionCubeMapId + "." + string i + ".bmp")
-            //Hl.Assert ()
+            //Hl.saveFramebufferRgbaToBitmap resolution resolution ("Reflection." + string reflectionCubeMapId + "." + string i + ".bmp")
 
         // transition cubemap layout
         Hl.recordTransitionLayout true 1 0 6 VkImageAspectFlags.Color ColorAttachmentWrite ShaderRead reflectionCubeMapParallel.Image commandBuffer
@@ -100,7 +99,7 @@ module LightMapping =
         // fin
         reflectionCubeMap
 
-    let createIrradianceMap (invertY, resolution, cubeMapSurface : CubeMapSurface, sampler, colorFormat, irradiancePipeline, commandBuffer, vkc) =
+    let createIrradianceMap invertY resolution (cubeMapSurface : CubeMapSurface) sampler colorFormat irradiancePipeline commandBuffer vkc =
 
         // create irradiance cube map
         let metadata = TextureMetadata.make resolution resolution
@@ -126,11 +125,11 @@ module LightMapping =
             // render face
             let view = views.[i]
             let viewProjection = view * projection
-            CubeMap.drawCubeMap (invertY, view, projection, viewProjection, cubeMapSurface.CubeMap, sampler, cubeMapSurface.CubeMapGeometry, resolution, cubeMap.SubViews.[0, i], irradiancePipeline, commandBuffer, vkc)
+            CubeMap.drawCubeMap invertY view projection viewProjection cubeMapSurface.CubeMap sampler cubeMapSurface.CubeMapGeometry resolution cubeMap.SubViews.[0, i] irradiancePipeline commandBuffer vkc
 
             // take a snapshot for testing
             // TODO: DJL: implement.
-            //Hl.SaveFramebufferRgbaToBitmap (resolution, resolution, "Irradiance." + string cubeMapId + "." + string i + ".bmp")
+            //Hl.saveFramebufferRgbaToBitmap resolution resolution ("Irradiance." + string cubeMapId + "." + string i + ".bmp")
 
         // transition cubemap layout
         Hl.recordTransitionLayout true 1 0 6 VkImageAspectFlags.Color ColorAttachmentWrite ShaderRead cubeMapParallel.Image commandBuffer
@@ -139,7 +138,7 @@ module LightMapping =
         cubeMap
     
     /// Create an EnvironmentFilterPipeline.
-    let createEnvironmentFilterPipeline (shaderPath, colorAttachmentFormat, vkc : VulkanContext) =
+    let createEnvironmentFilterPipeline shaderPath colorAttachmentFormat (vkc : VulkanContext) =
 
         // create uniform buffers
         let transformUniform = Buffer.create sizeof<Transform> Storage vkc
@@ -166,24 +165,24 @@ module LightMapping =
         { TransformUniform = transformUniform; EnvironmentFilterUniform = environmentFilterUniform; Pipeline = pipeline }
     
     /// Destroy an EnvironmentFilterPipeline.
-    let destroyEnvironmentFilterPipeline (environmentFilterPipeline, vkc) =
+    let destroyEnvironmentFilterPipeline environmentFilterPipeline vkc =
         Pipeline.destroy environmentFilterPipeline.Pipeline vkc
     
     /// Draw an environment filter.
     let drawEnvironmentFilter
-        (invertY : bool,
-         view : Matrix4x4,
-         projection : Matrix4x4,
-         viewProjection : Matrix4x4,
-         roughness : single,
-         resolution : single,
-         cubeMap : Texture,
-         sampler : Sampler,
-         geometry : CubeMapGeometry,
-         colorAttachment : VkImageView,
-         pipeline : EnvironmentFilterPipeline,
-         commandBuffer : VkCommandBuffer,
-         vkc : VulkanContext) =
+        (invertY : bool)
+        (view : Matrix4x4)
+        (projection : Matrix4x4)
+        (viewProjection : Matrix4x4)
+        (roughness : single)
+        (resolution : single)
+        (cubeMap : Texture)
+        (sampler : Sampler)
+        (geometry : CubeMapGeometry)
+        (colorAttachment : VkImageView)
+        (pipeline : EnvironmentFilterPipeline)
+        (commandBuffer : VkCommandBuffer)
+        (vkc : VulkanContext) =
 
         // only draw if render area is valid
         let mutable renderArea = VkRect2D (0, 0, uint resolution, uint resolution)
@@ -246,7 +245,7 @@ module LightMapping =
             | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
     
     /// Create an environment filter map.
-    let createEnvironmentFilterMap (invertY, resolution, environmentFilterSurface : CubeMapSurface, sampler, colorFormat, environmentFilterPipeline, commandBuffer, vkc) =
+    let createEnvironmentFilterMap invertY resolution (environmentFilterSurface : CubeMapSurface) sampler colorFormat environmentFilterPipeline commandBuffer vkc =
 
         // create environment filter cube map
         let metadata = TextureMetadata.make resolution resolution
@@ -276,23 +275,23 @@ module LightMapping =
                 let view = views.[i]
                 let viewProjection = view * projection
                 drawEnvironmentFilter
-                    (invertY,
-                     view,
-                     projection,
-                     viewProjection,
-                     mipRoughness,
-                     mipResolution,
-                     environmentFilterSurface.CubeMap,
-                     sampler,
-                     environmentFilterSurface.CubeMapGeometry,
-                     cubeMap.SubViews.[mip, i],
-                     environmentFilterPipeline,
-                     commandBuffer,
-                     vkc)
+                    invertY
+                    view
+                    projection
+                    viewProjection
+                    mipRoughness
+                    mipResolution
+                    environmentFilterSurface.CubeMap
+                    sampler
+                    environmentFilterSurface.CubeMapGeometry
+                    cubeMap.SubViews.[mip, i]
+                    environmentFilterPipeline
+                    commandBuffer
+                    vkc
 
                 // take a snapshot for testing
                 // TODO: DJL: implement.
-                //Hl.SaveFramebufferRgbaToBitmap (int mipResolution, int mipResolution, "EnvironmentFilter." + string i + "." + string mip + ".bmp")
+                //Hl.saveFramebufferRgbaToBitmap (int mipResolution) (int mipResolution) ("EnvironmentFilter." + string i + "." + string mip + ".bmp")
 
         // transition cubemap layout
         Hl.recordTransitionLayout true cubeMapParallel.MipLevels 0 6 VkImageAspectFlags.Color ColorAttachmentWrite ShaderRead cubeMapParallel.Image commandBuffer

@@ -695,15 +695,15 @@ type [<ReferenceEquality>] VulkanRenderer2d =
 
                 // draw contour
                 ContourTessellation.drawContourTessellation
-                    descriptor.Tessellation
-                    descriptor.Transform.Absolute
-                    &viewProjectionClipAbsolute
-                    &viewProjectionClipRelative
-                    &modelViewProjection
-                    &descriptor.ClipOpt
-                    renderer.Viewport
-                    renderer.ContourTessellationPipeline
-                    renderer.VulkanContext
+                    (descriptor.Tessellation,
+                     descriptor.Transform.Absolute,
+                     &viewProjectionClipAbsolute,
+                     &viewProjectionClipRelative,
+                     &modelViewProjection,
+                     &descriptor.ClipOpt,
+                     renderer.Viewport,
+                     renderer.ContourTessellationPipeline,
+                     renderer.VulkanContext)
 
     /// Render text.
     static member renderText

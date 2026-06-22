@@ -262,7 +262,7 @@ type internal BackgroundingResponseState =
     | PresentationTeardownComplete // presentation resources have been destroyed and restoration will commence when app is back in foreground
 
 // TODO: DJL: for mobile devices: https://learn.microsoft.com/en-us/dotnet/standard/native-interop/calling-conventions#when-you-can-omit-the-calling-convention.
-[<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
+[<UnmanagedFunctionPointer (CallingConvention.Cdecl)>]
 type internal DebugDelegate =
     delegate of VkDebugUtilsMessageSeverityFlagsEXT * VkDebugUtilsMessageTypeFlagsEXT * nativeint * nativeint -> uint32
 
@@ -278,7 +278,7 @@ type [<Struct>] internal VkDebugUtilsMessengerCreateInfoEXT_hack =
     val mutable pfnUserCallback : nativeint // "real" nativeint
     val mutable pUserData : nativeint
 
-[<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
+[<UnmanagedFunctionPointer (CallingConvention.Cdecl)>]
 type internal BackgroundingDelegate = delegate of userData : voidptr * event : SDL_Event nativeptr -> SDLBool    
 
 [<RequireQualifiedAccess>]
@@ -368,7 +368,7 @@ module Hl =
         lock TextureIdGenerationLock (fun () -> TextureIdCounter <- inc TextureIdCounter; TextureIdCounter)
 
     /// Check if an image format is supported for attachments, falling back to a standard format where possible.
-    let rec checkAttachmentFormat (vkPhysicalDevice, format : ImageFormat) =
+    let rec checkAttachmentFormat vkPhysicalDevice (format : ImageFormat) =
         if not (ImageFormat.supportsAttachment vkPhysicalDevice format) then
             
             // NOTE: DJL: format fallbacks must not be ints for blit conversion.
@@ -379,7 +379,7 @@ module Hl =
                 | Astc ->
                     Log.fail ("Compressed image formats are not supported for attachment textures.")
                 | Rgb16f ->
-                    checkAttachmentFormat (vkPhysicalDevice, Rgba16f)
+                    checkAttachmentFormat vkPhysicalDevice Rgba16f
                 | Rgba8 (* standard *)
                 | Rgba16f (* standard *)
                 | Rg32f (* standard *)
@@ -388,15 +388,15 @@ module Hl =
                     // NOTE: DJL: for spec requirements, see https://docs.vulkan.org/spec/latest/chapters/formats.html#features-required-format-support.
                     Log.fail ("Vulkan attachment image format '" + scstring format.VkFormat + "' support is absent but required. Further, it's a requirement in the Vulkan specification!")
                 | D32f ->
-                    checkAttachmentFormat (vkPhysicalDevice, D32fs8ui)
+                    checkAttachmentFormat vkPhysicalDevice D32fs8ui
                 | D32fs8ui ->
-                    checkAttachmentFormat (vkPhysicalDevice, D24s8ui)
+                    checkAttachmentFormat vkPhysicalDevice D24s8ui
                 | D24s8ui ->
-                    checkAttachmentFormat (vkPhysicalDevice, X8d24Pack32)
+                    checkAttachmentFormat vkPhysicalDevice X8d24Pack32
                 | X8d24Pack32 ->
-                    checkAttachmentFormat (vkPhysicalDevice, D16)
+                    checkAttachmentFormat vkPhysicalDevice D16
                 | D16 ->
-                    checkAttachmentFormat (vkPhysicalDevice, D16s8ui)
+                    checkAttachmentFormat vkPhysicalDevice D16s8ui
                 | D16s8ui ->
                     Log.fail "Could not find a suitable format for depth attachment textures."
             Log.warn ("Falling back to " + scstring formatFallback.VkFormat + " attachment format due to unavailability of " + scstring format.VkFormat + " attachment format.")
@@ -835,28 +835,3 @@ module Hl =
         match memoryTypeOpt with
         | Some memoryType -> memoryType
         | None -> Log.fail "Failed to find suitable memory type!"
-
-    let areAligned a b =
-        if a = b then true
-        elif a > b then a % b = 0
-        else b % a = 0
-
-    // TODO: DJL: perhaps calculating this stuff manually is a bad idea?
-    let getStride alignment size =
-        if size = 0 then size // just to prevent division by 0; size should be > 0
-        elif alignment = 0 then size
-        elif alignment = size then size
-        elif size > alignment && size % alignment = 0 then size
-        elif alignment % size = 0 then size
-        else (size / alignment + 1) * alignment // stride = lowest multiple of alignment that contains size
-
-    let alignOffset offset alignment =
-        if alignment = 0 then offset // no alignment
-        elif offset = 0 then offset // no offset to align
-        elif areAligned offset alignment then offset // offset already aligned
-        else (offset / alignment + 1) * alignment // offset shifted forward to align
-
-    let getMinimumBufferSize offset alignment size count =
-        let stride = getStride alignment size
-        let offset = alignOffset offset alignment
-        offset + stride * count

@@ -102,7 +102,7 @@ type RendererInline () =
                         let defaultImageTag = AssetTag.make Assets.Default.PackageName Assets.Default.ImageName
                         match Metadata.tryGetFilePath defaultImageTag with
                         | Some filePath ->
-                            match Hl.tryCreateTextureVulkan (true, false, Uncompressed, filePath, RenderThread, vkc) with
+                            match Hl.tryCreateTextureVulkan true false Uncompressed filePath RenderThread vkc with
                             | Right (_, textureParallel) -> textureParallel
                             | Left _ -> TextureParallel.createEmpty vkc
                         | None -> TextureParallel.createEmpty vkc
@@ -368,7 +368,7 @@ type RendererThread () =
             let defaultImageTag = AssetTag.make Assets.Default.PackageName Assets.Default.ImageName
             match Metadata.tryGetFilePath defaultImageTag with
             | Some filePath ->
-                match Hl.tryCreateTextureVulkan (true, false, Uncompressed, filePath, RenderThread, vkc) with
+                match Hl.tryCreateTextureVulkan true false Uncompressed filePath RenderThread vkc with
                 | Right (_, textureParallel) -> textureParallel
                 | Left _ -> TextureParallel.createEmpty vkc
             | None -> TextureParallel.createEmpty vkc

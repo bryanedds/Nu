@@ -84,7 +84,7 @@ module Metadata =
                 Some (TextureMetadata.make image.Width image.Height)
             else
                 Log.infoOnce "Slow path used to load texture metadata."
-                match Hl.tryCreateTextureData (true, filePath) with
+                match Hl.tryCreateTextureData true filePath with
                 | Some textureData ->
                     let metadata = textureData.Metadata
                     textureData.Dispose ()
@@ -156,7 +156,7 @@ module Metadata =
         if File.Exists asset.FilePath then
             let textureClient = TextureClient None // unused. TODO: consider making this opt.
             let sceneClient = PhysicallyBasedSceneClient () // unused. TODO: consider making this opt.
-            match sceneClient.TryCreatePhysicallyBasedModel (None, asset.FilePath, PhysicallyBasedMaterial.empty, textureClient) with
+            match sceneClient.TryCreatePhysicallyBasedModel None asset.FilePath PhysicallyBasedMaterial.empty textureClient with
             | Right model ->
                 if model.Animated
                 then Some (AnimatedModelMetadata model)

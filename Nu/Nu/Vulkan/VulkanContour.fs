@@ -5,6 +5,7 @@
 // See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace Nu.Vulkan
+open System
 open System.Numerics
 open Vortice.Vulkan
 open Prime
@@ -19,7 +20,7 @@ module ContourTessellation =
         // create buffers
         let count = 1024 // TODO: P1: make constant.
         let vertexBuffer = Buffer.create (count * sizeof<ContourVertex>) (Vertex true) vkc
-        let indexBuffer = Buffer.create (count * sizeof<uint32>) (Index true) vkc
+        let indexBuffer = Buffer.create (count * sizeof<uint32>) (BufferType.Index true) vkc
         let modelViewProjectionUniform = Buffer.create sizeof<Matrix4x4> Storage vkc
         
         // create pipeline
@@ -42,15 +43,15 @@ module ContourTessellation =
 
     /// Draw a contour tessellation.
     let drawContourTessellation
-        tessellation
-        (absolute : bool)
-        (viewProjectionClipAbsolute : Matrix4x4 inref)
-        (viewProjectionClipRelative : Matrix4x4 inref)
-        (modelViewProjection : Matrix4x4 inref)
-        (clipOpt : Box2 voption inref)
-        (viewport : Viewport)
-        (vertexBuffer : Buffer, indexBuffer : Buffer, modelViewProjectionUniform : Buffer, pipeline : Pipeline)
-        (vkc : VulkanContext) =
+        (tessellation,
+         absolute : bool,
+         viewProjectionClipAbsolute : Matrix4x4 inref,
+         viewProjectionClipRelative : Matrix4x4 inref,
+         modelViewProjection : Matrix4x4 inref,
+         clipOpt : Box2 voption inref,
+         viewport : Viewport,
+         (vertexBuffer : Nu.Vulkan.Buffer, indexBuffer : Nu.Vulkan.Buffer, modelViewProjectionUniform : Nu.Vulkan.Buffer, pipeline : Pipeline),
+         vkc : VulkanContext) =
             
         // only draw if scissor is valid
         let mutable renderArea = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)
