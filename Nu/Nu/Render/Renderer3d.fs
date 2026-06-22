@@ -5346,14 +5346,14 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         VulkanRenderer3d.invalidateCaches renderer
         match renderAsset with
         | RawAsset -> () // nothing to do
-        | TextureAsset texture -> texture.Destroy renderer.VulkanContext
+        | TextureAsset texture -> Texture.destroy texture renderer.VulkanContext
         | FontAsset (_, font) -> SDL3_ttf.TTF_CloseFont font
         | CubeMapAsset (_, cubeMap, irradianceAndEnvironmentMapOptRef) ->
-            cubeMap.Destroy renderer.VulkanContext
+            Texture.destroy cubeMap renderer.VulkanContext
             match irradianceAndEnvironmentMapOptRef.Value with
             | Some (irradiance, environment) -> 
-                irradiance.Destroy renderer.VulkanContext
-                environment.Destroy renderer.VulkanContext
+                Texture.destroy irradiance renderer.VulkanContext
+                Texture.destroy environment renderer.VulkanContext
             | None -> ()
         | StaticModelAsset (_, model) -> PhysicallyBased.destroyPhysicallyBasedModel model renderer.VulkanContext
         | AnimatedModelAsset model -> PhysicallyBased.destroyPhysicallyBasedModel model renderer.VulkanContext
@@ -6769,28 +6769,28 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             
             CubeMap.destroyCubeMapGeometry renderer.CubeMapGeometry renderer.VulkanContext
             
-            renderer.CubeMap.Destroy renderer.VulkanContext
-            renderer.WhiteTexture.Destroy renderer.VulkanContext
-            renderer.BlackTexture.Destroy renderer.VulkanContext
-            renderer.BrdfTexture.Destroy renderer.VulkanContext
+            Texture.destroy renderer.CubeMap renderer.VulkanContext
+            Texture.destroy renderer.WhiteTexture renderer.VulkanContext
+            Texture.destroy renderer.BlackTexture renderer.VulkanContext
+            Texture.destroy renderer.BrdfTexture renderer.VulkanContext
             
-            renderer.IrradianceMap.Destroy renderer.VulkanContext
-            renderer.EnvironmentFilterMap.Destroy renderer.VulkanContext
+            Texture.destroy renderer.IrradianceMap renderer.VulkanContext
+            Texture.destroy renderer.EnvironmentFilterMap renderer.VulkanContext
             
             // destroy default physically-based material
-            renderer.PhysicallyBasedMaterial.AlbedoTexture.Destroy renderer.VulkanContext
-            renderer.PhysicallyBasedMaterial.RoughnessTexture.Destroy renderer.VulkanContext
-            renderer.PhysicallyBasedMaterial.MetallicTexture.Destroy renderer.VulkanContext
-            renderer.PhysicallyBasedMaterial.AmbientOcclusionTexture.Destroy renderer.VulkanContext
-            renderer.PhysicallyBasedMaterial.EmissionTexture.Destroy renderer.VulkanContext
-            renderer.PhysicallyBasedMaterial.NormalTexture.Destroy renderer.VulkanContext
-            renderer.PhysicallyBasedMaterial.HeightTexture.Destroy renderer.VulkanContext
-            renderer.PhysicallyBasedMaterial.SubdermalTexture.Destroy renderer.VulkanContext
-            renderer.PhysicallyBasedMaterial.FinenessTexture.Destroy renderer.VulkanContext
-            renderer.PhysicallyBasedMaterial.ScatterTexture.Destroy renderer.VulkanContext
-            renderer.PhysicallyBasedMaterial.ClearCoatTexture.Destroy renderer.VulkanContext
-            renderer.PhysicallyBasedMaterial.ClearCoatRoughnessTexture.Destroy renderer.VulkanContext
-            renderer.PhysicallyBasedMaterial.ClearCoatNormalTexture.Destroy renderer.VulkanContext
+            Texture.destroy renderer.PhysicallyBasedMaterial.AlbedoTexture renderer.VulkanContext
+            Texture.destroy renderer.PhysicallyBasedMaterial.RoughnessTexture renderer.VulkanContext
+            Texture.destroy renderer.PhysicallyBasedMaterial.MetallicTexture renderer.VulkanContext
+            Texture.destroy renderer.PhysicallyBasedMaterial.AmbientOcclusionTexture renderer.VulkanContext
+            Texture.destroy renderer.PhysicallyBasedMaterial.EmissionTexture renderer.VulkanContext
+            Texture.destroy renderer.PhysicallyBasedMaterial.NormalTexture renderer.VulkanContext
+            Texture.destroy renderer.PhysicallyBasedMaterial.HeightTexture renderer.VulkanContext
+            Texture.destroy renderer.PhysicallyBasedMaterial.SubdermalTexture renderer.VulkanContext
+            Texture.destroy renderer.PhysicallyBasedMaterial.FinenessTexture renderer.VulkanContext
+            Texture.destroy renderer.PhysicallyBasedMaterial.ScatterTexture renderer.VulkanContext
+            Texture.destroy renderer.PhysicallyBasedMaterial.ClearCoatTexture renderer.VulkanContext
+            Texture.destroy renderer.PhysicallyBasedMaterial.ClearCoatRoughnessTexture renderer.VulkanContext
+            Texture.destroy renderer.PhysicallyBasedMaterial.ClearCoatNormalTexture renderer.VulkanContext
             
             TextureDestroyer.destroy renderer.TextureDestroyer renderer.VulkanContext
             

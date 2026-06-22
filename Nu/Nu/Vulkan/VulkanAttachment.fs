@@ -45,8 +45,8 @@ module Attachment =
 
     /// Destroy general attachments.
     let destroyGeneralAttachments (color : Texture, z : Texture) vkc =
-        color.Destroy vkc
-        z.Destroy vkc
+        Texture.destroy color vkc
+        Texture.destroy z vkc
     
     /// Create shadow texture array attachments.
     let createShadowTextureArrayAttachments shadowResolutionX shadowResolutionY shadowResolutionZ vkc =
@@ -62,8 +62,8 @@ module Attachment =
 
     /// Destroy shadow texture array attachments.
     let destroyShadowTextureArrayAttachments (color : Texture, z : Texture) vkc =
-        color.Destroy vkc
-        z.Destroy vkc
+        Texture.destroy color vkc
+        Texture.destroy z vkc
     
     /// Create shadow map attachments.
     let createShadowMapAttachments shadowResolutionX shadowResolutionY vkc =
@@ -79,8 +79,8 @@ module Attachment =
 
     /// Destroy shadow map attachments.
     let destroyShadowMapAttachments (color : Texture, z : Texture) vkc =
-        color.Destroy vkc
-        z.Destroy vkc
+        Texture.destroy color vkc
+        Texture.destroy z vkc
     
     /// Create shadow cascade array attachments.
     let createShadowCascadeArrayAttachments shadowCascadeResolutionX shadowCascadeResolutionY shadowCascadeLevels vkc =
@@ -99,8 +99,8 @@ module Attachment =
 
     /// Destroy shadow cascade array attachments.
     let destroyShadowCascadeArrayAttachments (color : Texture, z : Texture) vkc =
-        color.Destroy vkc
-        z.Destroy vkc
+        Texture.destroy color vkc
+        Texture.destroy z vkc
     
     /// Create geometry attachments.
     /// TODO: DJL: this z attachment is unused so maybe worth removing.
@@ -138,14 +138,14 @@ module Attachment =
          clearCoatPlus : Texture,
          z : Texture)
         vkc =
-        depth.Destroy vkc
-        albedo.Destroy vkc
-        material.Destroy vkc
-        normalPlus.Destroy vkc
-        subdermalPlus.Destroy vkc
-        scatterPlus.Destroy vkc
-        clearCoatPlus.Destroy vkc
-        z.Destroy vkc
+        Texture.destroy depth vkc
+        Texture.destroy albedo vkc
+        Texture.destroy material vkc
+        Texture.destroy normalPlus vkc
+        Texture.destroy subdermalPlus vkc
+        Texture.destroy scatterPlus vkc
+        Texture.destroy clearCoatPlus vkc
+        Texture.destroy z vkc
     
     /// Create lighting attachment.
     let createLightingAttachment resolutionX resolutionY vkc =
@@ -158,7 +158,7 @@ module Attachment =
 
     /// Destroy lighting attachment.
     let destroyLightingAttachment (lighting : Texture) vkc =
-        lighting.Destroy vkc
+        Texture.destroy lighting vkc
     
     /// Create coloring attachments.
     let createColoringAttachments resolutionX resolutionY vkc =
@@ -174,5 +174,5 @@ module Attachment =
 
     /// Destroy coloring attachments.
     let destroyColoringAttachments (color : Texture, depth : Texture) vkc =
-        color.Destroy vkc
-        depth.Destroy vkc
+        Texture.destroy color vkc
+        Texture.destroy depth vkc

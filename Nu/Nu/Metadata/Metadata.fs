@@ -87,7 +87,7 @@ module Metadata =
                 match Hl.tryCreateTextureData true filePath with
                 | Some textureData ->
                     let metadata = textureData.Metadata
-                    textureData.Dispose ()
+                    TextureData.destroy textureData
                     Some metadata
                 | None ->
                     let errorMessage = "Failed to load texture metadata for '" + filePath + "."

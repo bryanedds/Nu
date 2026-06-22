@@ -217,7 +217,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         VulkanRenderer2d.invalidateCaches renderer
         match renderAsset with
         | RawAsset -> ()
-        | TextureAsset texture -> texture.Destroy renderer.VulkanContext
+        | TextureAsset texture -> Texture.destroy texture renderer.VulkanContext
         | FontAsset (_, font) -> SDL3_ttf.TTF_CloseFont font
         | CubeMapAsset _ -> ()
         | StaticModelAsset _ -> ()
@@ -1083,7 +1083,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             let (_, _, spritePipeline) = renderer.SpritePipeline
             let (textVertexBuffer, textIndexBuffer) = renderer.TextQuad
             let (_, _, _, tessellationPipeline) = renderer.ContourTessellationPipeline
-            for (_, _, _, textTexture) in Seq.map snd renderer.TextTextures.Values do textTexture.Destroy renderer.VulkanContext
+            for (_, _, _, textTexture) in Seq.map snd renderer.TextTextures.Values do Texture.destroy textTexture renderer.VulkanContext
             renderer.TextTextures.Clear ()
             TextureDestroyer.destroy renderer.TextureDestroyer renderer.VulkanContext
             Sampler.destroy renderer.UnfilteredSampler renderer.VulkanContext

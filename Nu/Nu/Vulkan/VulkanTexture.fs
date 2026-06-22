@@ -192,9 +192,9 @@ type TextureData =
             Marshal.Copy (textureDataPtr, bytes, 0, bytes.Length)
             (false, bytes)
     
-    /// Manual disposal.
-    member this.Dispose () =
-        match this with
+    /// Manual destruction.
+    static member destroy data =
+        match data with
         | TextureDataDotNet (_, _) -> ()
         | TextureDataMipmap (_, _, _, _) -> ()
         | TextureDataNative (_, _, disposer) -> disposer.Dispose ()
@@ -830,7 +830,7 @@ module TextureModule2 =
     module Hl =
 
         /// Create a Vulkan texture from existing texture data.
-        /// NOTE: this function will dispose textureData.
+        /// NOTE: this function will destroy textureData.
         let createTextureVulkanFromData mipmaps (compression : TextureCompression) textureData thread vkc =
 
             // upload data to vulkan as appropriate
@@ -884,7 +884,6 @@ module TextureModule2 =
                 (metadata, textureParallel)
 
         /// Attempt to create uploadable texture data from the given file path.
-        /// Don't forget to dispose the last field when finished with the texture data.
         let tryCreateTextureData minimal (filePath : string) =
             if File.Exists filePath then
 
@@ -998,8 +997,8 @@ type [<Struct; NoEquality; NoComparison>] EagerTexture =
         this.TextureParallel.Id
 
     /// Destroy this texture's backing Vulkan texture.
-    member this.Destroy vkc =
-        TextureParallel.destroy this.TextureParallel vkc
+    static member destroy texture vkc =
+        TextureParallel.destroy texture.TextureParallel vkc
 
 /// A texture that can be loaded from another thread.
 type LazyTexture (filePath : string, minimalMetadata : TextureMetadata, minimalTextureParallel : TextureParallel) =
@@ -1059,13 +1058,28 @@ type [<CustomEquality; NoComparison>] Texture =
     | EmptyTexture
     | EagerTexture of EagerTexture
     | LazyTexture of LazyTexture
-    
+
     member private this.TextureParallel =
         match this with
         | EmptyTexture -> TextureParallel.empty
         | EagerTexture eagerTexture -> eagerTexture.TextureParallel
         | LazyTexture lazyTexture -> lazyTexture.TextureParallel
-    
+
+    member this.TextureMetadata =
+        match this with
+        | EmptyTexture -> TextureMetadata.empty
+        | EagerTexture eagerTexture -> eagerTexture.TextureMetadata
+        | LazyTexture lazyTexture -> lazyTexture.TextureMetadata
+
+    member this.Id = this.TextureParallel.Id
+    member this.Image = this.TextureParallel.Image
+    member this.ImageView = this.TextureParallel.ImageView
+    member this.SubViews = this.TextureParallel.SubViews
+    member this.InternalFormat = this.TextureParallel.InternalFormat
+    member this.VkFormat = this.TextureParallel.VkFormat
+    member this.MipLevels = this.TextureParallel.MipLevels_
+    member this.Layers = this.TextureParallel.TextureType_.Layers
+
     static member hash texture =
         match texture with
         | EmptyTexture -> 0
@@ -1087,25 +1101,10 @@ type [<CustomEquality; NoComparison>] Texture =
             | LazyTexture lazyThat -> lazyThis = lazyThat
             | _ -> false
     
-    member this.TextureMetadata =
-        match this with
-        | EmptyTexture -> TextureMetadata.empty
-        | EagerTexture eagerTexture -> eagerTexture.TextureMetadata
-        | LazyTexture lazyTexture -> lazyTexture.TextureMetadata
-    
-    member this.Id = this.TextureParallel.Id
-    member this.Image = this.TextureParallel.Image
-    member this.ImageView = this.TextureParallel.ImageView
-    member this.SubViews = this.TextureParallel.SubViews
-    member this.InternalFormat = this.TextureParallel.InternalFormat
-    member this.VkFormat = this.TextureParallel.VkFormat
-    member this.MipLevels = this.TextureParallel.MipLevels_
-    member this.Layers = this.TextureParallel.TextureType_.Layers
-    
-    member this.Destroy vkc =
-        match this with
+    static member destroy texture vkc =
+        match texture with
         | EmptyTexture -> () // TODO: DJL: protect TextureParallel.empty from premature destruction.
-        | EagerTexture eagerTexture -> eagerTexture.Destroy vkc
+        | EagerTexture eagerTexture -> EagerTexture.destroy eagerTexture vkc
         | LazyTexture lazyTexture -> lazyTexture.Destroy vkc
 
     /// Check that the current texture size is the same as the given size, resizing if necessary. If used, must be called every frame.
@@ -1140,7 +1139,7 @@ type TextureDestroyer =
     /// Destroy all textures from latest finished frame. Must be called before submitting new textures to avoid premature destruction.
     static member beginFrame textureDestroyer vkc =
         for i in 0 .. dec textureDestroyer.Textures_.[Hl.CurrentFrame].Count do
-            textureDestroyer.Textures_.[Hl.CurrentFrame].[i].Destroy vkc
+            Texture.destroy textureDestroyer.Textures_.[Hl.CurrentFrame].[i] vkc
         textureDestroyer.Textures_.[Hl.CurrentFrame].Clear ()
 
     /// Submit texture for destruction once the current frame has finished execution.
@@ -1157,7 +1156,7 @@ type TextureDestroyer =
     static member destroy textureDestroyer vkc =
         for i in 0 .. dec textureDestroyer.Textures_.Length do
             for j in 0 .. dec textureDestroyer.Textures_.[i].Count do
-                textureDestroyer.Textures_.[i].[j].Destroy vkc
+                Texture.destroy textureDestroyer.Textures_.[i].[j] vkc
 
 /// Memoizes and optionally threads texture loads.
 type TextureClient (lazyTextureQueuesOpt : ConcurrentDictionary<_, _> option) =

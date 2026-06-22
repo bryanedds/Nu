@@ -366,7 +366,7 @@ type VulkanRendererImGui
             | ValueSome textureId ->
                 match Dictionary.tryFind textureId assetTextureStorage with
                 | Some texture ->
-                    texture.Destroy vkc
+                    Texture.destroy texture vkc
                     assetTextureStorage.Remove textureId |> ignore<bool>
                 | None -> ()
                 match destroyedTextureIdsOpt with
@@ -610,7 +610,7 @@ type VulkanRendererImGui
             Sampler.destroy fontSampler vkc
             Sampler.destroy assetSampler vkc
             renderer.DestroyAssetTextures None
-            fontTexture.Destroy vkc
+            Texture.destroy fontTexture vkc
             Pipeline.destroy pipeline vkc
 
 /// VulkanRendererImGui functions.

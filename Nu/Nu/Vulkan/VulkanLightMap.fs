@@ -311,5 +311,5 @@ module LightMapping =
 
     /// Destroy a light map, including its irradiance environment filter maps.
     let destroyLightMap lightMap vkc =
-        lightMap.IrradianceMap.Destroy vkc
-        lightMap.EnvironmentFilterMap.Destroy vkc
+        Texture.destroy lightMap.IrradianceMap vkc
+        Texture.destroy lightMap.EnvironmentFilterMap vkc
