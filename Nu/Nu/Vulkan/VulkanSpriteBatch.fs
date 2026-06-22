@@ -48,6 +48,8 @@ type [<Struct>] SpriteBatchState =
         { Absolute = false; ClipOpt = ValueNone; Blend = VulkanTransparent; TextureOpt = ValueNone }
 
 /// The environment that contains the internal state required for batching sprites.
+/// TODO: P1: consider altering the representation of batched vertex data so that all the vertex data can be uploaded
+/// with a single driver call.
 type [<ReferenceEquality>] SpriteBatchEnv =
     private
         { mutable SpriteIndex : int

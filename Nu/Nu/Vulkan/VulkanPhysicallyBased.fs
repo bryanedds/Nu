@@ -1319,7 +1319,7 @@ module PhysicallyBased =
                 
                 // descriptor set 0: per render pass
                 [|Pipeline.descriptorSet<int>
-                    [|Pipeline.descriptor 0 StorageBuffer VertexFragmentStage 1 // transform
+                    [|Pipeline.descriptor 0 StorageBuffer VertexFragmentStage 1 // eye
                       Pipeline.descriptor 1 StorageBuffer FragmentStage 1 // lighting
                       Pipeline.descriptor 2 SampledImage FragmentStage 1 // depthTexture
                       Pipeline.descriptor 3 SampledImage FragmentStage 1 // colorTexture
@@ -1413,7 +1413,7 @@ module PhysicallyBased =
                       Pipeline.attribute 1 Single2 StaticTexCoordsOffset
                       Pipeline.attribute 2 Single3 StaticNormalOffset|]|]
                 [|Pipeline.descriptorSet<int>
-                    [|Pipeline.descriptor 0 StorageBuffer FragmentStage 1 // transform
+                    [|Pipeline.descriptor 0 StorageBuffer FragmentStage 1 // eye
                       Pipeline.descriptor 1 StorageBuffer FragmentStage 1 // lighting
                       Pipeline.descriptor 2 StorageBuffer FragmentStage 1 // light
                       Pipeline.descriptor 3 StorageBuffer FragmentStage 1 // shadowMatrix
@@ -1623,7 +1623,7 @@ module PhysicallyBased =
         // specify uniforms
         let mutable eyeDescriptorSet = Pipeline.specifyDescriptorSet 0 renderPassIndex pipeline.Pipeline vkc $ fun vkSet ->
 
-            // specify transform
+            // specify eye
             let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
             Buffer.uploadValue eye pipeline.EyeUniform vkc
             Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.EyeUniform vkSet vkc
