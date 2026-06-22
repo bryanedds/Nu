@@ -1836,6 +1836,8 @@ module PhysicallyBased =
         (eyeDescriptorSet, samplersDescriptorSet)
 
     /// Draw a batch of physically-based forward surfaces.
+    /// TODO: P1: consider altering the representation of incoming light maps and lights data so that each can be
+    /// uploaded with a single driver call.
     let drawPhysicallyBasedForwardSurfaces
         (bones : Matrix4x4 array)
         (surfacesCount : int)
@@ -1907,7 +1909,8 @@ module PhysicallyBased =
 
                     // specify bones
                     use bonesPin = new ArrayPin<_> (bones)
-                    Buffer.uploadSubdata 0 0 sizeof<Matrix4x4> (min bones.Length Constants.Render.BonesMax) bonesPin.NativeInt pipeline.BoneUniform vkc
+                    let bonesCount = min bones.Length Constants.Render.BonesMax
+                    Buffer.uploadSubdata 0 0 sizeof<Matrix4x4> bonesCount bonesPin.NativeInt pipeline.BoneUniform vkc
                     Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.BoneUniform vkSet vkc
 
                     // specify light maps
@@ -1954,13 +1957,9 @@ module PhysicallyBased =
                     Pipeline.writeDescriptorStorageBuffer 3 0 pipeline.LightUniform vkSet vkc
 
                     // specify shadow matrices
-                    let mutable shadowMatrix = m4Zero
-                    let shadowMatrixPtr = fixed &shadowMatrix
-                    for i in 0 .. dec (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels) do
-                        if i < shadowMatrices.Length
-                        then shadowMatrix <- shadowMatrices.[i]
-                        else shadowMatrix <- Unchecked.defaultof<_>
-                        Buffer.uploadSubdata (i * sizeof<Matrix4x4>) 0 sizeof<Matrix4x4> 1 (NativePtr.toNativeInt shadowMatrixPtr) pipeline.ShadowMatrixUniform vkc
+                    use shadowMatricesPin = new ArrayPin<_> (shadowMatrices)
+                    let shadowMatricesCount = min shadowMatrices.Length (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels)
+                    Buffer.uploadSubdata 0 0 sizeof<Matrix4x4> shadowMatricesCount shadowMatricesPin.NativeInt pipeline.ShadowMatrixUniform vkc
                     Pipeline.writeDescriptorStorageBuffer 4 0 pipeline.ShadowMatrixUniform vkSet vkc
 
                     // specify dynamic environment textures
