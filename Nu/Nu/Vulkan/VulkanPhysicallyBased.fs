@@ -59,7 +59,7 @@ type Lighting2 =
     [<FieldOffset(32)>] val mutable shadowNear : single
 
 [<Struct; StructLayout (LayoutKind.Explicit)>]
-type LightMap =
+type LightMap' =
     [<FieldOffset(0)>] val mutable lightMapOrigins : Vector3
     [<FieldOffset(16)>] val mutable lightMapMins : Vector3
     [<FieldOffset(32)>] val mutable lightMapSizes : Vector3
@@ -1759,7 +1759,7 @@ module PhysicallyBased =
                     Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.BoneUniform vkSet vkc
 
                     // specify light maps
-                    let mutable lightMap = LightMap ()
+                    let mutable lightMap = LightMap' ()
                     use lightMapPtr = fixed &lightMap
                     for i in 0 .. dec Constants.Render.LightMapsMaxForward do
                         if i < lightMapOrigins.Length then

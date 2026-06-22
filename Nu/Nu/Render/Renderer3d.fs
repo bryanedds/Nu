@@ -5180,7 +5180,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           EnvironmentFilterMap : Texture
           PhysicallyBasedMaterial : PhysicallyBasedMaterial
           mutable PhysicallyBasedAttachments : PhysicallyBasedAttachments
-          LightMaps : Dictionary<uint64, LightMapping>
+          LightMaps : Dictionary<uint64, LightMap>
           mutable LightingConfig : Lighting3dConfig
           mutable LightingConfigChanged : bool
           mutable RendererConfig : Renderer3dConfig
@@ -6012,8 +6012,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     match irradianceAndEnvironmentMapsOptRef.Value with
                     | Some irradianceAndEnvironmentMaps -> irradianceAndEnvironmentMaps
                     | None -> (renderer.IrradianceMap, renderer.EnvironmentFilterMap)
-                LightMapping.createLightMap true v3Zero ambientColor ambientBrightness box3Zero irradianceMap environmentFilterMap
-            | None -> LightMapping.createLightMap true v3Zero Color.White 1.0f box3Zero renderer.IrradianceMap renderer.EnvironmentFilterMap
+                LightMap.createLightMap true v3Zero ambientColor ambientBrightness box3Zero irradianceMap environmentFilterMap
+            | None -> LightMap.createLightMap true v3Zero Color.White 1.0f box3Zero renderer.IrradianceMap renderer.EnvironmentFilterMap
         
         // destroy cached light maps whose originating probe no longer exists
         for lightMapKvp in renderer.LightMaps do
@@ -6352,7 +6352,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
                         // render fallback irradiance map
                         let irradianceMap =
-                            LightMapping.createIrradianceMap
+                            LightMap.createIrradianceMap
                                 false
                                 Constants.Render.IrradianceMapResolution
                                 (CubeMapSurface.make cubeMap renderer.CubeMapGeometry)
@@ -6364,7 +6364,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
                         // render fallback env filter map
                         let environmentFilterMap =
-                            LightMapping.createEnvironmentFilterMap
+                            LightMap.createEnvironmentFilterMap
                                 false
                                 Constants.Render.EnvironmentFilterResolution
                                 (CubeMapSurface.make cubeMap renderer.CubeMapGeometry)
@@ -6399,7 +6399,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
                             // create reflection map
                             let reflectionMap =
-                                LightMapping.createReflectionMap
+                                LightMap.createReflectionMap
                                     (VulkanRenderer3d.renderGeometry frustumInterior frustumExterior frustumImposter renderPass (VulkanRenderer3d.getRenderTasks renderPass renderer) renderer)
                                     Constants.Render.ReflectionMapResolution
                                     lightProbeOrigin
@@ -6410,7 +6410,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
                             // create irradiance map
                             let irradianceMap =
-                                LightMapping.createIrradianceMap
+                                LightMap.createIrradianceMap
                                     true // y inverted here because texture produced by drawing is inverted relative to texture uploaded from file
                                     Constants.Render.IrradianceMapResolution
                                     (CubeMapSurface.make reflectionMap renderer.CubeMapGeometry)
@@ -6422,7 +6422,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
                             // create env filter map
                             let environmentFilterMap =
-                                LightMapping.createEnvironmentFilterMap
+                                LightMap.createEnvironmentFilterMap
                                     true // y inverted here because texture produced by drawing is inverted relative to texture uploaded from file
                                     Constants.Render.EnvironmentFilterResolution
                                     (CubeMapSurface.make reflectionMap renderer.CubeMapGeometry)
@@ -6436,7 +6436,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                             TextureDumpster.toss reflectionMap renderer.TextureDumpster
 
                             // create light map
-                            let lightMap = LightMapping.createLightMap lightProbeEnabled lightProbeOrigin lightProbeAmbientColor lightProbeAmbientBrightness lightProbeBounds irradianceMap environmentFilterMap
+                            let lightMap = LightMap.createLightMap lightProbeEnabled lightProbeOrigin lightProbeAmbientColor lightProbeAmbientBrightness lightProbeBounds irradianceMap environmentFilterMap
 
                             // add light map to cache
                             renderer.LightMaps.[lightProbeId] <- lightMap
@@ -6519,7 +6519,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         
         // create environment filter pipeline
         let environmentFilterFormat = Rgba16f
-        let environmentFilterPipeline = LightMapping.createEnvironmentFilterPipeline Constants.Paths.EnvironmentFilterShaderFilePath environmentFilterFormat.VkFormat vkc
+        let environmentFilterPipeline = LightMap.createEnvironmentFilterPipeline Constants.Paths.EnvironmentFilterShaderFilePath environmentFilterFormat.VkFormat vkc
         
         // create physically-based pipelines
         let physicallyBasedPipelines =
@@ -6584,7 +6584,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // create default irradiance map and default environment filter map and set up transiently
         let commandBuffer = Hl.createTransientCommandBuffer vkc.TransientCommandPool vkc.Device
         let irradianceMap =
-            LightMapping.createIrradianceMap
+            LightMap.createIrradianceMap
                 false
                 Constants.Render.IrradianceMapResolution
                 cubeMapSurface
@@ -6594,7 +6594,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 commandBuffer
                 vkc
         let environmentFilterMap =
-            LightMapping.createEnvironmentFilterMap
+            LightMap.createEnvironmentFilterMap
                 false
                 Constants.Render.EnvironmentFilterResolution
                 cubeMapSurface
@@ -6770,7 +6770,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             
             SkyBox.destroySkyBoxPipeline renderer.SkyBoxPipeline renderer.VulkanContext
             CubeMap.destroyCubeMapPipeline renderer.IrradiancePipeline.Pipeline renderer.VulkanContext
-            LightMapping.destroyEnvironmentFilterPipeline renderer.EnvironmentFilterPipeline renderer.VulkanContext
+            LightMap.destroyEnvironmentFilterPipeline renderer.EnvironmentFilterPipeline renderer.VulkanContext
             PhysicallyBased.destroyPhysicallyBasedPipelines renderer.PhysicallyBasedPipelines renderer.VulkanContext
             
             CubeMap.destroyCubeMapGeometry renderer.CubeMapGeometry renderer.VulkanContext
@@ -6802,7 +6802,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             
             PhysicallyBased.destroyPhysicallyBasedAttachments renderer.PhysicallyBasedAttachments renderer.VulkanContext
             
-            for lightMap in renderer.LightMaps.Values do LightMapping.destroyLightMap lightMap renderer.VulkanContext
+            for lightMap in renderer.LightMaps.Values do LightMap.destroyLightMap lightMap renderer.VulkanContext
             renderer.LightMaps.Clear ()
             
             // free assets

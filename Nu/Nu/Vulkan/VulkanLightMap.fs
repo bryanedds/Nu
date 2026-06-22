@@ -21,7 +21,7 @@ type EnvironmentFilterPipeline =
       Pipeline : Pipeline }
 
 /// A collection of maps consisting a light map.
-type [<Struct>] LightMapping =
+type [<Struct>] LightMap =
     { Enabled : bool
       Origin : Vector3
       Bounds : Box3
@@ -31,7 +31,7 @@ type [<Struct>] LightMapping =
       EnvironmentFilterMap : Texture }
 
 [<RequireQualifiedAccess>]
-module LightMapping =
+module LightMap =
 
     /// Create a reflection map.
     let createReflectionMap render resolution origin ambientColor ambientBrightness commandBuffer vkc =
