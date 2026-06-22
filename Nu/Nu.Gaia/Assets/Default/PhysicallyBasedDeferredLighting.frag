@@ -24,7 +24,7 @@ struct Eye
     mat4 viewProjection;
 };
 
-struct Lighting
+struct Lighting2
 {
     float lightCutoffMargin;
     int lightShadowSamples;
@@ -54,7 +54,7 @@ struct Light
 };
 
 layout(set = 0, binding = 0) buffer readonly EyeBlock { Eye eye; };
-layout(set = 0, binding = 1) buffer readonly LightingBlock { Lighting lighting; };
+layout(set = 0, binding = 1) buffer readonly Lighting2Block { Lighting2 lighting; };
 layout(set = 0, binding = 2) buffer readonly LightBlock { Light lights[LIGHTS_MAX]; };
 layout(set = 0, binding = 3) buffer readonly ShadowMatrixBlock { mat4 shadowMatrices[SHADOW_TEXTURES_MAX + SHADOW_CASCADES_MAX * SHADOW_CASCADE_LEVELS]; };
 layout(set = 0, binding = 4) uniform texture2D depthTexture;

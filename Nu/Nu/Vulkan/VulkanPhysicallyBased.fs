@@ -46,6 +46,7 @@ type Lighting =
     [<FieldOffset(144)>] val mutable ssrrEdgeVerticalMargin : single
     [<FieldOffset(148)>] val mutable shadowNear : single
 
+// TODO: P1: see if we can come up with a better alternative name than Lighting2?
 [<Struct; StructLayout (LayoutKind.Explicit)>]
 type Lighting2 =
     [<FieldOffset(0)>] val mutable lightCutoffMargin : single

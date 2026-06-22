@@ -14,11 +14,6 @@ open SDL
 open Prime
 open Nu
 
-module Vulkan =
-
-    let [<Literal>] MaxFramesInFlight = 2
-    let [<Literal>] DescriptorSetCountDefault = 32
-
 [<RequireQualifiedAccess>]
 module Runtime =
 
@@ -54,6 +49,12 @@ module OpenGL =
     let [<Uniform>] GlslVersionPragma = "#version " + string VersionMajor + string VersionMinor + "0" + " core"
     let [<Literal>] TextureImageUnitsRequired = 32
     let [<Uniform>] mutable HlDebug = match ConfigurationManager.AppSettings["HlDebug"] with null -> false | value -> scvalue value
+
+[<RequireQualifiedAccess>]
+module Vulkan =
+
+    let [<Literal>] MaxFramesInFlight = 2
+    let [<Literal>] DescriptorSetCountDefault = 32
 
 [<RequireQualifiedAccess>]
 module ImGui =
