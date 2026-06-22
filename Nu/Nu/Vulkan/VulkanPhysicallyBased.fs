@@ -1179,7 +1179,7 @@ module PhysicallyBased =
     let createPhysicallyBasedStaticGeometryFromMesh indexData (mesh : Assimp.Mesh) vkcOpt =
         match createPhysicallyBasedStaticMesh indexData mesh with
         | (vertexData, indexData, bounds) -> createPhysicallyBasedStaticGeometry VkPrimitiveTopology.TriangleList (vertexData.AsMemory ()) (indexData.AsMemory ()) bounds vkcOpt
-    
+
     /// Create physically-based animated geometry from a mesh.
     let createPhysicallyBasedAnimatedGeometry primitiveTopology (vertexData : single Memory) (indexData : int Memory) bounds vkcOpt =
 
@@ -1239,7 +1239,13 @@ module PhysicallyBased =
     let createPhysicallyBasedAnimatedGeometryFromMesh indexData (mesh : Assimp.Mesh) vkcOpt =
         match createPhysicallyBasedAnimatedMesh indexData mesh with
         | (vertexData, indexData, bounds) -> createPhysicallyBasedAnimatedGeometry VkPrimitiveTopology.TriangleList (vertexData.AsMemory ()) (indexData.AsMemory ()) bounds vkcOpt
-    
+
+    /// Destroy physically-based geometry resources.
+    let destroyPhysicallyBasedGeometry geometry vkc =
+        Buffer.destroy geometry.VertexBuffer vkc
+        Buffer.destroy geometry.InstanceBuffer vkc
+        Buffer.destroy geometry.IndexBuffer vkc
+
     /// Attempt to create physically-based material from an assimp scene.
     /// Thread-safe if vkcOpt = None.
     let tryCreatePhysicallyBasedMaterials dirPath defaultMaterial textureClient (scene : Assimp.Scene) vkcOpt =
@@ -1294,6 +1300,11 @@ module PhysicallyBased =
             let geometry = createPhysicallyBasedAnimatedGeometryFromMesh indexData mesh vkcOpt
             geometries.Add geometry
         geometries
+
+    /// Destroy physically-based model resources.
+    let destroyPhysicallyBasedModel (model : PhysicallyBasedModel) vkc =
+        for surface in model.Surfaces do
+            destroyPhysicallyBasedGeometry surface.PhysicallyBasedGeometry vkc
 
     /// Create a physically-based pipeline.
     let createPhysicallyBasedPipeline lightMapsMax lightsMax shaderPath blends cullModes vertexBindings colorAttachmentFormats depthTestOpt vkc =
@@ -1390,62 +1401,6 @@ module PhysicallyBased =
     /// Destroy PhysicallyBasedPipeline.
     let destroyPhysicallyBasedPipeline (physicallyBasedPipeline : PhysicallyBasedPipeline) vkc =
         Pipeline.destroy physicallyBasedPipeline.Pipeline vkc
-    
-    /// Create a PhysicallyBasedDeferredLightingPipeline.
-    let createPhysicallyBasedDeferredLightingPipeline lightsMax colorAttachmentFormat vkc =
-
-        // create uniform buffers
-        let shadowMatrixMax = Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels
-        let eyeUniform = Buffer.create sizeof<Eye> Storage vkc
-        let lightingUniform = Buffer.create sizeof<Lighting2> Storage vkc
-        let lightUniform = Buffer.create (lightsMax * sizeof<Light>) Storage vkc
-        let shadowMatrixUniform = Buffer.create (shadowMatrixMax * sizeof<Matrix4x4>) Storage vkc
-
-        // create pipeline
-        let pipeline =
-            Pipeline.create
-                Constants.Paths.PhysicallyBasedDeferredLightingShaderFilePath
-                [|VulkanUnblended|] [|false|]
-                [|Pipeline.vertex 0 StaticVertexSize VkVertexInputRate.Vertex
-                    [|Pipeline.attribute 0 Single3 0
-                      Pipeline.attribute 1 Single2 StaticTexCoordsOffset
-                      Pipeline.attribute 2 Single3 StaticNormalOffset|]|]
-                [|Pipeline.descriptorSet<int>
-                    [|Pipeline.descriptor 0 StorageBuffer FragmentStage 1 // eye
-                      Pipeline.descriptor 1 StorageBuffer FragmentStage 1 // lighting
-                      Pipeline.descriptor 2 StorageBuffer FragmentStage 1 // light
-                      Pipeline.descriptor 3 StorageBuffer FragmentStage 1 // shadowMatrix
-                      Pipeline.descriptor 4 SampledImage FragmentStage 1 // depth
-                      Pipeline.descriptor 5 SampledImage FragmentStage 1 // albedo
-                      Pipeline.descriptor 6 SampledImage FragmentStage 1 // material
-                      Pipeline.descriptor 7 SampledImage FragmentStage 1 // normalPlus
-                      Pipeline.descriptor 8 SampledImage FragmentStage 1 // subdermalPlus
-                      Pipeline.descriptor 9 SampledImage FragmentStage 1 // scatterPlus
-                      Pipeline.descriptor 10 SampledImage FragmentStage 1 // clearCoatPlus
-                      Pipeline.descriptor 11 SampledImage FragmentStage 1 // shadowTextures
-                      Pipeline.descriptor 12 SampledImage FragmentStage Constants.Render.ShadowMapsMax // shadowMaps
-                      Pipeline.descriptor 13 SampledImage FragmentStage Constants.Render.ShadowCascadesMax|] // shadowCascades
-                  Pipeline.descriptorSet<Unit>
-                    [|Pipeline.descriptor 0 Sampler FragmentStage 1
-                      Pipeline.descriptor 1 Sampler FragmentStage 1|]|]
-                [||] colorAttachmentFormat None
-                [|eyeUniform; lightingUniform; lightUniform; shadowMatrixUniform|]
-                vkc
-
-        // make PhysicallyBasedDeferredLightingPipeline
-        let physicallyBasedDeferredLightingPipeline =
-            { EyeUniform = eyeUniform
-              LightingUniform = lightingUniform
-              LightUniform = lightUniform
-              ShadowMatrixUniform = shadowMatrixUniform
-              Pipeline = pipeline }
-        
-        // fin
-        physicallyBasedDeferredLightingPipeline
-    
-    /// Destroy PhysicallyBasedDeferredLightingPipeline.
-    let destroyPhysicallyBasedDeferredLightingPipeline (pipeline : PhysicallyBasedDeferredLightingPipeline) vkc =
-        Pipeline.destroy pipeline.Pipeline vkc
 
     /// Draw a batch of physically-based deferred surfaces.
     let beginPhysicallyBasedDeferredPipeline
@@ -1565,6 +1520,205 @@ module PhysicallyBased =
                 // abort
                 | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
 
+    /// End the process of drawing with a deferred pipeline.
+    let endPhysicallyBasedDeferredPipeline (_ : PhysicallyBasedPipeline) =
+        () // nothing to do
+    
+    /// Create a PhysicallyBasedDeferredLightingPipeline.
+    let createPhysicallyBasedDeferredLightingPipeline lightsMax colorAttachmentFormat vkc =
+
+        // create uniform buffers
+        let shadowMatrixMax = Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels
+        let eyeUniform = Buffer.create sizeof<Eye> Storage vkc
+        let lightingUniform = Buffer.create sizeof<Lighting2> Storage vkc
+        let lightUniform = Buffer.create (lightsMax * sizeof<Light>) Storage vkc
+        let shadowMatrixUniform = Buffer.create (shadowMatrixMax * sizeof<Matrix4x4>) Storage vkc
+
+        // create pipeline
+        let pipeline =
+            Pipeline.create
+                Constants.Paths.PhysicallyBasedDeferredLightingShaderFilePath
+                [|VulkanUnblended|] [|false|]
+                [|Pipeline.vertex 0 StaticVertexSize VkVertexInputRate.Vertex
+                    [|Pipeline.attribute 0 Single3 0
+                      Pipeline.attribute 1 Single2 StaticTexCoordsOffset
+                      Pipeline.attribute 2 Single3 StaticNormalOffset|]|]
+                [|Pipeline.descriptorSet<int>
+                    [|Pipeline.descriptor 0 StorageBuffer FragmentStage 1 // eye
+                      Pipeline.descriptor 1 StorageBuffer FragmentStage 1 // lighting
+                      Pipeline.descriptor 2 StorageBuffer FragmentStage 1 // light
+                      Pipeline.descriptor 3 StorageBuffer FragmentStage 1 // shadowMatrix
+                      Pipeline.descriptor 4 SampledImage FragmentStage 1 // depth
+                      Pipeline.descriptor 5 SampledImage FragmentStage 1 // albedo
+                      Pipeline.descriptor 6 SampledImage FragmentStage 1 // material
+                      Pipeline.descriptor 7 SampledImage FragmentStage 1 // normalPlus
+                      Pipeline.descriptor 8 SampledImage FragmentStage 1 // subdermalPlus
+                      Pipeline.descriptor 9 SampledImage FragmentStage 1 // scatterPlus
+                      Pipeline.descriptor 10 SampledImage FragmentStage 1 // clearCoatPlus
+                      Pipeline.descriptor 11 SampledImage FragmentStage 1 // shadowTextures
+                      Pipeline.descriptor 12 SampledImage FragmentStage Constants.Render.ShadowMapsMax // shadowMaps
+                      Pipeline.descriptor 13 SampledImage FragmentStage Constants.Render.ShadowCascadesMax|] // shadowCascades
+                  Pipeline.descriptorSet<Unit>
+                    [|Pipeline.descriptor 0 Sampler FragmentStage 1
+                      Pipeline.descriptor 1 Sampler FragmentStage 1|]|]
+                [||] colorAttachmentFormat None
+                [|eyeUniform; lightingUniform; lightUniform; shadowMatrixUniform|]
+                vkc
+
+        // make PhysicallyBasedDeferredLightingPipeline
+        let physicallyBasedDeferredLightingPipeline =
+            { EyeUniform = eyeUniform
+              LightingUniform = lightingUniform
+              LightUniform = lightUniform
+              ShadowMatrixUniform = shadowMatrixUniform
+              Pipeline = pipeline }
+        
+        // fin
+        physicallyBasedDeferredLightingPipeline
+    
+    /// Destroy PhysicallyBasedDeferredLightingPipeline.
+    let destroyPhysicallyBasedDeferredLightingPipeline (pipeline : PhysicallyBasedDeferredLightingPipeline) vkc =
+        Pipeline.destroy pipeline.Pipeline vkc
+
+    /// Draw the lighting pass of a deferred physically-based surface.
+    let drawPhysicallyBasedDeferredLightingSurface
+        (eyeCenter : Vector3)
+        (view : Matrix4x4)
+        (viewInverse : Matrix4x4)
+        (projection : Matrix4x4)
+        (projectionInverse : Matrix4x4)
+        (viewProjection : Matrix4x4)
+        (lightCutoffMargin : single)
+        (lightShadowSamples : int)
+        (lightShadowBias : single)
+        (lightShadowSampleScalar : single)
+        (lightShadowExponent : single)
+        (lightShadowDensity : single)
+        (sssEnabled : int)
+        (depthTexture : Texture)
+        (albedoTexture : Texture)
+        (materialTexture : Texture)
+        (normalPlusTexture : Texture)
+        (subdermalPlusTexture : Texture)
+        (scatterPlusTexture : Texture)
+        (clearCoatPlusTexture : Texture)
+        (shadowTextureArray : Texture)
+        (shadowMaps : Texture array)
+        (shadowCascades : Texture array)
+        (lightOrigins : Vector3 array)
+        (lightDirections : Vector3 array)
+        (lightColors : Color array)
+        (lightBrightnesses : single array)
+        (lightAttenuationLinears : single array)
+        (lightAttenuationQuadratics : single array)
+        (lightCutoffs : single array)
+        (lightTypes : int array)
+        (lightConeInners : single array)
+        (lightConeOuters : single array)
+        (lightShadowIndices : int array)
+        (lightsCount : int)
+        (shadowNear : single)
+        (shadowMatrices : single array array)
+        (renderPassIndex : int)
+        (geometry : PhysicallyBasedGeometry)
+        (pipeline : PhysicallyBasedDeferredLightingPipeline)
+        (vkc : VulkanContext) =
+
+    //    // bind uniforms
+    //    let mutable transform = Transform ()
+    //    transform.view <- view
+    //    transform.projection <- projection
+    //    transform.viewInverse <- viewInverse
+    //    transform.projectionInverse <- projectionInverse
+    //    transform.eyeCenter <- eyeCenter
+    //    Buffer.uploadValue renderPassIndex 0 0 transform pipeline.TransformUniform vkc
+    //    Pipeline.writeDescriptorStorageBuffer 0 0 renderPassIndex 0 pipeline.TransformUniform.[renderPassIndex] pipeline.Pipeline vkc
+    //    let mutable lighting = Lighting2 ()
+    //    lighting.lightCutoffMargin <- lightCutoffMargin
+    //    lighting.lightShadowSamples <- lightShadowSamples
+    //    lighting.lightShadowBias <- lightShadowBias
+    //    lighting.lightShadowSampleScalar <- lightShadowSampleScalar
+    //    lighting.lightShadowExponent <- lightShadowExponent
+    //    lighting.lightShadowDensity <- lightShadowDensity
+    //    lighting.sssEnabled <- sssEnabled
+    //    lighting.lightsCount <- lightsCount
+    //    lighting.shadowNear <- shadowNear
+    //    Buffer.uploadValue renderPassIndex 0 0 lighting pipeline.LightingUniform vkc
+    //    Pipeline.writeDescriptorStorageBuffer 0 1 renderPassIndex 0 pipeline.LightingUniform.[renderPassIndex] pipeline.Pipeline vkc
+    //
+    //
+    //    Gl.Uniform1 (shader.DepthTextureUniform, 0)
+    //    Gl.Uniform1 (shader.AlbedoTextureUniform, 1)
+    //    Gl.Uniform1 (shader.MaterialTextureUniform, 2)
+    //    Gl.Uniform1 (shader.NormalPlusTextureUniform, 3)
+    //    Gl.Uniform1 (shader.SubdermalPlusTextureUniform, 4)
+    //    Gl.Uniform1 (shader.ScatterPlusTextureUniform, 5)
+    //    Gl.Uniform1 (shader.ClearCoatPlusTextureUniform, 6)
+    //    Gl.Uniform1 (shader.ShadowTexturesUniform, 7)
+    //    for i in 0 .. dec Constants.Render.ShadowMapsMax do
+    //        Gl.Uniform1 (shader.ShadowMapsUniforms[i], i + 8)
+    //    for i in 0 .. dec Constants.Render.ShadowCascadesMax do
+    //        Gl.Uniform1 (shader.ShadowCascadesUniforms[i], i + 8 + Constants.Render.ShadowMapsMax)
+    //    for i in 0 .. dec (min lightOrigins.Length Constants.Render.LightsMaxDeferred) do
+    //        Gl.Uniform3 (shader.LightOriginsUniforms[i], lightOrigins[i].X, lightOrigins[i].Y, lightOrigins[i].Z)
+    //    for i in 0 .. dec (min lightDirections.Length Constants.Render.LightsMaxDeferred) do
+    //        Gl.Uniform3 (shader.LightDirectionsUniforms[i], lightDirections[i].X, lightDirections[i].Y, lightDirections[i].Z)
+    //    for i in 0 .. dec (min lightColors.Length Constants.Render.LightsMaxDeferred) do
+    //        Gl.Uniform3 (shader.LightColorsUniforms[i], lightColors[i].R, lightColors[i].G, lightColors[i].B)
+    //    for i in 0 .. dec (min lightBrightnesses.Length Constants.Render.LightsMaxDeferred) do
+    //        Gl.Uniform1 (shader.LightBrightnessesUniforms[i], lightBrightnesses[i])
+    //    for i in 0 .. dec (min lightAttenuationLinears.Length Constants.Render.LightsMaxDeferred) do
+    //        Gl.Uniform1 (shader.LightAttenuationLinearsUniforms[i], lightAttenuationLinears[i])
+    //    for i in 0 .. dec (min lightAttenuationQuadratics.Length Constants.Render.LightsMaxDeferred) do
+    //        Gl.Uniform1 (shader.LightAttenuationQuadraticsUniforms[i], lightAttenuationQuadratics[i])
+    //    for i in 0 .. dec (min lightCutoffs.Length Constants.Render.LightsMaxDeferred) do
+    //        Gl.Uniform1 (shader.LightCutoffsUniforms[i], lightCutoffs[i])
+    //    for i in 0 .. dec (min lightTypes.Length Constants.Render.LightsMaxDeferred) do
+    //        Gl.Uniform1 (shader.LightTypesUniforms[i], lightTypes[i])
+    //    for i in 0 .. dec (min lightConeInners.Length Constants.Render.LightsMaxDeferred) do
+    //        Gl.Uniform1 (shader.LightConeInnersUniforms[i], lightConeInners[i])
+    //    for i in 0 .. dec (min lightConeOuters.Length Constants.Render.LightsMaxDeferred) do
+    //        Gl.Uniform1 (shader.LightConeOutersUniforms[i], lightConeOuters[i])
+    //    for i in 0 .. dec (min lightShadowIndices.Length Constants.Render.LightsMaxDeferred) do
+    //        Gl.Uniform1 (shader.LightShadowIndicesUniforms[i], lightShadowIndices[i])
+    //    for i in 0 .. dec (min shadowMatrices.Length (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels)) do
+    //        Gl.UniformMatrix4 (shader.ShadowMatricesUniforms[i], false, shadowMatrices[i])
+    //
+    //    // setup textures
+    //    Gl.ActiveTexture TextureUnit.Texture0
+    //    Gl.BindTexture (TextureTarget.Texture2d, depthTexture.TextureId)
+    //    Gl.ActiveTexture TextureUnit.Texture1
+    //    Gl.BindTexture (TextureTarget.Texture2d, albedoTexture.TextureId)
+    //    Gl.ActiveTexture TextureUnit.Texture2
+    //    Gl.BindTexture (TextureTarget.Texture2d, materialTexture.TextureId)
+    //    Gl.ActiveTexture TextureUnit.Texture3
+    //    Gl.BindTexture (TextureTarget.Texture2d, normalPlusTexture.TextureId)
+    //    Gl.ActiveTexture TextureUnit.Texture4
+    //    Gl.BindTexture (TextureTarget.Texture2d, subdermalPlusTexture.TextureId)
+    //    Gl.ActiveTexture TextureUnit.Texture5
+    //    Gl.BindTexture (TextureTarget.Texture2d, scatterPlusTexture.TextureId)
+    //    Gl.ActiveTexture TextureUnit.Texture6
+    //    Gl.BindTexture (TextureTarget.Texture2d, clearCoatPlusTexture.TextureId)
+    //    Gl.ActiveTexture (int TextureUnit.Texture0 + 7 |> Branchless.reinterpret)
+    //    Gl.BindTexture (TextureTarget.Texture2dArray, shadowTextureArray.TextureId)
+    //    for i in 0 .. dec (min shadowMaps.Length Constants.Render.ShadowMapsMax) do
+    //        Gl.ActiveTexture (int TextureUnit.Texture0 + 8 + i |> Branchless.reinterpret)
+    //        Gl.BindTexture (TextureTarget.TextureCubeMap, shadowMaps[i].TextureId)
+    //    for i in 0 .. dec (min shadowCascades.Length Constants.Render.ShadowCascadesMax) do
+    //        Gl.ActiveTexture (int TextureUnit.Texture0 + 8 + i + Constants.Render.ShadowMapsMax |> Branchless.reinterpret)
+    //        Gl.BindTexture (TextureTarget.Texture2dArray, shadowCascades[i].TextureId)
+    //    Hl.Assert ()
+    //
+    //    // setup geometry
+    //    Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, StaticVertexSize)
+    //    Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
+    //    Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
+    //    Hl.Assert ()
+    //
+    //    // draw geometry
+    //    Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
+        Hl.reportDrawCall 1
+
     /// Begin the process of drawing with a forward pipeline.
     let beginPhysicallyBasedForwardPipeline
         (eyeCenter : Vector3)
@@ -1679,10 +1833,6 @@ module PhysicallyBased =
 
         // fin
         (eyeDescriptorSet, samplersDescriptorSet)
-
-    /// End the process of drawing with a deferred pipeline.
-    let endPhysicallyBasedDeferredPipeline (_ : PhysicallyBasedPipeline) =
-        () // nothing to do
 
     /// Draw a batch of physically-based forward surfaces.
     let drawPhysicallyBasedForwardSurfaces
@@ -1862,156 +2012,6 @@ module PhysicallyBased =
     let endPhysicallyBasedForwardPipeline (_ : PhysicallyBasedPipeline) =
         () // nothing to do
 
-    /// Draw the lighting pass of a deferred physically-based surface.
-    let drawPhysicallyBasedDeferredLightingSurface
-        (eyeCenter : Vector3)
-        (view : Matrix4x4)
-        (viewInverse : Matrix4x4)
-        (projection : Matrix4x4)
-        (projectionInverse : Matrix4x4)
-        (viewProjection : Matrix4x4)
-        (lightCutoffMargin : single)
-        (lightShadowSamples : int)
-        (lightShadowBias : single)
-        (lightShadowSampleScalar : single)
-        (lightShadowExponent : single)
-        (lightShadowDensity : single)
-        (sssEnabled : int)
-        (depthTexture : Texture)
-        (albedoTexture : Texture)
-        (materialTexture : Texture)
-        (normalPlusTexture : Texture)
-        (subdermalPlusTexture : Texture)
-        (scatterPlusTexture : Texture)
-        (clearCoatPlusTexture : Texture)
-        (shadowTextureArray : Texture)
-        (shadowMaps : Texture array)
-        (shadowCascades : Texture array)
-        (lightOrigins : Vector3 array)
-        (lightDirections : Vector3 array)
-        (lightColors : Color array)
-        (lightBrightnesses : single array)
-        (lightAttenuationLinears : single array)
-        (lightAttenuationQuadratics : single array)
-        (lightCutoffs : single array)
-        (lightTypes : int array)
-        (lightConeInners : single array)
-        (lightConeOuters : single array)
-        (lightShadowIndices : int array)
-        (lightsCount : int)
-        (shadowNear : single)
-        (shadowMatrices : single array array)
-        (renderPassIndex : int)
-        (geometry : PhysicallyBasedGeometry)
-        (pipeline : PhysicallyBasedDeferredLightingPipeline)
-        (vkc : VulkanContext) =
-
-    //    // bind uniforms
-    //    let mutable transform = Transform ()
-    //    transform.view <- view
-    //    transform.projection <- projection
-    //    transform.viewInverse <- viewInverse
-    //    transform.projectionInverse <- projectionInverse
-    //    transform.eyeCenter <- eyeCenter
-    //    Buffer.uploadValue renderPassIndex 0 0 transform pipeline.TransformUniform vkc
-    //    Pipeline.writeDescriptorStorageBuffer 0 0 renderPassIndex 0 pipeline.TransformUniform.[renderPassIndex] pipeline.Pipeline vkc
-    //    let mutable lighting = Lighting2 ()
-    //    lighting.lightCutoffMargin <- lightCutoffMargin
-    //    lighting.lightShadowSamples <- lightShadowSamples
-    //    lighting.lightShadowBias <- lightShadowBias
-    //    lighting.lightShadowSampleScalar <- lightShadowSampleScalar
-    //    lighting.lightShadowExponent <- lightShadowExponent
-    //    lighting.lightShadowDensity <- lightShadowDensity
-    //    lighting.sssEnabled <- sssEnabled
-    //    lighting.lightsCount <- lightsCount
-    //    lighting.shadowNear <- shadowNear
-    //    Buffer.uploadValue renderPassIndex 0 0 lighting pipeline.LightingUniform vkc
-    //    Pipeline.writeDescriptorStorageBuffer 0 1 renderPassIndex 0 pipeline.LightingUniform.[renderPassIndex] pipeline.Pipeline vkc
-    //
-    //
-    //    Gl.Uniform1 (shader.DepthTextureUniform, 0)
-    //    Gl.Uniform1 (shader.AlbedoTextureUniform, 1)
-    //    Gl.Uniform1 (shader.MaterialTextureUniform, 2)
-    //    Gl.Uniform1 (shader.NormalPlusTextureUniform, 3)
-    //    Gl.Uniform1 (shader.SubdermalPlusTextureUniform, 4)
-    //    Gl.Uniform1 (shader.ScatterPlusTextureUniform, 5)
-    //    Gl.Uniform1 (shader.ClearCoatPlusTextureUniform, 6)
-    //    Gl.Uniform1 (shader.ShadowTexturesUniform, 7)
-    //    for i in 0 .. dec Constants.Render.ShadowMapsMax do
-    //        Gl.Uniform1 (shader.ShadowMapsUniforms[i], i + 8)
-    //    for i in 0 .. dec Constants.Render.ShadowCascadesMax do
-    //        Gl.Uniform1 (shader.ShadowCascadesUniforms[i], i + 8 + Constants.Render.ShadowMapsMax)
-    //    for i in 0 .. dec (min lightOrigins.Length Constants.Render.LightsMaxDeferred) do
-    //        Gl.Uniform3 (shader.LightOriginsUniforms[i], lightOrigins[i].X, lightOrigins[i].Y, lightOrigins[i].Z)
-    //    for i in 0 .. dec (min lightDirections.Length Constants.Render.LightsMaxDeferred) do
-    //        Gl.Uniform3 (shader.LightDirectionsUniforms[i], lightDirections[i].X, lightDirections[i].Y, lightDirections[i].Z)
-    //    for i in 0 .. dec (min lightColors.Length Constants.Render.LightsMaxDeferred) do
-    //        Gl.Uniform3 (shader.LightColorsUniforms[i], lightColors[i].R, lightColors[i].G, lightColors[i].B)
-    //    for i in 0 .. dec (min lightBrightnesses.Length Constants.Render.LightsMaxDeferred) do
-    //        Gl.Uniform1 (shader.LightBrightnessesUniforms[i], lightBrightnesses[i])
-    //    for i in 0 .. dec (min lightAttenuationLinears.Length Constants.Render.LightsMaxDeferred) do
-    //        Gl.Uniform1 (shader.LightAttenuationLinearsUniforms[i], lightAttenuationLinears[i])
-    //    for i in 0 .. dec (min lightAttenuationQuadratics.Length Constants.Render.LightsMaxDeferred) do
-    //        Gl.Uniform1 (shader.LightAttenuationQuadraticsUniforms[i], lightAttenuationQuadratics[i])
-    //    for i in 0 .. dec (min lightCutoffs.Length Constants.Render.LightsMaxDeferred) do
-    //        Gl.Uniform1 (shader.LightCutoffsUniforms[i], lightCutoffs[i])
-    //    for i in 0 .. dec (min lightTypes.Length Constants.Render.LightsMaxDeferred) do
-    //        Gl.Uniform1 (shader.LightTypesUniforms[i], lightTypes[i])
-    //    for i in 0 .. dec (min lightConeInners.Length Constants.Render.LightsMaxDeferred) do
-    //        Gl.Uniform1 (shader.LightConeInnersUniforms[i], lightConeInners[i])
-    //    for i in 0 .. dec (min lightConeOuters.Length Constants.Render.LightsMaxDeferred) do
-    //        Gl.Uniform1 (shader.LightConeOutersUniforms[i], lightConeOuters[i])
-    //    for i in 0 .. dec (min lightShadowIndices.Length Constants.Render.LightsMaxDeferred) do
-    //        Gl.Uniform1 (shader.LightShadowIndicesUniforms[i], lightShadowIndices[i])
-    //    for i in 0 .. dec (min shadowMatrices.Length (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels)) do
-    //        Gl.UniformMatrix4 (shader.ShadowMatricesUniforms[i], false, shadowMatrices[i])
-    //
-    //    // setup textures
-    //    Gl.ActiveTexture TextureUnit.Texture0
-    //    Gl.BindTexture (TextureTarget.Texture2d, depthTexture.TextureId)
-    //    Gl.ActiveTexture TextureUnit.Texture1
-    //    Gl.BindTexture (TextureTarget.Texture2d, albedoTexture.TextureId)
-    //    Gl.ActiveTexture TextureUnit.Texture2
-    //    Gl.BindTexture (TextureTarget.Texture2d, materialTexture.TextureId)
-    //    Gl.ActiveTexture TextureUnit.Texture3
-    //    Gl.BindTexture (TextureTarget.Texture2d, normalPlusTexture.TextureId)
-    //    Gl.ActiveTexture TextureUnit.Texture4
-    //    Gl.BindTexture (TextureTarget.Texture2d, subdermalPlusTexture.TextureId)
-    //    Gl.ActiveTexture TextureUnit.Texture5
-    //    Gl.BindTexture (TextureTarget.Texture2d, scatterPlusTexture.TextureId)
-    //    Gl.ActiveTexture TextureUnit.Texture6
-    //    Gl.BindTexture (TextureTarget.Texture2d, clearCoatPlusTexture.TextureId)
-    //    Gl.ActiveTexture (int TextureUnit.Texture0 + 7 |> Branchless.reinterpret)
-    //    Gl.BindTexture (TextureTarget.Texture2dArray, shadowTextureArray.TextureId)
-    //    for i in 0 .. dec (min shadowMaps.Length Constants.Render.ShadowMapsMax) do
-    //        Gl.ActiveTexture (int TextureUnit.Texture0 + 8 + i |> Branchless.reinterpret)
-    //        Gl.BindTexture (TextureTarget.TextureCubeMap, shadowMaps[i].TextureId)
-    //    for i in 0 .. dec (min shadowCascades.Length Constants.Render.ShadowCascadesMax) do
-    //        Gl.ActiveTexture (int TextureUnit.Texture0 + 8 + i + Constants.Render.ShadowMapsMax |> Branchless.reinterpret)
-    //        Gl.BindTexture (TextureTarget.Texture2dArray, shadowCascades[i].TextureId)
-    //    Hl.Assert ()
-    //
-    //    // setup geometry
-    //    Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, StaticVertexSize)
-    //    Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
-    //    Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
-    //    Hl.Assert ()
-    //
-    //    // draw geometry
-    //    Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
-        Hl.reportDrawCall 1
-
-    /// Destroy physically-based geometry resources.
-    let destroyPhysicallyBasedGeometry geometry vkc =
-        Buffer.destroy geometry.VertexBuffer vkc
-        Buffer.destroy geometry.InstanceBuffer vkc
-        Buffer.destroy geometry.IndexBuffer vkc
-
-    /// Destroy physically-based model resources.
-    let destroyPhysicallyBasedModel (model : PhysicallyBasedModel) vkc =
-        for surface in model.Surfaces do
-            destroyPhysicallyBasedGeometry surface.PhysicallyBasedGeometry vkc
-
     let createPhysicallyBasedPipelines lightMapsMax lightsMax attachments vkc =
 
         // static vertices
@@ -2079,16 +2079,16 @@ module PhysicallyBased =
 
         // fin
         physicallyBasedPipelines
-    
-    let reloadPhysicallyBasedShaders physicallyBasedPipelines vkc =
-        Pipeline.reloadShaders physicallyBasedPipelines.DeferredStaticPipeline.Pipeline vkc
-        Pipeline.reloadShaders physicallyBasedPipelines.DeferredLightingPipeline.Pipeline vkc
-        Pipeline.reloadShaders physicallyBasedPipelines.ForwardStaticPipeline.Pipeline vkc
-    
+
     let destroyPhysicallyBasedPipelines physicallyBasedPipelines vkc =
         destroyPhysicallyBasedPipeline physicallyBasedPipelines.DeferredStaticPipeline vkc
         destroyPhysicallyBasedDeferredLightingPipeline physicallyBasedPipelines.DeferredLightingPipeline vkc
         destroyPhysicallyBasedPipeline physicallyBasedPipelines.ForwardStaticPipeline vkc
+
+    let reloadPhysicallyBasedShaders physicallyBasedPipelines vkc =
+        Pipeline.reloadShaders physicallyBasedPipelines.DeferredStaticPipeline.Pipeline vkc
+        Pipeline.reloadShaders physicallyBasedPipelines.DeferredLightingPipeline.Pipeline vkc
+        Pipeline.reloadShaders physicallyBasedPipelines.ForwardStaticPipeline.Pipeline vkc
 
 /// Memoizes physically-based scene loads.
 type PhysicallyBasedSceneClient () =
