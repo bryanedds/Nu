@@ -59,10 +59,6 @@ type Lighting2 =
     [<FieldOffset(32)>] val mutable shadowNear : single
 
 [<Struct; StructLayout (LayoutKind.Explicit)>]
-type Bone =
-    [<FieldOffset(0)>] val mutable bone : Matrix4x4
-
-[<Struct; StructLayout (LayoutKind.Explicit)>]
 type LightMap =
     [<FieldOffset(0)>] val mutable lightMapOrigins : Vector3
     [<FieldOffset(16)>] val mutable lightMapMins : Vector3
@@ -1307,7 +1303,7 @@ module PhysicallyBased =
         
         // create set 2 uniform buffers
         let shadowMatrixMax = Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels
-        let boneUniform = Buffer.create (Constants.Render.BonesMax * sizeof<Bone>) Storage vkc
+        let boneUniform = Buffer.create (Constants.Render.BonesMax * sizeof<Matrix4x4>) Storage vkc
         let lightMapUniform = Buffer.create (lightMapsMax * sizeof<LightMap>) Storage vkc
         let lightsGeneralUniform = Buffer.create sizeof<LightsGeneral> Storage vkc
         let lightUniform = Buffer.create (lightsMax * sizeof<Light>) Storage vkc
@@ -1526,7 +1522,7 @@ module PhysicallyBased =
                     // specify dynamic
                     let mutable dynamicDescriptorSet = Pipeline.specifyDescriptorSet 2 pipeline.Pipeline.DrawIndex pipeline.Pipeline vkc $ fun vkSet ->
                         use bonesPin = new ArrayPin<_> (bones)
-                        Buffer.uploadSubdata 0 0 sizeof<Bone> (min bones.Length Constants.Render.BonesMax) bonesPin.NativeInt pipeline.BoneUniform vkc
+                        Buffer.uploadSubdata 0 0 sizeof<Matrix4x4> (min bones.Length Constants.Render.BonesMax) bonesPin.NativeInt pipeline.BoneUniform vkc
                         Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.BoneUniform vkSet vkc
 
                     // set up render
@@ -1759,7 +1755,7 @@ module PhysicallyBased =
 
                     // specify bones
                     use bonesPin = new ArrayPin<_> (bones)
-                    Buffer.uploadSubdata 0 0 sizeof<Bone> (min bones.Length Constants.Render.BonesMax) bonesPin.NativeInt pipeline.BoneUniform vkc
+                    Buffer.uploadSubdata 0 0 sizeof<Matrix4x4> (min bones.Length Constants.Render.BonesMax) bonesPin.NativeInt pipeline.BoneUniform vkc
                     Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.BoneUniform vkSet vkc
 
                     // specify light maps
@@ -1772,6 +1768,7 @@ module PhysicallyBased =
                             lightMap.lightMapSizes <- lightMapSizes.[i]
                             lightMap.lightMapAmbientColors <- lightMapAmbientColors.[i].V3
                             lightMap.lightMapAmbientBrightnesses <- lightMapAmbientBrightnesses.[i]
+                        else lightMap <- Unchecked.defaultof<_>
                         Buffer.uploadSubdata (i * sizeof<LightMap>) 0 sizeof<LightMap> 1 (NativePtr.toNativeInt lightMapPtr) pipeline.LightMapUniform vkc
                     Pipeline.writeDescriptorStorageBuffer 1 0 pipeline.LightMapUniform vkSet vkc
 
@@ -1800,6 +1797,7 @@ module PhysicallyBased =
                             light.lightConeOuters <- lightConeOuters.[i]
                             light.lightDesireFogs <- lightDesireFogs.[i]
                             light.lightShadowIndices <- lightShadowIndices.[i]
+                        else light <- Unchecked.defaultof<_>
                         Buffer.uploadSubdata (i * sizeof<Light>) 0 sizeof<Light> 1 (NativePtr.toNativeInt lightPtr) pipeline.LightUniform vkc
                     Pipeline.writeDescriptorStorageBuffer 3 0 pipeline.LightUniform vkSet vkc
 
@@ -1807,7 +1805,9 @@ module PhysicallyBased =
                     let mutable shadowMatrix = m4Zero
                     let shadowMatrixPtr = fixed &shadowMatrix
                     for i in 0 .. dec (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels) do
-                        if i < shadowMatrices.Length then shadowMatrix <- shadowMatrices.[i]
+                        if i < shadowMatrices.Length
+                        then shadowMatrix <- shadowMatrices.[i]
+                        else shadowMatrix <- Unchecked.defaultof<_>
                         Buffer.uploadSubdata (i * sizeof<Matrix4x4>) 0 sizeof<Matrix4x4> 1 (NativePtr.toNativeInt shadowMatrixPtr) pipeline.ShadowMatrixUniform vkc
                     Pipeline.writeDescriptorStorageBuffer 4 0 pipeline.ShadowMatrixUniform vkSet vkc
 
