@@ -1012,6 +1012,19 @@ module PhysicallyBased =
         // fin
         (properties, material)
 
+    /// Attempt to create physically-based material from an assimp scene.
+    /// Thread-safe if vkcOpt = None.
+    let tryCreatePhysicallyBasedMaterials dirPath defaultMaterial textureClient (scene : Assimp.Scene) vkcOpt =
+        let mutable errorOpt = None
+        let propertiesAndMaterials = Array.zeroCreate scene.Materials.Count
+        for i in 0 .. dec scene.Materials.Count do
+            if Option.isNone errorOpt then
+                let (properties, material) = createPhysicallyBasedMaterial dirPath defaultMaterial textureClient scene.Materials.[i] vkcOpt
+                propertiesAndMaterials.[i] <- (properties, material)
+        match errorOpt with
+        | Some error -> Left error
+        | None -> Right propertiesAndMaterials
+
     /// Create physically-based static mesh from an assimp mesh.
     let createPhysicallyBasedStaticMesh indexData (mesh : Assimp.Mesh) =
 
@@ -1240,25 +1253,6 @@ module PhysicallyBased =
         match createPhysicallyBasedAnimatedMesh indexData mesh with
         | (vertexData, indexData, bounds) -> createPhysicallyBasedAnimatedGeometry VkPrimitiveTopology.TriangleList (vertexData.AsMemory ()) (indexData.AsMemory ()) bounds vkcOpt
 
-    /// Destroy physically-based geometry resources.
-    let destroyPhysicallyBasedGeometry geometry vkc =
-        Buffer.destroy geometry.VertexBuffer vkc
-        Buffer.destroy geometry.InstanceBuffer vkc
-        Buffer.destroy geometry.IndexBuffer vkc
-
-    /// Attempt to create physically-based material from an assimp scene.
-    /// Thread-safe if vkcOpt = None.
-    let tryCreatePhysicallyBasedMaterials dirPath defaultMaterial textureClient (scene : Assimp.Scene) vkcOpt =
-        let mutable errorOpt = None
-        let propertiesAndMaterials = Array.zeroCreate scene.Materials.Count
-        for i in 0 .. dec scene.Materials.Count do
-            if Option.isNone errorOpt then
-                let (properties, material) = createPhysicallyBasedMaterial dirPath defaultMaterial textureClient scene.Materials.[i] vkcOpt
-                propertiesAndMaterials.[i] <- (properties, material)
-        match errorOpt with
-        | Some error -> Left error
-        | None -> Right propertiesAndMaterials
-
     /// Create physically-based static geometries from an assimp scene.
     /// OPTIMIZATION: duplicate geometry is detected and deduplicated here, which does have some run-time cost.
     let createPhysicallyBasedStaticGeometries (scene : Assimp.Scene) vkcOpt =
@@ -1301,7 +1295,14 @@ module PhysicallyBased =
             geometries.Add geometry
         geometries
 
+    /// Destroy physically-based geometry resources.
+    let destroyPhysicallyBasedGeometry geometry vkc =
+        Buffer.destroy geometry.VertexBuffer vkc
+        Buffer.destroy geometry.InstanceBuffer vkc
+        Buffer.destroy geometry.IndexBuffer vkc
+
     /// Destroy physically-based model resources.
+    /// NOTE: models are created via a PhysicallyBasedSceneClient instance.
     let destroyPhysicallyBasedModel (model : PhysicallyBasedModel) vkc =
         for surface in model.Surfaces do
             destroyPhysicallyBasedGeometry surface.PhysicallyBasedGeometry vkc
