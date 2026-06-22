@@ -1283,7 +1283,7 @@ module PhysicallyBased =
         geometries
 
     /// Create physically-based animated geometries from an assimp scene.
-    /// TODO: consider deduplicating geometry like in CreatePhysicallyBasedStaticGeometries?
+    /// TODO: consider deduplicating geometry like in createPhysicallyBasedStaticGeometries?
     let createPhysicallyBasedAnimatedGeometries (scene : Assimp.Scene) vkcOpt =
         let geometries = SList.make ()
         for i in 0 .. dec scene.Meshes.Count do

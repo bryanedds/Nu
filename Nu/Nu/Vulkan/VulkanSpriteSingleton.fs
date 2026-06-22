@@ -23,8 +23,8 @@ module SpriteSingleton =
 
     let VertexSize = sizeof<single> * 2
     
-    /// Create a sprite pipeline.
-    let createSpritePipeline (vkc : VulkanContext) =
+    /// Create a sprite singleton pipeline.
+    let createSpriteSingletonPipeline (vkc : VulkanContext) =
 
         // create sprite uniform buffers
         let spriteVertUniform = Buffer.create sizeof<SpriteVert> Storage vkc
@@ -51,7 +51,7 @@ module SpriteSingleton =
         // fin
         (spriteVertUniform, spriteFragUniform, pipeline)
     
-    /// Create a sprite quad for rendering to a pipeline matching the one created with CreateSpritePipeline.
+    /// Create a sprite singleton quad for rendering to this pipeline.
     let createSpriteQuad onlyUpperRightQuadrant vkc =
 
         // build vertex data
@@ -77,8 +77,8 @@ module SpriteSingleton =
         // fin
         (vertexBuffer, indexBuffer)
 
-    /// Draw a sprite whose indices and vertices were created by Vulkan.CreateSpriteQuad and whose uniforms and pipeline match those of CreateSpritePipeline.
-    let drawSprite
+    /// Draw a single sprite.
+    let drawSpriteSingleton
         (vertices : Nu.Vulkan.Buffer,
          indices : Nu.Vulkan.Buffer,
          absolute,

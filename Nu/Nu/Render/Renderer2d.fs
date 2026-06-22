@@ -870,7 +870,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                             let (spriteVertUniform, spriteFragUniform, pipeline) = renderer.SpritePipeline
                             let insetOpt : Box2 voption = ValueNone
                             let color = Color.White
-                            SpriteSingleton.drawSprite
+                            SpriteSingleton.drawSpriteSingleton
                                 (vertices,
                                  indices,
                                  absolute,
@@ -1039,7 +1039,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         let filteredSampler = Sampler.create VkSamplerAddressMode.Repeat VkFilter.Linear VkFilter.Linear true vkc
         
         // create text resources
-        let spriteSingletonPipeline = SpriteSingleton.createSpritePipeline vkc
+        let spriteSingletonPipeline = SpriteSingleton.createSpriteSingletonPipeline vkc
         let textQuad = SpriteSingleton.createSpriteQuad true vkc
         let textureDumpster = TextureDumpster.create ()
 
