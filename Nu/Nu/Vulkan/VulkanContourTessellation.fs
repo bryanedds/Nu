@@ -122,6 +122,3 @@ module ContourTessellation =
 
             // abort
             | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
-
-        // bulk draw limit exceeded
-        else Log.warnOnce "Draw operations aborted because bulk draw limit has been reached. Increase relevant bulk draw limit as necessary for current application."
