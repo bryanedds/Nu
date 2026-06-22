@@ -5,6 +5,7 @@ namespace Nu.Vulkan
 open System
 open System.Numerics
 open System.Runtime.InteropServices
+open Microsoft.FSharp.NativeInterop
 open Vortice.Vulkan
 open Prime
 open Nu
@@ -143,16 +144,16 @@ module SpriteBatch =
                     let mutable uniformDescriptorSet = Pipeline.specifyDescriptorSet 0 env.Pipeline.DrawIndex env.Pipeline env.VulkanContext $ fun vkSet ->
 
                         // specify sprites
+                        let mutable sprite = Sprite ()
+                        use spritePtr = fixed &sprite
                         let spriteSize = sizeof<Sprite>
                         for i in 0 .. dec env.SpriteIndex do
-                            let mutable sprite = Sprite ()
                             sprite.perimeter <- env.Perimeters.[i]
                             sprite.pivot <- env.Pivots.[i]
                             sprite.rotation <- env.Rotations.[i]
                             sprite.texCoords <- env.TexCoordses.[i]
                             sprite.color <- env.Colors.[i]
-                            use spritePin = new ArrayPin<_> ([|sprite|])
-                            Buffer.uploadSubdata (i * spriteSize) 0 spriteSize 1 spritePin.NativeInt env.SpritesUniform env.VulkanContext
+                            Buffer.uploadSubdata (i * spriteSize) 0 spriteSize 1 (NativePtr.toNativeInt spritePtr) env.SpritesUniform env.VulkanContext
                         Pipeline.writeDescriptorStorageBuffer 0 0 env.SpritesUniform vkSet env.VulkanContext
 
                         // specify viewProjection

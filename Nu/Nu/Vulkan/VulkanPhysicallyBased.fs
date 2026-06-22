@@ -8,6 +8,7 @@ open System.IO
 open System.Linq
 open System.Numerics
 open System.Runtime.InteropServices
+open Microsoft.FSharp.NativeInterop
 open Vortice.Vulkan
 open Prime
 open Nu
@@ -1762,16 +1763,16 @@ module PhysicallyBased =
                     Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.BoneUniform vkSet vkc
 
                     // specify light maps
+                    let mutable lightMap = LightMap ()
+                    use lightMapPtr = fixed &lightMap
                     for i in 0 .. dec Constants.Render.LightMapsMaxForward do
-                        let mutable lightMap = LightMap ()
                         if lightMapOrigins.Length > i then
                             lightMap.lightMapOrigins <- lightMapOrigins.[i]
                             lightMap.lightMapMins <- lightMapMins.[i]
                             lightMap.lightMapSizes <- lightMapSizes.[i]
                             lightMap.lightMapAmbientColors <- lightMapAmbientColors.[i].V3
                             lightMap.lightMapAmbientBrightnesses <- lightMapAmbientBrightnesses.[i]
-                        use lightMapPin = new ArrayPin<_> ([|lightMap|])
-                        Buffer.uploadSubdata (i * sizeof<LightMap>) 0 sizeof<LightMap> 1 lightMapPin.NativeInt pipeline.LightMapUniform vkc
+                        Buffer.uploadSubdata (i * sizeof<LightMap>) 0 sizeof<LightMap> 1 (NativePtr.toNativeInt lightMapPtr) pipeline.LightMapUniform vkc
                     Pipeline.writeDescriptorStorageBuffer 1 0 pipeline.LightMapUniform vkSet vkc
 
                     // specify lights general
@@ -1783,8 +1784,9 @@ module PhysicallyBased =
                     Pipeline.writeDescriptorStorageBuffer 2 0 pipeline.LightsGeneralUniform vkSet vkc
                     
                     // specify lights
+                    let mutable light = Light ()
+                    use lightPtr = fixed &light
                     for i in 0 .. dec Constants.Render.LightsMaxForward do
-                        let mutable light = Light ()
                         if lightOrigins.Length < i then
                             light.lightOrigins <- lightOrigins.[i]
                             light.lightDirections <- lightDirections.[i]
@@ -1798,19 +1800,18 @@ module PhysicallyBased =
                             light.lightConeOuters <- lightConeOuters.[i]
                             light.lightDesireFogs <- lightDesireFogs.[i]
                             light.lightShadowIndices <- lightShadowIndices.[i]
-                        use lightPin = new ArrayPin<_> ([|light|])
-                        Buffer.uploadSubdata (i * sizeof<Light>) 0 sizeof<Light> 1 lightPin.NativeInt pipeline.LightUniform vkc
+                        Buffer.uploadSubdata (i * sizeof<Light>) 0 sizeof<Light> 1 (NativePtr.toNativeInt lightPtr) pipeline.LightUniform vkc
                     Pipeline.writeDescriptorStorageBuffer 3 0 pipeline.LightUniform vkSet vkc
 
                     // specify shadow matrices
+                    let mutable shadowMatrix = m4Zero
+                    let shadowMatrixPtr = fixed &shadowMatrix
                     for i in 0 .. dec (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels) do
-                        let mutable shadowMatrix = m4Zero
-                        use shadowMatrixPin = new ArrayPin<_> ([|shadowMatrix|])
                         if shadowMatrices.Length < i then shadowMatrix <- shadowMatrices.[i]
-                        Buffer.uploadSubdata (i * sizeof<Matrix4x4>) 0 sizeof<Matrix4x4> 1 shadowMatrixPin.NativeInt pipeline.ShadowMatrixUniform vkc
+                        Buffer.uploadSubdata (i * sizeof<Matrix4x4>) 0 sizeof<Matrix4x4> 1 (NativePtr.toNativeInt shadowMatrixPtr) pipeline.ShadowMatrixUniform vkc
                     Pipeline.writeDescriptorStorageBuffer 4 0 pipeline.ShadowMatrixUniform vkSet vkc
 
-                    // specify dynamics environment textures
+                    // specify dynamic environment textures
                     Pipeline.writeDescriptorSampledImages 5 0 irradianceMaps vkSet vkc
                     Pipeline.writeDescriptorSampledImages 6 0 environmentFilterMaps vkSet vkc
                     Pipeline.writeDescriptorSampledImage 7 0 shadowTextureArray vkSet vkc

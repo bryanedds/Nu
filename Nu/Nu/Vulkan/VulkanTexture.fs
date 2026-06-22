@@ -768,7 +768,7 @@ type [<CustomEquality; NoComparison>] TextureParallel =
         | AttachmentNone ->
             let uploadSize = ImageFormat.getImageSize metadata.TextureWidth metadata.TextureHeight textureParallel.InternalFormat_
             let stagingBuffer = Buffer.stageData uploadSize pixels vkc
-            textureParallel.Texture.StagingBuffers.Add stagingBuffer    
+            textureParallel.Texture.StagingBuffers.Add stagingBuffer // TODO: P0: make sure this isn't a source of leaks and deal with it if it is!
             Hl.recordBufferToImageCopy commandBuffer metadata.TextureWidth metadata.TextureHeight mipLevel layer stagingBuffer.VkBuffer textureParallel.Image
         | AttachmentColor _
         | AttachmentDepth _ -> Log.warn "Upload not supported for attachment texture."
