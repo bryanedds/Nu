@@ -1524,10 +1524,9 @@ module PhysicallyBased =
 
                     // specify dynamic
                     let mutable dynamicDescriptorSet = Pipeline.specifyDescriptorSet 2 pipeline.Pipeline.DrawIndex pipeline.Pipeline vkc $ fun vkSet ->
-                        //use bonesPin = new ArrayPin<_> (bones)
-                        //Buffer.uploadSubdata 0 0 sizeof<Bone> (min bones.Length Constants.Render.BonesMax) bonesPin.NativeInt pipeline.BoneUniform vkc
-                        //Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.BoneUniform vkSet vkc
-                        ()
+                        use bonesPin = new ArrayPin<_> (bones)
+                        Buffer.uploadSubdata 0 0 sizeof<Bone> (min bones.Length Constants.Render.BonesMax) bonesPin.NativeInt pipeline.BoneUniform vkc
+                        Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.BoneUniform vkSet vkc
 
                     // set up render
                     let mutable rendering = Hl.makeRenderingInfo colorAttachments (Some depthAttachment.ImageView) renderArea None
@@ -1758,9 +1757,9 @@ module PhysicallyBased =
                 let mutable dynamicDescriptorSet = Pipeline.specifyDescriptorSet 2 pipeline.Pipeline.DrawIndex pipeline.Pipeline vkc $ fun vkSet ->
 
                     // specify bones
-                    //use bonesPin = new ArrayPin<_> (bones)
-                    //Buffer.uploadSubdata 0 0 sizeof<Bone> (min bones.Length Constants.Render.BonesMax) bonesPin.NativeInt pipeline.BoneUniform vkc
-                    //Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.BoneUniform vkSet vkc
+                    use bonesPin = new ArrayPin<_> (bones)
+                    Buffer.uploadSubdata 0 0 sizeof<Bone> (min bones.Length Constants.Render.BonesMax) bonesPin.NativeInt pipeline.BoneUniform vkc
+                    Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.BoneUniform vkSet vkc
 
                     // specify light maps
                     for i in 0 .. dec Constants.Render.LightMapsMaxForward do
