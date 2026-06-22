@@ -6,17 +6,6 @@
 
     <Import Project="../../Nu/Nu.Common.targets" />
 
-    <Target Name="BuildGaiaProjects" AfterTargets="BuildNuPipe" BeforeTargets="BeforeBuild">
-        <ItemGroup>
-            <GaiaProject Include="../../Projects/*/*.fsproj" />
-        </ItemGroup>
-        <!-- Supply TargetFrameworks to avoid building mobile target frameworks for desktop Gaia.
-             Using TargetFrameworks (plural) overrides projects with <TargetFrameworks> (e.g. Sand Box 2d),
-             limiting them to only the desktop framework. Projects with <TargetFramework> (singular)
-             will also respect this override. -->
-        <MSBuild Projects="@(GaiaProject)" Targets="Build" BuildInParallel="true" Properties="TargetFrameworks=$(TargetFramework)" />
-    </Target>
-
     <ItemGroup>
         <None Include="Assets\*" />
         <None Include="Assets\*\*" />
@@ -30,6 +19,7 @@
         <None Include="App.config" />
 
         <PackageReference Include="FSharp.Compiler.Service" Version="43.12.204" />
+        <ProjectReference Include="../../Projects/*/*.fsproj" ReferenceOutputAssembly="false" />
     </ItemGroup>
 
 </Project>
