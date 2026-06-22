@@ -5155,7 +5155,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           mutable WindowViewport : Viewport
           LazyTextureQueues : ConcurrentDictionary<LazyTexture ConcurrentQueue, LazyTexture ConcurrentQueue>
           TextureServer : TextureServer
-          TextureDestroyer : TextureDestroyer
+          TextureDumpster : TextureDumpster
           FilteredSampler : Sampler
           CubeMapSampler : Sampler
           GeometrySampler : Sampler
@@ -6019,8 +6019,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // destroy cached light maps whose originating probe no longer exists
         for lightMapKvp in renderer.LightMaps do
             if not (renderTasks.LightProbes.ContainsKey lightMapKvp.Key) then
-                TextureDestroyer.submit lightMapKvp.Value.IrradianceMap renderer.TextureDestroyer
-                TextureDestroyer.submit lightMapKvp.Value.EnvironmentFilterMap renderer.TextureDestroyer
+                TextureDumpster.toss lightMapKvp.Value.IrradianceMap renderer.TextureDumpster
+                TextureDumpster.toss lightMapKvp.Value.EnvironmentFilterMap renderer.TextureDumpster
                 renderer.LightMaps.Remove lightMapKvp.Key |> ignore<bool>
 
         // ensure light maps are synchronized with any light probe changes
@@ -6316,9 +6316,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             VulkanRenderer3d.handleReloadRenderAssets renderer
             renderer.ReloadAssetsRequested <- false
 
-        // begin texture destroyer frame
+        // begin texture dumpster frame
         if renderer.VulkanContext.RenderAllowed then
-            TextureDestroyer.beginFrame renderer.TextureDestroyer renderer.VulkanContext
+            TextureDumpster.beginFrame renderer.TextureDumpster renderer.VulkanContext
 
         // begin render pass index frame
         renderer.RenderPassIndex <- 0
@@ -6390,8 +6390,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                         // destroy any existing light map
                         match renderer.LightMaps.TryGetValue lightProbeId with
                         | (true, lightMap) ->
-                            TextureDestroyer.submit lightMap.IrradianceMap renderer.TextureDestroyer
-                            TextureDestroyer.submit lightMap.EnvironmentFilterMap renderer.TextureDestroyer
+                            TextureDumpster.toss lightMap.IrradianceMap renderer.TextureDumpster
+                            TextureDumpster.toss lightMap.EnvironmentFilterMap renderer.TextureDumpster
                             renderer.LightMaps.Remove lightProbeId |> ignore<bool>
                         | (false, _) -> ()
                             
@@ -6435,7 +6435,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                                     renderer.VulkanContext
 
                             // destroy reflection map
-                            TextureDestroyer.submit reflectionMap renderer.TextureDestroyer
+                            TextureDumpster.toss reflectionMap renderer.TextureDumpster
 
                             // create light map
                             let lightMap = LightMapping.createLightMap lightProbeEnabled lightProbeOrigin lightProbeAmbientColor lightProbeAmbientBrightness lightProbeBounds irradianceMap environmentFilterMap
@@ -6488,8 +6488,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let textureServer = TextureServer (lazyTextureQueues, vkc)
         textureServer.Start ()
         
-        // create texture destroyer
-        let textureDestroyer = TextureDestroyer.create ()
+        // create texture dumpster
+        let textureDumpster = TextureDumpster.create ()
         
         // create samplers
         let filteredSampler = Sampler.create VkSamplerAddressMode.Repeat VkFilter.Linear VkFilter.Linear true vkc
@@ -6701,7 +6701,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               WindowViewport = windowViewport
               LazyTextureQueues = lazyTextureQueues
               TextureServer = textureServer
-              TextureDestroyer = textureDestroyer
+              TextureDumpster = textureDumpster
               FilteredSampler = filteredSampler
               CubeMapSampler = cubeMapSampler
               GeometrySampler = geometrySampler
@@ -6792,7 +6792,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             Texture.destroy renderer.PhysicallyBasedMaterial.ClearCoatRoughnessTexture renderer.VulkanContext
             Texture.destroy renderer.PhysicallyBasedMaterial.ClearCoatNormalTexture renderer.VulkanContext
             
-            TextureDestroyer.destroy renderer.TextureDestroyer renderer.VulkanContext
+            TextureDumpster.destroy renderer.TextureDumpster renderer.VulkanContext
             
             PhysicallyBased.destroyPhysicallyBasedAttachments renderer.PhysicallyBasedAttachments renderer.VulkanContext
             

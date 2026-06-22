@@ -188,7 +188,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         { VulkanContext : VulkanContext
           mutable Viewport : Viewport
           TextQuad : Nu.Vulkan.Buffer * Nu.Vulkan.Buffer
-          TextureDestroyer : TextureDestroyer
+          TextureDumpster : TextureDumpster
           UnfilteredSampler : Sampler
           FilteredSampler : Sampler
           TextTextures : Dictionary<obj, bool ref * (int * int * Matrix4x4 * Texture)>
@@ -957,9 +957,9 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             VulkanRenderer2d.handleReloadRenderAssets renderer
             renderer.ReloadAssetsRequested <- false
 
-        // begin texture destroyer frame
+        // begin texture dumpster frame
         if renderer.VulkanContext.RenderAllowed then
-            TextureDestroyer.beginFrame renderer.TextureDestroyer renderer.VulkanContext
+            TextureDumpster.beginFrame renderer.TextureDumpster renderer.VulkanContext
 
         // begin sprite batch frame
         if renderer.VulkanContext.RenderAllowed then
@@ -1011,7 +1011,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                 |> Seq.toArray
             for entry in textTexturesUnused do
                 let (_, _, _, textTexture) = snd renderer.TextTextures.[entry]
-                TextureDestroyer.submit textTexture renderer.TextureDestroyer
+                TextureDumpster.toss textTexture renderer.TextureDumpster
                 renderer.TextTextures.Remove entry |> ignore<bool>
 
         // mark remaining text textures as unused for next frame
@@ -1041,7 +1041,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         // create text resources
         let spritePipeline = SpriteSingleton.createSpritePipeline vkc
         let textQuad = SpriteSingleton.createSpriteQuad true vkc
-        let textureDestroyer = TextureDestroyer.create ()
+        let textureDumpster = TextureDumpster.create ()
 
         // create sprite batch env
         let spriteBatchEnv = SpriteBatch.createSpriteBatchEnv unfilteredSampler filteredSampler vkc
@@ -1054,7 +1054,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             { VulkanContext = vkc
               Viewport = viewport
               TextQuad = textQuad
-              TextureDestroyer = textureDestroyer
+              TextureDumpster = textureDumpster
               UnfilteredSampler = unfilteredSampler
               FilteredSampler = filteredSampler
               TextTextures = dictPlus HashIdentity.Structural []
@@ -1085,7 +1085,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             let (_, _, _, tessellationPipeline) = renderer.ContourTessellationPipeline
             for (_, _, _, textTexture) in Seq.map snd renderer.TextTextures.Values do Texture.destroy textTexture renderer.VulkanContext
             renderer.TextTextures.Clear ()
-            TextureDestroyer.destroy renderer.TextureDestroyer renderer.VulkanContext
+            TextureDumpster.destroy renderer.TextureDumpster renderer.VulkanContext
             Sampler.destroy renderer.UnfilteredSampler renderer.VulkanContext
             Sampler.destroy renderer.FilteredSampler renderer.VulkanContext
             Pipeline.destroy spritePipeline renderer.VulkanContext

@@ -1131,32 +1131,31 @@ type [<CustomEquality; NoComparison>] Texture =
             Texture.equals this that
 
 /// A container for textures to be destroyed once their frame has executed.
-/// TODO: P0: rename to TextureDisposal?
-type TextureDestroyer =
+type TextureDumpster =
     private
         { Textures_ : Texture List array }
 
-    /// Destroy all textures from latest finished frame. Must be called before submitting new textures to avoid premature destruction.
-    static member beginFrame textureDestroyer vkc =
-        for i in 0 .. dec textureDestroyer.Textures_.[Hl.CurrentFrame].Count do
-            Texture.destroy textureDestroyer.Textures_.[Hl.CurrentFrame].[i] vkc
-        textureDestroyer.Textures_.[Hl.CurrentFrame].Clear ()
-
-    /// Submit texture for destruction once the current frame has finished execution.
-    static member submit texture textureDestroyer =
-        textureDestroyer.Textures_.[Hl.CurrentFrame].Add texture
-
-    /// Create a TextureDestroyer.
+    /// Create a TextureDumpster.
     static member create () =
         let textures = Array.zeroCreate<List<Texture>> Constants.Vulkan.MaxFramesInFlight
         for i in 0 .. dec textures.Length do textures.[i] <- List ()
         { Textures_ = textures }
 
-    /// Destroy a TextureDestroyer.
-    static member destroy textureDestroyer vkc =
-        for i in 0 .. dec textureDestroyer.Textures_.Length do
-            for j in 0 .. dec textureDestroyer.Textures_.[i].Count do
-                Texture.destroy textureDestroyer.Textures_.[i].[j] vkc
+    /// Destroy all textures from latest finished frame. Must be called before submitting new textures to avoid premature destruction.
+    static member beginFrame dumpster vkc =
+        for i in 0 .. dec dumpster.Textures_.[Hl.CurrentFrame].Count do
+            Texture.destroy dumpster.Textures_.[Hl.CurrentFrame].[i] vkc
+        dumpster.Textures_.[Hl.CurrentFrame].Clear ()
+
+    /// Relinquish texture for safe destruction.
+    static member toss texture dumpster =
+        dumpster.Textures_.[Hl.CurrentFrame].Add texture
+
+    /// Destroy a TextureDumpster.
+    static member destroy dumpster vkc =
+        for i in 0 .. dec dumpster.Textures_.Length do
+            for j in 0 .. dec dumpster.Textures_.[i].Count do
+                Texture.destroy dumpster.Textures_.[i].[j] vkc
 
 /// Memoizes and optionally threads texture loads.
 type TextureClient (lazyTextureQueuesOpt : ConcurrentDictionary<_, _> option) =
