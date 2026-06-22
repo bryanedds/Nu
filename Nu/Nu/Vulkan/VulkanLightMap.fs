@@ -125,7 +125,7 @@ module LightMapping =
             // render face
             let view = views.[i]
             let viewProjection = view * projection
-            CubeMap.drawCubeMap invertY view projection viewProjection cubeMapSurface.CubeMap sampler cubeMapSurface.CubeMapGeometry resolution cubeMap.SubViews.[0, i] irradiancePipeline commandBuffer vkc
+            CubeMap.drawCubeMap view projection viewProjection invertY cubeMapSurface.CubeMap sampler cubeMapSurface.CubeMapGeometry resolution cubeMap.SubViews.[0, i] irradiancePipeline commandBuffer vkc
 
             // take a snapshot for testing
             // TODO: DJL: implement.
@@ -170,10 +170,10 @@ module LightMapping =
     
     /// Draw an environment filter.
     let drawEnvironmentFilter
-        (invertY : bool)
         (view : Matrix4x4)
         (projection : Matrix4x4)
         (viewProjection : Matrix4x4)
+        (invertY : bool)
         (roughness : single)
         (resolution : single)
         (cubeMap : Texture)
@@ -275,10 +275,10 @@ module LightMapping =
                 let view = views.[i]
                 let viewProjection = view * projection
                 drawEnvironmentFilter
-                    invertY
                     view
                     projection
                     viewProjection
+                    invertY
                     mipRoughness
                     mipResolution
                     environmentFilterSurface.CubeMap

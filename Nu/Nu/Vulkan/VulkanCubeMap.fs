@@ -270,10 +270,10 @@ module CubeMap =
     
     /// Draw a cube map.
     let drawCubeMap
-        (invertY : bool)
         (view : Matrix4x4)
         (projection : Matrix4x4)
         (viewProjection : Matrix4x4)
+        (invertY : bool)
         (cubeMap : Texture)
         (sampler : Sampler)
         (geometry : CubeMapGeometry)
