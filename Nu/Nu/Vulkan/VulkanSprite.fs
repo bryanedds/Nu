@@ -9,12 +9,12 @@ open Vortice.Vulkan
 open Prime
 open Nu
 
-[<Struct; StructLayout(LayoutKind.Explicit)>]
+[<Struct; StructLayout (LayoutKind.Explicit)>]
 type SpriteVert =
     [<FieldOffset(0)>] val mutable modelViewProjection : Matrix4x4
     [<FieldOffset(64)>] val mutable texCoords4 : Vector4
     
-[<Struct; StructLayout(LayoutKind.Explicit)>]
+[<Struct; StructLayout (LayoutKind.Explicit)>]
 type SpriteFrag =
     [<FieldOffset(0)>] val mutable color : Vector4
 

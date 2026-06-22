@@ -9,7 +9,7 @@ open Vortice.Vulkan
 open Prime
 open Nu
 
-[<Struct; StructLayout(LayoutKind.Explicit)>]
+[<Struct; StructLayout (LayoutKind.Explicit)>]
 type Sprite =
     [<FieldOffset(0)>] val mutable perimeter : Vector4
     [<FieldOffset(16)>] val mutable pivot : Vector2
@@ -17,7 +17,7 @@ type Sprite =
     [<FieldOffset(32)>] val mutable texCoords : Vector4
     [<FieldOffset(48)>] val mutable color : Vector4
     
-[<Struct; StructLayout(LayoutKind.Explicit)>]
+[<Struct; StructLayout (LayoutKind.Explicit)>]
 type ViewProjection =
     [<FieldOffset(0)>] val mutable viewProjection : Matrix4x4
     

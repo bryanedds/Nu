@@ -247,7 +247,7 @@ type DescriptorType =
         | UniformBuffer -> VkDescriptorType.UniformBuffer
         | StorageBuffer -> VkDescriptorType.StorageBuffer
 
-///
+/// The state of the program's OS-provided rendering surface.
 type SurfaceState =
     | SurfaceReady
     | SurfaceLost
@@ -305,6 +305,8 @@ module Hl =
     // which is essential for tracking descriptor writes
     let mutable private TextureIdGenerationLock = obj ()
     let mutable private TextureIdCounter = 0UL
+    
+    let mutable internal DebugDelegate : DebugDelegate = null
     
     /// Index of the current Swapchain image.
     let mutable internal ImageIndex = 0u

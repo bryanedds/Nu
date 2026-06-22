@@ -1066,7 +1066,6 @@ type [<CustomEquality; NoComparison>] Texture =
         | EagerTexture eagerTexture -> eagerTexture.TextureParallel
         | LazyTexture lazyTexture -> lazyTexture.TextureParallel
     
-    // TODO: DJL: review use of resource specific and therefore mutable texture id for hash and equals.
     static member hash texture =
         match texture with
         | EmptyTexture -> 0

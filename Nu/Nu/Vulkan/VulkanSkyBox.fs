@@ -9,13 +9,13 @@ open Vortice.Vulkan
 open Prime
 open Nu
 
-[<Struct; StructLayout(LayoutKind.Explicit)>]
+[<Struct; StructLayout (LayoutKind.Explicit)>]
 type SkyBoxVert =
     [<FieldOffset(0)>] val mutable view : Matrix4x4
     [<FieldOffset(64)>] val mutable projection : Matrix4x4
     [<FieldOffset(128)>] val mutable viewProjection : Matrix4x4
 
-[<Struct; StructLayout(LayoutKind.Explicit)>]
+[<Struct; StructLayout (LayoutKind.Explicit)>]
 type SkyBoxFrag =
     [<FieldOffset(0)>] val mutable color : Vector3
     [<FieldOffset(12)>] val mutable brightness : single

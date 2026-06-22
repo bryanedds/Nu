@@ -9,13 +9,13 @@ open Vortice.Vulkan
 open Prime
 open Nu
     
-[<Struct; StructLayout(LayoutKind.Explicit)>]
+[<Struct; StructLayout (LayoutKind.Explicit)>]
 type LightMapTransform =
     [<FieldOffset(0)>] val mutable view : Matrix4x4
     [<FieldOffset(64)>] val mutable projection : Matrix4x4
     [<FieldOffset(128)>] val mutable viewProjection : Matrix4x4
 
-[<Struct; StructLayout(LayoutKind.Explicit)>]
+[<Struct; StructLayout (LayoutKind.Explicit)>]
 type EnvironmentFilter =
     [<FieldOffset(0)>] val mutable roughness : single
     [<FieldOffset(4)>] val mutable resolution : single

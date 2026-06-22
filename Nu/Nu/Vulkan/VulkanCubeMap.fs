@@ -11,7 +11,7 @@ open Vortice.Vulkan
 open Prime
 open Nu
 
-[<Struct; StructLayout(LayoutKind.Explicit)>]
+[<Struct; StructLayout (LayoutKind.Explicit)>]
 type CubeMapTransform =
     [<FieldOffset(0)>] val mutable view : Matrix4x4
     [<FieldOffset(64)>] val mutable projection : Matrix4x4

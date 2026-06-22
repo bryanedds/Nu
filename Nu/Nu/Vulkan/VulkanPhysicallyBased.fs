@@ -12,7 +12,7 @@ open Vortice.Vulkan
 open Prime
 open Nu
 
-[<Struct; StructLayout(LayoutKind.Explicit)>]
+[<Struct; StructLayout (LayoutKind.Explicit)>]
 type PhysicallyBasedTransform =
     [<FieldOffset(0)>] val mutable view : Matrix4x4
     [<FieldOffset(64)>] val mutable projection : Matrix4x4
@@ -21,7 +21,7 @@ type PhysicallyBasedTransform =
     [<FieldOffset(256)>] val mutable projectionInverse : Matrix4x4
     [<FieldOffset(320)>] val mutable eyeCenter : Vector3
 
-[<Struct; StructLayout(LayoutKind.Explicit)>]
+[<Struct; StructLayout (LayoutKind.Explicit)>]
 type Lighting =
     [<FieldOffset(0)>] val mutable lightCutoffMargin : single
     [<FieldOffset(16)>] val mutable lightAmbientColor : Vector3
@@ -54,7 +54,7 @@ type Lighting =
     [<FieldOffset(144)>] val mutable ssrrEdgeVerticalMargin : single
     [<FieldOffset(148)>] val mutable shadowNear : single
 
-[<Struct; StructLayout(LayoutKind.Explicit)>]
+[<Struct; StructLayout (LayoutKind.Explicit)>]
 type Lighting2 =
     [<FieldOffset(0)>] val mutable lightCutoffMargin : single
     [<FieldOffset(4)>] val mutable lightShadowSamples : int
@@ -66,11 +66,11 @@ type Lighting2 =
     [<FieldOffset(28)>] val mutable lightsCount : int
     [<FieldOffset(32)>] val mutable shadowNear : single
 
-[<Struct; StructLayout(LayoutKind.Explicit)>]
+[<Struct; StructLayout (LayoutKind.Explicit)>]
 type Bone =
     [<FieldOffset(0)>] val mutable bone : Matrix4x4
 
-[<Struct; StructLayout(LayoutKind.Explicit)>]
+[<Struct; StructLayout (LayoutKind.Explicit)>]
 type LightMap =
     [<FieldOffset(0)>] val mutable lightMapOrigins : Vector3
     [<FieldOffset(16)>] val mutable lightMapMins : Vector3
@@ -78,13 +78,13 @@ type LightMap =
     [<FieldOffset(48)>] val mutable lightMapAmbientColors : Vector3
     [<FieldOffset(60)>] val mutable lightMapAmbientBrightnesses : single
 
-[<Struct; StructLayout(LayoutKind.Explicit)>]
+[<Struct; StructLayout (LayoutKind.Explicit)>]
 type LightsGeneral =
     [<FieldOffset(0)>] val mutable lightMapsCount : int
     [<FieldOffset(4)>] val mutable lightMapSingletonBlendMargin : single
     [<FieldOffset(8)>] val mutable lightsCount : int
 
-[<Struct; StructLayout(LayoutKind.Explicit)>]
+[<Struct; StructLayout (LayoutKind.Explicit)>]
 type Light =
     [<FieldOffset(0)>] val mutable lightOrigins : Vector3
     [<FieldOffset(16)>] val mutable lightDirections : Vector3

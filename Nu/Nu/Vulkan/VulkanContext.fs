@@ -603,8 +603,6 @@ type [<ReferenceEquality>] VulkanContext =
     /// The swap format.
     member this.SwapFormat = this.Swapchain_.SurfaceFormat_.format
 
-    static let mutable debugDelegate : DebugDelegate = null
-    
     static member private debugCallback
         (messageSeverity : VkDebugUtilsMessageSeverityFlagsEXT)
         (messageType : VkDebugUtilsMessageTypeFlagsEXT)
@@ -642,7 +640,7 @@ type [<ReferenceEquality>] VulkanContext =
         0u
     
     static member private makeDebugMessengerInfo () =
-        debugDelegate <- DebugDelegate VulkanContext.debugCallback
+        Hl.DebugDelegate <- DebugDelegate VulkanContext.debugCallback
         let mutable info = VkDebugUtilsMessengerCreateInfoEXT_hack ()
         info.sType <- VkStructureType.DebugUtilsMessengerCreateInfoEXT
         info.messageSeverity <-
@@ -654,7 +652,7 @@ type [<ReferenceEquality>] VulkanContext =
             VkDebugUtilsMessageTypeFlagsEXT.General |||
             VkDebugUtilsMessageTypeFlagsEXT.Validation |||
             VkDebugUtilsMessageTypeFlagsEXT.Performance
-        info.pfnUserCallback <- Marshal.GetFunctionPointerForDelegate<DebugDelegate> debugDelegate // assign to "real" nativeint in the "fake" struct
+        info.pfnUserCallback <- Marshal.GetFunctionPointerForDelegate<DebugDelegate> Hl.DebugDelegate // assign to "real" nativeint in the "fake" struct
         info.pUserData <- 0n
         Branchless.reinterpret info : VkDebugUtilsMessengerCreateInfoEXT // reinterpret as the "real" struct
     
