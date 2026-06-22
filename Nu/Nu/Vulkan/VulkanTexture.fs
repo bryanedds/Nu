@@ -202,8 +202,7 @@ type TextureData =
         | TextureDataNative (_, _, disposer) -> disposer.Dispose ()
 
 type TextureSingleton =
-    { Id : uint64
-      Image : VkImage
+    { Image : VkImage
       Allocation : VmaAllocation
       ImageView : VkImageView
       SubViews : VkImageView array2d
@@ -261,8 +260,7 @@ type TextureSingleton =
         | _ -> ()
         
         // fin
-        { Id = Hl.GenTextureId ()
-          Image = image
+        { Image = image
           Allocation = allocation
           ImageView = imageView
           SubViews = subViews
@@ -641,7 +639,8 @@ module TextureModule =
 /// An abstraction of a texture as managed by Vulkan.
 type [<CustomEquality; NoComparison>] TextureParallel =
     private
-        { Textures_ : TextureSingleton array
+        { Id_ : uint64
+          Textures_ : TextureSingleton array
           InternalFormat_ : Nu.Vulkan.ImageFormat
           PixelFormat_ : PixelFormat
           MipLevels_ : int
@@ -653,9 +652,8 @@ type [<CustomEquality; NoComparison>] TextureParallel =
     member private this.CurrentIndex = if this.IsParallel then Hl.CurrentFrame else 0
     member private this.Texture = this.Textures_.[this.CurrentIndex]
     member private this.ImageSize = this.Texture.ImageSize
-    
-    /// The unique id of the current texture on the gpu, which may change for an attachment.
-    member this.Id = this.Texture.Id
+
+    member this.Id = this.Id_
     
     /// The image.
     member this.Image = this.Texture.Image
@@ -677,11 +675,11 @@ type [<CustomEquality; NoComparison>] TextureParallel =
     
     override this.Equals thatObj =
         match thatObj with
-        | :? TextureParallel as that -> this.Id = that.Id
+        | :? TextureParallel as that -> this.Id_ = that.Id_
         | _ -> false
 
     override this.GetHashCode () = 
-        hash this.Id
+        hash this.Id_
 
     /// Determine which image usage flags to use.
     static member private determineImageUsage (mipmapMode : MipmapMode) (attachmentMode : AttachmentMode) optionalUsageFlags =
@@ -748,7 +746,8 @@ type [<CustomEquality; NoComparison>] TextureParallel =
         
         // make TextureParallel
         let textureParallel =
-            { Textures_ = textures
+            { Id_ = Hl.GenTextureId ()
+              Textures_ = textures
               InternalFormat_ = internalFormat
               PixelFormat_ = pixelFormat
               MipLevels_ = mipLevels
@@ -995,7 +994,11 @@ module TextureModule2 =
 type [<Struct; NoEquality; NoComparison>] EagerTexture =
     { TextureMetadata : TextureMetadata
       TextureParallel : TextureParallel }
-    
+
+    /// The texture's unique id.
+    member this.Id =
+        this.TextureParallel.Id
+
     /// Destroy this texture's backing Vulkan texture.
     member this.Destroy vkc =
         TextureParallel.destroy this.TextureParallel vkc
@@ -1069,8 +1072,8 @@ type [<CustomEquality; NoComparison>] Texture =
     static member hash texture =
         match texture with
         | EmptyTexture -> 0
-        | EagerTexture eagerTexture -> eagerTexture.TextureParallel.GetHashCode () // TODO: DJL: GetHashCode for eager?
-        | LazyTexture lazyTexture -> lazyTexture.GetHashCode ()
+        | EagerTexture eagerTexture -> hash eagerTexture.Id
+        | LazyTexture lazyTexture -> hash lazyTexture
 
     static member equals this that =
         match this with
@@ -1080,7 +1083,7 @@ type [<CustomEquality; NoComparison>] Texture =
             | _ -> false
         | EagerTexture eagerThis ->
             match that with
-            | EagerTexture eagerThat -> eagerThis.TextureParallel.Id = eagerThat.TextureParallel.Id
+            | EagerTexture eagerThat -> eagerThis.Id = eagerThat.Id
             | _ -> false
         | LazyTexture lazyThis ->
             match that with

@@ -276,15 +276,14 @@ type [<Struct>] internal VkDebugUtilsMessengerCreateInfoEXT_hack =
     val mutable pfnUserCallback : nativeint // "real" nativeint
     val mutable pUserData : nativeint
 
+[<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
+type internal BackgroundingDelegate = delegate of userData : voidptr * event : SDL_Event nativeptr -> SDLBool    
+
 [<RequireQualifiedAccess>]
 module Hl =
 
     // TODO: DJL: all these free-floating variables, types and functions have become a
     // bit of a mess and need to be reordered, not to mention the inconsistent casing.
-    
-    let mutable internal DrawReportLock = obj ()
-    let mutable internal DrawCallCount = 0
-    let mutable internal DrawInstanceCount = 0
 
     let internal ValidationLayersEnabled =
 #if DEBUG
@@ -294,12 +293,15 @@ module Hl =
 #endif
 
     let mutable internal ValidationLayersActivated = false
+    
+    let mutable internal DrawReportLock = obj ()
+    let mutable internal DrawCallCount = 0
+    let mutable internal DrawInstanceCount = 0
 
     // provides id for a texture on the gpu that is globally unique i.e. cannot be reused after texture is destroyed,
     // which is essential for tracking descriptor writes
     let mutable private TextureIdGenerationLock = obj ()
     let mutable private TextureIdCounter = 0UL
-    let internal GenTextureId () = lock TextureIdGenerationLock (fun () -> TextureIdCounter <- inc TextureIdCounter; TextureIdCounter)
     
     /// Index of the current Swapchain image.
     let mutable internal ImageIndex = 0u
@@ -316,19 +318,12 @@ module Hl =
 
     let mutable internal SurfaceState = SurfaceDestroyed
     let mutable internal Surface = Unchecked.defaultof<VkSurfaceKHR>
-    
-    // presentation teardown in response to app backgrounding follows BackgroundingResponseState cycle,
-    // whereas presentation setup need only care whether app is *currently* in foreground
-    let mutable private BackgroundingResponseState = PresentationTeardownComplete
-    let mutable internal IsAppInForeground = true
-    
-    // thread-safe access to BackgroundingResponseState as it's essentially a semaphore that needs to be set by callback *and* render thread
-    let mutable private BackgroundingResponseStateLock = obj ()
-    let internal setPresentationSetupInitiated () = lock BackgroundingResponseStateLock (fun () -> BackgroundingResponseState <- PresentationSetupInitiated)
-    let internal setPresentationTeardownComplete () = lock BackgroundingResponseStateLock (fun () -> BackgroundingResponseState <- PresentationTeardownComplete)
 
-    /// Has app been SET for backgrounding (i.e. not necessarily IN background yet/still), invalidating existing surface.
-    let internal hasAppBegunBackgrounding () = lock BackgroundingResponseStateLock (fun () -> BackgroundingResponseState = PresentationTeardownPending)
+    // presentation teardown in response to backgrounding follows BackgroundingResponseState cycle,
+    // whereas presentation setup need only care whether app is *currently* in foreground
+    let mutable private BackgroundingResponseStateLock = obj ()
+    let mutable private BackgroundingResponseState = PresentationTeardownComplete
+    let mutable private Backgrounded = false
 
     // callback to inform render loop about app backgrounding
     // official documentation for android case: https://github.com/libsdl-org/SDL/blob/main/docs/README-android.md#activity-lifecycle
@@ -337,21 +332,38 @@ module Hl =
         let event = NativePtr.toByRef event
         match event.Type with
         | SDL_EventType.SDL_EVENT_WILL_ENTER_BACKGROUND ->
-            IsAppInForeground <- false
+            Backgrounded <- true
             lock BackgroundingResponseStateLock (fun () ->
                 if BackgroundingResponseState = PresentationSetupInitiated then BackgroundingResponseState <- PresentationTeardownPending)
             true
         | SDL_EventType.SDL_EVENT_DID_ENTER_FOREGROUND ->
-            IsAppInForeground <- true
+            Backgrounded <- false
             true
         | _ -> true
 
+    let private BackgroundingDelegate =
+        BackgroundingDelegate handleBackgrounding
+
     // set up delegate for app backgrounding callback
     // TODO: DJL: for mobile devices: https://learn.microsoft.com/en-us/dotnet/standard/native-interop/calling-conventions#when-you-can-omit-the-calling-convention.
-    [<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
-    type private BackgroundingDelegate = delegate of userData : voidptr * event : SDL_Event nativeptr -> SDLBool
-    let private backgroundingDelegate = BackgroundingDelegate handleBackgrounding
-    let internal backgroundingCallback = Marshal.GetFunctionPointerForDelegate<BackgroundingDelegate> backgroundingDelegate
+    let internal BackgroundingCallback =
+        Marshal.GetFunctionPointerForDelegate<BackgroundingDelegate> BackgroundingDelegate
+
+    let internal setPresentationSetupInitiated () =
+        lock BackgroundingResponseStateLock (fun () -> BackgroundingResponseState <- PresentationSetupInitiated)
+
+    let internal setPresentationTeardownComplete () =
+        lock BackgroundingResponseStateLock (fun () -> BackgroundingResponseState <- PresentationTeardownComplete)
+
+    /// Has app been SET for backgrounding (i.e. not necessarily IN background yet/still), invalidating existing surface.
+    let internal getBackgroundingRequested () =
+        lock BackgroundingResponseStateLock (fun () -> BackgroundingResponseState = PresentationTeardownPending)
+
+    let internal getBackgrounded () =
+        Backgrounded
+
+    let internal GenTextureId () =
+        lock TextureIdGenerationLock (fun () -> TextureIdCounter <- inc TextureIdCounter; TextureIdCounter)
 
     /// Check if an image format is supported for attachments, falling back to a standard format where possible.
     let rec checkAttachmentFormat (vkPhysicalDevice, format : ImageFormat) =
@@ -371,7 +383,6 @@ module Hl =
                 | Rg32f (* standard *)
                 | R16f (* standard *)
                 | R32f (* standard *) ->
-                    
                     // NOTE: DJL: for spec requirements, see https://docs.vulkan.org/spec/latest/chapters/formats.html#features-required-format-support.
                     Log.fail ("Vulkan attachment image format '" + scstring format.VkFormat + "' support is absent but required. Further, it's a requirement in the Vulkan specification!")
                 | D32f ->
@@ -596,7 +607,7 @@ module Hl =
     let createVulkanSurface window instance =
     
         // wait for app to enter foreground if not already
-        while not IsAppInForeground do ()
+        while not ApplicationInForeground do ()
         tryCreateVulkanSurface window instance
 
         // cannot tolerate failure as this function is intended to guarantee surface creation, otherwise must set up a retry mechanism

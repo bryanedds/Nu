@@ -119,7 +119,7 @@ type PhysicalDevice =
         this.Features.samplerAnisotropy = VkBool32.True
     
     static member private checkSurface window instance =
-        if Hl.hasAppBegunBackgrounding () then
+        if Hl.getBackgroundingRequested () then
             Hl.destroyVulkanSurface instance
             Hl.createVulkanSurface window instance
     
@@ -389,7 +389,7 @@ type Swapchain =
     static member private tryCreateSurfaceAndSwapchainSingleton physicalDevice renderQueue presentQueue swapchain device instance =
         
         // check if app is back in foreground
-        if Hl.IsAppInForeground then
+        if Hl.ApplicationInForeground then
             
             // create surface
             Hl.tryCreateVulkanSurface swapchain.Window_ instance
@@ -398,7 +398,7 @@ type Swapchain =
             if Hl.SurfaceState = SurfaceReady then
                 
                 // check if pause triggered during surface creation
-                if not (Hl.hasAppBegunBackgrounding ()) then
+                if not (Hl.getBackgroundingRequested ()) then
                 
                     // check window not minimized
                     if not (Swapchain.isWindowMinimized swapchain.Window_) then
@@ -408,7 +408,7 @@ type Swapchain =
                         swapchain.SwapchainSingletonOpts_.[swapchain.SwapchainIndex_] <- swapchainSingletonOpt
                         
                         // destroy surface if lost again or if pause triggered during swapchain creation
-                        if Hl.SurfaceState = SurfaceLost || Hl.hasAppBegunBackgrounding ()
+                        if Hl.SurfaceState = SurfaceLost || Hl.getBackgroundingRequested ()
                         then Swapchain.destroySurface renderQueue presentQueue swapchain device instance
 
                 // abort
@@ -439,7 +439,7 @@ type Swapchain =
         | SurfaceReady ->
         
             // check if app has or will enter background, if not then just try recreate swapchain
-            if not (Hl.hasAppBegunBackgrounding ()) then
+            if not (Hl.getBackgroundingRequested ()) then
             
                 // use current VkSwapchain to create new one
                 let oldVkSwapchainOpt =
@@ -459,7 +459,7 @@ type Swapchain =
                 | None -> ()
                 
                 // check once more for app pause (triggered during swapchain destruction) before attempting swapchain creation
-                if not (Hl.hasAppBegunBackgrounding ()) then
+                if not (Hl.getBackgroundingRequested ()) then
                 
                     // check window not minimized
                     if not (Swapchain.isWindowMinimized swapchain.Window_) then
@@ -469,7 +469,7 @@ type Swapchain =
                         swapchain.SwapchainSingletonOpts_.[swapchain.SwapchainIndex_] <- swapchainSingletonOpt
 
                         // if surface is lost here (or pause triggered during pipeline creation!), destroy and attempt to recover on the spot
-                        if Hl.SurfaceState = SurfaceLost || Hl.hasAppBegunBackgrounding () then
+                        if Hl.SurfaceState = SurfaceLost || Hl.getBackgroundingRequested () then
                             Swapchain.destroySurface renderQueue presentQueue swapchain device instance
                             Swapchain.tryCreateSurfaceAndSwapchainSingleton physicalDevice renderQueue presentQueue swapchain device instance
 
@@ -508,7 +508,7 @@ type Swapchain =
         let windowMinimized = Swapchain.isWindowMinimized window
         
         // try create first SwapchainSingleton if window is not minimized or app paused
-        if not (windowMinimized || Hl.hasAppBegunBackgrounding ()) then
+        if not (windowMinimized || Hl.getBackgroundingRequested ()) then
             let swapchainSingletonOpt = SwapchainSingleton.tryCreate surfaceFormat VkSwapchainKHR.Null physicalDevice window device
             swapchainSingletonOpts.[swapchainIndex] <- swapchainSingletonOpt
 
@@ -898,13 +898,13 @@ type [<ReferenceEquality>] VulkanContext =
         // update the swapchain if window is not minimized, which happens a) when the window size simply changes
         // and b) when minimization ends as detected above; must also check for backgrounding in case minimization
         // occurs first so backgrounding can still be handled straight away
-        if not vkc.WaitingForWindowRestore_ || Hl.hasAppBegunBackgrounding ()
+        if not vkc.WaitingForWindowRestore_ || Hl.getBackgroundingRequested ()
         then Swapchain.update vkc.PhysicalDevice_ vkc.RenderQueue_ vkc.PresentQueue_ vkc.Swapchain_ vkc.Device vkc.Instance_
     
     /// Wait for app to return to foreground.
     static member private handleBackgrounding vkc =
         vkc.WaitingForWindowRestore_ <- Swapchain.isWindowMinimized vkc.Swapchain_.Window_
-        if Hl.IsAppInForeground && not vkc.WaitingForWindowRestore_
+        if Hl.ApplicationInForeground && not vkc.WaitingForWindowRestore_
         then Swapchain.update vkc.PhysicalDevice_ vkc.RenderQueue_ vkc.PresentQueue_ vkc.Swapchain_ vkc.Device vkc.Instance_
     
     /// Begin the frame.
@@ -926,7 +926,7 @@ type [<ReferenceEquality>] VulkanContext =
             if vkc.WaitingForWindowRestore_ then VulkanContext.handleWindowSize vkc
             else
                 // check if app backgrounding has been triggered, if so then teardown the surface and swapchain
-                if Hl.hasAppBegunBackgrounding () then Swapchain.update vkc.PhysicalDevice_ vkc.RenderQueue_ vkc.PresentQueue_ vkc.Swapchain_ vkc.Device vkc.Instance_
+                if Hl.getBackgroundingRequested () then Swapchain.update vkc.PhysicalDevice_ vkc.RenderQueue_ vkc.PresentQueue_ vkc.Swapchain_ vkc.Device vkc.Instance_
                 else
                     // check if screen *has become* minimized, if so then set WaitingForWindowRestore_ and don't render
                     if Swapchain.isWindowMinimized vkc.Swapchain_.Window_ then VulkanContext.handleWindowSize vkc
@@ -996,7 +996,7 @@ type [<ReferenceEquality>] VulkanContext =
             CommandQueue.submit vkc.RenderCommandBuffer [|vkc.ImageAvailableSemaphore, waitStage|] [|vkc.RenderFinishedSemaphore|] fence vkc.RenderQueue
             
             // one more check for app backgrounding before we present
-            if not (Hl.hasAppBegunBackgrounding ()) then
+            if not (Hl.getBackgroundingRequested ()) then
             
                 // try to present image
                 let result = CommandQueue.present vkc.RenderFinishedSemaphore vkc.Swapchain_.VkSwapchain vkc.PresentQueue_
