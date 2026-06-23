@@ -19,7 +19,8 @@
         <None Include="App.config" />
 
         <PackageReference Include="FSharp.Compiler.Service" Version="43.12.204" />
-        <ProjectReference Include="../../Projects/*/*.fsproj" ReferenceOutputAssembly="false" />
+        <!-- Uncomment the following line to automatically build game projects but experience double-building (with locking errors) for the solution build -->
+        <!--ProjectReference Include="../../Projects/*/*.fsproj" ReferenceOutputAssembly="false" /-->
     </ItemGroup>
 
 </Project>
