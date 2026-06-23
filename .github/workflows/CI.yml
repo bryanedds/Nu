@@ -15,7 +15,7 @@ jobs:
           dotnet-version: '10.x'
           workloads: ${{ case(!contains(matrix.os, 'ubuntu'), 'maui', 'maui-android') }}
       - name: Install Android dependencies
-        run: dotnet build -t:InstallAndroidDependencies -f net10.0-android -p:AcceptAndroidSdkLicenses=True
+        run: dotnet build "Projects/Sand Box 2d" -t:InstallAndroidDependencies -f net10.0-android -p:AcceptAndroidSdkLicenses=True
       - run: dotnet build
   test:
     strategy:
