@@ -108,10 +108,25 @@
         </Reference>
     </ItemGroup>
 
+    <!-- These are single-target (net10.0) libraries referenced by every game
+         project via this targets file, and also listed directly in Nu.sln.
+         The solution metaproj builds them without TargetFramework in global
+         properties. When a multi-targeting project (e.g. Sand Box 2d with
+         net10.0-android;net10.0) resolves these references for its non-desktop
+         TFM, MSBuild would normally compute SetTargetFramework="TargetFramework=net10.0",
+         producing a distinct global property set that triggers a parallel second
+         build. The two builds race on the same output files, causing locking and
+         write-contention failures.
+         SkipGetTargetFrameworkProperties prevents the computed TargetFramework
+         property, and GlobalPropertiesToRemove strips the inherited TargetFramework
+         and RuntimeIdentifier from the parent (e.g. net10.0-android with
+         android-x64), so the referenced project builds with only its project-file
+         default (net10.0) — matching the metaproj's invocation and preventing
+         the duplicate parallel build. -->
     <ItemGroup>
-        <ProjectReference Include="$(MSBuildThisFileDirectory)Nu/Nu.fsproj" />
-        <ProjectReference Include="$(MSBuildThisFileDirectory)Nu.Math/Nu.Math.csproj" />
-        <ProjectReference Include="$(MSBuildThisFileDirectory)Nu.Spine/Nu.Spine.csproj" />
+        <ProjectReference Include="$(MSBuildThisFileDirectory)Nu/Nu.fsproj" SkipGetTargetFrameworkProperties="true" GlobalPropertiesToRemove="TargetFramework;RuntimeIdentifier" />
+        <ProjectReference Include="$(MSBuildThisFileDirectory)Nu.Math/Nu.Math.csproj" SkipGetTargetFrameworkProperties="true" GlobalPropertiesToRemove="TargetFramework;RuntimeIdentifier" />
+        <ProjectReference Include="$(MSBuildThisFileDirectory)Nu.Spine/Nu.Spine.csproj" SkipGetTargetFrameworkProperties="true" GlobalPropertiesToRemove="TargetFramework;RuntimeIdentifier" />
     </ItemGroup>
 
     <!-- ============================================================
