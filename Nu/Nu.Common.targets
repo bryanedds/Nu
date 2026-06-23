@@ -192,7 +192,7 @@
          Android: Remove Linux native assets from resolved packages
          ============================================================
          NuGet packages (Silk.NET.Shaderc.Native, Twizzle.ImGui-Bundle.NET,
-         AstcEncoderCSharp-NuGameEngine, Magick.NET-Q8-AnyCPU) contain Linux
+         AstcEncoderCSharp, Magick.NET-Q8-AnyCPU) contain Linux
          .so files under runtimes/linux-*/native/.  The Android build scans
          all resolved native assets and warns (XA0141) about Linux .so files
          that have no 16 KB page alignment or are simply not for Android.
