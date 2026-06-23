@@ -493,7 +493,7 @@ type PhysicallyBasedPipeline =
 /// Describes the lighting pass of a deferred physically-based pipeline that's loaded into GPU.
 type PhysicallyBasedDeferredLightingPipeline =
     { EyeUniform : Nu.Vulkan.Buffer
-      LightingUniform : Nu.Vulkan.Buffer
+      Lighting2Uniform : Nu.Vulkan.Buffer
       LightUniform : Nu.Vulkan.Buffer
       ShadowMatrixUniform : Nu.Vulkan.Buffer
       Pipeline : Pipeline }
@@ -510,6 +510,144 @@ module PhysicallyBased =
     let StaticTexCoordsOffset = (3 (*position*)) * sizeof<single>
     let StaticNormalOffset =    (3 (*position*) + 2 (*tex coords*)) * sizeof<single>
     let StaticVertexSize =      (3 (*position*) + 2 (*tex coords*) + 3 (*normal*)) * sizeof<single>
+
+    /// Create a mesh for a physically-based quad.
+    let createPhysicallyBasedQuadMesh () =
+
+        // make vertex data
+        let vertexData =
+            [|
+                (*   positions   *)         (* tex coords *)    (*    normals    *)
+                -1.0f; -1.0f; +0.0f;        0.0f; 0.0f;          0.0f;  0.0f;  1.0f // bottom-left
+                +1.0f; -1.0f; +0.0f;        1.0f; 0.0f;          0.0f;  0.0f;  1.0f // bottom-right
+                +1.0f; +1.0f; +0.0f;        1.0f; 1.0f;          0.0f;  0.0f;  1.0f // top-right
+                +1.0f; +1.0f; +0.0f;        1.0f; 1.0f;          0.0f;  0.0f;  1.0f // top-right
+                -1.0f; +1.0f; +0.0f;        0.0f; 1.0f;          0.0f;  0.0f;  1.0f // top-left
+                -1.0f; -1.0f; +0.0f;        0.0f; 0.0f;          0.0f;  0.0f;  1.0f // bottom-left
+            |]
+
+        // make index data trivially
+        let indexData = Array.init 6 id
+
+        // make bounds trivially
+        let bounds = box3 (v3 -1.0f -1.0f 0.0f) (v3 2.0f 2.0f 0.0f)
+
+        // fin
+        (vertexData, indexData, bounds)
+
+    /// Create a mesh for a physically-based particle.
+    let createPhysicallyBasedParticleMesh () =
+
+        // make vertex data
+        let vertexData =
+            [|
+                (*   positions   *)         (* tex coords *)    (*    normals    *)
+                -0.5f; -0.5f; +0.0f;        0.0f; 0.0f;          0.0f;  0.0f;  1.0f // bottom-left
+                +0.5f; -0.5f; +0.0f;        0.0f; 0.0f;          0.0f;  0.0f;  1.0f // bottom-right
+                +0.5f; +0.5f; +0.0f;        0.0f; 0.0f;          0.0f;  0.0f;  1.0f // top-right
+                +0.5f; +0.5f; +0.0f;        0.0f; 0.0f;          0.0f;  0.0f;  1.0f // top-right
+                -0.5f; +0.5f; +0.0f;        0.0f; 0.0f;          0.0f;  0.0f;  1.0f // top-left
+                -0.5f; -0.5f; +0.0f;        0.0f; 0.0f;          0.0f;  0.0f;  1.0f // bottom-left
+            |]
+
+        // make index data trivially
+        let indexData = Array.init 6 id
+
+        // make bounds trivially
+        let bounds = box3 (v3 -0.5f -0.5f 0.0f) (v3 1.0f 1.0f 0.0f)
+
+        // fin
+        (vertexData, indexData, bounds)
+
+    /// Create a mesh for a physically-based billboard.
+    let createPhysicallyBasedBillboardMesh () =
+
+        // make vertex data
+        let vertexData =
+            [|
+                (*   positions   *)         (* tex coords *)    (*    normals    *)
+                -0.5f; -0.5f; +0.0f;        0.0f; 0.0f;          0.0f;  0.0f;  1.0f // bottom-left
+                +0.5f; -0.5f; +0.0f;        0.0f; 0.0f;          0.0f;  0.0f;  1.0f // bottom-right
+                +0.5f; +0.5f; +0.0f;        0.0f; 0.0f;          0.0f;  0.0f;  1.0f // top-right
+                -0.5f; -0.5f; +0.0f;        0.0f; 0.0f;          0.0f;  0.0f;  1.0f // top-right
+                +0.5f; +0.5f; +0.0f;        0.0f; 0.0f;          0.0f;  0.0f;  1.0f // top-left
+                -0.5f; +0.5f; +0.0f;        0.0f; 0.0f;          0.0f;  0.0f;  1.0f // bottom-left
+            |]
+
+        // make index data trivially
+        let indexData = Array.init 6 id
+
+        // make bounds trivially
+        let bounds = box3 (v3 -0.5f -0.5f 0.0f) (v3 1.0f 1.0f 0.0f)
+
+        // fin
+        (vertexData, indexData, bounds)
+
+    /// Create a mesh for a physically-based cube.
+    let createPhysicallyBasedCubeMesh () =
+
+        // make vertex data
+        let vertexData =
+            [|
+                (*   positions   *)         (* tex coords *)    (*    normals    *)
+
+                // back face
+                -0.5f; -0.5f; -0.5f;        0.0f; 0.0f;          0.0f;  0.0f; -1.0f // bottom-left
+                +0.5f; +0.5f; -0.5f;        1.0f; 1.0f;          0.0f;  0.0f; -1.0f // top-right
+                +0.5f; -0.5f; -0.5f;        1.0f; 0.0f;          0.0f;  0.0f; -1.0f // bottom-right         
+                +0.5f; +0.5f; -0.5f;        1.0f; 1.0f;          0.0f;  0.0f; -1.0f // top-right
+                -0.5f; -0.5f; -0.5f;        0.0f; 0.0f;          0.0f;  0.0f; -1.0f // bottom-left
+                -0.5f; +0.5f; -0.5f;        0.0f; 1.0f;          0.0f;  0.0f; -1.0f // top-left
+
+                // front face
+                -0.5f; -0.5f; +0.5f;        0.0f; 0.0f;          0.0f;  0.0f; +1.0f // bottom-left
+                +0.5f; -0.5f; +0.5f;        1.0f; 0.0f;          0.0f;  0.0f; +1.0f // bottom-right
+                +0.5f; +0.5f; +0.5f;        1.0f; 1.0f;          0.0f;  0.0f; +1.0f // top-right
+                +0.5f; +0.5f; +0.5f;        1.0f; 1.0f;          0.0f;  0.0f; +1.0f // top-right
+                -0.5f; +0.5f; +0.5f;        0.0f; 1.0f;          0.0f;  0.0f; +1.0f // top-left
+                -0.5f; -0.5f; +0.5f;        0.0f; 0.0f;          0.0f;  0.0f; +1.0f // bottom-left
+
+                // left face
+                -0.5f; +0.5f; +0.5f;        1.0f; 0.0f;         -1.0f;  0.0f;  0.0f // top-right
+                -0.5f; +0.5f; -0.5f;        1.0f; 1.0f;         -1.0f;  0.0f;  0.0f // top-left
+                -0.5f; -0.5f; -0.5f;        0.0f; 1.0f;         -1.0f;  0.0f;  0.0f // bottom-left
+                -0.5f; -0.5f; -0.5f;        0.0f; 1.0f;         -1.0f;  0.0f;  0.0f // bottom-left
+                -0.5f; -0.5f; +0.5f;        0.0f; 0.0f;         -1.0f;  0.0f;  0.0f // bottom-right
+                -0.5f; +0.5f; +0.5f;        1.0f; 0.0f;         -1.0f;  0.0f;  0.0f // top-right
+
+                // right face
+                +0.5f; +0.5f; +0.5f;        1.0f; 0.0f;         +1.0f;  0.0f;  0.0f // top-left
+                +0.5f; -0.5f; -0.5f;        0.0f; 1.0f;         +1.0f;  0.0f;  0.0f // bottom-right
+                +0.5f; +0.5f; -0.5f;        1.0f; 1.0f;         +1.0f;  0.0f;  0.0f // top-right         
+                +0.5f; -0.5f; -0.5f;        0.0f; 1.0f;         +1.0f;  0.0f;  0.0f // bottom-right
+                +0.5f; +0.5f; +0.5f;        1.0f; 0.0f;         +1.0f;  0.0f;  0.0f // top-left
+                +0.5f; -0.5f; +0.5f;        0.0f; 0.0f;         +1.0f;  0.0f;  0.0f // bottom-left
+
+                // bottom face
+                -0.5f; -0.5f; -0.5f;        0.0f; 1.0f;          0.0f; -1.0f;  0.0f // top-right
+                +0.5f; -0.5f; -0.5f;        1.0f; 1.0f;          0.0f; -1.0f;  0.0f // top-left
+                +0.5f; -0.5f; +0.5f;        1.0f; 0.0f;          0.0f; -1.0f;  0.0f // bottom-left
+                +0.5f; -0.5f; +0.5f;        1.0f; 0.0f;          0.0f; -1.0f;  0.0f // bottom-left
+                -0.5f; -0.5f; +0.5f;        0.0f; 0.0f;          0.0f; -1.0f;  0.0f // bottom-right
+                -0.5f; -0.5f; -0.5f;        0.0f; 1.0f;          0.0f; -1.0f;  0.0f // top-right
+
+                // top face
+                -0.5f; +0.5f; -0.5f;        0.0f; 1.0f;          0.0f; +1.0f;  0.0f // top-left
+                +0.5f; +0.5f ;+0.5f;        1.0f; 0.0f;          0.0f; +1.0f;  0.0f // bottom-right
+                +0.5f; +0.5f; -0.5f;        1.0f; 1.0f;          0.0f; +1.0f;  0.0f // top-right     
+                +0.5f; +0.5f; +0.5f;        1.0f; 0.0f;          0.0f; +1.0f;  0.0f // bottom-right
+                -0.5f; +0.5f; -0.5f;        0.0f; 1.0f;          0.0f; +1.0f;  0.0f // top-left
+                -0.5f; +0.5f; +0.5f;        0.0f; 0.0f;          0.0f; +1.0f;  0.0f // bottom-left
+            |]
+
+        // make index data trivially
+        let indexData = Array.init 36 id
+
+        // make bounds trivially
+        let bounds = box3 (v3Dup -0.5f) v3One
+
+        // fin
+        (vertexData, indexData, bounds)
 
     /// Create the attachments required for physically-based rendering.
     let createPhysicallyBasedAttachments (geometryViewport : Viewport) vkc =
@@ -1188,6 +1326,26 @@ module PhysicallyBased =
         // fin
         geometry
 
+    /// Create physically-based quad geometry.
+    let createPhysicallyBasedQuadGeometry vkcOpt =
+        let (vertexData, indexData, bounds) = createPhysicallyBasedQuadMesh ()
+        createPhysicallyBasedStaticGeometry VkPrimitiveTopology.TriangleList (vertexData.AsMemory ()) (indexData.AsMemory ()) bounds vkcOpt
+
+    /// Create physically-based particle geometry.
+    let createPhysicallyBasedParticleGeometry vkcOpt =
+        let (vertexData, indexData, bounds) = createPhysicallyBasedParticleMesh ()
+        createPhysicallyBasedStaticGeometry VkPrimitiveTopology.TriangleList (vertexData.AsMemory ()) (indexData.AsMemory ()) bounds vkcOpt
+
+    /// Create physically-based billboard geometry.
+    let createPhysicallyBasedBillboardGeometry vkcOpt =
+        let (vertexData, indexData, bounds) = createPhysicallyBasedBillboardMesh ()
+        createPhysicallyBasedStaticGeometry VkPrimitiveTopology.TriangleList (vertexData.AsMemory ()) (indexData.AsMemory ()) bounds vkcOpt
+
+    /// Create physically-based cube geometry.
+    let createPhysicallyBasedCubeGeometry vkcOpt =
+        let (vertexData, indexData, bounds) = createPhysicallyBasedCubeMesh ()
+        createPhysicallyBasedStaticGeometry VkPrimitiveTopology.TriangleList (vertexData.AsMemory ()) (indexData.AsMemory ()) bounds vkcOpt
+
     /// Create physically-based static geometry from an assimp mesh.
     let createPhysicallyBasedStaticGeometryFromMesh indexData (mesh : Assimp.Mesh) vkcOpt =
         match createPhysicallyBasedStaticMesh indexData mesh with
@@ -1374,7 +1532,7 @@ module PhysicallyBased =
                       Pipeline.descriptor 3 Sampler FragmentStage 1
                       Pipeline.descriptor 4 Sampler FragmentStage 1
                       Pipeline.descriptor 5 Sampler FragmentStage 1|]|]
-                
+
                 [||] colorAttachmentFormats depthTestOpt
                 [|eyeUniform
                   lightingUniform
@@ -1569,7 +1727,7 @@ module PhysicallyBased =
         // make PhysicallyBasedDeferredLightingPipeline
         let physicallyBasedDeferredLightingPipeline =
             { EyeUniform = eyeUniform
-              LightingUniform = lightingUniform
+              Lighting2Uniform = lightingUniform
               LightUniform = lightUniform
               ShadowMatrixUniform = shadowMatrixUniform
               Pipeline = pipeline }
@@ -1616,109 +1774,127 @@ module PhysicallyBased =
         (lightTypes : int array)
         (lightConeInners : single array)
         (lightConeOuters : single array)
+        (lightDesireFogs : int array)
         (lightShadowIndices : int array)
         (lightsCount : int)
         (shadowNear : single)
-        (shadowMatrices : single array array)
+        (shadowMatrices : Matrix4x4 array)
+        (geometrySampler : Sampler)
+        (shadowSampler : Sampler)
+        (viewport : Viewport)
         (renderPassIndex : int)
         (geometry : PhysicallyBasedGeometry)
+        (lightAccumAttachment : Texture)
         (pipeline : PhysicallyBasedDeferredLightingPipeline)
         (vkc : VulkanContext) =
 
-    //    // bind uniforms
-    //    let mutable transform = Transform ()
-    //    transform.view <- view
-    //    transform.projection <- projection
-    //    transform.viewInverse <- viewInverse
-    //    transform.projectionInverse <- projectionInverse
-    //    transform.eyeCenter <- eyeCenter
-    //    Buffer.uploadValue renderPassIndex 0 0 transform pipeline.TransformUniform vkc
-    //    Pipeline.writeDescriptorStorageBuffer 0 0 renderPassIndex 0 pipeline.TransformUniform.[renderPassIndex] pipeline.Pipeline vkc
-    //    let mutable lighting = Lighting2 ()
-    //    lighting.lightCutoffMargin <- lightCutoffMargin
-    //    lighting.lightShadowSamples <- lightShadowSamples
-    //    lighting.lightShadowBias <- lightShadowBias
-    //    lighting.lightShadowSampleScalar <- lightShadowSampleScalar
-    //    lighting.lightShadowExponent <- lightShadowExponent
-    //    lighting.lightShadowDensity <- lightShadowDensity
-    //    lighting.sssEnabled <- sssEnabled
-    //    lighting.lightsCount <- lightsCount
-    //    lighting.shadowNear <- shadowNear
-    //    Buffer.uploadValue renderPassIndex 0 0 lighting pipeline.LightingUniform vkc
-    //    Pipeline.writeDescriptorStorageBuffer 0 1 renderPassIndex 0 pipeline.LightingUniform.[renderPassIndex] pipeline.Pipeline vkc
-    //
-    //
-    //    Gl.Uniform1 (shader.DepthTextureUniform, 0)
-    //    Gl.Uniform1 (shader.AlbedoTextureUniform, 1)
-    //    Gl.Uniform1 (shader.MaterialTextureUniform, 2)
-    //    Gl.Uniform1 (shader.NormalPlusTextureUniform, 3)
-    //    Gl.Uniform1 (shader.SubdermalPlusTextureUniform, 4)
-    //    Gl.Uniform1 (shader.ScatterPlusTextureUniform, 5)
-    //    Gl.Uniform1 (shader.ClearCoatPlusTextureUniform, 6)
-    //    Gl.Uniform1 (shader.ShadowTexturesUniform, 7)
-    //    for i in 0 .. dec Constants.Render.ShadowMapsMax do
-    //        Gl.Uniform1 (shader.ShadowMapsUniforms[i], i + 8)
-    //    for i in 0 .. dec Constants.Render.ShadowCascadesMax do
-    //        Gl.Uniform1 (shader.ShadowCascadesUniforms[i], i + 8 + Constants.Render.ShadowMapsMax)
-    //    for i in 0 .. dec (min lightOrigins.Length Constants.Render.LightsMaxDeferred) do
-    //        Gl.Uniform3 (shader.LightOriginsUniforms[i], lightOrigins[i].X, lightOrigins[i].Y, lightOrigins[i].Z)
-    //    for i in 0 .. dec (min lightDirections.Length Constants.Render.LightsMaxDeferred) do
-    //        Gl.Uniform3 (shader.LightDirectionsUniforms[i], lightDirections[i].X, lightDirections[i].Y, lightDirections[i].Z)
-    //    for i in 0 .. dec (min lightColors.Length Constants.Render.LightsMaxDeferred) do
-    //        Gl.Uniform3 (shader.LightColorsUniforms[i], lightColors[i].R, lightColors[i].G, lightColors[i].B)
-    //    for i in 0 .. dec (min lightBrightnesses.Length Constants.Render.LightsMaxDeferred) do
-    //        Gl.Uniform1 (shader.LightBrightnessesUniforms[i], lightBrightnesses[i])
-    //    for i in 0 .. dec (min lightAttenuationLinears.Length Constants.Render.LightsMaxDeferred) do
-    //        Gl.Uniform1 (shader.LightAttenuationLinearsUniforms[i], lightAttenuationLinears[i])
-    //    for i in 0 .. dec (min lightAttenuationQuadratics.Length Constants.Render.LightsMaxDeferred) do
-    //        Gl.Uniform1 (shader.LightAttenuationQuadraticsUniforms[i], lightAttenuationQuadratics[i])
-    //    for i in 0 .. dec (min lightCutoffs.Length Constants.Render.LightsMaxDeferred) do
-    //        Gl.Uniform1 (shader.LightCutoffsUniforms[i], lightCutoffs[i])
-    //    for i in 0 .. dec (min lightTypes.Length Constants.Render.LightsMaxDeferred) do
-    //        Gl.Uniform1 (shader.LightTypesUniforms[i], lightTypes[i])
-    //    for i in 0 .. dec (min lightConeInners.Length Constants.Render.LightsMaxDeferred) do
-    //        Gl.Uniform1 (shader.LightConeInnersUniforms[i], lightConeInners[i])
-    //    for i in 0 .. dec (min lightConeOuters.Length Constants.Render.LightsMaxDeferred) do
-    //        Gl.Uniform1 (shader.LightConeOutersUniforms[i], lightConeOuters[i])
-    //    for i in 0 .. dec (min lightShadowIndices.Length Constants.Render.LightsMaxDeferred) do
-    //        Gl.Uniform1 (shader.LightShadowIndicesUniforms[i], lightShadowIndices[i])
-    //    for i in 0 .. dec (min shadowMatrices.Length (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels)) do
-    //        Gl.UniformMatrix4 (shader.ShadowMatricesUniforms[i], false, shadowMatrices[i])
-    //
-    //    // setup textures
-    //    Gl.ActiveTexture TextureUnit.Texture0
-    //    Gl.BindTexture (TextureTarget.Texture2d, depthTexture.TextureId)
-    //    Gl.ActiveTexture TextureUnit.Texture1
-    //    Gl.BindTexture (TextureTarget.Texture2d, albedoTexture.TextureId)
-    //    Gl.ActiveTexture TextureUnit.Texture2
-    //    Gl.BindTexture (TextureTarget.Texture2d, materialTexture.TextureId)
-    //    Gl.ActiveTexture TextureUnit.Texture3
-    //    Gl.BindTexture (TextureTarget.Texture2d, normalPlusTexture.TextureId)
-    //    Gl.ActiveTexture TextureUnit.Texture4
-    //    Gl.BindTexture (TextureTarget.Texture2d, subdermalPlusTexture.TextureId)
-    //    Gl.ActiveTexture TextureUnit.Texture5
-    //    Gl.BindTexture (TextureTarget.Texture2d, scatterPlusTexture.TextureId)
-    //    Gl.ActiveTexture TextureUnit.Texture6
-    //    Gl.BindTexture (TextureTarget.Texture2d, clearCoatPlusTexture.TextureId)
-    //    Gl.ActiveTexture (int TextureUnit.Texture0 + 7 |> Branchless.reinterpret)
-    //    Gl.BindTexture (TextureTarget.Texture2dArray, shadowTextureArray.TextureId)
-    //    for i in 0 .. dec (min shadowMaps.Length Constants.Render.ShadowMapsMax) do
-    //        Gl.ActiveTexture (int TextureUnit.Texture0 + 8 + i |> Branchless.reinterpret)
-    //        Gl.BindTexture (TextureTarget.TextureCubeMap, shadowMaps[i].TextureId)
-    //    for i in 0 .. dec (min shadowCascades.Length Constants.Render.ShadowCascadesMax) do
-    //        Gl.ActiveTexture (int TextureUnit.Texture0 + 8 + i + Constants.Render.ShadowMapsMax |> Branchless.reinterpret)
-    //        Gl.BindTexture (TextureTarget.Texture2dArray, shadowCascades[i].TextureId)
-    //    Hl.Assert ()
-    //
-    //    // setup geometry
-    //    Gl.VertexArrayVertexBuffer (vao, 0u, geometry.VertexBuffer, 0, StaticVertexSize)
-    //    Gl.VertexArrayVertexBuffer (vao, 1u, geometry.InstanceBuffer, 0, Constants.Render.InstanceFieldCount * sizeof<single>)
-    //    Gl.VertexArrayElementBuffer (vao, geometry.IndexBuffer)
-    //    Hl.Assert ()
-    //
-    //    // draw geometry
-    //    Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
-        Hl.reportDrawCall 1
+        // only draw if render area is valid
+        let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
+        let mutable vkViewport = Hl.makeViewport true renderArea
+        if Hl.validateRect renderArea then
+
+            // only draw if required vkPipeline exists
+            match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
+            | Some vkPipeline ->
+
+                // specify uniforms
+                let mutable uniformsDescriptorSet = Pipeline.specifyDescriptorSet 0 renderPassIndex pipeline.Pipeline vkc $ fun vkSet ->
+
+                    // specify eye
+                    let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
+                    Buffer.uploadValue eye pipeline.EyeUniform vkc
+                    Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.EyeUniform vkSet vkc
+
+                    // specify lighting
+                    let mutable lighting = Lighting2 ()
+                    lighting.lightCutoffMargin <- lightCutoffMargin
+                    lighting.lightShadowSamples <- lightShadowSamples
+                    lighting.lightShadowBias <- lightShadowBias
+                    lighting.lightShadowSampleScalar <- lightShadowSampleScalar
+                    lighting.lightShadowExponent <- lightShadowExponent
+                    lighting.lightShadowDensity <- lightShadowDensity
+                    lighting.shadowNear <- shadowNear
+                    lighting.sssEnabled <- sssEnabled
+                    lighting.lightsCount <- lightsCount
+                    lighting.shadowNear <- shadowNear
+                    Buffer.uploadValue lighting pipeline.Lighting2Uniform vkc
+                    Pipeline.writeDescriptorStorageBuffer 1 0 pipeline.Lighting2Uniform vkSet vkc
+
+                    // specify lights
+                    let mutable light = Light ()
+                    use lightPtr = fixed &light
+                    for i in 0 .. dec Constants.Render.LightsMaxForward do
+                        if i < lightOrigins.Length then
+                            light.lightOrigins <- lightOrigins.[i]
+                            light.lightDirections <- lightDirections.[i]
+                            light.lightColors <- lightColors.[i].V3
+                            light.lightBrightnesses <- lightBrightnesses.[i]
+                            light.lightAttenuationLinears <- lightAttenuationLinears.[i]
+                            light.lightAttenuationQuadratics <- lightAttenuationQuadratics.[i]
+                            light.lightCutoffs <- lightCutoffs.[i]
+                            light.lightTypes <- lightTypes.[i]
+                            light.lightConeInners <- lightConeInners.[i]
+                            light.lightConeOuters <- lightConeOuters.[i]
+                            light.lightDesireFogs <- lightDesireFogs.[i]
+                            light.lightShadowIndices <- lightShadowIndices.[i]
+                        else light <- Unchecked.defaultof<_>
+                        Buffer.uploadSubdata (i * sizeof<Light>) 0 sizeof<Light> 1 (NativePtr.toNativeInt lightPtr) pipeline.LightUniform vkc
+                    Pipeline.writeDescriptorStorageBuffer 2 0 pipeline.LightUniform vkSet vkc
+
+                    // specify shadow matrices
+                    use shadowMatricesPin = new ArrayPin<_> (shadowMatrices)
+                    let shadowMatricesCount = min shadowMatrices.Length (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels)
+                    Buffer.uploadSubdata 0 0 sizeof<Matrix4x4> shadowMatricesCount shadowMatricesPin.NativeInt pipeline.ShadowMatrixUniform vkc
+                    Pipeline.writeDescriptorStorageBuffer 3 0 pipeline.ShadowMatrixUniform vkSet vkc
+
+                    // specify textures
+                    Pipeline.writeDescriptorSampledImage 4 0 depthTexture vkSet vkc
+                    Pipeline.writeDescriptorSampledImage 5 0 albedoTexture vkSet vkc
+                    Pipeline.writeDescriptorSampledImage 6 0 materialTexture vkSet vkc
+                    Pipeline.writeDescriptorSampledImage 7 0 normalPlusTexture vkSet vkc
+                    Pipeline.writeDescriptorSampledImage 8 0 subdermalPlusTexture vkSet vkc
+                    Pipeline.writeDescriptorSampledImage 9 0 scatterPlusTexture vkSet vkc
+                    Pipeline.writeDescriptorSampledImage 10 0 clearCoatPlusTexture vkSet vkc
+                    Pipeline.writeDescriptorSampledImage 11 0 shadowTextureArray vkSet vkc
+                    Pipeline.writeDescriptorSampledImages 12 0 shadowMaps vkSet vkc
+                    Pipeline.writeDescriptorSampledImages 13 0 shadowCascades vkSet vkc
+
+                // specify samplers
+                let mutable samplersDescriptorSet = Pipeline.specifyDescriptorSet 1 Unit pipeline.Pipeline vkc $ fun vkSet ->
+                    Pipeline.writeDescriptorSampler 0 0 geometrySampler vkSet vkc
+                    Pipeline.writeDescriptorSampler 1 0 shadowSampler vkSet vkc
+
+                // set up render
+                let mutable renderingInfo = Hl.makeRenderingInfo [|lightAccumAttachment.ImageView|] None renderArea None
+                Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &renderingInfo)
+                Vulkan.vkCmdBindPipeline (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
+                Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, asPointer &vkViewport)
+                Vulkan.vkCmdSetScissor (vkc.RenderCommandBuffer, 0u, 1u, asPointer &renderArea)
+
+                // bind vertex and index buffers
+                let vertexBuffers = [|geometry.VertexBuffer.VkBuffer; geometry.InstanceBuffer.VkBuffer|]
+                let vertexOffsets = [|0UL; 0UL|]
+                use vertexBuffersPin = new ArrayPin<_> (vertexBuffers)
+                use vertexOffsetsPin = new ArrayPin<_> (vertexOffsets)
+                Vulkan.vkCmdBindVertexBuffers (vkc.RenderCommandBuffer, 0u, 2u, vertexBuffersPin.Pointer, vertexOffsetsPin.Pointer)
+                Vulkan.vkCmdBindIndexBuffer (vkc.RenderCommandBuffer, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
+
+                // bind descriptor sets
+                let mutable (uniformsDescriptorSet, samplersDescriptorSet) = (uniformsDescriptorSet, samplersDescriptorSet)
+                Vulkan.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, asPointer &uniformsDescriptorSet, 0u, nullPtr)
+                Vulkan.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, asPointer &samplersDescriptorSet, 0u, nullPtr)
+
+                // draw
+                Vulkan.vkCmdDrawIndexed (vkc.RenderCommandBuffer, uint geometry.ElementCount, uint 1, 0u, 0, 0u)
+
+                // tear down render
+                Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
+
+                // advance pipeline
+                Pipeline.advance 1 pipeline.Pipeline
+
+            // abort
+            | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
 
     /// Begin the process of drawing with a forward pipeline.
     let beginPhysicallyBasedForwardPipeline
@@ -1757,6 +1933,7 @@ module PhysicallyBased =
         (ssrrDistanceCutoffMargin : single)
         (ssrrEdgeHorizontalMargin : single)
         (ssrrEdgeVerticalMargin : single)
+        (shadowNear : single)
         (depthTexture : Texture)
         (colorTexture : Texture)
         (brdfTexture : Texture)
@@ -1768,13 +1945,12 @@ module PhysicallyBased =
         (colorSampler : Sampler)
         (depthSampler : Sampler)
         (brdfSampler : Sampler)
-        (shadowNear : single)
         (renderPassIndex : int)
         (pipeline : PhysicallyBasedPipeline)
         (vkc : VulkanContext) =
 
         // specify uniforms
-        let mutable eyeDescriptorSet = Pipeline.specifyDescriptorSet 0 renderPassIndex pipeline.Pipeline vkc $ fun vkSet ->
+        let mutable uniformDescriptorSet = Pipeline.specifyDescriptorSet 0 renderPassIndex pipeline.Pipeline vkc $ fun vkSet ->
 
             // specify eye
             let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
@@ -1833,7 +2009,7 @@ module PhysicallyBased =
             Pipeline.writeDescriptorSampler 5 0 brdfSampler vkSet vkc
 
         // fin
-        (eyeDescriptorSet, samplersDescriptorSet)
+        (uniformDescriptorSet, samplersDescriptorSet)
 
     /// Draw a batch of physically-based forward surfaces.
     /// TODO: P1: consider altering the representation of incoming light maps and lights data so that each can be
@@ -1934,7 +2110,7 @@ module PhysicallyBased =
                     lightsGeneral.lightsCount <- lightsCount
                     Buffer.uploadValue lightsGeneral pipeline.LightsGeneralUniform vkc
                     Pipeline.writeDescriptorStorageBuffer 2 0 pipeline.LightsGeneralUniform vkSet vkc
-                    
+
                     // specify lights
                     let mutable light = Light ()
                     use lightPtr = fixed &light
@@ -1968,7 +2144,7 @@ module PhysicallyBased =
                     Pipeline.writeDescriptorSampledImage 7 0 shadowTextureArray vkSet vkc
                     Pipeline.writeDescriptorSampledImages 8 0 shadowMaps vkSet vkc
                     Pipeline.writeDescriptorSampledImages 9 0 shadowCascades vkSet vkc
-                
+
                 // set up render
                 let mutable rendering = Hl.makeRenderingInfo [|colorAttachment.ImageView|] (Some depthAttachment.ImageView) renderArea None
                 Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &rendering)
@@ -1977,7 +2153,7 @@ module PhysicallyBased =
                 Vulkan.vkCmdSetScissor (vkc.RenderCommandBuffer, 0u, 1u, asPointer &renderArea)
                 Vulkan.vkCmdSetDepthTestEnable (vkc.RenderCommandBuffer, not depthTest.IsAlwaysPassTest)
                 Vulkan.vkCmdSetDepthCompareOp (vkc.RenderCommandBuffer, Pipeline.depthTestToVkCompareOp depthTest)
-            
+
                 // bind vertex and index buffers
                 let vertexBuffers = [|geometry.VertexBuffer.VkBuffer; geometry.InstanceBuffer.VkBuffer|]
                 let vertexOffsets = [|0UL; 0UL|]

@@ -5172,6 +5172,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           ShadowMatrices : Matrix4x4 array
           LightShadowIndices : Dictionary<uint64, int>
           CubeMapGeometry : CubeMapGeometry
+          BillboardGeometry : PhysicallyBasedGeometry
+          QuadGeometry : PhysicallyBasedGeometry
           CubeMap : Texture
           WhiteTexture : Texture
           BlackTexture : Texture
@@ -5899,15 +5901,15 @@ type [<ReferenceEquality>] VulkanRenderer3d =
     static member private beginPhysicallyBasedForwardPipeline
         eyeCenter view viewInverse projection projectionInverse viewProjection
         lightCutoffMargin lightAmbientColor lightAmbientBrightness lightAmbientBoostCutoff lightAmbientBoostScalar lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity
-        fogEnabled fogType fogStart fogFinish fogDensity fogColor ssvfEnabled ssvfIntensity ssvfSteps ssvfAsymmetry ssrrEnabled ssrrIntensity ssrrDetail ssrrRefinementsMax ssrrRayThickness ssrrDistanceCutoff ssrrDistanceCutoffMargin ssrrEdgeHorizontalMargin ssrrEdgeVerticalMargin
-        depthTexture colorTexture brdfTexture irradianceMap environmentFilterMap filteredSampler cubeMapSampler shadowSampler colorSampler depthSampler brdfSampler shadowNear renderPass pipeline vkc =
+        fogEnabled fogType fogStart fogFinish fogDensity fogColor ssvfEnabled ssvfIntensity ssvfSteps ssvfAsymmetry ssrrEnabled ssrrIntensity ssrrDetail ssrrRefinementsMax ssrrRayThickness ssrrDistanceCutoff ssrrDistanceCutoffMargin ssrrEdgeHorizontalMargin ssrrEdgeVerticalMargin shadowNear
+        depthTexture colorTexture brdfTexture irradianceMap environmentFilterMap filteredSampler cubeMapSampler shadowSampler colorSampler depthSampler brdfSampler renderPass pipeline vkc =
 
         // begin shader
         PhysicallyBased.beginPhysicallyBasedForwardPipeline
             eyeCenter view viewInverse projection projectionInverse viewProjection
             lightCutoffMargin lightAmbientColor lightAmbientBrightness lightAmbientBoostCutoff lightAmbientBoostScalar lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity
-            fogEnabled fogType fogStart fogFinish fogDensity fogColor ssvfEnabled ssvfIntensity ssvfSteps ssvfAsymmetry ssrrEnabled ssrrIntensity ssrrDetail ssrrRefinementsMax ssrrRayThickness ssrrDistanceCutoff ssrrDistanceCutoffMargin ssrrEdgeHorizontalMargin ssrrEdgeVerticalMargin
-            depthTexture colorTexture brdfTexture irradianceMap environmentFilterMap filteredSampler cubeMapSampler shadowSampler colorSampler depthSampler brdfSampler shadowNear renderPass pipeline vkc
+            fogEnabled fogType fogStart fogFinish fogDensity fogColor ssvfEnabled ssvfIntensity ssvfSteps ssvfAsymmetry ssrrEnabled ssrrIntensity ssrrDetail ssrrRefinementsMax ssrrRayThickness ssrrDistanceCutoff ssrrDistanceCutoffMargin ssrrEdgeHorizontalMargin ssrrEdgeVerticalMargin shadowNear
+            depthTexture colorTexture brdfTexture irradianceMap environmentFilterMap filteredSampler cubeMapSampler shadowSampler colorSampler depthSampler brdfSampler renderPass pipeline vkc
 
     static member private renderPhysicallyBasedForwardSurfaces
         bonesArrays (parameters : struct (Matrix4x4 * Presence * Box2 * MaterialProperties) SList)
@@ -6076,6 +6078,29 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             |> Array.ofSeq
             |> Array.filter (fun lightMap -> lightMap.SortableLightMapEnabled && geometryFrustum.Intersects lightMap.SortableLightMapBounds)
 
+        // sort light maps for deferred rendering relative to eye center
+        let (lightMapOrigins, lightMapMins, lightMapSizes, lightMapAmbientColors, lightMapAmbientBrightnesses, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
+            if topLevelRender then
+                SortableLightMap.sortLightMaps Constants.Render.LightMapsMaxDeferred eyeCenter None renderer.IrradianceMap renderer.EnvironmentFilterMap lightMaps
+            else
+                (Array.zeroCreate (Constants.Render.LightMapsMaxDeferred * 4),
+                 Array.zeroCreate (Constants.Render.LightMapsMaxDeferred * 4),
+                 Array.zeroCreate (Constants.Render.LightMapsMaxDeferred * 4),
+                 Array.zeroCreate (Constants.Render.LightMapsMaxDeferred * 4),
+                 Array.zeroCreate Constants.Render.LightMapsMaxDeferred,
+                 Array.create Constants.Render.LightMapsMaxDeferred renderer.IrradianceMap,
+                 Array.create Constants.Render.LightMapsMaxDeferred renderer.EnvironmentFilterMap)
+
+        // sort lights for deferred rendering relative to eye center
+        let (lightIds, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightTypes, lightConeInners, lightConeOuters, lightDesireFogs) =
+            SortableLight.sortLights Constants.Render.LightsMaxDeferred eyeCenter renderTasks.Lights
+
+        // compute light shadow indices according to sorted lights
+        let lightShadowIndices =
+            if topLevelRender
+            then SortableLight.sortLightShadowIndices renderer.LightShadowIndices lightIds
+            else Array.init Constants.Render.LightsMaxDeferred (constant -1)
+
         
         // grab shadow texture array
         let shadowTextureArray = fst renderer.PhysicallyBasedAttachments.ShadowTextureArrayAttachments
@@ -6088,9 +6113,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
         // presume shadow near plane distance as interior near plane distance
         let shadowNear = Constants.Render.NearPlaneDistanceInterior
-        
-        // grab shadow matrices
-        let shadowMatrices = Array.map (fun (m : Matrix4x4) -> m.ToArray ()) renderer.ShadowMatrices
         
         // sort forward surfaces from far to near
         let forwardSurfacesSortBuffer = VulkanRenderer3d.sortForwardSurfaces eyeCenter renderTasks.Forward renderer.ForwardSurfacesComparer renderer.ForwardSurfacesSortBuffer
@@ -6172,19 +6194,22 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             else renderer.WhiteTexture
         
         
-        // setup lighting attachment
+        
+        // deferred render quad to light accum texture
         let lightAccumTexture = renderer.PhysicallyBasedAttachments.LightingAttachment
-        let mutable rendering = Hl.makeRenderingInfo [|lightAccumTexture.ImageView|] None renderArea (Some clearColor)
-        Vulkan.vkCmdBeginRendering (renderer.VulkanContext.RenderCommandBuffer, asPointer &rendering)
-        Vulkan.vkCmdEndRendering renderer.VulkanContext.RenderCommandBuffer
-        
-        
-        // deferred render quad to lighting attachments
         let sssEnabled = if renderer.RendererConfig.SssEnabled && renderer.LightingConfig.SssEnabled then 1 else 0
+        PhysicallyBased.drawPhysicallyBasedDeferredLightingSurface
+            eyeCenter view viewInverse geometryProjection geometryProjectionInverse geometryViewProjection renderer.LightingConfig.LightCutoffMargin
+            renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity sssEnabled
+            depthTexture albedoTexture materialTexture normalPlusTexture subdermalPlusTexture scatterPlusTexture clearCoatPlusTexture shadowTextureArray shadowMaps shadowCascades
+            lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices (min lightIds.Length renderTasks.Lights.Count) shadowNear renderer.ShadowMatrices
+            renderer.GeometrySampler renderer.ShadowSampler renderer.GeometryViewport renderer.RenderPassIndex renderer.QuadGeometry lightAccumTexture renderer.PhysicallyBasedPipelines.DeferredLightingPipeline renderer.VulkanContext
+        Texture.transitionLayoutAsync ColorAttachmentWrite ShaderRead lightAccumTexture renderer.VulkanContext.RenderCommandBuffer
+
+        
         let ssvfEnabled = if renderer.RendererConfig.SsvfEnabled && renderer.LightingConfig.SsvfEnabled then 1 else 0
-        // TODO: DJL: complete block.
-        
-        
+
+
         // setup coloring attachments
         let (colorTexture, depthTexture2) = renderer.PhysicallyBasedAttachments.ColoringAttachments
         // TODO: DJL: complete block.
@@ -6227,8 +6252,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 eyeCenter view viewInverse geometryProjection geometryProjectionInverse geometryViewProjection renderer.LightingConfig.LightCutoffMargin lightAmbientColor lightAmbientBrightness renderer.LightingConfig.LightAmbientBoostCutoff renderer.LightingConfig.LightAmbientBoostScalar
                 renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
                 fogEnabled fogType renderer.LightingConfig.FogStart renderer.LightingConfig.FogFinish renderer.LightingConfig.FogDensity renderer.LightingConfig.FogColor ssvfEnabled renderer.LightingConfig.SsvfIntensity forwardSsvfSteps renderer.LightingConfig.SsvfAsymmetry
-                ssrrEnabled renderer.LightingConfig.SsrrIntensity renderer.LightingConfig.SsrrDetail renderer.LightingConfig.SsrrRefinementsMax renderer.LightingConfig.SsrrRayThickness renderer.LightingConfig.SsrrDistanceCutoff renderer.LightingConfig.SsrrDistanceCutoffMargin renderer.LightingConfig.SsrrEdgeHorizontalMargin renderer.LightingConfig.SsrrEdgeVerticalMargin
-                depthTexture2 colorTexture renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap renderer.FilteredSampler renderer.CubeMapSampler renderer.ShadowSampler renderer.ColorSampler renderer.DepthSampler renderer.BrdfSampler shadowNear renderer.RenderPassIndex renderer.PhysicallyBasedPipelines.ForwardStaticPipeline renderer.VulkanContext
+                ssrrEnabled renderer.LightingConfig.SsrrIntensity renderer.LightingConfig.SsrrDetail renderer.LightingConfig.SsrrRefinementsMax renderer.LightingConfig.SsrrRayThickness renderer.LightingConfig.SsrrDistanceCutoff renderer.LightingConfig.SsrrDistanceCutoffMargin renderer.LightingConfig.SsrrEdgeHorizontalMargin renderer.LightingConfig.SsrrEdgeVerticalMargin shadowNear
+                depthTexture2 colorTexture renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap renderer.FilteredSampler renderer.CubeMapSampler renderer.ShadowSampler renderer.ColorSampler renderer.DepthSampler renderer.BrdfSampler renderer.RenderPassIndex renderer.PhysicallyBasedPipelines.ForwardStaticPipeline renderer.VulkanContext
         
         // render forward (static and animated) surfaces to composition attachment
         for (model, _, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest) in renderTasks.ForwardSorted do
@@ -6542,6 +6567,12 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         
         // create cube map geometry
         let cubeMapGeometry = CubeMap.createCubeMapGeometry true vkc
+
+        // create physically-based billboard geometry
+        let billboardGeometry = PhysicallyBased.createPhysicallyBasedBillboardGeometry (Some vkc)
+
+        // create physically-based quad
+        let quadGeometry = PhysicallyBased.createPhysicallyBasedQuadGeometry (Some vkc)
         
         // create cube map surface
         let cubeMapSurface = CubeMapSurface.make cubeMap cubeMapGeometry
@@ -6724,6 +6755,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               ShadowMatrices = shadowMatrices
               LightShadowIndices = dictPlus HashIdentity.Structural []
               CubeMapGeometry = cubeMapGeometry
+              BillboardGeometry = billboardGeometry
+              QuadGeometry = quadGeometry
               CubeMap = cubeMapSurface.CubeMap
               WhiteTexture = whiteTexture
               BlackTexture = blackTexture
