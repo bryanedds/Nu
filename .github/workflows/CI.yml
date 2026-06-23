@@ -18,22 +18,14 @@ jobs:
       - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.x'
-          workloads: ${{ case(!contains(matrix.os, 'ubuntu'), 'maui', 'maui-android') }}
+      - name: Build desktop only
+        run: dotnet build -f net10.0 -p:TargetFrameworks=net10.0
       - name: Install Android dependencies
-        run: dotnet build "Projects/Sand Box 2d" -t:InstallAndroidDependencies -f net10.0-android -p:AcceptAndroidSdkLicenses=True ${{ case(contains(matrix.os, 'ubuntu') && contains(matrix.os, 'arm'), '-p:AndroidSdkDirectory=/usr/local/lib/android/sdk', '') }} # path from https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md#environment-variables-2
-      - run: dotnet build
-  build-desktop-only:
-    strategy:
-      matrix:
-        os: *os-full
-      fail-fast: false
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-dotnet@v5
-        with:
-          dotnet-version: '10.x'
-      - run: dotnet build -f net10.0
+        run: |
+          dotnet workload install ${{ case(!contains(matrix.os, 'ubuntu'), 'maui', 'maui-android') }}
+          dotnet build "Projects/Sand Box 2d" -t:InstallAndroidDependencies -f net10.0-android -p:AcceptAndroidSdkLicenses=True ${{ case(contains(matrix.os, 'ubuntu') && contains(matrix.os, 'arm'), '-p:AndroidSdkDirectory=/usr/local/lib/android/sdk', '') }} # path from https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md#environment-variables-2
+      - name: Build all
+        run: dotnet build
   test:
     strategy:
       matrix:

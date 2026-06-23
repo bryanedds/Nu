@@ -174,7 +174,7 @@
 
     <Target Name="SelectCompatibleAssetDeliveryVersion" BeforeTargets="CollectPackageReferences"
             Condition="'$(TargetPlatformIdentifier)' == 'android' And '$(UsingAndroidNETSdk)' == 'true' And '@(PackageReference->WithMetadataValue(&quot;Identity&quot;, &quot;Xamarin.Google.Android.Play.Asset.Delivery&quot;))' == ''">
-        <!-- $(UsingAndroidNETSdk) ensures that the Android workload is actually installed, rather than having this script fail. -->
+        <!-- $(UsingAndroidNETSdk) ensures that the Android workload is actually installed to run this script. Otherwise, we want the descriptive workload-not-installed error to show instead of this script failing. -->
         <PropertyGroup>
             <_AssetDeliverySelectorScript>$(MSBuildThisFileDirectory)Nu/Scripts/SelectCompatibleAssetDeliveryVersion.fsx</_AssetDeliverySelectorScript>
         </PropertyGroup>
