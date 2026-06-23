@@ -107,6 +107,7 @@
         <Compile Include="Physics\JoltPhysicsEngine.fs" />
         <Compile Include="Render\RendererPrelude.fs" />
         <Compile Include="Render\Renderer2d.fs" />
+        <Compile Include="Render\Renderer3dOld.fs" />
         <Compile Include="Render\Renderer3d.fs" />
         <Compile Include="Render\RendererImGui.fs" />
         <Compile Include="Render\RendererProcess.fs" />
