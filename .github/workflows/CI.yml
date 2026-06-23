@@ -13,7 +13,7 @@ jobs:
       - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.x'
-          workloads: maui
+          workloads: maui-android
       - if: ${{ runner.os != 'Windows' }}
         run: sudo sh ./Configure.${{ runner.os }}.Application.sh
       - run: dotnet build
