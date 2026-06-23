@@ -5171,6 +5171,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           mutable PhysicallyBasedPipelines : PhysicallyBasedPipelines
           ShadowMatrices : Matrix4x4 array
           LightShadowIndices : Dictionary<uint64, int>
+          LightsDesiringShadows : Dictionary<uint64, SortableLight>
           CubeMapGeometry : CubeMapGeometry
           BillboardGeometry : PhysicallyBasedGeometry
           QuadGeometry : PhysicallyBasedGeometry
@@ -5747,6 +5748,30 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             | RenderLightMap3d rlm ->
                 let renderTasks = VulkanRenderer3d.getRenderTasks rlm.RenderPass renderer
                 renderTasks.LightMapRenders.Add rlm.LightProbeId |> ignore<bool>
+            | RenderLight3d rl ->
+                let direction = rl.Rotation.Down
+                let renderTasks = VulkanRenderer3d.getRenderTasks rl.RenderPass renderer
+                let coneOuter = match rl.LightType with SpotLight (_, coneOuter) -> min coneOuter MathF.TWO_PI | _ -> MathF.TWO_PI
+                let coneInner = match rl.LightType with SpotLight (coneInner, _) -> min coneInner coneOuter | _ -> MathF.TWO_PI
+                let light =
+                    { SortableLightId = rl.LightId
+                      SortableLightOrigin = rl.Origin
+                      SortableLightRotation = rl.Rotation
+                      SortableLightDirection = direction
+                      SortableLightColor = rl.Color
+                      SortableLightBrightness = rl.Brightness
+                      SortableLightAttenuationLinear = rl.AttenuationLinear
+                      SortableLightAttenuationQuadratic = rl.AttenuationQuadratic
+                      SortableLightCutoff = rl.LightCutoff
+                      SortableLightType = rl.LightType.Enumerate
+                      SortableLightConeInner = coneInner
+                      SortableLightConeOuter = coneOuter
+                      SortableLightDesireShadows = if rl.DesireShadows then 1 else 0
+                      SortableLightDesireFog = if rl.DesireFog then 1 else 0
+                      SortableLightDistance = Single.MaxValue }
+                renderTasks.Lights.Add light
+                if rl.DesireShadows then
+                    renderer.LightsDesiringShadows[rl.LightId] <- light
             | RenderStaticModel rsm ->
                 let insetOpt = Option.toValueOption rsm.InsetOpt
                 let renderTasks = VulkanRenderer3d.getRenderTasks rsm.RenderPass renderer
@@ -6195,16 +6220,19 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         
         
         
-        // deferred render quad to light accum texture
-        let lightAccumTexture = renderer.PhysicallyBasedAttachments.LightingAttachment
-        let sssEnabled = if renderer.RendererConfig.SssEnabled && renderer.LightingConfig.SssEnabled then 1 else 0
-        PhysicallyBased.drawPhysicallyBasedDeferredLightingSurface
-            eyeCenter view viewInverse geometryProjection geometryProjectionInverse geometryViewProjection renderer.LightingConfig.LightCutoffMargin
-            renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity sssEnabled
-            depthTexture albedoTexture materialTexture normalPlusTexture subdermalPlusTexture scatterPlusTexture clearCoatPlusTexture shadowTextureArray shadowMaps shadowCascades
-            lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices (min lightIds.Length renderTasks.Lights.Count) shadowNear renderer.ShadowMatrices
-            renderer.GeometrySampler renderer.ShadowSampler renderer.GeometryViewport renderer.RenderPassIndex renderer.QuadGeometry lightAccumTexture renderer.PhysicallyBasedPipelines.DeferredLightingPipeline renderer.VulkanContext
-        Texture.transitionLayoutAsync ColorAttachmentWrite ShaderRead lightAccumTexture renderer.VulkanContext.RenderCommandBuffer
+        // NOTE: commented this out for now because BGE needs to pair with DJL to figure out the layout transition
+        // issues that are keeping it from working.
+        //// deferred render quad to light accum texture
+        //let lightAccumTexture = renderer.PhysicallyBasedAttachments.LightingAttachment
+        //Texture.transitionLayoutAsync Undefined ColorAttachmentWrite lightAccumTexture renderer.VulkanContext.RenderCommandBuffer
+        //let sssEnabled = if renderer.RendererConfig.SssEnabled && renderer.LightingConfig.SssEnabled then 1 else 0
+        //PhysicallyBased.drawPhysicallyBasedDeferredLightingSurface
+        //    eyeCenter view viewInverse geometryProjection geometryProjectionInverse geometryViewProjection renderer.LightingConfig.LightCutoffMargin
+        //    renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity sssEnabled
+        //    depthTexture albedoTexture materialTexture normalPlusTexture subdermalPlusTexture scatterPlusTexture clearCoatPlusTexture shadowTextureArray shadowMaps shadowCascades
+        //    lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices (min lightIds.Length renderTasks.Lights.Count) shadowNear renderer.ShadowMatrices
+        //    renderer.GeometrySampler renderer.ShadowSampler renderer.GeometryViewport renderer.RenderPassIndex renderer.QuadGeometry lightAccumTexture renderer.PhysicallyBasedPipelines.DeferredLightingPipeline renderer.VulkanContext
+        //Texture.transitionLayoutAsync ColorAttachmentWrite ShaderRead lightAccumTexture renderer.VulkanContext.RenderCommandBuffer
 
         
         let ssvfEnabled = if renderer.RendererConfig.SsvfEnabled && renderer.LightingConfig.SsvfEnabled then 1 else 0
@@ -6355,7 +6383,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         Pipeline.beginFrame renderer.PhysicallyBasedPipelines.DeferredStaticPipeline.Pipeline
         Pipeline.beginFrame renderer.PhysicallyBasedPipelines.DeferredLightingPipeline.Pipeline
         Pipeline.beginFrame renderer.PhysicallyBasedPipelines.ForwardStaticPipeline.Pipeline
-        
+
         //////////////////
         // Handle Frame //
         //////////////////
@@ -6503,6 +6531,12 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         ///////////////
         // End Frame //
         ///////////////
+
+        // clear light shadow indices
+        renderer.LightShadowIndices.Clear ()
+
+        // clear lights desiring shadows
+        renderer.LightsDesiringShadows.Clear ()
 
         // swap render passes
         for renderTasks in renderer.RenderPasses.Values do if renderTasks.ShadowBufferIndexOpt.IsNone then RenderTasks.clear renderTasks
@@ -6754,6 +6788,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               PhysicallyBasedPipelines = physicallyBasedPipelines
               ShadowMatrices = shadowMatrices
               LightShadowIndices = dictPlus HashIdentity.Structural []
+              LightsDesiringShadows = dictPlus HashIdentity.Structural []
               CubeMapGeometry = cubeMapGeometry
               BillboardGeometry = billboardGeometry
               QuadGeometry = quadGeometry
