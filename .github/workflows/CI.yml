@@ -1,11 +1,17 @@
 name: CI
 on: [push, pull_request]
+
+env:
+  # Shared OS matrix definitions — single source of truth for runner platforms
+  OS_FULL: '["windows-latest", "windows-11-arm", "ubuntu-24.04-arm", "ubuntu-latest"]'
+  OS_DESKTOP: '["windows-latest", "ubuntu-latest"]'
+
 jobs:
   build:
     strategy:
       matrix:
         # Supported platforms: https://docs.github.com/en/actions/reference/runners/github-hosted-runners
-        os: [windows-latest, windows-11-arm, ubuntu-24.04-arm, ubuntu-latest]
+        os: ${{ fromJSON(env.OS_FULL) }}
       fail-fast: false # Don't cancel one when another fails
     runs-on: ${{ matrix.os }}
     steps:
@@ -17,10 +23,22 @@ jobs:
       - name: Install Android dependencies
         run: dotnet build "Projects/Sand Box 2d" -t:InstallAndroidDependencies -f net10.0-android -p:AcceptAndroidSdkLicenses=True ${{ case(contains(matrix.os, 'ubuntu') && contains(matrix.os, 'arm'), '-p:AndroidSdkDirectory=/usr/local/lib/android/sdk', '') }} # path from https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md#environment-variables-2
       - run: dotnet build
+  build-desktop-only:
+    strategy:
+      matrix:
+        os: ${{ fromJSON(env.OS_FULL) }}
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.x'
+      - run: dotnet build -f net10.0
   test:
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest]
+        os: ${{ fromJSON(env.OS_DESKTOP) }}
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
