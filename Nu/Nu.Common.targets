@@ -173,7 +173,8 @@
           -->
 
     <Target Name="SelectCompatibleAssetDeliveryVersion" BeforeTargets="CollectPackageReferences"
-            Condition="'$(TargetPlatformIdentifier)' == 'android' And '@(PackageReference->WithMetadataValue(&quot;Identity&quot;, &quot;Xamarin.Google.Android.Play.Asset.Delivery&quot;))' == ''">
+            Condition="'$(TargetPlatformIdentifier)' == 'android' And '$(UsingAndroidNETSdk)' == 'true' And '@(PackageReference->WithMetadataValue(&quot;Identity&quot;, &quot;Xamarin.Google.Android.Play.Asset.Delivery&quot;))' == ''">
+        <!-- $(UsingAndroidNETSdk) ensures that the Android workload is actually installed, rather than having this script fail. -->
         <PropertyGroup>
             <_AssetDeliverySelectorScript>$(MSBuildThisFileDirectory)Nu/Scripts/SelectCompatibleAssetDeliveryVersion.fsx</_AssetDeliverySelectorScript>
         </PropertyGroup>
