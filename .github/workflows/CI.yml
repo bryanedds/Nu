@@ -1,17 +1,16 @@
 name: CI
 on: [push, pull_request]
 
-env:
-  # Shared OS matrix definitions — single source of truth for runner platforms
-  OS_FULL: '["windows-latest", "windows-11-arm", "ubuntu-24.04-arm", "ubuntu-latest"]'
-  OS_DESKTOP: '["windows-latest", "ubuntu-latest"]'
-
 jobs:
   build:
     strategy:
       matrix:
         # Supported platforms: https://docs.github.com/en/actions/reference/runners/github-hosted-runners
-        os: ${{ fromJSON(env.OS_FULL) }}
+        os: &os-full
+          - windows-latest
+          - windows-11-arm
+          - ubuntu-24.04-arm
+          - ubuntu-latest
       fail-fast: false # Don't cancel one when another fails
     runs-on: ${{ matrix.os }}
     steps:
@@ -26,7 +25,7 @@ jobs:
   build-desktop-only:
     strategy:
       matrix:
-        os: ${{ fromJSON(env.OS_FULL) }}
+        os: *os-full
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
@@ -38,7 +37,7 @@ jobs:
   test:
     strategy:
       matrix:
-        os: ${{ fromJSON(env.OS_DESKTOP) }}
+        os: *os-full
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
