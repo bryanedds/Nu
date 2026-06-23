@@ -13,9 +13,14 @@ type NelmishMessage =
     | Reset
     interface Message
 
+// this is our MMCC command type
+type NelmishCommand =
+    | Exit
+    interface Command
+
 // this is our MMCC game dispatcher
 type NelmishDispatcher () =
-    inherit GameDispatcher<Nelmish, NelmishMessage, Command> (0) // initial model value
+    inherit GameDispatcher<Nelmish, NelmishMessage, NelmishCommand> (0) // initial model value
 
     // here we handle the MMCC messages
     override this.Message (nelmish, message, _, _) =
@@ -23,6 +28,11 @@ type NelmishDispatcher () =
         | Decrement -> just (nelmish - 1)
         | Increment -> just (nelmish + 1)
         | Reset -> just 0
+
+    // here we handle the MMCC commands
+    override this.Command (_, command, _, world) =
+        match command with
+        | Exit -> if world.Unaccompanied then World.exit world
 
     // here we describe the content of the game including its one screen, one group, three button entities, and one
     // text control
@@ -51,8 +61,7 @@ type NelmishDispatcher () =
     // from a Game.UpdateEvent to a command to handle it, but that's not the point of this little code demo.
     override this.Update (_, world) =
 
-        // handle Alt+F4 when not in editor
-        if  World.isKeyboardAltDown world &&
-            World.isKeyboardKeyDown KeyboardKey.F4 world &&
-            world.Unaccompanied then
-            World.exit world
+        // when not in editor, handle Alt+F4
+        if world.Unaccompanied then
+            if  World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world then
+                World.exit world

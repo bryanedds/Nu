@@ -66,3 +66,9 @@ type TerraFirmaDispatcher () =
         if World.doButton "Back" [] world then game.SetGameState Title world
         World.endGroup world
         World.endScreen world
+
+        // when not in editor, handle close window button or Alt+F4
+        if world.Unaccompanied then
+            if  World.doSubscriptionAny "Exit" game.ExitRequestEvent world ||
+                World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world then
+                World.exit world

@@ -1124,9 +1124,8 @@ module WorldModule2 =
         static member private processInput2 (evt : SDL_Event) (world : World) =
             match evt.Type with
             | SDL_EventType.SDL_EVENT_QUIT ->
-                if world.Accompanied then
-                    let eventTrace = EventTrace.debug "World" "processInput2" "ExitRequest" EventTrace.empty
-                    World.publishPlus () Nu.Game.Handle.ExitRequestEvent eventTrace Nu.Game.Handle true true world
+                let eventTrace = EventTrace.debug "World" "processInput2" "ExitRequest" EventTrace.empty
+                World.publishPlus () Nu.Game.Handle.ExitRequestEvent eventTrace Nu.Game.Handle true true world
             | SDL_EventType.SDL_EVENT_WINDOW_RESIZED ->
 
                 // ensure window size is a factor of display virtual resolution, going to full screen otherwise
