@@ -488,6 +488,79 @@ type Pipeline =
         write.pImageInfo <- asPointer &info
         Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
 
+    /// Describes a vertex attribute in the context of a vertex binding.
+    [<DebuggerHidden; DebuggerStepThrough>]
+    static member attribute location format offset =
+        { Location = location
+          Format = format
+          Offset = offset }
+
+    /// Describes a binding for a vertex and its attributes.
+    [<DebuggerHidden; DebuggerStepThrough>]
+    static member vertex binding stride inputRate attributes =
+        { Binding = binding
+          Stride = stride
+          InputRate = inputRate
+          Attributes = attributes }
+
+    /// Describes a binding for a resource descriptor (aka uniform).
+    [<DebuggerHidden; DebuggerStepThrough>]
+    static member descriptor binding descriptorType shaderStage descriptorCount =
+        { Binding = binding
+          DescriptorType = descriptorType
+          ShaderStage = shaderStage
+          DescriptorCount = descriptorCount }
+
+    /// Describes a descriptor set.
+    [<DebuggerHidden; DebuggerStepThrough>]
+    static member descriptorSet<'k when 'k : equality> descriptorBindings : 'k DescriptorSetDefinition =
+#if DEBUG
+        let ty = typeof<'k>
+        if ty = typeof<obj> then failwith "Unexpected key type 'obj'. You probably forgot to explicitly specify descriptorSet type!"
+        if ty = typeof<unit> then failwith "Unexpected key type 'unit'. You have to use the 'Unit' type instead since null semantics make 'unit' unusable as a key."
+#endif
+        { DescriptorBindings = descriptorBindings }
+    
+    /// Describes a push constant.
+    [<DebuggerHidden; DebuggerStepThrough>]
+    static member pushConstant offset size shaderStage =
+        { Offset = offset
+          Size = size
+          ShaderStage = shaderStage }
+    
+    /// Convert DepthTest to VkCompareOp.
+    /// TODO: BGE: since this is the odd one out in terms of being the only function directly in this module that is
+    /// not an operator, perhaps it should either be privatized or moved elsewhere?
+    static member depthTestToVkCompareOp depthTest =
+        match depthTest with
+        | LessThanTest -> VkCompareOp.Less
+        | LessThanOrEqualTest -> VkCompareOp.LessOrEqual
+        | EqualTest -> VkCompareOp.Equal
+        | GreaterThanOrEqualTest -> VkCompareOp.GreaterOrEqual
+        | GreaterThanTest -> VkCompareOp.Greater
+        | NeverPassTest -> VkCompareOp.Never
+        | AlwaysPassTest -> VkCompareOp.Always
+
+    /// Specify a descriptor set.
+    static member specifyDescriptorSet<'k when 'k : equality> set (key : 'k) pipeline vkc specify =
+        let descriptorSet = Pipeline.getDescriptorSet set pipeline
+        descriptorSet.Specify key vkc specify
+
+    /// Try to recreate VkPipelines with updated shaders.
+    static member reloadShaders pipeline (vkc : VulkanContext) =
+        CommandQueue.waitIdle vkc.RenderQueue // VkPipeline may still be in use by previous frame
+        Pipeline.destroyVkPipelines pipeline vkc
+        pipeline.VkPipelines_ <-
+            Pipeline.tryCreateVkPipelines
+                pipeline.ShaderPath_
+                pipeline.PipelineSettings_
+                pipeline.VkVertexBindings_
+                pipeline.VkVertexAttributes_
+                pipeline.VkPipelineLayout_
+                pipeline.VkColorAttachmentFormats_
+                pipeline.VkDepthTestFormatOpt_
+                vkc
+
     /// Create a Pipeline.
     static member create<'k when 'k : equality>
         shaderPath
@@ -549,21 +622,6 @@ type Pipeline =
         // fin
         pipeline
     
-    /// Try to recreate VkPipelines with updated shaders.
-    static member reloadShaders pipeline (vkc : VulkanContext) =
-        CommandQueue.waitIdle vkc.RenderQueue // VkPipeline may still be in use by previous frame
-        Pipeline.destroyVkPipelines pipeline vkc
-        pipeline.VkPipelines_ <-
-            Pipeline.tryCreateVkPipelines
-                pipeline.ShaderPath_
-                pipeline.PipelineSettings_
-                pipeline.VkVertexBindings_
-                pipeline.VkVertexAttributes_
-                pipeline.VkPipelineLayout_
-                pipeline.VkColorAttachmentFormats_
-                pipeline.VkDepthTestFormatOpt_
-                vkc
-    
     /// Destroy a Pipeline.
     static member destroy pipeline (vkc : VulkanContext) =
         Pipeline.destroyVkPipelines pipeline vkc
@@ -571,64 +629,3 @@ type Pipeline =
         for vkLayout in pipeline.VkDescriptorSetLayouts_ do Vulkan.vkDestroyDescriptorSetLayout (vkc.Device, vkLayout, nullPtr)
         for buffer in pipeline.Buffers_ do Buffer.destroy buffer vkc
         for set in pipeline.DescriptorSets_ do set.Destroy vkc
-
-[<RequireQualifiedAccess>]
-module Pipeline =
-
-    /// Describes a vertex attribute in the context of a vertex binding.
-    [<DebuggerHidden; DebuggerStepThrough>]
-    let attribute location format offset =
-        { Location = location
-          Format = format
-          Offset = offset }
-
-    /// Describes a binding for a vertex and its attributes.
-    [<DebuggerHidden; DebuggerStepThrough>]
-    let vertex binding stride inputRate attributes =
-        { Binding = binding
-          Stride = stride
-          InputRate = inputRate
-          Attributes = attributes }
-
-    /// Describes a binding for a resource descriptor (aka uniform).
-    [<DebuggerHidden; DebuggerStepThrough>]
-    let descriptor binding descriptorType shaderStage descriptorCount =
-        { Binding = binding
-          DescriptorType = descriptorType
-          ShaderStage = shaderStage
-          DescriptorCount = descriptorCount }
-
-    /// Describes a descriptor set.
-    [<DebuggerHidden; DebuggerStepThrough>]
-    let descriptorSet<'k when 'k : equality> descriptorBindings : 'k DescriptorSetDefinition =
-#if DEBUG
-        let ty = typeof<'k>
-        if ty = typeof<obj> then failwith "Unexpected key type 'obj'. You probably forgot to explicitly specify descriptorSet type!"
-        if ty = typeof<unit> then failwith "Unexpected key type 'unit'. You have to use the 'Unit' type instead since null semantics make 'unit' unusable as a key."
-#endif
-        { DescriptorBindings = descriptorBindings }
-    
-    /// Describes a push constant.
-    [<DebuggerHidden; DebuggerStepThrough>]
-    let pushConstant offset size shaderStage =
-        { Offset = offset
-          Size = size
-          ShaderStage = shaderStage }
-    
-    /// Convert DepthTest to VkCompareOp.
-    /// TODO: BGE: since this is the odd one out in terms of being the only function directly in this module that is
-    /// not an operator, perhaps it should either be privatized or moved elsewhere?
-    let depthTestToVkCompareOp depthTest =
-        match depthTest with
-        | LessThanTest -> VkCompareOp.Less
-        | LessThanOrEqualTest -> VkCompareOp.LessOrEqual
-        | EqualTest -> VkCompareOp.Equal
-        | GreaterThanOrEqualTest -> VkCompareOp.GreaterOrEqual
-        | GreaterThanTest -> VkCompareOp.Greater
-        | NeverPassTest -> VkCompareOp.Never
-        | AlwaysPassTest -> VkCompareOp.Always
-
-    /// Specify a descriptor set.
-    let specifyDescriptorSet<'k when 'k : equality> set (key : 'k) pipeline vkc specify =
-        let descriptorSet = Pipeline.getDescriptorSet set pipeline
-        descriptorSet.Specify key vkc specify
