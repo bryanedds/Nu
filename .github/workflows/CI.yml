@@ -25,7 +25,7 @@ jobs:
           optional_components: 'com.lunarg.vulkan.ios'
       - name: Build desktop only
         run: dotnet build -p TargetFrameworks=net10.0
-      - name: Install Android dependencies
+      - name: Install MAUI and Android dependencies
         run: |
           dotnet workload install ${{ case(!contains(matrix.os, 'ubuntu'), 'maui', 'maui-android') }}
           dotnet build "Projects/Sand Box 2d" -t:InstallAndroidDependencies -f net10.0-android -p:AcceptAndroidSdkLicenses=True ${{ case(contains(matrix.os, 'ubuntu') && contains(matrix.os, 'arm'), '-p:AndroidSdkDirectory=/usr/local/lib/android/sdk', '') }} # path from https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md#environment-variables-2
