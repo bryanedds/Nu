@@ -25,12 +25,16 @@ jobs:
           optional_components: 'com.lunarg.vulkan.ios'
       - name: Build desktop only
         run: dotnet build -p TargetFrameworks=net10.0
-      - name: Install MAUI and Android dependencies
-        run: |
-          dotnet workload install ${{ case(!contains(matrix.os, 'ubuntu'), 'maui', 'maui-android') }}
-          dotnet build "Projects/Sand Box 2d" -t:InstallAndroidDependencies -f net10.0-android -p:AcceptAndroidSdkLicenses=True ${{ case(contains(matrix.os, 'ubuntu') && contains(matrix.os, 'arm'), '-p:AndroidSdkDirectory=/usr/local/lib/android/sdk', '') }} # path from https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md#environment-variables-2
-      - name: Build all
+      - name: Install MAUI workload (if not Linux ARM)
         if: "!(contains(matrix.os, 'ubuntu') && contains(matrix.os, 'arm'))" # .NET Android SDK doesn't support Linux ARM64: https://github.com/dotnet/android/issues/11184
+        run: |
+          dotnet workload install ${{ case(!contains(matrix.os, 'ubuntu'), 'maui', 'maui-android') }} # Linux doesn't support iOS therefore full MAUI workload
+      - name: Install Android dependencies for Windows ARM
+        if: "contains(matrix.os, 'windows') && contains(matrix.os, 'arm')"
+        run:
+          dotnet build "Projects/Sand Box 2d" -t:InstallAndroidDependencies -f net10.0-android -p:AcceptAndroidSdkLicenses=True
+      - name: Build all (if not Linux ARM)
+        if: "!(contains(matrix.os, 'ubuntu') && contains(matrix.os, 'arm'))"
         run: dotnet build
   test:
     strategy:
