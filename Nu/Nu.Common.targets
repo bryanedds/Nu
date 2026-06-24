@@ -480,7 +480,7 @@
             then source ~/.bash_profile
             fi
             if [ &quot;$VULKAN_SDK&quot; == &quot;&quot; ]
-            then VULKAN_SDK=`ls -d ~/VulkanSDK/* | grep -E &quot;[^/]+/[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$&quot; | sort -V -r | head -n 1`
+            then VULKAN_SDK=`ls -d ~/VulkanSDK/* | grep -E &quot;[^/]+/[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$&quot; | sort -V -r | head -n 1`/macOS
             fi
             echo &quot;$VULKAN_SDK&quot;" ConsoleToMsBuild="true">
             <Output TaskParameter="ConsoleOutput" PropertyName="MacOSVulkanSdk" />
@@ -488,22 +488,22 @@
         <Error Text="Please install the macOS Vulkan SDK. If installed to a non-default location, override the MacOSVulkanSdk property in your project file."
                Condition="!$([System.IO.Directory]::Exists($(MacOSVulkanSdk)))" />
         <Error Text="You need to choose 'Development libraries for iOS' when installing the macOS Vulkan SDK to build for iOS. Please reinstall the Vulkan SDK with that option enabled."
-               Condition="'$(TargetPlatformIdentifier)'=='ios' And !$([System.IO.Directory]::Exists('$(MacOSVulkanSdk)/iOS'))" />
+               Condition="'$(TargetPlatformIdentifier)'=='ios' And !$([System.IO.Directory]::Exists('$(MacOSVulkanSdk)/../iOS'))" />
         <Warning Text="iOS Simulator builds will disable the 3D renderer because array (layered) attachments are unsupported."
                  Condition="'$(TargetPlatformIdentifier)'=='ios' And $(RuntimeIdentifier.StartsWith('iossimulator'))" />
         <ItemGroup>
             <!-- macOS: bundle Vulkan SDK dylibs -->
-            <MacOSVulkanSdkDylib Include="$(MacOSVulkanSdk)/macOS/lib/*.dylib" />
-            <MacOSVulkanSdkIcdOrExplicitLayerJson Include="$(MacOSVulkanSdk)/macOS/share/vulkan/explicit_layer.d/*.json" VulkanSubDir="explicit_layer.d" />
-            <MacOSVulkanSdkIcdOrExplicitLayerJson Include="$(MacOSVulkanSdk)/macOS/share/vulkan/icd.d/*.json" VulkanSubDir="icd.d" />
+            <MacOSVulkanSdkDylib Include="$(MacOSVulkanSdk)/lib/*.dylib" />
+            <MacOSVulkanSdkIcdOrExplicitLayerJson Include="$(MacOSVulkanSdk)/share/vulkan/explicit_layer.d/*.json" VulkanSubDir="explicit_layer.d" />
+            <MacOSVulkanSdkIcdOrExplicitLayerJson Include="$(MacOSVulkanSdk)/share/vulkan/icd.d/*.json" VulkanSubDir="icd.d" />
             <!-- iOS: package MoltenVK (simulator slice exists in the xcframework) -->
             <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios'"
-                             Include="$(MacOSVulkanSdk)/iOS/lib/MoltenVK.xcframework" Kind="Framework" />
+                             Include="$(MacOSVulkanSdk)/../iOS/lib/MoltenVK.xcframework" Kind="Framework" />
             <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios' And !$(RuntimeIdentifier.StartsWith('iossimulator'))"
-                             Include="$(MacOSVulkanSdk)/iOS/lib/vulkan.xcframework;$(MacOSVulkanSdk)/iOS/lib/VkLayer_*.xcframework" Kind="Framework" />
+                             Include="$(MacOSVulkanSdk)/../iOS/lib/vulkan.xcframework;$(MacOSVulkanSdk)/../iOS/lib/VkLayer_*.xcframework" Kind="Framework" />
         </ItemGroup>
         <Error Condition="'$(TargetPlatformIdentifier)'!='ios' And '@(MacOSVulkanSdkDylib)'==''"
-               Text="No macOS Vulkan SDK dylibs were found at '$(MacOSVulkanSdk)/macOS/lib/*.dylib'. Ensure MacOSVulkanSdk points to a valid Vulkan SDK installation." />
+               Text="No macOS Vulkan SDK dylibs were found at '$(MacOSVulkanSdk)/lib/*.dylib'. Ensure MacOSVulkanSdk points to a valid Vulkan SDK installation." />
         <!-- Create symbolic links for macOS Vulkan SDK dylibs -->
         <Exec Condition="'$(TargetPlatformIdentifier)'!='ios'"
               Command="mkdir -p &quot;$(OutDir)%(MacOSVulkanSdkDylib.RecursiveDir)&quot; &amp;&amp; ln -sfn &quot;%(MacOSVulkanSdkDylib.Identity)&quot; &quot;$(OutDir)%(MacOSVulkanSdkDylib.RecursiveDir)%(MacOSVulkanSdkDylib.Filename)%(MacOSVulkanSdkDylib.Extension)&quot;" />

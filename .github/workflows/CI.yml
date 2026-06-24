@@ -22,7 +22,7 @@ jobs:
       - uses: jakoch/install-vulkan-sdk-action@v1
         if: contains(matrix.os, 'macos')
         with:
-          optional_components: com.lunarg.vulkan.ios
+          optional_components: 'com.lunarg.vulkan.ios'
       - name: Build desktop only
         run: dotnet build -p TargetFrameworks=net10.0
       - name: Install Android dependencies
@@ -30,6 +30,7 @@ jobs:
           dotnet workload install ${{ case(!contains(matrix.os, 'ubuntu'), 'maui', 'maui-android') }}
           dotnet build "Projects/Sand Box 2d" -t:InstallAndroidDependencies -f net10.0-android -p:AcceptAndroidSdkLicenses=True ${{ case(contains(matrix.os, 'ubuntu') && contains(matrix.os, 'arm'), '-p:AndroidSdkDirectory=/usr/local/lib/android/sdk', '') }} # path from https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md#environment-variables-2
       - name: Build all
+        if: "!(contains(matrix.os, 'ubuntu') && contains(matrix.os, 'arm'))" # .NET Android SDK doesn't support Linux ARM64: https://github.com/dotnet/android/issues/11184
         run: dotnet build
   test:
     strategy:
@@ -45,6 +46,6 @@ jobs:
       - uses: jakoch/install-vulkan-sdk-action@v1
         if: contains(matrix.os, 'macos')
         with:
-          optional_components: com.lunarg.vulkan.ios
+          optional_components: 'com.lunarg.vulkan.ios'
         # GitHub Actions runners have no GPU so skip Integration tests
       - run: dotnet test Nu/Nu.Tests --filter TestCategory!="Integration"
