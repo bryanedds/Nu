@@ -19,7 +19,7 @@ jobs:
       - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.x'
-      - uses: jakoch/install-vulkan-sdk-action@v1
+      - uses: jakoch/install-vulkan-sdk-action@main # move to @v1 once 1065c8939d6f8f4a0a8c793bf654f543e21ec24f is released
         if: contains(matrix.os, 'macos')
         with:
           optional_components: 'com.lunarg.vulkan.ios'
@@ -47,9 +47,5 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.x'
-      - uses: jakoch/install-vulkan-sdk-action@v1
-        if: contains(matrix.os, 'macos')
-        with:
-          optional_components: 'com.lunarg.vulkan.ios'
         # GitHub Actions runners have no GPU so skip Integration tests
       - run: dotnet test Nu/Nu.Tests --filter TestCategory!="Integration"
