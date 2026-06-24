@@ -9,7 +9,7 @@ type MyGameDispatcher () =
     inherit GameDispatcherImSim ()
 
     // here we define the game's behavior
-    override this.Process (_, world) =
+    override this.Process (game, world) =
 
         // process in the game's ImSim context
         World.beginScreen "Screen" true Vanilla [] world |> ignore
@@ -21,8 +21,8 @@ type MyGameDispatcher () =
         World.endGroup world
         World.endScreen world
 
-        // handle Alt+F4 when not in editor
-        if  World.isKeyboardAltDown world &&
-            World.isKeyboardKeyDown KeyboardKey.F4 world &&
-            world.Unaccompanied then
-            World.exit world
+        // when not in editor, handle close window button or Alt+F4
+        if world.Unaccompanied then
+            if  World.doSubscriptionAny "Exit" game.ExitRequestEvent world ||
+                World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world then
+                World.exit world

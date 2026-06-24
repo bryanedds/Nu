@@ -43,8 +43,8 @@ type SandBox2dDispatcher () =
         World.doScreen<FluidSimDispatcher> Simulants.FluidSim.Name (game.GetGameState world = FluidSim) behavior [] world |> ignore
         if World.doSubscriptionAny "SwitchScreen" Simulants.FluidSimSwitchScreen.ClickEvent world then game.SetGameState ToyBox world
 
-        // handle Alt+F4 when not in editor
-        if  World.isKeyboardAltDown world &&
-            World.isKeyboardKeyDown KeyboardKey.F4 world &&
-            world.Unaccompanied then
-            World.exit world
+        // when not in editor, handle close window button or Alt+F4
+        if world.Unaccompanied then
+            if  World.doSubscriptionAny "Exit" game.ExitRequestEvent world ||
+                World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world then
+                World.exit world
