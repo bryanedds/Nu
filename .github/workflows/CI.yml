@@ -11,7 +11,7 @@ jobs:
           - windows-11-arm
           - ubuntu-24.04-arm
           - ubuntu-latest
-          - macos-latest
+          - macos-26 # choose a macOS version with Xcode that is supported by https://github.com/dotnet/macios/releases
       fail-fast: false # Don't cancel one when another fails
     runs-on: ${{ matrix.os }}
     steps:
@@ -39,7 +39,7 @@ jobs:
   test:
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
+        os: [windows-latest, ubuntu-latest, macos-latest] # can't include ARM because we don't have ImGui native libraries
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
