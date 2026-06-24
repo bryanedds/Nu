@@ -119,10 +119,11 @@ module Content =
         if notNull content.PropertyContentsOpt && content.PropertyContentsOpt.Count > 0 then
             let simulant = if notNull (contentOld.SimulantCachedOpt :> obj) then contentOld.SimulantCachedOpt else simulant
             content.SimulantCachedOpt <- simulant
+            let reinitializing = initializing || reinitializing
             for propertyContent in content.PropertyContentsOpt do
                 if (match propertyContent.PropertyType with
                     | InitializingProperty -> initializing
-                    | ReinitializingProperty -> initializing || reinitializing
+                    | ReinitializingProperty -> reinitializing
                     | DynamicProperty -> true) then
                     let lens = propertyContent.PropertyLens
                     match lens.This :> obj with
@@ -137,6 +138,7 @@ module Content =
         if notNull content.PropertyContentsOpt && content.PropertyContentsOpt.Count > 0 then
             let entity = if notNull (contentOld.EntityCachedOpt :> obj) then contentOld.EntityCachedOpt else entity
             content.EntityCachedOpt <- entity
+            let reinitializing = initializing || reinitializing
             let propertyContents = content.PropertyContentsOpt
             for i in 0 .. dec propertyContents.Count do
                 let propertyContent = propertyContents[i]
@@ -145,7 +147,7 @@ module Content =
                     mountOptOpt <- ValueSome (propertyContent.PropertyValue :?> Entity Address option)
                 if (match propertyContent.PropertyType with
                     | InitializingProperty -> initializing
-                    | ReinitializingProperty -> initializing || reinitializing
+                    | ReinitializingProperty -> reinitializing
                     | DynamicProperty -> true) then
                     match lens.This :> obj with
                     | null -> World.setEntityPropertyFast lens.Name { PropertyType = lens.Type; PropertyValue = propertyContent.PropertyValue } entity world

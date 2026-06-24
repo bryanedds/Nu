@@ -400,14 +400,16 @@ module WorldModule2 =
 
                     // fin
                     true
-
+                    
+            let initializing = initializing || Initializing
+            let reinitializing = initializing || Reinitializing
             for arg in args do
                 if (match arg.ArgType with
-                    | InitializingArg -> initializing || Initializing
-                    | ReinitializingArg -> initializing || Initializing || Reinitializing
+                    | InitializingArg -> initializing
+                    | ReinitializingArg -> reinitializing
                     | DynamicArg -> true) && screen.GetExists world then
                     screen.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
-            if (initializing || Initializing || Reinitializing) && screen.GetExists world then
+            if reinitializing && screen.GetExists world then
                 World.applyScreenBehavior setScreenSlide behavior screen world
             if screenCreation && screen.GetExists world then
                 WorldModuleInternal.tryProcessScreen true screen world
@@ -1144,9 +1146,8 @@ module WorldModule2 =
         static member internal processInput2 (evt : SDL_Event) (world : World) =
             match evt.Type with
             | SDL_EventType.SDL_EVENT_QUIT ->
-                if world.Accompanied then
-                    let eventTrace = EventTrace.debug "World" "processInput2" "ExitRequest" EventTrace.empty
-                    World.publishPlus () Nu.Game.Handle.ExitRequestEvent eventTrace Nu.Game.Handle true true world
+                let eventTrace = EventTrace.debug "World" "processInput2" "ExitRequest" EventTrace.empty
+                World.publishPlus () Nu.Game.Handle.ExitRequestEvent eventTrace Nu.Game.Handle true true world
             | SDL_EventType.SDL_EVENT_WINDOW_RESIZED ->
                 World.processWindowResized world
             | SDL_EventType.SDL_EVENT_MOUSE_MOTION ->

@@ -51,7 +51,8 @@ type MyGameDispatcher () =
          Simulants.TitlePlay.ClickEvent => ShowGameplay
          Simulants.TitleExit.ClickEvent => Exit
          Simulants.CreditsBack.ClickEvent => ShowTitle
-         Simulants.Gameplay.QuitEvent => ShowTitle]
+         Simulants.Gameplay.QuitEvent => ShowTitle
+         Game.ExitRequestEvent => Exit]
 
     // here we handle the above messages
     override this.Message (_, message, _, _) =

@@ -1231,16 +1231,6 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
       Id : uint64
       Surnames : string array }
 
-    member this.PerimeterCenter with get () = this.Transform.PerimeterCenter and set value = this.Transform.PerimeterCenter <- value
-    member this.PerimeterBottom with get () = this.Transform.PerimeterBottom and set value = this.Transform.PerimeterBottom <- value
-    member this.PerimeterBottomLeft with get () = this.Transform.PerimeterBottomLeft and set value = this.Transform.PerimeterBottomLeft <- value
-    member this.PerimeterMin with get () = this.Transform.PerimeterMin and set value = this.Transform.PerimeterMin <- value
-    member this.PerimeterMax with get () = this.Transform.PerimeterMax and set value = this.Transform.PerimeterMax <- value
-    member this.PerimeterCenterLocal = this.PositionLocal + (this.Transform.PerimeterCenter - this.Transform.Position)
-    member this.PerimeterBottomLocal = this.PositionLocal + (this.Transform.PerimeterBottom - this.Transform.Position)
-    member this.PerimeterBottomLeftLocal = this.PositionLocal + (this.Transform.PerimeterBottomLeft - this.Transform.Position)
-    member this.PerimeterMinLocal = this.PositionLocal + (this.Transform.PerimeterMin - this.Transform.Position)
-    member this.PerimeterMaxLocal = this.PositionLocal + (this.Transform.PerimeterMax - this.Transform.Position)
     member this.Position with get () = this.Transform.Position and set value = this.Transform.Position <- value
     member this.Rotation with get () = this.Transform.Rotation and set value = this.Transform.Rotation <- value
     member this.Scale with get () = this.Transform.Scale and set value = this.Transform.Scale <- value
@@ -1255,6 +1245,16 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member this.AffineMatrix = this.Transform.AffineMatrix
     member this.PerimeterUnscaled with get () = this.Transform.PerimeterUnscaled and set value = this.Transform.PerimeterUnscaled <- value
     member this.Perimeter with get () = this.Transform.Perimeter and set value = this.Transform.Perimeter <- value
+    member this.PerimeterCenter with get () = this.Transform.PerimeterCenter and set value = this.Transform.PerimeterCenter <- value
+    member this.PerimeterBottom with get () = this.Transform.PerimeterBottom and set value = this.Transform.PerimeterBottom <- value
+    member this.PerimeterBottomLeft with get () = this.Transform.PerimeterBottomLeft and set value = this.Transform.PerimeterBottomLeft <- value
+    member this.PerimeterMin with get () = this.Transform.PerimeterMin and set value = this.Transform.PerimeterMin <- value
+    member this.PerimeterMax with get () = this.Transform.PerimeterMax and set value = this.Transform.PerimeterMax <- value
+    member this.PerimeterCenterLocal = this.PositionLocal + (this.Transform.PerimeterCenter - this.Transform.Position)
+    member this.PerimeterBottomLocal = this.PositionLocal + (this.Transform.PerimeterBottom - this.Transform.Position)
+    member this.PerimeterBottomLeftLocal = this.PositionLocal + (this.Transform.PerimeterBottomLeft - this.Transform.Position)
+    member this.PerimeterMinLocal = this.PositionLocal + (this.Transform.PerimeterMin - this.Transform.Position)
+    member this.PerimeterMaxLocal = this.PositionLocal + (this.Transform.PerimeterMax - this.Transform.Position)
     member this.Bounds = if this.Is2d then this.Transform.Bounds2d else this.Transform.Bounds3d
     member internal this.Active with get () = this.Transform.Active and set value = this.Transform.Active <- value
     member internal this.Dirty with get () = this.Transform.Dirty and set value = this.Transform.Dirty <- value

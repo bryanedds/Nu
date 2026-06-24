@@ -109,7 +109,7 @@ type MyGameDispatcher () =
     static let Positions = // 20,000 entities
         [|for i in 0 .. dec 50 do
             for j in 0 .. dec 50 do
-                for k in 0 .. dec 8 do
+                for k in 0 .. dec 12 do
                     yield v3 (single i * 0.5f) (single j * 0.5f) (single k * 0.5f)|]
 
     override this.Register (_, world) =
@@ -126,13 +126,13 @@ type MyGameDispatcher () =
         World.selectScreen (IdlingState world.GameTime) screen world
 #endif
 
-    override this.Update (_, world) =
+    override this.Update (game, world) =
 
-        // handle Alt+F4 when not in editor
-        if  World.isKeyboardAltDown world &&
-            World.isKeyboardKeyDown KeyboardKey.F4 world &&
-            world.Unaccompanied then
-            World.exit world
+        // when not in editor, handle close window button or Alt+F4
+        if world.Unaccompanied then
+            if  World.doSubscriptionAny "Exit" game.ExitRequestEvent world ||
+                World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world then
+                World.exit world
 #endif
 
 type MetricsPlugin () =
