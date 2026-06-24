@@ -1095,7 +1095,7 @@ type [<ReferenceEquality>] private RenderTasks =
           DeferredAnimatedRemovals = List ()
           ShadowBufferIndexOpt = None }
 
-    static member clear renderTasks =
+    static member clear removeEmptyLists renderTasks =
 
         renderTasks.SkyBoxes.Clear ()
         renderTasks.LightProbes.Clear ()
@@ -1104,7 +1104,7 @@ type [<ReferenceEquality>] private RenderTasks =
         renderTasks.Lights.Clear ()
 
         for entry in renderTasks.DeferredStatic do
-            if entry.Value.Count = 0
+            if entry.Value.Count = 0 && removeEmptyLists
             then renderTasks.DeferredStaticRemovals.Add entry.Key
             else entry.Value.Clear ()
         for removal in renderTasks.DeferredStaticRemovals do
@@ -1113,7 +1113,7 @@ type [<ReferenceEquality>] private RenderTasks =
         renderTasks.DeferredStaticPreBatches.Clear ()
 
         for entry in renderTasks.DeferredStaticClipped do
-            if entry.Value.Count = 0
+            if entry.Value.Count = 0 && removeEmptyLists
             then renderTasks.DeferredStaticClippedRemovals.Add entry.Key
             else entry.Value.Clear ()
         for removal in renderTasks.DeferredStaticClippedRemovals do
@@ -1122,7 +1122,7 @@ type [<ReferenceEquality>] private RenderTasks =
         renderTasks.DeferredStaticClippedPreBatches.Clear ()
 
         for entry in renderTasks.DeferredAnimated do
-            if entry.Value.Count = 0
+            if entry.Value.Count = 0 && removeEmptyLists
             then renderTasks.DeferredAnimatedRemovals.Add entry.Key
             else entry.Value.Clear ()
         for removal in renderTasks.DeferredAnimatedRemovals do
@@ -1796,7 +1796,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 match displacedPasses with
                 | head :: _ ->
                     let recycledTasks = head.Value
-                    RenderTasks.clear recycledTasks
+                    RenderTasks.clear false recycledTasks
                     recycledTasks
                 | _ -> RenderTasks.make ()
             renderer.RenderPasses.Add (renderPass, renderTasks)
@@ -4739,8 +4739,8 @@ type [<ReferenceEquality>] GlRenderer3d =
             renderer.ReloadAssetsRequested <- false
 
         // swap render passes
-        for renderTasks in renderer.RenderPasses.Values do if renderTasks.ShadowBufferIndexOpt.IsNone then RenderTasks.clear renderTasks
-        for renderTasks in renderer.RenderPasses2.Values do RenderTasks.clear renderTasks
+        for renderTasks in renderer.RenderPasses.Values do if renderTasks.ShadowBufferIndexOpt.IsNone then RenderTasks.clear true renderTasks
+        for renderTasks in renderer.RenderPasses2.Values do RenderTasks.clear false renderTasks
         let renderPasses = renderer.RenderPasses
         renderer.RenderPasses <- renderer.RenderPasses2
         renderer.RenderPasses2 <- renderPasses
