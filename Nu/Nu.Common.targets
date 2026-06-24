@@ -85,10 +85,6 @@
         <ValidateXcodeVersion>False</ValidateXcodeVersion> <!-- You can disable this for more annoyances with Xcode version syncing with .NET workloads -->
     </PropertyGroup>
 
-    <PropertyGroup Condition="$(BuildingMacOS) And '$(Configuration)' == 'Release'">
-        <RuntimeIdentifiers Condition="'$(RuntimeIdentifiers)' == ''">osx-arm64</RuntimeIdentifiers>
-    </PropertyGroup>
-
     <!-- ============================================================
          Common Assembly References
          ============================================================ -->
@@ -106,32 +102,7 @@
         <Reference Include="TiledSharp">
             <HintPath>$(MSBuildThisFileDirectory)Nu.Dependencies/TiledSharp/lib/netstandard2.0/TiledSharp.dll</HintPath>
         </Reference>
-    </ItemGroup>
-
-    <!-- These are single-target (net10.0) libraries referenced by every game
-         project via this targets file, and also listed directly in Nu.sln.
-         The solution metaproj may or may not pass TargetFramework as a global
-         property depending on how dotnet build is invoked. When a multi-targeting
-         project (e.g. Sand Box 2d with net10.0-android;net10.0) resolves these
-         references for its non-desktop TFM, MSBuild computes
-         SetTargetFramework="TargetFramework=net10.0", which becomes an additional
-         global property — creating a distinct cache key that triggers a parallel
-         second build. Two builds racing on the same output files causes locking
-         and write-contention failures.
-         SkipGetTargetFrameworkProperties prevents the computed property from
-         being emitted. When the parent has a platform-specific TFM (contains '-',
-         e.g. net10.0-android with android-x64), GlobalPropertiesToRemove strips the
-         inherited TargetFramework and RuntimeIdentifier so the referenced project
-         uses its project-file default (net10.0). When the parent has a plain TFM
-         (net10.0), no stripping is needed — the inherited value already matches
-         what the metaproj passes, so the cache key aligns. -->
-    <PropertyGroup>
-        <_NuCommonGlobalPropertiesToRemove Condition="$(TargetFramework.Contains('-'))">TargetFramework;RuntimeIdentifier</_NuCommonGlobalPropertiesToRemove>
-    </PropertyGroup>
-    <ItemGroup>
-        <ProjectReference Include="$(MSBuildThisFileDirectory)Nu/Nu.fsproj" SkipGetTargetFrameworkProperties="true" GlobalPropertiesToRemove="$(_NuCommonGlobalPropertiesToRemove)" />
-        <ProjectReference Include="$(MSBuildThisFileDirectory)Nu.Math/Nu.Math.csproj" SkipGetTargetFrameworkProperties="true" GlobalPropertiesToRemove="$(_NuCommonGlobalPropertiesToRemove)" />
-        <ProjectReference Include="$(MSBuildThisFileDirectory)Nu.Spine/Nu.Spine.csproj" SkipGetTargetFrameworkProperties="true" GlobalPropertiesToRemove="$(_NuCommonGlobalPropertiesToRemove)" />
+        <ProjectReference Include="$(MSBuildThisFileDirectory)Nu/Nu.fsproj" />
     </ItemGroup>
 
     <!-- ============================================================
