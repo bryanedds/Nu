@@ -369,7 +369,7 @@
          RemoveProperties here ensures that the same properties are supplied for MSBuild caching. -->
     <Target Name="BuildNuPipe" BeforeTargets="BeforeBuild">
         <MSBuild Projects="$(MSBuildThisFileDirectory)Nu.Pipe/Nu.Pipe.fsproj"
-                 RemoveProperties="TargetFramework;TargetFrameworks;RuntimeIdentifier;SelfContained"
+                 RemoveProperties="TargetFramework;RuntimeIdentifier;SelfContained"
                  Targets="Restore;Build" />
     </Target>
 

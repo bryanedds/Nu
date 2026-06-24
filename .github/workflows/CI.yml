@@ -19,8 +19,12 @@ jobs:
       - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.x'
+      - uses: jakoch/install-vulkan-sdk-action@v1
+        if: contains(matrix.os, 'macos')
+        with:
+          optional_components: com.lunarg.vulkan.ios
       - name: Build desktop only
-        run: dotnet build -f net10.0 -p:TargetFrameworks=net10.0
+        run: dotnet build -f net10.0 -t Restore,Build
       - name: Install Android dependencies
         run: |
           dotnet workload install ${{ case(!contains(matrix.os, 'ubuntu'), 'maui', 'maui-android') }}
@@ -38,5 +42,9 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.x'
+      - uses: jakoch/install-vulkan-sdk-action@v1
+        if: contains(matrix.os, 'macos')
+        with:
+          optional_components: com.lunarg.vulkan.ios
         # GitHub Actions runners have no GPU so skip Integration tests
       - run: dotnet test Nu/Nu.Tests --filter TestCategory!="Integration"
