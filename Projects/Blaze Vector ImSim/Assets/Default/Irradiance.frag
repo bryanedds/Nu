@@ -3,9 +3,9 @@
 const float PI = 3.14159265359;
 const float SAMPLE_DELTA = 0.025;
 
-layout(binding = 1) uniform textureCube cubeMap;
+layout(set = 1, binding = 0) uniform textureCube cubeMap;
 
-layout(set = 1, binding = 0) uniform sampler samp;
+layout(set = 2, binding = 0) uniform sampler samp;
 
 layout(location = 0) in vec3 positionOut;
 

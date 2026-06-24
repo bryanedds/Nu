@@ -72,15 +72,6 @@ type NavShape =
     | BoundsNavShape
     | ContourNavShape
 
-/// The batch phasing such involved in persisting OpenGL state.
-type [<Struct>] BatchPhase =
-    | StartingPhase
-    | ResumingPhase
-    | StoppingPhase
-    | SingletonPhase
-    member this.Starting = match this with StartingPhase | SingletonPhase -> true | ResumingPhase | StoppingPhase -> false
-    member this.Stopping = match this with StoppingPhase | SingletonPhase -> true | ResumingPhase | StartingPhase -> false
-
 /// Additional assimp functionality.
 /// Intentionally prevents the original Assimp namespace from being opened.
 [<RequireQualifiedAccess>]

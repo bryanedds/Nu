@@ -1711,6 +1711,36 @@ module Math =
             [|segment|]
         else [||]
 
+    /// Check that a is aligned on b.
+    let Aligned (a, b) =
+        if a = b then true
+        elif a > b then a % b = 0
+        else b % a = 0
+
+    /// Compute the size of the stride.
+    /// TODO: DJL: perhaps calculating this stuff manually is a bad idea?
+    let Stride (alignment, size) =
+        if size = 0 then size // just to prevent division by 0; size should be > 0
+        elif alignment = 0 then size
+        elif alignment = size then size
+        elif size > alignment && size % alignment = 0 then size
+        elif alignment % size = 0 then size
+        else (size / alignment + 1) * alignment // stride = lowest multiple of alignment that contains size
+
+    /// Compute the alignment offset.
+    let AlignOffset (offset, alignment) =
+        if alignment = 0 then offset // no alignment
+        elif offset = 0 then offset // no offset to align
+        elif Aligned (offset, alignment) then offset // offset already aligned
+        else (offset / alignment + 1) * alignment // offset shifted forward to align
+
+    /// Compute the minimum buffer size.
+    /// TODO: find a more general name for this.
+    let MinimumBufferSize (offset, alignment, size, count) =
+        let stride = Stride (alignment, size)
+        let offset = AlignOffset (offset, alignment)
+        offset + stride * count
+
 [<AutoOpen>]
 module MathOperators =
 
@@ -1740,7 +1770,11 @@ module MathOperators =
 
 namespace Nu
 open System
+open System.Numerics
 open Prime
+
+/// The single inhabitant type / value for use where unit / () won't suffice, such as for a dictionary key.
+type Unit = Unit
 
 /// The result of an intersection-detecting operation.
 type [<Struct>] Intersection =

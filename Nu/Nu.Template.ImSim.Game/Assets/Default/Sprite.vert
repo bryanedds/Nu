@@ -15,10 +15,7 @@ struct SpriteVert
     vec4 texCoords4;
 };
 
-layout(binding = 0) buffer readonly SpriteVertBlock
-{
-    SpriteVert sprite;
-};
+layout(set = 0, binding = 0) buffer readonly SpriteVertBlock { SpriteVert sprite; };
 
 layout(location = 0) in vec2 position;
 

@@ -20,20 +20,17 @@ const vec2 TEX_COORDS_OFFSET_FILTERS_2[TEX_COORDS_OFFSET_VERTS] =
         vec2(1,1),
         vec2(0,1));
 
-struct Transform
+struct Eye
 {
+    vec3 center;
     mat4 view;
-    mat4 projection;
-    mat4 viewProjection;
     mat4 viewInverse;
+    mat4 projection;
     mat4 projectionInverse;
-    vec3 eyeCenter;
+    mat4 viewProjection;
 };
 
-layout(binding = 0) buffer readonly TransformBlock
-{
-    Transform transform;
-};
+layout(binding = 0) buffer readonly EyeBlock { Eye eye; };
 
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec2 texCoords;
@@ -68,5 +65,5 @@ void main()
     heightPlusOut = heightPlus;
     subsurfacePlusOut = subsurfacePlus;
     clearCoatPlusOut = clearCoatPlus;
-    gl_Position = transform.viewProjection * positionOut;
+    gl_Position = eye.viewProjection * positionOut;
 }

@@ -5,14 +5,11 @@ struct SpriteFrag
     vec4 color;
 };
 
-layout(binding = 1) buffer readonly SpriteFragBlock
-{
-    SpriteFrag sprite;
-};
+layout(set = 0, binding = 1) buffer readonly SpriteFragBlock { SpriteFrag sprite; };
 
-layout(binding = 2) uniform texture2D tex;
+layout(set = 1, binding = 0) uniform texture2D tex;
 
-layout(set = 1, binding = 0) uniform sampler samp;
+layout(set = 2, binding = 0) uniform sampler samp;
 
 layout(location = 0) in vec2 texCoords;
 

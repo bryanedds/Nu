@@ -8,12 +8,11 @@ namespace Nu
 open System
 open System.Collections.Generic
 open System.IO
-open Vortice.Vulkan
 open Prime
-open Nu
+open Nu.Vulkan
 
 /// Provides asset clients for direct usage.
-type AssetClient (textureClient : Texture.TextureClient, cubeMapClient : CubeMap.CubeMapClient, sceneClient : PhysicallyBased.PhysicallyBasedSceneClient) =
+type AssetClient (textureClient : TextureClient, cubeMapClient : CubeMapClient, sceneClient : PhysicallyBasedSceneClient) =
 
     /// The texture client.
     member this.TextureClient = textureClient
@@ -42,7 +41,7 @@ type AssetClient (textureClient : Texture.TextureClient, cubeMapClient : CubeMap
         let textureDataLoadOps =
             [for textureAsset in textureAssets do
                 vsync {
-                    match Texture.TryCreateTextureData (not is2d, textureAsset.FilePath) with
+                    match Hl.tryCreateTextureData (not is2d) textureAsset.FilePath with
                     | Some textureData -> return Right (textureAsset.FilePath, textureData)
                     | None -> return Left ("Error creating texture data from '" + textureAsset.FilePath + "'") }]
 
@@ -63,20 +62,20 @@ type AssetClient (textureClient : Texture.TextureClient, cubeMapClient : CubeMap
             | Right (filePath, textureData) ->
                 let texture =
                     if is2d then
-                        let (metadata, textureInternal) =
-                            if Texture.InferFiltered2d filePath
-                            then Texture.CreateTextureVulkanFromData (true, Texture.Uncompressed, textureData, Texture.RenderThread, vkc)
-                            else Texture.CreateTextureVulkanFromData (false, Texture.Uncompressed, textureData, Texture.RenderThread, vkc)
-                        Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = textureInternal }
+                        let (metadata, textureParallel) =
+                            if Hl.inferTextureFiltered2d filePath
+                            then Hl.createTextureVulkanFromData true Uncompressed textureData RenderThread vkc
+                            else Hl.createTextureVulkanFromData false Uncompressed textureData RenderThread vkc
+                        EagerTexture { TextureMetadata = metadata; TextureParallel = textureParallel }
                     elif textureData.LazyLoadable then
-                        let (metadata, textureInternal) = Texture.CreateTextureVulkanFromData (true, Texture.InferCompression filePath, textureData, Texture.RenderThread, vkc)
-                        let lazyTexture = new Texture.LazyTexture (filePath, metadata, textureInternal)
+                        let (metadata, textureParallel) = Hl.createTextureVulkanFromData true (Hl.inferTextureCompression filePath) textureData RenderThread vkc
+                        let lazyTexture = new LazyTexture (filePath, metadata, textureParallel)
                         textureClient.LazyTextureQueue.Enqueue lazyTexture
-                        Texture.LazyTexture lazyTexture
+                        LazyTexture lazyTexture
                     else
                         Log.infoOnce "One or more textures for non-2D usage are not streamable; consider using the BlockCompress refinement with them for more efficient loading."
-                        let (metadata, textureInternal) = Texture.CreateTextureVulkanFromData (true, Texture.InferCompression filePath, textureData, Texture.RenderThread, vkc)
-                        Texture.EagerTexture { TextureMetadata = metadata; TextureInternal = textureInternal }
+                        let (metadata, textureParallel) = Hl.createTextureVulkanFromData true (Hl.inferTextureCompression filePath) textureData RenderThread vkc
+                        EagerTexture { TextureMetadata = metadata; TextureParallel = textureParallel }
                 textureClient.Textures[filePath] <- texture
             | Left error -> Log.info error
 
@@ -98,7 +97,7 @@ type AssetClient (textureClient : Texture.TextureClient, cubeMapClient : CubeMap
                 let faceBackFilePath = dirPath + "/" + faceBackFilePath.Trim ()
                 let faceFrontFilePath = dirPath + "/" + faceFrontFilePath.Trim ()
                 let cubeMapKey = (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath)
-                match CubeMap.TryCreateCubeMap (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath, Texture.RenderThread, vkc) with
+                match CubeMap.tryCreateCubeMap faceRightFilePath faceLeftFilePath faceTopFilePath faceBottomFilePath faceBackFilePath faceFrontFilePath RenderThread vkc with
                 | Right cubeMap -> cubeMapClient.CubeMaps[cubeMapKey] <- cubeMap
                 | Left error -> Log.info ("Could not load cube map '" + cubeMap.FilePath + "' due to: " + error)
             | _ -> Log.info ("Could not load cube map '" + cubeMap.FilePath + "' due to requiring exactly 6 file paths with each file path on its own line.")

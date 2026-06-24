@@ -26,15 +26,9 @@ struct ViewProjection
     mat4 viewProjection;
 };
 
-layout(binding = 0) buffer readonly SpriteBlock
-{
-    Sprite sprites[SPRITE_BATCH_SIZE];
-};
+layout(set = 0, binding = 0) buffer readonly SpriteBlock { Sprite sprites[SPRITE_BATCH_SIZE]; };
 
-layout(binding = 1) buffer readonly ViewProjectionBlock
-{
-    ViewProjection viewProjection;
-};
+layout(set = 0, binding = 1) buffer readonly ViewProjectionBlock { ViewProjection viewProjection; };
 
 layout(location = 0) out vec2 texCoords;
 layout(location = 1) out vec4 color;
