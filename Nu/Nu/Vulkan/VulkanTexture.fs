@@ -203,6 +203,7 @@ type TextureSingleton =
     { Image : VkImage
       Allocation : VmaAllocation
       ImageView : VkImageView
+      LayerViews : VkImageView array
       SubViews : VkImageView array2d
       ImageSize : TextureMetadata
       StagingBuffers : Nu.Vulkan.Buffer List }
@@ -229,10 +230,23 @@ type TextureSingleton =
 
     static member create pixelFormat (internalFormat : Nu.Vulkan.ImageFormat) metadata mipLevels (attachmentMode : AttachmentMode) (textureType : TextureType) usageFlags (vkc : VulkanContext) =
 
-        // create image and image views
+        // create image
         let extent = VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
         let (image, allocation) = TextureSingleton.createImage internalFormat.VkFormat extent mipLevels textureType usageFlags vkc
+
+        // create image view
         let imageView = Hl.createImageView pixelFormat internalFormat.VkFormat 0 mipLevels 0 textureType.Layers textureType.VkImageViewType attachmentMode.VkImageAspectFlags image vkc.Device
+
+        // create layer views
+        let layerViews =
+            if attachmentMode.IsAttachmentColor && textureType.Layers > 1 then
+                let layerViews = Array.zeroCreate<VkImageView> textureType.Layers
+                for i in 0 .. dec textureType.Layers do
+                    layerViews.[i] <- Hl.createImageView pixelFormat internalFormat.VkFormat 0 mipLevels i 1 VkImageViewType.Image2D attachmentMode.VkImageAspectFlags image vkc.Device
+                layerViews
+            else Array.zeroCreate<VkImageView> 0
+
+        // create sub views
         let subViews =
             if attachmentMode.IsAttachmentColor && mipLevels * textureType.Layers > 1 then
                 let subViews = Array2D.zeroCreate<VkImageView> mipLevels textureType.Layers
@@ -256,17 +270,20 @@ type TextureSingleton =
             | _ -> ()
             CommandQueue.executeTransient commandBuffer pool fence queue vkc.Device
         | _ -> ()
-        
+
         // fin
         { Image = image
           Allocation = allocation
           ImageView = imageView
+          LayerViews = layerViews
           SubViews = subViews
           ImageSize = metadata
           StagingBuffers = List () }
 
     static member destroy textureSingleton (vkc : VulkanContext) =
         Vulkan.vkDestroyImageView (vkc.Device, textureSingleton.ImageView, nullPtr)
+        for i in 0 .. dec (textureSingleton.LayerViews.Length) do
+            Vulkan.vkDestroyImageView (vkc.Device, textureSingleton.LayerViews.[i], nullPtr)
         for i in 0 .. dec (textureSingleton.SubViews.GetLength 0) do
             for j in 0 .. dec (textureSingleton.SubViews.GetLength 1) do
                 Vulkan.vkDestroyImageView (vkc.Device, textureSingleton.SubViews.[i, j], nullPtr)
@@ -659,7 +676,10 @@ type [<CustomEquality; NoComparison>] TextureParallel =
     /// The image view.
     member this.ImageView = this.Texture.ImageView
 
-    /// The image views for each mip level.
+    /// The image views for each layer.
+    member this.LayerViews = this.Texture.LayerViews
+
+    /// The image views for each mip level and layer.
     member this.SubViews = this.Texture.SubViews
 
     /// The internal format.
@@ -1074,6 +1094,7 @@ type [<CustomEquality; NoComparison>] Texture =
     member this.Id = this.TextureParallel.Id
     member this.Image = this.TextureParallel.Image
     member this.ImageView = this.TextureParallel.ImageView
+    member this.LayerViews = this.TextureParallel.LayerViews
     member this.SubViews = this.TextureParallel.SubViews
     member this.InternalFormat = this.TextureParallel.InternalFormat
     member this.VkFormat = this.TextureParallel.VkFormat

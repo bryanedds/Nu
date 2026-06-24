@@ -14,6 +14,15 @@ open Prime
 open Nu
 
 [<Struct; StructLayout (LayoutKind.Explicit)>]
+type ShadowVert =
+    [<FieldOffset(0)>] val mutable viewProjection : Matrix4x4
+
+[<Struct; StructLayout (LayoutKind.Explicit)>]
+type ShadowFrag =
+    [<FieldOffset(0)>] val mutable eyeCenter : Vector3
+    [<FieldOffset(4)>] val mutable lightShadowExponent : single
+
+[<Struct; StructLayout (LayoutKind.Explicit)>]
 type Lighting =
     [<FieldOffset(0)>] val mutable lightCutoffMargin : single
     [<FieldOffset(16)>] val mutable lightAmbientColor : Vector3
@@ -479,6 +488,12 @@ type PhysicallyBasedModel =
       SceneOpt : Assimp.Scene option
       PhysicallyBasedHierarchy : PhysicallyBasedPart array TreeNode }
 
+/// Describes a physically-based depth pipeline that's loaded into GPU.
+type PhysicallyBasedShadowPipeline =
+    { ShadowVertUniform : Nu.Vulkan.Buffer
+      ShadowFragUniform : Nu.Vulkan.Buffer
+      Pipeline : Pipeline }
+
 /// Describes a physically-based pipeline that's loaded into GPU.
 type PhysicallyBasedPipeline =
     { EyeUniform : Nu.Vulkan.Buffer
@@ -500,7 +515,10 @@ type PhysicallyBasedDeferredLightingPipeline =
 
 /// Physically-based pipelines.
 type PhysicallyBasedPipelines =
-    { DeferredStaticPipeline : PhysicallyBasedPipeline
+    { ShadowStaticDirectionalPipeline : PhysicallyBasedShadowPipeline
+      ShadowStaticPointPipeline : PhysicallyBasedShadowPipeline
+      ShadowStaticSpotPipeline : PhysicallyBasedShadowPipeline
+      DeferredStaticPipeline : PhysicallyBasedPipeline
       DeferredLightingPipeline : PhysicallyBasedDeferredLightingPipeline
       ForwardStaticPipeline : PhysicallyBasedPipeline }
 
@@ -1465,6 +1483,37 @@ module PhysicallyBased =
         for surface in model.Surfaces do
             destroyPhysicallyBasedGeometry surface.PhysicallyBasedGeometry vkc
 
+    /// Create a physically-based shadow pipeline.
+    let createPhysicallyBasedShadowPipeline shaderPath vertexBindings colorAttachmentFormats depthTestFormat vkc =
+
+        // create set 0 uniform buffers
+        let shadowVertUniform = Buffer.create sizeof<ShadowVert> Storage vkc
+        let shadowFragUniform = Buffer.create sizeof<ShadowFrag> Storage vkc
+
+        // create pipeline
+        let pipeline =
+            Pipeline.create
+                shaderPath [|VulkanUnblended|] [|false; true|] vertexBindings
+                [|Pipeline.descriptorSet<int>
+                    [|Pipeline.descriptor 0 StorageBuffer VertexStage 1
+                      Pipeline.descriptor 1 StorageBuffer FragmentStage 1|]|]
+                [||] colorAttachmentFormats (Some depthTestFormat)
+                [|shadowVertUniform; shadowFragUniform|]
+                vkc
+
+        // make PhysicallyBasedDepthPipeline
+        let physicallyBasedDepthPipeline =
+            { ShadowVertUniform = shadowVertUniform
+              ShadowFragUniform = shadowFragUniform
+              Pipeline = pipeline }
+
+        // fin
+        physicallyBasedDepthPipeline
+
+    /// Destroy PhysicallyBasedShadowPipeline.
+    let destroyPhysicallyBasedShadowPipeline (physicallyBasedShadowPipeline : PhysicallyBasedShadowPipeline) vkc =
+        Pipeline.destroy physicallyBasedShadowPipeline.Pipeline vkc
+
     /// Create a physically-based pipeline.
     let createPhysicallyBasedPipeline lightMapsMax lightsMax shaderPath blends cullModes vertexBindings colorAttachmentFormats depthTestOpt vkc =
 
@@ -1560,6 +1609,101 @@ module PhysicallyBased =
     /// Destroy PhysicallyBasedPipeline.
     let destroyPhysicallyBasedPipeline (physicallyBasedPipeline : PhysicallyBasedPipeline) vkc =
         Pipeline.destroy physicallyBasedPipeline.Pipeline vkc
+
+    /// Draw a batch of physically-based shadows.
+    let beginPhysicallyBasedShadowPipeline
+        (eyeCenter : Vector3)
+        (viewProjection : Matrix4x4)
+        (lightShadowExponent : single)
+        (renderPassIndex : int)
+        (pipeline : PhysicallyBasedShadowPipeline)
+        (vkc : VulkanContext) =
+
+        // specify uniforms
+        let mutable uniformsDescriptorSet = Pipeline.specifyDescriptorSet 0 renderPassIndex pipeline.Pipeline vkc $ fun vkSet ->
+
+            // specify shadow vert
+            let shadowVert = ShadowVert (viewProjection = viewProjection)
+            Buffer.uploadValue shadowVert pipeline.ShadowVertUniform vkc
+            Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.ShadowVertUniform vkSet vkc
+
+            // specify shadow frag
+            let shadowFrag = ShadowFrag (eyeCenter = eyeCenter, lightShadowExponent = lightShadowExponent)
+            Buffer.uploadValue shadowFrag pipeline.ShadowVertUniform vkc
+            Pipeline.writeDescriptorStorageBuffer 1 0 pipeline.ShadowFragUniform vkSet vkc
+
+        // fin
+        uniformsDescriptorSet
+
+    /// Draw a batch of physically-based deferred surfaces.
+    let drawPhysicallyBasedShadowSurfaces
+        (surfacesCount : int)
+        (instanceFields : single array)
+        (material : PhysicallyBasedMaterial)
+        (geometry : PhysicallyBasedGeometry)
+        (resolution : Vector2i)
+        (colorClearValue : VkClearValue)
+        (colorAttachments : VkImageView array)
+        (depthAttachment : Texture)
+        (uniformsDescriptorSet : VkDescriptorSet)
+        (pipeline : PhysicallyBasedShadowPipeline)
+        (vkc : VulkanContext) =
+
+        // only draw if render area is valid
+        let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
+        let mutable vkViewport = Hl.makeViewport true renderArea
+        if Hl.validateRect renderArea then
+
+            // only set up when there is a surface to render to avoid potentially utilizing destroyed textures
+            if surfacesCount > 0 then
+
+                // only draw if required vkPipeline exists
+                match Pipeline.tryGetVkPipeline VulkanUnblended (not material.TwoSided) pipeline.Pipeline with
+                | Some vkPipeline ->
+
+                    // specify instancing
+                    use instanceFieldsPin = new ArrayPin<_> (instanceFields)
+                    Buffer.uploadSubdata 0 0 (Constants.Render.InstanceFieldCount * sizeof<single>) surfacesCount instanceFieldsPin.NativeInt geometry.InstanceBuffer vkc
+
+                    // set up render
+                    let mutable renderingInfo = Hl.makeRenderingInfo colorAttachments (Some depthAttachment.ImageView) renderArea (Some colorClearValue)
+                    Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &renderingInfo)
+                    Vulkan.vkCmdBindPipeline (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
+                    Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, asPointer &vkViewport)
+                    Vulkan.vkCmdSetScissor (vkc.RenderCommandBuffer, 0u, 1u, asPointer &renderArea)
+                    Vulkan.vkCmdSetDepthTestEnable (vkc.RenderCommandBuffer, true)
+                    Vulkan.vkCmdSetDepthCompareOp (vkc.RenderCommandBuffer, VkCompareOp.LessOrEqual)
+
+                    // bind vertex and index buffers
+                    let vertexBuffers = [|geometry.VertexBuffer.VkBuffer; geometry.InstanceBuffer.VkBuffer|]
+                    let vertexOffsets = [|0UL; 0UL|]
+                    use vertexBuffersPin = new ArrayPin<_> (vertexBuffers)
+                    use vertexOffsetsPin = new ArrayPin<_> (vertexOffsets)
+                    Vulkan.vkCmdBindVertexBuffers (vkc.RenderCommandBuffer, 0u, 2u, vertexBuffersPin.Pointer, vertexOffsetsPin.Pointer)
+                    Vulkan.vkCmdBindIndexBuffer (vkc.RenderCommandBuffer, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
+
+                    // bind descriptor sets
+                    let mutable uniformDescriptorSet = uniformsDescriptorSet
+                    Vulkan.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, asPointer &uniformDescriptorSet, 0u, nullPtr)
+
+                    // draw
+                    Vulkan.vkCmdDrawIndexed (vkc.RenderCommandBuffer, uint geometry.ElementCount, uint surfacesCount, 0u, 0, 0u)
+
+                    // tear down render
+                    Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
+                    
+                    // advance instancing
+                    Buffer.advance geometry.InstanceBuffer
+
+                    // advance pipeline
+                    Pipeline.advance surfacesCount pipeline.Pipeline
+
+                // abort
+                | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
+
+    /// End the process of drawing with a shadow pipeline.
+    let endPhysicallyBasedShadowPipeline (_ : PhysicallyBasedShadowPipeline) =
+        () // nothing to do
 
     /// Draw a batch of physically-based deferred surfaces.
     let beginPhysicallyBasedDeferredPipeline
@@ -2207,7 +2351,36 @@ module PhysicallyBased =
                   Pipeline.attribute 10 Single4 (28 * sizeof<single>)
                   Pipeline.attribute 11 Single4 (32 * sizeof<single>)
                   Pipeline.attribute 12 Single4 (36 * sizeof<single>)|]|]
-        
+
+        // create shadow static directional pipeline
+        let (shadowTextureArrayColorAttachment, shadowTextureArrayZAttachment) = attachments.ShadowTextureArrayAttachments
+        let shadowStaticDirectionalPipeline =
+            createPhysicallyBasedShadowPipeline
+                Constants.Paths.PhysicallyBasedShadowStaticDirectionalShaderFilePath
+                staticVertices
+                [|shadowTextureArrayColorAttachment.VkFormat|]
+                shadowTextureArrayZAttachment.VkFormat
+                vkc
+
+        // create shadow static point pipeline
+        let shadowStaticPointPipeline =
+            createPhysicallyBasedShadowPipeline
+                Constants.Paths.PhysicallyBasedShadowStaticPointShaderFilePath
+                staticVertices
+                [|shadowTextureArrayColorAttachment.VkFormat|]
+                shadowTextureArrayZAttachment.VkFormat
+                vkc
+
+        // create shadow static spot pipeline
+        let (shadowTextureMapColorAttachment, shadowTextureMapZAttachment) = attachments.ShadowMapAttachmentsArray[0] // assume all like first
+        let shadowStaticSpotPipeline =
+            createPhysicallyBasedShadowPipeline
+                Constants.Paths.PhysicallyBasedShadowStaticSpotShaderFilePath
+                staticVertices
+                [|shadowTextureMapColorAttachment.VkFormat|]
+                shadowTextureMapZAttachment.VkFormat
+                vkc
+
         // create deferred static pipeline
         // NOTE: DJL: we use the composition z attachment directly to avoid having to find a depth format supporting copy operations,
         // which is problematic on some mesa drivers.
@@ -2249,7 +2422,10 @@ module PhysicallyBased =
         
         // create PhysicallyBasedPipelines
         let physicallyBasedPipelines =
-            { DeferredStaticPipeline = deferredStaticPipeline
+            { ShadowStaticDirectionalPipeline = shadowStaticDirectionalPipeline
+              ShadowStaticPointPipeline = shadowStaticPointPipeline
+              ShadowStaticSpotPipeline = shadowStaticSpotPipeline
+              DeferredStaticPipeline = deferredStaticPipeline
               DeferredLightingPipeline = deferredLightingPipeline
               ForwardStaticPipeline = forwardStaticPipeline }
 
@@ -2257,11 +2433,17 @@ module PhysicallyBased =
         physicallyBasedPipelines
 
     let destroyPhysicallyBasedPipelines physicallyBasedPipelines vkc =
+        destroyPhysicallyBasedShadowPipeline physicallyBasedPipelines.ShadowStaticDirectionalPipeline vkc
+        destroyPhysicallyBasedShadowPipeline physicallyBasedPipelines.ShadowStaticPointPipeline vkc
+        destroyPhysicallyBasedShadowPipeline physicallyBasedPipelines.ShadowStaticSpotPipeline vkc
         destroyPhysicallyBasedPipeline physicallyBasedPipelines.DeferredStaticPipeline vkc
         destroyPhysicallyBasedDeferredLightingPipeline physicallyBasedPipelines.DeferredLightingPipeline vkc
         destroyPhysicallyBasedPipeline physicallyBasedPipelines.ForwardStaticPipeline vkc
 
     let reloadPhysicallyBasedShaders physicallyBasedPipelines vkc =
+        Pipeline.reloadShaders physicallyBasedPipelines.ShadowStaticDirectionalPipeline.Pipeline vkc
+        Pipeline.reloadShaders physicallyBasedPipelines.ShadowStaticPointPipeline.Pipeline vkc
+        Pipeline.reloadShaders physicallyBasedPipelines.ShadowStaticSpotPipeline.Pipeline vkc
         Pipeline.reloadShaders physicallyBasedPipelines.DeferredStaticPipeline.Pipeline vkc
         Pipeline.reloadShaders physicallyBasedPipelines.DeferredLightingPipeline.Pipeline vkc
         Pipeline.reloadShaders physicallyBasedPipelines.ForwardStaticPipeline.Pipeline vkc

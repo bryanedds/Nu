@@ -523,10 +523,9 @@ module Hl =
         blit
 
     /// Make a VkRenderingInfo.
+    /// NOTE: DJL: MUST be inline to keep pointers valid!
     let inline makeRenderingInfo (colorAttachments : VkImageView array) depthAttachmentOpt renderArea clearValueOpt =
-    
-        // NOTE: DJL: must be inline to keep pointers valid.
-    
+
         // color attachment infos
         let cInfos = Array.zeroCreate colorAttachments.Length
         for i in 0 .. dec cInfos.Length do
