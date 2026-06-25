@@ -242,7 +242,7 @@ type TextureSingleton =
             if attachmentMode.IsAttachmentColor && textureType.Layers > 1 then
                 let layerViews = Array.zeroCreate<VkImageView> textureType.Layers
                 for i in 0 .. dec textureType.Layers do
-                    layerViews.[i] <- Hl.createImageView pixelFormat internalFormat.VkFormat 0 mipLevels i 1 VkImageViewType.Image2D attachmentMode.VkImageAspectFlags image vkc.Device
+                    layerViews[i] <- Hl.createImageView pixelFormat internalFormat.VkFormat 0 mipLevels i 1 VkImageViewType.Image2D attachmentMode.VkImageAspectFlags image vkc.Device
                 layerViews
             else Array.zeroCreate<VkImageView> 0
 
@@ -252,7 +252,7 @@ type TextureSingleton =
                 let subViews = Array2D.zeroCreate<VkImageView> mipLevels textureType.Layers
                 for i in 0 .. dec mipLevels do
                     for j in 0 .. dec textureType.Layers do
-                        subViews.[i, j] <- Hl.createImageView pixelFormat internalFormat.VkFormat i 1 j 1 VkImageViewType.Image2D attachmentMode.VkImageAspectFlags image vkc.Device
+                        subViews[i, j] <- Hl.createImageView pixelFormat internalFormat.VkFormat i 1 j 1 VkImageViewType.Image2D attachmentMode.VkImageAspectFlags image vkc.Device
                 subViews
             else Array2D.zeroCreate<VkImageView> 0 0
 
@@ -283,13 +283,13 @@ type TextureSingleton =
     static member destroy textureSingleton (vkc : VulkanContext) =
         Vulkan.vkDestroyImageView (vkc.Device, textureSingleton.ImageView, nullPtr)
         for i in 0 .. dec (textureSingleton.LayerViews.Length) do
-            Vulkan.vkDestroyImageView (vkc.Device, textureSingleton.LayerViews.[i], nullPtr)
+            Vulkan.vkDestroyImageView (vkc.Device, textureSingleton.LayerViews[i], nullPtr)
         for i in 0 .. dec (textureSingleton.SubViews.GetLength 0) do
             for j in 0 .. dec (textureSingleton.SubViews.GetLength 1) do
-                Vulkan.vkDestroyImageView (vkc.Device, textureSingleton.SubViews.[i, j], nullPtr)
+                Vulkan.vkDestroyImageView (vkc.Device, textureSingleton.SubViews[i, j], nullPtr)
         Vma.vmaDestroyImage (vkc.VmaAllocator, textureSingleton.Image, textureSingleton.Allocation)
         for i in 0 .. dec textureSingleton.StagingBuffers.Count do
-            Buffer.destroy textureSingleton.StagingBuffers.[i] vkc
+            Buffer.destroy textureSingleton.StagingBuffers[i] vkc
 
 [<AutoOpen>]
 module TextureModule =
@@ -549,7 +549,7 @@ module TextureModule =
                         let mutable x = 0
                         while x < stride - 2 do
                             let i = x + stride * y
-                            data.[i]; data.[i+1]; data.[i+2]; 255uy
+                            data[i]; data[i+1]; data[i+2]; 255uy
                             x <- x + 3
                         y <- inc y|]
                 Some converted
@@ -560,7 +560,7 @@ module TextureModule =
                         let mutable x = 0
                         while x < stride - 3 do
                             let i = x + stride * y
-                            data.[i]; data.[i+1]; data.[i+2]; data.[i+3]
+                            data[i]; data[i+1]; data[i+2]; data[i+3]
                             x <- x + 4
                         y <- inc y|]
                 Some converted
@@ -576,7 +576,7 @@ module TextureModule =
                         let mutable x = 0
                         while x < mipmap.Stride - 2 do
                             let i = x + mipmap.Stride * y + mipmap.DataOffset
-                            data.[i]; data.[i+1]; data.[i+2]; 255uy
+                            data[i]; data[i+1]; data[i+2]; 255uy
                             x <- x + 3
                         y <- inc y|]
                 (v2i mipmap.Width mipmap.Height, converted)
@@ -587,7 +587,7 @@ module TextureModule =
                         let mutable x = 0
                         while x < mipmap.Stride - 3 do
                             let i = x + mipmap.Stride * y + mipmap.DataOffset
-                            data.[i]; data.[i+1]; data.[i+2]; data.[i+3]
+                            data[i]; data[i+1]; data[i+2]; data[i+3]
                             x <- x + 4
                         y <- inc y|]
                 (v2i mipmap.Width mipmap.Height, converted)
@@ -613,9 +613,9 @@ module TextureModule =
                     else 0
                 let mipmapBytesArray =
                     [|for i in minimalMipmapIndex .. dec mipmaps.Length do
-                        formatUncompressedPfimageMipmap format mipmaps.[i] data|]
+                        formatUncompressedPfimageMipmap format mipmaps[i] data|]
                 if minimal then
-                    let (minimalMipmapResolution, minimalMipmapBytes) = mipmapBytesArray.[0]
+                    let (minimalMipmapResolution, minimalMipmapBytes) = mipmapBytesArray[0]
                     let remainingMipmapBytes = if minimalMipmapBytes.Length > 1 then Array.tail mipmapBytesArray else [||]
                     Some (minimalMipmapResolution, minimalMipmapBytes, remainingMipmapBytes)
                 else Some (v2i image.Width image.Height, bytes, mipmapBytesArray)
@@ -646,7 +646,7 @@ module TextureModule =
                             (dims, dds.Data.AsSpan(index, size).ToArray())|]
                 else [||]
             if minimal then
-                let (minimalMipmapResolution, minimalMipmapBytes) = mipmapBytesArray.[0]
+                let (minimalMipmapResolution, minimalMipmapBytes) = mipmapBytesArray[0]
                 let remainingMipmapBytes = if minimalMipmapBytes.Length > 1 then Array.tail mipmapBytesArray else [||]
                 (minimalMipmapResolution, minimalMipmapBytes, remainingMipmapBytes)
             else (v2i dds.Width dds.Height, bytes, mipmapBytesArray)
@@ -665,7 +665,7 @@ type [<CustomEquality; NoComparison>] TextureParallel =
 
     member private this.IsParallel = this.AttachmentMode_.IsParallel
     member private this.CurrentIndex = if this.IsParallel then Hl.CurrentFrame else 0
-    member private this.Texture = this.Textures_.[this.CurrentIndex]
+    member private this.Texture = this.Textures_[this.CurrentIndex]
     member private this.ImageSize = this.Texture.ImageSize
 
     member this.Id = this.Id_
@@ -713,7 +713,7 @@ type [<CustomEquality; NoComparison>] TextureParallel =
         // combine necessary and optional flags and bitwise-or together 
         let usagesArray = Array.append (necessaryUsageFlags.ToArray ()) optionalUsageFlags |> Array.distinct
         let mutable usagesOred = VkImageUsageFlags.None
-        for i in 0 .. dec usagesArray.Length do usagesOred <- usagesOred ||| usagesArray.[i]
+        for i in 0 .. dec usagesArray.Length do usagesOred <- usagesOred ||| usagesArray[i]
         usagesOred
     
     /// Create a TextureParallel.
@@ -760,7 +760,7 @@ type [<CustomEquality; NoComparison>] TextureParallel =
         let usageFlags = TextureParallel.determineImageUsage mipmapMode attachmentMode optionalUsageFlags
         let textures = Array.zeroCreate<TextureSingleton> length
         for i in 0 .. dec length do
-            textures.[i] <- TextureSingleton.create pixelFormat internalFormat metadata mipLevels attachmentMode textureType usageFlags vkc
+            textures[i] <- TextureSingleton.create pixelFormat internalFormat metadata mipLevels attachmentMode textureType usageFlags vkc
         
         // make TextureParallel
         let textureParallel =
@@ -779,8 +779,8 @@ type [<CustomEquality; NoComparison>] TextureParallel =
     /// Check that the current texture size is the same as the given size, resizing if necessary. If used, must be called every frame.
     static member updateSize metadata (textureParallel : TextureParallel) (vkc : VulkanContext) =
         if metadata <> textureParallel.ImageSize then
-            TextureSingleton.destroy textureParallel.Textures_.[textureParallel.CurrentIndex] vkc
-            textureParallel.Textures_.[textureParallel.CurrentIndex] <- TextureSingleton.create textureParallel.PixelFormat_ textureParallel.InternalFormat_ metadata textureParallel.MipLevels textureParallel.AttachmentMode_ textureParallel.TextureType_ textureParallel.ImageUsages_ vkc
+            TextureSingleton.destroy textureParallel.Textures_[textureParallel.CurrentIndex] vkc
+            textureParallel.Textures_[textureParallel.CurrentIndex] <- TextureSingleton.create textureParallel.PixelFormat_ textureParallel.InternalFormat_ metadata textureParallel.MipLevels textureParallel.AttachmentMode_ textureParallel.TextureType_ textureParallel.ImageUsages_ vkc
     
     /// Record commands to upload pixel data to TextureParallel. Can only be done once.
     static member uploadAsync commandBuffer metadata mipLevel layer pixels (textureParallel : TextureParallel) (vkc : VulkanContext) =
@@ -803,7 +803,7 @@ type [<CustomEquality; NoComparison>] TextureParallel =
         // destroy staging buffer (only) if it was created by async function in synchronous context to prevent massive waste of vram
         if textureParallel.AttachmentMode_.IsAttachmentNone then
             let lastIndex = dec textureParallel.Texture.StagingBuffers.Count
-            Buffer.destroy textureParallel.Texture.StagingBuffers.[lastIndex] vkc
+            Buffer.destroy textureParallel.Texture.StagingBuffers[lastIndex] vkc
             textureParallel.Texture.StagingBuffers.RemoveAt lastIndex
     
     /// Record commands to upload array of pixel data to TextureParallel. Can only be done once.
@@ -835,7 +835,7 @@ type [<CustomEquality; NoComparison>] TextureParallel =
     
     /// Destroy TextureParallel.
     static member destroy (textureParallel : TextureParallel) (vkc : VulkanContext) =
-        for i in 0 .. dec textureParallel.Textures_.Length do TextureSingleton.destroy textureParallel.Textures_.[i] vkc
+        for i in 0 .. dec textureParallel.Textures_.Length do TextureSingleton.destroy textureParallel.Textures_[i] vkc
 
     /// Represents the empty texture used in Vulkan.
     static member empty =
@@ -886,7 +886,7 @@ module TextureModule2 =
                 | MipmapManual mipLevels ->
                     let mutable mipmapIndex = 0
                     while mipmapIndex < mipLevels - 1 do
-                        let (mipmapResolution, mipmapBytes) = mipmapBytesArray.[mipmapIndex]
+                        let (mipmapResolution, mipmapBytes) = mipmapBytesArray[mipmapIndex]
                         let metadata = TextureMetadata.make mipmapResolution.X mipmapResolution.Y
                         TextureParallel.uploadArray metadata (inc mipmapIndex) 0 mipmapBytes thread textureParallel vkc
                         mipmapIndex <- inc mipmapIndex
@@ -936,13 +936,13 @@ module TextureModule2 =
                             |> Array.ofSeq
                             |> Array.map (fun mip ->
                                 let resolution = v2i (int mip.Width) (int mip.Height)
-                                let bytes = mip.Faces.[0].Data
+                                let bytes = mip.Faces[0].Data
                                 (resolution, bytes))
                         let bytesArray = // ensure last element isn't a duplicate, which might happen when texture is not power-of-two or perhaps written to disk incorrectly
                             if bytesArray.Length >= 2 then
                                 let bytesArrayRev = Array.rev bytesArray
-                                let bytesLast = snd bytesArrayRev.[0]
-                                let bytes2ndToLast = snd bytesArrayRev.[1]
+                                let bytesLast = snd bytesArrayRev[0]
+                                let bytes2ndToLast = snd bytesArrayRev[1]
                                 if bytes2ndToLast.Length = bytesLast.Length
                                 then Array.allButLast bytesArray
                                 else bytesArray
@@ -1159,24 +1159,24 @@ type TextureDumpster =
     /// Create a TextureDumpster.
     static member create () =
         let textures = Array.zeroCreate<List<Texture>> Constants.Vulkan.MaxFramesInFlight
-        for i in 0 .. dec textures.Length do textures.[i] <- List ()
+        for i in 0 .. dec textures.Length do textures[i] <- List ()
         { Textures_ = textures }
 
     /// Destroy all textures from latest finished frame. Must be called before submitting new textures to avoid premature destruction.
     static member beginFrame dumpster vkc =
-        for i in 0 .. dec dumpster.Textures_.[Hl.CurrentFrame].Count do
-            Texture.destroy dumpster.Textures_.[Hl.CurrentFrame].[i] vkc
-        dumpster.Textures_.[Hl.CurrentFrame].Clear ()
+        for i in 0 .. dec dumpster.Textures_[Hl.CurrentFrame].Count do
+            Texture.destroy dumpster.Textures_[Hl.CurrentFrame].[i] vkc
+        dumpster.Textures_[Hl.CurrentFrame].Clear ()
 
     /// Relinquish texture for safe destruction.
     static member toss texture dumpster =
-        dumpster.Textures_.[Hl.CurrentFrame].Add texture
+        dumpster.Textures_[Hl.CurrentFrame].Add texture
 
     /// Destroy a TextureDumpster.
     static member destroy dumpster vkc =
         for i in 0 .. dec dumpster.Textures_.Length do
-            for j in 0 .. dec dumpster.Textures_.[i].Count do
-                Texture.destroy dumpster.Textures_.[i].[j] vkc
+            for j in 0 .. dec dumpster.Textures_[i].Count do
+                Texture.destroy dumpster.Textures_[i].[j] vkc
 
 /// Memoizes and optionally threads texture loads.
 type TextureClient (lazyTextureQueuesOpt : ConcurrentDictionary<_, _> option) =

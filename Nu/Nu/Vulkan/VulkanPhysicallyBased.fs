@@ -243,9 +243,9 @@ type PhysicallyBasedGeometry =
             assert (this.PrimitiveTopology = VkPrimitiveTopology.TriangleList) // should hold since we use Assimp.PostProcessSteps.Triangulate
             let triangles =
                 [|for points in Array.chunkBySize 3 this.Indices do
-                    this.Vertices.[points.[0]]
-                    this.Vertices.[points.[1]]
-                    this.Vertices.[points.[2]]|]
+                    this.Vertices[points[0]]
+                    this.Vertices[points[1]]
+                    this.Vertices[points[2]]|]
             this.TrianglesCached <- Some triangles
             triangles
         | Some triangles -> triangles
@@ -280,7 +280,7 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedSurface =
         | ValueNone ->
             match sceneOpt with
             | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
-                let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                let material = scene.Materials[surface.SurfaceMaterialIndex]
                 ValueOption.defaultValue presenceDefault material.PresenceOpt
             | Some _ | None -> presenceDefault
         | ValueSome presence -> presence
@@ -290,7 +290,7 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedSurface =
         | ValueNone ->
             match sceneOpt with
             | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
-                let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                let material = scene.Materials[surface.SurfaceMaterialIndex]
                 ValueOption.defaultValue renderStyleDefault material.RenderStyleOpt
             | Some _ | None -> renderStyleDefault
         | ValueSome renderStyle -> renderStyle
@@ -300,7 +300,7 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedSurface =
         | ValueNone ->
             match sceneOpt with
             | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
-                let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                let material = scene.Materials[surface.SurfaceMaterialIndex]
                 ValueOption.defaultValue ignoreLightMapsDefault material.IgnoreLightMapsOpt
             | Some _ | None -> ignoreLightMapsDefault
         | ValueSome ignoreLightMaps -> ignoreLightMaps
@@ -310,7 +310,7 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedSurface =
         | ValueNone ->
             match sceneOpt with
             | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
-                let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                let material = scene.Materials[surface.SurfaceMaterialIndex]
                 ValueOption.defaultValue opaqueDistanceDefault material.OpaqueDistanceOpt
             | Some _ | None -> opaqueDistanceDefault
         | ValueSome opaqueDistance -> opaqueDistance
@@ -320,7 +320,7 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedSurface =
         | ValueNone ->
             match sceneOpt with
             | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
-                let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                let material = scene.Materials[surface.SurfaceMaterialIndex]
                 ValueOption.defaultValue finenessOffsetDefault material.FinenessOffsetOpt
             | Some _ | None -> finenessOffsetDefault
         | ValueSome finenessOffset -> finenessOffset
@@ -330,7 +330,7 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedSurface =
         | ValueNone ->
             match sceneOpt with
             | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
-                let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                let material = scene.Materials[surface.SurfaceMaterialIndex]
                 ValueOption.defaultValue scatterTypeDefault material.ScatterTypeOpt
             | Some _ | None -> scatterTypeDefault
         | ValueSome scatterType -> scatterType
@@ -340,7 +340,7 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedSurface =
         | ValueNone ->
             match sceneOpt with
             | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
-                let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                let material = scene.Materials[surface.SurfaceMaterialIndex]
                 ValueOption.defaultValue specularScalarDefault material.SpecularScalarOpt
             | Some _ | None -> specularScalarDefault
         | ValueSome specularScalar -> specularScalar
@@ -350,7 +350,7 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedSurface =
         | ValueNone ->
             match sceneOpt with
             | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
-                let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                let material = scene.Materials[surface.SurfaceMaterialIndex]
                 ValueOption.defaultValue subsurfaceCutoffDefault material.SubsurfaceCutoffOpt
             | Some _ | None -> subsurfaceCutoffDefault
         | ValueSome subsurfaceCutoff -> subsurfaceCutoff
@@ -360,7 +360,7 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedSurface =
         | ValueNone ->
             match sceneOpt with
             | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
-                let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                let material = scene.Materials[surface.SurfaceMaterialIndex]
                 ValueOption.defaultValue subsurfaceCutoffMarginDefault material.SubsurfaceCutoffMarginOpt
             | Some _ | None -> subsurfaceCutoffMarginDefault
         | ValueSome subsurfaceCutoffMargin -> subsurfaceCutoffMargin
@@ -370,7 +370,7 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedSurface =
         | ValueNone ->
             match sceneOpt with
             | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
-                let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                let material = scene.Materials[surface.SurfaceMaterialIndex]
                 ValueOption.defaultValue refractiveIndexDefault material.RefractiveIndexOpt
             | Some _ | None -> refractiveIndexDefault
         | ValueSome refractiveIndex -> refractiveIndex
@@ -380,7 +380,7 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedSurface =
         | ValueNone ->
             match sceneOpt with
             | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
-                let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                let material = scene.Materials[surface.SurfaceMaterialIndex]
                 ValueOption.defaultValue clearCoatDefault material.ClearCoatOpt
             | Some _ | None -> clearCoatDefault
         | ValueSome clearCoat -> clearCoat
@@ -390,7 +390,7 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedSurface =
         | ValueNone ->
             match sceneOpt with
             | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
-                let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                let material = scene.Materials[surface.SurfaceMaterialIndex]
                 ValueOption.defaultValue clearCoatRoughnessDefault material.ClearCoatRoughnessOpt
             | Some _ | None -> clearCoatRoughnessDefault
         | ValueSome clearCoatRoughness -> clearCoatRoughness
@@ -400,7 +400,7 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedSurface =
         | ValueNone ->
             match sceneOpt with
             | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
-                let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                let material = scene.Materials[surface.SurfaceMaterialIndex]
                 ValueOption.defaultValue shapeDefault material.NavShapeOpt
             | Some _ | None -> shapeDefault
         | ValueSome shape -> shape
@@ -722,7 +722,7 @@ module PhysicallyBased =
         for i in 0 .. dec attachments.ShadowMapAttachmentsArray.Length do
             Attachment.updateShadowMapAttachmentsSize geometryViewport.ShadowMapResolution.X geometryViewport.ShadowMapResolution.Y attachments.ShadowMapAttachmentsArray[i] vkc
         for i in 0 .. dec attachments.ShadowCascadeArrayAttachmentsArray.Length do
-            Attachment.updateShadowCascadeArrayAttachmentsSize geometryViewport.ShadowCascadeResolution.X geometryViewport.ShadowCascadeResolution.Y attachments.ShadowCascadeArrayAttachmentsArray.[i] vkc
+            Attachment.updateShadowCascadeArrayAttachmentsSize geometryViewport.ShadowCascadeResolution.X geometryViewport.ShadowCascadeResolution.Y attachments.ShadowCascadeArrayAttachmentsArray[i] vkc
         Attachment.updateGeometryAttachmentsSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.GeometryAttachments vkc
         Attachment.updateLightingAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.LightingAttachment vkc
         Attachment.updateColoringAttachmentsSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.ColoringAttachments vkc
@@ -732,9 +732,9 @@ module PhysicallyBased =
     let destroyPhysicallyBasedAttachments (attachments : PhysicallyBasedAttachments) vkc =
         Attachment.destroyShadowTextureArrayAttachments attachments.ShadowTextureArrayAttachments vkc
         for i in 0 .. dec attachments.ShadowMapAttachmentsArray.Length do
-            Attachment.destroyShadowMapAttachments attachments.ShadowMapAttachmentsArray.[i] vkc
+            Attachment.destroyShadowMapAttachments attachments.ShadowMapAttachmentsArray[i] vkc
         for i in 0 .. dec attachments.ShadowCascadeArrayAttachmentsArray.Length do
-            Attachment.destroyShadowCascadeArrayAttachments attachments.ShadowCascadeArrayAttachmentsArray.[i] vkc
+            Attachment.destroyShadowCascadeArrayAttachments attachments.ShadowCascadeArrayAttachmentsArray[i] vkc
         Attachment.destroyGeometryAttachments attachments.GeometryAttachments vkc
         Attachment.destroyLightingAttachment attachments.LightingAttachment vkc
         Attachment.destroyColoringAttachments attachments.ColoringAttachments vkc
@@ -775,7 +775,7 @@ module PhysicallyBased =
             let mutable found = false
             let mutable i = 0
             while not found && i < possibleFilePaths.Length do
-                let possibleFilePath = possibleFilePaths.[i]
+                let possibleFilePath = possibleFilePaths[i]
                 if File.Exists (dirPrefix + possibleFilePath) then
                     albedoTextureSlotFilePath <- possibleFilePath
                     found <- true
@@ -1183,8 +1183,8 @@ module PhysicallyBased =
         let propertiesAndMaterials = Array.zeroCreate scene.Materials.Count
         for i in 0 .. dec scene.Materials.Count do
             if Option.isNone errorOpt then
-                let (properties, material) = createPhysicallyBasedMaterial dirPath defaultMaterial textureClient scene.Materials.[i] vkcOpt
-                propertiesAndMaterials.[i] <- (properties, material)
+                let (properties, material) = createPhysicallyBasedMaterial dirPath defaultMaterial textureClient scene.Materials[i] vkcOpt
+                propertiesAndMaterials[i] <- (properties, material)
         match errorOpt with
         | Some error -> Left error
         | None -> Right propertiesAndMaterials
@@ -1198,17 +1198,17 @@ module PhysicallyBased =
         let mutable positionMax = v3Zero
         for i in 0 .. dec mesh.Vertices.Count do
             let v = i * 8
-            let position = if i < mesh.VertexCount then mesh.Vertices.[i] else Assimp.Vector3D (0.0f, 0.0f, 0.0f)
-            let texCoords = if i < mesh.TextureCoordinateChannels.[0].Capacity then mesh.TextureCoordinateChannels.[0].[i] else Assimp.Vector3D (0.0f, 0.0f, 0.0f)
-            let normal = if i < mesh.Normals.Count then mesh.Normals.[i] else Assimp.Vector3D (0.5f, 0.5f, 1.0f)
-            vertexData.[v] <- position.X
-            vertexData.[v+1] <- position.Y
-            vertexData.[v+2] <- position.Z
-            vertexData.[v+3] <- texCoords.X
-            vertexData.[v+4] <- 1.0f - texCoords.Y
-            vertexData.[v+5] <- normal.X
-            vertexData.[v+6] <- normal.Y
-            vertexData.[v+7] <- normal.Z
+            let position = if i < mesh.VertexCount then mesh.Vertices[i] else Assimp.Vector3D (0.0f, 0.0f, 0.0f)
+            let texCoords = if i < mesh.TextureCoordinateChannels[0].Capacity then mesh.TextureCoordinateChannels[0][i] else Assimp.Vector3D (0.0f, 0.0f, 0.0f)
+            let normal = if i < mesh.Normals.Count then mesh.Normals[i] else Assimp.Vector3D (0.5f, 0.5f, 1.0f)
+            vertexData[v] <- position.X
+            vertexData[v+1] <- position.Y
+            vertexData[v+2] <- position.Z
+            vertexData[v+3] <- texCoords.X
+            vertexData[v+4] <- 1.0f - texCoords.Y
+            vertexData[v+5] <- normal.X
+            vertexData[v+6] <- normal.Y
+            vertexData[v+7] <- normal.Z
             positionMin.X <- min positionMin.X position.X
             positionMin.Y <- min positionMin.Y position.Y
             positionMin.Z <- min positionMin.Z position.Z
@@ -1229,25 +1229,25 @@ module PhysicallyBased =
         let mutable positionMax = v3Zero
         for i in 0 .. dec mesh.Vertices.Count do
             let v = i * 16
-            let position = if i < mesh.VertexCount then mesh.Vertices.[i] else Assimp.Vector3D (0.0f, 0.0f, 0.0f)
-            let texCoords = if i < mesh.TextureCoordinateChannels.[0].Capacity then mesh.TextureCoordinateChannels.[0].[i] else Assimp.Vector3D (0.0f, 0.0f, 0.0f)
-            let normal = if i < mesh.Normals.Count then mesh.Normals.[i] else Assimp.Vector3D (0.5f, 0.5f, 1.0f)
-            vertexData.[v] <- position.X
-            vertexData.[v+1] <- position.Y
-            vertexData.[v+2] <- position.Z
-            vertexData.[v+3] <- texCoords.X
-            vertexData.[v+4] <- 1.0f - texCoords.Y
-            vertexData.[v+5] <- normal.X
-            vertexData.[v+6] <- normal.Y
-            vertexData.[v+7] <- normal.Z
-            vertexData.[v+8] <- -1.0f
-            vertexData.[v+9] <- -1.0f
-            vertexData.[v+10] <- -1.0f
-            vertexData.[v+11] <- -1.0f
-            vertexData.[v+12] <- 0.0f
-            vertexData.[v+13] <- 0.0f
-            vertexData.[v+14] <- 0.0f
-            vertexData.[v+15] <- 0.0f
+            let position = if i < mesh.VertexCount then mesh.Vertices[i] else Assimp.Vector3D (0.0f, 0.0f, 0.0f)
+            let texCoords = if i < mesh.TextureCoordinateChannels[0].Capacity then mesh.TextureCoordinateChannels[0][i] else Assimp.Vector3D (0.0f, 0.0f, 0.0f)
+            let normal = if i < mesh.Normals.Count then mesh.Normals[i] else Assimp.Vector3D (0.5f, 0.5f, 1.0f)
+            vertexData[v] <- position.X
+            vertexData[v+1] <- position.Y
+            vertexData[v+2] <- position.Z
+            vertexData[v+3] <- texCoords.X
+            vertexData[v+4] <- 1.0f - texCoords.Y
+            vertexData[v+5] <- normal.X
+            vertexData[v+6] <- normal.Y
+            vertexData[v+7] <- normal.Z
+            vertexData[v+8] <- -1.0f
+            vertexData[v+9] <- -1.0f
+            vertexData[v+10] <- -1.0f
+            vertexData[v+11] <- -1.0f
+            vertexData[v+12] <- 0.0f
+            vertexData[v+13] <- 0.0f
+            vertexData[v+14] <- 0.0f
+            vertexData[v+15] <- 0.0f
             positionMin.X <- min positionMin.X position.X
             positionMin.Y <- min positionMin.Y position.Y
             positionMin.Z <- min positionMin.Z position.Z
@@ -1258,23 +1258,23 @@ module PhysicallyBased =
 
         // populate vertex bone data
         for boneIndex in 0 .. dec mesh.Bones.Count do
-            let weights = mesh.Bones.[boneIndex].VertexWeights
-            let weightsCount = mesh.Bones.[boneIndex].VertexWeights.Count
+            let weights = mesh.Bones[boneIndex].VertexWeights
+            let weightsCount = mesh.Bones[boneIndex].VertexWeights.Count
             for weightIndex in 0 .. dec weightsCount do
-                let vertexId = weights.[weightIndex].VertexID
+                let vertexId = weights[weightIndex].VertexID
                 let vertexOffset = vertexId * 16
-                let weight = weights.[weightIndex].Weight
+                let weight = weights[weightIndex].Weight
                 if weight > 0.0f then
 
                     // find a free slot to specify the current index and weight (free slots are designated as -1.0f index above)
                     let mutable found = false
                     let mutable i = 0
                     while not found && i < Constants.Render.BonesInfluenceMax do
-                        if vertexData.[vertexOffset+8+i] = single boneIndex then // already found
+                        if vertexData[vertexOffset+8+i] = single boneIndex then // already found
                             found <- true
-                        elif vertexData.[vertexOffset+8+i] < 0.0f then // found free slot
-                            vertexData.[vertexOffset+8+i] <- single boneIndex
-                            vertexData.[vertexOffset+12+i] <- weight
+                        elif vertexData[vertexOffset+8+i] < 0.0f then // found free slot
+                            vertexData[vertexOffset+8+i] <- single boneIndex
+                            vertexData[vertexOffset+12+i] <- weight
                             found <- true
                         else i <- inc i
 
@@ -1284,14 +1284,14 @@ module PhysicallyBased =
                         for i in 0 .. dec Constants.Render.BonesInfluenceMax do
                             match lowestOpt with
                             | ValueSome lowest ->
-                                if vertexData.[vertexOffset+12+i] < vertexData.[vertexOffset+12+lowest] then
+                                if vertexData[vertexOffset+12+i] < vertexData[vertexOffset+12+lowest] then
                                     lowestOpt <- ValueSome i
                             | ValueNone -> lowestOpt <- ValueSome i
                         match lowestOpt with
                         | ValueSome lowest ->
-                            if vertexData.[vertexOffset+12+lowest] < weight then
-                                vertexData.[vertexOffset+8+lowest] <- single boneIndex
-                                vertexData.[vertexOffset+12+lowest] <- weight
+                            if vertexData[vertexOffset+12+lowest] < weight then
+                                vertexData[vertexOffset+8+lowest] <- single boneIndex
+                                vertexData[vertexOffset+12+lowest] <- weight
                         | ValueNone -> failwithumf ()
 
         // fin
@@ -1328,8 +1328,8 @@ module PhysicallyBased =
                 let vertexData = vertexData.Span
                 for i in 0 .. dec vertices.Length do
                     let j = i * 8
-                    let vertex = v3 vertexData.[j] vertexData.[j+1] vertexData.[j+2]
-                    vertices.[i] <- vertex
+                    let vertex = v3 vertexData[j] vertexData[j+1] vertexData[j+2]
+                    vertices[i] <- vertex
 
                 // create indices
                 let indices = indexData.ToArray ()
@@ -1408,8 +1408,8 @@ module PhysicallyBased =
                 let vertexData = vertexData.Span
                 for i in 0 .. dec vertices.Length do
                     let j = i * 16
-                    let vertex = v3 vertexData.[j] vertexData.[j+1] vertexData.[j+2]
-                    vertices.[i] <- vertex
+                    let vertex = v3 vertexData[j] vertexData[j+1] vertexData[j+2]
+                    vertices[i] <- vertex
 
                 // create indices
                 let indices = indexData.ToArray ()
@@ -1443,9 +1443,9 @@ module PhysicallyBased =
         let meshAndGeometryLists = Dictionary<int * int * Assimp.BoundingBox, (Assimp.Mesh * PhysicallyBasedGeometry) List> HashIdentity.Structural
         let geometries = SList.make ()
         for i in 0 .. dec scene.Meshes.Count do
-            let indexDataEntry = scene.Metadata.["IndexData" + string i]
+            let indexDataEntry = scene.Metadata["IndexData" + string i]
             let indexData = indexDataEntry.Data :?> int array
-            let mesh = scene.Meshes.[i]
+            let mesh = scene.Meshes[i]
             let mutable found = false
             let meshAndGeometryListOpt = Dictionary.tryFind (mesh.VertexCount, mesh.FaceCount, mesh.BoundingBox) meshAndGeometryLists
             match meshAndGeometryListOpt with
@@ -1454,7 +1454,7 @@ module PhysicallyBased =
                 while not found && enr.MoveNext () do
                     let (meshCached, geometryCached) = enr.Current
                     if  Enumerable.SequenceEqual (meshCached.Vertices, mesh.Vertices) && 
-                        Enumerable.SequenceEqual (meshCached.TextureCoordinateChannels.[0], mesh.TextureCoordinateChannels.[0]) && 
+                        Enumerable.SequenceEqual (meshCached.TextureCoordinateChannels[0], mesh.TextureCoordinateChannels[0]) && 
                         Enumerable.SequenceEqual (meshCached.Normals, mesh.Normals) then
                         geometries.Add geometryCached
                         found <- true
@@ -1463,7 +1463,7 @@ module PhysicallyBased =
                 let geometry = createPhysicallyBasedStaticGeometryFromMesh indexData mesh vkcOpt
                 match meshAndGeometryListOpt with
                 | Some meshesAndGeometries -> meshesAndGeometries.Add (mesh, geometry)
-                | None -> meshAndGeometryLists.[(mesh.VertexCount, mesh.FaceCount, mesh.BoundingBox)] <- List [(mesh, geometry)]
+                | None -> meshAndGeometryLists[(mesh.VertexCount, mesh.FaceCount, mesh.BoundingBox)] <- List [(mesh, geometry)]
                 geometries.Add geometry
         geometries
 
@@ -1472,9 +1472,9 @@ module PhysicallyBased =
     let createPhysicallyBasedAnimatedGeometries (scene : Assimp.Scene) vkcOpt =
         let geometries = SList.make ()
         for i in 0 .. dec scene.Meshes.Count do
-            let indexDataEntry = scene.Metadata.["IndexData" + string i]
+            let indexDataEntry = scene.Metadata["IndexData" + string i]
             let indexData = indexDataEntry.Data :?> int array
-            let mesh = scene.Meshes.[i]
+            let mesh = scene.Meshes[i]
             let geometry = createPhysicallyBasedAnimatedGeometryFromMesh indexData mesh vkcOpt
             geometries.Add geometry
         geometries
@@ -1977,18 +1977,18 @@ module PhysicallyBased =
                     use lightPtr = fixed &light
                     for i in 0 .. dec Constants.Render.LightsMaxForward do
                         if i < lightOrigins.Length then
-                            light.lightOrigins <- lightOrigins.[i]
-                            light.lightDirections <- lightDirections.[i]
-                            light.lightColors <- lightColors.[i].V3
-                            light.lightBrightnesses <- lightBrightnesses.[i]
-                            light.lightAttenuationLinears <- lightAttenuationLinears.[i]
-                            light.lightAttenuationQuadratics <- lightAttenuationQuadratics.[i]
-                            light.lightCutoffs <- lightCutoffs.[i]
-                            light.lightTypes <- lightTypes.[i]
-                            light.lightConeInners <- lightConeInners.[i]
-                            light.lightConeOuters <- lightConeOuters.[i]
-                            light.lightDesireFogs <- lightDesireFogs.[i]
-                            light.lightShadowIndices <- lightShadowIndices.[i]
+                            light.lightOrigins <- lightOrigins[i]
+                            light.lightDirections <- lightDirections[i]
+                            light.lightColors <- lightColors[i].V3
+                            light.lightBrightnesses <- lightBrightnesses[i]
+                            light.lightAttenuationLinears <- lightAttenuationLinears[i]
+                            light.lightAttenuationQuadratics <- lightAttenuationQuadratics[i]
+                            light.lightCutoffs <- lightCutoffs[i]
+                            light.lightTypes <- lightTypes[i]
+                            light.lightConeInners <- lightConeInners[i]
+                            light.lightConeOuters <- lightConeOuters[i]
+                            light.lightDesireFogs <- lightDesireFogs[i]
+                            light.lightShadowIndices <- lightShadowIndices[i]
                         else light <- Unchecked.defaultof<_>
                         Buffer.uploadSubdata (i * sizeof<Light>) 0 sizeof<Light> 1 (NativePtr.toNativeInt lightPtr) pipeline.LightUniform vkc
                     Pipeline.writeDescriptorStorageBuffer 2 0 pipeline.LightUniform vkSet vkc
@@ -2246,11 +2246,11 @@ module PhysicallyBased =
                     use lightMapPtr = fixed &lightMap
                     for i in 0 .. dec Constants.Render.LightMapsMaxForward do
                         if i < lightMapOrigins.Length then
-                            lightMap.lightMapOrigins <- lightMapOrigins.[i]
-                            lightMap.lightMapMins <- lightMapMins.[i]
-                            lightMap.lightMapSizes <- lightMapSizes.[i]
-                            lightMap.lightMapAmbientColors <- lightMapAmbientColors.[i].V3
-                            lightMap.lightMapAmbientBrightnesses <- lightMapAmbientBrightnesses.[i]
+                            lightMap.lightMapOrigins <- lightMapOrigins[i]
+                            lightMap.lightMapMins <- lightMapMins[i]
+                            lightMap.lightMapSizes <- lightMapSizes[i]
+                            lightMap.lightMapAmbientColors <- lightMapAmbientColors[i].V3
+                            lightMap.lightMapAmbientBrightnesses <- lightMapAmbientBrightnesses[i]
                         else lightMap <- Unchecked.defaultof<_>
                         Buffer.uploadSubdata (i * sizeof<LightMap>) 0 sizeof<LightMap> 1 (NativePtr.toNativeInt lightMapPtr) pipeline.LightMapUniform vkc
                     Pipeline.writeDescriptorStorageBuffer 1 0 pipeline.LightMapUniform vkSet vkc
@@ -2268,18 +2268,18 @@ module PhysicallyBased =
                     use lightPtr = fixed &light
                     for i in 0 .. dec Constants.Render.LightsMaxForward do
                         if i < lightOrigins.Length then
-                            light.lightOrigins <- lightOrigins.[i]
-                            light.lightDirections <- lightDirections.[i]
-                            light.lightColors <- lightColors.[i].V3
-                            light.lightBrightnesses <- lightBrightnesses.[i]
-                            light.lightAttenuationLinears <- lightAttenuationLinears.[i]
-                            light.lightAttenuationQuadratics <- lightAttenuationQuadratics.[i]
-                            light.lightCutoffs <- lightCutoffs.[i]
-                            light.lightTypes <- lightTypes.[i]
-                            light.lightConeInners <- lightConeInners.[i]
-                            light.lightConeOuters <- lightConeOuters.[i]
-                            light.lightDesireFogs <- lightDesireFogs.[i]
-                            light.lightShadowIndices <- lightShadowIndices.[i]
+                            light.lightOrigins <- lightOrigins[i]
+                            light.lightDirections <- lightDirections[i]
+                            light.lightColors <- lightColors[i].V3
+                            light.lightBrightnesses <- lightBrightnesses[i]
+                            light.lightAttenuationLinears <- lightAttenuationLinears[i]
+                            light.lightAttenuationQuadratics <- lightAttenuationQuadratics[i]
+                            light.lightCutoffs <- lightCutoffs[i]
+                            light.lightTypes <- lightTypes[i]
+                            light.lightConeInners <- lightConeInners[i]
+                            light.lightConeOuters <- lightConeOuters[i]
+                            light.lightDesireFogs <- lightDesireFogs[i]
+                            light.lightShadowIndices <- lightShadowIndices[i]
                         else light <- Unchecked.defaultof<_>
                         Buffer.uploadSubdata (i * sizeof<Light>) 0 sizeof<Light> 1 (NativePtr.toNativeInt lightPtr) pipeline.LightUniform vkc
                     Pipeline.writeDescriptorStorageBuffer 3 0 pipeline.LightUniform vkSet vkc
@@ -2546,7 +2546,7 @@ type PhysicallyBasedSceneClient () =
                 // collect light nodes
                 let lightNodes =
                     [|for i in 0 .. dec scene.LightCount do
-                        let light = scene.Lights.[i]
+                        let light = scene.Lights[i]
                         let node = scene.RootNode.FindNode light.Name
                         yield (light, node)|]
 
@@ -2582,7 +2582,7 @@ type PhysicallyBasedSceneClient () =
                           // collect light
                           // NOTE: this is an n^2 algorithm to deal with nodes having no light information
                           for i in 0 .. dec lightNodes.Length do
-                            let (light, lightNode) = lightNodes.[i]
+                            let (light, lightNode) = lightNodes[i]
                             if lightNode = node then
                                 let names = Array.append names [|"Light" + if i > 0 then string i else ""|]
                                 let lightMatrix = Assimp.ExportMatrix node.TransformWorld
@@ -2608,10 +2608,10 @@ type PhysicallyBasedSceneClient () =
                           // collect surfaces
                           for i in 0 .. dec node.MeshIndices.Count do
                             let names = Array.append names [|"Geometry" + if i > 0 then string (inc i) else ""|]
-                            let meshIndex = node.MeshIndices.[i]
-                            let materialIndex = scene.Meshes.[meshIndex].MaterialIndex
-                            let (properties, material) = materials.[materialIndex]
-                            let geometry = geometries.[meshIndex]
+                            let meshIndex = node.MeshIndices[i]
+                            let materialIndex = scene.Meshes[meshIndex].MaterialIndex
+                            let (properties, material) = materials[materialIndex]
+                            let geometry = geometries[meshIndex]
                             let surface = PhysicallyBasedSurface.make names transform geometry.Bounds properties material materialIndex node geometry
                             bounds <- bounds.Combine (geometry.Bounds.Transform transform)
                             surfaces.Add surface

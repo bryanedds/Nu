@@ -1446,7 +1446,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                              CubeMapClient (),
                              PhysicallyBasedSceneClient ())
                     let renderPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = assetClient }
-                    renderer.RenderPackages.[packageName] <- renderPackage
+                    renderer.RenderPackages[packageName] <- renderPackage
                     renderPackage
 
             // categorize existing assets based on the required action
@@ -1492,7 +1492,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     let lastWriteTime =
                         try DateTimeOffset (File.GetLastWriteTime asset.FilePath)
                         with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
-                    assetsLoaded.[asset.AssetTag.AssetName] <- (lastWriteTime, asset, renderAsset)
+                    assetsLoaded[asset.AssetTag.AssetName] <- (lastWriteTime, asset, renderAsset)
                 | None -> ()
 
             // update assets to keep
@@ -1510,7 +1510,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                             | Some scene when not userDefined ->
                                 let surfaces =
                                     [|for surface in staticModel.Surfaces do
-                                        let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                                        let material = scene.Materials[surface.SurfaceMaterialIndex]
                                         let (_, material) = PhysicallyBased.createPhysicallyBasedMaterial dirPath renderer.PhysicallyBasedMaterial renderPackage.PackageState.TextureClient material (Some renderer.VulkanContext)
                                         { surface with SurfaceMaterial = material }|]
                                 StaticModelAsset (userDefined, { staticModel with Surfaces = surfaces })
@@ -1520,7 +1520,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                             | Some scene ->
                                 let surfaces =
                                     [|for surface in animatedModel.Surfaces do
-                                        let material = scene.Materials.[surface.SurfaceMaterialIndex]
+                                        let material = scene.Materials[surface.SurfaceMaterialIndex]
                                         let (_, material) = PhysicallyBased.createPhysicallyBasedMaterial dirPath renderer.PhysicallyBasedMaterial renderPackage.PackageState.TextureClient material (Some renderer.VulkanContext)
                                         { surface with SurfaceMaterial = material }|]
                                 AnimatedModelAsset { animatedModel with Surfaces = surfaces }
@@ -1531,7 +1531,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             for assetEntry in Seq.append assetsUpdated assetsLoaded do
                 let assetName = assetEntry.Key
                 let (lastWriteTime, asset, renderAsset) = assetEntry.Value
-                renderPackage.Assets.[assetName] <- (lastWriteTime, asset, renderAsset)
+                renderPackage.Assets[assetName] <- (lastWriteTime, asset, renderAsset)
 
         // handle error cases
         | Left failedAssetNames ->
@@ -1648,7 +1648,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         (forwardSurfacesComparer : IComparer<struct (single * single * Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * PhysicallyBasedSurface * DepthTest * single * int)>)
         (forwardSurfacesSortBuffer : struct (single * single * Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * PhysicallyBasedSurface * DepthTest * single * int) List) =
         for i in 0 .. dec surfaces.Count do
-            let struct (subsort, sort, model, castShadow, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest) = surfaces.[i]
+            let struct (subsort, sort, model, castShadow, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest) = surfaces[i]
             forwardSurfacesSortBuffer.Add struct (subsort, sort, model, castShadow, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest, (model.Translation - eyeCenter).MagnitudeSquared, i)
         forwardSurfacesSortBuffer.Sort forwardSurfacesComparer
         forwardSurfacesSortBuffer
@@ -2205,12 +2205,12 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
         // blit parameters to instance fields
         for i in 0 .. dec parameters.Length do
-            let struct (model, presence, texCoordsOffset, properties) = parameters.[i]
+            let struct (model, presence, texCoordsOffset, properties) = parameters[i]
             model.ToArray (renderer.InstanceFields, i * Constants.Render.InstanceFieldCount)
-            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 16] <- texCoordsOffset.Min.X
-            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 16 + 1] <- texCoordsOffset.Min.Y
-            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 16 + 2] <- texCoordsOffset.Min.X + texCoordsOffset.Size.X
-            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 16 + 3] <- texCoordsOffset.Min.Y + texCoordsOffset.Size.Y
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 16] <- texCoordsOffset.Min.X
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 16 + 1] <- texCoordsOffset.Min.Y
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 16 + 2] <- texCoordsOffset.Min.X + texCoordsOffset.Size.X
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 16 + 3] <- texCoordsOffset.Min.Y + texCoordsOffset.Size.Y
             let albedo = match properties.AlbedoOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Albedo
             let roughness = match properties.RoughnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Roughness
             let metallic = match properties.MetallicOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Metallic
@@ -2223,24 +2223,24 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             let subsurfaceCutoffMargin = match properties.SubsurfaceCutoffMarginOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.SubsurfaceCutoffMargin
             let specularScalar = match properties.SpecularScalarOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.SpecularScalar
             let refractiveIndex = match properties.RefractiveIndexOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.RefractiveIndex
-            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20] <- albedo.R
-            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20 + 1] <- albedo.G
-            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20 + 2] <- albedo.B
-            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 20 + 3] <- albedo.A
-            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 24] <- roughness
-            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 24 + 1] <- metallic
-            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 24 + 2] <- ambientOcclusion
-            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 24 + 3] <- emission
-            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 28] <- surface.SurfaceMaterial.AlbedoTexture.TextureMetadata.TextureTexelHeight * height
-            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 29] <- if ignoreLightMaps then 1.0f else 0.0f
-            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 30] <- presence.DepthCutoff
-            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 31] <- opaqueDistance
-            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 32] <- subsurfaceCutoff
-            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 33] <- subsurfaceCutoffMargin
-            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 34] <- specularScalar
-            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 35] <- refractiveIndex
-            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 36] <- 0.0f // free
-            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 37] <- 0.0f // free
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 20] <- albedo.R
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 20 + 1] <- albedo.G
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 20 + 2] <- albedo.B
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 20 + 3] <- albedo.A
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 24] <- roughness
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 24 + 1] <- metallic
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 24 + 2] <- ambientOcclusion
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 24 + 3] <- emission
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 28] <- surface.SurfaceMaterial.AlbedoTexture.TextureMetadata.TextureTexelHeight * height
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 29] <- if ignoreLightMaps then 1.0f else 0.0f
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 30] <- presence.DepthCutoff
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 31] <- opaqueDistance
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 32] <- subsurfaceCutoff
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 33] <- subsurfaceCutoffMargin
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 34] <- specularScalar
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 35] <- refractiveIndex
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 36] <- 0.0f // free
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 37] <- 0.0f // free
 
         // make these bindings mutable for passing by ref
         let mutable (uniformsDescriptorSet, samplersDescriptorSet) =
@@ -2502,7 +2502,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                             AmbientColor = lightProbeAmbientColor
                             AmbientBrightness = lightProbeAmbientBrightness
                             Bounds = lightProbeBounds }
-                    renderer.LightMaps.[lightMapId] <- lightMap
+                    renderer.LightMaps[lightMapId] <- lightMap
             | _ -> ()
 
         // collect light maps from cached light maps and ensure they're up to date with their light probes
@@ -2738,8 +2738,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 SortableLight.sortLightShadowIndices renderer.LightShadowIndices lightIds
             let (bonesArray, (uniformsDescriptorSet, samplersDescriptorSet), pipeline) =
                 match boneTransformsOpt with
-                | ValueSome boneTransforms -> (boneTransforms, descriptorSets.[0], forwardPipelines.[0])
-                | ValueNone -> ([||], descriptorSets.[1], forwardPipelines.[1])
+                | ValueSome boneTransforms -> (boneTransforms, descriptorSets[0], forwardPipelines[0])
+                | ValueNone -> ([||], descriptorSets[1], forwardPipelines[1])
             VulkanRenderer3d.renderPhysicallyBasedForwardSurfaces
                 bonesArray (SList.singleton (model, presence, texCoordsOffset, properties))
                 lightMapIrradianceMaps lightMapEnvironmentFilterMaps shadowTextureArray shadowMaps shadowCascades lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses (min lightMapEnvironmentFilterMaps.Length renderTasks.LightMaps.Count) renderer.LightingConfig.LightMapSingletonBlendMargin
@@ -2930,7 +2930,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                             let lightMap = LightMap.createLightMap lightProbeEnabled lightProbeOrigin lightProbeAmbientColor lightProbeAmbientBrightness lightProbeBounds irradianceMap environmentFilterMap
 
                             // add light map to cache
-                            renderer.LightMaps.[lightProbeId] <- lightMap
+                            renderer.LightMaps[lightProbeId] <- lightMap
 
                         | (false, _) -> ()
                     | _ -> ()
@@ -3066,7 +3066,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                                 | (_, _) -> true
                             if shouldDraw then
                                 let shadowResolution = renderer.GeometryViewport.ShadowMapResolution
-                                let (shadowColorAttachment, shadowDepthAttachment) = renderer.PhysicallyBasedAttachments.ShadowMapAttachmentsArray.[shadowMapBufferIndex]
+                                let (shadowColorAttachment, shadowDepthAttachment) = renderer.PhysicallyBasedAttachments.ShadowMapAttachmentsArray[shadowMapBufferIndex]
                                 //VulkanRenderer3d.renderShadowMapFace renderTasks renderer lightOrigin lightCutoff shadowViewProjection shadowFrustum shadowResolution [|shadowColorAttachment.ImageView|] shadowDepthAttachment
                                 ()
 

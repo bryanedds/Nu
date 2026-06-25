@@ -1010,7 +1010,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                 |> Seq.map (fun entry -> entry.Key)
                 |> Seq.toArray
             for entry in textTexturesUnused do
-                let (_, _, _, textTexture) = snd renderer.TextTextures.[entry]
+                let (_, _, _, textTexture) = snd renderer.TextTextures[entry]
                 TextureDumpster.toss textTexture renderer.TextureDumpster
                 renderer.TextTextures.Remove entry |> ignore<bool>
 

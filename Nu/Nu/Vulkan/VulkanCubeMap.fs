@@ -66,7 +66,7 @@ module CubeMap =
         let faceFilePaths = [|faceRightFilePath; faceLeftFilePath; faceTopFilePath; faceBottomFilePath; faceBackFilePath; faceFrontFilePath|]
         for i in 0 .. dec faceFilePaths.Length do
             if Option.isNone errorOpt then
-                let faceFilePath = faceFilePaths.[i]
+                let faceFilePath = faceFilePaths[i]
                 let faceFilePath = if not (File.Exists faceFilePath) then PathF.ChangeExtension (faceFilePath, ".png") else faceFilePath // in case of PsdToPng
                 let faceFilePath =
                     if not (File.Exists faceFilePath) then // in case of BlockCompress
@@ -213,8 +213,8 @@ module CubeMap =
                 let vertexData = vertexData.Span
                 for i in 0 .. dec vertices.Length do
                     let j = i * 3
-                    let vertex = v3 vertexData.[j] vertexData.[j+1] vertexData.[j+2]
-                    vertices.[i] <- vertex
+                    let vertex = v3 vertexData[j] vertexData[j+1] vertexData[j+2]
+                    vertices[i] <- vertex
                 
                 // fin
                 (vertices, Unchecked.defaultof<Nu.Vulkan.Buffer>, Unchecked.defaultof<Nu.Vulkan.Buffer>)

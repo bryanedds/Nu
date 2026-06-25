@@ -191,7 +191,8 @@ type FluidSimDispatcher () =
                         World.setGravity2d (snd gravities[(i + 1) % gravities.Length]) world
 
             // particle sprite button
-            let particleImage = (fluidEmitter.GetFluidParticleRenders world).["Water"].Image
+            let particleRenders = fluidEmitter.GetFluidParticleRenders world
+            let particleImage = particleRenders["Water"].Image
             if World.doButton $"Particle Sprite"
                 [Entity.Position .= v3 255f 80f 0f
                  Entity.Text @= $"Particle Sprite: {particleImage.AssetName}"

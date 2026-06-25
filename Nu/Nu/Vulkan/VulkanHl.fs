@@ -530,7 +530,7 @@ module Hl =
         let cInfos = Array.zeroCreate colorAttachments.Length
         for i in 0 .. dec cInfos.Length do
             let mutable cInfo = VkRenderingAttachmentInfo ()
-            cInfo.imageView <- colorAttachments.[i]
+            cInfo.imageView <- colorAttachments[i]
             cInfo.imageLayout <- ColorAttachmentWrite.VkImageLayout
             cInfo.storeOp <- VkAttachmentStoreOp.Store
             match clearValueOpt with
@@ -539,7 +539,7 @@ module Hl =
                 cInfo.clearValue <- clearValue
             | None ->
                 cInfo.loadOp <- VkAttachmentLoadOp.Load
-            cInfos.[i] <- cInfo
+            cInfos[i] <- cInfo
         use cInfosPin = new ArrayPin<_> (cInfos)
 
         // depth attachment info
@@ -780,7 +780,7 @@ module Hl =
     /// Allocate a command buffer.
     let allocateCommandBuffer commandPool device =
         let commandBuffers = allocateCommandBuffers 1 commandPool device
-        commandBuffers.[0]
+        commandBuffers[0]
 
     /// Create a semaphore.
     let createSemaphore device =
@@ -830,7 +830,7 @@ module Hl =
         let mutable memoryTypeOpt = None
         for i in 0 .. dec memoryTypes.Length do
             match memoryTypeOpt with
-            | None when typeFilter &&& (1u <<< i) <> 0u && memoryTypes.[i].propertyFlags &&& properties = properties ->
+            | None when typeFilter &&& (1u <<< i) <> 0u && memoryTypes[i].propertyFlags &&& properties = properties ->
                 memoryTypeOpt <- Some (uint i)
             | Some _ | None -> ()
 

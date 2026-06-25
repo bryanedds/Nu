@@ -471,8 +471,8 @@ type VulkanRendererImGui
                             let textureId = textureIdCounter
                             textureIdCounter <- inc textureIdCounter
                             assetTextureStorage.Add (textureId, texture)
-                            assetTextureOpts.[assetTag] <- ValueSome textureId
-                        | Left _ -> assetTextureOpts.[assetTag] <- ValueNone
+                            assetTextureOpts[assetTag] <- ValueSome textureId
+                        | Left _ -> assetTextureOpts[assetTag] <- ValueNone
                     | None -> ()
                 let mutable removed = ()
                 assetTextureRequests.TryRemove (assetTag, &removed) |> ignore<bool>
@@ -514,7 +514,7 @@ type VulkanRendererImGui
                     let mutable vertexOffset = 0
                     let mutable indexOffset = 0
                     for i in 0 .. dec drawData.CmdListsCount do
-                        let drawList = let range = drawData.CmdLists in range.[i]
+                        let drawList = let range = drawData.CmdLists in range[i]
                         let vertexSize = drawList.VtxBuffer.Size * sizeof<ImDrawVert>
                         let indexSize = drawList.IdxBuffer.Size * sizeof<uint16>
                         Nu.Vulkan.Buffer.uploadSubdata vertexOffset 0 vertexSize 1 drawList.VtxBuffer.Data vertexBuffer vkc
@@ -547,11 +547,11 @@ type VulkanRendererImGui
                 for i in 0 .. dec drawData.CmdListsCount do
                     
                     // draw commands from list
-                    let drawList = let range = drawData.CmdLists in range.[i]
+                    let drawList = let range = drawData.CmdLists in range[i]
                     for j in 0 .. dec drawList.CmdBuffer.Size do
 
                         // only render when required texture is not in blacklist
-                        let pcmd = let buffer = drawList.CmdBuffer in buffer.[j]
+                        let pcmd = let buffer = drawList.CmdBuffer in buffer[j]
                         if not (textureIdBlacklist.Contains (uint32 pcmd.TextureId)) then
 
                             // only process when no user callback is provided

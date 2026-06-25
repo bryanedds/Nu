@@ -190,8 +190,8 @@ type BufferParallel =
 
     member private this.IsParallel = this.BufferType_.IsParallel
     member private this.CurrentIndex = if this.IsParallel then Hl.CurrentFrame else 0
-    member private this.BufferSingleton = this.BufferSingletons_.[this.CurrentIndex]
-    member private this.BufferSize = this.BufferSizes_.[this.CurrentIndex]
+    member private this.BufferSingleton = this.BufferSingletons_[this.CurrentIndex]
+    member private this.BufferSize = this.BufferSizes_[this.CurrentIndex]
 
     /// The currently selected vulkan buffer.
     member this.VkBuffer = this.BufferSingleton.VkBuffer
@@ -217,7 +217,7 @@ type BufferParallel =
         let length = if bufferType.IsParallel then Constants.Vulkan.MaxFramesInFlight else 1
         let bufferSizes = Array.create length size
         let bufferSingletons = Array.zeroCreate<BufferSingleton> length
-        for i in 0 .. dec bufferSingletons.Length do bufferSingletons.[i] <- BufferParallel.createBufferSingleton size bufferType vkc
+        for i in 0 .. dec bufferSingletons.Length do bufferSingletons[i] <- BufferParallel.createBufferSingleton size bufferType vkc
 
         // make BufferParallel
         let bufferParallel =
@@ -232,8 +232,8 @@ type BufferParallel =
     static member updateSize size (bufferParallel : BufferParallel) vkc =
         if size > bufferParallel.BufferSize then
             BufferSingleton.destroy bufferParallel.BufferSingleton vkc
-            bufferParallel.BufferSingletons_.[bufferParallel.CurrentIndex] <- BufferParallel.createBufferSingleton size bufferParallel.BufferType_ vkc
-            bufferParallel.BufferSizes_.[bufferParallel.CurrentIndex] <- size
+            bufferParallel.BufferSingletons_[bufferParallel.CurrentIndex] <- BufferParallel.createBufferSingleton size bufferParallel.BufferType_ vkc
+            bufferParallel.BufferSizes_[bufferParallel.CurrentIndex] <- size
 
     /// Upload data to BufferParallel.
     static member upload offset alignment size count data (bufferParallel : BufferParallel) vkc =
@@ -242,7 +242,7 @@ type BufferParallel =
     /// Destroy BufferParallel. Never call this in frame as previous frame(s) may still be using it.
     static member destroy bufferParallel vkc =
         for i in 0 .. dec bufferParallel.BufferSingletons_.Length do
-            BufferSingleton.destroy bufferParallel.BufferSingletons_.[i] vkc
+            BufferSingleton.destroy bufferParallel.BufferSingletons_[i] vkc
 
 /// Represents a dynamically growing multibuffer with parallel underlying vulkan buffers. Maintains an internal
 /// cursor that selects the currently active buffer, which is reset via beginFrame and advanced to the next vulkan
@@ -258,7 +258,7 @@ type Buffer =
           BufferType_ : BufferType
           mutable BufferSize_ : int }
 
-    member private this.BufferParallel = this.BufferParallels_.[this.BufferCursor_]
+    member private this.BufferParallel = this.BufferParallels_[this.BufferCursor_]
 
     /// Get the vulkan buffer currently at the cursor.
     member this.VkBuffer = this.BufferParallel.VkBuffer
@@ -358,4 +358,4 @@ type Buffer =
     /// Destroy Buffer.
     static member destroy (buffer : Buffer) vkc =
         for i in 0 .. dec buffer.BufferParallels_.Count do
-            BufferParallel.destroy buffer.BufferParallels_.[i] vkc
+            BufferParallel.destroy buffer.BufferParallels_[i] vkc

@@ -244,7 +244,7 @@ module ContourTessellation =
                     // determine if this is a closed contour (last point equals first point)
                     let isClosed = 
                         contourCount >= 3 && 
-                        Vector2.DistanceSquared (contour.[0], contour.[contourCount - 1]) < epsilon
+                        Vector2.DistanceSquared (contour[0], contour[contourCount - 1]) < epsilon
                     
                     // generate vertices with proper miter joins and anti-aliasing fringe
                     let vertexCount = if isClosed then contourCount - 1 else contourCount
@@ -254,23 +254,23 @@ module ContourTessellation =
                             if isClosed then
                                 let idxPrev = if i = 0 then vertexCount - 1 else i - 1
                                 let idxNext = if i = vertexCount - 1 then 0 else i + 1
-                                (contour.[idxPrev], contour.[idxCurr], contour.[idxNext])
+                                (contour[idxPrev], contour[idxCurr], contour[idxNext])
                             else
                                 // for open contours, replace actual prev/next with straight perpendiculars at endpoints
                                 if i = 0 then
-                                    let pCurr = contour.[0]
-                                    let pNext = contour.[1]
+                                    let pCurr = contour[0]
+                                    let pNext = contour[1]
                                     let dir = Vector2.Normalize (pNext - pCurr)
                                     let pPrev = pCurr - dir * 0.1f // virtual prev point for perpendicular (any closer would produce too wide stroke ends)
                                     (pPrev, pCurr, pNext)
                                 elif i = vertexCount - 1 then
-                                    let pPrev = contour.[i - 1]
-                                    let pCurr = contour.[i]
+                                    let pPrev = contour[i - 1]
+                                    let pCurr = contour[i]
                                     let dir = Vector2.Normalize (pCurr - pPrev)
                                     let pNext = pCurr + dir * 0.1f // virtual next point for perpendicular (any closer would produce too wide stroke ends)
                                     (pPrev, pCurr, pNext)
                                 else
-                                    (contour.[i - 1], contour.[i], contour.[i + 1])
+                                    (contour[i - 1], contour[i], contour[i + 1])
                         
                         // compute miter offset with fringe for anti-aliasing
                         let (innerOffset1, innerOffset2, outerOffset1, outerOffset2) = 
@@ -293,16 +293,16 @@ module ContourTessellation =
         let totalVertexCount = fillVertexCount + strokeVertices.Count
         let vertices = Array.init totalVertexCount (fun i ->
             if i < fillVertexCount
-            then { Position = fromTess &fillTess.Vertices.[i]; Color = fill.Color }
-            else strokeVertices.[i - fillVertexCount])
+            then { Position = fromTess &fillTess.Vertices[i]; Color = fill.Color }
+            else strokeVertices[i - fillVertexCount])
         
         // combine fill and stroke geometry at offset (stroke indices need to be shifted by fill vertex count)
         let fillIndexCount = fillTess.ElementCount * triangle
         let totalIndexCount = fillIndexCount + strokeIndices.Count
         let indices = Array.init totalIndexCount (fun i ->
             if i < fillIndexCount
-            then uint32 fillTess.Elements.[i]
-            else strokeIndices.[i - fillIndexCount] + uint32 fillVertexCount)
+            then uint32 fillTess.Elements[i]
+            else strokeIndices[i - fillIndexCount] + uint32 fillVertexCount)
         
         // fin
         { Vertices = vertices; Indices = indices }

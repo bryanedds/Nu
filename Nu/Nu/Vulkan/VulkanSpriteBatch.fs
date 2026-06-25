@@ -148,11 +148,11 @@ module SpriteBatch =
                         use spritePtr = fixed &sprite
                         let spriteSize = sizeof<Sprite>
                         for i in 0 .. dec env.SpriteIndex do
-                            sprite.perimeter <- env.Perimeters.[i]
-                            sprite.pivot <- env.Pivots.[i]
-                            sprite.rotation <- env.Rotations.[i]
-                            sprite.texCoords <- env.TexCoordses.[i]
-                            sprite.color <- env.Colors.[i]
+                            sprite.perimeter <- env.Perimeters[i]
+                            sprite.pivot <- env.Pivots[i]
+                            sprite.rotation <- env.Rotations[i]
+                            sprite.texCoords <- env.TexCoordses[i]
+                            sprite.color <- env.Colors[i]
                             Buffer.uploadSubdata (i * spriteSize) 0 spriteSize 1 (NativePtr.toNativeInt spritePtr) env.SpritesUniform env.VulkanContext
                         Pipeline.writeDescriptorStorageBuffer 0 0 env.SpritesUniform vkSet env.VulkanContext
 
@@ -234,11 +234,11 @@ module SpriteBatch =
         inline
 #endif
         private populateSpriteBatchVertex (perimeter : Box2) (pivot : Vector2) (rotation : single) (texCoords : Box2) (color : Color) env =
-        env.Perimeters.[env.SpriteIndex] <- v4 perimeter.Min.X perimeter.Min.Y perimeter.Size.X perimeter.Size.Y
-        env.Pivots.[env.SpriteIndex] <- pivot
-        env.Rotations.[env.SpriteIndex] <- rotation
-        env.TexCoordses.[env.SpriteIndex] <- v4 texCoords.Min.X texCoords.Min.Y texCoords.Size.X texCoords.Size.Y
-        env.Colors.[env.SpriteIndex] <- color.V4
+        env.Perimeters[env.SpriteIndex] <- v4 perimeter.Min.X perimeter.Min.Y perimeter.Size.X perimeter.Size.Y
+        env.Pivots[env.SpriteIndex] <- pivot
+        env.Rotations[env.SpriteIndex] <- rotation
+        env.TexCoordses[env.SpriteIndex] <- v4 texCoords.Min.X texCoords.Min.Y texCoords.Size.X texCoords.Size.Y
+        env.Colors[env.SpriteIndex] <- color.V4
 
     /// Submit a sprite to the appropriate sprite batch.
     let submitSpriteBatchSprite (absolute, min : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2 inref, clipOpt : (Box2 voption) inref, color : Color inref, blend, texture : Texture, viewport, env) =

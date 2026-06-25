@@ -51,7 +51,7 @@ module NativePtr =
         let span = Span<byte> (voidPtr, lengthPlus1)
         let readOnlySpan = str.AsSpan ()
         let length = Encoding.UTF8.GetBytes (readOnlySpan, span)
-        span.[length] <- byte 0
+        span[length] <- byte 0
         NativePtr.ofVoidPtr<byte> voidPtr
 
     /// Convert an unmanaged string to a managed string.
@@ -85,7 +85,7 @@ module NativePtr =
         let handle = GCHandle.Alloc (fixedBuffer, GCHandleType.Pinned) // fixedBuffer must be pinned because generic functions like this convert it to obj
         let ptr = NativePtr.ofNativeInt<'a> (handle.AddrOfPinnedObject ())
         let array = Array.zeroCreate<'a> length
-        for i in 0 .. dec length do array.[i] <- NativePtr.get ptr i
+        for i in 0 .. dec length do array[i] <- NativePtr.get ptr i
         handle.Free ()
         array
 
@@ -95,7 +95,7 @@ module NativePtr =
         let mutable fixedBuffer = fixedBuffer
         let voidPtr = Unsafe.AsPointer &fixedBuffer
         let ptr = NativePtr.ofVoidPtr<'a> voidPtr
-        for i in 0 .. dec array.Length do NativePtr.set ptr i array.[i]
+        for i in 0 .. dec array.Length do NativePtr.set ptr i array[i]
         fixedBuffer
     
     /// Convert a ReadOnlySpan<byte> to a string.
@@ -135,7 +135,7 @@ module NativePtr =
             let offsetPtr = NativePtr.add bytePtr blob.Offset
             let voidPtr = NativePtr.toVoidPtr offsetPtr
             let typePtr = NativePtr.ofVoidPtr<'a> voidPtr
-            for i in 0 .. dec array.Length do NativePtr.set typePtr i array.[i]
+            for i in 0 .. dec array.Length do NativePtr.set typePtr i array[i]
             blob.Offset <- blob.Offset + writeSize
             blob
         else Log.warn "Attempted write into binary blob exceeds allocated boundaries; check data."; blob
@@ -227,7 +227,7 @@ type StringArrayWrap private (array : nativeptr<byte> array) =
     /// Create a StringArrayWrap for a given array of strings.
     new (strs : string array) =
         let ptrs = Array.zeroCreate<nativeptr<byte>> strs.Length
-        for i in 0 .. dec strs.Length do ptrs.[i] <- NativePtr.stringToUnmanaged strs.[i]
+        for i in 0 .. dec strs.Length do ptrs[i] <- NativePtr.stringToUnmanaged strs[i]
         new StringArrayWrap (ptrs)
 
     /// The native pointer to the pinned array of unmanaged strings.
@@ -235,5 +235,5 @@ type StringArrayWrap private (array : nativeptr<byte> array) =
 
     interface IDisposable with
         member this.Dispose () =
-            for i in 0 .. dec array.Length do NativePtr.freeUnmanagedString array.[i]
+            for i in 0 .. dec array.Length do NativePtr.freeUnmanagedString array[i]
             (pin :> IDisposable).Dispose ()

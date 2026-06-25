@@ -186,7 +186,7 @@ type PhysicalDevice =
             // NOTE: DJL: for reason described above, do not attempt to derive transfer queue from seperate family.
             match graphicsQueueFamilyOpt with
             | None ->
-                let props = queueFamilyProps.[i]
+                let props = queueFamilyProps[i]
                 if props.queueFlags &&& VkQueueFlags.Graphics <> VkQueueFlags.None then
                     graphicsQueueFamilyOpt <- Some (uint i, props.queueCount)
             | Some _ -> ()
@@ -298,13 +298,13 @@ type SwapchainSingleton =
     /// Create the image views.
     static member private createImageViews format (images : VkImage array) device =
         let imageViews = Array.zeroCreate<VkImageView> images.Length
-        for i in 0 .. dec imageViews.Length do imageViews.[i] <- Hl.createImageView Rgba format 0 1 0 1 VkImageViewType.Image2D VkImageAspectFlags.Color images.[i] device
+        for i in 0 .. dec imageViews.Length do imageViews[i] <- Hl.createImageView Rgba format 0 1 0 1 VkImageViewType.Image2D VkImageAspectFlags.Color images[i] device
         imageViews
     
     /// Create render finished semaphores.
     static member private createRenderFinishedSemaphores imageCount device =
         let semaphores = Array.zeroCreate<VkSemaphore> imageCount
-        for i in 0 .. dec semaphores.Length do semaphores.[i] <- Hl.createSemaphore device
+        for i in 0 .. dec semaphores.Length do semaphores[i] <- Hl.createSemaphore device
         semaphores
     
     /// Try create a SwapchainSingleton.
@@ -341,9 +341,9 @@ type SwapchainSingleton =
         // https://docs.vulkan.org/guide/latest/swapchain_semaphore_reuse.html#_vk_ext_swapchain_maintenance1_extension
         CommandQueue.waitIdle renderQueue
         CommandQueue.waitIdle presentQueue
-        for i in 0 .. dec swapchainSingleton.ImageViews.Length do Vulkan.vkDestroyImageView (device, swapchainSingleton.ImageViews.[i], nullPtr)
+        for i in 0 .. dec swapchainSingleton.ImageViews.Length do Vulkan.vkDestroyImageView (device, swapchainSingleton.ImageViews[i], nullPtr)
         Vulkan.vkDestroySwapchainKHR (device, swapchainSingleton.VkSwapchain, nullPtr)
-        for i in 0 .. dec swapchainSingleton.RenderFinishedSemaphores.Length do Vulkan.vkDestroySemaphore (device, swapchainSingleton.RenderFinishedSemaphores.[i], nullPtr)
+        for i in 0 .. dec swapchainSingleton.RenderFinishedSemaphores.Length do Vulkan.vkDestroySemaphore (device, swapchainSingleton.RenderFinishedSemaphores[i], nullPtr)
 
 /// A swapchain and its assets that may be refreshed for a different screen size.
 type Swapchain =
@@ -354,32 +354,32 @@ type Swapchain =
           mutable SwapchainIndex_ : int }
 
     /// The current SwapchainSingletonOpt.
-    member this.SwapchainSingletonOpt = this.SwapchainSingletonOpts_.[this.SwapchainIndex_]
+    member this.SwapchainSingletonOpt = this.SwapchainSingletonOpts_[this.SwapchainIndex_]
     
     /// The Vulkan swapchain itself.
-    member this.VkSwapchain = (Option.get this.SwapchainSingletonOpts_.[this.SwapchainIndex_]).VkSwapchain
+    member this.VkSwapchain = (Option.get this.SwapchainSingletonOpts_[this.SwapchainIndex_]).VkSwapchain
 
     /// The number of swapchain images.
-    member this.ImageCount = (Option.get this.SwapchainSingletonOpts_.[this.SwapchainIndex_]).Images.Length
+    member this.ImageCount = (Option.get this.SwapchainSingletonOpts_[this.SwapchainIndex_]).Images.Length
     
     /// The current swapchain image.
-    member this.Image = (Option.get this.SwapchainSingletonOpts_.[this.SwapchainIndex_]).Images.[int Hl.ImageIndex]
+    member this.Image = (Option.get this.SwapchainSingletonOpts_[this.SwapchainIndex_]).Images[int Hl.ImageIndex]
 
     /// The image view for the current swapchain image.
-    member this.ImageView = (Option.get this.SwapchainSingletonOpts_.[this.SwapchainIndex_]).ImageViews.[int Hl.ImageIndex]
+    member this.ImageView = (Option.get this.SwapchainSingletonOpts_[this.SwapchainIndex_]).ImageViews[int Hl.ImageIndex]
     
     /// The render finished semaphore for the current swapchain image.
-    member this.RenderFinishedSemaphore = (Option.get this.SwapchainSingletonOpts_.[this.SwapchainIndex_]).RenderFinishedSemaphores.[int Hl.ImageIndex]
+    member this.RenderFinishedSemaphore = (Option.get this.SwapchainSingletonOpts_[this.SwapchainIndex_]).RenderFinishedSemaphores[int Hl.ImageIndex]
 
     /// The swap extent of the current vkSwapchain.
-    member this.SwapExtent = (Option.get this.SwapchainSingletonOpts_.[this.SwapchainIndex_]).SwapExtent
+    member this.SwapExtent = (Option.get this.SwapchainSingletonOpts_[this.SwapchainIndex_]).SwapExtent
 
     static member private clear renderQueue presentQueue swapchain device =
         for i in 0 .. dec swapchain.SwapchainSingletonOpts_.Length do
-            match swapchain.SwapchainSingletonOpts_.[i] with
+            match swapchain.SwapchainSingletonOpts_[i] with
             | Some swapchainSingleton ->
                 SwapchainSingleton.destroy renderQueue presentQueue swapchainSingleton device
-                swapchain.SwapchainSingletonOpts_.[i] <- None
+                swapchain.SwapchainSingletonOpts_[i] <- None
             | None -> ()
     
     static member private destroySurface renderQueue presentQueue swapchain device instance =
@@ -402,7 +402,7 @@ type Swapchain =
 
                         // try create SwapchainSingleton
                         let swapchainSingletonOpt = SwapchainSingleton.tryCreate swapchain.SurfaceFormat_ VkSwapchainKHR.Null physicalDevice swapchain.Window_ device
-                        swapchain.SwapchainSingletonOpts_.[swapchain.SwapchainIndex_] <- swapchainSingletonOpt
+                        swapchain.SwapchainSingletonOpts_[swapchain.SwapchainIndex_] <- swapchainSingletonOpt
                         
                         // destroy surface if lost again or if pause triggered during swapchain creation
                         if Hl.SurfaceState = SurfaceLost || Hl.getBackgroundingRequested ()
@@ -440,19 +440,19 @@ type Swapchain =
             
                 // use current VkSwapchain to create new one
                 let oldVkSwapchainOpt =
-                    match swapchain.SwapchainSingletonOpts_.[swapchain.SwapchainIndex_] with
+                    match swapchain.SwapchainSingletonOpts_[swapchain.SwapchainIndex_] with
                     | Some swapchainSingleton -> if swapchain.SwapchainSingletonOpts_.Length > 1 then swapchainSingleton.VkSwapchain else VkSwapchainKHR.Null
                     | None -> VkSwapchainKHR.Null
 
                 // advance swapchain index
-                if Option.isSome swapchain.SwapchainSingletonOpts_.[swapchain.SwapchainIndex_] then
+                if Option.isSome swapchain.SwapchainSingletonOpts_[swapchain.SwapchainIndex_] then
                     swapchain.SwapchainIndex_ <- (inc swapchain.SwapchainIndex_) % swapchain.SwapchainSingletonOpts_.Length
 
                 // destroy SwapchainSingleton at new index if present
-                match swapchain.SwapchainSingletonOpts_.[swapchain.SwapchainIndex_] with
+                match swapchain.SwapchainSingletonOpts_[swapchain.SwapchainIndex_] with
                 | Some swapchainSingleton ->
                     SwapchainSingleton.destroy renderQueue presentQueue swapchainSingleton device
-                    swapchain.SwapchainSingletonOpts_.[swapchain.SwapchainIndex_] <- None
+                    swapchain.SwapchainSingletonOpts_[swapchain.SwapchainIndex_] <- None
                 | None -> ()
                 
                 // check once more for app pause (triggered during swapchain destruction) before attempting swapchain creation
@@ -463,7 +463,7 @@ type Swapchain =
                     
                         // try create new swapchain internal
                         let swapchainSingletonOpt = SwapchainSingleton.tryCreate swapchain.SurfaceFormat_ oldVkSwapchainOpt physicalDevice swapchain.Window_ device
-                        swapchain.SwapchainSingletonOpts_.[swapchain.SwapchainIndex_] <- swapchainSingletonOpt
+                        swapchain.SwapchainSingletonOpts_[swapchain.SwapchainIndex_] <- swapchainSingletonOpt
 
                         // if surface is lost here (or pause triggered during pipeline creation!), destroy and attempt to recover on the spot
                         if Hl.SurfaceState = SurfaceLost || Hl.getBackgroundingRequested () then
@@ -507,7 +507,7 @@ type Swapchain =
         // try create first SwapchainSingleton if window is not minimized or app paused
         if not (windowMinimized || Hl.getBackgroundingRequested ()) then
             let swapchainSingletonOpt = SwapchainSingleton.tryCreate surfaceFormat VkSwapchainKHR.Null physicalDevice window device
-            swapchainSingletonOpts.[swapchainIndex] <- swapchainSingletonOpt
+            swapchainSingletonOpts[swapchainIndex] <- swapchainSingletonOpt
 
         // make Swapchain
         let swapchain =
@@ -571,7 +571,7 @@ type [<ReferenceEquality>] VulkanContext =
     member this.TextureCommandPool = this.TextureCommandPool_
     
     /// The render command buffer for the current frame.
-    member this.RenderCommandBuffer = this.RenderCommandBuffers_.[Hl.CurrentFrame]
+    member this.RenderCommandBuffer = this.RenderCommandBuffers_[Hl.CurrentFrame]
 
     /// The render command queue.
     member this.RenderQueue = this.RenderQueue_
@@ -580,13 +580,13 @@ type [<ReferenceEquality>] VulkanContext =
     member this.TextureQueue = this.TextureQueue_
 
     /// The image available semaphore for the current frame.
-    member this.ImageAvailableSemaphore = this.ImageAvailableSemaphores_.[Hl.CurrentFrame]
+    member this.ImageAvailableSemaphore = this.ImageAvailableSemaphores_[Hl.CurrentFrame]
 
     /// The render finished semaphore for the current frame.
     member this.RenderFinishedSemaphore = this.Swapchain_.RenderFinishedSemaphore
 
     /// The in flight fence for the current frame.
-    member this.InFlightFence = this.InFlightFences_.[Hl.CurrentFrame]
+    member this.InFlightFence = this.InFlightFences_[Hl.CurrentFrame]
 
     /// The texture fence.
     member this.TextureFence = this.TextureFence_
@@ -634,7 +634,7 @@ type [<ReferenceEquality>] VulkanContext =
             (messageType = VkDebugUtilsMessageTypeFlagsEXT.General && messageSeverity <= VkDebugUtilsMessageSeverityFlagsEXT.Info ||
              messageType = VkDebugUtilsMessageTypeFlagsEXT.Performance && messageSeverity <= VkDebugUtilsMessageSeverityFlagsEXT.Warning) then
             Log.custom header message
-        
+
         // finish passively
         ignore pUserData
         0u
@@ -731,7 +731,7 @@ type [<ReferenceEquality>] VulkanContext =
         // gather devices together with relevant data for selection
         let candidates =
             [for i in 0 .. dec devices.Length do
-                match PhysicalDevice.tryCreate devices.[i] window instance with
+                match PhysicalDevice.tryCreate devices[i] window instance with
                 | Some physicalDevice -> physicalDevice
                 | None -> ()]
 
@@ -874,13 +874,13 @@ type [<ReferenceEquality>] VulkanContext =
     /// Create image available semaphores.
     static member private createImageAvailableSemaphores device =
         let semaphores = Array.zeroCreate<VkSemaphore> Constants.Vulkan.MaxFramesInFlight
-        for i in 0 .. dec semaphores.Length do semaphores.[i] <- Hl.createSemaphore device
+        for i in 0 .. dec semaphores.Length do semaphores[i] <- Hl.createSemaphore device
         semaphores
 
     /// Create in-flight fences.
     static member private createInFlightFences device =
         let fences = Array.zeroCreate<VkFence> Constants.Vulkan.MaxFramesInFlight
-        for i in 0 .. dec fences.Length do fences.[i] <- Hl.createFence true device
+        for i in 0 .. dec fences.Length do fences[i] <- Hl.createFence true device
         fences
 
     /// Handle changes in window size, and check for minimization.
@@ -1124,8 +1124,8 @@ type [<ReferenceEquality>] VulkanContext =
     /// NOTE: intended to be invoked from the main thread.
     static member cleanup vkc =
         Swapchain.destroy vkc.RenderQueue_ vkc.PresentQueue_ vkc.Swapchain_ vkc.Device
-        for i in 0 .. dec vkc.ImageAvailableSemaphores_.Length do Vulkan.vkDestroySemaphore (vkc.Device, vkc.ImageAvailableSemaphores_.[i], nullPtr)
-        for i in 0 .. dec vkc.InFlightFences_.Length do Vulkan.vkDestroyFence (vkc.Device, vkc.InFlightFences_.[i], nullPtr)
+        for i in 0 .. dec vkc.ImageAvailableSemaphores_.Length do Vulkan.vkDestroySemaphore (vkc.Device, vkc.ImageAvailableSemaphores_[i], nullPtr)
+        for i in 0 .. dec vkc.InFlightFences_.Length do Vulkan.vkDestroyFence (vkc.Device, vkc.InFlightFences_[i], nullPtr)
         Vulkan.vkDestroyFence (vkc.Device, vkc.TextureFence, nullPtr)
         Vulkan.vkDestroyFence (vkc.Device, vkc.TransientFence, nullPtr)
         Vulkan.vkDestroyCommandPool (vkc.Device, vkc.RenderCommandPool_, nullPtr)

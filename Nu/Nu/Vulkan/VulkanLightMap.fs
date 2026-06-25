@@ -62,7 +62,7 @@ module LightMap =
 
             // render to reflection cube map face
             let lightAmbientOverride = Some (ambientColor, ambientBrightness)
-            let (eyeForward, eyeUp) = eyeRotations.[i]
+            let (eyeForward, eyeUp) = eyeRotations[i]
             let eyeRotationMatrix = Matrix4x4.CreateLookAt (v3Zero, eyeForward, eyeUp)
             let eyeRotation = Quaternion.CreateFromRotationMatrix eyeRotationMatrix
             let view = Matrix4x4.CreateLookAt (origin, origin + eyeForward, eyeUp)
@@ -124,10 +124,10 @@ module LightMap =
 
             // render face
             let eyeCenter = v3Zero // assuming output
-            let view = views.[i]
+            let view = views[i]
             let viewInverse = view.Inverted
             let viewProjection = view * projection
-            CubeMap.drawCubeMap eyeCenter view viewInverse projection projectionInverse viewProjection invertY cubeMapSurface.CubeMap sampler cubeMapSurface.CubeMapGeometry resolution cubeMap.SubViews.[0, i] irradiancePipeline commandBuffer vkc
+            CubeMap.drawCubeMap eyeCenter view viewInverse projection projectionInverse viewProjection invertY cubeMapSurface.CubeMap sampler cubeMapSurface.CubeMapGeometry resolution cubeMap.SubViews[0, i] irradiancePipeline commandBuffer vkc
 
             // take a snapshot for testing
             // TODO: DJL: implement.
@@ -279,7 +279,7 @@ module LightMap =
 
                 // draw mip face
                 let eyeCenter = v3Zero // assuming origin
-                let view = views.[i]
+                let view = views[i]
                 let viewInverse = view.Inverted
                 let viewProjection = view * projection
                 drawEnvironmentFilter
@@ -295,7 +295,7 @@ module LightMap =
                     environmentFilterSurface.CubeMap
                     sampler
                     environmentFilterSurface.CubeMapGeometry
-                    cubeMap.SubViews.[mip, i]
+                    cubeMap.SubViews[mip, i]
                     environmentFilterPipeline
                     commandBuffer
                     vkc
