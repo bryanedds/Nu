@@ -8,7 +8,7 @@
         
         <!-- ===== ENABLE MOBILE BUILDS HERE =====
 
-             Remove the following <TargetFrameworks> line to enable building for mobile by default.
+             Remove the following <TargetFrameworks> line to enable building for mobile by default. Removing in Visual Studio needs "Reload projects" to then be pressed.
              For dotnet CLI, it will require `dotnet workload restore` to install the mobile .NET workloads,
              and for Visual Studio, it will require ".NET Multi-platform App UI development" workload to be installed via the Visual Studio Installer.
              Android builds require the Android SDK to be installed, and iOS builds require Xcode to be installed on macOS.
