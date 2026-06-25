@@ -12,13 +12,12 @@
     For desktop-only: <TargetFramework>net10.0</TargetFramework>
 
     Property to set BEFORE this import:
-        - TargetFramework / TargetFrameworks
+        - <TargetFramework> / <TargetFrameworks>
     Property to set AFTER this import:
-        - OutputType (if not Exe)
-    Properties that can be set before or after this import:
-        - ApplicationTitle, ApplicationId, ApplicationDisplayVersion, ApplicationVersion
-        - SupportedOSPlatformVersion (if after, $(TargetPlatformIdentifier) can be used in the condition)
-        - MacOSVulkanSdk (override macOS Vulkan SDK path if needed)
+        - <OutputType> (if not Exe)
+    Properties that can be set before or after this import, but $(TargetPlatformIdentifier) can be used if after:
+        - <MacOSVulkanSdk> (override macOS Vulkan SDK path if needed)
+        - App properties such as <ApplicationTitle>, <ApplicationId>, <ApplicationDisplayVersion>, <ApplicationVersion>, <SupportedOSPlatformVersion>
     -->
 
     <!-- ============================================================
@@ -47,7 +46,7 @@
              are evaluated with the desktop RID (e.g. linux-x64). Without clearing RuntimeIdentifiers,
              NuGet tries to resolve RID-specific packages for these impossible TFM+RID combinations,
              such as Microsoft.NETCore.App.Runtime.Mono.linux-x64, which doesn't exist for .NET 10.
-             Without these two properties, "dotnet publish -r linux-x64" will fail the build on Windows/macOS. -->
+             Without these two properties, `dotnet publish -r linux-x64 -p BuildMobile=true` will fail the build on Windows/macOS. -->
         <RuntimeIdentifiers Condition="'$(TargetPlatformIdentifier)' == 'android' And '$(RuntimeIdentifier)' != '' And !$(RuntimeIdentifier.StartsWith('android'))"></RuntimeIdentifiers>
         <RuntimeIdentifiers Condition="'$(TargetPlatformIdentifier)' == 'ios' And '$(RuntimeIdentifier)' != '' And !$(RuntimeIdentifier.StartsWith('ios'))"></RuntimeIdentifiers>
         <!-- For desktop, embed .NET DLLs into the generated executable. However, mobile doesn't support doing this. -->
@@ -63,30 +62,7 @@
     </PropertyGroup>
 
     <!-- ============================================================
-         iOS / Android: Mobile-specific Properties
-         ============================================================ 
-         Only apply when TargetFrameworks includes Android or iOS.-->
-
-    <PropertyGroup Condition="'$(TargetFrameworks)' != '' And ($(TargetFrameworks.Contains('android')) Or $(TargetFrameworks.Contains('ios')))">
-        <UseMaui>true</UseMaui> <!-- Import MAUI MSBuild targets for <SingleProject> property and <MauiAsset>/<MauiSplashScreen> items to be processed -->
-        <SingleProject>true</SingleProject> <!-- Tell Visual Studio to display Android and iOS devices in debugging dropdown menu -->
-        <SkipValidateMauiImplicitPackageReferences>true</SkipValidateMauiImplicitPackageReferences> <!-- Disable misleading warning: https://github.com/dotnet/maui/issues/20658#issuecomment-1952796981 -->
-    </PropertyGroup>
-
-    <PropertyGroup Condition="'$(TargetPlatformIdentifier)' == 'android'">
-        <!-- Required properties for asset packs: https://learn.microsoft.com/en-us/dotnet/maui/android/asset-packs -->
-        <AndroidPackageFormat>aab</AndroidPackageFormat>
-        <AndroidBundleToolExtraArgs>--local-testing</AndroidBundleToolExtraArgs>
-        <!-- Google Play Asset Delivery requires at least Android 6.0 (API version 23) -->
-        <SupportedOSPlatformVersion Condition="'$(SupportedOSPlatformVersion)' == ''">23</SupportedOSPlatformVersion>
-    </PropertyGroup>
-
-    <PropertyGroup Condition="'$(TargetPlatformIdentifier)' == 'ios'">
-        <ValidateXcodeVersion>False</ValidateXcodeVersion> <!-- Without this property, we have more annoyances with Xcode version syncing with .NET workloads -->
-    </PropertyGroup>
-
-    <!-- ============================================================
-         Common Assembly References
+         Common Assembly and Project References
          ============================================================ -->
 
     <ItemGroup>
@@ -105,143 +81,13 @@
         <ProjectReference Include="$(MSBuildThisFileDirectory)Nu/Nu.fsproj" />
     </ItemGroup>
 
+    
     <!-- ============================================================
-         iOS / Android: Mark <UseMaui> packages as build-time only during Restore
-         ============================================================
-         Done so that we don't need to wait for IL Stripping / AOT on them.
-         Only applies to implicitly added (SDK) PackageReferences — if the user explicitly includes
-         a Microsoft.Maui.* package in their project, they control its assets.
-
-         MAUI SDK sets IsMauiImplicitPackageReference=true on implicit packages
-         (see BundledVersions.in.targets in dotnet/maui). This is NOT the same as
-         NuGet's IsImplicitlyDefined — that's only set by dotnet/sdk's implicit
-         version resolution, not by the MAUI workload. -->
-    <Target Name="_RemoveMauiRuntimeAssets" BeforeTargets="CollectPackageReferences" Condition="'$(UseMaui)' == 'true'">
-        <ItemGroup>
-            <PackageReference Update="Microsoft.Maui.*" ExcludeAssets="runtime" Condition="'%(PackageReference.IsMauiImplicitPackageReference)' == 'true'" />
-        </ItemGroup>
-    </Target>
-
-    <!-- ============================================================
-         Android: PackageReference of Xamarin.Google.Android.Play.Asset.Delivery via automatic version selection
-         ============================================================
-         We dynamically choose the highest available Xamarin.Google.Android.Play.Asset.Delivery version
-         that restores for the Android target without NU1608 warnings.
-         If there is an explicit <PackageReference> for Asset.Delivery in the project,
-         this target is skipped to avoid conflicts with the selector script.
-
-         Selection is done by a script that probes candidate versions by
-         running restore with a temporary override and checking restore output.
-         No package versions or version ranges are hard-coded here.
-         
-         Without this target, we encounter the following conflict:
-
-         Xamarin.Google.Android.Play.Asset.Delivery 2.3.0.6
-         └─ Xamarin.GooglePlayServices.Basement 118.10.0.1
-            └─ Xamarin.AndroidX.Fragment ≥ 1.8.9.2
-            └─ Xamarin.AndroidX.Core 1.17.0.2
-                 └─ Xamarin.AndroidX.Lifecycle.Runtime ≥ 2.10.0.2
-                      └─ Xamarin.AndroidX.Lifecycle.Common ≥ 2.10.0.2
-         UseMaui=true (MAUI workload version 10.0.20)
-         └─ Microsoft.Maui.Controls 10.0.20
-              └─ Microsoft.Maui.Core 10.0.20
-                   └─ Xamarin.AndroidX.Navigation.Fragment 2.9.2.1
-                        ├─ Xamarin.AndroidX.Fragment.Ktx 1.8.8.1
-                        │    └─ requires Xamarin.AndroidX.Fragment [1.8.8.1, 1.8.9) ← upper bound < 1.8.9, conflicts with Xamarin.AndroidX.Fragment ≥ 1.8.9.2
-                        ├─ Xamarin.AndroidX.Activity.Ktx 1.10.1.3
-                        │    └─ requires Xamarin.AndroidX.Activity [1.10.1.3, 1.10.2) ← upper bound < 1.10.2
-                        ├─ Xamarin.AndroidX.Lifecycle.Runtime.Ktx 2.9.2.1
-                        │    └─ requires Xamarin.AndroidX.Lifecycle.Runtime [2.9.2.1, 2.9.3) ← upper bound < 2.9.3, conflicts with Xamarin.AndroidX.Lifecycle.Runtime ≥ 2.10.0.2
-                        └─ Xamarin.AndroidX.Lifecycle.ViewModel.Ktx 2.9.2.1
-                             └─ requires Xamarin.AndroidX.Lifecycle.ViewModel [2.9.2.1, 2.9.3) ← upper bound < 2.9.3
-         warning NU1608: Detected package version outside of dependency constraint: Xamarin.AndroidX.Fragment.Ktx 1.8.8.1 requires Xamarin.AndroidX.Fragment (>= 1.8.8.1 && < 1.8.9) but version Xamarin.AndroidX.Fragment 1.8.9.2 was resolved.
-         warning NU1608: Detected package version outside of dependency constraint: Xamarin.AndroidX.Activity.Ktx 1.10.1.3 requires Xamarin.AndroidX.Activity (>= 1.10.1.3 && < 1.10.2) but version Xamarin.AndroidX.Activity 1.12.4.1 was resolved.
-         warning NU1608: Detected package version outside of dependency constraint: Xamarin.AndroidX.Lifecycle.ViewModel.Ktx 2.9.2.1 requires Xamarin.AndroidX.Lifecycle.ViewModel (>= 2.9.2.1&& < 2.9.3) but version Xamarin.AndroidX.Lifecycle.ViewModel 2.10.0.2 was resolved.
-         warning NU1608: Detected package version outside of dependency constraint: Xamarin.AndroidX.SavedState.SavedState.Ktx 1.3.1.1 requires Xamarin.AndroidX.SavedState (>= 1.3.1.1 && < 1.3.2) but version Xamarin.AndroidX.SavedState 1.4.0.2 was resolved.
-         warning NU1608: Detected package version outside of dependency constraint: Xamarin.AndroidX.Lifecycle.Runtime.Ktx.Android 2.9.2.1 requires Xamarin.AndroidX.Lifecycle.Runtime.Android (>= 2.9.2.1 && < 2.9.3) but version Xamarin.AndroidX.Lifecycle.Runtime.Android 2.10.0.2 was resolved.
-         warning NU1608: Detected package version outside of dependency constraint: Xamarin.AndroidX.Lifecycle.Runtime.Ktx 2.9.2.1 requires Xamarin.AndroidX.Lifecycle.Runtime (>= 2.9.2.1 && < 2.9.3) but version Xamarin.AndroidX.Lifecycle.Runtime 2.10.0.2 was resolved.
-         warning NU1608: Detected package version outside of dependency constraint: Xamarin.AndroidX.Lifecycle.Process 2.9.2.1 requires Xamarin.AndroidX.Lifecycle.Runtime (>= 2.9.2.1 && < 2.9.3) but version Xamarin.AndroidX.Lifecycle.Runtime 2.10.0.2 was resolved.
-          -->
-
-    <Target Name="SelectCompatibleAssetDeliveryVersion" BeforeTargets="CollectPackageReferences"
-            Condition="'$(TargetPlatformIdentifier)' == 'android' And '$(UsingAndroidNETSdk)' == 'true' And '@(PackageReference->WithMetadataValue(&quot;Identity&quot;, &quot;Xamarin.Google.Android.Play.Asset.Delivery&quot;))' == ''">
-        <!-- $(UsingAndroidNETSdk) ensures that the Android workload is actually installed to run this script. Otherwise, we want the descriptive workload-not-installed error to show instead of this script failing. -->
-        <PropertyGroup>
-            <_AssetDeliverySelectorScript>$(MSBuildThisFileDirectory)Nu/Scripts/SelectCompatibleAssetDeliveryVersion.fsx</_AssetDeliverySelectorScript>
-        </PropertyGroup>
-        <Error Condition="!Exists('$(_AssetDeliverySelectorScript)')" Text="Asset Delivery selector script was not found at '$(_AssetDeliverySelectorScript)'." />
-        <Exec Command="dotnet fsi &quot;$(_AssetDeliverySelectorScript)&quot; --project-path &quot;$(MSBuildProjectFullPath)&quot; --tfm &quot;$(TargetFramework)&quot;" ConsoleToMsBuild="true">
-            <Output TaskParameter="ConsoleOutput" PropertyName="_AssetDeliverySelectedVersion" />
-        </Exec>
-        <Error Condition="'$(_AssetDeliverySelectedVersion)' == ''" Text="Failed to select a compatible Xamarin.Google.Android.Play.Asset.Delivery version." />
-        <ItemGroup>
-             <PackageReference Include="Xamarin.Google.Android.Play.Asset.Delivery" Version="$(_AssetDeliverySelectedVersion)" />
-        </ItemGroup>
-        <Message Importance="high" Text="Selected Xamarin.Google.Android.Play.Asset.Delivery version $(_AssetDeliverySelectedVersion) for $(MSBuildProjectName)." />
-    </Target>
-
-    <!-- ============================================================
-         Android: Remove Linux native assets from resolved packages
-         ============================================================
-         NuGet packages (Silk.NET.Shaderc.Native, Twizzle.ImGui-Bundle.NET,
-         AstcEncoderCSharp, Magick.NET-Q8-AnyCPU) contain Linux
-         .so files under runtimes/linux-*/native/.  The Android build scans
-         all resolved native assets and warns (XA0141) about Linux .so files
-         that have no 16 KB page alignment or are simply not for Android.
-         
-         We cannot set ExcludeAssets="native" before restore (the versions
-         come from the resolved graph), so instead we strip Linux-native
-         entries from the resolved copy-local lists after they are computed. -->
-    <Target Name="_RemoveLinuxNativeAssets" AfterTargets="ResolvePackageAssets" Condition="'$(TargetPlatformIdentifier)' == 'android'">
-        <ItemGroup>
-            <!-- Remove any resolved native item whose source path contains
-                 a Linux RID segment (/linux-), which is never correct for Android. -->
-            <NativeCopyLocalItems Remove="@(NativeCopyLocalItems)" Condition="$([System.String]::new('%(NativeCopyLocalItems.Identity)').Contains('/linux-'))" />
-            <RuntimeTargetsCopyLocalItems Remove="@(RuntimeTargetsCopyLocalItems)" Condition="$([System.String]::new('%(RuntimeTargetsCopyLocalItems.Identity)').Contains('/linux-'))" />
-        </ItemGroup>
-    </Target>
-
-    <!-- ============================================================
-         Native Libraries
+         Common Native Libraries
          ============================================================
          Note: SDL3-CS native libraries do not require manual inclusion -->
 
-    <ItemGroup Condition="'$(TargetPlatformIdentifier)' == 'android'">
-        <!-- Silk.NET.Shaderc.Native and Twizzle.ImGui-Bundle.NET only ship
-             Linux/macOS/Windows native libs — they do NOT provide Android .so files.
-             All Android .so files must come from Nu.Dependencies. -->
-        <AndroidNativeLibrary Include="$(MSBuildThisFileDirectory)Nu.Dependencies/ShaderC/android/*/libshaderc_shared.so" />
-        <AndroidNativeLibrary Include="$(MSBuildThisFileDirectory)Nu.Dependencies/ShaderC/android/*/libc++_shared.so" />
-        <AndroidNativeLibrary Include="$(MSBuildThisFileDirectory)Nu.Dependencies/ImGui/android/*/libcimgui.so" />
-        <AndroidNativeLibrary Include="$(MSBuildThisFileDirectory)Nu.Dependencies/AssimpNet/android/*/libassimp.so" />
-        <!-- Download Vulkan validation layers here: https://github.com/KhronosGroup/Vulkan-ValidationLayers/releases -->
-        <!--AndroidNativeLibrary Include="$(MSBuildThisFileDirectory)Nu.Dependencies/Vulkan-validation/**/*.so" Condition="'$(Configuration)' == 'Debug'" /-->
-    </ItemGroup>
-
-    <ItemGroup Condition="'$(TargetPlatformIdentifier)' == 'ios'">
-        <NativeReference Include="$(MSBuildThisFileDirectory)Nu.Dependencies/AssimpNet/iOS/assimp.xcframework" Kind="Framework" />
-        <NativeReference Include="$(MSBuildThisFileDirectory)Nu.Dependencies/BulletSharpPInvoke/iOS/bulletc.xcframework" Kind="Framework" />
-        <NativeReference Include="$(MSBuildThisFileDirectory)Nu.Dependencies/JoltPhysics/iOS/joltc.xcframework" Kind="Framework" />
-        <NativeReference Include="$(MSBuildThisFileDirectory)Nu.Dependencies/ImGui/iOS/cimgui.xcframework" Kind="Framework" />
-        <NativeReference Include="$(MSBuildThisFileDirectory)Nu.Dependencies/Vortice.VulkanMemoryAllocator/iOS/vma.xcframework" Kind="Framework" />
-        <NativeReference Include="$(MSBuildThisFileDirectory)Nu.Dependencies/ShaderC/iOS/shaderc_shared.xcframework" Kind="Framework" />
-    </ItemGroup>
-
-    <!-- macOS desktop: bundle frameworks into the output -->
-    <ItemGroup Condition="$(BuildingMacOS)">
-        <None Include="$(MSBuildThisFileDirectory)Nu.Dependencies/AssimpNet/iOS/assimp.xcframework/macos-arm64/assimp.framework/**/*">
-            <TargetPath>Frameworks/assimp.framework/%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
-        <None Include="$(MSBuildThisFileDirectory)Nu.Dependencies/BulletSharpPInvoke/iOS/bulletc.xcframework/macos-arm64/bulletc.framework/**/*">
-            <TargetPath>Frameworks/bulletc.framework/%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
-    </ItemGroup>
-
-    <!-- Windows x64 desktop: native DLLs (x64-only) -->
+    <!-- Windows x64: copy native .dll files to output -->
     <ItemGroup Condition="'$(TargetPlatformIdentifier)' == '' And (('$(RuntimeIdentifier)'=='' And $([System.OperatingSystem]::IsWindows()) And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'X64')
                                                                    Or '$(RuntimeIdentifier)' == 'win-x64')">
         <None Include="$(MSBuildThisFileDirectory)Nu/zlib1.dll">
@@ -258,7 +104,7 @@
         </None>
     </ItemGroup>
 
-    <!-- Linux x64 desktop: native .so files (x64-only) -->
+    <!-- Linux x64: copy native .so files to output -->
     <ItemGroup Condition="'$(TargetPlatformIdentifier)' == '' And (('$(RuntimeIdentifier)'=='' And $([System.OperatingSystem]::IsLinux()) And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'X64')
                                                                    Or '$(RuntimeIdentifier)' == 'linux-x64')">
         <None Include="$(MSBuildThisFileDirectory)Nu/libassimp.so">
@@ -271,65 +117,45 @@
         </None>
     </ItemGroup>
 
-    <!-- ============================================================
-         iOS: AssimpNet Patch (classifies iOS as Linux; fix it)
-         ============================================================ -->
+    <!-- macOS arm64: copy frameworks to output -->
+    <ItemGroup Condition="$(BuildingMacOS)">
+        <None Include="$(MSBuildThisFileDirectory)Nu.Dependencies/AssimpNet/iOS/assimp.xcframework/macos-arm64/assimp.framework/**/*">
+            <TargetPath>Frameworks/assimp.framework/%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Visible>False</Visible>
+        </None>
+        <None Include="$(MSBuildThisFileDirectory)Nu.Dependencies/BulletSharpPInvoke/iOS/bulletc.xcframework/macos-arm64/bulletc.framework/**/*">
+            <TargetPath>Frameworks/bulletc.framework/%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Visible>False</Visible>
+        </None>
+    </ItemGroup>
 
-    <!-- Runs before reference resolution on iOS. The reference update (Remove/Include) always
-         executes; file patching is incremental via SkipUnchangedFiles on the Copy task. -->
-    <Target Name="PatchAssimpNet" BeforeTargets="ResolveReferences;ResolveAssemblyReferences"
-            Condition="'$(TargetPlatformIdentifier)' == 'ios'">
-        <PropertyGroup>
-            <_AssimpNetOriginal>$(MSBuildThisFileDirectory)Nu.Dependencies/AssimpNet/netstandard2.1</_AssimpNetOriginal>
-            <_AssimpNetPatched>$(MSBuildProjectDirectory)/$(BaseIntermediateOutputPath)ios-managed/$(TargetFramework)</_AssimpNetPatched>
-        </PropertyGroup>
-        <MakeDir Directories="$(_AssimpNetPatched)" />
-        <Copy SourceFiles="$(_AssimpNetOriginal)/AssimpNet.dll;$(_AssimpNetOriginal)/AssimpNet.pdb;$(_AssimpNetOriginal)/AssimpNet.xml"
-              DestinationFolder="$(_AssimpNetPatched)" SkipUnchangedFiles="true" />
-        <Exec Command="perl -0777 -pi -e '$u=qr/\x18\x80(.{4})\x2a\x17\x80\1\x2a\x18\x80\1\x2a\x16\x80\1\x2a/s; $p=qr/\x18\x80(.{4})\x2a\x18\x80\1\x2a\x18\x80\1\x2a\x16\x80\1\x2a/s; s/$u/\x18\x80$1\x2a\x18\x80$1\x2a\x18\x80$1\x2a\x16\x80$1\x2a/s or /$p/ or die &quot;AssimpNet iOS platform patch pattern not found\n&quot;' &quot;$(_AssimpNetPatched)/AssimpNet.dll&quot;" />
-        <ItemGroup>
-            <!-- Always redirect the reference to the patched copy on iOS -->
-            <Reference Remove="AssimpNet" />
-            <Reference Include="AssimpNet">
-                <HintPath>$(_AssimpNetPatched)/AssimpNet.dll</HintPath>
-            </Reference>
-        </ItemGroup>
-    </Target>
+    <!-- Android x64/arm64: mark as <AndroidNativeLibrary> -->
+    <ItemGroup Condition="'$(TargetPlatformIdentifier)' == 'android'">
+        <!-- Silk.NET.Shaderc.Native and Twizzle.ImGui-Bundle.NET only ship
+             Linux/macOS/Windows native libs — they do NOT provide Android .so files.
+             All Android .so files must come from Nu.Dependencies. -->
+        <AndroidNativeLibrary Include="$(MSBuildThisFileDirectory)Nu.Dependencies/ShaderC/android/*/libshaderc_shared.so" />
+        <AndroidNativeLibrary Include="$(MSBuildThisFileDirectory)Nu.Dependencies/ShaderC/android/*/libc++_shared.so" />
+        <AndroidNativeLibrary Include="$(MSBuildThisFileDirectory)Nu.Dependencies/ImGui/android/*/libcimgui.so" />
+        <AndroidNativeLibrary Include="$(MSBuildThisFileDirectory)Nu.Dependencies/AssimpNet/android/*/libassimp.so" />
+        <!-- Download Vulkan validation layers here: https://github.com/KhronosGroup/Vulkan-ValidationLayers/releases -->
+        <!--AndroidNativeLibrary Include="$(MSBuildThisFileDirectory)Nu.Dependencies/Vulkan-validation/**/*.so" Condition="'$(Configuration)' == 'Debug'" /-->
+    </ItemGroup>
 
-    <!-- ============================================================
-         iOS: ILStrip Exclusion (F# SRTP byref<T> invalid IL workaround)
-         ============================================================
-         Without this target, Release mode IL stripping for iOS will fail.
-         See https://github.com/dotnet/fsharp/issues/18702#issuecomment-2988572951 -->
-
-    <Target Name="_ExcludeAssembliesFromILStrip" BeforeTargets="_StripAssemblyIL"
-            Condition="'$(TargetPlatformIdentifier)' == 'ios'">
-        <ItemGroup>
-            <_ExcludedAssemblies Include="@(ResolvedFileToPublish)"
-                Condition="'%(Filename)%(Extension)' == 'FSharp.Core.dll'" />
-            <ResolvedFileToPublish Remove="@(_ExcludedAssemblies)" />
-        </ItemGroup>
-    </Target>
-
-    <Target Name="_RestoreAssembliesAfterILStrip" AfterTargets="_StripAssemblyIL"
-            Condition="'$(TargetPlatformIdentifier)' == 'ios'">
-        <ItemGroup>
-            <ResolvedFileToPublish Include="@(_ExcludedAssemblies)" />
-        </ItemGroup>
-    </Target>
+    <!-- iOS arm64: mark as <NativeReference> -->
+    <ItemGroup Condition="'$(TargetPlatformIdentifier)' == 'ios'">
+        <NativeReference Include="$(MSBuildThisFileDirectory)Nu.Dependencies/AssimpNet/iOS/assimp.xcframework" Kind="Framework" />
+        <NativeReference Include="$(MSBuildThisFileDirectory)Nu.Dependencies/BulletSharpPInvoke/iOS/bulletc.xcframework" Kind="Framework" />
+        <NativeReference Include="$(MSBuildThisFileDirectory)Nu.Dependencies/JoltPhysics/iOS/joltc.xcframework" Kind="Framework" />
+        <NativeReference Include="$(MSBuildThisFileDirectory)Nu.Dependencies/ImGui/iOS/cimgui.xcframework" Kind="Framework" />
+        <NativeReference Include="$(MSBuildThisFileDirectory)Nu.Dependencies/Vortice.VulkanMemoryAllocator/iOS/vma.xcframework" Kind="Framework" />
+        <NativeReference Include="$(MSBuildThisFileDirectory)Nu.Dependencies/ShaderC/iOS/shaderc_shared.xcframework" Kind="Framework" />
+    </ItemGroup>
 
     <!-- ============================================================
-         iOS: Remove Stale Assets
-         ============================================================ -->
-
-    <Target Name="RemoveStaleIosAssets" BeforeTargets="_CopyResourcesToBundle"
-            Condition="'$(TargetPlatformIdentifier)' == 'ios'">
-        <RemoveDir Directories="$(AppBundleDir)/Assets" />
-        <RemoveDir Directories="$(AppBundleDir)/refinement-out" />
-    </Target>
-
-    <!-- ============================================================
-         NuPipe: Asset Pipeline
+         Nu.Pipe: Asset Pipeline
          ============================================================ -->
 
     <!-- Build Nu.Pipe once even for multi-project builds.
@@ -395,7 +221,7 @@
     </Target>
 
     <!-- ============================================================
-         Desktop: Icon Generation (from MAUI adaptive icon SVGs)
+         Desktop: Icon Generation (from <MauiIcon> SVGs)
          ============================================================ -->
 
     <Target Name="GenerateDesktopIcon" BeforeTargets="BeforeBuild"
@@ -494,6 +320,7 @@
          but they are not part of the resolved publish items. This target copies
          them (following symlinks) into $(PublishDir) so that CreateMacOSAppBundle
          can bundle them via the normal cp -RL from PublishDir. -->
+
     <Target Name="CopyVulkanSdkToPublishDir" AfterTargets="_CopyResolvedFilesToPublishPreserveNewest;_CopyResolvedFilesToPublishAlways"
             Condition="$(BuildingMacOS) And '$(PublishDir)' != ''">
         <Exec Command="cp -RL &quot;$(OutDir)&quot;/libvulkan* &quot;$(OutDir)&quot;/libMoltenVK* &quot;$(PublishDir)&quot; 2>/dev/null || true" />
@@ -561,6 +388,178 @@
         <Message Importance="high" Text="Note: Ad-hoc signed. Recipients must right-click the app" />
         <Message Importance="high" Text="and select Open on first launch to bypass Gatekeeper." />
         <Message Importance="high" Text="============================================" />
+    </Target>
+
+    <!-- ============================================================
+         iOS / Android: Mobile-specific Properties
+         ============================================================ 
+         Only apply when <TargetFrameworks> includes Android or iOS.-->
+
+    <PropertyGroup Condition="'$(TargetFrameworks)' != '' And ($(TargetFrameworks.Contains('android')) Or $(TargetFrameworks.Contains('ios')))">
+        <UseMaui>true</UseMaui> <!-- Import MAUI MSBuild targets for <SingleProject> property and <MauiAsset>/<MauiSplashScreen> items to be processed -->
+        <SingleProject>true</SingleProject> <!-- Tell Visual Studio to display Android and iOS devices in debugging dropdown menu -->
+        <SkipValidateMauiImplicitPackageReferences>true</SkipValidateMauiImplicitPackageReferences> <!-- Disable misleading warning: https://github.com/dotnet/maui/issues/20658#issuecomment-1952796981 -->
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(TargetPlatformIdentifier)' == 'android'">
+        <!-- Required properties for asset packs: https://learn.microsoft.com/en-us/dotnet/maui/android/asset-packs -->
+        <AndroidPackageFormat>aab</AndroidPackageFormat>
+        <AndroidBundleToolExtraArgs>--local-testing</AndroidBundleToolExtraArgs>
+        <!-- Google Play Asset Delivery requires at least Android 6.0 (API version 23) -->
+        <SupportedOSPlatformVersion Condition="'$(SupportedOSPlatformVersion)' == ''">23</SupportedOSPlatformVersion>
+    </PropertyGroup>
+
+    <!-- ============================================================
+         iOS / Android: Mark <UseMaui> packages as build-time only during Restore
+         ============================================================
+         Done so that we don't need to wait for IL Stripping / AOT on them.
+         Only applies to implicitly added (SDK) PackageReferences — if the user explicitly includes
+         a Microsoft.Maui.* package in their project, they control its assets.
+
+         MAUI SDK sets IsMauiImplicitPackageReference=true on implicit packages
+         (see BundledVersions.in.targets in dotnet/maui). This is NOT the same as
+         NuGet's IsImplicitlyDefined — that's only set by dotnet/sdk's implicit
+         version resolution, not by the MAUI workload. -->
+    <Target Name="_RemoveMauiRuntimeAssets" BeforeTargets="CollectPackageReferences" Condition="'$(UseMaui)' == 'true'">
+        <ItemGroup>
+            <PackageReference Update="Microsoft.Maui.*" ExcludeAssets="runtime" Condition="'%(PackageReference.IsMauiImplicitPackageReference)' == 'true'" />
+        </ItemGroup>
+    </Target>
+
+    <!-- ============================================================
+         Android: PackageReference of Xamarin.Google.Android.Play.Asset.Delivery via automatic version selection
+         ============================================================
+         We dynamically choose the highest available Xamarin.Google.Android.Play.Asset.Delivery version
+         that restores for the Android target without NU1608 warnings.
+         If there is an explicit <PackageReference> for Asset.Delivery in the project,
+         this target is skipped to avoid conflicts with the selector script.
+
+         Selection is done by a script that probes candidate versions by
+         running restore with a temporary override and checking restore output.
+         No package versions or version ranges are hard-coded here.
+         
+         Without this target, we encounter the following conflict:
+
+         Xamarin.Google.Android.Play.Asset.Delivery 2.3.0.6
+         └─ Xamarin.GooglePlayServices.Basement 118.10.0.1
+            └─ Xamarin.AndroidX.Fragment ≥ 1.8.9.2
+            └─ Xamarin.AndroidX.Core 1.17.0.2
+                 └─ Xamarin.AndroidX.Lifecycle.Runtime ≥ 2.10.0.2
+                      └─ Xamarin.AndroidX.Lifecycle.Common ≥ 2.10.0.2
+         UseMaui=true (MAUI workload version 10.0.20)
+         └─ Microsoft.Maui.Controls 10.0.20
+              └─ Microsoft.Maui.Core 10.0.20
+                   └─ Xamarin.AndroidX.Navigation.Fragment 2.9.2.1
+                        ├─ Xamarin.AndroidX.Fragment.Ktx 1.8.8.1
+                        │    └─ requires Xamarin.AndroidX.Fragment [1.8.8.1, 1.8.9) ← upper bound < 1.8.9, conflicts with Xamarin.AndroidX.Fragment ≥ 1.8.9.2
+                        ├─ Xamarin.AndroidX.Activity.Ktx 1.10.1.3
+                        │    └─ requires Xamarin.AndroidX.Activity [1.10.1.3, 1.10.2) ← upper bound < 1.10.2
+                        ├─ Xamarin.AndroidX.Lifecycle.Runtime.Ktx 2.9.2.1
+                        │    └─ requires Xamarin.AndroidX.Lifecycle.Runtime [2.9.2.1, 2.9.3) ← upper bound < 2.9.3, conflicts with Xamarin.AndroidX.Lifecycle.Runtime ≥ 2.10.0.2
+                        └─ Xamarin.AndroidX.Lifecycle.ViewModel.Ktx 2.9.2.1
+                             └─ requires Xamarin.AndroidX.Lifecycle.ViewModel [2.9.2.1, 2.9.3) ← upper bound < 2.9.3
+         warning NU1608: Detected package version outside of dependency constraint: Xamarin.AndroidX.Fragment.Ktx 1.8.8.1 requires Xamarin.AndroidX.Fragment (>= 1.8.8.1 && < 1.8.9) but version Xamarin.AndroidX.Fragment 1.8.9.2 was resolved.
+         warning NU1608: Detected package version outside of dependency constraint: Xamarin.AndroidX.Activity.Ktx 1.10.1.3 requires Xamarin.AndroidX.Activity (>= 1.10.1.3 && < 1.10.2) but version Xamarin.AndroidX.Activity 1.12.4.1 was resolved.
+         warning NU1608: Detected package version outside of dependency constraint: Xamarin.AndroidX.Lifecycle.ViewModel.Ktx 2.9.2.1 requires Xamarin.AndroidX.Lifecycle.ViewModel (>= 2.9.2.1&& < 2.9.3) but version Xamarin.AndroidX.Lifecycle.ViewModel 2.10.0.2 was resolved.
+         warning NU1608: Detected package version outside of dependency constraint: Xamarin.AndroidX.SavedState.SavedState.Ktx 1.3.1.1 requires Xamarin.AndroidX.SavedState (>= 1.3.1.1 && < 1.3.2) but version Xamarin.AndroidX.SavedState 1.4.0.2 was resolved.
+         warning NU1608: Detected package version outside of dependency constraint: Xamarin.AndroidX.Lifecycle.Runtime.Ktx.Android 2.9.2.1 requires Xamarin.AndroidX.Lifecycle.Runtime.Android (>= 2.9.2.1 && < 2.9.3) but version Xamarin.AndroidX.Lifecycle.Runtime.Android 2.10.0.2 was resolved.
+         warning NU1608: Detected package version outside of dependency constraint: Xamarin.AndroidX.Lifecycle.Runtime.Ktx 2.9.2.1 requires Xamarin.AndroidX.Lifecycle.Runtime (>= 2.9.2.1 && < 2.9.3) but version Xamarin.AndroidX.Lifecycle.Runtime 2.10.0.2 was resolved.
+         warning NU1608: Detected package version outside of dependency constraint: Xamarin.AndroidX.Lifecycle.Process 2.9.2.1 requires Xamarin.AndroidX.Lifecycle.Runtime (>= 2.9.2.1 && < 2.9.3) but version Xamarin.AndroidX.Lifecycle.Runtime 2.10.0.2 was resolved.
+          -->
+
+    <Target Name="SelectCompatibleAssetDeliveryVersion" BeforeTargets="CollectPackageReferences"
+            Condition="'$(TargetPlatformIdentifier)' == 'android' And '$(UsingAndroidNETSdk)' == 'true' And '@(PackageReference->WithMetadataValue(&quot;Identity&quot;, &quot;Xamarin.Google.Android.Play.Asset.Delivery&quot;))' == ''">
+        <!-- $(UsingAndroidNETSdk) ensures that the Android workload is actually installed to run this script. Otherwise, we want the descriptive workload-not-installed error to show instead of this script failing. -->
+        <PropertyGroup>
+            <_AssetDeliverySelectorScript>$(MSBuildThisFileDirectory)Nu/Scripts/SelectCompatibleAssetDeliveryVersion.fsx</_AssetDeliverySelectorScript>
+        </PropertyGroup>
+        <Error Condition="!Exists('$(_AssetDeliverySelectorScript)')" Text="Asset Delivery selector script was not found at '$(_AssetDeliverySelectorScript)'." />
+        <Exec Command="dotnet fsi &quot;$(_AssetDeliverySelectorScript)&quot; --project-path &quot;$(MSBuildProjectFullPath)&quot; --tfm &quot;$(TargetFramework)&quot;" ConsoleToMsBuild="true">
+            <Output TaskParameter="ConsoleOutput" PropertyName="_AssetDeliverySelectedVersion" />
+        </Exec>
+        <Error Condition="'$(_AssetDeliverySelectedVersion)' == ''" Text="Failed to select a compatible Xamarin.Google.Android.Play.Asset.Delivery version." />
+        <ItemGroup>
+             <PackageReference Include="Xamarin.Google.Android.Play.Asset.Delivery" Version="$(_AssetDeliverySelectedVersion)" />
+        </ItemGroup>
+        <Message Importance="high" Text="Selected Xamarin.Google.Android.Play.Asset.Delivery version $(_AssetDeliverySelectedVersion) for $(MSBuildProjectName)." />
+    </Target>
+
+    <!-- ============================================================
+         Android: Remove Linux native assets from resolved packages
+         ============================================================
+         NuGet packages (Silk.NET.Shaderc.Native, Twizzle.ImGui-Bundle.NET,
+         AstcEncoderCSharp, Magick.NET-Q8-AnyCPU) contain Linux
+         .so files under runtimes/linux-*/native/.  The Android build scans
+         all resolved native assets and warns (XA0141) about Linux .so files
+         that have no 16 KB page alignment or are simply not for Android.
+         
+         We cannot set ExcludeAssets="native" before restore (the versions
+         come from the resolved graph), so instead we strip Linux-native
+         entries from the resolved copy-local lists after they are computed. -->
+    <Target Name="_RemoveLinuxNativeAssets" AfterTargets="ResolvePackageAssets" Condition="'$(TargetPlatformIdentifier)' == 'android'">
+        <ItemGroup>
+            <!-- Remove any resolved native item whose source path contains
+                 a Linux RID segment (/linux-), which is never correct for Android. -->
+            <NativeCopyLocalItems Remove="@(NativeCopyLocalItems)" Condition="$([System.String]::new('%(NativeCopyLocalItems.Identity)').Contains('/linux-'))" />
+            <RuntimeTargetsCopyLocalItems Remove="@(RuntimeTargetsCopyLocalItems)" Condition="$([System.String]::new('%(RuntimeTargetsCopyLocalItems.Identity)').Contains('/linux-'))" />
+        </ItemGroup>
+    </Target>
+
+    <!-- ============================================================
+         iOS: AssimpNet Patch (classifies iOS as Linux; fix it)
+         ============================================================ -->
+
+    <!-- Runs before reference resolution on iOS. The reference update (Remove/Include) always
+         executes; file patching is incremental via SkipUnchangedFiles on the Copy task. -->
+    <Target Name="PatchAssimpNet" BeforeTargets="ResolveReferences;ResolveAssemblyReferences"
+            Condition="'$(TargetPlatformIdentifier)' == 'ios'">
+        <PropertyGroup>
+            <_AssimpNetOriginal>$(MSBuildThisFileDirectory)Nu.Dependencies/AssimpNet/netstandard2.1</_AssimpNetOriginal>
+            <_AssimpNetPatched>$(MSBuildProjectDirectory)/$(BaseIntermediateOutputPath)ios-managed/$(TargetFramework)</_AssimpNetPatched>
+        </PropertyGroup>
+        <MakeDir Directories="$(_AssimpNetPatched)" />
+        <Copy SourceFiles="$(_AssimpNetOriginal)/AssimpNet.dll;$(_AssimpNetOriginal)/AssimpNet.pdb;$(_AssimpNetOriginal)/AssimpNet.xml"
+              DestinationFolder="$(_AssimpNetPatched)" SkipUnchangedFiles="true" />
+        <Exec Command="perl -0777 -pi -e '$u=qr/\x18\x80(.{4})\x2a\x17\x80\1\x2a\x18\x80\1\x2a\x16\x80\1\x2a/s; $p=qr/\x18\x80(.{4})\x2a\x18\x80\1\x2a\x18\x80\1\x2a\x16\x80\1\x2a/s; s/$u/\x18\x80$1\x2a\x18\x80$1\x2a\x18\x80$1\x2a\x16\x80$1\x2a/s or /$p/ or die &quot;AssimpNet iOS platform patch pattern not found\n&quot;' &quot;$(_AssimpNetPatched)/AssimpNet.dll&quot;" />
+        <ItemGroup>
+            <!-- Always redirect the reference to the patched copy on iOS -->
+            <Reference Remove="AssimpNet" />
+            <Reference Include="AssimpNet">
+                <HintPath>$(_AssimpNetPatched)/AssimpNet.dll</HintPath>
+            </Reference>
+        </ItemGroup>
+    </Target>
+
+    <!-- ============================================================
+         iOS: ILStrip Exclusion (F# SRTP byref<T> invalid IL workaround)
+         ============================================================
+         Without this target, Release mode IL stripping for iOS will fail.
+         See https://github.com/dotnet/fsharp/issues/18702#issuecomment-2988572951 -->
+
+    <Target Name="_ExcludeAssembliesFromILStrip" BeforeTargets="_StripAssemblyIL"
+            Condition="'$(TargetPlatformIdentifier)' == 'ios'">
+        <ItemGroup>
+            <_ExcludedAssemblies Include="@(ResolvedFileToPublish)"
+                Condition="'%(Filename)%(Extension)' == 'FSharp.Core.dll'" />
+            <ResolvedFileToPublish Remove="@(_ExcludedAssemblies)" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="_RestoreAssembliesAfterILStrip" AfterTargets="_StripAssemblyIL"
+            Condition="'$(TargetPlatformIdentifier)' == 'ios'">
+        <ItemGroup>
+            <ResolvedFileToPublish Include="@(_ExcludedAssemblies)" />
+        </ItemGroup>
+    </Target>
+
+    <!-- ============================================================
+         iOS: Remove Stale Assets
+         ============================================================ -->
+
+    <Target Name="RemoveStaleIosAssets" BeforeTargets="_CopyResourcesToBundle"
+            Condition="'$(TargetPlatformIdentifier)' == 'ios'">
+        <RemoveDir Directories="$(AppBundleDir)/Assets" />
+        <RemoveDir Directories="$(AppBundleDir)/refinement-out" />
     </Target>
 
 </Project>

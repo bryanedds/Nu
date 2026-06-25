@@ -35,7 +35,7 @@ jobs:
           dotnet build "Projects/Sand Box 2d" -t:InstallAndroidDependencies -f net10.0-android -p BuildMobile=true,AcceptAndroidSdkLicenses=True
       - name: Build all (if not Linux ARM)
         if: "!(contains(matrix.os, 'ubuntu') && contains(matrix.os, 'arm'))"
-        run: dotnet build -p BuildMobile=true
+        run: dotnet build -p BuildMobile=true,ValidateXcodeVersion=False # Using ValidateXcodeVersion=False until https://github.com/dotnet/macios/issues/25818 is resolved
   test:
     strategy:
       matrix:
