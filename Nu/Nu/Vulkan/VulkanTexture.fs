@@ -1134,7 +1134,7 @@ type [<CustomEquality; NoComparison>] Texture =
         | EmptyTexture -> ()
         | EagerTexture eagerTexture -> TextureParallel.updateSize metadata eagerTexture.TextureParallel vkc
         | LazyTexture lazyTexture -> TextureParallel.updateSize metadata lazyTexture.TextureParallel vkc
-    
+
     /// Asynchronously transition the layout of the current texture.
     static member transitionLayoutAsync srcLayout dstLayout (texture : Texture) commandBuffer =
         Hl.recordTransitionLayout true texture.MipLevels 0 texture.Layers texture.InternalFormat.VkImageAspectFlags srcLayout dstLayout texture.Image commandBuffer

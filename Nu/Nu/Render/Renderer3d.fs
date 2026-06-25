@@ -1781,6 +1781,136 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             | _ -> Log.infoOnce ("Cannot render static model with a non-static model asset for '" + scstring staticModel + "'.")
         | ValueNone -> Log.infoOnce ("Cannot render static model due to unloadable asset(s) for '" + scstring staticModel + "'.")
 
+    static member private categorizeAnimatedModel
+        (model : Matrix4x4 inref,
+         castShadow : bool,
+         presence : Presence,
+         insetOpt : Box2 voption inref,
+         properties : MaterialProperties inref,
+         boneTransforms : Matrix4x4 array,
+         animatedModel : AnimatedModel AssetTag,
+         subsortOffsets : Map<int, single>,
+         drsIndices : int Set,
+         depthTest : DepthTest,
+         renderType : RenderType,
+         renderTasks : RenderTasks,
+         renderer) =
+
+        // ensure we have the required animated model
+        match VulkanRenderer3d.tryGetRenderAsset animatedModel renderer with
+        | ValueSome renderAsset ->
+            match renderAsset with
+            | AnimatedModelAsset modelAsset ->
+
+                // render animated surfaces
+                for i in 0 .. dec modelAsset.Surfaces.Length do
+
+                    // compute tex coords offset
+                    let surface = modelAsset.Surfaces[i]
+                    let texCoordsOffset =
+                        match insetOpt with
+                        | ValueSome inset ->
+                            let albedoMetadata = surface.SurfaceMaterial.AlbedoTexture.TextureMetadata
+                            let texelWidth = albedoMetadata.TextureTexelWidth
+                            let texelHeight = albedoMetadata.TextureTexelHeight
+                            let px = inset.Min.X * texelWidth
+                            let py = (inset.Min.Y + inset.Size.Y) * texelHeight
+                            let sx = inset.Size.X * texelWidth
+                            let sy = -inset.Size.Y * texelHeight
+                            Box2 (px, py, sx, sy)
+                        | ValueNone -> box2 v2Zero v2Zero
+
+                    // check if dual rendering needed
+                    let dualRendering = drsIndices.Contains i
+
+                    // deferred render animated surface when needed
+                    if renderType = DeferredRenderType || dualRendering then
+                        let animatedModelSurfaceKey = { BoneTransforms = boneTransforms; AnimatedSurface = surface }
+                        match renderTasks.DeferredAnimated.TryGetValue animatedModelSurfaceKey with
+                        | (true, renderOps) -> renderOps.Add struct (model, castShadow, presence, texCoordsOffset, properties)
+                        | (false, _) -> renderTasks.DeferredAnimated.Add (animatedModelSurfaceKey, List ([struct (model, castShadow, presence, texCoordsOffset, properties)]))
+
+                    // forward render animated surface when needed
+                    let subsortOffset =
+                        match subsortOffsets.TryGetValue i with
+                        | (true, subsortOffset) -> subsortOffset
+                        | (false, _) -> 0.0f
+                    let sortsOpt =
+                        match renderType with
+                        | ForwardRenderType (subsort, sort) -> ValueSome struct (subsort + subsortOffset, sort)
+                        | _ -> if dualRendering then ValueSome struct (subsortOffset, 0.0f) else ValueNone
+                    match sortsOpt with
+                    | ValueSome struct (subsort, sort) ->
+                        renderTasks.Forward.Add struct (subsort, sort, model, castShadow, presence, texCoordsOffset, properties, ValueSome boneTransforms, surface, depthTest)
+                    | ValueNone -> ()
+
+            // unable to render
+            | _ -> Log.infoOnce ("Cannot render animated model with a non-animated model asset '" + scstring animatedModel + "'.")
+        | ValueNone -> Log.infoOnce ("Cannot render animated model due to unloadable asset(s) for '" + scstring animatedModel + "'.")
+
+    static member private categorizeAnimatedModels
+        (animatedModels : (Matrix4x4 * bool * Presence * Box2 option * MaterialProperties) SList,
+         boneTransforms : Matrix4x4 array,
+         animatedModel : AnimatedModel AssetTag,
+         subsortOffsets : Map<int, single>,
+         drsIndices : int Set,
+         depthTest : DepthTest,
+         renderType : RenderType,
+         renderTasks : RenderTasks,
+         renderer) =
+
+        // ensure we have the required animated model
+        match VulkanRenderer3d.tryGetRenderAsset animatedModel renderer with
+        | ValueSome renderAsset ->
+            match renderAsset with
+            | AnimatedModelAsset modelAsset ->
+
+                // render animated surfaces
+                for i in 0 .. dec modelAsset.Surfaces.Length do
+
+                    // render animated surfaces
+                    let surface = modelAsset.Surfaces[i]
+                    for (model, castShadow, presence, insetOpt, properties) in animatedModels do // TODO: see if these should a struct tuples.
+
+                        // compute tex coords offset
+                        let texCoordsOffset =
+                            match insetOpt with
+                            | Some inset ->
+                                let albedoMetadata = surface.SurfaceMaterial.AlbedoTexture.TextureMetadata
+                                let texelWidth = albedoMetadata.TextureTexelWidth
+                                let texelHeight = albedoMetadata.TextureTexelHeight
+                                let px = inset.Min.X * texelWidth
+                                let py = (inset.Min.Y + inset.Size.Y) * texelHeight
+                                let sx = inset.Size.X * texelWidth
+                                let sy = -inset.Size.Y * texelHeight
+                                Box2 (px, py, sx, sy)
+                            | None -> box2 v2Zero v2Zero
+
+                        // deferred render animated surface when needed
+                        if renderType = DeferredRenderType then
+                            let animatedModelSurfaceKey = { BoneTransforms = boneTransforms; AnimatedSurface = surface }
+                            match renderTasks.DeferredAnimated.TryGetValue animatedModelSurfaceKey with
+                            | (true, renderOps) -> renderOps.Add struct (model, castShadow, presence, texCoordsOffset, properties)
+                            | (false, _) -> renderTasks.DeferredAnimated.Add (animatedModelSurfaceKey, List ([struct (model, castShadow, presence, texCoordsOffset, properties)]))
+
+                        // forward render animated surface when needed
+                        let subsortOffset =
+                            match subsortOffsets.TryGetValue i with
+                            | (true, subsortOffset) -> subsortOffset
+                            | (false, _) -> 0.0f
+                        let sortsOpt =
+                            match renderType with
+                            | ForwardRenderType (subsort, sort) -> ValueSome struct (subsort + subsortOffset, sort)
+                            | _ -> if drsIndices.Contains i then ValueSome struct (subsortOffset, 0.0f) else ValueNone
+                        match sortsOpt with
+                        | ValueSome struct (subsort, sort) ->
+                            renderTasks.Forward.Add struct (subsort, sort, model, castShadow, presence, texCoordsOffset, properties, ValueSome boneTransforms, surface, depthTest)
+                        | ValueNone -> ()
+
+            // unable to render
+            | _ -> Log.infoOnce ("Cannot render animated model with a non-animated model asset '" + scstring animatedModel + "'.")
+        | ValueNone -> Log.infoOnce ("Cannot render animated model due to unloadable asset(s) for '" + scstring animatedModel + "'.")
+
     static member private categorize
         frustumInterior
         frustumExterior
@@ -1837,6 +1967,16 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 for (model, castShadow, presence, insetOpt, properties) in rsms.StaticModels do // TODO: see if these should be struct tuples.
                     let insetOpt = Option.toValueOption insetOpt
                     VulkanRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, &model, castShadow, presence, &insetOpt, &properties, rsms.StaticModel, rsms.Clipped, rsms.DepthTest, rsms.RenderType, rsms.RenderPass, renderTasks, renderer)
+            | RenderAnimatedModel rsm ->
+                let insetOpt = Option.toValueOption rsm.InsetOpt
+                let renderTasks = VulkanRenderer3d.getRenderTasks rsm.RenderPass renderer
+                VulkanRenderer3d.categorizeAnimatedModel (&rsm.ModelMatrix, rsm.CastShadow, rsm.Presence, &insetOpt, &rsm.MaterialProperties, rsm.BoneTransforms, rsm.AnimatedModel, rsm.SubsortOffsets, rsm.DualRenderedSurfaceIndices, rsm.DepthTest, rsm.RenderType, renderTasks, renderer)
+            | RenderAnimatedModels rams ->
+                let renderTasks = VulkanRenderer3d.getRenderTasks rams.RenderPass renderer
+                VulkanRenderer3d.categorizeAnimatedModels (rams.AnimatedModels, rams.BoneTransforms, rams.AnimatedModel, rams.SubsortOffsets, rams.DualRenderedSurfaceIndices, rams.DepthTest, rams.RenderType, renderTasks, renderer)
+            | RenderCachedAnimatedModel camm ->
+                let renderTasks = VulkanRenderer3d.getRenderTasks camm.CachedAnimatedModelRenderPass renderer
+                VulkanRenderer3d.categorizeAnimatedModel (&camm.CachedAnimatedModelMatrix, camm.CachedAnimatedModelCastShadow, camm.CachedAnimatedModelPresence, &camm.CachedAnimatedModelInsetOpt, &camm.CachedAnimatedModelMaterialProperties, camm.CachedAnimatedModelBoneTransforms, camm.CachedAnimatedModel, camm.CachedAnimatedModelSubsortOffsets, camm.CachedAnimatedModelDualRenderedSurfaceIndices, camm.CachedAnimatedModelDepthTest, camm.CachedAnimatedModelRenderType, renderTasks, renderer)
             | RenderCachedStaticModel csmm ->
                 let renderTasks = VulkanRenderer3d.getRenderTasks csmm.CachedStaticModelRenderPass renderer
                 VulkanRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, &csmm.CachedStaticModelMatrix, csmm.CachedStaticModelCastShadow, csmm.CachedStaticModelPresence, &csmm.CachedStaticModelInsetOpt, &csmm.CachedStaticModelMaterialProperties, csmm.CachedStaticModel, csmm.CachedStaticModelClipped, csmm.CachedStaticModelDepthTest, csmm.CachedStaticModelRenderType, csmm.CachedStaticModelRenderPass, renderTasks, renderer)
@@ -2045,8 +2185,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         lightCutoffMargin lightAmbientColor lightAmbientBrightness lightAmbientBoostCutoff lightAmbientBoostScalar lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity
         fogEnabled fogType fogStart fogFinish fogDensity fogColor ssvfEnabled ssvfIntensity ssvfSteps ssvfAsymmetry ssrrEnabled ssrrIntensity ssrrDetail ssrrRefinementsMax ssrrRayThickness ssrrDistanceCutoff ssrrDistanceCutoffMargin ssrrEdgeHorizontalMargin ssrrEdgeVerticalMargin shadowNear
         depthTexture colorTexture brdfTexture irradianceMap environmentFilterMap filteredSampler cubeMapSampler shadowSampler colorSampler depthSampler brdfSampler renderPass pipeline vkc =
-
-        // begin shader
         PhysicallyBased.beginPhysicallyBasedForwardPipeline
             eyeCenter view viewInverse projection projectionInverse viewProjection
             lightCutoffMargin lightAmbientColor lightAmbientBrightness lightAmbientBoostCutoff lightAmbientBoostScalar lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity
@@ -2467,8 +2605,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         for entry in renderTasks.DeferredStatic do
             VulkanRenderer3d.renderPhysicallyBasedDeferredSurfaces
                 [||] entry.Value entry.Key
-                renderer.GeometryViewport geometryImageViewArray compositionZTexture
-                eyeDescriptorSet samplerDescriptorSet renderer.PhysicallyBasedPipelines.DeferredStaticPipeline renderer
+                renderer.GeometryViewport geometryImageViewArray compositionZTexture eyeDescriptorSet samplerDescriptorSet renderer.PhysicallyBasedPipelines.DeferredStaticPipeline renderer
             i <- inc i
         
         // render deferred static surface pre-batches
@@ -2477,6 +2614,14 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             VulkanRenderer3d.renderPhysicallyBasedDeferredSurfacePreBatch
                 frustumInterior frustumExterior frustumImposter renderPass [||] preBatch surface
                 renderer.GeometryViewport geometryImageViewArray compositionZTexture eyeDescriptorSet samplerDescriptorSet renderer.PhysicallyBasedPipelines.DeferredStaticPipeline renderer
+
+        // render animated surfaces deferred
+        for entry in renderTasks.DeferredAnimated do
+            let surfaceKey = entry.Key
+            let parameters = entry.Value
+            VulkanRenderer3d.renderPhysicallyBasedDeferredSurfaces
+                surfaceKey.BoneTransforms parameters surfaceKey.AnimatedSurface
+                renderer.GeometryViewport geometryImageViewArray compositionZTexture eyeDescriptorSet samplerDescriptorSet renderer.PhysicallyBasedPipelines.DeferredAnimatedPipeline renderer
 
         // end deferred static surfaces
         VulkanRenderer3d.endPhysicallyBasedDeferredPipeline
@@ -2567,20 +2712,24 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 eyeCenter viewSkyBox viewSkyBoxInverse windowProjection windowProjectionInverse windowViewProjectionSkyBox cubeMapColor cubeMapBrightness cubeMap renderer.CubeMapGeometry renderer.CubeMapSampler
                 renderer.GeometryViewport compositionTexture compositionZTexture renderer.SkyBoxPipeline renderer.VulkanContext
         | None -> ()
-        
-        // begin forward (static and animated) surfaces
+
+        // begin forward (static and animated) pipelines
         let ssrrEnabled =
             if renderer.RendererConfig.SsrrEnabled && renderer.LightingConfig.SsrrEnabled then 1 else 0
         let forwardSsvfSteps =
             renderer.LightingConfig.SsvfSteps * 2 // HACK: need an increase in forward-rendered steps since they don't get a blur pass.
-        let (uniformsDescriptorSet, samplersDescriptorSet) =
-            VulkanRenderer3d.beginPhysicallyBasedForwardPipeline // just hard coding these values until we implement animated
-                eyeCenter view viewInverse geometryProjection geometryProjectionInverse geometryViewProjection renderer.LightingConfig.LightCutoffMargin lightAmbientColor lightAmbientBrightness renderer.LightingConfig.LightAmbientBoostCutoff renderer.LightingConfig.LightAmbientBoostScalar
-                renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
-                fogEnabled fogType renderer.LightingConfig.FogStart renderer.LightingConfig.FogFinish renderer.LightingConfig.FogDensity renderer.LightingConfig.FogColor ssvfEnabled renderer.LightingConfig.SsvfIntensity forwardSsvfSteps renderer.LightingConfig.SsvfAsymmetry
-                ssrrEnabled renderer.LightingConfig.SsrrIntensity renderer.LightingConfig.SsrrDetail renderer.LightingConfig.SsrrRefinementsMax renderer.LightingConfig.SsrrRayThickness renderer.LightingConfig.SsrrDistanceCutoff renderer.LightingConfig.SsrrDistanceCutoffMargin renderer.LightingConfig.SsrrEdgeHorizontalMargin renderer.LightingConfig.SsrrEdgeVerticalMargin shadowNear
-                depthTexture2 colorTexture renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap renderer.FilteredSampler renderer.CubeMapSampler renderer.ShadowSampler renderer.ColorSampler renderer.DepthSampler renderer.BrdfSampler renderer.RenderPassIndex renderer.PhysicallyBasedPipelines.ForwardStaticPipeline renderer.VulkanContext
-        
+        let forwardPipelines =
+            [renderer.PhysicallyBasedPipelines.ForwardAnimatedPipeline
+             renderer.PhysicallyBasedPipelines.ForwardStaticPipeline]
+        let descriptorSets =
+            [|for pipeline in forwardPipelines do
+                VulkanRenderer3d.beginPhysicallyBasedForwardPipeline
+                    eyeCenter view viewInverse geometryProjection geometryProjectionInverse geometryViewProjection renderer.LightingConfig.LightCutoffMargin lightAmbientColor lightAmbientBrightness renderer.LightingConfig.LightAmbientBoostCutoff renderer.LightingConfig.LightAmbientBoostScalar
+                    renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
+                    fogEnabled fogType renderer.LightingConfig.FogStart renderer.LightingConfig.FogFinish renderer.LightingConfig.FogDensity renderer.LightingConfig.FogColor ssvfEnabled renderer.LightingConfig.SsvfIntensity forwardSsvfSteps renderer.LightingConfig.SsvfAsymmetry
+                    ssrrEnabled renderer.LightingConfig.SsrrIntensity renderer.LightingConfig.SsrrDetail renderer.LightingConfig.SsrrRefinementsMax renderer.LightingConfig.SsrrRayThickness renderer.LightingConfig.SsrrDistanceCutoff renderer.LightingConfig.SsrrDistanceCutoffMargin renderer.LightingConfig.SsrrEdgeHorizontalMargin renderer.LightingConfig.SsrrEdgeVerticalMargin shadowNear
+                    depthTexture2 colorTexture renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap renderer.FilteredSampler renderer.CubeMapSampler renderer.ShadowSampler renderer.ColorSampler renderer.DepthSampler renderer.BrdfSampler renderer.RenderPassIndex pipeline renderer.VulkanContext|]
+
         // render forward (static and animated) surfaces to composition attachment
         for (model, _, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest) in renderTasks.ForwardSorted do
             let (lightMapOrigins, lightMapMins, lightMapSizes, lightMapAmbientColors, lightMapAmbientBrightnesses, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
@@ -2590,21 +2739,19 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 SortableLight.sortLights Constants.Render.LightsMaxForward model.Translation renderTasks.Lights
             let lightShadowIndices =
                 SortableLight.sortLightShadowIndices renderer.LightShadowIndices lightIds
-            let (bonesArray, pipelineOpt (* until we implement animated *)) =
+            let (bonesArray, (uniformsDescriptorSet, samplersDescriptorSet), pipeline) =
                 match boneTransformsOpt with
-                | ValueSome boneTransforms -> (boneTransforms, None)
-                | ValueNone -> ([||], Some renderer.PhysicallyBasedPipelines.ForwardStaticPipeline)
-            match pipelineOpt with
-            | Some pipeline ->
-                VulkanRenderer3d.renderPhysicallyBasedForwardSurfaces
-                    bonesArray (SList.singleton (model, presence, texCoordsOffset, properties))
-                    lightMapIrradianceMaps lightMapEnvironmentFilterMaps shadowTextureArray shadowMaps shadowCascades lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses (min lightMapEnvironmentFilterMaps.Length renderTasks.LightMaps.Count) renderer.LightingConfig.LightMapSingletonBlendMargin
-                    lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices (min lightIds.Length renderTasks.Lights.Count) renderer.ShadowMatrices
-                    surface depthTest true renderer.GeometryViewport compositionTexture compositionZTexture uniformsDescriptorSet samplersDescriptorSet pipeline renderer
-            | None -> ()
+                | ValueSome boneTransforms -> (boneTransforms, descriptorSets.[0], forwardPipelines.[0])
+                | ValueNone -> ([||], descriptorSets.[1], forwardPipelines.[1])
+            VulkanRenderer3d.renderPhysicallyBasedForwardSurfaces
+                bonesArray (SList.singleton (model, presence, texCoordsOffset, properties))
+                lightMapIrradianceMaps lightMapEnvironmentFilterMaps shadowTextureArray shadowMaps shadowCascades lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses (min lightMapEnvironmentFilterMaps.Length renderTasks.LightMaps.Count) renderer.LightingConfig.LightMapSingletonBlendMargin
+                lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices (min lightIds.Length renderTasks.Lights.Count) renderer.ShadowMatrices
+                surface depthTest true renderer.GeometryViewport compositionTexture compositionZTexture uniformsDescriptorSet samplersDescriptorSet pipeline renderer
 
-        // end forward (static and animated) surfaces
-        VulkanRenderer3d.endPhysicallyBasedForwardPipeline renderer.PhysicallyBasedPipelines.ForwardStaticPipeline
+        // end forward (static and animated) pipelines
+        for pipeline in forwardPipelines do
+            VulkanRenderer3d.endPhysicallyBasedForwardPipeline pipeline
 
         // blit from composition attachment to swapchain (just for now)
         // TODO: DJL: blit from final attachment, not composition.

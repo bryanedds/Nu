@@ -519,15 +519,23 @@ type PhysicallyBasedPipelines =
       ShadowStaticPointPipeline : PhysicallyBasedShadowPipeline
       ShadowStaticSpotPipeline : PhysicallyBasedShadowPipeline
       DeferredStaticPipeline : PhysicallyBasedPipeline
+      DeferredAnimatedPipeline : PhysicallyBasedPipeline
       DeferredLightingPipeline : PhysicallyBasedDeferredLightingPipeline
-      ForwardStaticPipeline : PhysicallyBasedPipeline }
+      ForwardStaticPipeline : PhysicallyBasedPipeline
+      ForwardAnimatedPipeline : PhysicallyBasedPipeline }
 
 [<RequireQualifiedAccess>]
 module PhysicallyBased =
     
-    let StaticTexCoordsOffset = (3 (*position*)) * sizeof<single>
-    let StaticNormalOffset =    (3 (*position*) + 2 (*tex coords*)) * sizeof<single>
-    let StaticVertexSize =      (3 (*position*) + 2 (*tex coords*) + 3 (*normal*)) * sizeof<single>
+    let StaticTexCoordsOffset =     (3 (*position*)) * sizeof<single>
+    let StaticNormalOffset =        (3 (*position*) + 2 (*tex coords*)) * sizeof<single>
+    let StaticVertexSize =          (3 (*position*) + 2 (*tex coords*) + 3 (*normal*)) * sizeof<single>
+    
+    let AnimatedTexCoordsOffset =   (3 (*position*)) * sizeof<single>
+    let AnimatedNormalOffset =      (3 (*position*) + 2 (*tex coords*)) * sizeof<single>
+    let AnimatedBoneIdsOffset =     (3 (*position*) + 2 (*tex coords*) + 3 (*normal*)) * sizeof<single>
+    let AnimatedWeightsOffset =     (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 4 (*boneIds*)) * sizeof<single>
+    let AnimatedVertexSize =        (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 4 (*boneIds*) + 4 (*weights*)) * sizeof<single>
 
     /// Create a mesh for a physically-based quad.
     let createPhysicallyBasedQuadMesh () =
@@ -2352,6 +2360,26 @@ module PhysicallyBased =
                   Pipeline.attribute 11 Single4 (32 * sizeof<single>)
                   Pipeline.attribute 12 Single4 (36 * sizeof<single>)|]|]
 
+        // animated vertices
+        let animatedVertices =
+            [|Pipeline.vertex 0 AnimatedVertexSize VkVertexInputRate.Vertex
+                [|Pipeline.attribute 0 Single3 0
+                  Pipeline.attribute 1 Single2 AnimatedTexCoordsOffset
+                  Pipeline.attribute 2 Single3 AnimatedNormalOffset
+                  Pipeline.attribute 3 Single4 AnimatedBoneIdsOffset
+                  Pipeline.attribute 4 Single4 AnimatedWeightsOffset|]
+              Pipeline.vertex 1 (Constants.Render.InstanceFieldCount * sizeof<single>) VkVertexInputRate.Instance
+                [|Pipeline.attribute 5 Single4 0
+                  Pipeline.attribute 6 Single4 (4 * sizeof<single>)
+                  Pipeline.attribute 7 Single4 (8 * sizeof<single>)
+                  Pipeline.attribute 8 Single4 (12 * sizeof<single>)
+                  Pipeline.attribute 9 Single4 (16 * sizeof<single>)
+                  Pipeline.attribute 10 Single4 (20 * sizeof<single>)
+                  Pipeline.attribute 11 Single4 (24 * sizeof<single>)
+                  Pipeline.attribute 12 Single4 (28 * sizeof<single>)
+                  Pipeline.attribute 13 Single4 (32 * sizeof<single>)
+                  Pipeline.attribute 14 Single4 (36 * sizeof<single>)|]|]
+
         // create shadow static directional pipeline
         let (shadowTextureArrayColorAttachment, shadowTextureArrayZAttachment) = attachments.ShadowTextureArrayAttachments
         let shadowStaticDirectionalPipeline =
@@ -2403,6 +2431,25 @@ module PhysicallyBased =
                   clearCoatPlus.VkFormat|]
                 (Some compositionZ.VkFormat)
                 vkc
+
+        // create deferred animated pipeline
+        let deferredAnimatedPipeline =
+            createPhysicallyBasedPipeline
+                lightMapsMax
+                lightsMax
+                Constants.Paths.PhysicallyBasedDeferredAnimatedShaderFilePath
+                [|VulkanUnblended|]
+                [|false; true|]
+                animatedVertices
+                [|depth.VkFormat
+                  albedo.VkFormat
+                  material.VkFormat
+                  normalPlus.VkFormat
+                  subdermalPlus.VkFormat
+                  scatterPlus.VkFormat
+                  clearCoatPlus.VkFormat|]
+                (Some compositionZ.VkFormat)
+                vkc
         
         // create deferred lighting pipeline
         let deferredLightingPipeline = createPhysicallyBasedDeferredLightingPipeline lightsMax [|attachments.LightingAttachment.VkFormat|] vkc
@@ -2419,6 +2466,19 @@ module PhysicallyBased =
                 [|composition.VkFormat|]
                 (Some compositionZ.VkFormat)
                 vkc
+
+        // create forward animated pipeline
+        let forwardAnimatedPipeline =
+            createPhysicallyBasedPipeline
+                Constants.Render.LightMapsMaxForward
+                Constants.Render.LightsMaxForward
+                Constants.Paths.PhysicallyBasedForwardAnimatedShaderFilePath
+                [|VulkanUnblended; VulkanTransparent|]
+                [|false; true|]
+                animatedVertices
+                [|composition.VkFormat|]
+                (Some compositionZ.VkFormat)
+                vkc
         
         // create PhysicallyBasedPipelines
         let physicallyBasedPipelines =
@@ -2426,8 +2486,10 @@ module PhysicallyBased =
               ShadowStaticPointPipeline = shadowStaticPointPipeline
               ShadowStaticSpotPipeline = shadowStaticSpotPipeline
               DeferredStaticPipeline = deferredStaticPipeline
+              DeferredAnimatedPipeline = deferredAnimatedPipeline
               DeferredLightingPipeline = deferredLightingPipeline
-              ForwardStaticPipeline = forwardStaticPipeline }
+              ForwardStaticPipeline = forwardStaticPipeline
+              ForwardAnimatedPipeline = forwardAnimatedPipeline }
 
         // fin
         physicallyBasedPipelines
@@ -2437,16 +2499,20 @@ module PhysicallyBased =
         destroyPhysicallyBasedShadowPipeline physicallyBasedPipelines.ShadowStaticPointPipeline vkc
         destroyPhysicallyBasedShadowPipeline physicallyBasedPipelines.ShadowStaticSpotPipeline vkc
         destroyPhysicallyBasedPipeline physicallyBasedPipelines.DeferredStaticPipeline vkc
+        destroyPhysicallyBasedPipeline physicallyBasedPipelines.DeferredAnimatedPipeline vkc
         destroyPhysicallyBasedDeferredLightingPipeline physicallyBasedPipelines.DeferredLightingPipeline vkc
         destroyPhysicallyBasedPipeline physicallyBasedPipelines.ForwardStaticPipeline vkc
+        destroyPhysicallyBasedPipeline physicallyBasedPipelines.ForwardAnimatedPipeline vkc
 
     let reloadPhysicallyBasedShaders physicallyBasedPipelines vkc =
         Pipeline.reloadShaders physicallyBasedPipelines.ShadowStaticDirectionalPipeline.Pipeline vkc
         Pipeline.reloadShaders physicallyBasedPipelines.ShadowStaticPointPipeline.Pipeline vkc
         Pipeline.reloadShaders physicallyBasedPipelines.ShadowStaticSpotPipeline.Pipeline vkc
         Pipeline.reloadShaders physicallyBasedPipelines.DeferredStaticPipeline.Pipeline vkc
+        Pipeline.reloadShaders physicallyBasedPipelines.DeferredAnimatedPipeline.Pipeline vkc
         Pipeline.reloadShaders physicallyBasedPipelines.DeferredLightingPipeline.Pipeline vkc
         Pipeline.reloadShaders physicallyBasedPipelines.ForwardStaticPipeline.Pipeline vkc
+        Pipeline.reloadShaders physicallyBasedPipelines.ForwardAnimatedPipeline.Pipeline vkc
 
 /// Memoizes physically-based scene loads.
 type PhysicallyBasedSceneClient () =
