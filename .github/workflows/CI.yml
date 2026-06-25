@@ -47,8 +47,13 @@ jobs:
           #   2. List version directories under `microsoft.net.sdk.ios/` — each dir
           #      name IS a workload version (e.g. 26.5.10284).
           #   3. Sort version-sorted, take the latest, and extract major.minor.
+          # NOTE: We resolve the dotnet root from `dotnet --info` rather than using
+          # $DOTNET_ROOT, because actions/setup-dotnet may set $DOTNET_ROOT to
+          # $HOME/.dotnet while the actual SDK (and its workload manifests) live
+          # at the system location (e.g. /usr/local/share/dotnet) on macOS runners.
           SDK_BAND=$(dotnet --version | awk -F. '{print $1"."$2"."int($3/100)*100}')
-          IOS_VERSION=$(ls "$DOTNET_ROOT/sdk-manifests/$SDK_BAND/microsoft.net.sdk.ios/" 2>/dev/null \
+          DOTNET_ROOT_REAL=$(dotnet --info 2>/dev/null | awk -F': ' '/Base Path:/{gsub(/\/sdk\/[^\/]+/, "", $2); gsub(/\/+$/, "", $2); gsub(/^[[:space:]]+/, "", $2); print $2}')
+          IOS_VERSION=$(ls "$DOTNET_ROOT_REAL/sdk-manifests/$SDK_BAND/microsoft.net.sdk.ios/" 2>/dev/null \
             | sort -t. -k1,1n -k2,2n -k3,3n | tail -1 | cut -d. -f1-2)
           echo "xcode-version=${IOS_VERSION:-latest-stable}" >> "$GITHUB_OUTPUT"
       - uses: maxim-lobanov/setup-xcode@v1
