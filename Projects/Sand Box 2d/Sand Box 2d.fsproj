@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup Condition="$(BuildMobile) == 'true'">
+    <PropertyGroup>
         <!-- Target frameworks: Android must be listed before desktop for Visual Studio
              to detect mobile debug targets. iOS builds will not work outside macOS. -->
         <TargetFrameworks>net10.0-android;net10.0</TargetFrameworks>
