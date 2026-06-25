@@ -32,11 +32,14 @@ type SdlWindowConfig =
 
 /// Describes the general configuration of SDL.
 type [<ReferenceEquality>] SdlConfig =
-    { WindowConfig : SdlWindowConfig }
+    { WindowConfig : SdlWindowConfig
+      /// A space delimited list of LandscapeLeft LandscapeRight Portrait and PortraitUpsideDown. See https://wiki.libsdl.org/SDL3/SDL_HINT_ORIENTATIONS
+      MobileOrientations : string }
 
     /// A default SdlConfig.
     static member val defaultConfig =
-        { WindowConfig = SdlWindowConfig.defaultConfig }
+        { WindowConfig = SdlWindowConfig.defaultConfig
+          MobileOrientations = "" }
 
 [<RequireQualifiedAccess>]
 module SdlEvents =
@@ -181,7 +184,7 @@ module SdlDeps =
                 // attempt to initialize sdl
                 Log.info "Initializing SDL 3..."
                 SDL3.SDL_SetHint (SDL3.SDL_HINT_WINDOWS_CLOSE_ON_ALT_F4, "0") |> ignore<SDLBool>
-                SDL3.SDL_SetHint (SDL3.SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight") |> ignore<SDLBool>
+                SDL3.SDL_SetHint (SDL3.SDL_HINT_ORIENTATIONS, sdlConfig.MobileOrientations) |> ignore<SDLBool>
                 let initConfig =
                     SDL_InitFlags.SDL_INIT_AUDIO |||
                     SDL_InitFlags.SDL_INIT_VIDEO |||

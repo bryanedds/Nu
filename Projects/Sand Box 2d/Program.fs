@@ -14,7 +14,9 @@ let main firstFrameReady =
     let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "Sand Box (2D)" }
 
     // this specifies the configuration of the game engine's use of SDL
-    let sdlConfig = { SdlConfig.defaultConfig with WindowConfig = sdlWindowConfig }
+    // NOTE: keep MobileOrientations in sync with the ones specified for ScreenOrientation below and in "App/iOS Info.plist" file.
+    // the platform-specific orientations are applied to the splash screen before SDL sets orientations, so they must match to avoid a brief orientation change when the splash screen is removed.
+    let sdlConfig = { SdlConfig.defaultConfig with WindowConfig = sdlWindowConfig; MobileOrientations = "LandscapeLeft LandscapeRight" }
 
     // this specifies the world config using the above SDL config
     let worldConfig = { WorldConfig.defaultConfig with SdlConfig = sdlConfig; FirstFrameReady = firstFrameReady }
