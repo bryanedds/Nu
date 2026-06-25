@@ -33,9 +33,20 @@ jobs:
         if: "contains(matrix.os, 'windows') && contains(matrix.os, 'arm')"
         run:
           dotnet build "Projects/Sand Box 2d" -t:InstallAndroidDependencies -f net10.0-android -p BuildMobile=true,AcceptAndroidSdkLicenses=True
+      - name: Get Xcode version from iOS workload
+        id: ios-version
+        if: contains(matrix.os, 'macos')
+        run: |
+          # According to https://github.com/dotnet/macios/issues/25818#issuecomment-4799784136, iOS workload version 26.5.10284 implies iOS 26.5 and Xcode 26.5.
+          IOS_VERSION=$(dotnet workload list 2>/dev/null | awk '/^ios /{print $2}' | cut -d. -f1-2)
+          echo "xcode-version=${IOS_VERSION}" >> "$GITHUB_OUTPUT"
+      - uses: maxim-lobanov/setup-xcode@v1
+        if: contains(matrix.os, 'macos')
+        with:
+          xcode-version: ${{ steps.ios-version.outputs.xcode-version }}
       - name: Build all (if not Linux ARM)
         if: "!(contains(matrix.os, 'ubuntu') && contains(matrix.os, 'arm'))"
-        run: dotnet build -p BuildMobile=true,ValidateXcodeVersion=False # Using ValidateXcodeVersion=False until https://github.com/dotnet/macios/issues/25818 is resolved
+        run: dotnet build -p BuildMobile=true
   test:
     strategy:
       matrix:
