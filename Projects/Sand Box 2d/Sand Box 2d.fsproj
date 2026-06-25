@@ -1,6 +1,19 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
+        <!-- By default, we do not build for mobile to avoid requiring mobile SDKs for desktop users.
+             Note: <TargetFrameworks> is used instead of <TargetFramework> to allow
+             CI using our custom property $(BuildMobile) to override it. -->
+        <TargetFrameworks>net10.0</TargetFrameworks>
+    </PropertyGroup>
+    <!-- Remove the following condition to enable building for mobile by default.
+         It will require installing and updating .NET workloads if used from dotnet CLI (otherwise error)
+         as well as mobile .NET components if used from Visual Studio. Mobile SDKs will also be required.
+
+         For dotnet CLI, the following command installs the Android SDK:
+         dotnet build "Projects/Sand Box 2d" -t InstallAndroidDependencies -f net10.0-android -p BuildMobile=true,AcceptAndroidSdkLicenses=True
+         -->
+    <PropertyGroup Condition="$(BuildMobile) == 'true'">
         <!-- Target frameworks: Android must be listed before desktop for Visual Studio
              to detect mobile debug targets. iOS builds will not work outside macOS. -->
         <TargetFrameworks>net10.0-android;net10.0</TargetFrameworks>
