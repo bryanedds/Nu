@@ -2494,6 +2494,16 @@ module PhysicallyBased =
         // fin
         physicallyBasedPipelines
 
+    let beginPhysicallyBasedPipelines physicallyBasedPipelines =
+        Pipeline.beginFrame physicallyBasedPipelines.ShadowStaticDirectionalPipeline.Pipeline
+        Pipeline.beginFrame physicallyBasedPipelines.ShadowStaticPointPipeline.Pipeline
+        Pipeline.beginFrame physicallyBasedPipelines.ShadowStaticSpotPipeline.Pipeline
+        Pipeline.beginFrame physicallyBasedPipelines.DeferredStaticPipeline.Pipeline
+        Pipeline.beginFrame physicallyBasedPipelines.DeferredAnimatedPipeline.Pipeline
+        Pipeline.beginFrame physicallyBasedPipelines.DeferredLightingPipeline.Pipeline
+        Pipeline.beginFrame physicallyBasedPipelines.ForwardStaticPipeline.Pipeline
+        Pipeline.beginFrame physicallyBasedPipelines.ForwardAnimatedPipeline.Pipeline
+
     let destroyPhysicallyBasedPipelines physicallyBasedPipelines vkc =
         destroyPhysicallyBasedShadowPipeline physicallyBasedPipelines.ShadowStaticDirectionalPipeline vkc
         destroyPhysicallyBasedShadowPipeline physicallyBasedPipelines.ShadowStaticPointPipeline vkc

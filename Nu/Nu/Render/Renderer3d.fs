@@ -2816,18 +2816,13 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         if renderer.VulkanContext.RenderAllowed then
             TextureDumpster.beginFrame renderer.TextureDumpster renderer.VulkanContext
 
-        // begin render pass index frame
-        renderer.RenderPassIndex <- 0
-
         // begin instance buffer frames as requested on previous frame
         for geometry in renderer.GeometryInstanced do
             Buffer.beginFrame geometry.InstanceBuffer
         renderer.GeometryInstanced.Clear ()
 
         // begin pipeline frames
-        Pipeline.beginFrame renderer.PhysicallyBasedPipelines.DeferredStaticPipeline.Pipeline
-        Pipeline.beginFrame renderer.PhysicallyBasedPipelines.DeferredLightingPipeline.Pipeline
-        Pipeline.beginFrame renderer.PhysicallyBasedPipelines.ForwardStaticPipeline.Pipeline
+        PhysicallyBased.beginPhysicallyBasedPipelines renderer.PhysicallyBasedPipelines
 
         //////////////////
         // Handle Frame //
