@@ -171,8 +171,10 @@ let splashScreen = UIKit.UIStoryboard.FromName("MauiSplash", null).InstantiateIn
 
 // SDL_RunApp main callback using [UnmanagedCallersOnly] for iOS AOT compatibility.
 // See https://github.com/ppy/SDL3-CS/blob/master/SDL3-CS.Tests.iOS/Main.cs for reference.
+#nowarn 202
 [<System.Runtime.InteropServices.UnmanagedCallersOnly (CallConvs = [| typeof<System.Runtime.CompilerServices.CallConvCdecl> |])>]
-let private sdlMainImpl (argc: int, argv: nativeptr<nativeptr<byte>>) : int =
+#warnon 202
+let private sdlMainImpl (_argc: int, _argv: nativeptr<nativeptr<byte>>) : int =
     // this points the current working directory at the bundled game assets
     let baseDirectory = AppContext.BaseDirectory
     let assetDirectory = Path.Combine (baseDirectory, "refinement-out", "net10.0-ios")

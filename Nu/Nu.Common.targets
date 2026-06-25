@@ -68,9 +68,9 @@
          Only apply when TargetFrameworks includes Android or iOS.-->
 
     <PropertyGroup Condition="'$(TargetFrameworks)' != '' And ($(TargetFrameworks.Contains('android')) Or $(TargetFrameworks.Contains('ios')))">
-        <UseMaui>true</UseMaui> <!-- Import MAUI MSBuild targets -->
+        <UseMaui>true</UseMaui> <!-- Import MAUI MSBuild targets for <SingleProject> property and <MauiAsset>/<MauiSplashScreen> items to be processed -->
         <SingleProject>true</SingleProject> <!-- Tell Visual Studio to display Android and iOS devices in debugging dropdown menu -->
-        <SkipValidateMauiImplicitPackageReferences>true</SkipValidateMauiImplicitPackageReferences>
+        <SkipValidateMauiImplicitPackageReferences>true</SkipValidateMauiImplicitPackageReferences> <!-- Disable misleading warning: https://github.com/dotnet/maui/issues/20658#issuecomment-1952796981 -->
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(TargetPlatformIdentifier)' == 'android'">
@@ -82,7 +82,7 @@
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(TargetPlatformIdentifier)' == 'ios'">
-        <ValidateXcodeVersion>False</ValidateXcodeVersion> <!-- You can disable this for more annoyances with Xcode version syncing with .NET workloads -->
+        <ValidateXcodeVersion>False</ValidateXcodeVersion> <!-- Without this property, we have more annoyances with Xcode version syncing with .NET workloads -->
     </PropertyGroup>
 
     <!-- ============================================================
@@ -561,24 +561,6 @@
         <Message Importance="high" Text="Note: Ad-hoc signed. Recipients must right-click the app" />
         <Message Importance="high" Text="and select Open on first launch to bypass Gatekeeper." />
         <Message Importance="high" Text="============================================" />
-    </Target>
-
-    <!-- ============================================================
-         iOS Simulator: Re-sign the app for Free Provisioning
-         ============================================================ -->
-
-    <Target Name="ResignIosSimulatorAppBundle" AfterTargets="Build"
-            Condition="$(RuntimeIdentifier.StartsWith('iossimulator')) And $([System.OperatingSystem]::IsMacOS()) And '$(CodesignKey)' == ''">
-        <Exec Command="security find-identity -v -p codesigning 2&gt;/dev/null | grep -Eq &quot;Apple Development&quot;"
-              IgnoreExitCode="true">
-            <Output TaskParameter="ExitCode" PropertyName="_IosSigningIdentityExitCode" />
-        </Exec>
-        <Error Condition="'$(_IosSigningIdentityExitCode)'!='0'"
-               Text="No valid Apple Development signing identity was found. iOS simulator launch may fail with AMFI code-signing errors. Create one in Xcode, including free provisioning via a Personal Team." />
-        <Exec Command="find &quot;$(AppBundleDir)/Frameworks&quot; -mindepth 2 -maxdepth 2 -type f -perm -111 -print0 | xargs -0 -I{} codesign --force --sign &quot;Apple Development&quot; --timestamp=none {}"
-              Condition="Exists('$(AppBundleDir)/Frameworks')" />
-        <Exec Command="find &quot;$(AppBundleDir)&quot; -maxdepth 1 -type f -name '*.dylib' -print0 | xargs -0 -I{} codesign --force --sign &quot;Apple Development&quot; --timestamp=none {}" />
-        <Exec Command="codesign --force --sign &quot;Apple Development&quot; --timestamp=none &quot;$(AppBundleDir)&quot;" />
     </Target>
 
 </Project>
