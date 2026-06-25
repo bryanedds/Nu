@@ -37,9 +37,12 @@ jobs:
         id: ios-version
         if: contains(matrix.os, 'macos')
         run: |
-          # According to https://github.com/dotnet/macios/issues/25818#issuecomment-4799784136, iOS workload version 26.5.10284 implies iOS 26.5 and Xcode 26.5.
-          IOS_VERSION=$(dotnet workload list 2>/dev/null | awk '/^ios /{print $2}' | cut -d. -f1-2)
-          echo "xcode-version=${IOS_VERSION}" >> "$GITHUB_OUTPUT"
+          # The iOS SDK pack version equals the iOS workload version.
+          # Per https://github.com/dotnet/macios/issues/25818#issuecomment-4799784136,
+          # iOS workload version 26.5.10284 → iOS 26.5 and Xcode 26.5.
+          # We sort iOS workload packs for the latest version. `dotnet workload list` doesn't list ios as we didn't install it explicitly.
+          IOS_VERSION=$(ls "$DOTNET_ROOT/packs/Microsoft.iOS.Sdk/" 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n | tail -1 | cut -d. -f1-2)
+          echo "xcode-version=${IOS_VERSION:-latest-stable}" >> "$GITHUB_OUTPUT"
       - uses: maxim-lobanov/setup-xcode@v1
         if: contains(matrix.os, 'macos')
         with:
