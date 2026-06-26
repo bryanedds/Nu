@@ -289,58 +289,57 @@ module CubeMap =
         (commandBuffer : VkCommandBuffer)
         (vkc : VulkanContext) =
 
-        // only draw if render area is valid
-        let mutable renderArea = VkRect2D (0, 0, uint resolution, uint resolution)
-        let mutable vkViewport = Hl.makeViewport invertY renderArea
-        if Hl.validateRect renderArea then
+        // only draw if required vkPipeline exists
+        match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
+        | Some vkPipeline ->
 
-            // only draw if required vkPipeline exists
-            match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
-            | Some vkPipeline ->
+            // specify eye
+            let mutable eyeDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.Pipeline.DrawIndex pipeline.Pipeline vkc $ fun vkSet ->
+                let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
+                Buffer.uploadValue eye pipeline.EyeUniform vkc
+                Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.EyeUniform vkSet vkc
 
-                // specify eye
-                let mutable eyeDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.Pipeline.DrawIndex pipeline.Pipeline vkc $ fun vkSet ->
-                    let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
-                    Buffer.uploadValue eye pipeline.EyeUniform vkc
-                    Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.EyeUniform vkSet vkc
+            // specify material
+            let mutable materialDescriptorSet = Pipeline.specifyDescriptorSet 1 cubeMap pipeline.Pipeline vkc $ fun vkSet ->
+                Pipeline.writeDescriptorSampledImage 0 0 cubeMap vkSet vkc
 
-                // specify material
-                let mutable materialDescriptorSet = Pipeline.specifyDescriptorSet 1 cubeMap pipeline.Pipeline vkc $ fun vkSet ->
-                    Pipeline.writeDescriptorSampledImage 0 0 cubeMap vkSet vkc
+            // specify sampler
+            let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 2 sampler pipeline.Pipeline vkc $ fun vkSet ->
+                Pipeline.writeDescriptorSampler 0 0 sampler vkSet vkc
 
-                // specify sampler
-                let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 2 sampler pipeline.Pipeline vkc $ fun vkSet ->
-                    Pipeline.writeDescriptorSampler 0 0 sampler vkSet vkc
+            // set up render
+            let mutable renderArea = VkRect2D (0, 0, uint resolution, uint resolution)
+            let mutable vkViewport = Hl.makeViewport invertY renderArea
+            let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment|] None renderArea None
+            Vulkan.vkCmdBeginRendering (commandBuffer, asPointer &renderingInfo)
+            Vulkan.vkCmdSetViewport (commandBuffer, 0u, 1u, asPointer &vkViewport)
+            Vulkan.vkCmdSetScissor (commandBuffer, 0u, 1u, asPointer &renderArea)
+                
+            // set up pipeline
+            Vulkan.vkCmdBindPipeline (commandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
 
-                // set up render
-                let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment|] None renderArea None
-                Vulkan.vkCmdBeginRendering (commandBuffer, asPointer &renderingInfo)
-                Vulkan.vkCmdBindPipeline (commandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
-                Vulkan.vkCmdSetViewport (commandBuffer, 0u, 1u, asPointer &vkViewport)
-                Vulkan.vkCmdSetScissor (commandBuffer, 0u, 1u, asPointer &renderArea)
+            // bind vertex and index buffers
+            let mutable vertexBuffer = geometry.VertexBuffer.VkBuffer
+            let mutable vertexOffset = 0UL
+            Vulkan.vkCmdBindVertexBuffers (commandBuffer, 0u, 1u, asPointer &vertexBuffer, asPointer &vertexOffset)
+            Vulkan.vkCmdBindIndexBuffer (commandBuffer, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
 
-                // bind vertex and index buffers
-                let mutable vertexBuffer = geometry.VertexBuffer.VkBuffer
-                let mutable vertexOffset = 0UL
-                Vulkan.vkCmdBindVertexBuffers (commandBuffer, 0u, 1u, asPointer &vertexBuffer, asPointer &vertexOffset)
-                Vulkan.vkCmdBindIndexBuffer (commandBuffer, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
+            // bind descriptor sets
+            Vulkan.vkCmdBindDescriptorSets (commandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, asPointer &eyeDescriptorSet, 0u, nullPtr)
+            Vulkan.vkCmdBindDescriptorSets (commandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, asPointer &materialDescriptorSet, 0u, nullPtr)
+            Vulkan.vkCmdBindDescriptorSets (commandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 2u, 1u, asPointer &samplerDescriptorSet, 0u, nullPtr)
 
-                // bind descriptor sets
-                Vulkan.vkCmdBindDescriptorSets (commandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, asPointer &eyeDescriptorSet, 0u, nullPtr)
-                Vulkan.vkCmdBindDescriptorSets (commandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, asPointer &materialDescriptorSet, 0u, nullPtr)
-                Vulkan.vkCmdBindDescriptorSets (commandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 2u, 1u, asPointer &samplerDescriptorSet, 0u, nullPtr)
-
-                // draw
-                Vulkan.vkCmdDrawIndexed (commandBuffer, uint geometry.ElementCount, 1u, 0u, 0, 0u)
+            // draw
+            Vulkan.vkCmdDrawIndexed (commandBuffer, uint geometry.ElementCount, 1u, 0u, 0, 0u)
         
-                // tear down render
-                Vulkan.vkCmdEndRendering commandBuffer
+            // tear down render
+            Vulkan.vkCmdEndRendering commandBuffer
 
-                // advance pipeline
-                Pipeline.advance 1 pipeline.Pipeline
+            // advance pipeline
+            Pipeline.advance 1 pipeline.Pipeline
 
-            // abort
-            | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
+        // abort
+        | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
 
 /// Memoizes cube map loads (and may at some point potentially thread them).
 type CubeMapClient () =

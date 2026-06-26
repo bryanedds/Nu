@@ -552,7 +552,7 @@ module Hl =
             | None ->
                 dInfo.loadOp <- VkAttachmentLoadOp.Load
         | None -> ()
-    
+
         // rendering info
         let mutable rInfo = VkRenderingInfo ()
         rInfo.renderArea <- renderArea

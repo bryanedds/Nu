@@ -492,10 +492,10 @@ type VulkanRendererImGui
                 let mutable renderArea = VkRect2D (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
                 let mutable renderingInfo = Hl.makeRenderingInfo [|vkc.SwapchainImageView|] None renderArea None
                 Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &renderingInfo)
-                let vkPipeline = Pipeline.tryGetVkPipeline VulkanImGui false pipeline |> Option.get // not supporting shader reload of Gaia itself
-                Vulkan.vkCmdBindPipeline (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
                 let mutable viewport = Hl.makeViewport false renderArea
                 Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, asPointer &viewport)
+                let vkPipeline = Pipeline.tryGetVkPipeline VulkanImGui false pipeline |> Option.get // not supporting shader reload of Gaia itself
+                Vulkan.vkCmdBindPipeline (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
                 
                 // compute offsets
                 if drawData.TotalVtxCount > 0 then

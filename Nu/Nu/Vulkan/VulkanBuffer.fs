@@ -159,7 +159,7 @@ type BufferInternal =
         BufferInternal.createPlus uploadEnabled info vkc
 
     /// Write data to buffer if upload is enabled.
-    static member write offset alignment size count data bufferInternal (vkc : VulkanContext) =
+    static member write offset alignment size count data bufferInternal (_ : VulkanContext) =
         if bufferInternal.UploadEnabled_ then
             if size > 0 then
                 let stride = Math.Stride (alignment, size)

@@ -488,7 +488,7 @@ type Swapchain =
         // attempt to recreate surface and swapchain when app is in foreground
         | SurfaceDestroyed ->
             Swapchain.tryCreateSurfaceAndSwapchainSingleton physicalDevice renderQueue presentQueue swapchain device instance
-    
+
     /// Create a Swapchain.
     static member create surfaceFormat physicalDevice window device =
         

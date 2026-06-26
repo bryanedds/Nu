@@ -1988,14 +1988,14 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 renderer.ReloadAssetsRequested <- true
         userDefinedStaticModelsToDestroy
     
-    static member private beginPhysicallyBasedShadowPipeline
-        eyeCenter viewProjection lightShadowExponent renderPassIndex pipeline renderer =
-        PhysicallyBased.beginPhysicallyBasedShadowPipeline
-            eyeCenter viewProjection lightShadowExponent renderPassIndex pipeline renderer.VulkanContext
+    static member private beginPhysicallyBasedShadowSurfaces
+        eyeCenter viewProjection lightShadowExponent resolution colorClearValue colorAttachments depthAttachment renderPassIndex pipeline renderer =
+        PhysicallyBased.beginPhysicallyBasedShadowSurfaces
+            eyeCenter viewProjection lightShadowExponent resolution colorClearValue colorAttachments depthAttachment renderPassIndex pipeline renderer.VulkanContext
 
     static member private renderPhysicallyBasedShadowSurfaces
         bones (parameters : struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List) (surface : PhysicallyBasedSurface)
-        resolution colorClearValue colorAttachments depthAttachment uniformsDescriptorSet pipeline renderer =
+        uniformsDescriptorSet pipeline renderer =
 
         // ensure we have a large enough instance fields array
         let mutable length = renderer.InstanceFields.Length
@@ -2011,14 +2011,14 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // draw deferred surfaces
         PhysicallyBased.drawPhysicallyBasedShadowSurfaces
             bones parameters.Count renderer.InstanceFields surface.SurfaceMaterial surface.PhysicallyBasedGeometry
-            resolution colorClearValue colorAttachments depthAttachment uniformsDescriptorSet pipeline renderer.VulkanContext
+            uniformsDescriptorSet pipeline renderer.VulkanContext
 
         // track geometry instancing
         renderer.GeometryInstanced.Add surface.PhysicallyBasedGeometry |> ignore<bool>
 
     static member private renderPhysicallyBasedShadowSurfacePreBatch
         shadowLightType shadowFrustum bones (parameters : (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array) (surface : PhysicallyBasedSurface)
-        viewport colorClearValue colorAttachments depthAttachment uniformsDescriptorSet pipeline renderer =
+        uniformsDescriptorSet pipeline renderer =
 
         // ensure we have a large enough instance fields array
         let mutable length = renderer.InstanceFields.Length
@@ -2041,22 +2041,22 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // draw shadow surfaces
         PhysicallyBased.drawPhysicallyBasedShadowSurfaces
             bones i renderer.InstanceFields surface.SurfaceMaterial surface.PhysicallyBasedGeometry
-            viewport colorClearValue colorAttachments depthAttachment uniformsDescriptorSet pipeline renderer.VulkanContext
+            uniformsDescriptorSet pipeline renderer.VulkanContext
 
         // track geometry instancing
         renderer.GeometryInstanced.Add surface.PhysicallyBasedGeometry |> ignore<bool>
 
-    static member private endPhysicallyBasedShadowPipeline pipeline =
-        PhysicallyBased.endPhysicallyBasedShadowPipeline pipeline
+    static member private endPhysicallyBasedShadowSurfaces pipeline vkc =
+        PhysicallyBased.endPhysicallyBasedShadowSurfaces pipeline vkc
 
-    static member private beginPhysicallyBasedDeferredPipeline
-        eyeCenter view viewInverse projection projectionInverse viewProjection filteredSampler renderPassIndex pipeline renderer =
-        PhysicallyBased.beginPhysicallyBasedDeferredPipeline
-            eyeCenter view viewInverse projection projectionInverse viewProjection filteredSampler renderPassIndex pipeline renderer.VulkanContext
+    static member private beginPhysicallyBasedDeferredSurfaces
+        eyeCenter view viewInverse projection projectionInverse viewProjection filteredSampler colorAttachments depthAttachment viewport renderPassIndex pipeline renderer =
+        PhysicallyBased.beginPhysicallyBasedDeferredSurfaces
+            eyeCenter view viewInverse projection projectionInverse viewProjection filteredSampler colorAttachments depthAttachment viewport renderPassIndex pipeline renderer.VulkanContext
 
     static member private renderPhysicallyBasedDeferredSurfaces
         bones (parameters : struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List) (surface : PhysicallyBasedSurface)
-        viewport colorAttachments depthAttachment eyeDescriptorSet samplerDescriptorSet pipeline renderer =
+        eyeDescriptorSet samplerDescriptorSet pipeline renderer =
                                                                       
         // ensure we have a large enough instance fields array
         let mutable length = renderer.InstanceFields.Length
@@ -2105,17 +2105,17 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // draw deferred surfaces
         PhysicallyBased.drawPhysicallyBasedDeferredSurfaces
             bones parameters.Count renderer.InstanceFields surface.SurfaceMaterial surface.PhysicallyBasedGeometry
-            viewport colorAttachments depthAttachment eyeDescriptorSet samplerDescriptorSet pipeline renderer.VulkanContext
+            eyeDescriptorSet samplerDescriptorSet pipeline renderer.VulkanContext
 
         // track geometry instancing
         renderer.GeometryInstanced.Add surface.PhysicallyBasedGeometry |> ignore<bool>
 
-    static member private endPhysicallyBasedDeferredPipeline pipeline =
-        PhysicallyBased.endPhysicallyBasedDeferredPipeline pipeline
+    static member private endPhysicallyBasedDeferredSurfaces pipeline vkc =
+        PhysicallyBased.endPhysicallyBasedDeferredSurfaces pipeline vkc
 
     static member private renderPhysicallyBasedDeferredSurfacePreBatch
         frustumInterior frustumExterior frustumImposter renderPass bones (parameters : (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array) (surface : PhysicallyBasedSurface)
-        viewport colorAttachments depthAttachment eyeDescriptorSet samplerDescriptorSet pipeline renderer =
+        eyeDescriptorSet samplerDescriptorSet pipeline renderer =
 
         // ensure we have a large enough instance fields array
         let mutable length = renderer.InstanceFields.Length
@@ -2175,27 +2175,27 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // draw deferred surfaces
         PhysicallyBased.drawPhysicallyBasedDeferredSurfaces
             bones i renderer.InstanceFields surface.SurfaceMaterial surface.PhysicallyBasedGeometry
-            viewport colorAttachments depthAttachment eyeDescriptorSet samplerDescriptorSet pipeline renderer.VulkanContext
+            eyeDescriptorSet samplerDescriptorSet pipeline renderer.VulkanContext
 
         // track geometry instancing
         renderer.GeometryInstanced.Add surface.PhysicallyBasedGeometry |> ignore<bool>
 
-    static member private beginPhysicallyBasedForwardPipeline
+    static member private beginPhysicallyBasedForwardSurfaces
         eyeCenter view viewInverse projection projectionInverse viewProjection
         lightCutoffMargin lightAmbientColor lightAmbientBrightness lightAmbientBoostCutoff lightAmbientBoostScalar lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity
         fogEnabled fogType fogStart fogFinish fogDensity fogColor ssvfEnabled ssvfIntensity ssvfSteps ssvfAsymmetry ssrrEnabled ssrrIntensity ssrrDetail ssrrRefinementsMax ssrrRayThickness ssrrDistanceCutoff ssrrDistanceCutoffMargin ssrrEdgeHorizontalMargin ssrrEdgeVerticalMargin shadowNear
-        depthTexture colorTexture brdfTexture irradianceMap environmentFilterMap filteredSampler cubeMapSampler shadowSampler colorSampler depthSampler brdfSampler renderPass pipeline vkc =
-        PhysicallyBased.beginPhysicallyBasedForwardPipeline
+        depthTexture colorTexture brdfTexture irradianceMap environmentFilterMap filteredSampler cubeMapSampler shadowSampler colorSampler depthSampler brdfSampler colorAttachment depthAttachment viewport renderPass pipeline vkc =
+        PhysicallyBased.beginPhysicallyBasedForwardSurfaces
             eyeCenter view viewInverse projection projectionInverse viewProjection
             lightCutoffMargin lightAmbientColor lightAmbientBrightness lightAmbientBoostCutoff lightAmbientBoostScalar lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity
             fogEnabled fogType fogStart fogFinish fogDensity fogColor ssvfEnabled ssvfIntensity ssvfSteps ssvfAsymmetry ssrrEnabled ssrrIntensity ssrrDetail ssrrRefinementsMax ssrrRayThickness ssrrDistanceCutoff ssrrDistanceCutoffMargin ssrrEdgeHorizontalMargin ssrrEdgeVerticalMargin shadowNear
-            depthTexture colorTexture brdfTexture irradianceMap environmentFilterMap filteredSampler cubeMapSampler shadowSampler colorSampler depthSampler brdfSampler renderPass pipeline vkc
+            depthTexture colorTexture brdfTexture irradianceMap environmentFilterMap filteredSampler cubeMapSampler shadowSampler colorSampler depthSampler brdfSampler colorAttachment depthAttachment viewport renderPass pipeline vkc
 
     static member private renderPhysicallyBasedForwardSurfaces
         bonesArrays (parameters : struct (Matrix4x4 * Presence * Box2 * MaterialProperties) SList)
         irradianceMaps environmentFilterMaps shadowTextureArray shadowMaps shadowCascades lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses lightMapsCount lightMapSingletonBlendMargin
         lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices lightsCount shadowMatrices
-        (surface : PhysicallyBasedSurface) depthTest blending viewport colorAttachment depthAttachment uniformsDescriptorSet samplersDescriptorSet pipeline renderer =
+        (surface : PhysicallyBasedSurface) depthTest blending uniformsDescriptorSet samplersDescriptorSet pipeline renderer =
 
         // ensure we have a large enough instance fields array
         let mutable length = renderer.InstanceFields.Length
@@ -2251,13 +2251,13 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             bonesArrays parameters.Length renderer.InstanceFields
             irradianceMaps environmentFilterMaps shadowTextureArray shadowMaps shadowCascades lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses lightMapsCount lightMapSingletonBlendMargin
             lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices lightsCount shadowMatrices
-            surface.SurfaceMaterial surface.PhysicallyBasedGeometry depthTest blending viewport colorAttachment depthAttachment uniformsDescriptorSet samplersDescriptorSet pipeline renderer.VulkanContext
+            surface.SurfaceMaterial surface.PhysicallyBasedGeometry depthTest blending uniformsDescriptorSet samplersDescriptorSet pipeline renderer.VulkanContext
              
         // track geometry instancing
         renderer.GeometryInstanced.Add surface.PhysicallyBasedGeometry |> ignore<bool>
 
-    static member private endPhysicallyBasedForwardPipeline pipeline =
-        PhysicallyBased.endPhysicallyBasedForwardPipeline pipeline
+    static member private endPhysicallyBasedForwardSurfaces pipeline vkc =
+        PhysicallyBased.endPhysicallyBasedForwardSurfaces pipeline vkc
 
     static member private renderShadow
         lightOrigin
@@ -2293,50 +2293,50 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             | PointLight -> VkClearValue (lightCutoff, 0.0f, 0.0f, 0.0f)
             | SpotLight _ | DirectionalLight _ -> VkClearValue (1.0f, Single.MaxValue, 0.0f, 0.0f)
 
-        // begin shadow static pipeline
+        // begin shadow static rendering
         let uniformsDescriptorSet =
-            VulkanRenderer3d.beginPhysicallyBasedShadowPipeline
-                lightOrigin lightViewProjection renderer.LightingConfig.LightShadowExponent renderer.RenderPassIndex shadowStaticPipeline renderer
+            VulkanRenderer3d.beginPhysicallyBasedShadowSurfaces
+                lightOrigin lightViewProjection renderer.LightingConfig.LightShadowExponent resolution (Some colorClearValue) colorAttachments depthAttachment renderer.RenderPassIndex shadowStaticPipeline renderer
 
         // deferred render static surface shadows
         for entry in renderTasks.DeferredStatic do
             VulkanRenderer3d.renderPhysicallyBasedShadowSurfaces
-                [||] entry.Value entry.Key resolution colorClearValue colorAttachments depthAttachment uniformsDescriptorSet shadowStaticPipeline renderer
+                [||] entry.Value entry.Key uniformsDescriptorSet shadowStaticPipeline renderer
 
         // deferred render static surface pre-batches shadows
         for entry in renderTasks.DeferredStaticPreBatches do
             let struct (surface, preBatch) = entry.Value
             VulkanRenderer3d.renderPhysicallyBasedShadowSurfacePreBatch
-                lightType lightFrustum [||] preBatch surface resolution colorClearValue colorAttachments depthAttachment uniformsDescriptorSet shadowStaticPipeline renderer
+                lightType lightFrustum [||] preBatch surface uniformsDescriptorSet shadowStaticPipeline renderer
 
         // deferred render static surface clipped shadows (TODO: consider implementing clipped shadow rendering.)
         for entry in renderTasks.DeferredStaticClipped do
             VulkanRenderer3d.renderPhysicallyBasedShadowSurfaces
-                [||] entry.Value entry.Key resolution colorClearValue colorAttachments depthAttachment uniformsDescriptorSet shadowStaticPipeline renderer
+                [||] entry.Value entry.Key uniformsDescriptorSet shadowStaticPipeline renderer
 
         // deferred render static surface pre-batches clipped shadows (TODO: consider implementing clipped shadow rendering.)
         for entry in renderTasks.DeferredStaticClippedPreBatches do
             let struct (surface, preBatch) = entry.Value
             VulkanRenderer3d.renderPhysicallyBasedShadowSurfacePreBatch
-                lightType lightFrustum [||] preBatch surface resolution colorClearValue colorAttachments depthAttachment uniformsDescriptorSet shadowStaticPipeline renderer
+                lightType lightFrustum [||] preBatch surface uniformsDescriptorSet shadowStaticPipeline renderer
 
-        // end shadow static pipeline
-        VulkanRenderer3d.endPhysicallyBasedShadowPipeline shadowStaticPipeline
+        // end shadow static rendering
+        VulkanRenderer3d.endPhysicallyBasedShadowSurfaces shadowStaticPipeline renderer.VulkanContext
 
-        // begin shadow animated pipeline
+        // begin shadow animated rendering
         let uniformsDescriptorSet =
-            VulkanRenderer3d.beginPhysicallyBasedShadowPipeline
-                lightOrigin lightViewProjection renderer.LightingConfig.LightShadowExponent renderer.RenderPassIndex shadowAnimatedPipeline renderer
+            VulkanRenderer3d.beginPhysicallyBasedShadowSurfaces
+                lightOrigin lightViewProjection renderer.LightingConfig.LightShadowExponent resolution None colorAttachments depthAttachment renderer.RenderPassIndex shadowAnimatedPipeline renderer
 
         // deferred render animated surface shadows
         for entry in renderTasks.DeferredAnimated do
             let surfaceKey = entry.Key
             let parameters = entry.Value
             VulkanRenderer3d.renderPhysicallyBasedShadowSurfaces
-                surfaceKey.BoneTransforms parameters surfaceKey.AnimatedSurface resolution colorClearValue colorAttachments depthAttachment uniformsDescriptorSet shadowAnimatedPipeline renderer
+                surfaceKey.BoneTransforms parameters surfaceKey.AnimatedSurface uniformsDescriptorSet shadowAnimatedPipeline renderer
 
         // end shadow animated pipeline
-        VulkanRenderer3d.endPhysicallyBasedShadowPipeline shadowAnimatedPipeline
+        VulkanRenderer3d.endPhysicallyBasedShadowSurfaces shadowAnimatedPipeline renderer.VulkanContext
 
         // TODO: P0: implement terrain shadows.
         //// begin shadow terrain pipeline
@@ -2361,33 +2361,33 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 match boneTransformsOpt with
                 | ValueSome boneTransforms ->
 
-                    // begin shadow animated pipeline
+                    // begin shadow animated rendering
                     let uniformsDescriptorSet =
-                        VulkanRenderer3d.beginPhysicallyBasedShadowPipeline
-                            lightOrigin lightViewProjection renderer.LightingConfig.LightShadowExponent renderer.RenderPassIndex shadowAnimatedPipeline renderer
+                        VulkanRenderer3d.beginPhysicallyBasedShadowSurfaces
+                            lightOrigin lightViewProjection renderer.LightingConfig.LightShadowExponent resolution None colorAttachments depthAttachment renderer.RenderPassIndex shadowAnimatedPipeline renderer
 
                     // actually render surfaces
                     VulkanRenderer3d.renderPhysicallyBasedShadowSurfaces
                         boneTransforms (List ([struct (model, castShadow, presence, texCoordsOffset, properties)]))
-                        surface resolution colorClearValue colorAttachments depthAttachment uniformsDescriptorSet shadowAnimatedPipeline renderer
+                        surface uniformsDescriptorSet shadowAnimatedPipeline renderer
 
-                    // end shadow animated pipeline
-                    VulkanRenderer3d.endPhysicallyBasedShadowPipeline shadowAnimatedPipeline
+                    // end shadow animated rendering
+                    VulkanRenderer3d.endPhysicallyBasedShadowSurfaces shadowAnimatedPipeline renderer.VulkanContext
 
                 | ValueNone ->
 
-                    // begin shadow static pipeline
+                    // begin shadow static rendering
                     let uniformsDescriptorSet =
-                        VulkanRenderer3d.beginPhysicallyBasedShadowPipeline
-                            lightOrigin lightViewProjection renderer.LightingConfig.LightShadowExponent renderer.RenderPassIndex shadowStaticPipeline renderer
+                        VulkanRenderer3d.beginPhysicallyBasedShadowSurfaces
+                            lightOrigin lightViewProjection renderer.LightingConfig.LightShadowExponent resolution None colorAttachments depthAttachment renderer.RenderPassIndex shadowStaticPipeline renderer
 
                     // actually render surfaces
                     VulkanRenderer3d.renderPhysicallyBasedShadowSurfaces
                         [||] (List ([struct (model, castShadow, presence, texCoordsOffset, properties)]))
-                        surface resolution colorClearValue colorAttachments depthAttachment uniformsDescriptorSet shadowStaticPipeline renderer
+                        surface uniformsDescriptorSet shadowStaticPipeline renderer
 
-                    // end shadow static pipeline
-                    VulkanRenderer3d.endPhysicallyBasedShadowPipeline shadowStaticPipeline
+                    // end shadow static rendering
+                    VulkanRenderer3d.endPhysicallyBasedShadowSurfaces shadowStaticPipeline renderer.VulkanContext
 
         // advance render pass index
         renderer.RenderPassIndex <- inc renderer.RenderPassIndex
@@ -2583,25 +2583,24 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         Vulkan.vkCmdBeginRendering (renderer.VulkanContext.RenderCommandBuffer, asPointer &renderingInfo)
         Vulkan.vkCmdEndRendering renderer.VulkanContext.RenderCommandBuffer
 
-        // begin deferred static surfaces
+        // begin deferred static rendering
         let (eyeDescriptorSet, samplerDescriptorSet) =
-            VulkanRenderer3d.beginPhysicallyBasedDeferredPipeline
-                eyeCenter view viewInverse geometryProjection geometryProjectionInverse geometryViewProjection renderer.FilteredSampler renderer.RenderPassIndex renderer.PhysicallyBasedPipelines.DeferredStaticPipeline renderer
+            VulkanRenderer3d.beginPhysicallyBasedDeferredSurfaces
+                eyeCenter view viewInverse geometryProjection geometryProjectionInverse geometryViewProjection renderer.FilteredSampler geometryImageViewArray compositionZTexture renderer.GeometryViewport renderer.RenderPassIndex renderer.PhysicallyBasedPipelines.DeferredStaticPipeline renderer
 
         // render deferred static surfaces (unbatched)
         let mutable i = 0
         for entry in renderTasks.DeferredStatic do
             VulkanRenderer3d.renderPhysicallyBasedDeferredSurfaces
-                [||] entry.Value entry.Key
-                renderer.GeometryViewport geometryImageViewArray compositionZTexture eyeDescriptorSet samplerDescriptorSet renderer.PhysicallyBasedPipelines.DeferredStaticPipeline renderer
+                [||] entry.Value entry.Key eyeDescriptorSet samplerDescriptorSet renderer.PhysicallyBasedPipelines.DeferredStaticPipeline renderer
             i <- inc i
-        
+
         // render deferred static surface pre-batches
         for entry in renderTasks.DeferredStaticPreBatches do
             let struct (surface, preBatch) = entry.Value
             VulkanRenderer3d.renderPhysicallyBasedDeferredSurfacePreBatch
                 frustumInterior frustumExterior frustumImposter renderPass [||] preBatch surface
-                renderer.GeometryViewport geometryImageViewArray compositionZTexture eyeDescriptorSet samplerDescriptorSet renderer.PhysicallyBasedPipelines.DeferredStaticPipeline renderer
+                eyeDescriptorSet samplerDescriptorSet renderer.PhysicallyBasedPipelines.DeferredStaticPipeline renderer
 
         // render animated surfaces deferred
         for entry in renderTasks.DeferredAnimated do
@@ -2609,12 +2608,12 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             let parameters = entry.Value
             VulkanRenderer3d.renderPhysicallyBasedDeferredSurfaces
                 surfaceKey.BoneTransforms parameters surfaceKey.AnimatedSurface
-                renderer.GeometryViewport geometryImageViewArray compositionZTexture eyeDescriptorSet samplerDescriptorSet renderer.PhysicallyBasedPipelines.DeferredAnimatedPipeline renderer
+                eyeDescriptorSet samplerDescriptorSet renderer.PhysicallyBasedPipelines.DeferredAnimatedPipeline renderer
 
-        // end deferred static surfaces
-        VulkanRenderer3d.endPhysicallyBasedDeferredPipeline
-            renderer.PhysicallyBasedPipelines.DeferredStaticPipeline
-        
+        // end deferred static rendering
+        VulkanRenderer3d.endPhysicallyBasedDeferredSurfaces
+            renderer.PhysicallyBasedPipelines.DeferredStaticPipeline renderer.VulkanContext
+
         // transition deferred geometry attachments to sampling
         Texture.transitionLayoutAsync ColorAttachmentWrite ShaderRead depthTexture renderer.VulkanContext.RenderCommandBuffer
         Texture.transitionLayoutAsync ColorAttachmentWrite ShaderRead albedoTexture renderer.VulkanContext.RenderCommandBuffer
@@ -2706,14 +2705,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let forwardPipelines =
             [renderer.PhysicallyBasedPipelines.ForwardAnimatedPipeline
              renderer.PhysicallyBasedPipelines.ForwardStaticPipeline]
-        let descriptorSets =
-            [|for pipeline in forwardPipelines do
-                VulkanRenderer3d.beginPhysicallyBasedForwardPipeline
-                    eyeCenter view viewInverse geometryProjection geometryProjectionInverse geometryViewProjection renderer.LightingConfig.LightCutoffMargin lightAmbientColor lightAmbientBrightness renderer.LightingConfig.LightAmbientBoostCutoff renderer.LightingConfig.LightAmbientBoostScalar
-                    renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
-                    fogEnabled fogType renderer.LightingConfig.FogStart renderer.LightingConfig.FogFinish renderer.LightingConfig.FogDensity renderer.LightingConfig.FogColor ssvfEnabled renderer.LightingConfig.SsvfIntensity forwardSsvfSteps renderer.LightingConfig.SsvfAsymmetry
-                    ssrrEnabled renderer.LightingConfig.SsrrIntensity renderer.LightingConfig.SsrrDetail renderer.LightingConfig.SsrrRefinementsMax renderer.LightingConfig.SsrrRayThickness renderer.LightingConfig.SsrrDistanceCutoff renderer.LightingConfig.SsrrDistanceCutoffMargin renderer.LightingConfig.SsrrEdgeHorizontalMargin renderer.LightingConfig.SsrrEdgeVerticalMargin shadowNear
-                    depthTexture2 colorTexture renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap renderer.FilteredSampler renderer.CubeMapSampler renderer.ShadowSampler renderer.ColorSampler renderer.DepthSampler renderer.BrdfSampler renderer.RenderPassIndex pipeline renderer.VulkanContext|]
 
         // render forward (static and animated) surfaces to composition attachment
         for (model, _, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest) in renderTasks.ForwardSorted do
@@ -2724,19 +2715,23 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 SortableLight.sortLights Constants.Render.LightsMaxForward model.Translation renderTasks.Lights
             let lightShadowIndices =
                 SortableLight.sortLightShadowIndices renderer.LightShadowIndices lightIds
-            let (bonesArray, (uniformsDescriptorSet, samplersDescriptorSet), pipeline) =
+            let (bonesArray, forwardPipeline) =
                 match boneTransformsOpt with
-                | ValueSome boneTransforms -> (boneTransforms, descriptorSets[0], forwardPipelines[0])
-                | ValueNone -> ([||], descriptorSets[1], forwardPipelines[1])
+                | ValueSome boneTransforms -> (boneTransforms, forwardPipelines[0])
+                | ValueNone -> ([||], forwardPipelines[1])
+            let (uniformsDescriptorSet, samplersDescriptorSet) =
+                VulkanRenderer3d.beginPhysicallyBasedForwardSurfaces
+                    eyeCenter view viewInverse geometryProjection geometryProjectionInverse geometryViewProjection renderer.LightingConfig.LightCutoffMargin lightAmbientColor lightAmbientBrightness renderer.LightingConfig.LightAmbientBoostCutoff renderer.LightingConfig.LightAmbientBoostScalar
+                    renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
+                    fogEnabled fogType renderer.LightingConfig.FogStart renderer.LightingConfig.FogFinish renderer.LightingConfig.FogDensity renderer.LightingConfig.FogColor ssvfEnabled renderer.LightingConfig.SsvfIntensity forwardSsvfSteps renderer.LightingConfig.SsvfAsymmetry
+                    ssrrEnabled renderer.LightingConfig.SsrrIntensity renderer.LightingConfig.SsrrDetail renderer.LightingConfig.SsrrRefinementsMax renderer.LightingConfig.SsrrRayThickness renderer.LightingConfig.SsrrDistanceCutoff renderer.LightingConfig.SsrrDistanceCutoffMargin renderer.LightingConfig.SsrrEdgeHorizontalMargin renderer.LightingConfig.SsrrEdgeVerticalMargin shadowNear
+                    depthTexture2 colorTexture renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap renderer.FilteredSampler renderer.CubeMapSampler renderer.ShadowSampler renderer.ColorSampler renderer.DepthSampler renderer.BrdfSampler compositionTexture compositionZTexture renderer.GeometryViewport renderer.RenderPassIndex forwardPipeline renderer.VulkanContext
             VulkanRenderer3d.renderPhysicallyBasedForwardSurfaces
                 bonesArray (SList.singleton (model, presence, texCoordsOffset, properties))
                 lightMapIrradianceMaps lightMapEnvironmentFilterMaps shadowTextureArray shadowMaps shadowCascades lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses (min lightMapEnvironmentFilterMaps.Length renderTasks.LightMaps.Count) renderer.LightingConfig.LightMapSingletonBlendMargin
                 lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices (min lightIds.Length renderTasks.Lights.Count) renderer.ShadowMatrices
-                surface depthTest true renderer.GeometryViewport compositionTexture compositionZTexture uniformsDescriptorSet samplersDescriptorSet pipeline renderer
-
-        // end forward (static and animated) pipelines
-        for pipeline in forwardPipelines do
-            VulkanRenderer3d.endPhysicallyBasedForwardPipeline pipeline
+                surface depthTest true uniformsDescriptorSet samplersDescriptorSet forwardPipeline renderer
+            VulkanRenderer3d.endPhysicallyBasedForwardSurfaces forwardPipeline renderer.VulkanContext
 
         // blit from composition attachment to swapchain (just for now)
         // TODO: DJL: blit from final attachment, not composition.
@@ -2978,7 +2973,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                                     not upToDate
                                 else true
                             | (_, _) -> true
-                        if shouldDraw then
+                        if true then
 
                             // draw shadow texture
                             let shadowViewProjection = shadowView * shadowProjection
