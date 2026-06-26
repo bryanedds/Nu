@@ -2973,7 +2973,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                                     not upToDate
                                 else true
                             | (_, _) -> true
-                        if true then
+                        if shouldDraw then
 
                             // draw shadow texture
                             let shadowViewProjection = shadowView * shadowProjection
