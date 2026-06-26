@@ -34,6 +34,7 @@
         <ApplicationVersion>1</ApplicationVersion>
 
         <!-- Uncomment the following line if you installed Xcode from App Store which auto-updates to a version unsupported by the current .NET iOS workload.
+             Using an unsupported Xcode version may result in strange build failures. However, if it builds, the app should run fine.
              The supported Xcode version can be found at https://github.com/dotnet/macios/releases
              Pinning the Xcode version to a supported one can be done via https://github.com/XcodesOrg/xcodesapp instead of the App Store. -->
         <!-- <ValidateXcodeVersion>False</ValidateXcodeVersion> -->
