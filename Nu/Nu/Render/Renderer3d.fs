@@ -2649,6 +2649,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             // just use white texture
             else renderer.WhiteTexture
 
+
         // make shadows readable
         Texture.transitionLayoutAsync ColorAttachmentWrite ShaderRead shadowTextureArray renderer.VulkanContext.RenderCommandBuffer
         for i in 0 .. dec shadowMaps.Length do Texture.transitionLayoutAsync ColorAttachmentWrite ShaderRead shadowMaps[i] renderer.VulkanContext.RenderCommandBuffer
@@ -2697,16 +2698,13 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 renderer.GeometryViewport compositionTexture compositionZTexture renderer.SkyBoxPipeline renderer.VulkanContext
         | None -> ()
 
-        // begin forward (static and animated) pipelines
+        // render forward (static and animated) surfaces to composition attachment
+        // TODO: P1: consider optimizing this such that the current forward pipeline is only ended when pipeline change
+        // is detected.
         let ssrrEnabled =
             if renderer.RendererConfig.SsrrEnabled && renderer.LightingConfig.SsrrEnabled then 1 else 0
         let forwardSsvfSteps =
             renderer.LightingConfig.SsvfSteps * 2 // HACK: need an increase in forward-rendered steps since they don't get a blur pass.
-        let forwardPipelines =
-            [renderer.PhysicallyBasedPipelines.ForwardAnimatedPipeline
-             renderer.PhysicallyBasedPipelines.ForwardStaticPipeline]
-
-        // render forward (static and animated) surfaces to composition attachment
         for (model, _, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest) in renderTasks.ForwardSorted do
             let (lightMapOrigins, lightMapMins, lightMapSizes, lightMapAmbientColors, lightMapAmbientBrightnesses, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
                 let surfaceBounds = surface.SurfaceBounds.Transform model
@@ -2717,8 +2715,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 SortableLight.sortLightShadowIndices renderer.LightShadowIndices lightIds
             let (bonesArray, forwardPipeline) =
                 match boneTransformsOpt with
-                | ValueSome boneTransforms -> (boneTransforms, forwardPipelines[0])
-                | ValueNone -> ([||], forwardPipelines[1])
+                | ValueSome boneTransforms -> (boneTransforms, renderer.PhysicallyBasedPipelines.ForwardAnimatedPipeline)
+                | ValueNone -> ([||], renderer.PhysicallyBasedPipelines.ForwardStaticPipeline)
             let (uniformsDescriptorSet, samplersDescriptorSet) =
                 VulkanRenderer3d.beginPhysicallyBasedForwardSurfaces
                     eyeCenter view viewInverse geometryProjection geometryProjectionInverse geometryViewProjection renderer.LightingConfig.LightCutoffMargin lightAmbientColor lightAmbientBrightness renderer.LightingConfig.LightAmbientBoostCutoff renderer.LightingConfig.LightAmbientBoostScalar
@@ -3036,8 +3034,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                             let shadowViewProjection = shadowView * shadowProjection
 
                             // draw shadow map when not cached
-                            // NOTE: it's a tiny bit inefficient that we set up and tear down the same shadow map
-                            // once per face render here, but probably nothing worth caring about.
+                            // NOTE: it's a tiny bit inefficient that we set up and tear down the same shadow map once
+                            // per face render here, but probably nothing worth caring about.
                             let shouldDraw =
                                 match renderer.RenderPasses2.TryGetValue renderPass with
                                 | (true, renderTasksCached) ->
