@@ -51,28 +51,28 @@ jobs:
           # the system SDK lives at /usr/local/share/dotnet, and workload manifests
           # can be installed to either location. We search all possible dotnet roots.
           echo "::group::Resolve Xcode version from iOS workload"
-          SDK_BAND=$(dotnet --version | awk -F. '{print $1"."$2"."int($3/100)*100}')
-          echo "dotnet version: $(dotnet --version)"
-          echo "SDK band: $SDK_BAND"
           echo "DOTNET_ROOT: '$DOTNET_ROOT'"
-          echo "HOME/.dotnet exists: $(test -d "$HOME/.dotnet" && echo yes || echo no)"
-          echo "Searching for iOS workload manifests..."
-          IOS_VERSION=
-          for _root in "$DOTNET_ROOT" "$HOME/.dotnet" "/usr/local/share/dotnet" "/usr/share/dotnet"; do
-            [ -n "$_root" ] || { echo "  skip empty root"; continue; }
-            _manifest_dir="$_root/sdk-manifests/$SDK_BAND/microsoft.net.sdk.ios"
-            if [ -d "$_manifest_dir" ]; then
-              echo "  found at $_manifest_dir"
-              _versions=$(ls "$_manifest_dir/" 2>/dev/null)
+          echo "$(dotnet --version)"
+          # Query the actual dotnet root from the dotnet binary location
+          # (actions/setup-dotnet may set $DOTNET_ROOT to $HOME/.dotnet while
+          # the actual SDK lives elsewhere, e.g. /usr/local/share/dotnet).
+          DOTNET_ROOT_REAL=$(dirname "$(command -v dotnet)")
+          echo "dotnet root: $DOTNET_ROOT_REAL"
+          _all_versions=
+          for _kind in sdk-manifests metadata/workloads/InstalledManifests; do
+            _dir="$DOTNET_ROOT_REAL/$_kind"
+            [ -d "$_dir" ] || { echo "  $_kind: not found"; continue; }
+            echo "  scanning $_dir ..."
+            for _sub in "$_dir"/*/; do
+              _ios="$_sub/microsoft.net.sdk.ios"
+              [ -d "$_ios" ] || continue
+              echo "  found at $_ios"
+              _versions=$(ls "$_ios/" 2>/dev/null)
               echo "  versions: $_versions"
-              IOS_VERSION=$(echo "$_versions" \
-                | sort -t. -k1,1n -k2,2n -k3,3n | tail -1 | cut -d. -f1-2)
-              echo "  latest: $IOS_VERSION"
-              [ -n "$IOS_VERSION" ] && break
-            else
-              echo "  not at $_manifest_dir"
-            fi
+              _all_versions="$_all_versions $_versions"
+            done
           done
+          IOS_VERSION=$(echo "$_all_versions" | tr ' ' '\n' | grep -v '^$' | sort -t. -k1,1n -k2,2n -k3,3n | tail -1 | cut -d. -f1-2)
           echo "Resolved Xcode version: ${IOS_VERSION:-latest-stable}"
           echo "xcode-version=${IOS_VERSION:-latest-stable}" >> "$GITHUB_OUTPUT"
           echo "::endgroup::"
