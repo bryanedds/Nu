@@ -234,7 +234,7 @@ type Buffer =
     /// Expand buffer width as necessary, disregarding all existing content.
     static member ensureWidth size (buffer : Buffer) vkc =
         Buffer.ensureHeight buffer vkc
-        if size < buffer.BufferInternals_[buffer.BufferCursor_].Size then
+        if buffer.BufferInternals_[buffer.BufferCursor_].Size < size then
             BufferInternal.destroy buffer.BufferInternals_[buffer.BufferCursor_] vkc
             buffer.BufferInternals_[buffer.BufferCursor_] <- BufferInternal.create size buffer.BufferType_ vkc
 
@@ -261,10 +261,12 @@ type Buffer =
 
     /// Write subdata to Buffer. Caller is reponsible for ensuring buffer width and height.
     static member writeSubdata offset alignment size count data (buffer : Buffer) vkc =
+        Buffer.ensureHeight buffer vkc
         BufferInternal.write offset alignment size count data buffer.BufferInternal vkc
 
     /// Flush subdata from Buffer. Caller is reponsible for ensuring buffer width and height.
     static member flushSubdata offset alignment size count (buffer : Buffer) vkc =
+        Buffer.ensureHeight buffer vkc
         BufferInternal.flush offset alignment size count buffer.BufferInternal vkc
 
     /// Upload data to Buffer.
@@ -272,24 +274,25 @@ type Buffer =
         let bufferSize = size * count
         Buffer.ensureHeight buffer vkc
         Buffer.ensureWidth bufferSize buffer vkc
-        Buffer.writeSubdata 0 0 size count data buffer vkc
+        BufferInternal.write 0 0 size count data buffer.BufferInternal vkc
+        BufferInternal.flush 0 0 size count buffer.BufferInternal vkc
 
     /// Upload a value to Buffer.
     static member uploadValue (value : 'a) buffer vkc =
         let mutable value = value
         Buffer.uploadData sizeof<'a> 1 (asNativeInt &value) buffer vkc
-    
+
     /// Upload an array to Buffer.
     static member uploadArray (array : 'a array) buffer vkc =
         use arrayPin = new ArrayPin<_> (array)
         Buffer.uploadData sizeof<'a> array.Length arrayPin.NativeInt buffer vkc
-    
+
     /// Create a staging buffer and stage the data.
     static member stageData size data vkc =
         let buffer = Buffer.create size Staging vkc
         Buffer.uploadData size 1 data buffer vkc
         buffer
-    
+
     /// Create a vertex buffer with data uploaded via staging buffer.
     static member createVertexStaged size data vkc =
         let stagingBuffer = Buffer.stageData size data vkc

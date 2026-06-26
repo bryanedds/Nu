@@ -500,30 +500,33 @@ type VulkanRendererImGui
                 // compute offsets
                 if drawData.TotalVtxCount > 0 then
                     
-                    // get data size for vertices and indices
-                    let vertexSize = drawData.TotalVtxCount * sizeof<ImDrawVert>
-                    let indexSize = drawData.TotalIdxCount * sizeof<uint16>
+                    // get data buffer size totals for vertices and indices
+                    let vertexBufferSizeTotal = drawData.TotalVtxCount * sizeof<ImDrawVert>
+                    let indexBufferSizeTotal = drawData.TotalIdxCount * sizeof<uint16>
 
                     // enlarge buffer sizes if needed
-                    while vertexSize > vertexBufferSize do vertexBufferSize <- vertexBufferSize * 2
-                    while indexSize > indexBufferSize do indexBufferSize <- indexBufferSize * 2
-                    Nu.Vulkan.Buffer.update vertexBufferSize vertexBuffer vkc
-                    Nu.Vulkan.Buffer.update indexBufferSize indexBuffer vkc
+                    while vertexBufferSizeTotal > vertexBufferSize do vertexBufferSize <- vertexBufferSize * 2
+                    while indexBufferSizeTotal > indexBufferSize do indexBufferSize <- indexBufferSize * 2
+                    Nu.Vulkan.Buffer.ensureWidth vertexBufferSize vertexBuffer vkc
+                    Nu.Vulkan.Buffer.ensureWidth indexBufferSize indexBuffer vkc
 
                     // upload vertices and indices
                     let mutable vertexOffset = 0
                     let mutable indexOffset = 0
                     for i in 0 .. dec drawData.CmdListsCount do
                         let drawList = let range = drawData.CmdLists in range[i]
-                        let vertexSize = drawList.VtxBuffer.Size * sizeof<ImDrawVert>
-                        let indexSize = drawList.IdxBuffer.Size * sizeof<uint16>
-                        Nu.Vulkan.Buffer.uploadSubdata vertexOffset 0 vertexSize 1 drawList.VtxBuffer.Data vertexBuffer vkc
-                        Nu.Vulkan.Buffer.uploadSubdata indexOffset 0 indexSize 1 drawList.IdxBuffer.Data indexBuffer vkc
-                        vertexOffset <- vertexOffset + vertexSize
-                        indexOffset <- indexOffset + indexSize
+                        let vertexBufferSize = drawList.VtxBuffer.Size * sizeof<ImDrawVert>
+                        let indexBufferSize = drawList.IdxBuffer.Size * sizeof<uint16>
+                        Nu.Vulkan.Buffer.writeSubdata vertexOffset 0 vertexBufferSize 1 drawList.VtxBuffer.Data vertexBuffer vkc
+                        Nu.Vulkan.Buffer.writeSubdata indexOffset 0 indexBufferSize 1 drawList.IdxBuffer.Data indexBuffer vkc
+                        vertexOffset <- vertexOffset + vertexBufferSize
+                        indexOffset <- indexOffset + indexBufferSize
 
-                // bind vertex and index buffers
-                if drawData.TotalVtxCount > 0 then // TODO: P1: see if this conditional is actually necessary.
+                    // flush data
+                    Nu.Vulkan.Buffer.flushSubdata 0 0 vertexBufferSizeTotal 1 vertexBuffer vkc
+                    Nu.Vulkan.Buffer.flushSubdata 0 0 indexBufferSizeTotal 1 indexBuffer vkc
+
+                    // bind vertex and index buffers
                     let mutable vertexBuffer = vertexBuffer.VkBuffer
                     let mutable vertexOffset = 0UL
                     Vulkan.vkCmdBindVertexBuffers (vkc.RenderCommandBuffer, 0u, 1u, asPointer &vertexBuffer, asPointer &vertexOffset)
