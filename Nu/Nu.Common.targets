@@ -81,7 +81,6 @@
         <ProjectReference Include="$(MSBuildThisFileDirectory)Nu/Nu.fsproj" />
     </ItemGroup>
 
-    
     <!-- ============================================================
          Common Native Libraries
          ============================================================
@@ -269,6 +268,7 @@
          macOS / iOS: Vulkan SDK
          ============================================================
          User projects can override the Vulkan SDK path by setting the MacOSVulkanSdk property in their project file. -->
+
     <Target Name="UseMacOSVulkanSDK" BeforeTargets="AssignTargetPaths"
             Condition="$(BuildingMacOS) Or '$(TargetPlatformIdentifier)'=='ios'">
         <!-- Auto-detect Vulkan SDK on macOS if not already set -->
@@ -489,19 +489,27 @@
          ============================================================
          NuGet packages (Silk.NET.Shaderc.Native, Twizzle.ImGui-Bundle.NET,
          AstcEncoderCSharp, Magick.NET-Q8-AnyCPU) contain Linux
-         .so files under runtimes/linux-*/native/.  The Android build scans
+         .so files under runtimes/linux-*/native/. The Android build scans
          all resolved native assets and warns (XA0141) about Linux .so files
          that have no 16 KB page alignment or are simply not for Android.
+         Since the Linux .so files are included in place of Android .so files
+         in the built app package, XA4301 warnings and runtime crashes occur.
          
-         We cannot set ExcludeAssets="native" before restore (the versions
-         come from the resolved graph), so instead we strip Linux-native
-         entries from the resolved copy-local lists after they are computed. -->
+         We cannot set PackageReference ExcludeAssets="native" before restore
+         as the versions and transitive packages are resolved together, so instead
+         we strip Linux-native entries from the resolved copy-local lists after they are computed. -->
     <Target Name="_RemoveLinuxNativeAssets" AfterTargets="ResolvePackageAssets" Condition="'$(TargetPlatformIdentifier)' == 'android'">
         <ItemGroup>
             <!-- Remove any resolved native item whose source path contains
-                 a Linux RID segment (/linux-), which is never correct for Android. -->
-            <NativeCopyLocalItems Remove="@(NativeCopyLocalItems)" Condition="$([System.String]::new('%(NativeCopyLocalItems.Identity)').Contains('/linux-'))" />
-            <RuntimeTargetsCopyLocalItems Remove="@(RuntimeTargetsCopyLocalItems)" Condition="$([System.String]::new('%(RuntimeTargetsCopyLocalItems.Identity)').Contains('/linux-'))" />
+                 a Linux RID segment (/linux- or \linux-), which is never correct for Android.
+                 On Windows, MSBuild item identities use backslash separators, so we normalize
+                 them to forward slash before checking to ensure cross-platform matching.
+
+                 Only @(RuntimeTargetsCopyLocalItems) is checked because Linux .so files from
+                 NuGet packages always arrive under RID-specific runtimes/<rid>/native/ paths,
+                 which populate this item group. Non-RID-specific <native> nuspec declarations
+                 would not contain a Linux RID segment, so @(NativeCopyLocalItems) is not filtered. -->
+            <RuntimeTargetsCopyLocalItems Remove="@(RuntimeTargetsCopyLocalItems)" Condition="$([System.String]::new('%(RuntimeTargetsCopyLocalItems.Identity)').Replace('\', '/').Contains('/linux-'))" />
         </ItemGroup>
     </Target>
 
