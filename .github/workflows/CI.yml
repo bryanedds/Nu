@@ -33,29 +33,20 @@ jobs:
         if: "contains(matrix.os, 'windows') && contains(matrix.os, 'arm')"
         run:
           dotnet build "Projects/Sand Box 2d" -t:InstallAndroidDependencies -f net10.0-android -p BuildMobile=true,AcceptAndroidSdkLicenses=True
+      # Apple syncs version numbers across iOS, macOS, and Xcode; the .NET iOS
+      # workload version matches: 26.5.10284 → iOS 26.5 → Xcode 26.5.
+      # (https://github.com/dotnet/macios/issues/25818#issuecomment-4799784136)
+      # We derive Xcode version from the installed iOS workload manifest by
+      # scanning all SDK band directories for `microsoft.net.sdk.ios/` and
+      # metadata/workloads/InstalledManifests/, then picking the latest version.
+      # We query the dotnet binary directly because actions/setup-dotnet may set
+      # $DOTNET_ROOT to $HOME/.dotnet while the actual SDK lives elsewhere.
       - name: Get Xcode version from iOS workload
         id: ios-version
         if: contains(matrix.os, 'macos')
         run: |
-          # Apple has synchronized version numbers across iOS, macOS, and Xcode,
-          # and the .NET iOS workload version matches this scheme: the iOS workload
-          # version e.g. 26.5.10284 → iOS 26.5 → Xcode 26.5.
-          # (https://github.com/dotnet/macios/issues/25818#issuecomment-4799784136)
-          # We derive the Xcode version from the installed iOS workload manifest:
-          #   1. Compute the SDK feature band from `dotnet --version` (round patch
-          #      down to nearest 100, e.g. 10.0.102 → 10.0.100).
-          #   2. List version directories under `microsoft.net.sdk.ios/` — each dir
-          #      name IS a workload version (e.g. 26.5.10284).
-          #   3. Sort version-sorted, take the latest, and extract major.minor.
-          # NOTE: actions/setup-dotnet may set $DOTNET_ROOT to $HOME/.dotnet while
-          # the system SDK lives at /usr/local/share/dotnet, and workload manifests
-          # can be installed to either location. We search all possible dotnet roots.
           echo "::group::Resolve Xcode version from iOS workload"
-          echo "DOTNET_ROOT: '$DOTNET_ROOT'"
-          echo "$(dotnet --version)"
-          # Query the actual dotnet root from the dotnet binary location
-          # (actions/setup-dotnet may set $DOTNET_ROOT to $HOME/.dotnet while
-          # the actual SDK lives elsewhere, e.g. /usr/local/share/dotnet).
+          echo "dotnet version: $(dotnet --version)"
           DOTNET_ROOT_REAL=$(dirname "$(command -v dotnet)")
           echo "dotnet root: $DOTNET_ROOT_REAL"
           _all_versions=
@@ -66,9 +57,8 @@ jobs:
             for _sub in "$_dir"/*/; do
               _ios="$_sub/microsoft.net.sdk.ios"
               [ -d "$_ios" ] || continue
-              echo "  found at $_ios"
               _versions=$(ls "$_ios/" 2>/dev/null)
-              echo "  versions: $_versions"
+              echo "  found: $_ios -> $_versions"
               _all_versions="$_all_versions $_versions"
             done
           done
