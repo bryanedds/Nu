@@ -61,7 +61,7 @@ module CubeMap =
         // load faces into cube map
         // NOTE: DJL: opengl seems to allow individual faces to differ in compression or maybe even size, but vulkan does not, so these are now determined by the first face.
         // TODO: DJL: maybe check that size and compression match?
-        let mutable textureParallelOpt = None
+        let mutable textureInternalOpt = None
         let mutable errorOpt = None
         let faceFilePaths = [|faceRightFilePath; faceLeftFilePath; faceTopFilePath; faceBottomFilePath; faceBackFilePath; faceFrontFilePath|]
         for i in 0 .. dec faceFilePaths.Length do
@@ -78,48 +78,48 @@ module CubeMap =
                 | Some textureData ->
                     match textureData with
                     | TextureData.TextureDataDotNet (metadata, bytes) ->
-                        let textureParallel =
-                            match textureParallelOpt with
-                            | Some textureParallel -> textureParallel
+                        let textureInternal =
+                            match textureInternalOpt with
+                            | Some textureInternal -> textureInternal
                             | None ->
-                                TextureParallel.create
+                                TextureInternal.create
                                     MipmapNone AttachmentNone TextureCubeMap [||]
                                     Uncompressed.ImageFormat Uncompressed.PixelFormat metadata vkc
-                        textureParallelOpt <- Some textureParallel
-                        TextureParallel.uploadArray metadata 0 i bytes thread textureParallel vkc
+                        textureInternalOpt <- Some textureInternal
+                        TextureInternal.uploadArray metadata 0 i bytes thread textureInternal vkc
                     | TextureData.TextureDataMipmap (metadata, compressed, bytes, _) ->
-                        let textureParallel =
-                            match textureParallelOpt with
-                            | Some textureParallel -> textureParallel
+                        let textureInternal =
+                            match textureInternalOpt with
+                            | Some textureInternal -> textureInternal
                             | None ->
                                 let compression = if compressed then ColorCompression else Uncompressed
-                                TextureParallel.create
+                                TextureInternal.create
                                     MipmapNone AttachmentNone TextureCubeMap [||]
                                     compression.ImageFormat compression.PixelFormat metadata vkc
-                        textureParallelOpt <- Some textureParallel
-                        TextureParallel.uploadArray metadata 0 i bytes thread textureParallel vkc
+                        textureInternalOpt <- Some textureInternal
+                        TextureInternal.uploadArray metadata 0 i bytes thread textureInternal vkc
                     | TextureData.TextureDataNative (metadata, bytesPtr, disposer) ->
                         use _ = disposer
-                        let textureParallel =
-                            match textureParallelOpt with
-                            | Some textureParallel -> textureParallel
+                        let textureInternal =
+                            match textureInternalOpt with
+                            | Some textureInternal -> textureInternal
                             | None ->
-                                TextureParallel.create
+                                TextureInternal.create
                                     MipmapNone AttachmentNone TextureCubeMap [||]
                                     Uncompressed.ImageFormat Uncompressed.PixelFormat metadata vkc
-                        textureParallelOpt <- Some textureParallel
-                        TextureParallel.upload metadata 0 i bytesPtr thread textureParallel vkc
+                        textureInternalOpt <- Some textureInternal
+                        TextureInternal.upload metadata 0 i bytesPtr thread textureInternal vkc
                 | None -> errorOpt <- Some ("Could not create surface for image from '" + faceFilePath + "'")
 
         // attempt to finalize cube map
         match errorOpt with
         | None ->
-            // TODO: DJL: review error handling.
-            let cubeMap = EagerTexture { TextureMetadata = TextureMetadata.empty; TextureParallel = textureParallelOpt.Value }
+            // TODO: P0: review error handling.
+            let cubeMap = EagerTexture textureInternalOpt.Value
             Right cubeMap
         | Some error ->
-            match textureParallelOpt with
-            | Some vulkanTexture -> TextureParallel.destroy vulkanTexture vkc
+            match textureInternalOpt with
+            | Some textureInternal -> TextureInternal.destroy textureInternal vkc
             | None -> ()
             Left error
 
@@ -244,8 +244,8 @@ module CubeMap =
     /// Create a CubeMapPipeline.
     let createCubeMapPipeline shaderPath colorAttachmentFormat (vkc : VulkanContext) =
 
-        // create uniform buffer
-        let transformUniform = Buffer.create sizeof<Transform> Storage vkc
+        // create eye buffer
+        let eyeUniform = Buffer.create sizeof<Eye> Storage vkc
 
         // create pipeline
         let pipeline =
@@ -261,11 +261,11 @@ module CubeMap =
                     [|Pipeline.descriptor 0 Sampler FragmentStage 1|]|]
                 [||] [|colorAttachmentFormat|]
                 None // NOTE: DJL: not porting currently meaningless depth test as it imposes complexity cost in vulkan.
-                [|transformUniform|]
+                [|eyeUniform|]
                 vkc
 
         // fin
-        { EyeUniform = transformUniform; Pipeline = pipeline }
+        { EyeUniform = eyeUniform; Pipeline = pipeline }
     
     /// Destroy a CubeMapPipeline.
     let destroyCubeMapPipeline cubeMapPipeline vkc =

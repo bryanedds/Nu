@@ -53,7 +53,6 @@ module OpenGL =
 [<RequireQualifiedAccess>]
 module Vulkan =
 
-    let [<Literal>] MaxFramesInFlight = 2
     let [<Literal>] DescriptorSetCountDefault = 32
 
 [<RequireQualifiedAccess>]

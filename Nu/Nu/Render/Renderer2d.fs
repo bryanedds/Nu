@@ -836,16 +836,16 @@ type [<ReferenceEquality>] VulkanRenderer2d =
 
                                     // create and load texture
                                     let metadata = TextureMetadata.make textSurfaceWidth textSurfaceHeight
-                                    let textTextureParallel =
-                                        TextureParallel.create
+                                    let textTextureInternal =
+                                        TextureInternal.create
                                             MipmapNone AttachmentNone Texture2d [||]
                                             Uncompressed.ImageFormat Uncompressed.PixelFormat metadata renderer.VulkanContext
                                     
                                     // TODO: DJL: investigate safety of asynchronous upload with regard to memoized access in subsequent frames
                                     // which does not explicitly wait for upload.
-                                    TextureParallel.uploadAsync renderer.VulkanContext.RenderCommandBuffer metadata 0 0 textSurface.pixels textTextureParallel renderer.VulkanContext
-                                    let textTexture = EagerTexture { TextureMetadata = metadata; TextureParallel = textTextureParallel }
-                                    
+                                    TextureInternal.uploadAsync renderer.VulkanContext.RenderCommandBuffer metadata 0 0 textSurface.pixels textTextureInternal renderer.VulkanContext
+                                    let textTexture = EagerTexture textTextureInternal
+
                                     // destroy text surface
                                     SDL3.SDL_DestroySurface textSurfacePtr
 

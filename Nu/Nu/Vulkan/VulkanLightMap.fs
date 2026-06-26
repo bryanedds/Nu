@@ -38,11 +38,11 @@ module LightMap =
 
         // create reflection cube map
         let metadata = TextureMetadata.make resolution resolution
-        let reflectionCubeMapParallel =
-            TextureParallel.create
+        let reflectionCubeMapInternal =
+            TextureInternal.create
                 MipmapNone (AttachmentColor false) TextureCubeMap [|VkImageUsageFlags.Sampled; VkImageUsageFlags.TransferDst|]
                 Rgba16f Rgba metadata vkc
-        let reflectionCubeMap = EagerTexture { TextureMetadata = TextureMetadata.empty; TextureParallel = reflectionCubeMapParallel }
+        let reflectionCubeMap = EagerTexture reflectionCubeMapInternal
 
         // construct geometry viewport
         let bounds = box2i v2iZero (v2iDup resolution)
@@ -86,14 +86,14 @@ module LightMap =
             let bounds = VkRect2D (0, 0, uint resolution, uint resolution)
             render
                 false lightAmbientOverride origin view viewInverse viewSkyBox viewSkyBoxInverse frustum projection projectionInverse viewProjection projection projectionInverse viewProjection
-                bounds i reflectionCubeMapParallel.Image
+                bounds i reflectionCubeMap.Image
 
             // take a snapshot for testing
             // TODO: DJL: implement.
             //Hl.saveFramebufferRgbaToBitmap resolution resolution ("Reflection." + string reflectionCubeMapId + "." + string i + ".bmp")
 
         // transition cubemap layout
-        Hl.recordTransitionLayout true 1 0 6 VkImageAspectFlags.Color ColorAttachmentWrite ShaderRead reflectionCubeMapParallel.Image commandBuffer
+        Hl.recordTransitionLayout true 1 0 6 VkImageAspectFlags.Color ColorAttachmentWrite ShaderRead reflectionCubeMap.Image commandBuffer
 
         // fin
         reflectionCubeMap
@@ -102,11 +102,11 @@ module LightMap =
 
         // create irradiance cube map
         let metadata = TextureMetadata.make resolution resolution
-        let cubeMapParallel =
-            TextureParallel.create
+        let cubeMapInternal =
+            TextureInternal.create
                 MipmapNone (AttachmentColor false) TextureCubeMap [|VkImageUsageFlags.Sampled|]
                 colorFormat Rgba metadata vkc
-        let cubeMap = EagerTexture { TextureMetadata = TextureMetadata.empty; TextureParallel = cubeMapParallel }
+        let cubeMap = EagerTexture cubeMapInternal
 
         // compute views and projection
         let views =
@@ -134,7 +134,7 @@ module LightMap =
             //Hl.saveFramebufferRgbaToBitmap resolution resolution ("Irradiance." + string cubeMapId + "." + string i + ".bmp")
 
         // transition cubemap layout
-        Hl.recordTransitionLayout true 1 0 6 VkImageAspectFlags.Color ColorAttachmentWrite ShaderRead cubeMapParallel.Image commandBuffer
+        Hl.recordTransitionLayout true 1 0 6 VkImageAspectFlags.Color ColorAttachmentWrite ShaderRead cubeMap.Image commandBuffer
         
         // fin
         cubeMap
@@ -254,11 +254,11 @@ module LightMap =
 
         // create environment filter cube map
         let metadata = TextureMetadata.make resolution resolution
-        let cubeMapParallel =
-            TextureParallel.create
+        let cubeMapInternal =
+            TextureInternal.create
                 (MipmapManual Constants.Render.EnvironmentFilterMips) (AttachmentColor false) TextureCubeMap [|VkImageUsageFlags.Sampled|]
                 colorFormat Rgba metadata vkc
-        let cubeMap = EagerTexture { TextureMetadata = TextureMetadata.empty; TextureParallel = cubeMapParallel }
+        let cubeMap = EagerTexture cubeMapInternal
         
         // compute views and projection
         let views =
@@ -305,7 +305,7 @@ module LightMap =
                 //Hl.saveFramebufferRgbaToBitmap (int mipResolution) (int mipResolution) ("EnvironmentFilter." + string i + "." + string mip + ".bmp")
 
         // transition cubemap layout
-        Hl.recordTransitionLayout true cubeMapParallel.MipLevels 0 6 VkImageAspectFlags.Color ColorAttachmentWrite ShaderRead cubeMapParallel.Image commandBuffer
+        Hl.recordTransitionLayout true cubeMap.MipLevels 0 6 VkImageAspectFlags.Color ColorAttachmentWrite ShaderRead cubeMap.Image commandBuffer
 
         // fin
         cubeMap

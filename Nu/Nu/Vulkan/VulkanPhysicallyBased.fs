@@ -1682,11 +1682,11 @@ module PhysicallyBased =
 
                     // specify instancing
                     use instanceFieldsPin = new ArrayPin<_> (instanceFields)
-                    Buffer.uploadSubdata 0 0 (Constants.Render.InstanceFieldCount * sizeof<single>) surfacesCount instanceFieldsPin.NativeInt geometry.InstanceBuffer vkc                    // specify dynamic
+                    Buffer.uploadData (Constants.Render.InstanceFieldCount * sizeof<single>) surfacesCount instanceFieldsPin.NativeInt geometry.InstanceBuffer vkc                    // specify dynamic
 
                     let mutable dynamicDescriptorSet = Pipeline.specifyDescriptorSet 1 pipeline.Pipeline.DrawIndex pipeline.Pipeline vkc $ fun vkSet ->
                         use bonesPin = new ArrayPin<_> (bones)
-                        Buffer.uploadSubdata 0 0 sizeof<Matrix4x4> (min bones.Length Constants.Render.BonesMax) bonesPin.NativeInt pipeline.BoneUniform vkc
+                        Buffer.uploadData sizeof<Matrix4x4> (min bones.Length Constants.Render.BonesMax) bonesPin.NativeInt pipeline.BoneUniform vkc
                         Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.BoneUniform vkSet vkc
 
                     // set up render
@@ -1785,7 +1785,7 @@ module PhysicallyBased =
 
                     // specify instancing
                     use instanceFieldsPin = new ArrayPin<_> (instanceFields)
-                    Buffer.uploadSubdata 0 0 (Constants.Render.InstanceFieldCount * sizeof<single>) surfacesCount instanceFieldsPin.NativeInt geometry.InstanceBuffer vkc
+                    Buffer.uploadData (Constants.Render.InstanceFieldCount * sizeof<single>) surfacesCount instanceFieldsPin.NativeInt geometry.InstanceBuffer vkc
 
                     // specify material
                     let mutable materialDescriptorSet = Pipeline.specifyDescriptorSet 1 material pipeline.Pipeline vkc $ fun vkSet ->
@@ -1806,7 +1806,7 @@ module PhysicallyBased =
                     // specify dynamic
                     let mutable dynamicDescriptorSet = Pipeline.specifyDescriptorSet 2 pipeline.Pipeline.DrawIndex pipeline.Pipeline vkc $ fun vkSet ->
                         use bonesPin = new ArrayPin<_> (bones)
-                        Buffer.uploadSubdata 0 0 sizeof<Matrix4x4> (min bones.Length Constants.Render.BonesMax) bonesPin.NativeInt pipeline.BoneUniform vkc
+                        Buffer.uploadData sizeof<Matrix4x4> (min bones.Length Constants.Render.BonesMax) bonesPin.NativeInt pipeline.BoneUniform vkc
                         Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.BoneUniform vkSet vkc
 
                     // set up render
@@ -1992,7 +1992,7 @@ module PhysicallyBased =
                     // specify lights
                     let mutable light = Light ()
                     use lightPtr = fixed &light
-                    for i in 0 .. dec Constants.Render.LightsMaxForward do
+                    for i in 0 .. dec Constants.Render.LightsMaxDeferred do
                         if i < lightOrigins.Length then
                             light.lightOrigins <- lightOrigins[i]
                             light.lightDirections <- lightDirections[i]
@@ -2007,13 +2007,14 @@ module PhysicallyBased =
                             light.lightDesireFogs <- lightDesireFogs[i]
                             light.lightShadowIndices <- lightShadowIndices[i]
                         else light <- Unchecked.defaultof<_>
-                        Buffer.uploadSubdata (i * sizeof<Light>) 0 sizeof<Light> 1 (NativePtr.toNativeInt lightPtr) pipeline.LightUniform vkc
+                        Buffer.writeSubdata (i * sizeof<Light>) 0 sizeof<Light> 1 (NativePtr.toNativeInt lightPtr) pipeline.LightUniform vkc
+                    Buffer.flushSubdata 0 0 sizeof<Light> Constants.Render.LightsMaxDeferred pipeline.LightUniform vkc
                     Pipeline.writeDescriptorStorageBuffer 2 0 pipeline.LightUniform vkSet vkc
 
                     // specify shadow matrices
                     use shadowMatricesPin = new ArrayPin<_> (shadowMatrices)
                     let shadowMatricesCount = min shadowMatrices.Length (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels)
-                    Buffer.uploadSubdata 0 0 sizeof<Matrix4x4> shadowMatricesCount shadowMatricesPin.NativeInt pipeline.ShadowMatrixUniform vkc
+                    Buffer.uploadData sizeof<Matrix4x4> shadowMatricesCount shadowMatricesPin.NativeInt pipeline.ShadowMatrixUniform vkc
                     Pipeline.writeDescriptorStorageBuffer 3 0 pipeline.ShadowMatrixUniform vkSet vkc
 
                     // specify textures
@@ -2237,7 +2238,7 @@ module PhysicallyBased =
 
                 // specify instancing
                 use instanceFieldsPin = new ArrayPin<_> (instanceFields)
-                Buffer.uploadSubdata 0 0 (Constants.Render.InstanceFieldCount * sizeof<single>) surfacesCount instanceFieldsPin.NativeInt geometry.InstanceBuffer vkc
+                Buffer.uploadData (Constants.Render.InstanceFieldCount * sizeof<single>) surfacesCount instanceFieldsPin.NativeInt geometry.InstanceBuffer vkc
 
                 // specify material
                 let mutable materialDescriptorSet = Pipeline.specifyDescriptorSet 1 material pipeline.Pipeline vkc $ fun vkSet ->
@@ -2255,7 +2256,7 @@ module PhysicallyBased =
                     // specify bones
                     use bonesPin = new ArrayPin<_> (bones)
                     let bonesCount = min bones.Length Constants.Render.BonesMax
-                    Buffer.uploadSubdata 0 0 sizeof<Matrix4x4> bonesCount bonesPin.NativeInt pipeline.BoneUniform vkc
+                    Buffer.uploadData sizeof<Matrix4x4> bonesCount bonesPin.NativeInt pipeline.BoneUniform vkc
                     Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.BoneUniform vkSet vkc
 
                     // specify light maps
@@ -2269,7 +2270,8 @@ module PhysicallyBased =
                             lightMap.lightMapAmbientColors <- lightMapAmbientColors[i].V3
                             lightMap.lightMapAmbientBrightnesses <- lightMapAmbientBrightnesses[i]
                         else lightMap <- Unchecked.defaultof<_>
-                        Buffer.uploadSubdata (i * sizeof<LightMap>) 0 sizeof<LightMap> 1 (NativePtr.toNativeInt lightMapPtr) pipeline.LightMapUniform vkc
+                        Buffer.writeSubdata (i * sizeof<LightMap>) 0 sizeof<LightMap> 1 (NativePtr.toNativeInt lightMapPtr) pipeline.LightMapUniform vkc
+                    Buffer.flushSubdata 0 0 sizeof<Light> Constants.Render.LightMapsMaxForward pipeline.LightUniform vkc
                     Pipeline.writeDescriptorStorageBuffer 1 0 pipeline.LightMapUniform vkSet vkc
 
                     // specify lights general
@@ -2298,13 +2300,14 @@ module PhysicallyBased =
                             light.lightDesireFogs <- lightDesireFogs[i]
                             light.lightShadowIndices <- lightShadowIndices[i]
                         else light <- Unchecked.defaultof<_>
-                        Buffer.uploadSubdata (i * sizeof<Light>) 0 sizeof<Light> 1 (NativePtr.toNativeInt lightPtr) pipeline.LightUniform vkc
+                        Buffer.writeSubdata (i * sizeof<Light>) 0 sizeof<Light> 1 (NativePtr.toNativeInt lightPtr) pipeline.LightUniform vkc
+                    Buffer.flushSubdata 0 0 sizeof<Light> Constants.Render.LightsMaxForward pipeline.LightUniform vkc
                     Pipeline.writeDescriptorStorageBuffer 3 0 pipeline.LightUniform vkSet vkc
 
                     // specify shadow matrices
                     use shadowMatricesPin = new ArrayPin<_> (shadowMatrices)
                     let shadowMatricesCount = min shadowMatrices.Length (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels)
-                    Buffer.uploadSubdata 0 0 sizeof<Matrix4x4> shadowMatricesCount shadowMatricesPin.NativeInt pipeline.ShadowMatrixUniform vkc
+                    Buffer.uploadData sizeof<Matrix4x4> shadowMatricesCount shadowMatricesPin.NativeInt pipeline.ShadowMatrixUniform vkc
                     Pipeline.writeDescriptorStorageBuffer 4 0 pipeline.ShadowMatrixUniform vkSet vkc
 
                     // specify dynamic environment textures

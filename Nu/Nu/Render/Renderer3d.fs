@@ -3181,14 +3181,14 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         
         // create white texture
         let whiteTexture =
-            match Hl.tryCreateTextureVulkan false true Uncompressed "Assets/Default/White.png" RenderThread vkc with
-            | Right (metadata, textureParallel) -> EagerTexture { TextureMetadata = metadata; TextureParallel = textureParallel }
+            match Hl.tryCreateTextureInternal false true Uncompressed "Assets/Default/White.png" RenderThread vkc with
+            | Right textureInternal -> EagerTexture textureInternal
             | Left error -> failwith ("Could not load white texture due to: " + error)
 
         // create black texture
         let blackTexture =
-            match Hl.tryCreateTextureVulkan false true Uncompressed "Assets/Default/Black.png" RenderThread vkc with
-            | Right (metadata, textureParallel) -> EagerTexture { TextureMetadata = metadata; TextureParallel = textureParallel }
+            match Hl.tryCreateTextureInternal false true Uncompressed "Assets/Default/Black.png" RenderThread vkc with
+            | Right textureInternal -> EagerTexture textureInternal
             | Left error -> failwith ("Could not load black texture due to: " + error)
         
         // load or create and save brdf texture
@@ -3210,9 +3210,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     File.WriteAllBytes (brdfFilePath, brdfBuffer)
                     brdfBuffer
             let brdfMetadata = TextureMetadata.make Constants.Render.BrdfResolution Constants.Render.BrdfResolution
-            let brdfTexture = TextureParallel.create MipmapNone AttachmentNone Texture2d [||] Rg32f Rg brdfMetadata vkc
-            TextureParallel.uploadArray brdfMetadata 0 0 brdfBuffer RenderThread brdfTexture vkc
-            EagerTexture { TextureMetadata = brdfMetadata; TextureParallel = brdfTexture }
+            let brdfTextureInternal = TextureInternal.create MipmapNone AttachmentNone Texture2d [||] Rg32f Rg brdfMetadata vkc
+            TextureInternal.uploadArray brdfMetadata 0 0 brdfBuffer RenderThread brdfTextureInternal vkc
+            EagerTexture brdfTextureInternal
 
         // create default irradiance map and default environment filter map and set up transiently
         let commandBuffer = Hl.createTransientCommandBuffer vkc.TransientCommandPool vkc.Device
@@ -3248,59 +3248,59 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         
         // get albedo metadata and texture
         let albedoTexture =
-            match Hl.tryCreateTextureVulkan false true ColorCompression ("Assets/Default/MaterialAlbedo" + ext) RenderThread vkc with
-            | Right (metadata, vulkanTexture) -> EagerTexture { TextureMetadata = metadata; TextureParallel = vulkanTexture }
+            match Hl.tryCreateTextureInternal false true ColorCompression ("Assets/Default/MaterialAlbedo" + ext) RenderThread vkc with
+            | Right textureInternal -> EagerTexture textureInternal
             | Left error -> failwith ("Could not load albedo material texture due to: " + error)
 
         // create default physically-based material
         let physicallyBasedMaterial : PhysicallyBasedMaterial =
             let roughnessTexture =
-                match Hl.tryCreateTextureVulkan false true ColorCompression ("Assets/Default/MaterialRoughness" + ext) RenderThread vkc with
-                | Right (metadata, vulkanTexture) -> EagerTexture { TextureMetadata = metadata; TextureParallel = vulkanTexture }
+                match Hl.tryCreateTextureInternal false true ColorCompression ("Assets/Default/MaterialRoughness" + ext) RenderThread vkc with
+                | Right textureInternal -> EagerTexture textureInternal
                 | Left error -> failwith ("Could not load material roughness texture due to: " + error)
             let metallicTexture =
-                match Hl.tryCreateTextureVulkan false true ColorCompression ("Assets/Default/MaterialMetallic" + ext) RenderThread vkc with
-                | Right (metadata, vulkanTexture) -> EagerTexture { TextureMetadata = metadata; TextureParallel = vulkanTexture }
+                match Hl.tryCreateTextureInternal false true ColorCompression ("Assets/Default/MaterialMetallic" + ext) RenderThread vkc with
+                | Right textureInternal -> EagerTexture textureInternal
                 | Left error -> failwith ("Could not load material metallic texture due to: " + error)
             let ambientOcclusionTexture =
-                match Hl.tryCreateTextureVulkan false true ColorCompression ("Assets/Default/MaterialAmbientOcclusion" + ext) RenderThread vkc with
-                | Right (metadata, vulkanTexture) -> EagerTexture { TextureMetadata = metadata; TextureParallel = vulkanTexture }
+                match Hl.tryCreateTextureInternal false true ColorCompression ("Assets/Default/MaterialAmbientOcclusion" + ext) RenderThread vkc with
+                | Right textureInternal -> EagerTexture textureInternal
                 | Left error -> failwith ("Could not load material ambient occlusion texture due to: " + error)
             let emissionTexture =
-                match Hl.tryCreateTextureVulkan false true ColorCompression ("Assets/Default/MaterialEmission" + ext) RenderThread vkc with
-                | Right (metadata, vulkanTexture) -> EagerTexture { TextureMetadata = metadata; TextureParallel = vulkanTexture }
+                match Hl.tryCreateTextureInternal false true ColorCompression ("Assets/Default/MaterialEmission" + ext) RenderThread vkc with
+                | Right textureInternal -> EagerTexture textureInternal
                 | Left error -> failwith ("Could not load material emission texture due to: " + error)
             let normalTexture =
-                match Hl.tryCreateTextureVulkan false true NormalCompression ("Assets/Default/MaterialNormal" + ext) RenderThread vkc with
-                | Right (metadata, vulkanTexture) -> EagerTexture { TextureMetadata = metadata; TextureParallel = vulkanTexture }
+                match Hl.tryCreateTextureInternal false true NormalCompression ("Assets/Default/MaterialNormal" + ext) RenderThread vkc with
+                | Right textureInternal -> EagerTexture textureInternal
                 | Left error -> failwith ("Could not load material normal texture due to: " + error)
             let heightTexture =
-                match Hl.tryCreateTextureVulkan false true ColorCompression ("Assets/Default/MaterialHeight" + ext) RenderThread vkc with
-                | Right (metadata, vulkanTexture) -> EagerTexture { TextureMetadata = metadata; TextureParallel = vulkanTexture }
+                match Hl.tryCreateTextureInternal false true ColorCompression ("Assets/Default/MaterialHeight" + ext) RenderThread vkc with
+                | Right textureInternal -> EagerTexture textureInternal
                 | Left error -> failwith ("Could not load material height texture due to: " + error)
             let subdermalTexture =
-                match Hl.tryCreateTextureVulkan false true ColorCompression ("Assets/Default/MaterialSubdermal" + ext) RenderThread vkc with
-                | Right (metadata, vulkanTexture) -> EagerTexture { TextureMetadata = metadata; TextureParallel = vulkanTexture }
+                match Hl.tryCreateTextureInternal false true ColorCompression ("Assets/Default/MaterialSubdermal" + ext) RenderThread vkc with
+                | Right textureInternal -> EagerTexture textureInternal
                 | Left error -> failwith ("Could not load material subdermal texture due to: " + error)
             let finenessTexture =
-                match Hl.tryCreateTextureVulkan false true ColorCompression ("Assets/Default/MaterialFineness" + ext) RenderThread vkc with
-                | Right (metadata, vulkanTexture) -> EagerTexture { TextureMetadata = metadata; TextureParallel = vulkanTexture }
+                match Hl.tryCreateTextureInternal false true ColorCompression ("Assets/Default/MaterialFineness" + ext) RenderThread vkc with
+                | Right textureInternal -> EagerTexture textureInternal
                 | Left error -> failwith ("Could not load material fineness texture due to: " + error)
             let scatterTexture =
-                match Hl.tryCreateTextureVulkan false true ColorCompression ("Assets/Default/MaterialSubdermal" + ext) RenderThread vkc with
-                | Right (metadata, vulkanTexture) -> EagerTexture { TextureMetadata = metadata; TextureParallel = vulkanTexture }
+                match Hl.tryCreateTextureInternal false true ColorCompression ("Assets/Default/MaterialSubdermal" + ext) RenderThread vkc with
+                | Right textureInternal -> EagerTexture textureInternal
                 | Left error -> failwith ("Could not load material scatter texture due to: " + error)
             let clearCoatTexture =
-                match Hl.tryCreateTextureVulkan false true ColorCompression ("Assets/Default/MaterialClearCoat" + ext) RenderThread vkc with
-                | Right (metadata, vulkanTexture) -> EagerTexture { TextureMetadata = metadata; TextureParallel = vulkanTexture }
+                match Hl.tryCreateTextureInternal false true ColorCompression ("Assets/Default/MaterialClearCoat" + ext) RenderThread vkc with
+                | Right textureInternal -> EagerTexture textureInternal
                 | Left error -> failwith ("Could not load material clear coat texture due to: " + error)
             let clearCoatRoughnessTexture =
-                match Hl.tryCreateTextureVulkan false true ColorCompression ("Assets/Default/MaterialClearCoatRoughness" + ext) RenderThread vkc with
-                | Right (metadata, vulkanTexture) -> EagerTexture { TextureMetadata = metadata; TextureParallel = vulkanTexture }
+                match Hl.tryCreateTextureInternal false true ColorCompression ("Assets/Default/MaterialClearCoatRoughness" + ext) RenderThread vkc with
+                | Right textureInternal -> EagerTexture textureInternal
                 | Left error -> failwith ("Could not load material clear coat roughness texture due to: " + error)
             let clearCoatNormalTexture =
-                match Hl.tryCreateTextureVulkan false true NormalCompression ("Assets/Default/MaterialClearCoatNormal" + ext) RenderThread vkc with
-                | Right (metadata, vulkanTexture) -> EagerTexture { TextureMetadata = metadata; TextureParallel = vulkanTexture }
+                match Hl.tryCreateTextureInternal false true NormalCompression ("Assets/Default/MaterialClearCoatNormal" + ext) RenderThread vkc with
+                | Right textureInternal -> EagerTexture textureInternal
                 | Left error -> failwith ("Could not load material clear coat normal texture due to: " + error)
             { AlbedoTexture = albedoTexture
               RoughnessTexture = roughnessTexture

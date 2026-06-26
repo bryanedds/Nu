@@ -153,7 +153,8 @@ module SpriteBatch =
                             sprite.rotation <- env.Rotations[i]
                             sprite.texCoords <- env.TexCoordses[i]
                             sprite.color <- env.Colors[i]
-                            Buffer.uploadSubdata (i * spriteSize) 0 spriteSize 1 (NativePtr.toNativeInt spritePtr) env.SpritesUniform env.VulkanContext
+                            Buffer.writeSubdata (i * spriteSize) 0 spriteSize 1 (NativePtr.toNativeInt spritePtr) env.SpritesUniform env.VulkanContext
+                        Buffer.flushSubdata 0 0 spriteSize env.SpriteIndex env.SpritesUniform env.VulkanContext
                         Pipeline.writeDescriptorStorageBuffer 0 0 env.SpritesUniform vkSet env.VulkanContext
 
                         // specify viewProjection

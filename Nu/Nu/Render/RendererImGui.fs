@@ -398,9 +398,9 @@ type VulkanRendererImGui
 
             // create the font atlas texture
             let metadata = TextureMetadata.make fontWidth fontHeight
-            let textureParallel = TextureParallel.create MipmapNone AttachmentNone Texture2d [||] Uncompressed.ImageFormat Rgba metadata vkc
-            TextureParallel.upload metadata 0 0 pixels RenderThread textureParallel vkc
-            fontTexture <- EagerTexture { TextureMetadata = metadata; TextureParallel = textureParallel }
+            let textureInternal = TextureInternal.create MipmapNone AttachmentNone Texture2d [||] Uncompressed.ImageFormat Rgba metadata vkc
+            TextureInternal.upload metadata 0 0 pixels RenderThread textureInternal vkc
+            fontTexture <- EagerTexture textureInternal
             
             // create samplers
             fontSampler <- Sampler.create VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false vkc
@@ -465,9 +465,9 @@ type VulkanRendererImGui
                 if not (assetTextureOpts.ContainsKey assetTag) then
                     match Metadata.tryGetFilePath assetTag with
                     | Some filePath ->
-                        match Hl.tryCreateTextureVulkan true false (Hl.inferTextureCompression filePath) filePath RenderThread vkc with
-                        | Right (_, textureParallel) ->
-                            let texture = EagerTexture { TextureMetadata = TextureMetadata.empty; TextureParallel = textureParallel }
+                        match Hl.tryCreateTextureInternal true false (Hl.inferTextureCompression filePath) filePath RenderThread vkc with
+                        | Right textureInternal ->
+                            let texture = EagerTexture textureInternal
                             let textureId = textureIdCounter
                             textureIdCounter <- inc textureIdCounter
                             assetTextureStorage.Add (textureId, texture)

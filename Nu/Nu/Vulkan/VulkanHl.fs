@@ -311,10 +311,6 @@ module Hl =
     /// Index of the current Swapchain image.
     let mutable internal ImageIndex = 0u
 
-    /// The current frame within MaxFramesInFlight.
-    /// TODO: DJL: figure out how to prevent potential outside mutation.
-    let mutable internal CurrentFrame = 0
-
     /// The forward-declared empty texture value.
     /// Initialized in RendererProcesses.
     /// NOTE: if performance issues arise from checking / casting this, maybe use ValueOption or null directly.

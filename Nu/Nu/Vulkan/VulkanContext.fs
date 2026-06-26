@@ -494,16 +494,16 @@ type Swapchain =
         
         // swapchain index starts at zero
         let swapchainIndex = 0
-        
+
         // create SwapchainSingleton array
         // NOTE: DJL: must allow for frames in flight plus 1 to prevent destroying semaphores while still in use
         // because swapchain can be refreshed at the end of one frame AND at the beginning of the next,
         // but can still only be refreshed once per frame.
-        let swapchainSingletonOpts = Array.create (Constants.Vulkan.MaxFramesInFlight + 1) None
-        
+        let swapchainSingletonOpts = Array.create 1 None
+
         // check if window is minimized at startup
         let windowMinimized = Swapchain.isWindowMinimized window
-        
+
         // try create first SwapchainSingleton if window is not minimized or app paused
         if not (windowMinimized || Hl.getBackgroundingRequested ()) then
             let swapchainSingletonOpt = SwapchainSingleton.tryCreate surfaceFormat VkSwapchainKHR.Null physicalDevice window device
@@ -522,7 +522,7 @@ type Swapchain =
     /// Destroy a Swapchain.
     static member destroy swapchain device =
         Swapchain.clear swapchain device
-    
+
 /// Exposes the vulkan handles that must be globally accessible within the renderer.
 type [<ReferenceEquality>] VulkanContext =
     private
@@ -537,12 +537,12 @@ type [<ReferenceEquality>] VulkanContext =
           RenderCommandPool_ : VkCommandPool
           TransientCommandPool_ : VkCommandPool
           TextureCommandPool_ : VkCommandPool
-          RenderCommandBuffers_ : VkCommandBuffer array
+          RenderCommandBuffer_ : VkCommandBuffer
           RenderQueue_ : CommandQueue
           PresentQueue_ : CommandQueue
           TextureQueue_ : CommandQueue
-          ImageAvailableSemaphores_ : VkSemaphore array
-          InFlightFences_ : VkFence array
+          ImageAvailableSemaphore_ : VkSemaphore
+          InFlightFence_ : VkFence
           TransientFence_ : VkFence
           TextureFence_ : VkFence }
 
@@ -571,7 +571,7 @@ type [<ReferenceEquality>] VulkanContext =
     member this.TextureCommandPool = this.TextureCommandPool_
     
     /// The render command buffer for the current frame.
-    member this.RenderCommandBuffer = this.RenderCommandBuffers_[Hl.CurrentFrame]
+    member this.RenderCommandBuffer = this.RenderCommandBuffer_
 
     /// The render command queue.
     member this.RenderQueue = this.RenderQueue_
@@ -580,13 +580,13 @@ type [<ReferenceEquality>] VulkanContext =
     member this.TextureQueue = this.TextureQueue_
 
     /// The image available semaphore for the current frame.
-    member this.ImageAvailableSemaphore = this.ImageAvailableSemaphores_[Hl.CurrentFrame]
+    member this.ImageAvailableSemaphore = this.ImageAvailableSemaphore_
 
     /// The render finished semaphore for the current frame.
     member this.RenderFinishedSemaphore = this.Swapchain_.RenderFinishedSemaphore
 
     /// The in flight fence for the current frame.
-    member this.InFlightFence = this.InFlightFences_[Hl.CurrentFrame]
+    member this.InFlightFence = this.InFlightFence_
 
     /// The texture fence.
     member this.TextureFence = this.TextureFence_
@@ -638,7 +638,7 @@ type [<ReferenceEquality>] VulkanContext =
         // finish passively
         ignore pUserData
         0u
-    
+
     static member private makeDebugMessengerInfo () =
         Hl.DebugDelegate <- DebugDelegate VulkanContext.debugCallback
         let mutable info = VkDebugUtilsMessengerCreateInfoEXT_hack ()
@@ -868,20 +868,16 @@ type [<ReferenceEquality>] VulkanContext =
         commandPool
 
     /// Allocate an array of command buffers for each frame in flight.
-    static member private allocateFifCommandBuffers commandPool device =
-        Hl.allocateCommandBuffers Constants.Vulkan.MaxFramesInFlight commandPool device
+    static member private allocateCommandBuffers count commandPool device =
+        Hl.allocateCommandBuffers count commandPool device
     
     /// Create image available semaphores.
-    static member private createImageAvailableSemaphores device =
-        let semaphores = Array.zeroCreate<VkSemaphore> Constants.Vulkan.MaxFramesInFlight
-        for i in 0 .. dec semaphores.Length do semaphores[i] <- Hl.createSemaphore device
-        semaphores
+    static member private createImageAvailableSemaphore device =
+        Hl.createSemaphore device
 
     /// Create in-flight fences.
-    static member private createInFlightFences device =
-        let fences = Array.zeroCreate<VkFence> Constants.Vulkan.MaxFramesInFlight
-        for i in 0 .. dec fences.Length do fences[i] <- Hl.createFence true device
-        fences
+    static member private createInFlightFence device =
+        Hl.createFence true device
 
     /// Handle changes in window size, and check for minimization.
     static member private handleWindowSize vkc =
@@ -1009,10 +1005,6 @@ type [<ReferenceEquality>] VulkanContext =
             // this is valid because RenderFinishedSemaphore will be destroyed
             else Swapchain.update vkc.PhysicalDevice_ vkc.RenderQueue_ vkc.PresentQueue_ vkc.Swapchain_ vkc.Device vkc.Instance_
 
-        // advance frame in flight
-        // NOTE: DJL: this MUST happen EVERY frame regardless of RenderDesired_ otherwise fence security is broken.
-        Hl.CurrentFrame <- inc Hl.CurrentFrame % Constants.Vulkan.MaxFramesInFlight
-
     /// Wait for all device operations to complete before cleaning up resources.
     static member waitIdle (vkc : VulkanContext) =
         
@@ -1074,11 +1066,11 @@ type [<ReferenceEquality>] VulkanContext =
             
             // setup execution for rendering on render thread
             let renderCommandPool = VulkanContext.createCommandPool false physicalDevice.GraphicsQueueFamily device
-            let renderCommandBuffers = VulkanContext.allocateFifCommandBuffers renderCommandPool device
-            let inFlightFences = VulkanContext.createInFlightFences device
+            let renderCommandBuffer = (VulkanContext.allocateCommandBuffers 1 renderCommandPool device).[0]
+            let inFlightFence = VulkanContext.createInFlightFence device
             
             // setup execution for presentation on render thread
-            let imageAvailableSemaphores = VulkanContext.createImageAvailableSemaphores device
+            let imageAvailableSemaphore = VulkanContext.createImageAvailableSemaphore device
             
             // setup transient (one time) execution on render thread
             let transientCommandPool = VulkanContext.createCommandPool true physicalDevice.GraphicsQueueFamily device
@@ -1105,12 +1097,12 @@ type [<ReferenceEquality>] VulkanContext =
                   RenderCommandPool_ = renderCommandPool
                   TransientCommandPool_ = transientCommandPool
                   TextureCommandPool_ = textureCommandPool
-                  RenderCommandBuffers_ = renderCommandBuffers
+                  RenderCommandBuffer_ = renderCommandBuffer
                   RenderQueue_ = renderQueue
                   PresentQueue_ = presentQueue
                   TextureQueue_ = textureQueue
-                  ImageAvailableSemaphores_ = imageAvailableSemaphores
-                  InFlightFences_ = inFlightFences
+                  ImageAvailableSemaphore_ = imageAvailableSemaphore
+                  InFlightFence_ = inFlightFence
                   TransientFence_ = transientFence
                   TextureFence_ = textureFence }
 
@@ -1124,8 +1116,8 @@ type [<ReferenceEquality>] VulkanContext =
     /// NOTE: intended to be invoked from the main thread.
     static member cleanup vkc =
         Swapchain.destroy vkc.RenderQueue_ vkc.PresentQueue_ vkc.Swapchain_ vkc.Device
-        for i in 0 .. dec vkc.ImageAvailableSemaphores_.Length do Vulkan.vkDestroySemaphore (vkc.Device, vkc.ImageAvailableSemaphores_[i], nullPtr)
-        for i in 0 .. dec vkc.InFlightFences_.Length do Vulkan.vkDestroyFence (vkc.Device, vkc.InFlightFences_[i], nullPtr)
+        Vulkan.vkDestroySemaphore (vkc.Device, vkc.ImageAvailableSemaphore_, nullPtr)
+        Vulkan.vkDestroyFence (vkc.Device, vkc.InFlightFence_, nullPtr)
         Vulkan.vkDestroyFence (vkc.Device, vkc.TextureFence, nullPtr)
         Vulkan.vkDestroyFence (vkc.Device, vkc.TransientFence, nullPtr)
         Vulkan.vkDestroyCommandPool (vkc.Device, vkc.RenderCommandPool_, nullPtr)

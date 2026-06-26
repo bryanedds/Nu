@@ -78,8 +78,8 @@ and DescriptorSet<'k when 'k : equality> =
         { DescriptorSetDefinition_ : DescriptorSetDefinition
           VkDescriptorSetLayout_ : VkDescriptorSetLayout
           VkDescriptorPools_ : VkDescriptorPool List
-          VkDescriptorSets_ : Dictionary<'k, VkDescriptorSet> array
-          mutable VkDescriptorSetsAvailable_ : VkDescriptorSet Queue array }
+          VkDescriptorSets_ : Dictionary<'k, VkDescriptorSet>
+          mutable VkDescriptorSetsAvailable_ : VkDescriptorSet Queue }
 
     static member private createDescriptorPool (capacity : int) (descriptorSetDefinition : DescriptorSetDefinition) (vkc : VulkanContext) =
 
@@ -105,18 +105,17 @@ and DescriptorSet<'k when 'k : equality> =
         descriptorPool
 
     static member private allocateVkDescriptorSets capacity descriptorSetDefinitions descriptorSetLayout vkc =
-        let vkDescriptorPool = DescriptorSet.createDescriptorPool (capacity * Constants.Vulkan.MaxFramesInFlight) descriptorSetDefinitions vkc
-        let vkDescriptorSetLayouts = Array.create<VkDescriptorSetLayout> (capacity * Constants.Vulkan.MaxFramesInFlight) descriptorSetLayout
+        let vkDescriptorPool = DescriptorSet.createDescriptorPool capacity descriptorSetDefinitions vkc
+        let vkDescriptorSetLayouts = Array.create<VkDescriptorSetLayout> capacity descriptorSetLayout
         use vkDescriptorSetLayoutsPin = new ArrayPin<_> (vkDescriptorSetLayouts)
         let mutable info = VkDescriptorSetAllocateInfo ()
         info.descriptorPool <- vkDescriptorPool
         info.descriptorSetCount <- uint vkDescriptorSetLayouts.Length
         info.pSetLayouts <- vkDescriptorSetLayoutsPin.Pointer
-        let vkDescriptorSets = Array.zeroCreate<VkDescriptorSet> (capacity * Constants.Vulkan.MaxFramesInFlight)
+        let vkDescriptorSets = Array.zeroCreate<VkDescriptorSet> capacity
         use vkDescriptorSetsPin = new ArrayPin<_> (vkDescriptorSets)
         Vulkan.vkAllocateDescriptorSets (vkc.Device, asPointer &info, vkDescriptorSetsPin.Pointer) |> Hl.check
-        let vkDescriptorSets = vkDescriptorSets |> Array.chunkBySize capacity |> Array.map Queue
-        (vkDescriptorPool, vkDescriptorSets)
+        (vkDescriptorPool, Queue vkDescriptorSets)
 
     static member create<'a when 'a : equality> capacity (descriptorSetDefinition : 'a DescriptorSetDefinition) vkDescriptorSetLayout (vkc : VulkanContext) : 'a DescriptorSet =
 
@@ -129,7 +128,7 @@ and DescriptorSet<'k when 'k : equality> =
             { DescriptorSetDefinition_ = descriptorSetDefinition
               VkDescriptorSetLayout_ = vkDescriptorSetLayout
               VkDescriptorPools_ = List [vkDescriptorPool]
-              VkDescriptorSets_ = Array.init Constants.Vulkan.MaxFramesInFlight (fun _ -> dictPlus<'a, VkDescriptorSet> HashIdentity.Structural [])
+              VkDescriptorSets_ = dictPlus<'a, VkDescriptorSet> HashIdentity.Structural []
               VkDescriptorSetsAvailable_ = vkDescriptorSets }
 
         // fin
@@ -138,24 +137,24 @@ and DescriptorSet<'k when 'k : equality> =
     interface DescriptorSet with
 
         member this.BeginFrame () =
-            for entry in this.VkDescriptorSets_[Hl.CurrentFrame] do
-                this.VkDescriptorSetsAvailable_[Hl.CurrentFrame].Enqueue entry.Value
-            this.VkDescriptorSets_[Hl.CurrentFrame].Clear ()
+            for entry in this.VkDescriptorSets_ do
+                this.VkDescriptorSetsAvailable_.Enqueue entry.Value
+            this.VkDescriptorSets_.Clear ()
 
         member this.Specify (keyObj : obj) (vkc : VulkanContext) (specify : VkDescriptorSet -> unit) : VkDescriptorSet =
             let key = keyObj :?> 'k
-            match this.VkDescriptorSets_[Hl.CurrentFrame].TryGetValue key with
+            match this.VkDescriptorSets_.TryGetValue key with
             | (false, _) ->
                 let mutable vkDescriptorSet = Unchecked.defaultof<_>
-                let found = this.VkDescriptorSetsAvailable_[Hl.CurrentFrame].TryDequeue &vkDescriptorSet
+                let found = this.VkDescriptorSetsAvailable_.TryDequeue &vkDescriptorSet
                 if not found then
-                    let count = this.VkDescriptorSets_[Hl.CurrentFrame].Count
+                    let count = this.VkDescriptorSets_.Count
                     let (vkDescriptorPool, vkDescriptorSets) =
                         DescriptorSet<_>.allocateVkDescriptorSets count this.DescriptorSetDefinition_ this.VkDescriptorSetLayout_ vkc
                     this.VkDescriptorPools_.Add vkDescriptorPool
                     this.VkDescriptorSetsAvailable_ <- vkDescriptorSets
-                    vkDescriptorSet <- this.VkDescriptorSetsAvailable_[Hl.CurrentFrame].Dequeue ()
-                this.VkDescriptorSets_[Hl.CurrentFrame].Add (key, vkDescriptorSet)
+                    vkDescriptorSet <- this.VkDescriptorSetsAvailable_.Dequeue ()
+                this.VkDescriptorSets_.Add (key, vkDescriptorSet)
                 specify vkDescriptorSet
                 vkDescriptorSet
             | (true, vkDescriptorSet) -> vkDescriptorSet
