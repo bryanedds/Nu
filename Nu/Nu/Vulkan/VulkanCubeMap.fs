@@ -313,8 +313,8 @@ module CubeMap =
                     Pipeline.writeDescriptorSampler 0 0 sampler vkSet vkc
 
                 // set up render
-                let mutable rendering = Hl.makeRenderingInfo [|colorAttachment|] None renderArea None
-                Vulkan.vkCmdBeginRendering (commandBuffer, asPointer &rendering)
+                let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment|] None renderArea None
+                Vulkan.vkCmdBeginRendering (commandBuffer, asPointer &renderingInfo)
                 Vulkan.vkCmdBindPipeline (commandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
                 Vulkan.vkCmdSetViewport (commandBuffer, 0u, 1u, asPointer &vkViewport)
                 Vulkan.vkCmdSetScissor (commandBuffer, 0u, 1u, asPointer &renderArea)

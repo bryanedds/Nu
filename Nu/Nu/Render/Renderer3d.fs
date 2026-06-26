@@ -2579,8 +2579,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let (compositionTexture, compositionZTexture) = renderer.PhysicallyBasedAttachments.CompositionAttachments
         let (depthTexture, albedoTexture, materialTexture, normalPlusTexture, subdermalPlusTexture, scatterPlusTexture, clearCoatPlusTexture, _) = renderer.PhysicallyBasedAttachments.GeometryAttachments
         let geometryImageViewArray = [|depthTexture.ImageView; albedoTexture.ImageView; materialTexture.ImageView; normalPlusTexture.ImageView; subdermalPlusTexture.ImageView; scatterPlusTexture.ImageView; clearCoatPlusTexture.ImageView|]
-        let mutable rendering = Hl.makeRenderingInfo geometryImageViewArray (Some compositionZTexture.ImageView) renderArea (Some clearColor)
-        Vulkan.vkCmdBeginRendering (renderer.VulkanContext.RenderCommandBuffer, asPointer &rendering)
+        let mutable renderingInfo = Hl.makeRenderingInfo geometryImageViewArray (Some compositionZTexture.ImageView) renderArea (Some clearColor)
+        Vulkan.vkCmdBeginRendering (renderer.VulkanContext.RenderCommandBuffer, asPointer &renderingInfo)
         Vulkan.vkCmdEndRendering renderer.VulkanContext.RenderCommandBuffer
 
         // begin deferred static surfaces
@@ -2680,8 +2680,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         Texture.transitionLayoutAsync ColorAttachmentWrite ShaderRead depthTexture2 renderer.VulkanContext.RenderCommandBuffer
         
         // setup composition attachment
-        let mutable rendering = Hl.makeRenderingInfo [|compositionTexture.ImageView|] None renderArea (Some clearColor)
-        Vulkan.vkCmdBeginRendering (renderer.VulkanContext.RenderCommandBuffer, asPointer &rendering)
+        let mutable renderingInfo = Hl.makeRenderingInfo [|compositionTexture.ImageView|] None renderArea (Some clearColor)
+        Vulkan.vkCmdBeginRendering (renderer.VulkanContext.RenderCommandBuffer, asPointer &renderingInfo)
         Vulkan.vkCmdEndRendering renderer.VulkanContext.RenderCommandBuffer
         
         

@@ -1810,8 +1810,8 @@ module PhysicallyBased =
                         Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.BoneUniform vkSet vkc
 
                     // set up render
-                    let mutable rendering = Hl.makeRenderingInfo colorAttachments (Some depthAttachment.ImageView) renderArea None
-                    Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &rendering)
+                    let mutable renderingInfo = Hl.makeRenderingInfo colorAttachments (Some depthAttachment.ImageView) renderArea None
+                    Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &renderingInfo)
                     Vulkan.vkCmdBindPipeline (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
                     Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, asPointer &vkViewport)
                     Vulkan.vkCmdSetScissor (vkc.RenderCommandBuffer, 0u, 1u, asPointer &renderArea)
@@ -2318,8 +2318,8 @@ module PhysicallyBased =
                     Pipeline.writeDescriptorSampledImages 9 0 shadowCascades vkSet vkc
 
                 // set up render
-                let mutable rendering = Hl.makeRenderingInfo [|colorAttachment.ImageView|] (Some depthAttachment.ImageView) renderArea None
-                Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &rendering)
+                let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] (Some depthAttachment.ImageView) renderArea None
+                Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &renderingInfo)
                 Vulkan.vkCmdBindPipeline (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
                 Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, asPointer &vkViewport)
                 Vulkan.vkCmdSetScissor (vkc.RenderCommandBuffer, 0u, 1u, asPointer &renderArea)

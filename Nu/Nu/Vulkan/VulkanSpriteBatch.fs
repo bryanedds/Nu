@@ -172,8 +172,8 @@ module SpriteBatch =
                         Pipeline.writeDescriptorSampler 0 0 sampler vkSet env.VulkanContext
     
                     // set up render
-                    let mutable rendering = Hl.makeRenderingInfo [|env.VulkanContext.SwapchainImageView|] None renderArea None
-                    Vulkan.vkCmdBeginRendering (env.VulkanContext.RenderCommandBuffer, asPointer &rendering)
+                    let mutable renderingInfo = Hl.makeRenderingInfo [|env.VulkanContext.SwapchainImageView|] None renderArea None
+                    Vulkan.vkCmdBeginRendering (env.VulkanContext.RenderCommandBuffer, asPointer &renderingInfo)
                     Vulkan.vkCmdBindPipeline (env.VulkanContext.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
                     Vulkan.vkCmdSetViewport (env.VulkanContext.RenderCommandBuffer, 0u, 1u, asPointer &vkViewport)
                     Vulkan.vkCmdSetScissor (env.VulkanContext.RenderCommandBuffer, 0u, 1u, asPointer &scissor)

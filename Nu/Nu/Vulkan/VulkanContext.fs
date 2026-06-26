@@ -957,15 +957,15 @@ type [<ReferenceEquality>] VulkanContext =
             // clear screen
             let renderArea = VkRect2D (VkOffset2D.Zero, vkc.Swapchain_.SwapExtent)
             let clearColor = VkClearValue (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
-            let mutable rendering = Hl.makeRenderingInfo [|vkc.SwapchainImageView|] None renderArea (Some clearColor)
-            Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &rendering)
+            let mutable renderingInfo = Hl.makeRenderingInfo [|vkc.SwapchainImageView|] None renderArea (Some clearColor)
+            Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &renderingInfo)
             Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
             // clear viewport
             let renderArea = VkRect2D (windowViewport.Bounds.Min.X, windowViewport.Bounds.Min.Y, uint windowViewport.Bounds.Size.X, uint windowViewport.Bounds.Size.Y)
             let clearColor = VkClearValue (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
-            let mutable rendering = Hl.makeRenderingInfo [|vkc.SwapchainImageView|] None renderArea (Some clearColor)
-            Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &rendering)
+            let mutable renderingInfo = Hl.makeRenderingInfo [|vkc.SwapchainImageView|] None renderArea (Some clearColor)
+            Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &renderingInfo)
             Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
     /// End the frame.
