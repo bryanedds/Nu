@@ -332,13 +332,17 @@
          ============================================================ -->
 
     <Target Name="CreateMacOSAppBundle" AfterTargets="Publish"
-            Condition="$(BuildingMacOS) And '$(Configuration)' == 'Release' And '$(ApplicationTitle)' != ''">
+            Condition="$(BuildingMacOS) And '$(Configuration)' == 'Release' And @(MacOSPlistTemplate->Count()) > 0">
+        <Error Condition="@(MacOSPlistTemplate->Count()) > 1"
+               Text="Multiple &lt;MacOSPlistTemplate&gt; items were found. Please only specify one for macOS .app bundle creation." />
         <PropertyGroup>
+            <ApplicationTitle Condition="'$(ApplicationTitle)' == ''">$(MSBuildProjectName)</ApplicationTitle>
             <_MacOSAppBundleDir>$(MSBuildProjectDirectory)/bin/$(Configuration)/$(ApplicationTitle).app</_MacOSAppBundleDir>
             <_MacOSAppContentsDir>$(_MacOSAppBundleDir)/Contents</_MacOSAppContentsDir>
             <_MacOSAppMacOSDir>$(_MacOSAppContentsDir)/MacOS</_MacOSAppMacOSDir>
             <_MacOSAppResourcesDir>$(_MacOSAppContentsDir)/Resources</_MacOSAppResourcesDir>
-            <_MacOSPlistContent>$([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)/App/macOS Info.plist').Replace('@ApplicationTitle@', '$(ApplicationTitle)').Replace('@ApplicationId@', '$(ApplicationId)').Replace('@ApplicationDisplayVersion@', '$(ApplicationDisplayVersion)').Replace('@ApplicationVersion@', '$(ApplicationVersion)'))</_MacOSPlistContent>
+            <_MacOSPlistTemplatePath>@(MacOSPlistTemplate)</_MacOSPlistTemplatePath>
+            <_MacOSPlistContent>$([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)/$(_MacOSPlistTemplatePath)').Replace('@ApplicationTitle@', '$(ApplicationTitle)').Replace('@ApplicationId@', '$(ApplicationId)').Replace('@ApplicationDisplayVersion@', '$(ApplicationDisplayVersion)').Replace('@ApplicationVersion@', '$(ApplicationVersion)'))</_MacOSPlistContent>
         </PropertyGroup>
 
         <!-- Clean previous bundle -->
@@ -363,13 +367,8 @@
         <MakeDir Directories="$(_MacOSAppResourcesDir)/vulkan/icd.d" />
         <Exec Command="mv &quot;$(_MacOSAppMacOSDir)/vulkan/icd.d/&quot;*_icd.json &quot;$(_MacOSAppResourcesDir)/vulkan/icd.d/&quot; 2>/dev/null || true" />
         <Exec Command="rm -rf &quot;$(_MacOSAppMacOSDir)/vulkan&quot;" />
-        <!-- Remove MoltenVK ICD (iOS-only, conflicts with KosmicKrisp on macOS) -->
-        <Delete Files="$(_MacOSAppResourcesDir)/vulkan/icd.d/MoltenVK_icd.json"
-                Condition="Exists('$(_MacOSAppResourcesDir)/vulkan/icd.d/MoltenVK_icd.json')" />
         <!-- Fix library_path in ICD JSONs: Resources/vulkan/icd.d needs ../../../MacOS/ -->
         <Exec Command="find &quot;$(_MacOSAppResourcesDir)/vulkan/icd.d&quot; -name '*_icd.json' -exec sed -i '' 's|\&quot;../../lib|\&quot;../../../MacOS/lib|g' {} \;" />
-        <!-- Remove MoltenVK dylib from macOS bundle -->
-        <Exec Command="rm -f &quot;$(_MacOSAppMacOSDir)&quot;/libMoltenVK*" />
 
         <!-- Ad-hoc code sign for local distribution -->
         <Exec Command="find &quot;$(_MacOSAppMacOSDir)&quot; -maxdepth 1 -name '*.dylib' -print0 | xargs -0 -I{} codesign --force --sign - {}"
