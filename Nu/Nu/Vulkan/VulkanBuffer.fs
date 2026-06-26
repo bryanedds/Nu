@@ -174,9 +174,9 @@ type BufferInternal =
                             let ptr = NativePtr.add (NativePtr.nativeintToBytePtr data) (i * size)
                             NativePtr.memCopy (offset + i * stride) size (NativePtr.toVoidPtr ptr) bufferInternal.Mapping_
 
-                else Log.warn "Data upload to Vulkan buffer failed because it exceeded the size of that buffer."
-            else Log.warn "Data upload to Vulkan buffer failed because 'size' argument was less than or equal to zero."
-        else Log.warn "Data upload to Vulkan buffer failed because upload was not enabled for that buffer."
+                else Log.warn "Write to Vulkan buffer failed because it exceeded the size of that buffer."
+            else Log.warn "Write to Vulkan buffer failed because 'size' argument was less than or equal to zero."
+        else Log.warn "Write to Vulkan buffer failed because upload was not enabled for that buffer."
 
     /// Flush data to buffer if upload is enabled.
     static member flush offset alignment size count bufferInternal (vkc : VulkanContext) =
@@ -192,9 +192,9 @@ type BufferInternal =
                     | Vma vmaAllocation -> Vma.vmaFlushAllocation (vkc.VmaAllocator, vmaAllocation, uint64 offset, uint64 (stride * count)) |> Hl.check
                     | Manual _ -> () // currently no point bothering
 
-                else Log.warn "Data upload to Vulkan buffer failed because it exceeded the size of that buffer."
-            else Log.warn "Data upload to Vulkan buffer failed because 'size' argument was less than or equal to zero."
-        else Log.warn "Data upload to Vulkan buffer failed because upload was not enabled for that buffer."
+                else Log.warn "Flush of Vulkan buffer failed because it exceeded the size of that buffer."
+            else Log.warn "Flush of Vulkan buffer failed because 'size' argument was less than or equal to zero."
+        else Log.warn "Flush of Vulkan buffer failed because upload was not enabled for that buffer."
 
     /// Destroy buffer and allocation.
     static member destroy (bufferInternal : BufferInternal) (vkc : VulkanContext) =
