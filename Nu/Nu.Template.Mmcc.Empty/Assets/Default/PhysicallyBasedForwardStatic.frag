@@ -117,7 +117,6 @@ layout(set = 1, binding = 4) uniform texture2D emissionTexture;
 layout(set = 1, binding = 5) uniform texture2D normalTexture;
 layout(set = 1, binding = 6) uniform texture2D heightTexture;
 
-// NOTE: (set = 2, binding = 0) unused in static rendering.
 layout(set = 2, binding = 1) buffer readonly LightMapBlock { LightMap lightMaps[LIGHT_MAPS_MAX]; };
 layout(set = 2, binding = 2) buffer readonly LightsGeneralBlock { LightsGeneral lightsGeneral; };
 layout(set = 2, binding = 3) buffer readonly LightBlock { Light lights[LIGHTS_MAX]; };

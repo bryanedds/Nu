@@ -151,12 +151,13 @@ module SpriteBatch =
                         use spritePtr = fixed &sprite
                         let spriteSize = sizeof<Sprite>
                         for i in 0 .. dec env.SpriteIndex do
-                            sprite.perimeter <- env.Perimeters.[i]
-                            sprite.pivot <- env.Pivots.[i]
-                            sprite.rotation <- env.Rotations.[i]
-                            sprite.texCoords <- env.TexCoordses.[i]
-                            sprite.color <- env.Colors.[i]
-                            Buffer.uploadSubdata (i * spriteSize) 0 spriteSize 1 (NativePtr.toNativeInt spritePtr) env.SpritesUniform env.VulkanContext
+                            sprite.perimeter <- env.Perimeters[i]
+                            sprite.pivot <- env.Pivots[i]
+                            sprite.rotation <- env.Rotations[i]
+                            sprite.texCoords <- env.TexCoordses[i]
+                            sprite.color <- env.Colors[i]
+                            Buffer.writeSubdata (i * spriteSize) 0 spriteSize 1 (NativePtr.toNativeInt spritePtr) env.SpritesUniform env.VulkanContext
+                        Buffer.flushSubdata 0 0 spriteSize env.SpriteIndex env.SpritesUniform env.VulkanContext
                         Pipeline.writeDescriptorStorageBuffer 0 0 env.SpritesUniform vkSet env.VulkanContext
 
                         // specify viewProjection
@@ -174,11 +175,13 @@ module SpriteBatch =
                         Pipeline.writeDescriptorSampler 0 0 sampler vkSet env.VulkanContext
     
                     // set up render
-                    let mutable rendering = Hl.makeRenderingInfo [|env.VulkanContext.SwapchainImageView|] None renderArea None
-                    Vulkan.vkCmdBeginRendering (env.VulkanContext.RenderCommandBuffer, asPointer &rendering)
-                    Vulkan.vkCmdBindPipeline (env.VulkanContext.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
+                    let mutable renderingInfo = Hl.makeRenderingInfo [|env.VulkanContext.SwapchainImageView|] None renderArea None
+                    Vulkan.vkCmdBeginRendering (env.VulkanContext.RenderCommandBuffer, asPointer &renderingInfo)
                     Vulkan.vkCmdSetViewport (env.VulkanContext.RenderCommandBuffer, 0u, 1u, asPointer &vkViewport)
                     Vulkan.vkCmdSetScissor (env.VulkanContext.RenderCommandBuffer, 0u, 1u, asPointer &scissor)
+                
+                    // set up pipeline
+                    Vulkan.vkCmdBindPipeline (env.VulkanContext.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
 
                     // bind descriptor sets
                     Vulkan.vkCmdBindDescriptorSets (env.VulkanContext.RenderCommandBuffer, VkPipelineBindPoint.Graphics, env.Pipeline.PipelineLayout, 0u, 1u, asPointer &uniformDescriptorSet, 0u, nullPtr)
@@ -237,11 +240,11 @@ module SpriteBatch =
         inline
 #endif
         private populateSpriteBatchVertex (perimeter : Box2) (pivot : Vector2) (rotation : single) (texCoords : Box2) (color : Color) env =
-        env.Perimeters.[env.SpriteIndex] <- v4 perimeter.Min.X perimeter.Min.Y perimeter.Size.X perimeter.Size.Y
-        env.Pivots.[env.SpriteIndex] <- pivot
-        env.Rotations.[env.SpriteIndex] <- rotation
-        env.TexCoordses.[env.SpriteIndex] <- v4 texCoords.Min.X texCoords.Min.Y texCoords.Size.X texCoords.Size.Y
-        env.Colors.[env.SpriteIndex] <- color.V4
+        env.Perimeters[env.SpriteIndex] <- v4 perimeter.Min.X perimeter.Min.Y perimeter.Size.X perimeter.Size.Y
+        env.Pivots[env.SpriteIndex] <- pivot
+        env.Rotations[env.SpriteIndex] <- rotation
+        env.TexCoordses[env.SpriteIndex] <- v4 texCoords.Min.X texCoords.Min.Y texCoords.Size.X texCoords.Size.Y
+        env.Colors[env.SpriteIndex] <- color.V4
 
     /// Submit a sprite to the appropriate sprite batch.
     let submitSpriteBatchSprite (absolute, min : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2 inref, clipOpt : (Box2 voption) inref, color : Color inref, blend, texture : Texture, viewport, env) =

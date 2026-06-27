@@ -24,14 +24,6 @@ type BufferType =
     | Uniform
     | Storage
 
-    member this.IsParallel =
-        match this with
-        | Staging -> false
-        | Vertex uploadEnabled -> uploadEnabled
-        | Index uploadEnabled -> uploadEnabled
-        | Uniform -> true
-        | Storage -> true
-
     static member private makeInfoInternal size usage =
         let mutable info = VkBufferCreateInfo ()
         info.size <- uint64 size
@@ -57,8 +49,8 @@ type BufferType =
         | Uniform -> BufferType.makeInfoInternal size VkBufferUsageFlags.UniformBuffer
         | Storage -> BufferType.makeInfoInternal size VkBufferUsageFlags.StorageBuffer
 
-/// Abstraction for allocated buffer.
-type BufferSingleton =
+/// Internal representation of an allocated buffer.
+type BufferInternal =
     private
         { VkBuffer_ : VkBuffer
           Allocation_ : Allocation
@@ -66,8 +58,11 @@ type BufferSingleton =
           Size_ : int
           UploadEnabled_ : bool }
 
-    /// The VkBuffer.
+    /// The underlying VkBuffer.
     member this.VkBuffer = this.VkBuffer_
+
+    /// The size of the buffer.
+    member this.Size = this.Size_
     
     static member private createManual uploadEnabled bufferInfo (vkc : VulkanContext) =
 
@@ -98,9 +93,9 @@ type BufferSingleton =
         let mappingPtr = NativePtr.stackalloc<voidptr> 1 // must be allocated manually because managed allocation doesn't work
         if uploadEnabled then Vulkan.vkMapMemory (vkc.Device, memory, 0UL, Vulkan.VK_WHOLE_SIZE, VkMemoryMapFlags.None, mappingPtr) |> Hl.check
         let mapping = NativePtr.read mappingPtr
-        
-        // make BufferSingleton
-        let bufferSingleton = 
+
+        // make BufferInternal
+        let bufferInternal = 
             { VkBuffer_ = vkBuffer
               Allocation_ = Manual memory
               Mapping_ = mapping
@@ -108,7 +103,7 @@ type BufferSingleton =
               UploadEnabled_ = uploadEnabled }
 
         // fin
-        bufferSingleton
+        bufferInternal
 
     static member private createVma uploadEnabled bufferInfo (vkc : VulkanContext) =
 
@@ -123,8 +118,8 @@ type BufferSingleton =
         let mutable allocationInfo = Unchecked.defaultof<VmaAllocationInfo>
         Vma.vmaCreateBuffer (vkc.VmaAllocator, &bufferInfo, &info, &vkBuffer, &allocation, asPointer &allocationInfo) |> Hl.check
 
-        // make BufferSingleton
-        let bufferSingleton =
+        // make BufferInternal
+        let bufferInternal =
             { VkBuffer_ = vkBuffer
               Allocation_ = Vma allocation
               Mapping_ = allocationInfo.pMappedData
@@ -132,117 +127,84 @@ type BufferSingleton =
               UploadEnabled_ = uploadEnabled }
 
         // fin
-        bufferSingleton
+        bufferInternal
 
-    /// Create BufferSingleton.
-    static member create uploadEnabled bufferInfo (vkc : VulkanContext) =
-        
+    /// Create BufferInternal.
+    static member createPlus uploadEnabled bufferInfo (vkc : VulkanContext) =
+
         // NOTE: DJL: change this to Manual to bypass VMA and test buffers with manually allocated memory.
         let allocType = Vma Unchecked.defaultof<_>
-        
+
         // create with selected allocation type
         match allocType with
-        | Vma _ -> BufferSingleton.createVma uploadEnabled bufferInfo vkc
-        | Manual _ -> BufferSingleton.createManual uploadEnabled bufferInfo vkc
-    
-    /// Upload data to buffer if upload is enabled, including manual flush.
-    static member upload offset alignment size count data bufferSingleton (vkc : VulkanContext) =
-        if bufferSingleton.UploadEnabled_ then
+        | Vma _ -> BufferInternal.createVma uploadEnabled bufferInfo vkc
+        | Manual _ -> BufferInternal.createManual uploadEnabled bufferInfo vkc
+
+    /// Create BufferInternal.
+    static member create bufferSize bufferType vkc =
+
+        // compute uploadability
+        let uploadEnabled =
+            match bufferType with
+            | Staging -> true
+            | Vertex uploadEnabled -> uploadEnabled
+            | Index uploadEnabled -> uploadEnabled
+            | Uniform -> true
+            | Storage -> true
+
+        // make info
+        let info = BufferType.makeInfo bufferSize bufferType
+
+        // make buffer
+        BufferInternal.createPlus uploadEnabled info vkc
+
+    /// Write data to buffer if upload is enabled.
+    static member write offset alignment size count data bufferInternal (_ : VulkanContext) =
+        if bufferInternal.UploadEnabled_ then
             if size > 0 then
                 let stride = Math.Stride (alignment, size)
                 let offset = Math.AlignOffset (offset, alignment)
-                if offset + stride * count <= bufferSingleton.Size_ then
+                if offset + stride * count <= bufferInternal.Size_ then
                     
                     // upload as single blob if possible, otherwise upload one value at a time to create padding
                     if size = stride then
-                        NativePtr.memCopy offset (size * count) (NativePtr.nativeintToVoidPtr data) bufferSingleton.Mapping_
+                        NativePtr.memCopy offset (size * count) (NativePtr.nativeintToVoidPtr data) bufferInternal.Mapping_
                     else
                         for i in 0 .. dec count do
                             let ptr = NativePtr.add (NativePtr.nativeintToBytePtr data) (i * size)
-                            NativePtr.memCopy (offset + i * stride) size (NativePtr.toVoidPtr ptr) bufferSingleton.Mapping_
-        
+                            NativePtr.memCopy (offset + i * stride) size (NativePtr.toVoidPtr ptr) bufferInternal.Mapping_
+
+                else Log.warn "Write to Vulkan buffer failed because it exceeded the size of that buffer."
+            else Log.warn "Write to Vulkan buffer failed because 'size' argument was less than or equal to zero."
+        else Log.warn "Write to Vulkan buffer failed because upload was not enabled for that buffer."
+
+    /// Flush data to buffer if upload is enabled.
+    static member flush offset alignment size count bufferInternal (vkc : VulkanContext) =
+        if bufferInternal.UploadEnabled_ then
+            if size > 0 then
+                let stride = Math.Stride (alignment, size)
+                let offset = Math.AlignOffset (offset, alignment)
+                if offset + stride * count <= bufferInternal.Size_ then
+
                     // manually flush as memory may not be host-coherent on non-windows platforms, see
                     // https://gpuopen-librariesandsdks.github.io/VulkanMemoryAllocator/html/memory_mapping.html#memory_mapping_cache_control
-                    match bufferSingleton.Allocation_ with
+                    match bufferInternal.Allocation_ with
                     | Vma vmaAllocation -> Vma.vmaFlushAllocation (vkc.VmaAllocator, vmaAllocation, uint64 offset, uint64 (stride * count)) |> Hl.check
                     | Manual _ -> () // currently no point bothering
 
-                else Log.warn "Data upload to Vulkan buffer failed because it exceeded the size of that buffer."
-            else Log.warn "Data upload to Vulkan buffer failed because 'size' argument was less than or equal to zero."
-        else Log.warn "Data upload to Vulkan buffer failed because upload was not enabled for that buffer."
+                else Log.warn "Flush of Vulkan buffer failed because it exceeded the size of that buffer."
+            else Log.warn "Flush of Vulkan buffer failed because 'size' argument was less than or equal to zero."
+        else Log.warn "Flush of Vulkan buffer failed because upload was not enabled for that buffer."
 
     /// Destroy buffer and allocation.
-    static member destroy (bufferSingleton : BufferSingleton) (vkc : VulkanContext) =
-        match bufferSingleton.Allocation_ with
+    static member destroy (bufferInternal : BufferInternal) (vkc : VulkanContext) =
+        match bufferInternal.Allocation_ with
         | Vma vmaAllocation ->
-            Vma.vmaDestroyBuffer (vkc.VmaAllocator, bufferSingleton.VkBuffer, vmaAllocation)
+            Vma.vmaDestroyBuffer (vkc.VmaAllocator, bufferInternal.VkBuffer, vmaAllocation)
         | Manual manualAllocation ->
-            if bufferSingleton.Mapping_ <> Unchecked.defaultof<voidptr> then Vulkan.vkUnmapMemory (vkc.Device, manualAllocation)
-            Vulkan.vkDestroyBuffer (vkc.Device, bufferSingleton.VkBuffer, nullPtr)
+            if bufferInternal.Mapping_ <> Unchecked.defaultof<voidptr> then Vulkan.vkUnmapMemory (vkc.Device, manualAllocation)
+            Vulkan.vkDestroyBuffer (vkc.Device, bufferInternal.VkBuffer, nullPtr)
             Vulkan.vkFreeMemory (vkc.Device, manualAllocation, nullPtr)
-
-/// A buffer interface that internally automates parallelization for frames in flight.
-type BufferParallel =
-    private 
-        { BufferSingletons_ : BufferSingleton array
-          BufferSizes_ : int array
-          BufferType_ : BufferType }
-
-    member private this.IsParallel = this.BufferType_.IsParallel
-    member private this.CurrentIndex = if this.IsParallel then Hl.CurrentFrame else 0
-    member private this.BufferSingleton = this.BufferSingletons_.[this.CurrentIndex]
-    member private this.BufferSize = this.BufferSizes_.[this.CurrentIndex]
-
-    /// The currently selected vulkan buffer.
-    member this.VkBuffer = this.BufferSingleton.VkBuffer
-
-    /// Create a BufferSingleton.
-    static member private createBufferSingleton size bufferType vkc =
-        
-        // make info
-        let info = BufferType.makeInfo size bufferType
-
-        // create BufferSingleton
-        match bufferType with
-        | Staging -> BufferSingleton.create true info vkc
-        | Vertex uploadEnabled -> BufferSingleton.create uploadEnabled info vkc
-        | Index uploadEnabled -> BufferSingleton.create uploadEnabled info vkc
-        | Uniform -> BufferSingleton.create true info vkc
-        | Storage -> BufferSingleton.create true info vkc
-    
-    /// Create a BufferParallel.
-    static member create size (bufferType : BufferType) vkc =
-        
-        // create buffers and sizes
-        let length = if bufferType.IsParallel then Constants.Vulkan.MaxFramesInFlight else 1
-        let bufferSizes = Array.create length size
-        let bufferSingletons = Array.zeroCreate<BufferSingleton> length
-        for i in 0 .. dec bufferSingletons.Length do bufferSingletons.[i] <- BufferParallel.createBufferSingleton size bufferType vkc
-
-        // make BufferParallel
-        let bufferParallel =
-            { BufferSingletons_ = bufferSingletons 
-              BufferSizes_ = bufferSizes
-              BufferType_ = bufferType }
-
-        // fin
-        bufferParallel
-    
-    /// Check that the current buffer is at least as big as the given size, resizing if necessary. If used, must be called every frame.
-    static member updateSize size (bufferParallel : BufferParallel) vkc =
-        if size > bufferParallel.BufferSize then
-            BufferSingleton.destroy bufferParallel.BufferSingleton vkc
-            bufferParallel.BufferSingletons_.[bufferParallel.CurrentIndex] <- BufferParallel.createBufferSingleton size bufferParallel.BufferType_ vkc
-            bufferParallel.BufferSizes_.[bufferParallel.CurrentIndex] <- size
-
-    /// Upload data to BufferParallel.
-    static member upload offset alignment size count data (bufferParallel : BufferParallel) vkc =
-        BufferSingleton.upload offset alignment size count data bufferParallel.BufferSingleton vkc
-
-    /// Destroy BufferParallel. Never call this in frame as previous frame(s) may still be using it.
-    static member destroy bufferParallel vkc =
-        for i in 0 .. dec bufferParallel.BufferSingletons_.Length do
-            BufferSingleton.destroy bufferParallel.BufferSingletons_.[i] vkc
 
 /// Represents a dynamically growing multibuffer with parallel underlying vulkan buffers. Maintains an internal
 /// cursor that selects the currently active buffer, which is reset via beginFrame and advanced to the next vulkan
@@ -253,15 +215,35 @@ type BufferParallel =
 /// System.Buffer?
 type Buffer =
     private
-        { BufferParallels_ : BufferParallel List
-          mutable BufferCursor_ : int
-          BufferType_ : BufferType
-          mutable BufferSize_ : int }
+        { mutable BufferCursor_ : int
+          BufferInternals_ : BufferInternal List
+          BufferType_ : BufferType }
 
-    member private this.BufferParallel = this.BufferParallels_.[this.BufferCursor_]
+    member private this.BufferInternal =
+        this.BufferInternals_[this.BufferCursor_]
 
     /// Get the vulkan buffer currently at the cursor.
-    member this.VkBuffer = this.BufferParallel.VkBuffer
+    member this.VkBuffer =
+        this.BufferInternal.VkBuffer
+
+    static member private ensureHeight (buffer : Buffer) vkc =
+        while buffer.BufferCursor_ >= buffer.BufferInternals_.Count do
+            let bufferInternals = Array.init buffer.BufferInternals_.Count (fun _ -> BufferInternal.create buffer.BufferInternals_[0].Size buffer.BufferType_ vkc)
+            buffer.BufferInternals_.AddRange bufferInternals
+
+    /// Expand buffer width as necessary, disregarding all existing content.
+    static member ensureWidth size (buffer : Buffer) vkc =
+        Buffer.ensureHeight buffer vkc
+        if buffer.BufferInternals_[buffer.BufferCursor_].Size < size then
+            BufferInternal.destroy buffer.BufferInternals_[buffer.BufferCursor_] vkc
+            buffer.BufferInternals_[buffer.BufferCursor_] <- BufferInternal.create size buffer.BufferType_ vkc
+
+    /// Copy data from the source buffer to the destination buffer.
+    static member private copyData size source destination (vkc : VulkanContext) =
+        let commandBuffer = Hl.createTransientCommandBuffer vkc.TransientCommandPool vkc.Device
+        let mutable region = VkBufferCopy (size = uint64 size)
+        Vulkan.vkCmdCopyBuffer (commandBuffer, source, destination, 1u, asPointer &region)
+        CommandQueue.executeTransient commandBuffer vkc.TransientCommandPool vkc.TransientFence vkc.RenderQueue vkc.Device
 
     /// Begin use of this buffer for the current frame.
     static member beginFrame buffer =
@@ -271,55 +253,51 @@ type Buffer =
     static member advance buffer =
         buffer.BufferCursor_ <- inc buffer.BufferCursor_
 
-    /// Copy data from the source buffer to the destination buffer.
-    static member copyData size source destination (vkc : VulkanContext) =
-        let commandBuffer = Hl.createTransientCommandBuffer vkc.TransientCommandPool vkc.Device
-        let mutable region = VkBufferCopy (size = uint64 size)
-        Vulkan.vkCmdCopyBuffer (commandBuffer, source, destination, 1u, asPointer &region)
-        CommandQueue.executeTransient commandBuffer vkc.TransientCommandPool vkc.TransientFence vkc.RenderQueue vkc.Device
-    
     /// Create a new Buffer.
     static member create bufferSize (bufferType : BufferType) vkc =
-        { BufferParallels_ = List [BufferParallel.create bufferSize bufferType vkc]
-          BufferCursor_ = 0
-          BufferType_ = bufferType
-          BufferSize_ = bufferSize }
+        { BufferCursor_ = 0
+          BufferInternals_ = List [BufferInternal.create bufferSize bufferType vkc]
+          BufferType_ = bufferType }
 
-    /// Expand buffer size and count as necessary.
-    static member update size (buffer : Buffer) vkc =
-        if size > buffer.BufferSize_ then buffer.BufferSize_ <- size
-        while buffer.BufferCursor_ > dec buffer.BufferParallels_.Count do // TODO: P1: consider doubling capacity instead of just increasing to cursor.
-            let bufferParallel = BufferParallel.create buffer.BufferSize_ buffer.BufferType_ vkc
-            buffer.BufferParallels_.Add bufferParallel
-        BufferParallel.updateSize buffer.BufferSize_ buffer.BufferParallel vkc
+    /// Write subdata to Buffer. Caller is reponsible for ensuring buffer width and height.
+    static member writeSubdata offset alignment size count data (buffer : Buffer) vkc =
+        Buffer.ensureHeight buffer vkc
+        BufferInternal.write offset alignment size count data buffer.BufferInternal vkc
 
-    /// Upload subdata to Buffer.
-    static member uploadSubdata offset alignment size count data (buffer : Buffer) vkc =
-        let bufferSize = Math.MinimumBufferSize (offset, alignment, size, count)
-        Buffer.update bufferSize buffer vkc
-        BufferParallel.upload offset alignment size count data buffer.BufferParallel vkc
+    /// Flush subdata from Buffer. Caller is reponsible for ensuring buffer width and height.
+    static member flushSubdata offset alignment size count (buffer : Buffer) vkc =
+        Buffer.ensureHeight buffer vkc
+        BufferInternal.flush offset alignment size count buffer.BufferInternal vkc
+
+    /// Upload data to Buffer.
+    static member uploadData size count data (buffer : Buffer) vkc =
+        let bufferSize = size * count
+        Buffer.ensureHeight buffer vkc
+        Buffer.ensureWidth bufferSize buffer vkc
+        BufferInternal.write 0 0 size count data buffer.BufferInternal vkc
+        BufferInternal.flush 0 0 size count buffer.BufferInternal vkc
 
     /// Upload a value to Buffer.
     static member uploadValue (value : 'a) buffer vkc =
         let mutable value = value
-        Buffer.uploadSubdata 0 0 sizeof<'a> 1 (asNativeInt &value) buffer vkc
-    
+        Buffer.uploadData sizeof<'a> 1 (asNativeInt &value) buffer vkc
+
     /// Upload an array to Buffer.
     static member uploadArray (array : 'a array) buffer vkc =
         use arrayPin = new ArrayPin<_> (array)
-        Buffer.uploadSubdata 0 0 sizeof<'a> array.Length arrayPin.NativeInt buffer vkc
-    
+        Buffer.uploadData sizeof<'a> array.Length arrayPin.NativeInt buffer vkc
+
     /// Create a staging buffer and stage the data.
     static member stageData size data vkc =
         let buffer = Buffer.create size Staging vkc
-        Buffer.uploadSubdata 0 0 size 1 data buffer vkc
+        Buffer.uploadData size 1 data buffer vkc
         buffer
-    
+
     /// Create a vertex buffer with data uploaded via staging buffer.
     static member createVertexStaged size data vkc =
         let stagingBuffer = Buffer.stageData size data vkc
         let vertexBuffer = Buffer.create size (Vertex false) vkc
-        Buffer.copyData size stagingBuffer.BufferParallel.VkBuffer vertexBuffer.BufferParallel.VkBuffer vkc
+        Buffer.copyData size stagingBuffer.BufferInternal.VkBuffer vertexBuffer.BufferInternal.VkBuffer vkc
         Buffer.destroy stagingBuffer vkc
         vertexBuffer
 
@@ -327,7 +305,7 @@ type Buffer =
     static member createIndexStaged size data vkc =
         let stagingBuffer = Buffer.stageData size data vkc
         let indexBuffer = Buffer.create size (Index false) vkc
-        Buffer.copyData size stagingBuffer.BufferParallel.VkBuffer indexBuffer.BufferParallel.VkBuffer vkc
+        Buffer.copyData size stagingBuffer.BufferInternal.VkBuffer indexBuffer.BufferInternal.VkBuffer vkc
         Buffer.destroy stagingBuffer vkc
         indexBuffer
 
@@ -357,5 +335,5 @@ type Buffer =
     
     /// Destroy Buffer.
     static member destroy (buffer : Buffer) vkc =
-        for i in 0 .. dec buffer.BufferParallels_.Count do
-            BufferParallel.destroy buffer.BufferParallels_.[i] vkc
+        for i in 0 .. dec buffer.BufferInternals_.Count do
+            BufferInternal.destroy buffer.BufferInternals_[i] vkc

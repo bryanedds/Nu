@@ -78,8 +78,8 @@ and DescriptorSet<'k when 'k : equality> =
         { DescriptorSetDefinition_ : DescriptorSetDefinition
           VkDescriptorSetLayout_ : VkDescriptorSetLayout
           VkDescriptorPools_ : VkDescriptorPool List
-          VkDescriptorSets_ : Dictionary<'k, VkDescriptorSet> array
-          mutable VkDescriptorSetsAvailable_ : VkDescriptorSet Queue array }
+          VkDescriptorSets_ : Dictionary<'k, VkDescriptorSet>
+          mutable VkDescriptorSetsAvailable_ : VkDescriptorSet Queue }
 
     static member private createDescriptorPool (capacity : int) (descriptorSetDefinition : DescriptorSetDefinition) (vkc : VulkanContext) =
 
@@ -105,18 +105,17 @@ and DescriptorSet<'k when 'k : equality> =
         descriptorPool
 
     static member private allocateVkDescriptorSets capacity descriptorSetDefinitions descriptorSetLayout vkc =
-        let vkDescriptorPool = DescriptorSet.createDescriptorPool (capacity * Constants.Vulkan.MaxFramesInFlight) descriptorSetDefinitions vkc
-        let vkDescriptorSetLayouts = Array.create<VkDescriptorSetLayout> (capacity * Constants.Vulkan.MaxFramesInFlight) descriptorSetLayout
+        let vkDescriptorPool = DescriptorSet.createDescriptorPool capacity descriptorSetDefinitions vkc
+        let vkDescriptorSetLayouts = Array.create<VkDescriptorSetLayout> capacity descriptorSetLayout
         use vkDescriptorSetLayoutsPin = new ArrayPin<_> (vkDescriptorSetLayouts)
         let mutable info = VkDescriptorSetAllocateInfo ()
         info.descriptorPool <- vkDescriptorPool
         info.descriptorSetCount <- uint vkDescriptorSetLayouts.Length
         info.pSetLayouts <- vkDescriptorSetLayoutsPin.Pointer
-        let vkDescriptorSets = Array.zeroCreate<VkDescriptorSet> (capacity * Constants.Vulkan.MaxFramesInFlight)
+        let vkDescriptorSets = Array.zeroCreate<VkDescriptorSet> capacity
         use vkDescriptorSetsPin = new ArrayPin<_> (vkDescriptorSets)
         Vulkan.vkAllocateDescriptorSets (vkc.Device, asPointer &info, vkDescriptorSetsPin.Pointer) |> Hl.check
-        let vkDescriptorSets = vkDescriptorSets |> Array.chunkBySize capacity |> Array.map Queue
-        (vkDescriptorPool, vkDescriptorSets)
+        (vkDescriptorPool, Queue vkDescriptorSets)
 
     static member create<'a when 'a : equality> capacity (descriptorSetDefinition : 'a DescriptorSetDefinition) vkDescriptorSetLayout (vkc : VulkanContext) : 'a DescriptorSet =
 
@@ -129,7 +128,7 @@ and DescriptorSet<'k when 'k : equality> =
             { DescriptorSetDefinition_ = descriptorSetDefinition
               VkDescriptorSetLayout_ = vkDescriptorSetLayout
               VkDescriptorPools_ = List [vkDescriptorPool]
-              VkDescriptorSets_ = Array.init Constants.Vulkan.MaxFramesInFlight (fun _ -> dictPlus<'a, VkDescriptorSet> HashIdentity.Structural [])
+              VkDescriptorSets_ = dictPlus<'a, VkDescriptorSet> HashIdentity.Structural []
               VkDescriptorSetsAvailable_ = vkDescriptorSets }
 
         // fin
@@ -138,24 +137,24 @@ and DescriptorSet<'k when 'k : equality> =
     interface DescriptorSet with
 
         member this.BeginFrame () =
-            for entry in this.VkDescriptorSets_.[Hl.CurrentFrame] do
-                this.VkDescriptorSetsAvailable_.[Hl.CurrentFrame].Enqueue entry.Value
-            this.VkDescriptorSets_.[Hl.CurrentFrame].Clear ()
+            for entry in this.VkDescriptorSets_ do
+                this.VkDescriptorSetsAvailable_.Enqueue entry.Value
+            this.VkDescriptorSets_.Clear ()
 
         member this.Specify (keyObj : obj) (vkc : VulkanContext) (specify : VkDescriptorSet -> unit) : VkDescriptorSet =
             let key = keyObj :?> 'k
-            match this.VkDescriptorSets_.[Hl.CurrentFrame].TryGetValue key with
+            match this.VkDescriptorSets_.TryGetValue key with
             | (false, _) ->
                 let mutable vkDescriptorSet = Unchecked.defaultof<_>
-                let found = this.VkDescriptorSetsAvailable_.[Hl.CurrentFrame].TryDequeue &vkDescriptorSet
+                let found = this.VkDescriptorSetsAvailable_.TryDequeue &vkDescriptorSet
                 if not found then
-                    let count = this.VkDescriptorSets_.[Hl.CurrentFrame].Count
+                    let count = this.VkDescriptorSets_.Count
                     let (vkDescriptorPool, vkDescriptorSets) =
                         DescriptorSet<_>.allocateVkDescriptorSets count this.DescriptorSetDefinition_ this.VkDescriptorSetLayout_ vkc
                     this.VkDescriptorPools_.Add vkDescriptorPool
                     this.VkDescriptorSetsAvailable_ <- vkDescriptorSets
-                    vkDescriptorSet <- this.VkDescriptorSetsAvailable_.[Hl.CurrentFrame].Dequeue ()
-                this.VkDescriptorSets_.[Hl.CurrentFrame].Add (key, vkDescriptorSet)
+                    vkDescriptorSet <- this.VkDescriptorSetsAvailable_.Dequeue ()
+                this.VkDescriptorSets_.Add (key, vkDescriptorSet)
                 specify vkDescriptorSet
                 vkDescriptorSet
             | (true, vkDescriptorSet) -> vkDescriptorSet
@@ -217,7 +216,7 @@ type Pipeline =
 
     /// The descriptor set of the given number for the current frame.
     static member getDescriptorSet set pipeline =
-        pipeline.DescriptorSets_.[set]
+        pipeline.DescriptorSets_[set]
 
     /// Create the descriptor set layout.
     static member private createDescriptorSetLayout (resourceBindings : VkDescriptorSetLayoutBinding array) (vkc : VulkanContext) =
@@ -333,7 +332,7 @@ type Pipeline =
             for i in 0 .. dec pipelineSettings.Length do
             
                 // extract settings
-                let (blend, cullFace) = pipelineSettings.[i]
+                let (blend, cullFace) = pipelineSettings[i]
                 
                 // blend info (specifying blend state for each color attachment)
                 let blendState = VulkanBlend.makeAttachment blend
@@ -440,7 +439,7 @@ type Pipeline =
         let infosPtr = NativePtr.stackalloc<VkDescriptorImageInfo> textures.Length
         for i in 0 .. dec textures.Length do
             let mutable info = VkDescriptorImageInfo ()
-            info.imageView <- textures.[i].ImageView
+            info.imageView <- textures[i].ImageView
             info.imageLayout <- ShaderRead.VkImageLayout
             NativePtr.set infosPtr i info
 
@@ -578,25 +577,25 @@ type Pipeline =
         let vertexBindingDescriptions = Array.map (fun (binding : VertexBinding) -> Hl.makeVertexBinding binding.Binding binding.Stride binding.InputRate ) vertexBindings
         let vertexAttributes =
             [|for i in 0 .. dec vertexBindings.Length do
-                  for j in 0 .. dec vertexBindings.[i].Attributes.Length do
-                      let attribute = vertexBindings.[i].Attributes.[j]
-                      yield Hl.makeVertexAttribute attribute.Location vertexBindings.[i].Binding attribute.Format attribute.Offset |]
+                  for j in 0 .. dec vertexBindings[i].Attributes.Length do
+                      let attribute = vertexBindings[i].Attributes[j]
+                      yield Hl.makeVertexAttribute attribute.Location vertexBindings[i].Binding attribute.Format attribute.Offset |]
         let pushConstantRanges = Array.map (fun pushConstant -> Hl.makePushConstantRange pushConstant.Offset pushConstant.Size pushConstant.ShaderStage) pushConstants
 
         // create descriptor set layouts
         let layoutBindingsSets = Array.zeroCreate descriptorSetDefinitions.Length
         let descriptorSetLayouts = Array.zeroCreate descriptorSetDefinitions.Length
         for i in 0 .. dec descriptorSetDefinitions.Length do
-            layoutBindingsSets.[i] <-
-                descriptorSetDefinitions.[i].DescriptorBindings
+            layoutBindingsSets[i] <-
+                descriptorSetDefinitions[i].DescriptorBindings
                 |> Array.map (fun binding -> Hl.makeDescriptorBinding binding.Binding binding.DescriptorType binding.DescriptorCount binding.ShaderStage)
-            descriptorSetLayouts.[i] <- Pipeline.createDescriptorSetLayout layoutBindingsSets.[i] vkc
+            descriptorSetLayouts[i] <- Pipeline.createDescriptorSetLayout layoutBindingsSets[i] vkc
         
         // create descriptor sets
         let descriptorSets = Array.zeroCreate descriptorSetDefinitions.Length
         for i in 0 .. dec descriptorSetDefinitions.Length do
-            let definition = descriptorSetDefinitions.[i]
-            descriptorSets.[i] <- definition.CreateDescriptorSet descriptorSetLayouts.[i] vkc
+            let definition = descriptorSetDefinitions[i]
+            descriptorSets[i] <- definition.CreateDescriptorSet descriptorSetLayouts[i] vkc
         
         // create pipeline layout and vkPipelines
         if blends.Length < 1 then Log.fail "No pipeline blend was specified."

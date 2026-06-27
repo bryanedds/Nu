@@ -398,9 +398,9 @@ type VulkanRendererImGui
 
             // create the font atlas texture
             let metadata = TextureMetadata.make fontWidth fontHeight
-            let textureParallel = TextureParallel.create MipmapNone AttachmentNone Texture2d [||] Uncompressed.ImageFormat Rgba metadata vkc
-            TextureParallel.upload metadata 0 0 pixels RenderThread textureParallel vkc
-            fontTexture <- EagerTexture { TextureMetadata = metadata; TextureParallel = textureParallel }
+            let textureInternal = TextureInternal.create MipmapNone AttachmentNone Texture2d [||] Uncompressed.ImageFormat Rgba metadata vkc
+            TextureInternal.upload metadata 0 0 pixels RenderThread textureInternal vkc
+            fontTexture <- EagerTexture textureInternal
             
             // create samplers
             fontSampler <- Sampler.create VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false vkc
@@ -468,14 +468,14 @@ type VulkanRendererImGui
                 if not (assetTextureOpts.ContainsKey assetTag) then
                     match Metadata.tryGetFilePath assetTag with
                     | Some filePath ->
-                        match Hl.tryCreateTextureVulkan true false (Hl.inferTextureCompression filePath) filePath RenderThread vkc with
-                        | Right (_, textureParallel) ->
-                            let texture = EagerTexture { TextureMetadata = TextureMetadata.empty; TextureParallel = textureParallel }
+                        match Hl.tryCreateTextureInternal true false (Hl.inferTextureCompression filePath) filePath RenderThread vkc with
+                        | Right textureInternal ->
+                            let texture = EagerTexture textureInternal
                             let textureId = textureIdCounter
                             textureIdCounter <- inc textureIdCounter
                             assetTextureStorage.Add (textureId, texture)
-                            assetTextureOpts.[assetTag] <- ValueSome textureId
-                        | Left _ -> assetTextureOpts.[assetTag] <- ValueNone
+                            assetTextureOpts[assetTag] <- ValueSome textureId
+                        | Left _ -> assetTextureOpts[assetTag] <- ValueNone
                     | None -> ()
                 let mutable removed = ()
                 assetTextureRequests.TryRemove (assetTag, &removed) |> ignore<bool>
@@ -497,40 +497,43 @@ type VulkanRendererImGui
                 let mutable renderArea =
                     VkRect2D (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
                     |> Hl.scaleRectForPixelDensity pixelDensity
-                let mutable rendering = Hl.makeRenderingInfo [|vkc.SwapchainImageView|] None renderArea None
-                Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &rendering)
-                let vkPipeline = Pipeline.tryGetVkPipeline VulkanImGui false pipeline |> Option.get // not supporting shader reload of Gaia itself
-                Vulkan.vkCmdBindPipeline (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
+                let mutable renderingInfo = Hl.makeRenderingInfo [|vkc.SwapchainImageView|] None renderArea None
+                Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &renderingInfo)
                 let mutable viewport = Hl.makeViewport false renderArea
                 Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, asPointer &viewport)
+                let vkPipeline = Pipeline.tryGetVkPipeline VulkanImGui false pipeline |> Option.get // not supporting shader reload of Gaia itself
+                Vulkan.vkCmdBindPipeline (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
                 
                 // compute offsets
                 if drawData.TotalVtxCount > 0 then
                     
-                    // get data size for vertices and indices
-                    let vertexSize = drawData.TotalVtxCount * sizeof<ImDrawVert>
-                    let indexSize = drawData.TotalIdxCount * sizeof<uint16>
+                    // get data buffer size totals for vertices and indices
+                    let vertexBufferSizeTotal = drawData.TotalVtxCount * sizeof<ImDrawVert>
+                    let indexBufferSizeTotal = drawData.TotalIdxCount * sizeof<uint16>
 
                     // enlarge buffer sizes if needed
-                    while vertexSize > vertexBufferSize do vertexBufferSize <- vertexBufferSize * 2
-                    while indexSize > indexBufferSize do indexBufferSize <- indexBufferSize * 2
-                    Nu.Vulkan.Buffer.update vertexBufferSize vertexBuffer vkc
-                    Nu.Vulkan.Buffer.update indexBufferSize indexBuffer vkc
+                    while vertexBufferSizeTotal > vertexBufferSize do vertexBufferSize <- vertexBufferSize * 2
+                    while indexBufferSizeTotal > indexBufferSize do indexBufferSize <- indexBufferSize * 2
+                    Nu.Vulkan.Buffer.ensureWidth vertexBufferSize vertexBuffer vkc
+                    Nu.Vulkan.Buffer.ensureWidth indexBufferSize indexBuffer vkc
 
                     // upload vertices and indices
                     let mutable vertexOffset = 0
                     let mutable indexOffset = 0
                     for i in 0 .. dec drawData.CmdListsCount do
-                        let drawList = let range = drawData.CmdLists in range.[i]
-                        let vertexSize = drawList.VtxBuffer.Size * sizeof<ImDrawVert>
-                        let indexSize = drawList.IdxBuffer.Size * sizeof<uint16>
-                        Nu.Vulkan.Buffer.uploadSubdata vertexOffset 0 vertexSize 1 drawList.VtxBuffer.Data vertexBuffer vkc
-                        Nu.Vulkan.Buffer.uploadSubdata indexOffset 0 indexSize 1 drawList.IdxBuffer.Data indexBuffer vkc
-                        vertexOffset <- vertexOffset + vertexSize
-                        indexOffset <- indexOffset + indexSize
+                        let drawList = let range = drawData.CmdLists in range[i]
+                        let vertexBufferSize = drawList.VtxBuffer.Size * sizeof<ImDrawVert>
+                        let indexBufferSize = drawList.IdxBuffer.Size * sizeof<uint16>
+                        Nu.Vulkan.Buffer.writeSubdata vertexOffset 0 vertexBufferSize 1 drawList.VtxBuffer.Data vertexBuffer vkc
+                        Nu.Vulkan.Buffer.writeSubdata indexOffset 0 indexBufferSize 1 drawList.IdxBuffer.Data indexBuffer vkc
+                        vertexOffset <- vertexOffset + vertexBufferSize
+                        indexOffset <- indexOffset + indexBufferSize
 
-                // bind vertex and index buffers
-                if drawData.TotalVtxCount > 0 then // TODO: P1: see if this conditional is actually necessary.
+                    // flush data
+                    Nu.Vulkan.Buffer.flushSubdata 0 0 vertexBufferSizeTotal 1 vertexBuffer vkc
+                    Nu.Vulkan.Buffer.flushSubdata 0 0 indexBufferSizeTotal 1 indexBuffer vkc
+
+                    // bind vertex and index buffers
                     let mutable vertexBuffer = vertexBuffer.VkBuffer
                     let mutable vertexOffset = 0UL
                     Vulkan.vkCmdBindVertexBuffers (vkc.RenderCommandBuffer, 0u, 1u, asPointer &vertexBuffer, asPointer &vertexOffset)
@@ -554,11 +557,11 @@ type VulkanRendererImGui
                 for i in 0 .. dec drawData.CmdListsCount do
                     
                     // draw commands from list
-                    let drawList = let range = drawData.CmdLists in range.[i]
+                    let drawList = let range = drawData.CmdLists in range[i]
                     for j in 0 .. dec drawList.CmdBuffer.Size do
 
                         // only render when required texture is not in blacklist
-                        let pcmd = let buffer = drawList.CmdBuffer in buffer.[j]
+                        let pcmd = let buffer = drawList.CmdBuffer in buffer[j]
                         if not (textureIdBlacklist.Contains (uint32 pcmd.TextureId)) then
 
                             // only process when no user callback is provided

@@ -106,13 +106,6 @@ type AttachmentMode =
     | AttachmentColor of IsParallel : bool
     | AttachmentDepth of IsParallel : bool
 
-    /// Whether the type must be paralleled for frames in flight.
-    member this.IsParallel =
-        match this with
-        | AttachmentNone -> false
-        | AttachmentColor isParallel -> isParallel // 'parallel' is taken!
-        | AttachmentDepth isParallel -> isParallel
-
     /// The VkImageAspectFlags for a given attachment mode. This is because, unlike layout transitions, image view creation only needs
     /// the *intended* image aspect e.g. depth, not every aspect contained in the format e.g. depth & stencil.
     member this.VkImageAspectFlags =
@@ -199,7 +192,7 @@ type TextureData =
         | TextureDataMipmap (_, _, _, _) -> ()
         | TextureDataNative (_, _, disposer) -> disposer.Dispose ()
 
-type TextureSingleton =
+type TextureVulkan =
     { Image : VkImage
       Allocation : VmaAllocation
       ImageView : VkImageView
@@ -232,7 +225,7 @@ type TextureSingleton =
 
         // create image
         let extent = VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
-        let (image, allocation) = TextureSingleton.createImage internalFormat.VkFormat extent mipLevels textureType usageFlags vkc
+        let (image, allocation) = TextureVulkan.createImage internalFormat.VkFormat extent mipLevels textureType usageFlags vkc
 
         // create image view
         let imageView = Hl.createImageView pixelFormat internalFormat.VkFormat 0 mipLevels 0 textureType.Layers textureType.VkImageViewType attachmentMode.VkImageAspectFlags image vkc.Device
@@ -242,7 +235,7 @@ type TextureSingleton =
             if attachmentMode.IsAttachmentColor && textureType.Layers > 1 then
                 let layerViews = Array.zeroCreate<VkImageView> textureType.Layers
                 for i in 0 .. dec textureType.Layers do
-                    layerViews.[i] <- Hl.createImageView pixelFormat internalFormat.VkFormat 0 mipLevels i 1 VkImageViewType.Image2D attachmentMode.VkImageAspectFlags image vkc.Device
+                    layerViews[i] <- Hl.createImageView pixelFormat internalFormat.VkFormat 0 mipLevels i 1 VkImageViewType.Image2D attachmentMode.VkImageAspectFlags image vkc.Device
                 layerViews
             else Array.zeroCreate<VkImageView> 0
 
@@ -252,7 +245,7 @@ type TextureSingleton =
                 let subViews = Array2D.zeroCreate<VkImageView> mipLevels textureType.Layers
                 for i in 0 .. dec mipLevels do
                     for j in 0 .. dec textureType.Layers do
-                        subViews.[i, j] <- Hl.createImageView pixelFormat internalFormat.VkFormat i 1 j 1 VkImageViewType.Image2D attachmentMode.VkImageAspectFlags image vkc.Device
+                        subViews[i, j] <- Hl.createImageView pixelFormat internalFormat.VkFormat i 1 j 1 VkImageViewType.Image2D attachmentMode.VkImageAspectFlags image vkc.Device
                 subViews
             else Array2D.zeroCreate<VkImageView> 0 0
 
@@ -280,16 +273,16 @@ type TextureSingleton =
           ImageSize = metadata
           StagingBuffers = List () }
 
-    static member destroy textureSingleton (vkc : VulkanContext) =
-        Vulkan.vkDestroyImageView (vkc.Device, textureSingleton.ImageView, nullPtr)
-        for i in 0 .. dec (textureSingleton.LayerViews.Length) do
-            Vulkan.vkDestroyImageView (vkc.Device, textureSingleton.LayerViews.[i], nullPtr)
-        for i in 0 .. dec (textureSingleton.SubViews.GetLength 0) do
-            for j in 0 .. dec (textureSingleton.SubViews.GetLength 1) do
-                Vulkan.vkDestroyImageView (vkc.Device, textureSingleton.SubViews.[i, j], nullPtr)
-        Vma.vmaDestroyImage (vkc.VmaAllocator, textureSingleton.Image, textureSingleton.Allocation)
-        for i in 0 .. dec textureSingleton.StagingBuffers.Count do
-            Buffer.destroy textureSingleton.StagingBuffers.[i] vkc
+    static member destroy texture (vkc : VulkanContext) =
+        Vulkan.vkDestroyImageView (vkc.Device, texture.ImageView, nullPtr)
+        for i in 0 .. dec (texture.LayerViews.Length) do
+            Vulkan.vkDestroyImageView (vkc.Device, texture.LayerViews[i], nullPtr)
+        for i in 0 .. dec (texture.SubViews.GetLength 0) do
+            for j in 0 .. dec (texture.SubViews.GetLength 1) do
+                Vulkan.vkDestroyImageView (vkc.Device, texture.SubViews[i, j], nullPtr)
+        Vma.vmaDestroyImage (vkc.VmaAllocator, texture.Image, texture.Allocation)
+        for i in 0 .. dec texture.StagingBuffers.Count do
+            Buffer.destroy texture.StagingBuffers[i] vkc
 
 [<AutoOpen>]
 module TextureModule =
@@ -549,7 +542,7 @@ module TextureModule =
                         let mutable x = 0
                         while x < stride - 2 do
                             let i = x + stride * y
-                            data.[i]; data.[i+1]; data.[i+2]; 255uy
+                            data[i]; data[i+1]; data[i+2]; 255uy
                             x <- x + 3
                         y <- inc y|]
                 Some converted
@@ -560,7 +553,7 @@ module TextureModule =
                         let mutable x = 0
                         while x < stride - 3 do
                             let i = x + stride * y
-                            data.[i]; data.[i+1]; data.[i+2]; data.[i+3]
+                            data[i]; data[i+1]; data[i+2]; data[i+3]
                             x <- x + 4
                         y <- inc y|]
                 Some converted
@@ -576,7 +569,7 @@ module TextureModule =
                         let mutable x = 0
                         while x < mipmap.Stride - 2 do
                             let i = x + mipmap.Stride * y + mipmap.DataOffset
-                            data.[i]; data.[i+1]; data.[i+2]; 255uy
+                            data[i]; data[i+1]; data[i+2]; 255uy
                             x <- x + 3
                         y <- inc y|]
                 (v2i mipmap.Width mipmap.Height, converted)
@@ -587,7 +580,7 @@ module TextureModule =
                         let mutable x = 0
                         while x < mipmap.Stride - 3 do
                             let i = x + mipmap.Stride * y + mipmap.DataOffset
-                            data.[i]; data.[i+1]; data.[i+2]; data.[i+3]
+                            data[i]; data[i+1]; data[i+2]; data[i+3]
                             x <- x + 4
                         y <- inc y|]
                 (v2i mipmap.Width mipmap.Height, converted)
@@ -613,9 +606,9 @@ module TextureModule =
                     else 0
                 let mipmapBytesArray =
                     [|for i in minimalMipmapIndex .. dec mipmaps.Length do
-                        formatUncompressedPfimageMipmap format mipmaps.[i] data|]
+                        formatUncompressedPfimageMipmap format mipmaps[i] data|]
                 if minimal then
-                    let (minimalMipmapResolution, minimalMipmapBytes) = mipmapBytesArray.[0]
+                    let (minimalMipmapResolution, minimalMipmapBytes) = mipmapBytesArray[0]
                     let remainingMipmapBytes = if minimalMipmapBytes.Length > 1 then Array.tail mipmapBytesArray else [||]
                     Some (minimalMipmapResolution, minimalMipmapBytes, remainingMipmapBytes)
                 else Some (v2i image.Width image.Height, bytes, mipmapBytesArray)
@@ -646,41 +639,38 @@ module TextureModule =
                             (dims, dds.Data.AsSpan(index, size).ToArray())|]
                 else [||]
             if minimal then
-                let (minimalMipmapResolution, minimalMipmapBytes) = mipmapBytesArray.[0]
+                let (minimalMipmapResolution, minimalMipmapBytes) = mipmapBytesArray[0]
                 let remainingMipmapBytes = if minimalMipmapBytes.Length > 1 then Array.tail mipmapBytesArray else [||]
                 (minimalMipmapResolution, minimalMipmapBytes, remainingMipmapBytes)
             else (v2i dds.Width dds.Height, bytes, mipmapBytesArray)
 
-/// An abstraction of a texture as managed by Vulkan.
-type [<CustomEquality; NoComparison>] TextureParallel =
+/// An internal representation of a texture as managed by Vulkan.
+type [<CustomEquality; NoComparison>] TextureInternal =
     private
         { Id_ : uint64
-          Textures_ : TextureSingleton array
+          mutable TextureVulkan_ : TextureVulkan
           InternalFormat_ : Nu.Vulkan.ImageFormat
           PixelFormat_ : PixelFormat
           MipLevels_ : int
           ImageUsages_ : VkImageUsageFlags
           AttachmentMode_ : AttachmentMode
-          TextureType_ : TextureType }
+          TextureType_ : TextureType
+          TextureMetadata_ : TextureMetadata }
 
-    member private this.IsParallel = this.AttachmentMode_.IsParallel
-    member private this.CurrentIndex = if this.IsParallel then Hl.CurrentFrame else 0
-    member private this.Texture = this.Textures_.[this.CurrentIndex]
-    member private this.ImageSize = this.Texture.ImageSize
-
+    /// The id.
     member this.Id = this.Id_
     
     /// The image.
-    member this.Image = this.Texture.Image
+    member this.Image = this.TextureVulkan_.Image
 
     /// The image view.
-    member this.ImageView = this.Texture.ImageView
+    member this.ImageView = this.TextureVulkan_.ImageView
 
     /// The image views for each layer.
-    member this.LayerViews = this.Texture.LayerViews
+    member this.LayerViews = this.TextureVulkan_.LayerViews
 
     /// The image views for each mip level and layer.
-    member this.SubViews = this.Texture.SubViews
+    member this.SubViews = this.TextureVulkan_.SubViews
 
     /// The internal format.
     member this.InternalFormat = this.InternalFormat_
@@ -690,10 +680,13 @@ type [<CustomEquality; NoComparison>] TextureParallel =
     
     /// The mip level count.
     member this.MipLevels = this.MipLevels_
+
+    /// Metadata describing the texture.
+    member this.TextureMetadata = this.TextureMetadata_
     
     override this.Equals thatObj =
         match thatObj with
-        | :? TextureParallel as that -> this.Id_ = that.Id_
+        | :? TextureInternal as that -> this.Id_ = that.Id_
         | _ -> false
 
     override this.GetHashCode () = 
@@ -713,17 +706,17 @@ type [<CustomEquality; NoComparison>] TextureParallel =
         // combine necessary and optional flags and bitwise-or together 
         let usagesArray = Array.append (necessaryUsageFlags.ToArray ()) optionalUsageFlags |> Array.distinct
         let mutable usagesOred = VkImageUsageFlags.None
-        for i in 0 .. dec usagesArray.Length do usagesOred <- usagesOred ||| usagesArray.[i]
+        for i in 0 .. dec usagesArray.Length do usagesOred <- usagesOred ||| usagesArray[i]
         usagesOred
     
-    /// Create a TextureParallel.
+    /// Create a TextureInternal.
     static member create
         mipmapMode
-        (attachmentMode : AttachmentMode)
-        (textureType : TextureType)
+        attachmentMode
+        textureType
         optionalUsageFlags
         (internalFormat : Nu.Vulkan.ImageFormat)
-        (pixelFormat : PixelFormat)
+        pixelFormat
         metadata
         (vkc : VulkanContext) =
 
@@ -755,93 +748,91 @@ type [<CustomEquality; NoComparison>] TextureParallel =
                 
                 | _ -> Log.infoOnce "Automatic mipmap generation not supported for attachment texture."; 1
         
-        // create textures
-        let length = if attachmentMode.IsParallel then Constants.Vulkan.MaxFramesInFlight else 1
-        let usageFlags = TextureParallel.determineImageUsage mipmapMode attachmentMode optionalUsageFlags
-        let textures = Array.zeroCreate<TextureSingleton> length
-        for i in 0 .. dec length do
-            textures.[i] <- TextureSingleton.create pixelFormat internalFormat metadata mipLevels attachmentMode textureType usageFlags vkc
-        
-        // make TextureParallel
-        let textureParallel =
+        // create texture
+        let usageFlags = TextureInternal.determineImageUsage mipmapMode attachmentMode optionalUsageFlags
+        let textureVulkan = TextureVulkan.create pixelFormat internalFormat metadata mipLevels attachmentMode textureType usageFlags vkc
+
+        // make TextureInternal
+        let texture =
             { Id_ = Hl.genTextureId ()
-              Textures_ = textures
+              TextureVulkan_ = textureVulkan
               InternalFormat_ = internalFormat
               PixelFormat_ = pixelFormat
               MipLevels_ = mipLevels
               ImageUsages_ = usageFlags
               AttachmentMode_ = attachmentMode
-              TextureType_ = textureType }
+              TextureType_ = textureType
+              TextureMetadata_ = metadata }
 
         // fin
-        textureParallel
+        texture
 
     /// Check that the current texture size is the same as the given size, resizing if necessary. If used, must be called every frame.
-    static member updateSize metadata (textureParallel : TextureParallel) (vkc : VulkanContext) =
-        if metadata <> textureParallel.ImageSize then
-            TextureSingleton.destroy textureParallel.Textures_.[textureParallel.CurrentIndex] vkc
-            textureParallel.Textures_.[textureParallel.CurrentIndex] <- TextureSingleton.create textureParallel.PixelFormat_ textureParallel.InternalFormat_ metadata textureParallel.MipLevels textureParallel.AttachmentMode_ textureParallel.TextureType_ textureParallel.ImageUsages_ vkc
+    static member updateSize metadata (textureInternal : TextureInternal) (vkc : VulkanContext) =
+        if metadata <> textureInternal.TextureVulkan_.ImageSize then
+            TextureVulkan.destroy textureInternal.TextureVulkan_ vkc
+            textureInternal.TextureVulkan_ <- TextureVulkan.create textureInternal.PixelFormat_ textureInternal.InternalFormat_ metadata textureInternal.MipLevels textureInternal.AttachmentMode_ textureInternal.TextureType_ textureInternal.ImageUsages_ vkc
     
-    /// Record commands to upload pixel data to TextureParallel. Can only be done once.
-    static member uploadAsync commandBuffer metadata mipLevel layer pixels (textureParallel : TextureParallel) (vkc : VulkanContext) =
-        match textureParallel.AttachmentMode_ with
+    /// Record commands to upload pixel data to TextureInternal. Can only be done once.
+    static member uploadAsync commandBuffer metadata mipLevel layer pixels (textureInternal : TextureInternal) (vkc : VulkanContext) =
+        match textureInternal.AttachmentMode_ with
         | AttachmentNone ->
-            let uploadSize = ImageFormat.getImageSize metadata.TextureWidth metadata.TextureHeight textureParallel.InternalFormat_
+            let uploadSize = ImageFormat.getImageSize metadata.TextureWidth metadata.TextureHeight textureInternal.InternalFormat_
             let stagingBuffer = Buffer.stageData uploadSize pixels vkc
-            textureParallel.Texture.StagingBuffers.Add stagingBuffer // TODO: P0: make sure this isn't a source of leaks and deal with it if it is!
-            Hl.recordBufferToImageCopy commandBuffer metadata.TextureWidth metadata.TextureHeight mipLevel layer stagingBuffer.VkBuffer textureParallel.Image
+            textureInternal.TextureVulkan_.StagingBuffers.Add stagingBuffer // TODO: P0: make sure this isn't a source of leaks and deal with it if it is!
+            Hl.recordBufferToImageCopy commandBuffer metadata.TextureWidth metadata.TextureHeight mipLevel layer stagingBuffer.VkBuffer textureInternal.Image
         | AttachmentColor _
         | AttachmentDepth _ -> Log.warn "Upload not supported for attachment texture."
 
-    /// Upload pixel data to TextureParallel. Can only be done once.
-    static member upload metadata mipLevel layer pixels thread (textureParallel : TextureParallel) (vkc : VulkanContext) =
+    /// Upload pixel data to TextureInternal. Can only be done once.
+    static member upload metadata mipLevel layer pixels thread (textureInternal : TextureInternal) (vkc : VulkanContext) =
         let (queue, pool, fence) = TextureLoadThread.getResources thread vkc
         let commandBuffer = Hl.createTransientCommandBuffer pool vkc.Device
-        TextureParallel.uploadAsync commandBuffer metadata mipLevel layer pixels textureParallel vkc
+        TextureInternal.uploadAsync commandBuffer metadata mipLevel layer pixels textureInternal vkc
         CommandQueue.executeTransient commandBuffer pool fence queue vkc.Device
         
         // destroy staging buffer (only) if it was created by async function in synchronous context to prevent massive waste of vram
-        if textureParallel.AttachmentMode_.IsAttachmentNone then
-            let lastIndex = dec textureParallel.Texture.StagingBuffers.Count
-            Buffer.destroy textureParallel.Texture.StagingBuffers.[lastIndex] vkc
-            textureParallel.Texture.StagingBuffers.RemoveAt lastIndex
-    
-    /// Record commands to upload array of pixel data to TextureParallel. Can only be done once.
-    static member uploadArrayAsync commandBuffer metadata mipLevel layer (array : 'a array) textureParallel vkc =
+        if textureInternal.AttachmentMode_.IsAttachmentNone then
+            let lastIndex = dec textureInternal.TextureVulkan_.StagingBuffers.Count
+            Buffer.destroy textureInternal.TextureVulkan_.StagingBuffers[lastIndex] vkc
+            textureInternal.TextureVulkan_.StagingBuffers.RemoveAt lastIndex
+
+    /// Record commands to upload array of pixel data to TextureInternal. Can only be done once.
+    static member uploadArrayAsync commandBuffer metadata mipLevel layer (array : 'a array) textureInternal vkc =
         use arrayPin = new ArrayPin<_> (array)
-        TextureParallel.uploadAsync commandBuffer metadata mipLevel layer arrayPin.NativeInt textureParallel vkc
+        TextureInternal.uploadAsync commandBuffer metadata mipLevel layer arrayPin.NativeInt textureInternal vkc
     
-    /// Upload array of pixel data to TextureParallel. Can only be done once.
-    static member uploadArray metadata mipLevel layer (array : 'a array) thread textureParallel vkc =
+    /// Upload array of pixel data to TextureInternal. Can only be done once.
+    static member uploadArray metadata mipLevel layer (array : 'a array) thread textureInternal vkc =
         use arrayPin = new ArrayPin<_> (array)
-        TextureParallel.upload metadata mipLevel layer arrayPin.NativeInt thread textureParallel vkc
+        TextureInternal.upload metadata mipLevel layer arrayPin.NativeInt thread textureInternal vkc
     
-    /// Generate mipmaps in TextureParallel. Can only be done once, after upload to (only) mipLevel 0.
+    /// Generate mipmaps in TextureInternal. Can only be done once, after upload to (only) mipLevel 0.
     /// TODO: DJL: get this working with compressed textures.
-    static member generateMipmaps metadata layer thread (textureParallel : TextureParallel) (vkc : VulkanContext) =
-        if textureParallel.MipLevels > 1 then
+    static member generateMipmaps metadata layer thread (textureInternal : TextureInternal) (vkc : VulkanContext) =
+        if textureInternal.MipLevels > 1 then
             let (queue, pool, fence) = TextureLoadThread.getResources thread vkc
             let commandBuffer = Hl.createTransientCommandBuffer pool vkc.Device
-            Hl.recordGenerateMipmaps commandBuffer metadata.TextureWidth metadata.TextureHeight textureParallel.MipLevels layer textureParallel.Image
+            Hl.recordGenerateMipmaps commandBuffer metadata.TextureWidth metadata.TextureHeight textureInternal.MipLevels layer textureInternal.Image
             CommandQueue.executeTransient commandBuffer pool fence queue vkc.Device
         else Log.warn "Mipmap generation attempted on texture with only one mip level."
     
-    /// Create an empty TextureParallel.
-    /// NOTE: DJL: this is for fast empty texture creation. It is not preferred for TextureParallel.empty, which is created from Assets.Default.Image.
+    /// Create an empty TextureInternal.
+    /// NOTE: DJL: this is for fast empty texture creation. It is not preferred for TextureInternal.empty, which is created from Assets.Default.Image.
     static member createEmpty (vkc : VulkanContext) =
-        TextureParallel.create
+        TextureInternal.create
             MipmapNone AttachmentNone Texture2d [||]
             Uncompressed.ImageFormat Uncompressed.PixelFormat (TextureMetadata.make 32 32) vkc
     
-    /// Destroy TextureParallel.
-    static member destroy (textureParallel : TextureParallel) (vkc : VulkanContext) =
-        for i in 0 .. dec textureParallel.Textures_.Length do TextureSingleton.destroy textureParallel.Textures_.[i] vkc
+    /// Destroy TextureInternal.
+    static member destroy (textureInternal : TextureInternal) (vkc : VulkanContext) =
+        TextureVulkan.destroy textureInternal.TextureVulkan_ vkc
 
     /// Represents the empty texture used in Vulkan.
     static member empty =
         match Hl.EmptyTextureOpt with
-        | Some (:? TextureParallel as empty) -> empty
-        | Some _ | None -> failwith "TextureParallel.empty not initialized properly."
+        | Some (:? TextureInternal as empty) -> empty
+        | Some _ | None -> failwith "TextureInternal.empty not initialized properly."
 
 [<AutoOpen>]
 module TextureModule2 =
@@ -849,18 +840,18 @@ module TextureModule2 =
     [<RequireQualifiedAccess>]
     module Hl =
 
-        /// Create a Vulkan texture from existing texture data.
+        /// Create an internal texture representation from existing texture data.
         /// NOTE: this function will destroy textureData.
-        let createTextureVulkanFromData mipmaps (compression : TextureCompression) textureData thread vkc =
+        let createTextureInternalFromData mipmaps (compression : TextureCompression) textureData thread vkc =
 
             // upload data to vulkan as appropriate
             match textureData with
             | TextureDataDotNet (metadata, bytes) ->
                 let mipmapMode = if mipmaps then MipmapAuto else MipmapNone
-                let textureParallel = TextureParallel.create mipmapMode AttachmentNone Texture2d [||] compression.ImageFormat compression.PixelFormat metadata vkc
-                TextureParallel.uploadArray metadata 0 0 bytes thread textureParallel vkc
-                if mipmaps then TextureParallel.generateMipmaps metadata 0 thread textureParallel vkc
-                (metadata, textureParallel)
+                let textureInternal = TextureInternal.create mipmapMode AttachmentNone Texture2d [||] compression.ImageFormat compression.PixelFormat metadata vkc
+                TextureInternal.uploadArray metadata 0 0 bytes thread textureInternal vkc
+                if mipmaps then TextureInternal.generateMipmaps metadata 0 thread textureInternal vkc
+                textureInternal
             | TextureDataMipmap (metadata, blockCompressed, bytes, mipmapBytesArray) ->
 
                 // handle all compression scenarios
@@ -877,8 +868,8 @@ module TextureModule2 =
                     else MipmapNone
 
                 // create texture and upload original image
-                let textureParallel = TextureParallel.create mipmapMode AttachmentNone Texture2d [||] compression.ImageFormat compression.PixelFormat metadata vkc
-                TextureParallel.uploadArray metadata 0 0 bytes thread textureParallel vkc
+                let textureInternal = TextureInternal.create mipmapMode AttachmentNone Texture2d [||] compression.ImageFormat compression.PixelFormat metadata vkc
+                TextureInternal.uploadArray metadata 0 0 bytes thread textureInternal vkc
 
                 // populate mipmaps as determined
                 match mipmapMode with
@@ -886,22 +877,22 @@ module TextureModule2 =
                 | MipmapManual mipLevels ->
                     let mutable mipmapIndex = 0
                     while mipmapIndex < mipLevels - 1 do
-                        let (mipmapResolution, mipmapBytes) = mipmapBytesArray.[mipmapIndex]
+                        let (mipmapResolution, mipmapBytes) = mipmapBytesArray[mipmapIndex]
                         let metadata = TextureMetadata.make mipmapResolution.X mipmapResolution.Y
-                        TextureParallel.uploadArray metadata (inc mipmapIndex) 0 mipmapBytes thread textureParallel vkc
+                        TextureInternal.uploadArray metadata (inc mipmapIndex) 0 mipmapBytes thread textureInternal vkc
                         mipmapIndex <- inc mipmapIndex
-                | MipmapAuto -> TextureParallel.generateMipmaps metadata 0 thread textureParallel vkc
+                | MipmapAuto -> TextureInternal.generateMipmaps metadata 0 thread textureInternal vkc
         
                 // fin
-                (metadata, textureParallel)
+                textureInternal
 
             | TextureDataNative (metadata, bytesPtr, disposer) ->
                 use _ = disposer
                 let mipmapMode = if mipmaps then MipmapAuto else MipmapNone
-                let textureParallel = TextureParallel.create mipmapMode AttachmentNone Texture2d [||] compression.ImageFormat compression.PixelFormat metadata vkc
-                TextureParallel.upload metadata 0 0 bytesPtr thread textureParallel vkc
-                if mipmaps then TextureParallel.generateMipmaps metadata 0 thread textureParallel vkc
-                (metadata, textureParallel)
+                let textureInternal = TextureInternal.create mipmapMode AttachmentNone Texture2d [||] compression.ImageFormat compression.PixelFormat metadata vkc
+                TextureInternal.upload metadata 0 0 bytesPtr thread textureInternal vkc
+                if mipmaps then TextureInternal.generateMipmaps metadata 0 thread textureInternal vkc
+                textureInternal
 
         /// Attempt to create uploadable texture data from the given file path.
         let tryCreateTextureData minimal (filePath : string) =
@@ -936,13 +927,13 @@ module TextureModule2 =
                             |> Array.ofSeq
                             |> Array.map (fun mip ->
                                 let resolution = v2i (int mip.Width) (int mip.Height)
-                                let bytes = mip.Faces.[0].Data
+                                let bytes = mip.Faces[0].Data
                                 (resolution, bytes))
                         let bytesArray = // ensure last element isn't a duplicate, which might happen when texture is not power-of-two or perhaps written to disk incorrectly
                             if bytesArray.Length >= 2 then
                                 let bytesArrayRev = Array.rev bytesArray
-                                let bytesLast = snd bytesArrayRev.[0]
-                                let bytes2ndToLast = snd bytesArrayRev.[1]
+                                let bytesLast = snd bytesArrayRev[0]
+                                let bytes2ndToLast = snd bytesArrayRev[1]
                                 if bytes2ndToLast.Length = bytesLast.Length
                                 then Array.allButLast bytesArray
                                 else bytesArray
@@ -999,32 +990,19 @@ module TextureModule2 =
 
             else None
 
-        /// Attempt to create a Vulkan texture from a file.
-        let tryCreateTextureVulkan minimal mipmaps (compression : TextureCompression) filePath thread vkc =
+        /// Attempt to create an internal texture representation from a file.
+        let tryCreateTextureInternal minimal mipmaps (compression : TextureCompression) filePath thread vkc =
             match tryCreateTextureData minimal filePath with
             | Some textureData ->
-                let (metadata, textureParallel) = createTextureVulkanFromData mipmaps compression textureData thread vkc
-                Right (metadata, textureParallel)
+                let texture = createTextureInternalFromData mipmaps compression textureData thread vkc
+                Right texture
             | None -> Left ("Missing file or unloadable texture data '" + filePath + "'.")
 
-/// A texture that's immediately loaded.
-type [<Struct; NoEquality; NoComparison>] EagerTexture =
-    { TextureMetadata : TextureMetadata
-      TextureParallel : TextureParallel }
-
-    /// The texture's unique id.
-    member this.Id =
-        this.TextureParallel.Id
-
-    /// Destroy this texture's backing Vulkan texture.
-    static member destroy texture vkc =
-        TextureParallel.destroy texture.TextureParallel vkc
-
 /// A texture that can be loaded from another thread.
-type LazyTexture (filePath : string, minimalMetadata : TextureMetadata, minimalTextureParallel : TextureParallel) =
+type LazyTexture (filePath : string, minimalTexture : TextureInternal) =
 
     let [<VolatileField>] mutable fullServeAttempted = false
-    let [<VolatileField>] mutable fullMetadataAndTextureParallelOpt = ValueNone
+    let [<VolatileField>] mutable fullTextureOpt = ValueOption<TextureInternal>.None
     let [<VolatileField>] mutable destroyed = false
     let destructionLock = obj ()
 
@@ -1037,28 +1015,28 @@ type LazyTexture (filePath : string, minimalMetadata : TextureMetadata, minimalT
     member this.TextureMetadata =
         if destroyed then failwith "Accessing field of destroyed texture."
         if fullServeAttempted then
-            match fullMetadataAndTextureParallelOpt with
-            | ValueSome (metadata, _) -> metadata
-            | ValueNone -> minimalMetadata
-        else minimalMetadata
+            match fullTextureOpt with
+            | ValueSome fullTexture -> fullTexture.TextureMetadata
+            | ValueNone -> minimalTexture.TextureMetadata
+        else minimalTexture.TextureMetadata
 
-    member this.TextureParallel =
+    member this.TextureInternal =
         if destroyed then failwith "Accessing field of destroyed texture."
         if fullServeAttempted then
-            match fullMetadataAndTextureParallelOpt with
-            | ValueSome (_, textureParallel) -> textureParallel
-            | ValueNone -> minimalTextureParallel
-        else minimalTextureParallel
+            match fullTextureOpt with
+            | ValueSome fullTexture -> fullTexture
+            | ValueNone -> minimalTexture
+        else minimalTexture
 
     member this.Destroy vkc =
         lock destructionLock $ fun () ->
             if not destroyed then
-                TextureParallel.destroy minimalTextureParallel vkc
+                TextureInternal.destroy minimalTexture vkc
                 if fullServeAttempted then
-                    match fullMetadataAndTextureParallelOpt with
-                    | ValueSome (_, fullTextureParallel) ->
-                        TextureParallel.destroy fullTextureParallel vkc
-                        fullMetadataAndTextureParallelOpt <- ValueNone
+                    match fullTextureOpt with
+                    | ValueSome fullTexture ->
+                        TextureInternal.destroy fullTexture vkc
+                        fullTextureOpt <- ValueNone
                     | ValueNone -> ()
                     fullServeAttempted <- false
                 destroyed <- true
@@ -1068,43 +1046,43 @@ type LazyTexture (filePath : string, minimalMetadata : TextureMetadata, minimalT
     member internal this.TryServe vkc =
         lock destructionLock $ fun () ->
             if not destroyed && not fullServeAttempted then
-                match Hl.tryCreateTextureVulkan false false (Hl.inferTextureCompression filePath) filePath TextureStreamingThread vkc with
-                | Right (metadata, textureParallel) -> fullMetadataAndTextureParallelOpt <- ValueSome (metadata, textureParallel)
+                match Hl.tryCreateTextureInternal false false (Hl.inferTextureCompression filePath) filePath TextureStreamingThread vkc with
+                | Right texture -> fullTextureOpt <- ValueSome texture
                 | Left error -> Log.info ("Could not serve lazy texture due to:" + error)
                 fullServeAttempted <- true
 
 /// A 2d texture.
 type [<CustomEquality; NoComparison>] Texture =
     | EmptyTexture
-    | EagerTexture of EagerTexture
+    | EagerTexture of TextureInternal
     | LazyTexture of LazyTexture
 
-    member private this.TextureParallel =
+    member private this.TextureInternal =
         match this with
-        | EmptyTexture -> TextureParallel.empty
-        | EagerTexture eagerTexture -> eagerTexture.TextureParallel
-        | LazyTexture lazyTexture -> lazyTexture.TextureParallel
+        | EmptyTexture -> TextureInternal.empty
+        | EagerTexture texture -> texture
+        | LazyTexture lazyTexture -> lazyTexture.TextureInternal
 
     member this.TextureMetadata =
         match this with
         | EmptyTexture -> TextureMetadata.empty
-        | EagerTexture eagerTexture -> eagerTexture.TextureMetadata
+        | EagerTexture texture -> texture.TextureMetadata
         | LazyTexture lazyTexture -> lazyTexture.TextureMetadata
 
-    member this.Id = this.TextureParallel.Id
-    member this.Image = this.TextureParallel.Image
-    member this.ImageView = this.TextureParallel.ImageView
-    member this.LayerViews = this.TextureParallel.LayerViews
-    member this.SubViews = this.TextureParallel.SubViews
-    member this.InternalFormat = this.TextureParallel.InternalFormat
-    member this.VkFormat = this.TextureParallel.VkFormat
-    member this.MipLevels = this.TextureParallel.MipLevels_
-    member this.Layers = this.TextureParallel.TextureType_.Layers
+    member this.Id = this.TextureInternal.Id
+    member this.Image = this.TextureInternal.Image
+    member this.ImageView = this.TextureInternal.ImageView
+    member this.LayerViews = this.TextureInternal.LayerViews
+    member this.SubViews = this.TextureInternal.SubViews
+    member this.InternalFormat = this.TextureInternal.InternalFormat
+    member this.VkFormat = this.TextureInternal.VkFormat
+    member this.MipLevels = this.TextureInternal.MipLevels_
+    member this.Layers = this.TextureInternal.TextureType_.Layers
 
     static member hash texture =
         match texture with
         | EmptyTexture -> 0
-        | EagerTexture eagerTexture -> hash eagerTexture.Id
+        | EagerTexture texture -> hash texture.Id
         | LazyTexture lazyTexture -> hash lazyTexture
 
     static member equals this that =
@@ -1124,17 +1102,17 @@ type [<CustomEquality; NoComparison>] Texture =
     
     static member destroy texture vkc =
         match texture with
-        | EmptyTexture -> () // TODO: DJL: protect TextureParallel.empty from premature destruction.
-        | EagerTexture eagerTexture -> EagerTexture.destroy eagerTexture vkc
+        | EmptyTexture -> () // TODO: DJL: protect TextureInternal.empty from premature destruction.
+        | EagerTexture texture -> TextureInternal.destroy texture vkc
         | LazyTexture lazyTexture -> lazyTexture.Destroy vkc
 
     /// Check that the current texture size is the same as the given size, resizing if necessary. If used, must be called every frame.
     static member updateSize metadata texture vkc =
         match texture with
         | EmptyTexture -> ()
-        | EagerTexture eagerTexture -> TextureParallel.updateSize metadata eagerTexture.TextureParallel vkc
-        | LazyTexture lazyTexture -> TextureParallel.updateSize metadata lazyTexture.TextureParallel vkc
-    
+        | EagerTexture texture -> TextureInternal.updateSize metadata texture vkc
+        | LazyTexture lazyTexture -> TextureInternal.updateSize metadata lazyTexture.TextureInternal vkc
+
     /// Asynchronously transition the layout of the current texture.
     static member transitionLayoutAsync srcLayout dstLayout (texture : Texture) commandBuffer =
         Hl.recordTransitionLayout true texture.MipLevels 0 texture.Layers texture.InternalFormat.VkImageAspectFlags srcLayout dstLayout texture.Image commandBuffer
@@ -1154,29 +1132,28 @@ type [<CustomEquality; NoComparison>] Texture =
 /// A container for textures to be destroyed once their frame has executed.
 type TextureDumpster =
     private
-        { Textures_ : Texture List array }
+        { Textures_ : Texture List }
 
-    /// Create a TextureDumpster.
-    static member create () =
-        let textures = Array.zeroCreate<List<Texture>> Constants.Vulkan.MaxFramesInFlight
-        for i in 0 .. dec textures.Length do textures.[i] <- List ()
-        { Textures_ = textures }
+    static member private sweep dumpster vkc =
+        for texture in dumpster.Textures_ do
+            Texture.destroy texture vkc
+        dumpster.Textures_.Clear ()
 
-    /// Destroy all textures from latest finished frame. Must be called before submitting new textures to avoid premature destruction.
+    /// Destroy all textures from latest finished frame.
     static member beginFrame dumpster vkc =
-        for i in 0 .. dec dumpster.Textures_.[Hl.CurrentFrame].Count do
-            Texture.destroy dumpster.Textures_.[Hl.CurrentFrame].[i] vkc
-        dumpster.Textures_.[Hl.CurrentFrame].Clear ()
+        TextureDumpster.sweep dumpster vkc
 
     /// Relinquish texture for safe destruction.
     static member toss texture dumpster =
-        dumpster.Textures_.[Hl.CurrentFrame].Add texture
+        dumpster.Textures_.Add texture
+
+    /// Create a TextureDumpster.
+    static member create () =
+        { Textures_ = List () }
 
     /// Destroy a TextureDumpster.
     static member destroy dumpster vkc =
-        for i in 0 .. dec dumpster.Textures_.Length do
-            for j in 0 .. dec dumpster.Textures_.[i].Count do
-                Texture.destroy dumpster.Textures_.[i].[j] vkc
+        TextureDumpster.sweep dumpster vkc
 
 /// Memoizes and optionally threads texture loads.
 type TextureClient (lazyTextureQueuesOpt : ConcurrentDictionary<_, _> option) =
@@ -1199,16 +1176,16 @@ type TextureClient (lazyTextureQueuesOpt : ConcurrentDictionary<_, _> option) =
         match textures.TryGetValue filePath with
         | (false, _) ->
 
-            // attempt to create texture
-            match Hl.tryCreateTextureVulkan desireLazy mipmaps compression filePath thread vkc with
-            | Right (metadata, textureParallel) ->
+            // attempt to create vulkan texture
+            match Hl.tryCreateTextureInternal desireLazy mipmaps compression filePath thread vkc with
+            | Right texture ->
                 let texture =
                     if  desireLazy &&
                         (PathF.GetExtensionLower filePath = ".dds" || PathF.GetExtensionLower filePath = ".ktx") then
-                        let lazyTexture = new LazyTexture (filePath, metadata, textureParallel)
+                        let lazyTexture = new LazyTexture (filePath, texture)
                         lazyTextureQueue.Enqueue lazyTexture
                         LazyTexture lazyTexture
-                    else EagerTexture { TextureMetadata = metadata; TextureParallel = textureParallel}
+                    else EagerTexture texture
                 textures.Add (filePath, texture)
                 Right texture
             | Left error -> Left error

@@ -60,23 +60,23 @@ type AssetClient (textureClient : TextureClient, cubeMapClient : CubeMapClient, 
         for textureData in textureDataArray do
             match textureData with
             | Right (filePath, textureData) ->
-                let texture =
+                let textureInternal =
                     if is2d then
-                        let (metadata, textureParallel) =
+                        let textureInternal =
                             if Hl.inferTextureFiltered2d filePath
-                            then Hl.createTextureVulkanFromData true Uncompressed textureData RenderThread vkc
-                            else Hl.createTextureVulkanFromData false Uncompressed textureData RenderThread vkc
-                        EagerTexture { TextureMetadata = metadata; TextureParallel = textureParallel }
+                            then Hl.createTextureInternalFromData true Uncompressed textureData RenderThread vkc
+                            else Hl.createTextureInternalFromData false Uncompressed textureData RenderThread vkc
+                        EagerTexture textureInternal
                     elif textureData.LazyLoadable then
-                        let (metadata, textureParallel) = Hl.createTextureVulkanFromData true (Hl.inferTextureCompression filePath) textureData RenderThread vkc
-                        let lazyTexture = new LazyTexture (filePath, metadata, textureParallel)
+                        let textureInternal = Hl.createTextureInternalFromData true (Hl.inferTextureCompression filePath) textureData RenderThread vkc
+                        let lazyTexture = new LazyTexture (filePath, textureInternal)
                         textureClient.LazyTextureQueue.Enqueue lazyTexture
                         LazyTexture lazyTexture
                     else
                         Log.infoOnce "One or more textures for non-2D usage are not streamable; consider using the BlockCompress refinement with them for more efficient loading."
-                        let (metadata, textureParallel) = Hl.createTextureVulkanFromData true (Hl.inferTextureCompression filePath) textureData RenderThread vkc
-                        EagerTexture { TextureMetadata = metadata; TextureParallel = textureParallel }
-                textureClient.Textures[filePath] <- texture
+                        let textureInternal = Hl.createTextureInternalFromData true (Hl.inferTextureCompression filePath) textureData RenderThread vkc
+                        EagerTexture textureInternal
+                textureClient.Textures[filePath] <- textureInternal
             | Left error -> Log.info error
 
         // run assimp scene loading ops

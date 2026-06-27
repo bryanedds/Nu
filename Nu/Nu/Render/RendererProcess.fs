@@ -102,10 +102,10 @@ type RendererInline () =
                         let defaultImageTag = AssetTag.make Assets.Default.PackageName Assets.Default.ImageName
                         match Metadata.tryGetFilePath defaultImageTag with
                         | Some filePath ->
-                            match Hl.tryCreateTextureVulkan true false Uncompressed filePath RenderThread vkc with
-                            | Right (_, textureParallel) -> textureParallel
-                            | Left _ -> TextureParallel.createEmpty vkc
-                        | None -> TextureParallel.createEmpty vkc
+                            match Hl.tryCreateTextureInternal true false Uncompressed filePath RenderThread vkc with
+                            | Right textureInternal -> textureInternal
+                            | Left _ -> TextureInternal.createEmpty vkc
+                        | None -> TextureInternal.createEmpty vkc
                     Hl.EmptyTextureOpt <- Some emptyTexture
 
                     // create 3d renderer
@@ -219,7 +219,7 @@ type RendererInline () =
                 renderer3d.CleanUp ()
                 renderer2d.CleanUp ()
                 rendererImGui.CleanUp ()
-                TextureParallel.destroy TextureParallel.empty vkc
+                TextureInternal.destroy TextureInternal.empty vkc
                 VulkanContext.cleanup vkc
                 dependenciesOpt <- None
                 terminated <- true
@@ -371,10 +371,10 @@ type RendererThread () =
             let defaultImageTag = AssetTag.make Assets.Default.PackageName Assets.Default.ImageName
             match Metadata.tryGetFilePath defaultImageTag with
             | Some filePath ->
-                match Hl.tryCreateTextureVulkan true false Uncompressed filePath RenderThread vkc with
-                | Right (_, textureParallel) -> textureParallel
-                | Left _ -> TextureParallel.createEmpty vkc
-            | None -> TextureParallel.createEmpty vkc
+                match Hl.tryCreateTextureInternal true false Uncompressed filePath RenderThread vkc with
+                | Right textureInternal -> textureInternal
+                | Left _ -> TextureInternal.createEmpty vkc
+            | None -> TextureInternal.createEmpty vkc
         Hl.EmptyTextureOpt <- Some emptyTexture
 
         // create 3d renderer
@@ -444,7 +444,7 @@ type RendererThread () =
         renderer3d.CleanUp ()
         renderer2d.CleanUp ()
         rendererImGui.CleanUp ()
-        TextureParallel.destroy TextureParallel.empty vkc
+        TextureInternal.destroy TextureInternal.empty vkc
 
     interface RendererProcess with
 
