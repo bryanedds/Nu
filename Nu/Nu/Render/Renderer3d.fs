@@ -1037,11 +1037,11 @@ type [<ReferenceEquality>] private RenderTasks =
       LightMaps : SortableLightMap List
       LightMapRenders : uint64 HashSet
       Lights : SortableLight List
-      DeferredStatic : Dictionary<PhysicallyBasedSurface, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>
-      DeferredStaticPreBatches : Dictionary<Guid, struct (PhysicallyBasedSurface * (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array)>
-      DeferredStaticClipped : Dictionary<PhysicallyBasedSurface, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>
-      DeferredStaticClippedPreBatches : Dictionary<Guid, struct (PhysicallyBasedSurface * (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array)>
-      DeferredAnimated : Dictionary<AnimatedModelSurfaceKey, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>
+      DeferredStatic : OrderedDictionary<PhysicallyBasedSurface, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>
+      DeferredStaticPreBatches : OrderedDictionary<Guid, struct (PhysicallyBasedSurface * (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array)>
+      DeferredStaticClipped : OrderedDictionary<PhysicallyBasedSurface, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>
+      DeferredStaticClippedPreBatches : OrderedDictionary<Guid, struct (PhysicallyBasedSurface * (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array)>
+      DeferredAnimated : OrderedDictionary<AnimatedModelSurfaceKey, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>
       DeferredTerrains : struct (TerrainDescriptor * TerrainPatchDescriptor * PhysicallyBasedGeometry) List
       Forward : struct (single * single * Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * PhysicallyBasedSurface * DepthTest) List
       ForwardSorted : struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * PhysicallyBasedSurface * DepthTest) List
@@ -1056,11 +1056,11 @@ type [<ReferenceEquality>] private RenderTasks =
           LightMapRenders = HashSet HashIdentity.Structural
           LightMaps = List ()
           Lights = List ()
-          DeferredStatic = dictPlus PhysicallyBasedSurface.comparer []
-          DeferredStaticPreBatches = dictPlus HashIdentity.Structural []
-          DeferredStaticClipped = dictPlus PhysicallyBasedSurface.comparer []
-          DeferredStaticClippedPreBatches = dictPlus HashIdentity.Structural []
-          DeferredAnimated = dictPlus AnimatedModelSurfaceKey.comparer []
+          DeferredStatic = OrderedDictionary PhysicallyBasedSurfaceFns.comparer
+          DeferredStaticPreBatches = OrderedDictionary HashIdentity.Structural
+          DeferredStaticClipped = OrderedDictionary PhysicallyBasedSurfaceFns.comparer
+          DeferredStaticClippedPreBatches = OrderedDictionary HashIdentity.Structural
+          DeferredAnimated = OrderedDictionary AnimatedModelSurfaceKey.comparer
           DeferredTerrains = List ()
           Forward = List ()
           ForwardSorted = List ()
@@ -1099,18 +1099,21 @@ type [<ReferenceEquality>] private RenderTasks =
                 renderTasks.DeferredStaticRemovals.Add entry.Key
         for removal in renderTasks.DeferredStaticRemovals do
             renderTasks.DeferredStatic.Remove removal |> ignore<bool>
+        renderTasks.DeferredStaticRemovals.Clear ()
 
         for entry in renderTasks.DeferredStaticClipped do
             if entry.Value.Count = 0 then
                 renderTasks.DeferredStaticClippedRemovals.Add entry.Key
         for removal in renderTasks.DeferredStaticClippedRemovals do
             renderTasks.DeferredStaticClipped.Remove removal |> ignore<bool>
+        renderTasks.DeferredStaticClippedRemovals.Clear ()
 
         for entry in renderTasks.DeferredAnimated do
             if entry.Value.Count = 0 then
                 renderTasks.DeferredAnimatedRemovals.Add entry.Key
         for removal in renderTasks.DeferredAnimatedRemovals do
             renderTasks.DeferredAnimated.Remove removal |> ignore<bool>
+        renderTasks.DeferredAnimatedRemovals.Clear ()
 
     static member shadowUpToDate lightingConfigChanged renderingConfigChanged renderTasks renderTasksCached =
         if not lightingConfigChanged && not renderingConfigChanged then
@@ -2238,9 +2241,10 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     // deferred render animated surface when needed
                     if renderType = DeferredRenderType || dualRendering then
                         let animatedModelSurfaceKey = { BoneTransforms = boneTransforms; AnimatedSurface = surface }
-                        match renderTasks.DeferredAnimated.TryGetValue animatedModelSurfaceKey with
-                        | (true, renderOps) -> renderOps.Add struct (model, castShadow, presence, texCoordsOffset, properties)
-                        | (false, _) -> renderTasks.DeferredAnimated.Add (animatedModelSurfaceKey, List ([struct (model, castShadow, presence, texCoordsOffset, properties)]))
+                        let mutable renderOps = Unchecked.defaultof<_>
+                        if renderTasks.DeferredAnimated.TryGetValue (animatedModelSurfaceKey, &renderOps)
+                        then renderOps.Add struct (model, castShadow, presence, texCoordsOffset, properties)
+                        else renderTasks.DeferredAnimated.Add (animatedModelSurfaceKey, List ([struct (model, castShadow, presence, texCoordsOffset, properties)]))
 
                     // forward render animated surface when needed
                     let subsortOffset =
@@ -2301,9 +2305,10 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                         // deferred render animated surface when needed
                         if renderType = DeferredRenderType then
                             let animatedModelSurfaceKey = { BoneTransforms = boneTransforms; AnimatedSurface = surface }
-                            match renderTasks.DeferredAnimated.TryGetValue animatedModelSurfaceKey with
-                            | (true, renderOps) -> renderOps.Add struct (model, castShadow, presence, texCoordsOffset, properties)
-                            | (false, _) -> renderTasks.DeferredAnimated.Add (animatedModelSurfaceKey, List ([struct (model, castShadow, presence, texCoordsOffset, properties)]))
+                            let mutable renderOps = Unchecked.defaultof<_>
+                            if renderTasks.DeferredAnimated.TryGetValue (animatedModelSurfaceKey, &renderOps)
+                            then renderOps.Add struct (model, castShadow, presence, texCoordsOffset, properties)
+                            else renderTasks.DeferredAnimated.Add (animatedModelSurfaceKey, List ([struct (model, castShadow, presence, texCoordsOffset, properties)]))
 
                         // forward render animated surface when needed
                         let subsortOffset =
