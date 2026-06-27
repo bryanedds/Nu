@@ -1206,7 +1206,7 @@ type [<ReferenceEquality>] private RenderTasks =
                     m = mCached &&
                     cs = csCached &&
                     bo = boCached && // TODO: P0: optimize?
-                    PhysicallyBasedSurface.equals s sCached)
+                    OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.equals s sCached)
             deferredStaticCached &&
             deferredStaticPreBatchesCached &&
             deferredStaticClippedCached &&
