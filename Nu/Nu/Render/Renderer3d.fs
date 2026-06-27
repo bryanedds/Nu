@@ -1097,6 +1097,8 @@ type [<ReferenceEquality>] private RenderTasks =
 
     static member clear removeEmptyLists renderTasks =
 
+        let removeEmptyLists = true // NOTE: temporary regression fix.
+
         renderTasks.SkyBoxes.Clear ()
         renderTasks.LightProbes.Clear ()
         renderTasks.LightMapRenders.Clear ()
