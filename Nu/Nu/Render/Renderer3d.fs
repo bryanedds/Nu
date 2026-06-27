@@ -1063,11 +1063,11 @@ type [<ReferenceEquality>] private RenderTasks =
       LightMaps : SortableLightMap List
       LightMapRenders : uint64 HashSet
       Lights : SortableLight List
-      DeferredStatic : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>
-      DeferredStaticPreBatches : Dictionary<Guid, struct (OpenGL.PhysicallyBased.PhysicallyBasedSurface * (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array)>
-      DeferredStaticClipped : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>
-      DeferredStaticClippedPreBatches : Dictionary<Guid, struct (OpenGL.PhysicallyBased.PhysicallyBasedSurface * (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array)>
-      DeferredAnimated : Dictionary<AnimatedModelSurfaceKey, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>
+      DeferredStatic : OrderedDictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>
+      DeferredStaticPreBatches : OrderedDictionary<Guid, struct (OpenGL.PhysicallyBased.PhysicallyBasedSurface * (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array)>
+      DeferredStaticClipped : OrderedDictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>
+      DeferredStaticClippedPreBatches : OrderedDictionary<Guid, struct (OpenGL.PhysicallyBased.PhysicallyBasedSurface * (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array)>
+      DeferredAnimated : OrderedDictionary<AnimatedModelSurfaceKey, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>
       DeferredTerrains : struct (TerrainDescriptor * TerrainPatchDescriptor * OpenGL.PhysicallyBased.PhysicallyBasedGeometry) List
       Forward : struct (single * single * Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * OpenGL.PhysicallyBased.PhysicallyBasedSurface * DepthTest) List
       ForwardSorted : struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * OpenGL.PhysicallyBased.PhysicallyBasedSurface * DepthTest) List
@@ -1082,11 +1082,11 @@ type [<ReferenceEquality>] private RenderTasks =
           LightMapRenders = HashSet HashIdentity.Structural
           LightMaps = List ()
           Lights = List ()
-          DeferredStatic = dictPlus OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.comparer []
-          DeferredStaticPreBatches = dictPlus HashIdentity.Structural []
-          DeferredStaticClipped = dictPlus OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.comparer []
-          DeferredStaticClippedPreBatches = dictPlus HashIdentity.Structural []
-          DeferredAnimated = dictPlus AnimatedModelSurfaceKey.comparer []
+          DeferredStatic = OrderedDictionary OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.comparer
+          DeferredStaticPreBatches = OrderedDictionary HashIdentity.Structural
+          DeferredStaticClipped = OrderedDictionary OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.comparer
+          DeferredStaticClippedPreBatches = OrderedDictionary HashIdentity.Structural
+          DeferredAnimated = OrderedDictionary AnimatedModelSurfaceKey.comparer
           DeferredTerrains = List ()
           Forward = List ()
           ForwardSorted = List ()
@@ -2656,9 +2656,10 @@ type [<ReferenceEquality>] GlRenderer3d =
                     // deferred render animated surface when needed
                     if renderType = DeferredRenderType || dualRendering then
                         let animatedModelSurfaceKey = { BoneTransforms = boneTransforms; AnimatedSurface = surface }
-                        match renderTasks.DeferredAnimated.TryGetValue animatedModelSurfaceKey with
-                        | (true, renderOps) -> renderOps.Add struct (model, castShadow, presence, texCoordsOffset, properties)
-                        | (false, _) -> renderTasks.DeferredAnimated.Add (animatedModelSurfaceKey, List ([struct (model, castShadow, presence, texCoordsOffset, properties)]))
+                        let mutable renderOps = Unchecked.defaultof<_>
+                        if renderTasks.DeferredAnimated.TryGetValue (animatedModelSurfaceKey, &renderOps)
+                        then renderOps.Add struct (model, castShadow, presence, texCoordsOffset, properties)
+                        else renderTasks.DeferredAnimated.Add (animatedModelSurfaceKey, List ([struct (model, castShadow, presence, texCoordsOffset, properties)]))
 
                     // forward render animated surface when needed
                     let subsortOffset =
@@ -2719,9 +2720,10 @@ type [<ReferenceEquality>] GlRenderer3d =
                         // deferred render animated surface when needed
                         if renderType = DeferredRenderType then
                             let animatedModelSurfaceKey = { BoneTransforms = boneTransforms; AnimatedSurface = surface }
-                            match renderTasks.DeferredAnimated.TryGetValue animatedModelSurfaceKey with
-                            | (true, renderOps) -> renderOps.Add struct (model, castShadow, presence, texCoordsOffset, properties)
-                            | (false, _) -> renderTasks.DeferredAnimated.Add (animatedModelSurfaceKey, List ([struct (model, castShadow, presence, texCoordsOffset, properties)]))
+                            let mutable renderOps = Unchecked.defaultof<_>
+                            if renderTasks.DeferredAnimated.TryGetValue (animatedModelSurfaceKey, &renderOps)
+                            then renderOps.Add struct (model, castShadow, presence, texCoordsOffset, properties)
+                            else renderTasks.DeferredAnimated.Add (animatedModelSurfaceKey, List ([struct (model, castShadow, presence, texCoordsOffset, properties)]))
 
                         // forward render animated surface when needed
                         let subsortOffset =
