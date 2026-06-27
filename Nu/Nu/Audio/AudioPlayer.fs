@@ -481,9 +481,10 @@ type [<ReferenceEquality>] SdlAudioPlayer =
 
         member audioPlayer.CleanUp () =
 
-            // destroy mixer
+            // destroy mixer, which also destroys groups and tracks, but _not_ audio resources -
+            // https://wiki.libsdl.org/SDL3_mixer/MIX_DestroyMixer
             match audioPlayer.MixerOpt with
-            | Some mixer -> SDL3_mixer.MIX_DestroyMixer mixer // also destroys tracks
+            | Some mixer -> SDL3_mixer.MIX_DestroyMixer mixer
             | None -> ()
 
             // destroy audio resources
