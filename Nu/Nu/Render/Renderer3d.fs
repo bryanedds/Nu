@@ -1615,7 +1615,215 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 Log.info "Could not utilize sky box due to non-existent cube map asset."
                 (lightAmbientColor, lightAmbientBrightness, None)
         | None -> (Color.White, 1.0f, None)
-    
+
+    static member private makeBillboardMaterial (properties : MaterialProperties inref, material : Material inref, renderer) =
+        let albedoTexture =
+            match VulkanRenderer3d.tryGetRenderAsset material.AlbedoImage renderer with
+            | ValueSome (TextureAsset texture) -> texture
+            | _ -> renderer.PhysicallyBasedMaterial.AlbedoTexture
+        let roughnessTexture =
+            match VulkanRenderer3d.tryGetRenderAsset material.RoughnessImage renderer with
+            | ValueSome (TextureAsset texture) -> texture
+            | _ -> renderer.PhysicallyBasedMaterial.RoughnessTexture
+        let metallicTexture =
+            match VulkanRenderer3d.tryGetRenderAsset material.MetallicImage renderer with
+            | ValueSome (TextureAsset texture) -> texture
+            | _ -> renderer.PhysicallyBasedMaterial.MetallicTexture
+        let ambientOcclusionTexture =
+            match VulkanRenderer3d.tryGetRenderAsset material.AmbientOcclusionImage renderer with
+            | ValueSome (TextureAsset texture) -> texture
+            | _ -> renderer.PhysicallyBasedMaterial.AmbientOcclusionTexture
+        let emissionTexture =
+            match VulkanRenderer3d.tryGetRenderAsset material.EmissionImage renderer with
+            | ValueSome (TextureAsset texture) -> texture
+            | _ -> renderer.PhysicallyBasedMaterial.EmissionTexture
+        let normalTexture =
+            match VulkanRenderer3d.tryGetRenderAsset material.NormalImage renderer with
+            | ValueSome (TextureAsset texture) -> texture
+            | _ -> renderer.PhysicallyBasedMaterial.NormalTexture
+        let heightTexture =
+            match VulkanRenderer3d.tryGetRenderAsset material.HeightImage renderer with
+            | ValueSome (TextureAsset texture) -> texture
+            | _ -> renderer.PhysicallyBasedMaterial.HeightTexture
+        let subdermalTexture =
+            match VulkanRenderer3d.tryGetRenderAsset material.SubdermalImage renderer with
+            | ValueSome (TextureAsset texture) -> texture
+            | _ -> renderer.PhysicallyBasedMaterial.SubdermalTexture
+        let finenessTexture =
+            match VulkanRenderer3d.tryGetRenderAsset material.FinenessImage renderer with
+            | ValueSome (TextureAsset texture) -> texture
+            | _ -> renderer.PhysicallyBasedMaterial.FinenessTexture
+        let scatterTexture =
+            match VulkanRenderer3d.tryGetRenderAsset material.ScatterImage renderer with
+            | ValueSome (TextureAsset texture) -> texture
+            | _ -> renderer.PhysicallyBasedMaterial.ScatterTexture
+        let clearCoatTexture =
+            match VulkanRenderer3d.tryGetRenderAsset material.ClearCoatImage renderer with
+            | ValueSome (TextureAsset texture) -> texture
+            | _ -> renderer.PhysicallyBasedMaterial.ClearCoatTexture
+        let clearCoatRoughnessTexture =
+            match VulkanRenderer3d.tryGetRenderAsset material.ClearCoatRoughnessImage renderer with
+            | ValueSome (TextureAsset texture) -> texture
+            | _ -> renderer.PhysicallyBasedMaterial.ClearCoatRoughnessTexture
+        let clearCoatNormalTexture =
+            match VulkanRenderer3d.tryGetRenderAsset material.ClearCoatNormalImage renderer with
+            | ValueSome (TextureAsset texture) -> texture
+            | _ -> renderer.PhysicallyBasedMaterial.ClearCoatNormalTexture
+        let properties : PhysicallyBasedMaterialProperties =
+            { Albedo = properties.Albedo
+              Roughness = properties.Roughness
+              Metallic = properties.Metallic
+              AmbientOcclusion = properties.AmbientOcclusion
+              Emission = properties.Emission
+              Height = properties.Height
+              IgnoreLightMaps = properties.IgnoreLightMaps
+              OpaqueDistance = properties.OpaqueDistance
+              FinenessOffset = properties.FinenessOffset
+              ScatterType = properties.ScatterType
+              SpecularScalar = properties.SpecularScalar
+              SubsurfaceCutoff = properties.SubsurfaceCutoff
+              SubsurfaceCutoffMargin = properties.SubsurfaceCutoffMargin
+              RefractiveIndex = properties.RefractiveIndex
+              ClearCoat = properties.ClearCoat
+              ClearCoatRoughness = properties.ClearCoatRoughness }
+        let material : PhysicallyBasedMaterial =
+            { AlbedoTexture = albedoTexture
+              RoughnessTexture = roughnessTexture
+              MetallicTexture = metallicTexture
+              AmbientOcclusionTexture = ambientOcclusionTexture
+              EmissionTexture = emissionTexture
+              NormalTexture = normalTexture
+              HeightTexture = heightTexture
+              SubdermalTexture = subdermalTexture
+              FinenessTexture = finenessTexture
+              ScatterTexture = scatterTexture
+              ClearCoatTexture = clearCoatTexture
+              ClearCoatRoughnessTexture = clearCoatRoughnessTexture
+              ClearCoatNormalTexture = clearCoatNormalTexture
+              TwoSided = true
+              Clipped = true
+              Names = "" }
+        struct (properties, material)
+
+    static member private applySurfaceMaterial (material : Material inref, surfaceMaterial : PhysicallyBasedMaterial inref, renderer) =
+        let albedoTexture =
+            match material.AlbedoImageOpt with
+            | ValueSome image ->
+                match VulkanRenderer3d.tryGetRenderAsset image renderer with
+                | ValueSome (TextureAsset texture) -> texture
+                | _ -> surfaceMaterial.AlbedoTexture
+            | ValueNone -> surfaceMaterial.AlbedoTexture
+        let roughnessTexture =
+            match material.RoughnessImageOpt with
+            | ValueSome image ->
+                match VulkanRenderer3d.tryGetRenderAsset image renderer with
+                | ValueSome (TextureAsset texture) -> texture
+                | _ -> surfaceMaterial.RoughnessTexture
+            | ValueNone -> surfaceMaterial.RoughnessTexture
+        let metallicTexture =
+            match material.MetallicImageOpt with
+            | ValueSome image ->
+                match VulkanRenderer3d.tryGetRenderAsset image renderer with
+                | ValueSome (TextureAsset texture) -> texture
+                | _ -> surfaceMaterial.MetallicTexture
+            | ValueNone -> surfaceMaterial.MetallicTexture
+        let ambientOcclusionTexture =
+            match material.AmbientOcclusionImageOpt with
+            | ValueSome image ->
+                match VulkanRenderer3d.tryGetRenderAsset image renderer with
+                | ValueSome (TextureAsset texture) -> texture
+                | _ -> surfaceMaterial.AmbientOcclusionTexture
+            | ValueNone -> surfaceMaterial.AmbientOcclusionTexture
+        let emissionTexture =
+            match material.EmissionImageOpt with
+            | ValueSome image ->
+                match VulkanRenderer3d.tryGetRenderAsset image renderer with
+                | ValueSome (TextureAsset texture) -> texture
+                | _ -> surfaceMaterial.EmissionTexture
+            | ValueNone -> surfaceMaterial.EmissionTexture
+        let normalTexture =
+            match material.NormalImageOpt with
+            | ValueSome image ->
+                match VulkanRenderer3d.tryGetRenderAsset image renderer with
+                | ValueSome (TextureAsset texture) -> texture
+                | _ -> surfaceMaterial.NormalTexture
+            | ValueNone -> surfaceMaterial.NormalTexture
+        let heightTexture =
+            match material.HeightImageOpt with
+            | ValueSome image ->
+                match VulkanRenderer3d.tryGetRenderAsset image renderer with
+                | ValueSome (TextureAsset texture) -> texture
+                | _ -> surfaceMaterial.HeightTexture
+            | ValueNone -> surfaceMaterial.HeightTexture
+        let finenessTexture =
+            match material.FinenessImageOpt with
+            | ValueSome image ->
+                match VulkanRenderer3d.tryGetRenderAsset image renderer with
+                | ValueSome (TextureAsset texture) -> texture
+                | _ -> surfaceMaterial.FinenessTexture
+            | ValueNone -> surfaceMaterial.FinenessTexture
+        let subdermalTexture =
+            match material.SubdermalImageOpt with
+            | ValueSome image ->
+                match VulkanRenderer3d.tryGetRenderAsset image renderer with
+                | ValueSome (TextureAsset texture) -> texture
+                | _ -> surfaceMaterial.SubdermalTexture
+            | ValueNone -> surfaceMaterial.SubdermalTexture
+        let scatterTexture =
+            match material.ScatterImageOpt with
+            | ValueSome image ->
+                match VulkanRenderer3d.tryGetRenderAsset image renderer with
+                | ValueSome (TextureAsset texture) -> texture
+                | _ -> surfaceMaterial.ScatterTexture
+            | ValueNone -> surfaceMaterial.ScatterTexture
+        let clearCoatTexture =
+            match material.ClearCoatImageOpt with
+            | ValueSome image ->
+                match VulkanRenderer3d.tryGetRenderAsset image renderer with
+                | ValueSome (TextureAsset texture) -> texture
+                | _ -> surfaceMaterial.ClearCoatTexture
+            | ValueNone -> surfaceMaterial.ClearCoatTexture
+        let clearCoatRoughnessTexture =
+            match material.ClearCoatRoughnessImageOpt with
+            | ValueSome image ->
+                match VulkanRenderer3d.tryGetRenderAsset image renderer with
+                | ValueSome (TextureAsset texture) -> texture
+                | _ -> surfaceMaterial.ClearCoatRoughnessTexture
+            | ValueNone -> surfaceMaterial.ClearCoatRoughnessTexture
+        let clearCoatNormalTexture =
+            match material.ClearCoatNormalImageOpt with
+            | ValueSome image ->
+                match VulkanRenderer3d.tryGetRenderAsset image renderer with
+                | ValueSome (TextureAsset texture) -> texture
+                | _ -> surfaceMaterial.ClearCoatNormalTexture
+            | ValueNone -> surfaceMaterial.ClearCoatNormalTexture
+        let twoSided =
+            match material.TwoSidedOpt with
+            | ValueSome twoSided -> twoSided
+            | ValueNone -> surfaceMaterial.TwoSided
+        let clipped =
+            match material.ClippedOpt with
+            | ValueSome clipped -> clipped
+            | ValueNone -> surfaceMaterial.Clipped
+        let surfaceMaterial : PhysicallyBasedMaterial =
+            { AlbedoTexture = albedoTexture
+              RoughnessTexture = roughnessTexture
+              MetallicTexture = metallicTexture
+              AmbientOcclusionTexture = ambientOcclusionTexture
+              EmissionTexture = emissionTexture
+              NormalTexture = normalTexture
+              HeightTexture = heightTexture
+              SubdermalTexture = subdermalTexture
+              FinenessTexture = finenessTexture
+              ScatterTexture = scatterTexture
+              ClearCoatTexture = clearCoatTexture
+              ClearCoatRoughnessTexture = clearCoatRoughnessTexture
+              ClearCoatNormalTexture = clearCoatNormalTexture
+              TwoSided = twoSided
+              Clipped = clipped
+              Names = "" }
+        surfaceMaterial
+
     static member private handleReloadShaders renderer =
         Pipeline.reloadShaders renderer.SkyBoxPipeline.Pipeline renderer.VulkanContext
         Pipeline.reloadShaders renderer.IrradiancePipeline.Pipeline renderer.VulkanContext
@@ -1652,6 +1860,131 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             forwardSurfacesSortBuffer.Add struct (subsort, sort, model, castShadow, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest, (model.Translation - eyeCenter).MagnitudeSquared, i)
         forwardSurfacesSortBuffer.Sort forwardSurfacesComparer
         forwardSurfacesSortBuffer
+
+    static member private categorizeBillboardSurface
+        (eyeCenter : Vector3,
+         eyeRotation : Quaternion,
+         model : Matrix4x4,
+         castShadow : bool,
+         presence : Presence,
+         insetOpt : Box2 option,
+         albedoMetadata : TextureMetadata,
+         properties,
+         orientUp,
+         planar,
+         shadowOffset,
+         billboardSurface : PhysicallyBasedSurface,
+         depthTest,
+         renderType,
+         renderPass,
+         renderTasks,
+         _ : VulkanRenderer3d) =
+
+        // compute tex coords offset
+        let texCoordsOffset =
+            match insetOpt with
+            | Some inset ->
+                let texelWidth = albedoMetadata.TextureTexelWidth
+                let texelHeight = albedoMetadata.TextureTexelHeight
+                let px = inset.Min.X * texelWidth
+                let py = (inset.Min.Y + inset.Size.Y) * texelHeight
+                let sx = inset.Size.X * texelWidth
+                let sy = -inset.Size.Y * texelHeight
+                Box2 (px, py, sx, sy)
+            | None ->
+                let px = 0.0f
+                let py = 1.0f
+                let sx = 1.0f
+                let sy = -1.0f
+                Box2 (px, py, sx, sy)
+
+        // render as appropriate
+        match renderPass with
+        | ShadowPass (_, _, _, _, shadowRotation, _) ->
+
+            // compute billboard rotation
+            let lookRotation = shadowRotation * Quaternion.CreateFromAxisAngle (v3Right, -MathF.PI_OVER_2)
+            let billboardRotation = Matrix4x4.CreateFromQuaternion lookRotation
+
+            // add render task as appropriate
+            let mutable affineRotation = model
+            affineRotation.Translation <- v3Zero
+            let mutable billboardMatrix = model * billboardRotation
+            billboardMatrix.Translation <- model.Translation + lookRotation.Forward * shadowOffset
+            match renderType with
+            | DeferredRenderType ->
+                if not billboardSurface.SurfaceMaterial.Clipped then
+                    let mutable renderOps = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
+                    if renderTasks.DeferredStatic.TryGetValue (billboardSurface, &renderOps)
+                    then renderOps.Add struct (billboardMatrix, castShadow, presence, texCoordsOffset, properties)
+                    else renderTasks.DeferredStatic.Add (billboardSurface, List ([struct (billboardMatrix, castShadow, presence, texCoordsOffset, properties)]))
+                else
+                    let mutable renderOps = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
+                    if renderTasks.DeferredStaticClipped.TryGetValue (billboardSurface, &renderOps)
+                    then renderOps.Add struct (billboardMatrix, castShadow, presence, texCoordsOffset, properties)
+                    else renderTasks.DeferredStaticClipped.Add (billboardSurface, List ([struct (billboardMatrix, castShadow, presence, texCoordsOffset, properties)]))
+            | ForwardRenderType (subsort, sort) ->
+                renderTasks.Forward.Add struct (subsort, sort, billboardMatrix, castShadow, presence, texCoordsOffset, properties, ValueNone, billboardSurface, depthTest)
+
+        | _ ->
+            
+            // compute billboard rotation based on orient up and planarness
+            let billboardRotation =
+                if orientUp then
+
+                    // oriented up and planar, like a tree billboard
+                    if planar then
+                        let up = Vector3.UnitY
+                        let camRight = Vector3.Transform (Vector3.UnitX, eyeRotation)
+                        let rightFlat = Vector3 (camRight.X, 0.0f, camRight.Z)
+                        let right = if rightFlat.LengthSquared () > 0.000001f then Vector3.Normalize rightFlat else Vector3.UnitX
+                        let forwardCandidate = Vector3.Cross (right, up)
+                        let toCamera = eyeCenter - model.Translation
+                        let below = Vector3.Dot (forwardCandidate, toCamera) >= 0.0f
+                        let forward = if below then forwardCandidate else Vector3.Cross (up, right)
+                        (right, up, forward)
+                        |> Matrix4x4.CreateRotation
+                        |> Matrix4x4.Transpose
+
+                    // oriented up and not planar, like a character billboard
+                    else
+                        let eyeFlat = eyeCenter.WithY 0.0f
+                        let positionFlat = model.Translation.WithY 0.0f
+                        let eyeToPositionFlat = positionFlat - eyeFlat
+                        if eyeToPositionFlat.MagnitudeSquared > 0.0f then
+                            let forward = eyeToPositionFlat.Normalized
+                            let yaw = MathF.Atan2 (forward.X, forward.Z) - MathF.PI
+                            Matrix4x4.CreateRotationY yaw
+                        else m4Identity
+
+                // not oriented up and planar, like a simple billboard
+                elif planar then
+                    Matrix4x4.CreateFromQuaternion eyeRotation 
+
+                // not oriented up and not planar, like a sprite
+                else
+                    let lookat = Matrix4x4.CreateLookAt (eyeCenter, model.Translation, eyeRotation.Up)
+                    lookat.Inverted
+                    
+            // add render task as appropriate
+            let mutable affineRotation = model
+            affineRotation.Translation <- v3Zero
+            let mutable billboardMatrix = model * billboardRotation
+            billboardMatrix.Translation <- model.Translation
+            match renderType with
+            | DeferredRenderType ->
+                if not billboardSurface.SurfaceMaterial.Clipped then
+                    let mutable renderOps = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
+                    if renderTasks.DeferredStatic.TryGetValue (billboardSurface, &renderOps)
+                    then renderOps.Add struct (billboardMatrix, castShadow, presence, texCoordsOffset, properties)
+                    else renderTasks.DeferredStatic.Add (billboardSurface, List ([struct (billboardMatrix, castShadow, presence, texCoordsOffset, properties)]))
+                else
+                    let mutable renderOps = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
+                    if renderTasks.DeferredStaticClipped.TryGetValue (billboardSurface, &renderOps)
+                    then renderOps.Add struct (billboardMatrix, castShadow, presence, texCoordsOffset, properties)
+                    else renderTasks.DeferredStaticClipped.Add (billboardSurface, List ([struct (billboardMatrix, castShadow, presence, texCoordsOffset, properties)]))
+            | ForwardRenderType (subsort, sort) ->
+                renderTasks.Forward.Add struct (subsort, sort, billboardMatrix, castShadow, presence, texCoordsOffset, properties, ValueNone, billboardSurface, depthTest)
 
     static member private categorizeStaticModelSurface
         (model : Matrix4x4 inref,
@@ -1701,6 +2034,82 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 else renderTasks.DeferredStaticClipped.Add (surface, List ([struct (model, castShadow, presence, texCoordsOffset, properties)]))
         | ForwardRenderType (subsort, sort) ->
             renderTasks.Forward.Add struct (subsort, sort, model, castShadow, presence, texCoordsOffset, properties, ValueNone, surface, depthTest)
+
+    static member private categorizeStaticModelSurfaceByIndex
+        (model : Matrix4x4 inref,
+         castShadow : bool,
+         presence : Presence,
+         insetOpt : Box2 voption inref,
+         properties : MaterialProperties inref,
+         material : Material inref,
+         staticModel : StaticModel AssetTag,
+         surfaceIndex : int,
+         depthTest : DepthTest,
+         renderType : RenderType,
+         renderPass : RenderPass,
+         renderer) =
+        match VulkanRenderer3d.tryGetRenderAsset staticModel renderer with
+        | ValueSome renderAsset ->
+            match renderAsset with
+            | StaticModelAsset (_, modelAsset) ->
+                if surfaceIndex > -1 && surfaceIndex < modelAsset.Surfaces.Length then
+                    let surface = modelAsset.Surfaces[surfaceIndex]
+                    let surface = // OPTIMIZATION: apply surface material only if effective.
+                        if material <> Material.empty then
+                            let surfaceMaterial = VulkanRenderer3d.applySurfaceMaterial (&material, &surface.SurfaceMaterial, renderer)
+                            { surface with SurfaceMaterial = surfaceMaterial }
+                        else surface
+                    VulkanRenderer3d.categorizeStaticModelSurface (&model, castShadow, presence, &insetOpt, &properties, surface, depthTest, renderType, renderPass, ValueNone, renderer)
+            | _ -> Log.infoOnce ("Cannot render static model surface with a non-static model asset for '" + scstring staticModel + "'.")
+        | ValueNone -> Log.infoOnce ("Cannot render static model surface due to unloadable asset(s) for '" + scstring staticModel + "'.")
+
+    static member private categorizeStaticModelSurfacePreBatch
+        (preBatchId : Guid,
+         staticModelSurfaces : _ array,
+         material : Material,
+         staticModel : StaticModel AssetTag,
+         surfaceIndex : int,
+         depthTest : DepthTest,
+         renderType : RenderType,
+         frustumInterior : Frustum,
+         frustumExterior : Frustum,
+         frustumImposter : Frustum,
+         renderPass : RenderPass,
+         renderTasks : RenderTasks,
+         renderer) =
+        match VulkanRenderer3d.tryGetRenderAsset staticModel renderer with
+        | ValueSome renderAsset ->
+            match renderAsset with
+            | StaticModelAsset (_, modelAsset) ->
+                if surfaceIndex > -1 && surfaceIndex < modelAsset.Surfaces.Length then
+                    let surface = modelAsset.Surfaces[surfaceIndex]
+                    let surface = // OPTIMIZATION: apply surface material only if effective.
+                        if material <> Material.empty then
+                            let surfaceMaterial = VulkanRenderer3d.applySurfaceMaterial (&material, &surface.SurfaceMaterial, renderer)
+                            { surface with SurfaceMaterial = surfaceMaterial }
+                        else surface
+                    match renderType with
+                    | DeferredRenderType ->
+                        let preBatch = struct (surface, staticModelSurfaces)
+                        if not surface.SurfaceMaterial.Clipped
+                        then renderTasks.DeferredStaticPreBatches.Add (preBatchId, preBatch)
+                        else renderTasks.DeferredStaticClippedPreBatches.Add (preBatchId, preBatch)
+                    | ForwardRenderType (subsort, sort) ->
+                        for (model, castShadow, presence, insetOpt, properties, bounds) in staticModelSurfaces do
+                            let unculled =
+                                match renderPass with
+                                | LightMapPass (_, _) -> true // TODO: see if we have enough context to cull here.
+                                | ShadowPass (_, _, shadowLightType, _, _, shadowFrustum) ->
+                                    if castShadow then // TODO: see if we should check for CastShadow when constructing the pre-batch.
+                                        let shadowFrustumInteriorOpt = if LightType.shouldShadowInterior shadowLightType then ValueSome shadowFrustum else ValueNone
+                                        Presence.intersects3d shadowFrustumInteriorOpt shadowFrustum shadowFrustum false presence bounds
+                                    else false
+                                | ReflectionPass (_, reflFrustum) -> Presence.intersects3d ValueNone reflFrustum reflFrustum false presence bounds
+                                | NormalPass -> Presence.intersects3d (ValueSome frustumInterior) frustumExterior frustumImposter false presence bounds
+                            if unculled then
+                                renderTasks.Forward.Add struct (subsort, sort, model, castShadow, presence, insetOpt, properties, ValueNone, surface, depthTest)
+            | _ -> ()
+        | ValueNone -> ()
 
     static member private categorizeStaticModel
         (frustumInterior : Frustum,
@@ -1922,6 +2331,10 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let userDefinedStaticModelsToDestroy = SList.make ()
         for message in renderMessages do
             match message with
+            //| CreateUserDefinedStaticModel cudsm ->
+            //    VulkanRenderer3d.tryCreateUserDefinedStaticModel cudsm.StaticModelSurfaceDescriptors cudsm.Bounds cudsm.StaticModel renderer
+            //| DestroyUserDefinedStaticModel dudsm ->
+            //    userDefinedStaticModelsToDestroy.Add dudsm.StaticModel 
             | RenderSkyBox rsb ->
                 let renderTasks = VulkanRenderer3d.getRenderTasks rsb.RenderPass renderer
                 renderTasks.SkyBoxes.Add (rsb.AmbientColor, rsb.AmbientBrightness, rsb.CubeMapColor, rsb.CubeMapBrightness, rsb.CubeMap)
@@ -1958,6 +2371,41 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 renderTasks.Lights.Add light
                 if rl.DesireShadows then
                     renderer.LightsDesiringShadows[rl.LightId] <- light
+            | RenderBillboard rb ->
+                let struct (billboardProperties, billboardMaterial) = VulkanRenderer3d.makeBillboardMaterial (&rb.MaterialProperties, &rb.Material, renderer)
+                let billboardSurface = PhysicallyBasedSurface.make Array.empty m4Identity (box3 (v3 -0.5f 0.5f -0.5f) v3One) billboardProperties billboardMaterial -1 Assimp.Node.Empty renderer.BillboardGeometry
+                let renderTasks = VulkanRenderer3d.getRenderTasks rb.RenderPass renderer
+                VulkanRenderer3d.categorizeBillboardSurface (eyeCenter, eyeRotation, rb.ModelMatrix, rb.CastShadow, rb.Presence, rb.InsetOpt, billboardMaterial.AlbedoTexture.TextureMetadata, rb.MaterialProperties, rb.OrientUp, rb.Planar, rb.ShadowOffset, billboardSurface, rb.DepthTest, rb.RenderType, rb.RenderPass, renderTasks, renderer)
+            | RenderBillboards rbs ->
+                let struct (billboardProperties, billboardMaterial) = VulkanRenderer3d.makeBillboardMaterial (&rbs.MaterialProperties, &rbs.Material, renderer)
+                let billboardSurface = PhysicallyBasedSurface.make Array.empty m4Identity (box3 (v3 -0.5f -0.5f -0.5f) v3One) billboardProperties billboardMaterial -1 Assimp.Node.Empty renderer.BillboardGeometry
+                let renderTasks = VulkanRenderer3d.getRenderTasks rbs.RenderPass renderer
+                for (model, castShadow, presence, insetOpt, orientUp, planar) in rbs.Billboards do
+                    VulkanRenderer3d.categorizeBillboardSurface (eyeCenter, eyeRotation, model, castShadow, presence, insetOpt, billboardMaterial.AlbedoTexture.TextureMetadata, rbs.MaterialProperties, orientUp, planar, rbs.ShadowOffset, billboardSurface, rbs.DepthTest, rbs.RenderType, rbs.RenderPass, renderTasks, renderer)
+            | RenderBillboardParticles rbps ->
+                let struct (billboardProperties, billboardMaterial) = VulkanRenderer3d.makeBillboardMaterial (&rbps.MaterialProperties, &rbps.Material, renderer)
+                let renderTasks = VulkanRenderer3d.getRenderTasks rbps.RenderPass renderer
+                for particle in rbps.Particles do
+                    let billboardMatrix =
+                        Matrix4x4.CreateAffine
+                            (particle.Transform.Position,
+                             particle.Transform.Rotation,
+                             particle.Transform.Size * particle.Transform.Scale)
+                    let billboardProperties = { billboardProperties with Albedo = billboardProperties.Albedo * particle.Color; Emission = particle.Emission.R }
+                    let billboardSurface = PhysicallyBasedSurface.make Array.empty m4Identity box3Zero billboardProperties billboardMaterial -1 Assimp.Node.Empty renderer.BillboardGeometry
+                    VulkanRenderer3d.categorizeBillboardSurface (eyeCenter, eyeRotation, billboardMatrix, rbps.CastShadow, rbps.Presence, Option.ofValueOption particle.InsetOpt, billboardMaterial.AlbedoTexture.TextureMetadata, rbps.MaterialProperties, true, false, rbps.ShadowOffset, billboardSurface, rbps.DepthTest, rbps.RenderType, rbps.RenderPass, renderTasks, renderer)
+            | RenderStaticModelSurface rsms ->
+                let insetOpt = Option.toValueOption rsms.InsetOpt
+                VulkanRenderer3d.categorizeStaticModelSurfaceByIndex (&rsms.ModelMatrix, rsms.CastShadow, rsms.Presence, &insetOpt, &rsms.MaterialProperties, &rsms.Material, rsms.StaticModel, rsms.SurfaceIndex, rsms.DepthTest, rsms.RenderType, rsms.RenderPass, renderer)
+            | RenderStaticModelSurfacePreBatch rsmsb ->
+                let renderPass = rsmsb.RenderPass
+                let renderTasks = VulkanRenderer3d.getRenderTasks renderPass renderer
+                VulkanRenderer3d.categorizeStaticModelSurfacePreBatch (rsmsb.StaticModelSurfacePreBatch.PreBatchId, rsmsb.StaticModelSurfacePreBatch.StaticModelSurfaces, rsmsb.StaticModelSurfacePreBatch.Material, rsmsb.StaticModelSurfacePreBatch.StaticModel, rsmsb.StaticModelSurfacePreBatch.SurfaceIndex, rsmsb.StaticModelSurfacePreBatch.DepthTest, rsmsb.StaticModelSurfacePreBatch.RenderType, frustumInterior, frustumExterior, frustumImposter, renderPass, renderTasks, renderer)
+            | RenderStaticModelSurfacePreBatches rsmsbs ->
+                let renderPass = rsmsbs.RenderPass
+                let renderTasks = VulkanRenderer3d.getRenderTasks renderPass renderer
+                for preBatch in rsmsbs.StaticModelSurfacePreBatches do
+                    VulkanRenderer3d.categorizeStaticModelSurfacePreBatch (preBatch.PreBatchId, preBatch.StaticModelSurfaces, preBatch.Material, preBatch.StaticModel, preBatch.SurfaceIndex, preBatch.DepthTest, preBatch.RenderType, frustumInterior, frustumExterior, frustumImposter, renderPass, renderTasks, renderer)
             | RenderStaticModel rsm ->
                 let insetOpt = Option.toValueOption rsm.InsetOpt
                 let renderTasks = VulkanRenderer3d.getRenderTasks rsm.RenderPass renderer
@@ -1967,6 +2415,18 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 for (model, castShadow, presence, insetOpt, properties) in rsms.StaticModels do // TODO: see if these should be struct tuples.
                     let insetOpt = Option.toValueOption insetOpt
                     VulkanRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, &model, castShadow, presence, &insetOpt, &properties, rsms.StaticModel, rsms.Clipped, rsms.DepthTest, rsms.RenderType, rsms.RenderPass, renderTasks, renderer)
+            | RenderCachedStaticModelSurface csmsm ->
+                VulkanRenderer3d.categorizeStaticModelSurfaceByIndex (&csmsm.CachedStaticModelSurfaceMatrix, csmsm.CachedStaticModelSurfaceCastShadow, csmsm.CachedStaticModelSurfacePresence, &csmsm.CachedStaticModelSurfaceInsetOpt, &csmsm.CachedStaticModelSurfaceMaterialProperties, &csmsm.CachedStaticModelSurfaceMaterial, csmsm.CachedStaticModelSurfaceModel, csmsm.CachedStaticModelSurfaceIndex, csmsm.CachedStaticModelSurfaceDepthTest, csmsm.CachedStaticModelSurfaceRenderType, csmsm.CachedStaticModelSurfaceRenderPass, renderer)
+            | RenderCachedStaticModel csmm ->
+                let renderTasks = VulkanRenderer3d.getRenderTasks csmm.CachedStaticModelRenderPass renderer
+                VulkanRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, &csmm.CachedStaticModelMatrix, csmm.CachedStaticModelCastShadow, csmm.CachedStaticModelPresence, &csmm.CachedStaticModelInsetOpt, &csmm.CachedStaticModelMaterialProperties, csmm.CachedStaticModel, csmm.CachedStaticModelClipped, csmm.CachedStaticModelDepthTest, csmm.CachedStaticModelRenderType, csmm.CachedStaticModelRenderPass, renderTasks, renderer)
+            //| RenderUserDefinedStaticModel rudsm ->
+            //    let insetOpt = Option.toValueOption rudsm.InsetOpt
+            //    let assetTag = asset Assets.Default.PackageName Gen.name // TODO: see if we should instead use a specialized package for temporary assets like these.
+            //    VulkanRenderer3d.tryCreateUserDefinedStaticModel rudsm.StaticModelSurfaceDescriptors rudsm.Bounds assetTag renderer
+            //    let renderTasks = VulkanRenderer3d.getRenderTasks rudsm.RenderPass renderer
+            //    VulkanRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, &rudsm.ModelMatrix, rudsm.CastShadow, rudsm.Presence, &insetOpt, &rudsm.MaterialProperties, assetTag, rudsm.Clipped, rudsm.DepthTest, rudsm.RenderType, rudsm.RenderPass, renderTasks, renderer)
+            //    userDefinedStaticModelsToDestroy.Add assetTag
             | RenderAnimatedModel rsm ->
                 let insetOpt = Option.toValueOption rsm.InsetOpt
                 let renderTasks = VulkanRenderer3d.getRenderTasks rsm.RenderPass renderer
@@ -1977,9 +2437,12 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             | RenderCachedAnimatedModel camm ->
                 let renderTasks = VulkanRenderer3d.getRenderTasks camm.CachedAnimatedModelRenderPass renderer
                 VulkanRenderer3d.categorizeAnimatedModel (&camm.CachedAnimatedModelMatrix, camm.CachedAnimatedModelCastShadow, camm.CachedAnimatedModelPresence, &camm.CachedAnimatedModelInsetOpt, &camm.CachedAnimatedModelMaterialProperties, camm.CachedAnimatedModelBoneTransforms, camm.CachedAnimatedModel, camm.CachedAnimatedModelSubsortOffsets, camm.CachedAnimatedModelDualRenderedSurfaceIndices, camm.CachedAnimatedModelDepthTest, camm.CachedAnimatedModelRenderType, renderTasks, renderer)
-            | RenderCachedStaticModel csmm ->
-                let renderTasks = VulkanRenderer3d.getRenderTasks csmm.CachedStaticModelRenderPass renderer
-                VulkanRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, &csmm.CachedStaticModelMatrix, csmm.CachedStaticModelCastShadow, csmm.CachedStaticModelPresence, &csmm.CachedStaticModelInsetOpt, &csmm.CachedStaticModelMaterialProperties, csmm.CachedStaticModel, csmm.CachedStaticModelClipped, csmm.CachedStaticModelDepthTest, csmm.CachedStaticModelRenderType, csmm.CachedStaticModelRenderPass, renderTasks, renderer)
+            | ConfigureLighting3d l3c ->
+                if renderer.LightingConfig <> l3c then renderer.LightingConfigChanged <- true
+                renderer.LightingConfig <- l3c
+            | ConfigureRenderer3d r3c ->
+                if renderer.RendererConfig <> r3c then renderer.RendererConfigChanged <- true
+                renderer.RendererConfig <- r3c
             | LoadRenderPackage3d packageName ->
                 VulkanRenderer3d.handleLoadRenderPackage packageName renderer
             | UnloadRenderPackage3d packageName ->
@@ -2347,7 +2810,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         //// attempt to deferred render terrain shadows
         //for struct (descriptor, patchDescriptor, geometry) in renderTasks.DeferredTerrains do
         //    if lightFrustum.Intersects patchDescriptor.PatchBounds then
-        //        GlRenderer3d.renderPhysicallyBasedTerrain
+        //        VulkanRenderer3d.renderPhysicallyBasedTerrain
         //            lightViewArray lightProjectionArray lightViewProjectionArray lightOrigin
         //            renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
         //            descriptor geometry shadowTerrainShader renderer.PhysicallyBasedTerrainVao renderer
@@ -2602,6 +3065,38 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 frustumInterior frustumExterior frustumImposter renderPass [||] preBatch surface
                 eyeDescriptorSet samplerDescriptorSet renderer.PhysicallyBasedPipelines.DeferredStaticPipeline renderer
 
+        // end deferred static rendering
+        VulkanRenderer3d.endPhysicallyBasedDeferredSurfaces
+            renderer.PhysicallyBasedPipelines.DeferredStaticPipeline renderer.VulkanContext
+
+        // begin deferred static clipped rendering
+        let (eyeDescriptorSet, samplerDescriptorSet) =
+            VulkanRenderer3d.beginPhysicallyBasedDeferredSurfaces
+                eyeCenter view viewInverse geometryProjection geometryProjectionInverse geometryViewProjection renderer.FilteredSampler geometryImageViewArray compositionZTexture renderer.GeometryViewport renderer.RenderPassIndex renderer.PhysicallyBasedPipelines.DeferredStaticClippedPipeline renderer
+
+        // render deferred static surfaces clipped (unbatched)
+        let mutable i = 0
+        for entry in renderTasks.DeferredStatic do
+            VulkanRenderer3d.renderPhysicallyBasedDeferredSurfaces
+                [||] entry.Value entry.Key eyeDescriptorSet samplerDescriptorSet renderer.PhysicallyBasedPipelines.DeferredStaticClippedPipeline renderer
+            i <- inc i
+
+        // render deferred static surface clipped pre-batches
+        for entry in renderTasks.DeferredStaticPreBatches do
+            let struct (surface, preBatch) = entry.Value
+            VulkanRenderer3d.renderPhysicallyBasedDeferredSurfacePreBatch
+                frustumInterior frustumExterior frustumImposter renderPass [||] preBatch surface
+                eyeDescriptorSet samplerDescriptorSet renderer.PhysicallyBasedPipelines.DeferredStaticClippedPipeline renderer
+
+        // end deferred static clipped rendering
+        VulkanRenderer3d.endPhysicallyBasedDeferredSurfaces
+            renderer.PhysicallyBasedPipelines.DeferredStaticPipeline renderer.VulkanContext
+
+        // begin deferred animated rendering
+        let (eyeDescriptorSet, samplerDescriptorSet) =
+            VulkanRenderer3d.beginPhysicallyBasedDeferredSurfaces
+                eyeCenter view viewInverse geometryProjection geometryProjectionInverse geometryViewProjection renderer.FilteredSampler geometryImageViewArray compositionZTexture renderer.GeometryViewport renderer.RenderPassIndex renderer.PhysicallyBasedPipelines.DeferredAnimatedPipeline renderer
+
         // render animated surfaces deferred
         for entry in renderTasks.DeferredAnimated do
             let surfaceKey = entry.Key
@@ -2610,9 +3105,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 surfaceKey.BoneTransforms parameters surfaceKey.AnimatedSurface
                 eyeDescriptorSet samplerDescriptorSet renderer.PhysicallyBasedPipelines.DeferredAnimatedPipeline renderer
 
-        // end deferred static rendering
+        // end deferred animated rendering
         VulkanRenderer3d.endPhysicallyBasedDeferredSurfaces
-            renderer.PhysicallyBasedPipelines.DeferredStaticPipeline renderer.VulkanContext
+            renderer.PhysicallyBasedPipelines.DeferredAnimatedPipeline renderer.VulkanContext
 
         // transition deferred geometry attachments to sampling
         Texture.transitionLayoutAsync ColorAttachmentWrite ShaderRead depthTexture renderer.VulkanContext.RenderCommandBuffer
