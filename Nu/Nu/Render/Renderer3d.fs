@@ -1037,11 +1037,11 @@ type [<ReferenceEquality>] private RenderTasks =
       LightMaps : SortableLightMap List
       LightMapRenders : uint64 HashSet
       Lights : SortableLight List
-      DeferredStatic : OrderedDictionary<PhysicallyBasedSurface, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>
-      DeferredStaticPreBatches : OrderedDictionary<Guid, struct (PhysicallyBasedSurface * (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array)>
-      DeferredStaticClipped : OrderedDictionary<PhysicallyBasedSurface, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>
-      DeferredStaticClippedPreBatches : OrderedDictionary<Guid, struct (PhysicallyBasedSurface * (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array)>
-      DeferredAnimated : OrderedDictionary<AnimatedModelSurfaceKey, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>
+      DeferredStatic : Dictionary<PhysicallyBasedSurface, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>
+      DeferredStaticPreBatches : Dictionary<Guid, struct (PhysicallyBasedSurface * (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array)>
+      DeferredStaticClipped : Dictionary<PhysicallyBasedSurface, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>
+      DeferredStaticClippedPreBatches : Dictionary<Guid, struct (PhysicallyBasedSurface * (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array)>
+      DeferredAnimated : Dictionary<AnimatedModelSurfaceKey, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>
       DeferredTerrains : struct (TerrainDescriptor * TerrainPatchDescriptor * PhysicallyBasedGeometry) List
       Forward : struct (single * single * Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * PhysicallyBasedSurface * DepthTest) List
       ForwardSorted : struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * PhysicallyBasedSurface * DepthTest) List
@@ -1056,11 +1056,11 @@ type [<ReferenceEquality>] private RenderTasks =
           LightMapRenders = HashSet HashIdentity.Structural
           LightMaps = List ()
           Lights = List ()
-          DeferredStatic = OrderedDictionary PhysicallyBasedSurfaceFns.comparer
-          DeferredStaticPreBatches = OrderedDictionary HashIdentity.Structural
-          DeferredStaticClipped = OrderedDictionary PhysicallyBasedSurfaceFns.comparer
-          DeferredStaticClippedPreBatches = OrderedDictionary HashIdentity.Structural
-          DeferredAnimated = OrderedDictionary AnimatedModelSurfaceKey.comparer
+          DeferredStatic = dictPlus PhysicallyBasedSurfaceFns.comparer []
+          DeferredStaticPreBatches = dictPlus HashIdentity.Structural []
+          DeferredStaticClipped = dictPlus PhysicallyBasedSurfaceFns.comparer []
+          DeferredStaticClippedPreBatches = dictPlus HashIdentity.Structural []
+          DeferredAnimated = dictPlus AnimatedModelSurfaceKey.comparer []
           DeferredTerrains = List ()
           Forward = List ()
           ForwardSorted = List ()
@@ -1119,36 +1119,52 @@ type [<ReferenceEquality>] private RenderTasks =
         if not lightingConfigChanged && not renderingConfigChanged then
             let deferredStaticCached =
                 renderTasks.DeferredStatic.Count = renderTasksCached.DeferredStatic.Count &&
-                (renderTasks.DeferredStatic, renderTasksCached.DeferredStatic)
-                ||> Seq.forall2 (fun static_ staticCached ->
-                    PhysicallyBasedSurface.equals static_.Key staticCached.Key &&
-                    static_.Value.Count = staticCached.Value.Count &&
-                    (static_.Value, staticCached.Value)
-                    ||> Seq.forall2 (fun struct (m, cs, _, _, _) struct (mCached, csCached, _, _, _) -> m = mCached && cs = csCached))
-            let deferredStaticPreBatchesCached =
-                renderTasks.DeferredStaticPreBatches.Count = renderTasksCached.DeferredStaticPreBatches.Count &&
-                (renderTasks.DeferredStaticPreBatches, renderTasksCached.DeferredStaticPreBatches)
-                ||> Seq.forall2 (fun staticPreBatch staticPreBatchCached -> staticPreBatch.Key = staticPreBatchCached.Key)
+                let mutable changed = false
+                let mutable enr = renderTasks.DeferredStatic.GetEnumerator ()
+                while not changed && enr.MoveNext () do
+                    let entry = enr.Current
+                    let value = entry.Value
+                    match renderTasksCached.DeferredStatic.TryGetValue entry.Key with
+                    | (true, valueCached) ->
+                        if  value.Count <> valueCached.Count ||
+                            Seq.exists2 (fun struct (m, cs, _, _, _) struct (mCached, csCached, _, _, _) -> m <> mCached || cs <> csCached) value valueCached then
+                            changed <- false
+                    | (false, _) -> changed <- true
+                changed
             let deferredStaticClippedCached =
                 renderTasks.DeferredStaticClipped.Count = renderTasksCached.DeferredStaticClipped.Count &&
-                (renderTasks.DeferredStaticClipped, renderTasksCached.DeferredStaticClipped)
-                ||> Seq.forall2 (fun static_ staticCached ->
-                    PhysicallyBasedSurface.equals static_.Key staticCached.Key &&
-                    static_.Value.Count = staticCached.Value.Count &&
-                    (static_.Value, staticCached.Value)
-                    ||> Seq.forall2 (fun struct (m, cs, _, _, _) struct (mCached, csCached, _, _, _) -> m = mCached && cs = csCached))
+                let mutable changed = false
+                let mutable enr = renderTasks.DeferredStaticClipped.GetEnumerator ()
+                while not changed && enr.MoveNext () do
+                    let entry = enr.Current
+                    let value = entry.Value
+                    match renderTasksCached.DeferredStaticClipped.TryGetValue entry.Key with
+                    | (true, valueCached) ->
+                        if  value.Count <> valueCached.Count ||
+                            Seq.exists2 (fun struct (m, cs, _, _, _) struct (mCached, csCached, _, _, _) -> m <> mCached || cs <> csCached) value valueCached then
+                            changed <- false
+                    | (false, _) -> changed <- true
+                changed
+            let deferredStaticPreBatchesCached =
+                renderTasks.DeferredStaticPreBatches.Count = renderTasksCached.DeferredStaticPreBatches.Count &&
+                renderTasks.DeferredStaticPreBatches |> Seq.forall (fun preBatch -> renderTasksCached.DeferredStaticPreBatches.ContainsKey preBatch.Key)
             let deferredStaticClippedPreBatchesCached =
                 renderTasks.DeferredStaticClippedPreBatches.Count = renderTasksCached.DeferredStaticClippedPreBatches.Count &&
-                (renderTasks.DeferredStaticClippedPreBatches, renderTasksCached.DeferredStaticClippedPreBatches)
-                ||> Seq.forall2 (fun staticPreBatch staticPreBatchCached -> staticPreBatch.Key = staticPreBatchCached.Key)
+                renderTasks.DeferredStaticClippedPreBatches |> Seq.forall (fun preBatch -> renderTasksCached.DeferredStaticClippedPreBatches.ContainsKey preBatch.Key)
             let deferredAnimatedCached =
                 renderTasks.DeferredAnimated.Count = renderTasksCached.DeferredAnimated.Count &&
-                (renderTasks.DeferredAnimated, renderTasksCached.DeferredAnimated)
-                ||> Seq.forall2 (fun animated animatedCached ->
-                    AnimatedModelSurfaceKey.equals animated.Key animatedCached.Key &&
-                    animated.Value.Count = animatedCached.Value.Count &&
-                    (animated.Value, animatedCached.Value)
-                    ||> Seq.forall2 (fun struct (m, cs, _, _, _) struct (mCached, csCached, _, _, _) -> m = mCached && cs = csCached))
+                let mutable changed = false
+                let mutable enr = renderTasks.DeferredAnimated.GetEnumerator ()
+                while not changed && enr.MoveNext () do
+                    let entry = enr.Current
+                    let value = entry.Value
+                    match renderTasksCached.DeferredAnimated.TryGetValue entry.Key with
+                    | (true, valueCached) ->
+                        if  value.Count <> valueCached.Count ||
+                            Seq.exists2 (fun struct (m, cs, _, _, _) struct (mCached, csCached, _, _, _) -> m <> mCached || cs <> csCached) value valueCached then
+                            changed <- false
+                    | (false, _) -> changed <- true
+                changed
             let deferredTerrainsCached =
                 renderTasks.DeferredTerrains.Count = renderTasksCached.DeferredTerrains.Count &&
                 (renderTasks.DeferredTerrains, renderTasksCached.DeferredTerrains)
@@ -2241,10 +2257,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     // deferred render animated surface when needed
                     if renderType = DeferredRenderType || dualRendering then
                         let animatedModelSurfaceKey = { BoneTransforms = boneTransforms; AnimatedSurface = surface }
-                        let mutable renderOps = Unchecked.defaultof<_>
-                        if renderTasks.DeferredAnimated.TryGetValue (animatedModelSurfaceKey, &renderOps)
-                        then renderOps.Add struct (model, castShadow, presence, texCoordsOffset, properties)
-                        else renderTasks.DeferredAnimated.Add (animatedModelSurfaceKey, List ([struct (model, castShadow, presence, texCoordsOffset, properties)]))
+                        match renderTasks.DeferredAnimated.TryGetValue animatedModelSurfaceKey with
+                        | (true, renderOps) -> renderOps.Add struct (model, castShadow, presence, texCoordsOffset, properties)
+                        | (false, _) -> renderTasks.DeferredAnimated.Add (animatedModelSurfaceKey, List ([struct (model, castShadow, presence, texCoordsOffset, properties)]))
 
                     // forward render animated surface when needed
                     let subsortOffset =
@@ -2305,10 +2320,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                         // deferred render animated surface when needed
                         if renderType = DeferredRenderType then
                             let animatedModelSurfaceKey = { BoneTransforms = boneTransforms; AnimatedSurface = surface }
-                            let mutable renderOps = Unchecked.defaultof<_>
-                            if renderTasks.DeferredAnimated.TryGetValue (animatedModelSurfaceKey, &renderOps)
-                            then renderOps.Add struct (model, castShadow, presence, texCoordsOffset, properties)
-                            else renderTasks.DeferredAnimated.Add (animatedModelSurfaceKey, List ([struct (model, castShadow, presence, texCoordsOffset, properties)]))
+                            match renderTasks.DeferredAnimated.TryGetValue animatedModelSurfaceKey with
+                            | (true, renderOps) -> renderOps.Add struct (model, castShadow, presence, texCoordsOffset, properties)
+                            | (false, _) -> renderTasks.DeferredAnimated.Add (animatedModelSurfaceKey, List ([struct (model, castShadow, presence, texCoordsOffset, properties)]))
 
                         // forward render animated surface when needed
                         let subsortOffset =
