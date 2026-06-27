@@ -523,6 +523,7 @@ type PhysicallyBasedPipelines =
       ShadowAnimatedSpotPipeline : PhysicallyBasedShadowPipeline
       ShadowAnimatedDirectionalPipeline : PhysicallyBasedShadowPipeline
       DeferredStaticPipeline : PhysicallyBasedPipeline
+      DeferredStaticClippedPipeline : PhysicallyBasedPipeline
       DeferredAnimatedPipeline : PhysicallyBasedPipeline
       DeferredLightingPipeline : PhysicallyBasedDeferredLightingPipeline
       ForwardStaticPipeline : PhysicallyBasedPipeline
@@ -2472,6 +2473,25 @@ module PhysicallyBased =
                 (Some compositionZ.VkFormat)
                 vkc
 
+        // create deferred static clipped pipeline
+        let deferredStaticClippedPipeline =
+            createPhysicallyBasedPipeline
+                lightMapsMax
+                lightsMax
+                Constants.Paths.PhysicallyBasedDeferredStaticClippedShaderFilePath
+                [|VulkanUnblended|]
+                [|false; true|]
+                staticVertices
+                [|depth.VkFormat
+                  albedo.VkFormat
+                  material.VkFormat
+                  normalPlus.VkFormat
+                  subdermalPlus.VkFormat
+                  scatterPlus.VkFormat
+                  clearCoatPlus.VkFormat|]
+                (Some compositionZ.VkFormat)
+                vkc
+
         // create deferred animated pipeline
         let deferredAnimatedPipeline =
             createPhysicallyBasedPipeline
@@ -2529,6 +2549,7 @@ module PhysicallyBased =
               ShadowAnimatedSpotPipeline = shadowAnimatedSpotPipeline
               ShadowAnimatedDirectionalPipeline = shadowAnimatedDirectionalPipeline
               DeferredStaticPipeline = deferredStaticPipeline
+              DeferredStaticClippedPipeline = deferredStaticClippedPipeline
               DeferredAnimatedPipeline = deferredAnimatedPipeline
               DeferredLightingPipeline = deferredLightingPipeline
               ForwardStaticPipeline = forwardStaticPipeline
@@ -2545,6 +2566,7 @@ module PhysicallyBased =
         Pipeline.beginFrame physicallyBasedPipelines.ShadowAnimatedSpotPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.ShadowAnimatedDirectionalPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.DeferredStaticPipeline.Pipeline
+        Pipeline.beginFrame physicallyBasedPipelines.DeferredStaticClippedPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.DeferredAnimatedPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.DeferredLightingPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.ForwardStaticPipeline.Pipeline
@@ -2558,6 +2580,7 @@ module PhysicallyBased =
         destroyPhysicallyBasedShadowPipeline physicallyBasedPipelines.ShadowAnimatedSpotPipeline vkc
         destroyPhysicallyBasedShadowPipeline physicallyBasedPipelines.ShadowAnimatedDirectionalPipeline vkc
         destroyPhysicallyBasedPipeline physicallyBasedPipelines.DeferredStaticPipeline vkc
+        destroyPhysicallyBasedPipeline physicallyBasedPipelines.DeferredStaticClippedPipeline vkc
         destroyPhysicallyBasedPipeline physicallyBasedPipelines.DeferredAnimatedPipeline vkc
         destroyPhysicallyBasedDeferredLightingPipeline physicallyBasedPipelines.DeferredLightingPipeline vkc
         destroyPhysicallyBasedPipeline physicallyBasedPipelines.ForwardStaticPipeline vkc
@@ -2571,6 +2594,7 @@ module PhysicallyBased =
         Pipeline.reloadShaders physicallyBasedPipelines.ShadowAnimatedSpotPipeline.Pipeline vkc
         Pipeline.reloadShaders physicallyBasedPipelines.ShadowAnimatedDirectionalPipeline.Pipeline vkc
         Pipeline.reloadShaders physicallyBasedPipelines.DeferredStaticPipeline.Pipeline vkc
+        Pipeline.reloadShaders physicallyBasedPipelines.DeferredStaticClippedPipeline.Pipeline vkc
         Pipeline.reloadShaders physicallyBasedPipelines.DeferredAnimatedPipeline.Pipeline vkc
         Pipeline.reloadShaders physicallyBasedPipelines.DeferredLightingPipeline.Pipeline vkc
         Pipeline.reloadShaders physicallyBasedPipelines.ForwardStaticPipeline.Pipeline vkc
