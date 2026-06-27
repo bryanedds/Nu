@@ -52,7 +52,7 @@ type BufferType =
 /// Internal representation of an allocated buffer.
 type BufferInternal =
     private
-        { VkBuffer_ : VkBuffer
+        { mutable VkBuffer_ : VkBuffer // set to VkBuffer.Null when buffer destroyed
           Allocation_ : Allocation
           Mapping_ : voidptr
           Size_ : int
@@ -198,13 +198,15 @@ type BufferInternal =
 
     /// Destroy buffer and allocation.
     static member destroy (bufferInternal : BufferInternal) (vkc : VulkanContext) =
-        match bufferInternal.Allocation_ with
-        | Vma vmaAllocation ->
-            Vma.vmaDestroyBuffer (vkc.VmaAllocator, bufferInternal.VkBuffer, vmaAllocation)
-        | Manual manualAllocation ->
-            if bufferInternal.Mapping_ <> Unchecked.defaultof<voidptr> then Vulkan.vkUnmapMemory (vkc.Device, manualAllocation)
-            Vulkan.vkDestroyBuffer (vkc.Device, bufferInternal.VkBuffer, nullPtr)
-            Vulkan.vkFreeMemory (vkc.Device, manualAllocation, nullPtr)
+        if bufferInternal.VkBuffer_.IsNotNull then
+            match bufferInternal.Allocation_ with
+            | Vma vmaAllocation ->
+                Vma.vmaDestroyBuffer (vkc.VmaAllocator, bufferInternal.VkBuffer, vmaAllocation)
+            | Manual manualAllocation ->
+                if bufferInternal.Mapping_ <> Unchecked.defaultof<voidptr> then Vulkan.vkUnmapMemory (vkc.Device, manualAllocation)
+                Vulkan.vkDestroyBuffer (vkc.Device, bufferInternal.VkBuffer, nullPtr)
+                Vulkan.vkFreeMemory (vkc.Device, manualAllocation, nullPtr)
+            bufferInternal.VkBuffer_ <- VkBuffer.Null
 
 /// Represents a dynamically growing multibuffer with parallel underlying vulkan buffers. Maintains an internal
 /// cursor that selects the currently active buffer, which is reset via beginFrame and advanced to the next vulkan
