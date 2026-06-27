@@ -1069,7 +1069,7 @@ type [<ReferenceEquality>] private RenderTasks =
           DeferredAnimatedRemovals = List ()
           ShadowBufferIndexOpt = None }
 
-    static member clear removeEmptyLists renderTasks =
+    static member clear renderTasks =
 
         renderTasks.SkyBoxes.Clear ()
         renderTasks.LightProbes.Clear ()
@@ -1077,30 +1077,13 @@ type [<ReferenceEquality>] private RenderTasks =
         renderTasks.LightMaps.Clear ()
         renderTasks.Lights.Clear ()
 
-        for entry in renderTasks.DeferredStatic do
-            if entry.Value.Count = 0 && removeEmptyLists
-            then renderTasks.DeferredStaticRemovals.Add entry.Key
-            else entry.Value.Clear ()
-        for removal in renderTasks.DeferredStaticRemovals do
-            renderTasks.DeferredStatic.Remove removal |> ignore<bool>
-        renderTasks.DeferredStaticRemovals.Clear ()
+        for entry in renderTasks.DeferredStatic do entry.Value.Clear ()
         renderTasks.DeferredStaticPreBatches.Clear ()
 
-        for entry in renderTasks.DeferredStaticClipped do
-            if entry.Value.Count = 0 && removeEmptyLists
-            then renderTasks.DeferredStaticClippedRemovals.Add entry.Key
-            else entry.Value.Clear ()
-        for removal in renderTasks.DeferredStaticClippedRemovals do
-            renderTasks.DeferredStaticClipped.Remove removal |> ignore<bool>
-        renderTasks.DeferredStaticClippedRemovals.Clear ()
+        for entry in renderTasks.DeferredStaticClipped do entry.Value.Clear ()
         renderTasks.DeferredStaticClippedPreBatches.Clear ()
 
-        for entry in renderTasks.DeferredAnimated do
-            if entry.Value.Count = 0 && removeEmptyLists
-            then renderTasks.DeferredAnimatedRemovals.Add entry.Key
-            else entry.Value.Clear ()
-        for removal in renderTasks.DeferredAnimatedRemovals do
-            renderTasks.DeferredAnimated.Remove removal |> ignore<bool>
+        for entry in renderTasks.DeferredAnimated do entry.Value.Clear ()
         renderTasks.DeferredAnimatedRemovals.Clear ()
 
         renderTasks.Forward.Clear ()
@@ -1108,6 +1091,26 @@ type [<ReferenceEquality>] private RenderTasks =
         renderTasks.DeferredTerrains.Clear ()
 
         renderTasks.ShadowBufferIndexOpt <- None
+
+    static member sweep renderTasks =
+
+        for entry in renderTasks.DeferredStatic do
+            if entry.Value.Count = 0 then
+                renderTasks.DeferredStaticRemovals.Add entry.Key
+        for removal in renderTasks.DeferredStaticRemovals do
+            renderTasks.DeferredStatic.Remove removal |> ignore<bool>
+
+        for entry in renderTasks.DeferredStaticClipped do
+            if entry.Value.Count = 0 then
+                renderTasks.DeferredStaticClippedRemovals.Add entry.Key
+        for removal in renderTasks.DeferredStaticClippedRemovals do
+            renderTasks.DeferredStaticClipped.Remove removal |> ignore<bool>
+
+        for entry in renderTasks.DeferredAnimated do
+            if entry.Value.Count = 0 then
+                renderTasks.DeferredAnimatedRemovals.Add entry.Key
+        for removal in renderTasks.DeferredAnimatedRemovals do
+            renderTasks.DeferredAnimated.Remove removal |> ignore<bool>
 
     static member shadowUpToDate lightingConfigChanged renderingConfigChanged renderTasks renderTasksCached =
         if not lightingConfigChanged && not renderingConfigChanged then
@@ -1592,7 +1595,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 match displacedPasses with
                 | head :: _ ->
                     let recycledTasks = head.Value
-                    RenderTasks.clear false recycledTasks
+                    RenderTasks.clear recycledTasks
                     recycledTasks
                 | _ -> RenderTasks.make ()
             renderer.RenderPasses.Add (renderPass, renderTasks)
@@ -3595,8 +3598,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         renderer.LightsDesiringShadows.Clear ()
 
         // swap render passes
-        for renderTasks in renderer.RenderPasses.Values do if renderTasks.ShadowBufferIndexOpt.IsNone then RenderTasks.clear true renderTasks
-        for renderTasks in renderer.RenderPasses2.Values do RenderTasks.clear false renderTasks
+        for renderTasks in renderer.RenderPasses.Values do RenderTasks.sweep renderTasks
+        for renderTasks in renderer.RenderPasses2.Values do RenderTasks.clear renderTasks
         let renderPasses = renderer.RenderPasses
         renderer.RenderPasses <- renderer.RenderPasses2
         renderer.RenderPasses2 <- renderPasses
