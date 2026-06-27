@@ -1125,18 +1125,21 @@ type [<ReferenceEquality>] private RenderTasks =
                 renderTasks.DeferredStaticRemovals.Add entry.Key
         for removal in renderTasks.DeferredStaticRemovals do
             renderTasks.DeferredStatic.Remove removal |> ignore<bool>
+        renderTasks.DeferredStaticRemovals.Clear ()
 
         for entry in renderTasks.DeferredStaticClipped do
             if entry.Value.Count = 0 then
                 renderTasks.DeferredStaticClippedRemovals.Add entry.Key
         for removal in renderTasks.DeferredStaticClippedRemovals do
             renderTasks.DeferredStaticClipped.Remove removal |> ignore<bool>
+        renderTasks.DeferredStaticClippedRemovals.Clear ()
 
         for entry in renderTasks.DeferredAnimated do
             if entry.Value.Count = 0 then
                 renderTasks.DeferredAnimatedRemovals.Add entry.Key
         for removal in renderTasks.DeferredAnimatedRemovals do
             renderTasks.DeferredAnimated.Remove removal |> ignore<bool>
+        renderTasks.DeferredAnimatedRemovals.Clear ()
 
     static member shadowUpToDate lightingConfigChanged renderingConfigChanged renderTasks renderTasksCached =
         if not lightingConfigChanged && not renderingConfigChanged then
