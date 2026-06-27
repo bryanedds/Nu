@@ -480,13 +480,19 @@ type [<ReferenceEquality>] SdlAudioPlayer =
             SdlAudioPlayer.handleAudioMessages audioMessages audioPlayer
 
         member audioPlayer.CleanUp () =
-            let mutable playerHandle = audioPlayer.AudioPlayerHandle
-            if playerHandle.IsAllocated then playerHandle.Free (); audioPlayer.AudioPlayerHandle <- playerHandle
+
+            // destroy mixer
             match audioPlayer.MixerOpt with
             | Some mixer -> SDL3_mixer.MIX_DestroyMixer mixer // also destroys tracks
             | None -> ()
+
+            // destroy audio resources
             let audioPackages = audioPlayer.AudioPackages |> Seq.map (fun entry -> entry.Value)
             let audioAssets = audioPackages |> Seq.map (fun package -> package.Assets.Values) |> Seq.concat
             for (_, _, audioAsset) in audioAssets do SDL3_mixer.MIX_DestroyAudio audioAsset
             audioPlayer.AudioPackages.Clear ()
+
+            // free GC handle
             SDL3.SDL_DestroyProperties audioPlayer.SongTrackPropertiesId
+            if audioPlayer.AudioPlayerHandle.IsAllocated then
+                audioPlayer.AudioPlayerHandle.Free ()
