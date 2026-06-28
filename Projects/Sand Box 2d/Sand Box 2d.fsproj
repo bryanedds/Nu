@@ -1,39 +1,46 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <!-- Target frameworks: Android must be listed before desktop for Visual Studio
-             to detect mobile debug targets. iOS builds will not work outside macOS. -->
+    <!-- ============================================================
+	     Framework Targeting:
+		 ============================================================ -->
+	<PropertyGroup>
+        <!-- Target frameworks: Android must be listed before desktop for Visual Studio to detect mobile debug targets.
+		     iOS builds will not work outside macOS. -->
         <TargetFrameworks>net10.0-android;net10.0</TargetFrameworks>
         <TargetFrameworks Condition="$([System.OperatingSystem]::IsMacOS())">$(TargetFrameworks);net10.0-ios</TargetFrameworks>
-        
-        <!-- ===== ENABLE MOBILE BUILDS HERE =====
-
-             Remove the following <TargetFrameworks> line to enable building for mobile by default. Removing in Visual Studio needs "Reload projects" to then be pressed.
-             For dotnet CLI, it will require `dotnet workload restore` to install the mobile .NET workloads,
-             and for Visual Studio, it will require ".NET Multi-platform App UI development" workload to be installed via the Visual Studio Installer.
-             Android builds require the Android SDK to be installed, and iOS builds require Xcode to be installed on macOS.
-             The following command installs the Android SDK from dotnet CLI:
-                 dotnet build "Projects/Sand Box 2d" -t InstallAndroidDependencies -f net10.0-android -p BuildMobile=true,AcceptAndroidSdkLicenses=True
-             All the above setup and their updates are unnecessary for desktop users. Therefore, mobile builds are disabled by default, and the desktop target framework is used instead.
-             Note: Our custom property $(BuildMobile) is used by CI to build for mobile. -->
+        <!-- ENABLE MOBILE BUILDS HERE:
+		     For mobile builds, note the following -
+			 1) remove the following <TargetFrameworks> line to enable building for mobile by default. Removing in
+			 Visual Studio needs "Reload projects" to then be pressed.
+             2) for dotnet CLI, it will require `dotnet workload restore` to install the mobile .NET workloads, and for
+			 Visual Studio, it will require ".NET Multi-platform App UI development" workload to be installed via the
+			 Visual Studio Installer.
+			 3) Android builds require the Android SDK to be installed, and iOS builds require Xcode to be installed
+			 on macOS. The following command installs the Android SDK from dotnet CLI:
+             dotnet build "Projects/Sand Box 2d" -t InstallAndroidDependencies -f net10.0-android -p BuildMobile=true,AcceptAndroidSdkLicenses=True
+             4) all the above setup and their updates are unnecessary for desktop users. Therefore, mobile builds are
+			 disabled by default, and the desktop target framework is used instead.
+			 5) our custom property $(BuildMobile) is used by CI to build for mobile. -->
         <TargetFrameworks Condition="'$(BuildMobile)' != 'true'">net10.0</TargetFrameworks>
     </PropertyGroup>
 
-    <Import Project="../../Nu/Nu.Common.targets" />
-
     <!-- ============================================================
-         Mobile Properties
-         ============================================================
-         Nu.Common.targets sets $(TargetPlatformIdentifier) (empty for desktop, 'android' for Android, 'ios' for iOS) for usage here.
+	     Common Project Settings 
+		 ============================================================
+		 Sets $(TargetPlatformIdentifier) (empty for desktop, 'android' for Android, 'ios' for iOS) for usage.
          Android reference: https://learn.microsoft.com/en-us/dotnet/android/building-apps/build-properties
          iOS reference: https://learn.microsoft.com/en-us/dotnet/ios/building-apps/build-properties -->
+	<Import Project="../../Nu/Nu.Common.targets" />
+
+    <!-- ============================================================
+	     Mobile Properties
+		 ============================================================ -->
     <PropertyGroup>
         <ApplicationTitle>Sand Box 2d</ApplicationTitle>
         <ApplicationId>nu.game.SandBox2d</ApplicationId>
         <ApplicationDisplayVersion>1.0.0</ApplicationDisplayVersion>
         <ApplicationVersion>1</ApplicationVersion>
-
-        <!-- Uncomment the following line if you installed Xcode from App Store which auto-updates to a version unsupported by the current .NET iOS workload.
+        <!-- UNCOMMENT THE FOLLOWING LINE IF YOU INSTALLED XCODE FROM APP STORE WHICH AUTO-UPDATES TO A VERSION UNSUPPORTED BY THE CURRENT .NET IOS WORKLOAD.
              Using an unsupported Xcode version may result in strange build failures. However, if it builds, the app should run fine.
              The supported Xcode version can be found at https://github.com/dotnet/macios/releases
              Pinning the Xcode version to a supported one can be done via https://github.com/XcodesOrg/xcodesapp instead of the App Store. -->
@@ -41,46 +48,43 @@
     </PropertyGroup>
 
     <!-- ============================================================
-         Project Source Files
-         ============================================================ -->
-    <ItemGroup>
-        <None Include="Assets\*" />
-        <None Include="Assets\*\*" />
-        <Compile Include="Assets.fs" />
-        <Compile Include="Simulants.fs" />
-        <Compile Include="ToyCharacter.fs" />
-        <Compile Include="ToyBox.fs" />
-        <Compile Include="RaceCourse.fs" />
-        <Compile Include="FluidSim.fs" />
-        <Compile Include="SandBox2d.fs" />
-        <Compile Include="SandBox2dPlugin.fs" />
-        <Compile Include="Program.fs" />
-        <None Include="AssetGraph.nuag" />
-        <None Include="Overlayer.nuol" />
-        <None Include="App.config" />
-    </ItemGroup>
-
-    <!-- ============================================================
-         App icon, splash screen, and platform manifests
-         ============================================================ -->
+	     App Icon, Splash Screen, and Platform Manifests
+		 ============================================================ -->
     <ItemGroup>
         <!-- Composed icon: https://learn.microsoft.com/en-us/dotnet/maui/user-interface/images/app-icons
              On desktop, Nu.Common.targets invokes GenerateIcons.fsx to generate desktop icons from the SVGs.
              If you rename the background file, remember to replace icon_bg in @mipmap/icon_bg and @mipmap/icon_bg_round in Program.fs,
              and Assets.xcassets/icon_bg.appiconset in "App/iOS Info.plist". -->
         <MauiIcon Include="App/icon_bg.svg" ForegroundFile="App/icon_fg.svg" />
-
         <!-- Splash screen with background color: https://learn.microsoft.com/en-us/dotnet/maui/user-interface/images/splashscreen
              Only applicable to mobile. -->
         <MauiSplashScreen Include="App/icon_fg.svg" Color="#512BD4" />
-
         <!-- iOS Information property list: https://learn.microsoft.com/en-us/dotnet/maui/macios/info-plist -->
         <None Include="App/iOS Info.plist" LogicalName="Info.plist" />
         <!-- iOS Privacy manifest: https://learn.microsoft.com/en-us/dotnet/maui/ios/privacy-manifest -->
         <BundleResource Include="App/iOS PrivacyInfo.xcprivacy" LogicalName="PrivacyInfo.xcprivacy" />
-
         <!-- macOS Information property list template, only applicable to "dotnet publish" that creates a macOS .app bundle -->
         <MacOSPlistTemplate Include="App/macOS Info.plist" />
     </ItemGroup>
+
+	<!-- ============================================================
+	     Project Files
+		 ============================================================ -->
+	<ItemGroup>
+		<None Include="Assets\*" />
+		<None Include="Assets\*\*" />
+		<Compile Include="Assets.fs" />
+		<Compile Include="Simulants.fs" />
+		<Compile Include="ToyCharacter.fs" />
+		<Compile Include="ToyBox.fs" />
+		<Compile Include="RaceCourse.fs" />
+		<Compile Include="FluidSim.fs" />
+		<Compile Include="SandBox2d.fs" />
+		<Compile Include="SandBox2dPlugin.fs" />
+		<Compile Include="Program.fs" />
+		<None Include="AssetGraph.nuag" />
+		<None Include="Overlayer.nuol" />
+		<None Include="App.config" />
+	</ItemGroup>
 
 </Project>

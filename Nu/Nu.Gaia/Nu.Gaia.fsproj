@@ -17,8 +17,10 @@
         <None Include="AssetGraph.nuag" />
         <None Include="Overlayer.nuol" />
         <None Include="App.config" />
+	</ItemGroup>
 
-        <PackageReference Include="FSharp.Compiler.Service" Version="43.12.204" />
+	<ItemGroup>
+		<PackageReference Include="FSharp.Compiler.Service" Version="43.12.204" />
         <ProjectReference Include="../../Projects/*/*.fsproj" ReferenceOutputAssembly="false" />
     </ItemGroup>
 

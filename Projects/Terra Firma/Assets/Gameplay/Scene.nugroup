@@ -36,16 +36,6 @@
       [Presence Omnipresent]
       [Static True]]
      []]
-    [TerrainDispatcher
-     [[AlwaysRender True]
-      [MountOpt [Some ^]]
-      [Name Terrain]
-      [Position [1.3 59.8 -85.3]]
-      [PositionLocal [1.3 59.8 -85.3]]
-      [Presence Omnipresent]
-      [Size [512 128 512]]
-      [Static True]]
-     []]
     [LightProbe3dDispatcher
      [[AmbientColor [1 0.8901961 0.78431374 1]]
       [MountOpt [Some ^]]

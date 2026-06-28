@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
@@ -18,12 +18,8 @@
 		<Compile Include="TerraFirma.fs" />
 		<Compile Include="TerraFirmaPlugin.fs" />
 		<Compile Include="Program.fs" />
-		<Content Include="AssetGraph.nuag">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</Content>
-		<Content Include="Overlayer.nuol">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</Content>
+		<None Include="AssetGraph.nuag" />
+		<None Include="Overlayer.nuol" />
 		<None Include="App.config" />
     </ItemGroup>
 
