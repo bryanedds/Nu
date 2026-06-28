@@ -330,7 +330,7 @@ module Hl =
     let getWindowPixelDensity window =
         let pixelDensity = SDL3.SDL_GetWindowPixelDensity window
         if pixelDensity > 0.0f then pixelDensity
-        else Log.error $"Failed to get window pixel density: {SDL3.SDL_GetError ()}"; 1.0f
+        else Log.error ("Failed to get window pixel density due to: " + SDL3.SDL_GetError ()); 1.0f
 
     /// Scale a rectangle from window coordinate space to pixel coordinate space.
     let scaleRectForPixelDensity pixelDensity (rect : VkRect2D) =

@@ -66,7 +66,7 @@ module Platform =
     module Apple =
 
         let internal computeFrameworkFilePath frameworkName =
-            Path.Combine (AppContext.BaseDirectory, "Frameworks", frameworkName + ".framework", frameworkName)
+            PathF.Combine (AppContext.BaseDirectory, "Frameworks", frameworkName + ".framework", frameworkName)
 
         let internal trySetDllImportResolver (assembly : Assembly) mappedLibraries =
             let resolver =

@@ -133,17 +133,17 @@ type MainActivity () =
                             | None -> ())
                     match e.State.Status () with
                     | Model.AssetPackStatus.Pending -> updateLoadingUi "Pending assets download..." 0
-                    | Model.AssetPackStatus.Downloading -> updateLoadingUi $"Downloading assets..." downloadProgress
+                    | Model.AssetPackStatus.Downloading -> updateLoadingUi "Downloading assets..." downloadProgress
                     | Model.AssetPackStatus.WaitingForWifi ->
-                        updateLoadingUi $"Waiting for Wi-Fi connection..." downloadProgress
+                        updateLoadingUi "Waiting for Wi-Fi connection..." downloadProgress
                         assetPackManager.ShowConfirmationDialog this |> ignore
                     | Model.AssetPackStatus.RequiresUserConfirmation ->
-                        updateLoadingUi $"Waiting for user confirmation..." downloadProgress
+                        updateLoadingUi "Waiting for user confirmation..." downloadProgress
                         assetPackManager.ShowConfirmationDialog this |> ignore
-                    | Model.AssetPackStatus.Transferring -> updateLoadingUi $"Download complete. Installing assets..." (e.State.TransferProgressPercentage ())
+                    | Model.AssetPackStatus.Transferring -> updateLoadingUi "Download complete. Installing assets..." (e.State.TransferProgressPercentage ())
                     | Model.AssetPackStatus.Completed -> tcs.TrySetResult (assetPackManager.GetPackLocation "gameassets") |> ignore
                     | Model.AssetPackStatus.Failed -> updateLoadingUi $"Installation failed with error code {e.State.ErrorCode ()}." downloadProgress
-                    | Model.AssetPackStatus.Canceled -> updateLoadingUi $"Installation canceled." downloadProgress
+                    | Model.AssetPackStatus.Canceled -> updateLoadingUi "Installation canceled." downloadProgress
                     | status -> updateLoadingUi $"Unknown installation status {status}..." downloadProgress
 
             // fetch assets then wait synchronously in the main SDL thread. this is not the main Android UI thread so the system won't kill the app.
@@ -188,7 +188,7 @@ let splashScreen = UIKit.UIStoryboard.FromName("MauiSplash", null).InstantiateIn
 let private sdlMainImpl (_argc: int, _argv: nativeptr<nativeptr<byte>>) : int =
     // this points the current working directory at the bundled game assets
     let baseDirectory = AppContext.BaseDirectory
-    let assetDirectory = Path.Combine (baseDirectory, "refinement-out", "net10.0-ios")
+    let assetDirectory = PathF.Combine (baseDirectory, "refinement-out", "net10.0-ios")
     Directory.SetCurrentDirectory assetDirectory
 
     // direct ConfigurationManager.AppSettings to load values from our App.config file
