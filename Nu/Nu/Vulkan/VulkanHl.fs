@@ -3,6 +3,7 @@
 
 namespace Nu.Vulkan
 open System
+open System.Reflection
 open System.Runtime.InteropServices
 open System.Threading
 open System.IO
@@ -306,7 +307,7 @@ module Hl =
     // callback to inform render loop about app backgrounding
     // official documentation for android case: https://github.com/libsdl-org/SDL/blob/main/docs/README-android.md#activity-lifecycle
 #nowarn 202
-    [<UnmanagedCallersOnly (CallConvs = [| typeof<System.Runtime.CompilerServices.CallConvCdecl> |])>]
+    [<UnmanagedCallersOnly (CallConvs = [|typeof<System.Runtime.CompilerServices.CallConvCdecl>|])>]
 #warnon 202
     let private handleBackgrounding (userData : voidptr) (event : SDL_Event nativeptr) : SDLBool =
         ignore userData
@@ -322,14 +323,13 @@ module Hl =
             true
         | _ -> true
     let internal backgroundingCallback () =
-        let handle = System.Reflection.Assembly.GetExecutingAssembly().GetType("Nu.Vulkan.Hl").GetMethod(nameof handleBackgrounding, System.Reflection.BindingFlags.NonPublic ||| System.Reflection.BindingFlags.Static).MethodHandle
+        let handle = Assembly.GetExecutingAssembly().GetType("Nu.Vulkan.Hl").GetMethod(nameof handleBackgrounding, BindingFlags.NonPublic ||| BindingFlags.Static).MethodHandle
         handle.GetFunctionPointer ()
 
     /// Get the current pixel density of an SDL window.
     let getWindowPixelDensity window =
         let pixelDensity = SDL3.SDL_GetWindowPixelDensity window
-        if pixelDensity > 0.0f then
-            pixelDensity
+        if pixelDensity > 0.0f then pixelDensity
         else Log.error $"Failed to get window pixel density: {SDL3.SDL_GetError ()}"; 1.0f
 
     /// Scale a rectangle from window coordinate space to pixel coordinate space.

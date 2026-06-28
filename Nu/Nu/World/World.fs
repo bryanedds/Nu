@@ -306,8 +306,6 @@ type Nu () =
             // init vsync
             Vsync.Init Constants.Engine.RunSynchronously
 
-
-
             // mark init flag
             Initialized <- true
 

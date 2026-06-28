@@ -75,7 +75,7 @@ module SdlDeps =
 
     type private LogOutputCallback =
 #nowarn 202
-        [<UnmanagedCallersOnly(CallConvs = [| typeof<System.Runtime.CompilerServices.CallConvCdecl> |])>]
+        [<UnmanagedCallersOnly (CallConvs = [|typeof<System.Runtime.CompilerServices.CallConvCdecl>|])>]
 #warnon 202
         static member Invoke (_ : nativeint, category : int, priority : SDL_LogPriority, message : nativeptr<byte>) =
             let message = SDL3.PtrToStringUTF8 message

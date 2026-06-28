@@ -613,7 +613,7 @@ type [<ReferenceEquality>] VulkanContext =
     member this.SwapFormat = this.Swapchain_.SurfaceFormat_.format
 
 #nowarn 202
-    [<UnmanagedCallersOnly(CallConvs = [| typeof<System.Runtime.CompilerServices.CallConvCdecl> |])>]
+    [<UnmanagedCallersOnly (CallConvs = [|typeof<System.Runtime.CompilerServices.CallConvCdecl>|])>]
 #warnon 202
     static member private debugCallback
         (messageSeverity : VkDebugUtilsMessageSeverityFlagsEXT)
@@ -709,7 +709,7 @@ type [<ReferenceEquality>] VulkanContext =
             Array.init (sdlExtensionCountInt + if Hl.ValidationLayersActivated then 1 else 0)
                 (fun i -> if i < sdlExtensionCountInt then NativePtr.get sdlExtensions i else debugUtilsWrap.Pointer)
 
-        // Check for portability enumeration extension - using MoltenVK in place of Vulkan loader won't support it (on iOS Simulator),
+        // check for portability enumeration extension - using MoltenVK in place of Vulkan loader won't support it (on iOS Simulator),
         // while using MoltenVK from Vulkan loader (on iOS device / macOS) requires it
         let portabilityEnumeration = NativePtr.spanToString Vulkan.VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME
         use portabilityWrap = new StringWrap (portabilityEnumeration)
@@ -845,10 +845,9 @@ type [<ReferenceEquality>] VulkanContext =
         // get swapchain extension
         let swapchainExtensionName = NativePtr.spanToString Vulkan.VK_KHR_SWAPCHAIN_EXTENSION_NAME
         let extensionArray =
-            if Constants.Vulkan.MoltenVk && portabilitySubsetAvailable then
-                [|swapchainExtensionName; portabilitySubsetExtensionName|]
-            else
-                [|swapchainExtensionName|]
+            if Constants.Vulkan.MoltenVk && portabilitySubsetAvailable
+            then [|swapchainExtensionName; portabilitySubsetExtensionName|]
+            else [|swapchainExtensionName|]
         use extensionArrayWrap = new StringArrayWrap (extensionArray)
 
         // NOTE: DJL: for particularly dated implementations of Vulkan, validation depends on device layers which

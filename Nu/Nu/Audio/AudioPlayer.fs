@@ -139,7 +139,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
           mutable SongOpt : (SongDescriptor * MIX_Track nativeptr) option }
 
 #nowarn 202
-    [<UnmanagedCallersOnly(CallConvs = [| typeof<System.Runtime.CompilerServices.CallConvCdecl> |])>]
+    [<UnmanagedCallersOnly (CallConvs = [|typeof<System.Runtime.CompilerServices.CallConvCdecl>|])>]
 #warnon 202
     static member private StoppedCallback (userdata : nativeint, track : MIX_Track nativeptr) =
         let handle = GCHandle.FromIntPtr userdata
