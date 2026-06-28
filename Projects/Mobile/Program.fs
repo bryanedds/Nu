@@ -186,6 +186,7 @@ let splashScreen = UIKit.UIStoryboard.FromName("MauiSplash", null).InstantiateIn
 [<System.Runtime.InteropServices.UnmanagedCallersOnly (CallConvs = [|typeof<System.Runtime.CompilerServices.CallConvCdecl>|])>]
 #warnon 202
 let private sdlMainImpl (_argc: int, _argv: nativeptr<nativeptr<byte>>) : int =
+
     // this points the current working directory at the bundled game assets
     let baseDirectory = AppContext.BaseDirectory
     let assetDirectory = PathF.Combine (baseDirectory, "refinement-out", "net10.0-ios")
@@ -204,6 +205,7 @@ let private sdlMainImpl (_argc: int, _argv: nativeptr<nativeptr<byte>>) : int =
     main splashScreen.RemoveFromSuperview // needs to stay alive and not garbage collected
 
 let [<EntryPoint>] entryPoint _ =
+
     if ObjCRuntime.Runtime.Arch = ObjCRuntime.Arch.SIMULATOR then
         // Avoid hitting MoltenVK iOS Simulator limitations like:
         // - only 31 buffers are supported in the simulator
