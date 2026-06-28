@@ -4534,8 +4534,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             ImGui.LoadIniSettingsFromMemory (ImGuiIniFileStr.AsSpan ())
             ImGuiIniResetRequested <- false
 
-    let rec private runWithCleanUpAndErrorProtection firstFrameReady world =
-        try World.runWithoutCleanUp tautology ignore ignore imGuiRender imGuiProcess imGuiPostProcess firstFrameReady world
+    let rec private runWithCleanUpAndErrorProtection firstFrameOpt world =
+        try World.runWithoutCleanUp tautology ignore ignore imGuiRender imGuiProcess imGuiPostProcess firstFrameOpt world
             World.cleanUp world
             Constants.Engine.ExitCodeSuccess
         with exn ->
@@ -4637,7 +4637,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                   Advancing = false
                   FramePacing = false
                   ModeOpt = gaiaState.ProjectEditModeOpt
-                  FirstFrameReady = ignore
                   SdlConfig = sdlConfig }
 
             // attempt to create the world

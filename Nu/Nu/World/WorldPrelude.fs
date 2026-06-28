@@ -366,7 +366,6 @@ type [<ReferenceEquality>] WorldConfig =
       Advancing : bool
       FramePacing : bool
       ModeOpt : string option
-      FirstFrameReady : unit -> unit
       SdlConfig : SdlConfig }
 
     /// That Nu is to run unaccompanied.
@@ -380,7 +379,6 @@ type [<ReferenceEquality>] WorldConfig =
           Advancing = true
           FramePacing = false
           ModeOpt = None
-          FirstFrameReady = ignore
           SdlConfig = SdlConfig.defaultConfig }
 
 /// Engine timing objects.

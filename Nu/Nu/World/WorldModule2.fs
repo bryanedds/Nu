@@ -1961,7 +1961,7 @@ module WorldModule2 =
             world.WorldExtension.Plugin.CleanUp ()
 
         /// Run the game engine with the given handlers, but don't clean up at the end.
-        static member runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess firstFrameReady (world : World) =
+        static member runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess firstFrameOpt (world : World) =
 
             // run loop if user-defined run-while predicate passes
             world.Timers.FrameTimer.Restart ()
@@ -2066,7 +2066,7 @@ module WorldModule2 =
 
                                                                     // process rendering (1/2)
                                                                     let rendererProcess = World.getRendererProcess world
-                                                                    if Option.isNone firstFrameReady then rendererProcess.RequestSwap ()
+                                                                    if Option.isNone firstFrameOpt then rendererProcess.RequestSwap ()
 
                                                                     // process frame pacing mechanics
                                                                     if world.Timers.MainThreadTimer.IsRunning then
@@ -2130,6 +2130,11 @@ module WorldModule2 =
                                                                     World.imGuiPostProcess world
                                                                     imGuiPostProcess world
 
+                                                                    // signal that rendering is ready when appropriate
+                                                                    match firstFrameOpt with
+                                                                    | Some firstFrame -> firstFrame ()
+                                                                    | None -> ()
+
                                                                     // update time and recur
                                                                     world.Timers.FrameTimer.Stop ()
                                                                     WorldModuleInternal.EndFrameProcessingStarted <- false
@@ -2143,16 +2148,11 @@ module WorldModule2 =
                                                                                 if group.GetExists world then
                                                                                     World.publish () (Events.TimeUpdateEvent --> group) group world
                                                                         | None -> ()
-
-                                                                    // render is ready
-                                                                    match firstFrameReady with Some f -> f () | None -> ()
-
-                                                                    // recur
                                                                     World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess None world
 
         /// Run the game engine using the given world and returning exit code upon termination.
-        static member runWithCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess firstFrameReady world =
-            try World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess (Some firstFrameReady) world
+        static member runWithCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess firstFrameOpt world =
+            try World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess firstFrameOpt world
                 World.cleanUp world
                 Constants.Engine.ExitCodeSuccess
             with exn ->

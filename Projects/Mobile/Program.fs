@@ -4,7 +4,7 @@ open System.IO
 open Nu
 
 // this the entry point for your Nu application
-let main firstFrameReady =
+let main firstFrame =
 
     // this initializes Nu before other Nu code is run
     Nu.init ()
@@ -18,10 +18,10 @@ let main firstFrameReady =
     let sdlConfig = { SdlConfig.defaultConfig with WindowConfig = sdlWindowConfig; MobileOrientations = "LandscapeLeft LandscapeRight" }
 
     // this specifies the world config using the above SDL config
-    let worldConfig = { WorldConfig.defaultConfig with SdlConfig = sdlConfig; FirstFrameReady = firstFrameReady }
+    let worldConfig = { WorldConfig.defaultConfig with SdlConfig = sdlConfig }
 
     // this runs the engine with the given config and plugin, starting the game
-    World.run worldConfig (MobilePlugin ())
+    World.run (Some firstFrame) worldConfig (MobilePlugin ())
 
 #if ANDROID
 open Android.App

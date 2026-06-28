@@ -15,7 +15,7 @@ module WorldTests =
     let [<Test>] ``Run empty frame then clean up.`` () =
         Nu.init ()
         let world = World.makeStub (constant None) { WorldConfig.defaultConfig with Accompanied = true } (TestPlugin ())
-        let result = World.runWithCleanUp (fun world -> world.UpdateTime < 1L) ignore ignore ignore ignore ignore ignore world
+        let result = World.runWithCleanUp (fun world -> world.UpdateTime < 1L) ignore ignore ignore ignore ignore (Some ignore) world
         Assert.Equal (Constants.Engine.ExitCodeSuccess, result)
 
     let [<Test; Category "Integration">] ``Run integration frame then clean up.`` () =
@@ -28,7 +28,7 @@ module WorldTests =
             let windowViewport = Viewport.makeWindow1 windowSize
             let geometryViewport = Viewport.makeGeometry windowViewport.Bounds.Size
             let world = World.make (constant None) sdlDeps worldConfig geometryViewport windowViewport (TestPlugin ())
-            let result = World.runWithCleanUp (fun world -> world.UpdateTime < 1L) ignore ignore ignore ignore ignore ignore world
+            let result = World.runWithCleanUp (fun world -> world.UpdateTime < 1L) ignore ignore ignore ignore ignore (Some ignore) world
             Assert.Equal (Constants.Engine.ExitCodeSuccess, result)
         | Left _ -> Assert.Fail ()
 
