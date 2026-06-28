@@ -203,7 +203,7 @@ let [<EntryPoint>] entryPoint _ =
     Nu.NativeLibraryLoading.iOS.setupSdl () // Required before we initialize SDL on iOS!
 
     let sdlMainMethod = Assembly.GetExecutingAssembly().GetType("SandBox2d.Program").GetMethod (nameof sdlMainImpl, BindingFlags.Static ||| BindingFlags.NonPublic)
-    let sdlMainFuncPtr = sdlMainMethod.MethodHandle.GetFunctionPointer () // Requires UnmanagedCallersOnly on the function! See https://learn.microsoft.com/en-us/dotnet/api/system.runtimemethodhandle.getfunctionpointer#remarks
+    let sdlMainFuncPtr = sdlMainMethod.MethodHandle.GetFunctionPointer () // requires UnmanagedCallersOnly on the function! See https://learn.microsoft.com/en-us/dotnet/api/system.runtimemethodhandle.getfunctionpointer#remarks
     SDL3.SDL_RunApp (0, NativePtr.nullPtr, sdlMainFuncPtr, 0n)
 #endif
 #if !(ANDROID || IOS)

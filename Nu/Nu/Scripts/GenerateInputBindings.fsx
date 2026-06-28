@@ -1,4 +1,6 @@
-﻿// Nu Game Engine.
+﻿#!/usr/bin/env -S dotnet fsi
+
+// Nu Game Engine.
 // Required Notice:
 // Copyright (C) Bryan Edds.
 // Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.

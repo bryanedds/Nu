@@ -1,9 +1,10 @@
 #!/usr/bin/env -S dotnet fsi
+
 // Dynamically select a compatible Xamarin.Google.Android.Play.Asset.Delivery version
 // that restores for Android without NU1608 warnings. No versions or ranges are hard-coded.
 //
 // Usage:
-//   dotnet fsi SelectCompatibleAssetDeliveryVersion.fsx --project-path <path_to_.fsproj> --tfm <target_framework>
+//  dotnet fsi SelectCompatibleAssetDeliveryVersion.fsx --project-path <path_to_.fsproj> --tfm <target_framework>
 
 open System
 open System.IO
@@ -55,13 +56,10 @@ let fetchVersionsFromNuget () : string[] =
             use doc = System.Text.Json.JsonDocument.Parse json
             let root = doc.RootElement
             let mutable versionsProp = Unchecked.defaultof<_>
-            if root.TryGetProperty ("versions", &versionsProp) then
-                return versionsProp.EnumerateArray () |> Seq.map (fun v -> v.GetString ()) |> Seq.filter (fun v -> not (String.IsNullOrWhiteSpace v)) |> Seq.toArray
-            else
-                return [||]
-        with _ ->
-            return [||]
-    }
+            if root.TryGetProperty ("versions", &versionsProp)
+            then return versionsProp.EnumerateArray () |> Seq.map (fun v -> v.GetString ()) |> Seq.filter (fun v -> not (String.IsNullOrWhiteSpace v)) |> Seq.toArray
+            else return [||]
+        with _ -> return [||] }
     |> Async.AwaitTask
     |> Async.RunSynchronously
 
@@ -79,8 +77,8 @@ let tryParseVersion (s: string) : Version voption =
     let dotParts = clean.Split('.')
     // Pad to at least 4 parts
     let padded =
-        [| yield! dotParts
-           for _ in dotParts.Length .. 3 do yield "0" |]
+        [|yield! dotParts
+          for _ in dotParts.Length .. 3 do yield "0"|]
         |> Array.map (fun p ->
             match Int32.TryParse p with
             | true, v -> v
@@ -155,7 +153,8 @@ let sorted =
         | ValueSome vv -> vv
         | ValueNone -> Version ())
 
-match Array.tryFind (fun candidate ->
+match
+    Array.tryFind (fun candidate ->
         let succeeded, hasNu1608 = runRestoreProbe candidate
         succeeded && not hasNu1608) sorted with
 | Some v ->

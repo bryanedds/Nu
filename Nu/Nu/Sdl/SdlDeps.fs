@@ -91,7 +91,7 @@ module SdlDeps =
 
     let private logOutputCallbackPtr = lazy (
         let logOutputMethod = typeof<LogOutputCallback>.GetMethod(nameof LogOutputCallback.Invoke, BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic).MethodHandle
-        logOutputMethod.GetFunctionPointer ()) // Requires UnmanagedCallersOnly on the function! See https://learn.microsoft.com/en-us/dotnet/api/system.runtimemethodhandle.getfunctionpointer#remarks
+        logOutputMethod.GetFunctionPointer ()) // requires UnmanagedCallersOnly on the function! See https://learn.microsoft.com/en-us/dotnet/api/system.runtimemethodhandle.getfunctionpointer#remarks
 
     let private sdlVersionToString version =
         string (SDL3.SDL_VERSIONNUM_MAJOR version) + "." +

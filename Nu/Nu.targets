@@ -4,7 +4,7 @@
          Nu.Common.targets (shared build configuration for Nu game projects)
 	     ============================================================	 
 
-         USAGE: import this right after your first PropertyGroup (which sets TargetFramework / TargetFrameworks). The
+         Usage: import this right after your first PropertyGroup (which sets TargetFramework / TargetFrameworks). The
 		 shared file then sees TargetFrameworks to condition UseMaui on mobile targets (avoiding MAUI workload for desktop-only projects)
 
          To opt into mobile targets, list them explicitly in your project:

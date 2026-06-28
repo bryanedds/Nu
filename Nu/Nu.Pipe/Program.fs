@@ -12,10 +12,6 @@ module Program =
 
     let [<EntryPoint; STAThread>] main argv =
         match argv with
-        | [||] ->
-            let assetGraph = AssetGraph.makeFromFileOpt Assets.Global.AssetGraphFilePath
-            AssetGraph.buildAssets "../../.." "." "../../refinement" BcCompression true assetGraph
-            Constants.Engine.ExitCodeSuccess
         | [|inputDirectory; outputDirectory; refinementDirectory; blockCompressionStr; fullBuildStr|] ->
             let blockCompression = scvalue blockCompressionStr
             let fullBuild = fullBuildStr = string true

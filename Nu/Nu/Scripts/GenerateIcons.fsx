@@ -1,4 +1,5 @@
 #!/usr/bin/env -S dotnet fsi
+
 // Generate platform-specific desktop app icons from MAUI adaptive icon SVG sources.
 // These SVGs are the SINGLE SOURCE OF TRUTH across all platforms.
 //
@@ -72,8 +73,7 @@ let writeIcns (png1024Path : string) (outputDir : string) =
         256, 256, "256x256"
         512, 512, "256x256@2x"
         512, 512, "512x512"
-        1024, 1024, "512x512@2x"
-    ]
+        1024, 1024, "512x512@2x"]
     use src = new MagickImage (png1024Path)
     src.Format <- MagickFormat.Png32
     for w, h, suffix in sizes do
@@ -88,7 +88,7 @@ let writeIcns (png1024Path : string) (outputDir : string) =
     use p = Process.Start psi
     p.WaitForExit ()
     if p.ExitCode <> 0 then
-        failwithf "iconutil failed: %s" (p.StandardError.ReadToEnd())
+        failwithf "iconutil failed: %s" (p.StandardError.ReadToEnd ())
     Directory.Delete (iconsetDir, true)
     icnsPath
 
@@ -111,12 +111,12 @@ let writeWindowsIco (png1024Path : string) (outputIco : string) =
     src.Format <- MagickFormat.Png32
     let sizes = [16; 24; 32; 48; 64; 128; 256]
     let pngEntries =
-        [ for s in sizes do
+        [for s in sizes do
             use resized = src.Clone ()
             resized.Resize (uint32 s, uint32 s)
             use ms = new MemoryStream ()
             resized.Write (ms)
-            s, ms.ToArray () ]
+            (s, ms.ToArray ())]
     writeIco pngEntries outputIco
     outputIco
 
