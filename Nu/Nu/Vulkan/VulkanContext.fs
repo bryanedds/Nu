@@ -271,7 +271,7 @@ type SwapchainSingleton =
                 info.imageSharingMode <- VkSharingMode.Concurrent
                 info.queueFamilyIndexCount <- 2u
                 info.pQueueFamilyIndices <- indicesArrayPin.Pointer
-            info.preTransform <- VkSurfaceTransformFlagsKHR.Identity // TODO: using the Android Compositor is suboptimal in performance, implement pre-rotation instead
+            info.preTransform <- VkSurfaceTransformFlagsKHR.Identity // TODO: P1: using the Android Compositor is suboptimal in performance, consider implementing pre-rotation instead.
             info.compositeAlpha <-
                 if capabilities.supportedCompositeAlpha &&& VkCompositeAlphaFlagsKHR.Opaque <> VkCompositeAlphaFlagsKHR.None then VkCompositeAlphaFlagsKHR.Opaque
                 elif capabilities.supportedCompositeAlpha &&& VkCompositeAlphaFlagsKHR.PreMultiplied <> VkCompositeAlphaFlagsKHR.None then VkCompositeAlphaFlagsKHR.PreMultiplied
