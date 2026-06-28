@@ -9,13 +9,15 @@ let main firstFrame =
     // this initializes Nu before other Nu code is run
     Nu.init ()
 
+    // NOTE: keep Orientations in sync with the ones specified for ScreenOrientation below and in "App/iOS Info.plist" file.
+    // the platform-specific orientations are applied to the splash screen before SDL sets orientations, so they must match to avoid a brief orientation change when the splash screen is removed.
+    let sdlOrientations = Set.ofList [LandscapeLeft; LandscapeRight]
+
     // this specifies the window configuration used to display the game
     let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "Mobile Plus" }
 
     // this specifies the configuration of the game engine's use of SDL
-    // NOTE: keep MobileOrientations in sync with the ones specified for ScreenOrientation below and in "App/iOS Info.plist" file.
-    // the platform-specific orientations are applied to the splash screen before SDL sets orientations, so they must match to avoid a brief orientation change when the splash screen is removed.
-    let sdlConfig = { SdlConfig.defaultConfig with WindowConfig = sdlWindowConfig; MobileOrientations = "LandscapeLeft LandscapeRight" }
+    let sdlConfig = { SdlConfig.defaultConfig with Orientations = sdlOrientations; WindowConfig = sdlWindowConfig;  }
 
     // this specifies the world config using the above SDL config
     let worldConfig = { WorldConfig.defaultConfig with SdlConfig = sdlConfig }
@@ -58,11 +60,12 @@ type PreDrawListener () =
 do ()
 
 // Entry point, SDL usage taken from https://github.com/ppy/SDL3-CS/blob/master/SDL3-CS.Tests.Android/MainActivity.cs
-[<Activity (LaunchMode = LaunchMode.SingleInstance, // Only allow one instance of the game to be launched at once
-            MainLauncher = true, // At least one activity must be marked as the main launcher to be able to start the app (when the user taps the app icon).
-            Theme = "@style/Maui.SplashTheme", // From Microsoft.Maui.Core's AAR (available via UseMaui=true). See https://learn.microsoft.com/en-us/dotnet/maui/user-interface/images/splashscreen?tabs=android#platform-specific-configuration
-            ConfigurationChanges = enum -1, // SDL - Do not recreate the activity on all configuration changes, since SDL handles them itself.
-            ScreenOrientation = ScreenOrientation.UserLandscape)>] // Orientation before SDL initialization where it overrides based on SDL_HINT_ORIENTATIONS
+[<Activity
+    (LaunchMode = LaunchMode.SingleInstance, // Only allow one instance of the game to be launched at once
+     MainLauncher = true, // At least one activity must be marked as the main launcher to be able to start the app (when the user taps the app icon).
+     Theme = "@style/Maui.SplashTheme", // From Microsoft.Maui.Core's AAR (available via UseMaui=true). See https://learn.microsoft.com/en-us/dotnet/maui/user-interface/images/splashscreen?tabs=android#platform-specific-configuration
+     ConfigurationChanges = enum -1, // SDL - Do not recreate the activity on all configuration changes, since SDL handles them itself.
+     ScreenOrientation = ScreenOrientation.UserLandscape)>] // Orientation before SDL initialization where it overrides based on SDL_HINT_ORIENTATIONS
 [<IntentFilter ([|Android.Hardware.Usb.UsbManager.ActionUsbDeviceAttached|])>] // SDL - Let Android know that we can handle some USB devices and should receive this event
 type MainActivity () =
     inherit Org.Libsdl.App.SDLActivity ()

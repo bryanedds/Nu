@@ -23,23 +23,38 @@ type SdlWindowConfig =
 
     /// A default SdlWindowConfig.
     static member val defaultConfig =
+        
+        // NOTE: our use of SDL_WINDOW_HIGH_PIXEL_DENSITY only changes behavior on Apple iOS/macOS or Linux Wayland.
+        // See https://wiki.libsdl.org/SDL3/README-highdpi
         let noNotificationBar = if OperatingSystem.IsIOS () || OperatingSystem.IsAndroid () then SDL_WindowFlags.SDL_WINDOW_FULLSCREEN else Unchecked.defaultof<_>
         { WindowTitle = "Nu Game"
           WindowX = int SDL3.SDL_WINDOWPOS_UNDEFINED
           WindowY = int SDL3.SDL_WINDOWPOS_UNDEFINED
-          // SDL_WINDOW_HIGH_PIXEL_DENSITY only changes behavior on Apple iOS/macOS or Linux Wayland. see https://wiki.libsdl.org/SDL3/README-highdpi
           WindowFlags = SDL_WindowFlags.SDL_WINDOW_RESIZABLE ||| SDL_WindowFlags.SDL_WINDOW_VULKAN ||| SDL_WindowFlags.SDL_WINDOW_HIGH_PIXEL_DENSITY ||| noNotificationBar }
+
+/// SDL orientation.
+/// See https://wiki.libsdl.org/SDL3/SDL_HINT_ORIENTATIONS
+type SdlOrientation =
+    | LandscapeLeft
+    | LandscapeRight
+    | Portrait
+    | PortraitUpsideDown
 
 /// Describes the general configuration of SDL.
 type [<ReferenceEquality>] SdlConfig =
-    { WindowConfig : SdlWindowConfig
-      /// A space delimited list of LandscapeLeft LandscapeRight Portrait and PortraitUpsideDown. See https://wiki.libsdl.org/SDL3/SDL_HINT_ORIENTATIONS
-      MobileOrientations : string }
+    { Orientations : SdlOrientation Set
+      WindowConfig : SdlWindowConfig }
 
     /// A default SdlConfig.
     static member val defaultConfig =
-        { WindowConfig = SdlWindowConfig.defaultConfig
-          MobileOrientations = "" }
+        { Orientations = Set.empty
+          WindowConfig = SdlWindowConfig.defaultConfig }
+
+    /// The SDL orientations as a string.
+    member this.OrientationsStr =
+        this.Orientations
+        |> Seq.map scstring
+        |> String.join " "
 
 [<RequireQualifiedAccess>]
 module SdlEvents =
@@ -174,7 +189,7 @@ module SdlDeps =
           Destroy = id }
 
     /// Attempt to make an SdlDeps instance.
-    let tryMake sdlConfig accompanied (windowSize : Vector2i) =
+    let tryMake (sdlConfig : SdlConfig) (accompanied : bool) (windowSize : Vector2i) =
         match attemptPerformSdlInit
             (fun () ->
 
@@ -184,7 +199,7 @@ module SdlDeps =
                 // attempt to initialize sdl
                 Log.info "Initializing SDL 3..."
                 SDL3.SDL_SetHint (SDL3.SDL_HINT_WINDOWS_CLOSE_ON_ALT_F4, "0") |> ignore<SDLBool>
-                SDL3.SDL_SetHint (SDL3.SDL_HINT_ORIENTATIONS, sdlConfig.MobileOrientations) |> ignore<SDLBool>
+                SDL3.SDL_SetHint (SDL3.SDL_HINT_ORIENTATIONS, sdlConfig.OrientationsStr) |> ignore<SDLBool>
                 let initConfig =
                     SDL_InitFlags.SDL_INIT_AUDIO |||
                     SDL_InitFlags.SDL_INIT_VIDEO |||
