@@ -32,7 +32,7 @@ jobs:
       - name: Install Android dependencies for Windows ARM
         if: "contains(matrix.os, 'windows') && contains(matrix.os, 'arm')"
         run:
-          dotnet build "Projects/Sand Box 2d" -t:InstallAndroidDependencies -f net10.0-android -p BuildMobile=true,AcceptAndroidSdkLicenses=True
+          dotnet build "Projects/Mobile" -t:InstallAndroidDependencies -f net10.0-android -p BuildMobile=true,AcceptAndroidSdkLicenses=True
       # Apple syncs version numbers across iOS, macOS, and Xcode; the .NET iOS
       # workload version matches: 26.5.10284 → iOS 26.5 → Xcode 26.5.
       # (https://github.com/dotnet/macios/issues/25818#issuecomment-4799784136)
