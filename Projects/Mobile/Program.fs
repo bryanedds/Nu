@@ -207,7 +207,7 @@ let [<EntryPoint>] entryPoint _ =
         // - no rendering to array (layered) attachments
         Constants.Render.SkipRendering3d <- true
 
-    Nu.NativeLibraryLoading.iOS.setupSdl () // Required before we initialize SDL on iOS!
+    Platform.Apple.iOS.preInitSdl () // Required before we initialize SDL on iOS!
 
     let sdlMainMethod = Assembly.GetExecutingAssembly().GetType("Mobile.Program").GetMethod (nameof sdlMainImpl, BindingFlags.Static ||| BindingFlags.NonPublic)
     let sdlMainFuncPtr = sdlMainMethod.MethodHandle.GetFunctionPointer () // requires UnmanagedCallersOnly on the function! See https://learn.microsoft.com/en-us/dotnet/api/system.runtimemethodhandle.getfunctionpointer#remarks
