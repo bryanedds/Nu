@@ -53,15 +53,8 @@ module OpenGL =
 [<RequireQualifiedAccess>]
 module Vulkan =
 
+    let [<Uniform>] MoltenVk = OperatingSystem.IsIOS () || match ConfigurationManager.AppSettings.["MoltenVk"] with null -> false | value -> scvalue value
     let [<Literal>] DescriptorSetCountDefault = 32
-    
-    /// On macOS, enabling this uses MoltenVk in place of KosmicKrisp
-    /// On iOS, it must be set to true
-    /// On other platforms, it must be set to false
-    let [<Uniform>] MoltenVk =
-        OperatingSystem.IsIOS () ||
-        //OperatingSystem.IsMacOS () || // This line forces MoltenVk instead of KosmicKrisp.
-        match ConfigurationManager.AppSettings.["MoltenVk"] with null -> false | value -> scvalue value
 
 [<RequireQualifiedAccess>]
 module ImGui =

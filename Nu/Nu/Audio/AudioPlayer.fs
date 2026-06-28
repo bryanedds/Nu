@@ -128,8 +128,8 @@ type [<ReferenceEquality>] StubAudioPlayer =
 type [<ReferenceEquality>] SdlAudioPlayer =
     private
         { MixerOpt : MIX_Mixer nativeptr option
-          mutable FreeTracks : MIX_Track nativeptr ConcurrentStack // needs to be concurrent because tracks are returned from audio callbacks on SDL threads.
           mutable AudioPlayerHandle : GCHandle // we need to keep a GCHandle to prevent the audio player from being garbage collected and to pass userdata to native callbacks.
+          mutable FreeTracks : MIX_Track nativeptr ConcurrentStack // needs to be concurrent because tracks are returned from audio callbacks on SDL threads.
           AudioPackages : Packages<MIX_Audio nativeptr, unit>
           mutable AudioMessages : AudioMessage List
           mutable MasterAudioVolume : single
@@ -384,8 +384,8 @@ type [<ReferenceEquality>] SdlAudioPlayer =
         // create audio player
         let audioPlayer =
             { MixerOpt = mixerOpt
-              FreeTracks = Unchecked.defaultof<_>  
               AudioPlayerHandle = Unchecked.defaultof<_>
+              FreeTracks = Unchecked.defaultof<_>  
               AudioPackages = dictPlus StringComparer.Ordinal []
               AudioMessages = List ()
               MasterAudioVolume = Constants.Audio.MasterAudioVolumeDefault
