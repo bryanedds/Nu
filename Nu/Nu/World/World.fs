@@ -646,20 +646,20 @@ module WorldModule4 =
 
         /// Run the game engine, initializing dependencies as indicated by WorldConfig, and returning exit code upon
         /// termination.
-        static member runPlus tryMakeEditContext runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess firstFrameOpt worldConfig windowSize geometryViewport windowViewport plugin =
+        static member runPlus tryMakeEditContext runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess firstFrameCallback worldConfig windowSize geometryViewport windowViewport plugin =
             match SdlDeps.tryMake worldConfig.SdlConfig worldConfig.Accompanied windowSize with
             | Right sdlDeps ->
                 use sdlDeps = sdlDeps // bind explicitly to dispose automatically
                 let world = World.make tryMakeEditContext sdlDeps worldConfig geometryViewport windowViewport plugin
                 if World.getWindowSize world <> windowSize then
                     World.processWindowResized world // synchronize window size with actual size, e.g. fullscreen for mobile or a display with size smaller than the configured DisplayScalar
-                World.runWithCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess firstFrameOpt world
+                World.runWithCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess (Some firstFrameCallback) world
             | Left error -> Log.error error; Constants.Engine.ExitCodeFailure
 
         /// Run the game engine, initializing dependencies as indicated by WorldConfig, and returning exit code upon
         /// termination.
-        static member run firstFrameOpt worldConfig plugin =
+        static member run firstFrameCallback worldConfig plugin =
             let windowSize = Constants.Render.DisplayVirtualResolution * Globals.Render.DisplayScalar
             let windowViewport = Viewport.makeWindow1 windowSize
             let geometryViewport = Viewport.makeGeometry windowViewport.Bounds.Size
-            World.runPlus (constant None) tautology ignore ignore ignore ignore ignore firstFrameOpt worldConfig windowViewport.Outer.Size geometryViewport windowViewport plugin
+            World.runPlus (constant None) tautology ignore ignore ignore ignore ignore firstFrameCallback worldConfig windowViewport.Outer.Size geometryViewport windowViewport plugin
