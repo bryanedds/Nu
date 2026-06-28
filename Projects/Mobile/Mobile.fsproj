@@ -27,17 +27,17 @@
 	<!-- ============================================================
 	     Common Project Settings 
 		 ============================================================
-		 Sets $(TargetPlatformIdentifier) (empty for desktop, 'android' for Android, 'ios' for iOS) for usage.
-         Android reference: https://learn.microsoft.com/en-us/dotnet/android/building-apps/build-properties
-         iOS reference: https://learn.microsoft.com/en-us/dotnet/ios/building-apps/build-properties -->
+		 Sets $(TargetPlatformIdentifier) (empty for desktop, 'android' for Android, 'ios' for iOS) for usage. -->
 	<Import Project="../../Nu/Nu.targets" />
 
 	<!-- ============================================================
 	     Mobile Properties
-		 ============================================================ -->
+		 ============================================================
+         Android reference: https://learn.microsoft.com/en-us/dotnet/android/building-apps/build-properties
+         iOS reference: https://learn.microsoft.com/en-us/dotnet/ios/building-apps/build-properties -->
 	<PropertyGroup>
-		<ApplicationTitle>Sand Box 2d</ApplicationTitle>
-		<ApplicationId>nu.game.SandBox2d</ApplicationId>
+		<ApplicationTitle>Mobile</ApplicationTitle>
+		<ApplicationId>nu.project.Mobile</ApplicationId>
 		<ApplicationDisplayVersion>1.0.0</ApplicationDisplayVersion>
 		<ApplicationVersion>1</ApplicationVersion>
 		<!-- UNCOMMENT THE FOLLOWING LINE IF YOU INSTALLED XCODE FROM APP STORE WHICH AUTO-UPDATES TO A VERSION
@@ -48,6 +48,26 @@
 			 instead of the App Store. -->
 		<!-- <ValidateXcodeVersion>False</ValidateXcodeVersion> -->
 	</PropertyGroup>
+
+	<!-- ============================================================
+	     Project Files
+		 ============================================================ -->
+	<ItemGroup>
+		<None Include="Assets\*" />
+		<None Include="Assets\*\*" />
+		<None Include="App\iOS Info.plist">
+			<LogicalName>Info.plist</LogicalName>
+		</None>
+		<Compile Include="Assets.fs" />
+		<Compile Include="Simulants.fs" />
+		<Compile Include="Gameplay.fs" />
+		<Compile Include="Mobile.fs" />
+		<Compile Include="MobilePlugin.fs" />
+		<Compile Include="Program.fs" />
+		<None Include="AssetGraph.nuag" />
+		<None Include="Overlayer.nuol" />
+		<None Include="App.config" />
+	</ItemGroup>
 
 	<!-- ============================================================
 	     App Icon, Splash Screen, and Platform Manifests
@@ -66,26 +86,6 @@
 		<BundleResource Include="App/iOS PrivacyInfo.xcprivacy" LogicalName="PrivacyInfo.xcprivacy" />
 		<!-- macOS Information property list template, only applicable to "dotnet publish" that creates a macOS .app bundle -->
 		<MacOSPlistTemplate Include="App/macOS Info.plist" />
-	</ItemGroup>
-
-	<!-- ============================================================
-	     Project Files
-		 ============================================================ -->
-	<ItemGroup>
-		<None Include="Assets\*" />
-		<None Include="App\iOS Info.plist">
-		  <LogicalName>Info.plist</LogicalName>
-		</None>
-		<None Include="Assets\*\*" />
-		<Compile Include="Assets.fs" />
-		<Compile Include="Simulants.fs" />
-		<Compile Include="Gameplay.fs" />
-		<Compile Include="Mobile.fs" />
-		<Compile Include="MobilePlugin.fs" />
-		<Compile Include="Program.fs" />
-		<None Include="AssetGraph.nuag" />
-		<None Include="Overlayer.nuol" />
-		<None Include="App.config" />
 	</ItemGroup>
 
 </Project>
