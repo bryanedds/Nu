@@ -193,7 +193,7 @@ module SdlDeps =
     /// The splash will be overwritten when Vulkan presents its first swapchain image.
     let private tryShowSplashScreen (window : SDL_Window nativeptr) =
         let assembly = Assembly.GetEntryAssembly ()
-        let svgStream = assembly.GetManifestResourceStream "Splash.svg"
+        let svgStream = assembly.GetManifestResourceStream "MauiSplash"
         if not (isNull svgStream) then
             use svgStream = svgStream
             let nativeMemory = NativeMemory.Alloc (unativeint svgStream.Length)
@@ -203,13 +203,27 @@ module SdlDeps =
             let sdlStream = SDL3.SDL_IOFromConstMem (NativePtr.toNativeInt nativeMemoryBytePtr, unativeint svgStream.Length)
             let mutable w, h = 0, 0
             SDL3.SDL_GetWindowSizeInPixels (window, &&w, &&h) |> ignore<SDLBool>
-            let svgSurfacePtr = SDL3_image.IMG_LoadSizedSVG_IO (sdlStream, w, h)
-            SDL3.SDL_CloseIO sdlStream |> ignore<SDLBool>
+            let svgSurfacePtr =
+                if SDL3_image.IMG_isSVG sdlStream |> SDLBool.op_Implicit then
+                    // IMG_LoadSizedSVG_IO maintains aspect ratio automatically
+                    let vectorImage = SDL3_image.IMG_LoadSizedSVG_IO (sdlStream, w, h)
+                    SDL3.SDL_CloseIO sdlStream |> ignore<SDLBool>
+                    vectorImage
+                else
+                    // manually maintain aspect ratio for non-SVG images
+                    let rasterImage = SDL3_image.IMG_Load_IO (sdlStream, true)
+                    let rasterSurface = NativePtr.toByRef rasterImage
+                    let scaleX, scaleY = double w / double rasterSurface.w, double h / double rasterSurface.h
+                    let scale = min scaleX scaleY
+                    let newW, newH = int (double rasterSurface.w * scale), int (double rasterSurface.h * scale)
+                    let scaledImage = SDL3.SDL_ScaleSurface (rasterImage, newW, newH, SDL_ScaleMode.SDL_SCALEMODE_LINEAR)
+                    SDL3.SDL_DestroySurface rasterImage
+                    scaledImage
             if not (NativePtr.isNullPtr svgSurfacePtr) then
                 let windowSurfacePtr = SDL3.SDL_GetWindowSurface window
 
                 // fill window background with splash color
-                let colorStream = assembly.GetManifestResourceStream "SplashColor.txt"
+                let colorStream = assembly.GetManifestResourceStream "MauiSplashColor"
                 if not (isNull colorStream) then
                     use colorReader = new System.IO.StreamReader (colorStream)
                     let colorStr = colorReader.ReadToEnd ()
