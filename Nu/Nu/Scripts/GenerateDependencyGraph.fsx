@@ -1,3 +1,5 @@
+#!/usr/bin/env -S dotnet fsi
+
 #r "System.Drawing"
 #r "FSharp.Compiler.Service"
 #r "nuget: MSBuild.StructuredLogger"

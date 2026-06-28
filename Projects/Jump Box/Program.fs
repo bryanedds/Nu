@@ -23,4 +23,4 @@ module Program =
         let worldConfig = { WorldConfig.defaultConfig with SdlConfig = sdlConfig }
 
         // this runs the engine with the given config and plugin, starting the game
-        World.run worldConfig (JumpBoxPlugin ())
+        World.run (Some ignore) worldConfig (JumpBoxPlugin ())

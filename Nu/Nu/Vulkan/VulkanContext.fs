@@ -6,6 +6,8 @@ open System
 open System.Runtime.InteropServices
 open System.Collections.Generic
 open System.Numerics
+open System.Reflection
+open System.Runtime.CompilerServices
 open FSharp.NativeInterop
 open SDL
 open Vortice.Vulkan
@@ -269,8 +271,12 @@ type SwapchainSingleton =
                 info.imageSharingMode <- VkSharingMode.Concurrent
                 info.queueFamilyIndexCount <- 2u
                 info.pQueueFamilyIndices <- indicesArrayPin.Pointer
-            info.preTransform <- capabilities.currentTransform
-            info.compositeAlpha <- VkCompositeAlphaFlagsKHR.Opaque
+            info.preTransform <- VkSurfaceTransformFlagsKHR.Identity // TODO: P1: using the Android Compositor is suboptimal in performance, consider implementing pre-rotation instead.
+            info.compositeAlpha <-
+                if capabilities.supportedCompositeAlpha &&& VkCompositeAlphaFlagsKHR.Opaque <> VkCompositeAlphaFlagsKHR.None then VkCompositeAlphaFlagsKHR.Opaque
+                elif capabilities.supportedCompositeAlpha &&& VkCompositeAlphaFlagsKHR.PreMultiplied <> VkCompositeAlphaFlagsKHR.None then VkCompositeAlphaFlagsKHR.PreMultiplied
+                elif capabilities.supportedCompositeAlpha &&& VkCompositeAlphaFlagsKHR.PostMultiplied <> VkCompositeAlphaFlagsKHR.None then VkCompositeAlphaFlagsKHR.PostMultiplied
+                else VkCompositeAlphaFlagsKHR.Inherit
             info.presentMode <- VkPresentModeKHR.Fifo // NOTE: guaranteed by the spec and seems most appropriate for Nu.
             info.clipped <- true
             info.oldSwapchain <- oldVkSwapchainOpt
@@ -548,6 +554,9 @@ type [<ReferenceEquality>] VulkanContext =
 
     /// Whether rendering is permitted in the engine's current state.
     member this.RenderAllowed = this.RenderAllowed_
+
+    /// The SDL window used by the swapchain.
+    member this.Window = this.Swapchain_.Window_
     
     /// The physical device.
     member this.VkPhysicalDevice = this.PhysicalDevice_.VkPhysicalDevice
@@ -603,6 +612,9 @@ type [<ReferenceEquality>] VulkanContext =
     /// The swap format.
     member this.SwapFormat = this.Swapchain_.SurfaceFormat_.format
 
+#nowarn 202
+    [<UnmanagedCallersOnly (CallConvs = [|typeof<System.Runtime.CompilerServices.CallConvCdecl>|])>]
+#warnon 202
     static member private debugCallback
         (messageSeverity : VkDebugUtilsMessageSeverityFlagsEXT)
         (messageType : VkDebugUtilsMessageTypeFlagsEXT)
@@ -640,8 +652,7 @@ type [<ReferenceEquality>] VulkanContext =
         0u
 
     static member private makeDebugMessengerInfo () =
-        Hl.DebugDelegate <- DebugDelegate VulkanContext.debugCallback
-        let mutable info = VkDebugUtilsMessengerCreateInfoEXT_hack ()
+        let mutable info = VkDebugUtilsMessengerCreateInfoEXT ()
         info.sType <- VkStructureType.DebugUtilsMessengerCreateInfoEXT
         info.messageSeverity <-
             VkDebugUtilsMessageSeverityFlagsEXT.Verbose |||
@@ -652,9 +663,13 @@ type [<ReferenceEquality>] VulkanContext =
             VkDebugUtilsMessageTypeFlagsEXT.General |||
             VkDebugUtilsMessageTypeFlagsEXT.Validation |||
             VkDebugUtilsMessageTypeFlagsEXT.Performance
-        info.pfnUserCallback <- Marshal.GetFunctionPointerForDelegate<DebugDelegate> Hl.DebugDelegate // assign to "real" nativeint in the "fake" struct
-        info.pUserData <- 0n
-        Branchless.reinterpret info : VkDebugUtilsMessengerCreateInfoEXT // reinterpret as the "real" struct
+        let debugCallbackMethod = typeof<VulkanContext>.GetMethod(nameof VulkanContext.debugCallback, BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic).MethodHandle
+        let callbackPointer = debugCallbackMethod.GetFunctionPointer () // requires UnmanagedCallersOnly on the function! See https://learn.microsoft.com/en-us/dotnet/api/system.runtimemethodhandle.getfunctionpointer#remarks
+        let offset = Marshal.OffsetOf<VkDebugUtilsMessengerCreateInfoEXT> (nameof info.pfnUserCallback)
+        let fieldRef = NativePtr.ofNativeInt<byte> (NativePtr.toNativeInt &&info + offset)
+        Unsafe.WriteUnaligned (NativePtr.toByRef<byte> fieldRef, callbackPointer) // TODO: report this F# compiler bug that allows direct assignment to compile without error but causes a crash at runtime
+        info.pUserData <- NativePtr.toVoidPtr NativePtr.nullPtr<byte>
+        info
     
     /// Create the Vulkan instance.
     static member private createVulkanInstance debugInfo =
@@ -680,11 +695,29 @@ type [<ReferenceEquality>] VulkanContext =
         let sdlExtensionCountInt = int sdlExtensionCount
         if NativePtr.isNullPtr sdlExtensions then Log.fail (SDL3.SDL_GetError ())
 
+        // get available instance extensions
+        let mutable availableExtensionCount = 0u
+        Vulkan.vkEnumerateInstanceExtensionProperties (nullPtr, &&availableExtensionCount, nullPtr) |> Hl.check
+        let availableExtensionProps = Array.zeroCreate<VkExtensionProperties> (int availableExtensionCount)
+        use availableExtensionPropsPin = new ArrayPin<_> (availableExtensionProps)
+        Vulkan.vkEnumerateInstanceExtensionProperties (nullPtr, &&availableExtensionCount, availableExtensionPropsPin.Pointer) |> Hl.check
+        let availableExtensions = Array.map Hl.getExtensionName availableExtensionProps
+
         // choose extensions
         use debugUtilsWrap = new StringWrap (Vulkan.VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
         let extensions =
             Array.init (sdlExtensionCountInt + if Hl.ValidationLayersActivated then 1 else 0)
                 (fun i -> if i < sdlExtensionCountInt then NativePtr.get sdlExtensions i else debugUtilsWrap.Pointer)
+
+        // check for portability enumeration extension - using MoltenVK in place of Vulkan loader won't support it (on iOS Simulator),
+        // while using MoltenVK from Vulkan loader (on iOS device / macOS) requires it
+        let portabilityEnumeration = NativePtr.spanToString Vulkan.VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME
+        use portabilityWrap = new StringWrap (portabilityEnumeration)
+        let portabilityEnumerationAvailable = Array.contains portabilityEnumeration availableExtensions
+        let extensions =
+            if Constants.Vulkan.MoltenVk && portabilityEnumerationAvailable then
+                Array.append extensions [|portabilityWrap.Pointer|]
+            else extensions
         use extensionsPin = new ArrayPin<_> (extensions)
             
         // TODO: P1: DJL: complete VkApplicationInfo before merging to master
@@ -701,6 +734,8 @@ type [<ReferenceEquality>] VulkanContext =
         info.pApplicationInfo <- asPointer &aInfo
         info.enabledExtensionCount <- uint extensions.Length
         info.ppEnabledExtensionNames <- extensionsPin.Pointer
+        if Constants.Vulkan.MoltenVk && portabilityEnumerationAvailable then
+            info.flags <- VkInstanceCreateFlags.EnumeratePortabilityKHR
         if Hl.ValidationLayersActivated then
             let mutable debugInfo = debugInfo
             info.pNext <- asVoidPtr &debugInfo
@@ -778,9 +813,17 @@ type [<ReferenceEquality>] VulkanContext =
     /// Create the logical device.
     static member private createLogicalDevice (physicalDevice : PhysicalDevice) =
 
+        // MoltenVK features
+        let portabilitySubsetExtensionName = NativePtr.spanToString Vulkan.VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME
+        let portabilitySubsetAvailable =
+            Array.exists (fun ext -> Hl.getExtensionName ext = portabilitySubsetExtensionName) physicalDevice.Extensions
+        let mutable portabilityFeatures = VkPhysicalDevicePortabilitySubsetFeaturesKHR ()
+        portabilityFeatures.imageViewFormatSwizzle <- true
+
         // Vulkan 1.3 features
         let mutable vulkan13 = VkPhysicalDeviceVulkan13Features ()
         vulkan13.dynamicRendering <- true
+        if Constants.Vulkan.MoltenVk && portabilitySubsetAvailable then vulkan13.pNext <- asVoidPtr &portabilityFeatures
         
         // queue create infos
         let mutable queuePriority = 1.0f
@@ -801,7 +844,10 @@ type [<ReferenceEquality>] VulkanContext =
 
         // get swapchain extension
         let swapchainExtensionName = NativePtr.spanToString Vulkan.VK_KHR_SWAPCHAIN_EXTENSION_NAME
-        let extensionArray = [|swapchainExtensionName|]
+        let extensionArray =
+            if Constants.Vulkan.MoltenVk && portabilitySubsetAvailable
+            then [|swapchainExtensionName; portabilitySubsetExtensionName|]
+            else [|swapchainExtensionName|]
         use extensionArrayWrap = new StringArrayWrap (extensionArray)
 
         // NOTE: DJL: for particularly dated implementations of Vulkan, validation depends on device layers which
@@ -962,7 +1008,13 @@ type [<ReferenceEquality>] VulkanContext =
             Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
             // clear viewport
-            let renderArea = VkRect2D (windowViewport.Bounds.Min.X, windowViewport.Bounds.Min.Y, uint windowViewport.Bounds.Size.X, uint windowViewport.Bounds.Size.Y)
+            let renderArea =
+                VkRect2D
+                    (windowViewport.Bounds.Min.X,
+                     windowViewport.Bounds.Min.Y,
+                     uint windowViewport.Bounds.Size.X,
+                     uint windowViewport.Bounds.Size.Y)
+                |> Hl.scaleRectToWindowPixels vkc.Window
             let clearColor = VkClearValue (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
             let mutable renderingInfo = Hl.makeRenderingInfo [|vkc.SwapchainImageView|] None renderArea (Some clearColor)
             Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &renderingInfo)

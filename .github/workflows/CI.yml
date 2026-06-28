@@ -1,33 +1,90 @@
 name: CI
 on: [push, pull_request]
+
 jobs:
   build:
     strategy:
       matrix:
         # Supported platforms: https://docs.github.com/en/actions/reference/runners/github-hosted-runners
-        os: [windows-latest, windows-11-arm, ubuntu-24.04-arm, ubuntu-latest]
+        os:
+          - windows-latest
+          - windows-11-arm
+          - ubuntu-24.04-arm
+          - ubuntu-latest
+          - macos-26 # choose a macOS version with Xcode that is supported by https://github.com/dotnet/macios/releases
       fail-fast: false # Don't cancel one when another fails
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.x'
-      - if: ${{ runner.os != 'Windows' }}
-        run: sudo sh ./Configure.${{ runner.os }}.Application.sh
-      - run: dotnet build
+      - uses: Happypig375/install-vulkan-sdk-action@main # move to jakoch/install-vulkan-sdk-action@v1 once https://github.com/jakoch/install-vulkan-sdk-action/pull/587 is released
+        if: contains(matrix.os, 'macos')
+        with:
+          optional_components: com.lunarg.vulkan.ios
+      - name: Build desktop only
+        run: dotnet build
+      - name: Install MAUI workload (if not Linux ARM)
+        if: "!(contains(matrix.os, 'ubuntu') && contains(matrix.os, 'arm'))" # .NET Android SDK doesn't support Linux ARM64: https://github.com/dotnet/android/issues/11184
+        run: |
+          dotnet workload install ${{ case(!contains(matrix.os, 'ubuntu'), 'maui', 'maui-android') }} # Linux doesn't support iOS therefore full MAUI workload
+      - name: Install Android dependencies for Windows ARM
+        if: "contains(matrix.os, 'windows') && contains(matrix.os, 'arm')"
+        run:
+          dotnet build "Projects/Mobile" -t:InstallAndroidDependencies -f net10.0-android -p BuildMobile=true,AcceptAndroidSdkLicenses=True
+      # Apple syncs version numbers across iOS, macOS, and Xcode; the .NET iOS
+      # workload version matches: 26.5.10284 → iOS 26.5 → Xcode 26.5.
+      # (https://github.com/dotnet/macios/issues/25818#issuecomment-4799784136)
+      # We derive Xcode version from the installed iOS workload manifest by
+      # scanning all SDK band directories for `microsoft.net.sdk.ios/` and
+      # metadata/workloads/InstalledManifests/, then picking the latest version.
+      # We query the dotnet binary directly because actions/setup-dotnet may set
+      # $DOTNET_ROOT to $HOME/.dotnet while the actual SDK lives elsewhere.
+      - name: Get Xcode version from iOS workload
+        id: ios-version
+        if: contains(matrix.os, 'macos')
+        run: |
+          echo "::group::Resolve Xcode version from iOS workload"
+          echo "dotnet version: $(dotnet --version)"
+          DOTNET_ROOT_REAL=$(dirname "$(command -v dotnet)")
+          echo "dotnet root: $DOTNET_ROOT_REAL"
+          _all_versions=
+          for _kind in sdk-manifests metadata/workloads/InstalledManifests; do
+            _dir="$DOTNET_ROOT_REAL/$_kind"
+            [ -d "$_dir" ] || { echo "  $_kind: not found"; continue; }
+            echo "  scanning $_dir ..."
+            for _sub in "$_dir"/*/; do
+              _ios="$_sub/microsoft.net.sdk.ios"
+              [ -d "$_ios" ] || continue
+              _versions=$(ls "$_ios/" 2>/dev/null)
+              echo "  found: $_ios -> $_versions"
+              _all_versions="$_all_versions $_versions"
+            done
+          done
+          IOS_VERSION=$(echo "$_all_versions" | tr ' ' '\n' | grep -v '^$' | sort -t. -k1,1n -k2,2n -k3,3n | tail -1 | cut -d. -f1-2)
+          echo "Resolved Xcode version: ${IOS_VERSION:-latest-stable}"
+          echo "xcode-version=${IOS_VERSION:-latest-stable}" >> "$GITHUB_OUTPUT"
+          echo "::endgroup::"
+      - uses: maxim-lobanov/setup-xcode@v1
+        if: contains(matrix.os, 'macos')
+        with:
+          xcode-version: ${{ steps.ios-version.outputs.xcode-version }}
+      - name: Build all (if not Linux ARM)
+        if: "!(contains(matrix.os, 'ubuntu') && contains(matrix.os, 'arm'))"
+        run: dotnet build -p BuildMobile=true
   test:
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest]
+        os: [windows-latest, ubuntu-latest, macos-latest] # can't include ARM because we don't have ImGui native libraries
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.x'
-      - if: ${{ runner.os != 'Windows' }}
-        run: sudo sh ./Configure.${{ runner.os }}.Application.sh
+      - uses: jakoch/install-vulkan-sdk-action@v1
+        if: contains(matrix.os, 'macos')
         # GitHub Actions runners have no GPU so skip Integration tests
       - run: dotnet test Nu/Nu.Tests --filter TestCategory!="Integration"

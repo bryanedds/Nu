@@ -3,6 +3,7 @@
 
 namespace Nu.Vulkan
 open System
+open System.Reflection
 open System.Runtime.InteropServices
 open System.Threading
 open System.IO
@@ -261,27 +262,6 @@ type internal BackgroundingResponseState =
     | PresentationTeardownPending // presentation resources can no longer be trusted as app has commenced backgrounding
     | PresentationTeardownComplete // presentation resources have been destroyed and restoration will commence when app is back in foreground
 
-// TODO: DJL: for mobile devices: https://learn.microsoft.com/en-us/dotnet/standard/native-interop/calling-conventions#when-you-can-omit-the-calling-convention.
-[<UnmanagedFunctionPointer (CallingConvention.Cdecl)>]
-type internal DebugDelegate =
-    delegate of VkDebugUtilsMessageSeverityFlagsEXT * VkDebugUtilsMessageTypeFlagsEXT * nativeint * nativeint -> uint32
-
-// https://github.com/amerkoleci/Vortice.Vulkan/blob/32035603790b64f4c96a979193a7e1391d34a428/src/Vortice.Vulkan/Generated/Structures.cs#L14978
-// VkDebugUtilsMessengerCreateInfoEXT with pfnUserCallback as "real" nativeint instead of "fake" nativeint which is actually a function pointer type
-// TODO: report this F# compiler bug that allows assigning to "fake" nativeint to compile without error but causes a crash at runtime
-type [<Struct>] internal VkDebugUtilsMessengerCreateInfoEXT_hack =
-    val mutable sType : VkStructureType
-    val mutable pNext : nativeint
-    val mutable flags : VkDebugUtilsMessengerCreateFlagsEXT
-    val mutable messageSeverity : VkDebugUtilsMessageSeverityFlagsEXT
-    val mutable messageType : VkDebugUtilsMessageTypeFlagsEXT
-    val mutable pfnUserCallback : nativeint // "real" nativeint
-    val mutable pUserData : nativeint
-
-[<UnmanagedFunctionPointer (CallingConvention.Cdecl)>]
-type internal BackgroundingDelegate =
-    delegate of userData : voidptr * event : SDL_Event nativeptr -> SDLBool    
-
 [<RequireQualifiedAccess>]
 module Hl =
 
@@ -306,8 +286,6 @@ module Hl =
     let mutable private TextureIdGenerationLock = obj ()
     let mutable private TextureIdCounter = 0UL
     
-    let mutable internal DebugDelegate : DebugDelegate = null
-    
     /// Index of the current Swapchain image.
     let mutable internal ImageIndex = 0u
 
@@ -328,6 +306,9 @@ module Hl =
 
     // callback to inform render loop about app backgrounding
     // official documentation for android case: https://github.com/libsdl-org/SDL/blob/main/docs/README-android.md#activity-lifecycle
+#nowarn 202
+    [<UnmanagedCallersOnly (CallConvs = [|typeof<System.Runtime.CompilerServices.CallConvCdecl>|])>]
+#warnon 202
     let private handleBackgrounding (userData : voidptr) (event : SDL_Event nativeptr) : SDLBool =
         ignore userData
         let event = NativePtr.toByRef event
@@ -341,14 +322,24 @@ module Hl =
             Backgrounded <- false
             true
         | _ -> true
+    let internal backgroundingCallback () =
+        let handle = Assembly.GetExecutingAssembly().GetType("Nu.Vulkan.Hl").GetMethod(nameof handleBackgrounding, BindingFlags.NonPublic ||| BindingFlags.Static).MethodHandle
+        handle.GetFunctionPointer ()
 
-    let private BackgroundingDelegate =
-        BackgroundingDelegate handleBackgrounding
+    /// Get the current pixel density of an SDL window.
+    let getWindowPixelDensity window =
+        let pixelDensity = SDL3.SDL_GetWindowPixelDensity window
+        if pixelDensity > 0.0f then pixelDensity
+        else Log.error ("Failed to get window pixel density due to: " + SDL3.SDL_GetError ()); 1.0f
 
-    // set up delegate for app backgrounding callback
-    // TODO: DJL: for mobile devices: https://learn.microsoft.com/en-us/dotnet/standard/native-interop/calling-conventions#when-you-can-omit-the-calling-convention.
-    let internal BackgroundingCallback =
-        Marshal.GetFunctionPointerForDelegate<BackgroundingDelegate> BackgroundingDelegate
+    /// Scale a rectangle from window coordinate space to pixel coordinate space.
+    let scaleRectForPixelDensity pixelDensity (rect : VkRect2D) =
+        let inline scale v = single v * pixelDensity
+        VkRect2D (int (scale rect.offset.x), int (scale rect.offset.y), uint (scale rect.extent.width), uint (scale rect.extent.height))
+
+    /// Scale a rectangle from SDL window coordinates to SDL pixel coordinates.
+    let scaleRectToWindowPixels window rect =
+        scaleRectForPixelDensity (getWindowPixelDensity window) rect
 
     let internal setPresentationSetupInitiated () =
         lock BackgroundingResponseStateLock (fun () -> BackgroundingResponseState <- PresentationSetupInitiated)

@@ -53,8 +53,10 @@ module ContourTessellation =
          (vertexBuffer : Nu.Vulkan.Buffer, indexBuffer : Nu.Vulkan.Buffer, modelViewProjectionUniform : Nu.Vulkan.Buffer, pipeline : Pipeline),
          vkc : VulkanContext) =
             
-        // only draw if scissor is valid
-        let mutable renderArea = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)
+        // only draw if scissor (and therefore also viewport) is valid
+        let pixelDensity = Hl.getWindowPixelDensity vkc.Window
+        let renderAreaLogical = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)
+        let mutable renderArea = Hl.scaleRectForPixelDensity pixelDensity renderAreaLogical
         let mutable vkViewport = Hl.makeViewport true renderArea
         let mutable scissor = renderArea
         match clipOpt with
@@ -67,12 +69,13 @@ module ContourTessellation =
             let sizeNdc = sizeClip * single viewport.DisplayScalar
             let sizeScissor = sizeNdc * 0.5f * viewport.Inner.Size.V2
             let offset = v2i viewport.Inner.Min.X (viewport.Outer.Max.Y - viewport.Inner.Max.Y)
-            scissor <-
+            let scissorLogical =
                 VkRect2D
                     ((minScissor.X |> round |> int) + offset.X,
-                     (single renderArea.extent.height - minScissor.Y |> round |> int) + offset.Y,
-                     uint sizeScissor.X,
-                     uint sizeScissor.Y)
+                        (single renderAreaLogical.extent.height - minScissor.Y |> round |> int) + offset.Y,
+                        uint sizeScissor.X,
+                        uint sizeScissor.Y)
+            scissor <- Hl.scaleRectForPixelDensity pixelDensity scissorLogical
             scissor <- Hl.clipRect renderArea scissor
         | ValueNone -> ()
         if Hl.validateRect scissor then

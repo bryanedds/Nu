@@ -1121,33 +1121,35 @@ module WorldModule2 =
                 elif keyboardKey >= KeyboardKey.F1 && keyboardKey <= KeyboardKey.F12 then ImGuiKey.F1 + (keyboardKey - KeyboardKey.F1 |> LanguagePrimitives.EnumToValue |> LanguagePrimitives.EnumOfValue) |> List.singleton
                 else []
 
-        static member private processInput2 (evt : SDL_Event) (world : World) =
+        static member internal processWindowResized (world : World) =
+
+            // ensure window size is a factor of display virtual resolution, going to full screen otherwise
+            let windowSize = World.getWindowSize world
+            let windowScalar =
+                max (single windowSize.X / single Constants.Render.DisplayVirtualResolution.X |> ceil |> int |> max 1)
+                    (single windowSize.Y / single Constants.Render.DisplayVirtualResolution.Y |> ceil |> int |> max 1)
+            let windowSize' = windowScalar * Constants.Render.DisplayVirtualResolution
+            World.trySetWindowSize windowSize' world
+            let windowSize'' = World.getWindowSize world
+            if windowSize''.X < windowSize'.X || windowSize''.Y < windowSize'.Y then
+                World.trySetWindowFullScreen true world
+
+            // synchronize display virtual scalar
+            let windowSize'' = World.getWindowSize world
+            let xScalar = windowSize''.X / Constants.Render.DisplayVirtualResolution.X
+            let yScalar = windowSize''.Y / Constants.Render.DisplayVirtualResolution.Y
+            Globals.Render.DisplayScalar <- min xScalar yScalar
+
+            // synchronize view ports
+            World.synchronizeViewports world
+
+        static member internal processInput2 (evt : SDL_Event) (world : World) =
             match evt.Type with
             | SDL_EventType.SDL_EVENT_QUIT ->
                 let eventTrace = EventTrace.debug "World" "processInput2" "ExitRequest" EventTrace.empty
                 World.publishPlus () Nu.Game.Handle.ExitRequestEvent eventTrace Nu.Game.Handle true true world
             | SDL_EventType.SDL_EVENT_WINDOW_RESIZED ->
-
-                // ensure window size is a factor of display virtual resolution, going to full screen otherwise
-                let windowSize = World.getWindowSize world
-                let windowScalar =
-                    max (single windowSize.X / single Constants.Render.DisplayVirtualResolution.X |> ceil |> int |> max 1)
-                        (single windowSize.Y / single Constants.Render.DisplayVirtualResolution.Y |> ceil |> int |> max 1)
-                let windowSize' = windowScalar * Constants.Render.DisplayVirtualResolution
-                World.trySetWindowSize windowSize' world
-                let windowSize'' = World.getWindowSize world
-                if windowSize''.X < windowSize'.X || windowSize''.Y < windowSize'.Y then
-                    World.trySetWindowFullScreen true world
-
-                // synchronize display virtual scalar
-                let windowSize'' = World.getWindowSize world
-                let xScalar = windowSize''.X / Constants.Render.DisplayVirtualResolution.X
-                let yScalar = windowSize''.Y / Constants.Render.DisplayVirtualResolution.Y
-                Globals.Render.DisplayScalar <- min xScalar yScalar
-
-                // synchronize view ports
-                World.synchronizeViewports world
-
+                World.processWindowResized world
             | SDL_EventType.SDL_EVENT_MOUSE_MOTION ->
                 let io = ImGui.GetIO ()
                 let boundsMin = world.WindowViewport.Bounds.Min
@@ -1959,7 +1961,7 @@ module WorldModule2 =
             world.WorldExtension.Plugin.CleanUp ()
 
         /// Run the game engine with the given handlers, but don't clean up at the end.
-        static member runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess firstFrame (world : World) =
+        static member runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess firstFrameOpt (world : World) =
 
             // run loop if user-defined run-while predicate passes
             world.Timers.FrameTimer.Restart ()
@@ -2064,7 +2066,7 @@ module WorldModule2 =
 
                                                                     // process rendering (1/2)
                                                                     let rendererProcess = World.getRendererProcess world
-                                                                    if not firstFrame then rendererProcess.RequestSwap ()
+                                                                    if Option.isNone firstFrameOpt then rendererProcess.RequestSwap ()
 
                                                                     // process frame pacing mechanics
                                                                     if world.Timers.MainThreadTimer.IsRunning then
@@ -2128,6 +2130,11 @@ module WorldModule2 =
                                                                     World.imGuiPostProcess world
                                                                     imGuiPostProcess world
 
+                                                                    // signal that rendering is ready when appropriate
+                                                                    match firstFrameOpt with
+                                                                    | Some firstFrame -> firstFrame ()
+                                                                    | None -> ()
+
                                                                     // update time and recur
                                                                     world.Timers.FrameTimer.Stop ()
                                                                     WorldModuleInternal.EndFrameProcessingStarted <- false
@@ -2141,13 +2148,11 @@ module WorldModule2 =
                                                                                 if group.GetExists world then
                                                                                     World.publish () (Events.TimeUpdateEvent --> group) group world
                                                                         | None -> ()
-
-                                                                    // recur
-                                                                    World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess false world
+                                                                    World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess None world
 
         /// Run the game engine using the given world and returning exit code upon termination.
-        static member runWithCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess firstFrame world =
-            try World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess firstFrame world
+        static member runWithCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess firstFrameOpt world =
+            try World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess firstFrameOpt world
                 World.cleanUp world
                 Constants.Engine.ExitCodeSuccess
             with exn ->

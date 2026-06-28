@@ -434,9 +434,12 @@ type VulkanRendererImGui
 
         member renderer.Render viewport_ (drawData : ImDrawDataPtr) renderMessages =
 
+            let pixelDensity = Hl.getWindowPixelDensity vkc.Window
+            let io = ImGui.GetIO ()
+            io.DisplayFramebufferScale <- v2Dup pixelDensity
+
             // update viewport, updating the imgui display size as needed
             if viewport <> viewport_ then
-                let io = ImGui.GetIO ()
                 io.DisplaySize <- viewport_.Bounds.Size.V2 // NOTE: DJL: this is not set in the dear imgui vulkan backend but IS necessary!
                 viewport <- viewport_
 
@@ -478,9 +481,11 @@ type VulkanRendererImGui
                 assetTextureRequests.TryRemove (assetTag, &removed) |> ignore<bool>
 
             // check that viewport bounds assumed by drawData match the actual viewport, as they sometimes lag behind upon resize, triggering validation errors when viewport bounds are exceeded.
+            let viewportPixelWidth = int (round (single viewport.Bounds.Width * pixelDensity))
+            let viewportPixelHeight = int (round (single viewport.Bounds.Height * pixelDensity))
             let drawDataMatchesViewport =
-                int drawData.DisplaySize.X * int drawData.FramebufferScale.X = viewport.Bounds.Width &&
-                int drawData.DisplaySize.Y * int drawData.FramebufferScale.Y = viewport.Bounds.Height
+                int (round (drawData.DisplaySize.X * drawData.FramebufferScale.X)) = viewportPixelWidth &&
+                int (round (drawData.DisplaySize.Y * drawData.FramebufferScale.Y)) = viewportPixelHeight
             
             // render when desired and drawData matches viewport
             if vkc.RenderAllowed && drawDataMatchesViewport then
@@ -489,7 +494,9 @@ type VulkanRendererImGui
                 let usedImages = List ()
                 
                 // set up render
-                let mutable renderArea = VkRect2D (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
+                let mutable renderArea =
+                    VkRect2D (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
+                    |> Hl.scaleRectForPixelDensity pixelDensity
                 let mutable renderingInfo = Hl.makeRenderingInfo [|vkc.SwapchainImageView|] None renderArea None
                 Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &renderingInfo)
                 let mutable viewport = Hl.makeViewport false renderArea

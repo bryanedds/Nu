@@ -21,6 +21,8 @@ Thumbs.db
 #######################
 *.suo
 *.tws
+*.csproj.user
+*.fsproj.user
 
 #####################
 # Build Directories #
@@ -28,6 +30,7 @@ Thumbs.db
 bin/
 obj/
 refinement/
+refinement-out/
 .vs/
 
 #########

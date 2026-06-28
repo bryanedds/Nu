@@ -31,7 +31,7 @@ module CoroutineTests =
                     numbers.Add world.UpdateTime
                     do! Coroutine.cancel
                     numbers.Add world.UpdateTime }
-        let result = World.runWithCleanUp runWhile ignore perProcess ignore ignore ignore true world
+        let result = World.runWithCleanUp runWhile ignore perProcess ignore ignore ignore (Some ignore) world
         CollectionAssert.AreEqual ([0; 0; 1; 2; 4], numbers)
         Assert.Equal (Constants.Engine.ExitCodeSuccess, result)
 
@@ -50,7 +50,7 @@ module CoroutineTests =
                     numbers.Add world.UpdateTime
                     do! Coroutine.cancel
                     numbers.Add world.UpdateTime }
-        let result = World.runWithCleanUp runWhile ignore perProcess ignore ignore ignore true world
+        let result = World.runWithCleanUp runWhile ignore perProcess ignore ignore ignore (Some ignore) world
         CollectionAssert.AreEqual ([1; 2; 4], numbers)
         Assert.Equal (Constants.Engine.ExitCodeSuccess, result)
 
@@ -66,7 +66,7 @@ module CoroutineTests =
                         numbers.Add world.UpdateTime
                         c () }
                 c ()
-        let result = World.runWithCleanUp runWhile ignore perProcess ignore ignore ignore true world
+        let result = World.runWithCleanUp runWhile ignore perProcess ignore ignore ignore (Some ignore) world
         CollectionAssert.AreEqual ([0; 1; 2; 3; 4; 5; 6; 7; 8; 9], numbers)
         Assert.Equal (Constants.Engine.ExitCodeSuccess, result)
     
@@ -81,7 +81,7 @@ module CoroutineTests =
                     while true do
                         numbers.Add world.UpdateTime
                         do! Coroutine.sleep 3L }
-        let result = World.runWithCleanUp runWhile ignore perProcess ignore ignore ignore true world
+        let result = World.runWithCleanUp runWhile ignore perProcess ignore ignore ignore (Some ignore) world
         CollectionAssert.AreEqual ([2; 5; 8], numbers)
         Assert.Equal (Constants.Engine.ExitCodeSuccess, result)
 
@@ -102,6 +102,6 @@ module CoroutineTests =
                         numbers.Add world.UpdateTime
                         do! Coroutine.sleep 2L
                     Assert.Fail () }
-        let result = World.runWithCleanUp runWhile ignore perProcess ignore ignore ignore true world
+        let result = World.runWithCleanUp runWhile ignore perProcess ignore ignore ignore (Some ignore) world
         CollectionAssert.AreEqual ([3; 0; 0; 0; 6; 6; 8; 10], numbers)
         Assert.Equal (Constants.Engine.ExitCodeSuccess, result)

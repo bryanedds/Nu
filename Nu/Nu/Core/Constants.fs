@@ -53,6 +53,7 @@ module OpenGL =
 [<RequireQualifiedAccess>]
 module Vulkan =
 
+    let [<Uniform>] MoltenVk = OperatingSystem.IsIOS () || match ConfigurationManager.AppSettings.["MoltenVk"] with null -> false | value -> scvalue value
     let [<Literal>] DescriptorSetCountDefault = 32
 
 [<RequireQualifiedAccess>]
@@ -206,7 +207,10 @@ module Render =
     let [<Literal>] TexturePriorityDefault = 0.5f // higher priority than (supposed) default, but not maximum. this value is arrived at through experimenting with a Windows NVidia driver.
     let [<Uniform>] mutable TextureAnisotropyMax = match ConfigurationManager.AppSettings["TextureAnisotropyMax"] with null -> 16.0f | value -> scvalue value
     let [<Uniform>] mutable TextureMinimalMipmapIndex = match ConfigurationManager.AppSettings["TextureMinimalMipmapIndex"] with null -> 2 | value -> scvalue value
-    let [<Uniform>] mutable TextureBlockCompression = match ConfigurationManager.AppSettings["TextureBlockCompression"] with null -> BcCompression | value -> scvalue value
+    let [<Uniform>] mutable TextureBlockCompression =
+        match ConfigurationManager.AppSettings["TextureBlockCompression"] with
+        | null -> if OperatingSystem.IsMacOS () || OperatingSystem.IsAndroid () || OperatingSystem.IsIOS() then AstcCompression else BcCompression
+        | value -> scvalue value
     let [<Literal>] SpriteBatchSize = 192 // NOTE: remember to update SPRITE_BATCH_SIZE in shaders when changing this!
     let [<Literal>] SpriteBorderTexelScalar = 0.001f
     let [<Literal>] SpriteMessagesPrealloc = 256
@@ -355,6 +359,7 @@ module Render =
     let [<Literal>] Body3dSegmentRenderMagnitudeMax = 48.0f
     let [<Literal>] Body3dSegmentRenderDistanceMax = 40.0f
     let [<Literal>] Body3dRenderDistanceMax = 32.0f
+    let [<Uniform>] mutable SkipRendering3d = false
 
 [<RequireQualifiedAccess>]
 module Audio =

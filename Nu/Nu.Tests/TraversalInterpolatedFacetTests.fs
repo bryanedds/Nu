@@ -82,7 +82,7 @@ module TraversalInterpolatedFacetTests =
             World.endScreen world
             World.endGame world
 
-        let result = World.runWithCleanUp runWhile preProcess ignore ignore ignore ignore true world
+        let result = World.runWithCleanUp runWhile preProcess ignore ignore ignore ignore (Some ignore) world
         Assert.Equal (Constants.Engine.ExitCodeSuccess, result)
 
     [<TestCase true; TestCase false>]
@@ -164,5 +164,5 @@ module TraversalInterpolatedFacetTests =
             World.endScreen world
             World.endGame world
 
-        let result = World.runWithCleanUp runWhile preProcess ignore ignore ignore ignore true world
+        let result = World.runWithCleanUp runWhile preProcess ignore ignore ignore ignore (Some ignore) world
         Assert.Equal (Constants.Engine.ExitCodeSuccess, result)

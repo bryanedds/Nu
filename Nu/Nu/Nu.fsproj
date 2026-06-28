@@ -9,18 +9,7 @@
         <RepositoryType>git</RepositoryType>
         <FsDocsLicenseLink>https://github.com/bryanedds/Nu/blob/master/License.md</FsDocsLicenseLink>
         <FsDocsReleaseNotesLink>https://github.com/bryanedds/Nu</FsDocsReleaseNotesLink>
-    </PropertyGroup>
-
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCpu'">
-        <WarnOn>FS1182</WarnOn>
-        <NoWarn>FS0009;FS0051;FS1118;FS1178;FS3391;FS3536;FS3560</NoWarn>
-        <Tailcalls>False</Tailcalls>
-        <WarningLevel>5</WarningLevel>
-        <DefineConstants>TRACE</DefineConstants>
-        <WarningsAsErrors>FS0026;FS0049;FS3239;$(WarningsAsErrors)</WarningsAsErrors>
-    </PropertyGroup>
-
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCpu'">
+        <OutDir>bin/$(Configuration)</OutDir>
         <WarnOn>FS1182</WarnOn>
         <NoWarn>FS0009;FS0051;FS1118;FS1178;FS3391;FS3536;FS3560</NoWarn>
         <Tailcalls>False</Tailcalls>
@@ -156,34 +145,8 @@
         <Compile Include="World\World.fs" />
         <None Include="Scripts\GenerateDependencyGraph.fsx" />
         <None Include="Scripts\GenerateInputBindings.fsx" />
-        <None Include="zlib1.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
-        <None Include="assimp.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
-        <None Include="libassimp.dylib">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
-        <None Include="libassimp.so">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
-        <None Include="libbulletc.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
-        <None Include="libbulletc.dylib">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
-        <None Include="libbulletc.so">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>False</Visible>
-        </None>
+        <None Include="Scripts\GenerateIcons.fsx" />
+        <None Include="Scripts\SelectCompatibleAssetDeliveryVersion.fsx" />
     </ItemGroup>
 
     <ItemGroup>
@@ -200,7 +163,7 @@
             <HintPath>..\Nu.Dependencies\TiledSharp\lib\netstandard2.0\TiledSharp.dll</HintPath>
         </Reference>
         <PackageReference Include="Aether.Physics2D" Version="2.2.0" />
-        <PackageReference Include="AstcEncoderCSharp-NuGameEngine" Version="5.3.1-alpha.0.4" />
+        <PackageReference Include="AstcEncoderCSharp" Version="5.5.0" />
 		<PackageReference Include="Box2D.NET" Version="3.1.1.557" />
         <PackageReference Include="BCnEncoder.Net" Version="2.2.1" />
         <PackageReference Include="DotRecast.Recast.Toolset" Version="2026.1.1" />
@@ -211,11 +174,12 @@
         <PackageReference Include="Prime" Version="11.5.1" />
         <PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.1" />
         <PackageReference Include="System.Drawing.Common" Version="10.0.1" />
+        <PackageReference Include="System.Formats.Nrbf" Version="10.0.1" /> <!-- we need this to AOT System.Drawing.Common for macOS/mobile when building in Release -->
         <PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" />
-        <PackageReference Include="ppy.SDL3-CS" Version="2026.302.0" />
-        <PackageReference Include="ppy.SDL3_ttf-CS" Version="2026.302.0" />
-        <PackageReference Include="ppy.SDL3_image-CS" Version="2026.302.0" />
-        <PackageReference Include="ppy.SDL3_mixer-CS" Version="2026.302.0" />
+        <PackageReference Include="ppy.SDL3-CS" Version="2026.512.0" />
+        <PackageReference Include="ppy.SDL3_ttf-CS" Version="2026.512.0" />
+        <PackageReference Include="ppy.SDL3_image-CS" Version="2026.512.0" />
+        <PackageReference Include="ppy.SDL3_mixer-CS" Version="2026.512.0" />
         <PackageReference Include="Vortice.ShaderCompiler" Version="1.8.0" />
         <PackageReference Include="Vortice.Vulkan" Version="2.1.1" />
         <PackageReference Include="Vortice.VulkanMemoryAllocator" Version="1.6.1" />
@@ -227,7 +191,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Update="FSharp.Core" Version="10.1.300" />
+        <PackageReference Update="FSharp.Core" Version="10.1.204" /> <!-- if this version conflicts with Nu.Gaia's FSharp.Compiler.Service's pinned version, building Gaia will fail -->
     </ItemGroup>
 
 </Project>

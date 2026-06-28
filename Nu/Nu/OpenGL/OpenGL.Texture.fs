@@ -155,7 +155,7 @@ module Texture =
             if status = AstcencError.AstcencSuccess then
 
                 // attempt to compress astc image
-                let mutable astcImage = AstcencImage (dimX = image.Width, dimY = image.Height, dimZ = 1u, dataType = AstcencType.AstcencTypeU8, data = pixelBytes)
+                let mutable astcImage = AstcencImage (dimX = image.Width, dimY = image.Height, dimZ = 1u, dataType = AstcencType.AstcencTypeU8, data = [|pixelBytes|])
                 let swizzle = AstcencSwizzle (r = AstcencSwz.AstcencSwzR, g = AstcencSwz.AstcencSwzG, b = AstcencSwz.AstcencSwzB, a = AstcencSwz.AstcencSwzA)
                 let blockCountX = (uint image.Width + blockSize - 1u) / blockSize
                 let blockCountY = (uint image.Height + blockSize - 1u) / blockSize

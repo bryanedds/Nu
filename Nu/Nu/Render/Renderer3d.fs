@@ -3599,6 +3599,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                      renderer.WindowViewport.Outer.Max.Y - renderer.WindowViewport.Inner.Max.Y,
                      uint renderer.WindowViewport.Inner.Size.X,
                      uint renderer.WindowViewport.Inner.Size.Y)
+                |> Hl.scaleRectToWindowPixels renderer.VulkanContext.Window
             VulkanRenderer3d.renderGeometry
                 frustumInterior frustumExterior frustumImposter normalPass normalTasks renderer
                 true None eyeCenter view viewInverse viewSkyBox viewSkyBoxInverse geometryFrustum
