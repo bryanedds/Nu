@@ -128,6 +128,14 @@ module Engine =
               (* Entity Properties *)
               "Facets"
               "Surnames"
+              "RotationMatrix"
+              "Angles"
+              "AnglesLocal"
+              "Degrees"
+              "DegreesLocal"
+              "AffineMatrix"
+              "PerimeterUnscaled"
+              "Perimeter"
               "PerimeterCenter"
               "PerimeterBottom"
               "PerimeterBottomLeft"
@@ -138,14 +146,6 @@ module Engine =
               "PerimeterBottomLeftLocal"
               "PerimeterMinLocal"
               "PerimeterMaxLocal"
-              "RotationMatrix"
-              "Angles"
-              "AnglesLocal"
-              "Degrees"
-              "DegreesLocal"
-              "AffineMatrix"
-              "PerimeterUnscaled"
-              "Perimeter"
               "Bounds"
               "PresenceOverride"
               "PublishChangeEvents"
@@ -202,7 +202,7 @@ module Render =
     let [<Uniform>] mutable TextureMinimalMipmapIndex = match ConfigurationManager.AppSettings["TextureMinimalMipmapIndex"] with null -> 2 | value -> scvalue value
     let [<Uniform>] mutable TextureBlockCompression = match ConfigurationManager.AppSettings["TextureBlockCompression"] with null -> BcCompression | value -> scvalue value
     let [<Literal>] SpriteBatchSize = 192 // NOTE: remember to update SPRITE_BATCH_SIZE in shaders when changing this!
-    let [<Literal>] SpriteBorderTexelScalar = 0.005f
+    let [<Literal>] SpriteBorderTexelScalar = 0.001f
     let [<Literal>] SpriteMessagesPrealloc = 256
     let [<Literal>] StaticModelMessagesPrealloc = 256
     let [<Literal>] StaticModelSurfaceMessagesPrealloc = 256

@@ -36,7 +36,8 @@ type MyGameDispatcher () =
 
     // here we define the game's properties and event handling
     override this.Definitions (_, _) =
-        [Game.UpdateEvent => Update]
+        [Game.UpdateEvent => Update
+         Game.ExitRequestEvent => Exit]
 
     // here we handle the above messages
     override this.Message (myGame, message, _, _) =

@@ -186,6 +186,25 @@ type [<NoEquality; NoComparison>] Transform =
         affineMatrix.Translation <- this.Position_
         affineMatrix
 
+    member this.PerimeterUnscaled
+        with get () =
+            let perimeterUnscaledOffset = this.Offset_ - v3UncenteredOffset
+            Box3 (this.Position_ + perimeterUnscaledOffset * this.Size_, this.Size_)
+        and set (value : Box3) =
+            let perimeterUnscaledOffset = this.Offset_ - v3UncenteredOffset
+            this.Position <- value.Min - perimeterUnscaledOffset * value.Size
+            this.Size <- value.Size
+
+    member this.Perimeter
+        with get () : Box3 =
+            let scale = this.Scale_
+            let sizeScaled = this.Size_ * scale
+            let perimeterUnscaledOffset = this.Offset_ - v3UncenteredOffset
+            Box3 (this.Position_ + perimeterUnscaledOffset * sizeScaled, sizeScaled)
+        and set (value : Box3) =
+            this.Scale <- Vector3.One
+            this.PerimeterUnscaled <- value
+
     member this.PerimeterCenter
         with get () =
             let perimeter = this.Perimeter
@@ -226,24 +245,9 @@ type [<NoEquality; NoComparison>] Transform =
             let delta = value - this.PerimeterMax
             this.Position <- this.Position + delta
 
-    member this.PerimeterUnscaled
-        with get () =
-            let perimeterUnscaledOffset = this.Offset_ - v3UncenteredOffset
-            Box3 (this.Position_ + perimeterUnscaledOffset * this.Size_, this.Size_)
-        and set (value : Box3) =
-            let perimeterUnscaledOffset = this.Offset_ - v3UncenteredOffset
-            this.Position <- value.Min - perimeterUnscaledOffset * value.Size
-            this.Size <- value.Size
-
-    member this.Perimeter
-        with get () : Box3 =
-            let scale = this.Scale_
-            let sizeScaled = this.Size_ * scale
-            let perimeterUnscaledOffset = this.Offset_ - v3UncenteredOffset
-            Box3 (this.Position_ + perimeterUnscaledOffset * sizeScaled, sizeScaled)
-        and set (value : Box3) =
-            this.Scale <- Vector3.One
-            this.PerimeterUnscaled <- value
+    member this.PerimeterPivot =
+        let perimeter = this.Perimeter
+        -perimeter.Center + perimeter.Size * this.Offset_
 
     member this.Bounds2d =
         let perimeterOriented =
@@ -332,10 +336,6 @@ type [<NoEquality; NoComparison>] Transform =
 
     member this.Horizon =
         this.Perimeter.Center.Y
-
-    member this.PerimeterPivot =
-        let perimeter = this.Perimeter
-        -perimeter.Center + perimeter.Size * this.Offset_
 
     static member private cleanAngles (this : Transform byref) =
         if this.AnglesDirty then
