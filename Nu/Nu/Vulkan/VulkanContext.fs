@@ -1009,7 +1009,11 @@ type [<ReferenceEquality>] VulkanContext =
 
             // clear viewport
             let renderArea =
-                VkRect2D (windowViewport.Bounds.Min.X, windowViewport.Bounds.Min.Y, uint windowViewport.Bounds.Size.X, uint windowViewport.Bounds.Size.Y)
+                VkRect2D
+                    (windowViewport.Bounds.Min.X,
+                     windowViewport.Bounds.Min.Y,
+                     uint windowViewport.Bounds.Size.X,
+                     uint windowViewport.Bounds.Size.Y)
                 |> Hl.scaleRectToWindowPixels vkc.Window
             let clearColor = VkClearValue (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
             let mutable renderingInfo = Hl.makeRenderingInfo [|vkc.SwapchainImageView|] None renderArea (Some clearColor)
