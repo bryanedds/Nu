@@ -202,7 +202,7 @@ module SdlDeps =
             svgStream.CopyTo nativeStream
             let sdlStream = SDL3.SDL_IOFromConstMem (NativePtr.toNativeInt nativeMemoryBytePtr, unativeint svgStream.Length)
             let mutable w, h = 0, 0
-            SDL3.SDL_GetWindowSize (window, &&w, &&h) |> ignore<SDLBool>
+            SDL3.SDL_GetWindowSizeInPixels (window, &&w, &&h) |> ignore<SDLBool>
             let svgSurfacePtr = SDL3_image.IMG_LoadSizedSVG_IO (sdlStream, w, h)
             SDL3.SDL_CloseIO sdlStream |> ignore<SDLBool>
             if not (NativePtr.isNullPtr svgSurfacePtr) then
