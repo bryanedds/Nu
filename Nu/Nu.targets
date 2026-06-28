@@ -1,7 +1,7 @@
 <Project>
 	
     <!-- ============================================================
-         Nu.Common.targets (shared build configuration for Nu game projects)
+         Nu.targets (shared build configuration for Nu game projects)
 	     ============================================================	 
 
          Usage: import this right after your first PropertyGroup (which sets TargetFramework / TargetFrameworks). The
