@@ -188,6 +188,45 @@ module SdlDeps =
           Config = SdlConfig.defaultConfig
           Destroy = id }
 
+    /// Attempt to show a desktop splash screen on the given window from embedded SVG and color resources.
+    /// This renders the splash immediately using SDL's software surface API, before Vulkan takes over.
+    /// The splash will be overwritten when Vulkan presents its first swapchain image.
+    let private tryShowSplashScreen (window : SDL_Window nativeptr) =
+        let assembly = Assembly.GetEntryAssembly ()
+        let svgStream = assembly.GetManifestResourceStream "Splash.svg"
+        if not (isNull svgStream) then
+            use svgStream = svgStream
+            let nativeMemory = NativeMemory.Alloc (unativeint svgStream.Length)
+            let nativeMemoryBytePtr = NativePtr.ofVoidPtr<byte> nativeMemory
+            use nativeStream = new System.IO.UnmanagedMemoryStream (nativeMemoryBytePtr, svgStream.Length, svgStream.Length, System.IO.FileAccess.Write)
+            svgStream.CopyTo nativeStream
+            let sdlStream = SDL3.SDL_IOFromConstMem (NativePtr.toNativeInt nativeMemoryBytePtr, unativeint svgStream.Length)
+            let mutable w, h = 0, 0
+            SDL3.SDL_GetWindowSize (window, &&w, &&h) |> ignore<SDLBool>
+            let svgSurfacePtr = SDL3_image.IMG_LoadSizedSVG_IO (sdlStream, w, h)
+            SDL3.SDL_CloseIO sdlStream |> ignore<SDLBool>
+            if not (NativePtr.isNullPtr svgSurfacePtr) then
+                let windowSurfacePtr = SDL3.SDL_GetWindowSurface window
+
+                // fill window background with splash color
+                let colorStream = assembly.GetManifestResourceStream "SplashColor.txt"
+                if not (isNull colorStream) then
+                    use colorReader = new System.IO.StreamReader (colorStream)
+                    let colorStr = colorReader.ReadToEnd ()
+                    let colorParsed = Drawing.ColorTranslator.FromHtml colorStr
+                    let color = SDL3.SDL_MapSurfaceRGBA (windowSurfacePtr, byte colorParsed.R, byte colorParsed.G, byte colorParsed.B, 255uy)
+                    SDL3.SDL_FillSurfaceRect (windowSurfacePtr, NativePtr.nullPtr, color) |> ignore<SDLBool>
+
+                // display splash screen centered on window
+                let svgSurface = NativePtr.toByRef svgSurfacePtr
+                let mutable dstRect = SDL_Rect (x = (w - svgSurface.w) / 2, y = (h - svgSurface.h) / 2, w = svgSurface.w, h = svgSurface.h)
+                SDL3.SDL_BlitSurface (svgSurfacePtr, NativePtr.nullPtr, windowSurfacePtr, &&dstRect) |> ignore<SDLBool>
+                SDL3.SDL_UpdateWindowSurface window |> ignore<SDLBool>
+                SDL3.SDL_DestroySurface svgSurfacePtr
+            else
+                Log.warn ("Failed to load splash SVG from embedded resource: " + SDL3.SDL_GetError ())
+            NativeMemory.Free nativeMemory
+
     /// Attempt to make an SdlDeps instance.
     let tryMake (sdlConfig : SdlConfig) (accompanied : bool) (windowSize : Vector2i) =
         match attemptPerformSdlInit
@@ -236,6 +275,9 @@ module SdlDeps =
                         let mutable displayMode = getDisplayModeInternal window
                         if (windowSize.X = displayMode.w || windowSize.Y = displayMode.h) && not accompanied then
                             SDL3.SDL_SetWindowFullscreen (window, true) |> ignore<SDLBool>
+
+                        // attempt to show splash screen (software surface; will be overwritten by Vulkan)
+                        tryShowSplashScreen window
 
                     // fin
                     windowOpt)
