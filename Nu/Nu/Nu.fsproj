@@ -146,6 +146,7 @@
         <None Include="Scripts\GenerateDependencyGraph.fsx" />
         <None Include="Scripts\GenerateInputBindings.fsx" />
         <None Include="Scripts\GenerateIcons.fsx" />
+        <None Include="Scripts\SelectCompatibleAssetDeliveryVersion.fsx" />
     </ItemGroup>
 
     <ItemGroup>
@@ -172,8 +173,8 @@
         <PackageReference Include="Pfim" Version="0.11.4" />
         <PackageReference Include="Prime" Version="11.5.1" />
         <PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.1" />
-        <PackageReference Include="System.Drawing.Common" Version="10.0.1" /><!-- we need this to AOT System.Drawing.Common for macOS/mobile when building in Release -->
-        <PackageReference Include="System.Formats.Nrbf" Version="10.0.1" />
+        <PackageReference Include="System.Drawing.Common" Version="10.0.1" />
+        <PackageReference Include="System.Formats.Nrbf" Version="10.0.1" /> <!-- we need this to AOT System.Drawing.Common for macOS/mobile when building in Release -->
         <PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" />
         <PackageReference Include="ppy.SDL3-CS" Version="2026.512.0" />
         <PackageReference Include="ppy.SDL3_ttf-CS" Version="2026.512.0" />
@@ -190,7 +191,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Update="FSharp.Core" Version="10.1.204" /><!-- if this version conflicts with Nu.Gaia's FSharp.Compiler.Service's pinned version, building Gaia will fail -->
+        <PackageReference Update="FSharp.Core" Version="10.1.204" /> <!-- if this version conflicts with Nu.Gaia's FSharp.Compiler.Service's pinned version, building Gaia will fail -->
     </ItemGroup>
 
 </Project>
