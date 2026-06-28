@@ -4,7 +4,7 @@
         <TargetFramework>net10.0</TargetFramework>
     </PropertyGroup>
 
-    <Import Project="../../Nu/Nu.Common.targets" />
+    <Import Project="../../Nu/Nu.targets" />
 
     <ItemGroup>
         <None Include="Assets\*" />

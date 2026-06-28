@@ -30,7 +30,7 @@
 		 Sets $(TargetPlatformIdentifier) (empty for desktop, 'android' for Android, 'ios' for iOS) for usage.
          Android reference: https://learn.microsoft.com/en-us/dotnet/android/building-apps/build-properties
          iOS reference: https://learn.microsoft.com/en-us/dotnet/ios/building-apps/build-properties -->
-	<Import Project="../../Nu/Nu.Common.targets" />
+	<Import Project="../../Nu/Nu.targets" />
 
     <!-- ============================================================
 	     Mobile Properties
@@ -52,7 +52,7 @@
 		 ============================================================ -->
     <ItemGroup>
         <!-- Composed icon: https://learn.microsoft.com/en-us/dotnet/maui/user-interface/images/app-icons
-             On desktop, Nu.Common.targets invokes GenerateIcons.fsx to generate desktop icons from the SVGs.
+             On desktop, Nu.targets invokes GenerateIcons.fsx to generate desktop icons from the SVGs.
              If you rename the background file, remember to replace icon_bg in @mipmap/icon_bg and @mipmap/icon_bg_round in Program.fs,
              and Assets.xcassets/icon_bg.appiconset in "App/iOS Info.plist". -->
         <MauiIcon Include="App/icon_bg.svg" ForegroundFile="App/icon_fg.svg" />
