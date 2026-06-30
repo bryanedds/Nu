@@ -977,7 +977,7 @@ module TextureModule2 =
                     let format = SDL_PixelFormat.SDL_PIXELFORMAT_ARGB8888 // seems to be the right format on Ubuntu...
                     let filePathSdl = PathF.GetFullPath filePath
                     let unconvertedPtr = SDL3_image.IMG_Load filePathSdl
-                    if not (NativePtr.isNullPtr unconvertedPtr) then
+                    if NativePtr.notNullPtr unconvertedPtr then
                         let unconverted = NativePtr.toByRef unconvertedPtr
                         let metadata = TextureMetadata.make unconverted.w unconverted.h
                         if unconverted.format <> format then

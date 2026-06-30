@@ -55,9 +55,6 @@
 	<ItemGroup>
 		<None Include="Assets\*" />
 		<None Include="Assets\*\*" />
-		<None Include="App\iOS Info.plist">
-			<LogicalName>Info.plist</LogicalName>
-		</None>
 		<Compile Include="Assets.fs" />
 		<Compile Include="Simulants.fs" />
 		<Compile Include="Gameplay.fs" />
@@ -79,9 +76,10 @@
              and Assets.xcassets/icon_bg.appiconset in "App/iOS Info.plist". -->
 		<MauiIcon Include="App/icon_bg.svg" ForegroundFile="App/icon_fg.svg" />
 		<!-- Splash screen with background color: https://learn.microsoft.com/en-us/dotnet/maui/user-interface/images/splashscreen
-             Only applicable to mobile. -->
+             On desktop, Nu.targets embeds the splash screen for display on startup. -->
 		<MauiSplashScreen Include="App/icon_fg.svg" Color="#512BD4" />
 		<!-- iOS Information property list: https://learn.microsoft.com/en-us/dotnet/maui/macios/info-plist -->
+		<None Include="App/iOS Info.plist" LogicalName="Info.plist" />
 		<!-- iOS Privacy manifest: https://learn.microsoft.com/en-us/dotnet/maui/ios/privacy-manifest -->
 		<BundleResource Include="App/iOS PrivacyInfo.xcprivacy" LogicalName="PrivacyInfo.xcprivacy" />
 		<!-- macOS Information property list template, only applicable to "dotnet publish" that creates a macOS .app bundle -->

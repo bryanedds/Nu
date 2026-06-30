@@ -821,7 +821,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                         (offset, textSurfacePtr)
 
                                 // render only when a valid surface was created
-                                if not (NativePtr.isNullPtr textSurfacePtr) then
+                                if NativePtr.notNullPtr textSurfacePtr then
                                     let textSurface = NativePtr.toByRef textSurfacePtr
 
                                     // construct mvp matrix
