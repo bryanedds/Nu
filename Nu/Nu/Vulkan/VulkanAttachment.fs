@@ -146,7 +146,7 @@ module Attachment =
         Texture.destroy scatterPlus vkc
         Texture.destroy clearCoatPlus vkc
         Texture.destroy z vkc
-    
+
     /// Create lighting attachment.
     let createLightingAttachment resolutionX resolutionY vkc =
         createColorAttachment Texture2d [|VkImageUsageFlags.Sampled|] Rgb16f Rgb resolutionX resolutionY vkc
@@ -159,13 +159,65 @@ module Attachment =
     /// Destroy lighting attachment.
     let destroyLightingAttachment (lighting : Texture) vkc =
         Texture.destroy lighting vkc
-    
+
+    /// Create light mapping attachment.
+    let createLightMappingAttachment resolutionX resolutionY vkc =
+        createColorAttachment Texture2d [|VkImageUsageFlags.Sampled|] Rgb16f Rgb resolutionX resolutionY vkc
+
+    /// Update size of light mapping attachment. Must be used every frame.
+    let updateLightMappingAttachmentSize resolutionX resolutionY lightmapping vkc =
+        let metadata = TextureMetadata.make resolutionX resolutionY
+        Texture.updateSize metadata lightmapping vkc
+
+    /// Destroy light mapping attachment.
+    let destroyLightMappingAttachment (lightmapping : Texture) vkc =
+        Texture.destroy lightmapping vkc
+
+    /// Create ambient attachment.
+    let createAmbientAttachment resolutionX resolutionY vkc =
+        createColorAttachment Texture2d [|VkImageUsageFlags.Sampled|] Rgb16f Rgb resolutionX resolutionY vkc
+
+    /// Update size of ambient attachment. Must be used every frame.
+    let updateAmbientAttachmentSize resolutionX resolutionY ambient vkc =
+        let metadata = TextureMetadata.make resolutionX resolutionY
+        Texture.updateSize metadata ambient vkc
+
+    /// Destroy ambient attachment.
+    let destroyAmbientAttachment (ambient : Texture) vkc =
+        Texture.destroy ambient vkc
+
+    /// Create irradiance attachment.
+    let createIrradianceAttachment resolutionX resolutionY vkc =
+        createColorAttachment Texture2d [|VkImageUsageFlags.Sampled|] Rgb16f Rgb resolutionX resolutionY vkc
+
+    /// Update size of irradiance attachment. Must be used every frame.
+    let updateIrradianceAttachmentSize resolutionX resolutionY irradiance vkc =
+        let metadata = TextureMetadata.make resolutionX resolutionY
+        Texture.updateSize metadata irradiance vkc
+
+    /// Destroy irradiance attachment.
+    let destroyIrradianceAttachment (irradiance : Texture) vkc =
+        Texture.destroy irradiance vkc
+
+    /// Create environment filter attachment.
+    let createEnvironmentFilterAttachment resolutionX resolutionY vkc =
+        createColorAttachment Texture2d [|VkImageUsageFlags.Sampled|] Rgb16f Rgb resolutionX resolutionY vkc
+
+    /// Update size of environment filter attachment. Must be used every frame.
+    let updateEnvironmentFilterAttachmentSize resolutionX resolutionY environmentfilter vkc =
+        let metadata = TextureMetadata.make resolutionX resolutionY
+        Texture.updateSize metadata environmentfilter vkc
+
+    /// Destroy environment filter attachment.
+    let destroyEnvironmentFilterAttachment (environmentfilter : Texture) vkc =
+        Texture.destroy environmentfilter vkc
+
     /// Create coloring attachments.
     let createColoringAttachments resolutionX resolutionY vkc =
         let color = createColorAttachment Texture2d [|VkImageUsageFlags.Sampled|] Rgb16f Rgb resolutionX resolutionY vkc
         let depth = createColorAttachment Texture2d [|VkImageUsageFlags.Sampled|] R16f Red resolutionX resolutionY vkc
         (color, depth)
-    
+
     /// Update size of coloring attachments. Must be used every frame.
     let updateColoringAttachmentsSize resolutionX resolutionY (color, depth) vkc =
         let metadata = TextureMetadata.make resolutionX resolutionY

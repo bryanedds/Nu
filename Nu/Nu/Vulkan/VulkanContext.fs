@@ -642,10 +642,12 @@ type [<ReferenceEquality>] VulkanContext =
         let header = "Vulkan" + typeLabel + severityLabel
         
         // decide when to log
-        if not
-            (messageType = VkDebugUtilsMessageTypeFlagsEXT.General && messageSeverity <= VkDebugUtilsMessageSeverityFlagsEXT.Info ||
-             messageType = VkDebugUtilsMessageTypeFlagsEXT.Performance && messageSeverity <= VkDebugUtilsMessageSeverityFlagsEXT.Warning) then
-            Log.custom header message
+        if messageType = VkDebugUtilsMessageTypeFlagsEXT.Performance then
+            if messageSeverity > VkDebugUtilsMessageSeverityFlagsEXT.Warning then
+                Log.custom header message
+        else
+            if messageSeverity > VkDebugUtilsMessageSeverityFlagsEXT.Info then
+                Log.custom header message
 
         // finish passively
         ignore pUserData
@@ -683,11 +685,11 @@ type [<ReferenceEquality>] VulkanContext =
 
         // check if validation layer exists
         // TODO: DJL: try to automatically prevent validation from interfering with Nsight, starting with VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT.
-        let validationLayer = "VK_LAYER_KHRONOS_validation"
-        let validationLayerExists = Array.exists (fun x -> Hl.getLayerName x = validationLayer) layers
-        if Hl.ValidationLayersEnabled && not validationLayerExists then Log.info (validationLayer + " is not available. Vulkan programmers must install the Vulkan SDK to enable validation.")
+        let validationLayerName = "VK_LAYER_KHRONOS_validation"
+        let validationLayerExists = Array.exists (fun x -> Hl.getLayerName x = validationLayerName) layers
+        if Hl.ValidationLayersEnabled && not validationLayerExists then Log.info (validationLayerName + " is not available. Vulkan programmers must install the Vulkan SDK to enable validation.")
         Hl.ValidationLayersActivated <- Hl.ValidationLayersEnabled && validationLayerExists
-        use layerWrap = new StringArrayWrap ([|validationLayer|]) // must remain in scope until vkCreateInstance
+        use layerWrap = new StringArrayWrap ([|validationLayerName|]) // must remain in scope until vkCreateInstance
 
         // get sdl extensions
         let mutable sdlExtensionCount = 0u
