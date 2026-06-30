@@ -14,7 +14,7 @@ let main firstFrameCallback =
     let sdlOrientations = Set.ofList [LandscapeLeft; LandscapeRight]
 
     // this specifies the window configuration used to display the game
-    let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "Mobile Plus" }
+    let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "Mobile" }
 
     // this specifies the configuration of the game engine's use of SDL
     let sdlConfig = { SdlConfig.defaultConfig with Orientations = sdlOrientations; WindowConfig = sdlWindowConfig;  }
@@ -178,7 +178,7 @@ open SDL
 open FSharp.NativeInterop
 
 // UIStoryboard.FromName must run in main thread, not in SdlMain, so it is extracted here
-let splashScreen = UIKit.UIStoryboard.FromName("MauiSplash", null).InstantiateInitialViewController().View
+let splashScreen = UIKit.UIStoryboard.FromName("PreSplash", null).InstantiateInitialViewController().View
 
 // SDL_RunApp main callback using [UnmanagedCallersOnly] for iOS AOT compatibility.
 // See https://github.com/ppy/SDL3-CS/blob/master/SDL3-CS.Tests.iOS/Main.cs for reference.
