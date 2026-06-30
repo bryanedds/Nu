@@ -239,6 +239,9 @@
         <Error Condition="@(MauiIcon->Count()) > 1" Text="Multiple &lt;MauiIcon&gt; items were found. Please only specify one for desktop icon generation." />
         <Error Condition="'%(MauiIcon.Resize)' != ''" Text="The &lt;MauiIcon&gt; item should not specify the Resize attribute; only Include and ForegroundFile are supported for desktop icon generation." />
         <Error Condition="'%(MauiIcon.BaseSize)' != ''" Text="The &lt;MauiIcon&gt; item should not specify the BaseSize attribute; only Include and ForegroundFile are supported for desktop icon generation." />
+        <Error Condition="'%(MauiIcon.TintColor)' != ''" Text="The &lt;MauiIcon&gt; item should not specify the TintColor attribute; only Include and ForegroundFile are supported for desktop icon generation." />
+        <Error Condition="'%(MauiIcon.Color)' != ''" Text="The &lt;MauiIcon&gt; item should not specify the Color attribute; only Include and ForegroundFile are supported for desktop icon generation." />
+        <Error Condition="'%(MauiIcon.ForegroundScale)' != ''" Text="The &lt;MauiIcon&gt; item should not specify the ForegroundScale attribute; only Include and ForegroundFile are supported for desktop icon generation." />
 
         <!-- Use RuntimeIdentifier to determine target OS for cross-compilation (e.g. publishing Linux on macOS); fall
 		     back to the host OS when no RID is set (plain dotnet build). -->
@@ -266,6 +269,31 @@
             <Content Include="$(_DesktopIconDir)/app.png" Link="app.png" CopyToOutputDirectory="PreserveNewest" />
         </ItemGroup>
 		
+    </Target>
+
+    <!-- ============================================================
+         Desktop: Splash Screen Generation (from <MauiSplashScreen> SVG)
+         ============================================================ -->
+
+    <!-- Generate splash screen -->
+    <Target Name="GenerateDesktopSplash" BeforeTargets="BeforeBuild" Condition="'$(TargetPlatformIdentifier)' == '' And '@(MauiSplashScreen)' != ''">
+        <PropertyGroup>
+            <_SplashColorFile>$(IntermediateOutputPath)splash/SplashColor.txt</_SplashColorFile>
+        </PropertyGroup>
+        <Error Condition="@(MauiSplashScreen->Count()) > 1" Text="Multiple &lt;MauiSplashScreen&gt; items were found. Please only specify one for desktop splash generation." />
+        <Error Condition="'%(MauiSplashScreen.Resize)' != ''" Text="The &lt;MauiSplashScreen&gt; item should not specify the Resize attribute; only Include and Color are supported for desktop splash generation." />
+        <Error Condition="'%(MauiSplashScreen.BaseSize)' != ''" Text="The &lt;MauiSplashScreen&gt; item should not specify the BaseSize attribute; only Include and Color are supported for desktop splash generation." />
+        <Error Condition="'%(MauiSplashScreen.TintColor)' != ''" Text="The &lt;MauiSplashScreen&gt; item should not specify the TintColor attribute; only Include and Color are supported for desktop splash generation." />
+        <Error Condition="'%(MauiSplashScreen.ForegroundScale)' != ''" Text="The &lt;MauiSplashScreen&gt; item should not specify the ForegroundScale attribute; only Include and Color are supported for desktop splash generation." />
+        
+        <!-- Write the background color to a text file for runtime use -->
+        <WriteLinesToFile Condition="'%(MauiSplashScreen.Color)' != ''" File="$(_SplashColorFile)" Lines="%(MauiSplashScreen.Color)" Overwrite="true" />
+
+        <!-- Embed splash SVG and color as embedded resources (read at runtime via SDL_IOFromConstMem) -->
+        <ItemGroup>
+            <EmbeddedResource Include="@(MauiSplashScreen)" LogicalName="PreSplash" />
+            <EmbeddedResource Condition="'%(MauiSplashScreen.Color)' != ''" Include="$(_SplashColorFile)" LogicalName="PreSplashColor" />
+        </ItemGroup>
     </Target>
 
     <!-- ============================================================

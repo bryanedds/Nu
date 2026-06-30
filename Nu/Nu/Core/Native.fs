@@ -19,6 +19,10 @@ module NativePtr =
           Size : int
           VoidPtr : voidptr }
 
+    /// Tests whether the given native ptr is not null.
+    let notNullPtr ptr =
+        not (NativePtr.isNullPtr ptr)
+
     /// Convert a managed pointer to a typed native pointer.
     let asPointer<'a when 'a : unmanaged> (managedPtr : byref<'a>) : nativeptr<'a> =
         let voidPtr = Unsafe.AsPointer<'a> &managedPtr

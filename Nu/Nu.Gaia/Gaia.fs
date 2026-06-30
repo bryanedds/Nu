@@ -1729,7 +1729,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             | Some (DragDropAsset (_, assetTag)) when
                 ImGui.IsMouseReleased ImGuiMouseButton.Left &&
                 not io.WantCaptureMouse &&
-                (*not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr)*)true ->
+                (*NativePtr.notNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr*)true ->
                 match Metadata.tryGetMetadata assetTag with
                 | ValueSome metadata ->
                     match metadata with
@@ -1922,7 +1922,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         if openPopupContextItemWhenUnselected then
             ImGui.OpenPopup popupContextItemTitle
         if ImGui.BeginDragDropTarget () then
-            if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Entity").NativePtr) then
+            if NativePtr.notNullPtr (ImGui.AcceptDragDropPayload "Entity").NativePtr then
                 match DragDropPayloadOpt with
                 | Some (DragDropEntity sourceEntity) ->
                     if sourceEntity.GetProtection world = Unprotected then
@@ -2866,7 +2866,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         if group.Name = selectedGroupName then ImGui.SetItemDefaultFocus ()
                     ImGui.EndCombo ()
                 if ImGui.BeginDragDropTarget () then
-                    if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Entity").NativePtr) then
+                    if NativePtr.notNullPtr (ImGui.AcceptDragDropPayload "Entity").NativePtr then
                         match DragDropPayloadOpt with
                         | Some (DragDropEntity sourceEntity) ->
                             if sourceEntity.GetProtection world = Unprotected then
@@ -3155,7 +3155,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         with _ ->
                             Pasts <- pasts
                     if isPropertyAssetTag && ImGui.BeginDragDropTarget () then
-                        if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
+                        if NativePtr.notNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr then
                             match DragDropPayloadOpt with
                             | Some (DragDropAsset (assetTagStr, _)) ->
                                 let pasts = Pasts

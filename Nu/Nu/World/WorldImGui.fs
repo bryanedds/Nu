@@ -530,7 +530,7 @@ module WorldImGui =
                     let (edited3, value) =
                         if ImGui.BeginDragDropTarget () then
                             let (edited4, value) =
-                                if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
+                                if NativePtr.notNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr then
                                     match context.DragDropPayloadOpt with
                                     | Some (DragDropAsset (assetTagStr, _)) ->
                                         try let valueStrEscaped = assetTagStr
