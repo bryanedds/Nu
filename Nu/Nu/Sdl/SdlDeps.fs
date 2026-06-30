@@ -183,18 +183,18 @@ module SdlDeps =
         | None -> ()
         sdlDeps
 
-    /// Attempt to show a desktop splash screen on the given window from embedded SVG and color resources.
-    /// This renders the splash immediately using SDL's software surface API, before Vulkan takes over.
-    /// The splash will be overwritten when Vulkan presents its first swapchain image.
-    let private tryShowSplashScreen (window : SDL_Window nativeptr) =
+    /// Attempt to show a desktop pre-splash screen on the given window from embedded SVG and color resources. This
+    /// renders the pre-splash immediately using SDL's software surface API, before Vulkan takes over. The pre-splash
+    /// render will be overwritten when Vulkan presents its first swapchain image.
+    let private tryRenderPreSplash (window : SDL_Window nativeptr) =
 
-        // attempt to utilize splash graphics from manifest resource
+        // attempt to utilize pre-splash graphics from manifest resource
         let assembly = Assembly.GetEntryAssembly ()
-        let splashStreamOpt = assembly.GetManifestResourceStream "MauiSplash"
-        if notNull splashStreamOpt then
+        let svgStreamOpt = assembly.GetManifestResourceStream "PreSplash"
+        if notNull svgStreamOpt then
 
             // attempt to copy svg to memory
-            use svgStream = splashStreamOpt
+            use svgStream = svgStreamOpt
             let nativeMemory = NativeMemory.Alloc (unativeint svgStream.Length)
             try let nativeMemoryBytePtr = NativePtr.ofVoidPtr<byte> nativeMemory
                 use nativeStream = new UnmanagedMemoryStream (nativeMemoryBytePtr, svgStream.Length, svgStream.Length, FileAccess.Write)
@@ -218,17 +218,17 @@ module SdlDeps =
                             finally SDL3.SDL_DestroySurface rasterImage
                     finally SDL3.SDL_CloseIO svgStream |> ignore<SDLBool>
 
-                // attempt to populate window background with splash graphics
+                // attempt to populate window background with pre-splash graphics
                 try if NativePtr.notNullPtr surfacePtrOpt then
 
-                        // attempt to fill window background with splash color
+                        // attempt to fill window background with pre-splash color
                         let windowSurfacePtr = SDL3.SDL_GetWindowSurface window
-                        let splashColorStreamOpt = assembly.GetManifestResourceStream "MauiSplashColor"
-                        if notNull splashColorStreamOpt then
-                            use colorReader = new StreamReader (splashColorStreamOpt)
+                        let colorStreamOpt = assembly.GetManifestResourceStream "PreSplashColor"
+                        if notNull colorStreamOpt then
+                            use colorReader = new StreamReader (colorStreamOpt)
                             let colorStr = colorReader.ReadToEnd ()
-                            let colorParsed = Drawing.ColorTranslator.FromHtml colorStr // NOTE: this works fine starting on .NET Core 3.0.
-                            let color = SDL3.SDL_MapSurfaceRGBA (windowSurfacePtr, byte colorParsed.R, byte colorParsed.G, byte colorParsed.B, 255uy)
+                            let colorDrawing = Drawing.ColorTranslator.FromHtml colorStr // NOTE: this works fine starting on .NET Core 3.0.
+                            let color = SDL3.SDL_MapSurfaceRGBA (windowSurfacePtr, byte colorDrawing.R, byte colorDrawing.G, byte colorDrawing.B, 255uy)
                             SDL3.SDL_FillSurfaceRect (windowSurfacePtr, NativePtr.nullPtr, color) |> ignore<SDLBool>
 
                         // display splash screen centered on window
@@ -296,7 +296,7 @@ module SdlDeps =
                             SDL3.SDL_SetWindowFullscreen (window, true) |> ignore<SDLBool>
 
                         // attempt to show splash screen (software surface; will be overwritten by Vulkan)
-                        tryShowSplashScreen window
+                        tryRenderPreSplash window
 
                     // fin
                     windowOpt)

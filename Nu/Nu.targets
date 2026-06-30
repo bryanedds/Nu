@@ -291,8 +291,8 @@
 
         <!-- Embed splash SVG and color as embedded resources (read at runtime via SDL_IOFromConstMem) -->
         <ItemGroup>
-            <EmbeddedResource Include="@(MauiSplashScreen)" LogicalName="MauiSplash" />
-            <EmbeddedResource Condition="'%(MauiSplashScreen.Color)' != ''" Include="$(_SplashColorFile)" LogicalName="MauiSplashColor" />
+            <EmbeddedResource Include="@(MauiSplashScreen)" LogicalName="PreSplash" />
+            <EmbeddedResource Condition="'%(MauiSplashScreen.Color)' != ''" Include="$(_SplashColorFile)" LogicalName="PreSplashColor" />
         </ItemGroup>
     </Target>
 
