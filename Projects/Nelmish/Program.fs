@@ -23,4 +23,4 @@ module Program =
         let worldConfig = { WorldConfig.defaultConfig with SdlConfig = sdlConfig }
 
         // this runs the engine with the given config and plugin, starting the game
-        World.run (Some ignore) worldConfig (NelmishPlugin ())
+        World.run ignore worldConfig (NelmishPlugin ())

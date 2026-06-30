@@ -4,7 +4,7 @@ open System.IO
 open Nu
 
 // this the entry point for your Nu application
-let main firstFrame =
+let main firstFrameCallback =
 
     // this initializes Nu before other Nu code is run
     Nu.init ()
@@ -14,7 +14,7 @@ let main firstFrame =
     let sdlOrientations = Set.ofList [LandscapeLeft; LandscapeRight]
 
     // this specifies the window configuration used to display the game
-    let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "Mobile Plus" }
+    let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "Mobile" }
 
     // this specifies the configuration of the game engine's use of SDL
     let sdlConfig = { SdlConfig.defaultConfig with Orientations = sdlOrientations; WindowConfig = sdlWindowConfig;  }
@@ -23,7 +23,7 @@ let main firstFrame =
     let worldConfig = { WorldConfig.defaultConfig with SdlConfig = sdlConfig }
 
     // this runs the engine with the given config and plugin, starting the game
-    World.run (Some firstFrame) worldConfig (MobilePlugin ())
+    World.run firstFrameCallback worldConfig (MobilePlugin ())
 
 #if ANDROID
 open Android.App
@@ -178,7 +178,7 @@ open SDL
 open FSharp.NativeInterop
 
 // UIStoryboard.FromName must run in main thread, not in SdlMain, so it is extracted here
-let splashScreen = UIKit.UIStoryboard.FromName("MauiSplash", null).InstantiateInitialViewController().View
+let splashScreen = UIKit.UIStoryboard.FromName("PreSplash", null).InstantiateInitialViewController().View
 
 // SDL_RunApp main callback using [UnmanagedCallersOnly] for iOS AOT compatibility.
 // See https://github.com/ppy/SDL3-CS/blob/master/SDL3-CS.Tests.iOS/Main.cs for reference.
@@ -186,6 +186,7 @@ let splashScreen = UIKit.UIStoryboard.FromName("MauiSplash", null).InstantiateIn
 [<System.Runtime.InteropServices.UnmanagedCallersOnly (CallConvs = [|typeof<System.Runtime.CompilerServices.CallConvCdecl>|])>]
 #warnon 202
 let private sdlMainImpl (_argc: int, _argv: nativeptr<nativeptr<byte>>) : int =
+
     // this points the current working directory at the bundled game assets
     let baseDirectory = AppContext.BaseDirectory
     let assetDirectory = PathF.Combine (baseDirectory, "refinement-out", "net10.0-ios")
@@ -204,6 +205,7 @@ let private sdlMainImpl (_argc: int, _argv: nativeptr<nativeptr<byte>>) : int =
     main splashScreen.RemoveFromSuperview // needs to stay alive and not garbage collected
 
 let [<EntryPoint>] entryPoint _ =
+
     if ObjCRuntime.Runtime.Arch = ObjCRuntime.Arch.SIMULATOR then
         // Avoid hitting MoltenVK iOS Simulator limitations like:
         // - only 31 buffers are supported in the simulator

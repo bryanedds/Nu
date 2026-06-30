@@ -4534,8 +4534,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             ImGui.LoadIniSettingsFromMemory (ImGuiIniFileStr.AsSpan ())
             ImGuiIniResetRequested <- false
 
-    let rec private runWithCleanUpAndErrorProtection firstFrameOpt world =
-        try World.runWithoutCleanUp tautology ignore ignore imGuiRender imGuiProcess imGuiPostProcess firstFrameOpt world
+    let rec private runWithCleanUpAndErrorProtection firstFrameCallbackOpt world =
+        try World.runWithoutCleanUp tautology ignore ignore imGuiRender imGuiProcess imGuiPostProcess firstFrameCallbackOpt world
             World.cleanUp world
             Constants.Engine.ExitCodeSuccess
         with exn ->

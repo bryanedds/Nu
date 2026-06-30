@@ -15,6 +15,13 @@ open FSharp.NativeInterop
 open SDL
 open Prime
 
+/// SDL orientation.
+type SdlOrientation =
+    | LandscapeLeft
+    | LandscapeRight
+    | Portrait
+    | PortraitUpsideDown
+
 /// Describes the initial configuration of a window created via SDL.
 type SdlWindowConfig =
     { WindowTitle : string
@@ -32,14 +39,6 @@ type SdlWindowConfig =
           WindowX = int SDL3.SDL_WINDOWPOS_UNDEFINED
           WindowY = int SDL3.SDL_WINDOWPOS_UNDEFINED
           WindowFlags = SDL_WindowFlags.SDL_WINDOW_RESIZABLE ||| SDL_WindowFlags.SDL_WINDOW_VULKAN ||| SDL_WindowFlags.SDL_WINDOW_HIGH_PIXEL_DENSITY ||| noNotificationBar }
-
-/// SDL orientation.
-/// See https://wiki.libsdl.org/SDL3/SDL_HINT_ORIENTATIONS
-type SdlOrientation =
-    | LandscapeLeft
-    | LandscapeRight
-    | Portrait
-    | PortraitUpsideDown
 
 /// Describes the general configuration of SDL.
 type [<ReferenceEquality>] SdlConfig =
