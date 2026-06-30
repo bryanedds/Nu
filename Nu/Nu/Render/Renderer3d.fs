@@ -3152,7 +3152,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     (min lightMapEnvironmentFilterMaps.Length renderTasks.LightMaps.Count) renderer.LightingConfig.LightMapSingletonBlendMargin
                     renderTasks.Lights.Count depthTexture normalPlusTexture renderer.ColorSampler lightMappingTexture
                     renderer.GeometryViewport renderer.RenderPassIndex renderer.QuadGeometry renderer.PhysicallyBasedPipelines.DeferredLightMappingPipeline renderer.VulkanContext
-                renderer.GeometryInstanced.Add renderer.QuadGeometry |> ignore<bool>
                 Texture.transitionLayoutAsync ColorAttachmentWrite ShaderRead lightMappingTexture renderer.VulkanContext.RenderCommandBuffer
                 lightMappingTexture
 
@@ -3165,7 +3164,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             eyeCenter view viewInverse geometryProjection geometryProjectionInverse geometryViewProjection
             lightMapFallback.AmbientColor lightMapFallback.AmbientBrightness lightMapAmbientColors lightMapAmbientBrightnesses depthTexture lightMappingTexture renderer.ColorSampler ambientTexture
             renderer.GeometryViewport renderer.RenderPassIndex renderer.QuadGeometry renderer.PhysicallyBasedPipelines.DeferredAmbientPipeline renderer.VulkanContext
-        renderer.GeometryInstanced.Add renderer.QuadGeometry |> ignore<bool>
         Texture.transitionLayoutAsync ColorAttachmentWrite ShaderRead ambientTexture renderer.VulkanContext.RenderCommandBuffer
 
         // run irradiance pass
@@ -3174,7 +3172,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             eyeCenter view viewInverse geometryProjection geometryProjectionInverse geometryViewProjection
             depthTexture normalPlusTexture lightMappingTexture lightMapFallback.IrradianceMap lightMapIrradianceMaps renderer.ColorSampler renderer.CubeMapSampler irradianceTexture
             renderer.GeometryViewport renderer.RenderPassIndex renderer.QuadGeometry renderer.PhysicallyBasedPipelines.DeferredIrradiancePipeline renderer.VulkanContext
-        renderer.GeometryInstanced.Add renderer.QuadGeometry |> ignore<bool>
         Texture.transitionLayoutAsync ColorAttachmentWrite ShaderRead irradianceTexture renderer.VulkanContext.RenderCommandBuffer
 
         // run environment filter pass
@@ -3184,7 +3181,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses
             depthTexture materialTexture normalPlusTexture clearCoatPlusTexture lightMappingTexture lightMapFallback.EnvironmentFilterMap lightMapEnvironmentFilterMaps renderer.ColorSampler renderer.CubeMapSampler environmentFilterTexture
             renderer.GeometryViewport renderer.RenderPassIndex renderer.QuadGeometry renderer.PhysicallyBasedPipelines.DeferredEnvironmentFilterPipeline renderer.VulkanContext
-        renderer.GeometryInstanced.Add renderer.QuadGeometry |> ignore<bool>
         Texture.transitionLayoutAsync ColorAttachmentWrite ShaderRead environmentFilterTexture renderer.VulkanContext.RenderCommandBuffer
         
         // run ssao pass
@@ -3214,17 +3210,24 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             depthTexture albedoTexture materialTexture normalPlusTexture subdermalPlusTexture scatterPlusTexture clearCoatPlusTexture shadowTextureArray shadowMaps shadowCascades
             lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices (min lightIds.Length renderTasks.Lights.Count) shadowNear renderer.ShadowMatrices
             renderer.GeometrySampler renderer.ShadowSampler renderer.GeometryViewport renderer.RenderPassIndex renderer.QuadGeometry lightAccumTexture renderer.PhysicallyBasedPipelines.DeferredLightingPipeline renderer.VulkanContext
-        renderer.GeometryInstanced.Add renderer.QuadGeometry |> ignore<bool>
         Texture.transitionLayoutAsync ColorAttachmentWrite ShaderRead lightAccumTexture renderer.VulkanContext.RenderCommandBuffer
 
-        
+        // setup fogging buffers and viewport
         let ssvfEnabled = if renderer.RendererConfig.SsvfEnabled && renderer.LightingConfig.SsvfEnabled then 1 else 0
+        let fogAccumTexture =
 
+            // but only when desired
+            if topLevelRender && ssvfEnabled = 1 then
+
+                // TODO: implement.
+                renderer.BlackTexture
+
+            // just use black texture
+            else renderer.BlackTexture
 
         // setup coloring attachments
         let (colorTexture, depthTexture2) = renderer.PhysicallyBasedAttachments.ColoringAttachments
         // TODO: DJL: complete block.
-        
         
         // transition sampled attachments to sampling
         Texture.transitionLayoutAsync ColorAttachmentWrite ShaderRead colorTexture renderer.VulkanContext.RenderCommandBuffer
@@ -3235,12 +3238,11 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         Vulkan.vkCmdBeginRendering (renderer.VulkanContext.RenderCommandBuffer, asPointer &renderingInfo)
         Vulkan.vkCmdEndRendering renderer.VulkanContext.RenderCommandBuffer
         
-        
         // deferred render composition quad to composition attachments
         let fogEnabled = if renderer.LightingConfig.FogEnabled then 1 else 0
         let fogType = renderer.LightingConfig.FogType.Enumerate
         // TODO: DJL: complete block.
-        
+
         // attempt to render sky box to composition attachment
         match skyBoxOpt with
         | Some (cubeMapColor, cubeMapBrightness, cubeMap, _) ->
