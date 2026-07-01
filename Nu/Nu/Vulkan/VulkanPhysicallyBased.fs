@@ -2396,9 +2396,8 @@ module PhysicallyBased =
                 let mutable lightMap = LightMap' ()
                 lightMap.lightMapAmbientColors <- lightMapAmbientColor.V3
                 lightMap.lightMapAmbientBrightnesses <- lightMapAmbientBrightness
-                Buffer.uploadValue lightMap pipeline.LightMapsUniform vkc
-                Buffer.flushSubdata 0 0 sizeof<LightMap> Constants.Render.LightMapsMaxDeferred pipeline.LightMapsUniform vkc
-                Pipeline.writeDescriptorStorageBuffer 1 0 pipeline.LightMapsUniform vkSet vkc
+                Buffer.uploadValue lightMap pipeline.LightMapUniform vkc
+                Pipeline.writeDescriptorStorageBuffer 1 0 pipeline.LightMapUniform vkSet vkc
 
                 // specify light maps
                 use lightMapPtr = fixed &lightMap
