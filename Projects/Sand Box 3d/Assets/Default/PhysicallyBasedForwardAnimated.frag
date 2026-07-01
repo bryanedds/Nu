@@ -66,7 +66,23 @@ struct Lighting
     float ssrrDistanceCutoffMargin;
     float ssrrEdgeHorizontalMargin;
     float ssrrEdgeVerticalMargin;
-    float shadowNear; // NOTE: currently unused.
+    int ssrlEnabled;
+    float ssrlIntensity;
+    float ssrlDetail;
+    int ssrlRefinementsMax;
+    float ssrlRayThickness;
+    float ssrlTowardEyeCutoff;
+    float ssrlDepthCutoff;
+    float ssrlDepthCutoffMargin;
+    float ssrlDistanceCutoff;
+    float ssrlDistanceCutoffMargin;
+    float ssrlRoughnessCutoff;
+    float ssrlRoughnessCutoffMargin;
+    float ssrlSlopeCutoff;
+    float ssrlSlopeCutoffMargin;
+    float ssrlEdgeHorizontalMargin;
+    float ssrlEdgeVerticalMargin;
+    float shadowNear;
 };
 
 struct LightMap
