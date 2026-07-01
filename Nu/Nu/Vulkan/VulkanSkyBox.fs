@@ -101,7 +101,7 @@ module SkyBox =
                 Pipeline.writeDescriptorSampledImage 0 0 cubeMap vkSet vkc
 
             // specify sampler
-            let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 2 sampler pipeline.Pipeline vkc $ fun vkSet ->
+            let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 2 Unit pipeline.Pipeline vkc $ fun vkSet ->
                 Pipeline.writeDescriptorSampler 0 0 sampler vkSet vkc
 
             // set up render
