@@ -308,7 +308,7 @@ module CubeMap =
 
             // set up render
             let mutable renderArea = VkRect2D (0, 0, uint resolution, uint resolution)
-            let mutable vkViewport = Hl.makeViewport true renderArea
+            let mutable vkViewport = Hl.makeViewport false renderArea // NOTE: when drawing a cube map, it's expected to come out upside-down, so by _not_ flipping, we achieve that naturally.
             let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment|] None renderArea None
             Vulkan.vkCmdBeginRendering (commandBuffer, asPointer &renderingInfo)
             Vulkan.vkCmdSetViewport (commandBuffer, 0u, 1u, asPointer &vkViewport)

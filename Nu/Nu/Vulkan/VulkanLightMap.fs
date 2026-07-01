@@ -50,12 +50,12 @@ module LightMap =
 
         // construct eye rotations
         let eyeRotations =
-            [|(v3Right, v3Down)     // (+x) right
-              (v3Left, v3Down)      // (-x) left
-              (v3Up, v3Back)        // (+y) top
-              (v3Down, v3Forward)   // (-y) bottom
-              (v3Back, v3Down)      // (+z) back
-              (v3Forward, v3Down)|] // (-z) front
+            [|(v3Right, v3Up)       // (+x)
+              (v3Left, v3Up)        // (-x)
+              (v3Up, v3Forward)     // (+y)
+              (v3Down, v3Back)      // (-y)
+              (v3Back, v3Up)        // (+z)
+              (v3Forward, v3Up)|]   // (-z)
 
         // render reflection cube map faces
         for i in 0 .. dec 6 do
@@ -215,7 +215,7 @@ module LightMap =
 
             // set up render
             let mutable renderArea = VkRect2D (0, 0, uint resolution, uint resolution)
-            let mutable vkViewport = Hl.makeViewport true renderArea
+            let mutable vkViewport = Hl.makeViewport false renderArea // NOTE: when drawing a cube map, it's expected to come out upside-down, so by _not_ flipping, we achieve that naturally.
             let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment|] None renderArea None
             Vulkan.vkCmdBeginRendering (commandBuffer, asPointer &renderingInfo)
             Vulkan.vkCmdSetViewport (commandBuffer, 0u, 1u, asPointer &vkViewport)
