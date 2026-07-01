@@ -3018,10 +3018,10 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             if topLevelRender then
                 SortableLightMap.sortLightMaps Constants.Render.LightMapsMaxDeferred eyeCenter None renderer.IrradianceMap renderer.EnvironmentFilterMap lightMaps
             else
-                (Array.zeroCreate (Constants.Render.LightMapsMaxDeferred * 4),
-                 Array.zeroCreate (Constants.Render.LightMapsMaxDeferred * 4),
-                 Array.zeroCreate (Constants.Render.LightMapsMaxDeferred * 4),
-                 Array.zeroCreate (Constants.Render.LightMapsMaxDeferred * 4),
+                (Array.zeroCreate Constants.Render.LightMapsMaxDeferred,
+                 Array.zeroCreate Constants.Render.LightMapsMaxDeferred,
+                 Array.zeroCreate Constants.Render.LightMapsMaxDeferred,
+                 Array.zeroCreate Constants.Render.LightMapsMaxDeferred,
                  Array.zeroCreate Constants.Render.LightMapsMaxDeferred,
                  Array.create Constants.Render.LightMapsMaxDeferred renderer.IrradianceMap,
                  Array.create Constants.Render.LightMapsMaxDeferred renderer.EnvironmentFilterMap)
@@ -3054,7 +3054,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             renderTasks.ForwardSorted.Add struct (model, castShadow, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest)
         forwardSurfacesSortBuffer.Clear ()
 
-        // setup geometry attachments and depth testing
+        // clear geometry textures
         let geometryResolution = renderer.GeometryViewport.Bounds.Size
         let renderArea = VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)
         let clearColor = VkClearValue (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)

@@ -42,7 +42,7 @@ module SkyBox =
                       Pipeline.descriptor 1 StorageBuffer FragmentStage 1|]
                   Pipeline.descriptorSet<Texture>
                     [|Pipeline.descriptor 0 SampledImage FragmentStage 1|]
-                  Pipeline.descriptorSet<Sampler>
+                  Pipeline.descriptorSet<Unit>
                     [|Pipeline.descriptor 0 Sampler FragmentStage 1|]|]
                 [||] [|colorAttachmentFormat|] (Some depthAttachmentFormat)
                 [|eyeUniform; skyBoxPropertiesUniform|] vkc
