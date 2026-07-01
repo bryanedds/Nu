@@ -3403,7 +3403,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                         // render fallback irradiance map
                         let irradianceMap =
                             LightMap.createIrradianceMap
-                                false
                                 Constants.Render.IrradianceMapResolution
                                 (CubeMapSurface.make cubeMap renderer.CubeMapGeometry)
                                 renderer.CubeMapSampler
@@ -3415,7 +3414,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                         // render fallback env filter map
                         let environmentFilterMap =
                             LightMap.createEnvironmentFilterMap
-                                false
                                 Constants.Render.EnvironmentFilterResolution
                                 (CubeMapSurface.make cubeMap renderer.CubeMapGeometry)
                                 renderer.CubeMapSampler
@@ -3461,7 +3459,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                             // create irradiance map
                             let irradianceMap =
                                 LightMap.createIrradianceMap
-                                    true // y inverted here because texture produced by drawing is inverted relative to texture uploaded from file
                                     Constants.Render.IrradianceMapResolution
                                     (CubeMapSurface.make reflectionMap renderer.CubeMapGeometry)
                                     renderer.CubeMapSampler
@@ -3473,7 +3470,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                             // create env filter map
                             let environmentFilterMap =
                                 LightMap.createEnvironmentFilterMap
-                                    true // y inverted here because texture produced by drawing is inverted relative to texture uploaded from file
                                     Constants.Render.EnvironmentFilterResolution
                                     (CubeMapSurface.make reflectionMap renderer.CubeMapGeometry)
                                     renderer.CubeMapSampler
@@ -3791,7 +3787,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let commandBuffer = Hl.createTransientCommandBuffer vkc.TransientCommandPool vkc.Device
         let irradianceMap =
             LightMap.createIrradianceMap
-                false
                 Constants.Render.IrradianceMapResolution
                 cubeMapSurface
                 cubeMapSampler
@@ -3801,7 +3796,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 vkc
         let environmentFilterMap =
             LightMap.createEnvironmentFilterMap
-                false
                 Constants.Render.EnvironmentFilterResolution
                 cubeMapSurface
                 cubeMapSampler

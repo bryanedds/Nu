@@ -98,7 +98,7 @@ module LightMap =
         // fin
         reflectionCubeMap
 
-    let createIrradianceMap invertY resolution (cubeMapSurface : CubeMapSurface) sampler colorFormat irradiancePipeline commandBuffer vkc =
+    let createIrradianceMap resolution (cubeMapSurface : CubeMapSurface) sampler colorFormat irradiancePipeline commandBuffer vkc =
 
         // create irradiance cube map
         let metadata = TextureMetadata.make resolution resolution
@@ -127,7 +127,7 @@ module LightMap =
             let view = views[i]
             let viewInverse = view.Inverted
             let viewProjection = view * projection
-            CubeMap.drawCubeMap eyeCenter view viewInverse projection projectionInverse viewProjection invertY cubeMapSurface.CubeMap sampler cubeMapSurface.CubeMapGeometry resolution cubeMap.SubViews[0, i] irradiancePipeline commandBuffer vkc
+            CubeMap.drawCubeMap eyeCenter view viewInverse projection projectionInverse viewProjection cubeMapSurface.CubeMap sampler cubeMapSurface.CubeMapGeometry resolution cubeMap.SubViews[0, i] irradiancePipeline commandBuffer vkc
 
             // take a snapshot for testing
             // TODO: DJL: implement.
@@ -178,7 +178,6 @@ module LightMap =
         (projection : Matrix4x4)
         (projectionInverse : Matrix4x4)
         (viewProjection : Matrix4x4)
-        (invertY : bool)
         (roughness : single)
         (resolution : single)
         (cubeMap : Texture)
@@ -216,7 +215,7 @@ module LightMap =
 
             // set up render
             let mutable renderArea = VkRect2D (0, 0, uint resolution, uint resolution)
-            let mutable vkViewport = Hl.makeViewport invertY renderArea
+            let mutable vkViewport = Hl.makeViewport true renderArea
             let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment|] None renderArea None
             Vulkan.vkCmdBeginRendering (commandBuffer, asPointer &renderingInfo)
             Vulkan.vkCmdSetViewport (commandBuffer, 0u, 1u, asPointer &vkViewport)
@@ -249,7 +248,7 @@ module LightMap =
         | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
     
     /// Create an environment filter map.
-    let createEnvironmentFilterMap invertY resolution (environmentFilterSurface : CubeMapSurface) sampler colorFormat environmentFilterPipeline commandBuffer vkc =
+    let createEnvironmentFilterMap resolution (environmentFilterSurface : CubeMapSurface) sampler colorFormat environmentFilterPipeline commandBuffer vkc =
 
         // create environment filter cube map
         let metadata = TextureMetadata.make resolution resolution
@@ -288,7 +287,6 @@ module LightMap =
                     projection
                     projectionInverse
                     viewProjection
-                    invertY
                     mipRoughness
                     mipResolution
                     environmentFilterSurface.CubeMap

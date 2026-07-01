@@ -279,7 +279,6 @@ module CubeMap =
         (projection : Matrix4x4)
         (projectionInverse : Matrix4x4)
         (viewProjection : Matrix4x4)
-        (invertY : bool)
         (cubeMap : Texture)
         (sampler : Sampler)
         (geometry : CubeMapGeometry)
@@ -309,7 +308,7 @@ module CubeMap =
 
             // set up render
             let mutable renderArea = VkRect2D (0, 0, uint resolution, uint resolution)
-            let mutable vkViewport = Hl.makeViewport invertY renderArea
+            let mutable vkViewport = Hl.makeViewport true renderArea
             let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment|] None renderArea None
             Vulkan.vkCmdBeginRendering (commandBuffer, asPointer &renderingInfo)
             Vulkan.vkCmdSetViewport (commandBuffer, 0u, 1u, asPointer &vkViewport)

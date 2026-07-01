@@ -623,12 +623,12 @@ module PhysicallyBased =
         let vertexData =
             [|
                 (*   positions   *)         (* tex coords *)    (*    normals    *)
-                -1.0f; -1.0f; +0.0f;        0.0f; 0.0f;          0.0f;  0.0f;  1.0f // bottom-left
-                +1.0f; -1.0f; +0.0f;        1.0f; 0.0f;          0.0f;  0.0f;  1.0f // bottom-right
-                +1.0f; +1.0f; +0.0f;        1.0f; 1.0f;          0.0f;  0.0f;  1.0f // top-right
-                +1.0f; +1.0f; +0.0f;        1.0f; 1.0f;          0.0f;  0.0f;  1.0f // top-right
-                -1.0f; +1.0f; +0.0f;        0.0f; 1.0f;          0.0f;  0.0f;  1.0f // top-left
-                -1.0f; -1.0f; +0.0f;        0.0f; 0.0f;          0.0f;  0.0f;  1.0f // bottom-left
+                -1.0f; -1.0f; +0.0f;        0.0f; 1.0f;          0.0f;  0.0f;  1.0f // bottom-left
+                +1.0f; -1.0f; +0.0f;        1.0f; 1.0f;          0.0f;  0.0f;  1.0f // bottom-right
+                +1.0f; +1.0f; +0.0f;        1.0f; 0.0f;          0.0f;  0.0f;  1.0f // top-right
+                +1.0f; +1.0f; +0.0f;        1.0f; 0.0f;          0.0f;  0.0f;  1.0f // top-right
+                -1.0f; +1.0f; +0.0f;        0.0f; 0.0f;          0.0f;  0.0f;  1.0f // top-left
+                -1.0f; -1.0f; +0.0f;        0.0f; 1.0f;          0.0f;  0.0f;  1.0f // bottom-left
             |]
 
         // make index data trivially
@@ -697,52 +697,52 @@ module PhysicallyBased =
                 (*   positions   *)         (* tex coords *)    (*    normals    *)
 
                 // back face
-                -0.5f; -0.5f; -0.5f;        0.0f; 0.0f;          0.0f;  0.0f; -1.0f // bottom-left
-                +0.5f; +0.5f; -0.5f;        1.0f; 1.0f;          0.0f;  0.0f; -1.0f // top-right
-                +0.5f; -0.5f; -0.5f;        1.0f; 0.0f;          0.0f;  0.0f; -1.0f // bottom-right         
-                +0.5f; +0.5f; -0.5f;        1.0f; 1.0f;          0.0f;  0.0f; -1.0f // top-right
-                -0.5f; -0.5f; -0.5f;        0.0f; 0.0f;          0.0f;  0.0f; -1.0f // bottom-left
-                -0.5f; +0.5f; -0.5f;        0.0f; 1.0f;          0.0f;  0.0f; -1.0f // top-left
+                -0.5f; -0.5f; -0.5f;        0.0f; 1.0f;          0.0f;  0.0f; -1.0f // bottom-left
+                +0.5f; +0.5f; -0.5f;        1.0f; 0.0f;          0.0f;  0.0f; -1.0f // top-right
+                +0.5f; -0.5f; -0.5f;        1.0f; 1.0f;          0.0f;  0.0f; -1.0f // bottom-right         
+                +0.5f; +0.5f; -0.5f;        1.0f; 0.0f;          0.0f;  0.0f; -1.0f // top-right
+                -0.5f; -0.5f; -0.5f;        0.0f; 1.0f;          0.0f;  0.0f; -1.0f // bottom-left
+                -0.5f; +0.5f; -0.5f;        0.0f; 0.0f;          0.0f;  0.0f; -1.0f // top-left
 
                 // front face
-                -0.5f; -0.5f; +0.5f;        0.0f; 0.0f;          0.0f;  0.0f; +1.0f // bottom-left
-                +0.5f; -0.5f; +0.5f;        1.0f; 0.0f;          0.0f;  0.0f; +1.0f // bottom-right
-                +0.5f; +0.5f; +0.5f;        1.0f; 1.0f;          0.0f;  0.0f; +1.0f // top-right
-                +0.5f; +0.5f; +0.5f;        1.0f; 1.0f;          0.0f;  0.0f; +1.0f // top-right
-                -0.5f; +0.5f; +0.5f;        0.0f; 1.0f;          0.0f;  0.0f; +1.0f // top-left
-                -0.5f; -0.5f; +0.5f;        0.0f; 0.0f;          0.0f;  0.0f; +1.0f // bottom-left
+                -0.5f; -0.5f; +0.5f;        0.0f; 1.0f;          0.0f;  0.0f; +1.0f // bottom-left
+                +0.5f; -0.5f; +0.5f;        1.0f; 1.0f;          0.0f;  0.0f; +1.0f // bottom-right
+                +0.5f; +0.5f; +0.5f;        1.0f; 0.0f;          0.0f;  0.0f; +1.0f // top-right
+                +0.5f; +0.5f; +0.5f;        1.0f; 0.0f;          0.0f;  0.0f; +1.0f // top-right
+                -0.5f; +0.5f; +0.5f;        0.0f; 0.0f;          0.0f;  0.0f; +1.0f // top-left
+                -0.5f; -0.5f; +0.5f;        0.0f; 1.0f;          0.0f;  0.0f; +1.0f // bottom-left
 
                 // left face
-                -0.5f; +0.5f; +0.5f;        1.0f; 0.0f;         -1.0f;  0.0f;  0.0f // top-right
-                -0.5f; +0.5f; -0.5f;        1.0f; 1.0f;         -1.0f;  0.0f;  0.0f // top-left
-                -0.5f; -0.5f; -0.5f;        0.0f; 1.0f;         -1.0f;  0.0f;  0.0f // bottom-left
-                -0.5f; -0.5f; -0.5f;        0.0f; 1.0f;         -1.0f;  0.0f;  0.0f // bottom-left
-                -0.5f; -0.5f; +0.5f;        0.0f; 0.0f;         -1.0f;  0.0f;  0.0f // bottom-right
-                -0.5f; +0.5f; +0.5f;        1.0f; 0.0f;         -1.0f;  0.0f;  0.0f // top-right
+                -0.5f; +0.5f; +0.5f;        1.0f; 1.0f;         -1.0f;  0.0f;  0.0f // top-right
+                -0.5f; +0.5f; -0.5f;        1.0f; 0.0f;         -1.0f;  0.0f;  0.0f // top-left
+                -0.5f; -0.5f; -0.5f;        0.0f; 0.0f;         -1.0f;  0.0f;  0.0f // bottom-left
+                -0.5f; -0.5f; -0.5f;        0.0f; 0.0f;         -1.0f;  0.0f;  0.0f // bottom-left
+                -0.5f; -0.5f; +0.5f;        0.0f; 1.0f;         -1.0f;  0.0f;  0.0f // bottom-right
+                -0.5f; +0.5f; +0.5f;        1.0f; 1.0f;         -1.0f;  0.0f;  0.0f // top-right
 
                 // right face
-                +0.5f; +0.5f; +0.5f;        1.0f; 0.0f;         +1.0f;  0.0f;  0.0f // top-left
-                +0.5f; -0.5f; -0.5f;        0.0f; 1.0f;         +1.0f;  0.0f;  0.0f // bottom-right
-                +0.5f; +0.5f; -0.5f;        1.0f; 1.0f;         +1.0f;  0.0f;  0.0f // top-right         
-                +0.5f; -0.5f; -0.5f;        0.0f; 1.0f;         +1.0f;  0.0f;  0.0f // bottom-right
-                +0.5f; +0.5f; +0.5f;        1.0f; 0.0f;         +1.0f;  0.0f;  0.0f // top-left
-                +0.5f; -0.5f; +0.5f;        0.0f; 0.0f;         +1.0f;  0.0f;  0.0f // bottom-left
+                +0.5f; +0.5f; +0.5f;        1.0f; 1.0f;         +1.0f;  0.0f;  0.0f // top-left
+                +0.5f; -0.5f; -0.5f;        0.0f; 0.0f;         +1.0f;  0.0f;  0.0f // bottom-right
+                +0.5f; +0.5f; -0.5f;        1.0f; 0.0f;         +1.0f;  0.0f;  0.0f // top-right         
+                +0.5f; -0.5f; -0.5f;        0.0f; 0.0f;         +1.0f;  0.0f;  0.0f // bottom-right
+                +0.5f; +0.5f; +0.5f;        1.0f; 1.0f;         +1.0f;  0.0f;  0.0f // top-left
+                +0.5f; -0.5f; +0.5f;        0.0f; 1.0f;         +1.0f;  0.0f;  0.0f // bottom-left
 
                 // bottom face
-                -0.5f; -0.5f; -0.5f;        0.0f; 1.0f;          0.0f; -1.0f;  0.0f // top-right
-                +0.5f; -0.5f; -0.5f;        1.0f; 1.0f;          0.0f; -1.0f;  0.0f // top-left
-                +0.5f; -0.5f; +0.5f;        1.0f; 0.0f;          0.0f; -1.0f;  0.0f // bottom-left
-                +0.5f; -0.5f; +0.5f;        1.0f; 0.0f;          0.0f; -1.0f;  0.0f // bottom-left
-                -0.5f; -0.5f; +0.5f;        0.0f; 0.0f;          0.0f; -1.0f;  0.0f // bottom-right
-                -0.5f; -0.5f; -0.5f;        0.0f; 1.0f;          0.0f; -1.0f;  0.0f // top-right
+                -0.5f; -0.5f; -0.5f;        0.0f; 0.0f;          0.0f; -1.0f;  0.0f // top-right
+                +0.5f; -0.5f; -0.5f;        1.0f; 0.0f;          0.0f; -1.0f;  0.0f // top-left
+                +0.5f; -0.5f; +0.5f;        1.0f; 1.0f;          0.0f; -1.0f;  0.0f // bottom-left
+                +0.5f; -0.5f; +0.5f;        1.0f; 1.0f;          0.0f; -1.0f;  0.0f // bottom-left
+                -0.5f; -0.5f; +0.5f;        0.0f; 1.0f;          0.0f; -1.0f;  0.0f // bottom-right
+                -0.5f; -0.5f; -0.5f;        0.0f; 0.0f;          0.0f; -1.0f;  0.0f // top-right
 
                 // top face
-                -0.5f; +0.5f; -0.5f;        0.0f; 1.0f;          0.0f; +1.0f;  0.0f // top-left
-                +0.5f; +0.5f ;+0.5f;        1.0f; 0.0f;          0.0f; +1.0f;  0.0f // bottom-right
-                +0.5f; +0.5f; -0.5f;        1.0f; 1.0f;          0.0f; +1.0f;  0.0f // top-right     
-                +0.5f; +0.5f; +0.5f;        1.0f; 0.0f;          0.0f; +1.0f;  0.0f // bottom-right
-                -0.5f; +0.5f; -0.5f;        0.0f; 1.0f;          0.0f; +1.0f;  0.0f // top-left
-                -0.5f; +0.5f; +0.5f;        0.0f; 0.0f;          0.0f; +1.0f;  0.0f // bottom-left
+                -0.5f; +0.5f; -0.5f;        0.0f; 0.0f;          0.0f; +1.0f;  0.0f // top-left
+                +0.5f; +0.5f; +0.5f;        1.0f; 1.0f;          0.0f; +1.0f;  0.0f // bottom-right
+                +0.5f; +0.5f; -0.5f;        1.0f; 0.0f;          0.0f; +1.0f;  0.0f // top-right     
+                +0.5f; +0.5f; +0.5f;        1.0f; 1.0f;          0.0f; +1.0f;  0.0f // bottom-right
+                -0.5f; +0.5f; -0.5f;        0.0f; 0.0f;          0.0f; +1.0f;  0.0f // top-left
+                -0.5f; +0.5f; +0.5f;        0.0f; 1.0f;          0.0f; +1.0f;  0.0f // bottom-left
             |]
 
         // make index data trivially
@@ -780,8 +780,8 @@ module PhysicallyBased =
         // create lighting attachment
         let lightingAttachment = Attachment.createLightingAttachment geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y vkc
 
-        // create lightmapping attachment
-        let lightmappingAttachment = Attachment.createLightMappingAttachment geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y vkc
+        // create light mapping attachment
+        let lightMappingAttachment = Attachment.createLightMappingAttachment geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y vkc
 
         // create ambient attachment
         let ambientAttachment = Attachment.createAmbientAttachment geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y vkc
@@ -807,7 +807,7 @@ module PhysicallyBased =
           ShadowCascadeArrayAttachmentsArray = shadowCascadeArrayAttachmentsArray
           GeometryAttachments = geometryAttachments
           LightingAttachment = lightingAttachment
-          LightMappingAttachment = lightmappingAttachment
+          LightMappingAttachment = lightMappingAttachment
           AmbientAttachment = ambientAttachment
           IrradianceAttachment = irradianceAttachment
           EnvironmentFilterAttachment = environmentfilterAttachment
