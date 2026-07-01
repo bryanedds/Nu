@@ -3300,10 +3300,10 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         Texture.transitionLayoutAsync ColorAttachmentWrite ShaderRead compositionTexture renderer.VulkanContext.RenderCommandBuffer
         Texture.transitionLayoutAsync ShaderRead TransferSrc compositionTexture renderer.VulkanContext.RenderCommandBuffer
 
-        // blit from composition attachment to swapchain
+        // blit from composition attachment to target image (using VkFilter.Nearest)
         Hl.recordTransitionLayout true 1 targetLayer 1 VkImageAspectFlags.Color ColorAttachmentWrite TransferDst targetImage renderer.VulkanContext.RenderCommandBuffer
         let mutable blit = Hl.makeBlit 0 0 0 targetLayer (VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)) targetBounds
-        Vulkan.vkCmdBlitImage (renderer.VulkanContext.RenderCommandBuffer, compositionTexture.Image, TransferSrc.VkImageLayout, targetImage, TransferDst.VkImageLayout, 1u, asPointer &blit, VkFilter.Linear)
+        Vulkan.vkCmdBlitImage (renderer.VulkanContext.RenderCommandBuffer, compositionTexture.Image, TransferSrc.VkImageLayout, targetImage, TransferDst.VkImageLayout, 1u, asPointer &blit, VkFilter.Nearest)
         Texture.transitionLayoutAsync TransferSrc ShaderRead compositionTexture renderer.VulkanContext.RenderCommandBuffer
         Hl.recordTransitionLayout true 1 targetLayer 1 VkImageAspectFlags.Color TransferDst ColorAttachmentWrite targetImage renderer.VulkanContext.RenderCommandBuffer
 
