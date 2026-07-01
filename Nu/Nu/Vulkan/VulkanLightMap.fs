@@ -40,7 +40,7 @@ module LightMap =
         let metadata = TextureMetadata.make resolution resolution
         let reflectionCubeMapInternal =
             TextureInternal.create
-                MipmapNone (AttachmentColor false) TextureCubeMap [|VkImageUsageFlags.Sampled; VkImageUsageFlags.TransferDst|]
+                MipmapNone (AttachmentColor false) TextureCubeMap (VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferDst)
                 Rgba16f Rgba metadata vkc
         let reflectionCubeMap = EagerTexture reflectionCubeMapInternal
 
@@ -104,7 +104,7 @@ module LightMap =
         let metadata = TextureMetadata.make resolution resolution
         let cubeMapInternal =
             TextureInternal.create
-                MipmapNone (AttachmentColor false) TextureCubeMap [|VkImageUsageFlags.Sampled|]
+                MipmapNone (AttachmentColor false) TextureCubeMap VkImageUsageFlags.Sampled
                 colorFormat Rgba metadata vkc
         let cubeMap = EagerTexture cubeMapInternal
 
@@ -255,7 +255,7 @@ module LightMap =
         let metadata = TextureMetadata.make resolution resolution
         let cubeMapInternal =
             TextureInternal.create
-                (MipmapManual Constants.Render.EnvironmentFilterMips) (AttachmentColor false) TextureCubeMap [|VkImageUsageFlags.Sampled|]
+                (MipmapManual Constants.Render.EnvironmentFilterMips) (AttachmentColor false) TextureCubeMap VkImageUsageFlags.Sampled
                 colorFormat Rgba metadata vkc
         let cubeMap = EagerTexture cubeMapInternal
         

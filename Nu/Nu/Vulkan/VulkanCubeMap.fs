@@ -83,7 +83,7 @@ module CubeMap =
                             | Some textureInternal -> textureInternal
                             | None ->
                                 TextureInternal.create
-                                    MipmapNone AttachmentNone TextureCubeMap [||]
+                                    MipmapNone AttachmentNone TextureCubeMap VkImageUsageFlags.None
                                     Uncompressed.ImageFormat Uncompressed.PixelFormat metadata vkc
                         textureInternalOpt <- Some textureInternal
                         TextureInternal.uploadArray metadata 0 i bytes thread textureInternal vkc
@@ -94,7 +94,7 @@ module CubeMap =
                             | None ->
                                 let compression = if compressed then ColorCompression else Uncompressed
                                 TextureInternal.create
-                                    MipmapNone AttachmentNone TextureCubeMap [||]
+                                    MipmapNone AttachmentNone TextureCubeMap VkImageUsageFlags.None
                                     compression.ImageFormat compression.PixelFormat metadata vkc
                         textureInternalOpt <- Some textureInternal
                         TextureInternal.uploadArray metadata 0 i bytes thread textureInternal vkc
@@ -105,7 +105,7 @@ module CubeMap =
                             | Some textureInternal -> textureInternal
                             | None ->
                                 TextureInternal.create
-                                    MipmapNone AttachmentNone TextureCubeMap [||]
+                                    MipmapNone AttachmentNone TextureCubeMap VkImageUsageFlags.None
                                     Uncompressed.ImageFormat Uncompressed.PixelFormat metadata vkc
                         textureInternalOpt <- Some textureInternal
                         TextureInternal.upload metadata 0 i bytesPtr thread textureInternal vkc

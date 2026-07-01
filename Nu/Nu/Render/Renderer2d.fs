@@ -838,7 +838,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                     let metadata = TextureMetadata.make textSurfaceWidth textSurfaceHeight
                                     let textTextureInternal =
                                         TextureInternal.create
-                                            MipmapNone AttachmentNone Texture2d [||]
+                                            MipmapNone AttachmentNone Texture2d VkImageUsageFlags.None
                                             Uncompressed.ImageFormat Uncompressed.PixelFormat metadata renderer.VulkanContext
                                     
                                     // TODO: DJL: investigate safety of asynchronous upload with regard to memoized access in subsequent frames

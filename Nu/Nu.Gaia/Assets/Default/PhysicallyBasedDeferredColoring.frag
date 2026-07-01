@@ -1,60 +1,87 @@
-#shader vertex
-#version 460 core
-
-layout(location = 0) in vec3 position;
-layout(location = 1) in vec2 texCoords;
-
-out vec2 texCoordsOut;
-
-void main()
-{
-    texCoordsOut = texCoords;
-    gl_Position = vec4(position, 1.0);
-}
-
-#shader fragment
-#version 460 core
+#version 450 core
 
 const float PI = 3.141592654;
 const float PI_OVER_2 = PI / 2.0;
 const float SSRL_STEP_COUNT_MAX = 256; // TODO: P1: promote this to uniform?
 
-uniform vec3 eyeCenter;
-uniform mat4 view;
-uniform mat4 viewInverse;
-uniform mat4 projection;
-uniform mat4 projectionInverse;
-uniform float lightAmbientBoostCutoff;
-uniform float lightAmbientBoostScalar;
-uniform int ssrlEnabled;
-uniform float ssrlIntensity;
-uniform float ssrlDetail;
-uniform int ssrlRefinementsMax;
-uniform float ssrlRayThickness;
-uniform float ssrlTowardEyeCutoff;
-uniform float ssrlDepthCutoff;
-uniform float ssrlDepthCutoffMargin;
-uniform float ssrlDistanceCutoff;
-uniform float ssrlDistanceCutoffMargin;
-uniform float ssrlRoughnessCutoff;
-uniform float ssrlRoughnessCutoffMargin;
-uniform float ssrlSlopeCutoff;
-uniform float ssrlSlopeCutoffMargin;
-uniform float ssrlEdgeHorizontalMargin;
-uniform float ssrlEdgeVerticalMargin;
-uniform sampler2D depthTexture;
-uniform sampler2D albedoTexture;
-uniform sampler2D materialTexture;
-uniform sampler2D normalPlusTexture;
-uniform sampler2D clearCoatPlusTexture;
-uniform sampler2D lightAccumTexture;
-uniform sampler2D brdfTexture;
-uniform sampler2D ambientTexture;
-uniform sampler2D irradianceTexture;
-uniform sampler2D environmentFilterTexture;
-uniform sampler2D ssaoTexture;
+struct Eye
+{
+    vec3 center;
+    mat4 view;
+    mat4 viewInverse;
+    mat4 projection;
+    mat4 projectionInverse;
+    mat4 viewProjection;
+};
 
-in vec2 texCoordsOut;
+struct Lighting
+{
+    float lightCutoffMargin;
+    vec3 lightAmbientColor;
+    float lightAmbientBrightness;
+    float lightAmbientBoostCutoff;
+    float lightAmbientBoostScalar;
+    int lightShadowSamples;
+    float lightShadowBias;
+    float lightShadowSampleScalar;
+    float lightShadowExponent;
+    float lightShadowDensity;
+    int fogEnabled;
+    int fogType;
+    float fogStart;
+    float fogFinish;
+    float fogDensity;
+    vec4 fogColor;
+    int ssvfEnabled;
+    float ssvfIntensity;
+    int ssvfSteps;
+    float ssvfAsymmetry;
+    int ssrrEnabled;
+    float ssrrIntensity;
+    float ssrrDetail;
+    int ssrrRefinementsMax;
+    float ssrrRayThickness;
+    float ssrrDistanceCutoff;
+    float ssrrDistanceCutoffMargin;
+    float ssrrEdgeHorizontalMargin;
+    float ssrrEdgeVerticalMargin;
+    int ssrlEnabled;
+    float ssrlIntensity;
+    float ssrlDetail;
+    int ssrlRefinementsMax;
+    float ssrlRayThickness;
+    float ssrlTowardEyeCutoff;
+    float ssrlDepthCutoff;
+    float ssrlDepthCutoffMargin;
+    float ssrlDistanceCutoff;
+    float ssrlDistanceCutoffMargin;
+    float ssrlRoughnessCutoff;
+    float ssrlRoughnessCutoffMargin;
+    float ssrlSlopeCutoff;
+    float ssrlSlopeCutoffMargin;
+    float ssrlEdgeHorizontalMargin;
+    float ssrlEdgeVerticalMargin;
+    float shadowNear;
+};
+
+layout(set = 0, binding = 0) buffer readonly EyeBlock { Eye eye; };
+layout(set = 0, binding = 1) buffer readonly LightingBlock { Lighting lighting; };
+layout(set = 0, binding = 2) uniform texture2D depthTexture;
+layout(set = 0, binding = 3) uniform texture2D albedoTexture;
+layout(set = 0, binding = 4) uniform texture2D materialTexture;
+layout(set = 0, binding = 5) uniform texture2D normalPlusTexture;
+layout(set = 0, binding = 6) uniform texture2D clearCoatPlusTexture;
+layout(set = 0, binding = 7) uniform texture2D lightAccumTexture;
+layout(set = 0, binding = 8) uniform texture2D brdfTexture;
+layout(set = 0, binding = 9) uniform texture2D ambientTexture;
+layout(set = 0, binding = 10) uniform texture2D irradianceTexture;
+layout(set = 0, binding = 11) uniform texture2D environmentFilterTexture;
+layout(set = 0, binding = 12) uniform texture2D ssaoTexture;
+
+layout(set = 1, binding = 0) uniform sampler colorSampler;
+layout(set = 1, binding = 1) uniform sampler brdfSampler;
+
+layout(location = 0) in vec2 texCoordsOut;
 
 layout(location = 0) out vec3 color;
 layout(location = 1) out float depth;
@@ -78,9 +105,9 @@ vec4 depthToPosition(float depth, vec2 texCoords)
 {
     float z = depth * 2.0 - 1.0;
     vec4 positionClip = vec4(texCoords * 2.0 - 1.0, z, 1.0);
-    vec4 positionView = projectionInverse * positionClip;
+    vec4 positionView = eye.projectionInverse * positionClip;
     positionView /= positionView.w;
-    return viewInverse * positionView;
+    return eye.viewInverse * positionView;
 }
 
 float depthViewToDepthBuffer(float near, float far, float depthView)
@@ -116,23 +143,23 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
 void computeSsrl(float depth, vec4 position, vec3 albedo, float roughness, float metallic, vec3 normal, float slope, inout vec3 specularScreen, inout float specularScreenWeight)
 {
     // compute view values
-    vec4 positionView = view * position;
+    vec4 positionView = eye.view * position;
     vec3 positionViewNormal = normalize(positionView.xyz);
-    vec3 normalView = mat3(view) * normal;
+    vec3 normalView = mat3(eye.view) * normal;
     vec3 reflectionView = reflect(positionViewNormal, normalView);
     vec4 startView = vec4(positionView.xyz, 1.0);
-    vec4 stopView = vec4(positionView.xyz + reflectionView * ssrlDistanceCutoff, 1.0);
+    vec4 stopView = vec4(positionView.xyz + reflectionView * lighting.ssrlDistanceCutoff, 1.0);
     float eyeDistanceFromPlane = abs(dot(normalView, positionView.xyz));
 
     // compute the fragment at which to start marching
-    vec2 texSize = textureSize(depthTexture, 0).xy;
-    vec4 startFrag4 = projection * startView;
+    vec2 texSize = textureSize(sampler2D(depthTexture, colorSampler), 0).xy;
+    vec4 startFrag4 = eye.projection * startView;
     vec2 startFrag = startFrag4.xy / startFrag4.w;
     startFrag = startFrag * 0.5 + 0.5;
     startFrag *= texSize;
 
     // compute the fragment at which to end marching as well as total length
-    vec4 stopFrag4 = projection * stopView;
+    vec4 stopFrag4 = eye.projection * stopView;
     vec2 stopFrag = stopFrag4.xy / stopFrag4.w;
     stopFrag = stopFrag * 0.5 + 0.5;
     stopFrag *= texSize;
@@ -149,7 +176,7 @@ void computeSsrl(float depth, vec4 position, vec3 albedo, float roughness, float
     float marchHorizontal = stopFrag.x - startFrag.x;
     float marchVertical = stopFrag.y - startFrag.y;
     bool shouldMarchHorizontal = abs(marchHorizontal) >= abs(marchVertical);
-    float stepCount = min(abs(shouldMarchHorizontal ? marchHorizontal : marchVertical) * ssrlDetail, float(SSRL_STEP_COUNT_MAX));
+    float stepCount = min(abs(shouldMarchHorizontal ? marchHorizontal : marchVertical) * lighting.ssrlDetail, float(SSRL_STEP_COUNT_MAX));
     vec2 stepAmount = vec2(marchHorizontal, marchVertical) / max(stepCount, 0.001);
 
     // march fragment
@@ -165,34 +192,34 @@ void computeSsrl(float depth, vec4 position, vec3 albedo, float roughness, float
         // advance frag values
         currentFrag += stepAmount;
         currentTexCoords = currentFrag / texSize;
-        currentDepth = texture(depthTexture, currentTexCoords).r;
+        currentDepth = texture(sampler2D(depthTexture, colorSampler), currentTexCoords).r;
         currentPosition = depthToPosition(currentDepth, currentTexCoords);
-        currentPositionView = view * currentPosition;
+        currentPositionView = eye.view * currentPosition;
         currentProgressB = length(currentFrag - startFrag) / lengthFrag;
         currentDepthView = -startView.z * -stopView.z / max(0.00001, mix(-stopView.z, -startView.z, currentProgressB)); // NOTE: uses perspective correct interpolation for depth, but causes precision issues as ssrlDistanceCutoff increases.
 
         // compute depth delta and thickness based on view state
         float depthDelta = currentDepthView - -currentPositionView.z;
-        float thickness = max(-currentPositionView.z * ssrlRayThickness, ssrlRayThickness);
+        float thickness = max(-currentPositionView.z * lighting.ssrlRayThickness, lighting.ssrlRayThickness);
 
         // determine whether we hit geometry within acceptable thickness
         if (currentDepth != 0.0 && depthDelta >= 0.0 && depthDelta <= thickness)
         {
             // perform refinements within walk
             currentProgressB = currentProgressA + (currentProgressB - currentProgressA) * 0.5;
-            for (int j = 0; j < ssrlRefinementsMax; ++j)
+            for (int j = 0; j < lighting.ssrlRefinementsMax; ++j)
             {
                 // advance frag values
                 currentFrag = mix(startFrag, stopFrag, currentProgressB);
                 currentTexCoords = currentFrag / texSize;
-                currentDepth = texture(depthTexture, currentTexCoords).r;
+                currentDepth = texture(sampler2D(depthTexture, colorSampler), currentTexCoords).r;
                 currentPosition = depthToPosition(currentDepth, currentTexCoords);
-                currentPositionView = view * currentPosition;
+                currentPositionView = eye.view * currentPosition;
                 currentDepthView = -startView.z * -stopView.z / max(0.00001, mix(-stopView.z, -startView.z, currentProgressB)); // NOTE: uses perspective correct interpolation for depth, but causes precision issues as ssrlDistanceCutoff increases.
 
                 // compute depth delta and thickness based on view state
                 float depthDelta = currentDepthView - -currentPositionView.z;
-                float thickness = max(-currentPositionView.z * ssrlRayThickness, ssrlRayThickness);
+                float thickness = max(-currentPositionView.z * lighting.ssrlRayThickness, lighting.ssrlRayThickness);
 
                 // determine whether we hit geometry within acceptable thickness
                 if (currentDepth != 0.0 && depthDelta >= 0.0 && depthDelta <= thickness)
@@ -203,15 +230,15 @@ void computeSsrl(float depth, vec4 position, vec3 albedo, float roughness, float
                     vec3 h = normalize(v + normal);
                     vec3 f = fresnelSchlick(saturate(dot(h, v)), f0);
                     vec3 specularIntensity = f * (1.0 - roughness);
-                    specularScreen = texture(lightAccumTexture, currentTexCoords).rgb * specularIntensity * ssrlIntensity;
+                    specularScreen = texture(sampler2D(lightAccumTexture, colorSampler), currentTexCoords).rgb * specularIntensity * lighting.ssrlIntensity;
                     specularScreenWeight =
-                        (1.0 - smoothstep(1.0 - ssrlRoughnessCutoffMargin, 1.0, roughness / ssrlRoughnessCutoff)) * // filter out as fragment reaches max roughness
-                        (1.0 - smoothstep(1.0 - ssrlDepthCutoffMargin, 1.0, positionView.z / -ssrlDepthCutoff)) * // filter out as fragment reaches max depth
-                        (1.0 - smoothstep(1.0 - ssrlDistanceCutoffMargin, 1.0, length(currentPositionView - positionView) / ssrlDistanceCutoff)) * // filter out as reflection point reaches max distance from fragment
-                        (1.0 - smoothstep(1.0 - ssrlSlopeCutoffMargin, 1.0, slope / ssrlSlopeCutoff)) * // filter out as slope nears cutoff
+                        (1.0 - smoothstep(1.0 - lighting.ssrlRoughnessCutoffMargin, 1.0, roughness / lighting.ssrlRoughnessCutoff)) * // filter out as fragment reaches max roughness
+                        (1.0 - smoothstep(1.0 - lighting.ssrlDepthCutoffMargin, 1.0, positionView.z / -lighting.ssrlDepthCutoff)) * // filter out as fragment reaches max depth
+                        (1.0 - smoothstep(1.0 - lighting.ssrlDistanceCutoffMargin, 1.0, length(currentPositionView - positionView) / lighting.ssrlDistanceCutoff)) * // filter out as reflection point reaches max distance from fragment
+                        (1.0 - smoothstep(1.0 - lighting.ssrlSlopeCutoffMargin, 1.0, slope / lighting.ssrlSlopeCutoff)) * // filter out as slope nears cutoff
                         smoothstep(0.0, 0.5, eyeDistanceFromPlane) * // filter out as eye nears plane. TODO: expose edge B as uniform!
-                        smoothstep(0.0, ssrlEdgeHorizontalMargin, min(currentTexCoords.x, 1.0 - currentTexCoords.x)) *
-                        smoothstep(0.0, ssrlEdgeVerticalMargin, min(currentTexCoords.y, 1.0 - currentTexCoords.y));
+                        smoothstep(0.0, lighting.ssrlEdgeHorizontalMargin, min(currentTexCoords.x, 1.0 - currentTexCoords.x)) *
+                        smoothstep(0.0, lighting.ssrlEdgeVerticalMargin, min(currentTexCoords.y, 1.0 - currentTexCoords.y));
                     specularScreenWeight = clamp(specularScreenWeight, 0.0, 1.0);
                     break;
                 }
@@ -234,26 +261,26 @@ void computeSsrl(float depth, vec4 position, vec3 albedo, float roughness, float
 void main()
 {
     // ensure fragment was written
-    float depthInput = texture(depthTexture, texCoordsOut).r;
+    float depthInput = texture(sampler2D(depthTexture, colorSampler), texCoordsOut).r;
     if (depthInput == 0.0) discard;
 
     // recover position from depth
     vec4 position = depthToPosition(depthInput, texCoordsOut);
 
     // retrieve remaining data from geometry buffers
-    vec3 albedo = texture(albedoTexture, texCoordsOut).rgb;
-    vec4 material = texture(materialTexture, texCoordsOut);
-    vec3 normal = normalize(texture(normalPlusTexture, texCoordsOut).xyz);
-    vec2 clearCoatPlus = texture(clearCoatPlusTexture, texCoordsOut).rg;
+    vec3 albedo = texture(sampler2D(albedoTexture, colorSampler), texCoordsOut).rgb;
+    vec4 material = texture(sampler2D(materialTexture, colorSampler), texCoordsOut);
+    vec3 normal = normalize(texture(sampler2D(normalPlusTexture, colorSampler), texCoordsOut).xyz);
+    vec2 clearCoatPlus = texture(sampler2D(clearCoatPlusTexture, colorSampler), texCoordsOut).rg;
     float clearCoat = clearCoatPlus.r;
     float clearCoatRoughness = clearCoatPlus.g;
-    vec3 lightAccum = texture(lightAccumTexture, texCoordsOut).rgb;
+    vec3 lightAccum = texture(sampler2D(lightAccumTexture, colorSampler), texCoordsOut).rgb;
 
     // retrieve data from intermediate buffers
-    vec4 ambientColorAndBrightness = texture(ambientTexture, texCoordsOut);
-    vec3 irradiance = texture(irradianceTexture, texCoordsOut).rgb;
-    vec3 environmentFilter = texture(environmentFilterTexture, texCoordsOut).rgb;
-    float ssao = texture(ssaoTexture, texCoordsOut).r;
+    vec4 ambientColorAndBrightness = texture(sampler2D(ambientTexture, colorSampler), texCoordsOut);
+    vec3 irradiance = texture(sampler2D(irradianceTexture, colorSampler), texCoordsOut).rgb;
+    vec3 environmentFilter = texture(sampler2D(environmentFilterTexture, colorSampler), texCoordsOut).rgb;
+    float ssao = texture(sampler2D(ssaoTexture, colorSampler), texCoordsOut).r;
 
     // compute materials
     float roughness = material.r;
@@ -265,15 +292,15 @@ void main()
     roughness = mix(roughness, clearCoatRoughness, clearCoat);
 
     // compute lighting terms
-    vec3 v = normalize(eyeCenter - position.xyz);
+    vec3 v = normalize(eye.center - position.xyz);
     float nDotV = saturate(dot(normal, v));
     vec3 f0 = mix(vec3(0.04), albedo, metallic); // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
 
     // compute ambient light
     vec3 ambientColor = ambientColorAndBrightness.rgb;
     float ambientBrightness = ambientColorAndBrightness.a;
-    float ambientBoostFactor = smoothstep(1.0 - lightAmbientBoostCutoff, 1.0, 1.0 - roughness);
-    float ambientBoost = 1.0 + ambientBoostFactor * lightAmbientBoostScalar;
+    float ambientBoostFactor = smoothstep(1.0 - lighting.lightAmbientBoostCutoff, 1.0, 1.0 - roughness);
+    float ambientBoost = 1.0 + ambientBoostFactor * lighting.lightAmbientBoostScalar;
     vec3 ambientLight = ambientColor * ambientBrightness * ambientBoost * ambientOcclusion;
 
     // compute diffuse term
@@ -284,19 +311,19 @@ void main()
     vec3 diffuse = kD * irradiance * albedo * ambientLight;
 
     // compute specular term and weight from screen-space
-    vec3 forward = vec3(view[0][2], view[1][2], view[2][2]);
+    vec3 forward = vec3(eye.view[0][2], eye.view[1][2], eye.view[2][2]);
     float towardEye = dot(forward, normal);
     float slope = 1.0 - abs(dot(normal, vec3(0.0, 1.0, 0.0)));
-    vec4 positionView = view * position;
+    vec4 positionView = eye.view * position;
     vec3 specularScreen = vec3(0.0);
     float specularScreenWeight = 0.0;
-    if (ssrlEnabled == 1 && towardEye <= ssrlTowardEyeCutoff && -positionView.z <= ssrlDepthCutoff && roughness <= ssrlRoughnessCutoff && slope <= ssrlSlopeCutoff)
+    if (lighting.ssrlEnabled == 1 && towardEye <= lighting.ssrlTowardEyeCutoff && -positionView.z <= lighting.ssrlDepthCutoff && roughness <= lighting.ssrlRoughnessCutoff && slope <= lighting.ssrlSlopeCutoff)
     {
-        vec2 texSize = textureSize(depthTexture, 0).xy;
+        vec2 texSize = textureSize(sampler2D(depthTexture, colorSampler), 0).xy;
         float texelHeight = 1.0 / texSize.y;
         vec2 texCoordsBelow = texCoordsOut + vec2(0.0, -texelHeight); // using tex coord below current pixel reduces 'cracks' on floor reflections
         texCoordsBelow.y = max(0.0, texCoordsBelow.y);
-        float depthBelow = texture(depthTexture, texCoordsBelow).r;
+        float depthBelow = texture(sampler2D(depthTexture, colorSampler), texCoordsBelow).r;
         vec4 positionBelow = depthToPosition(depthBelow, texCoordsBelow);
         computeSsrl(depthBelow, positionBelow, albedo, roughness, metallic, normal, slope, specularScreen, specularScreenWeight);
 
@@ -310,7 +337,7 @@ void main()
     }
 
     // compute specular term
-    vec2 environmentBrdf = texture(brdfTexture, vec2(nDotV, roughness)).rg;
+    vec2 environmentBrdf = texture(sampler2D(brdfTexture, brdfSampler), vec2(nDotV, roughness)).rg;
     vec3 specularEnvironmentSubterm = f * environmentBrdf.x + environmentBrdf.y;
     vec3 specularEnvironment = environmentFilter * specularEnvironmentSubterm * ambientLight;
     vec3 specular = (1.0 - specularScreenWeight) * specularEnvironment + specularScreenWeight * specularScreen;

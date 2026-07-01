@@ -31,27 +31,10 @@ module Attachment =
                 (Hl.checkAttachmentFormat vkc.VkPhysicalDevice D32f) Depth metadata vkc
         EagerTexture textureInternal
     
-    /// Create general-purpose attachments.
-    let createGeneralAttachments resolutionX resolutionY vkc =
-        let color = createColorAttachment Texture2d [|VkImageUsageFlags.TransferSrc|] Rgba16f Rgba resolutionX resolutionY vkc
-        let z = createDepthAttachment [||] resolutionX resolutionY vkc
-        (color, z)
-
-    /// Update size of general attachments. Must be used every frame.
-    let updateGeneralAttachmentsSize resolutionX resolutionY (color, z) vkc =
-        let metadata = TextureMetadata.make resolutionX resolutionY
-        Texture.updateSize metadata color vkc
-        Texture.updateSize metadata z vkc
-
-    /// Destroy general attachments.
-    let destroyGeneralAttachments (color : Texture, z : Texture) vkc =
-        Texture.destroy color vkc
-        Texture.destroy z vkc
-    
     /// Create shadow texture array attachments.
     let createShadowTextureArrayAttachments shadowResolutionX shadowResolutionY shadowResolutionZ vkc =
-        let color = createColorAttachment (Texture2dArray shadowResolutionZ) [|VkImageUsageFlags.Sampled|] Rg32f Rg shadowResolutionX shadowResolutionY vkc
-        let z = createDepthAttachment [||] shadowResolutionX shadowResolutionY vkc
+        let color = createColorAttachment (Texture2dArray shadowResolutionZ) VkImageUsageFlags.Sampled Rg32f Rg shadowResolutionX shadowResolutionY vkc
+        let z = createDepthAttachment VkImageUsageFlags.None shadowResolutionX shadowResolutionY vkc
         (color, z)
     
     /// Update size of shadow texture array attachments. Must be used every frame.
@@ -67,8 +50,8 @@ module Attachment =
     
     /// Create shadow map attachments.
     let createShadowMapAttachments shadowResolutionX shadowResolutionY vkc =
-        let color = createColorAttachment TextureCubeMap [|VkImageUsageFlags.Sampled|] R16f Red shadowResolutionX shadowResolutionY vkc
-        let z = createDepthAttachment [||] shadowResolutionX shadowResolutionY vkc
+        let color = createColorAttachment TextureCubeMap VkImageUsageFlags.Sampled R16f Red shadowResolutionX shadowResolutionY vkc
+        let z = createDepthAttachment VkImageUsageFlags.None shadowResolutionX shadowResolutionY vkc
         (color, z)
 
     /// Update size of shadow map attachments. Must be used every frame.
@@ -86,9 +69,9 @@ module Attachment =
     let createShadowCascadeArrayAttachments shadowCascadeResolutionX shadowCascadeResolutionY shadowCascadeLevels vkc =
         let color =
             createColorAttachment
-                (Texture2dArray shadowCascadeLevels) [|VkImageUsageFlags.Sampled|]
+                (Texture2dArray shadowCascadeLevels) VkImageUsageFlags.Sampled
                 Rg32f Rg shadowCascadeResolutionX shadowCascadeResolutionY vkc
-        let z = createDepthAttachment [||] shadowCascadeResolutionX shadowCascadeResolutionY vkc
+        let z = createDepthAttachment VkImageUsageFlags.None shadowCascadeResolutionX shadowCascadeResolutionY vkc
         (color, z)
     
     /// Update size of shadow cascade array attachments. Must be used every frame.
@@ -105,14 +88,14 @@ module Attachment =
     /// Create geometry attachments.
     /// TODO: DJL: this z attachment is unused so maybe worth removing.
     let createGeometryAttachments resolutionX resolutionY vkc =
-        let depth = createColorAttachment Texture2d [|VkImageUsageFlags.Sampled|] R32f Red resolutionX resolutionY vkc
-        let albedo = createColorAttachment Texture2d [|VkImageUsageFlags.Sampled|] Rgba8 Rgba resolutionX resolutionY vkc
-        let material = createColorAttachment Texture2d [|VkImageUsageFlags.Sampled|] Rgba8 Rgba resolutionX resolutionY vkc
-        let normalPlus = createColorAttachment Texture2d [|VkImageUsageFlags.Sampled|] Rgba16f Rgba resolutionX resolutionY vkc
-        let subdermalPlus = createColorAttachment Texture2d [|VkImageUsageFlags.Sampled|] Rgba8 Rgba resolutionX resolutionY vkc
-        let scatterPlus = createColorAttachment Texture2d [|VkImageUsageFlags.Sampled|] Rgba8 Rgba resolutionX resolutionY vkc
-        let clearCoatPlus = createColorAttachment Texture2d [|VkImageUsageFlags.Sampled|] Rgba16f Rgba resolutionX resolutionY vkc
-        let z = createDepthAttachment [||] resolutionX resolutionY vkc
+        let depth = createColorAttachment Texture2d VkImageUsageFlags.Sampled R32f Red resolutionX resolutionY vkc
+        let albedo = createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba8 Rgba resolutionX resolutionY vkc
+        let material = createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba8 Rgba resolutionX resolutionY vkc
+        let normalPlus = createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba16f Rgba resolutionX resolutionY vkc
+        let subdermalPlus = createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba8 Rgba resolutionX resolutionY vkc
+        let scatterPlus = createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba8 Rgba resolutionX resolutionY vkc
+        let clearCoatPlus = createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba16f Rgba resolutionX resolutionY vkc
+        let z = createDepthAttachment VkImageUsageFlags.None resolutionX resolutionY vkc
         (depth, albedo, material, normalPlus, subdermalPlus, scatterPlus, clearCoatPlus, z)
     
     /// Update size of geometry attachments. Must be used every frame.
@@ -149,7 +132,7 @@ module Attachment =
 
     /// Create lighting attachment.
     let createLightingAttachment resolutionX resolutionY vkc =
-        createColorAttachment Texture2d [|VkImageUsageFlags.Sampled|] Rgb16f Rgb resolutionX resolutionY vkc
+        createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgb16f Rgb resolutionX resolutionY vkc
 
     /// Update size of lighting attachment. Must be used every frame.
     let updateLightingAttachmentSize resolutionX resolutionY lighting vkc =
@@ -162,7 +145,7 @@ module Attachment =
 
     /// Create light mapping attachment.
     let createLightMappingAttachment resolutionX resolutionY vkc =
-        createColorAttachment Texture2d [|VkImageUsageFlags.Sampled|] Rgb16f Rgb resolutionX resolutionY vkc
+        createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgb16f Rgb resolutionX resolutionY vkc
 
     /// Update size of light mapping attachment. Must be used every frame.
     let updateLightMappingAttachmentSize resolutionX resolutionY lightmapping vkc =
@@ -175,7 +158,7 @@ module Attachment =
 
     /// Create ambient attachment.
     let createAmbientAttachment resolutionX resolutionY vkc =
-        createColorAttachment Texture2d [|VkImageUsageFlags.Sampled|] Rgb16f Rgb resolutionX resolutionY vkc
+        createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgb16f Rgb resolutionX resolutionY vkc
 
     /// Update size of ambient attachment. Must be used every frame.
     let updateAmbientAttachmentSize resolutionX resolutionY ambient vkc =
@@ -188,7 +171,7 @@ module Attachment =
 
     /// Create irradiance attachment.
     let createIrradianceAttachment resolutionX resolutionY vkc =
-        createColorAttachment Texture2d [|VkImageUsageFlags.Sampled|] Rgb16f Rgb resolutionX resolutionY vkc
+        createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgb16f Rgb resolutionX resolutionY vkc
 
     /// Update size of irradiance attachment. Must be used every frame.
     let updateIrradianceAttachmentSize resolutionX resolutionY irradiance vkc =
@@ -201,7 +184,7 @@ module Attachment =
 
     /// Create environment filter attachment.
     let createEnvironmentFilterAttachment resolutionX resolutionY vkc =
-        createColorAttachment Texture2d [|VkImageUsageFlags.Sampled|] Rgb16f Rgb resolutionX resolutionY vkc
+        createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgb16f Rgb resolutionX resolutionY vkc
 
     /// Update size of environment filter attachment. Must be used every frame.
     let updateEnvironmentFilterAttachmentSize resolutionX resolutionY environmentfilter vkc =
@@ -212,10 +195,23 @@ module Attachment =
     let destroyEnvironmentFilterAttachment (environmentfilter : Texture) vkc =
         Texture.destroy environmentfilter vkc
 
+    /// Create fogging attachment.
+    let createFoggingAttachment resolutionX resolutionY vkc =
+        createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgb16f Rgb resolutionX resolutionY vkc
+
+    /// Update size of fogging attachment. Must be used every frame.
+    let updateFoggingAttachmentSize resolutionX resolutionY fogging vkc =
+        let metadata = TextureMetadata.make resolutionX resolutionY
+        Texture.updateSize metadata fogging vkc
+
+    /// Destroy fogging attachment.
+    let destroyFoggingAttachment (fogging : Texture) vkc =
+        Texture.destroy fogging vkc
+
     /// Create coloring attachments.
     let createColoringAttachments resolutionX resolutionY vkc =
-        let color = createColorAttachment Texture2d [|VkImageUsageFlags.Sampled|] Rgb16f Rgb resolutionX resolutionY vkc
-        let depth = createColorAttachment Texture2d [|VkImageUsageFlags.Sampled|] R16f Red resolutionX resolutionY vkc
+        let color = createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgb16f Rgb resolutionX resolutionY vkc
+        let depth = createColorAttachment Texture2d VkImageUsageFlags.Sampled R16f Red resolutionX resolutionY vkc
         (color, depth)
 
     /// Update size of coloring attachments. Must be used every frame.
@@ -228,3 +224,16 @@ module Attachment =
     let destroyColoringAttachments (color : Texture, depth : Texture) vkc =
         Texture.destroy color vkc
         Texture.destroy depth vkc
+
+    /// Create composition attachments.
+    let createCompositionAttachments resolutionX resolutionY vkc =
+        createColorAttachment Texture2d (VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferSrc) Rgb32f Rgb resolutionX resolutionY vkc
+
+    /// Update size of composition attachments. Must be used every frame.
+    let updateCompositionAttachmentSize resolutionX resolutionY color vkc =
+        let metadata = TextureMetadata.make resolutionX resolutionY
+        Texture.updateSize metadata color vkc
+
+    /// Destroy composition attachments.
+    let destroyCompositionAttachment (color : Texture) vkc =
+        Texture.destroy color vkc

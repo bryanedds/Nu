@@ -398,7 +398,7 @@ type VulkanRendererImGui
 
             // create the font atlas texture
             let metadata = TextureMetadata.make fontWidth fontHeight
-            let textureInternal = TextureInternal.create MipmapNone AttachmentNone Texture2d [||] Uncompressed.ImageFormat Rgba metadata vkc
+            let textureInternal = TextureInternal.create MipmapNone AttachmentNone Texture2d VkImageUsageFlags.None Uncompressed.ImageFormat Rgba metadata vkc
             TextureInternal.upload metadata 0 0 pixels RenderThread textureInternal vkc
             fontTexture <- EagerTexture textureInternal
             

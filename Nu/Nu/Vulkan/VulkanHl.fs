@@ -18,7 +18,9 @@ open Nu
 type ImageFormat =
     | Rgba8
     | Rgba16f
+    | Rgba32f
     | Rgb16f
+    | Rgb32f
     | Rg32f
     | R16f
     | R32f
@@ -37,7 +39,9 @@ type ImageFormat =
         match this with
         | Rgba8 -> VkFormat.R8G8B8A8Unorm
         | Rgba16f -> VkFormat.R16G16B16A16Sfloat
+        | Rgba32f -> VkFormat.R32G32B32A32Sfloat
         | Rgb16f -> VkFormat.R16G16B16Sfloat
+        | Rgb32f -> VkFormat.R32G32B32Sfloat
         | Rg32f -> VkFormat.R32G32Sfloat
         | R16f -> VkFormat.R16Sfloat
         | R32f -> VkFormat.R32Sfloat
@@ -56,7 +60,9 @@ type ImageFormat =
         match this with
         | Rgba8
         | Rgba16f
+        | Rgba32f
         | Rgb16f
+        | Rgb32f
         | Rg32f
         | R16f
         | R32f
@@ -75,7 +81,9 @@ type ImageFormat =
         match imageFormat with
         | Rgba8 -> width * height * 4
         | Rgba16f -> width * height * 8
+        | Rgba32f -> width * height * 16
         | Rgb16f -> width * height * 6
+        | Rgb32f -> width * height * 12
         | Rg32f -> width * height * 8
         | R16f -> width * height * 2
         | R32f -> width * height * 4
@@ -98,7 +106,9 @@ type ImageFormat =
             match format with
             | Rgba8
             | Rgba16f
+            | Rgba32f
             | Rgb16f
+            | Rgb32f
             | Rg32f
             | R16f
             | R32f
@@ -361,21 +371,19 @@ module Hl =
     let rec checkAttachmentFormat vkPhysicalDevice (format : ImageFormat) =
         if not (ImageFormat.supportsAttachment vkPhysicalDevice format) then
             
+            // NOTE: DJL: formats required by spec - https://docs.vulkan.org/spec/latest/chapters/formats.html#features-required-format-support
             // NOTE: DJL: format fallbacks must not be ints for blit conversion.
             let (formatFallback : ImageFormat) =
                 match format with
-                | Bc3
-                | Bc5
-                | Astc ->
+                | Bc3 | Bc5 | Astc ->
                     Log.fail ("Compressed image formats are not supported for attachment textures.")
                 | Rgb16f ->
                     checkAttachmentFormat vkPhysicalDevice Rgba16f
-                | Rgba8 (* standard *)
-                | Rgba16f (* standard *)
-                | Rg32f (* standard *)
-                | R16f (* standard *)
-                | R32f (* standard *) ->
-                    // NOTE: DJL: for spec requirements, see https://docs.vulkan.org/spec/latest/chapters/formats.html#features-required-format-support.
+                | Rgb32f ->
+                    checkAttachmentFormat vkPhysicalDevice Rgba32f
+                | Rgba32f ->
+                    checkAttachmentFormat vkPhysicalDevice Rgba16f
+                | Rgba8 | Rgba16f | Rg32f | R16f | R32f ->
                     Log.fail ("Vulkan attachment image format '" + scstring format.VkFormat + "' support is absent but required. Further, it's a requirement in the Vulkan specification!")
                 | D32f ->
                     checkAttachmentFormat vkPhysicalDevice D32fs8ui
@@ -391,6 +399,7 @@ module Hl =
                     Log.fail "Could not find a suitable format for depth attachment textures."
             Log.warn ("Falling back to " + scstring formatFallback.VkFormat + " attachment format due to unavailability of " + scstring format.VkFormat + " attachment format.")
             formatFallback
+
         else format
 
     /// Convert VkExtensionProperties.extensionName to a string.
