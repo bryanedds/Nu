@@ -21,7 +21,15 @@
 
 	<ItemGroup>
 		<PackageReference Include="FSharp.Compiler.Service" Version="43.12.204" />
-        <ProjectReference Include="../../Projects/*/*.fsproj" ReferenceOutputAssembly="false" />
+        <GaiaProject Include="../../Projects/*/*.fsproj" />
+        <ProjectReference Include="@(GaiaProject)" ReferenceOutputAssembly="false" />
     </ItemGroup>
+
+    <Target Name="CollectGaiaProjectPaths" AfterTargets="Build">
+        <MSBuild Projects="@(GaiaProject)" Targets="GetTargetPath" Properties="TargetFramework=$(TargetFramework)">
+            <Output TaskParameter="TargetOutputs" ItemName="GaiaProjectOutputPath" />
+        </MSBuild>
+        <WriteLinesToFile File="$(TargetDir)Nu.Gaia.Projects.txt" Lines="@(GaiaProjectOutputPath->Replace('\', '/'))" Overwrite="true" />
+    </Target>
 
 </Project>
