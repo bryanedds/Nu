@@ -24,9 +24,13 @@ type PathF private () =
     static member Combine ([<ParamArray>] paths : string[]) =
         PathF.Normalize (Path.Combine paths)
 
-    /// Gets an array containing the characters that are not allowed in path names.
+    /// Gets an array containing the characters that are not allowed in file paths.
     static member GetInvalidPathChars () =
         Path.GetInvalidPathChars ()
+
+    /// Gets an array containing the characters that are not allowed in file names.
+    static member GetInvalidFileNameChars () =
+        Path.GetInvalidFileNameChars ()
 
     /// Returns the file name and extension of the specified path string.
     static member GetFileName (path : string) =

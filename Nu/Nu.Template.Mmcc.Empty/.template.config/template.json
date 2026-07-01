@@ -5,6 +5,7 @@
   "identity": "Nu Template MMCC Empty",
   "name": "Nu Template MMCC Empty",
   "shortName": "nu-template-mmcc-empty",
+  "sourceName": "Nu.Template.Mmcc.Empty",
   "tags": {
     "language": "F#",
     "type": "project"

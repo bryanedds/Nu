@@ -5,6 +5,7 @@
   "identity": "Nu Template ImSim Empty",
   "name": "Nu Template ImSim Empty",
   "shortName": "nu-template-imsim-empty",
+  "sourceName": "Nu.Template.ImSim.Empty",
   "tags": {
     "language": "F#",
     "type": "project"
