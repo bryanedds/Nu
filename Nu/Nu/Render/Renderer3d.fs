@@ -3693,7 +3693,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let textureDumpster = TextureDumpster.create ()
         
         // create samplers
-        let filteredSampler = Sampler.create VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear true vkc
+        let filteredSampler = Sampler.create VkSamplerAddressMode.Repeat VkFilter.Linear VkFilter.Linear true vkc
         let cubeMapSampler = Sampler.create VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false vkc
         let geometrySampler = Sampler.create VkSamplerAddressMode.ClampToEdge VkFilter.Nearest VkFilter.Nearest false vkc
         let shadowSampler = Sampler.create VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false vkc
