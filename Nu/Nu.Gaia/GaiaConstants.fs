@@ -31,6 +31,7 @@ module Constants =
         let [<Literal>] HeightRegularPickOffset = 0.0f // NOTE: this used to be a value of -0.05f in order to make quick-picked names align with the top of drop downs better, but it had to be zero'd out to satisfy an assertion that it be in range from 0.0f - 1.0f.
         let [<Literal>] ImGuiIniFilePath = "imgui.ini"
         let [<Literal>] StateFilePath = "Nu.Gaia.State.txt"
+        let [<Literal>] ProjectsFilePath = "Nu.Gaia.Projects.txt"
         let [<Literal>] InteractiveInputFilePath = "input.fsx"
         let [<Literal>] NonePick = "\"None\""
         let [<Uniform>] EventFilter =

@@ -810,26 +810,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         then Assembly.LoadFrom assemblyFilePath
         else null
 
-    let private nuPluginTypeFilter (metadataReader : MetadataReader) ty =
-        let typeDef = metadataReader.GetTypeDefinition ty
-        let baseType = typeDef.BaseType
-        match baseType.Kind with
-        | HandleKind.TypeReference ->
-            let typeRef = metadataReader.GetTypeReference (TypeReferenceHandle.op_Explicit baseType)
-            metadataReader.GetString typeRef.Name = nameof NuPlugin
-        | HandleKind.TypeDefinition -> false // base type must not be defined in the same assembly
-        | HandleKind.TypeSpecification -> false // base type is not a constructed generic type, pointer or array
-        | _ -> false
-
-    let private nuAssemblyFileFilter filePath =
-        try use fileStream = new FileStream (filePath, FileMode.Open, FileAccess.Read)
-            use peReader = new PortableExecutable.PEReader (fileStream)
-            peReader.HasMetadata &&
-            let metadataReader = PEReaderExtensions.GetMetadataReader peReader in metadataReader.IsAssembly &&
-            Seq.exists (metadataReader.GetAssemblyReference >> _.Name >> metadataReader.GetString >> (=) "Nu") metadataReader.AssemblyReferences &&
-            Seq.exists (nuPluginTypeFilter metadataReader) metadataReader.TypeDefinitions
-        with _ -> false
-
     // NOTE: this function isn't used, but it is kept around as it's a good tool to surface memory leaks deep in large libs like FSI.
     let private scanAndNullifyFields (root : obj) (targetType : Type) =
         let bindingFlags = BindingFlags.NonPublic ||| BindingFlags.Public ||| BindingFlags.Instance
@@ -3843,25 +3823,21 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             let openProjectDlls =
                 match OpenProjectDllsOpt with
                 | None ->
-                    let projectsDirPaths = PathF.GetFullPath (gaiaDir + "/../../../../../Projects")
-                    let openProjectDlls =
-                        Directory.EnumerateDirectories projectsDirPaths
-                        |> Seq.collect (fun dir -> Directory.EnumerateDirectories (dir, "bin"))
-                        |> Seq.collect (fun dir -> Directory.EnumerateDirectories (dir, Constants.Gaia.BuildName))
-                        |> Seq.collect (fun dir -> Directory.EnumerateDirectories dir)
-                        |> Seq.collect (fun dir -> Directory.EnumerateFiles (dir, "*.dll"))
-                        |> Seq.map PathF.Normalize // ensure we're in '/' mode
-                        |> Seq.filter nuAssemblyFileFilter
-                        |> Seq.toArray
+                    // read MSBuild-resolved project paths
+                    let openProjectDlls = File.ReadAllLines (gaiaDir + "/" + Constants.Gaia.ProjectsFilePath)
                     let openProjectNames =
                         openProjectDlls
-                        |> Array.map (fun (filePath : string) ->
-                            try let names = filePath.Split "/"
-                                let projectName = names[names.Length - 1] + " (" + names[names.Length - 2] + ")"
-                                Some projectName
-                            with _ -> None)
-                        |> Array.definitize
-                    let openProjectIndex = Array.IndexOf (openProjectDlls, ProjectDllPath)
+                        |> Array.map PathF.GetFileNameWithoutExtension
+                    let (openProjectDlls, openProjectNames, openProjectIndex) =
+                        if Array.contains ProjectDllPath openProjectDlls then
+                            (openProjectDlls, openProjectNames, Array.IndexOf (openProjectDlls, ProjectDllPath))
+                        elif String.isEmpty ProjectDllPath then // no selected item
+                            (openProjectDlls, openProjectNames, -1)
+                        else // ensure currently opened DLL is in the list even if from a different TargetFramework
+                            let projectDllDirectories = ProjectDllPath.Split "/"
+                            (Array.append openProjectDlls [|ProjectDllPath|],
+                             Array.append openProjectNames [|PathF.GetFileNameWithoutExtension ProjectDllPath + " (" + projectDllDirectories[projectDllDirectories.Length - 2] + ")"|],
+                             Array.length openProjectDlls)
                     OpenProjectDllsOpt <- Some openProjectDlls
                     OpenProjectNames <- openProjectNames
                     OpenProjectIndex <- openProjectIndex
