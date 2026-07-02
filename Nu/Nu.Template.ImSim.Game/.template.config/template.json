@@ -5,6 +5,7 @@
   "identity": "Nu Template ImSim Game",
   "name": "Nu Template ImSim Game",
   "shortName": "nu-template-imsim-game",
+  "sourceName": "Nu.Template.ImSim.Game",
   "tags": {
     "language": "F#",
     "type": "project"

@@ -3726,81 +3726,39 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             let projectsDir = PathF.GetFullPath (programDir + "/../../../../../Projects")
             let newProjectDir = PathF.GetFullPath (projectsDir + "/" + NewProjectName)
             let newProjectDllPath = newProjectDir + "/bin/" + Constants.Gaia.BuildName + "/" + Constants.Engine.TargetFramework + "/" + NewProjectName + ".dll"
-            let newFileName = NewProjectName + ".fsproj"
-            let newProject = PathF.GetFullPath (newProjectDir + "/" + newFileName)
-            let validName = not (String.IsNullOrWhiteSpace NewProjectName) && Array.notExists (fun char -> NewProjectName.Contains (string char)) (PathF.GetInvalidPathChars ())
+            let validName = not (String.IsNullOrWhiteSpace NewProjectName) && (PathF.GetInvalidFileNameChars () |> Array.notExists NewProjectName.Contains)
             let validDirectory = not (Directory.Exists newProjectDir)
             if not validName then
-                ImGui.Text "Invalid project name!"
+                ImGui.Text ("Invalid project name! It must not be empty or contain characters unusable as file names.")
             elif not validDirectory then
                 ImGui.Text "Project already exists!"
             elif ImGui.Button "Create" || ImGui.IsKeyReleased ImGuiKey.Enter then
 
                 // choose a template, ensuring it exists
                 let slnDir = PathF.GetFullPath (programDir + "/../../../../..")
-                let (templateFileName, templateDir, editMode, shortName) =
+                let (templateDir, editMode, shortName) =
                     match NewProjectType with
-                    | "MMCC Empty" -> ("Nu.Template.Mmcc.Empty.fsproj", PathF.GetFullPath (programDir + "/../../../../Nu.Template.Mmcc.Empty"), "Initial", "nu-template-mmcc-empty")
-                    | "MMCC Game" -> ("Nu.Template.Mmcc.Game.fsproj", PathF.GetFullPath (programDir + "/../../../../Nu.Template.Mmcc.Game"), "Title", "nu-template-mmcc-game")
-                    | "ImSim Empty" -> ("Nu.Template.ImSim.Empty.fsproj", PathF.GetFullPath (programDir + "/../../../../Nu.Template.ImSim.Empty"), "Initial", "nu-template-imsim-empty")
-                    | "ImSim Game" -> ("Nu.Template.ImSim.Game.fsproj", PathF.GetFullPath (programDir + "/../../../../Nu.Template.ImSim.Game"), "Title", "nu-template-imsim-game")
+                    | "MMCC Empty" -> (PathF.GetFullPath (programDir + "/../../../../Nu.Template.Mmcc.Empty"), "Initial", "nu-template-mmcc-empty")
+                    | "MMCC Game" -> (PathF.GetFullPath (programDir + "/../../../../Nu.Template.Mmcc.Game"), "Title", "nu-template-mmcc-game")
+                    | "ImSim Empty" -> (PathF.GetFullPath (programDir + "/../../../../Nu.Template.ImSim.Empty"), "Initial", "nu-template-imsim-empty")
+                    | "ImSim Game" -> (PathF.GetFullPath (programDir + "/../../../../Nu.Template.ImSim.Game"), "Title", "nu-template-imsim-game")
                     | _ -> failwithumf ()
+                // work around https://github.com/dotnet/sdk/pull/55105 by manual normalization of drive letter
+                let templateDir = if templateDir.Length > 1 && templateDir.[1] = ':' then string (Char.ToUpperInvariant templateDir.[0]) + templateDir.Substring 1 else templateDir
                 if Directory.Exists templateDir then
 
                     // attempt to create project files
                     try Log.info ("Creating project '" + NewProjectName + "' in '" + projectsDir + "'...")
 
-                        // install nu template
-                        Directory.SetCurrentDirectory templateDir
-                        Process.Start("dotnet", "new install ./ --force").WaitForExit()
+                        // install nu template (--force does in-place update)
+                        Process.Start("dotnet", "new install \"" + templateDir + "\" --force").WaitForExit()
 
                         // instantiate nu template
-                        Directory.SetCurrentDirectory projectsDir
-                        Directory.CreateDirectory NewProjectName |> ignore<DirectoryInfo>
-                        Directory.SetCurrentDirectory newProjectDir
-                        Process.Start("dotnet", "new " + shortName + " --force").WaitForExit()
-
-                        // rename project file
-                        File.Copy (templateFileName, newFileName, true)
-                        File.Delete templateFileName
+                        Directory.CreateDirectory newProjectDir |> ignore<DirectoryInfo>
+                        Process.Start("dotnet", "new " + shortName + " --name \"" + NewProjectName + "\" --output \"" + newProjectDir + "\"").WaitForExit() // no --force because we already checked directory existence
 
                         // substitute project guid in project file
-                        let projectGuid = Gen.id
-                        let projectGuidStr = projectGuid.ToString().ToUpperInvariant()
-                        let newProjectStr = File.ReadAllText newProject
-                        let newProjectStr = newProjectStr.Replace("4DBBAA23-56BA-43CB-AB63-C45D5FC1016F", projectGuidStr)
-                        File.WriteAllText (newProject, newProjectStr)
-
-                        // add project to sln file
-                        Directory.SetCurrentDirectory slnDir
-                        let slnLines = "Nu.sln" |> File.ReadAllLines |> Array.toList
-                        let insertionIndex = List.findIndexBack ((=) "\tEndProjectSection") slnLines
-                        let slnLines = 
-                            List.take insertionIndex slnLines @
-                            ["\t\t{" + projectGuidStr + "} = {" + projectGuidStr + "}"] @
-                            List.skip insertionIndex slnLines
-                        let insertionIndex = List.findIndex ((=) "Global") slnLines
-                        let slnLines =
-                            List.take insertionIndex slnLines @
-                            ["Project(\"{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}\") = \"" + NewProjectName + "\", \"Projects\\" + NewProjectName + "\\" + NewProjectName + ".fsproj\", \"{" + projectGuidStr + "}\""
-                             "EndProject"] @
-                            List.skip insertionIndex slnLines
-                        let insertionIndex = List.findIndex ((=) "\tGlobalSection(SolutionProperties) = preSolution") slnLines - 1
-                        let slnLines =
-                            List.take insertionIndex slnLines @
-                            ["\t\t{" + projectGuidStr + "}.Debug|Any CPU.ActiveCfg = Debug|Any CPU"
-                             "\t\t{" + projectGuidStr + "}.Debug|Any CPU.Build.0 = Debug|Any CPU"
-                             "\t\t{" + projectGuidStr + "}.Mixed|Any CPU.ActiveCfg = Debug|Any CPU"
-                             "\t\t{" + projectGuidStr + "}.Mixed|Any CPU.Build.0 = Debug|Any CPU"
-                             "\t\t{" + projectGuidStr + "}.Release|Any CPU.ActiveCfg = Release|Any CPU"
-                             "\t\t{" + projectGuidStr + "}.Release|Any CPU.Build.0 = Release|Any CPU"] @
-                            List.skip insertionIndex slnLines
-                        let insertionIndex = List.findIndex ((=) "\tGlobalSection(ExtensibilityGlobals) = postSolution") slnLines - 1
-                        let slnLines =
-                            List.take insertionIndex slnLines @
-                            ["\t\t{" + projectGuidStr + "} = {E3C4D6E1-0572-4D80-84A9-8001C21372D3}"] @
-                            List.skip insertionIndex slnLines
-                        File.WriteAllLines ("Nu.sln", List.toArray slnLines)
+                        Process.Start("dotnet", "sln \"" + slnDir + "\" add \"" + newProjectDir + "/" + NewProjectName + ".fsproj\"").WaitForExit()
                         Log.info ("Project '" + NewProjectName + "'" + " created.")
 
                         // configure editor to open new project then exit
