@@ -329,11 +329,7 @@ void main()
 
         // if hit failed, try again on the proper tex coord
         if (specularScreenWeight == 0.0)
-        {
-            vec2 texCoords = texCoordsOut;
-            texCoords.y = max(0.0, texCoords.y);
             computeSsrl(depthInput, position, albedo, roughness, metallic, normal, slope, specularScreen, specularScreenWeight);
-        }
     }
 
     // compute specular term
