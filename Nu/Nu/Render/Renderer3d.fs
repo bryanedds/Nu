@@ -2925,19 +2925,21 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         lightAmbientOverride
         (eyeCenter : Vector3)
         (view : Matrix4x4)
-        (viewInverse : Matrix4x4)
         (viewSkyBox : Matrix4x4)
-        (viewSkyBoxInverse : Matrix4x4)
         (geometryFrustum : Frustum)
         (geometryProjection : Matrix4x4)
-        (geometryProjectionInverse : Matrix4x4)
         (geometryViewProjection : Matrix4x4)
         (windowProjection : Matrix4x4)
-        (windowProjectionInverse : Matrix4x4)
-        (windowViewProjectionSkyBox : Matrix4x4)
         targetBounds
         targetLayer
         targetImage =
+
+        // compute matrices
+        let viewInverse = view.Inverted
+        let viewSkyBoxInverse = viewSkyBox.Inverted
+        let geometryProjectionInverse = geometryProjection.Inverted
+        let windowProjectionInverse = windowProjection.Inverted
+        let windowViewProjectionSkyBox = viewSkyBox * windowProjection
 
         // get ambient lighting, sky box opt, and fallback light map
         let (lightAmbientColor, lightAmbientBrightness, skyBoxOpt) = VulkanRenderer3d.getLastSkyBoxOpt renderPass renderer
@@ -3641,16 +3643,11 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // process top-level geometry pass. OPTIMIZATION: don't process rendering tasks when no render messages.
         if renderer.VulkanContext.RenderAllowed && renderMessages.Count > 0 then
             let view = Viewport.getView3d eyeCenter eyeRotation
-            let viewInverse = view.Inverted
             let viewSkyBox = Matrix4x4.CreateFromQuaternion eyeRotation.Inverted
-            let viewSkyBoxInverse = viewSkyBox.Inverted
             let geometryFrustum = Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView geometryViewport
             let geometryProjection = Viewport.getProjection3d eyeFieldOfView geometryViewport
-            let geometryProjectionInverse = geometryProjection.Inverted
             let geometryViewProjection = view * geometryProjection
             let windowProjection = Viewport.getProjection3d eyeFieldOfView windowViewport
-            let windowProjectionInverse = windowProjection.Inverted
-            let windowViewProjectionSkyBox = viewSkyBox * windowProjection
             let targetBounds =
                 VkRect2D
                     (renderer.WindowViewport.Inner.Min.X,
@@ -3659,10 +3656,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                      uint renderer.WindowViewport.Inner.Size.Y)
                 |> Hl.scaleRectToWindowPixels renderer.VulkanContext.Window
             VulkanRenderer3d.renderGeometry
-                frustumInterior frustumExterior frustumImposter normalPass normalTasks renderer
-                true None eyeCenter view viewInverse viewSkyBox viewSkyBoxInverse geometryFrustum
-                geometryProjection geometryProjectionInverse geometryViewProjection
-                windowProjection windowProjectionInverse windowViewProjectionSkyBox
+                frustumInterior frustumExterior frustumImposter normalPass normalTasks renderer true None
+                eyeCenter view viewSkyBox geometryFrustum geometryProjection geometryViewProjection windowProjection
                 targetBounds 0 renderer.VulkanContext.SwapchainImage
         
         ///////////////
