@@ -85,7 +85,7 @@ module LightMap =
             let viewProjection = view * projection
             let bounds = VkRect2D (0, 0, uint resolution, uint resolution)
             render
-                false lightAmbientOverride origin view viewInverse viewSkyBox viewSkyBoxInverse frustum projection projectionInverse viewProjection projection projectionInverse viewProjection
+                false lightAmbientOverride origin view viewInverse viewSkyBox viewSkyBoxInverse frustum projection projectionInverse viewProjection projection projectionInverse (viewSkyBox * projection)
                 bounds i reflectionCubeMap.Image
 
             // take a snapshot for testing
