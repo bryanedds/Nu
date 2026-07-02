@@ -27,6 +27,7 @@
 
     <Target Name="CollectGaiaProjectPaths" AfterTargets="Build">
         <MSBuild Projects="@(GaiaProject)" Targets="GetTargetPath" Properties="TargetFramework=$(TargetFramework)">
+            <!-- Mobile target frameworks have no GetTargetPath, so we need to specify the desktop target framework -->
             <Output TaskParameter="TargetOutputs" ItemName="GaiaProjectOutputPath" />
         </MSBuild>
         <WriteLinesToFile File="$(TargetDir)Nu.Gaia.Projects.txt" Lines="@(GaiaProjectOutputPath->Replace('\', '/'))" Overwrite="true" />
