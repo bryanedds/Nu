@@ -359,7 +359,7 @@ module Render =
     let [<Literal>] Body3dSegmentRenderMagnitudeMax = 48.0f
     let [<Literal>] Body3dSegmentRenderDistanceMax = 40.0f
     let [<Literal>] Body3dRenderDistanceMax = 32.0f
-    let [<Uniform>] mutable SkipRendering3d = false
+    let [<Uniform>] mutable SkipRendering3d = match ConfigurationManager.AppSettings["SkipRendering3d"] with null -> false | value -> scvalue value
 
 [<RequireQualifiedAccess>]
 module Audio =
