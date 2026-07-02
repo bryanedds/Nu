@@ -1298,6 +1298,23 @@ module Matrix4x4 =
     let m4Identity = Matrix4x4.Identity
     let m4Zero = Unchecked.defaultof<Matrix4x4>
 
+    /// <summary>Create a right-handed perspective projection matrix suitable for Vulkan.</summary>
+    /// <param name="fieldOfView">Vertical field of view, in radians.</param>
+    /// <param name="aspectRatio">Viewport width divided by height.</param>
+    /// <param name="nearPlaneDistance">Distance to the near clipping plane. Must be greater than zero.</param>
+    /// <param name="farPlaneDistance">Distance to the far clipping plane. Must be greater than <paramref name="nearPlaneDistance"/>.</param>
+    /// <returns>
+    /// A projection matrix that:
+    /// - Uses a right-handed coordinate system.
+    /// - Maps depth to Vulkan's NDC Z range of [0, 1].
+    /// - Flips the Y axis to match Vulkan clip-space conventions.
+    /// </returns>
+    let CreatePerspectiveFieldOfViewVulkan (fieldOfView, aspectRatio, nearPlaneDistance, farPlaneDistance) =
+        let mutable matrix =
+            Matrix4x4.CreatePerspectiveFieldOfView (fieldOfView, aspectRatio, nearPlaneDistance, farPlaneDistance)
+        matrix.M22 <- -matrix.M22 // vulkan clip space has an inverted Y axis compared to the projection matrix produced by CreatePerspectiveFieldOfView
+        matrix
+
     /// Create a rotation matrix from three orthogonal vectors.
     let CreateRotation (right : Vector3, up : Vector3, forward : Vector3) =
         Matrix4x4

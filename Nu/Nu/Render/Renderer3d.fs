@@ -3525,7 +3525,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                                 let shadowView = Matrix4x4.CreateLookAt (lightOrigin, lightOrigin + shadowForward, shadowUp)
                                 let shadowFov = max (min lightConeOuter Constants.Render.ShadowFovMax) 0.01f
                                 let shadowCutoff = max lightCutoff (Constants.Render.NearPlaneDistanceInterior * 2.0f)
-                                let shadowProjection = Matrix4x4.CreatePerspectiveFieldOfView (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceInterior, shadowCutoff)
+                                let shadowProjection = Matrix4x4.CreatePerspectiveFieldOfViewVulkan (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceInterior, shadowCutoff)
                                 let (shadowColorAttachment, shadowDepthAttachment) = renderer.PhysicallyBasedAttachments.ShadowTextureArrayAttachments
                                 (lightOrigin, shadowView, shadowProjection, shadowCutoff, [|shadowColorAttachment.LayerViews[shadowTextureIndex]|], shadowDepthAttachment)
                             | DirectionalLight _ ->

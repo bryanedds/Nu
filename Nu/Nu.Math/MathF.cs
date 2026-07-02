@@ -52,7 +52,7 @@ namespace System.Numerics
         public const float THREE_OVER_PI = 3 * PI / 2;
 
         /// <summary>
-        /// Defines the value of Pi minus a small epsilon to keep it from blowing up operations like Matrix4x4.CreatePerspectiveFieldOfView.
+        /// Defines the value of Pi minus a small epsilon to keep it from blowing up operations like Matrix4x4.CreatePerspectiveFieldOfView and the like.
         /// </summary>
         public const float PI_MINUS_EPSILON = 3.14159f;
 

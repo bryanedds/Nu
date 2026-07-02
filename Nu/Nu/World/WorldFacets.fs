@@ -3003,7 +3003,7 @@ module Light3dFacetExtensions =
             | SpotLight (_, coneOuter) ->
                 let shadowFov = max (min coneOuter Constants.Render.ShadowFovMax) 0.01f
                 let shadowCutoff = max (this.GetLightCutoff world) (Constants.Render.NearPlaneDistanceInterior * 2.0f)
-                Matrix4x4.CreatePerspectiveFieldOfView (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceInterior, shadowCutoff)
+                Matrix4x4.CreatePerspectiveFieldOfViewVulkan (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceInterior, shadowCutoff)
             | DirectionalLight _ | CascadedLight ->
                 let shadowCutoff = max (this.GetLightCutoff world) (Constants.Render.NearPlaneDistanceInterior * 2.0f)
                 Matrix4x4.CreateOrthographic (shadowCutoff * 2.0f, shadowCutoff * 2.0f, -shadowCutoff, shadowCutoff)

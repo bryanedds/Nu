@@ -80,7 +80,7 @@ module LightMap =
                 | _ -> Matrix4x4.Transpose eyeRotationMatrix
             let viewSkyBoxInverse = viewSkyBox.Inverted
             let frustum = Viewport.getFrustum origin eyeRotation MathF.PI_OVER_2 geometryViewport
-            let projection = Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, geometryViewport.DistanceNear, geometryViewport.DistanceFar)
+            let projection = Matrix4x4.CreatePerspectiveFieldOfViewVulkan (MathF.PI_OVER_2, 1.0f, geometryViewport.DistanceNear, geometryViewport.DistanceFar)
             let projectionInverse = projection.Inverted
             let viewProjection = view * projection
             let bounds = VkRect2D (0, 0, uint resolution, uint resolution)
@@ -115,7 +115,7 @@ module LightMap =
               Matrix4x4.CreateLookAt (v3Zero, v3Down, v3Forward)
               Matrix4x4.CreateLookAt (v3Zero, v3Back, v3Down)
               Matrix4x4.CreateLookAt (v3Zero, v3Forward, v3Down)|]
-        let projection = Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, 0.1f, 10.0f)
+        let projection = Matrix4x4.CreatePerspectiveFieldOfViewVulkan (MathF.PI_OVER_2, 1.0f, 0.1f, 10.0f)
         let projectionInverse = projection.Inverted
 
         // render faces to irradiance cube map
@@ -214,7 +214,7 @@ module LightMap =
 
             // set up render
             let mutable renderArea = VkRect2D (0, 0, uint resolution, uint resolution)
-            let mutable vkViewport = Hl.makeViewport false renderArea // NOTE: when drawing a cube map, it's expected to come out upside-down, so by _not_ flipping, we achieve that naturally.
+            let mutable vkViewport = Hl.makeViewport true renderArea // NOTE: when drawing _to_ a cube map, it's expected to come out upside-down.
             let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment|] None renderArea None
             Vulkan.vkCmdBeginRendering (commandBuffer, asPointer &renderingInfo)
             Vulkan.vkCmdSetViewport (commandBuffer, 0u, 1u, asPointer &vkViewport)
@@ -265,7 +265,7 @@ module LightMap =
               Matrix4x4.CreateLookAt (v3Zero, v3Down, v3Forward)
               Matrix4x4.CreateLookAt (v3Zero, v3Back, v3Down)
               Matrix4x4.CreateLookAt (v3Zero, v3Forward, v3Down)|]
-        let projection = Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, 0.1f, 10.0f)
+        let projection = Matrix4x4.CreatePerspectiveFieldOfViewVulkan (MathF.PI_OVER_2, 1.0f, 0.1f, 10.0f)
         let projectionInverse = projection.Inverted
 
         // render environment filter cube map mips

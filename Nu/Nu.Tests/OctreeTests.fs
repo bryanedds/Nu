@@ -44,7 +44,7 @@ module OctreeTests =
     // Helper to create test frustum
     let makeTestFrustum() =
         let view = Matrix4x4.CreateLookAt(v3 0.0f 0.0f 10.0f, v3 0.0f 0.0f 0.0f, v3 0.0f 1.0f 0.0f)
-        let projection = Matrix4x4.CreatePerspectiveFieldOfView(MathF.PI / 4.0f, 1.0f, 1.0f, 100.0f)
+        let projection = Matrix4x4.CreatePerspectiveFieldOfViewVulkan(MathF.PI / 4.0f, 1.0f, 1.0f, 100.0f)
         Frustum(view * projection)
 
     [<Test>]
