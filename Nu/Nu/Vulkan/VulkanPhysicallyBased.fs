@@ -623,12 +623,12 @@ module PhysicallyBased =
         let vertexData =
             [|
                 (*   positions   *)         (* tex coords *)    (*    normals    *)
-                -1.0f; -1.0f; +0.0f;        0.0f; 1.0f;          0.0f;  0.0f;  1.0f // bottom-left
-                +1.0f; -1.0f; +0.0f;        1.0f; 1.0f;          0.0f;  0.0f;  1.0f // bottom-right
-                +1.0f; +1.0f; +0.0f;        1.0f; 0.0f;          0.0f;  0.0f;  1.0f // top-right
-                +1.0f; +1.0f; +0.0f;        1.0f; 0.0f;          0.0f;  0.0f;  1.0f // top-right
-                -1.0f; +1.0f; +0.0f;        0.0f; 0.0f;          0.0f;  0.0f;  1.0f // top-left
-                -1.0f; -1.0f; +0.0f;        0.0f; 1.0f;          0.0f;  0.0f;  1.0f // bottom-left
+                -1.0f; -1.0f; +0.0f;        0.0f; 0.0f;          0.0f;  0.0f;  1.0f // bottom-left
+                +1.0f; -1.0f; +0.0f;        1.0f; 0.0f;          0.0f;  0.0f;  1.0f // bottom-right
+                +1.0f; +1.0f; +0.0f;        1.0f; 1.0f;          0.0f;  0.0f;  1.0f // top-right
+                +1.0f; +1.0f; +0.0f;        1.0f; 1.0f;          0.0f;  0.0f;  1.0f // top-right
+                -1.0f; +1.0f; +0.0f;        0.0f; 1.0f;          0.0f;  0.0f;  1.0f // top-left
+                -1.0f; -1.0f; +0.0f;        0.0f; 0.0f;          0.0f;  0.0f;  1.0f // bottom-left
             |]
 
         // make index data trivially
@@ -1677,7 +1677,7 @@ module PhysicallyBased =
 
         // set up render
         let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
-        let mutable vkViewport = Hl.makeViewport true renderArea
+        let mutable vkViewport = Hl.makeViewport false renderArea
         let mutable renderingInfo = Hl.makeRenderingInfo colorAttachments (Some depthAttachment.ImageView) renderArea colorClearValueOpt
         Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &renderingInfo)
         Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, asPointer &vkViewport)
@@ -1766,10 +1766,7 @@ module PhysicallyBased =
     let beginPhysicallyBasedDeferredSurfaces
         (eyeCenter : Vector3)
         (view : Matrix4x4)
-        (viewInverse : Matrix4x4)
         (projection : Matrix4x4)
-        (projectionInverse : Matrix4x4)
-        (viewProjection : Matrix4x4)
         (filteredSampler : Sampler)
         (colorAttachments : VkImageView array)
         (depthAttachment : Texture)
@@ -1777,6 +1774,12 @@ module PhysicallyBased =
         (renderPassIndex : int)
         (pipeline : PhysicallyBasedPipeline)
         (vkc : VulkanContext) =
+
+        // compute vulkan-appropriate matrices
+        let viewInverse = view.Inverted
+        let projection = projection.Flipped
+        let projectionInverse = projection.Inverted
+        let viewProjection = view * projection
 
         // specify eye
         let mutable eyeDescriptorSet = Pipeline.specifyDescriptorSet 0 renderPassIndex pipeline.Pipeline vkc $ fun vkSet ->
@@ -1790,7 +1793,7 @@ module PhysicallyBased =
             
         // set up render
         let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
-        let mutable vkViewport = Hl.makeViewport true renderArea
+        let mutable vkViewport = Hl.makeViewport false renderArea
         let mutable renderingInfo = Hl.makeRenderingInfo colorAttachments (Some depthAttachment.ImageView) renderArea None
         Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &renderingInfo)
         Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, asPointer &vkViewport)
@@ -1942,10 +1945,7 @@ module PhysicallyBased =
     let drawPhysicallyBasedDeferredLightingSurface
         (eyeCenter : Vector3)
         (view : Matrix4x4)
-        (viewInverse : Matrix4x4)
         (projection : Matrix4x4)
-        (projectionInverse : Matrix4x4)
-        (viewProjection : Matrix4x4)
         (lightCutoffMargin : single)
         (lightShadowSamples : int)
         (lightShadowBias : single)
@@ -1986,6 +1986,12 @@ module PhysicallyBased =
         (lightAccumAttachment : Texture)
         (pipeline : PhysicallyBasedDeferredLightingPipeline)
         (vkc : VulkanContext) =
+
+        // compute vulkan-appropriate matrices
+        let viewInverse = view.Inverted
+        let projection = projection.Flipped
+        let projectionInverse = projection.Inverted
+        let viewProjection = view * projection
 
         // only draw if required vkPipeline exists
         match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
@@ -2061,7 +2067,7 @@ module PhysicallyBased =
 
             // set up render
             let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
-            let mutable vkViewport = Hl.makeViewport true renderArea
+            let mutable vkViewport = Hl.makeViewport false renderArea
             let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
             let mutable renderingInfo = Hl.makeRenderingInfo [|lightAccumAttachment.ImageView|] None renderArea (Some clearValue)
             Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &renderingInfo)
@@ -2153,10 +2159,7 @@ module PhysicallyBased =
     let drawPhysicallyBasedDeferredFoggingSurface
         (eyeCenter : Vector3)
         (view : Matrix4x4)
-        (viewInverse : Matrix4x4)
         (projection : Matrix4x4)
-        (projectionInverse : Matrix4x4)
-        (viewProjection : Matrix4x4)
         (lightCutoffMargin : single)
         (ssvfEnabled : int)
         (ssvfIntensity : single)
@@ -2190,6 +2193,12 @@ module PhysicallyBased =
         (geometry : PhysicallyBasedGeometry)
         (pipeline : PhysicallyBasedDeferredFoggingPipeline)
         (vkc : VulkanContext) =
+
+        // compute vulkan-appropriate matrices
+        let viewInverse = view.Inverted
+        let projection = projection.Flipped
+        let projectionInverse = projection.Inverted
+        let viewProjection = view * projection
 
         // only draw if required vkPipeline exists
         match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
@@ -2262,7 +2271,7 @@ module PhysicallyBased =
 
             // set up render
             let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
-            let mutable vkViewport = Hl.makeViewport true renderArea
+            let mutable vkViewport = Hl.makeViewport false renderArea
             let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
             let mutable renderingInfo = Hl.makeRenderingInfo [|foggingAttachment.ImageView|] None renderArea (Some clearValue)
             Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &renderingInfo)
@@ -2344,10 +2353,7 @@ module PhysicallyBased =
     let drawPhysicallyBasedDeferredLightMappingSurface
         (eyeCenter : Vector3)
         (view : Matrix4x4)
-        (viewInverse : Matrix4x4)
         (projection : Matrix4x4)
-        (projectionInverse : Matrix4x4)
-        (viewProjection : Matrix4x4)
         (lightMapOrigins : Vector3 array)
         (lightMapMins : Vector3 array)
         (lightMapSizes : Vector3 array)
@@ -2365,6 +2371,12 @@ module PhysicallyBased =
         (geometry : PhysicallyBasedGeometry)
         (pipeline : PhysicallyBasedDeferredLightMappingPipeline)
         (vkc : VulkanContext) =
+
+        // compute vulkan-appropriate matrices
+        let viewInverse = view.Inverted
+        let projection = projection.Flipped
+        let projectionInverse = projection.Inverted
+        let viewProjection = view * projection
 
         // only draw if required vkPipeline exists
         match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
@@ -2411,7 +2423,7 @@ module PhysicallyBased =
 
             // set up render
             let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
-            let mutable vkViewport = Hl.makeViewport true renderArea
+            let mutable vkViewport = Hl.makeViewport false renderArea
             let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
             let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue)
             Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &renderingInfo)
@@ -2492,10 +2504,7 @@ module PhysicallyBased =
     let drawPhysicallyBasedDeferredAmbientSurface
         (eyeCenter : Vector3)
         (view : Matrix4x4)
-        (viewInverse : Matrix4x4)
         (projection : Matrix4x4)
-        (projectionInverse : Matrix4x4)
-        (viewProjection : Matrix4x4)
         (lightMapAmbientColor : Color)
         (lightMapAmbientBrightness : single)
         (lightMapAmbientColors : Color array)
@@ -2509,6 +2518,12 @@ module PhysicallyBased =
         (geometry : PhysicallyBasedGeometry)
         (pipeline : PhysicallyBasedDeferredAmbientPipeline)
         (vkc : VulkanContext) =
+
+        // compute vulkan-appropriate matrices
+        let viewInverse = view.Inverted
+        let projection = projection.Flipped
+        let projectionInverse = projection.Inverted
+        let viewProjection = view * projection
 
         // only draw if required vkPipeline exists
         match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
@@ -2550,7 +2565,7 @@ module PhysicallyBased =
 
             // set up render
             let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
-            let mutable vkViewport = Hl.makeViewport true renderArea
+            let mutable vkViewport = Hl.makeViewport false renderArea
             let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
             let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue)
             Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &renderingInfo)
@@ -2629,10 +2644,7 @@ module PhysicallyBased =
     let drawPhysicallyBasedDeferredIrradianceSurface
         (eyeCenter : Vector3)
         (view : Matrix4x4)
-        (viewInverse : Matrix4x4)
         (projection : Matrix4x4)
-        (projectionInverse : Matrix4x4)
-        (viewProjection : Matrix4x4)
         (depthTexture : Texture)
         (normalPlusTexture : Texture)
         (lightMappingTexture : Texture)
@@ -2646,6 +2658,12 @@ module PhysicallyBased =
         (geometry : PhysicallyBasedGeometry)
         (pipeline : PhysicallyBasedDeferredIrradiancePipeline)
         (vkc : VulkanContext) =
+
+        // compute vulkan-appropriate matrices
+        let viewInverse = view.Inverted
+        let projection = projection.Flipped
+        let projectionInverse = projection.Inverted
+        let viewProjection = view * projection
 
         // only draw if required vkPipeline exists
         match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
@@ -2673,7 +2691,7 @@ module PhysicallyBased =
 
             // set up render
             let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
-            let mutable vkViewport = Hl.makeViewport true renderArea
+            let mutable vkViewport = Hl.makeViewport false renderArea
             let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
             let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue)
             Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &renderingInfo)
@@ -2757,10 +2775,7 @@ module PhysicallyBased =
     let drawPhysicallyBasedDeferredEnvironmentFilterSurface
         (eyeCenter : Vector3)
         (view : Matrix4x4)
-        (viewInverse : Matrix4x4)
         (projection : Matrix4x4)
-        (projectionInverse : Matrix4x4)
-        (viewProjection : Matrix4x4)
         (lightMapOrigins : Vector3 array)
         (lightMapMins : Vector3 array)
         (lightMapSizes : Vector3 array)
@@ -2781,6 +2796,12 @@ module PhysicallyBased =
         (geometry : PhysicallyBasedGeometry)
         (pipeline : PhysicallyBasedDeferredEnvironmentFilterPipeline)
         (vkc : VulkanContext) =
+
+        // compute vulkan-appropriate matrices
+        let viewInverse = view.Inverted
+        let projection = projection.Flipped
+        let projectionInverse = projection.Inverted
+        let viewProjection = view * projection
 
         // only draw if required vkPipeline exists
         match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
@@ -2825,7 +2846,7 @@ module PhysicallyBased =
 
             // set up render
             let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
-            let mutable vkViewport = Hl.makeViewport true renderArea
+            let mutable vkViewport = Hl.makeViewport false renderArea
             let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
             let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue)
             Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &renderingInfo)
@@ -2913,10 +2934,7 @@ module PhysicallyBased =
     let drawPhysicallyBasedDeferredColoringSurface
         (eyeCenter : Vector3)
         (view : Matrix4x4)
-        (viewInverse : Matrix4x4)
         (projection : Matrix4x4)
-        (projectionInverse : Matrix4x4)
-        (viewProjection : Matrix4x4)
         (lightAmbientBoostCutoff : single)
         (lightAmbientBoostScalar : single)
         (ssrlEnabled : int)
@@ -2955,6 +2973,12 @@ module PhysicallyBased =
         (geometry : PhysicallyBasedGeometry)
         (pipeline : PhysicallyBasedDeferredColoringPipeline)
         (vkc : VulkanContext) =
+
+        // compute vulkan-appropriate matrices
+        let viewInverse = view.Inverted
+        let projection = projection.Flipped
+        let projectionInverse = projection.Inverted
+        let viewProjection = view * projection
 
         // only draw if required vkPipeline exists
         match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
@@ -3011,7 +3035,7 @@ module PhysicallyBased =
 
             // set up render
             let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
-            let mutable vkViewport = Hl.makeViewport true renderArea
+            let mutable vkViewport = Hl.makeViewport false renderArea
             let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
             let mutable renderingInfo = Hl.makeRenderingInfo [|coloringAttachment.ImageView; depthAttachment.ImageView|] None renderArea (Some clearValue)
             Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &renderingInfo)
@@ -3091,10 +3115,7 @@ module PhysicallyBased =
     let drawPhysicallyBasedDeferredCompositionSurface
         (eyeCenter : Vector3)
         (view : Matrix4x4)
-        (viewInverse : Matrix4x4)
         (projection : Matrix4x4)
-        (projectionInverse : Matrix4x4)
-        (viewProjection : Matrix4x4)
         (fogEnabled : int)
         (fogType : int)
         (fogStart : single)
@@ -3111,6 +3132,12 @@ module PhysicallyBased =
         (geometry : PhysicallyBasedGeometry)
         (pipeline : PhysicallyBasedDeferredCompositionPipeline)
         (vkc : VulkanContext) =
+
+        // compute vulkan-appropriate matrices
+        let viewInverse = view.Inverted
+        let projection = projection.Flipped
+        let projectionInverse = projection.Inverted
+        let viewProjection = view * projection
 
         // only draw if required vkPipeline exists
         match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
@@ -3146,7 +3173,7 @@ module PhysicallyBased =
 
             // set up render
             let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
-            let mutable vkViewport = Hl.makeViewport true renderArea
+            let mutable vkViewport = Hl.makeViewport false renderArea
             let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
             let mutable renderingInfo = Hl.makeRenderingInfo [|compositionAttachment.ImageView|] None renderArea (Some clearValue)
             Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &renderingInfo)
@@ -3185,10 +3212,7 @@ module PhysicallyBased =
     let beginPhysicallyBasedForwardSurfaces
         (eyeCenter : Vector3)
         (view : Matrix4x4)
-        (viewInverse : Matrix4x4)
         (projection : Matrix4x4)
-        (projectionInverse : Matrix4x4)
-        (viewProjection : Matrix4x4)
         (lightCutoffMargin : single)
         (lightAmbientColor : Color)
         (lightAmbientBrightness : single)
@@ -3236,6 +3260,12 @@ module PhysicallyBased =
         (renderPassIndex : int)
         (pipeline : PhysicallyBasedPipeline)
         (vkc : VulkanContext) =
+
+        // compute vulkan-appropriate matrices
+        let viewInverse = view.Inverted
+        let projection = projection.Flipped
+        let projectionInverse = projection.Inverted
+        let viewProjection = view * projection
 
         // specify uniforms
         let mutable uniformDescriptorSet = Pipeline.specifyDescriptorSet 0 renderPassIndex pipeline.Pipeline vkc $ fun vkSet ->
@@ -3298,7 +3328,7 @@ module PhysicallyBased =
 
         // set up render
         let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
-        let mutable vkViewport = Hl.makeViewport true renderArea
+        let mutable vkViewport = Hl.makeViewport false renderArea
         let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] (Some depthAttachment.ImageView) renderArea None
         Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &renderingInfo)
         Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, asPointer &vkViewport)

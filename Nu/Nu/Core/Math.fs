@@ -1254,6 +1254,12 @@ module Matrix4x4 =
             if not (Matrix4x4.Invert (this, &result)) then failwith "Failed to invert matrix."
             result
 
+        /// The vulkan-flipped value of a matrix.
+        member inline this.Flipped =
+            let mutable result = this
+            result.M22 <- -result.M22 // vulkan clip space has an inverted Y axis compared to the projection matrix produced by CreatePerspectiveFieldOfView
+            result
+
         /// The transposed value of a matrix.
         member inline this.Transposed =
             Matrix4x4.Transpose this

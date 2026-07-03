@@ -275,10 +275,7 @@ module CubeMap =
     let drawCubeMap
         (eyeCenter : Vector3)
         (view : Matrix4x4)
-        (viewInverse : Matrix4x4)
         (projection : Matrix4x4)
-        (projectionInverse : Matrix4x4)
-        (viewProjection : Matrix4x4)
         (cubeMap : Texture)
         (sampler : Sampler)
         (geometry : CubeMapGeometry)
@@ -287,6 +284,12 @@ module CubeMap =
         (pipeline : CubeMapPipeline)
         (commandBuffer : VkCommandBuffer)
         (vkc : VulkanContext) =
+
+        // compute vulkan-appropriate matrices
+        let viewInverse = view.Inverted
+        let projection = projection.Flipped
+        let projectionInverse = projection.Inverted
+        let viewProjection = view * projection
 
         // only draw if required vkPipeline exists
         match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
@@ -308,7 +311,7 @@ module CubeMap =
 
             // set up render
             let mutable renderArea = VkRect2D (0, 0, uint resolution, uint resolution)
-            let mutable vkViewport = Hl.makeViewport false renderArea // NOTE: when drawing a cube map, it's expected to come out upside-down, so by _not_ flipping, we achieve that naturally.
+            let mutable vkViewport = Hl.makeViewport false renderArea
             let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment|] None renderArea None
             Vulkan.vkCmdBeginRendering (commandBuffer, asPointer &renderingInfo)
             Vulkan.vkCmdSetViewport (commandBuffer, 0u, 1u, asPointer &vkViewport)

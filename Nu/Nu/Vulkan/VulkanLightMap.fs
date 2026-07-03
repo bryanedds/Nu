@@ -66,7 +66,6 @@ module LightMap =
             let eyeRotationMatrix = Matrix4x4.CreateLookAt (v3Zero, eyeForward, eyeUp)
             let eyeRotation = Quaternion.CreateFromRotationMatrix eyeRotationMatrix
             let view = Matrix4x4.CreateLookAt (origin, origin + eyeForward, eyeUp)
-            let viewInverse = view.Inverted
             let viewSkyBox =
                 match i with
                 | 2 -> // NOTE: special case for sky box top.
@@ -78,14 +77,10 @@ module LightMap =
                     let eyeRotationMatrix = Matrix4x4.CreateLookAt (v3Zero, eyeForward, eyeUp)
                     Matrix4x4.Transpose eyeRotationMatrix
                 | _ -> Matrix4x4.Transpose eyeRotationMatrix
-            let viewSkyBoxInverse = viewSkyBox.Inverted
             let frustum = Viewport.getFrustum origin eyeRotation MathF.PI_OVER_2 geometryViewport
             let projection = Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, geometryViewport.DistanceNear, geometryViewport.DistanceFar)
-            let projectionInverse = projection.Inverted
-            let viewProjection = view * projection
             let bounds = VkRect2D (0, 0, uint resolution, uint resolution)
-            render
-                false lightAmbientOverride origin view viewSkyBox frustum projection viewProjection projection bounds i reflectionCubeMap.Image
+            render false lightAmbientOverride origin view viewSkyBox frustum projection projection bounds i reflectionCubeMap.Image
 
             // take a snapshot for testing
             // TODO: DJL: implement.
@@ -116,7 +111,6 @@ module LightMap =
               Matrix4x4.CreateLookAt (v3Zero, v3Back, v3Down)
               Matrix4x4.CreateLookAt (v3Zero, v3Forward, v3Down)|]
         let projection = Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, 0.1f, 10.0f)
-        let projectionInverse = projection.Inverted
 
         // render faces to irradiance cube map
         for i in 0 .. dec 6 do
@@ -124,9 +118,9 @@ module LightMap =
             // render face
             let eyeCenter = v3Zero // assuming output
             let view = views[i]
-            let viewInverse = view.Inverted
-            let viewProjection = view * projection
-            CubeMap.drawCubeMap eyeCenter view viewInverse projection projectionInverse viewProjection cubeMapSurface.CubeMap sampler cubeMapSurface.CubeMapGeometry resolution cubeMap.SubViews[0, i] irradiancePipeline commandBuffer vkc
+            CubeMap.drawCubeMap
+                eyeCenter view projection cubeMapSurface.CubeMap sampler
+                cubeMapSurface.CubeMapGeometry resolution cubeMap.SubViews[0, i] irradiancePipeline commandBuffer vkc
 
             // take a snapshot for testing
             // TODO: DJL: implement.
@@ -173,10 +167,7 @@ module LightMap =
     let drawEnvironmentFilter
         (eyeCenter : Vector3)
         (view : Matrix4x4)
-        (viewInverse : Matrix4x4)
         (projection : Matrix4x4)
-        (projectionInverse : Matrix4x4)
-        (viewProjection : Matrix4x4)
         (roughness : single)
         (resolution : single)
         (cubeMap : Texture)
@@ -186,6 +177,12 @@ module LightMap =
         (pipeline : EnvironmentFilterPipeline)
         (commandBuffer : VkCommandBuffer)
         (vkc : VulkanContext) =
+
+        // compute vulkan-appropriate matrices
+        let viewInverse = view.Inverted
+        let projection = projection.Flipped
+        let projectionInverse = projection.Inverted
+        let viewProjection = view * projection
 
         // only draw if required vkPipeline exists
         match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
@@ -214,7 +211,7 @@ module LightMap =
 
             // set up render
             let mutable renderArea = VkRect2D (0, 0, uint resolution, uint resolution)
-            let mutable vkViewport = Hl.makeViewport false renderArea // NOTE: when drawing a cube map, it's expected to come out upside-down, so by _not_ flipping, we achieve that naturally.
+            let mutable vkViewport = Hl.makeViewport true renderArea // NOTE: when drawing _to_ a cube map, it's expected to come out upside-down.
             let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment|] None renderArea None
             Vulkan.vkCmdBeginRendering (commandBuffer, asPointer &renderingInfo)
             Vulkan.vkCmdSetViewport (commandBuffer, 0u, 1u, asPointer &vkViewport)
@@ -266,7 +263,6 @@ module LightMap =
               Matrix4x4.CreateLookAt (v3Zero, v3Back, v3Down)
               Matrix4x4.CreateLookAt (v3Zero, v3Forward, v3Down)|]
         let projection = Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, 0.1f, 10.0f)
-        let projectionInverse = projection.Inverted
 
         // render environment filter cube map mips
         for mip in 0 .. dec Constants.Render.EnvironmentFilterMips do
@@ -277,24 +273,9 @@ module LightMap =
                 // draw mip face
                 let eyeCenter = v3Zero // assuming origin
                 let view = views[i]
-                let viewInverse = view.Inverted
-                let viewProjection = view * projection
                 drawEnvironmentFilter
-                    eyeCenter
-                    view
-                    viewInverse
-                    projection
-                    projectionInverse
-                    viewProjection
-                    mipRoughness
-                    mipResolution
-                    environmentFilterSurface.CubeMap
-                    sampler
-                    environmentFilterSurface.CubeMapGeometry
-                    cubeMap.SubViews[mip, i]
-                    environmentFilterPipeline
-                    commandBuffer
-                    vkc
+                    eyeCenter view projection mipRoughness mipResolution environmentFilterSurface.CubeMap sampler
+                    environmentFilterSurface.CubeMapGeometry cubeMap.SubViews[mip, i] environmentFilterPipeline commandBuffer vkc
 
                 // take a snapshot for testing
                 // TODO: DJL: implement.
