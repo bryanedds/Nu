@@ -3645,6 +3645,10 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // End Frame //
         ///////////////
 
+        // clear config dirty flags
+        renderer.LightingConfigChanged <- false
+        renderer.RendererConfigChanged <- false
+
         // clear light shadow indices
         renderer.LightShadowIndices.Clear ()
 
