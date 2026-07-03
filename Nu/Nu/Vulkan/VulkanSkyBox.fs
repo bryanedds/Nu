@@ -64,10 +64,7 @@ module SkyBox =
     let drawSkyBox
         (eyeCenter : Vector3)
         (view : Matrix4x4)
-        (viewInverse : Matrix4x4)
         (projection : Matrix4x4)
-        (projectionInverse : Matrix4x4)
-        (viewProjection : Matrix4x4)
         (color : Color)
         (brightness : single)
         (cubeMap : Texture)
@@ -78,6 +75,12 @@ module SkyBox =
         (depthAttachment : Texture)
         (pipeline : SkyBoxPipeline)
         (vkc : VulkanContext) =
+
+        // compute vulkan-appropriate matrices
+        let viewInverse = view.Inverted
+        let projection = projection.Flipped
+        let projectionInverse = projection.Inverted
+        let viewProjection = view * projection
 
         // only draw if required vkPipeline exists
         match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with

@@ -1753,7 +1753,7 @@ module WorldModule2 =
                                   (v3Forward, v3Down)|] // (-z) front
 
                             // construct projection
-                            let shadowProjection = Matrix4x4.CreatePerspectiveFieldOfViewVulkan (MathF.PI_OVER_2, 1.0f, shadowNearDistance, shadowFarDistance)
+                            let shadowProjection = Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, shadowNearDistance, shadowFarDistance)
 
                             // render faces
                             for i in 0 .. dec 6 do
@@ -1858,7 +1858,7 @@ module WorldModule2 =
                                         | 0 -> Constants.Render.NearPlaneDistanceInterior
                                         | _ -> shadowFarDistance * Constants.Render.ShadowCascadeLimits[dec i]
                                     let sectionFar = shadowFarDistance * Constants.Render.ShadowCascadeLimits[i]
-                                    let sectionProjection = Matrix4x4.CreatePerspectiveFieldOfViewVulkan (eyeFov, eyeAspectRatio, sectionNear, sectionFar)
+                                    let sectionProjection = Matrix4x4.CreatePerspectiveFieldOfView (eyeFov, eyeAspectRatio, sectionNear, sectionFar)
                                     let sectionViewProjection = eyeView * sectionProjection
                                     let sectionFrustum = Frustum sectionViewProjection
 

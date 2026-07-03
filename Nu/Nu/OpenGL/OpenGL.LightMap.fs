@@ -84,7 +84,7 @@ module LightMap =
                     Matrix4x4.Transpose eyeRotationMatrix
                 | _ -> Matrix4x4.Transpose eyeRotationMatrix
             let frustum = Viewport.getFrustum origin eyeRotation MathF.PI_OVER_2 geometryViewport
-            let projection = Matrix4x4.CreatePerspectiveFieldOfViewVulkan (MathF.PI_OVER_2, 1.0f, geometryViewport.DistanceNear, geometryViewport.DistanceFar)
+            let projection = Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, geometryViewport.DistanceNear, geometryViewport.DistanceFar)
             let viewProjection = view * projection
             let bounds = box2i v2iZero (v2iDup resolution)
             render false lightAmbientOverride origin view viewSkyBox frustum projection viewProjection bounds projection framebuffer
@@ -148,7 +148,7 @@ module LightMap =
               Matrix4x4.CreateLookAt (v3Zero, v3Down, v3Forward)
               Matrix4x4.CreateLookAt (v3Zero, v3Back, v3Down)
               Matrix4x4.CreateLookAt (v3Zero, v3Forward, v3Down)|]
-        let projection = Matrix4x4.CreatePerspectiveFieldOfViewVulkan (MathF.PI_OVER_2, 1.0f, 0.1f, 10.0f)
+        let projection = Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, 0.1f, 10.0f)
 
         // mutate viewport
         Gl.Viewport (0, 0, resolution, resolution)
@@ -305,7 +305,7 @@ module LightMap =
               Matrix4x4.CreateLookAt (v3Zero, v3Down, v3Forward)
               Matrix4x4.CreateLookAt (v3Zero, v3Back, v3Down)
               Matrix4x4.CreateLookAt (v3Zero, v3Forward, v3Down)|]
-        let projection = Matrix4x4.CreatePerspectiveFieldOfViewVulkan (MathF.PI_OVER_2, 1.0f, 0.1f, 10.0f)
+        let projection = Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, 0.1f, 10.0f)
 
         // render environment filter cube map mips
         for mip in 0 .. dec Constants.Render.EnvironmentFilterMips do
