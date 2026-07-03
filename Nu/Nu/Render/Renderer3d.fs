@@ -1130,7 +1130,7 @@ type [<ReferenceEquality>] private RenderTasks =
                             Seq.exists2 (fun struct (m, cs, _, _, _) struct (mCached, csCached, _, _, _) -> m <> mCached || cs <> csCached) value valueCached then
                             changed <- false
                     | (false, _) -> changed <- true
-                changed
+                not changed
             let deferredStaticClippedCached =
                 renderTasks.DeferredStaticClipped.Count = renderTasksCached.DeferredStaticClipped.Count &&
                 let mutable changed = false
@@ -1144,7 +1144,7 @@ type [<ReferenceEquality>] private RenderTasks =
                             Seq.exists2 (fun struct (m, cs, _, _, _) struct (mCached, csCached, _, _, _) -> m <> mCached || cs <> csCached) value valueCached then
                             changed <- false
                     | (false, _) -> changed <- true
-                changed
+                not changed
             let deferredStaticPreBatchesCached =
                 renderTasks.DeferredStaticPreBatches.Count = renderTasksCached.DeferredStaticPreBatches.Count &&
                 renderTasks.DeferredStaticPreBatches |> Seq.forall (fun preBatch -> renderTasksCached.DeferredStaticPreBatches.ContainsKey preBatch.Key)
@@ -1164,7 +1164,7 @@ type [<ReferenceEquality>] private RenderTasks =
                             Seq.exists2 (fun struct (m, cs, _, _, _) struct (mCached, csCached, _, _, _) -> m <> mCached || cs <> csCached) value valueCached then
                             changed <- false
                     | (false, _) -> changed <- true
-                changed
+                not changed
             let deferredTerrainsCached =
                 renderTasks.DeferredTerrains.Count = renderTasksCached.DeferredTerrains.Count &&
                 (renderTasks.DeferredTerrains, renderTasksCached.DeferredTerrains)
@@ -1180,7 +1180,7 @@ type [<ReferenceEquality>] private RenderTasks =
                     m = mCached &&
                     cs = csCached &&
                     bo = boCached && // TODO: P0: optimize?
-                    PhysicallyBasedSurface.equals s sCached)
+                    OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.equals s sCached)
             deferredStaticCached &&
             deferredStaticPreBatchesCached &&
             deferredStaticClippedCached &&
