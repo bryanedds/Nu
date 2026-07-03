@@ -505,7 +505,7 @@ type Swapchain =
         // NOTE: DJL: must allow for frames in flight plus 1 to prevent destroying semaphores while still in use
         // because swapchain can be refreshed at the end of one frame AND at the beginning of the next,
         // but can still only be refreshed once per frame.
-        let swapchainSingletonOpts = Array.create 1 None
+        let swapchainSingletonOpts = Array.create 2 None
 
         // check if window is minimized at startup
         let windowMinimized = Swapchain.isWindowMinimized window
