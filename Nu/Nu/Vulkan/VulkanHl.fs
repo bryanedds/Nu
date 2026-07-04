@@ -360,6 +360,17 @@ module Hl =
     let internal genTextureId () =
         lock TextureIdGenerationLock (fun () -> TextureIdCounter <- inc TextureIdCounter; TextureIdCounter)
 
+    /// Check the given Vulkan operation result, logging on non-Success.
+    let check (result : VkResult) =
+        if int result > 0 then Log.info ("Vulkan info: " + string result)
+        elif int result < 0 then
+            let message = "Vulkan assertion failed due to: " + string result
+#if DEBUG
+            Log.fail message
+#else
+            Log.error message
+#endif
+
     /// Check if an image format is supported for attachments, falling back to a standard format where possible.
     let rec checkAttachmentFormat vkPhysicalDevice (format : ImageFormat) =
         if not (ImageFormat.supportsAttachment vkPhysicalDevice format) then
@@ -627,37 +638,6 @@ module Hl =
         | SurfaceDestroyed ->
             Log.error "Attempted destruction of Vulkan surface that has already been destroyed!"
 
-    /// Check the given Vulkan operation result, logging on non-Success.
-    let check (result : VkResult) =
-        if int result > 0 then Log.info ("Vulkan info: " + string result)
-        elif int result < 0 then
-            let message = "Vulkan assertion failed due to: " + string result
-#if DEBUG
-            Log.fail message
-#else
-            Log.error message
-#endif
-
-    /// Report the fact that a draw call has just been made with the given number of instances.
-    let reportDrawCall drawInstances =
-        lock DrawReportLock (fun () ->
-            DrawCallCount <- inc DrawCallCount
-            DrawInstanceCount <- DrawInstanceCount + drawInstances)
-
-    /// Reset the running number of draw calls.
-    let resetDrawCalls () =
-        lock DrawReportLock (fun () ->
-            DrawCallCount <- 0
-            DrawInstanceCount <- 0)
-
-    /// Get the running number of draw calls.
-    let getDrawCallCount () =
-        lock DrawReportLock (fun () -> DrawCallCount)
-
-    /// Get the running number of draw calls.
-    let getDrawInstanceCount () =
-        lock DrawReportLock (fun () -> DrawInstanceCount)
-
     /// Try to compile GLSL file to SPIR-V code.
     let tryCompileShader shaderPath shaderKind =
         use shaderStream = new StreamReader (File.OpenRead shaderPath)
@@ -671,6 +651,7 @@ module Hl =
         else Left ("Vulkan shader compilation failed due to:\n" + result.ErrorMessage)
 
     /// Try to create a shader module from a GLSL file.
+    /// TODO: create matching destroy fn and use that?
     let tryCreateShaderModuleFromGlsl shaderPath shaderKind device =
         match tryCompileShader shaderPath shaderKind with
         | Right shader ->
@@ -782,6 +763,7 @@ module Hl =
         commandBuffers[0]
 
     /// Create a semaphore.
+    /// TODO: create matching destroy fn and use that?
     let createSemaphore device =
         let info = VkSemaphoreCreateInfo ()
         let mutable semaphore = Unchecked.defaultof<VkSemaphore>
@@ -789,6 +771,7 @@ module Hl =
         semaphore
 
     /// Create a fence.
+    /// TODO: create matching destroy fn and use that?
     let createFence createSignaled device =
         let info =
             if createSignaled then VkFenceCreateInfo (flags = VkFenceCreateFlags.Signaled)
@@ -805,6 +788,7 @@ module Hl =
 
     /// Create a transient command buffer.
     /// TODO: DJL: review choice of transient command buffers over normal ones.
+    /// TODO: create matching destroy fn and use that?
     let createTransientCommandBuffer commandPool device =
         let commandBuffer = allocateCommandBuffer VkCommandBufferLevel.Primary commandPool device
         let mutable cbInfo = VkCommandBufferBeginInfo (flags = VkCommandBufferUsageFlags.OneTimeSubmit)
@@ -831,3 +815,23 @@ module Hl =
         match memoryTypeOpt with
         | Some memoryType -> memoryType
         | None -> Log.fail "Failed to find suitable memory type!"
+
+    /// Report the fact that a draw call has just been made with the given number of instances.
+    let reportDrawCall drawInstances =
+        lock DrawReportLock (fun () ->
+            DrawCallCount <- inc DrawCallCount
+            DrawInstanceCount <- DrawInstanceCount + drawInstances)
+
+    /// Reset the running number of draw calls.
+    let resetDrawCalls () =
+        lock DrawReportLock (fun () ->
+            DrawCallCount <- 0
+            DrawInstanceCount <- 0)
+
+    /// Get the running number of draw calls.
+    let getDrawCallCount () =
+        lock DrawReportLock (fun () -> DrawCallCount)
+
+    /// Get the running number of draw calls.
+    let getDrawInstanceCount () =
+        lock DrawReportLock (fun () -> DrawInstanceCount)
