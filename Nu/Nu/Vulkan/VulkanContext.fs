@@ -951,9 +951,7 @@ type [<ReferenceEquality>] VulkanContext =
     static member beginFrame (windowViewport : Viewport) (vkc : VulkanContext) =
 
         // wait for current frame to be ready
-        let mutable fence = vkc.RenderFence_
-        Vulkan.vkWaitForFences (vkc.Device, 1u, asPointer &fence, true, UInt64.MaxValue) |> Hl.check
-        Vulkan.vkResetFences (vkc.Device, 1u, asPointer &fence) |> Hl.check
+        Hl.awaitFence vkc.RenderFence_ vkc.Device_
 
         // update render allowed flag and check if current swapchain is non-existent, typically because app has been
         // backgrounded
