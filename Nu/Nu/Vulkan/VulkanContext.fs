@@ -25,9 +25,9 @@ type [<ReferenceEquality>] ConcurrentCommandQueue =
         { VkQueue_ : VkQueue
           Lock_ : obj }
 
-    ///
-    static member withLock queue (fn : VkQueue -> unit) =
-        lock queue.Lock_ (fun () -> fn queue.VkQueue_) : unit
+    /// Perform an arbitrary operation on the internal vulkan queue.
+    static member withLock queue (op : VkQueue -> unit) =
+        lock queue.Lock_ (fun () -> op queue.VkQueue_) : unit
 
     /// Wait for Queue to finish execution.
     static member waitIdle queue =
@@ -1021,19 +1021,18 @@ type [<ReferenceEquality>] VulkanContext =
             Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
     /// End the frame.
-    static member endFrame (_ : VulkanContext) =
-        ()
+    static member endFrame vkc =
+
+        // transition swapchain image layout to presentation
+        Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color ColorAttachmentWrite Present vkc.Swapchain_.Image vkc.RenderCommandBuffer
+
+        // end rendering
+        VulkanContext.endRenderCommandBuffer LastSubmission vkc
 
     /// Present the image back to the swapchain to appear on screen.
     static member present (vkc : VulkanContext) =
 
         if vkc.RenderAllowed_ then
-        
-            // transition swapchain image layout to presentation
-            Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color ColorAttachmentWrite Present vkc.Swapchain_.Image vkc.RenderCommandBuffer
-
-            // 
-            VulkanContext.endRenderCommandBuffer LastSubmission vkc
 
             // one more check for app backgrounding before we present
             if not (Hl.getBackgroundingRequested ()) then
