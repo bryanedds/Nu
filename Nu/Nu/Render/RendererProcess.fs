@@ -187,20 +187,30 @@ type RendererInline () =
             match dependenciesOpt with
             | Some (renderer3d, renderer2d, rendererImGui, vkc) ->
 
+                // pre-render 3d. OPTIMIZATION: don't render geometry when no 3D messages are encountered.
+                let renderGeometry = messages3d.Count > 0
+                renderer3d.PreRender frustumInterior frustumExterior frustumImposter eye3dCenter eye3dRotation messages3d
+                messages3d.Clear ()
+
+                // pre-render 2d
+                renderer2d.PreRender eye2dCenter eye2dSize windowViewport messages2d
+                messages2d.Clear ()
+
+                // pre-render imgui
+                rendererImGui.PreRender messagesImGui
+                messagesImGui.Clear ()
+
                 // begin frame
                 VulkanContext.beginFrame windowViewport vkc
 
                 // render 3d
-                renderer3d.Render frustumInterior frustumExterior frustumImposter eye3dCenter eye3dRotation eye3dFieldOfView geometryViewport windowViewport messages3d
-                messages3d.Clear ()
+                renderer3d.Render frustumInterior frustumExterior frustumImposter eye3dCenter eye3dRotation eye3dFieldOfView geometryViewport windowViewport renderGeometry
 
                 // render 2d
-                renderer2d.Render eye2dCenter eye2dSize windowViewport messages2d
-                messages2d.Clear ()
+                renderer2d.Render eye2dCenter eye2dSize windowViewport
 
                 // render imgui
-                rendererImGui.Render windowViewport drawData messagesImGui
-                messagesImGui.Clear ()
+                rendererImGui.Render windowViewport drawData
 
                 // end frame
                 VulkanContext.endFrame vkc
@@ -402,23 +412,34 @@ type RendererThread () =
 
             // guard against early termination
             if not terminated then
-                
-                // begin frame
-                VulkanContext.beginFrame windowViewport vkc
-
-                // render 3d
-                renderer3d.Render frustumInterior frustumExterior frustumImposter eye3dCenter eye3dRotation eye3dFieldOfView geometryViewport windowViewport messages3d
+            
+                // pre-render 3d. OPTIMIZATION: don't render geometry when no 3D messages are encountered.
+                let renderGeometry = messages3d.Count > 0
+                renderer3d.PreRender frustumInterior frustumExterior frustumImposter eye3dCenter eye3dRotation messages3d
                 freeStaticModelMessages messages3d
                 freeStaticModelSurfaceMessages messages3d
                 freeAnimatedModelMessages messages3d
                 renderer3dConfig <- renderer3d.RendererConfig
 
-                // render 2d
-                renderer2d.Render eye2dCenter eye2dSize windowViewport messages2d
+                // pre-render 2d
+                renderer2d.PreRender eye2dCenter eye2dSize windowViewport messages2d
                 freeSpriteMessages messages2d
 
+                // pre-render imgui
+                rendererImGui.PreRender messagesImGui
+                messagesImGui.Clear ()
+
+                // begin frame
+                VulkanContext.beginFrame windowViewport vkc
+
+                // render 3d
+                renderer3d.Render frustumInterior frustumExterior frustumImposter eye3dCenter eye3dRotation eye3dFieldOfView geometryViewport windowViewport renderGeometry
+
+                // render 2d
+                renderer2d.Render eye2dCenter eye2dSize windowViewport
+
                 // render imgui
-                rendererImGui.Render windowViewport drawData messagesImGui
+                rendererImGui.Render windowViewport drawData
 
                 // end frame
                 VulkanContext.endFrame vkc

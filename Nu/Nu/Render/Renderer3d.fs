@@ -1196,6 +1196,15 @@ type Renderer3d =
     /// The current renderer configuration.
     abstract RendererConfig : Renderer3dConfig
 
+    /// Pre-render a frame of the game.
+    abstract PreRender :
+        frustumInterior : Frustum ->
+        frustumExterior : Frustum ->
+        frustumImposter : Frustum ->
+        eyeCenter : Vector3 ->
+        eyeRotation : Quaternion ->
+        renderMessages : RenderMessage3d List -> unit
+
     /// Render a frame of the game.
     abstract Render :
         frustumInterior : Frustum ->
@@ -1206,7 +1215,7 @@ type Renderer3d =
         eyeFieldOfView : single ->
         geometryViewport : Viewport ->
         windowViewport : Viewport ->
-        renderMessages : RenderMessage3d List -> unit
+        renderGeometry : bool -> unit
 
     /// Handle render clean up by freeing all loaded render assets.
     abstract CleanUp : unit -> unit
@@ -1222,6 +1231,7 @@ type [<ReferenceEquality>] StubRenderer3d =
 
     interface Renderer3d with
         member renderer.RendererConfig = Renderer3dConfig.defaultConfig
+        member renderer.PreRender _ _ _ _ _ _ = ()
         member renderer.Render _ _ _ _ _ _ _ _ _ = ()
         member renderer.CleanUp () = ()
 
@@ -1274,7 +1284,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           mutable RenderPasses2 : Dictionary<RenderPass, RenderTasks>
           mutable RenderPackageCachedOpt : RenderPackageCached
           mutable RenderAssetCached : RenderAssetCached
-          mutable ReloadAssetsRequested : bool }
+          mutable ReloadAssetsRequested : bool
+          UserDefinedStaticModelsToDestroy : StaticModel AssetTag SList }
 
     static member private logRenderAssetUnavailableOnce (assetTag : AssetTag) =
         let message =
@@ -2350,13 +2361,12 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         eyeRotation
         renderMessages
         renderer =
-        let userDefinedStaticModelsToDestroy = SList.make ()
         for message in renderMessages do
             match message with
             //| CreateUserDefinedStaticModel cudsm ->
             //    VulkanRenderer3d.tryCreateUserDefinedStaticModel cudsm.StaticModelSurfaceDescriptors cudsm.Bounds cudsm.StaticModel renderer
             //| DestroyUserDefinedStaticModel dudsm ->
-            //    userDefinedStaticModelsToDestroy.Add dudsm.StaticModel 
+            //    renderer.UserDefinedStaticModelsToDestroy.Add dudsm.StaticModel 
             | RenderSkyBox rsb ->
                 let renderTasks = VulkanRenderer3d.getRenderTasks rsb.RenderPass renderer
                 renderTasks.SkyBoxes.Add (rsb.AmbientColor, rsb.AmbientBrightness, rsb.CubeMapColor, rsb.CubeMapBrightness, rsb.CubeMap)
@@ -2448,7 +2458,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             //    VulkanRenderer3d.tryCreateUserDefinedStaticModel rudsm.StaticModelSurfaceDescriptors rudsm.Bounds assetTag renderer
             //    let renderTasks = VulkanRenderer3d.getRenderTasks rudsm.RenderPass renderer
             //    VulkanRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, &rudsm.ModelMatrix, rudsm.CastShadow, rudsm.Presence, &insetOpt, &rudsm.MaterialProperties, assetTag, rudsm.Clipped, rudsm.DepthTest, rudsm.RenderType, rudsm.RenderPass, renderTasks, renderer)
-            //    userDefinedStaticModelsToDestroy.Add assetTag
+            //    renderer.UserDefinedStaticModelsToDestroy.Add assetTag
             | RenderAnimatedModel rsm ->
                 let insetOpt = Option.toValueOption rsm.InsetOpt
                 let renderTasks = VulkanRenderer3d.getRenderTasks rsm.RenderPass renderer
@@ -2471,7 +2481,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 VulkanRenderer3d.handleUnloadRenderPackage packageName renderer
             | ReloadRenderAssets3d ->
                 renderer.ReloadAssetsRequested <- true
-        userDefinedStaticModelsToDestroy
     
     static member private beginPhysicallyBasedShadowSurfaces
         eyeCenter viewProjection lightShadowExponent resolution colorClearValue colorAttachments depthAttachment renderPassIndex pipeline renderer =
@@ -3321,38 +3330,15 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // advance render pass index
         renderer.RenderPassIndex <- inc renderer.RenderPassIndex
 
-    /// Render 3d surfaces.
-    static member render
+    /// Pre-render 3d surfaces.
+    static member preRender
         frustumInterior
         frustumExterior
         frustumImposter
         eyeCenter
         eyeRotation
-        eyeFieldOfView
-        geometryViewport
-        windowViewport
         (renderMessages : _ List)
         (renderer : VulkanRenderer3d) =
-        
-        /////////////////
-        // Begin Frame //
-        /////////////////
-
-        // update viewports
-        if renderer.GeometryViewport <> geometryViewport then
-            VulkanRenderer3d.invalidateCaches renderer
-            VulkanRenderer3d.clearRenderPasses renderer // force shadows to rerender
-            renderer.GeometryViewport <- geometryViewport
-        renderer.WindowViewport <- windowViewport
-
-        // update attachment sizes (must happen every frame to cover all frames in flight)
-        PhysicallyBased.updatePhysicallyBasedAttachmentsSize
-            geometryViewport renderer.PhysicallyBasedAttachments renderer.VulkanContext
-
-        // reload render assets when requested on previous frame
-        if renderer.ReloadAssetsRequested then
-            VulkanRenderer3d.handleReloadRenderAssets renderer
-            renderer.ReloadAssetsRequested <- false
 
         // begin texture dumpster frame
         if renderer.VulkanContext.RenderAllowed then
@@ -3366,13 +3352,37 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // begin pipeline frames
         PhysicallyBased.beginPhysicallyBasedPipelines renderer.PhysicallyBasedPipelines
 
-        //////////////////
-        // Handle Frame //
-        //////////////////
-        
         // categorize messages
-        let userDefinedStaticModelsToDestroy =
-            VulkanRenderer3d.categorize frustumInterior frustumExterior frustumImposter eyeCenter eyeRotation renderMessages renderer
+        VulkanRenderer3d.categorize frustumInterior frustumExterior frustumImposter eyeCenter eyeRotation renderMessages renderer
+
+    /// Render 3d surfaces.
+    static member render
+        frustumInterior
+        frustumExterior
+        frustumImposter
+        eyeCenter
+        eyeRotation
+        eyeFieldOfView
+        geometryViewport
+        windowViewport
+        renderGeometry
+        (renderer : VulkanRenderer3d) =
+
+        // update viewports
+        if renderer.GeometryViewport <> geometryViewport then
+            VulkanRenderer3d.invalidateCaches renderer
+            VulkanRenderer3d.clearRenderPasses renderer // force shadows to rerender
+            renderer.GeometryViewport <- geometryViewport
+        renderer.WindowViewport <- windowViewport
+
+        // update attachment sizes
+        PhysicallyBased.updatePhysicallyBasedAttachmentsSize
+            geometryViewport renderer.PhysicallyBasedAttachments renderer.VulkanContext
+
+        // reload render assets when requested on previous frame
+        if renderer.ReloadAssetsRequested then
+            VulkanRenderer3d.handleReloadRenderAssets renderer
+            renderer.ReloadAssetsRequested <- false
 
         // light map pre-passes
         if renderer.VulkanContext.RenderAllowed then
@@ -3627,8 +3637,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                         | SpotLight (_, _) | DirectionalLight _ | CascadedLight -> failwithumf ()
                     | _ -> ()
 
-        // process top-level geometry pass. OPTIMIZATION: don't process rendering tasks when no render messages.
-        if renderer.VulkanContext.RenderAllowed && renderMessages.Count > 0 then
+        // process top-level geometry pass.
+        if renderer.VulkanContext.RenderAllowed && renderGeometry then
             let view = Viewport.getView3d eyeCenter eyeRotation
             let viewSkyBox = Matrix4x4.CreateFromQuaternion eyeRotation.Inverted
             let geometryFrustum = Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView geometryViewport
@@ -3646,10 +3656,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 eyeCenter view viewSkyBox geometryFrustum geometryProjection windowProjection
                 targetBounds 0 renderer.VulkanContext.SwapchainImage
         
-        ///////////////
-        // End Frame //
-        ///////////////
-
         // clear config dirty flags
         renderer.LightingConfigChanged <- false
         renderer.RendererConfigChanged <- false
@@ -3659,6 +3665,11 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
         // clear lights desiring shadows
         renderer.LightsDesiringShadows.Clear ()
+
+        // destroy user-defined static models
+        //for staticModel in renderer.UserDefinedStaticModelsToDestroy do
+        //    VulkanRenderer3d.tryDestroyUserDefinedStaticModel staticModel renderer
+        renderer.UserDefinedStaticModelsToDestroy.Clear ()
 
         // swap render passes
         for renderTasks in renderer.RenderPasses.Values do RenderTasks.sweep renderTasks
@@ -3936,7 +3947,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               RenderPasses2 = dictPlus HashIdentity.Structural [(NormalPass, RenderTasks.make ())]
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCached = { CachedAssetTagOpt = Unchecked.defaultof<_>; CachedRenderAsset = Unchecked.defaultof<_> }
-              ReloadAssetsRequested = false }
+              ReloadAssetsRequested = false
+              UserDefinedStaticModelsToDestroy = SList.make () }
 
         // fin
         renderer
@@ -3946,9 +3958,12 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         member renderer.RendererConfig =
             renderer.RendererConfig
         
+        member renderer.PreRender frustumInterior frustumExterior frustumImposter eyeCenter eyeRotation renderMessages =
+            VulkanRenderer3d.preRender frustumInterior frustumExterior frustumImposter eyeCenter eyeRotation renderMessages renderer
+        
         member renderer.Render frustumInterior frustumExterior frustumImposter eyeCenter eyeRotation eyeFieldOfView geometryViewport windowViewport renderMessages =
             VulkanRenderer3d.render frustumInterior frustumExterior frustumImposter eyeCenter eyeRotation eyeFieldOfView geometryViewport windowViewport renderMessages renderer
-        
+
         member renderer.CleanUp () =
             
             Sampler.destroy renderer.FilteredSampler renderer.VulkanContext

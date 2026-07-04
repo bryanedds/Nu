@@ -163,9 +163,12 @@ type [<NoEquality; NoComparison>] private RenderAssetCached =
 /// The 2d renderer. Represents a 2d rendering subsystem in Nu generally.
 type Renderer2d =
     
+    /// Pre-render a frame of the game.
+    abstract PreRender : eyeCenter : Vector2 -> eyeSize : Vector2 -> viewport : Viewport -> renderMessages : RenderMessage2d List -> unit
+
     /// Render a frame of the game.
-    abstract Render : eyeCenter : Vector2 -> eyeSize : Vector2 -> viewport : Viewport -> renderMessages : RenderMessage2d List -> unit
-    
+    abstract Render : eyeCenter : Vector2 -> eyeSize : Vector2 -> viewport : Viewport -> unit
+
     /// Handle render clean up by freeing all loaded render assets.
     abstract CleanUp : unit -> unit
 
@@ -179,7 +182,8 @@ type [<ReferenceEquality>] StubRenderer2d =
         { StubRenderer2d = () }
 
     interface Renderer2d with
-        member renderer.Render _ _ _ _ = ()
+        member renderer.PreRender _ _ _ _ = ()
+        member renderer.Render _ _ _ = ()
         member renderer.CleanUp () = ()
 
 /// The Vulkan implementation of Renderer2d.
@@ -402,7 +406,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         | UnloadRenderPackage2d hintPackageDisuse -> VulkanRenderer2d.handleUnloadRenderPackage hintPackageDisuse renderer
         | ReloadRenderAssets2d -> renderer.ReloadAssetsRequested <- true
 
-    static member private handleRenderMessages renderMessages renderer =
+    static member private categorizeRenderMessages renderMessages renderer =
         for renderMessage in renderMessages do
             VulkanRenderer2d.handleRenderMessage renderMessage renderer
     
@@ -930,12 +934,36 @@ type [<ReferenceEquality>] VulkanRenderer2d =
     static member private renderLayeredOperations eyeCenter eyeSize renderer =
         for operation in renderer.LayeredOperations do
             VulkanRenderer2d.renderDescriptor operation.RenderOperation2d eyeCenter eyeSize renderer
-    
-    static member private render eyeCenter eyeSize viewport renderMessages renderer =
 
-        /////////////////
-        // Begin Frame //
-        /////////////////
+    static member private preRender eyeCenter eyeSize viewport renderMessages renderer =
+
+        // begin texture dumpster frame
+        if renderer.VulkanContext.RenderAllowed then
+            TextureDumpster.beginFrame renderer.TextureDumpster renderer.VulkanContext
+
+        // begin sprite batch frame
+        if renderer.VulkanContext.RenderAllowed then
+            let viewProjectionAbsolute = Viewport.getViewProjection2d true eyeCenter eyeSize viewport
+            let viewProjectionRelative = Viewport.getViewProjection2d false eyeCenter eyeSize viewport
+            let viewProjectionClipAbsolute = Viewport.getViewProjectionClip true eyeCenter eyeSize viewport
+            let viewProjectionClipRelative = Viewport.getViewProjectionClip false eyeCenter eyeSize viewport
+            SpriteBatch.beginSpriteBatchFrame (&viewProjectionAbsolute, &viewProjectionRelative, &viewProjectionClipAbsolute, &viewProjectionClipRelative, renderer.SpriteBatchEnv)
+
+        // begin single sprite frame
+        if renderer.VulkanContext.RenderAllowed then
+            match renderer.SpritePipeline with (_, _, pipeline) -> Pipeline.beginFrame pipeline
+
+        // being contour frame
+        if renderer.VulkanContext.RenderAllowed then
+            match renderer.ContourTessellationPipeline with (_, _, _, pipeline) -> Pipeline.beginFrame pipeline
+
+        // handle render messages
+        VulkanRenderer2d.categorizeRenderMessages renderMessages renderer
+
+        // sort layered operations
+        VulkanRenderer2d.sortLayeredOperations renderer
+
+    static member private render eyeCenter eyeSize viewport renderer =
 
         // invalidate caches and reload fonts when viewport changes
         if renderer.Viewport.DisplayScalar <> viewport.DisplayScalar then
@@ -957,43 +985,9 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             VulkanRenderer2d.handleReloadRenderAssets renderer
             renderer.ReloadAssetsRequested <- false
 
-        // begin texture dumpster frame
-        if renderer.VulkanContext.RenderAllowed then
-            TextureDumpster.beginFrame renderer.TextureDumpster renderer.VulkanContext
-
-        // begin sprite batch frame
-        if renderer.VulkanContext.RenderAllowed then
-            let viewProjectionAbsolute = Viewport.getViewProjection2d true eyeCenter eyeSize renderer.Viewport
-            let viewProjectionRelative = Viewport.getViewProjection2d false eyeCenter eyeSize renderer.Viewport
-            let viewProjectionClipAbsolute = Viewport.getViewProjectionClip true eyeCenter eyeSize viewport
-            let viewProjectionClipRelative = Viewport.getViewProjectionClip false eyeCenter eyeSize viewport
-            SpriteBatch.beginSpriteBatchFrame (&viewProjectionAbsolute, &viewProjectionRelative, &viewProjectionClipAbsolute, &viewProjectionClipRelative, renderer.SpriteBatchEnv)
-
-        // begin single sprite frame
-        if renderer.VulkanContext.RenderAllowed then
-            match renderer.SpritePipeline with (_, _, pipeline) -> Pipeline.beginFrame pipeline
-
-        // being contour frame
-        if renderer.VulkanContext.RenderAllowed then
-            match renderer.ContourTessellationPipeline with (_, _, _, pipeline) -> Pipeline.beginFrame pipeline
-
-        //////////////////
-        // Handle Frame //
-        //////////////////
-
-        // handle render messages
-        VulkanRenderer2d.handleRenderMessages renderMessages renderer
-
-        // sort layered operations
-        VulkanRenderer2d.sortLayeredOperations renderer
-
         // render layered operations
         if renderer.VulkanContext.RenderAllowed then
             VulkanRenderer2d.renderLayeredOperations eyeCenter eyeSize renderer
-
-        ///////////////
-        // End Frame //
-        ///////////////
 
         // clear layered operations
         renderer.LayeredOperations.Clear ()
@@ -1073,9 +1067,11 @@ type [<ReferenceEquality>] VulkanRenderer2d =
     
     interface Renderer2d with
         
-        member renderer.Render eyeCenter eyeSize viewport renderMessages =
-            if renderMessages.Count > 0 then
-                VulkanRenderer2d.render eyeCenter eyeSize viewport renderMessages renderer
+        member renderer.PreRender eyeCenter eyeSize viewport renderMessages =
+            VulkanRenderer2d.preRender eyeCenter eyeSize viewport renderMessages renderer
+        
+        member renderer.Render eyeCenter eyeSize viewport =
+            VulkanRenderer2d.render eyeCenter eyeSize viewport renderer
         
         member renderer.CleanUp () =
             

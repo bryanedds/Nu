@@ -190,7 +190,6 @@ type SwapchainSingleton =
     { VkSwapchain : VkSwapchainKHR
       Images : VkImage array
       ImageViews : VkImageView array
-      RenderFinishedSemaphores : VkSemaphore array
       SwapExtent : VkExtent2D }
 
     /// Try create the VkSwapchain.
@@ -265,33 +264,20 @@ type SwapchainSingleton =
         for i in 0 .. dec imageViews.Length do imageViews[i] <- Hl.createImageView Rgba format 0 1 0 1 VkImageViewType.Image2D VkImageAspectFlags.Color images[i] device
         imageViews
     
-    /// Create render finished semaphores.
-    static member private createRenderFinishedSemaphores imageCount device =
-        let semaphores = Array.zeroCreate<VkSemaphore> imageCount
-        for i in 0 .. dec semaphores.Length do semaphores[i] <- Hl.createSemaphore device
-        semaphores
-    
     /// Try create a SwapchainSingleton.
     static member tryCreate surfaceFormat oldVkSwapchainOpt physicalDevice window device =
         
         // try create vkSwapchain and its assets
         match SwapchainSingleton.tryCreateVkSwapchain surfaceFormat oldVkSwapchainOpt physicalDevice window device with
         | Some (vkSwapchain, swapExtent) ->
-            let images = SwapchainSingleton.getSwapchainImages vkSwapchain device
-            let imageViews = SwapchainSingleton.createImageViews surfaceFormat.format images device
-
-            // render finished semaphores based on swapchain images rather than frames in flight to address
-            // safety issue described in https://docs.vulkan.org/guide/latest/swapchain_semaphore_reuse.html.
-            // these should naturally be associated with the vkSwapchain itself, especially to prevent validation
-            // errors triggered by reuse of semaphores that "may still be in use" by obsolete vkSwapchains.
-            let renderFinishedSemaphores = SwapchainSingleton.createRenderFinishedSemaphores images.Length device
 
             // make SwapchainSingleton
+            let images = SwapchainSingleton.getSwapchainImages vkSwapchain device
+            let imageViews = SwapchainSingleton.createImageViews surfaceFormat.format images device
             let swapchainSingleton =
                 { VkSwapchain = vkSwapchain
                   Images = images
                   ImageViews = imageViews
-                  RenderFinishedSemaphores = renderFinishedSemaphores
                   SwapExtent = swapExtent }
 
             // fin
@@ -307,7 +293,6 @@ type SwapchainSingleton =
         ConcurrentCommandQueue.waitIdle presentQueue
         for i in 0 .. dec swapchainSingleton.ImageViews.Length do Vulkan.vkDestroyImageView (device, swapchainSingleton.ImageViews[i], nullPtr)
         Vulkan.vkDestroySwapchainKHR (device, swapchainSingleton.VkSwapchain, nullPtr)
-        for i in 0 .. dec swapchainSingleton.RenderFinishedSemaphores.Length do Vulkan.vkDestroySemaphore (device, swapchainSingleton.RenderFinishedSemaphores[i], nullPtr)
 
 /// A swapchain and its assets that may be refreshed for a different screen size.
 type Swapchain =
@@ -331,9 +316,6 @@ type Swapchain =
 
     /// The image view for the current swapchain image.
     member this.ImageView = (Option.get this.SwapchainSingletonOpts_[this.SwapchainIndex_]).ImageViews[int Hl.ImageIndex]
-    
-    /// The render finished semaphore for the current swapchain image.
-    member this.RenderFinishedSemaphore = (Option.get this.SwapchainSingletonOpts_[this.SwapchainIndex_]).RenderFinishedSemaphores[int Hl.ImageIndex]
 
     /// The swap extent of the current vkSwapchain.
     member this.SwapExtent = (Option.get this.SwapchainSingletonOpts_[this.SwapchainIndex_]).SwapExtent
@@ -550,9 +532,6 @@ type [<ReferenceEquality>] VulkanContext =
 
     /// The image available semaphore.
     member this.ImageAvailableSemaphore = this.ImageAvailableSemaphore_
-
-    /// The render finished semaphore.
-    member this.RenderFinishedSemaphore = this.Swapchain_.RenderFinishedSemaphore
 
     /// The render fence.
     member this.RenderFence = this.RenderFence_
@@ -947,9 +926,6 @@ type [<ReferenceEquality>] VulkanContext =
             | MiddleSubmission ->
                 Vulkan.vkQueueSubmit (vkQueue, 1u, &&submitInfo, VkFence.Null) |> Hl.check
             | LastSubmission ->
-                let mutable renderFinishedSemaphore = vkc.RenderFinishedSemaphore
-                submitInfo.signalSemaphoreCount <- uint 1
-                submitInfo.pSignalSemaphores <- &&renderFinishedSemaphore
                 Vulkan.vkQueueSubmit (vkQueue, 1u, &&submitInfo, vkc.RenderFence_) |> Hl.check
 
             // advance cursor
@@ -1040,7 +1016,7 @@ type [<ReferenceEquality>] VulkanContext =
             Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
     /// End the frame.
-    static member endFrame vkc =
+    static member endFrame (_ : VulkanContext) =
         ()
 
     /// Present the image back to the swapchain to appear on screen.
@@ -1061,11 +1037,8 @@ type [<ReferenceEquality>] VulkanContext =
                 ConcurrentCommandQueue.withLock vkc.PresentQueue_ (fun vkQueue ->
             
                     // try to present image
-                    let mutable waitSemaphore = vkc.Swapchain_.RenderFinishedSemaphore
                     let mutable vkSwapchain = vkc.Swapchain_.VkSwapchain
                     let mutable info = VkPresentInfoKHR ()
-                    info.waitSemaphoreCount <- 1u
-                    info.pWaitSemaphores <- asPointer &waitSemaphore
                     info.swapchainCount <- 1u
                     info.pSwapchains <- asPointer &vkSwapchain
                     info.pImageIndices <- asPointer &Hl.ImageIndex
@@ -1083,9 +1056,8 @@ type [<ReferenceEquality>] VulkanContext =
                     // normal check
                     else Hl.check result)
 
-            // this is valid because RenderFinishedSemaphore will be destroyed
+            // 
             else Swapchain.update vkc.PhysicalDevice_ vkc.RenderQueue_ vkc.PresentQueue_ vkc.Swapchain_ vkc.Device vkc.Instance_
-
 
     /// Wait for all device operations to complete before cleaning up resources.
     static member waitIdle (vkc : VulkanContext) =
