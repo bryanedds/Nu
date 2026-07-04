@@ -503,6 +503,7 @@ type [<ReferenceEquality>] VulkanContext =
           TextureCommandPool_ : VkCommandPool
           RenderCommandBuffers_ : VkCommandBuffer List
           mutable RenderCommandBuffersCursor_ : int
+          mutable RenderCommandInstancesLast_ : int
           RenderQueue_ : ConcurrentCommandQueue
           PresentQueue_ : ConcurrentCommandQueue
           TextureQueue_ : ConcurrentCommandQueue
@@ -646,8 +647,11 @@ type [<ReferenceEquality>] VulkanContext =
         // TODO: DJL: try to automatically prevent validation from interfering with Nsight, starting with VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT.
         let validationLayerName = "VK_LAYER_KHRONOS_validation"
         let validationLayerExists = Array.exists (fun x -> Hl.getLayerName x = validationLayerName) layers
-        if Hl.ValidationLayersEnabled && not validationLayerExists then Log.info (validationLayerName + " is not available. Vulkan programmers must install the Vulkan SDK to enable validation.")
-        Hl.ValidationLayersActivated <- Hl.ValidationLayersEnabled && validationLayerExists
+        if Constants.Vulkan.HlDebug && not validationLayerExists then
+            Log.info (validationLayerName + " is not available. Vulkan programmers must install the Vulkan SDK to enable validation.")
+
+        // attempt to use validation layer when desired
+        Hl.ValidationLayersActivated <- Constants.Vulkan.HlDebug && validationLayerExists
         use layerWrap = new StringArrayWrap ([|validationLayerName|]) // must remain in scope until vkCreateInstance
 
         // get sdl extensions
@@ -951,10 +955,14 @@ type [<ReferenceEquality>] VulkanContext =
             // advance cursor
             vkc.RenderCommandBuffersCursor_ <- inc vkc.RenderCommandBuffersCursor_)
 
-    static member advanceRenderCommandBuffer (vkc : VulkanContext) =
+    static member advanceRenderCommandBuffer threshold (vkc : VulkanContext) =
         let submissionType = if vkc.RenderCommandBuffersCursor_ = 0 then FirstSubmission else MiddleSubmission
-        VulkanContext.endRenderCommandBuffer submissionType vkc
-        VulkanContext.beginRenderCommandBuffer vkc
+        let instanceCount = Hl.getDrawInstanceCount ()
+        let instanceDelta = instanceCount - vkc.RenderCommandInstancesLast_
+        if instanceDelta >= threshold then
+            VulkanContext.endRenderCommandBuffer submissionType vkc
+            VulkanContext.beginRenderCommandBuffer vkc
+            vkc.RenderCommandInstancesLast_ <- instanceCount
 
     /// Begin the frame.
     static member beginFrame (windowViewport : Viewport) (vkc : VulkanContext) =
@@ -1173,6 +1181,7 @@ type [<ReferenceEquality>] VulkanContext =
                   TextureCommandPool_ = textureCommandPool
                   RenderCommandBuffers_ = List renderCommandBuffers
                   RenderCommandBuffersCursor_ = 0
+                  RenderCommandInstancesLast_ = 0
                   RenderQueue_ = renderQueue
                   PresentQueue_ = presentQueue
                   TextureQueue_ = textureQueue

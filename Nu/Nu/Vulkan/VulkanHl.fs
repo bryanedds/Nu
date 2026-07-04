@@ -278,13 +278,6 @@ module Hl =
     // TODO: DJL: all these free-floating variables, types and functions have become a
     // bit of a mess and need to be reordered, not to mention the inconsistent casing.
 
-    let internal ValidationLayersEnabled =
-#if DEBUG
-        true
-#else
-        false
-#endif
-
     let mutable internal ValidationLayersActivated = false
     
     let mutable internal DrawReportLock = obj ()

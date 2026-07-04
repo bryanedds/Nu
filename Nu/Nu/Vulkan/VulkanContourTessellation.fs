@@ -118,15 +118,15 @@ module ContourTessellation =
                 // tear down render
                 Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
-                // intermittently advance rendering command buffer
-                if pipeline.DrawIndex % Constants.Vulkan.AdvanceRenderCommandBufferCadence = 0 then VulkanContext.advanceRenderCommandBuffer vkc
+                // advance vertex and index buffers
+                Buffer.advance vertexBuffer
+                Buffer.advance indexBuffer
 
                 // advance pipeline
                 Pipeline.advance 1 pipeline
 
-                // advance vertex and index buffers
-                Buffer.advance vertexBuffer
-                Buffer.advance indexBuffer
+                // intermittently advance rendering command buffer
+                VulkanContext.advanceRenderCommandBuffer Constants.Vulkan.RenderCommandAdvanceThreshold vkc
 
             // abort
             | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."

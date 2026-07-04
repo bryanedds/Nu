@@ -137,11 +137,11 @@ module SkyBox =
             // tear down render
             Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
-            // advance rendering command buffer
-            VulkanContext.advanceRenderCommandBuffer vkc
-
             // advance pipeline
             Pipeline.advance 1 pipeline.Pipeline
+
+            // advance rendering command buffer
+            VulkanContext.advanceRenderCommandBuffer 1 vkc
 
         // abort
         | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."

@@ -48,15 +48,15 @@ module OpenGL =
     let [<Literal>] Profile = SDL3.SDL_GL_CONTEXT_PROFILE_CORE
     let [<Uniform>] GlslVersionPragma = "#version " + string VersionMajor + string VersionMinor + "0" + " core"
     let [<Literal>] TextureImageUnitsRequired = 32
-    let [<Uniform>] mutable HlDebug = match ConfigurationManager.AppSettings["HlDebug"] with null -> false | value -> scvalue value
 
 [<RequireQualifiedAccess>]
 module Vulkan =
 
+    let [<Uniform>] mutable HlDebug = match ConfigurationManager.AppSettings["HlDebug"] with null -> false | value -> scvalue value
     let [<Uniform>] MoltenVk = OperatingSystem.IsIOS () || match ConfigurationManager.AppSettings.["MoltenVk"] with null -> false | value -> scvalue value
     let [<Literal>] RenderCommandBufferCountDefault = 32
     let [<Literal>] DescriptorSetCountDefault = 32
-    let [<Literal>] AdvanceRenderCommandBufferCadence = 32
+    let [<Literal>] RenderCommandAdvanceThreshold = 64
 
 [<RequireQualifiedAccess>]
 module ImGui =

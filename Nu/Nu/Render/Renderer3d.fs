@@ -3394,7 +3394,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                                 renderer.IrradianceMap.InternalFormat
                                 renderer.IrradiancePipeline
                                 (fun () -> renderer.VulkanContext.RenderCommandBuffer)
-                                (fun () -> VulkanContext.advanceRenderCommandBuffer renderer.VulkanContext)
+                                (fun threshold -> VulkanContext.advanceRenderCommandBuffer threshold renderer.VulkanContext)
                                 renderer.VulkanContext
 
                         // render fallback env filter map
@@ -3406,7 +3406,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                                 renderer.EnvironmentFilterMap.InternalFormat
                                 renderer.EnvironmentFilterPipeline
                                 (fun () -> renderer.VulkanContext.RenderCommandBuffer)
-                                (fun () -> VulkanContext.advanceRenderCommandBuffer renderer.VulkanContext)
+                                (fun threshold -> VulkanContext.advanceRenderCommandBuffer threshold renderer.VulkanContext)
                                 renderer.VulkanContext
 
                         // add to cache and create light map
@@ -3441,7 +3441,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                                     lightProbeAmbientColor
                                     lightProbeAmbientBrightness
                                     (fun () -> renderer.VulkanContext.RenderCommandBuffer)
-                                    (fun () -> VulkanContext.advanceRenderCommandBuffer renderer.VulkanContext)
+                                    (fun threshold -> VulkanContext.advanceRenderCommandBuffer threshold renderer.VulkanContext)
                                     renderer.VulkanContext
 
                             // create irradiance map
@@ -3453,7 +3453,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                                     renderer.IrradianceMap.InternalFormat
                                     renderer.IrradiancePipeline
                                     (fun () -> renderer.VulkanContext.RenderCommandBuffer)
-                                    (fun () -> VulkanContext.advanceRenderCommandBuffer renderer.VulkanContext)
+                                    (fun threshold -> VulkanContext.advanceRenderCommandBuffer threshold renderer.VulkanContext)
                                     renderer.VulkanContext
 
                             // create env filter map
@@ -3465,7 +3465,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                                     renderer.EnvironmentFilterMap.InternalFormat
                                     renderer.EnvironmentFilterPipeline
                                     (fun () -> renderer.VulkanContext.RenderCommandBuffer)
-                                    (fun () -> VulkanContext.advanceRenderCommandBuffer renderer.VulkanContext)
+                                    (fun threshold -> VulkanContext.advanceRenderCommandBuffer threshold renderer.VulkanContext)
                                     renderer.VulkanContext
 
                             // destroy reflection map

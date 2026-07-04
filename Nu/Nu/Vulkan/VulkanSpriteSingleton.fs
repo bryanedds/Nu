@@ -212,11 +212,11 @@ module SpriteSingleton =
                 // tear down render
                 Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
-                // intermittently intermittently advance rendering command buffer
-                if pipeline.DrawIndex % Constants.Vulkan.AdvanceRenderCommandBufferCadence = 0 then VulkanContext.advanceRenderCommandBuffer vkc
-
                 // advance pipeline
                 Pipeline.advance 1 pipeline
+
+                // intermittently intermittently advance rendering command buffer
+                VulkanContext.advanceRenderCommandBuffer Constants.Vulkan.RenderCommandAdvanceThreshold vkc
 
             // abort
             | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."

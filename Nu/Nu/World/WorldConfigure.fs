@@ -24,7 +24,7 @@ module Configure =
                 match key with
                 | nameof Constants.Runtime.GcDebug -> Constants.Runtime.GcDebug <- scvalue value
                 | nameof Constants.GameTime.DesiredFrameRate -> Constants.GameTime.DesiredFrameRate <- scvalue value
-                | nameof Constants.OpenGL.HlDebug -> Constants.OpenGL.HlDebug <- scvalue value
+                | nameof Constants.Vulkan.HlDebug -> Constants.Vulkan.HlDebug <- scvalue value
                 | nameof Constants.ImGui.FontSize -> Constants.ImGui.FontSize <- scvalue value
                 | nameof Constants.Engine.Meter2d -> Constants.Engine.Meter2d <- scvalue value
                 | nameof Constants.Engine.RunSynchronously -> Constants.Engine.RunSynchronously <- scvalue value

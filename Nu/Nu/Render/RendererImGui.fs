@@ -617,7 +617,7 @@ type VulkanRendererImGui
                 Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
                 // advance rendering command buffer
-                VulkanContext.advanceRenderCommandBuffer vkc
+                VulkanContext.advanceRenderCommandBuffer 1 vkc
 
         member renderer.CleanUp () =
             Sampler.destroy fontSampler vkc

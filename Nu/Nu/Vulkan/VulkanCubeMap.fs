@@ -283,7 +283,7 @@ module CubeMap =
         (colorAttachment : VkImageView)
         (pipeline : CubeMapPipeline)
         (getCommandBuffer : unit -> VkCommandBuffer)
-        (advanceCommandBufferWhenNeeded : unit -> unit)
+        (advanceCommandBufferWhenNeeded : int -> unit)
         (vkc : VulkanContext) =
 
         // compute vulkan-appropriate matrices
@@ -339,11 +339,11 @@ module CubeMap =
             // tear down render
             Vulkan.vkCmdEndRendering commandBuffer
 
-            // advance rendering command buffer when needed
-            advanceCommandBufferWhenNeeded ()
-
             // advance pipeline
             Pipeline.advance 1 pipeline.Pipeline
+
+            // advance rendering command buffer when needed
+            advanceCommandBufferWhenNeeded 1
 
         // abort
         | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
