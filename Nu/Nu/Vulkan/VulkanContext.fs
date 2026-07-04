@@ -196,7 +196,11 @@ type SwapchainSingleton =
     static member private tryCreateVkSwapchain (surfaceFormat : VkSurfaceFormatKHR) oldVkSwapchainOpt physicalDevice window device =
         match Hl.tryGetSurfaceCapabilities physicalDevice.VkPhysicalDevice with
         | Some capabilities ->
-        
+
+            // get swap extent
+            let swapExtent =
+                Hl.getSwapExtent capabilities window
+
             // decide the minimum number of images in the swapchain. Sellers, Vulkan Programming Guide p. 144, recommends
             // at least 3 for performance, but to keep latency low let's start with the more conservative recommendation of
             // https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Swap_chain#page_Creating-the-swap-chain.
@@ -205,15 +209,14 @@ type SwapchainSingleton =
                 then capabilities.minImageCount + 1u
                 else min (capabilities.minImageCount + 1u) capabilities.maxImageCount
 
-            // get swap extent
-            let swapExtent = Hl.getSwapExtent capabilities window
-            
-            // in case graphics and present queue families differ
-            // TODO: as part of optimization, the sharing mode in this case should probably be VkSharingMode.Exclusive (see below).
-            let indicesArray = [|physicalDevice.GraphicsQueueFamily; physicalDevice.PresentQueueFamily|]
-            use indicesArrayPin = new ArrayPin<_> (indicesArray)
+            // check that we can use a more efficient mailbox-based present mode
+            let canUseMailbox =
+                let presentModes = Hl.getPresentModes physicalDevice.VkPhysicalDevice
+                Array.contains VkPresentModeKHR.Mailbox presentModes
 
             // create swapchain
+            let indicesArray = [|physicalDevice.GraphicsQueueFamily; physicalDevice.PresentQueueFamily|]
+            use indicesArrayPin = new ArrayPin<_> (indicesArray)
             let mutable info = VkSwapchainCreateInfoKHR ()
             info.surface <- Hl.Surface
             info.minImageCount <- minImageCount
@@ -222,7 +225,7 @@ type SwapchainSingleton =
             info.imageExtent <- swapExtent
             info.imageArrayLayers <- 1u
             info.imageUsage <- VkImageUsageFlags.ColorAttachment ||| VkImageUsageFlags.TransferDst
-            if (physicalDevice.GraphicsQueueFamily = physicalDevice.PresentQueueFamily) then
+            if physicalDevice.GraphicsQueueFamily = physicalDevice.PresentQueueFamily then
                 info.imageSharingMode <- VkSharingMode.Exclusive
             else
                 info.imageSharingMode <- VkSharingMode.Concurrent
@@ -234,12 +237,16 @@ type SwapchainSingleton =
                 elif capabilities.supportedCompositeAlpha &&& VkCompositeAlphaFlagsKHR.PreMultiplied <> VkCompositeAlphaFlagsKHR.None then VkCompositeAlphaFlagsKHR.PreMultiplied
                 elif capabilities.supportedCompositeAlpha &&& VkCompositeAlphaFlagsKHR.PostMultiplied <> VkCompositeAlphaFlagsKHR.None then VkCompositeAlphaFlagsKHR.PostMultiplied
                 else VkCompositeAlphaFlagsKHR.Inherit
-            info.presentMode <- VkPresentModeKHR.Fifo // NOTE: guaranteed by the spec and seems most appropriate for Nu.
+            info.presentMode <-
+                if canUseMailbox
+                then VkPresentModeKHR.Mailbox
+                else VkPresentModeKHR.Fifo
             info.clipped <- true
             info.oldSwapchain <- oldVkSwapchainOpt
             let mutable vkSwapchain = Unchecked.defaultof<VkSwapchainKHR>
             let result = Vulkan.vkCreateSwapchainKHR (device, &info, nullPtr, &vkSwapchain)
             
+            // fail if surface is lost
             if result <> VkResult.ErrorSurfaceLostKHR then
                 Hl.check result
                 Some (vkSwapchain, swapExtent)

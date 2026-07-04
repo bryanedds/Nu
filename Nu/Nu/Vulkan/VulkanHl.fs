@@ -680,7 +680,17 @@ module Hl =
             let mutable shaderModule = Unchecked.defaultof<VkShaderModule>
             Vulkan.vkCreateShaderModule (device, shader, nullPtr, &shaderModule) |> check
             Right shaderModule
+
         | Left msg -> Left msg
+
+    /// Get the available vulkan present modes.
+    let getPresentModes device =
+        let mutable presentModeCount = 0u
+        Vulkan.vkGetPhysicalDeviceSurfacePresentModesKHR (device, Surface, &&presentModeCount, NativePtr.nullPtr) |> check
+        let presentModes = Array.zeroCreate<VkPresentModeKHR> (int presentModeCount)
+        use presentModesPin = new ArrayPin<_> (presentModes)
+        Vulkan.vkGetPhysicalDeviceSurfacePresentModesKHR (device, Surface, &&presentModeCount, presentModesPin.Pointer) |> check
+        presentModes
 
     /// Record command to transition image layout.
     let recordTransitionLayout allLevels mipNumber layer layerCount imageAspect (oldLayout : ImageLayout) (newLayout : ImageLayout) vkImage commandBuffer =
