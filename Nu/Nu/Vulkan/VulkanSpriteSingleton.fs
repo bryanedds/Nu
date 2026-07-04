@@ -216,7 +216,7 @@ module SpriteSingleton =
                 Pipeline.advance 1 pipeline
 
                 // intermittently intermittently advance rendering command buffer
-                VulkanContext.advanceRenderCommandBuffer Constants.Vulkan.RenderCommandAdvanceThreshold vkc
+                VulkanContext.advanceRenderCommandBuffer Constants.Vulkan.InstanceThreshold2dSpriteSingleton vkc
 
             // abort
             | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
