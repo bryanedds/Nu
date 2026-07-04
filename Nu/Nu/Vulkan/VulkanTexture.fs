@@ -261,7 +261,7 @@ type TextureVulkan =
             | AttachmentColor _ -> Hl.recordTransitionLayout true mipLevels 0 textureType.Layers internalFormat.VkImageAspectFlags Undefined ColorAttachmentWrite image commandBuffer
             | AttachmentDepth _ -> Hl.recordTransitionLayout true mipLevels 0 textureType.Layers internalFormat.VkImageAspectFlags Undefined DepthAttachment image commandBuffer
             | _ -> ()
-            CommandQueue.executeTransient commandBuffer pool fence queue vkc.Device
+            ConcurrentCommandQueue.executeTransient commandBuffer pool fence queue vkc.Device
         | _ -> ()
 
         // fin
@@ -781,7 +781,7 @@ type [<CustomEquality; NoComparison>] TextureInternal =
         let (queue, pool, fence) = TextureLoadThread.getResources thread vkc
         let commandBuffer = Hl.createTransientCommandBuffer pool vkc.Device
         TextureInternal.uploadAsync commandBuffer metadata mipLevel layer pixels textureInternal vkc
-        CommandQueue.executeTransient commandBuffer pool fence queue vkc.Device
+        ConcurrentCommandQueue.executeTransient commandBuffer pool fence queue vkc.Device
         
         // destroy staging buffer (only) if it was created by async function in synchronous context to prevent massive waste of vram
         if textureInternal.AttachmentMode_.IsAttachmentNone then
@@ -793,12 +793,12 @@ type [<CustomEquality; NoComparison>] TextureInternal =
     static member uploadArrayAsync commandBuffer metadata mipLevel layer (array : 'a array) textureInternal vkc =
         use arrayPin = new ArrayPin<_> (array)
         TextureInternal.uploadAsync commandBuffer metadata mipLevel layer arrayPin.NativeInt textureInternal vkc
-    
+
     /// Upload array of pixel data to TextureInternal. Can only be done once.
     static member uploadArray metadata mipLevel layer (array : 'a array) thread textureInternal vkc =
         use arrayPin = new ArrayPin<_> (array)
         TextureInternal.upload metadata mipLevel layer arrayPin.NativeInt thread textureInternal vkc
-    
+
     /// Generate mipmaps in TextureInternal. Can only be done once, after upload to (only) mipLevel 0.
     /// TODO: DJL: get this working with compressed textures.
     static member generateMipmaps metadata layer thread (textureInternal : TextureInternal) (vkc : VulkanContext) =
@@ -806,16 +806,16 @@ type [<CustomEquality; NoComparison>] TextureInternal =
             let (queue, pool, fence) = TextureLoadThread.getResources thread vkc
             let commandBuffer = Hl.createTransientCommandBuffer pool vkc.Device
             Hl.recordGenerateMipmaps commandBuffer metadata.TextureWidth metadata.TextureHeight textureInternal.MipLevels layer textureInternal.Image
-            CommandQueue.executeTransient commandBuffer pool fence queue vkc.Device
+            ConcurrentCommandQueue.executeTransient commandBuffer pool fence queue vkc.Device
         else Log.warn "Mipmap generation attempted on texture with only one mip level."
-    
+
     /// Create an empty TextureInternal.
     /// NOTE: DJL: this is for fast empty texture creation. It is not preferred for TextureInternal.empty, which is created from Assets.Default.Image.
     static member createEmpty (vkc : VulkanContext) =
         TextureInternal.create
             MipmapNone AttachmentNone Texture2d VkImageUsageFlags.None
             Uncompressed.ImageFormat Uncompressed.PixelFormat (TextureMetadata.make 32 32) vkc
-    
+
     /// Destroy TextureInternal.
     static member destroy (textureInternal : TextureInternal) (vkc : VulkanContext) =
         TextureVulkan.destroy textureInternal.TextureVulkan_ vkc

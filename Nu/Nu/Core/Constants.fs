@@ -54,6 +54,7 @@ module OpenGL =
 module Vulkan =
 
     let [<Uniform>] MoltenVk = OperatingSystem.IsIOS () || match ConfigurationManager.AppSettings.["MoltenVk"] with null -> false | value -> scvalue value
+    let [<Literal>] RenderCommandBufferCountDefault = 32
     let [<Literal>] DescriptorSetCountDefault = 32
 
 [<RequireQualifiedAccess>]

@@ -190,9 +190,12 @@ module SpriteBatch =
 
                     // draw
                     Vulkan.vkCmdDraw (env.VulkanContext.RenderCommandBuffer, uint (6 * env.SpriteIndex), 1u, 0u, 0u)
-                        
+
                     // tear down render
                     Vulkan.vkCmdEndRendering env.VulkanContext.RenderCommandBuffer
+
+                    // advance rendering command buffer
+                    VulkanContext.advanceRenderCommandBuffer env.VulkanContext
 
                     // advance pipeline
                     Pipeline.advance env.SpriteIndex env.Pipeline

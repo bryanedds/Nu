@@ -282,7 +282,8 @@ module CubeMap =
         (resolution : int)
         (colorAttachment : VkImageView)
         (pipeline : CubeMapPipeline)
-        (commandBuffer : VkCommandBuffer)
+        (getCommandBuffer : unit -> VkCommandBuffer)
+        (advanceCommandBufferWhenNeeded : VulkanContext -> unit)
         (vkc : VulkanContext) =
 
         // compute vulkan-appropriate matrices
@@ -310,13 +311,14 @@ module CubeMap =
                 Pipeline.writeDescriptorSampler 0 0 sampler vkSet vkc
 
             // set up render
+            let commandBuffer = getCommandBuffer ()
             let mutable renderArea = VkRect2D (0, 0, uint resolution, uint resolution)
             let mutable vkViewport = Hl.makeViewport false renderArea
             let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment|] None renderArea None
             Vulkan.vkCmdBeginRendering (commandBuffer, asPointer &renderingInfo)
             Vulkan.vkCmdSetViewport (commandBuffer, 0u, 1u, asPointer &vkViewport)
             Vulkan.vkCmdSetScissor (commandBuffer, 0u, 1u, asPointer &renderArea)
-                
+    
             // set up pipeline
             Vulkan.vkCmdBindPipeline (commandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
 
@@ -333,9 +335,12 @@ module CubeMap =
 
             // draw
             Vulkan.vkCmdDrawIndexed (commandBuffer, uint geometry.ElementCount, 1u, 0u, 0, 0u)
-        
+
             // tear down render
             Vulkan.vkCmdEndRendering commandBuffer
+
+            // advance rendering command buffer when needed
+            advanceCommandBufferWhenNeeded vkc
 
             // advance pipeline
             Pipeline.advance 1 pipeline.Pipeline

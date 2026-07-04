@@ -245,7 +245,7 @@ type Buffer =
         let commandBuffer = Hl.createTransientCommandBuffer vkc.TransientCommandPool vkc.Device
         let mutable region = VkBufferCopy (size = uint64 size)
         Vulkan.vkCmdCopyBuffer (commandBuffer, source, destination, 1u, asPointer &region)
-        CommandQueue.executeTransient commandBuffer vkc.TransientCommandPool vkc.TransientFence vkc.RenderQueue vkc.Device
+        ConcurrentCommandQueue.executeTransient commandBuffer vkc.TransientCommandPool vkc.TransientFence vkc.RenderQueue vkc.Device
 
     /// Begin use of this buffer for the current frame.
     static member beginFrame buffer =

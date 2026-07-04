@@ -137,6 +137,9 @@ module SkyBox =
             // tear down render
             Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
+            // advance rendering command buffer
+            VulkanContext.advanceRenderCommandBuffer vkc
+
             // advance pipeline
             Pipeline.advance 1 pipeline.Pipeline
 

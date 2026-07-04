@@ -1180,7 +1180,7 @@ type [<ReferenceEquality>] private RenderTasks =
                     m = mCached &&
                     cs = csCached &&
                     bo = boCached && // TODO: P0: optimize?
-                    OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.equals s sCached)
+                    PhysicallyBasedSurfaceFns.equals s sCached)
             deferredStaticCached &&
             deferredStaticPreBatchesCached &&
             deferredStaticClippedCached &&
@@ -3393,7 +3393,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                                 renderer.CubeMapSampler
                                 renderer.IrradianceMap.InternalFormat
                                 renderer.IrradiancePipeline
-                                renderer.VulkanContext.RenderCommandBuffer
+                                (fun vkc -> renderer.VulkanContext.RenderCommandBuffer)
+                                (fun vkc -> VulkanContext.advanceRenderCommandBuffer renderer.VulkanContext)
                                 renderer.VulkanContext
 
                         // render fallback env filter map
@@ -3404,7 +3405,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                                 renderer.CubeMapSampler
                                 renderer.EnvironmentFilterMap.InternalFormat
                                 renderer.EnvironmentFilterPipeline
-                                renderer.VulkanContext.RenderCommandBuffer
+                                (fun vkc -> renderer.VulkanContext.RenderCommandBuffer)
+                                (fun vkc -> VulkanContext.advanceRenderCommandBuffer renderer.VulkanContext)
                                 renderer.VulkanContext
 
                         // add to cache and create light map
@@ -3438,7 +3440,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                                     lightProbeOrigin
                                     lightProbeAmbientColor
                                     lightProbeAmbientBrightness
-                                    renderer.VulkanContext.RenderCommandBuffer
+                                    (fun vkc -> renderer.VulkanContext.RenderCommandBuffer)
+                                    (fun vkc -> VulkanContext.advanceRenderCommandBuffer renderer.VulkanContext)
                                     renderer.VulkanContext
 
                             // create irradiance map
@@ -3449,7 +3452,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                                     renderer.CubeMapSampler
                                     renderer.IrradianceMap.InternalFormat
                                     renderer.IrradiancePipeline
-                                    renderer.VulkanContext.RenderCommandBuffer
+                                    (fun vkc -> renderer.VulkanContext.RenderCommandBuffer)
+                                    (fun vkc -> VulkanContext.advanceRenderCommandBuffer renderer.VulkanContext)
                                     renderer.VulkanContext
 
                             // create env filter map
@@ -3460,7 +3464,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                                     renderer.CubeMapSampler
                                     renderer.EnvironmentFilterMap.InternalFormat
                                     renderer.EnvironmentFilterPipeline
-                                    renderer.VulkanContext.RenderCommandBuffer
+                                    (fun vkc -> renderer.VulkanContext.RenderCommandBuffer)
+                                    (fun vkc -> VulkanContext.advanceRenderCommandBuffer renderer.VulkanContext)
                                     renderer.VulkanContext
 
                             // destroy reflection map
@@ -3773,7 +3778,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 cubeMapSampler
                 irradianceFormat
                 irradiancePipeline
-                commandBuffer
+                (fun vkc -> commandBuffer)
+                ignore
                 vkc
         let environmentFilterMap =
             LightMap.createEnvironmentFilterMap
@@ -3782,10 +3788,11 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 cubeMapSampler
                 environmentFilterFormat
                 environmentFilterPipeline
-                commandBuffer
+                (fun vkc -> commandBuffer)
+                ignore
                 vkc
         let fence = Hl.createFence false vkc.Device
-        CommandQueue.executeTransient commandBuffer vkc.TransientCommandPool fence vkc.RenderQueue vkc.Device
+        ConcurrentCommandQueue.executeTransient commandBuffer vkc.TransientCommandPool fence vkc.RenderQueue vkc.Device
         Vulkan.vkDestroyFence (vkc.Device, fence, nullPtr)
 
         // compute compressed image file extension

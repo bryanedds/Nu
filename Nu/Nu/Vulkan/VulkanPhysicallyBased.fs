@@ -1762,6 +1762,9 @@ module PhysicallyBased =
         // tear down render
         Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
+        // advance rendering command buffer
+        VulkanContext.advanceRenderCommandBuffer vkc
+
     /// Begin drawing a batch of physically-based deferred surfaces.
     let beginPhysicallyBasedDeferredSurfaces
         (eyeCenter : Vector3)
@@ -1884,6 +1887,9 @@ module PhysicallyBased =
 
         // tear down render
         Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
+
+        // advance rendering command buffer
+        VulkanContext.advanceRenderCommandBuffer vkc
 
     /// Create a PhysicallyBasedDeferredLightingPipeline.
     let createPhysicallyBasedDeferredLightingPipeline colorAttachmentFormat vkc =
@@ -2096,6 +2102,9 @@ module PhysicallyBased =
             // tear down render
             Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
+            // advance rendering command buffer
+            VulkanContext.advanceRenderCommandBuffer vkc
+
             // advance pipeline
             Pipeline.advance 1 pipeline.Pipeline
 
@@ -2300,6 +2309,9 @@ module PhysicallyBased =
             // tear down render
             Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
+            // advance rendering command buffer
+            VulkanContext.advanceRenderCommandBuffer vkc
+
             // advance pipeline
             Pipeline.advance 1 pipeline.Pipeline
 
@@ -2451,6 +2463,9 @@ module PhysicallyBased =
             // tear down render
             Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
+            // advance rendering command buffer
+            VulkanContext.advanceRenderCommandBuffer vkc
+
             // advance pipeline
             Pipeline.advance 1 pipeline.Pipeline
 
@@ -2593,6 +2608,9 @@ module PhysicallyBased =
             // tear down render
             Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
+            // advance rendering command buffer
+            VulkanContext.advanceRenderCommandBuffer vkc
+
             // advance pipeline
             Pipeline.advance 1 pipeline.Pipeline
 
@@ -2718,6 +2736,9 @@ module PhysicallyBased =
 
             // tear down render
             Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
+
+            // advance rendering command buffer
+            VulkanContext.advanceRenderCommandBuffer vkc
 
             // advance pipeline
             Pipeline.advance 1 pipeline.Pipeline
@@ -2873,6 +2894,9 @@ module PhysicallyBased =
 
             // tear down render
             Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
+
+            // advance rendering command buffer
+            VulkanContext.advanceRenderCommandBuffer vkc
 
             // advance pipeline
             Pipeline.advance 1 pipeline.Pipeline
@@ -3064,6 +3088,9 @@ module PhysicallyBased =
             // tear down render
             Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
+            // advance rendering command buffer
+            VulkanContext.advanceRenderCommandBuffer vkc
+
             // advance pipeline
             Pipeline.advance 1 pipeline.Pipeline
 
@@ -3201,6 +3228,9 @@ module PhysicallyBased =
 
             // tear down render
             Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
+
+            // advance rendering command buffer
+            VulkanContext.advanceRenderCommandBuffer vkc
 
             // advance pipeline
             Pipeline.advance 1 pipeline.Pipeline
@@ -3502,6 +3532,9 @@ module PhysicallyBased =
 
         // tear down render
         Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
+
+        // advance rendering command buffer
+        VulkanContext.advanceRenderCommandBuffer vkc
 
     let createPhysicallyBasedPipelines lightMapsMax lightsMax attachments vkc =
 

@@ -34,7 +34,7 @@ type [<Struct>] LightMap =
 module LightMap =
 
     /// Create a reflection map.
-    let createReflectionMap render resolution origin ambientColor ambientBrightness commandBuffer vkc =
+    let createReflectionMap render resolution origin ambientColor ambientBrightness getCommandBuffer advanceCommandBufferWhenNeeded vkc =
 
         // create reflection cube map
         let metadata = TextureMetadata.make resolution resolution
@@ -87,12 +87,12 @@ module LightMap =
             //Hl.saveFramebufferRgbaToBitmap resolution resolution ("Reflection." + string reflectionCubeMapId + "." + string i + ".bmp")
 
         // transition cubemap layout
-        Hl.recordTransitionLayout true 1 0 6 VkImageAspectFlags.Color ColorAttachmentWrite ShaderRead reflectionCubeMap.Image commandBuffer
+        Hl.recordTransitionLayout true 1 0 6 VkImageAspectFlags.Color ColorAttachmentWrite ShaderRead reflectionCubeMap.Image (getCommandBuffer ())
 
         // fin
         reflectionCubeMap
 
-    let createIrradianceMap resolution (cubeMapSurface : CubeMapSurface) sampler colorFormat irradiancePipeline commandBuffer vkc =
+    let createIrradianceMap resolution (cubeMapSurface : CubeMapSurface) sampler colorFormat irradiancePipeline getCommandBuffer advanceCommandBufferWhenNeeded vkc =
 
         // create irradiance cube map
         let metadata = TextureMetadata.make resolution resolution
@@ -120,14 +120,15 @@ module LightMap =
             let view = views[i]
             CubeMap.drawCubeMap
                 eyeCenter view projection cubeMapSurface.CubeMap sampler
-                cubeMapSurface.CubeMapGeometry resolution cubeMap.SubViews[0, i] irradiancePipeline commandBuffer vkc
+                cubeMapSurface.CubeMapGeometry resolution cubeMap.SubViews[0, i]
+                irradiancePipeline getCommandBuffer advanceCommandBufferWhenNeeded vkc
 
             // take a snapshot for testing
             // TODO: DJL: implement.
             //Hl.saveFramebufferRgbaToBitmap resolution resolution ("Irradiance." + string cubeMapId + "." + string i + ".bmp")
 
         // transition cubemap layout
-        Hl.recordTransitionLayout true 1 0 6 VkImageAspectFlags.Color ColorAttachmentWrite ShaderRead cubeMap.Image commandBuffer
+        Hl.recordTransitionLayout true 1 0 6 VkImageAspectFlags.Color ColorAttachmentWrite ShaderRead cubeMap.Image (getCommandBuffer ())
         
         // fin
         cubeMap
@@ -175,7 +176,8 @@ module LightMap =
         (geometry : CubeMapGeometry)
         (colorAttachment : VkImageView)
         (pipeline : EnvironmentFilterPipeline)
-        (commandBuffer : VkCommandBuffer)
+        (getCommandBuffer : VulkanContext -> VkCommandBuffer)
+        (advanceCommandBufferWhenNeeded : VulkanContext -> unit)
         (vkc : VulkanContext) =
 
         // compute vulkan-appropriate matrices
@@ -210,6 +212,7 @@ module LightMap =
                 Pipeline.writeDescriptorSampler 0 0 sampler vkSet vkc
 
             // set up render
+            let commandBuffer = getCommandBuffer vkc
             let mutable renderArea = VkRect2D (0, 0, uint resolution, uint resolution)
             let mutable vkViewport = Hl.makeViewport true renderArea // NOTE: when drawing _to_ a cube map, it's expected to come out upside-down.
             let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment|] None renderArea None
@@ -219,7 +222,7 @@ module LightMap =
 
             // set up pipeline
             Vulkan.vkCmdBindPipeline (commandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
-                
+
             // bind vertex and index buffers
             let mutable vertexBuffer = geometry.VertexBuffer.VkBuffer
             let mutable vertexOffset = 0UL
@@ -230,12 +233,15 @@ module LightMap =
             Vulkan.vkCmdBindDescriptorSets (commandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, asPointer &uniformDescriptorSet, 0u, nullPtr)
             Vulkan.vkCmdBindDescriptorSets (commandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, asPointer &cubeMapDescriptorSet, 0u, nullPtr)
             Vulkan.vkCmdBindDescriptorSets (commandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 2u, 1u, asPointer &samplerDescriptorSet, 0u, nullPtr)
-                
+
             // draw
             Vulkan.vkCmdDrawIndexed (commandBuffer, uint geometry.ElementCount, 1u, 0u, 0, 0u)
 
             // tear down render
             Vulkan.vkCmdEndRendering commandBuffer
+
+            // advance rendering command buffer when needed
+            advanceCommandBufferWhenNeeded vkc
 
             // advance pipeline
             Pipeline.advance 1 pipeline.Pipeline
@@ -244,7 +250,7 @@ module LightMap =
         | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
     
     /// Create an environment filter map.
-    let createEnvironmentFilterMap resolution (environmentFilterSurface : CubeMapSurface) sampler colorFormat environmentFilterPipeline commandBuffer vkc =
+    let createEnvironmentFilterMap resolution (environmentFilterSurface : CubeMapSurface) sampler colorFormat environmentFilterPipeline getCommandBuffer advanceCommandBufferWhenNeeded vkc =
 
         // create environment filter cube map
         let metadata = TextureMetadata.make resolution resolution
@@ -275,14 +281,15 @@ module LightMap =
                 let view = views[i]
                 drawEnvironmentFilter
                     eyeCenter view projection mipRoughness mipResolution environmentFilterSurface.CubeMap sampler
-                    environmentFilterSurface.CubeMapGeometry cubeMap.SubViews[mip, i] environmentFilterPipeline commandBuffer vkc
+                    environmentFilterSurface.CubeMapGeometry cubeMap.SubViews[mip, i]
+                    environmentFilterPipeline getCommandBuffer advanceCommandBufferWhenNeeded vkc
 
                 // take a snapshot for testing
                 // TODO: DJL: implement.
                 //Hl.saveFramebufferRgbaToBitmap (int mipResolution) (int mipResolution) ("EnvironmentFilter." + string i + "." + string mip + ".bmp")
 
         // transition cubemap layout
-        Hl.recordTransitionLayout true cubeMap.MipLevels 0 6 VkImageAspectFlags.Color ColorAttachmentWrite ShaderRead cubeMap.Image commandBuffer
+        Hl.recordTransitionLayout true cubeMap.MipLevels 0 6 VkImageAspectFlags.Color ColorAttachmentWrite ShaderRead cubeMap.Image (getCommandBuffer vkc)
 
         // fin
         cubeMap

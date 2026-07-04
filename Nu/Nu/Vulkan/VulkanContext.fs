@@ -14,60 +14,31 @@ open Vortice.Vulkan
 open Prime
 open Nu
 
+type CommandBufferSubmissionType =
+    | FirstSubmission
+    | MiddleSubmission
+    | LastSubmission
+
 /// A command queue that internally synchronizes use across multiple threads.
-type [<ReferenceEquality>] CommandQueue =
+type [<ReferenceEquality>] ConcurrentCommandQueue =
     private
-        { VkQueue : VkQueue
-          Lock : obj }
+        { VkQueue_ : VkQueue
+          Lock_ : obj }
 
-    /// Create a Queue.
-    static member create queueFamilyIndex queueIndex device =
-    
-        // get VkQueue
-        let mutable vkQueue = Unchecked.defaultof<VkQueue>
-        Vulkan.vkGetDeviceQueue (device, queueFamilyIndex, queueIndex, &vkQueue)
-
-        // make Queue
-        let queue =
-            { VkQueue = vkQueue
-              Lock = obj () }
-
-        // fin
-        queue
+    ///
+    static member withLock queue (fn : VkQueue -> unit) =
+        lock queue.Lock_ (fun () -> fn queue.VkQueue_) : unit
 
     /// Wait for Queue to finish execution.
     static member waitIdle queue =
-        lock queue.Lock (fun () -> Vulkan.vkQueueWaitIdle queue.VkQueue |> Hl.check)
-
-    /// Submit persistent command buffer for execution.
-    static member submit commandBuffer waitSemaphoresStages (signalSemaphores : VkSemaphore array) signalFence (commandQueue : CommandQueue) =
-        lock commandQueue.Lock (fun () ->
-
-            // end command buffer
-            Vulkan.vkEndCommandBuffer commandBuffer |> Hl.check
-        
-            // unpack and pin arrays
-            let (waitSemaphores, waitStages) = Array.unzip waitSemaphoresStages
-            use waitSemaphoresPin = new ArrayPin<_> (waitSemaphores)
-            use waitStagesPin = new ArrayPin<_> (waitStages)
-            use signalSemaphoresPin = new ArrayPin<_> (signalSemaphores)
-
-            // submit commands
-            let mutable commandBuffer = commandBuffer
-            let mutable info = VkSubmitInfo ()
-            info.waitSemaphoreCount <- uint waitSemaphores.Length
-            info.pWaitSemaphores <- waitSemaphoresPin.Pointer
-            info.pWaitDstStageMask <- waitStagesPin.Pointer
-            info.commandBufferCount <- 1u
-            info.pCommandBuffers <- asPointer &commandBuffer
-            info.signalSemaphoreCount <- uint signalSemaphores.Length
-            info.pSignalSemaphores <- signalSemaphoresPin.Pointer
-            Vulkan.vkQueueSubmit (commandQueue.VkQueue, 1u, asPointer &info, signalFence) |> Hl.check)
+        ConcurrentCommandQueue.withLock queue (fun vkQueue -> Vulkan.vkQueueWaitIdle vkQueue |> Hl.check)
 
     /// Execute and free transient command buffer. Command pool and fence must NOT be shared between threads!
-    static member executeTransient commandBuffer commandPool finishFence (commandQueue : CommandQueue) device =
+    static member executeTransient commandBuffer commandPool finishFence (commandQueue : ConcurrentCommandQueue) device =
+
+        // lock to get access to vulkan queue
         let mutable commandBuffer = commandBuffer
-        lock commandQueue.Lock (fun () ->
+        ConcurrentCommandQueue.withLock commandQueue (fun vkQueue ->
         
             // end command buffer
             Vulkan.vkEndCommandBuffer commandBuffer |> Hl.check
@@ -76,33 +47,20 @@ type [<ReferenceEquality>] CommandQueue =
             let mutable info = VkSubmitInfo ()
             info.commandBufferCount <- 1u
             info.pCommandBuffers <- asPointer &commandBuffer
-            Vulkan.vkQueueSubmit (commandQueue.VkQueue, 1u, asPointer &info, finishFence) |> Hl.check
+            Vulkan.vkQueueSubmit (vkQueue, 1u, asPointer &info, finishFence) |> Hl.check
 
             // wait for execution to finish
-            // NOTE: DJL: must ALSO be thread safe!
             Hl.awaitFence finishFence device
 
             // free command buffer
             Vulkan.vkFreeCommandBuffers (device, commandPool, 1u, asPointer &commandBuffer))
 
-    /// Present swapchain image.
-    static member present waitSemaphore vkSwapchain (commandQueue : CommandQueue) =
-
-        // try to present image
-        let result =
-            lock commandQueue.Lock (fun () ->
-                let mutable waitSemaphore = waitSemaphore
-                let mutable vkSwapchain = vkSwapchain
-                let mutable info = VkPresentInfoKHR ()
-                info.waitSemaphoreCount <- 1u
-                info.pWaitSemaphores <- asPointer &waitSemaphore
-                info.swapchainCount <- 1u
-                info.pSwapchains <- asPointer &vkSwapchain
-                info.pImageIndices <- asPointer &Hl.ImageIndex
-                Vulkan.vkQueuePresentKHR (commandQueue.VkQueue, asPointer &info))
-    
-        // return result
-        result
+    /// Create a ConcurrentCommandQueue.
+    static member create queueFamilyIndex queueIndex device =
+        let mutable vkQueue = Unchecked.defaultof<VkQueue>
+        Vulkan.vkGetDeviceQueue (device, queueFamilyIndex, queueIndex, &vkQueue)
+        let queue = { VkQueue_ = vkQueue; Lock_ = obj () }
+        queue
 
 /// A physical device and associated data.
 type PhysicalDevice =
@@ -345,8 +303,8 @@ type SwapchainSingleton =
         
         // TODO: DJL: this is not sufficient to ensure resources not still in use, that requires an extension!!
         // https://docs.vulkan.org/guide/latest/swapchain_semaphore_reuse.html#_vk_ext_swapchain_maintenance1_extension
-        CommandQueue.waitIdle renderQueue
-        CommandQueue.waitIdle presentQueue
+        ConcurrentCommandQueue.waitIdle renderQueue
+        ConcurrentCommandQueue.waitIdle presentQueue
         for i in 0 .. dec swapchainSingleton.ImageViews.Length do Vulkan.vkDestroyImageView (device, swapchainSingleton.ImageViews[i], nullPtr)
         Vulkan.vkDestroySwapchainKHR (device, swapchainSingleton.VkSwapchain, nullPtr)
         for i in 0 .. dec swapchainSingleton.RenderFinishedSemaphores.Length do Vulkan.vkDestroySemaphore (device, swapchainSingleton.RenderFinishedSemaphores[i], nullPtr)
@@ -543,12 +501,13 @@ type [<ReferenceEquality>] VulkanContext =
           RenderCommandPool_ : VkCommandPool
           TransientCommandPool_ : VkCommandPool
           TextureCommandPool_ : VkCommandPool
-          RenderCommandBuffer_ : VkCommandBuffer
-          RenderQueue_ : CommandQueue
-          PresentQueue_ : CommandQueue
-          TextureQueue_ : CommandQueue
+          RenderCommandBuffers_ : VkCommandBuffer List
+          mutable RenderCommandBuffersCursor_ : int
+          RenderQueue_ : ConcurrentCommandQueue
+          PresentQueue_ : ConcurrentCommandQueue
+          TextureQueue_ : ConcurrentCommandQueue
           ImageAvailableSemaphore_ : VkSemaphore
-          InFlightFence_ : VkFence
+          RenderFence_ : VkFence
           TransientFence_ : VkFence
           TextureFence_ : VkFence }
 
@@ -579,8 +538,8 @@ type [<ReferenceEquality>] VulkanContext =
     /// The command pool for texture command buffers.
     member this.TextureCommandPool = this.TextureCommandPool_
     
-    /// The render command buffer for the current frame.
-    member this.RenderCommandBuffer = this.RenderCommandBuffer_
+    /// The current render command buffer.
+    member this.RenderCommandBuffer = this.RenderCommandBuffers_[this.RenderCommandBuffersCursor_]
 
     /// The render command queue.
     member this.RenderQueue = this.RenderQueue_
@@ -588,14 +547,14 @@ type [<ReferenceEquality>] VulkanContext =
     /// The texture command queue.
     member this.TextureQueue = this.TextureQueue_
 
-    /// The image available semaphore for the current frame.
+    /// The image available semaphore.
     member this.ImageAvailableSemaphore = this.ImageAvailableSemaphore_
 
-    /// The render finished semaphore for the current frame.
+    /// The render finished semaphore.
     member this.RenderFinishedSemaphore = this.Swapchain_.RenderFinishedSemaphore
 
-    /// The in flight fence for the current frame.
-    member this.InFlightFence = this.InFlightFence_
+    /// The render fence.
+    member this.RenderFence = this.RenderFence_
 
     /// The texture fence.
     member this.TextureFence = this.TextureFence_
@@ -900,7 +859,7 @@ type [<ReferenceEquality>] VulkanContext =
 
     /// Create a command pool.
     static member private createCommandPool transient queueFamilyIndex device =
-        
+
         // apply transient flag if desired
         let flags =
             if transient
@@ -916,9 +875,13 @@ type [<ReferenceEquality>] VulkanContext =
         commandPool
 
     /// Allocate an array of command buffers for each frame in flight.
-    static member private allocateCommandBuffers count commandPool device =
-        Hl.allocateCommandBuffers count commandPool device
-    
+    static member private allocateCommandBuffersPrimary count commandPool device =
+        Hl.allocateCommandBuffers count VkCommandBufferLevel.Primary commandPool device
+
+    /// Allocate an array of command buffers for each frame in flight.
+    static member private allocateCommandBuffersSecondary count commandPool device =
+        Hl.allocateCommandBuffers count VkCommandBufferLevel.Secondary commandPool device
+
     /// Create image available semaphores.
     static member private createImageAvailableSemaphore device =
         Hl.createSemaphore device
@@ -939,27 +902,71 @@ type [<ReferenceEquality>] VulkanContext =
         // occurs first so backgrounding can still be handled straight away
         if not vkc.WaitingForWindowRestore_ || Hl.getBackgroundingRequested ()
         then Swapchain.update vkc.PhysicalDevice_ vkc.RenderQueue_ vkc.PresentQueue_ vkc.Swapchain_ vkc.Device vkc.Instance_
-    
+
     /// Wait for app to return to foreground.
     static member private handleBackgrounding vkc =
         vkc.WaitingForWindowRestore_ <- Swapchain.isWindowMinimized vkc.Swapchain_.Window_
         if  not (Hl.getBackgrounded ()) &&
             not vkc.WaitingForWindowRestore_ then
             Swapchain.update vkc.PhysicalDevice_ vkc.RenderQueue_ vkc.PresentQueue_ vkc.Swapchain_ vkc.Device vkc.Instance_
-    
+
+    static member private beginRenderCommandBuffer (vkc : VulkanContext) =
+        if vkc.RenderCommandBuffersCursor_ >= vkc.RenderCommandBuffers_.Count then
+            let buffers = VulkanContext.allocateCommandBuffersPrimary vkc.RenderCommandBuffers_.Count vkc.RenderCommandPool_ vkc.Device
+            vkc.RenderCommandBuffers_.AddRange buffers
+        let commandBuffer = vkc.RenderCommandBuffers_[vkc.RenderCommandBuffersCursor_]
+        Vulkan.vkResetCommandBuffer (commandBuffer, VkCommandBufferResetFlags.None) |> Hl.check
+        let mutable beginInfo = VkCommandBufferBeginInfo ()
+        Vulkan.vkBeginCommandBuffer (commandBuffer, &&beginInfo) |> Hl.check
+
+    static member private endRenderCommandBuffer submissionType (vkc : VulkanContext) =
+
+        // lock to get access to vulkan queue
+        ConcurrentCommandQueue.withLock vkc.RenderQueue_ (fun vkQueue ->
+
+            // end command buffer
+            let mutable commandBuffer = vkc.RenderCommandBuffers_[vkc.RenderCommandBuffersCursor_]
+            Vulkan.vkEndCommandBuffer commandBuffer |> Hl.check
+
+            // submit commands as appropriate
+            let mutable submitInfo = VkSubmitInfo ()
+            submitInfo.commandBufferCount <- 1u
+            submitInfo.pCommandBuffers <- &&commandBuffer
+            match submissionType with
+            | FirstSubmission ->
+                let mutable imageAvailableSemaphore = vkc.ImageAvailableSemaphore
+                let mutable topOfPipeStage = VkPipelineStageFlags.TopOfPipe // see wtf here: https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation#page_Subpass-dependencies
+                submitInfo.waitSemaphoreCount <- uint 1
+                submitInfo.pWaitSemaphores <- &&imageAvailableSemaphore
+                submitInfo.pWaitDstStageMask <- &&topOfPipeStage
+                Vulkan.vkQueueSubmit (vkQueue, 1u, &&submitInfo, VkFence.Null) |> Hl.check
+            | MiddleSubmission ->
+                Vulkan.vkQueueSubmit (vkQueue, 1u, &&submitInfo, VkFence.Null) |> Hl.check
+            | LastSubmission ->
+                let mutable renderFinishedSemaphore = vkc.RenderFinishedSemaphore
+                submitInfo.signalSemaphoreCount <- uint 1
+                submitInfo.pSignalSemaphores <- &&renderFinishedSemaphore
+                Vulkan.vkQueueSubmit (vkQueue, 1u, &&submitInfo, vkc.RenderFence_) |> Hl.check
+
+            // advance cursor
+            vkc.RenderCommandBuffersCursor_ <- inc vkc.RenderCommandBuffersCursor_)
+
+    static member advanceRenderCommandBuffer (vkc : VulkanContext) =
+        let submissionType = if vkc.RenderCommandBuffersCursor_ = 0 then FirstSubmission else MiddleSubmission
+        VulkanContext.endRenderCommandBuffer submissionType vkc
+        VulkanContext.beginRenderCommandBuffer vkc
+
     /// Begin the frame.
     static member beginFrame (windowViewport : Viewport) (vkc : VulkanContext) =
 
-        // ensure that rendering is only allowed after passing all checks below
-        vkc.RenderAllowed_ <- false
-
-        // ensure current frame is ready
-        let mutable fence = vkc.InFlightFence
+        // wait for current frame to be ready
+        let mutable fence = vkc.RenderFence_
         Vulkan.vkWaitForFences (vkc.Device, 1u, asPointer &fence, true, UInt64.MaxValue) |> Hl.check
+        Vulkan.vkResetFences (vkc.Device, 1u, asPointer &fence) |> Hl.check
 
-        // the cascade of checks needed to handle window behavior, avoiding 'elif' statements for maximum understandability
-
-        // check if current swapchain is non-existent, typically because app has been backgrounded
+        // update render allowed flag and check if current swapchain is non-existent, typically because app has been
+        // backgrounded
+        vkc.RenderAllowed_ <- false
         if Option.isNone vkc.Swapchain_.SwapchainSingletonOpt then VulkanContext.handleBackgrounding vkc
         else
             // check for handling of minimized window from previous frame(s); if *still* minimized then do nothing; if restored then refresh swapchain
@@ -977,10 +984,8 @@ type [<ReferenceEquality>] VulkanContext =
                             // check that swap extent >= viewport.Bounds >= viewport.Inner; done *after* screen change check to avoid outdated swap extent
                             let extent = vkc.Swapchain_.SwapExtent
                             let swapchainBounds = box2i v2iZero (v2i (int extent.width) (int extent.height))
-                            if
-                                swapchainBounds.ContainsInclusive windowViewport.Bounds = ContainmentType.Contains &&
-                                windowViewport.Bounds.ContainsInclusive windowViewport.Inner = ContainmentType.Contains
-                            then
+                            if  swapchainBounds.ContainsInclusive windowViewport.Bounds = ContainmentType.Contains &&
+                                windowViewport.Bounds.ContainsInclusive windowViewport.Inner = ContainmentType.Contains then
                                 // try to acquire image from swapchain to draw onto
                                 // NOTE: DJL: due to semaphore, if this is successful, the render *must* proceed!
                                 let result = Vulkan.vkAcquireNextImageKHR (vkc.Device, vkc.Swapchain_.VkSwapchain, UInt64.MaxValue, vkc.ImageAvailableSemaphore, VkFence.Null, &Hl.ImageIndex)
@@ -994,14 +999,18 @@ type [<ReferenceEquality>] VulkanContext =
                                         Hl.check result // NOTE: DJL: this will report a suboptimal swapchain image.
                                         vkc.RenderAllowed_ <- true // permit rendering
 
+        // render when allowed
         if vkc.RenderAllowed_ then
-        
-            // begin command recording
-            Hl.createPersistentCommandBuffer vkc.RenderCommandBuffer
-            
+
+            // reset render command buffers cursor
+            vkc.RenderCommandBuffersCursor_ <- 0
+
+            // begin render command recording
+            VulkanContext.beginRenderCommandBuffer vkc
+
             // transition swapchain image layout to color attachment
             Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color Undefined ColorAttachmentWrite vkc.Swapchain_.Image vkc.RenderCommandBuffer
-            
+
             // clear screen
             let renderArea = VkRect2D (VkOffset2D.Zero, vkc.Swapchain_.SwapExtent)
             let clearColor = VkClearValue (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
@@ -1023,49 +1032,60 @@ type [<ReferenceEquality>] VulkanContext =
             Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
     /// End the frame.
-    static member endFrame () =
-        () // nothing to do
+    static member endFrame vkc =
+        ()
 
     /// Present the image back to the swapchain to appear on screen.
     static member present (vkc : VulkanContext) =
+
         if vkc.RenderAllowed_ then
         
             // transition swapchain image layout to presentation
             Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color ColorAttachmentWrite Present vkc.Swapchain_.Image vkc.RenderCommandBuffer
-            
-            // the *simple* solution: https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation#page_Subpass-dependencies
-            let waitStage = VkPipelineStageFlags.TopOfPipe
-            
-            // reset fence and flush commands
-            let mutable fence = vkc.InFlightFence
-            Vulkan.vkResetFences (vkc.Device, 1u, asPointer &fence) |> Hl.check
-            CommandQueue.submit vkc.RenderCommandBuffer [|vkc.ImageAvailableSemaphore, waitStage|] [|vkc.RenderFinishedSemaphore|] fence vkc.RenderQueue
-            
+
+            // 
+            VulkanContext.endRenderCommandBuffer LastSubmission vkc
+
             // one more check for app backgrounding before we present
             if not (Hl.getBackgroundingRequested ()) then
-            
-                // try to present image
-                let result = CommandQueue.present vkc.RenderFinishedSemaphore vkc.Swapchain_.VkSwapchain vkc.PresentQueue_
 
-                // refresh swapchain if framebuffer out of date or suboptimal
-                if result = VkResult.ErrorOutOfDateKHR || result = VkResult.SuboptimalKHR then VulkanContext.handleWindowSize vkc
+                // lock to get access to underlying vulkan queue
+                ConcurrentCommandQueue.withLock vkc.PresentQueue_ (fun vkQueue ->
+            
+                    // try to present image
+                    let mutable waitSemaphore = vkc.Swapchain_.RenderFinishedSemaphore
+                    let mutable vkSwapchain = vkc.Swapchain_.VkSwapchain
+                    let mutable info = VkPresentInfoKHR ()
+                    info.waitSemaphoreCount <- 1u
+                    info.pWaitSemaphores <- asPointer &waitSemaphore
+                    info.swapchainCount <- 1u
+                    info.pSwapchains <- asPointer &vkSwapchain
+                    info.pImageIndices <- asPointer &Hl.ImageIndex
+                    let result = Vulkan.vkQueuePresentKHR (vkQueue, asPointer &info)
+
+                    // refresh swapchain if framebuffer out of date or suboptimal
+                    if result = VkResult.ErrorOutOfDateKHR || result = VkResult.SuboptimalKHR then
+                        VulkanContext.handleWindowSize vkc
                 
-                // destroy surface if lost
-                elif result = VkResult.ErrorSurfaceLostKHR then
-                    Hl.SurfaceState <- SurfaceLost
-                    Swapchain.update vkc.PhysicalDevice_ vkc.RenderQueue_ vkc.PresentQueue_ vkc.Swapchain_ vkc.Device vkc.Instance_
-                else Hl.check result
+                    // destroy surface if lost
+                    elif result = VkResult.ErrorSurfaceLostKHR then
+                        Hl.SurfaceState <- SurfaceLost
+                        Swapchain.update vkc.PhysicalDevice_ vkc.RenderQueue_ vkc.PresentQueue_ vkc.Swapchain_ vkc.Device vkc.Instance_
+                
+                    // normal check
+                    else Hl.check result)
 
             // this is valid because RenderFinishedSemaphore will be destroyed
             else Swapchain.update vkc.PhysicalDevice_ vkc.RenderQueue_ vkc.PresentQueue_ vkc.Swapchain_ vkc.Device vkc.Instance_
 
+
     /// Wait for all device operations to complete before cleaning up resources.
     static member waitIdle (vkc : VulkanContext) =
-        
-        // never call vkDeviceWaitIdle as its implementation compromises queue thread safety
-        CommandQueue.waitIdle vkc.RenderQueue_
-        CommandQueue.waitIdle vkc.PresentQueue_
-        CommandQueue.waitIdle vkc.TextureQueue_
+
+        // NOTE: we never call vkDeviceWaitIdle as its implementation compromises queue thread safety.
+        ConcurrentCommandQueue.waitIdle vkc.RenderQueue_
+        ConcurrentCommandQueue.waitIdle vkc.PresentQueue_
+        ConcurrentCommandQueue.waitIdle vkc.TextureQueue_
 
     /// Attempt to create a VulkanContext.
     /// NOTE: this procedure is intended to be invoked from the main thread to satisfy the requirements of Mac and
@@ -1104,25 +1124,25 @@ type [<ReferenceEquality>] VulkanContext =
             let allocator = VulkanContext.createVmaAllocator physicalDevice device instance
 
             // create render queue
-            let renderQueue = CommandQueue.create physicalDevice.GraphicsQueueFamily 0u device
-            
+            let renderQueue = ConcurrentCommandQueue.create physicalDevice.GraphicsQueueFamily 0u device
+
             // create seperate present queue if graphics queue family does not support presentation
             let presentQueue =
                 if physicalDevice.GraphicsQueueFamily <> physicalDevice.PresentQueueFamily
-                then CommandQueue.create physicalDevice.PresentQueueFamily 0u device
+                then ConcurrentCommandQueue.create physicalDevice.PresentQueueFamily 0u device
                 else renderQueue
             
             // create seperate queue for texture server thread if available
             let textureQueue =
                 if physicalDevice.GraphicsQueueCount > 1u
-                then CommandQueue.create physicalDevice.GraphicsQueueFamily 1u device
+                then ConcurrentCommandQueue.create physicalDevice.GraphicsQueueFamily 1u device
                 else renderQueue
-            
+
             // setup execution for rendering on render thread
             let renderCommandPool = VulkanContext.createCommandPool false physicalDevice.GraphicsQueueFamily device
-            let renderCommandBuffer = (VulkanContext.allocateCommandBuffers 1 renderCommandPool device).[0]
+            let renderCommandBuffers = VulkanContext.allocateCommandBuffersPrimary Constants.Vulkan.RenderCommandBufferCountDefault renderCommandPool device
             let inFlightFence = VulkanContext.createInFlightFence device
-            
+
             // setup execution for presentation on render thread
             let imageAvailableSemaphore = VulkanContext.createImageAvailableSemaphore device
             
@@ -1151,12 +1171,13 @@ type [<ReferenceEquality>] VulkanContext =
                   RenderCommandPool_ = renderCommandPool
                   TransientCommandPool_ = transientCommandPool
                   TextureCommandPool_ = textureCommandPool
-                  RenderCommandBuffer_ = renderCommandBuffer
+                  RenderCommandBuffers_ = List renderCommandBuffers
+                  RenderCommandBuffersCursor_ = 0
                   RenderQueue_ = renderQueue
                   PresentQueue_ = presentQueue
                   TextureQueue_ = textureQueue
                   ImageAvailableSemaphore_ = imageAvailableSemaphore
-                  InFlightFence_ = inFlightFence
+                  RenderFence_ = inFlightFence
                   TransientFence_ = transientFence
                   TextureFence_ = textureFence }
 
@@ -1171,7 +1192,7 @@ type [<ReferenceEquality>] VulkanContext =
     static member cleanup vkc =
         Swapchain.destroy vkc.RenderQueue_ vkc.PresentQueue_ vkc.Swapchain_ vkc.Device
         Vulkan.vkDestroySemaphore (vkc.Device, vkc.ImageAvailableSemaphore_, nullPtr)
-        Vulkan.vkDestroyFence (vkc.Device, vkc.InFlightFence_, nullPtr)
+        Vulkan.vkDestroyFence (vkc.Device, vkc.RenderFence_, nullPtr)
         Vulkan.vkDestroyFence (vkc.Device, vkc.TextureFence, nullPtr)
         Vulkan.vkDestroyFence (vkc.Device, vkc.TransientFence, nullPtr)
         Vulkan.vkDestroyCommandPool (vkc.Device, vkc.RenderCommandPool_, nullPtr)

@@ -643,7 +643,7 @@ module Hl =
             Log.fail message
 #else
             Log.error message
-#endif            
+#endif
 
     /// Report the fact that a draw call has just been made with the given number of instances.
     let reportDrawCall drawInstances =
@@ -763,10 +763,10 @@ module Hl =
         imageView
 
     /// Allocate an array of command buffers.
-    let allocateCommandBuffers count commandPool device =
+    let allocateCommandBuffers count commandBufferLevel commandPool device =
         let mutable info = VkCommandBufferAllocateInfo ()
         info.commandPool <- commandPool
-        info.level <- VkCommandBufferLevel.Primary
+        info.level <- commandBufferLevel
         info.commandBufferCount <- uint count
         let commandBuffers = Array.zeroCreate<VkCommandBuffer> count
         use commandBuffersPin = new ArrayPin<_> (commandBuffers)
@@ -774,8 +774,8 @@ module Hl =
         commandBuffers
 
     /// Allocate a command buffer.
-    let allocateCommandBuffer commandPool device =
-        let commandBuffers = allocateCommandBuffers 1 commandPool device
+    let allocateCommandBuffer commandBufferLevel commandPool device =
+        let commandBuffers = allocateCommandBuffers 1 commandBufferLevel commandPool device
         commandBuffers[0]
 
     /// Create a semaphore.
@@ -800,16 +800,10 @@ module Hl =
         Vulkan.vkWaitForFences (device, 1u, asPointer &fence, true, UInt64.MaxValue) |> check
         Vulkan.vkResetFences (device, 1u, asPointer &fence) |> check
 
-    /// Create a persistent command buffer.
-    let createPersistentCommandBuffer commandBuffer =
-        Vulkan.vkResetCommandBuffer (commandBuffer, VkCommandBufferResetFlags.None) |> check
-        let mutable cbInfo = VkCommandBufferBeginInfo ()
-        Vulkan.vkBeginCommandBuffer (commandBuffer, asPointer &cbInfo) |> check
-
     /// Create a transient command buffer.
     /// TODO: DJL: review choice of transient command buffers over normal ones.
     let createTransientCommandBuffer commandPool device =
-        let commandBuffer = allocateCommandBuffer commandPool device
+        let commandBuffer = allocateCommandBuffer VkCommandBufferLevel.Primary commandPool device
         let mutable cbInfo = VkCommandBufferBeginInfo (flags = VkCommandBufferUsageFlags.OneTimeSubmit)
         Vulkan.vkBeginCommandBuffer (commandBuffer, asPointer &cbInfo) |> check
         commandBuffer

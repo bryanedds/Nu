@@ -203,7 +203,7 @@ type RendererInline () =
                 messagesImGui.Clear ()
 
                 // end frame
-                VulkanContext.endFrame ()
+                VulkanContext.endFrame vkc
 
             | None -> ()
 
@@ -421,7 +421,7 @@ type RendererThread () =
                 rendererImGui.Render windowViewport drawData messagesImGui
 
                 // end frame
-                VulkanContext.endFrame ()
+                VulkanContext.endFrame vkc
 
                 // guard against early termination
                 if not terminated then

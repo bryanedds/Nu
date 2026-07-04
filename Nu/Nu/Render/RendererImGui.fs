@@ -360,7 +360,7 @@ type VulkanRendererImGui
     let mutable textureIdCounter = 0u
     
     member private renderer.DestroyAssetTextures (destroyedTextureIdsOpt : uint32 HashSet option) =
-        CommandQueue.waitIdle vkc.RenderQueue
+        ConcurrentCommandQueue.waitIdle vkc.RenderQueue
         for assetTextureOpt in assetTextureOpts.Values do
             match assetTextureOpt with
             | ValueSome textureId ->
@@ -615,6 +615,9 @@ type VulkanRendererImGui
 
                 // tear down render
                 Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
+
+                // advance rendering command buffer
+                VulkanContext.advanceRenderCommandBuffer vkc
 
         member renderer.CleanUp () =
             Sampler.destroy fontSampler vkc
