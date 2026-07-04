@@ -176,8 +176,8 @@ module LightMap =
         (geometry : CubeMapGeometry)
         (colorAttachment : VkImageView)
         (pipeline : EnvironmentFilterPipeline)
-        (getCommandBuffer : VulkanContext -> VkCommandBuffer)
-        (advanceCommandBufferWhenNeeded : VulkanContext -> unit)
+        (getCommandBuffer : unit -> VkCommandBuffer)
+        (advanceCommandBufferWhenNeeded : unit -> unit)
         (vkc : VulkanContext) =
 
         // compute vulkan-appropriate matrices
@@ -212,7 +212,7 @@ module LightMap =
                 Pipeline.writeDescriptorSampler 0 0 sampler vkSet vkc
 
             // set up render
-            let commandBuffer = getCommandBuffer vkc
+            let commandBuffer = getCommandBuffer ()
             let mutable renderArea = VkRect2D (0, 0, uint resolution, uint resolution)
             let mutable vkViewport = Hl.makeViewport true renderArea // NOTE: when drawing _to_ a cube map, it's expected to come out upside-down.
             let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment|] None renderArea None
@@ -241,7 +241,7 @@ module LightMap =
             Vulkan.vkCmdEndRendering commandBuffer
 
             // advance rendering command buffer when needed
-            advanceCommandBufferWhenNeeded vkc
+            advanceCommandBufferWhenNeeded ()
 
             // advance pipeline
             Pipeline.advance 1 pipeline.Pipeline
@@ -289,7 +289,7 @@ module LightMap =
                 //Hl.saveFramebufferRgbaToBitmap (int mipResolution) (int mipResolution) ("EnvironmentFilter." + string i + "." + string mip + ".bmp")
 
         // transition cubemap layout
-        Hl.recordTransitionLayout true cubeMap.MipLevels 0 6 VkImageAspectFlags.Color ColorAttachmentWrite ShaderRead cubeMap.Image (getCommandBuffer vkc)
+        Hl.recordTransitionLayout true cubeMap.MipLevels 0 6 VkImageAspectFlags.Color ColorAttachmentWrite ShaderRead cubeMap.Image (getCommandBuffer ())
 
         // fin
         cubeMap

@@ -194,8 +194,8 @@ module SpriteBatch =
                     // tear down render
                     Vulkan.vkCmdEndRendering env.VulkanContext.RenderCommandBuffer
 
-                    // advance rendering command buffer
-                    VulkanContext.advanceRenderCommandBuffer env.VulkanContext
+                    // intermittently advance rendering command buffer
+                    if env.Pipeline.DrawIndex % Constants.Vulkan.AdvanceRenderCommandBufferCadence = 0 then VulkanContext.advanceRenderCommandBuffer env.VulkanContext
 
                     // advance pipeline
                     Pipeline.advance env.SpriteIndex env.Pipeline

@@ -283,7 +283,7 @@ module CubeMap =
         (colorAttachment : VkImageView)
         (pipeline : CubeMapPipeline)
         (getCommandBuffer : unit -> VkCommandBuffer)
-        (advanceCommandBufferWhenNeeded : VulkanContext -> unit)
+        (advanceCommandBufferWhenNeeded : unit -> unit)
         (vkc : VulkanContext) =
 
         // compute vulkan-appropriate matrices
@@ -340,7 +340,7 @@ module CubeMap =
             Vulkan.vkCmdEndRendering commandBuffer
 
             // advance rendering command buffer when needed
-            advanceCommandBufferWhenNeeded vkc
+            advanceCommandBufferWhenNeeded ()
 
             // advance pipeline
             Pipeline.advance 1 pipeline.Pipeline

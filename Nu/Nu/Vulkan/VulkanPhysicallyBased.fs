@@ -1566,102 +1566,6 @@ module PhysicallyBased =
     let destroyPhysicallyBasedShadowPipeline (physicallyBasedShadowPipeline : PhysicallyBasedShadowPipeline) vkc =
         Pipeline.destroy physicallyBasedShadowPipeline.Pipeline vkc
 
-    /// Create a physically-based pipeline.
-    let createPhysicallyBasedPipeline lightMapsMax lightsMax shaderPath blends cullModes vertexBindings colorAttachmentFormats depthTestOpt vkc =
-
-        // create set 0 uniform buffers
-        let eyeUniform = Buffer.create sizeof<Eye> Storage vkc
-        let lightingUniform = Buffer.create sizeof<Lighting> Storage vkc
-
-        // create set 2 uniform buffers
-        let shadowMatrixMax = Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels
-        let boneUniform = Buffer.create (Constants.Render.BonesMax * sizeof<Matrix4x4>) Storage vkc
-        let lightMapsUniform = Buffer.create (lightMapsMax * sizeof<LightMap>) Storage vkc
-        let lightsGeneralUniform = Buffer.create sizeof<LightsGeneral> Storage vkc
-        let lightsUniform = Buffer.create (lightsMax * sizeof<Light>) Storage vkc
-        let shadowMatrixUniform = Buffer.create (shadowMatrixMax * sizeof<Matrix4x4>) Storage vkc
-
-        // create pipeline
-        let pipeline =
-            Pipeline.create
-                shaderPath blends cullModes vertexBindings
-                
-                // descriptor set 0: per render pass
-                [|Pipeline.descriptorSet<int>
-                    [|Pipeline.descriptor 0 StorageBuffer VertexFragmentStage 1 // eye
-                      Pipeline.descriptor 1 StorageBuffer FragmentStage 1 // lighting
-                      Pipeline.descriptor 2 SampledImage FragmentStage 1 // depthTexture
-                      Pipeline.descriptor 3 SampledImage FragmentStage 1 // colorTexture
-                      Pipeline.descriptor 4 SampledImage FragmentStage 1 // brdfTexture
-                      Pipeline.descriptor 5 SampledImage FragmentStage 1 // irradianceMap
-                      Pipeline.descriptor 6 SampledImage FragmentStage 1|] // environmentFilterMap
-
-                  // descriptor set 1: per material
-                  Pipeline.descriptorSet<PhysicallyBasedMaterial>
-                    [|Pipeline.descriptor 0 SampledImage FragmentStage 1 // albedoTexture
-                      Pipeline.descriptor 1 SampledImage FragmentStage 1 // roughnessTexture
-                      Pipeline.descriptor 2 SampledImage FragmentStage 1 // metallicTexture
-                      Pipeline.descriptor 3 SampledImage FragmentStage 1 // ambientOcclusionTexture
-                      Pipeline.descriptor 4 SampledImage FragmentStage 1 // emissionTexture
-                      Pipeline.descriptor 5 SampledImage FragmentStage 1 // normalTexture
-                      Pipeline.descriptor 6 SampledImage FragmentStage 1 // heightTexture
-                      Pipeline.descriptor 7 SampledImage FragmentStage 1 // subdermalTexture
-                      Pipeline.descriptor 8 SampledImage FragmentStage 1 // finenessTexture
-                      Pipeline.descriptor 9 SampledImage FragmentStage 1 // scatterTexture
-                      Pipeline.descriptor 10 SampledImage FragmentStage 1 // clearCoatTexture
-                      Pipeline.descriptor 11 SampledImage FragmentStage 1 // clearCoatRoughnessTexture
-                      Pipeline.descriptor 12 SampledImage FragmentStage 1|] // clearCoatNormalTexture
-
-                  // descriptor set 2: dynamic
-                  Pipeline.descriptorSet<int>
-                    [|Pipeline.descriptor 0 StorageBuffer VertexStage 1 // bone
-                      Pipeline.descriptor 1 StorageBuffer FragmentStage 1 // lightMap
-                      Pipeline.descriptor 2 StorageBuffer FragmentStage 1 // lightsGeneral
-                      Pipeline.descriptor 3 StorageBuffer FragmentStage 1 // light
-                      Pipeline.descriptor 4 StorageBuffer FragmentStage 1 // shadowMatrix
-                      Pipeline.descriptor 5 SampledImage FragmentStage lightMapsMax // irradianceMaps
-                      Pipeline.descriptor 6 SampledImage FragmentStage lightMapsMax // environmentFilterMaps
-                      Pipeline.descriptor 7 SampledImage FragmentStage 1 // shadowTextures
-                      Pipeline.descriptor 8 SampledImage FragmentStage Constants.Render.ShadowMapsMax // shadowMaps
-                      Pipeline.descriptor 9 SampledImage FragmentStage Constants.Render.ShadowCascadesMax|] // shadowCascades
-
-                  // descriptor set 3: samplers
-                  Pipeline.descriptorSet<Unit>
-                    [|Pipeline.descriptor 0 Sampler FragmentStage 1
-                      Pipeline.descriptor 1 Sampler FragmentStage 1
-                      Pipeline.descriptor 2 Sampler FragmentStage 1
-                      Pipeline.descriptor 3 Sampler FragmentStage 1
-                      Pipeline.descriptor 4 Sampler FragmentStage 1
-                      Pipeline.descriptor 5 Sampler FragmentStage 1|]|]
-
-                [||] colorAttachmentFormats depthTestOpt
-                [|eyeUniform
-                  lightingUniform
-                  boneUniform
-                  lightMapsUniform
-                  lightsGeneralUniform
-                  lightsUniform
-                  shadowMatrixUniform|]
-                vkc
-
-        // make PhysicallyBasedPipeline
-        let physicallyBasedPipeline =
-            { EyeUniform = eyeUniform
-              LightingUniform = lightingUniform
-              BoneUniform = boneUniform
-              LightMapUniform = lightMapsUniform
-              LightsGeneralUniform = lightsGeneralUniform
-              LightUniform = lightsUniform
-              ShadowMatrixUniform = shadowMatrixUniform
-              Pipeline = pipeline }
-        
-        // fin
-        physicallyBasedPipeline
-    
-    /// Destroy PhysicallyBasedPipeline.
-    let destroyPhysicallyBasedPipeline (physicallyBasedPipeline : PhysicallyBasedPipeline) vkc =
-        Pipeline.destroy physicallyBasedPipeline.Pipeline vkc
-
     /// Begin drawing a batch of physically-based shadow surfaces.
     let beginPhysicallyBasedShadowSurfaces
         (eyeCenter : Vector3)
@@ -1757,13 +1661,109 @@ module PhysicallyBased =
             | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
 
     /// End the process of drawing physically-based shadow surfaces.
-    let endPhysicallyBasedShadowSurfaces (_ : PhysicallyBasedShadowPipeline) (vkc : VulkanContext) =
+    let endPhysicallyBasedShadowSurfaces (pipeline : PhysicallyBasedShadowPipeline) (vkc : VulkanContext) =
 
         // tear down render
         Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
-        // advance rendering command buffer
-        VulkanContext.advanceRenderCommandBuffer vkc
+        // intermittently advance rendering command buffer
+        if pipeline.Pipeline.DrawIndex % Constants.Vulkan.AdvanceRenderCommandBufferCadence = 0 then VulkanContext.advanceRenderCommandBuffer vkc
+
+    /// Create a physically-based pipeline.
+    let createPhysicallyBasedPipeline lightMapsMax lightsMax shaderPath blends cullModes vertexBindings colorAttachmentFormats depthTestOpt vkc =
+
+        // create set 0 uniform buffers
+        let eyeUniform = Buffer.create sizeof<Eye> Storage vkc
+        let lightingUniform = Buffer.create sizeof<Lighting> Storage vkc
+
+        // create set 2 uniform buffers
+        let shadowMatrixMax = Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels
+        let boneUniform = Buffer.create (Constants.Render.BonesMax * sizeof<Matrix4x4>) Storage vkc
+        let lightMapsUniform = Buffer.create (lightMapsMax * sizeof<LightMap>) Storage vkc
+        let lightsGeneralUniform = Buffer.create sizeof<LightsGeneral> Storage vkc
+        let lightsUniform = Buffer.create (lightsMax * sizeof<Light>) Storage vkc
+        let shadowMatrixUniform = Buffer.create (shadowMatrixMax * sizeof<Matrix4x4>) Storage vkc
+
+        // create pipeline
+        let pipeline =
+            Pipeline.create
+                shaderPath blends cullModes vertexBindings
+                
+                // descriptor set 0: per render pass
+                [|Pipeline.descriptorSet<int>
+                    [|Pipeline.descriptor 0 StorageBuffer VertexFragmentStage 1 // eye
+                      Pipeline.descriptor 1 StorageBuffer FragmentStage 1 // lighting
+                      Pipeline.descriptor 2 SampledImage FragmentStage 1 // depthTexture
+                      Pipeline.descriptor 3 SampledImage FragmentStage 1 // colorTexture
+                      Pipeline.descriptor 4 SampledImage FragmentStage 1 // brdfTexture
+                      Pipeline.descriptor 5 SampledImage FragmentStage 1 // irradianceMap
+                      Pipeline.descriptor 6 SampledImage FragmentStage 1|] // environmentFilterMap
+
+                  // descriptor set 1: per material
+                  Pipeline.descriptorSet<PhysicallyBasedMaterial>
+                    [|Pipeline.descriptor 0 SampledImage FragmentStage 1 // albedoTexture
+                      Pipeline.descriptor 1 SampledImage FragmentStage 1 // roughnessTexture
+                      Pipeline.descriptor 2 SampledImage FragmentStage 1 // metallicTexture
+                      Pipeline.descriptor 3 SampledImage FragmentStage 1 // ambientOcclusionTexture
+                      Pipeline.descriptor 4 SampledImage FragmentStage 1 // emissionTexture
+                      Pipeline.descriptor 5 SampledImage FragmentStage 1 // normalTexture
+                      Pipeline.descriptor 6 SampledImage FragmentStage 1 // heightTexture
+                      Pipeline.descriptor 7 SampledImage FragmentStage 1 // subdermalTexture
+                      Pipeline.descriptor 8 SampledImage FragmentStage 1 // finenessTexture
+                      Pipeline.descriptor 9 SampledImage FragmentStage 1 // scatterTexture
+                      Pipeline.descriptor 10 SampledImage FragmentStage 1 // clearCoatTexture
+                      Pipeline.descriptor 11 SampledImage FragmentStage 1 // clearCoatRoughnessTexture
+                      Pipeline.descriptor 12 SampledImage FragmentStage 1|] // clearCoatNormalTexture
+
+                  // descriptor set 2: dynamic
+                  Pipeline.descriptorSet<int>
+                    [|Pipeline.descriptor 0 StorageBuffer VertexStage 1 // bone
+                      Pipeline.descriptor 1 StorageBuffer FragmentStage 1 // lightMap
+                      Pipeline.descriptor 2 StorageBuffer FragmentStage 1 // lightsGeneral
+                      Pipeline.descriptor 3 StorageBuffer FragmentStage 1 // light
+                      Pipeline.descriptor 4 StorageBuffer FragmentStage 1 // shadowMatrix
+                      Pipeline.descriptor 5 SampledImage FragmentStage lightMapsMax // irradianceMaps
+                      Pipeline.descriptor 6 SampledImage FragmentStage lightMapsMax // environmentFilterMaps
+                      Pipeline.descriptor 7 SampledImage FragmentStage 1 // shadowTextures
+                      Pipeline.descriptor 8 SampledImage FragmentStage Constants.Render.ShadowMapsMax // shadowMaps
+                      Pipeline.descriptor 9 SampledImage FragmentStage Constants.Render.ShadowCascadesMax|] // shadowCascades
+
+                  // descriptor set 3: samplers
+                  Pipeline.descriptorSet<Unit>
+                    [|Pipeline.descriptor 0 Sampler FragmentStage 1
+                      Pipeline.descriptor 1 Sampler FragmentStage 1
+                      Pipeline.descriptor 2 Sampler FragmentStage 1
+                      Pipeline.descriptor 3 Sampler FragmentStage 1
+                      Pipeline.descriptor 4 Sampler FragmentStage 1
+                      Pipeline.descriptor 5 Sampler FragmentStage 1|]|]
+
+                [||] colorAttachmentFormats depthTestOpt
+                [|eyeUniform
+                  lightingUniform
+                  boneUniform
+                  lightMapsUniform
+                  lightsGeneralUniform
+                  lightsUniform
+                  shadowMatrixUniform|]
+                vkc
+
+        // make PhysicallyBasedPipeline
+        let physicallyBasedPipeline =
+            { EyeUniform = eyeUniform
+              LightingUniform = lightingUniform
+              BoneUniform = boneUniform
+              LightMapUniform = lightMapsUniform
+              LightsGeneralUniform = lightsGeneralUniform
+              LightUniform = lightsUniform
+              ShadowMatrixUniform = shadowMatrixUniform
+              Pipeline = pipeline }
+        
+        // fin
+        physicallyBasedPipeline
+    
+    /// Destroy PhysicallyBasedPipeline.
+    let destroyPhysicallyBasedPipeline (physicallyBasedPipeline : PhysicallyBasedPipeline) vkc =
+        Pipeline.destroy physicallyBasedPipeline.Pipeline vkc
 
     /// Begin drawing a batch of physically-based deferred surfaces.
     let beginPhysicallyBasedDeferredSurfaces
@@ -1883,13 +1883,13 @@ module PhysicallyBased =
             | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
 
     /// End the process of drawing physically-based deferred surfaces.
-    let endPhysicallyBasedDeferredSurfaces (_ : PhysicallyBasedPipeline) (vkc : VulkanContext) =
+    let endPhysicallyBasedDeferredSurfaces (pipeline : PhysicallyBasedPipeline) (vkc : VulkanContext) =
 
         // tear down render
         Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
-        // advance rendering command buffer
-        VulkanContext.advanceRenderCommandBuffer vkc
+        // intermittently advance rendering command buffer
+        if pipeline.Pipeline.DrawIndex % Constants.Vulkan.AdvanceRenderCommandBufferCadence = 0 then VulkanContext.advanceRenderCommandBuffer vkc
 
     /// Create a PhysicallyBasedDeferredLightingPipeline.
     let createPhysicallyBasedDeferredLightingPipeline colorAttachmentFormat vkc =
@@ -3528,13 +3528,13 @@ module PhysicallyBased =
         | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
 
     /// End the process of drawing physically-based forward surfaces.
-    let endPhysicallyBasedForwardSurfaces (_ : PhysicallyBasedPipeline) (vkc : VulkanContext)=
+    let endPhysicallyBasedForwardSurfaces (pipeline : PhysicallyBasedPipeline) (vkc : VulkanContext)=
 
         // tear down render
         Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
-        // advance rendering command buffer
-        VulkanContext.advanceRenderCommandBuffer vkc
+        // intermittently advance rendering command buffer
+        if pipeline.Pipeline.DrawIndex % Constants.Vulkan.AdvanceRenderCommandBufferCadence = 0 then VulkanContext.advanceRenderCommandBuffer vkc
 
     let createPhysicallyBasedPipelines lightMapsMax lightsMax attachments vkc =
 

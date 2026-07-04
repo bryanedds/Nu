@@ -212,8 +212,8 @@ module SpriteSingleton =
                 // tear down render
                 Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
-                // advance rendering command buffer
-                VulkanContext.advanceRenderCommandBuffer vkc
+                // intermittently intermittently advance rendering command buffer
+                if pipeline.DrawIndex % Constants.Vulkan.AdvanceRenderCommandBufferCadence = 0 then VulkanContext.advanceRenderCommandBuffer vkc
 
                 // advance pipeline
                 Pipeline.advance 1 pipeline
