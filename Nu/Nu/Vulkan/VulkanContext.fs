@@ -945,9 +945,6 @@ type [<ReferenceEquality>] VulkanContext =
     /// Begin the frame.
     static member beginFrame (windowViewport : Viewport) (vkc : VulkanContext) =
 
-        // wait for current frame to be ready
-        Hl.awaitFence vkc.RenderFence_ vkc.Device_
-
         // update render allowed flag and check if current swapchain is non-existent, typically because app has been
         // backgrounded
         vkc.RenderAllowed_ <- false
@@ -986,34 +983,17 @@ type [<ReferenceEquality>] VulkanContext =
         // render when allowed
         if vkc.RenderAllowed_ then
 
+            // wait for current frame to be ready
+            //let sw = System.Diagnostics.Stopwatch.StartNew ()
+            Hl.awaitFence vkc.RenderFence_ vkc.Device_
+            //sw.Stop ()
+            //Log.info (string sw.ElapsedMilliseconds)
+
             // reset render command buffers cursor
             vkc.RenderCommandBuffersCursor_ <- 0
 
             // begin render command recording
             VulkanContext.beginRenderCommandBuffer vkc
-
-            // transition swapchain image layout to color attachment
-            Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color Undefined ColorAttachmentWrite vkc.Swapchain_.Image vkc.RenderCommandBuffer
-
-            // clear screen
-            let renderArea = VkRect2D (VkOffset2D.Zero, vkc.Swapchain_.SwapExtent)
-            let clearColor = VkClearValue (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
-            let mutable renderingInfo = Hl.makeRenderingInfo [|vkc.SwapchainImageView|] None renderArea (Some clearColor)
-            Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &renderingInfo)
-            Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
-
-            // clear viewport
-            let renderArea =
-                VkRect2D
-                    (windowViewport.Bounds.Min.X,
-                     windowViewport.Bounds.Min.Y,
-                     uint windowViewport.Bounds.Size.X,
-                     uint windowViewport.Bounds.Size.Y)
-                |> Hl.scaleRectToWindowPixels vkc.Window
-            let clearColor = VkClearValue (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
-            let mutable renderingInfo = Hl.makeRenderingInfo [|vkc.SwapchainImageView|] None renderArea (Some clearColor)
-            Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &renderingInfo)
-            Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
     /// End the frame.
     static member endFrame vkc =
