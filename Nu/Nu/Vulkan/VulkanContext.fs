@@ -1040,8 +1040,11 @@ type [<ReferenceEquality>] VulkanContext =
                     info.swapchainCount <- 1u
                     info.pSwapchains <- asPointer &vkSwapchain
                     info.pImageIndices <- asPointer &Hl.ImageIndex
+                    //let sw = System.Diagnostics.Stopwatch.StartNew ()
                     let result = Vulkan.vkQueuePresentKHR (vkQueue, asPointer &info)
-
+                    //sw.Stop ()
+                    //Log.info (string sw.ElapsedMilliseconds)
+                    
                     // refresh swapchain if framebuffer out of date or suboptimal
                     if result = VkResult.ErrorOutOfDateKHR || result = VkResult.SuboptimalKHR then
                         VulkanContext.handleWindowSize vkc
