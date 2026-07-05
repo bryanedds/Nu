@@ -3097,13 +3097,13 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
         // render deferred static surfaces clipped (unbatched)
         let mutable i = 0
-        for entry in renderTasks.DeferredStatic do
+        for entry in renderTasks.DeferredStaticClipped do
             VulkanRenderer3d.renderPhysicallyBasedDeferredSurfaces
                 [||] entry.Value entry.Key eyeDescriptorSet samplerDescriptorSet renderer.PhysicallyBasedPipelines.DeferredStaticClippedPipeline renderer
             i <- inc i
 
         // render deferred static surface clipped pre-batches
-        for entry in renderTasks.DeferredStaticPreBatches do
+        for entry in renderTasks.DeferredStaticClippedPreBatches do
             let struct (surface, preBatch) = entry.Value
             VulkanRenderer3d.renderPhysicallyBasedDeferredSurfacePreBatch
                 frustumInterior frustumExterior frustumImposter renderPass [||] preBatch surface
