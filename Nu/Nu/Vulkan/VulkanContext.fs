@@ -27,7 +27,11 @@ type [<ReferenceEquality>] ConcurrentCommandQueue =
 
     /// Perform an arbitrary operation on the internal vulkan queue.
     static member withLock queue (op : VkQueue -> unit) =
-        lock queue.Lock_ (fun () -> op queue.VkQueue_) : unit
+        //let sw = System.Diagnostics.Stopwatch.StartNew ()
+        lock queue.Lock_ (fun () ->
+            //sw.Stop ()
+            //Log.info ("ConcurrentCommandQueue.withLock: " + string sw.ElapsedTicks)
+            op queue.VkQueue_) : unit
 
     /// Wait for Queue to finish execution.
     static member waitIdle queue =
@@ -156,7 +160,7 @@ type PhysicalDevice =
             | None ->
                 let mutable presentSupport = VkBool32.False
                 Vulkan.vkGetPhysicalDeviceSurfaceSupportKHR (vkPhysicalDevice, uint i, Hl.Surface, &presentSupport) |> Hl.check
-                if (presentSupport = VkBool32.True) then
+                if presentSupport = VkBool32.True then
                     presentQueueFamilyOpt <- Some (uint i)
             | Some _ -> ()
 
@@ -978,7 +982,7 @@ type [<ReferenceEquality>] VulkanContext =
                                 //let sw = System.Diagnostics.Stopwatch.StartNew ()
                                 let result = Vulkan.vkAcquireNextImageKHR (vkc.Device, vkc.Swapchain_.VkSwapchain, UInt64.MaxValue, vkc.ImageAvailableSemaphore, VkFence.Null, &Hl.ImageIndex)
                                 //sw.Stop ()
-                                //Log.info ("Vulkan.vkAcquireNextImageKHR: " + string sw.ElapsedMilliseconds)
+                                //Log.info ("Vulkan.vkAcquireNextImageKHR: " + string sw.ElapsedTicks)
                                 if result = VkResult.ErrorOutOfDateKHR then VulkanContext.handleWindowSize vkc // refresh swapchain if out of date
                                 else
                                     // destroy surface if lost
@@ -996,7 +1000,7 @@ type [<ReferenceEquality>] VulkanContext =
             //let sw = System.Diagnostics.Stopwatch.StartNew ()
             Hl.awaitFence vkc.RenderFence_ vkc.Device_
             //sw.Stop ()
-            //Log.info (string sw.ElapsedMilliseconds)
+            //Log.info ("Hl.awaitFence: " + string sw.ElapsedTicks)
 
             // reset render command buffers cursor
             vkc.RenderCommandBuffersCursor_ <- 0
@@ -1050,7 +1054,7 @@ type [<ReferenceEquality>] VulkanContext =
                     //let sw = System.Diagnostics.Stopwatch.StartNew ()
                     let result = Vulkan.vkQueuePresentKHR (vkQueue, asPointer &info)
                     //sw.Stop ()
-                    //Log.info (string sw.ElapsedMilliseconds)
+                    //Log.info ("Vulkan.vkQueuePresentKHR: " + string sw.ElapsedTicks)
                     
                     // refresh swapchain if framebuffer out of date or suboptimal
                     if result = VkResult.ErrorOutOfDateKHR || result = VkResult.SuboptimalKHR then
