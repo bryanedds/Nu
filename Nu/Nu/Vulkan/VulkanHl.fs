@@ -190,7 +190,7 @@ type ImageLayout =
         | ColorAttachmentWrite -> VkPipelineStageFlags.ColorAttachmentOutput
         | DepthAttachment -> VkPipelineStageFlags.EarlyFragmentTests
         | Present -> VkPipelineStageFlags.BottomOfPipe
-    
+
 /// The format of a vertex attribute.
 type VertexAttribFormat =
     | Int       | Int2      | Int3      | Int4

@@ -501,6 +501,7 @@ type [<ReferenceEquality>] VulkanContext =
           PresentQueue_ : ConcurrentCommandQueue
           TextureQueue_ : ConcurrentCommandQueue
           RenderFinishedSemaphore_ : VkSemaphore
+          ImageAvailableSemaphore_ : VkSemaphore
           RenderFence_ : VkFence
           PresentFence_ : VkFence
           TransientFence_ : VkFence
@@ -544,6 +545,9 @@ type [<ReferenceEquality>] VulkanContext =
 
     /// The render finished semaphore.
     member this.RenderFinishedSemaphore = this.RenderFinishedSemaphore_
+
+    /// The image available semaphore.
+    member this.ImageAvailableSemaphore = this.ImageAvailableSemaphore_
 
     /// The render fence.
     member this.RenderFence = this.RenderFence_
@@ -921,6 +925,9 @@ type [<ReferenceEquality>] VulkanContext =
             submitInfo.pCommandBuffers <- &&commandBuffer
             match submissionType with
             | FirstSubmission ->
+                let mutable imageAvailableSemaphore = vkc.ImageAvailableSemaphore_
+                submitInfo.waitSemaphoreCount <- uint 1
+                submitInfo.pWaitSemaphores <- &&imageAvailableSemaphore
                 Vulkan.vkQueueSubmit (vkQueue, 1u, &&submitInfo, VkFence.Null) |> Hl.check // fine without waiting because we've already waited on the render fence
             | MiddleSubmission ->
                 Vulkan.vkQueueSubmit (vkQueue, 1u, &&submitInfo, VkFence.Null) |> Hl.check
@@ -969,7 +976,7 @@ type [<ReferenceEquality>] VulkanContext =
                                 windowViewport.Bounds.ContainsInclusive windowViewport.Inner = ContainmentType.Contains then
                                 // try to acquire image from swapchain to draw onto
                                 //let sw = System.Diagnostics.Stopwatch.StartNew ()
-                                let result = Vulkan.vkAcquireNextImageKHR (vkc.Device, vkc.Swapchain_.VkSwapchain, UInt64.MaxValue, VkSemaphore.Null, VkFence.Null, &Hl.ImageIndex)
+                                let result = Vulkan.vkAcquireNextImageKHR (vkc.Device, vkc.Swapchain_.VkSwapchain, UInt64.MaxValue, vkc.ImageAvailableSemaphore, VkFence.Null, &Hl.ImageIndex)
                                 //sw.Stop ()
                                 //Log.info ("Vulkan.vkAcquireNextImageKHR: " + string sw.ElapsedMilliseconds)
                                 if result = VkResult.ErrorOutOfDateKHR then VulkanContext.handleWindowSize vkc // refresh swapchain if out of date
@@ -1019,13 +1026,13 @@ type [<ReferenceEquality>] VulkanContext =
                 let mutable beginInfo = VkCommandBufferBeginInfo ()
                 let mutable commandBuffer = vkc.PresentCommandBuffer_
                 let mutable renderFinishedSemaphore = vkc.RenderFinishedSemaphore_
-                let mutable topOfPipeStage = VkPipelineStageFlags.TopOfPipe // see wtf here: https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation#page_Subpass-dependencies
+                let mutable pipelineStage = VkPipelineStageFlags.ColorAttachmentOutput
                 Vulkan.vkBeginCommandBuffer (commandBuffer, &&beginInfo) |> Hl.check
                 Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color ColorAttachmentWrite Present vkc.Swapchain_.Image commandBuffer
                 let mutable info = VkSubmitInfo ()
                 info.waitSemaphoreCount <- 1u
                 info.pWaitSemaphores <- &&renderFinishedSemaphore
-                info.pWaitDstStageMask <- &&topOfPipeStage
+                info.pWaitDstStageMask <- &&pipelineStage
                 info.commandBufferCount <- 1u
                 info.pCommandBuffers <- asPointer &commandBuffer
                 Vulkan.vkEndCommandBuffer vkc.PresentCommandBuffer_ |> Hl.check
@@ -1129,6 +1136,7 @@ type [<ReferenceEquality>] VulkanContext =
             let presentCommandPool = VulkanContext.createCommandPool false physicalDevice.PresentQueueFamily device
             let presentCommandBuffer = (VulkanContext.allocateCommandBuffersPrimary 1 renderCommandPool device)[0]
             let presentFence = Hl.createFence true device
+            let imageAvailableSemaphore = Hl.createSemaphore device
 
             // setup transient (one time) execution on render thread
             let transientCommandPool = VulkanContext.createCommandPool true physicalDevice.GraphicsQueueFamily device
@@ -1164,6 +1172,7 @@ type [<ReferenceEquality>] VulkanContext =
                   PresentQueue_ = presentQueue
                   TextureQueue_ = textureQueue
                   RenderFinishedSemaphore_ = renderFinishedSemaphore
+                  ImageAvailableSemaphore_ = imageAvailableSemaphore
                   RenderFence_ = renderFence
                   PresentFence_ = presentFence
                   TransientFence_ = transientFence
