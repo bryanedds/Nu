@@ -141,7 +141,7 @@ module SkyBox =
             Pipeline.advance 1 pipeline.Pipeline
 
             // advance rendering command buffer
-            VulkanContext.advanceRenderCommandBuffer 1 vkc
+            VulkanContext.advanceRenderCommandBuffer vkc
 
         // abort
         | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."

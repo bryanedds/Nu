@@ -177,7 +177,7 @@ module LightMap =
         (colorAttachment : VkImageView)
         (pipeline : EnvironmentFilterPipeline)
         (getCommandBuffer : unit -> VkCommandBuffer)
-        (advanceCommandBufferWhenNeeded : int -> unit)
+        (advanceCommandBufferWhenNeeded : unit -> unit)
         (vkc : VulkanContext) =
 
         // compute vulkan-appropriate matrices
@@ -244,7 +244,7 @@ module LightMap =
             Pipeline.advance 1 pipeline.Pipeline
 
             // advance rendering command buffer when needed
-            advanceCommandBufferWhenNeeded 1
+            advanceCommandBufferWhenNeeded ()
 
         // abort
         | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."

@@ -1667,7 +1667,7 @@ module PhysicallyBased =
         Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
         // intermittently advance rendering command buffer
-        VulkanContext.advanceRenderCommandBuffer Constants.Vulkan.ShadowSurfaceInstanceThreshold vkc
+        VulkanContext.advanceRenderCommandBuffer vkc
 
     /// Create a physically-based pipeline.
     let createPhysicallyBasedPipeline lightMapsMax lightsMax shaderPath blends cullModes vertexBindings colorAttachmentFormats depthTestOpt vkc =
@@ -1889,7 +1889,7 @@ module PhysicallyBased =
         Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
         // intermittently advance rendering command buffer
-        VulkanContext.advanceRenderCommandBuffer Constants.Vulkan.DeferredSurfaceInstanceThreshold vkc
+        VulkanContext.advanceRenderCommandBuffer vkc
 
     /// Create a PhysicallyBasedDeferredLightingPipeline.
     let createPhysicallyBasedDeferredLightingPipeline colorAttachmentFormat vkc =
@@ -2106,7 +2106,7 @@ module PhysicallyBased =
             Pipeline.advance 1 pipeline.Pipeline
 
             // advance rendering command buffer
-            VulkanContext.advanceRenderCommandBuffer 1 vkc
+            VulkanContext.advanceRenderCommandBuffer vkc
 
         // abort
         | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
@@ -2313,7 +2313,7 @@ module PhysicallyBased =
             Pipeline.advance 1 pipeline.Pipeline
 
             // advance rendering command buffer
-            VulkanContext.advanceRenderCommandBuffer 1 vkc
+            VulkanContext.advanceRenderCommandBuffer vkc
 
         // abort
         | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
@@ -2467,7 +2467,7 @@ module PhysicallyBased =
             Pipeline.advance 1 pipeline.Pipeline
 
             // advance rendering command buffer
-            VulkanContext.advanceRenderCommandBuffer 1 vkc
+            VulkanContext.advanceRenderCommandBuffer vkc
 
         // abort
         | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
@@ -2612,7 +2612,7 @@ module PhysicallyBased =
             Pipeline.advance 1 pipeline.Pipeline
 
             // advance rendering command buffer
-            VulkanContext.advanceRenderCommandBuffer 1 vkc
+            VulkanContext.advanceRenderCommandBuffer vkc
 
         // abort
         | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
@@ -2741,7 +2741,7 @@ module PhysicallyBased =
             Pipeline.advance 1 pipeline.Pipeline
 
             // advance rendering command buffer
-            VulkanContext.advanceRenderCommandBuffer 1 vkc
+            VulkanContext.advanceRenderCommandBuffer vkc
 
         // abort
         | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
@@ -2899,7 +2899,7 @@ module PhysicallyBased =
             Pipeline.advance 1 pipeline.Pipeline
 
             // advance rendering command buffer
-            VulkanContext.advanceRenderCommandBuffer 1 vkc
+            VulkanContext.advanceRenderCommandBuffer vkc
 
         // abort
         | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
@@ -3092,7 +3092,7 @@ module PhysicallyBased =
             Pipeline.advance 1 pipeline.Pipeline
 
             // advance rendering command buffer
-            VulkanContext.advanceRenderCommandBuffer 1 vkc
+            VulkanContext.advanceRenderCommandBuffer vkc
 
         // abort
         | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
@@ -3233,7 +3233,7 @@ module PhysicallyBased =
             Pipeline.advance 1 pipeline.Pipeline
 
             // advance rendering command buffer
-            VulkanContext.advanceRenderCommandBuffer 1 vkc
+            VulkanContext.advanceRenderCommandBuffer vkc
 
         // abort
         | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
@@ -3534,7 +3534,7 @@ module PhysicallyBased =
         Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
         // intermittently advance rendering command buffer
-        VulkanContext.advanceRenderCommandBuffer Constants.Vulkan.ForwardSurfaceInstanceThreshold vkc
+        VulkanContext.advanceRenderCommandBuffer vkc
 
     let createPhysicallyBasedPipelines lightMapsMax lightsMax attachments vkc =
 

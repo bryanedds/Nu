@@ -56,12 +56,9 @@ module Vulkan =
     let [<Uniform>] MoltenVk = OperatingSystem.IsIOS () || match ConfigurationManager.AppSettings.["MoltenVk"] with null -> false | value -> scvalue value
     let [<Literal>] RenderCommandBufferCountDefault = 32
     let [<Literal>] DescriptorSetCountDefault = 32
-    let [<Literal>] SpriteBatchInstanceThreshold = 128
-    let [<Literal>] SpriteSingletonInstanceThreshold = 32
-    let [<Literal>] TessellationInstanceThreshold = 8
-    let [<Literal>] ShadowSurfaceInstanceThreshold = 32
-    let [<Literal>] DeferredSurfaceInstanceThreshold = 16
-    let [<Literal>] ForwardSurfaceInstanceThreshold = 8
+    let [<Literal>] ShadowSurfaceInstanceThreshold = 1024
+    let [<Literal>] DeferredSurfaceInstanceThreshold = 512
+    let [<Literal>] ForwardSurfaceInstanceThreshold = 64
 
 [<RequireQualifiedAccess>]
 module ImGui =

@@ -198,7 +198,7 @@ module SpriteBatch =
                     Pipeline.advance env.SpriteIndex env.Pipeline
 
                     // intermittently advance rendering command buffer
-                    VulkanContext.advanceRenderCommandBuffer Constants.Vulkan.SpriteBatchInstanceThreshold env.VulkanContext
+                    VulkanContext.advanceRenderCommandBuffer env.VulkanContext
 
                 // abort
                 | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."

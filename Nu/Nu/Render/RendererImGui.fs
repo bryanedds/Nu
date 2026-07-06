@@ -321,7 +321,7 @@ type VulkanRendererImGui
                 Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
                 // advance rendering command buffer
-                VulkanContext.advanceRenderCommandBuffer 1 vkc
+                VulkanContext.advanceRenderCommandBuffer vkc
 
                 // clear blacklist
                 textureIdBlacklist.Clear ()

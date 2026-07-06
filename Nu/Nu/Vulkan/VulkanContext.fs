@@ -499,7 +499,6 @@ type [<ReferenceEquality>] VulkanContext =
           TextureCommandPool_ : VkCommandPool
           RenderCommandBuffers_ : VkCommandBuffer List
           mutable RenderCommandBuffersCursor_ : int
-          mutable RenderCommandInstancesLast_ : int
           PresentCommandBuffer_ : VkCommandBuffer
           RenderQueue_ : ConcurrentCommandQueue
           PresentQueue_ : ConcurrentCommandQueue
@@ -944,14 +943,10 @@ type [<ReferenceEquality>] VulkanContext =
             // advance cursor
             vkc.RenderCommandBuffersCursor_ <- inc vkc.RenderCommandBuffersCursor_)
 
-    static member advanceRenderCommandBuffer threshold (vkc : VulkanContext) =
+    static member advanceRenderCommandBuffer (vkc : VulkanContext) =
         let submissionType = if vkc.RenderCommandBuffersCursor_ = 0 then FirstSubmission else MiddleSubmission
-        let instanceCount = Hl.getDrawInstanceCount ()
-        let instanceDelta = instanceCount - vkc.RenderCommandInstancesLast_
-        if instanceDelta >= threshold then
-            VulkanContext.endRenderCommandBuffer submissionType vkc
-            VulkanContext.beginRenderCommandBuffer vkc
-            vkc.RenderCommandInstancesLast_ <- instanceCount
+        VulkanContext.endRenderCommandBuffer submissionType vkc
+        VulkanContext.beginRenderCommandBuffer vkc
 
     /// Begin the frame.
     static member beginFrame (windowViewport : Viewport) (vkc : VulkanContext) =
@@ -1170,7 +1165,6 @@ type [<ReferenceEquality>] VulkanContext =
                   TextureCommandPool_ = textureCommandPool
                   RenderCommandBuffers_ = List renderCommandBuffers
                   RenderCommandBuffersCursor_ = 0
-                  RenderCommandInstancesLast_ = 0
                   PresentCommandBuffer_ = presentCommandBuffer
                   RenderQueue_ = renderQueue
                   PresentQueue_ = presentQueue
