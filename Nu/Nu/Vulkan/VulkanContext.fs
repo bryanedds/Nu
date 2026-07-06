@@ -554,7 +554,7 @@ type [<ReferenceEquality>] VulkanContext =
     
     /// The transient fence.
     member this.TransientFence = this.TransientFence_
-
+    
     /// The current swapchain image.
     member this.SwapchainImage = this.Swapchain_.Image
     
@@ -990,6 +990,9 @@ type [<ReferenceEquality>] VulkanContext =
 
             // begin render command recording
             VulkanContext.beginRenderCommandBuffer vkc
+
+            // ensure swapchain image is ready to be drawn to
+            Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color Present ColorAttachmentWrite vkc.Swapchain_.Image vkc.RenderCommandBuffer
 
     /// End the frame.
     static member endFrame vkc =

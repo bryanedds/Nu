@@ -3380,10 +3380,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         (renderMessages : _ List)
         (renderer : VulkanRenderer3d) =
 
-        // begin texture dumpster frame
-        if renderer.VulkanContext.RenderAllowed then
-            TextureDumpster.beginFrame renderer.TextureDumpster renderer.VulkanContext
-
         // begin instance buffer frames as requested on previous frame
         for geometry in renderer.GeometryInstanced do
             Buffer.beginFrame geometry.InstanceBuffer
@@ -3418,6 +3414,10 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // update attachment sizes
         PhysicallyBased.updatePhysicallyBasedAttachmentsSize
             geometryViewport renderer.PhysicallyBasedAttachments renderer.VulkanContext
+
+        // delete textures as requested on previous frame
+        if renderer.VulkanContext.RenderAllowed then
+            TextureDumpster.beginFrame renderer.TextureDumpster renderer.VulkanContext
 
         // reload render assets when requested on previous frame
         if renderer.ReloadAssetsRequested then
