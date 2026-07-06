@@ -961,7 +961,7 @@ type [<ReferenceEquality>] VulkanContext =
                                 windowViewport.Bounds.ContainsInclusive windowViewport.Inner = ContainmentType.Contains then
                                 // try to acquire image from swapchain to draw onto
                                 //let sw = System.Diagnostics.Stopwatch.StartNew ()
-                                let result = Vulkan.vkAcquireNextImageKHR (vkc.Device, vkc.Swapchain_.VkSwapchain, UInt64.MaxValue, vkc.ImageAvailableSemaphore, VkFence.Null, &Hl.ImageIndex)
+                                let result = Vulkan.vkAcquireNextImageKHR (vkc.Device, vkc.Swapchain_.VkSwapchain, UInt64.MaxValue, vkc.ImageAvailableSemaphore_, VkFence.Null, &Hl.ImageIndex)
                                 //sw.Stop ()
                                 //Log.info ("Vulkan.vkAcquireNextImageKHR: " + string sw.ElapsedTicks)
                                 if result = VkResult.ErrorOutOfDateKHR then VulkanContext.handleWindowSize vkc // refresh swapchain if out of date
