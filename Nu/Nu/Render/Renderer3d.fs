@@ -2807,6 +2807,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             if delta >= Constants.Vulkan.ShadowSurfaceInstanceThreshold then
                 endBatch ()
                 beginBatch ()
+                committed <- counted
         beginBatch ()
 
         // deferred render static surface shadows
@@ -3103,6 +3104,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             if delta >= Constants.Vulkan.DeferredSurfaceInstanceThreshold then
                 endBatch ()
                 beginBatch ()
+                committed <- counted
         beginBatch ()
 
         // render deferred static surfaces
@@ -3137,6 +3139,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             if delta >= Constants.Vulkan.DeferredSurfaceInstanceThreshold then
                 endBatch ()
                 beginBatch ()
+                committed <- counted
         beginBatch ()
 
         // render deferred static surfaces clipped
