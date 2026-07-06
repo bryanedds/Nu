@@ -2816,7 +2816,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             advanceBatch entry.Value.Count
         
         // deferred render static surface pre-batches shadows
-        let mutable uniformsDescriptorSet = VulkanRenderer3d.beginPhysicallyBasedShadowSurfaces lightOrigin lightViewProjection renderer.LightingConfig.LightShadowExponent resolution (Some colorClearValue) colorAttachments depthAttachment renderer.RenderPassIndex shadowStaticPipeline renderer
         for entry in renderTasks.DeferredStaticPreBatches do
             let struct (surface, preBatch) = entry.Value
             advanceBatch $ VulkanRenderer3d.renderPhysicallyBasedShadowSurfacePreBatch lightType lightFrustum [||] preBatch surface uniformsDescriptorSet shadowStaticPipeline renderer
@@ -3148,7 +3147,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             advanceBatch entry.Value.Count
         
         // render deferred static surface clipped pre-batches
-        let mutable (eyeDescriptorSet, samplerDescriptorSet) = VulkanRenderer3d.beginPhysicallyBasedDeferredSurfaces eyeCenter view geometryProjection renderer.FilteredSampler geometryTextureViews zTexture renderer.GeometryViewport renderer.RenderPassIndex renderer.PhysicallyBasedPipelines.DeferredStaticClippedPipeline renderer
         for entry in renderTasks.DeferredStaticClippedPreBatches do
             let struct (surface, preBatch) = entry.Value
             advanceBatch $ VulkanRenderer3d.renderPhysicallyBasedDeferredSurfacePreBatch frustumInterior frustumExterior frustumImposter renderPass [||] preBatch surface eyeDescriptorSet samplerDescriptorSet renderer.PhysicallyBasedPipelines.DeferredStaticClippedPipeline renderer
