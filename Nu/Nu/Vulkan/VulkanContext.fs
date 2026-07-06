@@ -546,12 +546,6 @@ type [<ReferenceEquality>] VulkanContext =
     /// The texture command queue.
     member this.TextureQueue = this.TextureQueue_
 
-    /// The render finished semaphore.
-    member this.RenderFinishedSemaphore = this.RenderFinishedSemaphore_
-
-    /// The image available semaphore.
-    member this.ImageAvailableSemaphore = this.ImageAvailableSemaphore_
-
     /// The render fence.
     member this.RenderFence = this.RenderFence_
 
