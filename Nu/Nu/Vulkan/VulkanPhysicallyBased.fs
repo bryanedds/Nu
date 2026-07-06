@@ -1671,6 +1671,9 @@ module PhysicallyBased =
         // tear down render
         Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
+        // report draw scope
+        Hl.reportDrawScope ()
+
         // intermittently advance rendering command buffer
         VulkanContext.advanceRenderCommandBuffer vkc
 
@@ -1897,6 +1900,9 @@ module PhysicallyBased =
         // tear down render
         Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
+        // report draw scope
+        Hl.reportDrawScope ()
+
         // intermittently advance rendering command buffer
         VulkanContext.advanceRenderCommandBuffer vkc
 
@@ -2111,6 +2117,9 @@ module PhysicallyBased =
             // tear down render
             Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
+            // report draw scope
+            Hl.reportDrawScope ()
+
             // advance pipeline
             Pipeline.advance 1 pipeline.Pipeline
 
@@ -2318,6 +2327,9 @@ module PhysicallyBased =
             // tear down render
             Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
+            // report draw scope
+            Hl.reportDrawScope ()
+
             // advance pipeline
             Pipeline.advance 1 pipeline.Pipeline
 
@@ -2472,6 +2484,9 @@ module PhysicallyBased =
             // tear down render
             Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
+            // report draw scope
+            Hl.reportDrawScope ()
+
             // advance pipeline
             Pipeline.advance 1 pipeline.Pipeline
 
@@ -2617,6 +2632,9 @@ module PhysicallyBased =
             // tear down render
             Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
+            // report draw scope
+            Hl.reportDrawScope ()
+
             // advance pipeline
             Pipeline.advance 1 pipeline.Pipeline
 
@@ -2745,6 +2763,9 @@ module PhysicallyBased =
 
             // tear down render
             Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
+
+            // report draw scope
+            Hl.reportDrawScope ()
 
             // advance pipeline
             Pipeline.advance 1 pipeline.Pipeline
@@ -2903,6 +2924,9 @@ module PhysicallyBased =
 
             // tear down render
             Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
+
+            // report draw scope
+            Hl.reportDrawScope ()
 
             // advance pipeline
             Pipeline.advance 1 pipeline.Pipeline
@@ -3097,6 +3121,9 @@ module PhysicallyBased =
             // tear down render
             Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
+            // report draw scope
+            Hl.reportDrawScope ()
+
             // advance pipeline
             Pipeline.advance 1 pipeline.Pipeline
 
@@ -3237,6 +3264,9 @@ module PhysicallyBased =
 
             // tear down render
             Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
+
+            // report draw scope
+            Hl.reportDrawScope ()
 
             // advance pipeline
             Pipeline.advance 1 pipeline.Pipeline
@@ -3544,6 +3574,9 @@ module PhysicallyBased =
 
         // tear down render
         Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
+
+        // report draw scope
+        Hl.reportDrawScope ()
 
         // intermittently advance rendering command buffer
         VulkanContext.advanceRenderCommandBuffer vkc

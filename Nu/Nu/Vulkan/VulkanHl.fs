@@ -281,6 +281,7 @@ module Hl =
     let mutable internal ValidationLayersActivated = false
     
     let mutable internal DrawReportLock = obj ()
+    let mutable internal DrawScopeCount = 0
     let mutable internal DrawCallCount = 0
     let mutable internal DrawInstanceCount = 0
 
@@ -817,16 +818,26 @@ module Hl =
         | None -> Log.fail "Failed to find suitable memory type!"
 
     /// Report the fact that a draw call has just been made with the given number of instances.
+    let reportDrawScope () =
+        lock DrawReportLock (fun () ->
+            DrawScopeCount <- inc DrawCallCount)
+
+    /// Report the fact that a draw call has just been made with the given number of instances.
     let reportDrawCall drawInstances =
         lock DrawReportLock (fun () ->
             DrawCallCount <- inc DrawCallCount
             DrawInstanceCount <- DrawInstanceCount + drawInstances)
 
-    /// Reset the running number of draw calls.
-    let resetDrawCalls () =
+    /// Reset the running number of draw events.
+    let resetDrawCounters () =
         lock DrawReportLock (fun () ->
+            DrawScopeCount <- 0
             DrawCallCount <- 0
             DrawInstanceCount <- 0)
+
+    /// Get the running number of draw scopes.
+    let getDrawScopeCount () =
+        lock DrawReportLock (fun () -> DrawScopeCount)
 
     /// Get the running number of draw calls.
     let getDrawCallCount () =

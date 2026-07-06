@@ -1000,6 +1000,9 @@ type [<ReferenceEquality>] VulkanContext =
             // end rendering
             VulkanContext.endRenderCommandBuffer LastSubmission vkc
 
+            // reset draw counters
+            Hl.resetDrawCounters ()
+
     /// Present the image back to the swapchain to appear on screen.
     static member present (vkc : VulkanContext) =
 

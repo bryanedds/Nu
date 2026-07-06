@@ -194,6 +194,9 @@ module SpriteBatch =
                     // tear down render
                     Vulkan.vkCmdEndRendering env.VulkanContext.RenderCommandBuffer
 
+                    // report draw scope
+                    Hl.reportDrawScope ()
+
                     // advance pipeline
                     Pipeline.advance env.SpriteIndex env.Pipeline
 

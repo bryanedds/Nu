@@ -9,7 +9,6 @@ open System
 open System.Collections.Generic
 open System.Collections.Concurrent
 open System.Numerics
-open System.Runtime.CompilerServices
 open ImGuiNET
 open Vortice.Vulkan
 open Prime
@@ -319,6 +318,9 @@ type VulkanRendererImGui
 
                 // tear down render
                 Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
+
+                // report draw scope
+                Hl.reportDrawScope ()
 
                 // advance rendering command buffer
                 VulkanContext.advanceRenderCommandBuffer vkc

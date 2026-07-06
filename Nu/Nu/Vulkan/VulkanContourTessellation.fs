@@ -118,6 +118,9 @@ module ContourTessellation =
                 // tear down render
                 Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
 
+                // report draw scope
+                Hl.reportDrawScope ()
+
                 // advance vertex and index buffers
                 Buffer.advance vertexBuffer
                 Buffer.advance indexBuffer

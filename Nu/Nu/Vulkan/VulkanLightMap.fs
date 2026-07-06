@@ -240,6 +240,9 @@ module LightMap =
             // tear down render
             Vulkan.vkCmdEndRendering commandBuffer
 
+            // report draw scope
+            Hl.reportDrawScope ()
+
             // advance pipeline
             Pipeline.advance 1 pipeline.Pipeline
 

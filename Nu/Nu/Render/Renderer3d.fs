@@ -3090,6 +3090,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let mutable renderingInfo = Hl.makeRenderingInfo geometryTextureViews (Some zTexture.ImageView) renderArea (Some clearColor)
         Vulkan.vkCmdBeginRendering (renderer.VulkanContext.RenderCommandBuffer, asPointer &renderingInfo)
         Vulkan.vkCmdEndRendering renderer.VulkanContext.RenderCommandBuffer
+        Hl.reportDrawScope ()
 
         // begin deferred static surface rendering
         let mutable counted = 0
