@@ -1625,10 +1625,15 @@ module PhysicallyBased =
                 use instanceFieldsPin = new ArrayPin<_> (instanceFields)
                 Buffer.uploadData (Constants.Render.InstanceFieldCount * sizeof<single>) surfacesCount instanceFieldsPin.NativeInt geometry.InstanceBuffer vkc                    // specify dynamic
 
-                let mutable dynamicDescriptorSet = Pipeline.specifyDescriptorSet 1 pipeline.Pipeline.DrawIndex pipeline.Pipeline vkc $ fun vkSet ->
-                    use bonesPin = new ArrayPin<_> (bones)
-                    Buffer.uploadData sizeof<Matrix4x4> (min bones.Length Constants.Render.BonesMax) bonesPin.NativeInt pipeline.BoneUniform vkc
-                    Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.BoneUniform vkSet vkc
+                // specify dynamic when animated
+                let mutable dynamicDescriptorSet =
+                    if bones.Length = 0 then
+                        Pipeline.specifyDescriptorSet 1 0 pipeline.Pipeline vkc ignore
+                    else
+                        Pipeline.specifyDescriptorSet 1 pipeline.Pipeline.DrawIndex pipeline.Pipeline vkc $ fun vkSet ->
+                            use bonesPin = new ArrayPin<_> (bones)
+                            Buffer.uploadData sizeof<Matrix4x4> (min bones.Length Constants.Render.BonesMax) bonesPin.NativeInt pipeline.BoneUniform vkc
+                            Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.BoneUniform vkSet vkc
 
                 // set up pipeline
                 Vulkan.vkCmdBindPipeline (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
@@ -1844,11 +1849,15 @@ module PhysicallyBased =
                     Pipeline.writeDescriptorSampledImage 11 0 material.ClearCoatRoughnessTexture vkSet vkc
                     Pipeline.writeDescriptorSampledImage 12 0 material.ClearCoatNormalTexture vkSet vkc
 
-                // specify dynamic
-                let mutable dynamicDescriptorSet = Pipeline.specifyDescriptorSet 2 pipeline.Pipeline.DrawIndex pipeline.Pipeline vkc $ fun vkSet ->
-                    use bonesPin = new ArrayPin<_> (bones)
-                    Buffer.uploadData sizeof<Matrix4x4> (min bones.Length Constants.Render.BonesMax) bonesPin.NativeInt pipeline.BoneUniform vkc
-                    Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.BoneUniform vkSet vkc
+                // specify dynamic when animated
+                let mutable dynamicDescriptorSet =
+                    if bones.Length = 0 then
+                        Pipeline.specifyDescriptorSet 2 0 pipeline.Pipeline vkc ignore
+                    else
+                        Pipeline.specifyDescriptorSet 2 pipeline.Pipeline.DrawIndex pipeline.Pipeline vkc $ fun vkSet ->
+                            use bonesPin = new ArrayPin<_> (bones)
+                            Buffer.uploadData sizeof<Matrix4x4> (min bones.Length Constants.Render.BonesMax) bonesPin.NativeInt pipeline.BoneUniform vkc
+                            Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.BoneUniform vkSet vkc
 
                 // set up pipeline
                 Vulkan.vkCmdBindPipeline (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
@@ -3429,13 +3438,16 @@ module PhysicallyBased =
                 Pipeline.writeDescriptorSampledImage 6 0 material.HeightTexture vkSet vkc
 
             // specify dynamic
+            // NOTE: we do more work on bones specification even when there aren't bones to specify than in the other
+            // draw calls.
             let mutable dynamicDescriptorSet = Pipeline.specifyDescriptorSet 2 pipeline.Pipeline.DrawIndex pipeline.Pipeline vkc $ fun vkSet ->
 
-                // specify bones
-                use bonesPin = new ArrayPin<_> (bones)
-                let bonesCount = min bones.Length Constants.Render.BonesMax
-                Buffer.uploadData sizeof<Matrix4x4> bonesCount bonesPin.NativeInt pipeline.BoneUniform vkc
-                Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.BoneUniform vkSet vkc
+                // specify bones when animated
+                if bones.Length > 0 then
+                    use bonesPin = new ArrayPin<_> (bones)
+                    let bonesCount = min bones.Length Constants.Render.BonesMax
+                    Buffer.uploadData sizeof<Matrix4x4> bonesCount bonesPin.NativeInt pipeline.BoneUniform vkc
+                    Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.BoneUniform vkSet vkc
 
                 // specify light maps
                 let mutable lightMap = LightMap' ()
