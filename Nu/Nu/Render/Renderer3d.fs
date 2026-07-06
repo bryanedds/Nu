@@ -3100,7 +3100,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let advanceBatch = fun instances ->
             counted <- counted + instances
             let delta = counted - committed
-            if delta >= Constants.Vulkan.ShadowSurfaceInstanceThreshold then
+            if delta >= Constants.Vulkan.DeferredSurfaceInstanceThreshold then
                 endBatch ()
                 beginBatch ()
         beginBatch ()
@@ -3134,7 +3134,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let advanceBatch = fun instances ->
             counted <- counted + instances
             let delta = counted - committed
-            if delta >= Constants.Vulkan.ShadowSurfaceInstanceThreshold then
+            if delta >= Constants.Vulkan.DeferredSurfaceInstanceThreshold then
                 endBatch ()
                 beginBatch ()
         beginBatch ()
