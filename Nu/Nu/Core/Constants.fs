@@ -57,8 +57,8 @@ module Vulkan =
     let [<Literal>] RenderCommandBufferCountDefault = 32
     let [<Literal>] DescriptorSetCountDefault = 32
     let [<Literal>] ShadowSurfaceInstanceThreshold = 1024
-    let [<Literal>] DeferredSurfaceInstanceThreshold = 512
-    let [<Literal>] ForwardSurfaceInstanceThreshold = 64
+    let [<Literal>] DeferredSurfaceInstanceThreshold = 1024
+    let [<Literal>] ForwardSurfaceInstanceThreshold = 128
 
 [<RequireQualifiedAccess>]
 module ImGui =
