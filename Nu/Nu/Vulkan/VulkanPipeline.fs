@@ -421,7 +421,7 @@ type Pipeline =
         // image info
         let mutable info = VkDescriptorImageInfo ()
         info.imageView <- texture.ImageView
-        info.imageLayout <- ShaderRead.VkImageLayout
+        info.imageLayout <- ColorAttachmentRead.VkImageLayout
 
         // write descriptor set
         let mutable write = VkWriteDescriptorSet ()
@@ -440,7 +440,7 @@ type Pipeline =
         for i in 0 .. dec textures.Length do
             let mutable info = VkDescriptorImageInfo ()
             info.imageView <- textures[i].ImageView
-            info.imageLayout <- ShaderRead.VkImageLayout
+            info.imageLayout <- ColorAttachmentRead.VkImageLayout
             NativePtr.set infosPtr i info
 
         // write descriptor set
@@ -475,7 +475,7 @@ type Pipeline =
         let mutable info = VkDescriptorImageInfo ()
         info.sampler <- sampler.VkSampler
         info.imageView <- texture.ImageView
-        info.imageLayout <- ShaderRead.VkImageLayout
+        info.imageLayout <- ColorAttachmentRead.VkImageLayout
 
         // write descriptor set
         let mutable write = VkWriteDescriptorSet ()

@@ -143,15 +143,16 @@ type PixelFormat =
         | Rg -> (VkComponentSwizzle.R, VkComponentSwizzle.G, VkComponentSwizzle.B, VkComponentSwizzle.A)
         | Red -> (VkComponentSwizzle.R, VkComponentSwizzle.G, VkComponentSwizzle.B, VkComponentSwizzle.A)
         | Depth -> (VkComponentSwizzle.R, VkComponentSwizzle.G, VkComponentSwizzle.B, VkComponentSwizzle.A) // doesn't matter
-    
+
 /// An image layout in its access and pipeline stage context.
 type ImageLayout =
     | Undefined
     | TransferSrc
     | TransferDst
-    | ShaderRead
+    | ColorAttachmentRead
     | ColorAttachmentWrite
-    | DepthAttachment
+    | DepthAttachmentRead
+    | DepthAttachmentWrite
     | Present
 
     /// The VkImageLayout.
@@ -160,9 +161,10 @@ type ImageLayout =
         | Undefined -> VkImageLayout.Undefined
         | TransferSrc -> VkImageLayout.TransferSrcOptimal
         | TransferDst -> VkImageLayout.TransferDstOptimal
-        | ShaderRead -> VkImageLayout.ShaderReadOnlyOptimal
+        | ColorAttachmentRead -> VkImageLayout.ShaderReadOnlyOptimal
         | ColorAttachmentWrite -> VkImageLayout.ColorAttachmentOptimal
-        | DepthAttachment -> VkImageLayout.DepthStencilAttachmentOptimal
+        | DepthAttachmentRead -> VkImageLayout.DepthReadOnlyStencilAttachmentOptimal
+        | DepthAttachmentWrite -> VkImageLayout.DepthStencilAttachmentOptimal
         | Present -> VkImageLayout.PresentSrcKHR
 
     /// The access flag.
@@ -171,24 +173,26 @@ type ImageLayout =
         | Undefined -> VkAccessFlags.None
         | TransferSrc -> VkAccessFlags.TransferRead
         | TransferDst -> VkAccessFlags.TransferWrite
-        | ShaderRead -> VkAccessFlags.ShaderRead
+        | ColorAttachmentRead -> VkAccessFlags.ShaderRead
         | ColorAttachmentWrite -> VkAccessFlags.ColorAttachmentWrite
-        | DepthAttachment -> VkAccessFlags.DepthStencilAttachmentRead ||| VkAccessFlags.DepthStencilAttachmentWrite
+        | DepthAttachmentRead -> VkAccessFlags.DepthStencilAttachmentRead
+        | DepthAttachmentWrite -> VkAccessFlags.DepthStencilAttachmentRead ||| VkAccessFlags.DepthStencilAttachmentWrite
         | Present -> VkAccessFlags.None
 
     /// The pipeline stage.
     member this.PipelineStage =
-        match this with
             
         // NOTE: DJL: for Undefined as image layout transition source, texture upload and mipmap generation previously used VK_PIPELINE_STAGE_HOST_BIT.
         // I can't remember why but it's not in the tutorial and apparently may lead to failure on Android devices. I suspect it was inherited
         // from ImGui backend.
+        match this with
         | Undefined -> VkPipelineStageFlags.TopOfPipe
         | TransferSrc -> VkPipelineStageFlags.Transfer
         | TransferDst -> VkPipelineStageFlags.Transfer
-        | ShaderRead -> VkPipelineStageFlags.FragmentShader
+        | ColorAttachmentRead -> VkPipelineStageFlags.FragmentShader
         | ColorAttachmentWrite -> VkPipelineStageFlags.ColorAttachmentOutput
-        | DepthAttachment -> VkPipelineStageFlags.EarlyFragmentTests
+        | DepthAttachmentRead -> VkPipelineStageFlags.EarlyFragmentTests ||| VkPipelineStageFlags.LateFragmentTests
+        | DepthAttachmentWrite -> VkPipelineStageFlags.EarlyFragmentTests ||| VkPipelineStageFlags.LateFragmentTests
         | Present -> VkPipelineStageFlags.BottomOfPipe
 
 /// The format of a vertex attribute.
@@ -548,7 +552,7 @@ module Hl =
         match depthAttachmentOpt with
         | Some depthAttachment ->
             dInfo.imageView <- depthAttachment
-            dInfo.imageLayout <- DepthAttachment.VkImageLayout
+            dInfo.imageLayout <- DepthAttachmentWrite.VkImageLayout
             dInfo.storeOp <- VkAttachmentStoreOp.Store
             match clearValueOpt with
             | Some _ ->

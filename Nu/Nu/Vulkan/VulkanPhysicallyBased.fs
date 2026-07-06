@@ -1573,7 +1573,7 @@ module PhysicallyBased =
         (lightShadowExponent : single)
         (resolution : Vector2i)
         (colorClearValueOpt : VkClearValue option)
-        (colorAttachments : VkImageView array)
+        (colorAttachment : VkImageView)
         (depthAttachment : Texture)
         (renderPassIndex : int)
         (pipeline : PhysicallyBasedShadowPipeline)
@@ -1582,7 +1582,7 @@ module PhysicallyBased =
         // set up render
         let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
         let mutable vkViewport = Hl.makeViewport false renderArea
-        let mutable renderingInfo = Hl.makeRenderingInfo colorAttachments (Some depthAttachment.ImageView) renderArea colorClearValueOpt
+        let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment|] (Some depthAttachment.ImageView) renderArea colorClearValueOpt
         Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &renderingInfo)
         Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, asPointer &vkViewport)
         Vulkan.vkCmdSetScissor (vkc.RenderCommandBuffer, 0u, 1u, asPointer &renderArea)

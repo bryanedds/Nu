@@ -251,18 +251,16 @@ type TextureVulkan =
 
         // transition layout as appropriate
         // NOTE: DJL: we use render thread here as attachments are not intended for lazy loading.
-        // TODO: DJL: we should write a proper api for layout transitions at the attachment level and do initial transition separately from creation.
         match attachmentMode with
-        | AttachmentColor _
-        | AttachmentDepth _ ->
+        | AttachmentNone -> ()
+        | AttachmentColor _ | AttachmentDepth _ ->
             let (queue, pool, fence) = TextureLoadThread.getResources RenderThread vkc
             let commandBuffer = Hl.createTransientCommandBuffer pool vkc.Device
             match attachmentMode with
-            | AttachmentColor _ -> Hl.recordTransitionLayout true mipLevels 0 textureType.Layers internalFormat.VkImageAspectFlags Undefined ColorAttachmentWrite image commandBuffer
-            | AttachmentDepth _ -> Hl.recordTransitionLayout true mipLevels 0 textureType.Layers internalFormat.VkImageAspectFlags Undefined DepthAttachment image commandBuffer
+            | AttachmentColor _ -> Hl.recordTransitionLayout true mipLevels 0 textureType.Layers internalFormat.VkImageAspectFlags Undefined ColorAttachmentRead image commandBuffer
+            | AttachmentDepth _ -> Hl.recordTransitionLayout true mipLevels 0 textureType.Layers internalFormat.VkImageAspectFlags Undefined DepthAttachmentRead image commandBuffer
             | _ -> ()
             ConcurrentCommandQueue.executeTransient commandBuffer pool fence queue vkc.Device
-        | _ -> ()
 
         // fin
         { Image = image
@@ -300,7 +298,7 @@ module TextureModule =
                 (commandBuffer, vkBuffer, vkImage,
                  TransferDst.VkImageLayout,
                  1u, asPointer &region)
-            Hl.recordTransitionLayout false mipLevel layer 1 VkImageAspectFlags.Color TransferDst ShaderRead vkImage commandBuffer
+            Hl.recordTransitionLayout false mipLevel layer 1 VkImageAspectFlags.Color TransferDst ColorAttachmentRead vkImage commandBuffer
 
         /// Record commands to generate mipmaps.
         let recordGenerateMipmaps commandBuffer width height mipLevels layer vkImage =
@@ -326,15 +324,15 @@ module TextureModule =
                  1u, asPointer &barrier)
 
             // transition original image separately as it's already set to shader read
-            barrier.srcAccessMask <- ShaderRead.Access
+            barrier.srcAccessMask <- ColorAttachmentRead.Access
             barrier.dstAccessMask <- TransferDst.Access
-            barrier.oldLayout <- ShaderRead.VkImageLayout
+            barrier.oldLayout <- ColorAttachmentRead.VkImageLayout
             barrier.newLayout <- TransferDst.VkImageLayout
             barrier.subresourceRange.baseMipLevel <- 0u
             barrier.subresourceRange.levelCount <- 1u // only one level at a time from here on
             Vulkan.vkCmdPipelineBarrier
                 (commandBuffer,
-                 ShaderRead.PipelineStage,
+                 ColorAttachmentRead.PipelineStage,
                  TransferDst.PipelineStage,
                  VkDependencyFlags.None,
                  0u, nullPtr, 0u, nullPtr,
@@ -371,13 +369,13 @@ module TextureModule =
 
                 // transition layout of previous image to be read by shader
                 barrier.srcAccessMask <- TransferSrc.Access
-                barrier.dstAccessMask <- ShaderRead.Access
+                barrier.dstAccessMask <- ColorAttachmentRead.Access
                 barrier.oldLayout <- TransferSrc.VkImageLayout
-                barrier.newLayout <- ShaderRead.VkImageLayout
+                barrier.newLayout <- ColorAttachmentRead.VkImageLayout
                 Vulkan.vkCmdPipelineBarrier
                     (commandBuffer,
                      TransferSrc.PipelineStage,
-                     ShaderRead.PipelineStage,
+                     ColorAttachmentRead.PipelineStage,
                      VkDependencyFlags.None,
                      0u, nullPtr, 0u, nullPtr,
                      1u, asPointer &barrier)
@@ -388,14 +386,14 @@ module TextureModule =
 
             // transition final mip image left unfinished by loop
             barrier.srcAccessMask <- TransferDst.Access
-            barrier.dstAccessMask <- ShaderRead.Access
+            barrier.dstAccessMask <- ColorAttachmentRead.Access
             barrier.oldLayout <- TransferDst.VkImageLayout
-            barrier.newLayout <- ShaderRead.VkImageLayout
+            barrier.newLayout <- ColorAttachmentRead.VkImageLayout
             barrier.subresourceRange.baseMipLevel <- uint (mipLevels - 1)
             Vulkan.vkCmdPipelineBarrier
                 (commandBuffer,
                  TransferDst.PipelineStage,
-                 ShaderRead.PipelineStage,
+                 ColorAttachmentRead.PipelineStage,
                  VkDependencyFlags.None,
                  0u, nullPtr, 0u, nullPtr,
                  1u, asPointer &barrier)

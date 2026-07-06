@@ -57,6 +57,9 @@ module LightMap =
               (v3Back, v3Up)        // (+z)
               (v3Forward, v3Up)|]   // (-z)
 
+        // begin reflection rendering
+        Hl.recordTransitionLayout true 1 0 6 VkImageAspectFlags.Color ColorAttachmentRead ColorAttachmentWrite reflectionCubeMap.Image (getCommandBuffer ())
+
         // render reflection cube map faces
         for i in 0 .. dec 6 do
 
@@ -86,8 +89,8 @@ module LightMap =
             // TODO: DJL: implement.
             //Hl.saveFramebufferRgbaToBitmap resolution resolution ("Reflection." + string reflectionCubeMapId + "." + string i + ".bmp")
 
-        // transition cubemap layout
-        Hl.recordTransitionLayout true 1 0 6 VkImageAspectFlags.Color ColorAttachmentWrite ShaderRead reflectionCubeMap.Image (getCommandBuffer ())
+        // end reflection rendering
+        Hl.recordTransitionLayout true 1 0 6 VkImageAspectFlags.Color ColorAttachmentWrite ColorAttachmentRead reflectionCubeMap.Image (getCommandBuffer ())
 
         // fin
         reflectionCubeMap
@@ -112,6 +115,9 @@ module LightMap =
               Matrix4x4.CreateLookAt (v3Zero, v3Forward, v3Down)|]
         let projection = Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, 0.1f, 10.0f)
 
+        // begin cubemap rendering
+        Hl.recordTransitionLayout true 1 0 6 VkImageAspectFlags.Color ColorAttachmentRead ColorAttachmentWrite cubeMap.Image (getCommandBuffer ())
+
         // render faces to irradiance cube map
         for i in 0 .. dec 6 do
 
@@ -127,8 +133,8 @@ module LightMap =
             // TODO: DJL: implement.
             //Hl.saveFramebufferRgbaToBitmap resolution resolution ("Irradiance." + string cubeMapId + "." + string i + ".bmp")
 
-        // transition cubemap layout
-        Hl.recordTransitionLayout true 1 0 6 VkImageAspectFlags.Color ColorAttachmentWrite ShaderRead cubeMap.Image (getCommandBuffer ())
+        // end cubemap rendering
+        Hl.recordTransitionLayout true 1 0 6 VkImageAspectFlags.Color ColorAttachmentWrite ColorAttachmentRead cubeMap.Image (getCommandBuffer ())
         
         // fin
         cubeMap
@@ -273,6 +279,9 @@ module LightMap =
               Matrix4x4.CreateLookAt (v3Zero, v3Forward, v3Down)|]
         let projection = Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, 0.1f, 10.0f)
 
+        // begin cubemap rendering
+        Hl.recordTransitionLayout true cubeMap.MipLevels 0 6 VkImageAspectFlags.Color ColorAttachmentRead ColorAttachmentWrite cubeMap.Image (getCommandBuffer ())
+
         // render environment filter cube map mips
         for mip in 0 .. dec Constants.Render.EnvironmentFilterMips do
             let mipRoughness = single mip / single (dec Constants.Render.EnvironmentFilterMips)
@@ -291,8 +300,8 @@ module LightMap =
                 // TODO: DJL: implement.
                 //Hl.saveFramebufferRgbaToBitmap (int mipResolution) (int mipResolution) ("EnvironmentFilter." + string i + "." + string mip + ".bmp")
 
-        // transition cubemap layout
-        Hl.recordTransitionLayout true cubeMap.MipLevels 0 6 VkImageAspectFlags.Color ColorAttachmentWrite ShaderRead cubeMap.Image (getCommandBuffer ())
+        // end cubemap rendering
+        Hl.recordTransitionLayout true cubeMap.MipLevels 0 6 VkImageAspectFlags.Color ColorAttachmentWrite ColorAttachmentRead cubeMap.Image (getCommandBuffer ())
 
         // fin
         cubeMap
