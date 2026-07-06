@@ -1352,7 +1352,7 @@ module PhysicallyBased =
 
                 // create buffers
                 let vertexBuffer = Buffer.createVertexStagedFromMemory vertexData vkc
-                let instanceBuffer = Buffer.create (Constants.Render.InstanceFieldCount * sizeof<single>) (Vertex true) vkc
+                let instanceBuffer = Buffer.create (Constants.Render.InstanceFieldCount * sizeof<single>) Instance vkc
                 let indexBuffer = Buffer.createIndexStagedFromMemory indexData vkc
 
                 // prepare instance buffer
@@ -1427,7 +1427,7 @@ module PhysicallyBased =
 
                 // create buffers
                 let vertexBuffer = Buffer.createVertexStagedFromMemory vertexData vkc
-                let instanceBuffer = Buffer.create (Constants.Render.InstanceFieldCount * sizeof<single>) (Vertex true) vkc
+                let instanceBuffer = Buffer.create (Constants.Render.InstanceFieldCount * sizeof<single>) Instance vkc
                 let indexBuffer = Buffer.createIndexStagedFromMemory indexData vkc
 
                 // prepare instance buffer

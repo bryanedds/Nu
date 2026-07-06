@@ -12,15 +12,12 @@ open Nu
 
 // TODO: DJL: doc comments!
 
-type Allocation =
-    | Vma of VmaAllocation
-    | Manual of VkDeviceMemory
-
 // TODO: P0: rename this to BufferStreamType or BufferMultiType?
 type BufferType =
     | Staging
     | Vertex of UploadEnabled : bool
     | Index of UploadEnabled : bool
+    | Instance
     | Uniform
     | Storage
 
@@ -46,6 +43,7 @@ type BufferType =
                 then VkBufferUsageFlags.IndexBuffer
                 else VkBufferUsageFlags.IndexBuffer ||| VkBufferUsageFlags.TransferDst
             BufferType.makeInfoInternal size usage
+        | Instance -> BufferType.makeInfoInternal size VkBufferUsageFlags.VertexBuffer
         | Uniform -> BufferType.makeInfoInternal size VkBufferUsageFlags.UniformBuffer
         | Storage -> BufferType.makeInfoInternal size VkBufferUsageFlags.StorageBuffer
 
@@ -53,7 +51,7 @@ type BufferType =
 type BufferInternal =
     private
         { mutable VkBuffer_ : VkBuffer // set to VkBuffer.Null when buffer destroyed
-          Allocation_ : Allocation
+          VmaAllocation_ : VmaAllocation
           Mapping_ : voidptr
           Size_ : int
           UploadEnabled_ : bool }
@@ -63,100 +61,52 @@ type BufferInternal =
 
     /// The size of the buffer.
     member this.Size = this.Size_
-    
-    static member private createManual uploadEnabled bufferInfo (vkc : VulkanContext) =
 
-        // create vkBuffer
-        let mutable vkBuffer = Unchecked.defaultof<VkBuffer>
-        Vulkan.vkCreateBuffer (vkc.Device, &bufferInfo, nullPtr, asPointer &vkBuffer) |> Hl.check
-
-        // get vkBuffer memory requirements
-        let mutable memRequirements = Unchecked.defaultof<VkMemoryRequirements>
-        Vulkan.vkGetBufferMemoryRequirements (vkc.Device, vkBuffer, &memRequirements)
-
-        // choose appropriate memory properties
-        let properties =
-            if uploadEnabled then VkMemoryPropertyFlags.HostVisible ||| VkMemoryPropertyFlags.HostCoherent
-            else VkMemoryPropertyFlags.DeviceLocal
-
-        // allocate memory
-        let mutable info = VkMemoryAllocateInfo ()
-        info.allocationSize <- memRequirements.size
-        info.memoryTypeIndex <- Hl.findMemoryType memRequirements.memoryTypeBits properties vkc.VkPhysicalDevice
-        let mutable memory = Unchecked.defaultof<VkDeviceMemory>
-        Vulkan.vkAllocateMemory (vkc.Device, asPointer &info, nullPtr, &memory) |> Hl.check
-
-        // bind vkBuffer to memory
-        Vulkan.vkBindBufferMemory (vkc.Device, vkBuffer, memory, 0UL) |> Hl.check
-
-        // map memory if upload enabled
-        let mappingPtr = NativePtr.stackalloc<voidptr> 1 // must be allocated manually because managed allocation doesn't work
-        if uploadEnabled then Vulkan.vkMapMemory (vkc.Device, memory, 0UL, Vulkan.VK_WHOLE_SIZE, VkMemoryMapFlags.None, mappingPtr) |> Hl.check
-        let mapping = NativePtr.read mappingPtr
-
-        // make BufferInternal
-        let bufferInternal = 
-            { VkBuffer_ = vkBuffer
-              Allocation_ = Manual memory
-              Mapping_ = mapping
-              Size_ = int bufferInfo.size
-              UploadEnabled_ = uploadEnabled }
-
-        // fin
-        bufferInternal
-
-    static member private createVma uploadEnabled bufferInfo (vkc : VulkanContext) =
+    /// Create BufferInternal.
+    static member createPlus uploadEnabled bufferUsage bufferInfo (vkc : VulkanContext) =
 
         // allocation create info
         let mutable info = VmaAllocationCreateInfo ()
-        info.usage <- VmaMemoryUsage.Auto
+        info.usage <- bufferUsage
         if uploadEnabled then info.flags <- VmaAllocationCreateFlags.HostAccessSequentialWrite ||| VmaAllocationCreateFlags.Mapped
 
         // create vma buffer
         let mutable vkBuffer = Unchecked.defaultof<VkBuffer>
-        let mutable allocation = Unchecked.defaultof<VmaAllocation>
-        let mutable allocationInfo = Unchecked.defaultof<VmaAllocationInfo>
-        Vma.vmaCreateBuffer (vkc.VmaAllocator, &bufferInfo, &info, &vkBuffer, &allocation, asPointer &allocationInfo) |> Hl.check
+        let mutable vmaAllocation = Unchecked.defaultof<VmaAllocation>
+        let mutable vmaAllocationInfo = Unchecked.defaultof<VmaAllocationInfo>
+        Vma.vmaCreateBuffer (vkc.VmaAllocator, &bufferInfo, &info, &vkBuffer, &vmaAllocation, asPointer &vmaAllocationInfo) |> Hl.check
 
         // make BufferInternal
         let bufferInternal =
             { VkBuffer_ = vkBuffer
-              Allocation_ = Vma allocation
-              Mapping_ = allocationInfo.pMappedData
+              VmaAllocation_ = vmaAllocation
+              Mapping_ = vmaAllocationInfo.pMappedData
               Size_ = int bufferInfo.size
               UploadEnabled_ = uploadEnabled }
 
         // fin
         bufferInternal
-
-    /// Create BufferInternal.
-    static member createPlus uploadEnabled bufferInfo (vkc : VulkanContext) =
-
-        // NOTE: DJL: change this to Manual to bypass VMA and test buffers with manually allocated memory.
-        let allocType = Vma Unchecked.defaultof<_>
-
-        // create with selected allocation type
-        match allocType with
-        | Vma _ -> BufferInternal.createVma uploadEnabled bufferInfo vkc
-        | Manual _ -> BufferInternal.createManual uploadEnabled bufferInfo vkc
 
     /// Create BufferInternal.
     static member create bufferSize bufferType vkc =
 
         // compute uploadability
-        let uploadEnabled =
+        let struct (uploadEnabled, bufferUsage) =
             match bufferType with
-            | Staging -> true
-            | Vertex uploadEnabled -> uploadEnabled
-            | Index uploadEnabled -> uploadEnabled
-            | Uniform -> true
-            | Storage -> true
+            | Staging -> struct (true, VmaMemoryUsage.AutoPreferDevice)
+            | Vertex true -> struct (true, VmaMemoryUsage.AutoPreferDevice)
+            | Vertex false -> struct (false, VmaMemoryUsage.AutoPreferDevice)
+            | Index true -> struct (true, VmaMemoryUsage.AutoPreferDevice)
+            | Index false -> struct (false, VmaMemoryUsage.AutoPreferDevice)
+            | Instance -> struct (true, VmaMemoryUsage.AutoPreferDevice)
+            | Uniform -> struct (true, VmaMemoryUsage.AutoPreferDevice)
+            | Storage -> struct (true, VmaMemoryUsage.AutoPreferDevice)
 
-        // make info
-        let info = BufferType.makeInfo bufferSize bufferType
+        // make create info
+        let createInfo = BufferType.makeInfo bufferSize bufferType
 
         // make buffer
-        BufferInternal.createPlus uploadEnabled info vkc
+        BufferInternal.createPlus uploadEnabled bufferUsage createInfo vkc
 
     /// Write data to buffer if upload is enabled.
     static member write offset alignment size count data bufferInternal (_ : VulkanContext) =
@@ -188,9 +138,7 @@ type BufferInternal =
 
                     // manually flush as memory may not be host-coherent on non-windows platforms, see
                     // https://gpuopen-librariesandsdks.github.io/VulkanMemoryAllocator/html/memory_mapping.html#memory_mapping_cache_control
-                    match bufferInternal.Allocation_ with
-                    | Vma vmaAllocation -> Vma.vmaFlushAllocation (vkc.VmaAllocator, vmaAllocation, uint64 offset, uint64 (stride * count)) |> Hl.check
-                    | Manual _ -> () // currently no point bothering
+                    Vma.vmaFlushAllocation (vkc.VmaAllocator, bufferInternal.VmaAllocation_, uint64 offset, uint64 (stride * count)) |> Hl.check
 
                 else Log.warn "Flush of Vulkan buffer failed because it exceeded the size of that buffer."
             else Log.warn "Flush of Vulkan buffer failed because 'size' argument was less than or equal to zero."
@@ -199,13 +147,7 @@ type BufferInternal =
     /// Destroy buffer and allocation.
     static member destroy (bufferInternal : BufferInternal) (vkc : VulkanContext) =
         if bufferInternal.VkBuffer_.IsNotNull then
-            match bufferInternal.Allocation_ with
-            | Vma vmaAllocation ->
-                Vma.vmaDestroyBuffer (vkc.VmaAllocator, bufferInternal.VkBuffer, vmaAllocation)
-            | Manual manualAllocation ->
-                if bufferInternal.Mapping_ <> Unchecked.defaultof<voidptr> then Vulkan.vkUnmapMemory (vkc.Device, manualAllocation)
-                Vulkan.vkDestroyBuffer (vkc.Device, bufferInternal.VkBuffer, nullPtr)
-                Vulkan.vkFreeMemory (vkc.Device, manualAllocation, nullPtr)
+            Vma.vmaDestroyBuffer (vkc.VmaAllocator, bufferInternal.VkBuffer, bufferInternal.VmaAllocation_)
             bufferInternal.VkBuffer_ <- VkBuffer.Null
 
 /// Represents a dynamically growing multibuffer with parallel underlying vulkan buffers. Maintains an internal
