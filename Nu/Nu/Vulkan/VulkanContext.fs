@@ -1179,6 +1179,7 @@ type [<ReferenceEquality>] VulkanContext =
     static member cleanup vkc =
         Swapchain.destroy vkc.RenderQueue_ vkc.PresentQueue_ vkc.Swapchain_ vkc.Device
         Vulkan.vkDestroySemaphore (vkc.Device, vkc.RenderFinishedSemaphore_, nullPtr)
+        Vulkan.vkDestroySemaphore (vkc.Device, vkc.ImageAvailableSemaphore_, nullPtr)
         Vulkan.vkDestroyFence (vkc.Device, vkc.RenderFence_, nullPtr)
         Vulkan.vkDestroyFence (vkc.Device, vkc.TextureFence, nullPtr)
         Vulkan.vkDestroyFence (vkc.Device, vkc.TransientFence, nullPtr)
