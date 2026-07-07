@@ -551,14 +551,12 @@
 		 after they are computed. -->
 	
     <!-- Remove any resolved native item whose source path contains a Linux RID segment (/linux- or \linux-), which is
-	     never correct for Android. On Windows, MSBuild item identities use backslash separators, so we normalize them
-		 to forward slash before checking to ensure cross-platform matching. Only @(RuntimeTargetsCopyLocalItems) is
-		 checked because Linux .so files from NuGet packages always arrive under RID-specific runtimes/<rid>/native/
-		 paths, which populate this item group. Non-RID-specific <native> nuspec declarations would not contain a Linux
-		 RID segment, so @(NativeCopyLocalItems) is not filtered. -->
+	     never correct for Android, but they are still chosen if Android native items are unavailable. On Windows,
+         MSBuild item identities use backslash separators, so we normalize them to forward slash before checking to
+         ensure cross-platform matching. -->
     <Target Name="_RemoveLinuxNativeAssets" AfterTargets="ResolvePackageAssets" Condition="'$(TargetPlatformIdentifier)' == 'android'">
         <ItemGroup>
-            <RuntimeTargetsCopyLocalItems Remove="@(RuntimeTargetsCopyLocalItems)" Condition="$([System.String]::new('%(RuntimeTargetsCopyLocalItems.Identity)').Replace('\', '/').Contains('/linux-'))" />
+            <NativeCopyLocalItems Remove="@(NativeCopyLocalItems)" Condition="$([System.String]::new('%(NativeCopyLocalItems.Identity)').Replace('\', '/').Contains('/linux-'))" />
         </ItemGroup>
     </Target>
 
