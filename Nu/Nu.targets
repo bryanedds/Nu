@@ -207,22 +207,22 @@
               SourceFiles="$(NuPipeOut)/AssetGraph.nuag;$(NuPipeOut)/Overlayer.nuol;$(NuPipeOut)/AssetGraph.tracker"
               DestinationFolder="$(OutDir)"
               SkipUnchangedFiles="true" />
-        <Copy Condition="'$(TargetPlatformIdentifier)' == '' And '$(PublishDir)' != ''"
+        <Copy Condition="'$(TargetPlatformIdentifier)' == '' And '$(IsPublishing)' == 'true'"
               SourceFiles="$(NuPipeOut)/AssetGraph.nuag;$(NuPipeOut)/Overlayer.nuol;$(NuPipeOut)/AssetGraph.tracker"
               DestinationFolder="$(PublishDir)"
               SkipUnchangedFiles="true" />
 
         <!-- For desktop: create directory symlinks/junctions for each subdirectory in NuPipeOut.
-             Creates links in both $(OutDir) and $(PublishDir) (when set) with a single script per platform,
-             avoiding duplicated Exec lines. Runs after NuPipe so that output directories are guaranteed to exist. -->
-        <!-- Windows: create junctions in OutDir and PublishDir -->
+             Creates links in $(OutDir) always, and $(PublishDir) only during publish.
+             Uses a single script per platform, avoiding duplicated Exec lines. -->
+        <!-- Windows: create junctions in OutDir and optionally PublishDir -->
         <Exec Condition="'$(TargetPlatformIdentifier)' == '' And $([System.OperatingSystem]::IsWindows())"
               WorkingDirectory="$(MSBuildProjectDirectory)"
-              Command="powershell -NoProfile -NonInteractive -Command &quot;$targets = @('$(OutDir)'); if ('$(PublishDir)' -ne '') { $targets += '$(PublishDir)' }; Get-ChildItem '$(NuPipeOut)' -Directory | ForEach-Object { $n = $_.Name; $f = $_.FullName; foreach ($t in $targets) { $p = $t + $n; if (Test-Path $p) { Remove-Item $p -Recurse -Force }; New-Item -Path $p -ItemType Junction -Target $f -Force } }&quot;" />
-        <!-- Linux/macOS: create symlinks in OutDir and PublishDir -->
+              Command="powershell -NoProfile -NonInteractive -Command &quot;$targets = @('$(OutDir)'); if ('$(IsPublishing)' -eq 'true') { $targets += '$(PublishDir)' }; Get-ChildItem '$(NuPipeOut)' -Directory | ForEach-Object { $n = $_.Name; $f = $_.FullName; foreach ($t in $targets) { $p = $t + $n; if (Test-Path $p) { Remove-Item $p -Recurse -Force }; New-Item -Path $p -ItemType Junction -Target $f -Force } }&quot;" />
+        <!-- Linux/macOS: create symlinks in OutDir and optionally PublishDir -->
         <Exec Condition="'$(TargetPlatformIdentifier)' == '' And !$([System.OperatingSystem]::IsWindows())"
               WorkingDirectory="$(MSBuildProjectDirectory)"
-              Command="targets=&quot;$(OutDir)&quot;; [ -n &quot;$(PublishDir)&quot; ] &amp;&amp; targets=&quot;$targets $(PublishDir)&quot;; for dir in &quot;$(NuPipeOut)&quot;/*/; do [ -d &quot;$dir&quot; ] || break; b=`basename &quot;$dir&quot;`; for t in $targets; do rm -rf &quot;$t/$b&quot;; ln -sf &quot;$dir&quot; &quot;$t/$b&quot;; done; done" />
+              Command="targets=&quot;$(OutDir)&quot;; [ &quot;$(IsPublishing)&quot; = 'true' ] &amp;&amp; targets=&quot;$targets $(PublishDir)&quot;; for dir in &quot;$(NuPipeOut)&quot;/*/; do [ -d &quot;$dir&quot; ] || break; b=`basename &quot;$dir&quot;`; for t in $targets; do rm -rf &quot;$t/$b&quot;; ln -sf &quot;$dir&quot; &quot;$t/$b&quot;; done; done" />
     </Target>
 
     <!-- Can't remove refinement directly because clean across TargetFrameworks are executed in parallel so may cause
