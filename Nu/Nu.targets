@@ -216,11 +216,11 @@
              Creates links in both $(OutDir) and $(PublishDir) (when set) with a single script per platform,
              avoiding duplicated Exec lines. Runs after NuPipe so that output directories are guaranteed to exist. -->
         <!-- Windows: create junctions in OutDir and PublishDir -->
-        <Exec Condition="$([System.OperatingSystem]::IsWindows())"
+        <Exec Condition="'$(TargetPlatformIdentifier)' == '' And $([System.OperatingSystem]::IsWindows())"
               WorkingDirectory="$(MSBuildProjectDirectory)"
               Command="powershell -NoProfile -NonInteractive -Command &quot;$targets = @('$(OutDir)'); if ('$(PublishDir)' -ne '') { $targets += '$(PublishDir)' }; Get-ChildItem '$(NuPipeOut)' -Directory | ForEach-Object { $n = $_.Name; $f = $_.FullName; foreach ($t in $targets) { $p = $t + $n; if (Test-Path $p) { Remove-Item $p -Recurse -Force }; New-Item -Path $p -ItemType Junction -Target $f -Force } }&quot;" />
         <!-- Linux/macOS: create symlinks in OutDir and PublishDir -->
-        <Exec Condition="!$([System.OperatingSystem]::IsWindows())"
+        <Exec Condition="'$(TargetPlatformIdentifier)' == '' And !$([System.OperatingSystem]::IsWindows())"
               WorkingDirectory="$(MSBuildProjectDirectory)"
               Command="targets=(&quot;$(OutDir)&quot;); [ -n &quot;$(PublishDir)&quot; ] &amp;&amp; targets+=(&quot;$(PublishDir)&quot;); for dir in &quot;$(NuPipeOut)&quot;/*/; do [ -d &quot;$dir&quot; ] || break; for t in &quot;${targets[@]}&quot;; do b=`basename &quot;$dir&quot;`; rm -rf &quot;$t/$b&quot;; ln -sf &quot;$dir&quot; &quot;$t/$b&quot;; done; done" />
     </Target>
