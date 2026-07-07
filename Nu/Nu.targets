@@ -202,27 +202,18 @@
             <MauiAsset Include="$(NuPipeOut)/**" AssetPack="gameassets" DeliveryType="FastFollow" />
         </ItemGroup>
 
-        <!-- Desktop: copy root-level files (few and small) to OutDir and PublishDir -->
-        <Copy Condition="'$(TargetPlatformIdentifier)' == ''"
-              SourceFiles="$(NuPipeOut)/AssetGraph.nuag;$(NuPipeOut)/Overlayer.nuol;$(NuPipeOut)/AssetGraph.tracker"
-              DestinationFolder="$(OutDir)"
-              SkipUnchangedFiles="true" />
-        <Copy Condition="'$(TargetPlatformIdentifier)' == '' And '$(IsPublishing)' == 'true'"
-              SourceFiles="$(NuPipeOut)/AssetGraph.nuag;$(NuPipeOut)/Overlayer.nuol;$(NuPipeOut)/AssetGraph.tracker"
-              DestinationFolder="$(PublishDir)"
-              SkipUnchangedFiles="true" />
-
-        <!-- For desktop: create directory symlinks/junctions for each subdirectory in NuPipeOut.
-             Creates links in $(OutDir) always, and $(PublishDir) only during publish.
-             Uses a single script per platform, avoiding duplicated Exec lines. -->
-        <!-- Windows: create junctions in OutDir and optionally PublishDir -->
+        <!-- Desktop: create directory junctions/symlinks (for subdirectories) and hardlinks (for root files) in
+             $(OutDir) always, and $(PublishDir) only during publish. Uses a single script per platform, avoiding
+             duplicated Exec lines. Dynamic enumeration means Nu.Pipe can emit any directory or file structure
+             without updating this target. -->
+        <!-- Windows: junctions for subdirectories, hardlinks for root files -->
         <Exec Condition="'$(TargetPlatformIdentifier)' == '' And $([System.OperatingSystem]::IsWindows())"
               WorkingDirectory="$(MSBuildProjectDirectory)"
-              Command="powershell -NoProfile -NonInteractive -Command &quot;$targets = @('$(OutDir)'); if ('$(IsPublishing)' -eq 'true') { $targets += '$(PublishDir)' }; Get-ChildItem '$(NuPipeOut)' -Directory | ForEach-Object { $n = $_.Name; $f = $_.FullName; foreach ($t in $targets) { $p = $t + $n; if (Test-Path $p) { Remove-Item $p -Recurse -Force }; New-Item -Path $p -ItemType Junction -Target $f -Force } }&quot;" />
-        <!-- Linux/macOS: create symlinks in OutDir and optionally PublishDir -->
+              Command="powershell -NoProfile -NonInteractive -Command &quot;$targets = @('$(OutDir)'); if ('$(IsPublishing)' -eq 'true') { $targets += '$(PublishDir)' }; Get-ChildItem '$(NuPipeOut)' -Directory | ForEach-Object { $n = $_.Name; $f = $_.FullName; foreach ($t in $targets) { $p = $t + $n; if (Test-Path $p) { Remove-Item $p -Recurse -Force }; New-Item -Path $p -ItemType Junction -Target $f -Force } }; Get-ChildItem '$(NuPipeOut)' -File | ForEach-Object { $n = $_.Name; $f = $_.FullName; foreach ($t in $targets) { $p = $t + $n; if (Test-Path $p) { Remove-Item $p -Force }; New-Item -Path $p -ItemType HardLink -Target $f -Force } }&quot;" />
+        <!-- Linux/macOS: symlinks for subdirectories, hardlinks for root files -->
         <Exec Condition="'$(TargetPlatformIdentifier)' == '' And !$([System.OperatingSystem]::IsWindows())"
               WorkingDirectory="$(MSBuildProjectDirectory)"
-              Command="targets=&quot;$(OutDir)&quot;; [ &quot;$(IsPublishing)&quot; = 'true' ] &amp;&amp; targets=&quot;$targets $(PublishDir)&quot;; for dir in &quot;$(NuPipeOut)&quot;/*/; do [ -d &quot;$dir&quot; ] || break; b=`basename &quot;$dir&quot;`; for t in $targets; do rm -rf &quot;$t/$b&quot;; ln -sf &quot;$dir&quot; &quot;$t/$b&quot;; done; done" />
+              Command="targets=&quot;$(OutDir)&quot;; [ &quot;$(IsPublishing)&quot; = 'true' ] &amp;&amp; targets=&quot;$targets $(PublishDir)&quot;; for dir in &quot;$(NuPipeOut)&quot;/*/; do [ -d &quot;$dir&quot; ] || break; b=`basename &quot;$dir&quot;`; for t in $targets; do rm -rf &quot;$t/$b&quot;; ln -sf &quot;$dir&quot; &quot;$t/$b&quot;; done; done; for f in &quot;$(NuPipeOut)&quot;/*; do [ -f &quot;$f&quot; ] || continue; b=`basename &quot;$f&quot;`; for t in $targets; do rm -f &quot;$t/$b&quot;; ln &quot;$f&quot; &quot;$t/$b&quot;; done; done" />
     </Target>
 
     <!-- Can't remove refinement directly because clean across TargetFrameworks are executed in parallel so may cause
