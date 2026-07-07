@@ -188,9 +188,9 @@ let splashScreen = UIKit.UIStoryboard.FromName("PreSplash", null).InstantiateIni
 let private sdlMainImpl (_argc: int, _argv: nativeptr<nativeptr<byte>>) : int =
 
     // this points the current working directory at the bundled game assets
-    let baseDirectory = AppContext.BaseDirectory
-    let assetDirectory = PathF.Combine (baseDirectory, "refinement-out", "net10.0-ios")
-    Directory.SetCurrentDirectory assetDirectory
+    Directory.EnumerateDirectories (AppContext.BaseDirectory + "/refinement-out", "*")
+    |> Seq.exactlyOne
+    |> Directory.SetCurrentDirectory
 
     // direct ConfigurationManager.AppSettings to load values from our App.config file
     if not (File.Exists "App.config") then

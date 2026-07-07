@@ -175,9 +175,9 @@
     <!-- Run Nu.Pipe to process assets. -->
     <Target Name="NuPipe" BeforeTargets="AssignTargetPaths;ResizetizeCollectItems" DependsOnTargets="BuildNuPipe">
 		
-        <!-- Write to refinement-out for use in later build steps (therefore cannot be under bin or obj folders) -->
+        <!-- Write to refinement-out for use in later build steps (therefore cannot be under bin or obj folders).  -->
         <PropertyGroup>
-            <NuPipeOut>$(MSBuildProjectDirectory)/refinement-out/$(TargetFramework)</NuPipeOut>
+            <NuPipeOut>$(MSBuildProjectDirectory)/refinement-out/$(BlockCompression)</NuPipeOut>
         </PropertyGroup>
 		
         <!-- These files are not copied by Nu.Pipe but read by the app - count them as Nu.Pipe outputs. App.config is
@@ -185,43 +185,53 @@
         <Copy Condition="'$(TargetPlatformIdentifier)' != ''" SourceFiles="App.config" DestinationFolder="$(NuPipeOut)" SkipUnchangedFiles="true" />
         <Copy SourceFiles="AssetGraph.nuag;Overlayer.nuol" DestinationFolder="$(NuPipeOut)" SkipUnchangedFiles="true" />
 		
-        <!-- Uses dotnet exec instead of MSBuild Run target to avoid file-locking. -->
-        <Exec Command="dotnet &quot;$([System.IO.Directory]::GetDirectories('$(MSBuildThisFileDirectory)Nu.Pipe/bin/$(Configuration)')[0])/Nu.Pipe.dll&quot; &quot;$(MSBuildProjectDirectory)/&quot; &quot;$(NuPipeOut)&quot; &quot;$(MSBuildProjectDirectory)/refinement/$(TargetFramework)/&quot; &quot;$(BlockCompression)&quot; &quot;False&quot;"
-			  WorkingDirectory="$(MSBuildProjectDirectory)" />
+        <!-- Uses dotnet exec (via the MSBuild task) to avoid file-locking from MSBuild's Run target.
+             Nu.Pipe.Run.proj is invoked with RemoveProperties so MSBuild's project cache deduplicates
+             calls across TFM inner builds that share the same compression type, ensuring only one Nu.Pipe
+             invocation per (ProjectDirectory, BlockCompression, Configuration) tuple, where Configuration is
+             a global property and other global properties are removed via RemoveProperties. -->
+        <MSBuild Projects="$(MSBuildThisFileDirectory)Nu.Pipe.Run.proj"
+                 Targets="ProcessAssets"
+                 RemoveProperties="TargetFramework;RuntimeIdentifier;SelfContained"
+                 Properties="ProjectDirectory=$(MSBuildProjectDirectory);BlockCompression=$(BlockCompression)" />
 		
         <!-- iOS: include as bundle asset
              Android: include as fast-follow asset pack (extracted to file system, up to 512MB).
              Use on-demand for up to 2GB. Install-time packs do not have a file system path (remains compressed), don't use it. -->
         <ItemGroup>
-            <MauiAsset Include="$(NuPipeOut)/**/*.*" AssetPack="gameassets" DeliveryType="FastFollow" />
+            <MauiAsset Include="$(NuPipeOut)/**" AssetPack="gameassets" DeliveryType="FastFollow" />
         </ItemGroup>
 
-        <!-- Desktop: copy to build output directory (overwriting files marked as readonly by Nu/AssetGraph/AssetGraph.fs) -->
+        <!-- Desktop: copy root-level files (few and small) to OutDir and PublishDir -->
         <Copy Condition="'$(TargetPlatformIdentifier)' == ''"
-              SourceFiles="@(MauiAsset)"
-              DestinationFiles="@(MauiAsset->'$(OutDir)%(RecursiveDir)%(Filename)%(Extension)')"
-              SkipUnchangedFiles="true"
-              OverwriteReadOnlyFiles="true" />
-
-    </Target>
-
-    <!-- Desktop only: copy Nu.Pipe outputs to the publish directory. The AfterTargets is set via a property so that
-	     Android/iOS projects don't register the hook at all — using Condition on the Target alone still causes MSBuild
-		 to look for the AfterTargets targets, which don't exist for mobile TFMs, causing the following error:
-         MSB4057: The target "GetCopyToPublishDirectoryItems" does not exist in the project -->
-    <PropertyGroup>
-        <_CopyNuPipeAfterTargets Condition="'$(TargetPlatformIdentifier)' == ''">_CopyResolvedFilesToPublishPreserveNewest;_CopyResolvedFilesToPublishAlways</_CopyNuPipeAfterTargets>
-    </PropertyGroup>
-    <Target Name="CopyNuPipeToPublishDir" AfterTargets="$(_CopyNuPipeAfterTargets)" DependsOnTargets="NuPipe" Condition="'$(PublishDir)' != ''">
-        <Copy SourceFiles="@(MauiAsset)"
-              DestinationFiles="@(MauiAsset->'$(PublishDir)%(RecursiveDir)%(Filename)%(Extension)')"
+              SourceFiles="$(NuPipeOut)/AssetGraph.nuag;$(NuPipeOut)/Overlayer.nuol;$(NuPipeOut)/AssetGraph.tracker"
+              DestinationFolder="$(OutDir)"
               SkipUnchangedFiles="true" />
+        <Copy Condition="'$(TargetPlatformIdentifier)' == '' And '$(PublishDir)' != ''"
+              SourceFiles="$(NuPipeOut)/AssetGraph.nuag;$(NuPipeOut)/Overlayer.nuol;$(NuPipeOut)/AssetGraph.tracker"
+              DestinationFolder="$(PublishDir)"
+              SkipUnchangedFiles="true" />
+
+        <!-- For desktop: create directory symlinks/junctions for each subdirectory in NuPipeOut.
+             Creates links in both $(OutDir) and $(PublishDir) (when set) with a single script per platform,
+             avoiding duplicated Exec lines. Runs after NuPipe so that output directories are guaranteed to exist. -->
+        <!-- Windows: create junctions in OutDir and PublishDir -->
+        <Exec Condition="$([System.OperatingSystem]::IsWindows())"
+              WorkingDirectory="$(MSBuildProjectDirectory)"
+              Command="powershell -NoProfile -NonInteractive -Command &quot;$targets = @('$(OutDir)'); if ('$(PublishDir)' -ne '') { $targets += '$(PublishDir)' }; Get-ChildItem '$(NuPipeOut)' -Directory | ForEach-Object { $n = $_.Name; $f = $_.FullName; foreach ($t in $targets) { $p = $t + $n; if (Test-Path $p) { Remove-Item $p -Recurse -Force }; New-Item -Path $p -ItemType Junction -Target $f -Force } }&quot;" />
+        <!-- Linux/macOS: create symlinks in OutDir and PublishDir -->
+        <Exec Condition="!$([System.OperatingSystem]::IsWindows())"
+              WorkingDirectory="$(MSBuildProjectDirectory)"
+              Command="targets=(&quot;$(OutDir)&quot;); [ -n &quot;$(PublishDir)&quot; ] &amp;&amp; targets+=(&quot;$(PublishDir)&quot;); for dir in &quot;$(NuPipeOut)&quot;/*/; do [ -d &quot;$dir&quot; ] || break; for t in &quot;${targets[@]}&quot;; do b=`basename &quot;$dir&quot;`; rm -rf &quot;$t/$b&quot;; ln -sf &quot;$dir&quot; &quot;$t/$b&quot;; done; done" />
     </Target>
 
     <!-- Can't remove refinement directly because clean across TargetFrameworks are executed in parallel so may cause
-	     conflict errors -->
+	     conflict errors. Clean by BlockCompression so that a single clean removes the shared directory for all TFMs
+	     of the same compression type. -->
     <Target Name="CleanNuPipe" AfterTargets="Clean">
-        <RemoveDir Directories="refinement/$(TargetFramework);refinement-out/$(TargetFramework);$(OutDir)/Assets" />
+        <RemoveDir Directories="refinement/$(BlockCompression);refinement-out/$(BlockCompression)" />
+        <!-- Remove the symlink if it exists (RemoveDir on a symlink removes the link, not the target) -->
+        <RemoveDir Condition="Exists('$(OutDir)/Assets')" Directories="$(OutDir)/Assets" />
     </Target>
 
     <!-- ============================================================
