@@ -18,7 +18,7 @@
            Configuration     — Debug / Release
     -->
 
-    <Target Name="ProcessAssets">
+    <Target Name="Run Nu Pipe">
 
         <PropertyGroup>
             <!-- Locate Nu.Pipe.dll relative to this .proj file -->
