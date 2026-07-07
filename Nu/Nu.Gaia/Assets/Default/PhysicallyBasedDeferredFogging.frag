@@ -117,8 +117,7 @@ layout(location = 0) out vec3 frag;
 
 vec4 depthToPosition(float depth, vec2 texCoords)
 {
-    float z = depth * 2.0 - 1.0;
-    vec4 positionClip = vec4(texCoords * 2.0 - 1.0, z, 1.0);
+    vec4 positionClip = vec4(texCoords * 2.0 - 1.0, depth, 1.0);
     vec4 positionView = eye.projectionInverse * positionClip;
     positionView /= positionView.w;
     return eye.viewInverse * positionView;
