@@ -222,7 +222,7 @@
         <!-- Linux/macOS: create symlinks in OutDir and PublishDir -->
         <Exec Condition="'$(TargetPlatformIdentifier)' == '' And !$([System.OperatingSystem]::IsWindows())"
               WorkingDirectory="$(MSBuildProjectDirectory)"
-              Command="targets=&quot;$(OutDir)&quot;; [ -n &quot;$(PublishDir)&quot; ] &amp;&amp; targets+=&quot;$(PublishDir)&quot;; for dir in &quot;$(NuPipeOut)&quot;/*/; do [ -d &quot;$dir&quot; ] || break; for t in &quot;${targets[@]}&quot;; do b=`basename &quot;$dir&quot;`; rm -rf &quot;$t/$b&quot;; ln -sf &quot;$dir&quot; &quot;$t/$b&quot;; done; done" />
+              Command="targets=&quot;$(OutDir)&quot;; [ -n &quot;$(PublishDir)&quot; ] &amp;&amp; targets=&quot;$targets $(PublishDir)&quot;; for dir in &quot;$(NuPipeOut)&quot;/*/; do [ -d &quot;$dir&quot; ] || break; b=`basename &quot;$dir&quot;`; for t in $targets; do rm -rf &quot;$t/$b&quot;; ln -sf &quot;$dir&quot; &quot;$t/$b&quot;; done; done" />
     </Target>
 
     <!-- Can't remove refinement directly because clean across TargetFrameworks are executed in parallel so may cause
