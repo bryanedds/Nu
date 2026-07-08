@@ -1,6 +1,7 @@
 #version 450 core
 
 const float GAMMA = 2.2;
+const float ALBEDO_ALPHA_MIN = 0.3;
 const float SAA_VARIANCE = 0.1; // TODO: consider exposing as lighting config property.
 const float SAA_THRESHOLD = 0.1; // TODO: consider exposing as lighting config property.
 
@@ -113,6 +114,7 @@ void main()
 
     // compute albedo
     vec4 albedoSample = texture(sampler2D(albedoTexture, filteredSampler), texCoords);
+    if (albedoSample.a < ALBEDO_ALPHA_MIN) discard;
     albedo = pow(albedoSample.rgb, vec3(GAMMA)) * albedoOut.rgb;
 
     // compute normal and ignore local height maps
