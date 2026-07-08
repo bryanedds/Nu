@@ -1663,7 +1663,7 @@ module PhysicallyBased =
 
                 // specify instancing
                 use instanceFieldsPin = new ArrayPin<_> (instanceFields)
-                Buffer.uploadData (Constants.Render.InstanceFieldCount * sizeof<single>) surfacesCount instanceFieldsPin.NativeInt geometry.InstanceBuffer vkc                    // specify dynamic
+                Buffer.uploadData (Constants.Render.InstanceFieldCount * sizeof<single>) surfacesCount instanceFieldsPin.NativeInt geometry.InstanceBuffer vkc
 
                 // specify dynamic when animated
                 let mutable dynamicDescriptorSet =

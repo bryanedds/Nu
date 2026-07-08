@@ -178,9 +178,12 @@ type Buffer =
     /// Expand buffer width as necessary, disregarding all existing content.
     static member ensureWidth size (buffer : Buffer) vkc =
         Buffer.ensureHeight buffer vkc
-        if buffer.BufferInternals_[buffer.BufferCursor_].Size < size then
-            BufferInternal.destroy buffer.BufferInternals_[buffer.BufferCursor_] vkc
-            buffer.BufferInternals_[buffer.BufferCursor_] <- BufferInternal.create size buffer.BufferType_ vkc
+        let bufferInternalOld = buffer.BufferInternals_[buffer.BufferCursor_]
+        if bufferInternalOld.Size < size then
+            let bufferInternalNew = BufferInternal.create size buffer.BufferType_ vkc
+            Buffer.copyData bufferInternalOld.Size bufferInternalOld.VkBuffer_ buffer.BufferInternals_[buffer.BufferCursor_].VkBuffer_ vkc
+            buffer.BufferInternals_[buffer.BufferCursor_] <- bufferInternalNew
+            BufferInternal.destroy bufferInternalOld vkc
 
     /// Copy data from the source buffer to the destination buffer.
     static member private copyData size source destination (vkc : VulkanContext) =
