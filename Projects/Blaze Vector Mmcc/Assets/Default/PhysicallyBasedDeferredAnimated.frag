@@ -157,7 +157,11 @@ void main()
         else scatterPlus.rgb = scatter.rgb;
         scatterPlus.a = scatterType;
     }
-    else scatterPlus = vec4(0.0);
+    else
+    {
+        subdermalPlus = vec4(0.0);
+        scatterPlus = vec4(0.0);
+    }
 
     // compute clear coat properties
     float clearCoat = texture(sampler2D(clearCoatTexture, filteredSampler), texCoords).r * clearCoatPlusOut.r;
