@@ -1678,7 +1678,7 @@ module PhysicallyBased =
                 // set up pipeline
                 Vulkan.vkCmdBindPipeline (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
                 Vulkan.vkCmdSetDepthTestEnable (vkc.RenderCommandBuffer, true)
-                Vulkan.vkCmdSetDepthCompareOp (vkc.RenderCommandBuffer, VkCompareOp.LessOrEqual)
+                Vulkan.vkCmdSetDepthCompareOp (vkc.RenderCommandBuffer, VkCompareOp.Less)
 
                 // bind vertex and index buffers
                 let vertexBuffers = [|geometry.VertexBuffer.VkBuffer; geometry.InstanceBuffer.VkBuffer|]
@@ -1905,7 +1905,7 @@ module PhysicallyBased =
                 // set up pipeline
                 Vulkan.vkCmdBindPipeline (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
                 Vulkan.vkCmdSetDepthTestEnable (vkc.RenderCommandBuffer, true)
-                Vulkan.vkCmdSetDepthCompareOp (vkc.RenderCommandBuffer, VkCompareOp.LessOrEqual)
+                Vulkan.vkCmdSetDepthCompareOp (vkc.RenderCommandBuffer, VkCompareOp.Less)
 
                 // bind vertex and index buffers
                 let vertexBuffers = [|geometry.VertexBuffer.VkBuffer; geometry.InstanceBuffer.VkBuffer|]
