@@ -2796,20 +2796,21 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let mutable counted = 0
         let mutable committed = 0
         let mutable uniformsDescriptorSet = Unchecked.defaultof<_>
-        let beginBatch = fun () ->
+        let beginBatch = fun clear ->
+            let clearColorValueOpt = if clear then Some colorClearValue else None
             uniformsDescriptorSet <-
                 VulkanRenderer3d.beginPhysicallyBasedShadowSurfaces
                     lightOrigin lightView lightProjection renderer.LightingConfig.LightShadowExponent resolution
-                    (Some colorClearValue) colorAttachment depthAttachment renderer.RenderPassIndex shadowStaticPipeline renderer
+                    clearColorValueOpt colorAttachment depthAttachment renderer.RenderPassIndex shadowStaticPipeline renderer
         let endBatch = fun () -> VulkanRenderer3d.endPhysicallyBasedShadowSurfaces shadowStaticPipeline renderer.VulkanContext
         let advanceBatch = fun instances ->
             counted <- counted + instances
             let delta = counted - committed
             if delta >= Constants.Vulkan.ShadowSurfaceInstanceThreshold then
                 endBatch ()
-                beginBatch ()
+                beginBatch false
                 committed <- counted
-        beginBatch ()
+        beginBatch true
 
         // deferred render static surface shadows
         for entry in renderTasks.DeferredStatic do
