@@ -2786,18 +2786,17 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                  renderer.PhysicallyBasedPipelines.ShadowAnimatedDirectionalPipeline,
                  Unchecked.defaultof<_>)//renderer.PhysicallyBasedPipelines.ShadowTerrainDirectionalPipeline)
 
-        // compute appropriate color clear value
-        let colorClearValue =
-            match lightType with
-            | PointLight -> VkClearValue (lightCutoff, 0.0f, 0.0f, 0.0f)
-            | SpotLight _ | DirectionalLight _ -> VkClearValue (1.0f, Single.MaxValue, 0.0f, 0.0f)
-
         // begin deferred static surface shadow rendering
         let mutable counted = 0
         let mutable committed = 0
         let mutable uniformsDescriptorSet = Unchecked.defaultof<_>
         let beginBatch = fun clear ->
-            let clearColorValueOpt = if clear then Some colorClearValue else None
+            let clearColorValueOpt =
+                if clear then
+                    match lightType with
+                    | PointLight -> Some (VkClearValue (lightCutoff, 0.0f, 0.0f, 0.0f))
+                    | SpotLight _ | DirectionalLight _ -> Some (VkClearValue (1.0f, Single.MaxValue, 0.0f, 0.0f))
+                else None
             uniformsDescriptorSet <-
                 VulkanRenderer3d.beginPhysicallyBasedShadowSurfaces
                     lightOrigin lightView lightProjection renderer.LightingConfig.LightShadowExponent resolution
@@ -2838,8 +2837,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // begin shadow animated rendering
         let uniformsDescriptorSet =
             VulkanRenderer3d.beginPhysicallyBasedShadowSurfaces
-                lightOrigin lightView lightProjection renderer.LightingConfig.LightShadowExponent resolution None colorAttachment depthAttachment renderer.RenderPassIndex shadowAnimatedPipeline renderer
-        
+                lightOrigin lightView lightProjection renderer.LightingConfig.LightShadowExponent resolution
+                None colorAttachment depthAttachment renderer.RenderPassIndex shadowAnimatedPipeline renderer
+
         // deferred render animated surface shadows
         for entry in renderTasks.DeferredAnimated do
             let surfaceKey = entry.Key

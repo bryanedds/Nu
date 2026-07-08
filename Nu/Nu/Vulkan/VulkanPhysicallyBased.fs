@@ -2137,7 +2137,7 @@ module PhysicallyBased =
             Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &renderingInfo)
             Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, asPointer &vkViewport)
             Vulkan.vkCmdSetScissor (vkc.RenderCommandBuffer, 0u, 1u, asPointer &renderArea)
-                
+
             // set up pipeline
             Vulkan.vkCmdBindPipeline (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
 
