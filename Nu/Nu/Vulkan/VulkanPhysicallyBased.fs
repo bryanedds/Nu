@@ -1727,7 +1727,7 @@ module PhysicallyBased =
         // create set 2 uniform buffers
         let shadowMatrixMax = Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels
         let boneUniform = Buffer.create (Constants.Render.BonesMax * sizeof<Matrix4x4>) Storage vkc
-        let lightMapsUniform = Buffer.create (lightMapsMax * sizeof<LightMap>) Storage vkc
+        let lightMapsUniform = Buffer.create (lightMapsMax * sizeof<LightMap'>) Storage vkc
         let lightsGeneralUniform = Buffer.create sizeof<LightsGeneral> Storage vkc
         let lightsUniform = Buffer.create (lightsMax * sizeof<Light>) Storage vkc
         let shadowMatrixUniform = Buffer.create (shadowMatrixMax * sizeof<Matrix4x4>) Storage vkc
@@ -2390,7 +2390,7 @@ module PhysicallyBased =
 
         // create uniform buffers
         let eyeUniform = Buffer.create sizeof<Eye> Storage vkc
-        let lightMapsUniform = Buffer.create (Constants.Render.LightMapsMaxDeferred * sizeof<LightMap>) Storage vkc
+        let lightMapsUniform = Buffer.create (Constants.Render.LightMapsMaxDeferred * sizeof<LightMap'>) Storage vkc
         let lightsGeneralUniform = Buffer.create sizeof<LightsGeneral> Storage vkc
 
         // create pipeline
@@ -2480,8 +2480,8 @@ module PhysicallyBased =
                         lightMap.lightMapAmbientColors <- lightMapAmbientColors[i].V3
                         lightMap.lightMapAmbientBrightnesses <- lightMapAmbientBrightnesses[i]
                     else lightMap <- Unchecked.defaultof<_>
-                    Buffer.writeSubdata (i * sizeof<LightMap>) 0 sizeof<LightMap> 1 (NativePtr.toNativeInt lightMapPtr) pipeline.LightMapsUniform vkc
-                Buffer.flushSubdata 0 0 sizeof<LightMap> Constants.Render.LightMapsMaxDeferred pipeline.LightMapsUniform vkc
+                    Buffer.writeSubdata (i * sizeof<LightMap'>) 0 sizeof<LightMap'> 1 (NativePtr.toNativeInt lightMapPtr) pipeline.LightMapsUniform vkc
+                Buffer.flushSubdata 0 0 sizeof<LightMap'> Constants.Render.LightMapsMaxDeferred pipeline.LightMapsUniform vkc
                 Pipeline.writeDescriptorStorageBuffer 1 0 pipeline.LightMapsUniform vkSet vkc
 
                 // specify lights general
@@ -2547,8 +2547,8 @@ module PhysicallyBased =
 
         // create uniform buffers
         let eyeUniform = Buffer.create sizeof<Eye> Storage vkc
-        let lightMapUniform = Buffer.create sizeof<LightMap> Storage vkc
-        let lightMapsUniform = Buffer.create (Constants.Render.LightMapsMaxDeferred * sizeof<LightMap>) Storage vkc
+        let lightMapUniform = Buffer.create sizeof<LightMap'> Storage vkc
+        let lightMapsUniform = Buffer.create (Constants.Render.LightMapsMaxDeferred * sizeof<LightMap'>) Storage vkc
 
         // create pipeline
         let pipeline =
@@ -2636,8 +2636,8 @@ module PhysicallyBased =
                         lightMap.lightMapAmbientColors <- lightMapAmbientColors[i].V3
                         lightMap.lightMapAmbientBrightnesses <- lightMapAmbientBrightnesses[i]
                     else lightMap <- Unchecked.defaultof<_>
-                    Buffer.writeSubdata (i * sizeof<LightMap>) 0 sizeof<LightMap> 1 (NativePtr.toNativeInt lightMapPtr) pipeline.LightMapsUniform vkc
-                Buffer.flushSubdata 0 0 sizeof<LightMap> Constants.Render.LightMapsMaxDeferred pipeline.LightMapsUniform vkc
+                    Buffer.writeSubdata (i * sizeof<LightMap'>) 0 sizeof<LightMap'> 1 (NativePtr.toNativeInt lightMapPtr) pipeline.LightMapsUniform vkc
+                Buffer.flushSubdata 0 0 sizeof<LightMap'> Constants.Render.LightMapsMaxDeferred pipeline.LightMapsUniform vkc
                 Pipeline.writeDescriptorStorageBuffer 2 0 pipeline.LightMapsUniform vkSet vkc
 
                 // specify static environment textures
@@ -2827,7 +2827,7 @@ module PhysicallyBased =
 
         // create uniform buffers
         let eyeUniform = Buffer.create sizeof<Eye> Storage vkc
-        let lightMapsUniform = Buffer.create (Constants.Render.LightMapsMaxDeferred * sizeof<LightMap>) Storage vkc
+        let lightMapsUniform = Buffer.create (Constants.Render.LightMapsMaxDeferred * sizeof<LightMap'>) Storage vkc
 
         // create pipeline
         let pipeline =
@@ -2923,8 +2923,8 @@ module PhysicallyBased =
                         lightMap.lightMapAmbientColors <- lightMapAmbientColors[i].V3
                         lightMap.lightMapAmbientBrightnesses <- lightMapAmbientBrightnesses[i]
                     else lightMap <- Unchecked.defaultof<_>
-                    Buffer.writeSubdata (i * sizeof<LightMap>) 0 sizeof<LightMap> 1 (NativePtr.toNativeInt lightMapPtr) pipeline.LightMapsUniform vkc
-                Buffer.flushSubdata 0 0 sizeof<LightMap> Constants.Render.LightMapsMaxDeferred pipeline.LightMapsUniform vkc
+                    Buffer.writeSubdata (i * sizeof<LightMap'>) 0 sizeof<LightMap'> 1 (NativePtr.toNativeInt lightMapPtr) pipeline.LightMapsUniform vkc
+                Buffer.flushSubdata 0 0 sizeof<LightMap'> Constants.Render.LightMapsMaxDeferred pipeline.LightMapsUniform vkc
                 Pipeline.writeDescriptorStorageBuffer 1 0 pipeline.LightMapsUniform vkSet vkc
 
                 // specify static environment textures
@@ -3539,8 +3539,8 @@ module PhysicallyBased =
                         lightMap.lightMapAmbientColors <- lightMapAmbientColors[i].V3
                         lightMap.lightMapAmbientBrightnesses <- lightMapAmbientBrightnesses[i]
                     else lightMap <- Unchecked.defaultof<_>
-                    Buffer.writeSubdata (i * sizeof<LightMap>) 0 sizeof<LightMap> 1 (NativePtr.toNativeInt lightMapPtr) pipeline.LightMapUniform vkc
-                Buffer.flushSubdata 0 0 sizeof<LightMap> Constants.Render.LightMapsMaxForward pipeline.LightMapUniform vkc
+                    Buffer.writeSubdata (i * sizeof<LightMap'>) 0 sizeof<LightMap'> 1 (NativePtr.toNativeInt lightMapPtr) pipeline.LightMapUniform vkc
+                Buffer.flushSubdata 0 0 sizeof<LightMap'> Constants.Render.LightMapsMaxForward pipeline.LightMapUniform vkc
                 Pipeline.writeDescriptorStorageBuffer 1 0 pipeline.LightMapUniform vkSet vkc
 
                 // specify lights general
