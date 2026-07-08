@@ -232,7 +232,8 @@ float computeShadowScalarDirectional(vec4 position, int shadowIndex)
         shadowTexCoordsProj.z >= SHADOW_DIRECTIONAL_SEAM_INSET && shadowTexCoordsProj.z < 1.0 - SHADOW_DIRECTIONAL_SEAM_INSET)
     {
         vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5;
-        float shadowZExp = exp(-lighting.lightShadowExponent * shadowTexCoordsProj.z);
+        float shadowZ = shadowTexCoordsProj.z;
+        float shadowZExp = exp(-lighting.lightShadowExponent * shadowZ);
         float shadowDepthExp = texture(sampler2DArray(shadowTextures, shadowSampler), vec3(shadowTexCoords, float(shadowIndex))).y;
         float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
         shadowScalar = pow(shadowScalar, lighting.lightShadowDensity);
