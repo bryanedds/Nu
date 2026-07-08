@@ -436,7 +436,7 @@ type ToyBoxDispatcher () =
             [1f, "Torso Upper", "Head", None
              2f, "Torso Middle", "Torso Upper", Some (MathF.PI / 8f)
              3f,  "Torso Lower", "Torso Middle", Some (MathF.PI / 16f)] do
-            World.doOrbBody2d $"{name} {componentName}"
+            World.doBallBody2d $"{name} {componentName}"
                 [Entity.Position |= spawnCenter + v3 0f (ballY - i * torsoHeight) 0f
                  Entity.BodyShape |= CapsuleShape
                     { Height = 0.5f; Radius = 0.25f; PropertiesOpt = None
@@ -490,7 +490,7 @@ type ToyBoxDispatcher () =
                 [pos1, "Upper", $"Torso {connectsToTorso}"
                  pos1 + posIncrement, "Lower", $"{side} {armOrLeg} Upper"] do
             let componentName = $"{side} {armOrLeg} {upperOrLower}"
-            World.doOrbBody2d $"{name} {componentName}"
+            World.doBallBody2d $"{name} {componentName}"
                 [Entity.Position |= spawnCenter + pos
                  Entity.Rotation |= Quaternion.CreateFromAngle2d rotation
                  Entity.Size .= v3 armWidth armHeight 0f
@@ -624,7 +624,7 @@ type ToyBoxDispatcher () =
         for layer in 0 .. dec numLayers do
             for vertex in 0 .. dec numSides do
             let gooSpawnPosition = spawnPositions[layer][vertex]
-            World.doOrbBody2d (spawnPositionToName gooSpawnPosition)
+            World.doBallBody2d (spawnPositionToName gooSpawnPosition)
                 [Entity.Position |= spawnCenter + gooSpawnPosition
                  Entity.Size .= v3Dup 8f
                  Entity.StaticImage .= Assets.Gameplay.GooImage
@@ -697,7 +697,7 @@ type ToyBoxDispatcher () =
         let chassis = world.ContextEntity
 
         // declare wheel
-        World.doOrbBody2d $"{name} Wheel"
+        World.doBallBody2d $"{name} Wheel"
             [Entity.Position |= spawnCenter + pivot * objectScale
              Entity.Size .= v3Dup 3.2f * objectScale
              Entity.Elevation .= -0.5f
