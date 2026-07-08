@@ -103,31 +103,10 @@ vec3 rotate(vec3 axis, float angle, vec3 v)
 
 vec4 depthToPosition(float depth, vec2 texCoords)
 {
-    float z = depth * 2.0 - 1.0;
-    vec4 positionClip = vec4(texCoords * 2.0 - 1.0, z, 1.0);
+    vec4 positionClip = vec4(texCoords * 2.0 - 1.0, depth, 1.0);
     vec4 positionView = eye.projectionInverse * positionClip;
     positionView /= positionView.w;
     return eye.viewInverse * positionView;
-}
-
-float depthViewToDepthBuffer(float near, float far, float depthView)
-{
-    return (-depthView - near) / (far - near);
-}
-
-float depthScreenToDepthView(float near, float far, float depthScreen)
-{
-    // for a standard OpenGL projection, compute a and b:
-    float a = -(far + near) / (far - near);
-    float b = -(2.0 * far * near) / (far - near);
-
-    // convert depth from [0, 1] to normalized device coordinate (NDC) z in [-1, 1].
-    float ndcZ = depthScreen * 2.0 - 1.0;
-
-    // recover view-space z: note that view-space z is negative in front of the camera.
-    // when depthScreen is 0 (near plane), ndcZ is -1 and view.z becomes -near.
-    // when depthScreen is 1 (far plane), ndcZ is 1 and view.z becomes -far.
-    return b / (ndcZ + a);
 }
 
 vec3 fresnelSchlick(float cosTheta, vec3 f0)
@@ -321,7 +300,7 @@ void main()
     {
         vec2 texSize = textureSize(sampler2D(depthTexture, colorSampler), 0).xy;
         float texelHeight = 1.0 / texSize.y;
-        vec2 texCoordsBelow = texCoordsOut + vec2(0.0, -texelHeight); // using tex coord below current pixel reduces 'cracks' on floor reflections
+        vec2 texCoordsBelow = texCoordsOut + vec2(0.0, texelHeight); // using tex coord below current pixel reduces 'cracks' on floor reflections
         texCoordsBelow.y = max(0.0, texCoordsBelow.y);
         float depthBelow = texture(sampler2D(depthTexture, colorSampler), texCoordsBelow).r;
         vec4 positionBelow = depthToPosition(depthBelow, texCoordsBelow);
