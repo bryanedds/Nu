@@ -30,22 +30,30 @@ type BufferType =
 
     static member makeInfo size bufferType =
         match bufferType with
-        | Staging -> BufferType.makeInfoInternal size VkBufferUsageFlags.TransferSrc
+        | Staging ->
+            let usage = VkBufferUsageFlags.TransferSrc ||| VkBufferUsageFlags.TransferDst
+            BufferType.makeInfoInternal size usage
         | Vertex uploadEnabled ->
             let usage =
                 if uploadEnabled
-                then VkBufferUsageFlags.VertexBuffer
-                else VkBufferUsageFlags.VertexBuffer ||| VkBufferUsageFlags.TransferDst
+                then VkBufferUsageFlags.VertexBuffer ||| VkBufferUsageFlags.TransferSrc ||| VkBufferUsageFlags.TransferDst
+                else VkBufferUsageFlags.VertexBuffer
             BufferType.makeInfoInternal size usage
         | Index uploadEnabled ->
             let usage =
                 if uploadEnabled
-                then VkBufferUsageFlags.IndexBuffer
-                else VkBufferUsageFlags.IndexBuffer ||| VkBufferUsageFlags.TransferDst
+                then VkBufferUsageFlags.IndexBuffer ||| VkBufferUsageFlags.TransferSrc ||| VkBufferUsageFlags.TransferDst
+                else VkBufferUsageFlags.IndexBuffer
             BufferType.makeInfoInternal size usage
-        | Instance -> BufferType.makeInfoInternal size VkBufferUsageFlags.VertexBuffer
-        | Uniform -> BufferType.makeInfoInternal size VkBufferUsageFlags.UniformBuffer
-        | Storage -> BufferType.makeInfoInternal size VkBufferUsageFlags.StorageBuffer
+        | Instance ->
+            let usage = VkBufferUsageFlags.VertexBuffer ||| VkBufferUsageFlags.TransferSrc ||| VkBufferUsageFlags.TransferDst
+            BufferType.makeInfoInternal size usage
+        | Uniform ->
+            let usage = VkBufferUsageFlags.UniformBuffer ||| VkBufferUsageFlags.TransferSrc ||| VkBufferUsageFlags.TransferDst
+            BufferType.makeInfoInternal size usage
+        | Storage ->
+            let usage = VkBufferUsageFlags.StorageBuffer ||| VkBufferUsageFlags.TransferSrc ||| VkBufferUsageFlags.TransferDst
+            BufferType.makeInfoInternal size usage
 
 /// Internal representation of an allocated buffer.
 type BufferInternal =
@@ -181,7 +189,7 @@ type Buffer =
         let bufferInternalOld = buffer.BufferInternals_[buffer.BufferCursor_]
         if bufferInternalOld.Size < size then
             let bufferInternalNew = BufferInternal.create size buffer.BufferType_ vkc
-            Buffer.copyData bufferInternalOld.Size bufferInternalOld.VkBuffer_ buffer.BufferInternals_[buffer.BufferCursor_].VkBuffer_ vkc
+            Buffer.copyData bufferInternalOld.Size bufferInternalOld.VkBuffer_ bufferInternalNew.VkBuffer_ vkc
             buffer.BufferInternals_[buffer.BufferCursor_] <- bufferInternalNew
             BufferInternal.destroy bufferInternalOld vkc
 

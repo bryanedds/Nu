@@ -632,7 +632,7 @@ type RenderTerrain =
       TerrainDescriptor : TerrainDescriptor
       RenderPass : RenderPass }
 
-/// Configures 3d lighting and ssao.
+/// Configures 3d lighting.
 type [<SymbolicExpansion>] Lighting3dConfig =
     { LightCutoffMargin : single
       LightAmbientBoostCutoff : single
@@ -3396,6 +3396,25 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             compositionTexture renderer.ColorSampler toneMappingTexture
             renderer.GeometryViewport renderer.RenderPassIndex renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterToneMappingPipeline renderer.VulkanContext
         Texture.transitionLayoutAsync ColorAttachmentWrite ColorAttachmentRead toneMappingTexture renderer.VulkanContext.RenderCommandBuffer
+
+        //// apply fxaa filter when desired
+        //if renderer.RendererConfig.FxaaEnabled then
+        //
+        //    // run fxaa pass 0 from tone mapping to color full 0
+        //    let colorFull0Texture = renderer.PhysicallyBasedAttachments.ColorFull0Attachment
+        //    Texture.transitionLayoutAsync ColorAttachmentRead ColorAttachmentWrite colorFull0Texture renderer.VulkanContext.RenderCommandBuffer
+        //    PhysicallyBased.drawFilterFxaaSurface
+        //        renderer.RendererConfig.FxaaSpanMax renderer.RendererConfig.FxaaReduceMinDivisor renderer.RendererConfig.FxaaReduceMulDivisor
+        //        toneMappingTexture renderer.ColorSampler colorFull0Texture
+        //        renderer.GeometryViewport renderer.RenderPassIndex renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterFxaaPipeline renderer.VulkanContext
+        //    Texture.transitionLayoutAsync ColorAttachmentWrite TransferSrc colorFull0Texture renderer.VulkanContext.RenderCommandBuffer
+        //    Texture.transitionLayoutAsync ColorAttachmentRead TransferDst toneMappingTexture renderer.VulkanContext.RenderCommandBuffer
+        //
+        //    // blit from color full 0 back to tone mapping
+        //    let mutable blit = Hl.makeBlit 0 0 0 0 (VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)) targetBounds
+        //    Vulkan.vkCmdBlitImage (renderer.VulkanContext.RenderCommandBuffer, colorFull0Texture.Image, TransferSrc.VkImageLayout, toneMappingTexture.Image, TransferDst.VkImageLayout, 1u, asPointer &blit, VkFilter.Nearest)
+        //    Texture.transitionLayoutAsync TransferSrc ColorAttachmentRead colorFull0Texture renderer.VulkanContext.RenderCommandBuffer
+        //    Texture.transitionLayoutAsync TransferDst ColorAttachmentRead toneMappingTexture renderer.VulkanContext.RenderCommandBuffer
 
         // run gamma-correction pass
         let gammaCorrectionTexture = renderer.PhysicallyBasedAttachments.GammaCorrectionAttachment

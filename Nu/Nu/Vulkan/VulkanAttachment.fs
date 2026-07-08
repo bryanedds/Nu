@@ -13,7 +13,7 @@ module Attachment =
     // from color component attachments using the name "depth". Otherwise color and depth component textures are just called "color" and "depth" attachments,
     // as they are called when passed to Vulkan structures.
 
-    let private createColorAttachment textureType optionalUsages internalFormat pixelFormat resolutionX resolutionY (vkc : VulkanContext) =
+    let createColorAttachment textureType optionalUsages internalFormat pixelFormat resolutionX resolutionY (vkc : VulkanContext) =
         let metadata = TextureMetadata.make resolutionX resolutionY
         let textureInternal =
             TextureInternal.create
@@ -22,12 +22,12 @@ module Attachment =
         EagerTexture textureInternal
 
     /// Update size of color attachment.
-    let private updateColorAttachmentSize resolutionX resolutionY color vkc =
+    let updateColorAttachmentSize resolutionX resolutionY color vkc =
         let metadata = TextureMetadata.make resolutionX resolutionY
         Texture.updateSize metadata color vkc
 
     /// Destroy color attachment.
-    let private destroyColorAttachment (color : Texture) vkc =
+    let destroyColorAttachment (color : Texture) vkc =
         Texture.destroy color vkc
 
     /// Create depth attachment.
@@ -257,7 +257,7 @@ module Attachment =
 
     /// Create tone-mapping attachments.
     let createToneMappingAttachments resolutionX resolutionY vkc =
-        createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba16f Rgba resolutionX resolutionY vkc
+        createColorAttachment Texture2d (VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferDst) Rgba16f Rgba resolutionX resolutionY vkc
 
     /// Update size of tone-mapping attachments.
     let updateToneMappingAttachmentSize resolutionX resolutionY toneMapping vkc =
