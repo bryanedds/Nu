@@ -1257,7 +1257,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           mutable IrradiancePipeline : CubeMapPipeline
           mutable EnvironmentFilterPipeline : EnvironmentFilterPipeline
           mutable PhysicallyBasedPipelines : PhysicallyBasedPipelines
-          ShadowMatrices : Matrix4x4 array
+          ShadowMatricesFlipped : Matrix4x4 array
           LightShadowIndices : Dictionary<uint64, int>
           LightsDesiringShadows : Dictionary<uint64, SortableLight>
           CubeMapGeometry : CubeMapGeometry
@@ -2483,9 +2483,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 renderer.ReloadAssetsRequested <- true
     
     static member private beginPhysicallyBasedShadowSurfaces
-        eyeCenter viewProjection lightShadowExponent resolution colorClearValue colorAttachment depthAttachment renderPassIndex pipeline renderer =
+        eyeCenter view projection lightShadowExponent resolution colorClearValue colorAttachment depthAttachment renderPassIndex pipeline renderer =
         PhysicallyBased.beginPhysicallyBasedShadowSurfaces
-            eyeCenter viewProjection lightShadowExponent resolution colorClearValue colorAttachment depthAttachment renderPassIndex pipeline renderer.VulkanContext
+            eyeCenter view projection lightShadowExponent resolution colorClearValue colorAttachment depthAttachment renderPassIndex pipeline renderer.VulkanContext
 
     static member private renderPhysicallyBasedShadowSurfaces
         bones (parameters : struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List) (surface : PhysicallyBasedSurface)
@@ -2692,7 +2692,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
     static member private renderPhysicallyBasedForwardSurfaces
         bonesArrays (parameters : struct (Matrix4x4 * Presence * Box2 * MaterialProperties) SList)
         irradianceMaps environmentFilterMaps shadowTextureArray shadowMaps shadowCascades lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses lightMapsCount lightMapSingletonBlendMargin
-        lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices lightsCount shadowMatrices
+        lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices lightsCount shadowMatricesFlipped
         (surface : PhysicallyBasedSurface) depthTest blending uniformsDescriptorSet samplersDescriptorSet pipeline renderer =
 
         // ensure we have a large enough instance fields array
@@ -2748,7 +2748,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         PhysicallyBased.drawPhysicallyBasedForwardSurfaces
             bonesArrays parameters.Length renderer.InstanceFields
             irradianceMaps environmentFilterMaps shadowTextureArray shadowMaps shadowCascades lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses lightMapsCount lightMapSingletonBlendMargin
-            lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices lightsCount shadowMatrices
+            lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices lightsCount shadowMatricesFlipped
             surface.SurfaceMaterial surface.PhysicallyBasedGeometry depthTest blending uniformsDescriptorSet samplersDescriptorSet pipeline renderer.VulkanContext
              
         // track geometry instancing
@@ -2759,7 +2759,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
     static member private renderShadow
         lightOrigin
-        (lightViewProjection : Matrix4x4)
+        (lightView : Matrix4x4)
+        (lightProjection : Matrix4x4)
         lightFrustum
         lightType
         lightCutoff
@@ -2798,7 +2799,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let beginBatch = fun () ->
             uniformsDescriptorSet <-
                 VulkanRenderer3d.beginPhysicallyBasedShadowSurfaces
-                    lightOrigin lightViewProjection renderer.LightingConfig.LightShadowExponent resolution
+                    lightOrigin lightView lightProjection renderer.LightingConfig.LightShadowExponent resolution
                     (Some colorClearValue) colorAttachment depthAttachment renderer.RenderPassIndex shadowStaticPipeline renderer
         let endBatch = fun () -> VulkanRenderer3d.endPhysicallyBasedShadowSurfaces shadowStaticPipeline renderer.VulkanContext
         let advanceBatch = fun instances ->
@@ -2836,7 +2837,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // begin shadow animated rendering
         let uniformsDescriptorSet =
             VulkanRenderer3d.beginPhysicallyBasedShadowSurfaces
-                lightOrigin lightViewProjection renderer.LightingConfig.LightShadowExponent resolution None colorAttachment depthAttachment renderer.RenderPassIndex shadowAnimatedPipeline renderer
+                lightOrigin lightView lightProjection renderer.LightingConfig.LightShadowExponent resolution None colorAttachment depthAttachment renderer.RenderPassIndex shadowAnimatedPipeline renderer
         
         // deferred render animated surface shadows
         for entry in renderTasks.DeferredAnimated do
@@ -2873,7 +2874,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let beginBatch = fun () ->
             uniformsDescriptorSet <-
                 VulkanRenderer3d.beginPhysicallyBasedShadowSurfaces
-                    lightOrigin lightViewProjection renderer.LightingConfig.LightShadowExponent resolution
+                    lightOrigin lightView lightProjection renderer.LightingConfig.LightShadowExponent resolution
                     None colorAttachment depthAttachment renderer.RenderPassIndex forwardPipeline renderer
         let endBatch = fun () -> VulkanRenderer3d.endPhysicallyBasedShadowSurfaces forwardPipeline renderer.VulkanContext
         let checkBatch = fun forwardPipeline' ->
@@ -2914,7 +2915,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         renderTasks
         renderer
         (lightOrigin : Vector3)
-        (lightViewProjection : Matrix4x4)
+        (lightView : Matrix4x4)
+        (lightProjection : Matrix4x4)
         (lightFrustum : Frustum)
         (lightType : LightType)
         (lightCutoff : single)
@@ -2927,14 +2929,15 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             renderTasks.ForwardSorted.Add struct (model, castShadow, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest)
 
         // actually render shadow
-        VulkanRenderer3d.renderShadow lightOrigin lightViewProjection lightFrustum lightType lightCutoff shadowResolution colorAttachment depthAttachment renderTasks renderer
+        VulkanRenderer3d.renderShadow lightOrigin lightView lightProjection lightFrustum lightType lightCutoff shadowResolution colorAttachment depthAttachment renderTasks renderer
 
     static member private renderShadowMapFace
         renderTasks
         renderer
         (lightOrigin : Vector3)
         (lightCutoff : single)
-        (shadowViewProjection : Matrix4x4)
+        (shadowView : Matrix4x4)
+        (shadowProjection : Matrix4x4)
         (shadowFrustum : Frustum)
         (shadowResolution : Vector2i)
         (colorAttachment : VkImageView)
@@ -2945,7 +2948,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             renderTasks.ForwardSorted.Add struct (model, castShadow, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest)
 
         // actually render to shadow cube map face
-        VulkanRenderer3d.renderShadow lightOrigin shadowViewProjection shadowFrustum PointLight lightCutoff shadowResolution colorAttachment depthAttachment renderTasks renderer
+        VulkanRenderer3d.renderShadow lightOrigin shadowView shadowProjection shadowFrustum PointLight lightCutoff shadowResolution colorAttachment depthAttachment renderTasks renderer
 
     static member private renderGeometry
         frustumInterior
@@ -3074,12 +3077,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
         // presume shadow near plane distance as interior near plane distance
         let shadowNear = Constants.Render.NearPlaneDistanceInterior
-        
-        // sort forward surfaces from far to near
-        let forwardSurfacesSortBuffer = VulkanRenderer3d.sortForwardSurfaces eyeCenter renderTasks.Forward renderer.ForwardSurfacesComparer renderer.ForwardSurfacesSortBuffer
-        for struct (_, _, model, castShadow, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest, _, _) in forwardSurfacesSortBuffer do
-            renderTasks.ForwardSorted.Add struct (model, castShadow, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest)
-        forwardSurfacesSortBuffer.Clear ()
 
         // clear geometry textures
         let geometryResolution = renderer.GeometryViewport.Bounds.Size
@@ -3204,7 +3201,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         PhysicallyBased.drawPhysicallyBasedDeferredLightingSurface
             eyeCenter view geometryProjection renderer.LightingConfig.LightCutoffMargin renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity sssEnabled
             depthTexture albedoTexture materialTexture normalPlusTexture subdermalPlusTexture scatterPlusTexture clearCoatPlusTexture shadowTextureArray shadowMaps shadowCascades
-            lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices (min lightIds.Length renderTasks.Lights.Count) shadowNear renderer.ShadowMatrices
+            lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices (min lightIds.Length renderTasks.Lights.Count) shadowNear renderer.ShadowMatricesFlipped
             renderer.GeometrySampler renderer.ShadowSampler renderer.GeometryViewport renderer.RenderPassIndex renderer.QuadGeometry lightAccumTexture renderer.PhysicallyBasedPipelines.DeferredLightingPipeline renderer.VulkanContext
         Texture.transitionLayoutAsync ColorAttachmentWrite ColorAttachmentRead lightAccumTexture renderer.VulkanContext.RenderCommandBuffer
 
@@ -3222,7 +3219,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     eyeCenter view geometryProjection renderer.LightingConfig.LightCutoffMargin ssvfEnabled renderer.LightingConfig.SsvfIntensity renderer.LightingConfig.SsvfSteps renderer.LightingConfig.SsvfAsymmetry
                     depthTexture shadowTextureArray shadowMaps shadowCascades (min lightMapEnvironmentFilterMaps.Length renderTasks.LightMaps.Count) renderer.LightingConfig.LightMapSingletonBlendMargin
                     lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices (min lightIds.Length renderTasks.Lights.Count)
-                    renderer.ShadowMatrices renderer.ColorSampler renderer.ShadowSampler fogAccumTexture renderer.GeometryViewport renderer.RenderPassIndex
+                    renderer.ShadowMatricesFlipped renderer.ColorSampler renderer.ShadowSampler fogAccumTexture renderer.GeometryViewport renderer.RenderPassIndex
                     renderer.QuadGeometry renderer.PhysicallyBasedPipelines.DeferredFoggingPipeline renderer.VulkanContext
                 Texture.transitionLayoutAsync ColorAttachmentWrite ColorAttachmentRead fogAccumTexture renderer.VulkanContext.RenderCommandBuffer
                 fogAccumTexture
@@ -3354,6 +3351,12 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 beginBatch ()
                 committed <- counted
         beginBatch ()
+
+        // sort forward surfaces from far to near
+        let forwardSurfacesSortBuffer = VulkanRenderer3d.sortForwardSurfaces eyeCenter renderTasks.Forward renderer.ForwardSurfacesComparer renderer.ForwardSurfacesSortBuffer
+        for struct (_, _, model, castShadow, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest, _, _) in forwardSurfacesSortBuffer do
+            renderTasks.ForwardSorted.Add struct (model, castShadow, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest)
+        forwardSurfacesSortBuffer.Clear ()
         
         // render forward (static and animated) surfaces to composition attachment
         for (model, _, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest) in renderTasks.ForwardSorted do
@@ -3372,7 +3375,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             VulkanRenderer3d.renderPhysicallyBasedForwardSurfaces
                 bonesArray (SList.singleton (model, presence, texCoordsOffset, properties))
                 lightMapIrradianceMaps lightMapEnvironmentFilterMaps shadowTextureArray shadowMaps shadowCascades lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses (min lightMapEnvironmentFilterMaps.Length renderTasks.LightMaps.Count) renderer.LightingConfig.LightMapSingletonBlendMargin
-                lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices (min lightIds.Length renderTasks.Lights.Count) renderer.ShadowMatrices
+                lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices (min lightIds.Length renderTasks.Lights.Count) renderer.ShadowMatricesFlipped
                 surface depthTest true uniformsDescriptorSet samplersDescriptorSet forwardPipeline renderer
             advanceBatch 1
         
@@ -3630,11 +3633,10 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                         if shouldDraw then
 
                             // draw shadow texture
-                            let shadowViewProjection = shadowView * shadowProjection
                             let shadowResolution = renderer.GeometryViewport.ShadowTextureResolution
                             Texture.transitionLayoutAsync ColorAttachmentRead ColorAttachmentWrite shadowColorAttachment renderer.VulkanContext.RenderCommandBuffer
                             VulkanRenderer3d.renderShadowTexture
-                                renderTasks renderer shadowOrigin shadowViewProjection shadowFrustum
+                                renderTasks renderer shadowOrigin shadowView shadowProjection shadowFrustum
                                 shadowLightType shadowCutoff shadowResolution shadowColorAttachment.LayerViews[shadowTextureIndex] shadowDepthAttachment
                             Texture.transitionLayoutAsync ColorAttachmentWrite ColorAttachmentRead shadowColorAttachment renderer.VulkanContext.RenderCommandBuffer
 
@@ -3656,7 +3658,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                         renderTasks.ShadowBufferIndexOpt <- Some shadowTextureIndex
 
                         // update renderer values
-                        renderer.ShadowMatrices[shadowTextureIndex] <- shadowView * shadowProjection
+                        renderer.ShadowMatricesFlipped[shadowTextureIndex] <- shadowView * shadowProjection.Flipped
                         renderer.LightShadowIndices[lightId] <- shadowTextureIndex
 
                         // next shadow
@@ -3689,7 +3691,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
                             // destructure shadow index info
                             let (shadowFace, shadowView, shadowProjection) = shadowIndexInfoOpt.Value
-                            let shadowViewProjection = shadowView * shadowProjection
 
                             // draw shadow map when not cached
                             // NOTE: it's a tiny bit inefficient that we set up and tear down the same shadow map once
@@ -3707,7 +3708,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                                 let (shadowColorAttachment, shadowDepthAttachment) = renderer.PhysicallyBasedAttachments.ShadowMapAttachmentsArray[shadowMapBufferIndex]
                                 Texture.transitionLayoutAsync ColorAttachmentRead ColorAttachmentWrite shadowColorAttachment renderer.VulkanContext.RenderCommandBuffer
                                 Texture.transitionLayoutAsync DepthAttachmentRead DepthAttachmentWrite shadowDepthAttachment renderer.VulkanContext.RenderCommandBuffer
-                                VulkanRenderer3d.renderShadowMapFace renderTasks renderer lightOrigin lightCutoff shadowViewProjection shadowFrustum shadowResolution shadowColorAttachment.ImageView shadowDepthAttachment
+                                VulkanRenderer3d.renderShadowMapFace renderTasks renderer lightOrigin lightCutoff shadowView shadowProjection shadowFrustum shadowResolution shadowColorAttachment.ImageView shadowDepthAttachment
                                 Texture.transitionLayoutAsync ColorAttachmentWrite ColorAttachmentRead shadowColorAttachment renderer.VulkanContext.RenderCommandBuffer
                                 Texture.transitionLayoutAsync DepthAttachmentWrite DepthAttachmentRead shadowDepthAttachment renderer.VulkanContext.RenderCommandBuffer
 
@@ -3810,9 +3811,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 physicallyBasedAttachments
                 vkc
 
-        // create shadow matrices buffer
-        let shadowMatricesCount = Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels
-        let shadowMatrices = Array.zeroCreate<Matrix4x4> shadowMatricesCount
+        // create shadow matrices flipped buffer
+        let shadowMatricesFlippedCount = Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels
+        let shadowMatricesFlipped = Array.zeroCreate<Matrix4x4> shadowMatricesFlippedCount
         
         // create white cube map
         let cubeMap =
@@ -4008,7 +4009,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               IrradiancePipeline = irradiancePipeline
               EnvironmentFilterPipeline = environmentFilterPipeline
               PhysicallyBasedPipelines = physicallyBasedPipelines
-              ShadowMatrices = shadowMatrices
+              ShadowMatricesFlipped = shadowMatricesFlipped
               LightShadowIndices = dictPlus HashIdentity.Structural []
               LightsDesiringShadows = dictPlus HashIdentity.Structural []
               CubeMapGeometry = cubeMapGeometry

@@ -20,7 +20,7 @@ type ShadowVert =
 [<Struct; StructLayout (LayoutKind.Explicit)>]
 type ShadowFrag =
     [<FieldOffset(0)>] val mutable eyeCenter : Vector3
-    [<FieldOffset(4)>] val mutable lightShadowExponent : single
+    [<FieldOffset(12)>] val mutable lightShadowExponent : single
 
 [<Struct; StructLayout (LayoutKind.Explicit)>]
 type Lighting =
@@ -1584,7 +1584,7 @@ module PhysicallyBased =
                   Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 StorageBuffer VertexStage 1|]|]
                 [||] colorAttachmentFormats (Some depthTestFormat)
-                [|boneUniform; shadowVertUniform; shadowFragUniform|]
+                [|shadowVertUniform; boneUniform; shadowFragUniform|]
                 vkc
 
         // make PhysicallyBasedDepthPipeline
@@ -1604,7 +1604,8 @@ module PhysicallyBased =
     /// Begin drawing a batch of physically-based shadow surfaces.
     let beginPhysicallyBasedShadowSurfaces
         (eyeCenter : Vector3)
-        (viewProjection : Matrix4x4)
+        (view : Matrix4x4)
+        (projection : Matrix4x4)
         (lightShadowExponent : single)
         (resolution : Vector2i)
         (colorClearValueOpt : VkClearValue option)
@@ -1613,6 +1614,10 @@ module PhysicallyBased =
         (renderPassIndex : int)
         (pipeline : PhysicallyBasedShadowPipeline)
         (vkc : VulkanContext) =
+        
+        // compute vulkan-appropriate matrices
+        let projection = projection.Flipped
+        let viewProjection = view * projection
 
         // set up render
         let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
@@ -1800,7 +1805,7 @@ module PhysicallyBased =
               LightUniform = lightsUniform
               ShadowMatrixUniform = shadowMatrixUniform
               Pipeline = pipeline }
-        
+
         // fin
         physicallyBasedPipeline
     
@@ -2033,7 +2038,7 @@ module PhysicallyBased =
         (lightShadowIndices : int array)
         (lightsCount : int)
         (shadowNear : single)
-        (shadowMatrices : Matrix4x4 array)
+        (shadowMatricesFlipped : Matrix4x4 array)
         (geometrySampler : Sampler)
         (shadowSampler : Sampler)
         (viewport : Viewport)
@@ -2048,6 +2053,9 @@ module PhysicallyBased =
         let projection = projection.Flipped
         let projectionInverse = projection.Inverted
         let viewProjection = view * projection
+
+        // shadow matrices considered unflipped in this context
+        let shadowMatrices = shadowMatricesFlipped
 
         // only draw if required vkPipeline exists
         match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
@@ -2246,7 +2254,7 @@ module PhysicallyBased =
         (lightDesireFogs : int array)
         (lightShadowIndices : int array)
         (lightsCount : int)
-        (shadowMatrices : Matrix4x4 array)
+        (shadowMatricesFlipped : Matrix4x4 array)
         (colorSampler : Sampler)
         (shadowSampler : Sampler)
         (foggingAttachment : Texture)
@@ -2261,6 +2269,9 @@ module PhysicallyBased =
         let projection = projection.Flipped
         let projectionInverse = projection.Inverted
         let viewProjection = view * projection
+
+        // shadow matrices considered unflipped in this context
+        let shadowMatrices = shadowMatricesFlipped
 
         // only draw if required vkPipeline exists
         match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
@@ -3473,7 +3484,7 @@ module PhysicallyBased =
         (lightDesireFogs : int array)
         (lightShadowIndices : int array)
         (lightsCount : int)
-        (shadowMatrices : Matrix4x4 array)
+        (shadowMatricesFlipped : Matrix4x4 array)
         (material : PhysicallyBasedMaterial)
         (geometry : PhysicallyBasedGeometry)
         (depthTest : DepthTest)
@@ -3482,6 +3493,9 @@ module PhysicallyBased =
         (samplersDescriptorSet : VkDescriptorSet)
         (pipeline : PhysicallyBasedPipeline)
         (vkc : VulkanContext) =
+
+        // shadow matrices considered unflipped in this context
+        let shadowMatrices = shadowMatricesFlipped
 
         // only draw if required vkPipeline exists
         let blend = if blending then VulkanTransparent else VulkanUnblended
@@ -3561,7 +3575,7 @@ module PhysicallyBased =
 
                 // specify shadow matrices
                 use shadowMatricesPin = new ArrayPin<_> (shadowMatrices)
-                let shadowMatricesCount = min shadowMatrices.Length (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels)
+                let shadowMatricesCount = min shadowMatricesFlipped.Length (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels)
                 Buffer.uploadData sizeof<Matrix4x4> shadowMatricesCount shadowMatricesPin.NativeInt pipeline.ShadowMatrixUniform vkc
                 Pipeline.writeDescriptorStorageBuffer 4 0 pipeline.ShadowMatrixUniform vkSet vkc
 
