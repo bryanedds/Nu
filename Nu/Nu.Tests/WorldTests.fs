@@ -30,7 +30,7 @@ module WorldTests =
             let world = World.make (constant None) sdlDeps worldConfig geometryViewport windowViewport (TestPlugin ())
             let result = World.runWithCleanUp (fun world -> world.UpdateTime < 1L) ignore ignore ignore ignore ignore (Some ignore) world
             Assert.Equal (Constants.Engine.ExitCodeSuccess, result)
-        | Left _ -> Assert.Fail ()
+        | Left message -> Assert.Fail message
 
     let [<Test; Category "Integration">] ``Run integration frame then clean up - three times.`` () =
         for _ in 0 .. dec 3 do
