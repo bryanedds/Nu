@@ -123,11 +123,13 @@ float depthViewToDepthBuffer(float near, float far, float depthView)
 
 float depthScreenToDepthView(float near, float far, float depthScreen)
 {
+    // TODO: P0: I'm not confident about this transformation; can we check more thoroughly?
     return -(near * far) / (far - depthScreen * (far - near));
 }
 
 float worldToDepthView(float near, float far, mat4 viewProjection, vec4 position)
 {
+    // TODO: P0: I'm not confident about this transformation; can we check more thoroughly?
     vec4 positionClip = viewProjection * position;
     float depthScreen = positionClip.z / positionClip.w;
     return -(near * far) / (far - depthScreen * (far - near));
@@ -312,7 +314,7 @@ float geometryTravelSpot(vec4 position, int lightIndex, int shadowIndex)
         {
             for (int j = -1; j <= 1; ++j)
             {
-                float shadowDepthScreen = texture(sampler2DArray(shadowTextures, shadowSampler), vec3(shadowTexCoords.xy + vec2(i, j) * shadowTexelSize, float(shadowIndex))).x;
+                float shadowDepthScreen = texture(sampler2DArray(shadowTextures, shadowSampler), vec3(shadowTexCoords + vec2(i, j) * shadowTexelSize, float(shadowIndex))).x;
                 float shadowDepth = depthScreenToDepthView(lighting.shadowNear, shadowFar, shadowDepthScreen);
                 float delta = shadowZ - shadowDepth;
                 travel += max(0.0, delta);

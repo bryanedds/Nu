@@ -31,8 +31,6 @@ layout(set = 1, binding = 10) uniform texture2D clearCoatTexture;
 layout(set = 1, binding = 11) uniform texture2D clearCoatRoughnessTexture;
 layout(set = 1, binding = 12) uniform texture2D clearCoatNormalTexture;
 
-// NOTE: (set = 2, binding = 0) unused in static rendering.
-
 layout(set = 3, binding = 0) uniform sampler filteredSampler;
 
 layout(location = 0) in vec4 positionOut;
