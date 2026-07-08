@@ -162,7 +162,7 @@ module Attachment =
 
     /// Create light mapping attachment.
     let createLightMappingAttachment resolutionX resolutionY vkc =
-        createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgb16f Rgb resolutionX resolutionY vkc
+        createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba16f Rgba resolutionX resolutionY vkc
 
     /// Update size of light mapping attachment.
     let updateLightMappingAttachmentSize resolutionX resolutionY lightmapping vkc =
@@ -175,7 +175,7 @@ module Attachment =
 
     /// Create ambient attachment.
     let createAmbientAttachment resolutionX resolutionY vkc =
-        createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgb16f Rgb resolutionX resolutionY vkc
+        createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba16f Rgba resolutionX resolutionY vkc
 
     /// Update size of ambient attachment.
     let updateAmbientAttachmentSize resolutionX resolutionY ambient vkc =
@@ -188,7 +188,7 @@ module Attachment =
 
     /// Create irradiance attachment.
     let createIrradianceAttachment resolutionX resolutionY vkc =
-        createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgb16f Rgb resolutionX resolutionY vkc
+        createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba16f Rgba resolutionX resolutionY vkc
 
     /// Update size of irradiance attachment.
     let updateIrradianceAttachmentSize resolutionX resolutionY irradiance vkc =
@@ -201,7 +201,7 @@ module Attachment =
 
     /// Create environment filter attachment.
     let createEnvironmentFilterAttachment resolutionX resolutionY vkc =
-        createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgb16f Rgb resolutionX resolutionY vkc
+        createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba16f Rgba resolutionX resolutionY vkc
 
     /// Update size of environment filter attachment.
     let updateEnvironmentFilterAttachmentSize resolutionX resolutionY environmentfilter vkc =
