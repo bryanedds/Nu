@@ -1128,7 +1128,7 @@ type [<ReferenceEquality>] private RenderTasks =
                     | (true, valueCached) ->
                         if  value.Count <> valueCached.Count ||
                             Seq.exists2 (fun struct (m, cs, _, _, _) struct (mCached, csCached, _, _, _) -> m <> mCached || cs <> csCached) value valueCached then
-                            changed <- false
+                            changed <- true
                     | (false, _) -> changed <- true
                 not changed
             let deferredStaticClippedCached =
@@ -1142,7 +1142,7 @@ type [<ReferenceEquality>] private RenderTasks =
                     | (true, valueCached) ->
                         if  value.Count <> valueCached.Count ||
                             Seq.exists2 (fun struct (m, cs, _, _, _) struct (mCached, csCached, _, _, _) -> m <> mCached || cs <> csCached) value valueCached then
-                            changed <- false
+                            changed <- true
                     | (false, _) -> changed <- true
                 not changed
             let deferredStaticPreBatchesCached =
@@ -1162,7 +1162,7 @@ type [<ReferenceEquality>] private RenderTasks =
                     | (true, valueCached) ->
                         if  value.Count <> valueCached.Count ||
                             Seq.exists2 (fun struct (m, cs, _, _, _) struct (mCached, csCached, _, _, _) -> m <> mCached || cs <> csCached) value valueCached then
-                            changed <- false
+                            changed <- true
                     | (false, _) -> changed <- true
                 not changed
             let deferredTerrainsCached =
