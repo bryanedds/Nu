@@ -140,7 +140,7 @@ module WorldModuleEntity =
             let entityStates = SUMap.remove entity world.EntityStates
             world.WorldState <- { world.WorldState with Simulants = simulants; EntityStates = entityStates }
 
-        static member private entityStateSetter entityState (entity : Entity) (world : World) =
+        static member internal entityStateSetter entityState (entity : Entity) (world : World) =
 #if DEBUG
             if not (SUMap.containsKey entity world.EntityStates) then
                 failwith ("Cannot set the state of a non-existent entity '" + scstring entity + "'")
