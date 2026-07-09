@@ -123,16 +123,18 @@ float depthViewToDepthBuffer(float near, float far, float depthView)
 
 float depthScreenToDepthView(float near, float far, float depthScreen)
 {
-    // TODO: P0: I'm not confident about this transformation; can we check more thoroughly?
-    return -(near * far) / (far - depthScreen * (far - near));
+    float a = -far / (far - near);
+    float b = -(far * near) / (far - near);
+    return b / (depthScreen + a);
 }
 
 float worldToDepthView(float near, float far, mat4 viewProjection, vec4 position)
 {
-    // TODO: P0: I'm not confident about this transformation; can we check more thoroughly?
+    float a = -far / (far - near);
+    float b = -(far * near) / (far - near);
     vec4 positionClip = viewProjection * position;
-    float depthScreen = positionClip.z / positionClip.w;
-    return -(near * far) / (far - depthScreen * (far - near));
+    float ndcZ = positionClip.z / positionClip.w;
+    return b / (ndcZ + a);
 }
 
 float distributionGGX(vec3 normal, vec3 h, float roughness)
