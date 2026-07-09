@@ -592,7 +592,7 @@ type [<ReferenceEquality>] VulkanContext =
             | VkDebugUtilsMessageSeverityFlagsEXT.Error -> "Error"
             | _ -> ""
         let header = "Vulkan" + typeLabel + severityLabel
-        
+
         // decide when to log
         if messageType = VkDebugUtilsMessageTypeFlagsEXT.Performance then
             if messageSeverity > VkDebugUtilsMessageSeverityFlagsEXT.Warning then
@@ -992,7 +992,7 @@ type [<ReferenceEquality>] VulkanContext =
             VulkanContext.beginRenderCommandBuffer vkc
 
             // ensure swapchain image is ready to be drawn to
-            Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color Present ColorAttachmentWrite vkc.Swapchain_.Image vkc.RenderCommandBuffer
+            Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color Undefined ColorAttachmentRead vkc.Swapchain_.Image vkc.RenderCommandBuffer
 
     /// End the frame.
     static member endFrame vkc =
@@ -1021,7 +1021,7 @@ type [<ReferenceEquality>] VulkanContext =
                 let mutable renderFinishedSemaphore = vkc.RenderFinishedSemaphore_
                 let mutable pipelineStage = VkPipelineStageFlags.ColorAttachmentOutput
                 Vulkan.vkBeginCommandBuffer (commandBuffer, &&beginInfo) |> Hl.check
-                Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color ColorAttachmentWrite Present vkc.Swapchain_.Image commandBuffer
+                Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color ColorAttachmentRead Present vkc.Swapchain_.Image commandBuffer
                 let mutable info = VkSubmitInfo ()
                 info.waitSemaphoreCount <- 1u
                 info.pWaitSemaphores <- &&renderFinishedSemaphore
