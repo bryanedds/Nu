@@ -297,32 +297,25 @@ module WorldModuleGame =
         /// Get the bounds of the 2d eye's sight irrespective of its position.
         static member getViewBounds2dAbsolute world =
             let gameState = World.getGameState Game.Handle world
-            let eyeViewed = gameState.Eye2dViewed
-            box2
-                (v2 (eyeViewed.X * -0.5f) (eyeViewed.Y * -0.5f))
-                eyeViewed
+            box2 (gameState.Eye2dViewed * -0.5f) gameState.Eye2dViewed
 
         /// Get the bounds of the 2d eye's sight relative to its position.
         static member getViewBounds2dRelative world =
             let gameState = World.getGameState Game.Handle world
             let eyeViewed = gameState.Eye2dViewed
-            let min = v2 (gameState.Eye2dCenter.X - eyeViewed.X * 0.5f) (gameState.Eye2dCenter.Y - eyeViewed.Y * 0.5f)
-            box2 min eyeViewed
+            box2 (gameState.Eye2dCenter - eyeViewed * 0.5f) eyeViewed
 
         /// Get the bounds of the 2d play zone irrespective of eye center.
         static member getPlayBounds2dAbsolute world =
             let gameState = World.getGameState Game.Handle world
             let eyeViewable = gameState.Eye2dSize + gameState.Eye2dSize * Constants.Engine.EyeMarginMaxScalar
-            box2
-                (v2 (eyeViewable.X * -0.5f) (eyeViewable.Y * -0.5f))
-                eyeViewable
+            box2 (eyeViewable * -0.5f) eyeViewable
 
         /// Get the bounds of the 2d play zone relative to eye center.
         static member getPlayBounds2dRelative world =
             let gameState = World.getGameState Game.Handle world
             let eyeViewable = gameState.Eye2dSize + gameState.Eye2dSize * Constants.Engine.EyeMarginMaxScalar
-            let min = v2 (gameState.Eye2dCenter.X - eyeViewable.X * 0.5f) (gameState.Eye2dCenter.Y - eyeViewable.Y * 0.5f)
-            box2 min eyeViewable
+            box2 (gameState.Eye2dCenter - eyeViewable * 0.5f) eyeViewable
 
         /// Check that the given bounds is within the 2d eye's sight irrespective of eye center.
         static member boundsInView2dAbsolute (bounds : Box2) world =
