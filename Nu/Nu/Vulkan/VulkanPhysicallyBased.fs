@@ -2193,7 +2193,7 @@ module PhysicallyBased =
             Vulkan.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, asPointer &samplersDescriptorSet, 0u, nullPtr)
 
             // draw
-            Vulkan.vkCmdDrawIndexed (vkc.RenderCommandBuffer, uint geometry.ElementCount, uint 1, 0u, 0, 0u)
+            Vulkan.vkCmdDrawIndexed (vkc.RenderCommandBuffer, uint geometry.ElementCount, 1u, 0u, 0, 0u)
 
             // tear down render
             Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
@@ -2406,7 +2406,7 @@ module PhysicallyBased =
             Vulkan.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, asPointer &samplersDescriptorSet, 0u, nullPtr)
 
             // draw
-            Vulkan.vkCmdDrawIndexed (vkc.RenderCommandBuffer, uint geometry.ElementCount, uint 1, 0u, 0, 0u)
+            Vulkan.vkCmdDrawIndexed (vkc.RenderCommandBuffer, uint geometry.ElementCount, 1u, 0u, 0, 0u)
 
             // tear down render
             Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
@@ -3200,7 +3200,7 @@ module PhysicallyBased =
             Vulkan.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, asPointer &samplersDescriptorSet, 0u, nullPtr)
 
             // draw
-            Vulkan.vkCmdDrawIndexed (vkc.RenderCommandBuffer, uint geometry.ElementCount, uint 1, 0u, 0, 0u)
+            Vulkan.vkCmdDrawIndexed (vkc.RenderCommandBuffer, uint geometry.ElementCount, 1u, 0u, 0, 0u)
 
             // tear down render
             Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
@@ -3344,7 +3344,7 @@ module PhysicallyBased =
             Vulkan.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, asPointer &samplersDescriptorSet, 0u, nullPtr)
 
             // draw
-            Vulkan.vkCmdDrawIndexed (vkc.RenderCommandBuffer, uint geometry.ElementCount, uint 1, 0u, 0, 0u)
+            Vulkan.vkCmdDrawIndexed (vkc.RenderCommandBuffer, uint geometry.ElementCount, 1u, 0u, 0, 0u)
 
             // tear down render
             Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer

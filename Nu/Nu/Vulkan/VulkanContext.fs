@@ -916,7 +916,7 @@ type [<ReferenceEquality>] VulkanContext =
             | FirstSubmission ->
                 let mutable imageAvailableSemaphore = vkc.ImageAvailableSemaphore_
                 let mutable stageFlag = VkPipelineStageFlags.ColorAttachmentOutput
-                submitInfo.waitSemaphoreCount <- uint 1
+                submitInfo.waitSemaphoreCount <- 1u
                 submitInfo.pWaitSemaphores <- &&imageAvailableSemaphore
                 submitInfo.pWaitDstStageMask <- &&stageFlag
                 Vulkan.vkQueueSubmit (vkQueue, 1u, &&submitInfo, VkFence.Null) |> Hl.check // fine without waiting because we've already waited on the render fence
@@ -924,7 +924,7 @@ type [<ReferenceEquality>] VulkanContext =
                 Vulkan.vkQueueSubmit (vkQueue, 1u, &&submitInfo, VkFence.Null) |> Hl.check
             | LastSubmission ->
                 let mutable renderFinishedSemaphore = vkc.RenderFinishedSemaphore_
-                submitInfo.signalSemaphoreCount <- uint 1
+                submitInfo.signalSemaphoreCount <- 1u
                 submitInfo.pSignalSemaphores <- &&renderFinishedSemaphore
                 Vulkan.vkQueueSubmit (vkQueue, 1u, &&submitInfo, vkc.RenderFence_) |> Hl.check
 
