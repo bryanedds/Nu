@@ -3427,10 +3427,10 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
         // blit from gamma-correction attachment to target image without filtering
         Texture.transitionLayoutAsync ColorAttachmentRead TransferSrc gammaCorrectionTexture renderer.VulkanContext.RenderCommandBuffer
-        Hl.recordTransitionLayout true 1 targetLayer 1 VkImageAspectFlags.Color Hl.ColorAttachmentWrite TransferDst targetImage renderer.VulkanContext.RenderCommandBuffer
+        Hl.recordTransitionLayout true 1 targetLayer 1 VkImageAspectFlags.Color ColorAttachmentWrite TransferDst targetImage renderer.VulkanContext.RenderCommandBuffer
         let mutable region = Hl.makeBlit 0 0 0 targetLayer (VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)) targetBounds
         Vulkan.vkCmdBlitImage (renderer.VulkanContext.RenderCommandBuffer, gammaCorrectionTexture.Image, TransferSrc.VkImageLayout, targetImage, TransferDst.VkImageLayout, 1u, asPointer &region, VkFilter.Nearest)
-        Hl.recordTransitionLayout true 1 targetLayer 1 VkImageAspectFlags.Color TransferDst Hl.ColorAttachmentWrite targetImage renderer.VulkanContext.RenderCommandBuffer
+        Hl.recordTransitionLayout true 1 targetLayer 1 VkImageAspectFlags.Color TransferDst ColorAttachmentWrite targetImage renderer.VulkanContext.RenderCommandBuffer
         Texture.transitionLayoutAsync TransferSrc ColorAttachmentRead gammaCorrectionTexture renderer.VulkanContext.RenderCommandBuffer
 
         // advance render pass index
