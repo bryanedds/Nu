@@ -30,7 +30,7 @@ Thumbs.db
 bin/
 obj/
 refinement/
-refinement-out/
+piped/
 .vs/
 
 #########

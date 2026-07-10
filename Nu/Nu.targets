@@ -5,13 +5,14 @@
 	     ============================================================	 
 
          Usage: import this right after your first PropertyGroup (which sets TargetFramework / TargetFrameworks). The
-		 shared file then sees TargetFrameworks to condition UseMaui on mobile targets (avoiding MAUI workload for desktop-only projects)
+		 shared file then sees TargetFrameworks to condition UseMaui on mobile targets (avoiding MAUI workload for
+         desktop-only projects)
 
          To opt into mobile targets, list them explicitly in your project:
 		    <TargetFrameworks>net10.0-android;net10.0</TargetFrameworks>
             <TargetFrameworks Condition="$([System.OperatingSystem]::IsMacOS())">$(TargetFrameworks);net10.0-ios</TargetFrameworks>
-         Note that desktop must NOT come first for Visual Studio tooling to show mobile debug targets correctly. iOS builds will not work outside macOS.
-         For desktop-only: <TargetFramework>net10.0</TargetFramework>
+         Note that desktop must NOT come first for Visual Studio tooling to show mobile debug targets correctly. iOS
+         builds will not work outside macOS. For desktop-only: <TargetFramework>net10.0</TargetFramework>
 
          Property to set BEFORE this import:
             <TargetFramework> / <TargetFrameworks>
@@ -19,7 +20,12 @@
             <OutputType> (if not Exe)
          Properties that can be set before or after this import, but $(TargetPlatformIdentifier) can be used if after:
             <MacOSVulkanSdk> (override macOS Vulkan SDK path if needed)
-            App properties such as <ApplicationTitle>, <ApplicationId>, <ApplicationDisplayVersion>, <ApplicationVersion>, <SupportedOSPlatformVersion> -->
+            App properties such as:
+                <ApplicationTitle>
+                <ApplicationId>
+                <ApplicationDisplayVersion>
+                <ApplicationVersion>
+                <SupportedOSPlatformVersion> -->
 
     <!-- ============================================================
          Common Properties (defaults; override in your project)
@@ -133,17 +139,17 @@
 
     <!-- Android x64/arm64: mark as <AndroidNativeLibrary> -->
     <ItemGroup Condition="'$(TargetPlatformIdentifier)' == 'android'">
-		
+
         <!-- Silk.NET.Shaderc.Native and Twizzle.ImGui-Bundle.NET only ship Linux/macOS/Windows native libs — they do
 		     NOT provide Android .so files. All Android .so files must come from Nu.Dependencies. -->
         <AndroidNativeLibrary Include="$(MSBuildThisFileDirectory)Nu.Dependencies/ShaderC/android/*/libshaderc_shared.so" />
         <AndroidNativeLibrary Include="$(MSBuildThisFileDirectory)Nu.Dependencies/ShaderC/android/*/libc++_shared.so" />
         <AndroidNativeLibrary Include="$(MSBuildThisFileDirectory)Nu.Dependencies/ImGui/android/*/libcimgui.so" />
         <AndroidNativeLibrary Include="$(MSBuildThisFileDirectory)Nu.Dependencies/AssimpNet/android/*/libassimp.so" />
-		
+
         <!-- To uncomment the following line, also download Vulkan validation layers (https://github.com/KhronosGroup/Vulkan-ValidationLayers/releases) -->
         <!--AndroidNativeLibrary Include="$(MSBuildThisFileDirectory)Nu.Dependencies/Vulkan-validation/**/*.so" Condition="'$(Configuration)' == 'Debug'" /-->
-		
+
     </ItemGroup>
 
     <!-- iOS arm64: mark as <NativeReference> -->
@@ -161,10 +167,9 @@
          ============================================================ -->
 
     <!-- Build Nu.Pipe once even for multi-project builds.
-         Note: For a solution build, for some reason, Nu and its dependencies (Nu.Math/Nu.Spine) are
-         built again for EACH framework in TargetFrameworks (desktop / Android / iOS).
-         By building here, we force all of them to use this cached build instead of fighting over each
-         other with file locking and parallel write errors.
+         Note: For a solution build, for some reason, Nu and its dependencies (Nu.Math/Nu.Spine) are built again for
+         EACH framework in TargetFrameworks (desktop / Android / iOS). By building here, we force all of them to use
+         this cached build instead of fighting over each other with file locking and parallel write errors.
          RemoveProperties here ensures that the same properties are supplied for MSBuild caching. -->
     <Target Name="BuildNuPipe" BeforeTargets="BeforeBuild">
         <MSBuild Projects="$(MSBuildThisFileDirectory)Nu.Pipe/Nu.Pipe.fsproj"
@@ -175,9 +180,11 @@
     <!-- Run Nu.Pipe to process assets. -->
     <Target Name="NuPipe" BeforeTargets="AssignTargetPaths;ResizetizeCollectItems" DependsOnTargets="BuildNuPipe">
 		
-        <!-- Write to refinement-out for use in later build steps (therefore cannot be under bin or obj folders). -->
+        <!-- For normal builds, write to output directory, but for publishing builds, write to piped for use in later
+             publishing steps (therefore cannot be under bin or obj folders). -->
         <PropertyGroup>
-            <NuPipeOut>$(MSBuildProjectDirectory)/refinement-out/$(BlockCompression)</NuPipeOut>
+            <NuPipeOut>$(MSBuildProjectDirectory)/$(OutDir)</NuPipeOut>
+            <NuPipeOut Condition="'$(TargetPlatformIdentifier)' != '' Or '$(IsPublishing)' == 'true'">$(MSBuildProjectDirectory)/piped/$(BlockCompression)</NuPipeOut>
         </PropertyGroup>
 		
         <!-- These files are not copied by Nu.Pipe but read by the app - count them as Nu.Pipe outputs. App.config is
@@ -188,41 +195,46 @@
         <!-- Uses dotnet exec (via the MSBuild task) to avoid file-locking from MSBuild's Run target.
              Nu.Pipe.Run.proj is invoked with RemoveProperties so MSBuild's project cache deduplicates
              calls across TFM inner builds that share the same compression type, ensuring only one Nu.Pipe
-             invocation per (ProjectDirectory, BlockCompression, Configuration) tuple, where
+             invocation per (Configuration, ProjectDirectory, NuPipeOut, BlockCompression) tuple, where
              global properties are removed via RemoveProperties. -->
         <MSBuild Projects="$(MSBuildThisFileDirectory)Nu.Pipe/Nu.Pipe.Run.proj"
                  Targets="Run Nu Pipe"
                  RemoveProperties="TargetFramework;RuntimeIdentifier;SelfContained"
-                 Properties="ProjectDirectory=$(MSBuildProjectDirectory);BlockCompression=$(BlockCompression);Configuration=$(Configuration)" />
+                 Properties="Configuration=$(Configuration);
+                             ProjectDirectory=$(MSBuildProjectDirectory);
+                             NuPipeOut=$(NuPipeOut);
+                             BlockCompression=$(BlockCompression)" />
 		
         <!-- iOS: include as bundle asset
              Android: include as fast-follow asset pack (extracted to file system, up to 512MB).
-             Use on-demand for up to 2GB. Install-time packs do not have a file system path (remains compressed), don't use it. -->
+             Use on-demand for up to 2GB. Install-time packs do not have a file system path (remains compressed), don't
+             use it. -->
         <ItemGroup>
             <MauiAsset Include="$(NuPipeOut)/**" AssetPack="gameassets" DeliveryType="FastFollow" />
         </ItemGroup>
 
-        <!-- Desktop: create directory junctions/symlinks (for subdirectories) and hardlinks (for root files) in
-             $(OutDir) always, and $(PublishDir) only during publish. Uses a single script per platform, avoiding
-             duplicated Exec lines. Dynamic enumeration means Nu.Pipe can emit any directory or file structure
-             without updating this target. -->
-        <!-- Windows: junctions for subdirectories, hardlinks for root files -->
-        <Exec Condition="'$(TargetPlatformIdentifier)' == '' And $([System.OperatingSystem]::IsWindows())"
+        <!-- Desktop when publishing: create directory junctions/symlinks (for subdirectories) and hardlinks (for
+             root files) in $(OutDir) for the RID-specific .NET-dependent executable and $(PublishDir) for the
+             .NET-independent executable. -->
+        
+        <!-- Publishing on Windows: junctions for subdirectories, hardlinks for root files -->
+        <Exec Condition="'$(IsPublishing)' == 'true' And '$(TargetPlatformIdentifier)' == '' And $([System.OperatingSystem]::IsWindows())"
               WorkingDirectory="$(MSBuildProjectDirectory)"
               Command="powershell -NoProfile -NonInteractive -Command &quot;$targets = @('$(OutDir)'); if ('$(IsPublishing)' -eq 'true') { $targets += '$(PublishDir)' }; Get-ChildItem '$(NuPipeOut)' -Directory | ForEach-Object { $n = $_.Name; $f = $_.FullName; foreach ($t in $targets) { $p = $t + $n; if (Test-Path $p) { Remove-Item $p -Recurse -Force }; New-Item -Path $p -ItemType Junction -Target $f -Force } }; Get-ChildItem '$(NuPipeOut)' -File | ForEach-Object { $n = $_.Name; $f = $_.FullName; foreach ($t in $targets) { $p = $t + $n; if (Test-Path $p) { Remove-Item $p -Force }; New-Item -Path $p -ItemType HardLink -Target $f -Force } }&quot;" />
-        <!-- Linux/macOS: symlinks for subdirectories, hardlinks for root files -->
-        <Exec Condition="'$(TargetPlatformIdentifier)' == '' And !$([System.OperatingSystem]::IsWindows())"
+        
+        <!-- Publishing on Linux/macOS: symlinks for subdirectories, hardlinks for root files -->
+        <Exec Condition="'$(IsPublishing)' == 'true' And '$(TargetPlatformIdentifier)' == '' And !$([System.OperatingSystem]::IsWindows())"
               WorkingDirectory="$(MSBuildProjectDirectory)"
               Command="targets=&quot;$(OutDir)&quot;; [ &quot;$(IsPublishing)&quot; = 'true' ] &amp;&amp; targets=&quot;$targets $(PublishDir)&quot;; for dir in &quot;$(NuPipeOut)&quot;/*/; do [ -d &quot;$dir&quot; ] || break; b=`basename &quot;$dir&quot;`; for t in $targets; do rm -rf &quot;$t/$b&quot;; ln -sf &quot;$dir&quot; &quot;$t/$b&quot;; done; done; for f in &quot;$(NuPipeOut)&quot;/*; do [ -f &quot;$f&quot; ] || continue; b=`basename &quot;$f&quot;`; for t in $targets; do rm -f &quot;$t/$b&quot;; ln &quot;$f&quot; &quot;$t/$b&quot;; done; done" />
+    
     </Target>
 
     <!-- Can't remove refinement directly because clean across TargetFrameworks are executed in parallel so may cause
 	     conflict errors. Clean by BlockCompression so that a single clean removes the shared directory for all TFMs
 	     of the same compression type. -->
     <Target Name="CleanNuPipe" AfterTargets="Clean">
-        <RemoveDir Directories="refinement/$(BlockCompression);refinement-out/$(BlockCompression)" />
-        <!-- Remove the symlink if it exists (RemoveDir on a symlink removes the link, not the target) -->
-        <RemoveDir Condition="Exists('$(OutDir)/Assets')" Directories="$(OutDir)/Assets" />
+        <RemoveDir Directories="refinement/$(BlockCompression);piped/$(BlockCompression)" />
+        <RemoveDir Condition="Exists('$(OutDir)/Assets')" Directories="$(OutDir)/Assets" /> <!-- remove symlink -->
     </Target>
 
     <!-- ============================================================
@@ -278,15 +290,19 @@
 
     <!-- Generate splash screen -->
     <Target Name="GenerateDesktopSplash" BeforeTargets="BeforeBuild" Condition="'$(TargetPlatformIdentifier)' == '' And '@(MauiSplashScreen)' != ''">
+
+        <!-- Specify splash screen color file -->
         <PropertyGroup>
             <_SplashColorFile>$(IntermediateOutputPath)splash/SplashColor.txt</_SplashColorFile>
         </PropertyGroup>
+
+        <!-- Validate splash screen specification -->
         <Error Condition="@(MauiSplashScreen->Count()) > 1" Text="Multiple &lt;MauiSplashScreen&gt; items were found. Please only specify one for desktop splash generation." />
         <Error Condition="'%(MauiSplashScreen.Resize)' != ''" Text="The &lt;MauiSplashScreen&gt; item should not specify the Resize attribute; only Include and Color are supported for desktop splash generation." />
         <Error Condition="'%(MauiSplashScreen.BaseSize)' != ''" Text="The &lt;MauiSplashScreen&gt; item should not specify the BaseSize attribute; only Include and Color are supported for desktop splash generation." />
         <Error Condition="'%(MauiSplashScreen.TintColor)' != ''" Text="The &lt;MauiSplashScreen&gt; item should not specify the TintColor attribute; only Include and Color are supported for desktop splash generation." />
         <Error Condition="'%(MauiSplashScreen.ForegroundScale)' != ''" Text="The &lt;MauiSplashScreen&gt; item should not specify the ForegroundScale attribute; only Include and Color are supported for desktop splash generation." />
-        
+
         <!-- Write the background color to a text file for runtime use -->
         <WriteLinesToFile Condition="'%(MauiSplashScreen.Color)' != ''" File="$(_SplashColorFile)" Lines="%(MauiSplashScreen.Color)" Overwrite="true" />
 
@@ -295,6 +311,7 @@
             <EmbeddedResource Include="@(MauiSplashScreen)" LogicalName="PreSplash" />
             <EmbeddedResource Condition="'%(MauiSplashScreen.Color)' != ''" Include="$(_SplashColorFile)" LogicalName="PreSplashColor" />
         </ItemGroup>
+        
     </Target>
 
     <!-- ============================================================
@@ -322,14 +339,14 @@
                Condition="'$(TargetPlatformIdentifier)'=='ios' And !$([System.IO.Directory]::Exists('$(MacOSVulkanSdk)/../iOS'))" />
         <Warning Text="iOS Simulator builds will disable the 3D renderer because array (layered) attachments are unsupported."
                  Condition="'$(TargetPlatformIdentifier)'=='ios' And $(RuntimeIdentifier.StartsWith('iossimulator'))" />
-		
+
         <!-- macOS: bundle Vulkan SDK dylibs -->
 		<ItemGroup>
             <MacOSVulkanSdkDylib Include="$(MacOSVulkanSdk)/lib/*.dylib" />
             <MacOSVulkanSdkIcdOrExplicitLayerJson Include="$(MacOSVulkanSdk)/share/vulkan/explicit_layer.d/*.json" VulkanSubDir="explicit_layer.d" />
             <MacOSVulkanSdkIcdOrExplicitLayerJson Include="$(MacOSVulkanSdk)/share/vulkan/icd.d/*.json" VulkanSubDir="icd.d" />
         </ItemGroup>
-			
+
         <!-- iOS: package MoltenVK (simulator slice exists in the xcframework) -->
 		<ItemGroup>
             <NativeReference Condition="'$(TargetPlatformIdentifier)'=='ios'"
@@ -343,7 +360,7 @@
 		<!-- Check for the presence of vulkan sdk libs on mac  -->
 		<Error Condition="'$(TargetPlatformIdentifier)'!='ios' And '@(MacOSVulkanSdkDylib)'==''"
                Text="No macOS Vulkan SDK dylibs were found at '$(MacOSVulkanSdk)/lib/*.dylib'. Ensure MacOSVulkanSdk points to a valid Vulkan SDK installation." />
-		
+
         <!-- Create symbolic links for macOS Vulkan SDK dylibs -->
         <Exec Condition="'$(TargetPlatformIdentifier)'!='ios'"
               Command="mkdir -p &quot;$(OutDir)%(MacOSVulkanSdkDylib.RecursiveDir)&quot; &amp;&amp; ln -sfn &quot;%(MacOSVulkanSdkDylib.Identity)&quot; &quot;$(OutDir)%(MacOSVulkanSdkDylib.RecursiveDir)%(MacOSVulkanSdkDylib.Filename)%(MacOSVulkanSdkDylib.Extension)&quot;" />
@@ -351,11 +368,13 @@
               SourceFiles="@(MacOSVulkanSdkIcdOrExplicitLayerJson)"
               DestinationFiles="@(MacOSVulkanSdkIcdOrExplicitLayerJson->'$(OutDir)vulkan/%(VulkanSubDir)/%(Filename)%(Extension)')"
               SkipUnchangedFiles="true" />
-		
-        <!-- Patch library_path in all Vulkan JSON files (../../../lib/ -> ../../) using Exec/sed instead of MSBuild string Replace to avoid MSBuild path normalization implicitly converting all "\n" to "/n" in the property values -->
+
+        <!-- Patch library_path in all Vulkan JSON files (../../../lib/ -> ../../) using Exec/sed instead of MSBuild
+             string Replace to avoid MSBuild path normalization implicitly converting all "\n" to "/n" in the property
+             values -->
         <Exec Condition="'$(TargetPlatformIdentifier)'!='ios'"
               Command="find &quot;$(OutDir)vulkan/icd.d&quot; &quot;$(OutDir)vulkan/explicit_layer.d&quot; -name '*.json' -exec sed -i '' 's|../../../lib/|../../|g' {} +" />
-		
+
     </Target>
 
     <!-- ============================================================
@@ -467,7 +486,7 @@
 		 in dotnet/maui). This is NOT the same as NuGet's IsImplicitlyDefined — that's only set by dotnet/sdk's
 		 implicit version resolution, not by the MAUI workload. -->
 
-	<!--  -->
+	<!-- Remove Maui assets. -->
 	<Target Name="_RemoveMauiRuntimeAssets" BeforeTargets="CollectPackageReferences" Condition="'$(UseMaui)' == 'true'">
         <ItemGroup>
             <PackageReference Update="Microsoft.Maui.*" ExcludeAssets="runtime" Condition="'%(PackageReference.IsMauiImplicitPackageReference)' == 'true'" />
@@ -512,7 +531,8 @@
          warning NU1608: Detected package version outside of dependency constraint: Xamarin.AndroidX.Lifecycle.Runtime.Ktx 2.9.2.1 requires Xamarin.AndroidX.Lifecycle.Runtime (>= 2.9.2.1 && < 2.9.3) but version Xamarin.AndroidX.Lifecycle.Runtime 2.10.0.2 was resolved.
          warning NU1608: Detected package version outside of dependency constraint: Xamarin.AndroidX.Lifecycle.Process 2.9.2.1 requires Xamarin.AndroidX.Lifecycle.Runtime (>= 2.9.2.1 && < 2.9.3) but version Xamarin.AndroidX.Lifecycle.Runtime 2.10.0.2 was resolved. -->
 
-    <!-- $(UsingAndroidNETSdk) ensures that the Android workload is actually installed to run this script. Otherwise, we want the descriptive workload-not-installed error to show instead of this script failing. -->
+    <!-- $(UsingAndroidNETSdk) ensures that the Android workload is actually installed to run this script. Otherwise,
+         we want the descriptive workload-not-installed error to show instead of this script failing. -->
     <Target Name="SelectCompatibleAssetDeliveryVersion" BeforeTargets="CollectPackageReferences"
             Condition="'$(TargetPlatformIdentifier)' == 'android' And '$(UsingAndroidNETSdk)' == 'true' And '@(PackageReference->WithMetadataValue(&quot;Identity&quot;, &quot;Xamarin.Google.Android.Play.Asset.Delivery&quot;))' == ''">
         <PropertyGroup>
@@ -604,7 +624,7 @@
 	<Target Name="RemoveStaleIosAssets" BeforeTargets="_CopyResourcesToBundle"
             Condition="'$(TargetPlatformIdentifier)' == 'ios'">
         <RemoveDir Directories="$(AppBundleDir)/Assets" />
-        <RemoveDir Directories="$(AppBundleDir)/refinement-out" />
+        <RemoveDir Directories="$(AppBundleDir)/piped" />
     </Target>
 
 </Project>
