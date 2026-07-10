@@ -193,7 +193,7 @@
         <!-- Uses dotnet exec (via the MSBuild task) to avoid file-locking from MSBuild's Run target.
              Nu.Pipe.Run.proj is invoked with RemoveProperties so MSBuild's project cache deduplicates
              calls across TFM inner builds that share the same compression type, ensuring only one Nu.Pipe
-             invocation per (ProjectDirectory, BlockCompression, Configuration) tuple, where
+             invocation per (Configuration, ProjectDirectory, NuPipeOut, BlockCompression) tuple, where
              global properties are removed via RemoveProperties. -->
         <MSBuild Projects="$(MSBuildThisFileDirectory)Nu.Pipe/Nu.Pipe.Run.proj"
                  Targets="Run Nu Pipe"
