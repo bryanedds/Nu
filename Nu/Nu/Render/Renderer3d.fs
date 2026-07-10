@@ -3277,8 +3277,25 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             // but only when desired
             if renderer.RendererConfig.SsaoEnabled && renderer.LightingConfig.SsaoEnabled then
 
-                // TODO: DJL: implement.
-                renderer.WhiteTexture
+                // render deferred ssao
+                let ssaoUnfilteredResolution = renderer.GeometryViewport.SsaoResolution
+                let ssaoUnfilteredTexture = renderer.PhysicallyBasedAttachments.SsaoUnfilteredAttachment
+                Texture.transitionLayoutAsync ColorAttachmentRead ColorAttachmentWrite ssaoUnfilteredTexture renderer.VulkanContext.RenderCommandBuffer
+                PhysicallyBased.drawPhysicallyBasedDeferredSsaoSurface
+                    eyeCenter view geometryProjection ssaoUnfilteredResolution
+                    renderer.LightingConfig.SsaoIntensity renderer.LightingConfig.SsaoBias renderer.LightingConfig.SsaoRadius renderer.LightingConfig.SsaoDistanceMax renderer.RendererConfig.SsaoSampleCount
+                    depthTexture normalPlusTexture renderer.ColorSampler ssaoUnfilteredTexture
+                    renderer.GeometryViewport renderer.RenderPassIndex renderer.QuadGeometry renderer.PhysicallyBasedPipelines.DeferredSsaoPipeline renderer.VulkanContext
+                Texture.transitionLayoutAsync ColorAttachmentWrite ColorAttachmentRead ssaoUnfilteredTexture renderer.VulkanContext.RenderCommandBuffer
+
+                // filter deferred ssao
+                let ssaoFilteredTexture = renderer.PhysicallyBasedAttachments.SsaoFilteredAttachment
+                Texture.transitionLayoutAsync ColorAttachmentRead ColorAttachmentWrite ssaoFilteredTexture renderer.VulkanContext.RenderCommandBuffer
+                PhysicallyBased.drawFilterBoxSurface
+                    ssaoUnfilteredTexture renderer.ColorSampler ssaoFilteredTexture
+                    renderer.GeometryViewport renderer.RenderPassIndex renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterBox1dPipeline renderer.VulkanContext
+                Texture.transitionLayoutAsync ColorAttachmentWrite ColorAttachmentRead ssaoFilteredTexture renderer.VulkanContext.RenderCommandBuffer
+                ssaoFilteredTexture
 
             // just use white texture
             else renderer.WhiteTexture

@@ -114,6 +114,15 @@ type Light =
     [<FieldOffset(76)>] val mutable lightShadowIndices : int
 
 [<Struct; StructLayout (LayoutKind.Explicit)>]
+type Ssao =
+    [<FieldOffset(0)>] val mutable resolution : Vector2i
+    [<FieldOffset(8)>] val mutable intensity : single
+    [<FieldOffset(12)>] val mutable bias : single
+    [<FieldOffset(16)>] val mutable radius : single
+    [<FieldOffset(20)>] val mutable distanceMax : single
+    [<FieldOffset(24)>] val mutable sampleCount : int
+
+[<Struct; StructLayout (LayoutKind.Explicit)>]
 type ToneMapping =
     [<FieldOffset(0)>] val mutable lightExposure : single
     [<FieldOffset(4)>] val mutable toneMapType : int
@@ -131,11 +140,7 @@ type Fxaa =
 
 /// A set of physically-based attachments that support a given viewport.
 type PhysicallyBasedAttachments =
-    { ColorFull0Attachment : Texture
-      ColorFull1Attachment : Texture
-      ColorHalf0Attachment : Texture
-      ColorHalf1Attachment : Texture
-      ShadowTextureArrayAttachments : Texture * Texture
+    { ShadowTextureArrayAttachments : Texture * Texture
       ShadowMapAttachmentsArray : (Texture * Texture) array
       ShadowCascadeArrayAttachmentsArray : (Texture * Texture) array
       GeometryAttachments : Texture * Texture * Texture * Texture * Texture * Texture * Texture * Texture
@@ -145,10 +150,16 @@ type PhysicallyBasedAttachments =
       AmbientAttachment : Texture
       IrradianceAttachment : Texture
       EnvironmentFilterAttachment : Texture
+      SsaoUnfilteredAttachment : Texture
+      SsaoFilteredAttachment : Texture
       ColoringAttachments : Texture * Texture
       CompositionAttachment : Texture
       ToneMappingAttachment : Texture
-      GammaCorrectionAttachment : Texture }
+      GammaCorrectionAttachment : Texture
+      ColorFull0Attachment : Texture
+      ColorFull1Attachment : Texture
+      ColorHalf0Attachment : Texture
+      ColorHalf1Attachment : Texture }
 
 /// Describes the configurable properties of a physically-based material.
 type PhysicallyBasedMaterialProperties =
@@ -591,6 +602,12 @@ type PhysicallyBasedDeferredEnvironmentFilterPipeline =
       LightMapsUniform : Nu.Vulkan.Buffer
       Pipeline : Pipeline }
 
+/// Describes the ssao pass of a deferred physically-based pipeline that's loaded into GPU.
+type PhysicallyBasedDeferredSsaoPipeline =
+    { EyeUniform : Nu.Vulkan.Buffer
+      SsaoUniform : Nu.Vulkan.Buffer
+      Pipeline : Pipeline }
+
 /// Describes the coloring pass of a deferred physically-based pipeline that's loaded into GPU.
 type PhysicallyBasedDeferredColoringPipeline =
     { EyeUniform : Nu.Vulkan.Buffer
@@ -602,6 +619,10 @@ type PhysicallyBasedDeferredCompositionPipeline =
     { EyeUniform : Nu.Vulkan.Buffer
       LightingUniform : Nu.Vulkan.Buffer
       Pipeline : Pipeline }
+
+/// Describes a box filter pipeline that's loaded into GPU.
+type FilterBoxPipeline =
+    { Pipeline : Pipeline }
 
 /// Describes a tone-mapping filter pipeline that's loaded into GPU.
 type FilterToneMappingPipeline =
@@ -634,10 +655,12 @@ type PhysicallyBasedPipelines =
       DeferredAmbientPipeline : PhysicallyBasedDeferredAmbientPipeline
       DeferredIrradiancePipeline : PhysicallyBasedDeferredIrradiancePipeline
       DeferredEnvironmentFilterPipeline : PhysicallyBasedDeferredEnvironmentFilterPipeline
+      DeferredSsaoPipeline : PhysicallyBasedDeferredSsaoPipeline
       DeferredColoringPipeline : PhysicallyBasedDeferredColoringPipeline
       DeferredCompositionPipeline : PhysicallyBasedDeferredCompositionPipeline
       ForwardStaticPipeline : PhysicallyBasedPipeline
       ForwardAnimatedPipeline : PhysicallyBasedPipeline
+      FilterBox1dPipeline : FilterBoxPipeline
       FilterToneMappingPipeline : FilterToneMappingPipeline
       FilterFxaaPipeline : FilterFxaaPipeline
       FilterGammaCorrectionPipeline : FilterGammaCorrectionPipeline }
@@ -768,6 +791,11 @@ module PhysicallyBased =
         // create environment filter attachment
         let environmentfilterAttachment = Attachment.createEnvironmentFilterAttachment geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y vkc
 
+        // create ssao attachments
+        let ssaoUsageFlags = VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferSrc ||| VkImageUsageFlags.TransferDst
+        let ssaoUnfilteredAttachment = Attachment.createColorAttachment Texture2d ssaoUsageFlags R32f Red geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y vkc
+        let ssaoFilteredAttachment = Attachment.createColorAttachment Texture2d ssaoUsageFlags R32f Red geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y vkc
+
         // create coloring attachments
         let coloringAttachments = Attachment.createColoringAttachments geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y vkc
 
@@ -791,11 +819,7 @@ module PhysicallyBased =
         let gammaCorrectionAttachment = Attachment.createGammaCorrectionAttachments geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y vkc
 
         // make record
-        { ColorFull0Attachment = colorFull0Attachment
-          ColorFull1Attachment = colorFull1Attachment
-          ColorHalf0Attachment = colorHalf0Attachment
-          ColorHalf1Attachment = colorHalf1Attachment
-          ShadowTextureArrayAttachments = shadowTextureArrayAttachments
+        { ShadowTextureArrayAttachments = shadowTextureArrayAttachments
           ShadowMapAttachmentsArray = shadowMapAttachmentsArray
           ShadowCascadeArrayAttachmentsArray = shadowCascadeArrayAttachmentsArray
           GeometryAttachments = geometryAttachments
@@ -805,17 +829,19 @@ module PhysicallyBased =
           AmbientAttachment = ambientAttachment
           IrradianceAttachment = irradianceAttachment
           EnvironmentFilterAttachment = environmentfilterAttachment
+          SsaoUnfilteredAttachment = ssaoUnfilteredAttachment
+          SsaoFilteredAttachment = ssaoFilteredAttachment
           ColoringAttachments = coloringAttachments
           CompositionAttachment = compositionAttachment
           ToneMappingAttachment = toneMappingAttachment
-          GammaCorrectionAttachment = gammaCorrectionAttachment }
+          GammaCorrectionAttachment = gammaCorrectionAttachment
+          ColorFull0Attachment = colorFull0Attachment
+          ColorFull1Attachment = colorFull1Attachment
+          ColorHalf0Attachment = colorHalf0Attachment
+          ColorHalf1Attachment = colorHalf1Attachment }
 
     /// Update the size of the attachments. Must be used every frame.
     let updatePhysicallyBasedAttachmentsSize (geometryViewport : Viewport) (attachments : PhysicallyBasedAttachments) vkc =
-        Attachment.updateColorAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.ColorFull0Attachment vkc
-        Attachment.updateColorAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.ColorFull1Attachment vkc
-        Attachment.updateColorAttachmentSize (geometryViewport.Bounds.Size.X / 2) (geometryViewport.Bounds.Size.Y / 2) attachments.ColorHalf0Attachment vkc
-        Attachment.updateColorAttachmentSize (geometryViewport.Bounds.Size.X / 2) (geometryViewport.Bounds.Size.Y / 2) attachments.ColorHalf1Attachment vkc
         Attachment.updateShadowTextureArrayAttachmentsSize geometryViewport.ShadowTextureResolution.X geometryViewport.ShadowTextureResolution.Y attachments.ShadowTextureArrayAttachments vkc
         for i in 0 .. dec attachments.ShadowMapAttachmentsArray.Length do
             Attachment.updateShadowMapAttachmentsSize geometryViewport.ShadowMapResolution.X geometryViewport.ShadowMapResolution.Y attachments.ShadowMapAttachmentsArray[i] vkc
@@ -828,17 +854,19 @@ module PhysicallyBased =
         Attachment.updateAmbientAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.AmbientAttachment vkc
         Attachment.updateIrradianceAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.IrradianceAttachment vkc
         Attachment.updateEnvironmentFilterAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.EnvironmentFilterAttachment vkc
+        Attachment.updateColorAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.SsaoUnfilteredAttachment vkc
+        Attachment.updateColorAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.SsaoFilteredAttachment vkc
         Attachment.updateColoringAttachmentsSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.ColoringAttachments vkc
         Attachment.updateCompositionAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.CompositionAttachment vkc
         Attachment.updateToneMappingAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.ToneMappingAttachment vkc
         Attachment.updateGammaCorrectionAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.GammaCorrectionAttachment vkc
+        Attachment.updateColorAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.ColorFull0Attachment vkc
+        Attachment.updateColorAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.ColorFull1Attachment vkc
+        Attachment.updateColorAttachmentSize (geometryViewport.Bounds.Size.X / 2) (geometryViewport.Bounds.Size.Y / 2) attachments.ColorHalf0Attachment vkc
+        Attachment.updateColorAttachmentSize (geometryViewport.Bounds.Size.X / 2) (geometryViewport.Bounds.Size.Y / 2) attachments.ColorHalf1Attachment vkc
 
     /// Destroy the physically-based attachments.
     let destroyPhysicallyBasedAttachments (attachments : PhysicallyBasedAttachments) vkc =
-        Attachment.destroyColorAttachment attachments.ColorFull0Attachment vkc
-        Attachment.destroyColorAttachment attachments.ColorFull1Attachment vkc
-        Attachment.destroyColorAttachment attachments.ColorHalf0Attachment vkc
-        Attachment.destroyColorAttachment attachments.ColorHalf1Attachment vkc
         Attachment.destroyShadowTextureArrayAttachments attachments.ShadowTextureArrayAttachments vkc
         for i in 0 .. dec attachments.ShadowMapAttachmentsArray.Length do
             Attachment.destroyShadowMapAttachments attachments.ShadowMapAttachmentsArray[i] vkc
@@ -851,10 +879,16 @@ module PhysicallyBased =
         Attachment.destroyAmbientAttachment attachments.AmbientAttachment vkc
         Attachment.destroyIrradianceAttachment attachments.IrradianceAttachment vkc
         Attachment.destroyEnvironmentFilterAttachment attachments.EnvironmentFilterAttachment vkc
+        Attachment.destroyColorAttachment attachments.SsaoUnfilteredAttachment vkc
+        Attachment.destroyColorAttachment attachments.SsaoFilteredAttachment vkc
         Attachment.destroyColoringAttachments attachments.ColoringAttachments vkc
         Attachment.destroyCompositionAttachment attachments.CompositionAttachment vkc
         Attachment.destroyToneMappingAttachment attachments.ToneMappingAttachment vkc
         Attachment.destroyGammaCorrectionAttachment attachments.GammaCorrectionAttachment vkc
+        Attachment.destroyColorAttachment attachments.ColorFull0Attachment vkc
+        Attachment.destroyColorAttachment attachments.ColorFull1Attachment vkc
+        Attachment.destroyColorAttachment attachments.ColorHalf0Attachment vkc
+        Attachment.destroyColorAttachment attachments.ColorHalf1Attachment vkc
 
     /// Create physically-based material from an assimp mesh, falling back on defaults in case of missing textures.
     /// Uses file name-based inferences to look for texture files in case the ones that were hard-coded in the model
@@ -1741,7 +1775,7 @@ module PhysicallyBased =
                 Pipeline.advance surfacesCount pipeline.Pipeline
 
             // abort
-            | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
+            | None -> Log.warnOnce ("Cannot draw " + getTypeName pipeline + " because VkPipeline does not exist.")
 
     /// End the process of drawing physically-based shadow surfaces.
     let endPhysicallyBasedShadowSurfaces (_ : PhysicallyBasedShadowPipeline) (vkc : VulkanContext) =
@@ -1970,7 +2004,7 @@ module PhysicallyBased =
                 Pipeline.advance surfacesCount pipeline.Pipeline
 
             // abort
-            | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
+            | None -> Log.warnOnce ("Cannot draw " + getTypeName pipeline + " because VkPipeline does not exist.")
 
     /// End the process of drawing physically-based deferred surfaces.
     let endPhysicallyBasedDeferredSurfaces (_ : PhysicallyBasedPipeline) (vkc : VulkanContext) =
@@ -2208,7 +2242,7 @@ module PhysicallyBased =
             VulkanContext.advanceRenderCommandBuffer vkc
 
         // abort
-        | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
+        | None -> Log.warnOnce ("Cannot draw " + getTypeName pipeline + " because VkPipeline does not exist.")
 
     /// Create a PhysicallyBasedDeferredFoggingPipeline.
     let createPhysicallyBasedDeferredFoggingPipeline colorAttachmentFormat vkc =
@@ -2421,7 +2455,7 @@ module PhysicallyBased =
             VulkanContext.advanceRenderCommandBuffer vkc
 
         // abort
-        | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
+        | None -> Log.warnOnce ("Cannot draw " + getTypeName pipeline + " because VkPipeline does not exist.")
 
     /// Create a PhysicallyBasedDeferredLightMappingPipeline.
     let createPhysicallyBasedDeferredLightMappingPipeline colorAttachmentFormat vkc =
@@ -2578,7 +2612,7 @@ module PhysicallyBased =
             VulkanContext.advanceRenderCommandBuffer vkc
 
         // abort
-        | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
+        | None -> Log.warnOnce ("Cannot draw " + getTypeName pipeline + " because VkPipeline does not exist.")
 
     /// Create a PhysicallyBasedDeferredAmbientPipeline.
     let createPhysicallyBasedDeferredAmbientPipeline colorAttachmentFormat vkc =
@@ -2689,7 +2723,7 @@ module PhysicallyBased =
             // set up render
             let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
-            let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
+            let clearValue = VkClearValue (r = Constants.Render.AmbientClearColor.R, g = Constants.Render.AmbientClearColor.G, b = Constants.Render.AmbientClearColor.B, a = Constants.Render.AmbientClearColor.A)
             let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue)
             Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &renderingInfo)
             Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, asPointer &vkViewport)
@@ -2726,7 +2760,7 @@ module PhysicallyBased =
             VulkanContext.advanceRenderCommandBuffer vkc
 
         // abort
-        | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
+        | None -> Log.warnOnce ("Cannot draw " + getTypeName pipeline + " because VkPipeline does not exist.")
 
     /// Create a PhysicallyBasedDeferredIrradiancePipeline.
     let createPhysicallyBasedDeferredIrradiancePipeline colorAttachmentFormat vkc =
@@ -2821,7 +2855,7 @@ module PhysicallyBased =
             // set up render
             let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
-            let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
+            let clearValue = VkClearValue (r = Constants.Render.IrradianceClearColor.R, g = Constants.Render.IrradianceClearColor.G, b = Constants.Render.IrradianceClearColor.B, a = Constants.Render.IrradianceClearColor.A)
             let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue)
             Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &renderingInfo)
             Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, asPointer &vkViewport)
@@ -2858,9 +2892,9 @@ module PhysicallyBased =
             VulkanContext.advanceRenderCommandBuffer vkc
 
         // abort
-        | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
+        | None -> Log.warnOnce ("Cannot draw " + getTypeName pipeline + " because VkPipeline does not exist.")
 
-    /// Create a PhysicallyBasedDeferredEnvironmentFilterPipeline.
+    /// Create a deferred environment filter pipeline of a physically-based surface.
     let createPhysicallyBasedDeferredEnvironmentFilterPipeline colorAttachmentFormat vkc =
 
         // create uniform buffers
@@ -2902,11 +2936,11 @@ module PhysicallyBased =
         // fin
         physicallyBasedDeferredEnvironmentFilterPipeline
 
-    /// Destroy PhysicallyBasedDeferredEnvironmentFilterPipeline.
+    /// Destroy a deferred environment filter pipeline of a physically-based surface.
     let destroyPhysicallyBasedDeferredEnvironmentFilterPipeline (pipeline : PhysicallyBasedDeferredEnvironmentFilterPipeline) vkc =
         Pipeline.destroy pipeline.Pipeline vkc
 
-    /// Draw the deferred environment filter pass of a physically-based surface.
+    /// Draw a deferred environment filter pass of a physically-based surface.
     let drawPhysicallyBasedDeferredEnvironmentFilterSurface
         (eyeCenter : Vector3)
         (view : Matrix4x4)
@@ -2982,7 +3016,7 @@ module PhysicallyBased =
             // set up render
             let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
-            let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
+            let clearValue = VkClearValue (r = Constants.Render.EnvironmentClearColor.R, g = Constants.Render.EnvironmentClearColor.G, b = Constants.Render.EnvironmentClearColor.B, a = Constants.Render.EnvironmentClearColor.A)
             let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue)
             Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &renderingInfo)
             Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, asPointer &vkViewport)
@@ -3019,7 +3053,141 @@ module PhysicallyBased =
             VulkanContext.advanceRenderCommandBuffer vkc
 
         // abort
-        | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
+        | None -> Log.warnOnce ("Cannot draw " + getTypeName pipeline + " because VkPipeline does not exist.")
+
+    /// Create a deferred ssao pipeline of a physically-based surface.
+    let createPhysicallyBasedDeferredSsaoPipeline colorAttachmentFormat vkc =
+
+        // create set 0 uniform buffers
+        let eyeUniform = Buffer.create sizeof<Eye> Storage vkc
+        let ssaoUniform = Buffer.create sizeof<Ssao> Storage vkc
+
+        // create pipeline
+        let pipeline =
+            Pipeline.create
+                Constants.Paths.PhysicallyBasedDeferredSsaoShaderFilePath
+                [|VulkanUnblended|] [|false|]
+                [|Pipeline.vertex 0 StaticVertexSize VkVertexInputRate.Vertex
+                    [|Pipeline.attribute 0 Single3 0
+                      Pipeline.attribute 1 Single2 StaticTexCoordsOffset
+                      Pipeline.attribute 2 Single3 StaticNormalOffset|]|]
+                [|Pipeline.descriptorSet<int>
+                    [|Pipeline.descriptor 0 StorageBuffer FragmentStage 1 // eye
+                      Pipeline.descriptor 1 StorageBuffer FragmentStage 1 // ssao
+                      Pipeline.descriptor 2 SampledImage FragmentStage 1 // depthTexture
+                      Pipeline.descriptor 3 SampledImage FragmentStage 1|] // normalPlusTexture
+                  Pipeline.descriptorSet<Unit>
+                    [|Pipeline.descriptor 0 Sampler FragmentStage 1|]|] // inputSampler
+                [||] [|colorAttachmentFormat|] None
+                [|eyeUniform; ssaoUniform|]
+                vkc
+
+        // make pipeline
+        let physicallyBasedDeferredSsaoPipeline =
+            { EyeUniform = eyeUniform
+              SsaoUniform = ssaoUniform
+              Pipeline = pipeline }
+
+        // fin
+        physicallyBasedDeferredSsaoPipeline
+
+    /// Destroy a deferred ssao pipeline of a physically-based surface.
+    let destroyPhysicallyBasedDeferredSsaoPipeline (ssaoPipeline : PhysicallyBasedDeferredSsaoPipeline) vkc =
+        Pipeline.destroy ssaoPipeline.Pipeline vkc
+
+    /// Draw a deferred ssao pass of a physically-based surface.
+    let drawPhysicallyBasedDeferredSsaoSurface
+        (eyeCenter : Vector3)
+        (view : Matrix4x4)
+        (projection : Matrix4x4)
+        (resolution : Vector2i)
+        (intensity : single)
+        (bias : single)
+        (radius : single)
+        (distanceMax : single)
+        (sampleCount : int)
+        (depthTexture : Texture)
+        (normalPlusTexture : Texture)
+        (colorSampler : Sampler)
+        (colorAttachment : Texture)
+        (viewport : Viewport)
+        (renderPassIndex : int)
+        (geometry : PhysicallyBasedGeometry)
+        (pipeline : PhysicallyBasedDeferredSsaoPipeline)
+        (vkc : VulkanContext) =
+
+        // compute vulkan-appropriate matrices
+        let viewInverse = view.Inverted
+        let projection = projection.Flipped
+        let projectionInverse = projection.Inverted
+        let viewProjection = view * projection
+
+        // only draw if required vkPipeline exists
+        match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
+        | Some vkPipeline ->
+
+            // specify uniforms
+            let mutable uniformsDescriptorSet = Pipeline.specifyDescriptorSet 0 renderPassIndex pipeline.Pipeline vkc $ fun vkSet ->
+
+                // specify eye
+                let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
+                Buffer.uploadValue eye pipeline.EyeUniform vkc
+                Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.EyeUniform vkSet vkc
+
+                // specify ssao
+                let ssao = Ssao (resolution = resolution, intensity = intensity, bias = bias, radius = radius, distanceMax = distanceMax, sampleCount = sampleCount)
+                Buffer.uploadValue ssao pipeline.SsaoUniform vkc
+                Pipeline.writeDescriptorStorageBuffer 1 0 pipeline.SsaoUniform vkSet vkc
+
+                // specify textures
+                Pipeline.writeDescriptorSampledImage 2 0 depthTexture vkSet vkc
+                Pipeline.writeDescriptorSampledImage 3 0 normalPlusTexture vkSet vkc
+
+            // specify sampler
+            let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 1 Unit pipeline.Pipeline vkc $ fun vkSet ->
+                Pipeline.writeDescriptorSampler 0 0 colorSampler vkSet vkc
+
+            // set up render
+            let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
+            let mutable vkViewport = Hl.makeViewport false renderArea
+            let clearValue = VkClearValue (r = Constants.Render.SsaoClearColor.R, g = Constants.Render.SsaoClearColor.G, b = Constants.Render.SsaoClearColor.B, a = Constants.Render.SsaoClearColor.A)
+            let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue)
+            Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &renderingInfo)
+            Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, asPointer &vkViewport)
+            Vulkan.vkCmdSetScissor (vkc.RenderCommandBuffer, 0u, 1u, asPointer &renderArea)
+
+            // set up pipeline
+            Vulkan.vkCmdBindPipeline (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
+
+            // bind vertex and index buffers
+            let vertexBuffers = [|geometry.VertexBuffer.VkBuffer; geometry.InstanceBuffer.VkBuffer|]
+            let vertexOffsets = [|0UL; 0UL|]
+            use vertexBuffersPin = new ArrayPin<_> (vertexBuffers)
+            use vertexOffsetsPin = new ArrayPin<_> (vertexOffsets)
+            Vulkan.vkCmdBindVertexBuffers (vkc.RenderCommandBuffer, 0u, 2u, vertexBuffersPin.Pointer, vertexOffsetsPin.Pointer)
+            Vulkan.vkCmdBindIndexBuffer (vkc.RenderCommandBuffer, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
+
+            // bind descriptor sets
+            Vulkan.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, asPointer &uniformsDescriptorSet, 0u, nullPtr)
+            Vulkan.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, asPointer &samplerDescriptorSet, 0u, nullPtr)
+
+            // draw
+            Vulkan.vkCmdDrawIndexed (vkc.RenderCommandBuffer, uint geometry.ElementCount, 1u, 0u, 0, 0u)
+
+            // tear down render
+            Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
+
+            // report draw scope
+            Hl.reportDrawScope ()
+
+            // advance pipeline
+            Pipeline.advance 1 pipeline.Pipeline
+
+            // advance rendering command buffer
+            VulkanContext.advanceRenderCommandBuffer vkc
+
+        // abort
+        | None -> Log.warnOnce ("Cannot draw " + getTypeName pipeline + " because VkPipeline does not exist.")
 
     /// Create a PhysicallyBasedDeferredColoringPipeline.
     let createPhysicallyBasedDeferredColoringPipeline colorAttachmentFormats vkc =
@@ -3215,7 +3383,7 @@ module PhysicallyBased =
             VulkanContext.advanceRenderCommandBuffer vkc
 
         // abort
-        | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
+        | None -> Log.warnOnce ("Cannot draw " + getTypeName pipeline + " because VkPipeline does not exist.")
 
     /// Create a PhysicallyBasedDeferredCompositionPipeline.
     let createPhysicallyBasedDeferredCompositionPipeline colorAttachmentFormat vkc =
@@ -3359,7 +3527,7 @@ module PhysicallyBased =
             VulkanContext.advanceRenderCommandBuffer vkc
 
         // abort
-        | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
+        | None -> Log.warnOnce ("Cannot draw " + getTypeName pipeline + " because VkPipeline does not exist.")
 
     /// Begin the process of drawing physically-based forward surfaces.
     let beginPhysicallyBasedForwardSurfaces
@@ -3654,7 +3822,7 @@ module PhysicallyBased =
             Pipeline.advance surfacesCount pipeline.Pipeline
 
         // abort
-        | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
+        | None -> Log.warnOnce ("Cannot draw " + getTypeName pipeline + " because VkPipeline does not exist.")
 
     /// End the process of drawing physically-based forward surfaces.
     let endPhysicallyBasedForwardSurfaces (_ : PhysicallyBasedPipeline) (vkc : VulkanContext)=
@@ -3667,6 +3835,101 @@ module PhysicallyBased =
 
         // intermittently advance rendering command buffer
         VulkanContext.advanceRenderCommandBuffer vkc
+
+    /// Create a box filter pipeline.
+    let createFilterBoxPipeline shaderPath colorAttachmentFormat vkc =
+
+        // create pipeline
+        let pipeline =
+            Pipeline.create
+                shaderPath [|VulkanUnblended|] [|false|]
+                [|Pipeline.vertex 0 StaticVertexSize VkVertexInputRate.Vertex
+                    [|Pipeline.attribute 0 Single3 0
+                      Pipeline.attribute 1 Single2 StaticTexCoordsOffset
+                      Pipeline.attribute 2 Single3 StaticNormalOffset|]|]
+                [|Pipeline.descriptorSet<int>
+                    [|Pipeline.descriptor 0 SampledImage FragmentStage 1|] // inputTexture
+                  Pipeline.descriptorSet<Unit>
+                    [|Pipeline.descriptor 0 Sampler FragmentStage 1|]|] // inputSampler
+                [||] [|colorAttachmentFormat|] None
+                [||]
+                vkc
+
+        // make pipeline
+        let filterBoxPipeline =
+            { FilterBoxPipeline.Pipeline = pipeline }
+
+        // fin
+        filterBoxPipeline
+
+    /// Destroy a box filter pipeline.
+    let destroyFilterBoxPipeline (filterBoxPipeline : FilterBoxPipeline) vkc =
+        Pipeline.destroy filterBoxPipeline.Pipeline vkc
+
+    /// Draw the box filter pass of a physically-based surface.
+    let drawFilterBoxSurface
+        (inputTexture : Texture)
+        (inputSampler : Sampler)
+        (colorAttachment : Texture)
+        (viewport : Viewport)
+        (renderPassIndex : int)
+        (geometry : PhysicallyBasedGeometry)
+        (pipeline : FilterBoxPipeline)
+        (vkc : VulkanContext) =
+
+        // only draw if required vkPipeline exists
+        match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
+        | Some vkPipeline ->
+
+            // specify texture
+            let mutable textureDescriptorSet = Pipeline.specifyDescriptorSet 0 renderPassIndex pipeline.Pipeline vkc $ fun vkSet ->
+                Pipeline.writeDescriptorSampledImage 0 0 inputTexture vkSet vkc
+
+            // specify sampler
+            let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 1 Unit pipeline.Pipeline vkc $ fun vkSet ->
+                Pipeline.writeDescriptorSampler 0 0 inputSampler vkSet vkc
+
+            // set up render
+            let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
+            let mutable vkViewport = Hl.makeViewport false renderArea
+            let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
+            let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue)
+            Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &renderingInfo)
+            Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, asPointer &vkViewport)
+            Vulkan.vkCmdSetScissor (vkc.RenderCommandBuffer, 0u, 1u, asPointer &renderArea)
+
+            // set up pipeline
+            Vulkan.vkCmdBindPipeline (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
+
+            // bind vertex and index buffers
+            let vertexBuffers = [|geometry.VertexBuffer.VkBuffer; geometry.InstanceBuffer.VkBuffer|]
+            let vertexOffsets = [|0UL; 0UL|]
+            use vertexBuffersPin = new ArrayPin<_> (vertexBuffers)
+            use vertexOffsetsPin = new ArrayPin<_> (vertexOffsets)
+            Vulkan.vkCmdBindVertexBuffers (vkc.RenderCommandBuffer, 0u, 2u, vertexBuffersPin.Pointer, vertexOffsetsPin.Pointer)
+            Vulkan.vkCmdBindIndexBuffer (vkc.RenderCommandBuffer, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
+
+            // bind descriptor sets
+            Vulkan.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, asPointer &textureDescriptorSet, 0u, nullPtr)
+            Vulkan.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, asPointer &samplerDescriptorSet, 0u, nullPtr)
+
+            // draw
+            Vulkan.vkCmdDrawIndexed (vkc.RenderCommandBuffer, uint geometry.ElementCount, 1u, 0u, 0, 0u)
+
+            // tear down render
+            Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
+
+            // report draw scope
+            Hl.reportDrawScope ()
+
+            // advance pipeline
+            Pipeline.advance 1 pipeline.Pipeline
+
+            // advance rendering command buffer
+            VulkanContext.advanceRenderCommandBuffer vkc
+
+        // abort
+        | None -> Log.warnOnce ("Cannot draw " + getTypeName pipeline + " because VkPipeline does not exist.")
 
     /// Create a tone-mapping filter pipeline.
     let createFilterToneMappingPipeline colorAttachmentFormat vkc =
@@ -3789,7 +4052,7 @@ module PhysicallyBased =
             VulkanContext.advanceRenderCommandBuffer vkc
 
         // abort
-        | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
+        | None -> Log.warnOnce ("Cannot draw " + getTypeName pipeline + " because VkPipeline does not exist.")
 
     /// Create an fxaa filter pipeline.
     let createFilterFxaaPipeline colorAttachmentFormat vkc =
@@ -3900,7 +4163,7 @@ module PhysicallyBased =
             VulkanContext.advanceRenderCommandBuffer vkc
 
         // abort
-        | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
+        | None -> Log.warnOnce ("Cannot draw " + getTypeName pipeline + " because VkPipeline does not exist.")
 
     /// Create a gamma-correction filter pipeline.
     let createFilterGammaCorrectionPipeline colorAttachmentFormat vkc =
@@ -3996,7 +4259,7 @@ module PhysicallyBased =
             VulkanContext.advanceRenderCommandBuffer vkc
 
         // abort
-        | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
+        | None -> Log.warnOnce ("Cannot draw " + getTypeName pipeline + " because VkPipeline does not exist.")
 
     let createPhysicallyBasedPipelines lightMapsMax lightsMax attachments vkc =
 
@@ -4156,11 +4419,12 @@ module PhysicallyBased =
         
         // create deferred lighting pipelines
         let deferredLightingPipeline = createPhysicallyBasedDeferredLightingPipeline attachments.LightingAttachment.VkFormat vkc
+        let deferredFoggingPipeline = createPhysicallyBasedDeferredFoggingPipeline attachments.FoggingAttachment.VkFormat vkc
         let deferredLightMappingPipeline = createPhysicallyBasedDeferredLightMappingPipeline attachments.LightMappingAttachment.VkFormat vkc
         let deferredAmbientPipeline = createPhysicallyBasedDeferredAmbientPipeline attachments.AmbientAttachment.VkFormat vkc
         let deferredIrradiancePipeline = createPhysicallyBasedDeferredIrradiancePipeline attachments.IrradianceAttachment.VkFormat vkc
         let deferredEnvironmentFilterPipeline = createPhysicallyBasedDeferredEnvironmentFilterPipeline attachments.EnvironmentFilterAttachment.VkFormat vkc
-        let deferredFoggingPipeline = createPhysicallyBasedDeferredFoggingPipeline attachments.FoggingAttachment.VkFormat vkc
+        let deferredSsaoPipeline = createPhysicallyBasedDeferredSsaoPipeline attachments.SsaoUnfilteredAttachment.VkFormat vkc
         let deferredColoringPipeline = createPhysicallyBasedDeferredColoringPipeline [|(fst attachments.ColoringAttachments).VkFormat; (snd attachments.ColoringAttachments).VkFormat|] vkc
         let deferredCompositionPipeline = createPhysicallyBasedDeferredCompositionPipeline attachments.CompositionAttachment.VkFormat vkc
         
@@ -4191,6 +4455,9 @@ module PhysicallyBased =
                 (Some z.VkFormat)
                 vkc
 
+        // create 1d box filter pipeline
+        let filterBox1dPipeline = createFilterBoxPipeline Constants.Paths.FilterBox1dShaderFilePath R32f.VkFormat vkc
+
         // create tone-mapping filter pipeline
         let filterToneMappingPipeline = createFilterToneMappingPipeline attachments.ToneMappingAttachment.VkFormat vkc
 
@@ -4212,15 +4479,17 @@ module PhysicallyBased =
               DeferredStaticClippedPipeline = deferredStaticClippedPipeline
               DeferredAnimatedPipeline = deferredAnimatedPipeline
               DeferredLightingPipeline = deferredLightingPipeline
+              DeferredFoggingPipeline = deferredFoggingPipeline
               DeferredLightMappingPipeline = deferredLightMappingPipeline
               DeferredAmbientPipeline = deferredAmbientPipeline
               DeferredIrradiancePipeline = deferredIrradiancePipeline
               DeferredEnvironmentFilterPipeline = deferredEnvironmentFilterPipeline
-              DeferredFoggingPipeline = deferredFoggingPipeline
+              DeferredSsaoPipeline = deferredSsaoPipeline
               DeferredColoringPipeline = deferredColoringPipeline
               DeferredCompositionPipeline = deferredCompositionPipeline
               ForwardStaticPipeline = forwardStaticPipeline
               ForwardAnimatedPipeline = forwardAnimatedPipeline
+              FilterBox1dPipeline = filterBox1dPipeline
               FilterToneMappingPipeline = filterToneMappingPipeline
               FilterFxaaPipeline = filterFxaaPipeline
               FilterGammaCorrectionPipeline = filterGammaCorrectionPipeline }
@@ -4239,15 +4508,17 @@ module PhysicallyBased =
         Pipeline.beginFrame physicallyBasedPipelines.DeferredStaticClippedPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.DeferredAnimatedPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.DeferredLightingPipeline.Pipeline
+        Pipeline.beginFrame physicallyBasedPipelines.DeferredFoggingPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.DeferredLightMappingPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.DeferredAmbientPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.DeferredIrradiancePipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.DeferredEnvironmentFilterPipeline.Pipeline
-        Pipeline.beginFrame physicallyBasedPipelines.DeferredFoggingPipeline.Pipeline
+        Pipeline.beginFrame physicallyBasedPipelines.DeferredSsaoPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.DeferredColoringPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.DeferredCompositionPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.ForwardStaticPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.ForwardAnimatedPipeline.Pipeline
+        Pipeline.beginFrame physicallyBasedPipelines.FilterBox1dPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.FilterToneMappingPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.FilterFxaaPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.FilterGammaCorrectionPipeline.Pipeline
@@ -4263,15 +4534,17 @@ module PhysicallyBased =
         destroyPhysicallyBasedPipeline physicallyBasedPipelines.DeferredStaticClippedPipeline vkc
         destroyPhysicallyBasedPipeline physicallyBasedPipelines.DeferredAnimatedPipeline vkc
         destroyPhysicallyBasedDeferredLightingPipeline physicallyBasedPipelines.DeferredLightingPipeline vkc
+        destroyPhysicallyBasedDeferredFoggingPipeline physicallyBasedPipelines.DeferredFoggingPipeline vkc
         destroyPhysicallyBasedDeferredLightMappingPipeline physicallyBasedPipelines.DeferredLightMappingPipeline vkc
         destroyPhysicallyBasedDeferredAmbientPipeline physicallyBasedPipelines.DeferredAmbientPipeline vkc
         destroyPhysicallyBasedDeferredIrradiancePipeline physicallyBasedPipelines.DeferredIrradiancePipeline vkc
         destroyPhysicallyBasedDeferredEnvironmentFilterPipeline physicallyBasedPipelines.DeferredEnvironmentFilterPipeline vkc
-        destroyPhysicallyBasedDeferredFoggingPipeline physicallyBasedPipelines.DeferredFoggingPipeline vkc
+        destroyPhysicallyBasedDeferredSsaoPipeline physicallyBasedPipelines.DeferredSsaoPipeline vkc
         destroyPhysicallyBasedDeferredColoringPipeline physicallyBasedPipelines.DeferredColoringPipeline vkc
         destroyPhysicallyBasedDeferredCompositionPipeline physicallyBasedPipelines.DeferredCompositionPipeline vkc
         destroyPhysicallyBasedPipeline physicallyBasedPipelines.ForwardStaticPipeline vkc
         destroyPhysicallyBasedPipeline physicallyBasedPipelines.ForwardAnimatedPipeline vkc
+        destroyFilterBoxPipeline physicallyBasedPipelines.FilterBox1dPipeline vkc
         destroyFilterToneMappingPipeline physicallyBasedPipelines.FilterToneMappingPipeline vkc
         destroyFilterFxaaPipeline physicallyBasedPipelines.FilterFxaaPipeline vkc
         destroyFilterGammaCorrectionPipeline physicallyBasedPipelines.FilterGammaCorrectionPipeline vkc
@@ -4287,15 +4560,17 @@ module PhysicallyBased =
         Pipeline.reloadShaders physicallyBasedPipelines.DeferredStaticClippedPipeline.Pipeline vkc
         Pipeline.reloadShaders physicallyBasedPipelines.DeferredAnimatedPipeline.Pipeline vkc
         Pipeline.reloadShaders physicallyBasedPipelines.DeferredLightingPipeline.Pipeline vkc
+        Pipeline.reloadShaders physicallyBasedPipelines.DeferredFoggingPipeline.Pipeline vkc
         Pipeline.reloadShaders physicallyBasedPipelines.DeferredLightMappingPipeline.Pipeline vkc
         Pipeline.reloadShaders physicallyBasedPipelines.DeferredAmbientPipeline.Pipeline vkc
         Pipeline.reloadShaders physicallyBasedPipelines.DeferredIrradiancePipeline.Pipeline vkc
         Pipeline.reloadShaders physicallyBasedPipelines.DeferredEnvironmentFilterPipeline.Pipeline vkc
-        Pipeline.reloadShaders physicallyBasedPipelines.DeferredFoggingPipeline.Pipeline vkc
+        Pipeline.reloadShaders physicallyBasedPipelines.DeferredSsaoPipeline.Pipeline vkc
         Pipeline.reloadShaders physicallyBasedPipelines.DeferredColoringPipeline.Pipeline vkc
         Pipeline.reloadShaders physicallyBasedPipelines.DeferredCompositionPipeline.Pipeline vkc
         Pipeline.reloadShaders physicallyBasedPipelines.ForwardStaticPipeline.Pipeline vkc
         Pipeline.reloadShaders physicallyBasedPipelines.ForwardAnimatedPipeline.Pipeline vkc
+        Pipeline.reloadShaders physicallyBasedPipelines.FilterBox1dPipeline.Pipeline vkc
         Pipeline.reloadShaders physicallyBasedPipelines.FilterToneMappingPipeline.Pipeline vkc
         Pipeline.reloadShaders physicallyBasedPipelines.FilterFxaaPipeline.Pipeline vkc
         Pipeline.reloadShaders physicallyBasedPipelines.FilterGammaCorrectionPipeline.Pipeline vkc
