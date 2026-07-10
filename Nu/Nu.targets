@@ -175,7 +175,7 @@
     <!-- Run Nu.Pipe to process assets. -->
     <Target Name="NuPipe" BeforeTargets="AssignTargetPaths;ResizetizeCollectItems" DependsOnTargets="BuildNuPipe">
 		
-        <!-- Write to refinement-out for use in later build steps (therefore cannot be under bin or obj folders).  -->
+        <!-- Write to refinement-out for use in later build steps (therefore cannot be under bin or obj folders). -->
         <PropertyGroup>
             <NuPipeOut>$(MSBuildProjectDirectory)/refinement-out/$(BlockCompression)</NuPipeOut>
         </PropertyGroup>
@@ -190,7 +190,7 @@
              calls across TFM inner builds that share the same compression type, ensuring only one Nu.Pipe
              invocation per (ProjectDirectory, BlockCompression, Configuration) tuple, where
              global properties are removed via RemoveProperties. -->
-        <MSBuild Projects="$(MSBuildThisFileDirectory)Nu.Pipe.Run.proj"
+        <MSBuild Projects="$(MSBuildThisFileDirectory)Nu.Pipe/Nu.Pipe.Run.proj"
                  Targets="Run Nu Pipe"
                  RemoveProperties="TargetFramework;RuntimeIdentifier;SelfContained"
                  Properties="ProjectDirectory=$(MSBuildProjectDirectory);BlockCompression=$(BlockCompression);Configuration=$(Configuration)" />
