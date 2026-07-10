@@ -28,6 +28,10 @@ type PathF private () =
     static member GetInvalidPathChars () =
         Path.GetInvalidPathChars ()
 
+    /// Gets an array containing the characters that are not allowed in file names.
+    static member GetInvalidFileNameChars () =
+        Path.GetInvalidFileNameChars ()
+
     /// Returns the file name and extension of the specified path string.
     static member GetFileName (path : string) =
         Path.GetFileName path
