@@ -19,7 +19,7 @@ jobs:
       - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.x'
-      - uses: Happypig375/install-vulkan-sdk-action@main # move to jakoch/install-vulkan-sdk-action@v1 once https://github.com/jakoch/install-vulkan-sdk-action/pull/587 is released
+      - uses: jakoch/install-vulkan-sdk-action@v1
         if: contains(matrix.os, 'macos')
         with:
           optional_components: com.lunarg.vulkan.ios
@@ -47,7 +47,11 @@ jobs:
         run: |
           echo "::group::Resolve Xcode version from iOS workload"
           echo "dotnet version: $(dotnet --version)"
-          DOTNET_ROOT_REAL=$(dirname "$(command -v dotnet)")
+          DOTNET_ROOT_REAL=$(command -v dotnet)
+          while [ -L "$DOTNET_ROOT_REAL" ]; do
+            DOTNET_ROOT_REAL=$(readlink "$DOTNET_ROOT_REAL") # Resolve symlinks - needed when actions/setup-dotnet didn't install a new SDK
+          done
+          DOTNET_ROOT_REAL=$(dirname "$DOTNET_ROOT_REAL")
           echo "dotnet root: $DOTNET_ROOT_REAL"
           _all_versions=
           for _kind in sdk-manifests metadata/workloads/InstalledManifests; do
