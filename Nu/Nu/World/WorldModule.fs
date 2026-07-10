@@ -939,7 +939,7 @@ module WorldModule =
             | (false, _)-> None
 
         static member internal makePhysicsEngine2dRenderContext segments circles (world : World) =
-            world.WorldExtension.Plugin.MakePhysicsEngine2dRenderContext segments circles world.Eye2dBounds
+            world.WorldExtension.Plugin.MakePhysicsEngine2dRenderContext segments circles world.Eye2dBoundsViewable
 
         static member internal preProcess (world : World) =
             world.WorldExtension.Plugin.PreProcess world

@@ -899,7 +899,7 @@ module WorldModule2 =
 
         static member private synchronizeViewports world =
             let windowSize = World.getWindowSize world
-            let windowViewport = Viewport.makeWindow1 windowSize
+            let windowViewport = Viewport.makeWindowViewed world.Eye2dViewed windowSize
             World.setWindowViewport windowViewport world
             World.setGeometryViewport (Viewport.makeGeometry windowViewport.Bounds.Size) world
 
@@ -1123,22 +1123,26 @@ module WorldModule2 =
 
         static member internal processWindowResized (world : World) =
 
-            // ensure window size is a factor of display virtual resolution, going to full screen otherwise
+            // ensure window size is at least display virtual resolution
             let windowSize = World.getWindowSize world
-            let windowScalar =
-                max (single windowSize.X / single Constants.Render.DisplayVirtualResolution.X |> ceil |> int |> max 1)
-                    (single windowSize.Y / single Constants.Render.DisplayVirtualResolution.Y |> ceil |> int |> max 1)
-            let windowSize' = windowScalar * Constants.Render.DisplayVirtualResolution
-            World.trySetWindowSize windowSize' world
-            let windowSize'' = World.getWindowSize world
-            if windowSize''.X < windowSize'.X || windowSize''.Y < windowSize'.Y then
-                World.trySetWindowFullScreen true world
+            let windowSize' = v2i (max windowSize.X Globals.Render.DisplayVirtualResolution.X) (max windowSize.Y Globals.Render.DisplayVirtualResolution.Y)
+            if windowSize <> windowSize' then
+                World.trySetWindowSize windowSize' world
 
             // synchronize display virtual scalar
             let windowSize'' = World.getWindowSize world
-            let xScalar = windowSize''.X / Constants.Render.DisplayVirtualResolution.X
-            let yScalar = windowSize''.Y / Constants.Render.DisplayVirtualResolution.Y
+            let xScalar = windowSize''.X / Globals.Render.DisplayVirtualResolution.X
+            let yScalar = windowSize''.Y / Globals.Render.DisplayVirtualResolution.Y
             Globals.Render.DisplayScalar <- min xScalar yScalar
+
+            // compute eye2d viewed size based on actual window size vs display virtual resolution
+            let eyeSize = World.getEye2dSize world
+            let eyeViewable = eyeSize + eyeSize * Constants.Engine.EyeMarginMaxScalar
+            let eyeViewed =
+                let maxViewedX = min eyeViewable.X (single windowSize''.X / single Globals.Render.DisplayScalar)
+                let maxViewedY = min eyeViewable.Y (single windowSize''.Y / single Globals.Render.DisplayScalar)
+                v2 maxViewedX maxViewedY
+            World.setEye2dViewed eyeViewed world
 
             // synchronize view ports
             World.synchronizeViewports world
@@ -1583,8 +1587,8 @@ module WorldModule2 =
 
         static member private renderScreenTransition renderPass (screen : Screen) world =
             match screen.GetTransitionState world with
-            | IncomingState transitionTime -> World.renderScreenTransition5 transitionTime world.Eye2dSize renderPass (screen.GetIncoming world) world
-            | OutgoingState transitionTime -> World.renderScreenTransition5 transitionTime world.Eye2dSize renderPass (screen.GetOutgoing world) world
+            | IncomingState transitionTime -> World.renderScreenTransition5 transitionTime world.Eye2dViewed renderPass (screen.GetIncoming world) world
+            | OutgoingState transitionTime -> World.renderScreenTransition5 transitionTime world.Eye2dViewed renderPass (screen.GetOutgoing world) world
             | IdlingState _ -> ()
 
         static member private renderSimulantsInternal8
@@ -2120,7 +2124,7 @@ module WorldModule2 =
                                                                         world.Eye3dRotation
                                                                         world.Eye3dFieldOfView
                                                                         world.Eye2dCenter
-                                                                        world.Eye2dSize
+                                                                        world.Eye2dViewed
                                                                         (World.getWindowSize world)
                                                                         world.GeometryViewport
                                                                         world.WindowViewport

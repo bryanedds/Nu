@@ -7,6 +7,7 @@
 namespace Nu.Globals
 open System
 open System.Configuration
+open System.Numerics
 open Prime
 
 /// Global mutable rendering values. Change tracking must be done manually by dependant code.
@@ -18,3 +19,6 @@ module Render =
 
     /// The global mutable shadow scalar. This may be changed by the engine at run-time.
     let mutable ShadowScalar = match ConfigurationManager.AppSettings["ShadowScalar"] with null -> 4 | value -> scvalue value
+
+    /// The global mutable display virtual resolution. This may be changed by the engine at run-time.
+    let mutable DisplayVirtualResolution = match ConfigurationManager.AppSettings["DisplayVirtualResolution"] with null -> v2i 640 360 | value -> scvalue value

@@ -254,6 +254,26 @@ module WorldModuleGame =
         static member setEye2dSize value world =
             World.setGameEye2dSize value Game.Handle world |> ignore<bool>
 
+        static member internal getGameEye2dViewed game world =
+            (World.getGameState game world).Eye2dViewed
+
+        static member internal setGameEye2dViewed value game world =
+            let gameState = World.getGameState game world
+            let previous = gameState.Eye2dViewed
+            if previous <> value then
+                World.setGameState { gameState with Eye2dViewed = value } game world
+                World.publishGameChange (nameof gameState.Eye2dViewed) previous value game world
+                true
+            else false
+
+        /// Get the current 2d eye viewed size.
+        static member getEye2dViewed world =
+            World.getGameEye2dViewed Game.Handle world
+
+        /// Set the current 2d eye viewed size.
+        static member setEye2dViewed value world =
+            World.setGameEye2dViewed value Game.Handle world |> ignore<bool>
+
         /// Get the current 2d eye bounds.
         static member getEye2dBounds world =
             let eyeCenter = World.getGameEye2dCenter Game.Handle world
@@ -277,23 +297,32 @@ module WorldModuleGame =
         /// Get the bounds of the 2d eye's sight irrespective of its position.
         static member getViewBounds2dAbsolute world =
             let gameState = World.getGameState Game.Handle world
+            let eyeViewed = gameState.Eye2dViewed
             box2
-                (v2 (gameState.Eye2dSize.X * -0.5f) (gameState.Eye2dSize.Y * -0.5f))
-                (v2 gameState.Eye2dSize.X gameState.Eye2dSize.Y)
+                (v2 (eyeViewed.X * -0.5f) (eyeViewed.Y * -0.5f))
+                eyeViewed
 
         /// Get the bounds of the 2d eye's sight relative to its position.
         static member getViewBounds2dRelative world =
             let gameState = World.getGameState Game.Handle world
-            let min = v2 (gameState.Eye2dCenter.X - gameState.Eye2dSize.X * 0.5f) (gameState.Eye2dCenter.Y - gameState.Eye2dSize.Y * 0.5f)
-            box2 min gameState.Eye2dSize
+            let eyeViewed = gameState.Eye2dViewed
+            let min = v2 (gameState.Eye2dCenter.X - eyeViewed.X * 0.5f) (gameState.Eye2dCenter.Y - eyeViewed.Y * 0.5f)
+            box2 min eyeViewed
 
         /// Get the bounds of the 2d play zone irrespective of eye center.
         static member getPlayBounds2dAbsolute world =
-            World.getViewBounds2dAbsolute world
+            let gameState = World.getGameState Game.Handle world
+            let eyeViewable = gameState.Eye2dSize + gameState.Eye2dSize * Constants.Engine.EyeMarginMaxScalar
+            box2
+                (v2 (eyeViewable.X * -0.5f) (eyeViewable.Y * -0.5f))
+                eyeViewable
 
         /// Get the bounds of the 2d play zone relative to eye center.
         static member getPlayBounds2dRelative world =
-            World.getViewBounds2dRelative world
+            let gameState = World.getGameState Game.Handle world
+            let eyeViewable = gameState.Eye2dSize + gameState.Eye2dSize * Constants.Engine.EyeMarginMaxScalar
+            let min = v2 (gameState.Eye2dCenter.X - eyeViewable.X * 0.5f) (gameState.Eye2dCenter.Y - eyeViewable.Y * 0.5f)
+            box2 min eyeViewable
 
         /// Check that the given bounds is within the 2d eye's sight irrespective of eye center.
         static member boundsInView2dAbsolute (bounds : Box2) world =
@@ -398,8 +427,8 @@ module WorldModuleGame =
         static member internal getGameEye3dAspectRatio game world =
             ignore<Game> game
             ignore<World> world
-            single Constants.Render.DisplayVirtualResolution.X /
-            single Constants.Render.DisplayVirtualResolution.Y
+            single Globals.Render.DisplayVirtualResolution.X /
+            single Globals.Render.DisplayVirtualResolution.Y
 
         /// Get the current 3d eye field of view.
         static member getEye3dFieldOfView world =

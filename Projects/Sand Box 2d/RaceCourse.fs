@@ -77,7 +77,7 @@ type RaceCourseDispatcher () =
 
             // declare border
             World.doStaticSprite Simulants.RaceCourseBorder.Name
-                [Entity.Size .= v3 640f 360f 0f
+                [Entity.Size .= world.Eye2dViewable
                  Entity.Elevation .= -1f
                  Entity.Absolute .= true // displays at the same screen location regardless of the eye position
                  Entity.StaticImage .= Assets.Gameplay.BackgroundImage] world
