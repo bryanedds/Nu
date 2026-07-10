@@ -160,7 +160,7 @@ type MainActivity () =
             | None -> ()
 
         // set current directory for asset loading
-        Directory.EnumerateDirectories (assetPackLocation.AssetsPath () + "/refinement-out", "*")
+        Directory.EnumerateDirectories (assetPackLocation.AssetsPath () + "/piped", "*")
         |> Seq.exactlyOne
         |> Directory.SetCurrentDirectory
 
@@ -188,7 +188,7 @@ let splashScreen = UIKit.UIStoryboard.FromName("PreSplash", null).InstantiateIni
 let private sdlMainImpl (_argc: int, _argv: nativeptr<nativeptr<byte>>) : int =
 
     // this points the current working directory at the bundled game assets
-    Directory.EnumerateDirectories (AppContext.BaseDirectory + "/refinement-out", "*")
+    Directory.EnumerateDirectories (AppContext.BaseDirectory + "/piped", "*")
     |> Seq.exactlyOne
     |> Directory.SetCurrentDirectory
 

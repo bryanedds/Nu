@@ -175,9 +175,14 @@
     <!-- Run Nu.Pipe to process assets. -->
     <Target Name="NuPipe" BeforeTargets="AssignTargetPaths;ResizetizeCollectItems" DependsOnTargets="BuildNuPipe">
 		
-        <!-- Write to refinement-out for use in later build steps (therefore cannot be under bin or obj folders). -->
         <PropertyGroup>
-            <NuPipeOut>$(MSBuildProjectDirectory)/refinement-out/$(BlockCompression)</NuPipeOut>
+            <!-- Write to piped for use in later build steps (therefore cannot be under bin or obj folders). -->
+            <NuPipeOut>$(MSBuildProjectDirectory)/piped/$(BlockCompression)</NuPipeOut>
+            <!-- But for desktop non-publishing builds, just write to the output directory.
+                 Game developers expect their output directories to not have symlinks during normal builds,
+                 because normal builds are what game developers understand and feel comfortable and in control with.
+                 However, the publish process can totally be written from scratch however necessary to make it work how it needs to. -->
+            <NuPipeOut Condition="'$(TargetPlatformIdentifier)' == '' And '$(IsPublishing)' != 'true'">$(MSBuildProjectDirectory)/$(OutDir)</NuPipeOut>
         </PropertyGroup>
 		
         <!-- These files are not copied by Nu.Pipe but read by the app - count them as Nu.Pipe outputs. App.config is
@@ -193,7 +198,10 @@
         <MSBuild Projects="$(MSBuildThisFileDirectory)Nu.Pipe/Nu.Pipe.Run.proj"
                  Targets="Run Nu Pipe"
                  RemoveProperties="TargetFramework;RuntimeIdentifier;SelfContained"
-                 Properties="ProjectDirectory=$(MSBuildProjectDirectory);BlockCompression=$(BlockCompression);Configuration=$(Configuration)" />
+                 Properties="Configuration=$(Configuration);
+                             ProjectDirectory=$(MSBuildProjectDirectory);
+                             NuPipeOut=$(NuPipeOut);
+                             BlockCompression=$(BlockCompression)" />
 		
         <!-- iOS: include as bundle asset
              Android: include as fast-follow asset pack (extracted to file system, up to 512MB).
@@ -202,16 +210,15 @@
             <MauiAsset Include="$(NuPipeOut)/**" AssetPack="gameassets" DeliveryType="FastFollow" />
         </ItemGroup>
 
-        <!-- Desktop: create directory junctions/symlinks (for subdirectories) and hardlinks (for root files) in
-             $(OutDir) always, and $(PublishDir) only during publish. Uses a single script per platform, avoiding
-             duplicated Exec lines. Dynamic enumeration means Nu.Pipe can emit any directory or file structure
-             without updating this target. -->
+        <!-- Desktop when publishing: create directory junctions/symlinks (for subdirectories) and hardlinks (for
+             root files) in $(OutDir) for the RID-specific .NET-dependent executable and $(PublishDir) for the
+             .NET-independent executable. -->
         <!-- Windows: junctions for subdirectories, hardlinks for root files -->
-        <Exec Condition="'$(TargetPlatformIdentifier)' == '' And $([System.OperatingSystem]::IsWindows())"
+        <Exec Condition="'$(IsPublishing)' == 'true' And '$(TargetPlatformIdentifier)' == '' And $([System.OperatingSystem]::IsWindows())"
               WorkingDirectory="$(MSBuildProjectDirectory)"
               Command="powershell -NoProfile -NonInteractive -Command &quot;$targets = @('$(OutDir)'); if ('$(IsPublishing)' -eq 'true') { $targets += '$(PublishDir)' }; Get-ChildItem '$(NuPipeOut)' -Directory | ForEach-Object { $n = $_.Name; $f = $_.FullName; foreach ($t in $targets) { $p = $t + $n; if (Test-Path $p) { Remove-Item $p -Recurse -Force }; New-Item -Path $p -ItemType Junction -Target $f -Force } }; Get-ChildItem '$(NuPipeOut)' -File | ForEach-Object { $n = $_.Name; $f = $_.FullName; foreach ($t in $targets) { $p = $t + $n; if (Test-Path $p) { Remove-Item $p -Force }; New-Item -Path $p -ItemType HardLink -Target $f -Force } }&quot;" />
         <!-- Linux/macOS: symlinks for subdirectories, hardlinks for root files -->
-        <Exec Condition="'$(TargetPlatformIdentifier)' == '' And !$([System.OperatingSystem]::IsWindows())"
+        <Exec Condition="'$(IsPublishing)' == 'true' And '$(TargetPlatformIdentifier)' == '' And !$([System.OperatingSystem]::IsWindows())"
               WorkingDirectory="$(MSBuildProjectDirectory)"
               Command="targets=&quot;$(OutDir)&quot;; [ &quot;$(IsPublishing)&quot; = 'true' ] &amp;&amp; targets=&quot;$targets $(PublishDir)&quot;; for dir in &quot;$(NuPipeOut)&quot;/*/; do [ -d &quot;$dir&quot; ] || break; b=`basename &quot;$dir&quot;`; for t in $targets; do rm -rf &quot;$t/$b&quot;; ln -sf &quot;$dir&quot; &quot;$t/$b&quot;; done; done; for f in &quot;$(NuPipeOut)&quot;/*; do [ -f &quot;$f&quot; ] || continue; b=`basename &quot;$f&quot;`; for t in $targets; do rm -f &quot;$t/$b&quot;; ln &quot;$f&quot; &quot;$t/$b&quot;; done; done" />
     </Target>
@@ -220,7 +227,7 @@
 	     conflict errors. Clean by BlockCompression so that a single clean removes the shared directory for all TFMs
 	     of the same compression type. -->
     <Target Name="CleanNuPipe" AfterTargets="Clean">
-        <RemoveDir Directories="refinement/$(BlockCompression);refinement-out/$(BlockCompression)" />
+        <RemoveDir Directories="refinement/$(BlockCompression);piped/$(BlockCompression)" />
         <!-- Remove the symlink if it exists (RemoveDir on a symlink removes the link, not the target) -->
         <RemoveDir Condition="Exists('$(OutDir)/Assets')" Directories="$(OutDir)/Assets" />
     </Target>
@@ -604,7 +611,7 @@
 	<Target Name="RemoveStaleIosAssets" BeforeTargets="_CopyResourcesToBundle"
             Condition="'$(TargetPlatformIdentifier)' == 'ios'">
         <RemoveDir Directories="$(AppBundleDir)/Assets" />
-        <RemoveDir Directories="$(AppBundleDir)/refinement-out" />
+        <RemoveDir Directories="$(AppBundleDir)/piped" />
     </Target>
 
 </Project>

@@ -10,17 +10,14 @@
 		 Multiple TFM inner builds that share the same compression type will resolve to a single invocation.
 
          Required properties passed by the caller:
-           ProjectDirectory  — absolute path of the consuming project
-           BlockCompression  — BcCompression or AstcCompression
-           Configuration     — Debug / Release -->
+           Configuration     — build configuration (e.g., Debug or Release)
+           ProjectDirectory  — absolute path of the project directory
+           NuPipeOut         — absolute path of the output directory for Nu.Pipe to write to
+           BlockCompression  — BcCompression or AstcCompression -->
 
     <Target Name="Run Nu Pipe">
-        <PropertyGroup>
-            <_NuPipeDllPath>$([System.IO.Directory]::GetDirectories('$(MSBuildThisFileDirectory)bin/$(Configuration)')[0])/Nu.Pipe.dll</_NuPipeDllPath> <!-- locates Nu.Pipe.dll relative to this .proj file -->
-            <_NuPipeOut>$(ProjectDirectory)/refinement-out/$(BlockCompression)</_NuPipeOut>
-            <_RefinementDir>$(ProjectDirectory)/refinement/$(BlockCompression)/</_RefinementDir>
-        </PropertyGroup>
-        <Exec Command="dotnet &quot;$(_NuPipeDllPath)&quot; &quot;$(ProjectDirectory)/&quot; &quot;$(_NuPipeOut)&quot; &quot;$(_RefinementDir)&quot; &quot;$(BlockCompression)&quot; &quot;False&quot;"
+        <!-- Manual inclusions of / are required for " to not get escaped by \ on Windows -->
+        <Exec Command="dotnet &quot;$([System.IO.Directory]::GetDirectories('$(MSBuildThisFileDirectory)bin/$(Configuration)')[0])/Nu.Pipe.dll&quot; &quot;$(ProjectDirectory)/&quot; &quot;$(NuPipeOut)/&quot; &quot;$(ProjectDirectory)/refinement/$(BlockCompression)/&quot; &quot;$(BlockCompression)&quot; &quot;False&quot;"
               WorkingDirectory="$(ProjectDirectory)" />
     </Target>
 </Project>
