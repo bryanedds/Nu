@@ -3427,10 +3427,10 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
         // blit from gamma-correction attachment to target image without filtering
         Texture.transitionLayoutAsync ColorAttachmentRead TransferSrc gammaCorrectionTexture renderer.VulkanContext.RenderCommandBuffer
-        Hl.recordTransitionLayout true 1 targetLayer 1 VkImageAspectFlags.Color ColorAttachmentRead TransferDst targetImage renderer.VulkanContext.RenderCommandBuffer
+        Hl.recordTransitionLayout true 1 targetLayer 1 VkImageAspectFlags.Color Hl.SwapchainImageReadLayout TransferDst targetImage renderer.VulkanContext.RenderCommandBuffer
         let mutable region = Hl.makeBlit 0 0 0 targetLayer (VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)) targetBounds
         Vulkan.vkCmdBlitImage (renderer.VulkanContext.RenderCommandBuffer, gammaCorrectionTexture.Image, TransferSrc.VkImageLayout, targetImage, TransferDst.VkImageLayout, 1u, asPointer &region, VkFilter.Nearest)
-        Hl.recordTransitionLayout true 1 targetLayer 1 VkImageAspectFlags.Color TransferDst ColorAttachmentRead targetImage renderer.VulkanContext.RenderCommandBuffer
+        Hl.recordTransitionLayout true 1 targetLayer 1 VkImageAspectFlags.Color TransferDst Hl.SwapchainImageReadLayout targetImage renderer.VulkanContext.RenderCommandBuffer
         Texture.transitionLayoutAsync TransferSrc ColorAttachmentRead gammaCorrectionTexture renderer.VulkanContext.RenderCommandBuffer
 
         // advance render pass index
@@ -3656,10 +3656,12 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                             // draw shadow texture
                             let shadowResolution = renderer.GeometryViewport.ShadowTextureResolution
                             Texture.transitionLayoutAsync ColorAttachmentRead ColorAttachmentWrite shadowColorAttachment renderer.VulkanContext.RenderCommandBuffer
+                            Texture.transitionLayoutAsync DepthAttachmentRead DepthAttachmentWrite shadowDepthAttachment renderer.VulkanContext.RenderCommandBuffer
                             VulkanRenderer3d.renderShadowTexture
                                 renderTasks renderer shadowOrigin shadowView shadowProjection shadowFrustum
                                 shadowLightType shadowCutoff shadowResolution shadowColorAttachment.LayerViews[shadowTextureIndex] shadowDepthAttachment
                             Texture.transitionLayoutAsync ColorAttachmentWrite ColorAttachmentRead shadowColorAttachment renderer.VulkanContext.RenderCommandBuffer
+                            Texture.transitionLayoutAsync DepthAttachmentWrite DepthAttachmentRead shadowDepthAttachment renderer.VulkanContext.RenderCommandBuffer
 
                             // TODO: P0: implement shadow filtering.
                             //// filter shadows on the x (presuming that viewport already configured correctly)

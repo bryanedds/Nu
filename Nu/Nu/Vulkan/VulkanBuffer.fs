@@ -18,42 +18,7 @@ type BufferType =
     | Vertex of UploadEnabled : bool
     | Index of UploadEnabled : bool
     | Instance
-    | Uniform
     | Storage
-
-    static member private makeInfoInternal size usage =
-        let mutable info = VkBufferCreateInfo ()
-        info.size <- uint64 size
-        info.usage <- usage
-        info.sharingMode <- VkSharingMode.Exclusive
-        info
-
-    static member makeInfo size bufferType =
-        match bufferType with
-        | Staging ->
-            let usage = VkBufferUsageFlags.TransferSrc ||| VkBufferUsageFlags.TransferDst
-            BufferType.makeInfoInternal size usage
-        | Vertex uploadEnabled ->
-            let usage =
-                if uploadEnabled
-                then VkBufferUsageFlags.VertexBuffer ||| VkBufferUsageFlags.TransferSrc ||| VkBufferUsageFlags.TransferDst
-                else VkBufferUsageFlags.VertexBuffer
-            BufferType.makeInfoInternal size usage
-        | Index uploadEnabled ->
-            let usage =
-                if uploadEnabled
-                then VkBufferUsageFlags.IndexBuffer ||| VkBufferUsageFlags.TransferSrc ||| VkBufferUsageFlags.TransferDst
-                else VkBufferUsageFlags.IndexBuffer
-            BufferType.makeInfoInternal size usage
-        | Instance ->
-            let usage = VkBufferUsageFlags.VertexBuffer ||| VkBufferUsageFlags.TransferSrc ||| VkBufferUsageFlags.TransferDst
-            BufferType.makeInfoInternal size usage
-        | Uniform ->
-            let usage = VkBufferUsageFlags.UniformBuffer ||| VkBufferUsageFlags.TransferSrc ||| VkBufferUsageFlags.TransferDst
-            BufferType.makeInfoInternal size usage
-        | Storage ->
-            let usage = VkBufferUsageFlags.StorageBuffer ||| VkBufferUsageFlags.TransferSrc ||| VkBufferUsageFlags.TransferDst
-            BufferType.makeInfoInternal size usage
 
 /// Internal representation of an allocated buffer.
 type BufferInternal =
@@ -69,6 +34,13 @@ type BufferInternal =
 
     /// The size of the buffer.
     member this.Size = this.Size_
+
+    static member private makeBufferCreateInfo size usage =
+        let mutable info = VkBufferCreateInfo ()
+        info.size <- uint64 size
+        info.usage <- usage
+        info.sharingMode <- VkSharingMode.Exclusive
+        info
 
     /// Create BufferInternal.
     static member createPlus uploadEnabled bufferUsage bufferInfo (vkc : VulkanContext) =
@@ -107,11 +79,32 @@ type BufferInternal =
             | Index true -> struct (true, VmaMemoryUsage.AutoPreferDevice)
             | Index false -> struct (false, VmaMemoryUsage.AutoPreferDevice)
             | Instance -> struct (true, VmaMemoryUsage.AutoPreferDevice)
-            | Uniform -> struct (true, VmaMemoryUsage.AutoPreferDevice)
             | Storage -> struct (true, VmaMemoryUsage.AutoPreferDevice)
 
         // make create info
-        let createInfo = BufferType.makeInfo bufferSize bufferType
+        let createInfo =
+            match bufferType with
+            | Staging ->
+                let usage = VkBufferUsageFlags.TransferSrc
+                BufferInternal.makeBufferCreateInfo bufferSize usage
+            | Vertex uploadEnabled ->
+                let usage =
+                    if uploadEnabled
+                    then VkBufferUsageFlags.VertexBuffer ||| VkBufferUsageFlags.TransferSrc ||| VkBufferUsageFlags.TransferDst
+                    else VkBufferUsageFlags.VertexBuffer ||| VkBufferUsageFlags.TransferDst
+                BufferInternal.makeBufferCreateInfo bufferSize usage
+            | Index uploadEnabled ->
+                let usage =
+                    if uploadEnabled
+                    then VkBufferUsageFlags.IndexBuffer ||| VkBufferUsageFlags.TransferSrc ||| VkBufferUsageFlags.TransferDst
+                    else VkBufferUsageFlags.IndexBuffer ||| VkBufferUsageFlags.TransferDst
+                BufferInternal.makeBufferCreateInfo bufferSize usage
+            | Instance ->
+                let usage = VkBufferUsageFlags.VertexBuffer ||| VkBufferUsageFlags.TransferSrc ||| VkBufferUsageFlags.TransferDst
+                BufferInternal.makeBufferCreateInfo bufferSize usage
+            | Storage ->
+                let usage = VkBufferUsageFlags.StorageBuffer ||| VkBufferUsageFlags.TransferSrc ||| VkBufferUsageFlags.TransferDst
+                BufferInternal.makeBufferCreateInfo bufferSize usage
 
         // make buffer
         BufferInternal.createPlus uploadEnabled bufferUsage createInfo vkc
