@@ -911,6 +911,10 @@ type ToyBoxDispatcher () =
             World.beginGroup Simulants.ToyBoxScene.Name [] world
 
             World.doStaticSprite "Background"
+                // With EyeMarginMaxScalar in App.config, we allow the window size to extend beyond DisplayVirtualResolution
+                // by a margin up to the specified multiple of DisplayVirtualResolution. This can accommodate for
+                // closely matching screen sizes especially on mobile devices. The eye 2d viewable size ensures this image
+                // fills for all window sizes, even if smaller window sizes only see a crop of this image.
                 [Entity.Size .= world.Eye2dViewable.V3
                  Entity.Absolute .= true
                  Entity.StaticImage .= Assets.Default.AnimatedSprite
@@ -981,6 +985,8 @@ type ToyBoxDispatcher () =
                 // first page of add toy buttons
                 for (i, entityType) in List.indexed [Box; Ball; TinyBalls; Spring; Block; Bridge; Fan] do
                     if World.doButton $"Add {scstringMemo entityType}"
+                        // With EyeMarginMaxScalar in App.config, we also need to ensure
+                        // right alignment on any window size by adding the margin width.
                         [Entity.Position @= v3 (255f + world.Eye2dMargin.X) (160f - 30f * single i) 0f
                          Entity.Text .= $"Add {scstringMemo entityType}"
                          Entity.Elevation .= 1f] world then

@@ -1123,11 +1123,36 @@ module WorldModule2 =
 
         static member internal processWindowResized (world : World) =
 
-            // ensure window size is at least display virtual resolution
+            // snap window to nearest valid render size
+            let oldWindowSize = world.WindowViewport.Outer.Size
             let windowSize = World.getWindowSize world
-            let windowSize' = v2i (max windowSize.X Globals.Render.DisplayVirtualResolution.X) (max windowSize.Y Globals.Render.DisplayVirtualResolution.Y)
+            let virtualSize = Globals.Render.DisplayVirtualResolution
+            let marginScalar = Constants.Engine.EyeMarginMaxScalar
+            let virtualSizeWithMargin = virtualSize.V2 * (v2Dup 1.0f + marginScalar)
+            let virtualSizeWithMargin = (v2 (ceil virtualSizeWithMargin.X) (ceil virtualSizeWithMargin.Y)).V2i
+            let oldDisplayScalar = max 1 (min (oldWindowSize.X / virtualSize.X) (oldWindowSize.Y / virtualSize.Y))
+            let oldMinPixelSize = virtualSize * oldDisplayScalar
+            let oldMaxPixelSize = virtualSizeWithMargin * oldDisplayScalar
+            let windowSize' =
+                let growing = windowSize.X * windowSize.Y > oldWindowSize.X * oldWindowSize.Y
+                let shrinking = windowSize.X * windowSize.Y < oldWindowSize.X * oldWindowSize.Y
+                if growing && (windowSize.X > oldMaxPixelSize.X || windowSize.Y > oldMaxPixelSize.Y)
+                // growing past max margin at old display scalar -> snap to marginless size of next larger display scalar
+                then virtualSize * (oldDisplayScalar + 1)
+                elif shrinking && (windowSize.X < oldMinPixelSize.X || windowSize.Y < oldMinPixelSize.Y) then
+                    // shrinking below marginless size at old display scalar -> snap to max margin of previous display scalar, but at least virtual size
+                    let previousDisplayScalar = oldDisplayScalar - 1
+                    if previousDisplayScalar >= 1
+                    then virtualSizeWithMargin * previousDisplayScalar
+                    else virtualSize
+                else windowSize
             if windowSize <> windowSize' then
                 World.trySetWindowSize windowSize' world
+
+                // if the size we specified wasn't used (limited by full screen size), go to full screen
+                let windowSize = World.getWindowSize world
+                if windowSize <> windowSize' then
+                    World.trySetWindowFullScreen true world
 
             // synchronize display virtual scalar
             let windowSize'' = World.getWindowSize world
@@ -1139,9 +1164,8 @@ module WorldModule2 =
             let eyeSize = World.getEye2dSize world
             let eyeViewable = eyeSize + eyeSize * Constants.Engine.EyeMarginMaxScalar
             let eyeViewed =
-                let maxViewedX = min eyeViewable.X (single windowSize''.X / single Globals.Render.DisplayScalar)
-                let maxViewedY = min eyeViewable.Y (single windowSize''.Y / single Globals.Render.DisplayScalar)
-                v2 maxViewedX maxViewedY
+                v2 (min eyeViewable.X (single windowSize''.X / single Globals.Render.DisplayScalar))
+                   (min eyeViewable.Y (single windowSize''.Y / single Globals.Render.DisplayScalar))
             World.setEye2dViewed eyeViewed world
 
             // synchronize view ports
