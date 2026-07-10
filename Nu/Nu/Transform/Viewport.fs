@@ -256,11 +256,11 @@ type [<StructuralEquality; NoComparison>] Viewport =
         Viewport.makeWindowViewed Globals.Render.DisplayVirtualResolution.V2 windowSize
 
     static member makeWindowViewed (eyeViewed : Vector2) (windowSize : Vector2i) =
-        let ds = Globals.Render.DisplayScalar
-        let boundsSizeX = min (int (ceil eyeViewed.X) * ds) windowSize.X
-        let boundsSizeY = min (int (ceil eyeViewed.Y) * ds) windowSize.Y
+        let displayScalar = Globals.Render.DisplayScalar
+        let boundsSizeX = min (int (ceil eyeViewed.X) * displayScalar) windowSize.X
+        let boundsSizeY = min (int (ceil eyeViewed.Y) * displayScalar) windowSize.Y
         let boundsSize = v2i boundsSizeX boundsSizeY
-        let boundsMin = Vector2i ((windowSize.X - boundsSize.X) / 2, (windowSize.Y - boundsSize.Y) / 2)
+        let boundsMin = (windowSize - boundsSize) / 2
         let bounds = box2i boundsMin boundsSize
         Viewport.makeWindow bounds bounds windowSize // presume inner = bounds
 
