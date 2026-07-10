@@ -1,0 +1,35 @@
+<Project>
+
+    <!-- ============================================================
+         Nu.Pipe.Assets.proj — Build assets through Nu.Pipe once per
+         compression type, cached by MSBuild across TFM inner builds.
+         ============================================================
+
+         This project is invoked by Nu.targets via the MSBuild task with
+         RemoveProperties, so MSBuild's project cache ensures it builds
+         only once per unique set of properties (ProjectDirectory,
+         BlockCompression, Configuration). Multiple TFM inner builds
+         that share the same compression type will resolve to a single
+         invocation.
+
+         Required properties passed by the caller:
+           ProjectDirectory  — absolute path of the consuming project
+           BlockCompression  — BcCompression or AstcCompression
+           Configuration     — Debug / Release
+    -->
+
+    <Target Name="Run Nu Pipe">
+
+        <PropertyGroup>
+            <!-- Locate Nu.Pipe.dll relative to this .proj file -->
+            <_NuPipeDllPath>$([System.IO.Directory]::GetDirectories('$(MSBuildThisFileDirectory)Nu.Pipe/bin/$(Configuration)')[0])/Nu.Pipe.dll</_NuPipeDllPath>
+            <_NuPipeOut>$(ProjectDirectory)/refinement-out/$(BlockCompression)</_NuPipeOut>
+            <_RefinementDir>$(ProjectDirectory)/refinement/$(BlockCompression)/</_RefinementDir>
+        </PropertyGroup>
+
+        <Exec Command="dotnet &quot;$(_NuPipeDllPath)&quot; &quot;$(ProjectDirectory)/&quot; &quot;$(_NuPipeOut)&quot; &quot;$(_RefinementDir)&quot; &quot;$(BlockCompression)&quot; &quot;False&quot;"
+              WorkingDirectory="$(ProjectDirectory)" />
+
+    </Target>
+
+</Project>

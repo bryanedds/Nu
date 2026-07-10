@@ -175,9 +175,9 @@
     <!-- Run Nu.Pipe to process assets. -->
     <Target Name="NuPipe" BeforeTargets="AssignTargetPaths;ResizetizeCollectItems" DependsOnTargets="BuildNuPipe">
 		
-        <!-- Write to refinement-out for use in later build steps (therefore cannot be under bin or obj folders) -->
+        <!-- Write to refinement-out for use in later build steps (therefore cannot be under bin or obj folders).  -->
         <PropertyGroup>
-            <NuPipeOut>$(MSBuildProjectDirectory)/refinement-out/$(TargetFramework)</NuPipeOut>
+            <NuPipeOut>$(MSBuildProjectDirectory)/refinement-out/$(BlockCompression)</NuPipeOut>
         </PropertyGroup>
 		
         <!-- These files are not copied by Nu.Pipe but read by the app - count them as Nu.Pipe outputs. App.config is
@@ -185,43 +185,44 @@
         <Copy Condition="'$(TargetPlatformIdentifier)' != ''" SourceFiles="App.config" DestinationFolder="$(NuPipeOut)" SkipUnchangedFiles="true" />
         <Copy SourceFiles="AssetGraph.nuag;Overlayer.nuol" DestinationFolder="$(NuPipeOut)" SkipUnchangedFiles="true" />
 		
-        <!-- Uses dotnet exec instead of MSBuild Run target to avoid file-locking. -->
-        <Exec Command="dotnet &quot;$([System.IO.Directory]::GetDirectories('$(MSBuildThisFileDirectory)Nu.Pipe/bin/$(Configuration)')[0])/Nu.Pipe.dll&quot; &quot;$(MSBuildProjectDirectory)/&quot; &quot;$(NuPipeOut)&quot; &quot;$(MSBuildProjectDirectory)/refinement/$(TargetFramework)/&quot; &quot;$(BlockCompression)&quot; &quot;False&quot;"
-			  WorkingDirectory="$(MSBuildProjectDirectory)" />
+        <!-- Uses dotnet exec (via the MSBuild task) to avoid file-locking from MSBuild's Run target.
+             Nu.Pipe.Run.proj is invoked with RemoveProperties so MSBuild's project cache deduplicates
+             calls across TFM inner builds that share the same compression type, ensuring only one Nu.Pipe
+             invocation per (ProjectDirectory, BlockCompression, Configuration) tuple, where
+             global properties are removed via RemoveProperties. -->
+        <MSBuild Projects="$(MSBuildThisFileDirectory)Nu.Pipe.Run.proj"
+                 Targets="Run Nu Pipe"
+                 RemoveProperties="TargetFramework;RuntimeIdentifier;SelfContained"
+                 Properties="ProjectDirectory=$(MSBuildProjectDirectory);BlockCompression=$(BlockCompression);Configuration=$(Configuration)" />
 		
         <!-- iOS: include as bundle asset
              Android: include as fast-follow asset pack (extracted to file system, up to 512MB).
              Use on-demand for up to 2GB. Install-time packs do not have a file system path (remains compressed), don't use it. -->
         <ItemGroup>
-            <MauiAsset Include="$(NuPipeOut)/**/*.*" AssetPack="gameassets" DeliveryType="FastFollow" />
+            <MauiAsset Include="$(NuPipeOut)/**" AssetPack="gameassets" DeliveryType="FastFollow" />
         </ItemGroup>
 
-        <!-- Desktop: copy to build output directory (overwriting files marked as readonly by Nu/AssetGraph/AssetGraph.fs) -->
-        <Copy Condition="'$(TargetPlatformIdentifier)' == ''"
-              SourceFiles="@(MauiAsset)"
-              DestinationFiles="@(MauiAsset->'$(OutDir)%(RecursiveDir)%(Filename)%(Extension)')"
-              SkipUnchangedFiles="true"
-              OverwriteReadOnlyFiles="true" />
-
-    </Target>
-
-    <!-- Desktop only: copy Nu.Pipe outputs to the publish directory. The AfterTargets is set via a property so that
-	     Android/iOS projects don't register the hook at all — using Condition on the Target alone still causes MSBuild
-		 to look for the AfterTargets targets, which don't exist for mobile TFMs, causing the following error:
-         MSB4057: The target "GetCopyToPublishDirectoryItems" does not exist in the project -->
-    <PropertyGroup>
-        <_CopyNuPipeAfterTargets Condition="'$(TargetPlatformIdentifier)' == ''">_CopyResolvedFilesToPublishPreserveNewest;_CopyResolvedFilesToPublishAlways</_CopyNuPipeAfterTargets>
-    </PropertyGroup>
-    <Target Name="CopyNuPipeToPublishDir" AfterTargets="$(_CopyNuPipeAfterTargets)" DependsOnTargets="NuPipe" Condition="'$(PublishDir)' != ''">
-        <Copy SourceFiles="@(MauiAsset)"
-              DestinationFiles="@(MauiAsset->'$(PublishDir)%(RecursiveDir)%(Filename)%(Extension)')"
-              SkipUnchangedFiles="true" />
+        <!-- Desktop: create directory junctions/symlinks (for subdirectories) and hardlinks (for root files) in
+             $(OutDir) always, and $(PublishDir) only during publish. Uses a single script per platform, avoiding
+             duplicated Exec lines. Dynamic enumeration means Nu.Pipe can emit any directory or file structure
+             without updating this target. -->
+        <!-- Windows: junctions for subdirectories, hardlinks for root files -->
+        <Exec Condition="'$(TargetPlatformIdentifier)' == '' And $([System.OperatingSystem]::IsWindows())"
+              WorkingDirectory="$(MSBuildProjectDirectory)"
+              Command="powershell -NoProfile -NonInteractive -Command &quot;$targets = @('$(OutDir)'); if ('$(IsPublishing)' -eq 'true') { $targets += '$(PublishDir)' }; Get-ChildItem '$(NuPipeOut)' -Directory | ForEach-Object { $n = $_.Name; $f = $_.FullName; foreach ($t in $targets) { $p = $t + $n; if (Test-Path $p) { Remove-Item $p -Recurse -Force }; New-Item -Path $p -ItemType Junction -Target $f -Force } }; Get-ChildItem '$(NuPipeOut)' -File | ForEach-Object { $n = $_.Name; $f = $_.FullName; foreach ($t in $targets) { $p = $t + $n; if (Test-Path $p) { Remove-Item $p -Force }; New-Item -Path $p -ItemType HardLink -Target $f -Force } }&quot;" />
+        <!-- Linux/macOS: symlinks for subdirectories, hardlinks for root files -->
+        <Exec Condition="'$(TargetPlatformIdentifier)' == '' And !$([System.OperatingSystem]::IsWindows())"
+              WorkingDirectory="$(MSBuildProjectDirectory)"
+              Command="targets=&quot;$(OutDir)&quot;; [ &quot;$(IsPublishing)&quot; = 'true' ] &amp;&amp; targets=&quot;$targets $(PublishDir)&quot;; for dir in &quot;$(NuPipeOut)&quot;/*/; do [ -d &quot;$dir&quot; ] || break; b=`basename &quot;$dir&quot;`; for t in $targets; do rm -rf &quot;$t/$b&quot;; ln -sf &quot;$dir&quot; &quot;$t/$b&quot;; done; done; for f in &quot;$(NuPipeOut)&quot;/*; do [ -f &quot;$f&quot; ] || continue; b=`basename &quot;$f&quot;`; for t in $targets; do rm -f &quot;$t/$b&quot;; ln &quot;$f&quot; &quot;$t/$b&quot;; done; done" />
     </Target>
 
     <!-- Can't remove refinement directly because clean across TargetFrameworks are executed in parallel so may cause
-	     conflict errors -->
+	     conflict errors. Clean by BlockCompression so that a single clean removes the shared directory for all TFMs
+	     of the same compression type. -->
     <Target Name="CleanNuPipe" AfterTargets="Clean">
-        <RemoveDir Directories="refinement/$(TargetFramework);refinement-out/$(TargetFramework);$(OutDir)/Assets" />
+        <RemoveDir Directories="refinement/$(BlockCompression);refinement-out/$(BlockCompression)" />
+        <!-- Remove the symlink if it exists (RemoveDir on a symlink removes the link, not the target) -->
+        <RemoveDir Condition="Exists('$(OutDir)/Assets')" Directories="$(OutDir)/Assets" />
     </Target>
 
     <!-- ============================================================
@@ -541,14 +542,12 @@
 		 after they are computed. -->
 	
     <!-- Remove any resolved native item whose source path contains a Linux RID segment (/linux- or \linux-), which is
-	     never correct for Android. On Windows, MSBuild item identities use backslash separators, so we normalize them
-		 to forward slash before checking to ensure cross-platform matching. Only @(RuntimeTargetsCopyLocalItems) is
-		 checked because Linux .so files from NuGet packages always arrive under RID-specific runtimes/<rid>/native/
-		 paths, which populate this item group. Non-RID-specific <native> nuspec declarations would not contain a Linux
-		 RID segment, so @(NativeCopyLocalItems) is not filtered. -->
+	     never correct for Android, but they are still chosen if Android native items are unavailable. On Windows,
+         MSBuild item identities use backslash separators, so we normalize them to forward slash before checking to
+         ensure cross-platform matching. -->
     <Target Name="_RemoveLinuxNativeAssets" AfterTargets="ResolvePackageAssets" Condition="'$(TargetPlatformIdentifier)' == 'android'">
         <ItemGroup>
-            <RuntimeTargetsCopyLocalItems Remove="@(RuntimeTargetsCopyLocalItems)" Condition="$([System.String]::new('%(RuntimeTargetsCopyLocalItems.Identity)').Replace('\', '/').Contains('/linux-'))" />
+            <NativeCopyLocalItems Remove="@(NativeCopyLocalItems)" Condition="$([System.String]::new('%(NativeCopyLocalItems.Identity)').Replace('\', '/').Contains('/linux-'))" />
         </ItemGroup>
     </Target>
 
