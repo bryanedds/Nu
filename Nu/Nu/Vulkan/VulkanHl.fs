@@ -312,8 +312,6 @@ module Hl =
     let mutable private BackgroundingResponseState = PresentationTeardownComplete
     let mutable private Backgrounded = false
 
-    let SwapchainImageReadLayout = ColorAttachmentWrite
-
     // callback to inform render loop about app backgrounding
     // official documentation for android case: https://github.com/libsdl-org/SDL/blob/main/docs/README-android.md#activity-lifecycle
 #nowarn 202
