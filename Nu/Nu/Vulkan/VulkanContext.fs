@@ -987,7 +987,7 @@ type [<ReferenceEquality>] VulkanContext =
         Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color Undefined ColorAttachmentWrite vkc.SwapchainImage vkc.RenderCommandBuffer
         let windowResolution = windowViewport.Bounds.Size
         let renderArea = VkRect2D (0, 0, uint windowResolution.X, uint windowResolution.Y)
-        let clearColor = VkClearValue (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
+        let clearColor = VkClearValue (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
         let mutable renderingInfo = Hl.makeRenderingInfo [|vkc.SwapchainImageView|] None renderArea (Some clearColor)
         Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &renderingInfo)
         Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
