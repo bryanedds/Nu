@@ -822,7 +822,7 @@ module Hl =
         | Some memoryType -> memoryType
         | None -> Log.fail "Failed to find suitable memory type!"
 
-    /// Report the fact that a draw call has just been made with the given number of instances.
+    /// Report the fact that a draw scope has been completed.
     let reportDrawScope () =
         lock DrawReportLock (fun () ->
             DrawScopeCount <- inc DrawCallCount)

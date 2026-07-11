@@ -983,8 +983,15 @@ type [<ReferenceEquality>] VulkanContext =
         // begin render command recording
         VulkanContext.beginRenderCommandBuffer vkc
 
-        // ensure swapchain image is ready to be drawn to
-        Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color Undefined ColorAttachmentWrite vkc.Swapchain_.Image vkc.RenderCommandBuffer
+        // make swapchain image is ready to be rendered to
+        Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color Undefined ColorAttachmentWrite vkc.SwapchainImage vkc.RenderCommandBuffer
+        let windowResolution = windowViewport.Bounds.Size
+        let renderArea = VkRect2D (0, 0, uint windowResolution.X, uint windowResolution.Y)
+        let clearColor = VkClearValue (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
+        let mutable renderingInfo = Hl.makeRenderingInfo [|vkc.SwapchainImageView|] None renderArea (Some clearColor)
+        Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &renderingInfo)
+        Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
+        Hl.reportDrawScope ()
 
     /// End the frame.
     static member endFrame vkc =
