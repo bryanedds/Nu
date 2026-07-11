@@ -640,11 +640,11 @@ type [<ReferenceEquality>] VulkanContext =
         // TODO: DJL: try to automatically prevent validation from interfering with Nsight, starting with VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT.
         let validationLayerName = "VK_LAYER_KHRONOS_validation"
         let validationLayerExists = Array.exists (fun x -> Hl.getLayerName x = validationLayerName) layers
-        if Constants.Vulkan.HlDebug && not validationLayerExists then
+        if Constants.Render.Debug && not validationLayerExists then
             Log.info (validationLayerName + " is not available. Vulkan programmers must install the Vulkan SDK to enable validation.")
 
         // attempt to use validation layer when desired
-        Hl.ValidationLayersActivated <- Constants.Vulkan.HlDebug && validationLayerExists
+        Hl.ValidationLayersActivated <- Constants.Render.Debug && validationLayerExists
         use layerWrap = new StringArrayWrap ([|validationLayerName|]) // must remain in scope until vkCreateInstance
 
         // get sdl extensions
