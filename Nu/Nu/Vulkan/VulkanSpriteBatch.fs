@@ -131,9 +131,9 @@ module SpriteBatch =
                 let scissorLogical =
                     VkRect2D
                         ((minScissor.X |> round |> int) + offset.X,
-                            (single renderAreaLogical.extent.height - minScissor.Y |> round |> int) + offset.Y,
-                            uint sizeScissor.X,
-                            uint sizeScissor.Y)
+                         (single renderAreaLogical.extent.height - minScissor.Y |> round |> int) + offset.Y,
+                         uint sizeScissor.X,
+                         uint sizeScissor.Y)
                 scissor <- Hl.scaleRectForPixelDensity pixelDensity scissorLogical
                 scissor <- Hl.clipRect renderArea scissor
             | ValueNone -> ()
