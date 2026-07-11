@@ -3766,7 +3766,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
         // delete textures as requested on previous frame
         if renderer.VulkanContext.RenderAllowed then
-            TextureDumpster.beginFrame renderer.TextureDumpster renderer.VulkanContext
+            TextureDumpster.sweep renderer.TextureDumpster renderer.VulkanContext
 
         // reload render assets when requested on previous frame
         if renderer.ReloadAssetsRequested then

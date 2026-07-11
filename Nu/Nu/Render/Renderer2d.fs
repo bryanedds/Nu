@@ -937,25 +937,22 @@ type [<ReferenceEquality>] VulkanRenderer2d =
 
     static member private preRender eyeCenter eyeSize viewport renderMessages renderer =
 
-        // begin texture dumpster frame
+        // delete textures as requested on previous frame
         if renderer.VulkanContext.RenderAllowed then
-            TextureDumpster.beginFrame renderer.TextureDumpster renderer.VulkanContext
+            TextureDumpster.sweep renderer.TextureDumpster renderer.VulkanContext
 
         // begin sprite batch frame
-        if renderer.VulkanContext.RenderAllowed then
-            let viewProjectionAbsolute = Viewport.getViewProjection2d true eyeCenter eyeSize viewport
-            let viewProjectionRelative = Viewport.getViewProjection2d false eyeCenter eyeSize viewport
-            let viewProjectionClipAbsolute = Viewport.getViewProjectionClip true eyeCenter eyeSize viewport
-            let viewProjectionClipRelative = Viewport.getViewProjectionClip false eyeCenter eyeSize viewport
-            SpriteBatch.beginSpriteBatchFrame (&viewProjectionAbsolute, &viewProjectionRelative, &viewProjectionClipAbsolute, &viewProjectionClipRelative, renderer.SpriteBatchEnv)
+        let viewProjectionAbsolute = Viewport.getViewProjection2d true eyeCenter eyeSize viewport
+        let viewProjectionRelative = Viewport.getViewProjection2d false eyeCenter eyeSize viewport
+        let viewProjectionClipAbsolute = Viewport.getViewProjectionClip true eyeCenter eyeSize viewport
+        let viewProjectionClipRelative = Viewport.getViewProjectionClip false eyeCenter eyeSize viewport
+        SpriteBatch.beginSpriteBatchFrame (&viewProjectionAbsolute, &viewProjectionRelative, &viewProjectionClipAbsolute, &viewProjectionClipRelative, renderer.SpriteBatchEnv)
 
         // begin single sprite frame
-        if renderer.VulkanContext.RenderAllowed then
-            match renderer.SpritePipeline with (_, _, pipeline) -> Pipeline.beginFrame pipeline
+        match renderer.SpritePipeline with (_, _, pipeline) -> Pipeline.beginFrame pipeline
 
         // being contour frame
-        if renderer.VulkanContext.RenderAllowed then
-            match renderer.ContourTessellationPipeline with (_, _, _, pipeline) -> Pipeline.beginFrame pipeline
+        match renderer.ContourTessellationPipeline with (_, _, _, pipeline) -> Pipeline.beginFrame pipeline
 
         // handle render messages
         VulkanRenderer2d.categorizeRenderMessages renderMessages renderer
@@ -993,10 +990,10 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         renderer.LayeredOperations.Clear ()
 
         // end sprite batch frame
-        if renderer.VulkanContext.RenderAllowed then
-            SpriteBatch.endSpriteBatchFrame renderer.Viewport renderer.SpriteBatchEnv
-        
-        // sweep up any text textures that went unused this frame
+        SpriteBatch.endSpriteBatchFrame renderer.Viewport renderer.SpriteBatchEnv
+
+        // sweep up any text textures that went unused this frame and mark remaining text textures as unused for next
+        // frame
         if renderer.VulkanContext.RenderAllowed then
             let textTexturesUnused =
                 renderer.TextTextures
@@ -1007,13 +1004,10 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                 let (_, _, _, textTexture) = snd renderer.TextTextures[entry]
                 TextureDumpster.toss textTexture renderer.TextureDumpster
                 renderer.TextTextures.Remove entry |> ignore<bool>
-
-        // mark remaining text textures as unused for next frame
-        if renderer.VulkanContext.RenderAllowed then
             for entry in renderer.TextTextures.Values do
                 let used = fst entry
                 used.Value <- false
-        
+
         // sweep up any skeleton renderers that went unused this frame
         if renderer.VulkanContext.RenderAllowed then
             (* TODO: DJL: enable when spine rendering is working again.

@@ -1124,14 +1124,11 @@ type TextureDumpster =
     private
         { Textures_ : Texture List }
 
-    static member private sweep dumpster vkc =
+    /// Destroy all textures from latest finished frame.
+    static member sweep dumpster vkc =
         for texture in dumpster.Textures_ do
             Texture.destroy texture vkc
         dumpster.Textures_.Clear ()
-
-    /// Destroy all textures from latest finished frame.
-    static member beginFrame dumpster vkc =
-        TextureDumpster.sweep dumpster vkc
 
     /// Relinquish texture for safe destruction.
     static member toss texture dumpster =
