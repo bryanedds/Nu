@@ -881,6 +881,7 @@ module WorldImGui =
                 let mutable lightShadowBias = lighting3dConfig.LightShadowBias
                 let mutable lightShadowSampleScalar = lighting3dConfig.LightShadowSampleScalar
                 let mutable lightShadowExponent = lighting3dConfig.LightShadowExponent
+                let mutable lightShadowRadius = lighting3dConfig.LightShadowRadius
                 let mutable lightShadowDensity = lighting3dConfig.LightShadowDensity
                 let mutable lightMapSingletonBlendMargin = lighting3dConfig.LightMapSingletonBlendMargin
                 let mutable lightExposure = lighting3dConfig.LightExposure
@@ -953,6 +954,7 @@ module WorldImGui =
                 lighting3dEdited <- ImGui.SliderFloat ("Light Shadow Bias", &lightShadowBias, 0.0f, 0.05f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Light Shadow Sample Scalar", &lightShadowSampleScalar, 0.0f, 0.05f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Light Shadow Exponent", &lightShadowExponent, 0.0f, 90.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Light Shadow Radius", &lightShadowRadius, 0.0f, 5.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Light Shadow Density", &lightShadowDensity, 0.0f, 32.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Light Map Singleton Blend Margin", &lightMapSingletonBlendMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 ImGui.Text "Exposure / Tone Mapping"
@@ -1042,6 +1044,7 @@ module WorldImGui =
                           LightShadowBias = lightShadowBias
                           LightShadowSampleScalar = lightShadowSampleScalar
                           LightShadowExponent = lightShadowExponent
+                          LightShadowRadius = lightShadowRadius
                           LightShadowDensity = lightShadowDensity
                           LightMapSingletonBlendMargin = lightMapSingletonBlendMargin
                           LightExposure = lightExposure

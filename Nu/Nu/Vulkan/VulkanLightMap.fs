@@ -211,7 +211,7 @@ module LightMap =
 
             // specify cube map
             let mutable cubeMapDescriptorSet = Pipeline.specifyDescriptorSet 1 cubeMap pipeline.Pipeline vkc $ fun vkSet ->
-                Pipeline.writeDescriptorSampledImage 0 0 cubeMap vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 0 0 cubeMap vkSet vkc
 
             // specify sampler
             let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 2 sampler pipeline.Pipeline vkc $ fun vkSet ->

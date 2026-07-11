@@ -167,7 +167,7 @@ module SpriteBatch =
 
                     // specify material
                     let mutable materialDescriptorSet = Pipeline.specifyDescriptorSet 1 texture env.Pipeline env.VulkanContext $ fun vkSet ->
-                        Pipeline.writeDescriptorSampledImage 0 0 texture vkSet env.VulkanContext
+                        Pipeline.writeDescriptorSampledTexture 0 0 texture vkSet env.VulkanContext
 
                     // specify sampler
                     let sampler = if texture.MipLevels = 1 then env.UnfilteredSampler else env.FilteredSampler

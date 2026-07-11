@@ -416,11 +416,11 @@ type Pipeline =
         // advance buffer
         Buffer.advance buffer
 
-    static member writeDescriptorSampledImage (binding : int) (descriptorIndex : int) (texture : Texture) vkDescriptorSet (vkc : VulkanContext) =
+    static member writeDescriptorSampledImageView (binding : int) (descriptorIndex : int) (imageView : VkImageView) vkDescriptorSet (vkc : VulkanContext) =
 
         // image info
         let mutable info = VkDescriptorImageInfo ()
-        info.imageView <- texture.ImageView
+        info.imageView <- imageView
         info.imageLayout <- ColorAttachmentRead.VkImageLayout
 
         // write descriptor set
@@ -433,13 +433,13 @@ type Pipeline =
         write.pImageInfo <- asPointer &info
         Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
 
-    static member writeDescriptorSampledImages (binding : int) (descriptorIndex : int) (textures : Texture array) vkDescriptorSet (vkc : VulkanContext) =
+    static member writeDescriptorSampledImageViews (binding : int) (descriptorIndex : int) (imageViews : VkImageView array) vkDescriptorSet (vkc : VulkanContext) =
 
         // image infos
-        let infosPtr = NativePtr.stackalloc<VkDescriptorImageInfo> textures.Length
-        for i in 0 .. dec textures.Length do
+        let infosPtr = NativePtr.stackalloc<VkDescriptorImageInfo> imageViews.Length
+        for i in 0 .. dec imageViews.Length do
             let mutable info = VkDescriptorImageInfo ()
-            info.imageView <- textures[i].ImageView
+            info.imageView <- imageViews[i]
             info.imageLayout <- ColorAttachmentRead.VkImageLayout
             NativePtr.set infosPtr i info
 
@@ -448,10 +448,38 @@ type Pipeline =
         write.dstSet <- vkDescriptorSet
         write.dstBinding <- uint binding
         write.dstArrayElement <- uint descriptorIndex
-        write.descriptorCount <- uint textures.Length
+        write.descriptorCount <- uint imageViews.Length
         write.descriptorType <- VkDescriptorType.SampledImage
         write.pImageInfo <- infosPtr
         Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
+
+    static member writeDescriptorCombinedImageViewSampler (binding : int) (descriptorIndex : int) (imageView : VkImageView) (sampler : Sampler) vkDescriptorSet (vkc : VulkanContext) =
+
+        // image info
+        let mutable info = VkDescriptorImageInfo ()
+        info.sampler <- sampler.VkSampler
+        info.imageView <- imageView
+        info.imageLayout <- ColorAttachmentRead.VkImageLayout
+
+        // write descriptor set
+        let mutable write = VkWriteDescriptorSet ()
+        write.dstSet <- vkDescriptorSet
+        write.dstBinding <- uint binding
+        write.dstArrayElement <- uint descriptorIndex
+        write.descriptorCount <- 1u
+        write.descriptorType <- VkDescriptorType.CombinedImageSampler
+        write.pImageInfo <- asPointer &info
+        Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
+
+    static member writeDescriptorSampledTexture binding descriptorIndex (texture : Texture) vkDescriptorSet vkc =
+        Pipeline.writeDescriptorSampledImageView binding descriptorIndex texture.ImageView vkDescriptorSet vkc
+
+    static member writeDescriptorSampledTextures binding descriptorIndex (textures : Texture array) vkDescriptorSet vkc =
+        let imageViews = Array.map (fun (texture : Texture) -> texture.ImageView) textures
+        Pipeline.writeDescriptorSampledImageViews binding descriptorIndex imageViews vkDescriptorSet vkc
+
+    static member writeDescriptorCombinedTextureSampler binding descriptorIndex (texture : Texture) sampler vkDescriptorSet vkc =
+        Pipeline.writeDescriptorCombinedImageViewSampler binding descriptorIndex texture.ImageView sampler vkDescriptorSet vkc
 
     static member writeDescriptorSampler (binding : int) (descriptorIndex : int) (sampler : Sampler) vkDescriptorSet (vkc : VulkanContext) =
         
@@ -466,24 +494,6 @@ type Pipeline =
         write.dstArrayElement <- uint descriptorIndex
         write.descriptorCount <- 1u
         write.descriptorType <- VkDescriptorType.Sampler
-        write.pImageInfo <- asPointer &info
-        Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
-    
-    static member writeDescriptorCombinedImageSampler (binding : int) (descriptorIndex : int) (texture : Texture) (sampler : Sampler) vkDescriptorSet (vkc : VulkanContext) =
-
-        // image info
-        let mutable info = VkDescriptorImageInfo ()
-        info.sampler <- sampler.VkSampler
-        info.imageView <- texture.ImageView
-        info.imageLayout <- ColorAttachmentRead.VkImageLayout
-
-        // write descriptor set
-        let mutable write = VkWriteDescriptorSet ()
-        write.dstSet <- vkDescriptorSet
-        write.dstBinding <- uint binding
-        write.dstArrayElement <- uint descriptorIndex
-        write.descriptorCount <- 1u
-        write.descriptorType <- VkDescriptorType.CombinedImageSampler
         write.pImageInfo <- asPointer &info
         Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
 
@@ -572,7 +582,7 @@ type Pipeline =
         depthTestFormatOpt
         buffers
         (vkc : VulkanContext) =
-        
+
         // convert vertex and push constant data to vulkan objects
         let vertexBindingDescriptions = Array.map (fun (binding : VertexBinding) -> Hl.makeVertexBinding binding.Binding binding.Stride binding.InputRate ) vertexBindings
         let vertexAttributes =
@@ -590,19 +600,19 @@ type Pipeline =
                 descriptorSetDefinitions[i].DescriptorBindings
                 |> Array.map (fun binding -> Hl.makeDescriptorBinding binding.Binding binding.DescriptorType binding.DescriptorCount binding.ShaderStage)
             descriptorSetLayouts[i] <- Pipeline.createDescriptorSetLayout layoutBindingsSets[i] vkc
-        
+
         // create descriptor sets
         let descriptorSets = Array.zeroCreate descriptorSetDefinitions.Length
         for i in 0 .. dec descriptorSetDefinitions.Length do
             let definition = descriptorSetDefinitions[i]
             descriptorSets[i] <- definition.CreateDescriptorSet descriptorSetLayouts[i] vkc
-        
+
         // create pipeline layout and vkPipelines
         if blends.Length < 1 then Log.fail "No pipeline blend was specified."
         let pipelineSettings = Array.allPairs blends cullModes
         let vkPipelineLayout = Pipeline.createVkPipelineLayout descriptorSetLayouts pushConstantRanges vkc
         let vkPipelines = Pipeline.tryCreateVkPipelines shaderPath pipelineSettings vertexBindingDescriptions vertexAttributes vkPipelineLayout colorAttachmentFormats depthTestFormatOpt vkc
-        
+
         // make Pipeline
         let pipeline =
             { VkPipelines_ = vkPipelines

@@ -180,7 +180,7 @@ module SpriteSingleton =
 
                 // specify material
                 let mutable materialDescriptorSet = Pipeline.specifyDescriptorSet 1 texture pipeline vkc $ fun vkSet ->
-                    Pipeline.writeDescriptorSampledImage 0 0 texture vkSet vkc
+                    Pipeline.writeDescriptorSampledTexture 0 0 texture vkSet vkc
 
                 // specify sampler
                 let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 2 sampler pipeline vkc $ fun vkSet ->

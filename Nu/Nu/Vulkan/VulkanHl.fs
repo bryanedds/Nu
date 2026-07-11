@@ -15,6 +15,7 @@ open Prime
 open Nu
 
 /// The format of an image.
+/// TODO: P0: see if we can make this not clash names with the other ImageFormat type.
 type ImageFormat =
     | Rgba8
     | Rgba16f

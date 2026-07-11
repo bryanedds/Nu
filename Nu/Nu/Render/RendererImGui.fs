@@ -298,7 +298,7 @@ type VulkanRendererImGui
                                     // specify material
                                     let (texture, sampler) as combined = (renderer.GetTexture textureId, renderer.GetSampler textureId)
                                     let mutable materialDescriptorSet = Pipeline.specifyDescriptorSet descriptorSetIndex combined pipeline vkc $ fun vkSet ->
-                                        Pipeline.writeDescriptorCombinedImageSampler 0 0 texture sampler vkSet vkc
+                                        Pipeline.writeDescriptorCombinedTextureSampler 0 0 texture sampler vkSet vkc
 
                                     // bind descriptor set
                                     Vulkan.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.PipelineLayout, 0u, 1u, asPointer &materialDescriptorSet, 0u, nullPtr)

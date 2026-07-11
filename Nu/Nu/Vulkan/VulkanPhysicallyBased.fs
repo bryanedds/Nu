@@ -123,6 +123,11 @@ type Ssao =
     [<FieldOffset(24)>] val mutable sampleCount : int
 
 [<Struct; StructLayout (LayoutKind.Explicit)>]
+type GaussianEsm =
+    [<FieldOffset(0)>] val mutable scale : Vector2
+    [<FieldOffset(8)>] val mutable radius : single
+
+[<Struct; StructLayout (LayoutKind.Explicit)>]
 type ToneMapping =
     [<FieldOffset(0)>] val mutable lightExposure : single
     [<FieldOffset(4)>] val mutable toneMapType : int
@@ -154,12 +159,13 @@ type PhysicallyBasedAttachments =
       SsaoFilteredAttachment : Texture
       ColoringAttachments : Texture * Texture
       CompositionAttachment : Texture
-      ToneMappingAttachment : Texture
-      GammaCorrectionAttachment : Texture
+      GaussianEsmAttachment : Texture
       ColorFull0Attachment : Texture
       ColorFull1Attachment : Texture
       ColorHalf0Attachment : Texture
-      ColorHalf1Attachment : Texture }
+      ColorHalf1Attachment : Texture
+      ToneMappingAttachment : Texture
+      GammaCorrectionAttachment : Texture }
 
 /// Describes the configurable properties of a physically-based material.
 type PhysicallyBasedMaterialProperties =
@@ -624,6 +630,11 @@ type PhysicallyBasedDeferredCompositionPipeline =
 type FilterBoxPipeline =
     { Pipeline : Pipeline }
 
+/// Describes an esm gaussian filter pipeline that's loaded into GPU.
+type FilterGaussianEsmPipeline =
+    { GaussianEsmUniform : Nu.Vulkan.Buffer
+      Pipeline : Pipeline }
+
 /// Describes a tone-mapping filter pipeline that's loaded into GPU.
 type FilterToneMappingPipeline =
     { ToneMappingUniform : Nu.Vulkan.Buffer
@@ -661,6 +672,7 @@ type PhysicallyBasedPipelines =
       ForwardStaticPipeline : PhysicallyBasedPipeline
       ForwardAnimatedPipeline : PhysicallyBasedPipeline
       FilterBox1dPipeline : FilterBoxPipeline
+      FilterGaussianEsmPipeline : FilterGaussianEsmPipeline
       FilterToneMappingPipeline : FilterToneMappingPipeline
       FilterFxaaPipeline : FilterFxaaPipeline
       FilterGammaCorrectionPipeline : FilterGammaCorrectionPipeline }
@@ -802,8 +814,9 @@ module PhysicallyBased =
         // create composition attachments
         let compositionAttachment = Attachment.createCompositionAttachments geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y vkc
 
-        // create tone-mapping attachments
-        let toneMappingAttachment = Attachment.createToneMappingAttachments geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y vkc
+        // create gaussian esm attachment
+        let gaussianEsmResolution = geometryViewport.ShadowTextureResolution
+        let gaussianEsmAttachment = Attachment.createColorAttachment Texture2d VkImageUsageFlags.Sampled Rg32f Rg gaussianEsmResolution.X gaussianEsmResolution.Y vkc
 
         // create color full attachments
         let colorFullUsageFlags = VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferSrc ||| VkImageUsageFlags.TransferDst
@@ -814,6 +827,9 @@ module PhysicallyBased =
         let colorHalfUsageFlags = colorFullUsageFlags
         let colorHalf0Attachment = Attachment.createColorAttachment Texture2d colorHalfUsageFlags Rgba16f Rgba (geometryViewport.Bounds.Size.X / 2) (geometryViewport.Bounds.Size.Y / 2) vkc
         let colorHalf1Attachment = Attachment.createColorAttachment Texture2d colorHalfUsageFlags Rgba16f Rgba (geometryViewport.Bounds.Size.X / 2) (geometryViewport.Bounds.Size.Y / 2) vkc
+
+        // create tone-mapping attachments
+        let toneMappingAttachment = Attachment.createToneMappingAttachments geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y vkc
 
         // create gamma-correction attachments
         let gammaCorrectionAttachment = Attachment.createGammaCorrectionAttachments geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y vkc
@@ -833,12 +849,13 @@ module PhysicallyBased =
           SsaoFilteredAttachment = ssaoFilteredAttachment
           ColoringAttachments = coloringAttachments
           CompositionAttachment = compositionAttachment
-          ToneMappingAttachment = toneMappingAttachment
-          GammaCorrectionAttachment = gammaCorrectionAttachment
+          GaussianEsmAttachment = gaussianEsmAttachment
           ColorFull0Attachment = colorFull0Attachment
           ColorFull1Attachment = colorFull1Attachment
           ColorHalf0Attachment = colorHalf0Attachment
-          ColorHalf1Attachment = colorHalf1Attachment }
+          ColorHalf1Attachment = colorHalf1Attachment
+          ToneMappingAttachment = toneMappingAttachment
+          GammaCorrectionAttachment = gammaCorrectionAttachment }
 
     /// Update the size of the attachments. Must be used every frame.
     let updatePhysicallyBasedAttachmentsSize (geometryViewport : Viewport) (attachments : PhysicallyBasedAttachments) vkc =
@@ -858,12 +875,12 @@ module PhysicallyBased =
         Attachment.updateColorAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.SsaoFilteredAttachment vkc
         Attachment.updateColoringAttachmentsSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.ColoringAttachments vkc
         Attachment.updateCompositionAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.CompositionAttachment vkc
-        Attachment.updateToneMappingAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.ToneMappingAttachment vkc
-        Attachment.updateGammaCorrectionAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.GammaCorrectionAttachment vkc
         Attachment.updateColorAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.ColorFull0Attachment vkc
         Attachment.updateColorAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.ColorFull1Attachment vkc
         Attachment.updateColorAttachmentSize (geometryViewport.Bounds.Size.X / 2) (geometryViewport.Bounds.Size.Y / 2) attachments.ColorHalf0Attachment vkc
         Attachment.updateColorAttachmentSize (geometryViewport.Bounds.Size.X / 2) (geometryViewport.Bounds.Size.Y / 2) attachments.ColorHalf1Attachment vkc
+        Attachment.updateToneMappingAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.ToneMappingAttachment vkc
+        Attachment.updateGammaCorrectionAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.GammaCorrectionAttachment vkc
 
     /// Destroy the physically-based attachments.
     let destroyPhysicallyBasedAttachments (attachments : PhysicallyBasedAttachments) vkc =
@@ -883,12 +900,12 @@ module PhysicallyBased =
         Attachment.destroyColorAttachment attachments.SsaoFilteredAttachment vkc
         Attachment.destroyColoringAttachments attachments.ColoringAttachments vkc
         Attachment.destroyCompositionAttachment attachments.CompositionAttachment vkc
-        Attachment.destroyToneMappingAttachment attachments.ToneMappingAttachment vkc
-        Attachment.destroyGammaCorrectionAttachment attachments.GammaCorrectionAttachment vkc
         Attachment.destroyColorAttachment attachments.ColorFull0Attachment vkc
         Attachment.destroyColorAttachment attachments.ColorFull1Attachment vkc
         Attachment.destroyColorAttachment attachments.ColorHalf0Attachment vkc
         Attachment.destroyColorAttachment attachments.ColorHalf1Attachment vkc
+        Attachment.destroyToneMappingAttachment attachments.ToneMappingAttachment vkc
+        Attachment.destroyGammaCorrectionAttachment attachments.GammaCorrectionAttachment vkc
 
     /// Create physically-based material from an assimp mesh, falling back on defaults in case of missing textures.
     /// Uses file name-based inferences to look for texture files in case the ones that were hard-coded in the model
@@ -1950,19 +1967,19 @@ module PhysicallyBased =
 
                 // specify material
                 let mutable materialDescriptorSet = Pipeline.specifyDescriptorSet 1 material pipeline.Pipeline vkc $ fun vkSet ->
-                    Pipeline.writeDescriptorSampledImage 0 0 material.AlbedoTexture vkSet vkc
-                    Pipeline.writeDescriptorSampledImage 1 0 material.RoughnessTexture vkSet vkc
-                    Pipeline.writeDescriptorSampledImage 2 0 material.MetallicTexture vkSet vkc
-                    Pipeline.writeDescriptorSampledImage 3 0 material.AmbientOcclusionTexture vkSet vkc
-                    Pipeline.writeDescriptorSampledImage 4 0 material.EmissionTexture vkSet vkc
-                    Pipeline.writeDescriptorSampledImage 5 0 material.NormalTexture vkSet vkc
-                    Pipeline.writeDescriptorSampledImage 6 0 material.HeightTexture vkSet vkc
-                    Pipeline.writeDescriptorSampledImage 7 0 material.SubdermalTexture vkSet vkc
-                    Pipeline.writeDescriptorSampledImage 8 0 material.FinenessTexture vkSet vkc
-                    Pipeline.writeDescriptorSampledImage 9 0 material.ScatterTexture vkSet vkc
-                    Pipeline.writeDescriptorSampledImage 10 0 material.ClearCoatTexture vkSet vkc
-                    Pipeline.writeDescriptorSampledImage 11 0 material.ClearCoatRoughnessTexture vkSet vkc
-                    Pipeline.writeDescriptorSampledImage 12 0 material.ClearCoatNormalTexture vkSet vkc
+                    Pipeline.writeDescriptorSampledTexture 0 0 material.AlbedoTexture vkSet vkc
+                    Pipeline.writeDescriptorSampledTexture 1 0 material.RoughnessTexture vkSet vkc
+                    Pipeline.writeDescriptorSampledTexture 2 0 material.MetallicTexture vkSet vkc
+                    Pipeline.writeDescriptorSampledTexture 3 0 material.AmbientOcclusionTexture vkSet vkc
+                    Pipeline.writeDescriptorSampledTexture 4 0 material.EmissionTexture vkSet vkc
+                    Pipeline.writeDescriptorSampledTexture 5 0 material.NormalTexture vkSet vkc
+                    Pipeline.writeDescriptorSampledTexture 6 0 material.HeightTexture vkSet vkc
+                    Pipeline.writeDescriptorSampledTexture 7 0 material.SubdermalTexture vkSet vkc
+                    Pipeline.writeDescriptorSampledTexture 8 0 material.FinenessTexture vkSet vkc
+                    Pipeline.writeDescriptorSampledTexture 9 0 material.ScatterTexture vkSet vkc
+                    Pipeline.writeDescriptorSampledTexture 10 0 material.ClearCoatTexture vkSet vkc
+                    Pipeline.writeDescriptorSampledTexture 11 0 material.ClearCoatRoughnessTexture vkSet vkc
+                    Pipeline.writeDescriptorSampledTexture 12 0 material.ClearCoatNormalTexture vkSet vkc
 
                 // specify dynamic when animated
                 let mutable dynamicDescriptorSet =
@@ -2185,16 +2202,16 @@ module PhysicallyBased =
                 Pipeline.writeDescriptorStorageBuffer 3 0 pipeline.ShadowMatrixUniform vkSet vkc
 
                 // specify textures
-                Pipeline.writeDescriptorSampledImage 4 0 depthTexture vkSet vkc
-                Pipeline.writeDescriptorSampledImage 5 0 albedoTexture vkSet vkc
-                Pipeline.writeDescriptorSampledImage 6 0 materialTexture vkSet vkc
-                Pipeline.writeDescriptorSampledImage 7 0 normalPlusTexture vkSet vkc
-                Pipeline.writeDescriptorSampledImage 8 0 subdermalPlusTexture vkSet vkc
-                Pipeline.writeDescriptorSampledImage 9 0 scatterPlusTexture vkSet vkc
-                Pipeline.writeDescriptorSampledImage 10 0 clearCoatPlusTexture vkSet vkc
-                Pipeline.writeDescriptorSampledImage 11 0 shadowTextureArray vkSet vkc
-                Pipeline.writeDescriptorSampledImages 12 0 (Array.tryTake Constants.Render.ShadowMapsMax shadowMaps) vkSet vkc
-                Pipeline.writeDescriptorSampledImages 13 0 (Array.tryTake Constants.Render.ShadowCascadesMax shadowCascades) vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 4 0 depthTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 5 0 albedoTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 6 0 materialTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 7 0 normalPlusTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 8 0 subdermalPlusTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 9 0 scatterPlusTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 10 0 clearCoatPlusTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 11 0 shadowTextureArray vkSet vkc
+                Pipeline.writeDescriptorSampledTextures 12 0 (Array.tryTake Constants.Render.ShadowMapsMax shadowMaps) vkSet vkc
+                Pipeline.writeDescriptorSampledTextures 13 0 (Array.tryTake Constants.Render.ShadowCascadesMax shadowCascades) vkSet vkc
 
             // specify samplers
             let mutable samplersDescriptorSet = Pipeline.specifyDescriptorSet 1 Unit pipeline.Pipeline vkc $ fun vkSet ->
@@ -2404,10 +2421,10 @@ module PhysicallyBased =
                 Pipeline.writeDescriptorStorageBuffer 4 0 pipeline.ShadowMatricesUniform vkSet vkc
 
                 // specify textures
-                Pipeline.writeDescriptorSampledImage 5 0 depthTexture vkSet vkc
-                Pipeline.writeDescriptorSampledImage 6 0 shadowTextureArray vkSet vkc
-                Pipeline.writeDescriptorSampledImages 7 0 (Array.tryTake Constants.Render.ShadowMapsMax shadowMaps) vkSet vkc
-                Pipeline.writeDescriptorSampledImages 8 0 (Array.tryTake Constants.Render.ShadowCascadesMax shadowCascades) vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 5 0 depthTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 6 0 shadowTextureArray vkSet vkc
+                Pipeline.writeDescriptorSampledTextures 7 0 (Array.tryTake Constants.Render.ShadowMapsMax shadowMaps) vkSet vkc
+                Pipeline.writeDescriptorSampledTextures 8 0 (Array.tryTake Constants.Render.ShadowCascadesMax shadowCascades) vkSet vkc
 
             // specify samplers
             let mutable samplersDescriptorSet = Pipeline.specifyDescriptorSet 1 Unit pipeline.Pipeline vkc $ fun vkSet ->
@@ -2565,8 +2582,8 @@ module PhysicallyBased =
                 Pipeline.writeDescriptorStorageBuffer 2 0 pipeline.LightsGeneralUniform vkSet vkc
 
                 // specify static environment textures
-                Pipeline.writeDescriptorSampledImage 3 0 depthTexture vkSet vkc
-                Pipeline.writeDescriptorSampledImage 4 0 normalPlusTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 3 0 depthTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 4 0 normalPlusTexture vkSet vkc
 
             // specify samplers
             let mutable samplersDescriptorSet = Pipeline.specifyDescriptorSet 1 Unit pipeline.Pipeline vkc $ fun vkSet ->
@@ -2713,8 +2730,8 @@ module PhysicallyBased =
                 Pipeline.writeDescriptorStorageBuffer 2 0 pipeline.LightMapsUniform vkSet vkc
 
                 // specify static environment textures
-                Pipeline.writeDescriptorSampledImage 3 0 depthTexture vkSet vkc
-                Pipeline.writeDescriptorSampledImage 4 0 lightMappingTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 3 0 depthTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 4 0 lightMappingTexture vkSet vkc
 
             // specify samplers
             let mutable samplersDescriptorSet = Pipeline.specifyDescriptorSet 1 Unit pipeline.Pipeline vkc $ fun vkSet ->
@@ -2841,11 +2858,11 @@ module PhysicallyBased =
                 Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.EyeUniform vkSet vkc
 
                 // specify static environment textures
-                Pipeline.writeDescriptorSampledImage 1 0 depthTexture vkSet vkc
-                Pipeline.writeDescriptorSampledImage 2 0 normalPlusTexture vkSet vkc
-                Pipeline.writeDescriptorSampledImage 3 0 lightMappingTexture vkSet vkc
-                Pipeline.writeDescriptorSampledImage 4 0 irradianceMap vkSet vkc
-                Pipeline.writeDescriptorSampledImages 5 0 (Array.tryTake Constants.Render.LightMapsMaxDeferred irradianceMaps) vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 1 0 depthTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 2 0 normalPlusTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 3 0 lightMappingTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 4 0 irradianceMap vkSet vkc
+                Pipeline.writeDescriptorSampledTextures 5 0 (Array.tryTake Constants.Render.LightMapsMaxDeferred irradianceMaps) vkSet vkc
 
             // specify samplers
             let mutable samplersDescriptorSet = Pipeline.specifyDescriptorSet 1 Unit pipeline.Pipeline vkc $ fun vkSet ->
@@ -3000,13 +3017,13 @@ module PhysicallyBased =
                 Pipeline.writeDescriptorStorageBuffer 1 0 pipeline.LightMapsUniform vkSet vkc
 
                 // specify static environment textures
-                Pipeline.writeDescriptorSampledImage 2 0 depthTexture vkSet vkc
-                Pipeline.writeDescriptorSampledImage 3 0 materialTexture vkSet vkc
-                Pipeline.writeDescriptorSampledImage 4 0 normalPlusTexture vkSet vkc
-                Pipeline.writeDescriptorSampledImage 5 0 clearCoatPlusTexture vkSet vkc
-                Pipeline.writeDescriptorSampledImage 6 0 lightMappingTexture vkSet vkc
-                Pipeline.writeDescriptorSampledImage 7 0 environmentFilterMap vkSet vkc
-                Pipeline.writeDescriptorSampledImages 8 0 (Array.tryTake Constants.Render.LightMapsMaxDeferred environmentFilterMaps) vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 2 0 depthTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 3 0 materialTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 4 0 normalPlusTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 5 0 clearCoatPlusTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 6 0 lightMappingTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 7 0 environmentFilterMap vkSet vkc
+                Pipeline.writeDescriptorSampledTextures 8 0 (Array.tryTake Constants.Render.LightMapsMaxDeferred environmentFilterMaps) vkSet vkc
 
             // specify samplers
             let mutable samplersDescriptorSet = Pipeline.specifyDescriptorSet 1 Unit pipeline.Pipeline vkc $ fun vkSet ->
@@ -3140,8 +3157,8 @@ module PhysicallyBased =
                 Pipeline.writeDescriptorStorageBuffer 1 0 pipeline.SsaoUniform vkSet vkc
 
                 // specify textures
-                Pipeline.writeDescriptorSampledImage 2 0 depthTexture vkSet vkc
-                Pipeline.writeDescriptorSampledImage 3 0 normalPlusTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 2 0 depthTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 3 0 normalPlusTexture vkSet vkc
 
             // specify sampler
             let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 1 Unit pipeline.Pipeline vkc $ fun vkSet ->
@@ -3325,17 +3342,17 @@ module PhysicallyBased =
                 Pipeline.writeDescriptorStorageBuffer 1 0 pipeline.LightingUniform vkSet vkc
 
                 // specify textures
-                Pipeline.writeDescriptorSampledImage 2 0 depthTexture vkSet vkc
-                Pipeline.writeDescriptorSampledImage 3 0 albedoTexture vkSet vkc
-                Pipeline.writeDescriptorSampledImage 4 0 materialTexture vkSet vkc
-                Pipeline.writeDescriptorSampledImage 5 0 normalPlusTexture vkSet vkc
-                Pipeline.writeDescriptorSampledImage 6 0 clearCoatPlusTexture vkSet vkc
-                Pipeline.writeDescriptorSampledImage 7 0 lightAccumTexture vkSet vkc
-                Pipeline.writeDescriptorSampledImage 8 0 brdfTexture vkSet vkc
-                Pipeline.writeDescriptorSampledImage 9 0 ambientTexture vkSet vkc
-                Pipeline.writeDescriptorSampledImage 10 0 irradianceTexture vkSet vkc
-                Pipeline.writeDescriptorSampledImage 11 0 environmentFilterTexture vkSet vkc
-                Pipeline.writeDescriptorSampledImage 12 0 ssaoTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 2 0 depthTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 3 0 albedoTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 4 0 materialTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 5 0 normalPlusTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 6 0 clearCoatPlusTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 7 0 lightAccumTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 8 0 brdfTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 9 0 ambientTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 10 0 irradianceTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 11 0 environmentFilterTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 12 0 ssaoTexture vkSet vkc
 
             // specify samplers
             let mutable samplersDescriptorSet = Pipeline.specifyDescriptorSet 1 Unit pipeline.Pipeline vkc $ fun vkSet ->
@@ -3478,9 +3495,9 @@ module PhysicallyBased =
                 Pipeline.writeDescriptorStorageBuffer 1 0 pipeline.LightingUniform vkSet vkc
 
                 // specify textures
-                Pipeline.writeDescriptorSampledImage 2 0 depthTexture vkSet vkc
-                Pipeline.writeDescriptorSampledImage 3 0 colorTexture vkSet vkc
-                Pipeline.writeDescriptorSampledImage 4 0 fogAccumTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 2 0 depthTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 3 0 colorTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 4 0 fogAccumTexture vkSet vkc
 
             // specify samplers
             let mutable samplersDescriptorSet = Pipeline.specifyDescriptorSet 1 Unit pipeline.Pipeline vkc $ fun vkSet ->
@@ -3632,11 +3649,11 @@ module PhysicallyBased =
             Pipeline.writeDescriptorStorageBuffer 1 0 pipeline.LightingUniform vkSet vkc
 
             // specify static environment textures
-            Pipeline.writeDescriptorSampledImage 2 0 depthTexture vkSet vkc
-            Pipeline.writeDescriptorSampledImage 3 0 colorTexture vkSet vkc
-            Pipeline.writeDescriptorSampledImage 4 0 brdfTexture vkSet vkc
-            Pipeline.writeDescriptorSampledImage 5 0 irradianceMap vkSet vkc
-            Pipeline.writeDescriptorSampledImage 6 0 environmentFilterMap vkSet vkc
+            Pipeline.writeDescriptorSampledTexture 2 0 depthTexture vkSet vkc
+            Pipeline.writeDescriptorSampledTexture 3 0 colorTexture vkSet vkc
+            Pipeline.writeDescriptorSampledTexture 4 0 brdfTexture vkSet vkc
+            Pipeline.writeDescriptorSampledTexture 5 0 irradianceMap vkSet vkc
+            Pipeline.writeDescriptorSampledTexture 6 0 environmentFilterMap vkSet vkc
 
         // specify samplers
         let mutable samplersDescriptorSet = Pipeline.specifyDescriptorSet 3 Unit pipeline.Pipeline vkc $ fun vkSet ->
@@ -3714,13 +3731,13 @@ module PhysicallyBased =
 
             // specify material
             let mutable materialDescriptorSet = Pipeline.specifyDescriptorSet 1 material pipeline.Pipeline vkc $ fun vkSet ->
-                Pipeline.writeDescriptorSampledImage 0 0 material.AlbedoTexture vkSet vkc
-                Pipeline.writeDescriptorSampledImage 1 0 material.RoughnessTexture vkSet vkc
-                Pipeline.writeDescriptorSampledImage 2 0 material.MetallicTexture vkSet vkc
-                Pipeline.writeDescriptorSampledImage 3 0 material.AmbientOcclusionTexture vkSet vkc
-                Pipeline.writeDescriptorSampledImage 4 0 material.EmissionTexture vkSet vkc
-                Pipeline.writeDescriptorSampledImage 5 0 material.NormalTexture vkSet vkc
-                Pipeline.writeDescriptorSampledImage 6 0 material.HeightTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 0 0 material.AlbedoTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 1 0 material.RoughnessTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 2 0 material.MetallicTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 3 0 material.AmbientOcclusionTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 4 0 material.EmissionTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 5 0 material.NormalTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 6 0 material.HeightTexture vkSet vkc
 
             // specify dynamic
             // NOTE: we do more work on bones specification even when there aren't bones to specify than in the other
@@ -3786,11 +3803,11 @@ module PhysicallyBased =
                 Pipeline.writeDescriptorStorageBuffer 4 0 pipeline.ShadowMatrixUniform vkSet vkc
 
                 // specify dynamic environment textures
-                Pipeline.writeDescriptorSampledImages 5 0 (Array.tryTake Constants.Render.LightMapsMaxForward irradianceMaps) vkSet vkc
-                Pipeline.writeDescriptorSampledImages 6 0 (Array.tryTake Constants.Render.LightMapsMaxForward environmentFilterMaps) vkSet vkc
-                Pipeline.writeDescriptorSampledImage 7 0 shadowTextureArray vkSet vkc
-                Pipeline.writeDescriptorSampledImages 8 0 (Array.tryTake Constants.Render.ShadowMapsMax shadowMaps) vkSet vkc
-                Pipeline.writeDescriptorSampledImages 9 0 (Array.tryTake Constants.Render.ShadowCascadesMax shadowCascades) vkSet vkc
+                Pipeline.writeDescriptorSampledTextures 5 0 (Array.tryTake Constants.Render.LightMapsMaxForward irradianceMaps) vkSet vkc
+                Pipeline.writeDescriptorSampledTextures 6 0 (Array.tryTake Constants.Render.LightMapsMaxForward environmentFilterMaps) vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 7 0 shadowTextureArray vkSet vkc
+                Pipeline.writeDescriptorSampledTextures 8 0 (Array.tryTake Constants.Render.ShadowMapsMax shadowMaps) vkSet vkc
+                Pipeline.writeDescriptorSampledTextures 9 0 (Array.tryTake Constants.Render.ShadowCascadesMax shadowCascades) vkSet vkc
 
             // set up pipeline
             Vulkan.vkCmdBindPipeline (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
@@ -3883,7 +3900,7 @@ module PhysicallyBased =
 
             // specify texture
             let mutable textureDescriptorSet = Pipeline.specifyDescriptorSet 0 renderPassIndex pipeline.Pipeline vkc $ fun vkSet ->
-                Pipeline.writeDescriptorSampledImage 0 0 inputTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 0 0 inputTexture vkSet vkc
 
             // specify sampler
             let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 1 Unit pipeline.Pipeline vkc $ fun vkSet ->
@@ -3912,6 +3929,117 @@ module PhysicallyBased =
             // bind descriptor sets
             Vulkan.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, asPointer &textureDescriptorSet, 0u, nullPtr)
             Vulkan.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, asPointer &samplerDescriptorSet, 0u, nullPtr)
+
+            // draw
+            Vulkan.vkCmdDrawIndexed (vkc.RenderCommandBuffer, uint geometry.ElementCount, 1u, 0u, 0, 0u)
+
+            // tear down render
+            Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
+
+            // report draw scope
+            Hl.reportDrawScope ()
+
+            // advance pipeline
+            Pipeline.advance 1 pipeline.Pipeline
+
+            // advance rendering command buffer
+            VulkanContext.advanceRenderCommandBuffer vkc
+
+        // abort
+        | None -> Log.warnOnce ("Cannot draw " + getTypeName pipeline + " because VkPipeline does not exist.")
+
+    /// Create an esm guassian filter pipeline.
+    let createFilterGaussianEsmPipeline colorAttachmentFormat vkc =
+
+        // create set 0 uniform buffers
+        let gaussianEsmUniform = Buffer.create sizeof<GaussianEsm> Storage vkc
+
+        // create pipeline
+        let pipeline =
+            Pipeline.create
+                Constants.Paths.FilterGaussianEsmShaderFilePath
+                [|VulkanUnblended|] [|false|]
+                [|Pipeline.vertex 0 StaticVertexSize VkVertexInputRate.Vertex
+                    [|Pipeline.attribute 0 Single3 0
+                      Pipeline.attribute 1 Single2 StaticTexCoordsOffset
+                      Pipeline.attribute 2 Single3 StaticNormalOffset|]|]
+                [|Pipeline.descriptorSet<int>
+                    [|Pipeline.descriptor 0 StorageBuffer FragmentStage 1|] // gaussianEsm
+                  Pipeline.descriptorSet<int>
+                    [|Pipeline.descriptor 0 SampledImage FragmentStage 1|] // esmTexture
+                  Pipeline.descriptorSet<Unit>
+                    [|Pipeline.descriptor 0 Sampler FragmentStage 1|]|] // filterSampler
+                [||] [|colorAttachmentFormat|] None
+                [|gaussianEsmUniform|]
+                vkc
+
+        // make pipeline
+        let filterGaussianEsmPipeline =
+            { GaussianEsmUniform = gaussianEsmUniform
+              Pipeline = pipeline }
+
+        // fin
+        filterGaussianEsmPipeline
+
+    /// Destroy an esm gaussian filter pipeline.
+    let destroyFilterGaussianEsmPipeline (gaussianEsmPipeline : FilterGaussianEsmPipeline) vkc =
+        Pipeline.destroy gaussianEsmPipeline.Pipeline vkc
+
+    /// Draw the esm gaussian filter pass of a physically-based surface.
+    let drawFilterGaussianEsmSurface
+        (scale : Vector2)
+        (radius : single)
+        (esmImageView : VkImageView)
+        (filteredSampler : Sampler)
+        (resolution : Vector2i)
+        (colorAttachment : VkImageView)
+        (renderPassIndex : int) // TODO: use this for just gaussian esm uniforms...
+        (geometry : PhysicallyBasedGeometry)
+        (pipeline : FilterGaussianEsmPipeline)
+        (vkc : VulkanContext) =
+
+        // only draw if required vkPipeline exists
+        match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
+        | Some vkPipeline ->
+
+            // specify gaussianEsm
+            let mutable gaussianEsmDescriptorSet = Pipeline.specifyDescriptorSet 0 renderPassIndex pipeline.Pipeline vkc $ fun vkSet ->
+                let gaussianEsm = GaussianEsm (scale = scale, radius = radius)
+                Buffer.uploadValue gaussianEsm pipeline.GaussianEsmUniform vkc
+                Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.GaussianEsmUniform vkSet vkc
+
+            // specify image views
+            let mutable imageViewsDescriptorSet = Pipeline.specifyDescriptorSet 1 pipeline.Pipeline.DrawIndex pipeline.Pipeline vkc $ fun vkSet ->
+                Pipeline.writeDescriptorSampledImageView 0 0 esmImageView vkSet vkc
+
+            // specify sampler
+            let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 2 Unit pipeline.Pipeline vkc $ fun vkSet ->
+                Pipeline.writeDescriptorSampler 0 0 filteredSampler vkSet vkc
+
+            // set up render
+            let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
+            let mutable vkViewport = Hl.makeViewport false renderArea
+            let clearValue = VkClearValue (1.0f, Single.MaxValue, 0.0f, 0.0f) // TODO: P1: make derived from constant.
+            let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment|] None renderArea (Some clearValue)
+            Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &renderingInfo)
+            Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, asPointer &vkViewport)
+            Vulkan.vkCmdSetScissor (vkc.RenderCommandBuffer, 0u, 1u, asPointer &renderArea)
+
+            // set up pipeline
+            Vulkan.vkCmdBindPipeline (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
+
+            // bind vertex and index buffers
+            let vertexBuffers = [|geometry.VertexBuffer.VkBuffer; geometry.InstanceBuffer.VkBuffer|]
+            let vertexOffsets = [|0UL; 0UL|]
+            use vertexBuffersPin = new ArrayPin<_> (vertexBuffers)
+            use vertexOffsetsPin = new ArrayPin<_> (vertexOffsets)
+            Vulkan.vkCmdBindVertexBuffers (vkc.RenderCommandBuffer, 0u, 2u, vertexBuffersPin.Pointer, vertexOffsetsPin.Pointer)
+            Vulkan.vkCmdBindIndexBuffer (vkc.RenderCommandBuffer, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
+
+            // bind descriptor sets
+            Vulkan.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, asPointer &gaussianEsmDescriptorSet, 0u, nullPtr)
+            Vulkan.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, asPointer &imageViewsDescriptorSet, 0u, nullPtr)
+            Vulkan.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 2u, 1u, asPointer &samplerDescriptorSet, 0u, nullPtr)
 
             // draw
             Vulkan.vkCmdDrawIndexed (vkc.RenderCommandBuffer, uint geometry.ElementCount, 1u, 0u, 0, 0u)
@@ -4006,7 +4134,7 @@ module PhysicallyBased =
                 Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.ToneMappingUniform vkSet vkc
 
                 // specify input texture
-                Pipeline.writeDescriptorSampledImage 1 0 inputTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 1 0 inputTexture vkSet vkc
 
             // specify sampler
             let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 1 Unit pipeline.Pipeline vkc $ fun vkSet ->
@@ -4112,12 +4240,12 @@ module PhysicallyBased =
             let mutable uniformsDescriptorSet = Pipeline.specifyDescriptorSet 0 renderPassIndex pipeline.Pipeline vkc $ fun vkSet ->
                 
                 // specify fxaa
-                let fxaa = Fxaa (spanMax = spanMax, reduceMinDivisor = reduceMinDivisor,reduceMulDivisor = reduceMulDivisor)
+                let fxaa = Fxaa (spanMax = spanMax, reduceMinDivisor = reduceMinDivisor, reduceMulDivisor = reduceMulDivisor)
                 Buffer.uploadValue fxaa pipeline.FxaaUniform vkc
                 Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.FxaaUniform vkSet vkc
 
                 // specify input texture
-                Pipeline.writeDescriptorSampledImage 1 0 inputTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 1 0 inputTexture vkSet vkc
 
             // specify sampler
             let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 1 Unit pipeline.Pipeline vkc $ fun vkSet ->
@@ -4213,7 +4341,7 @@ module PhysicallyBased =
 
             // specify uniforms
             let mutable uniformsDescriptorSet = Pipeline.specifyDescriptorSet 0 renderPassIndex pipeline.Pipeline vkc $ fun vkSet ->
-                Pipeline.writeDescriptorSampledImage 0 0 inputTexture vkSet vkc
+                Pipeline.writeDescriptorSampledTexture 0 0 inputTexture vkSet vkc
 
             // specify sampler
             let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 1 Unit pipeline.Pipeline vkc $ fun vkSet ->
@@ -4458,6 +4586,9 @@ module PhysicallyBased =
         // create 1d box filter pipeline
         let filterBox1dPipeline = createFilterBoxPipeline Constants.Paths.FilterBox1dShaderFilePath R32f.VkFormat vkc
 
+        // create esm gaussian filter pipeline
+        let filterGaussianEsmPipeline = createFilterGaussianEsmPipeline Rg32f.VkFormat vkc
+
         // create tone-mapping filter pipeline
         let filterToneMappingPipeline = createFilterToneMappingPipeline attachments.ToneMappingAttachment.VkFormat vkc
 
@@ -4490,6 +4621,7 @@ module PhysicallyBased =
               ForwardStaticPipeline = forwardStaticPipeline
               ForwardAnimatedPipeline = forwardAnimatedPipeline
               FilterBox1dPipeline = filterBox1dPipeline
+              FilterGaussianEsmPipeline = filterGaussianEsmPipeline
               FilterToneMappingPipeline = filterToneMappingPipeline
               FilterFxaaPipeline = filterFxaaPipeline
               FilterGammaCorrectionPipeline = filterGammaCorrectionPipeline }
@@ -4519,6 +4651,7 @@ module PhysicallyBased =
         Pipeline.beginFrame physicallyBasedPipelines.ForwardStaticPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.ForwardAnimatedPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.FilterBox1dPipeline.Pipeline
+        Pipeline.beginFrame physicallyBasedPipelines.FilterGaussianEsmPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.FilterToneMappingPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.FilterFxaaPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.FilterGammaCorrectionPipeline.Pipeline
@@ -4545,6 +4678,7 @@ module PhysicallyBased =
         destroyPhysicallyBasedPipeline physicallyBasedPipelines.ForwardStaticPipeline vkc
         destroyPhysicallyBasedPipeline physicallyBasedPipelines.ForwardAnimatedPipeline vkc
         destroyFilterBoxPipeline physicallyBasedPipelines.FilterBox1dPipeline vkc
+        destroyFilterGaussianEsmPipeline physicallyBasedPipelines.FilterGaussianEsmPipeline vkc
         destroyFilterToneMappingPipeline physicallyBasedPipelines.FilterToneMappingPipeline vkc
         destroyFilterFxaaPipeline physicallyBasedPipelines.FilterFxaaPipeline vkc
         destroyFilterGammaCorrectionPipeline physicallyBasedPipelines.FilterGammaCorrectionPipeline vkc
@@ -4571,6 +4705,7 @@ module PhysicallyBased =
         Pipeline.reloadShaders physicallyBasedPipelines.ForwardStaticPipeline.Pipeline vkc
         Pipeline.reloadShaders physicallyBasedPipelines.ForwardAnimatedPipeline.Pipeline vkc
         Pipeline.reloadShaders physicallyBasedPipelines.FilterBox1dPipeline.Pipeline vkc
+        Pipeline.reloadShaders physicallyBasedPipelines.FilterGaussianEsmPipeline.Pipeline vkc
         Pipeline.reloadShaders physicallyBasedPipelines.FilterToneMappingPipeline.Pipeline vkc
         Pipeline.reloadShaders physicallyBasedPipelines.FilterFxaaPipeline.Pipeline vkc
         Pipeline.reloadShaders physicallyBasedPipelines.FilterGammaCorrectionPipeline.Pipeline vkc

@@ -738,12 +738,12 @@ type [<CustomEquality; NoComparison>] TextureInternal =
                 
                 | _ -> Log.infoOnce "Automatic mipmap generation not supported for attachment texture."; 1
         
-        // create texture
+        // create vulkan texture
         let usageFlags = TextureInternal.inferImageUsageFlags mipmapMode attachmentMode optionalUsageFlags
         let textureVulkan = TextureVulkan.create pixelFormat internalFormat metadata mipLevels attachmentMode textureType usageFlags vkc
 
-        // make TextureInternal
-        let texture =
+        // make internal texture
+        let textureInternal =
             { Id_ = Hl.genTextureId ()
               TextureVulkan_ = textureVulkan
               InternalFormat_ = internalFormat
@@ -755,7 +755,7 @@ type [<CustomEquality; NoComparison>] TextureInternal =
               TextureMetadata_ = metadata }
 
         // fin
-        texture
+        textureInternal
 
     /// Check that the current texture size is the same as the given size, resizing if necessary. If used, must be called every frame.
     static member updateSize metadata (textureInternal : TextureInternal) (vkc : VulkanContext) =
@@ -1104,7 +1104,7 @@ type [<CustomEquality; NoComparison>] Texture =
         | LazyTexture lazyTexture -> TextureInternal.updateSize metadata lazyTexture.TextureInternal vkc
 
     /// Asynchronously transition the layout of the current texture.
-    static member transitionLayoutAsync srcLayout dstLayout (texture : Texture) commandBuffer =
+    static member recordTransitionLayout srcLayout dstLayout (texture : Texture) commandBuffer =
         Hl.recordTransitionLayout true texture.MipLevels 0 texture.Layers texture.InternalFormat.VkImageAspectFlags srcLayout dstLayout texture.Image commandBuffer
     
     override this.GetHashCode () =
