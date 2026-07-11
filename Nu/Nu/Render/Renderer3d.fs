@@ -1071,10 +1071,10 @@ type [<ReferenceEquality>] private RenderTasks =
           DeferredAnimatedRemovals = List ()
           ShadowBufferIndexOpt = None }
 
-    static member clear renderTasks =
+    static member clear lightProbesIncluded renderTasks =
 
         renderTasks.SkyBoxes.Clear ()
-        renderTasks.LightProbes.Clear ()
+        if lightProbesIncluded then renderTasks.LightProbes.Clear ()
         renderTasks.LightMapRenders.Clear ()
         renderTasks.LightMaps.Clear ()
         renderTasks.Lights.Clear ()
@@ -1370,8 +1370,18 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         renderer.RenderAssetCached.CachedAssetTagOpt <- Unchecked.defaultof<_>
         renderer.RenderAssetCached.CachedRenderAsset <- RawAsset
 
-    static member private clearRenderPasses renderer =
+    static member private clearRenderPasses lightProbesIncluded renderer =
+
+        // clear current render passes with possible exception of light probes to preserve tracking of associated light maps
+        let normalTasksOpt = Dictionary.tryFind NormalPass renderer.RenderPasses
         renderer.RenderPasses.Clear ()
+        match normalTasksOpt with
+        | Some normalTasks ->
+            RenderTasks.clear lightProbesIncluded normalTasks
+            renderer.RenderPasses.Add (NormalPass, normalTasks)
+        | None -> ()
+
+        // clear previous render passes
         renderer.RenderPasses2.Clear ()
 
     static member private tryLoadTextureAsset (assetClient : AssetClient) (asset : Asset) renderer =
@@ -1627,7 +1637,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 match displacedPasses with
                 | head :: _ ->
                     let recycledTasks = head.Value
-                    RenderTasks.clear recycledTasks
+                    RenderTasks.clear true recycledTasks
                     recycledTasks
                 | _ -> RenderTasks.make ()
             renderer.RenderPasses.Add (renderPass, renderTasks)
@@ -1880,7 +1890,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
     static member private handleReloadRenderAssets renderer =
         VulkanRenderer3d.invalidateCaches renderer
-        VulkanRenderer3d.clearRenderPasses renderer // invalidate render task keys that now contain potentially stale data
+        VulkanRenderer3d.clearRenderPasses false renderer // invalidate render task keys that now contain potentially stale data (but keep light probes for light map tracking)
         VulkanRenderer3d.handleReloadShaders renderer // waits for renders to complete, relevant to all asset reload
         for packageName in renderer.RenderPackages |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq do
             VulkanRenderer3d.tryLoadRenderPackage packageName renderer
@@ -2366,8 +2376,10 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         for message in renderMessages do
             match message with
             //| CreateUserDefinedStaticModel cudsm ->
+            //    NOTE: this will be done with tranient commands!
             //    VulkanRenderer3d.tryCreateUserDefinedStaticModel cudsm.StaticModelSurfaceDescriptors cudsm.Bounds cudsm.StaticModel renderer
             //| DestroyUserDefinedStaticModel dudsm ->
+            //    NOTE: this will be done with tranient commands!
             //    renderer.UserDefinedStaticModelsToDestroy.Add dudsm.StaticModel 
             | RenderSkyBox rsb ->
                 let renderTasks = VulkanRenderer3d.getRenderTasks rsb.RenderPass renderer
@@ -2483,7 +2495,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 VulkanRenderer3d.handleUnloadRenderPackage packageName renderer
             | ReloadRenderAssets3d ->
                 renderer.ReloadAssetsRequested <- true
-    
+
     static member private beginPhysicallyBasedShadowSurfaces
         eyeCenter view projection lightShadowExponent resolution colorClearValue colorAttachment depthAttachment renderPassIndex pipeline renderer =
         PhysicallyBased.beginPhysicallyBasedShadowSurfaces
@@ -3085,13 +3097,11 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // actually render to shadow cube map face
         VulkanRenderer3d.renderShadow lightOrigin shadowView shadowProjection shadowFrustum PointLight lightCutoff shadowResolution colorAttachment depthAttachment renderTasks renderer
 
-    static member private renderShadows
-        eyeCenter
-        renderTasks
-        renderer =
+    static member private renderShadows eyeCenter renderer =
 
         // sort spot and directional lights according to how they are utilized by shadows
-        let spotAndDirectionalLightsArray = SortableLight.sortShadowingSpotAndDirectionalLightsIntoArray Constants.Render.ShadowTexturesMax eyeCenter renderTasks.Lights
+        let normalTasks = VulkanRenderer3d.getRenderTasks NormalPass renderer
+        let spotAndDirectionalLightsArray = SortableLight.sortShadowingSpotAndDirectionalLightsIntoArray Constants.Render.ShadowTexturesMax eyeCenter normalTasks.Lights
 
         // sort spot and directional lights so that shadows that have the possibility of cache reuse come to the front
         // NOTE: this approach has O(n^2) complexity altho perhaps it could be optimized.
@@ -3185,7 +3195,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     | _ -> ()
 
         // sort point lights according to how they are utilized by shadows
-        let pointLightsArray = SortableLight.sortShadowingPointLightsIntoArray Constants.Render.ShadowMapsMax eyeCenter renderTasks.Lights
+        let pointLightsArray = SortableLight.sortShadowingPointLightsIntoArray Constants.Render.ShadowMapsMax eyeCenter normalTasks.Lights
 
         // sort point lights so that shadows that have the possibility of cache reuse come to the front
         // NOTE: this approach has O(n^2) complexity altho perhaps it could be optimized.
@@ -3275,13 +3285,14 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     | None -> (renderer.IrradianceMap, renderer.EnvironmentFilterMap)
                 LightMap.createLightMap true v3Zero ambientColor ambientBrightness box3Zero irradianceMap environmentFilterMap
             | None -> LightMap.createLightMap true v3Zero Color.White 1.0f box3Zero renderer.IrradianceMap renderer.EnvironmentFilterMap
-        
-        // destroy cached light maps whose originating probe no longer exists
-        for lightMapKvp in renderer.LightMaps do
-            if not (renderTasks.LightProbes.ContainsKey lightMapKvp.Key) then
-                TextureDumpster.toss lightMapKvp.Value.IrradianceMap renderer.TextureDumpster
-                TextureDumpster.toss lightMapKvp.Value.EnvironmentFilterMap renderer.TextureDumpster
-                renderer.LightMaps.Remove lightMapKvp.Key |> ignore<bool>
+
+        // destroy cached light maps whose originating probe no longer exists (top-level only)
+        if topLevelRender then
+            for lightMapKvp in renderer.LightMaps do
+                if not (renderTasks.LightProbes.ContainsKey lightMapKvp.Key) then
+                    TextureDumpster.toss lightMapKvp.Value.IrradianceMap renderer.TextureDumpster
+                    TextureDumpster.toss lightMapKvp.Value.EnvironmentFilterMap renderer.TextureDumpster
+                    renderer.LightMaps.Remove lightMapKvp.Key |> ignore<bool>
 
         // ensure light maps are synchronized with any light probe changes
         for (lightMapId, lightMap) in renderer.LightMaps.Pairs do
@@ -3756,7 +3767,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // update viewports
         if renderer.GeometryViewport <> geometryViewport then
             VulkanRenderer3d.invalidateCaches renderer
-            VulkanRenderer3d.clearRenderPasses renderer // force shadows to rerender
+            VulkanRenderer3d.clearRenderPasses false renderer // force shadows to rerender, but keep light probes for light map tracking
             renderer.GeometryViewport <- geometryViewport
         renderer.WindowViewport <- windowViewport
 
@@ -3779,8 +3790,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
         // render shadows when desired
         if renderer.VulkanContext.RenderAllowed then
-            let renderTasks = VulkanRenderer3d.getRenderTasks NormalPass renderer
-            VulkanRenderer3d.renderShadows eyeCenter renderTasks renderer
+            VulkanRenderer3d.renderShadows eyeCenter renderer
 
         // render top-level geometry pass.
         if renderer.VulkanContext.RenderAllowed && renderGeometry then
@@ -3820,7 +3830,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
         // swap render passes
         for renderTasks in renderer.RenderPasses.Values do RenderTasks.sweep renderTasks
-        for renderTasks in renderer.RenderPasses2.Values do RenderTasks.clear renderTasks
+        for renderTasks in renderer.RenderPasses2.Values do RenderTasks.clear true renderTasks
         let renderPasses = renderer.RenderPasses
         renderer.RenderPasses <- renderer.RenderPasses2
         renderer.RenderPasses2 <- renderPasses
