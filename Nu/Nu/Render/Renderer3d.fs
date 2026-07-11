@@ -3776,42 +3776,42 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             geometryViewport renderer.PhysicallyBasedAttachments renderer.VulkanContext
 
         // delete textures as requested on previous frame
-        if renderer.VulkanContext.RenderAllowed then
-            TextureDumpster.sweep renderer.TextureDumpster renderer.VulkanContext
+        TextureDumpster.sweep renderer.TextureDumpster renderer.VulkanContext
 
         // reload render assets when requested on previous frame
         if renderer.ReloadAssetsRequested then
             VulkanRenderer3d.handleReloadRenderAssets renderer
             renderer.ReloadAssetsRequested <- false
 
-        // render light maps
+        // render when allowed
         if renderer.VulkanContext.RenderAllowed then
+
+            // render light maps
             VulkanRenderer3d.renderLightMaps frustumInterior frustumExterior frustumImposter renderer
 
-        // render shadows when desired
-        if renderer.VulkanContext.RenderAllowed then
+            // render shadows
             VulkanRenderer3d.renderShadows eyeCenter renderer
 
-        // render top-level geometry pass.
-        if renderer.VulkanContext.RenderAllowed && renderGeometry then
-            let view = Viewport.getView3d eyeCenter eyeRotation
-            let viewSkyBox = Matrix4x4.CreateFromQuaternion eyeRotation.Inverted
-            let geometryFrustum = Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView geometryViewport
-            let geometryProjection = Viewport.getProjection3d eyeFieldOfView geometryViewport
-            let windowProjection = Viewport.getProjection3d eyeFieldOfView windowViewport
-            let targetBounds =
-                VkRect2D
-                    (renderer.WindowViewport.Inner.Min.X,
-                     renderer.WindowViewport.Outer.Max.Y - renderer.WindowViewport.Inner.Max.Y,
-                     uint renderer.WindowViewport.Inner.Size.X,
-                     uint renderer.WindowViewport.Inner.Size.Y)
-                |> Hl.scaleRectToWindowPixels renderer.VulkanContext.Window
-            let normalPass = NormalPass
-            let normalTasks = VulkanRenderer3d.getRenderTasks normalPass renderer
-            VulkanRenderer3d.renderGeometry
-                frustumInterior frustumExterior frustumImposter normalPass normalTasks renderer true None
-                eyeCenter view viewSkyBox geometryFrustum geometryProjection windowProjection
-                targetBounds 0 renderer.VulkanContext.SwapchainImage
+            // render top-level geometry pass
+            if renderGeometry then
+                let view = Viewport.getView3d eyeCenter eyeRotation
+                let viewSkyBox = Matrix4x4.CreateFromQuaternion eyeRotation.Inverted
+                let geometryFrustum = Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView geometryViewport
+                let geometryProjection = Viewport.getProjection3d eyeFieldOfView geometryViewport
+                let windowProjection = Viewport.getProjection3d eyeFieldOfView windowViewport
+                let targetBounds =
+                    VkRect2D
+                        (renderer.WindowViewport.Inner.Min.X,
+                         renderer.WindowViewport.Outer.Max.Y - renderer.WindowViewport.Inner.Max.Y,
+                         uint renderer.WindowViewport.Inner.Size.X,
+                         uint renderer.WindowViewport.Inner.Size.Y)
+                    |> Hl.scaleRectToWindowPixels renderer.VulkanContext.Window
+                let normalPass = NormalPass
+                let normalTasks = VulkanRenderer3d.getRenderTasks normalPass renderer
+                VulkanRenderer3d.renderGeometry
+                    frustumInterior frustumExterior frustumImposter normalPass normalTasks renderer true None
+                    eyeCenter view viewSkyBox geometryFrustum geometryProjection windowProjection
+                    targetBounds 0 renderer.VulkanContext.SwapchainImage
         
         // clear config dirty flags
         renderer.LightingConfigChanged <- false

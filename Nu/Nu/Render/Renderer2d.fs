@@ -938,8 +938,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
     static member private preRender eyeCenter eyeSize viewport renderMessages renderer =
 
         // delete textures as requested on previous frame
-        if renderer.VulkanContext.RenderAllowed then
-            TextureDumpster.sweep renderer.TextureDumpster renderer.VulkanContext
+        TextureDumpster.sweep renderer.TextureDumpster renderer.VulkanContext
 
         // begin sprite batch frame
         let viewProjectionAbsolute = Viewport.getViewProjection2d true eyeCenter eyeSize viewport
@@ -994,30 +993,28 @@ type [<ReferenceEquality>] VulkanRenderer2d =
 
         // sweep up any text textures that went unused this frame and mark remaining text textures as unused for next
         // frame
-        if renderer.VulkanContext.RenderAllowed then
-            let textTexturesUnused =
-                renderer.TextTextures
-                |> Seq.filter (fun entry -> not (fst entry.Value).Value)
-                |> Seq.map (fun entry -> entry.Key)
-                |> Seq.toArray
-            for entry in textTexturesUnused do
-                let (_, _, _, textTexture) = snd renderer.TextTextures[entry]
-                TextureDumpster.toss textTexture renderer.TextureDumpster
-                renderer.TextTextures.Remove entry |> ignore<bool>
-            for entry in renderer.TextTextures.Values do
-                let used = fst entry
-                used.Value <- false
+        let textTexturesUnused =
+            renderer.TextTextures
+            |> Seq.filter (fun entry -> not (fst entry.Value).Value)
+            |> Seq.map (fun entry -> entry.Key)
+            |> Seq.toArray
+        for entry in textTexturesUnused do
+            let (_, _, _, textTexture) = snd renderer.TextTextures[entry]
+            TextureDumpster.toss textTexture renderer.TextureDumpster
+            renderer.TextTextures.Remove entry |> ignore<bool>
+        for entry in renderer.TextTextures.Values do
+            let used = fst entry
+            used.Value <- false
 
         // sweep up any skeleton renderers that went unused this frame
-        if renderer.VulkanContext.RenderAllowed then
-            (* TODO: DJL: enable when spine rendering is working again.
-            let entriesUnused = renderer.SpineSkeletonRenderers |> Seq.filter (fun entry -> not (fst entry.Value).Value)
-            for entry in entriesUnused do
-                let spineSkeletonId = entry.Key
-                let spineSkeleton = snd entry.Value
-                renderer.SpineSkeletonRenderers.Remove spineSkeletonId |> ignore<bool>
-                spineSkeleton.Destroy ()*)
-            ()
+        (* TODO: DJL: enable when spine rendering is working again.
+        let entriesUnused = renderer.SpineSkeletonRenderers |> Seq.filter (fun entry -> not (fst entry.Value).Value)
+        for entry in entriesUnused do
+            let spineSkeletonId = entry.Key
+            let spineSkeleton = snd entry.Value
+            renderer.SpineSkeletonRenderers.Remove spineSkeletonId |> ignore<bool>
+            spineSkeleton.Destroy ()*)
+        ()
 
     /// Make a VulkanRenderer2d.
     static member make viewport (vkc : VulkanContext) =

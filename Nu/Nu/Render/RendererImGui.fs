@@ -190,7 +190,7 @@ type VulkanRendererImGui
                 int (round (drawData.DisplaySize.X * drawData.FramebufferScale.X)) = viewportPixelWidth &&
                 int (round (drawData.DisplaySize.Y * drawData.FramebufferScale.Y)) = viewportPixelHeight
             
-            // render when desired and drawData matches viewport
+            // render when allowed and drawData matches viewport
             if vkc.RenderAllowed && drawDataMatchesViewport then
 
                 // images added as needed for current frame, associated with descriptor sets by index
