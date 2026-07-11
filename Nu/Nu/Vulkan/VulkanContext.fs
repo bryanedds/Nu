@@ -242,9 +242,11 @@ type SwapchainSingleton =
                 elif capabilities.supportedCompositeAlpha &&& VkCompositeAlphaFlagsKHR.PostMultiplied <> VkCompositeAlphaFlagsKHR.None then VkCompositeAlphaFlagsKHR.PostMultiplied
                 else VkCompositeAlphaFlagsKHR.Inherit
             info.presentMode <-
-                if canUseMailbox
-                then VkPresentModeKHR.Mailbox
-                else VkPresentModeKHR.Fifo
+                if Constants.Render.Vsync then
+                    if canUseMailbox
+                    then VkPresentModeKHR.Mailbox
+                    else VkPresentModeKHR.Fifo
+                else VkPresentModeKHR.Immediate
             info.clipped <- true
             info.oldSwapchain <- oldVkSwapchainOpt
             let mutable vkSwapchain = Unchecked.defaultof<VkSwapchainKHR>

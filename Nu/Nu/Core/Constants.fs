@@ -52,7 +52,6 @@ module OpenGL =
 [<RequireQualifiedAccess>]
 module Vulkan =
 
-    let [<Uniform>] mutable HlDebug = match ConfigurationManager.AppSettings["HlDebug"] with null -> false | value -> scvalue value
     let [<Uniform>] MoltenVk = OperatingSystem.IsIOS () || match ConfigurationManager.AppSettings.["MoltenVk"] with null -> false | value -> scvalue value
     let [<Literal>] RenderCommandBufferCountDefault = 32
     let [<Literal>] DescriptorSetCountDefault = 32
@@ -195,6 +194,7 @@ module Render =
     let [<Literal>] ClippedName = "Clipped"
     let [<Literal>] NavShapeName = "NavShape"
     let [<Uniform>] mutable Vsync = match ConfigurationManager.AppSettings["Vsync"] with null -> true | value -> scvalue value
+    let [<Uniform>] mutable RenderDebug = match ConfigurationManager.AppSettings["HlDebug"] with null -> false | value -> scvalue value
     let [<Uniform>] mutable NearPlaneDistanceInterior = match ConfigurationManager.AppSettings["NearPlaneDistanceInterior"] with null -> 0.125f | value -> scvalue value
     let [<Uniform>] mutable FarPlaneDistanceInterior = match ConfigurationManager.AppSettings["FarPlaneDistanceInterior"] with null -> 20.0f | value -> scvalue value
     let [<Uniform>] mutable NearPlaneDistanceExterior = match ConfigurationManager.AppSettings["NearPlaneDistanceExterior"] with null -> 20.0f | value -> scvalue value
