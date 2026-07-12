@@ -13,6 +13,7 @@ open ImageMagick.Formats
 open BCnEncoder.Shared
 open BCnEncoder.Encoder
 open Prime
+open Nu.Vulkan
 
 /// A refinement that can be applied to an asset during the build process.
 type Refinement =
@@ -150,8 +151,8 @@ module AssetGraph =
                     File.Copy (intermediateFilePath, refinementFilePath, true)
 
         | BlockCompress ->
-            match OpenGL.Texture.InferCompression refinementFilePath with
-            | OpenGL.Texture.Uncompressed ->
+            match Hl.inferTextureCompression refinementFilePath with
+            | Uncompressed ->
                 match blockCompression with
                 | BcCompression ->
                     use image = new MagickImage (intermediateFilePath)
@@ -162,14 +163,14 @@ module AssetGraph =
                     image.Write (stream, defines)
                 | AstcCompression ->
                     use image = new MagickImage (intermediateFilePath)
-                    match OpenGL.Texture.TryGenerateUncompressedImage image with
+                    match Hl.tryGenerateUncompressedImage image with
                     | Some (resolution, mipmapHead) ->
-                        match OpenGL.Texture.TryGenerateUncompressedMipmaps image with
+                        match Hl.tryGenerateUncompressedMipmaps image with
                         | Some mipmapTail ->
                             let mipmapLevels = inc mipmapTail.Length
                             use stream = File.OpenWrite refinementFilePath
                             use writer = new BinaryWriter (stream)
-                            OpenGL.Texture.WriteKtxHeader (resolution, mipmapLevels, false, writer)     // ktx header
+                            Hl.writeKtxHeader resolution mipmapLevels false writer                      // ktx header
                             writer.Write (uint mipmapHead.Length)                                       // mip head size
                             writer.Write mipmapHead                                                     // mip head data
                             let padding = Array.zeroCreate<byte> ((4 - (mipmapHead.Length % 4)) % 4)    // mip head padding
@@ -182,7 +183,7 @@ module AssetGraph =
                         | None -> Log.error ("Failed to " + scstring refinement + " refine asset '" + intermediateFilePath + "'.")
                     | None -> Log.error ("Failed to " + scstring refinement + " refine asset '" + intermediateFilePath + "'.")
 
-            | OpenGL.Texture.ColorCompression ->
+            | ColorCompression ->
                 match blockCompression with
                 | BcCompression ->
                     use image = new MagickImage (intermediateFilePath)
@@ -193,14 +194,14 @@ module AssetGraph =
                     image.Write (stream, defines)
                 | AstcCompression ->
                     use image = new MagickImage (intermediateFilePath)
-                    match OpenGL.Texture.TryCompressImage image with
+                    match Hl.tryCompressImage image with
                     | Some (resolution, mipmapHead) ->
-                        match OpenGL.Texture.TryCompressMipmaps image with
+                        match Hl.tryCompressMipmaps image with
                         | Some mipmapTail ->
                             let mipmapLevels = inc mipmapTail.Length
                             use stream = File.OpenWrite refinementFilePath
                             use writer = new BinaryWriter (stream)
-                            OpenGL.Texture.WriteKtxHeader (resolution, mipmapLevels, true, writer)      // mip header
+                            Hl.writeKtxHeader resolution mipmapLevels true writer                       // mip header
                             writer.Write (uint mipmapHead.Length)                                       // mip head size
                             writer.Write mipmapHead                                                     // mip head data
                             let padding = 3 - (mipmapHead.Length + 3) % 4 |> Array.zeroCreate<byte>     // mip head padding
@@ -213,7 +214,7 @@ module AssetGraph =
                         | None -> Log.error ("Failed to " + scstring refinement + " refine asset '" + intermediateFilePath + "'.")
                     | None -> Log.error ("Failed to " + scstring refinement + " refine asset '" + intermediateFilePath + "'.")
 
-            | OpenGL.Texture.NormalCompression ->
+            | NormalCompression ->
                 match blockCompression with
                 | BcCompression ->
                     use image = new MagickImage (intermediateFilePath)
@@ -229,14 +230,14 @@ module AssetGraph =
                     encoder.EncodeToStream (bytes, int image.Width, int image.Height, PixelFormat.Rgba32, stream)
                 | AstcCompression ->
                     use image = new MagickImage (intermediateFilePath)
-                    match OpenGL.Texture.TryCompressImage image with
+                    match Hl.tryCompressImage image with
                     | Some (resolution, mipmapHead) ->
-                        match OpenGL.Texture.TryCompressMipmaps image with
+                        match Hl.tryCompressMipmaps image with
                         | Some mipmapTail ->
                             let mipmapLevels = inc mipmapTail.Length
                             use stream = File.OpenWrite refinementFilePath
                             use writer = new BinaryWriter (stream)
-                            OpenGL.Texture.WriteKtxHeader (resolution, mipmapLevels, true, writer)      // mip header
+                            Hl.writeKtxHeader resolution mipmapLevels true writer                       // mip header
                             writer.Write (uint mipmapHead.Length)                                       // mip head size
                             writer.Write mipmapHead                                                     // mip head data
                             let padding = 3 - (mipmapHead.Length + 3) % 4 |> Array.zeroCreate<byte>     // mip head padding

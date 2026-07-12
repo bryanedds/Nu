@@ -59,7 +59,6 @@ module CubeMap =
     let tryCreateCubeMap faceRightFilePath faceLeftFilePath faceTopFilePath faceBottomFilePath faceBackFilePath faceFrontFilePath thread vkc =
 
         // load faces into cube map
-        // NOTE: DJL: opengl seems to allow individual faces to differ in compression or maybe even size, but vulkan does not, so these are now determined by the first face.
         // TODO: DJL: maybe check that size and compression match?
         let mutable textureInternalOpt = None
         let mutable errorOpt = None

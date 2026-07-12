@@ -478,7 +478,7 @@ type RendererThread () =
             match windowOpt with
             | Some window ->
 
-                // attempt to create VulkanContext (on main thread, unlike OpenGL), storing a reference for clean-up.
+                // attempt to create VulkanContext on main thread, storing a reference for clean-up.
                 let vkc =
                     match VulkanContext.tryCreate window with
                     | Some vkc -> vkc

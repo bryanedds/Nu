@@ -10,6 +10,7 @@ open System.Buffers.Binary
 open System.IO
 open System.Numerics
 open Prime
+open Nu.Vulkan
 
 /// The endianness which indicates byte order in a raw asset.
 type [<Struct>] Endianness =
@@ -43,11 +44,11 @@ type [<StructuralEquality; NoComparison>] HeightMap =
     static member private tryGetTextureData tryGetFilePath (assetTag : Image AssetTag) =
         match tryGetFilePath assetTag with
         | Some filePath ->
-            match OpenGL.Texture.TryCreateTextureData (false, filePath) with
+            match Hl.tryCreateTextureData false filePath with
             | Some textureData ->
                 let metadata = textureData.Metadata
                 let (compressed, bytes) = textureData.Bytes
-                textureData.Dispose ()
+                TextureData.destroy textureData
                 ValueSome (metadata, compressed, bytes)
             | None -> ValueNone
         | None -> ValueNone

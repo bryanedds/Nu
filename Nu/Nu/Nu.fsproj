@@ -57,17 +57,6 @@
 		<Compile Include="Vulkan\VulkanContourTessellation.fs" />
         <Compile Include="Vulkan\VulkanSkyBox.fs" />
         <Compile Include="Vulkan\VulkanPhysicallyBased.fs" />
-        <Compile Include="OpenGL\OpenGL.Hl.fs" />
-        <Compile Include="OpenGL\OpenGL.Shader.fs" />
-        <Compile Include="OpenGL\OpenGL.Texture.fs" />
-        <Compile Include="OpenGL\OpenGL.CubeMap.fs" />
-        <Compile Include="OpenGL\OpenGL.LightMap.fs" />
-        <Compile Include="OpenGL\OpenGL.Framebuffer.fs" />
-        <Compile Include="OpenGL\OpenGL.Sprite.fs" />
-        <Compile Include="OpenGL\OpenGL.SpriteBatch.fs" />
-        <Compile Include="OpenGL\OpenGL.Filter.fs" />
-        <Compile Include="OpenGL\OpenGL.SkyBox.fs" />
-        <Compile Include="OpenGL\OpenGL.PhysicallyBased.fs" />
         <Compile Include="Sdl\SdlInputBindings.fs" />
         <Compile Include="Sdl\SdlInput.fs" />
         <Compile Include="Sdl\SdlDeps.fs" />
@@ -95,7 +84,6 @@
         <Compile Include="Physics\JoltPhysicsEngine.fs" />
         <Compile Include="Render\RendererPrelude.fs" />
         <Compile Include="Render\Renderer2d.fs" />
-        <Compile Include="Render\Renderer3dOld.fs" />
         <Compile Include="Render\Renderer3d.fs" />
         <Compile Include="Render\RendererImGui.fs" />
         <Compile Include="Render\RendererProcess.fs" />
@@ -154,9 +142,6 @@
         </Reference>
         <Reference Include="BulletSharpPInvoke">
             <HintPath>..\Nu.Dependencies\BulletSharpPInvoke\netstandard2.1\BulletSharp.dll</HintPath>
-        </Reference>
-        <Reference Include="OpenGL.Net">
-            <HintPath>..\Nu.Dependencies\OpenGL.NET\lib\netcoreapp2.2\OpenGL.Net.dll</HintPath>
         </Reference>
         <Reference Include="TiledSharp">
             <HintPath>..\Nu.Dependencies\TiledSharp\lib\netstandard2.0\TiledSharp.dll</HintPath>

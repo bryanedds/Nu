@@ -445,16 +445,16 @@ module TextureModule =
                   0x0Duy; 0x0Auy; 0x1Auy; 0x0Auy|]                              //
             writer.Write 0x04030201u                                            // endianness
             if compressed                                                       // glType
-            then writer.Write 0x0u                                              // (zero when compressed)
-            else writer.Write (uint OpenGL.Gl.UNSIGNED_BYTE)                    //
+            then writer.Write 0x0000u                                           // (zero when compressed)
+            else writer.Write 0x1401u                                           // OpenGL.Gl.UNSIGNED_BYTE
             writer.Write 1u                                                     // glTypeSize
             if compressed                                                       // glFormat
-            then writer.Write 0x0u                                              // (zero when compressed)
-            else writer.Write (uint OpenGL.PixelFormat.Bgra)                    //
+            then writer.Write 0x0000u                                           // (zero when compressed)
+            else writer.Write 0x80E1u                                           // OpenGL.PixelFormat.Bgra
             if compressed                                                       // glInternalFormat
-            then writer.Write (uint OpenGL.InternalFormat.CompressedRgbaAstc4x4)//
-            else writer.Write (uint OpenGL.InternalFormat.Rgba8)                //
-            writer.Write (uint OpenGL.PixelFormat.Bgra)                         // glBaseInternalFormat
+            then writer.Write 0x93B0u                                           // OpenGL.InternalFormat.CompressedRgbaAstc4x4
+            else writer.Write 0x8058u                                           // OpenGL.InternalFormat.Rgba8
+            writer.Write 0x80E1                                                 // glBaseInternalFormat = OpenGL.PixelFormat.Bgra
             writer.Write (uint32 resolution.X)                                  // width
             writer.Write (uint32 resolution.Y)                                  // height
             writer.Write 1u                                                     // depth

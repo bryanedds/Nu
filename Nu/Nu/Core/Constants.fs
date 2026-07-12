@@ -40,15 +40,6 @@ module Assimp =
     let [<Literal>] ClippedPropertyName = RawPropertyPrefix + "Clipped"
     let [<Literal>] NavShapePropertyName = RawPropertyPrefix + "NavShape"
 
-// NOTE: no qualification specifier here as module exists as an extension.
-module OpenGL =
-
-    let [<Literal>] VersionMajor = 4
-    let [<Literal>] VersionMinor = 6
-    let [<Literal>] Profile = SDL3.SDL_GL_CONTEXT_PROFILE_CORE
-    let [<Uniform>] GlslVersionPragma = "#version " + string VersionMajor + string VersionMinor + "0" + " core"
-    let [<Literal>] TextureImageUnitsRequired = 32
-
 [<RequireQualifiedAccess>]
 module Vulkan =
 
