@@ -1692,6 +1692,7 @@ module PhysicallyBased =
 
     /// Begin drawing a batch of physically-based shadow surfaces.
     let beginPhysicallyBasedShadowSurfaces
+        (cubeMapFace : bool)
         (eyeCenter : Vector3)
         (view : Matrix4x4)
         (projection : Matrix4x4)
@@ -1705,7 +1706,7 @@ module PhysicallyBased =
         (vkc : VulkanContext) =
         
         // compute vulkan-appropriate matrices
-        let projection = projection.Flipped
+        let projection = if cubeMapFace then projection else projection.Flipped
         let viewProjection = view * projection
 
         // set up render

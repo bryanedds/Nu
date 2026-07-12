@@ -2497,9 +2497,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 renderer.ReloadAssetsRequested <- true
 
     static member private beginPhysicallyBasedShadowSurfaces
-        eyeCenter view projection lightShadowExponent resolution colorClearValue colorAttachment depthAttachment renderPassIndex pipeline renderer =
+        cubeMapFace eyeCenter view projection lightShadowExponent resolution colorClearValue colorAttachment depthAttachment renderPassIndex pipeline renderer =
         PhysicallyBased.beginPhysicallyBasedShadowSurfaces
-            eyeCenter view projection lightShadowExponent resolution colorClearValue colorAttachment depthAttachment renderPassIndex pipeline renderer.VulkanContext
+            cubeMapFace eyeCenter view projection lightShadowExponent resolution colorClearValue colorAttachment depthAttachment renderPassIndex pipeline renderer.VulkanContext
 
     static member private renderPhysicallyBasedShadowSurfaces
         bones (parameters : struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List) (surface : PhysicallyBasedSurface)
@@ -2945,7 +2945,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 else None
             uniformsDescriptorSet <-
                 VulkanRenderer3d.beginPhysicallyBasedShadowSurfaces
-                    lightOrigin lightView lightProjection renderer.LightingConfig.LightShadowExponent resolution
+                    lightType.ShadowsUseCubeMap lightOrigin lightView lightProjection renderer.LightingConfig.LightShadowExponent resolution
                     clearColorValueOpt colorAttachment depthAttachment renderer.RenderPassIndex shadowStaticPipeline renderer
         let endBatch = fun () -> VulkanRenderer3d.endPhysicallyBasedShadowSurfaces shadowStaticPipeline renderer.VulkanContext
         let advanceBatch = fun instances ->
@@ -2983,7 +2983,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // begin shadow animated rendering
         let uniformsDescriptorSet =
             VulkanRenderer3d.beginPhysicallyBasedShadowSurfaces
-                lightOrigin lightView lightProjection renderer.LightingConfig.LightShadowExponent resolution
+                lightType.ShadowsUseCubeMap lightOrigin lightView lightProjection renderer.LightingConfig.LightShadowExponent resolution
                 None colorAttachment depthAttachment renderer.RenderPassIndex shadowAnimatedPipeline renderer
 
         // deferred render animated surface shadows
@@ -3021,7 +3021,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let beginBatch = fun () ->
             uniformsDescriptorSet <-
                 VulkanRenderer3d.beginPhysicallyBasedShadowSurfaces
-                    lightOrigin lightView lightProjection renderer.LightingConfig.LightShadowExponent resolution
+                    lightType.ShadowsUseCubeMap lightOrigin lightView lightProjection renderer.LightingConfig.LightShadowExponent resolution
                     None colorAttachment depthAttachment renderer.RenderPassIndex forwardPipeline renderer
         let endBatch = fun () -> VulkanRenderer3d.endPhysicallyBasedShadowSurfaces forwardPipeline renderer.VulkanContext
         let checkBatch = fun forwardPipeline' ->
@@ -3236,7 +3236,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                                 let (shadowColorTexture, shadowDepthTexture) = renderer.PhysicallyBasedAttachments.ShadowMapAttachmentsArray[shadowMapBufferIndex]
                                 Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite shadowColorTexture renderer.VulkanContext.RenderCommandBuffer
                                 Texture.recordTransitionLayout DepthAttachmentRead DepthAttachmentWrite shadowDepthTexture renderer.VulkanContext.RenderCommandBuffer
-                                VulkanRenderer3d.renderShadowMapFace lightOrigin lightCutoff shadowView shadowProjection shadowFrustum shadowResolution shadowColorTexture.ImageView shadowDepthTexture renderTasks renderer
+                                VulkanRenderer3d.renderShadowMapFace lightOrigin lightCutoff shadowView shadowProjection shadowFrustum shadowResolution shadowColorTexture.LayerViews[shadowFace] shadowDepthTexture renderTasks renderer
                                 Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead shadowColorTexture renderer.VulkanContext.RenderCommandBuffer
                                 Texture.recordTransitionLayout DepthAttachmentWrite DepthAttachmentRead shadowDepthTexture renderer.VulkanContext.RenderCommandBuffer
 

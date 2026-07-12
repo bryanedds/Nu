@@ -1820,6 +1820,12 @@ type LightType =
         | DirectionalLight _ -> 2
         | CascadedLight -> 3
 
+    /// Whether the shadows for this light render to a cube map.
+    member this.ShadowsUseCubeMap =
+        match this with
+        | PointLight -> true
+        | SpotLight _ | DirectionalLight _ | CascadedLight -> false
+
     /// Check that the light should shadow interior surfaces with the given shadowIndexInfoOpt information.
     static member shouldShadowInterior lightType =
         match lightType with
