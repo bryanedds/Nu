@@ -646,14 +646,14 @@ module TextureModule =
 type [<CustomEquality; NoComparison>] TextureInternal =
     private
         { Id_ : uint64
-          mutable TextureVulkan_ : TextureVulkan
           InternalFormat_ : Nu.Vulkan.ImageFormat
           PixelFormat_ : PixelFormat
           MipLevels_ : int
           ImageUsages_ : VkImageUsageFlags
           AttachmentMode_ : AttachmentMode
           TextureType_ : TextureType
-          TextureMetadata_ : TextureMetadata }
+          mutable TextureMetadata_ : TextureMetadata
+          mutable TextureVulkan_ : TextureVulkan }
 
     /// The id.
     member this.Id = this.Id_
@@ -746,13 +746,13 @@ type [<CustomEquality; NoComparison>] TextureInternal =
         let textureInternal =
             { Id_ = Hl.genTextureId ()
               TextureVulkan_ = textureVulkan
+              TextureMetadata_ = metadata
               InternalFormat_ = internalFormat
               PixelFormat_ = pixelFormat
               MipLevels_ = mipLevels
               ImageUsages_ = usageFlags
               AttachmentMode_ = attachmentMode
-              TextureType_ = textureType
-              TextureMetadata_ = metadata }
+              TextureType_ = textureType }
 
         // fin
         textureInternal
@@ -764,6 +764,7 @@ type [<CustomEquality; NoComparison>] TextureInternal =
             let textureVulkan = TextureVulkan.create textureInternal.PixelFormat_ textureInternal.InternalFormat_ textureMetadata textureInternal.MipLevels_ textureInternal.AttachmentMode_ textureInternal.TextureType_ textureInternal.ImageUsages_ vkc
             TextureVulkan.destroy textureInternal.TextureVulkan_ vkc
             textureInternal.TextureVulkan_ <- textureVulkan
+            textureInternal.TextureMetadata_ <- textureMetadata
     
     /// Record commands to upload pixel data to TextureInternal. Can only be done once.
     static member uploadAsync commandBuffer metadata mipLevel layer pixels (textureInternal : TextureInternal) (vkc : VulkanContext) =
@@ -1055,12 +1056,6 @@ type [<CustomEquality; NoComparison>] Texture =
         | EagerTexture texture -> texture
         | LazyTexture lazyTexture -> lazyTexture.TextureInternal
 
-    member this.TextureMetadata =
-        match this with
-        | EmptyTexture -> TextureMetadata.empty
-        | EagerTexture texture -> texture.TextureMetadata
-        | LazyTexture lazyTexture -> lazyTexture.TextureMetadata
-
     member this.Id = this.TextureInternal.Id
     member this.Image = this.TextureInternal.Image
     member this.ImageView = this.TextureInternal.ImageView
@@ -1070,6 +1065,12 @@ type [<CustomEquality; NoComparison>] Texture =
     member this.VkFormat = this.TextureInternal.VkFormat
     member this.MipLevels = this.TextureInternal.MipLevels_
     member this.Layers = this.TextureInternal.TextureType_.Layers
+
+    member this.TextureMetadata =
+        match this with
+        | EmptyTexture -> TextureMetadata.empty
+        | EagerTexture texture -> texture.TextureMetadata
+        | LazyTexture lazyTexture -> lazyTexture.TextureMetadata
 
     static member hash texture =
         match texture with

@@ -875,6 +875,7 @@ module PhysicallyBased =
         Attachment.updateColorAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.SsaoFilteredAttachment vkc
         Attachment.updateColoringAttachmentsSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.ColoringAttachments vkc
         Attachment.updateCompositionAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.CompositionAttachment vkc
+        Attachment.updateColorAttachmentSize geometryViewport.ShadowTextureResolution.X geometryViewport.ShadowTextureResolution.Y attachments.GaussianEsmAttachment vkc
         Attachment.updateColorAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.ColorFull0Attachment vkc
         Attachment.updateColorAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.ColorFull1Attachment vkc
         Attachment.updateColorAttachmentSize (geometryViewport.Bounds.Size.X / 2) (geometryViewport.Bounds.Size.Y / 2) attachments.ColorHalf0Attachment vkc
@@ -900,6 +901,7 @@ module PhysicallyBased =
         Attachment.destroyColorAttachment attachments.SsaoFilteredAttachment vkc
         Attachment.destroyColoringAttachments attachments.ColoringAttachments vkc
         Attachment.destroyCompositionAttachment attachments.CompositionAttachment vkc
+        Attachment.destroyColorAttachment attachments.GaussianEsmAttachment vkc
         Attachment.destroyColorAttachment attachments.ColorFull0Attachment vkc
         Attachment.destroyColorAttachment attachments.ColorFull1Attachment vkc
         Attachment.destroyColorAttachment attachments.ColorHalf0Attachment vkc
