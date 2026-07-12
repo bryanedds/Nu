@@ -759,9 +759,9 @@ type [<CustomEquality; NoComparison>] TextureInternal =
 
     /// Check that the current texture size is the same as the given size, resizing if necessary. If used, must be called every frame.
     static member updateSize textureMetadata (textureInternal : TextureInternal) (vkc : VulkanContext) =
-        if  textureMetadata.TextureWidth <> textureInternal.TextureMetadata.TextureWidth ||
-            textureMetadata.TextureHeight <> textureInternal.TextureMetadata.TextureHeight then
-            let textureVulkan = TextureVulkan.create textureInternal.PixelFormat_ textureInternal.InternalFormat_ textureMetadata textureInternal.MipLevels textureInternal.AttachmentMode_ textureInternal.TextureType_ textureInternal.ImageUsages_ vkc
+        if  textureMetadata.TextureWidth <> textureInternal.TextureMetadata_.TextureWidth ||
+            textureMetadata.TextureHeight <> textureInternal.TextureMetadata_.TextureHeight then
+            let textureVulkan = TextureVulkan.create textureInternal.PixelFormat_ textureInternal.InternalFormat_ textureMetadata textureInternal.MipLevels_ textureInternal.AttachmentMode_ textureInternal.TextureType_ textureInternal.ImageUsages_ vkc
             TextureVulkan.destroy textureInternal.TextureVulkan_ vkc
             textureInternal.TextureVulkan_ <- textureVulkan
     
