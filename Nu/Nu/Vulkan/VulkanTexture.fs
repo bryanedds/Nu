@@ -198,7 +198,7 @@ type TextureVulkan =
       ImageView : VkImageView
       LayerViews : VkImageView array
       SubViews : VkImageView array2d
-      ImageSize : TextureMetadata
+      TextureMetadata : TextureMetadata
       StagingBuffers : Nu.Vulkan.Buffer List }
 
     static member private createImage vkFormat extent mipLevels (textureType : TextureType) usageFlags (vkc : VulkanContext) =
@@ -268,7 +268,7 @@ type TextureVulkan =
           ImageView = imageView
           LayerViews = layerViews
           SubViews = subViews
-          ImageSize = metadata
+          TextureMetadata = metadata
           StagingBuffers = List () }
 
     static member destroy texture (vkc : VulkanContext) =
@@ -758,10 +758,12 @@ type [<CustomEquality; NoComparison>] TextureInternal =
         textureInternal
 
     /// Check that the current texture size is the same as the given size, resizing if necessary. If used, must be called every frame.
-    static member updateSize metadata (textureInternal : TextureInternal) (vkc : VulkanContext) =
-        if metadata <> textureInternal.TextureVulkan_.ImageSize then
+    static member updateSize textureMetadata (textureInternal : TextureInternal) (vkc : VulkanContext) =
+        if  textureMetadata.TextureWidth <> textureInternal.TextureMetadata.TextureWidth ||
+            textureMetadata.TextureHeight <> textureInternal.TextureMetadata.TextureHeight then
+            let textureVulkan = TextureVulkan.create textureInternal.PixelFormat_ textureInternal.InternalFormat_ textureMetadata textureInternal.MipLevels textureInternal.AttachmentMode_ textureInternal.TextureType_ textureInternal.ImageUsages_ vkc
             TextureVulkan.destroy textureInternal.TextureVulkan_ vkc
-            textureInternal.TextureVulkan_ <- TextureVulkan.create textureInternal.PixelFormat_ textureInternal.InternalFormat_ metadata textureInternal.MipLevels textureInternal.AttachmentMode_ textureInternal.TextureType_ textureInternal.ImageUsages_ vkc
+            textureInternal.TextureVulkan_ <- textureVulkan
     
     /// Record commands to upload pixel data to TextureInternal. Can only be done once.
     static member uploadAsync commandBuffer metadata mipLevel layer pixels (textureInternal : TextureInternal) (vkc : VulkanContext) =
