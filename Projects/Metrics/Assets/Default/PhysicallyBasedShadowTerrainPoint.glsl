@@ -1,5 +1,5 @@
 #shader vertex
-#version 460 core
+#version 450 core
 
 uniform mat4 view;
 uniform mat4 projection;
@@ -17,7 +17,7 @@ void main()
 }
 
 #shader fragment
-#version 460 core
+#version 450 core
 
 uniform vec3 eyeCenter;
 
