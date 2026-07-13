@@ -1478,7 +1478,7 @@ module PhysicallyBased =
 
                 // create buffers
                 let vertexBuffer = Buffer.createVertexStagedFromMemory vertexData vkc
-                let instanceBuffer = Buffer.create (Constants.Render.InstanceFieldCount * sizeof<single>) Instance vkc
+                let instanceBuffer = Buffer.create Instance (Constants.Render.InstanceFieldCount * sizeof<single>) vkc
                 let indexBuffer = Buffer.createIndexStagedFromMemory indexData vkc
 
                 // prepare instance buffer
@@ -1553,7 +1553,7 @@ module PhysicallyBased =
 
                 // create buffers
                 let vertexBuffer = Buffer.createVertexStagedFromMemory vertexData vkc
-                let instanceBuffer = Buffer.create (Constants.Render.InstanceFieldCount * sizeof<single>) Instance vkc
+                let instanceBuffer = Buffer.create Instance (Constants.Render.InstanceFieldCount * sizeof<single>) vkc
                 let indexBuffer = Buffer.createIndexStagedFromMemory indexData vkc
 
                 // prepare instance buffer
@@ -1659,11 +1659,11 @@ module PhysicallyBased =
     let createPhysicallyBasedShadowPipeline shaderPath vertexBindings colorAttachmentFormats depthTestFormat vkc =
 
         // create set 0 uniform buffers
-        let shadowVertUniform = Buffer.create sizeof<ShadowVert> Storage vkc
-        let shadowFragUniform = Buffer.create sizeof<ShadowFrag> Storage vkc
+        let shadowVertUniform = Buffer.create Storage sizeof<ShadowVert> vkc
+        let shadowFragUniform = Buffer.create Storage sizeof<ShadowFrag> vkc
 
         // create set 1 uniform buffers
-        let boneUniform = Buffer.create (Constants.Render.BonesMax * sizeof<Matrix4x4>) Storage vkc
+        let boneUniform = Buffer.create Storage (Constants.Render.BonesMax * sizeof<Matrix4x4>) vkc
 
         // create pipeline
         let pipeline =
@@ -1813,16 +1813,16 @@ module PhysicallyBased =
     let createPhysicallyBasedPipeline lightMapsMax lightsMax shaderPath blends cullModes vertexBindings colorAttachmentFormats depthTestOpt vkc =
 
         // create set 0 uniform buffers
-        let eyeUniform = Buffer.create sizeof<Eye> Storage vkc
-        let lightingUniform = Buffer.create sizeof<Lighting> Storage vkc
+        let eyeUniform = Buffer.create Storage sizeof<Eye> vkc
+        let lightingUniform = Buffer.create Storage sizeof<Lighting> vkc
 
         // create set 2 uniform buffers
         let shadowMatrixMax = Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels
-        let boneUniform = Buffer.create (Constants.Render.BonesMax * sizeof<Matrix4x4>) Storage vkc
-        let lightMapsUniform = Buffer.create (lightMapsMax * sizeof<LightMap'>) Storage vkc
-        let lightsGeneralUniform = Buffer.create sizeof<LightsGeneral> Storage vkc
-        let lightsUniform = Buffer.create (lightsMax * sizeof<Light>) Storage vkc
-        let shadowMatrixUniform = Buffer.create (shadowMatrixMax * sizeof<Matrix4x4>) Storage vkc
+        let boneUniform = Buffer.create Storage (Constants.Render.BonesMax * sizeof<Matrix4x4>) vkc
+        let lightMapsUniform = Buffer.create Storage (lightMapsMax * sizeof<LightMap'>) vkc
+        let lightsGeneralUniform = Buffer.create Storage sizeof<LightsGeneral> vkc
+        let lightsUniform = Buffer.create Storage (lightsMax * sizeof<Light>) vkc
+        let shadowMatrixUniform = Buffer.create Storage (shadowMatrixMax * sizeof<Matrix4x4>) vkc
 
         // create pipeline
         let pipeline =
@@ -2043,10 +2043,10 @@ module PhysicallyBased =
 
         // create uniform buffers
         let shadowMatrixMax = Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels
-        let eyeUniform = Buffer.create sizeof<Eye> Storage vkc
-        let lightingUniform = Buffer.create sizeof<Lighting2> Storage vkc
-        let lightUniform = Buffer.create (Constants.Render.LightsMaxDeferred * sizeof<Light>) Storage vkc
-        let shadowMatrixUniform = Buffer.create (shadowMatrixMax * sizeof<Matrix4x4>) Storage vkc
+        let eyeUniform = Buffer.create Storage sizeof<Eye> vkc
+        let lightingUniform = Buffer.create Storage sizeof<Lighting2> vkc
+        let lightUniform = Buffer.create Storage (Constants.Render.LightsMaxDeferred * sizeof<Light>) vkc
+        let shadowMatrixUniform = Buffer.create Storage (shadowMatrixMax * sizeof<Matrix4x4>) vkc
 
         // create pipeline
         let pipeline =
@@ -2269,11 +2269,11 @@ module PhysicallyBased =
 
         // create uniform buffers
         let shadowMatrixMax = Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels
-        let eyeUniform = Buffer.create sizeof<Eye> Storage vkc
-        let lightingUniform = Buffer.create sizeof<Lighting> Storage vkc
-        let lightsGeneralUniform = Buffer.create sizeof<LightsGeneral> Storage vkc
-        let lightsUniform = Buffer.create (Constants.Render.LightsMaxDeferred * sizeof<Light>) Storage vkc
-        let shadowMatricesUniform = Buffer.create (shadowMatrixMax * sizeof<Matrix4x4>) Storage vkc
+        let eyeUniform = Buffer.create Storage sizeof<Eye> vkc
+        let lightingUniform = Buffer.create Storage sizeof<Lighting> vkc
+        let lightsGeneralUniform = Buffer.create Storage sizeof<LightsGeneral> vkc
+        let lightsUniform = Buffer.create Storage (Constants.Render.LightsMaxDeferred * sizeof<Light>) vkc
+        let shadowMatricesUniform = Buffer.create Storage (shadowMatrixMax * sizeof<Matrix4x4>) vkc
 
         // create pipeline
         let pipeline =
@@ -2481,9 +2481,9 @@ module PhysicallyBased =
     let createPhysicallyBasedDeferredLightMappingPipeline colorAttachmentFormat vkc =
 
         // create uniform buffers
-        let eyeUniform = Buffer.create sizeof<Eye> Storage vkc
-        let lightMapsUniform = Buffer.create (Constants.Render.LightMapsMaxDeferred * sizeof<LightMap'>) Storage vkc
-        let lightsGeneralUniform = Buffer.create sizeof<LightsGeneral> Storage vkc
+        let eyeUniform = Buffer.create Storage sizeof<Eye> vkc
+        let lightMapsUniform = Buffer.create Storage (Constants.Render.LightMapsMaxDeferred * sizeof<LightMap'>) vkc
+        let lightsGeneralUniform = Buffer.create Storage sizeof<LightsGeneral> vkc
 
         // create pipeline
         let pipeline =
@@ -2638,9 +2638,9 @@ module PhysicallyBased =
     let createPhysicallyBasedDeferredAmbientPipeline colorAttachmentFormat vkc =
 
         // create uniform buffers
-        let eyeUniform = Buffer.create sizeof<Eye> Storage vkc
-        let lightMapUniform = Buffer.create sizeof<LightMap'> Storage vkc
-        let lightMapsUniform = Buffer.create (Constants.Render.LightMapsMaxDeferred * sizeof<LightMap'>) Storage vkc
+        let eyeUniform = Buffer.create Storage sizeof<Eye> vkc
+        let lightMapUniform = Buffer.create Storage sizeof<LightMap'> vkc
+        let lightMapsUniform = Buffer.create Storage (Constants.Render.LightMapsMaxDeferred * sizeof<LightMap'>) vkc
 
         // create pipeline
         let pipeline =
@@ -2786,7 +2786,7 @@ module PhysicallyBased =
     let createPhysicallyBasedDeferredIrradiancePipeline colorAttachmentFormat vkc =
 
         // create uniform buffers
-        let eyeUniform = Buffer.create sizeof<Eye> Storage vkc
+        let eyeUniform = Buffer.create Storage sizeof<Eye> vkc
 
         // create pipeline
         let pipeline =
@@ -2918,8 +2918,8 @@ module PhysicallyBased =
     let createPhysicallyBasedDeferredEnvironmentFilterPipeline colorAttachmentFormat vkc =
 
         // create uniform buffers
-        let eyeUniform = Buffer.create sizeof<Eye> Storage vkc
-        let lightMapsUniform = Buffer.create (Constants.Render.LightMapsMaxDeferred * sizeof<LightMap'>) Storage vkc
+        let eyeUniform = Buffer.create Storage sizeof<Eye> vkc
+        let lightMapsUniform = Buffer.create Storage (Constants.Render.LightMapsMaxDeferred * sizeof<LightMap'>) vkc
 
         // create pipeline
         let pipeline =
@@ -3079,8 +3079,8 @@ module PhysicallyBased =
     let createPhysicallyBasedDeferredSsaoPipeline colorAttachmentFormat vkc =
 
         // create set 0 uniform buffers
-        let eyeUniform = Buffer.create sizeof<Eye> Storage vkc
-        let ssaoUniform = Buffer.create sizeof<Ssao> Storage vkc
+        let eyeUniform = Buffer.create Storage sizeof<Eye> vkc
+        let ssaoUniform = Buffer.create Storage sizeof<Ssao> vkc
 
         // create pipeline
         let pipeline =
@@ -3213,8 +3213,8 @@ module PhysicallyBased =
     let createPhysicallyBasedDeferredColoringPipeline colorAttachmentFormats vkc =
 
         // create uniform buffers
-        let eyeUniform = Buffer.create sizeof<Eye> Storage vkc
-        let lightingUniform = Buffer.create sizeof<Lighting> Storage vkc
+        let eyeUniform = Buffer.create Storage sizeof<Eye> vkc
+        let lightingUniform = Buffer.create Storage sizeof<Lighting> vkc
 
         // create pipeline
         let pipeline =
@@ -3409,8 +3409,8 @@ module PhysicallyBased =
     let createPhysicallyBasedDeferredCompositionPipeline colorAttachmentFormat vkc =
 
         // create uniform buffers
-        let eyeUniform = Buffer.create sizeof<Eye> Storage vkc
-        let lightingUniform = Buffer.create sizeof<Lighting> Storage vkc
+        let eyeUniform = Buffer.create Storage sizeof<Eye> vkc
+        let lightingUniform = Buffer.create Storage sizeof<Lighting> vkc
 
         // create pipeline
         let pipeline =
@@ -3955,7 +3955,7 @@ module PhysicallyBased =
     let createFilterGaussianEsmPipeline colorAttachmentFormat vkc =
 
         // create set 0 uniform buffers
-        let gaussianEsmUniform = Buffer.create sizeof<GaussianEsm> Storage vkc
+        let gaussianEsmUniform = Buffer.create Storage sizeof<GaussianEsm> vkc
 
         // create pipeline
         let pipeline =
@@ -4066,7 +4066,7 @@ module PhysicallyBased =
     let createFilterToneMappingPipeline colorAttachmentFormat vkc =
 
         // create set 0 uniform buffers
-        let toneMappingUniform = Buffer.create sizeof<ToneMapping> Storage vkc
+        let toneMappingUniform = Buffer.create Storage sizeof<ToneMapping> vkc
 
         // create pipeline
         let pipeline =
@@ -4189,7 +4189,7 @@ module PhysicallyBased =
     let createFilterFxaaPipeline colorAttachmentFormat vkc =
 
         // create set 0 uniform buffers
-        let fxaaUniform = Buffer.create sizeof<Fxaa> Storage vkc
+        let fxaaUniform = Buffer.create Storage sizeof<Fxaa> vkc
 
         // create pipeline
         let pipeline =

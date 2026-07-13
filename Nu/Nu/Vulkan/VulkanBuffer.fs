@@ -35,10 +35,10 @@ type BufferInternal =
     /// The size of the buffer.
     member this.Size = this.Size_
 
-    static member private makeBufferCreateInfo size usage =
+    static member private makeBufferCreateInfo usage (size : int) =
         let mutable info = VkBufferCreateInfo ()
-        info.size <- uint64 size
         info.usage <- usage
+        info.size <- uint64 size
         info.sharingMode <- VkSharingMode.Exclusive
         info
 
@@ -68,7 +68,7 @@ type BufferInternal =
         bufferInternal
 
     /// Create BufferInternal.
-    static member create bufferSize bufferType vkc =
+    static member create bufferType bufferSize vkc =
 
         // compute uploadability
         let struct (uploadEnabled, bufferUsage) =
@@ -86,25 +86,25 @@ type BufferInternal =
             match bufferType with
             | Staging ->
                 let usage = VkBufferUsageFlags.TransferSrc
-                BufferInternal.makeBufferCreateInfo bufferSize usage
+                BufferInternal.makeBufferCreateInfo usage bufferSize
             | Vertex uploadEnabled ->
                 let usage =
                     if uploadEnabled
                     then VkBufferUsageFlags.VertexBuffer ||| VkBufferUsageFlags.TransferSrc ||| VkBufferUsageFlags.TransferDst
                     else VkBufferUsageFlags.VertexBuffer ||| VkBufferUsageFlags.TransferDst
-                BufferInternal.makeBufferCreateInfo bufferSize usage
+                BufferInternal.makeBufferCreateInfo usage bufferSize
             | Index uploadEnabled ->
                 let usage =
                     if uploadEnabled
                     then VkBufferUsageFlags.IndexBuffer ||| VkBufferUsageFlags.TransferSrc ||| VkBufferUsageFlags.TransferDst
                     else VkBufferUsageFlags.IndexBuffer ||| VkBufferUsageFlags.TransferDst
-                BufferInternal.makeBufferCreateInfo bufferSize usage
+                BufferInternal.makeBufferCreateInfo usage bufferSize
             | Instance ->
                 let usage = VkBufferUsageFlags.VertexBuffer ||| VkBufferUsageFlags.TransferSrc ||| VkBufferUsageFlags.TransferDst
-                BufferInternal.makeBufferCreateInfo bufferSize usage
+                BufferInternal.makeBufferCreateInfo usage bufferSize
             | Storage ->
                 let usage = VkBufferUsageFlags.StorageBuffer ||| VkBufferUsageFlags.TransferSrc ||| VkBufferUsageFlags.TransferDst
-                BufferInternal.makeBufferCreateInfo bufferSize usage
+                BufferInternal.makeBufferCreateInfo usage bufferSize
 
         // make buffer
         BufferInternal.createPlus (uploadEnabled, bufferUsage, &createInfo, vkc)
@@ -173,7 +173,7 @@ type Buffer =
 
     static member private ensureHeight (buffer : Buffer) vkc =
         while buffer.BufferCursor_ >= buffer.BufferInternals_.Count do
-            let bufferInternals = Array.init buffer.BufferInternals_.Count (fun _ -> BufferInternal.create buffer.BufferInternals_[0].Size buffer.BufferType_ vkc)
+            let bufferInternals = Array.init buffer.BufferInternals_.Count (fun _ -> BufferInternal.create buffer.BufferType_ buffer.BufferInternals_[0].Size vkc)
             buffer.BufferInternals_.AddRange bufferInternals
 
     /// Expand buffer width as necessary, disregarding all existing content.
@@ -181,7 +181,7 @@ type Buffer =
         Buffer.ensureHeight buffer vkc
         let bufferInternalOld = buffer.BufferInternals_[buffer.BufferCursor_]
         if bufferInternalOld.Size < size then
-            let bufferInternalNew = BufferInternal.create size buffer.BufferType_ vkc
+            let bufferInternalNew = BufferInternal.create buffer.BufferType_ size vkc
             Buffer.copyData bufferInternalOld.Size bufferInternalOld.VkBuffer_ bufferInternalNew.VkBuffer_ vkc
             buffer.BufferInternals_[buffer.BufferCursor_] <- bufferInternalNew
             BufferInternal.destroy bufferInternalOld vkc
@@ -202,9 +202,9 @@ type Buffer =
         buffer.BufferCursor_ <- inc buffer.BufferCursor_
 
     /// Create a new Buffer.
-    static member create bufferSize (bufferType : BufferType) vkc =
+    static member create (bufferType : BufferType) bufferSize vkc =
         { BufferCursor_ = 0
-          BufferInternals_ = List [BufferInternal.create bufferSize bufferType vkc]
+          BufferInternals_ = List [BufferInternal.create bufferType bufferSize vkc]
           BufferType_ = bufferType }
 
     /// Write subdata to Buffer. Caller is reponsible for ensuring buffer width and height.
@@ -237,14 +237,14 @@ type Buffer =
 
     /// Create a staging buffer and stage the data.
     static member stageData size data vkc =
-        let buffer = Buffer.create size Staging vkc
+        let buffer = Buffer.create Staging size vkc
         Buffer.uploadData size 1 data buffer vkc
         buffer
 
     /// Create a vertex buffer with data uploaded via staging buffer.
     static member createVertexStaged size data vkc =
         let stagingBuffer = Buffer.stageData size data vkc
-        let vertexBuffer = Buffer.create size (Vertex false) vkc
+        let vertexBuffer = Buffer.create (Vertex false) size vkc
         Buffer.copyData size stagingBuffer.BufferInternal.VkBuffer vertexBuffer.BufferInternal.VkBuffer vkc
         Buffer.destroy stagingBuffer vkc
         vertexBuffer
@@ -252,7 +252,7 @@ type Buffer =
     /// Create an index buffer with data uploaded via staging buffer.
     static member createIndexStaged size data vkc =
         let stagingBuffer = Buffer.stageData size data vkc
-        let indexBuffer = Buffer.create size (Index false) vkc
+        let indexBuffer = Buffer.create (Index false) size vkc
         Buffer.copyData size stagingBuffer.BufferInternal.VkBuffer indexBuffer.BufferInternal.VkBuffer vkc
         Buffer.destroy stagingBuffer vkc
         indexBuffer

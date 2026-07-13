@@ -78,8 +78,8 @@ module SpriteBatch =
     let private createSpriteBatchPipeline (vkc : VulkanContext) =
 
         // create uniforms
-        let spritesUniform = Buffer.create (Constants.Render.SpriteBatchSize * sizeof<Sprite>) Storage vkc
-        let viewProjectionUniform = Buffer.create sizeof<ViewProjection> Storage vkc
+        let spritesUniform = Buffer.create Storage (Constants.Render.SpriteBatchSize * sizeof<Sprite>) vkc
+        let viewProjectionUniform = Buffer.create Storage sizeof<ViewProjection> vkc
         
         // create sprite batch pipeline
         let pipeline =

@@ -120,8 +120,8 @@ type VulkanRendererImGui
             fonts.ClearTexData ()
 
             // create vertex and index buffers
-            vertexBuffer <- Nu.Vulkan.Buffer.create vertexBufferSize (Vertex true) vkc
-            indexBuffer <- Nu.Vulkan.Buffer.create indexBufferSize (Index true) vkc
+            vertexBuffer <- Nu.Vulkan.Buffer.create (Vertex true) vertexBufferSize vkc
+            indexBuffer <- Nu.Vulkan.Buffer.create (Index true) indexBufferSize vkc
 
             // create pipeline
             pipeline <-

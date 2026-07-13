@@ -27,8 +27,8 @@ module SkyBox =
     let createSkyBoxPipeline colorAttachmentFormat depthAttachmentFormat (vkc : VulkanContext) =
 
         // create uniform buffers
-        let eyeUniform = Buffer.create sizeof<Eye> Storage vkc
-        let skyBoxPropertiesUniform = Buffer.create sizeof<SkyBox> Storage vkc
+        let eyeUniform = Buffer.create Storage sizeof<Eye> vkc
+        let skyBoxPropertiesUniform = Buffer.create Storage sizeof<SkyBox> vkc
 
         // create pipeline
         let pipeline =

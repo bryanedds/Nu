@@ -19,9 +19,9 @@ module ContourTessellation =
 
         // create buffers
         let count = 1024 // TODO: P1: make constant.
-        let vertexBuffer = Buffer.create (count * sizeof<ContourVertex>) (Vertex true) vkc
-        let indexBuffer = Buffer.create (count * sizeof<uint32>) (BufferType.Index true) vkc
-        let modelViewProjectionUniform = Buffer.create sizeof<Matrix4x4> Storage vkc
+        let vertexBuffer = Buffer.create (Vertex true) (count * sizeof<ContourVertex>) vkc
+        let indexBuffer = Buffer.create (BufferType.Index true) (count * sizeof<uint32>) vkc
+        let modelViewProjectionUniform = Buffer.create Storage sizeof<Matrix4x4> vkc
         
         // create pipeline
         let vertexSize = sizeof<ContourVertex> // = sizeof<Vector2> + sizeof<Color> = 2 * sizeof<single> + 4 * sizeof<single>

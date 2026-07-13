@@ -143,8 +143,8 @@ module LightMap =
     let createEnvironmentFilterPipeline shaderPath colorAttachmentFormat (vkc : VulkanContext) =
 
         // create uniform buffers
-        let eyeUniform = Buffer.create sizeof<Eye> Storage vkc
-        let environmentFilterUniform = Buffer.create sizeof<EnvironmentFilter> Storage vkc
+        let eyeUniform = Buffer.create Storage sizeof<Eye> vkc
+        let environmentFilterUniform = Buffer.create Storage sizeof<EnvironmentFilter> vkc
 
         // create pipeline
         let pipeline =

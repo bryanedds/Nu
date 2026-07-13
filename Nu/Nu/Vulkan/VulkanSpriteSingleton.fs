@@ -27,8 +27,8 @@ module SpriteSingleton =
     let createSpriteSingletonPipeline (vkc : VulkanContext) =
 
         // create sprite uniform buffers
-        let spriteVertUniform = Buffer.create sizeof<SpriteVert> Storage vkc
-        let spriteFragUniform = Buffer.create sizeof<SpriteFrag> Storage vkc
+        let spriteVertUniform = Buffer.create Storage sizeof<SpriteVert> vkc
+        let spriteFragUniform = Buffer.create Storage sizeof<SpriteFrag> vkc
         
         // create sprite pipeline
         let pipeline =

@@ -244,7 +244,7 @@ module CubeMap =
     let createCubeMapPipeline shaderPath colorAttachmentFormat (vkc : VulkanContext) =
 
         // create eye buffer
-        let eyeUniform = Buffer.create sizeof<Eye> Storage vkc
+        let eyeUniform = Buffer.create Storage sizeof<Eye> vkc
 
         // create pipeline
         let pipeline =
