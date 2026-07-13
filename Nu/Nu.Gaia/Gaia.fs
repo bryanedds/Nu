@@ -3837,25 +3837,29 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             let openProjectDlls =
                 match OpenProjectDllsOpt with
                 | None ->
-                    let projectsDirPaths = PathF.GetFullPath (gaiaDir + "/../../../../../Projects")
                     let openProjectDlls =
-                        Directory.EnumerateDirectories projectsDirPaths
-                        |> Seq.collect (fun dir -> Directory.EnumerateDirectories (dir, "bin"))
-                        |> Seq.collect (fun dir -> Directory.EnumerateDirectories (dir, Constants.Gaia.BuildName))
-                        |> Seq.collect (fun dir -> Directory.EnumerateDirectories dir)
-                        |> Seq.collect (fun dir -> Directory.EnumerateFiles (dir, "*.dll"))
-                        |> Seq.map PathF.Normalize // ensure we're in '/' mode
-                        |> Seq.filter nuAssemblyFileFilter
-                        |> Seq.toArray
+                        gaiaDir + "../../../../../Projects" // scan project directories for DLLs
+                        |> PathF.GetFullPath
+                        |> Directory.GetDirectories 
+                        |> Array.collect (fun projectDir ->
+                            let projectDir = PathF.Normalize projectDir
+                            let projectName = PathF.GetFileName projectDir
+                            let dllDir = projectDir + "/bin/" + Constants.Gaia.BuildName + "/" + Constants.Engine.TargetFramework
+                            if Directory.Exists dllDir
+                            then Directory.GetFiles (dllDir, projectName + ".dll") |> Array.map PathF.Normalize
+                            else [||])
                     let openProjectNames =
-                        openProjectDlls
-                        |> Array.map (fun (filePath : string) ->
-                            try let names = filePath.Split "/"
-                                let projectName = names[names.Length - 1] + " (" + names[names.Length - 2] + ")"
-                                Some projectName
-                            with _ -> None)
-                        |> Array.definitize
-                    let openProjectIndex = Array.IndexOf (openProjectDlls, ProjectDllPath)
+                        Array.map PathF.GetFileNameWithoutExtension openProjectDlls
+                    let (openProjectDlls, openProjectNames, openProjectIndex) =
+                        if Array.contains ProjectDllPath openProjectDlls then
+                            (openProjectDlls, openProjectNames, Array.IndexOf (openProjectDlls, ProjectDllPath))
+                        elif String.isEmpty ProjectDllPath then // no selected item
+                            (openProjectDlls, openProjectNames, -1)
+                        else // ensure currently opened DLL is in the list even if from a different TargetFramework
+                            let projectDllDirectories = ProjectDllPath.Split "/"
+                            (Array.append openProjectDlls [|ProjectDllPath|],
+                             Array.append openProjectNames [|PathF.GetFileNameWithoutExtension ProjectDllPath + " (" + projectDllDirectories[projectDllDirectories.Length - 2] + ")"|],
+                             Array.length openProjectDlls)
                     OpenProjectDllsOpt <- Some openProjectDlls
                     OpenProjectNames <- openProjectNames
                     OpenProjectIndex <- openProjectIndex
@@ -3869,7 +3873,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             if ImGui.Button "Open" || ImGui.IsKeyReleased ImGuiKey.Enter then
                 ShowOpenProjectDialog <- false
                 let gaiaState = makeGaiaState openProjectDlls[OpenProjectIndex] (Some OpenProjectEditMode) true world
-                try File.WriteAllText (gaiaDir + "/" + Constants.Gaia.StateFilePath, printGaiaState gaiaState)
+                try File.WriteAllText (gaiaDir + Constants.Gaia.StateFilePath, printGaiaState gaiaState)
                     Directory.SetCurrentDirectory gaiaDir
                     ShowRestartDialog <- true
                 with _ ->
