@@ -201,9 +201,9 @@ type VulkanRendererImGui
                     VkRect2D (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
                     |> Hl.scaleRectForPixelDensity pixelDensity
                 let mutable renderingInfo = Hl.makeRenderingInfo [|vkc.SwapchainImageView|] None renderArea None
-                Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &renderingInfo)
+                Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, &&renderingInfo)
                 let mutable viewport = Hl.makeViewport false renderArea
-                Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, asPointer &viewport)
+                Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, &&viewport)
                 let vkPipeline = Pipeline.tryGetVkPipeline VulkanImGui false pipeline |> Option.get // not supporting shader reload of Gaia itself
                 Vulkan.vkCmdBindPipeline (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
                 
@@ -239,7 +239,7 @@ type VulkanRendererImGui
                     // bind vertex and index buffers
                     let mutable vertexBuffer = vertexBuffer.VkBuffer
                     let mutable vertexOffset = 0UL
-                    Vulkan.vkCmdBindVertexBuffers (vkc.RenderCommandBuffer, 0u, 1u, asPointer &vertexBuffer, asPointer &vertexOffset)
+                    Vulkan.vkCmdBindVertexBuffers (vkc.RenderCommandBuffer, 0u, 1u, &&vertexBuffer, &&vertexOffset)
                     Vulkan.vkCmdBindIndexBuffer (vkc.RenderCommandBuffer, indexBuffer.VkBuffer, 0UL, VkIndexType.Uint16)
 
                 // set up scale and translation
@@ -288,7 +288,7 @@ type VulkanRendererImGui
                                 if Hl.validateRect scissor then
 
                                     // set scissor
-                                    Vulkan.vkCmdSetScissor (vkc.RenderCommandBuffer, 0u, 1u, asPointer &scissor)
+                                    Vulkan.vkCmdSetScissor (vkc.RenderCommandBuffer, 0u, 1u, &&scissor)
 
                                     // identify requested texture and assign to it a descriptor set index
                                     let textureId = uint32 pcmd.TextureId
@@ -301,7 +301,7 @@ type VulkanRendererImGui
                                         Pipeline.writeDescriptorCombinedTextureSampler 0 0 texture sampler vkSet vkc
 
                                     // bind descriptor set
-                                    Vulkan.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.PipelineLayout, 0u, 1u, asPointer &materialDescriptorSet, 0u, nullPtr)
+                                    Vulkan.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.PipelineLayout, 0u, 1u, &&materialDescriptorSet, 0u, nullPtr)
 
                                     // draw
                                     Vulkan.vkCmdDrawIndexed (vkc.RenderCommandBuffer, pcmd.ElemCount, 1u, pcmd.IdxOffset + uint globalIdxOffset, int pcmd.VtxOffset + globalVtxOffset, 0u)

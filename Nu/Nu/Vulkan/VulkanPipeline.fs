@@ -114,7 +114,7 @@ and DescriptorSet<'k when 'k : equality> =
         info.pSetLayouts <- vkDescriptorSetLayoutsPin.Pointer
         let vkDescriptorSets = Array.zeroCreate<VkDescriptorSet> capacity
         use vkDescriptorSetsPin = new ArrayPin<_> (vkDescriptorSets)
-        Vulkan.vkAllocateDescriptorSets (vkc.Device, asPointer &info, vkDescriptorSetsPin.Pointer) |> Hl.check
+        Vulkan.vkAllocateDescriptorSets (vkc.Device, &&info, vkDescriptorSetsPin.Pointer) |> Hl.check
         (vkDescriptorPool, Queue vkDescriptorSets)
 
     static member create<'a when 'a : equality> capacity (descriptorSetDefinition : 'a DescriptorSetDefinition) vkDescriptorSetLayout (vkc : VulkanContext) : 'a DescriptorSet =
@@ -351,14 +351,14 @@ type Pipeline =
                 info.pNext <- asVoidPtr &rnInfo
                 info.stageCount <- uint ssInfos.Length
                 info.pStages <- ssInfosPin.Pointer
-                info.pVertexInputState <- asPointer &viInfo
-                info.pInputAssemblyState <- asPointer &iaInfo
-                info.pViewportState <- asPointer &vInfo
+                info.pVertexInputState <- &&viInfo
+                info.pInputAssemblyState <- &&iaInfo
+                info.pViewportState <- &&vInfo
                 info.pRasterizationState <- NativePtr.add rInfos i
-                info.pMultisampleState <- asPointer &mInfo
-                info.pDepthStencilState <- asPointer &dInfo
+                info.pMultisampleState <- &&mInfo
+                info.pDepthStencilState <- &&dInfo
                 info.pColorBlendState <- NativePtr.add bInfos i
-                info.pDynamicState <- asPointer &dsInfo
+                info.pDynamicState <- &&dsInfo
                 info.layout <- pipelineLayout
                 info.renderPass <- VkRenderPass.Null
                 info.subpass <- 0u
@@ -410,8 +410,8 @@ type Pipeline =
         write.dstArrayElement <- uint descriptorIndex
         write.descriptorCount <- 1u
         write.descriptorType <- VkDescriptorType.StorageBuffer
-        write.pBufferInfo <- asPointer &info
-        Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
+        write.pBufferInfo <- &&info
+        Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, &&write, 0u, nullPtr)
 
         // advance buffer
         Buffer.advance buffer
@@ -430,8 +430,8 @@ type Pipeline =
         write.dstArrayElement <- uint descriptorIndex
         write.descriptorCount <- 1u
         write.descriptorType <- VkDescriptorType.SampledImage
-        write.pImageInfo <- asPointer &info
-        Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
+        write.pImageInfo <- &&info
+        Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, &&write, 0u, nullPtr)
 
     static member writeDescriptorSampledImageViews (binding : int) (descriptorIndex : int) (imageViews : VkImageView array) vkDescriptorSet (vkc : VulkanContext) =
 
@@ -451,7 +451,7 @@ type Pipeline =
         write.descriptorCount <- uint imageViews.Length
         write.descriptorType <- VkDescriptorType.SampledImage
         write.pImageInfo <- infosPtr
-        Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
+        Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, &&write, 0u, nullPtr)
 
     static member writeDescriptorCombinedImageViewSampler (binding : int) (descriptorIndex : int) (imageView : VkImageView) (sampler : Sampler) vkDescriptorSet (vkc : VulkanContext) =
 
@@ -468,8 +468,8 @@ type Pipeline =
         write.dstArrayElement <- uint descriptorIndex
         write.descriptorCount <- 1u
         write.descriptorType <- VkDescriptorType.CombinedImageSampler
-        write.pImageInfo <- asPointer &info
-        Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
+        write.pImageInfo <- &&info
+        Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, &&write, 0u, nullPtr)
 
     static member writeDescriptorSampledTexture binding descriptorIndex (texture : Texture) vkDescriptorSet vkc =
         Pipeline.writeDescriptorSampledImageView binding descriptorIndex texture.ImageView vkDescriptorSet vkc
@@ -494,8 +494,8 @@ type Pipeline =
         write.dstArrayElement <- uint descriptorIndex
         write.descriptorCount <- 1u
         write.descriptorType <- VkDescriptorType.Sampler
-        write.pImageInfo <- asPointer &info
-        Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
+        write.pImageInfo <- &&info
+        Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, &&write, 0u, nullPtr)
 
     /// Describes a vertex attribute in the context of a vertex binding.
     [<DebuggerHidden; DebuggerStepThrough>]

@@ -43,7 +43,7 @@ type BufferInternal =
         info
 
     /// Create BufferInternal.
-    static member createPlus uploadEnabled bufferUsage bufferInfo (vkc : VulkanContext) =
+    static member createPlus (uploadEnabled, bufferUsage, bufferInfo : VkBufferCreateInfo byref, vkc : VulkanContext) =
 
         // allocation create info
         let mutable info = VmaAllocationCreateInfo ()
@@ -54,7 +54,7 @@ type BufferInternal =
         let mutable vkBuffer = Unchecked.defaultof<VkBuffer>
         let mutable vmaAllocation = Unchecked.defaultof<VmaAllocation>
         let mutable vmaAllocationInfo = Unchecked.defaultof<VmaAllocationInfo>
-        Vma.vmaCreateBuffer (vkc.VmaAllocator, &bufferInfo, &info, &vkBuffer, &vmaAllocation, asPointer &vmaAllocationInfo) |> Hl.check
+        Vma.vmaCreateBuffer (vkc.VmaAllocator, &&bufferInfo, &&info, &vkBuffer, &vmaAllocation, &vmaAllocationInfo) |> Hl.check
 
         // make BufferInternal
         let bufferInternal =
@@ -82,7 +82,7 @@ type BufferInternal =
             | Storage -> struct (true, VmaMemoryUsage.AutoPreferDevice)
 
         // make create info
-        let createInfo =
+        let mutable createInfo =
             match bufferType with
             | Staging ->
                 let usage = VkBufferUsageFlags.TransferSrc
@@ -107,7 +107,7 @@ type BufferInternal =
                 BufferInternal.makeBufferCreateInfo bufferSize usage
 
         // make buffer
-        BufferInternal.createPlus uploadEnabled bufferUsage createInfo vkc
+        BufferInternal.createPlus (uploadEnabled, bufferUsage, &createInfo, vkc)
 
     /// Write data to buffer if upload is enabled.
     static member write offset alignment size count data bufferInternal (_ : VulkanContext) =
@@ -190,7 +190,7 @@ type Buffer =
     static member private copyData size source destination (vkc : VulkanContext) =
         let commandBuffer = Hl.createTransientCommandBuffer vkc.TransientCommandPool vkc.Device
         let mutable region = VkBufferCopy (size = uint64 size)
-        Vulkan.vkCmdCopyBuffer (commandBuffer, source, destination, 1u, asPointer &region)
+        Vulkan.vkCmdCopyBuffer (commandBuffer, source, destination, 1u, &&region)
         ConcurrentCommandQueue.executeTransient commandBuffer vkc.TransientCommandPool vkc.TransientFence vkc.RenderQueue vkc.Device
 
     /// Begin use of this buffer for the current frame.

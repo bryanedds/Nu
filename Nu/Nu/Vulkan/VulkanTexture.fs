@@ -297,7 +297,7 @@ module TextureModule =
             Vulkan.vkCmdCopyBufferToImage
                 (commandBuffer, vkBuffer, vkImage,
                  TransferDst.VkImageLayout,
-                 1u, asPointer &region)
+                 1u, &&region)
             Hl.recordTransitionLayout false mipLevel layer 1 VkImageAspectFlags.Color TransferDst ColorAttachmentRead vkImage commandBuffer
 
         /// Record commands to generate mipmaps.
@@ -321,7 +321,7 @@ module TextureModule =
                  TransferDst.PipelineStage,
                  VkDependencyFlags.None,
                  0u, nullPtr, 0u, nullPtr,
-                 1u, asPointer &barrier)
+                 1u, &&barrier)
 
             // transition original image separately as it's already set to shader read
             barrier.srcAccessMask <- ColorAttachmentRead.Access
@@ -336,7 +336,7 @@ module TextureModule =
                  TransferDst.PipelineStage,
                  VkDependencyFlags.None,
                  0u, nullPtr, 0u, nullPtr,
-                 1u, asPointer &barrier)
+                 1u, &&barrier)
 
             // compute mipmap dimensions
             let mutable mipWidth = width
@@ -355,7 +355,7 @@ module TextureModule =
                      TransferSrc.PipelineStage,
                      VkDependencyFlags.None,
                      0u, nullPtr, 0u, nullPtr,
-                     1u, asPointer &barrier)
+                     1u, &&barrier)
 
                 // generate the next mipmap image from the previous one
                 let nextWidth = if mipWidth > 1 then mipWidth / 2 else 1
@@ -365,7 +365,7 @@ module TextureModule =
                         (i - 1) i layer layer
                         (VkRect2D (0, 0, uint mipWidth, uint mipHeight))
                         (VkRect2D (0, 0, uint nextWidth, uint nextHeight))
-                Vulkan.vkCmdBlitImage (commandBuffer, vkImage, TransferSrc.VkImageLayout, vkImage, TransferDst.VkImageLayout, 1u, asPointer &blit, VkFilter.Linear)
+                Vulkan.vkCmdBlitImage (commandBuffer, vkImage, TransferSrc.VkImageLayout, vkImage, TransferDst.VkImageLayout, 1u, &&blit, VkFilter.Linear)
 
                 // transition layout of previous image to be read by shader
                 barrier.srcAccessMask <- TransferSrc.Access
@@ -378,7 +378,7 @@ module TextureModule =
                      ColorAttachmentRead.PipelineStage,
                      VkDependencyFlags.None,
                      0u, nullPtr, 0u, nullPtr,
-                     1u, asPointer &barrier)
+                     1u, &&barrier)
 
                 // update mipmap dimensions
                 mipWidth <- nextWidth
@@ -396,7 +396,7 @@ module TextureModule =
                  ColorAttachmentRead.PipelineStage,
                  VkDependencyFlags.None,
                  0u, nullPtr, 0u, nullPtr,
-                 1u, asPointer &barrier)
+                 1u, &&barrier)
 
         /// Infer that an asset with the given file path should be filtered in a 2D rendering context.
         let inferTextureFiltered2d (filePath : string) =

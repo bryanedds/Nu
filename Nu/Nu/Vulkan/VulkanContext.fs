@@ -50,14 +50,14 @@ type [<ReferenceEquality>] ConcurrentCommandQueue =
             // submit commands
             let mutable info = VkSubmitInfo ()
             info.commandBufferCount <- 1u
-            info.pCommandBuffers <- asPointer &commandBuffer
-            Vulkan.vkQueueSubmit (vkQueue, 1u, asPointer &info, finishFence) |> Hl.check
+            info.pCommandBuffers <- &&commandBuffer
+            Vulkan.vkQueueSubmit (vkQueue, 1u, &&info, finishFence) |> Hl.check
 
             // wait for execution to finish
             Hl.awaitFence finishFence device
 
             // free command buffer
-            Vulkan.vkFreeCommandBuffers (device, commandPool, 1u, asPointer &commandBuffer))
+            Vulkan.vkFreeCommandBuffers (device, commandPool, 1u, &&commandBuffer))
 
     /// Create a ConcurrentCommandQueue.
     static member create queueFamilyIndex queueIndex device =
@@ -102,20 +102,20 @@ type PhysicalDevice =
     /// Get available extensions.
     static member private getExtensions vkPhysicalDevice =
         let mutable extensionCount = 0u
-        Vulkan.vkEnumerateDeviceExtensionProperties (vkPhysicalDevice, nullPtr, asPointer &extensionCount, nullPtr) |> Hl.check
+        Vulkan.vkEnumerateDeviceExtensionProperties (vkPhysicalDevice, nullPtr, &&extensionCount, nullPtr) |> Hl.check
         let extensions = Array.zeroCreate<VkExtensionProperties> (int extensionCount)
         use extensionsPin = new ArrayPin<_> (extensions)
-        Vulkan.vkEnumerateDeviceExtensionProperties (vkPhysicalDevice, nullPtr, asPointer &extensionCount, extensionsPin.Pointer) |> Hl.check
+        Vulkan.vkEnumerateDeviceExtensionProperties (vkPhysicalDevice, nullPtr, &&extensionCount, extensionsPin.Pointer) |> Hl.check
         extensions
 
     /// Get available surface formats.
     static member private getSurfaceFormats vkPhysicalDevice window instance =
         PhysicalDevice.checkSurface window instance
         let mutable formatCount = 0u
-        Vulkan.vkGetPhysicalDeviceSurfaceFormatsKHR (vkPhysicalDevice, Hl.Surface, asPointer &formatCount, nullPtr) |> Hl.check
+        Vulkan.vkGetPhysicalDeviceSurfaceFormatsKHR (vkPhysicalDevice, Hl.Surface, &&formatCount, nullPtr) |> Hl.check
         let formats = Array.zeroCreate<VkSurfaceFormatKHR> (int formatCount)
         use formatsPin = new ArrayPin<_> (formats)
-        Vulkan.vkGetPhysicalDeviceSurfaceFormatsKHR (vkPhysicalDevice, Hl.Surface, asPointer &formatCount, formatsPin.Pointer) |> Hl.check
+        Vulkan.vkGetPhysicalDeviceSurfaceFormatsKHR (vkPhysicalDevice, Hl.Surface, &&formatCount, formatsPin.Pointer) |> Hl.check
         formats
 
     /// Get surface capabilities.
@@ -133,10 +133,10 @@ type PhysicalDevice =
         
         // get queue families' properties
         let mutable queueFamilyCount = 0u
-        Vulkan.vkGetPhysicalDeviceQueueFamilyProperties (vkPhysicalDevice, asPointer &queueFamilyCount, nullPtr)
+        Vulkan.vkGetPhysicalDeviceQueueFamilyProperties (vkPhysicalDevice, &&queueFamilyCount, nullPtr)
         let queueFamilyProps = Array.zeroCreate<VkQueueFamilyProperties> (int queueFamilyCount)
         use queueFamilyPropsPin = new ArrayPin<_> (queueFamilyProps)
-        Vulkan.vkGetPhysicalDeviceQueueFamilyProperties (vkPhysicalDevice, asPointer &queueFamilyCount, queueFamilyPropsPin.Pointer)
+        Vulkan.vkGetPhysicalDeviceQueueFamilyProperties (vkPhysicalDevice, &&queueFamilyCount, queueFamilyPropsPin.Pointer)
 
         // NOTE: DJL: it is *essential* to use the *first* compatible queue families in the array, *not* the last, as per the tutorial and vortice vulkan sample.
         // I discovered this by accident because the queue families on my AMD behaved exactly the same as the queue families on this one:
@@ -265,10 +265,10 @@ type SwapchainSingleton =
     /// Get swapchain images.
     static member private getSwapchainImages vkSwapchain device =
         let mutable imageCount = 0u
-        Vulkan.vkGetSwapchainImagesKHR (device, vkSwapchain, asPointer &imageCount, nullPtr) |> Hl.check
+        Vulkan.vkGetSwapchainImagesKHR (device, vkSwapchain, &&imageCount, nullPtr) |> Hl.check
         let images = Array.zeroCreate<VkImage> (int imageCount)
         use imagesPin = new ArrayPin<_> (images)
-        Vulkan.vkGetSwapchainImagesKHR (device, vkSwapchain, asPointer &imageCount, imagesPin.Pointer) |> Hl.check
+        Vulkan.vkGetSwapchainImagesKHR (device, vkSwapchain, &&imageCount, imagesPin.Pointer) |> Hl.check
         images
 
     /// Create the image views.
@@ -631,10 +631,10 @@ type [<ReferenceEquality>] VulkanContext =
 
         // get available instance layers
         let mutable layerCount = 0u
-        Vulkan.vkEnumerateInstanceLayerProperties (asPointer &layerCount, nullPtr) |> Hl.check
+        Vulkan.vkEnumerateInstanceLayerProperties (&&layerCount, nullPtr) |> Hl.check
         let layers = Array.zeroCreate<VkLayerProperties> (int layerCount)
         use layersPin = new ArrayPin<_> (layers)
-        Vulkan.vkEnumerateInstanceLayerProperties (asPointer &layerCount, layersPin.Pointer) |> Hl.check
+        Vulkan.vkEnumerateInstanceLayerProperties (&&layerCount, layersPin.Pointer) |> Hl.check
 
         // check if validation layer exists
         // TODO: DJL: try to automatically prevent validation from interfering with Nsight, starting with VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT.
@@ -689,7 +689,7 @@ type [<ReferenceEquality>] VulkanContext =
 
         // create instance
         let mutable info = VkInstanceCreateInfo ()
-        info.pApplicationInfo <- asPointer &aInfo
+        info.pApplicationInfo <- &&aInfo
         info.enabledExtensionCount <- uint extensions.Length
         info.ppEnabledExtensionNames <- extensionsPin.Pointer
         if Constants.Vulkan.MoltenVk && portabilityEnumerationAvailable then
@@ -716,10 +716,10 @@ type [<ReferenceEquality>] VulkanContext =
 
         // get available physical devices
         let mutable deviceCount = 0u
-        Vulkan.vkEnumeratePhysicalDevices (instance, asPointer &deviceCount, nullPtr) |> Hl.check
+        Vulkan.vkEnumeratePhysicalDevices (instance, &&deviceCount, nullPtr) |> Hl.check
         let devices = Array.zeroCreate<VkPhysicalDevice> (int deviceCount)
         use devicesPin = new ArrayPin<_> (devices)
-        Vulkan.vkEnumeratePhysicalDevices (instance, asPointer &deviceCount, devicesPin.Pointer) |> Hl.check
+        Vulkan.vkEnumeratePhysicalDevices (instance, &&deviceCount, devicesPin.Pointer) |> Hl.check
 
         // gather devices together with relevant data for selection
         let candidates =
@@ -789,13 +789,13 @@ type [<ReferenceEquality>] VulkanContext =
         let mutable qInfo = VkDeviceQueueCreateInfo ()
         qInfo.queueFamilyIndex <- physicalDevice.GraphicsQueueFamily
         qInfo.queueCount <- min 2u physicalDevice.GraphicsQueueCount
-        qInfo.pQueuePriorities <- asPointer &queuePriority
+        qInfo.pQueuePriorities <- &&queuePriority
         queueCreateInfosList.Add qInfo
         if physicalDevice.GraphicsQueueFamily <> physicalDevice.PresentQueueFamily then
             let mutable qInfo = VkDeviceQueueCreateInfo ()
             qInfo.queueFamilyIndex <- physicalDevice.PresentQueueFamily
             qInfo.queueCount <- 1u
-            qInfo.pQueuePriorities <- asPointer &queuePriority
+            qInfo.pQueuePriorities <- &&queuePriority
             queueCreateInfosList.Add qInfo
         let queueCreateInfos = queueCreateInfosList.ToArray ()
         use queueCreateInfosPin = new ArrayPin<_> (queueCreateInfos)
@@ -822,7 +822,7 @@ type [<ReferenceEquality>] VulkanContext =
         info.pQueueCreateInfos <- queueCreateInfosPin.Pointer
         info.enabledExtensionCount <- uint extensionArray.Length
         info.ppEnabledExtensionNames <- extensionArrayWrap.Pointer
-        info.pEnabledFeatures <- asPointer &features
+        info.pEnabledFeatures <- &&features
         let mutable device = Unchecked.defaultof<VkDevice>
         Vulkan.vkCreateDevice (physicalDevice.VkPhysicalDevice, &info, nullPtr, &device) |> Hl.check
         device
@@ -991,7 +991,7 @@ type [<ReferenceEquality>] VulkanContext =
         let renderArea = VkRect2D (0, 0, uint windowResolution.X, uint windowResolution.Y)
         let clearColor = VkClearValue (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
         let mutable renderingInfo = Hl.makeRenderingInfo [|vkc.SwapchainImageView|] None renderArea (Some clearColor)
-        Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &renderingInfo)
+        Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, &&renderingInfo)
         Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
         Hl.reportDrawScope ()
 
@@ -1020,10 +1020,10 @@ type [<ReferenceEquality>] VulkanContext =
                 let mutable vkSwapchain = vkc.Swapchain_.VkSwapchain
                 let mutable info = VkPresentInfoKHR ()
                 info.swapchainCount <- 1u
-                info.pSwapchains <- asPointer &vkSwapchain
-                info.pImageIndices <- asPointer &Hl.ImageIndex
+                info.pSwapchains <- &&vkSwapchain
+                info.pImageIndices <- &&Hl.ImageIndex
                 //let sw = System.Diagnostics.Stopwatch.StartNew ()
-                let result = Vulkan.vkQueuePresentKHR (vkQueue, asPointer &info)
+                let result = Vulkan.vkQueuePresentKHR (vkQueue, &&info)
                 //sw.Stop ()
                 //Log.info ("Vulkan.vkQueuePresentKHR: " + string sw.ElapsedTicks)
 

@@ -96,9 +96,9 @@ module ContourTessellation =
 
                 // set up render
                 let mutable renderingInfo = Hl.makeRenderingInfo [|vkc.SwapchainImageView|] None renderArea None
-                Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &renderingInfo)
-                Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, asPointer &vkViewport)
-                Vulkan.vkCmdSetScissor (vkc.RenderCommandBuffer, 0u, 1u, asPointer &scissor)
+                Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, &&renderingInfo)
+                Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, &&vkViewport)
+                Vulkan.vkCmdSetScissor (vkc.RenderCommandBuffer, 0u, 1u, &&scissor)
 
                 // set up pipeline
                 Vulkan.vkCmdBindPipeline (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
@@ -106,11 +106,11 @@ module ContourTessellation =
                 // bind vertex and index buffers
                 let mutable vkVertexBuffer = vertexBuffer.VkBuffer
                 let mutable vkVertexOffset = 0UL
-                Vulkan.vkCmdBindVertexBuffers (vkc.RenderCommandBuffer, 0u, 1u, asPointer &vkVertexBuffer, asPointer &vkVertexOffset)
+                Vulkan.vkCmdBindVertexBuffers (vkc.RenderCommandBuffer, 0u, 1u, &&vkVertexBuffer, &&vkVertexOffset)
                 Vulkan.vkCmdBindIndexBuffer (vkc.RenderCommandBuffer, indexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
 
                 // bind descriptor set
-                Vulkan.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.PipelineLayout, 0u, 1u, asPointer &uniformDescriptorSet, 0u, nullPtr)
+                Vulkan.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.PipelineLayout, 0u, 1u, &&uniformDescriptorSet, 0u, nullPtr)
 
                 // draw
                 Vulkan.vkCmdDrawIndexed (vkc.RenderCommandBuffer, uint32 tessellation.Indices.Length, 1u, 0u, 0, 0u)

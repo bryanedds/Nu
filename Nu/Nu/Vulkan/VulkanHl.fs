@@ -569,7 +569,7 @@ module Hl =
         rInfo.layerCount <- 1u
         rInfo.colorAttachmentCount <- uint cInfos.Length
         rInfo.pColorAttachments <- cInfosPin.Pointer
-        if depthAttachmentOpt.IsSome then rInfo.pDepthAttachment <- asPointer &dInfo
+        if depthAttachmentOpt.IsSome then rInfo.pDepthAttachment <- &&dInfo
         rInfo
 
     /// Check that VkRect2D has non-zero area.
@@ -702,7 +702,7 @@ module Hl =
              newLayout.PipelineStage,
              VkDependencyFlags.None,
              0u, nullPtr, 0u, nullPtr,
-             1u, asPointer &barrier)
+             1u, &&barrier)
 
     /// Try get surface capabilities.
     let tryGetSurfaceCapabilities vkPhysicalDevice =
@@ -760,7 +760,7 @@ module Hl =
         info.commandBufferCount <- uint count
         let commandBuffers = Array.zeroCreate<VkCommandBuffer> count
         use commandBuffersPin = new ArrayPin<_> (commandBuffers)
-        Vulkan.vkAllocateCommandBuffers (device, asPointer &info, commandBuffersPin.Pointer) |> check
+        Vulkan.vkAllocateCommandBuffers (device, &&info, commandBuffersPin.Pointer) |> check
         commandBuffers
 
     /// Allocate a command buffer.
@@ -789,8 +789,8 @@ module Hl =
     /// Wait for a fence to signal and reset it for reuse.
     let awaitFence fence device =
         let mutable fence = fence
-        Vulkan.vkWaitForFences (device, 1u, asPointer &fence, true, UInt64.MaxValue) |> check
-        Vulkan.vkResetFences (device, 1u, asPointer &fence) |> check
+        Vulkan.vkWaitForFences (device, 1u, &&fence, true, UInt64.MaxValue) |> check
+        Vulkan.vkResetFences (device, 1u, &&fence) |> check
 
     /// Create a transient command buffer.
     /// TODO: DJL: review choice of transient command buffers over normal ones.
@@ -798,7 +798,7 @@ module Hl =
     let createTransientCommandBuffer commandPool device =
         let commandBuffer = allocateCommandBuffer VkCommandBufferLevel.Primary commandPool device
         let mutable cbInfo = VkCommandBufferBeginInfo (flags = VkCommandBufferUsageFlags.OneTimeSubmit)
-        Vulkan.vkBeginCommandBuffer (commandBuffer, asPointer &cbInfo) |> check
+        Vulkan.vkBeginCommandBuffer (commandBuffer, &&cbInfo) |> check
         commandBuffer
 
     ///
