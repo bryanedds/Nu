@@ -105,14 +105,16 @@ module LightMap =
                 colorFormat Rgba metadata vkc
         let cubeMap = EagerTexture cubeMapInternal
 
-        // compute views and projection
-        let views =
-            [|Matrix4x4.CreateLookAt (v3Zero, v3Right, v3Down)
-              Matrix4x4.CreateLookAt (v3Zero, v3Left, v3Down)
-              Matrix4x4.CreateLookAt (v3Zero, v3Up, v3Back)
-              Matrix4x4.CreateLookAt (v3Zero, v3Down, v3Forward)
-              Matrix4x4.CreateLookAt (v3Zero, v3Back, v3Down)
-              Matrix4x4.CreateLookAt (v3Zero, v3Forward, v3Down)|]
+        // construct eye rotations
+        let eyeRotations =
+            [|(v3Right, v3Down)     // (+x)
+              (v3Left, v3Down)      // (-x)
+              (v3Up, v3Back)        // (+y)
+              (v3Down, v3Forward)   // (-y)
+              (v3Back, v3Down)      // (+z)
+              (v3Forward, v3Down)|] // (-z)
+
+        // compute projection
         let projection = Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, 0.1f, 10.0f)
 
         // begin cubemap rendering
@@ -123,7 +125,8 @@ module LightMap =
 
             // render face
             let eyeCenter = v3Zero // assuming output
-            let view = views[i]
+            let (eyeForward, eyeUp) = eyeRotations[i]
+            let view = Matrix4x4.CreateLookAt (v3Zero, eyeForward, eyeUp)
             CubeMap.drawCubeMap
                 eyeCenter view projection cubeMapSurface.CubeMap sampler
                 cubeMapSurface.CubeMapGeometry resolution cubeMap.SubViews[0, i]

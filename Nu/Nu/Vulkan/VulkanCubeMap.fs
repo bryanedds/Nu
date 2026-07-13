@@ -286,8 +286,8 @@ module CubeMap =
         (vkc : VulkanContext) =
 
         // compute vulkan-appropriate matrices
+        // NOTE: we do NOT flip when rendering to a cube map face!
         let viewInverse = view.Inverted
-        let projection = projection.Flipped
         let projectionInverse = projection.Inverted
         let viewProjection = view * projection
 

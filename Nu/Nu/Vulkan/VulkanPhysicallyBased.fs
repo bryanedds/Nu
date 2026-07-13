@@ -1708,6 +1708,7 @@ module PhysicallyBased =
         (vkc : VulkanContext) =
         
         // compute vulkan-appropriate matrices
+        // NOTE: we do NOT flip when rendering to a cube map face!
         let projection = if cubeMapFace then projection else projection.Flipped
         let viewProjection = view * projection
 
