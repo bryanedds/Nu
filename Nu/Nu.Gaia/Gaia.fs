@@ -870,8 +870,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         | _ -> ()
         Cascade
 
-    let private handleNuSelectedScreenOptChange (evt : Event<ChangeData, Game>) world =
-        match evt.Data.Value :?> Screen option with
+    let private handleNuSelectedScreenOptChange (evt : Event<Screen option, Game>) world =
+        match evt.Data with
         | Some screen ->
             selectScreen true screen
             selectGroupInitial screen world
@@ -1504,6 +1504,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         World.setSelectedScreen screen world
                         let eventTrace = EventTrace.debug "World" "selectScreen" "Select" EventTrace.empty
                         World.publishPlus () screen.SelectEvent eventTrace screen false false world
+                        let eventTrace = EventTrace.debug "World" "selectScreen" "PostSelect" EventTrace.empty
+                        World.publishPlus (Some screen) Game.PostSelectEvent eventTrace screen false false world
                         screen
                     else screen
                 | Some screen -> screen
@@ -4639,7 +4641,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 World.subscribe handleNuMouseButton Game.MouseRightDownEvent Game world |> ignore
                 World.subscribe handleNuMouseButton Game.MouseRightUpEvent Game world |> ignore
                 World.subscribe handleNuLifeCycleGroup (Game.LifeCycleEvent (nameof Group)) Game world |> ignore
-                World.subscribe handleNuSelectedScreenOptChange Game.SelectedScreenOpt.ChangeEvent Game world |> ignore
+                World.subscribe handleNuSelectedScreenOptChange Game.PostSelectEvent Game world |> ignore
                 World.subscribe handleNuExitRequest Game.ExitRequestEvent Game world |> ignore
 
                 // run the world
