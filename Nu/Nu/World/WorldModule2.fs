@@ -81,10 +81,14 @@ module WorldModule2 =
                         World.setSelectedScreen screen world
                         let eventTrace = EventTrace.debug "World" "selectScreen" "Select" EventTrace.empty
                         World.publishPlus () screen.SelectEvent eventTrace screen false false world
+                        let eventTrace = EventTrace.debug "World" "selectScreen" "PostSelect" EventTrace.empty
+                        World.publishPlus (Some screen) Nu.Game.Handle.PostSelectEvent eventTrace screen false false world
                 | None ->
                     World.setSelectedScreen screen world
                     let eventTrace = EventTrace.debug "World" "selectScreen" "Select" EventTrace.empty
                     World.publishPlus () screen.SelectEvent eventTrace screen false false world
+                    let eventTrace = EventTrace.debug "World" "selectScreen" "PostSelect" EventTrace.empty
+                    World.publishPlus (Some screen) Nu.Game.Handle.PostSelectEvent eventTrace screen false false world
                 World.setScreenTransitionStatePlus transitionState screen world
             | None -> World.setSelectedScreenOpt None world
 
@@ -180,7 +184,7 @@ module WorldModule2 =
 
         static member private updateScreenIdling transitionTime (selectedScreen : Screen) (world : World) =
             if world.Alive then
-                if world.Accompanied && world.Halted then // special case to play song when halted in editor
+                if world.Accompanied && world.Halted && not world.AdvancementCleared then // special case to play song when halted in editor
                     match (selectedScreen.GetIncoming world).SongOpt with
                     | Some playSong ->
                         match World.getSongOpt world with
@@ -351,6 +355,8 @@ module WorldModule2 =
                 World.setSelectedScreen destination world
                 let eventTrace = EventTrace.debug "World" "selectScreen" "Select" EventTrace.empty
                 World.publishPlus () destination.SelectEvent eventTrace destination false false world
+                let eventTrace = EventTrace.debug "World" "selectScreen" "PostSelect" EventTrace.empty
+                World.publishPlus (Some destination) Nu.Game.Handle.PostSelectEvent eventTrace destination false false world
                 World.updateScreenIncoming transitionTime destination world
                 true
 
@@ -2915,8 +2921,8 @@ module ScreenDispatcherModule =
             let contentOld = World.getScreenContent screen world
             let model = this.GetModel screen world
             let definitions = this.Definitions (model, screen)
-            let group = this.Content (model, screen)
-            let content = Content.screen screen.Name Vanilla definitions group
+            let groups = this.Content (model, screen)
+            let content = Content.screen screen.Name Vanilla definitions groups
             Content.synchronizeScreen initializing reinitializing contentOld content screen screen world
             World.setScreenContent content screen world
 
