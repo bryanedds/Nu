@@ -3823,8 +3823,16 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             let openProjectDlls =
                 match OpenProjectDllsOpt with
                 | None ->
-                    // read MSBuild-resolved project paths
-                    let openProjectDlls = File.ReadAllLines (gaiaDir + "/" + Constants.Gaia.ProjectsFilePath)
+                    // scan project directories for DLLs
+                    let openProjectDlls =
+                        let projectsDir = gaiaDir + "/../../../../../Projects"
+                        Directory.GetDirectories projectsDir
+                        |> Array.collect (fun projectDir ->
+                            let projectName = PathF.GetFileName projectDir
+                            let dllDir = projectDir + "/bin/" + Constants.Gaia.BuildName + "/" + Constants.Engine.TargetFramework
+                            if Directory.Exists dllDir
+                            then Directory.GetFiles (dllDir, projectName + ".dll")
+                            else [||])
                     let openProjectNames =
                         openProjectDlls
                         |> Array.map PathF.GetFileNameWithoutExtension
