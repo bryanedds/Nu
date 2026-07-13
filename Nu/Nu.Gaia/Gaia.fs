@@ -101,8 +101,9 @@ module Gaia =
 
     (* Configuration States *)
 
+    let mutable private CaptureMode = false
+    let mutable private FreeMode = false
     let mutable private OverlayMode = false
-    let mutable private ViewMode = NormalMode
     let mutable private EditWhileAdvancing = false
     let mutable private ManipulationWorld = true
     let mutable private Snaps2dSelected = true
@@ -492,11 +493,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private canEditWithMouse (world : World) =
         let io = ImGui.GetIO ()
-        match ViewMode with
-        | NormalMode | FreeMode ->
-            not io.WantCaptureMouseGlobal &&
-            (world.Halted || EditWhileAdvancing)
-        | CaptureMode -> false
+        not CaptureMode &&
+        not io.WantCaptureMouseGlobal &&
+        (world.Halted || EditWhileAdvancing)
 
     let private canEditWithKeyboard (world : World) =
         let io = ImGui.GetIO ()
@@ -602,21 +601,18 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             // actually set the selection
             SelectedEntityOpt <- entityOpt
 
-    let private setViewMode viewMode world =
+    let private setFreeMode freeMode world =
         ignore<World> world // not yet used for anything here
-        match (ViewMode, viewMode) with
-        | (NormalMode, NormalMode) | (FreeMode, FreeMode) | (CaptureMode, CaptureMode) -> ()
-        | (NormalMode, FreeMode) -> ViewMode <- viewMode
-        | (FreeMode, NormalMode) -> ViewMode <- viewMode; SelectedWindowRestoreRequested <- 1
-        | (NormalMode, CaptureMode) -> ViewMode <- viewMode
-        | (CaptureMode, NormalMode) -> ViewMode <- viewMode; SelectedWindowRestoreRequested <- 1
-        | (FreeMode, CaptureMode) -> ViewMode <- viewMode
-        | (CaptureMode, FreeMode) -> ViewMode <- viewMode
+        if FreeMode && not freeMode then SelectedWindowRestoreRequested <- 1
+        FreeMode <- freeMode
+        if not FreeMode then CaptureMode <- false
 
-    let private toggleViewMode viewMode world =
-        if ViewMode = viewMode
-        then setViewMode NormalMode world
-        else setViewMode viewMode world
+    let private setCaptureMode captureMode world =
+        CaptureMode <- captureMode
+        if CaptureMode then
+            selectEntityOpt None world
+            setFreeMode true world
+        else setFreeMode false world
 
     let private tryUndo (world : World) =
         if  not (World.getImperative world) &&
@@ -813,6 +809,26 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         if File.Exists assemblyFilePath
         then Assembly.LoadFrom assemblyFilePath
         else null
+
+    let private nuPluginTypeFilter (metadataReader : MetadataReader) ty =
+        let typeDef = metadataReader.GetTypeDefinition ty
+        let baseType = typeDef.BaseType
+        match baseType.Kind with
+        | HandleKind.TypeReference ->
+            let typeRef = metadataReader.GetTypeReference (TypeReferenceHandle.op_Explicit baseType)
+            metadataReader.GetString typeRef.Name = nameof NuPlugin
+        | HandleKind.TypeDefinition -> false // base type must not be defined in the same assembly
+        | HandleKind.TypeSpecification -> false // base type is not a constructed generic type, pointer or array
+        | _ -> false
+
+    let private nuAssemblyFileFilter filePath =
+        try use fileStream = new FileStream (filePath, FileMode.Open, FileAccess.Read)
+            use peReader = new PortableExecutable.PEReader (fileStream)
+            peReader.HasMetadata &&
+            let metadataReader = PEReaderExtensions.GetMetadataReader peReader in metadataReader.IsAssembly &&
+            Seq.exists (metadataReader.GetAssemblyReference >> _.Name >> metadataReader.GetString >> (=) "Nu") metadataReader.AssemblyReferences &&
+            Seq.exists (nuPluginTypeFilter metadataReader) metadataReader.TypeDefinitions
+        with _ -> false
 
     // NOTE: this function isn't used, but it is kept around as it's a good tool to surface memory leaks deep in large libs like FSI.
     let private scanAndNullifyFields (root : obj) (targetType : Type) =
@@ -1253,7 +1269,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     Log.info ("Inspecting code for F# project '" + fsprojFilePath + "'...")
                     let fsprojFileLines = // TODO: P1: consider loading these references from Nu.fsproj.
                         [|"""<PackageReference Include="Aether.Physics2D" Version="2.2.0" />"""
-                          """<PackageReference Include="AstcEncoderCSharp" Version="5.5.0" />"""
+                          """<PackageReference Include="AstcEncoderCSharp" Version="5.3.1-alpha.0.4" />"""
                           """<PackageReference Include="Box2D.NET" Version="3.1.1.557" />"""
                           """<PackageReference Include="BCnEncoder.Net" Version="2.2.1" />"""
                           """<PackageReference Include="DotRecast.Recast.Toolset" Version="2026.1.1" />"""
@@ -1264,13 +1280,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                           """<PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.1" />"""
                           """<PackageReference Include="System.Drawing.Common" Version="10.0.1" />"""
                           """<PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" />"""
-                          """<PackageReference Include="ppy.SDL3-CS" Version="2026.512.0" />"""
-                          """<PackageReference Include="ppy.SDL3_ttf-CS" Version="2026.512.0" />"""
-                          """<PackageReference Include="ppy.SDL3_image-CS" Version="2026.512.0" />"""
-                          """<PackageReference Include="ppy.SDL3_mixer-CS" Version="2026.512.0" />"""
-                          """<PackageReference Include="Vortice.ShaderCompiler" Version="1.8.0" />"""
-                          """<PackageReference Include="Vortice.Vulkan" Version="2.1.1" />"""
-                          """<PackageReference Include="Vortice.VulkanMemoryAllocator" Version="1.6.1" />"""|]
+                          """<PackageReference Include="ppy.SDL3-CS" Version="2026.302.0" />"""
+                          """<PackageReference Include="ppy.SDL3_ttf-CS" Version="2026.302.0" />"""
+                          """<PackageReference Include="ppy.SDL3_image-CS" Version="2026.302.0" />"""
+                          """<PackageReference Include="ppy.SDL3_mixer-CS" Version="2026.302.0" />"""|]
                         |> Array.append (File.ReadAllLines fsprojFilePath)
                     let fsprojNugetPaths =
                         fsprojFileLines
@@ -1713,7 +1726,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             | Some (DragDropAsset (_, assetTag)) when
                 ImGui.IsMouseReleased ImGuiMouseButton.Left &&
                 not io.WantCaptureMouse &&
-                (*NativePtr.notNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr*)true ->
+                (*not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr)*)true ->
                 match Metadata.tryGetMetadata assetTag with
                 | ValueSome metadata ->
                     match metadata with
@@ -1761,9 +1774,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             elif ImGui.IsKeyPressed ImGuiKey.F8 then ReloadAssetsRequested <- 1
             elif ImGui.IsKeyPressed ImGuiKey.F9 && ImGui.IsShiftUp () then ReloadCodeRequested <- (false, 1)
             elif ImGui.IsKeyPressed ImGuiKey.F9 && ImGui.IsShiftDown () then ReloadCodeRequested <- (true, 1)
-            elif ImGui.IsKeyPressed ImGuiKey.F10 then OverlayMode <- not OverlayMode
-            elif ImGui.IsKeyPressed ImGuiKey.F11 then toggleViewMode FreeMode world
-            elif ImGui.IsKeyPressed ImGuiKey.F12 then toggleViewMode CaptureMode world
+            elif ImGui.IsKeyPressed ImGuiKey.F10 then setCaptureMode (not CaptureMode) world
+            elif ImGui.IsKeyPressed ImGuiKey.F11 then setFreeMode (not FreeMode) world
+            elif ImGui.IsKeyPressed ImGuiKey.F12 then OverlayMode <- not OverlayMode
             elif ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then World.tryToggleWindowFullScreen world
             elif ImGui.IsKeyPressed ImGuiKey.UpArrow && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then tryReorderSelectedEntity true world
             elif ImGui.IsKeyPressed ImGuiKey.DownArrow && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then tryReorderSelectedEntity false world
@@ -1906,7 +1919,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         if openPopupContextItemWhenUnselected then
             ImGui.OpenPopup popupContextItemTitle
         if ImGui.BeginDragDropTarget () then
-            if NativePtr.notNullPtr (ImGui.AcceptDragDropPayload "Entity").NativePtr then
+            if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Entity").NativePtr) then
                 match DragDropPayloadOpt with
                 | Some (DragDropEntity sourceEntity) ->
                     if sourceEntity.GetProtection world = Unprotected then
@@ -2276,7 +2289,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         ImGui.SetNextWindowSize io.DisplaySize
         if ImGui.IsKeyReleased ImGuiKey.Escape && not (modal ()) then ImGui.SetNextWindowFocus ()
         if ImGui.Begin ("Viewport", ImGuiWindowFlags.NoBackground ||| ImGuiWindowFlags.NoTitleBar ||| ImGuiWindowFlags.NoInputs ||| ImGuiWindowFlags.NoNav) then
-            if not ViewMode.IsCaptureMode then
+            if not CaptureMode then
 
                 // physics debug rendering
                 if PhysicsDebugRendering3d then
@@ -2504,7 +2517,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         let eyeRotationArray = Matrix4x4.CreateFromQuaternion(eyeRotationOld).Transposed.ToArray()
                         let size = v2 128.0f 128.0f
                         let position =
-                            if OverlayMode && not ViewMode.IsFreeMode
+                            if OverlayMode && not FreeMode
                             then v2 (single windowViewport.Bounds.Size.X - 475.0f) 100.0f
                             else v2 (innerImGui.Max.X - 178.0f) (innerImGui.Min.Y + 44.0f)
                         ImGuizmo.ViewManipulate (&eyeRotationArray[0], 1.0f, position, size, uint 0x00000000)
@@ -2527,23 +2540,23 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         ImGui.End ()
 
     let private imGuiFullScreenWindow world =
-        if ViewMode.IsFreeMode then
+        if not CaptureMode then
             if ImGui.Begin ("Full Screen Enabled", ImGuiWindowFlags.NoNav ||| ImGuiWindowFlags.AlwaysAutoResize) then
-                ImGui.Text "Free Mode (F11)"
+                ImGui.Text "Capture Mode (F10)"
                 ImGui.SameLine ()
-                let mutable freeMode = ViewMode.IsFreeMode
-                if ImGui.Checkbox ("##freeMode", &freeMode) then
-                    setViewMode (if freeMode then FreeMode else NormalMode) world
+                let mutable captureMode = CaptureMode
+                if ImGui.Checkbox ("##captureMode", &captureMode) then
+                    setCaptureMode captureMode world
+                if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                    ImGui.Text "Toggle capture mode (F10 to toggle)."
+                    ImGui.EndTooltip ()
+                ImGui.Text "Full Screen (F11)"
+                ImGui.SameLine ()
+                let mutable freeMode = FreeMode
+                ImGui.Checkbox ("##freeMode", &freeMode) |> ignore<bool>
+                setFreeMode freeMode world
                 if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                     ImGui.Text "Toggle free mode (F11 to toggle)."
-                    ImGui.EndTooltip ()
-                ImGui.Text "Capture Mode (F12)"
-                ImGui.SameLine ()
-                let mutable captureMode = ViewMode.IsCaptureMode
-                if ImGui.Checkbox ("##captureMode", &captureMode) then
-                    setViewMode (if captureMode then CaptureMode else NormalMode) world
-                if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                    ImGui.Text "Toggle capture mode (F12 to toggle)."
                     ImGui.EndTooltip ()
             ImGui.End ()
 
@@ -2762,29 +2775,29 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             ImGui.SameLine ()
             ImGui.Text "|"
             ImGui.SameLine ()
-            ImGui.Text "Overlay Mode"
+            ImGui.Text "Capture Mode"
             ImGui.SameLine ()
-            ImGui.Checkbox ("##overlayMode", &OverlayMode) |> ignore<bool>
+            let mutable captureMode = CaptureMode
+            ImGui.Checkbox ("##captureMode", &captureMode) |> ignore<bool>
+            setCaptureMode captureMode world
             if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                ImGui.Text "Toggle overlay mode (F10 to toggle)."
+                ImGui.Text "Toggle capture mode view (F10 to toggle)."
                 ImGui.EndTooltip ()
             ImGui.SameLine ()
             ImGui.Text "Free Mode"
             ImGui.SameLine ()
-            let mutable freeMode = ViewMode.IsFreeMode
-            if ImGui.Checkbox ("##freeMode", &freeMode) then
-                setViewMode (if freeMode then FreeMode else NormalMode) world
+            let mutable freeMode = FreeMode
+            ImGui.Checkbox ("##freeMode", &freeMode) |> ignore<bool>
+            setFreeMode freeMode world
             if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                 ImGui.Text "Toggle free mode (F11 to toggle)."
                 ImGui.EndTooltip ()
             ImGui.SameLine ()
-            ImGui.Text "Capture Mode"
+            ImGui.Text "Overlay Mode"
             ImGui.SameLine ()
-            let mutable captureMode = ViewMode.IsCaptureMode
-            if ImGui.Checkbox ("##captureMode", &captureMode) then
-                setViewMode (if captureMode then FreeMode else NormalMode) world
+            ImGui.Checkbox ("##overlayMode", &OverlayMode) |> ignore<bool>
             if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                ImGui.Text "Toggle capture mode view (F12 to toggle)."
+                ImGui.Text "Toggle overlay mode (F12 to toggle)."
                 ImGui.EndTooltip ()
         ImGui.End ()
 
@@ -2850,7 +2863,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         if group.Name = selectedGroupName then ImGui.SetItemDefaultFocus ()
                     ImGui.EndCombo ()
                 if ImGui.BeginDragDropTarget () then
-                    if NativePtr.notNullPtr (ImGui.AcceptDragDropPayload "Entity").NativePtr then
+                    if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Entity").NativePtr) then
                         match DragDropPayloadOpt with
                         | Some (DragDropEntity sourceEntity) ->
                             if sourceEntity.GetProtection world = Unprotected then
@@ -3139,7 +3152,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         with _ ->
                             Pasts <- pasts
                     if isPropertyAssetTag && ImGui.BeginDragDropTarget () then
-                        if NativePtr.notNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr then
+                        if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
                             match DragDropPayloadOpt with
                             | Some (DragDropAsset (assetTagStr, _)) ->
                                 let pasts = Pasts
@@ -3179,20 +3192,15 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             let frames = time / elapsedDateTime.TotalSeconds
             ImGui.Text (if not (Double.IsNaN frames) then String.Format ("{0:f2}", frames) else "0.00")
 
-            // draw scope count
-            ImGui.Text "Draw Scope Count:"
-            ImGui.SameLine ()
-            ImGui.Text (string (Nu.Vulkan.Hl.getDrawScopeCount ()))
-
             // draw call count
             ImGui.Text "Draw Call Count:"
             ImGui.SameLine ()
-            ImGui.Text (string (Nu.Vulkan.Hl.getDrawCallCount ()))
+            ImGui.Text (string (OpenGL.Hl.GetDrawCallCount ()))
 
             // draw instance count
             ImGui.Text "Draw Instance Count:"
             ImGui.SameLine ()
-            ImGui.Text (string (Nu.Vulkan.Hl.getDrawInstanceCount ()))
+            ImGui.Text (string (OpenGL.Hl.GetDrawInstanceCount ()))
 
             // frame timing plot
             GcTimings.Enqueue (single world.Timers.GcFrameTime.TotalMilliseconds)
@@ -3285,6 +3293,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         "#r \"DotRecast.Recast.Toolset.dll\"\n" +
                         "#r \"FParsec.dll\"\n" +
                         "#r \"Magick.NET-Q8-AnyCPU.dll\"\n" +
+                        "#r \"OpenGL.Net.dll\"\n" +
                         "#r \"Pfim.dll\"\n" +
                         "#r \"SDL3-CS.dll\"\n" +
                         "#r \"SDL3_image-CS.dll\"\n" +
@@ -3292,9 +3301,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         "#r \"SDL3_ttf-CS.dll\"\n" +
                         "#r \"TiledSharp.dll\"\n" +
                         "#r \"Twizzle.ImGui-Bundle.NET.dll\"\n" +
-                        "#r \"Vortice.ShaderCompiler.dll\"\n" +
-                        "#r \"Vortice.Vulkan.dll\"\n" +
-                        "#r \"Vortice.VulkanMemoryAllocator.dll\"\n" +
                         "#r \"Prime.dll\"\n" +
                         "#r \"Nu.Math.dll\"\n" +
                         "#r \"Nu.dll\"\n" +
@@ -3714,39 +3720,81 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             let projectsDir = PathF.GetFullPath (programDir + "/../../../../../Projects")
             let newProjectDir = PathF.GetFullPath (projectsDir + "/" + NewProjectName)
             let newProjectDllPath = newProjectDir + "/bin/" + Constants.Gaia.BuildName + "/" + Constants.Engine.TargetFramework + "/" + NewProjectName + ".dll"
-            let validName = not (String.IsNullOrWhiteSpace NewProjectName) && (PathF.GetInvalidFileNameChars () |> Array.notExists NewProjectName.Contains)
+            let newFileName = NewProjectName + ".fsproj"
+            let newProject = PathF.GetFullPath (newProjectDir + "/" + newFileName)
+            let validName = not (String.IsNullOrWhiteSpace NewProjectName) && Array.notExists (fun char -> NewProjectName.Contains (string char)) (PathF.GetInvalidPathChars ())
             let validDirectory = not (Directory.Exists newProjectDir)
             if not validName then
-                ImGui.Text "Invalid project name! It must not be empty or contain characters unusable as file names."
+                ImGui.Text "Invalid project name!"
             elif not validDirectory then
                 ImGui.Text "Project already exists!"
             elif ImGui.Button "Create" || ImGui.IsKeyReleased ImGuiKey.Enter then
 
                 // choose a template, ensuring it exists
                 let slnDir = PathF.GetFullPath (programDir + "/../../../../..")
-                let (templateDir, editMode, shortName) =
+                let (templateFileName, templateDir, editMode, shortName) =
                     match NewProjectType with
-                    | "MMCC Empty" -> (PathF.GetFullPath (programDir + "/../../../../Nu.Template.Mmcc.Empty"), "Initial", "nu-template-mmcc-empty")
-                    | "MMCC Game" -> (PathF.GetFullPath (programDir + "/../../../../Nu.Template.Mmcc.Game"), "Title", "nu-template-mmcc-game")
-                    | "ImSim Empty" -> (PathF.GetFullPath (programDir + "/../../../../Nu.Template.ImSim.Empty"), "Initial", "nu-template-imsim-empty")
-                    | "ImSim Game" -> (PathF.GetFullPath (programDir + "/../../../../Nu.Template.ImSim.Game"), "Title", "nu-template-imsim-game")
+                    | "MMCC Empty" -> ("Nu.Template.Mmcc.Empty.fsproj", PathF.GetFullPath (programDir + "/../../../../Nu.Template.Mmcc.Empty"), "Initial", "nu-template-mmcc-empty")
+                    | "MMCC Game" -> ("Nu.Template.Mmcc.Game.fsproj", PathF.GetFullPath (programDir + "/../../../../Nu.Template.Mmcc.Game"), "Title", "nu-template-mmcc-game")
+                    | "ImSim Empty" -> ("Nu.Template.ImSim.Empty.fsproj", PathF.GetFullPath (programDir + "/../../../../Nu.Template.ImSim.Empty"), "Initial", "nu-template-imsim-empty")
+                    | "ImSim Game" -> ("Nu.Template.ImSim.Game.fsproj", PathF.GetFullPath (programDir + "/../../../../Nu.Template.ImSim.Game"), "Title", "nu-template-imsim-game")
                     | _ -> failwithumf ()
-                // work around https://github.com/dotnet/sdk/pull/55105 by manual normalization of drive letter
-                let templateDir = if templateDir.Length > 1 && templateDir.[1] = ':' then string (Char.ToUpperInvariant templateDir.[0]) + templateDir.Substring 1 else templateDir
                 if Directory.Exists templateDir then
 
                     // attempt to create project files
                     try Log.info ("Creating project '" + NewProjectName + "' in '" + projectsDir + "'...")
 
-                        // install nu template (--force does in-place update)
-                        Process.Start("dotnet", "new install \"" + templateDir + "\" --force").WaitForExit()
+                        // install nu template
+                        Directory.SetCurrentDirectory templateDir
+                        Process.Start("dotnet", "new install ./ --force").WaitForExit()
 
                         // instantiate nu template
-                        Directory.CreateDirectory newProjectDir |> ignore<DirectoryInfo>
-                        Process.Start("dotnet", "new " + shortName + " --name \"" + NewProjectName + "\" --output \"" + newProjectDir + "\"").WaitForExit() // no --force because we already checked directory existence
+                        Directory.SetCurrentDirectory projectsDir
+                        Directory.CreateDirectory NewProjectName |> ignore<DirectoryInfo>
+                        Directory.SetCurrentDirectory newProjectDir
+                        Process.Start("dotnet", "new " + shortName + " --force").WaitForExit()
+
+                        // rename project file
+                        File.Copy (templateFileName, newFileName, true)
+                        File.Delete templateFileName
 
                         // substitute project guid in project file
-                        Process.Start("dotnet", "sln \"" + slnDir + "\" add \"" + newProjectDir + "/" + NewProjectName + ".fsproj\"").WaitForExit()
+                        let projectGuid = Gen.id
+                        let projectGuidStr = projectGuid.ToString().ToUpperInvariant()
+                        let newProjectStr = File.ReadAllText newProject
+                        let newProjectStr = newProjectStr.Replace("4DBBAA23-56BA-43CB-AB63-C45D5FC1016F", projectGuidStr)
+                        File.WriteAllText (newProject, newProjectStr)
+
+                        // add project to sln file
+                        Directory.SetCurrentDirectory slnDir
+                        let slnLines = "Nu.sln" |> File.ReadAllLines |> Array.toList
+                        let insertionIndex = List.findIndexBack ((=) "\tEndProjectSection") slnLines
+                        let slnLines = 
+                            List.take insertionIndex slnLines @
+                            ["\t\t{" + projectGuidStr + "} = {" + projectGuidStr + "}"] @
+                            List.skip insertionIndex slnLines
+                        let insertionIndex = List.findIndex ((=) "Global") slnLines
+                        let slnLines =
+                            List.take insertionIndex slnLines @
+                            ["Project(\"{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}\") = \"" + NewProjectName + "\", \"Projects\\" + NewProjectName + "\\" + NewProjectName + ".fsproj\", \"{" + projectGuidStr + "}\""
+                             "EndProject"] @
+                            List.skip insertionIndex slnLines
+                        let insertionIndex = List.findIndex ((=) "\tGlobalSection(SolutionProperties) = preSolution") slnLines - 1
+                        let slnLines =
+                            List.take insertionIndex slnLines @
+                            ["\t\t{" + projectGuidStr + "}.Debug|Any CPU.ActiveCfg = Debug|Any CPU"
+                             "\t\t{" + projectGuidStr + "}.Debug|Any CPU.Build.0 = Debug|Any CPU"
+                             "\t\t{" + projectGuidStr + "}.Mixed|Any CPU.ActiveCfg = Debug|Any CPU"
+                             "\t\t{" + projectGuidStr + "}.Mixed|Any CPU.Build.0 = Debug|Any CPU"
+                             "\t\t{" + projectGuidStr + "}.Release|Any CPU.ActiveCfg = Release|Any CPU"
+                             "\t\t{" + projectGuidStr + "}.Release|Any CPU.Build.0 = Release|Any CPU"] @
+                            List.skip insertionIndex slnLines
+                        let insertionIndex = List.findIndex ((=) "\tGlobalSection(ExtensibilityGlobals) = postSolution") slnLines - 1
+                        let slnLines =
+                            List.take insertionIndex slnLines @
+                            ["\t\t{" + projectGuidStr + "} = {E3C4D6E1-0572-4D80-84A9-8001C21372D3}"] @
+                            List.skip insertionIndex slnLines
+                        File.WriteAllLines ("Nu.sln", List.toArray slnLines)
                         Log.info ("Project '" + NewProjectName + "'" + " created.")
 
                         // configure editor to open new project then exit
@@ -4278,7 +4326,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
                 // windows
                 let entityHierarchyFocused =
-                    if not ViewMode.IsNormalMode then
+                    if FreeMode then
                         imGuiFullScreenWindow world
                         false
                     else
@@ -4374,7 +4422,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
     let private imGuiRender world =
 
         // augmentative rendering while not in capture mode
-        if not ViewMode.IsCaptureMode then
+        if not CaptureMode then
 
             // HACK: in order to successfully focus entity properties when clicking in the viewport in the current version
             // of Dear ImGui, we seem to have to the the window focus command AFTER normal processing.
@@ -4484,8 +4532,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             ImGui.LoadIniSettingsFromMemory (ImGuiIniFileStr.AsSpan ())
             ImGuiIniResetRequested <- false
 
-    let rec private runWithCleanUpAndErrorProtection firstFrameCallbackOpt world =
-        try World.runWithoutCleanUp tautology ignore ignore imGuiRender imGuiProcess imGuiPostProcess firstFrameCallbackOpt world
+    let rec private runWithCleanUpAndErrorProtection firstFrame world =
+        try World.runWithoutCleanUp tautology ignore ignore imGuiRender imGuiProcess imGuiPostProcess firstFrame world
             World.cleanUp world
             Constants.Engine.ExitCodeSuccess
         with exn ->
@@ -4500,7 +4548,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     "\nStack trace:\n" + string exn.StackTrace
                 Log.error errorMsg
                 MessageBoxOpt <- Some errorMsg
-                runWithCleanUpAndErrorProtection None world
+                runWithCleanUpAndErrorProtection false world
             else
                 let errorMsg = "Unexpected exception! Could not rewind world. Error due to: " + scstring exn
                 Log.error errorMsg
@@ -4555,7 +4603,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
             PrettyPrinter.prettyPrint extrinsicOverlaysStr prettyPrinter
         FsiSession <- Shell.FsiEvaluationSession.Create (FsiConfig, FsiArgs, FsiInStream, FsiOutStream, FsiErrorStream)
-        let result = runWithCleanUpAndErrorProtection (Some ignore) world
+        let result = runWithCleanUpAndErrorProtection true world
         (FsiSession :> IDisposable).Dispose () // not sure why we have to cast here...
         FsiErrorStream.Dispose ()
         FsiInStream.Dispose ()
