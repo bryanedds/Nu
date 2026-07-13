@@ -2223,9 +2223,9 @@ module PhysicallyBased =
                 Pipeline.writeDescriptorSampler 1 0 shadowSampler vkSet vkc
 
             // set up render
+            let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
             let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
-            let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
             let mutable renderingInfo = Hl.makeRenderingInfo [|lightAccumAttachment.ImageView|] None renderArea (Some clearValue)
             Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, &&renderingInfo)
             Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, &&vkViewport)
@@ -2436,9 +2436,9 @@ module PhysicallyBased =
                 Pipeline.writeDescriptorSampler 1 0 shadowSampler vkSet vkc
 
             // set up render
+            let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
             let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
-            let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
             let mutable renderingInfo = Hl.makeRenderingInfo [|foggingAttachment.ImageView|] None renderArea (Some clearValue)
             Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, &&renderingInfo)
             Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, &&vkViewport)
@@ -2594,9 +2594,9 @@ module PhysicallyBased =
                 Pipeline.writeDescriptorSampler 0 0 colorSampler vkSet vkc
 
             // set up render
+            let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
             let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
-            let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
             let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue)
             Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, &&renderingInfo)
             Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, &&vkViewport)
@@ -2742,9 +2742,9 @@ module PhysicallyBased =
                 Pipeline.writeDescriptorSampler 0 0 colorSampler vkSet vkc
 
             // set up render
+            let clearValue = VkClearValue (r = Constants.Render.AmbientClearColor.R, g = Constants.Render.AmbientClearColor.G, b = Constants.Render.AmbientClearColor.B, a = Constants.Render.AmbientClearColor.A)
             let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
-            let clearValue = VkClearValue (r = Constants.Render.AmbientClearColor.R, g = Constants.Render.AmbientClearColor.G, b = Constants.Render.AmbientClearColor.B, a = Constants.Render.AmbientClearColor.A)
             let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue)
             Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, &&renderingInfo)
             Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, &&vkViewport)
@@ -2874,9 +2874,9 @@ module PhysicallyBased =
                 Pipeline.writeDescriptorSampler 1 0 irradianceSampler vkSet vkc
 
             // set up render
+            let clearValue = VkClearValue (r = Constants.Render.IrradianceClearColor.R, g = Constants.Render.IrradianceClearColor.G, b = Constants.Render.IrradianceClearColor.B, a = Constants.Render.IrradianceClearColor.A)
             let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
-            let clearValue = VkClearValue (r = Constants.Render.IrradianceClearColor.R, g = Constants.Render.IrradianceClearColor.G, b = Constants.Render.IrradianceClearColor.B, a = Constants.Render.IrradianceClearColor.A)
             let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue)
             Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, &&renderingInfo)
             Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, &&vkViewport)
@@ -3035,9 +3035,9 @@ module PhysicallyBased =
                 Pipeline.writeDescriptorSampler 1 0 environmentFilterSampler vkSet vkc
 
             // set up render
+            let clearValue = VkClearValue (r = Constants.Render.EnvironmentClearColor.R, g = Constants.Render.EnvironmentClearColor.G, b = Constants.Render.EnvironmentClearColor.B, a = Constants.Render.EnvironmentClearColor.A)
             let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
-            let clearValue = VkClearValue (r = Constants.Render.EnvironmentClearColor.R, g = Constants.Render.EnvironmentClearColor.G, b = Constants.Render.EnvironmentClearColor.B, a = Constants.Render.EnvironmentClearColor.A)
             let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue)
             Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, &&renderingInfo)
             Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, &&vkViewport)
@@ -3169,9 +3169,9 @@ module PhysicallyBased =
                 Pipeline.writeDescriptorSampler 0 0 colorSampler vkSet vkc
 
             // set up render
+            let clearValue = VkClearValue (r = Constants.Render.SsaoClearColor.R, g = Constants.Render.SsaoClearColor.G, b = Constants.Render.SsaoClearColor.B, a = Constants.Render.SsaoClearColor.A)
             let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
-            let clearValue = VkClearValue (r = Constants.Render.SsaoClearColor.R, g = Constants.Render.SsaoClearColor.G, b = Constants.Render.SsaoClearColor.B, a = Constants.Render.SsaoClearColor.A)
             let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue)
             Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, &&renderingInfo)
             Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, &&vkViewport)
@@ -3364,9 +3364,9 @@ module PhysicallyBased =
                 Pipeline.writeDescriptorSampler 1 0 brdfSampler vkSet vkc
 
             // set up render
+            let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
             let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
-            let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
             let mutable renderingInfo = Hl.makeRenderingInfo [|coloringAttachment.ImageView; depthAttachment.ImageView|] None renderArea (Some clearValue)
             Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, &&renderingInfo)
             Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, &&vkViewport)
@@ -3508,9 +3508,9 @@ module PhysicallyBased =
                 Pipeline.writeDescriptorSampler 0 0 colorSampler vkSet vkc
 
             // set up render
+            let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
             let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
-            let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
             let mutable renderingInfo = Hl.makeRenderingInfo [|compositionAttachment.ImageView|] None renderArea (Some clearValue)
             Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, &&renderingInfo)
             Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, &&vkViewport)
@@ -3911,9 +3911,9 @@ module PhysicallyBased =
                 Pipeline.writeDescriptorSampler 0 0 inputSampler vkSet vkc
 
             // set up render
+            let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
             let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
-            let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
             let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue)
             Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, &&renderingInfo)
             Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, &&vkViewport)
@@ -4021,9 +4021,9 @@ module PhysicallyBased =
                 Pipeline.writeDescriptorSampler 0 0 filteredSampler vkSet vkc
 
             // set up render
+            let clearValue = VkClearValue (1.0f, Single.MaxValue, 0.0f, 0.0f) // TODO: P1: make derived from constant.
             let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
-            let clearValue = VkClearValue (1.0f, Single.MaxValue, 0.0f, 0.0f) // TODO: P1: make derived from constant.
             let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment|] None renderArea (Some clearValue)
             Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, &&renderingInfo)
             Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, &&vkViewport)
@@ -4145,9 +4145,9 @@ module PhysicallyBased =
                 Pipeline.writeDescriptorSampler 0 0 inputSampler vkSet vkc
 
             // set up render
+            let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
             let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
-            let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
             let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue)
             Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, &&renderingInfo)
             Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, &&vkViewport)
@@ -4256,9 +4256,9 @@ module PhysicallyBased =
                 Pipeline.writeDescriptorSampler 0 0 inputSampler vkSet vkc
 
             // set up render
+            let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
             let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
-            let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
             let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue)
             Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, &&renderingInfo)
             Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, &&vkViewport)
@@ -4352,9 +4352,9 @@ module PhysicallyBased =
                 Pipeline.writeDescriptorSampler 0 0 inputSampler vkSet vkc
 
             // set up render
+            let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
             let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
-            let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
             let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue)
             Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, &&renderingInfo)
             Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, &&vkViewport)

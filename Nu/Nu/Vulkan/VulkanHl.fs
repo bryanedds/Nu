@@ -533,44 +533,44 @@ module Hl =
     let inline makeRenderingInfo (colorAttachments : VkImageView array) depthAttachmentOpt renderArea clearValueOpt =
 
         // color attachment infos
-        let cInfos = Array.zeroCreate colorAttachments.Length
-        for i in 0 .. dec cInfos.Length do
-            let mutable cInfo = VkRenderingAttachmentInfo ()
-            cInfo.imageView <- colorAttachments[i]
-            cInfo.imageLayout <- ColorAttachmentWrite.VkImageLayout
-            cInfo.storeOp <- VkAttachmentStoreOp.Store
+        let colorInfos = Array.zeroCreate colorAttachments.Length
+        for i in 0 .. dec colorInfos.Length do
+            let mutable colorInfo = VkRenderingAttachmentInfo ()
+            colorInfo.imageView <- colorAttachments[i]
+            colorInfo.imageLayout <- ColorAttachmentWrite.VkImageLayout
+            colorInfo.storeOp <- VkAttachmentStoreOp.Store
             match clearValueOpt with
             | Some clearValue ->
-                cInfo.loadOp <- VkAttachmentLoadOp.Clear
-                cInfo.clearValue <- clearValue
+                colorInfo.loadOp <- VkAttachmentLoadOp.Clear
+                colorInfo.clearValue <- clearValue
             | None ->
-                cInfo.loadOp <- VkAttachmentLoadOp.Load
-            cInfos[i] <- cInfo
-        use cInfosPin = new ArrayPin<_> (cInfos)
+                colorInfo.loadOp <- VkAttachmentLoadOp.Load
+            colorInfos[i] <- colorInfo
+        use cInfosPin = new ArrayPin<_> (colorInfos)
 
         // depth attachment info
-        let mutable dInfo = VkRenderingAttachmentInfo ()
+        let mutable depthInfo = VkRenderingAttachmentInfo ()
         match depthAttachmentOpt with
         | Some depthAttachment ->
-            dInfo.imageView <- depthAttachment
-            dInfo.imageLayout <- DepthAttachmentWrite.VkImageLayout
-            dInfo.storeOp <- VkAttachmentStoreOp.Store
+            depthInfo.imageView <- depthAttachment
+            depthInfo.imageLayout <- DepthAttachmentWrite.VkImageLayout
+            depthInfo.storeOp <- VkAttachmentStoreOp.Store
             match clearValueOpt with
             | Some _ ->
-                dInfo.loadOp <- VkAttachmentLoadOp.Clear
-                dInfo.clearValue <- VkClearValue (1.0f, 0u)
+                depthInfo.loadOp <- VkAttachmentLoadOp.Clear
+                depthInfo.clearValue <- VkClearValue (1.0f, 0u)
             | None ->
-                dInfo.loadOp <- VkAttachmentLoadOp.Load
+                depthInfo.loadOp <- VkAttachmentLoadOp.Load
         | None -> ()
 
         // rendering info
-        let mutable rInfo = VkRenderingInfo ()
-        rInfo.renderArea <- renderArea
-        rInfo.layerCount <- 1u
-        rInfo.colorAttachmentCount <- uint cInfos.Length
-        rInfo.pColorAttachments <- cInfosPin.Pointer
-        if depthAttachmentOpt.IsSome then rInfo.pDepthAttachment <- &&dInfo
-        rInfo
+        let mutable renderingInfo = VkRenderingInfo ()
+        renderingInfo.renderArea <- renderArea
+        renderingInfo.layerCount <- 1u
+        renderingInfo.colorAttachmentCount <- uint colorInfos.Length
+        renderingInfo.pColorAttachments <- cInfosPin.Pointer
+        if depthAttachmentOpt.IsSome then renderingInfo.pDepthAttachment <- &&depthInfo
+        renderingInfo
 
     /// Check that VkRect2D has non-zero area.
     let validateRect (rect : VkRect2D) =

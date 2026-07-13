@@ -201,8 +201,8 @@ type VulkanRendererImGui
                     VkRect2D (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
                     |> Hl.scaleRectForPixelDensity pixelDensity
                 let mutable renderingInfo = Hl.makeRenderingInfo [|vkc.SwapchainImageView|] None renderArea None
-                Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, &&renderingInfo)
                 let mutable viewport = Hl.makeViewport false renderArea
+                Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, &&renderingInfo)
                 Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, &&viewport)
                 let vkPipeline = Pipeline.tryGetVkPipeline VulkanImGui false pipeline |> Option.get // not supporting shader reload of Gaia itself
                 Vulkan.vkCmdBindPipeline (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)

@@ -317,7 +317,7 @@ module CubeMap =
             Vulkan.vkCmdBeginRendering (commandBuffer, &&renderingInfo)
             Vulkan.vkCmdSetViewport (commandBuffer, 0u, 1u, &&vkViewport)
             Vulkan.vkCmdSetScissor (commandBuffer, 0u, 1u, &&renderArea)
-    
+
             // set up pipeline
             Vulkan.vkCmdBindPipeline (commandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
 
