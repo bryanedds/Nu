@@ -19,6 +19,7 @@ type BufferType =
     | Index of UploadEnabled : bool
     | Instance
     | Uniform
+    | Storage
 
 /// Internal representation of an allocated buffer.
 type BufferInternal =
@@ -80,6 +81,7 @@ type BufferInternal =
             | Index false -> struct (false, VmaMemoryUsage.AutoPreferDevice)
             | Instance -> struct (true, VmaMemoryUsage.AutoPreferDevice)
             | Uniform -> struct (true, VmaMemoryUsage.AutoPreferDevice)
+            | Storage -> struct (true, VmaMemoryUsage.AutoPreferDevice)
 
         // make create info
         let mutable createInfo =
@@ -104,6 +106,9 @@ type BufferInternal =
                 BufferInternal.makeBufferCreateInfo usage bufferSize
             | Uniform ->
                 let usage = VkBufferUsageFlags.UniformBuffer ||| VkBufferUsageFlags.TransferSrc ||| VkBufferUsageFlags.TransferDst
+                BufferInternal.makeBufferCreateInfo usage bufferSize
+            | Storage ->
+                let usage = VkBufferUsageFlags.StorageBuffer ||| VkBufferUsageFlags.TransferSrc ||| VkBufferUsageFlags.TransferDst
                 BufferInternal.makeBufferCreateInfo usage bufferSize
 
         // make buffer

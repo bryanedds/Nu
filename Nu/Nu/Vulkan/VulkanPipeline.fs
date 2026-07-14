@@ -415,7 +415,25 @@ type Pipeline =
 
         // advance buffer
         Buffer.advance buffer
+    static member writeDescriptorStorageBuffer (binding : int) (descriptorIndex : int) (buffer : Nu.Vulkan.Buffer) vkDescriptorSet (vkc : VulkanContext) =
 
+        // buffer info
+        let mutable info = VkDescriptorBufferInfo ()
+        info.buffer <- buffer.VkBuffer
+        info.range <- Vulkan.VK_WHOLE_SIZE
+
+        // write descriptor set
+        let mutable write = VkWriteDescriptorSet ()
+        write.dstSet <- vkDescriptorSet
+        write.dstBinding <- uint binding
+        write.dstArrayElement <- uint descriptorIndex
+        write.descriptorCount <- 1u
+        write.descriptorType <- VkDescriptorType.StorageBuffer
+        write.pBufferInfo <- &&info
+        Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, &&write, 0u, nullPtr)
+
+        // advance buffer
+        Buffer.advance buffer
     static member writeDescriptorSampledImageView (binding : int) (descriptorIndex : int) (imageView : VkImageView) vkDescriptorSet (vkc : VulkanContext) =
 
         // image info
