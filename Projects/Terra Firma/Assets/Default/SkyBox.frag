@@ -6,7 +6,7 @@ struct SkyBox
     float brightness;
 };
 
-layout(set = 0, binding = 1) buffer readonly SkyBoxBlock { SkyBox skyBox; };
+layout(set = 0, binding = 1) uniform SkyBoxBlock { SkyBox skyBox; };
 
 layout(set = 1, binding = 0) uniform textureCube cubeMap;
 

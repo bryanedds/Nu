@@ -78,8 +78,8 @@ module SpriteBatch =
     let private createSpriteBatchPipeline (vkc : VulkanContext) =
 
         // create uniforms
-        let spritesUniform = Buffer.create Storage (Constants.Render.SpriteBatchSize * sizeof<Sprite>) vkc
-        let viewProjectionUniform = Buffer.create Storage sizeof<ViewProjection> vkc
+        let spritesUniform = Buffer.create Uniform (Constants.Render.SpriteBatchSize * sizeof<Sprite>) vkc
+        let viewProjectionUniform = Buffer.create Uniform sizeof<ViewProjection> vkc
         
         // create sprite batch pipeline
         let pipeline =
@@ -87,8 +87,8 @@ module SpriteBatch =
                 Constants.Paths.SpriteBatchShaderFilePath
                 [|VulkanTransparent; VulkanAdditive; VulkanOverwrite|] [|true|] [||]
                 [|Pipeline.descriptorSet<int>
-                    [|Pipeline.descriptor 0 StorageBuffer VertexStage 1
-                      Pipeline.descriptor 1 StorageBuffer VertexStage 1|]
+                    [|Pipeline.descriptor 0 UniformBuffer VertexStage 1
+                      Pipeline.descriptor 1 UniformBuffer VertexStage 1|]
                   Pipeline.descriptorSet<Texture>
                     [|Pipeline.descriptor 0 SampledImage FragmentStage 1|]
                   Pipeline.descriptorSet<Sampler>
@@ -158,12 +158,12 @@ module SpriteBatch =
                             sprite.color <- env.Colors[i]
                             Buffer.writeSubdata (i * spriteSize) 0 spriteSize 1 (NativePtr.toNativeInt spritePtr) env.SpritesUniform env.VulkanContext
                         Buffer.flushSubdata 0 0 spriteSize env.SpriteIndex env.SpritesUniform env.VulkanContext
-                        Pipeline.writeDescriptorStorageBuffer 0 0 env.SpritesUniform vkSet env.VulkanContext
+                        Pipeline.writeDescriptorUniformBuffer 0 0 env.SpritesUniform vkSet env.VulkanContext
 
                         // specify viewProjection
                         let mutable viewProjection = ViewProjection (viewProjection = if env.State.Absolute then env.ViewProjection2dAbsolute else env.ViewProjection2dRelative)
                         Buffer.uploadValue viewProjection env.ViewProjectionUniform env.VulkanContext
-                        Pipeline.writeDescriptorStorageBuffer 1 0 env.ViewProjectionUniform vkSet env.VulkanContext
+                        Pipeline.writeDescriptorUniformBuffer 1 0 env.ViewProjectionUniform vkSet env.VulkanContext
 
                     // specify material
                     let mutable materialDescriptorSet = Pipeline.specifyDescriptorSet 1 texture env.Pipeline env.VulkanContext $ fun vkSet ->

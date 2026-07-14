@@ -21,7 +21,7 @@ module ContourTessellation =
         let count = 1024 // TODO: P1: make constant.
         let vertexBuffer = Buffer.create (Vertex true) (count * sizeof<ContourVertex>) vkc
         let indexBuffer = Buffer.create (BufferType.Index true) (count * sizeof<uint32>) vkc
-        let modelViewProjectionUniform = Buffer.create Storage sizeof<Matrix4x4> vkc
+        let modelViewProjectionUniform = Buffer.create Uniform sizeof<Matrix4x4> vkc
         
         // create pipeline
         let vertexSize = sizeof<ContourVertex> // = sizeof<Vector2> + sizeof<Color> = 2 * sizeof<single> + 4 * sizeof<single>
@@ -33,7 +33,7 @@ module ContourTessellation =
                     [|Pipeline.attribute 0 Single2 0
                       Pipeline.attribute 1 Single4 sizeof<Vector2>|]|]
                 [|Pipeline.descriptorSet<int>
-                    [|Pipeline.descriptor 0 StorageBuffer VertexStage 1|]|]
+                    [|Pipeline.descriptor 0 UniformBuffer VertexStage 1|]|]
                 [||] [|vkc.SwapFormat|] None
                 [|vertexBuffer; indexBuffer; modelViewProjectionUniform|]
                 vkc
@@ -92,7 +92,7 @@ module ContourTessellation =
                 let modelViewProjection = modelViewProjection
                 let mutable uniformDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.DrawIndex pipeline vkc $ fun vkSet ->
                     Buffer.uploadValue modelViewProjection modelViewProjectionUniform vkc
-                    Pipeline.writeDescriptorStorageBuffer 0 0 modelViewProjectionUniform vkSet vkc
+                    Pipeline.writeDescriptorUniformBuffer 0 0 modelViewProjectionUniform vkSet vkc
 
                 // set up render
                 let mutable renderingInfo = Hl.makeRenderingInfo [|vkc.SwapchainImageView|] None renderArea None

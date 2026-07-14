@@ -244,7 +244,7 @@ module CubeMap =
     let createCubeMapPipeline shaderPath colorAttachmentFormat (vkc : VulkanContext) =
 
         // create eye buffer
-        let eyeUniform = Buffer.create Storage sizeof<Eye> vkc
+        let eyeUniform = Buffer.create Uniform sizeof<Eye> vkc
 
         // create pipeline
         let pipeline =
@@ -253,7 +253,7 @@ module CubeMap =
                 [|Pipeline.vertex 0 VertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Single3 0|]|]
                 [|Pipeline.descriptorSet<int>
-                    [|Pipeline.descriptor 0 StorageBuffer VertexStage 1|]
+                    [|Pipeline.descriptor 0 UniformBuffer VertexStage 1|]
                   Pipeline.descriptorSet<Texture>
                     [|Pipeline.descriptor 0 SampledImage FragmentStage 1|]
                   Pipeline.descriptorSet<Sampler>
@@ -299,7 +299,7 @@ module CubeMap =
             let mutable eyeDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.Pipeline.DrawIndex pipeline.Pipeline vkc $ fun vkSet ->
                 let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
                 Buffer.uploadValue eye pipeline.EyeUniform vkc
-                Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.EyeUniform vkSet vkc
+                Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.EyeUniform vkSet vkc
 
             // specify material
             let mutable materialDescriptorSet = Pipeline.specifyDescriptorSet 1 cubeMap pipeline.Pipeline vkc $ fun vkSet ->

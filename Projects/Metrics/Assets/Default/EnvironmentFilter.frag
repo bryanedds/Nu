@@ -9,7 +9,7 @@ struct EnvironmentFilter
     float resolution; // resolution of cube map face
 };
 
-layout(set = 0, binding = 1) buffer readonly EnvironmentFilterBlock { EnvironmentFilter environmentFilter; };
+layout(set = 0, binding = 1) uniform EnvironmentFilterBlock { EnvironmentFilter environmentFilter; };
 
 layout(set = 1, binding = 0) uniform textureCube cubeMap;
 

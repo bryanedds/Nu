@@ -6,7 +6,7 @@ struct GaussianEsm
     float radius;
 };
 
-layout(set = 0, binding = 0) buffer readonly GaussianEsmBlock { GaussianEsm gaussianEsm; };
+layout(set = 0, binding = 0) uniform GaussianEsmBlock { GaussianEsm gaussianEsm; };
 
 layout(set = 1, binding = 0) uniform texture2D esmTexture;
 

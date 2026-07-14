@@ -32,9 +32,9 @@ struct Eye
     mat4 viewProjection;
 };
 
-layout(set = 0, binding = 0) buffer readonly EyeBlock { Eye eye; };
+layout(set = 0, binding = 0) uniform EyeBlock { Eye eye; };
 
-layout(set = 2, binding = 0) buffer readonly BonesBlock { mat4 bones[BONES_MAX]; };
+layout(set = 2, binding = 0) uniform BonesBlock { mat4 bones[BONES_MAX]; };
 
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec2 texCoords;

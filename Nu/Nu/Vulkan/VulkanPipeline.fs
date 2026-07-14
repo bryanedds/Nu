@@ -396,7 +396,7 @@ type Pipeline =
     static member tryGetVkPipeline blend cullFace pipeline =
         Map.tryFind (blend, cullFace) pipeline.VkPipelines_
 
-    static member writeDescriptorStorageBuffer (binding : int) (descriptorIndex : int) (buffer : Nu.Vulkan.Buffer) vkDescriptorSet (vkc : VulkanContext) =
+    static member writeDescriptorUniformBuffer (binding : int) (descriptorIndex : int) (buffer : Nu.Vulkan.Buffer) vkDescriptorSet (vkc : VulkanContext) =
 
         // buffer info
         let mutable info = VkDescriptorBufferInfo ()
@@ -409,7 +409,7 @@ type Pipeline =
         write.dstBinding <- uint binding
         write.dstArrayElement <- uint descriptorIndex
         write.descriptorCount <- 1u
-        write.descriptorType <- VkDescriptorType.StorageBuffer
+        write.descriptorType <- VkDescriptorType.UniformBuffer
         write.pBufferInfo <- &&info
         Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, &&write, 0u, nullPtr)
 

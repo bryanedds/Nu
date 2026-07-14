@@ -1659,21 +1659,21 @@ module PhysicallyBased =
     let createPhysicallyBasedShadowPipeline shaderPath vertexBindings colorAttachmentFormats depthTestFormat vkc =
 
         // create set 0 uniform buffers
-        let shadowVertUniform = Buffer.create Storage sizeof<ShadowVert> vkc
-        let shadowFragUniform = Buffer.create Storage sizeof<ShadowFrag> vkc
+        let shadowVertUniform = Buffer.create Uniform sizeof<ShadowVert> vkc
+        let shadowFragUniform = Buffer.create Uniform sizeof<ShadowFrag> vkc
 
         // create set 1 uniform buffers
-        let boneUniform = Buffer.create Storage (Constants.Render.BonesMax * sizeof<Matrix4x4>) vkc
+        let boneUniform = Buffer.create Uniform (Constants.Render.BonesMax * sizeof<Matrix4x4>) vkc
 
         // create pipeline
         let pipeline =
             Pipeline.create
                 shaderPath [|VulkanUnblended|] [|false; true|] vertexBindings
                 [|Pipeline.descriptorSet<int>
-                    [|Pipeline.descriptor 0 StorageBuffer VertexStage 1
-                      Pipeline.descriptor 1 StorageBuffer FragmentStage 1|]
+                    [|Pipeline.descriptor 0 UniformBuffer VertexStage 1
+                      Pipeline.descriptor 1 UniformBuffer FragmentStage 1|]
                   Pipeline.descriptorSet<int>
-                    [|Pipeline.descriptor 0 StorageBuffer VertexStage 1|]|]
+                    [|Pipeline.descriptor 0 UniformBuffer VertexStage 1|]|]
                 [||] colorAttachmentFormats (Some depthTestFormat)
                 [|shadowVertUniform; boneUniform; shadowFragUniform|]
                 vkc
@@ -1726,12 +1726,12 @@ module PhysicallyBased =
             // specify shadow vert
             let shadowVert = ShadowVert (viewProjection = viewProjection)
             Buffer.uploadValue shadowVert pipeline.ShadowVertUniform vkc
-            Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.ShadowVertUniform vkSet vkc
+            Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.ShadowVertUniform vkSet vkc
 
             // specify shadow frag
             let shadowFrag = ShadowFrag (eyeCenter = eyeCenter, lightShadowExponent = lightShadowExponent)
             Buffer.uploadValue shadowFrag pipeline.ShadowFragUniform vkc
-            Pipeline.writeDescriptorStorageBuffer 1 0 pipeline.ShadowFragUniform vkSet vkc
+            Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.ShadowFragUniform vkSet vkc
 
         // fin
         uniformsDescriptorSet
@@ -1766,7 +1766,7 @@ module PhysicallyBased =
                         Pipeline.specifyDescriptorSet 1 pipeline.Pipeline.DrawIndex pipeline.Pipeline vkc $ fun vkSet ->
                             use bonesPin = new ArrayPin<_> (bones)
                             Buffer.uploadData sizeof<Matrix4x4> (min bones.Length Constants.Render.BonesMax) bonesPin.NativeInt pipeline.BoneUniform vkc
-                            Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.BoneUniform vkSet vkc
+                            Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.BoneUniform vkSet vkc
 
                 // set up pipeline
                 Vulkan.vkCmdBindPipeline (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
@@ -1814,16 +1814,16 @@ module PhysicallyBased =
     let createPhysicallyBasedPipeline lightMapsMax lightsMax shaderPath blends cullModes vertexBindings colorAttachmentFormats depthTestOpt vkc =
 
         // create set 0 uniform buffers
-        let eyeUniform = Buffer.create Storage sizeof<Eye> vkc
-        let lightingUniform = Buffer.create Storage sizeof<Lighting> vkc
+        let eyeUniform = Buffer.create Uniform sizeof<Eye> vkc
+        let lightingUniform = Buffer.create Uniform sizeof<Lighting> vkc
 
         // create set 2 uniform buffers
         let shadowMatrixMax = Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels
-        let boneUniform = Buffer.create Storage (Constants.Render.BonesMax * sizeof<Matrix4x4>) vkc
-        let lightMapsUniform = Buffer.create Storage (lightMapsMax * sizeof<LightMap'>) vkc
-        let lightsGeneralUniform = Buffer.create Storage sizeof<LightsGeneral> vkc
-        let lightsUniform = Buffer.create Storage (lightsMax * sizeof<Light>) vkc
-        let shadowMatrixUniform = Buffer.create Storage (shadowMatrixMax * sizeof<Matrix4x4>) vkc
+        let boneUniform = Buffer.create Uniform (Constants.Render.BonesMax * sizeof<Matrix4x4>) vkc
+        let lightMapsUniform = Buffer.create Uniform (lightMapsMax * sizeof<LightMap'>) vkc
+        let lightsGeneralUniform = Buffer.create Uniform sizeof<LightsGeneral> vkc
+        let lightsUniform = Buffer.create Uniform (lightsMax * sizeof<Light>) vkc
+        let shadowMatrixUniform = Buffer.create Uniform (shadowMatrixMax * sizeof<Matrix4x4>) vkc
 
         // create pipeline
         let pipeline =
@@ -1832,8 +1832,8 @@ module PhysicallyBased =
                 
                 // descriptor set 0: per render pass
                 [|Pipeline.descriptorSet<int>
-                    [|Pipeline.descriptor 0 StorageBuffer VertexFragmentStage 1 // eye
-                      Pipeline.descriptor 1 StorageBuffer FragmentStage 1 // lighting
+                    [|Pipeline.descriptor 0 UniformBuffer VertexFragmentStage 1 // eye
+                      Pipeline.descriptor 1 UniformBuffer FragmentStage 1 // lighting
                       Pipeline.descriptor 2 SampledImage FragmentStage 1 // depthTexture
                       Pipeline.descriptor 3 SampledImage FragmentStage 1 // colorTexture
                       Pipeline.descriptor 4 SampledImage FragmentStage 1 // brdfTexture
@@ -1858,11 +1858,11 @@ module PhysicallyBased =
 
                   // descriptor set 2: dynamic
                   Pipeline.descriptorSet<int>
-                    [|Pipeline.descriptor 0 StorageBuffer VertexStage 1 // bone
-                      Pipeline.descriptor 1 StorageBuffer FragmentStage 1 // lightMap
-                      Pipeline.descriptor 2 StorageBuffer FragmentStage 1 // lightsGeneral
-                      Pipeline.descriptor 3 StorageBuffer FragmentStage 1 // light
-                      Pipeline.descriptor 4 StorageBuffer FragmentStage 1 // shadowMatrix
+                    [|Pipeline.descriptor 0 UniformBuffer VertexStage 1 // bone
+                      Pipeline.descriptor 1 UniformBuffer FragmentStage 1 // lightMap
+                      Pipeline.descriptor 2 UniformBuffer FragmentStage 1 // lightsGeneral
+                      Pipeline.descriptor 3 UniformBuffer FragmentStage 1 // light
+                      Pipeline.descriptor 4 UniformBuffer FragmentStage 1 // shadowMatrix
                       Pipeline.descriptor 5 SampledImage FragmentStage lightMapsMax // irradianceMaps
                       Pipeline.descriptor 6 SampledImage FragmentStage lightMapsMax // environmentFilterMaps
                       Pipeline.descriptor 7 SampledImage FragmentStage 1 // shadowTextures
@@ -1929,7 +1929,7 @@ module PhysicallyBased =
         let mutable eyeDescriptorSet = Pipeline.specifyDescriptorSet 0 renderPassIndex pipeline.Pipeline vkc $ fun vkSet ->
             let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
             Buffer.uploadValue eye pipeline.EyeUniform vkc
-            Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.EyeUniform vkSet vkc
+            Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.EyeUniform vkSet vkc
 
         // specify samplers
         let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 3 Unit pipeline.Pipeline vkc $ fun vkSet ->
@@ -1993,7 +1993,7 @@ module PhysicallyBased =
                         Pipeline.specifyDescriptorSet 2 pipeline.Pipeline.DrawIndex pipeline.Pipeline vkc $ fun vkSet ->
                             use bonesPin = new ArrayPin<_> (bones)
                             Buffer.uploadData sizeof<Matrix4x4> (min bones.Length Constants.Render.BonesMax) bonesPin.NativeInt pipeline.BoneUniform vkc
-                            Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.BoneUniform vkSet vkc
+                            Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.BoneUniform vkSet vkc
 
                 // set up pipeline
                 Vulkan.vkCmdBindPipeline (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
@@ -2044,10 +2044,10 @@ module PhysicallyBased =
 
         // create uniform buffers
         let shadowMatrixMax = Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels
-        let eyeUniform = Buffer.create Storage sizeof<Eye> vkc
-        let lightingUniform = Buffer.create Storage sizeof<Lighting2> vkc
-        let lightUniform = Buffer.create Storage (Constants.Render.LightsMaxDeferred * sizeof<Light>) vkc
-        let shadowMatrixUniform = Buffer.create Storage (shadowMatrixMax * sizeof<Matrix4x4>) vkc
+        let eyeUniform = Buffer.create Uniform sizeof<Eye> vkc
+        let lightingUniform = Buffer.create Uniform sizeof<Lighting2> vkc
+        let lightUniform = Buffer.create Uniform (Constants.Render.LightsMaxDeferred * sizeof<Light>) vkc
+        let shadowMatrixUniform = Buffer.create Uniform (shadowMatrixMax * sizeof<Matrix4x4>) vkc
 
         // create pipeline
         let pipeline =
@@ -2059,10 +2059,10 @@ module PhysicallyBased =
                       Pipeline.attribute 1 Single2 StaticTexCoordsOffset
                       Pipeline.attribute 2 Single3 StaticNormalOffset|]|]
                 [|Pipeline.descriptorSet<int>
-                    [|Pipeline.descriptor 0 StorageBuffer FragmentStage 1 // eye
-                      Pipeline.descriptor 1 StorageBuffer FragmentStage 1 // lighting
-                      Pipeline.descriptor 2 StorageBuffer FragmentStage 1 // light
-                      Pipeline.descriptor 3 StorageBuffer FragmentStage 1 // shadowMatrix
+                    [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // eye
+                      Pipeline.descriptor 1 UniformBuffer FragmentStage 1 // lighting
+                      Pipeline.descriptor 2 UniformBuffer FragmentStage 1 // light
+                      Pipeline.descriptor 3 UniformBuffer FragmentStage 1 // shadowMatrix
                       Pipeline.descriptor 4 SampledImage FragmentStage 1 // depth
                       Pipeline.descriptor 5 SampledImage FragmentStage 1 // albedo
                       Pipeline.descriptor 6 SampledImage FragmentStage 1 // material
@@ -2160,7 +2160,7 @@ module PhysicallyBased =
                 // specify eye
                 let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
                 Buffer.uploadValue eye pipeline.EyeUniform vkc
-                Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.EyeUniform vkSet vkc
+                Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.EyeUniform vkSet vkc
 
                 // specify lighting
                 let mutable lighting = Lighting2 ()
@@ -2175,7 +2175,7 @@ module PhysicallyBased =
                 lighting.lightsCount <- lightsCount
                 lighting.shadowNear <- shadowNear
                 Buffer.uploadValue lighting pipeline.Lighting2Uniform vkc
-                Pipeline.writeDescriptorStorageBuffer 1 0 pipeline.Lighting2Uniform vkSet vkc
+                Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.Lighting2Uniform vkSet vkc
 
                 // specify lights
                 let mutable light = Light ()
@@ -2197,13 +2197,13 @@ module PhysicallyBased =
                     else light <- Unchecked.defaultof<_>
                     Buffer.writeSubdata (i * sizeof<Light>) 0 sizeof<Light> 1 (NativePtr.toNativeInt lightPtr) pipeline.LightUniform vkc
                 Buffer.flushSubdata 0 0 sizeof<Light> Constants.Render.LightsMaxDeferred pipeline.LightUniform vkc
-                Pipeline.writeDescriptorStorageBuffer 2 0 pipeline.LightUniform vkSet vkc
+                Pipeline.writeDescriptorUniformBuffer 2 0 pipeline.LightUniform vkSet vkc
 
                 // specify shadow matrices
                 use shadowMatricesPin = new ArrayPin<_> (shadowMatrices)
                 let shadowMatricesCount = min shadowMatrices.Length (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels)
                 Buffer.uploadData sizeof<Matrix4x4> shadowMatricesCount shadowMatricesPin.NativeInt pipeline.ShadowMatrixUniform vkc
-                Pipeline.writeDescriptorStorageBuffer 3 0 pipeline.ShadowMatrixUniform vkSet vkc
+                Pipeline.writeDescriptorUniformBuffer 3 0 pipeline.ShadowMatrixUniform vkSet vkc
 
                 // specify textures
                 Pipeline.writeDescriptorSampledTexture 4 0 depthTexture vkSet vkc
@@ -2270,11 +2270,11 @@ module PhysicallyBased =
 
         // create uniform buffers
         let shadowMatrixMax = Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels
-        let eyeUniform = Buffer.create Storage sizeof<Eye> vkc
-        let lightingUniform = Buffer.create Storage sizeof<Lighting> vkc
-        let lightsGeneralUniform = Buffer.create Storage sizeof<LightsGeneral> vkc
-        let lightsUniform = Buffer.create Storage (Constants.Render.LightsMaxDeferred * sizeof<Light>) vkc
-        let shadowMatricesUniform = Buffer.create Storage (shadowMatrixMax * sizeof<Matrix4x4>) vkc
+        let eyeUniform = Buffer.create Uniform sizeof<Eye> vkc
+        let lightingUniform = Buffer.create Uniform sizeof<Lighting> vkc
+        let lightsGeneralUniform = Buffer.create Uniform sizeof<LightsGeneral> vkc
+        let lightsUniform = Buffer.create Uniform (Constants.Render.LightsMaxDeferred * sizeof<Light>) vkc
+        let shadowMatricesUniform = Buffer.create Uniform (shadowMatrixMax * sizeof<Matrix4x4>) vkc
 
         // create pipeline
         let pipeline =
@@ -2286,11 +2286,11 @@ module PhysicallyBased =
                       Pipeline.attribute 1 Single2 StaticTexCoordsOffset
                       Pipeline.attribute 2 Single3 StaticNormalOffset|]|]
                 [|Pipeline.descriptorSet<int>
-                    [|Pipeline.descriptor 0 StorageBuffer FragmentStage 1 // eye
-                      Pipeline.descriptor 1 StorageBuffer FragmentStage 1 // lighting
-                      Pipeline.descriptor 2 StorageBuffer FragmentStage 1 // lightsGeneral
-                      Pipeline.descriptor 3 StorageBuffer FragmentStage 1 // lights
-                      Pipeline.descriptor 4 StorageBuffer FragmentStage 1 // shadowMatrices
+                    [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // eye
+                      Pipeline.descriptor 1 UniformBuffer FragmentStage 1 // lighting
+                      Pipeline.descriptor 2 UniformBuffer FragmentStage 1 // lightsGeneral
+                      Pipeline.descriptor 3 UniformBuffer FragmentStage 1 // lights
+                      Pipeline.descriptor 4 UniformBuffer FragmentStage 1 // shadowMatrices
                       Pipeline.descriptor 5 SampledImage FragmentStage 1 // depth
                       Pipeline.descriptor 6 SampledImage FragmentStage 1 // shadowTextures
                       Pipeline.descriptor 7 SampledImage FragmentStage Constants.Render.ShadowMapsMax // shadowMaps
@@ -2376,7 +2376,7 @@ module PhysicallyBased =
                 // specify eye
                 let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
                 Buffer.uploadValue eye pipeline.EyeUniform vkc
-                Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.EyeUniform vkSet vkc
+                Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.EyeUniform vkSet vkc
 
                 // specify lighting
                 let mutable lighting = Lighting ()
@@ -2386,7 +2386,7 @@ module PhysicallyBased =
                 lighting.ssvfSteps <- ssvfSteps
                 lighting.ssvfAsymmetry <- ssvfAsymmetry
                 Buffer.uploadValue lighting pipeline.LightingUniform vkc
-                Pipeline.writeDescriptorStorageBuffer 1 0 pipeline.LightingUniform vkSet vkc
+                Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.LightingUniform vkSet vkc
 
                 // specify lights general
                 let mutable lightsGeneral = LightsGeneral ()
@@ -2394,7 +2394,7 @@ module PhysicallyBased =
                 lightsGeneral.lightMapSingletonBlendMargin <- lightMapSingletonBlendMargin
                 lightsGeneral.lightsCount <- lightsCount
                 Buffer.uploadValue lightsGeneral pipeline.LightsGeneralUniform vkc
-                Pipeline.writeDescriptorStorageBuffer 2 0 pipeline.LightsGeneralUniform vkSet vkc
+                Pipeline.writeDescriptorUniformBuffer 2 0 pipeline.LightsGeneralUniform vkSet vkc
 
                 // specify lights
                 let mutable light = Light ()
@@ -2416,13 +2416,13 @@ module PhysicallyBased =
                     else light <- Unchecked.defaultof<_>
                     Buffer.writeSubdata (i * sizeof<Light>) 0 sizeof<Light> 1 (NativePtr.toNativeInt lightPtr) pipeline.LightsUniform vkc
                 Buffer.flushSubdata 0 0 sizeof<Light> Constants.Render.LightsMaxDeferred pipeline.LightsUniform vkc
-                Pipeline.writeDescriptorStorageBuffer 3 0 pipeline.LightsUniform vkSet vkc
+                Pipeline.writeDescriptorUniformBuffer 3 0 pipeline.LightsUniform vkSet vkc
 
                 // specify shadow matrices
                 use shadowMatricesPin = new ArrayPin<_> (shadowMatrices)
                 let shadowMatricesCount = min shadowMatrices.Length (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels)
                 Buffer.uploadData sizeof<Matrix4x4> shadowMatricesCount shadowMatricesPin.NativeInt pipeline.ShadowMatricesUniform vkc
-                Pipeline.writeDescriptorStorageBuffer 4 0 pipeline.ShadowMatricesUniform vkSet vkc
+                Pipeline.writeDescriptorUniformBuffer 4 0 pipeline.ShadowMatricesUniform vkSet vkc
 
                 // specify textures
                 Pipeline.writeDescriptorSampledTexture 5 0 depthTexture vkSet vkc
@@ -2482,9 +2482,9 @@ module PhysicallyBased =
     let createPhysicallyBasedDeferredLightMappingPipeline colorAttachmentFormat vkc =
 
         // create uniform buffers
-        let eyeUniform = Buffer.create Storage sizeof<Eye> vkc
-        let lightMapsUniform = Buffer.create Storage (Constants.Render.LightMapsMaxDeferred * sizeof<LightMap'>) vkc
-        let lightsGeneralUniform = Buffer.create Storage sizeof<LightsGeneral> vkc
+        let eyeUniform = Buffer.create Uniform sizeof<Eye> vkc
+        let lightMapsUniform = Buffer.create Uniform (Constants.Render.LightMapsMaxDeferred * sizeof<LightMap'>) vkc
+        let lightsGeneralUniform = Buffer.create Uniform sizeof<LightsGeneral> vkc
 
         // create pipeline
         let pipeline =
@@ -2496,9 +2496,9 @@ module PhysicallyBased =
                       Pipeline.attribute 1 Single2 StaticTexCoordsOffset
                       Pipeline.attribute 2 Single3 StaticNormalOffset|]|]
                 [|Pipeline.descriptorSet<int>
-                    [|Pipeline.descriptor 0 StorageBuffer FragmentStage 1 // eye
-                      Pipeline.descriptor 1 StorageBuffer FragmentStage 1 // lightMaps
-                      Pipeline.descriptor 2 StorageBuffer FragmentStage 1 // lightsGeneral
+                    [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // eye
+                      Pipeline.descriptor 1 UniformBuffer FragmentStage 1 // lightMaps
+                      Pipeline.descriptor 2 UniformBuffer FragmentStage 1 // lightsGeneral
                       Pipeline.descriptor 3 SampledImage FragmentStage 1 // depth
                       Pipeline.descriptor 4 SampledImage FragmentStage 1|] // normalPlus
                   Pipeline.descriptorSet<Unit>
@@ -2560,7 +2560,7 @@ module PhysicallyBased =
                 // specify eye
                 let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
                 Buffer.uploadValue eye pipeline.EyeUniform vkc
-                Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.EyeUniform vkSet vkc
+                Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.EyeUniform vkSet vkc
 
                 // specify light maps
                 let mutable lightMap = LightMap' ()
@@ -2575,7 +2575,7 @@ module PhysicallyBased =
                     else lightMap <- Unchecked.defaultof<_>
                     Buffer.writeSubdata (i * sizeof<LightMap'>) 0 sizeof<LightMap'> 1 (NativePtr.toNativeInt lightMapPtr) pipeline.LightMapsUniform vkc
                 Buffer.flushSubdata 0 0 sizeof<LightMap'> Constants.Render.LightMapsMaxDeferred pipeline.LightMapsUniform vkc
-                Pipeline.writeDescriptorStorageBuffer 1 0 pipeline.LightMapsUniform vkSet vkc
+                Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.LightMapsUniform vkSet vkc
 
                 // specify lights general
                 let mutable lightsGeneral = LightsGeneral ()
@@ -2583,7 +2583,7 @@ module PhysicallyBased =
                 lightsGeneral.lightMapSingletonBlendMargin <- lightMapSingletonBlendMargin
                 lightsGeneral.lightsCount <- lightsCount
                 Buffer.uploadValue lightsGeneral pipeline.LightsGeneralUniform vkc
-                Pipeline.writeDescriptorStorageBuffer 2 0 pipeline.LightsGeneralUniform vkSet vkc
+                Pipeline.writeDescriptorUniformBuffer 2 0 pipeline.LightsGeneralUniform vkSet vkc
 
                 // specify static environment textures
                 Pipeline.writeDescriptorSampledTexture 3 0 depthTexture vkSet vkc
@@ -2639,9 +2639,9 @@ module PhysicallyBased =
     let createPhysicallyBasedDeferredAmbientPipeline colorAttachmentFormat vkc =
 
         // create uniform buffers
-        let eyeUniform = Buffer.create Storage sizeof<Eye> vkc
-        let lightMapUniform = Buffer.create Storage sizeof<LightMap'> vkc
-        let lightMapsUniform = Buffer.create Storage (Constants.Render.LightMapsMaxDeferred * sizeof<LightMap'>) vkc
+        let eyeUniform = Buffer.create Uniform sizeof<Eye> vkc
+        let lightMapUniform = Buffer.create Uniform sizeof<LightMap'> vkc
+        let lightMapsUniform = Buffer.create Uniform (Constants.Render.LightMapsMaxDeferred * sizeof<LightMap'>) vkc
 
         // create pipeline
         let pipeline =
@@ -2653,9 +2653,9 @@ module PhysicallyBased =
                       Pipeline.attribute 1 Single2 StaticTexCoordsOffset
                       Pipeline.attribute 2 Single3 StaticNormalOffset|]|]
                 [|Pipeline.descriptorSet<int>
-                    [|Pipeline.descriptor 0 StorageBuffer FragmentStage 1 // eye
-                      Pipeline.descriptor 1 StorageBuffer FragmentStage 1 // lightMap
-                      Pipeline.descriptor 2 StorageBuffer FragmentStage 1 // lightMaps
+                    [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // eye
+                      Pipeline.descriptor 1 UniformBuffer FragmentStage 1 // lightMap
+                      Pipeline.descriptor 2 UniformBuffer FragmentStage 1 // lightMaps
                       Pipeline.descriptor 3 SampledImage FragmentStage 1 // depth
                       Pipeline.descriptor 4 SampledImage FragmentStage 1|] // lightMapping
                   Pipeline.descriptorSet<Unit>
@@ -2713,14 +2713,14 @@ module PhysicallyBased =
                 // specify eye
                 let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
                 Buffer.uploadValue eye pipeline.EyeUniform vkc
-                Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.EyeUniform vkSet vkc
+                Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.EyeUniform vkSet vkc
 
                 // specify light map
                 let mutable lightMap = LightMap' ()
                 lightMap.lightMapAmbientColors <- lightMapAmbientColor.V3
                 lightMap.lightMapAmbientBrightnesses <- lightMapAmbientBrightness
                 Buffer.uploadValue lightMap pipeline.LightMapUniform vkc
-                Pipeline.writeDescriptorStorageBuffer 1 0 pipeline.LightMapUniform vkSet vkc
+                Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.LightMapUniform vkSet vkc
 
                 // specify light maps
                 use lightMapPtr = fixed &lightMap
@@ -2731,7 +2731,7 @@ module PhysicallyBased =
                     else lightMap <- Unchecked.defaultof<_>
                     Buffer.writeSubdata (i * sizeof<LightMap'>) 0 sizeof<LightMap'> 1 (NativePtr.toNativeInt lightMapPtr) pipeline.LightMapsUniform vkc
                 Buffer.flushSubdata 0 0 sizeof<LightMap'> Constants.Render.LightMapsMaxDeferred pipeline.LightMapsUniform vkc
-                Pipeline.writeDescriptorStorageBuffer 2 0 pipeline.LightMapsUniform vkSet vkc
+                Pipeline.writeDescriptorUniformBuffer 2 0 pipeline.LightMapsUniform vkSet vkc
 
                 // specify static environment textures
                 Pipeline.writeDescriptorSampledTexture 3 0 depthTexture vkSet vkc
@@ -2787,7 +2787,7 @@ module PhysicallyBased =
     let createPhysicallyBasedDeferredIrradiancePipeline colorAttachmentFormat vkc =
 
         // create uniform buffers
-        let eyeUniform = Buffer.create Storage sizeof<Eye> vkc
+        let eyeUniform = Buffer.create Uniform sizeof<Eye> vkc
 
         // create pipeline
         let pipeline =
@@ -2799,7 +2799,7 @@ module PhysicallyBased =
                       Pipeline.attribute 1 Single2 StaticTexCoordsOffset
                       Pipeline.attribute 2 Single3 StaticNormalOffset|]|]
                 [|Pipeline.descriptorSet<int>
-                    [|Pipeline.descriptor 0 StorageBuffer FragmentStage 1 // eye
+                    [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // eye
                       Pipeline.descriptor 1 SampledImage FragmentStage 1 // depth
                       Pipeline.descriptor 2 SampledImage FragmentStage 1 // normalPlus
                       Pipeline.descriptor 3 SampledImage FragmentStage 1 // lightMapping
@@ -2859,7 +2859,7 @@ module PhysicallyBased =
                 // specify eye
                 let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
                 Buffer.uploadValue eye pipeline.EyeUniform vkc
-                Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.EyeUniform vkSet vkc
+                Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.EyeUniform vkSet vkc
 
                 // specify static environment textures
                 Pipeline.writeDescriptorSampledTexture 1 0 depthTexture vkSet vkc
@@ -2919,8 +2919,8 @@ module PhysicallyBased =
     let createPhysicallyBasedDeferredEnvironmentFilterPipeline colorAttachmentFormat vkc =
 
         // create uniform buffers
-        let eyeUniform = Buffer.create Storage sizeof<Eye> vkc
-        let lightMapsUniform = Buffer.create Storage (Constants.Render.LightMapsMaxDeferred * sizeof<LightMap'>) vkc
+        let eyeUniform = Buffer.create Uniform sizeof<Eye> vkc
+        let lightMapsUniform = Buffer.create Uniform (Constants.Render.LightMapsMaxDeferred * sizeof<LightMap'>) vkc
 
         // create pipeline
         let pipeline =
@@ -2932,8 +2932,8 @@ module PhysicallyBased =
                       Pipeline.attribute 1 Single2 StaticTexCoordsOffset
                       Pipeline.attribute 2 Single3 StaticNormalOffset|]|]
                 [|Pipeline.descriptorSet<int>
-                    [|Pipeline.descriptor 0 StorageBuffer FragmentStage 1 // eye
-                      Pipeline.descriptor 1 StorageBuffer FragmentStage 1 // lightMaps
+                    [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // eye
+                      Pipeline.descriptor 1 UniformBuffer FragmentStage 1 // lightMaps
                       Pipeline.descriptor 2 SampledImage FragmentStage 1 // depth
                       Pipeline.descriptor 3 SampledImage FragmentStage 1 // material
                       Pipeline.descriptor 4 SampledImage FragmentStage 1 // normalPlus
@@ -3003,7 +3003,7 @@ module PhysicallyBased =
                 // specify eye
                 let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
                 Buffer.uploadValue eye pipeline.EyeUniform vkc
-                Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.EyeUniform vkSet vkc
+                Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.EyeUniform vkSet vkc
 
                 // specify light maps
                 let mutable lightMap = LightMap' ()
@@ -3018,7 +3018,7 @@ module PhysicallyBased =
                     else lightMap <- Unchecked.defaultof<_>
                     Buffer.writeSubdata (i * sizeof<LightMap'>) 0 sizeof<LightMap'> 1 (NativePtr.toNativeInt lightMapPtr) pipeline.LightMapsUniform vkc
                 Buffer.flushSubdata 0 0 sizeof<LightMap'> Constants.Render.LightMapsMaxDeferred pipeline.LightMapsUniform vkc
-                Pipeline.writeDescriptorStorageBuffer 1 0 pipeline.LightMapsUniform vkSet vkc
+                Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.LightMapsUniform vkSet vkc
 
                 // specify static environment textures
                 Pipeline.writeDescriptorSampledTexture 2 0 depthTexture vkSet vkc
@@ -3080,8 +3080,8 @@ module PhysicallyBased =
     let createPhysicallyBasedDeferredSsaoPipeline colorAttachmentFormat vkc =
 
         // create set 0 uniform buffers
-        let eyeUniform = Buffer.create Storage sizeof<Eye> vkc
-        let ssaoUniform = Buffer.create Storage sizeof<Ssao> vkc
+        let eyeUniform = Buffer.create Uniform sizeof<Eye> vkc
+        let ssaoUniform = Buffer.create Uniform sizeof<Ssao> vkc
 
         // create pipeline
         let pipeline =
@@ -3093,8 +3093,8 @@ module PhysicallyBased =
                       Pipeline.attribute 1 Single2 StaticTexCoordsOffset
                       Pipeline.attribute 2 Single3 StaticNormalOffset|]|]
                 [|Pipeline.descriptorSet<int>
-                    [|Pipeline.descriptor 0 StorageBuffer FragmentStage 1 // eye
-                      Pipeline.descriptor 1 StorageBuffer FragmentStage 1 // ssao
+                    [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // eye
+                      Pipeline.descriptor 1 UniformBuffer FragmentStage 1 // ssao
                       Pipeline.descriptor 2 SampledImage FragmentStage 1 // depthTexture
                       Pipeline.descriptor 3 SampledImage FragmentStage 1|] // normalPlusTexture
                   Pipeline.descriptorSet<Unit>
@@ -3153,12 +3153,12 @@ module PhysicallyBased =
                 // specify eye
                 let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
                 Buffer.uploadValue eye pipeline.EyeUniform vkc
-                Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.EyeUniform vkSet vkc
+                Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.EyeUniform vkSet vkc
 
                 // specify ssao
                 let ssao = Ssao (resolution = resolution, intensity = intensity, bias = bias, radius = radius, distanceMax = distanceMax, sampleCount = sampleCount)
                 Buffer.uploadValue ssao pipeline.SsaoUniform vkc
-                Pipeline.writeDescriptorStorageBuffer 1 0 pipeline.SsaoUniform vkSet vkc
+                Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.SsaoUniform vkSet vkc
 
                 // specify textures
                 Pipeline.writeDescriptorSampledTexture 2 0 depthTexture vkSet vkc
@@ -3214,8 +3214,8 @@ module PhysicallyBased =
     let createPhysicallyBasedDeferredColoringPipeline colorAttachmentFormats vkc =
 
         // create uniform buffers
-        let eyeUniform = Buffer.create Storage sizeof<Eye> vkc
-        let lightingUniform = Buffer.create Storage sizeof<Lighting> vkc
+        let eyeUniform = Buffer.create Uniform sizeof<Eye> vkc
+        let lightingUniform = Buffer.create Uniform sizeof<Lighting> vkc
 
         // create pipeline
         let pipeline =
@@ -3227,8 +3227,8 @@ module PhysicallyBased =
                       Pipeline.attribute 1 Single2 StaticTexCoordsOffset
                       Pipeline.attribute 2 Single3 StaticNormalOffset|]|]
                 [|Pipeline.descriptorSet<int>
-                    [|Pipeline.descriptor 0 StorageBuffer FragmentStage 1 // eye
-                      Pipeline.descriptor 1 StorageBuffer FragmentStage 1 // lighting
+                    [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // eye
+                      Pipeline.descriptor 1 UniformBuffer FragmentStage 1 // lighting
                       Pipeline.descriptor 2 SampledImage FragmentStage 1 // depthTexture
                       Pipeline.descriptor 3 SampledImage FragmentStage 1 // albedoTexture
                       Pipeline.descriptor 4 SampledImage FragmentStage 1 // materialTexture
@@ -3320,7 +3320,7 @@ module PhysicallyBased =
                 // specify eye
                 let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
                 Buffer.uploadValue eye pipeline.EyeUniform vkc
-                Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.EyeUniform vkSet vkc
+                Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.EyeUniform vkSet vkc
 
                 // specify lighting
                 let mutable lighting = Lighting ()
@@ -3343,7 +3343,7 @@ module PhysicallyBased =
                 lighting.ssrlEdgeHorizontalMargin <- ssrlEdgeHorizontalMargin
                 lighting.ssrlEdgeVerticalMargin <- ssrlEdgeVerticalMargin
                 Buffer.uploadValue lighting pipeline.LightingUniform vkc
-                Pipeline.writeDescriptorStorageBuffer 1 0 pipeline.LightingUniform vkSet vkc
+                Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.LightingUniform vkSet vkc
 
                 // specify textures
                 Pipeline.writeDescriptorSampledTexture 2 0 depthTexture vkSet vkc
@@ -3410,8 +3410,8 @@ module PhysicallyBased =
     let createPhysicallyBasedDeferredCompositionPipeline colorAttachmentFormat vkc =
 
         // create uniform buffers
-        let eyeUniform = Buffer.create Storage sizeof<Eye> vkc
-        let lightingUniform = Buffer.create Storage sizeof<Lighting> vkc
+        let eyeUniform = Buffer.create Uniform sizeof<Eye> vkc
+        let lightingUniform = Buffer.create Uniform sizeof<Lighting> vkc
 
         // create pipeline
         let pipeline =
@@ -3423,8 +3423,8 @@ module PhysicallyBased =
                       Pipeline.attribute 1 Single2 StaticTexCoordsOffset
                       Pipeline.attribute 2 Single3 StaticNormalOffset|]|]
                 [|Pipeline.descriptorSet<int>
-                    [|Pipeline.descriptor 0 StorageBuffer FragmentStage 1 // eye
-                      Pipeline.descriptor 1 StorageBuffer FragmentStage 1 // lighting
+                    [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // eye
+                      Pipeline.descriptor 1 UniformBuffer FragmentStage 1 // lighting
                       Pipeline.descriptor 2 SampledImage FragmentStage 1 // depthTexture
                       Pipeline.descriptor 3 SampledImage FragmentStage 1 // colorTexture
                       Pipeline.descriptor 4 SampledImage FragmentStage 1|] // fogAccumTexture
@@ -3485,7 +3485,7 @@ module PhysicallyBased =
                 // specify eye
                 let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
                 Buffer.uploadValue eye pipeline.EyeUniform vkc
-                Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.EyeUniform vkSet vkc
+                Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.EyeUniform vkSet vkc
 
                 // specify lighting
                 let mutable lighting = Lighting ()
@@ -3496,7 +3496,7 @@ module PhysicallyBased =
                 lighting.fogDensity <- fogDensity
                 lighting.fogColor <- fogColor.V4
                 Buffer.uploadValue lighting pipeline.LightingUniform vkc
-                Pipeline.writeDescriptorStorageBuffer 1 0 pipeline.LightingUniform vkSet vkc
+                Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.LightingUniform vkSet vkc
 
                 // specify textures
                 Pipeline.writeDescriptorSampledTexture 2 0 depthTexture vkSet vkc
@@ -3615,7 +3615,7 @@ module PhysicallyBased =
             // specify eye
             let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
             Buffer.uploadValue eye pipeline.EyeUniform vkc
-            Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.EyeUniform vkSet vkc
+            Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.EyeUniform vkSet vkc
 
             // specify lighting
             let mutable lighting = Lighting ()
@@ -3650,7 +3650,7 @@ module PhysicallyBased =
             lighting.ssrrEdgeVerticalMargin <- ssrrEdgeVerticalMargin
             lighting.shadowNear <- shadowNear
             Buffer.uploadValue lighting pipeline.LightingUniform vkc
-            Pipeline.writeDescriptorStorageBuffer 1 0 pipeline.LightingUniform vkSet vkc
+            Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.LightingUniform vkSet vkc
 
             // specify static environment textures
             Pipeline.writeDescriptorSampledTexture 2 0 depthTexture vkSet vkc
@@ -3753,7 +3753,7 @@ module PhysicallyBased =
                     use bonesPin = new ArrayPin<_> (bones)
                     let bonesCount = min bones.Length Constants.Render.BonesMax
                     Buffer.uploadData sizeof<Matrix4x4> bonesCount bonesPin.NativeInt pipeline.BoneUniform vkc
-                    Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.BoneUniform vkSet vkc
+                    Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.BoneUniform vkSet vkc
 
                 // specify light maps
                 let mutable lightMap = LightMap' ()
@@ -3768,7 +3768,7 @@ module PhysicallyBased =
                     else lightMap <- Unchecked.defaultof<_>
                     Buffer.writeSubdata (i * sizeof<LightMap'>) 0 sizeof<LightMap'> 1 (NativePtr.toNativeInt lightMapPtr) pipeline.LightMapUniform vkc
                 Buffer.flushSubdata 0 0 sizeof<LightMap'> Constants.Render.LightMapsMaxForward pipeline.LightMapUniform vkc
-                Pipeline.writeDescriptorStorageBuffer 1 0 pipeline.LightMapUniform vkSet vkc
+                Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.LightMapUniform vkSet vkc
 
                 // specify lights general
                 let mutable lightsGeneral = LightsGeneral ()
@@ -3776,7 +3776,7 @@ module PhysicallyBased =
                 lightsGeneral.lightMapSingletonBlendMargin <- lightMapSingletonBlendMargin
                 lightsGeneral.lightsCount <- lightsCount
                 Buffer.uploadValue lightsGeneral pipeline.LightsGeneralUniform vkc
-                Pipeline.writeDescriptorStorageBuffer 2 0 pipeline.LightsGeneralUniform vkSet vkc
+                Pipeline.writeDescriptorUniformBuffer 2 0 pipeline.LightsGeneralUniform vkSet vkc
 
                 // specify lights
                 let mutable light = Light ()
@@ -3798,13 +3798,13 @@ module PhysicallyBased =
                     else light <- Unchecked.defaultof<_>
                     Buffer.writeSubdata (i * sizeof<Light>) 0 sizeof<Light> 1 (NativePtr.toNativeInt lightPtr) pipeline.LightUniform vkc
                 Buffer.flushSubdata 0 0 sizeof<Light> Constants.Render.LightsMaxForward pipeline.LightUniform vkc
-                Pipeline.writeDescriptorStorageBuffer 3 0 pipeline.LightUniform vkSet vkc
+                Pipeline.writeDescriptorUniformBuffer 3 0 pipeline.LightUniform vkSet vkc
 
                 // specify shadow matrices
                 use shadowMatricesPin = new ArrayPin<_> (shadowMatrices)
                 let shadowMatricesCount = min shadowMatricesFlipped.Length (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels)
                 Buffer.uploadData sizeof<Matrix4x4> shadowMatricesCount shadowMatricesPin.NativeInt pipeline.ShadowMatrixUniform vkc
-                Pipeline.writeDescriptorStorageBuffer 4 0 pipeline.ShadowMatrixUniform vkSet vkc
+                Pipeline.writeDescriptorUniformBuffer 4 0 pipeline.ShadowMatrixUniform vkSet vkc
 
                 // specify dynamic environment textures
                 Pipeline.writeDescriptorSampledTextures 5 0 (Array.tryTake Constants.Render.LightMapsMaxForward irradianceMaps) vkSet vkc
@@ -3956,7 +3956,7 @@ module PhysicallyBased =
     let createFilterGaussianEsmPipeline colorAttachmentFormat vkc =
 
         // create set 0 uniform buffers
-        let gaussianEsmUniform = Buffer.create Storage sizeof<GaussianEsm> vkc
+        let gaussianEsmUniform = Buffer.create Uniform sizeof<GaussianEsm> vkc
 
         // create pipeline
         let pipeline =
@@ -3968,7 +3968,7 @@ module PhysicallyBased =
                       Pipeline.attribute 1 Single2 StaticTexCoordsOffset
                       Pipeline.attribute 2 Single3 StaticNormalOffset|]|]
                 [|Pipeline.descriptorSet<int>
-                    [|Pipeline.descriptor 0 StorageBuffer FragmentStage 1|] // gaussianEsm
+                    [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1|] // gaussianEsm
                   Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 SampledImage FragmentStage 1|] // esmTexture
                   Pipeline.descriptorSet<Unit>
@@ -4010,7 +4010,7 @@ module PhysicallyBased =
             let mutable gaussianEsmDescriptorSet = Pipeline.specifyDescriptorSet 0 renderPassIndex pipeline.Pipeline vkc $ fun vkSet ->
                 let gaussianEsm = GaussianEsm (scale = scale, radius = radius)
                 Buffer.uploadValue gaussianEsm pipeline.GaussianEsmUniform vkc
-                Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.GaussianEsmUniform vkSet vkc
+                Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.GaussianEsmUniform vkSet vkc
 
             // specify image views
             let mutable imageViewsDescriptorSet = Pipeline.specifyDescriptorSet 1 pipeline.Pipeline.DrawIndex pipeline.Pipeline vkc $ fun vkSet ->
@@ -4067,7 +4067,7 @@ module PhysicallyBased =
     let createFilterToneMappingPipeline colorAttachmentFormat vkc =
 
         // create set 0 uniform buffers
-        let toneMappingUniform = Buffer.create Storage sizeof<ToneMapping> vkc
+        let toneMappingUniform = Buffer.create Uniform sizeof<ToneMapping> vkc
 
         // create pipeline
         let pipeline =
@@ -4079,7 +4079,7 @@ module PhysicallyBased =
                       Pipeline.attribute 1 Single2 StaticTexCoordsOffset
                       Pipeline.attribute 2 Single3 StaticNormalOffset|]|]
                 [|Pipeline.descriptorSet<int>
-                    [|Pipeline.descriptor 0 StorageBuffer FragmentStage 1 // toneMapping
+                    [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // toneMapping
                       Pipeline.descriptor 1 SampledImage FragmentStage 1|] // inputTexture
                   Pipeline.descriptorSet<Unit>
                     [|Pipeline.descriptor 0 Sampler FragmentStage 1|]|] // inputSampler
@@ -4135,7 +4135,7 @@ module PhysicallyBased =
                          toneMapSaturation = toneMapSaturation,
                          toneMapWhitePoint = toneMapWhitePoint)
                 Buffer.uploadValue toneMapping pipeline.ToneMappingUniform vkc
-                Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.ToneMappingUniform vkSet vkc
+                Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.ToneMappingUniform vkSet vkc
 
                 // specify input texture
                 Pipeline.writeDescriptorSampledTexture 1 0 inputTexture vkSet vkc
@@ -4190,7 +4190,7 @@ module PhysicallyBased =
     let createFilterFxaaPipeline colorAttachmentFormat vkc =
 
         // create set 0 uniform buffers
-        let fxaaUniform = Buffer.create Storage sizeof<Fxaa> vkc
+        let fxaaUniform = Buffer.create Uniform sizeof<Fxaa> vkc
 
         // create pipeline
         let pipeline =
@@ -4202,7 +4202,7 @@ module PhysicallyBased =
                       Pipeline.attribute 1 Single2 StaticTexCoordsOffset
                       Pipeline.attribute 2 Single3 StaticNormalOffset|]|]
                 [|Pipeline.descriptorSet<int>
-                    [|Pipeline.descriptor 0 StorageBuffer FragmentStage 1 // fxaa
+                    [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // fxaa
                       Pipeline.descriptor 1 SampledImage FragmentStage 1|] // inputTexture
                   Pipeline.descriptorSet<Unit>
                     [|Pipeline.descriptor 0 Sampler FragmentStage 1|]|] // inputSampler
@@ -4246,7 +4246,7 @@ module PhysicallyBased =
                 // specify fxaa
                 let fxaa = Fxaa (spanMax = spanMax, reduceMinDivisor = reduceMinDivisor, reduceMulDivisor = reduceMulDivisor)
                 Buffer.uploadValue fxaa pipeline.FxaaUniform vkc
-                Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.FxaaUniform vkSet vkc
+                Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.FxaaUniform vkSet vkc
 
                 // specify input texture
                 Pipeline.writeDescriptorSampledTexture 1 0 inputTexture vkSet vkc

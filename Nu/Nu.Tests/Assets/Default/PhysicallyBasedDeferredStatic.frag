@@ -14,7 +14,7 @@ struct Eye
     mat4 viewProjection;
 };
 
-layout(set = 0, binding = 0) buffer readonly EyeBlock { Eye eye; };
+layout(set = 0, binding = 0) uniform EyeBlock { Eye eye; };
 
 layout(set = 1, binding = 0) uniform texture2D albedoTexture;
 layout(set = 1, binding = 1) uniform texture2D roughnessTexture;

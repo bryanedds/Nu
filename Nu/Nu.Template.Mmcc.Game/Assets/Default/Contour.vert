@@ -5,7 +5,7 @@ struct ContourVert
     mat4 modelViewProjection;
 };
 
-layout(binding = 0) buffer readonly ContourVertBlock { ContourVert contourVert; };
+layout(binding = 0) uniform ContourVertBlock { ContourVert contourVert; };
 
 layout (location = 0) in vec2 position;
 layout (location = 1) in vec4 color;

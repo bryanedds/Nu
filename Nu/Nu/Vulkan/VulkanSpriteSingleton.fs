@@ -27,8 +27,8 @@ module SpriteSingleton =
     let createSpriteSingletonPipeline (vkc : VulkanContext) =
 
         // create sprite uniform buffers
-        let spriteVertUniform = Buffer.create Storage sizeof<SpriteVert> vkc
-        let spriteFragUniform = Buffer.create Storage sizeof<SpriteFrag> vkc
+        let spriteVertUniform = Buffer.create Uniform sizeof<SpriteVert> vkc
+        let spriteFragUniform = Buffer.create Uniform sizeof<SpriteFrag> vkc
         
         // create sprite pipeline
         let pipeline =
@@ -38,8 +38,8 @@ module SpriteSingleton =
                 [|Pipeline.vertex 0 VertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Single2 0|]|]
                 [|Pipeline.descriptorSet<int>
-                    [|Pipeline.descriptor 0 StorageBuffer VertexStage 1
-                      Pipeline.descriptor 1 StorageBuffer FragmentStage 1|]
+                    [|Pipeline.descriptor 0 UniformBuffer VertexStage 1
+                      Pipeline.descriptor 1 UniformBuffer FragmentStage 1|]
                   Pipeline.descriptorSet<Texture>
                     [|Pipeline.descriptor 0 SampledImage FragmentStage 1|]
                   Pipeline.descriptorSet<Sampler>
@@ -175,8 +175,8 @@ module SpriteSingleton =
                     let spriteFrag = SpriteFrag (color = color.V4)
                     Buffer.uploadValue spriteVert spriteVertUniform vkc
                     Buffer.uploadValue spriteFrag spriteFragUniform vkc
-                    Pipeline.writeDescriptorStorageBuffer 0 0 spriteVertUniform vkSet vkc
-                    Pipeline.writeDescriptorStorageBuffer 1 0 spriteFragUniform vkSet vkc
+                    Pipeline.writeDescriptorUniformBuffer 0 0 spriteVertUniform vkSet vkc
+                    Pipeline.writeDescriptorUniformBuffer 1 0 spriteFragUniform vkSet vkc
 
                 // specify material
                 let mutable materialDescriptorSet = Pipeline.specifyDescriptorSet 1 texture pipeline vkc $ fun vkSet ->

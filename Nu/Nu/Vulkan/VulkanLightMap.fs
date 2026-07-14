@@ -146,8 +146,8 @@ module LightMap =
     let createEnvironmentFilterPipeline shaderPath colorAttachmentFormat (vkc : VulkanContext) =
 
         // create uniform buffers
-        let eyeUniform = Buffer.create Storage sizeof<Eye> vkc
-        let environmentFilterUniform = Buffer.create Storage sizeof<EnvironmentFilter> vkc
+        let eyeUniform = Buffer.create Uniform sizeof<Eye> vkc
+        let environmentFilterUniform = Buffer.create Uniform sizeof<EnvironmentFilter> vkc
 
         // create pipeline
         let pipeline =
@@ -156,8 +156,8 @@ module LightMap =
                 [|Pipeline.vertex 0 ((3 (*position*)) * sizeof<single>) VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Single3 0|]|]
                 [|Pipeline.descriptorSet<int>
-                    [|Pipeline.descriptor 0 StorageBuffer VertexStage 1
-                      Pipeline.descriptor 1 StorageBuffer FragmentStage 1|]
+                    [|Pipeline.descriptor 0 UniformBuffer VertexStage 1
+                      Pipeline.descriptor 1 UniformBuffer FragmentStage 1|]
                   Pipeline.descriptorSet<Texture>
                       [|Pipeline.descriptor 0 SampledImage FragmentStage 1|]
                   Pipeline.descriptorSet<Sampler>
@@ -205,12 +205,12 @@ module LightMap =
                 // specify eye
                 let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
                 Buffer.uploadValue eye pipeline.EyeUniform vkc
-                Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.EyeUniform vkSet vkc
+                Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.EyeUniform vkSet vkc
 
                 // specify environment filter
                 let environmentFilter = EnvironmentFilter (roughness = roughness, resolution = resolution)
                 Buffer.uploadValue environmentFilter pipeline.EnvironmentFilterUniform vkc
-                Pipeline.writeDescriptorStorageBuffer 1 0 pipeline.EnvironmentFilterUniform vkSet vkc
+                Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.EnvironmentFilterUniform vkSet vkc
 
             // specify cube map
             let mutable cubeMapDescriptorSet = Pipeline.specifyDescriptorSet 1 cubeMap pipeline.Pipeline vkc $ fun vkSet ->
