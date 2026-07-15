@@ -512,6 +512,12 @@ type [<ReferenceEquality>] VulkanContext =
           TransientFence_ : VkFence
           TextureFence_ : VkFence }
 
+    /// The vulkan instance API. Provided for use from user lambda callbacks.
+    member this.VkInstanceApi = VulkanInstance
+
+    /// The vulkan device API. Provided for use from user lambda callbacks.
+    member this.VkDeviceApi = VulkanDevice
+
     /// Whether rendering is permitted in the engine's current state.
     member this.RenderAllowed = this.RenderAllowed_
 
@@ -702,7 +708,7 @@ type [<ReferenceEquality>] VulkanContext =
             info.ppEnabledLayerNames <- layerWrap.Pointer
         let mutable instance = Unchecked.defaultof<VkInstance>
         Vulkan.vkCreateInstance (&info, nullPtr, &instance) |> VulkanHl.check
-        VulkanInstance <- Vulkan.GetApi instance // initialize vulkan instance api
+        VulkanApis.setVkInstanceApi (Vulkan.GetApi instance) // initialize vulkan instance api
         instance
 
     // TODO: DJL: try separate this from validation status, same for create instance debug.
@@ -827,7 +833,7 @@ type [<ReferenceEquality>] VulkanContext =
         info.pEnabledFeatures <- &&features
         let mutable device = Unchecked.defaultof<VkDevice>
         VulkanInstance.vkCreateDevice (physicalDevice.VkPhysicalDevice, &info, nullPtr, &device) |> VulkanHl.check
-        VulkanDevice <- Vulkan.GetApi (instance, device) // initialize vulkan device api
+        VulkanApis.setVkDeviceApi (Vulkan.GetApi (instance, device)) // initialize vulkan device api
         device
 
     /// Create the VMA allocator.
