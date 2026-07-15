@@ -16,8 +16,8 @@ type SkyBox =
 
 /// Describes a sky box pipeline that's loaded into GPU.
 type SkyBoxPipeline =
-    { EyeUniform : Nu.Vulkan.Buffer
-      SkyBoxPropertiesUniform : Nu.Vulkan.Buffer
+    { EyeUniform : VulkanBuffer
+      SkyBoxPropertiesUniform : VulkanBuffer
       Pipeline : Pipeline }
 
 [<RequireQualifiedAccess>]
@@ -27,8 +27,8 @@ module SkyBox =
     let createSkyBoxPipeline colorAttachmentFormat depthAttachmentFormat (vkc : VulkanContext) =
 
         // create uniform buffers
-        let eyeUniform = Buffer.create Uniform sizeof<Eye> vkc
-        let skyBoxPropertiesUniform = Buffer.create Uniform sizeof<SkyBox> vkc
+        let eyeUniform = VulkanBuffer.create Uniform sizeof<Eye> vkc
+        let skyBoxPropertiesUniform = VulkanBuffer.create Uniform sizeof<SkyBox> vkc
 
         // create pipeline
         let pipeline =
@@ -91,12 +91,12 @@ module SkyBox =
                     
                 // specify eye
                 let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
-                Buffer.uploadValue eye pipeline.EyeUniform vkc
+                VulkanBuffer.uploadValue eye pipeline.EyeUniform vkc
                 Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.EyeUniform vkSet
 
                 // specify sky box
                 let skyBox = SkyBox (color = color.V3, brightness = brightness)
-                Buffer.uploadValue skyBox pipeline.SkyBoxPropertiesUniform vkc
+                VulkanBuffer.uploadValue skyBox pipeline.SkyBoxPropertiesUniform vkc
                 Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.SkyBoxPropertiesUniform vkSet
 
             // specify material

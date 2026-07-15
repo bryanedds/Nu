@@ -185,7 +185,7 @@ type PushConstant =
 type Pipeline =
     private
         { mutable VkPipelines_ : Map<VulkanBlend * bool, VkPipeline> // TODO: P0: make sure no allocation happens on look-up.
-          Buffers_ : Nu.Vulkan.Buffer array
+          Buffers_ : VulkanBuffer array
           DescriptorSets_ : DescriptorSet array
           VkPipelineLayout_ : VkPipelineLayout
           VkDescriptorSetLayouts_ : VkDescriptorSetLayout array
@@ -205,7 +205,7 @@ type Pipeline =
 
     /// Begin use of the pipeline this frame.
     static member beginFrame pipeline =
-        for buffer in pipeline.Buffers_ do Buffer.beginFrame buffer
+        for buffer in pipeline.Buffers_ do VulkanBuffer.beginFrame buffer
         for set in pipeline.DescriptorSets_ do set.BeginFrame ()
         pipeline.DrawIndex_ <- 0
 
@@ -395,7 +395,7 @@ type Pipeline =
     static member tryGetVkPipeline blend cullFace pipeline =
         Map.tryFind (blend, cullFace) pipeline.VkPipelines_
 
-    static member writeDescriptorUniformBuffer (binding : int) (descriptorIndex : int) (buffer : Nu.Vulkan.Buffer) vkDescriptorSet =
+    static member writeDescriptorUniformBuffer (binding : int) (descriptorIndex : int) (buffer : VulkanBuffer) vkDescriptorSet =
 
         // buffer info
         let mutable info = VkDescriptorBufferInfo ()
@@ -413,7 +413,7 @@ type Pipeline =
         VulkanDevice.vkUpdateDescriptorSets (1u, &&write, 0u, nullPtr)
 
         // advance buffer
-        Buffer.advance buffer
+        VulkanBuffer.advance buffer
 
     static member writeDescriptorSampledImageView (binding : int) (descriptorIndex : int) (imageView : VkImageView) vkDescriptorSet =
 
@@ -633,5 +633,5 @@ type Pipeline =
         Pipeline.destroyVkPipelines pipeline
         VulkanDevice.vkDestroyPipelineLayout (pipeline.PipelineLayout, nullPtr)
         for vkLayout in pipeline.VkDescriptorSetLayouts_ do VulkanDevice.vkDestroyDescriptorSetLayout (vkLayout, nullPtr)
-        for buffer in pipeline.Buffers_ do Buffer.destroy buffer vkc
+        for buffer in pipeline.Buffers_ do VulkanBuffer.destroy buffer vkc
         for set in pipeline.DescriptorSets_ do set.Destroy ()

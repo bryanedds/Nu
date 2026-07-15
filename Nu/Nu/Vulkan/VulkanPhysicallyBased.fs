@@ -292,9 +292,9 @@ type PhysicallyBasedGeometry =
       Vertices : Vector3 array
       Indices : int array
       mutable TrianglesCached : Vector3 array option
-      VertexBuffer : Nu.Vulkan.Buffer
-      InstanceBuffer : Nu.Vulkan.Buffer
-      IndexBuffer : Nu.Vulkan.Buffer }
+      VertexBuffer : VulkanBuffer
+      InstanceBuffer : VulkanBuffer
+      IndexBuffer : VulkanBuffer }
 
     /// Lazily access triangles, building them from Vertices and Indices if needed.
     member this.Triangles =
@@ -550,80 +550,80 @@ type PhysicallyBasedModel =
 
 /// Describes a physically-based depth pipeline that's loaded into GPU.
 type PhysicallyBasedShadowPipeline =
-    { ShadowVertUniform : Nu.Vulkan.Buffer
-      BoneUniform : Nu.Vulkan.Buffer
-      ShadowFragUniform : Nu.Vulkan.Buffer
+    { ShadowVertUniform : VulkanBuffer
+      BoneUniform : VulkanBuffer
+      ShadowFragUniform : VulkanBuffer
       Pipeline : Pipeline }
 
 /// Describes a physically-based pipeline that's loaded into GPU.
 type PhysicallyBasedPipeline =
-    { EyeUniform : Nu.Vulkan.Buffer
-      LightingUniform : Nu.Vulkan.Buffer
-      BoneUniform : Nu.Vulkan.Buffer
-      LightMapUniform : Nu.Vulkan.Buffer
-      LightsGeneralUniform : Nu.Vulkan.Buffer
-      LightUniform : Nu.Vulkan.Buffer
-      ShadowMatrixUniform : Nu.Vulkan.Buffer
+    { EyeUniform : VulkanBuffer
+      LightingUniform : VulkanBuffer
+      BoneUniform : VulkanBuffer
+      LightMapUniform : VulkanBuffer
+      LightsGeneralUniform : VulkanBuffer
+      LightUniform : VulkanBuffer
+      ShadowMatrixUniform : VulkanBuffer
       Pipeline : Pipeline }
 
 /// Describes the lighting pass of a deferred physically-based pipeline that's loaded into GPU.
 type PhysicallyBasedDeferredLightingPipeline =
-    { EyeUniform : Nu.Vulkan.Buffer
-      Lighting2Uniform : Nu.Vulkan.Buffer
-      LightUniform : Nu.Vulkan.Buffer
-      ShadowMatrixUniform : Nu.Vulkan.Buffer
+    { EyeUniform : VulkanBuffer
+      Lighting2Uniform : VulkanBuffer
+      LightUniform : VulkanBuffer
+      ShadowMatrixUniform : VulkanBuffer
       Pipeline : Pipeline }
 
 /// Describes the fogging pass of a deferred physically-based pipeline that's loaded into GPU.
 type PhysicallyBasedDeferredFoggingPipeline =
-    { EyeUniform : Nu.Vulkan.Buffer
-      LightingUniform : Nu.Vulkan.Buffer
-      LightsGeneralUniform : Nu.Vulkan.Buffer
-      LightsUniform : Nu.Vulkan.Buffer
-      ShadowMatricesUniform : Nu.Vulkan.Buffer
+    { EyeUniform : VulkanBuffer
+      LightingUniform : VulkanBuffer
+      LightsGeneralUniform : VulkanBuffer
+      LightsUniform : VulkanBuffer
+      ShadowMatricesUniform : VulkanBuffer
       Pipeline : Pipeline }
 
 /// Describes the light mapping pass of a deferred physically-based pipeline that's loaded into GPU.
 type PhysicallyBasedDeferredLightMappingPipeline =
-    { EyeUniform : Nu.Vulkan.Buffer
-      LightMapsUniform : Nu.Vulkan.Buffer
-      LightsGeneralUniform : Nu.Vulkan.Buffer
+    { EyeUniform : VulkanBuffer
+      LightMapsUniform : VulkanBuffer
+      LightsGeneralUniform : VulkanBuffer
       Pipeline : Pipeline }
 
 /// Describes the ambient pass of a deferred physically-based pipeline that's loaded into GPU.
 type PhysicallyBasedDeferredAmbientPipeline =
-    { EyeUniform : Nu.Vulkan.Buffer
-      LightMapUniform : Nu.Vulkan.Buffer
-      LightMapsUniform : Nu.Vulkan.Buffer
+    { EyeUniform : VulkanBuffer
+      LightMapUniform : VulkanBuffer
+      LightMapsUniform : VulkanBuffer
       Pipeline : Pipeline }
 
 /// Describes the irradiance pass of a deferred physically-based pipeline that's loaded into GPU.
 type PhysicallyBasedDeferredIrradiancePipeline =
-    { EyeUniform : Nu.Vulkan.Buffer
+    { EyeUniform : VulkanBuffer
       Pipeline : Pipeline }
 
 /// Describes the environment filter pass of a deferred physically-based pipeline that's loaded into GPU.
 type PhysicallyBasedDeferredEnvironmentFilterPipeline =
-    { EyeUniform : Nu.Vulkan.Buffer
-      LightMapsUniform : Nu.Vulkan.Buffer
+    { EyeUniform : VulkanBuffer
+      LightMapsUniform : VulkanBuffer
       Pipeline : Pipeline }
 
 /// Describes the ssao pass of a deferred physically-based pipeline that's loaded into GPU.
 type PhysicallyBasedDeferredSsaoPipeline =
-    { EyeUniform : Nu.Vulkan.Buffer
-      SsaoUniform : Nu.Vulkan.Buffer
+    { EyeUniform : VulkanBuffer
+      SsaoUniform : VulkanBuffer
       Pipeline : Pipeline }
 
 /// Describes the coloring pass of a deferred physically-based pipeline that's loaded into GPU.
 type PhysicallyBasedDeferredColoringPipeline =
-    { EyeUniform : Nu.Vulkan.Buffer
-      LightingUniform : Nu.Vulkan.Buffer
+    { EyeUniform : VulkanBuffer
+      LightingUniform : VulkanBuffer
       Pipeline : Pipeline }
 
 /// Describes the composition pass of a deferred physically-based pipeline that's loaded into GPU.
 type PhysicallyBasedDeferredCompositionPipeline =
-    { EyeUniform : Nu.Vulkan.Buffer
-      LightingUniform : Nu.Vulkan.Buffer
+    { EyeUniform : VulkanBuffer
+      LightingUniform : VulkanBuffer
       Pipeline : Pipeline }
 
 /// Describes a box filter pipeline that's loaded into GPU.
@@ -632,17 +632,17 @@ type FilterBoxPipeline =
 
 /// Describes an esm gaussian filter pipeline that's loaded into GPU.
 type FilterGaussianEsmPipeline =
-    { GaussianEsmUniform : Nu.Vulkan.Buffer
+    { GaussianEsmUniform : VulkanBuffer
       Pipeline : Pipeline }
 
 /// Describes a tone-mapping filter pipeline that's loaded into GPU.
 type FilterToneMappingPipeline =
-    { ToneMappingUniform : Nu.Vulkan.Buffer
+    { ToneMappingUniform : VulkanBuffer
       Pipeline : Pipeline }
 
 /// Describes an fxaa filter pipeline that's loaded into GPU.
 type FilterFxaaPipeline =
-    { FxaaUniform : Nu.Vulkan.Buffer
+    { FxaaUniform : VulkanBuffer
       Pipeline : Pipeline }
 
 /// Describes a gamma-correction filter pipeline that's loaded into GPU.
@@ -1477,14 +1477,14 @@ module PhysicallyBased =
             | Some vkc ->
 
                 // create buffers
-                let vertexBuffer = Buffer.createVertexStagedFromMemory vertexData vkc
-                let instanceBuffer = Buffer.create Instance (Constants.Render.InstanceFieldCount * sizeof<single>) vkc
-                let indexBuffer = Buffer.createIndexStagedFromMemory indexData vkc
+                let vertexBuffer = VulkanBuffer.createVertexStagedFromMemory vertexData vkc
+                let instanceBuffer = VulkanBuffer.create Instance (Constants.Render.InstanceFieldCount * sizeof<single>) vkc
+                let indexBuffer = VulkanBuffer.createIndexStagedFromMemory indexData vkc
 
                 // prepare instance buffer
                 let instanceData = Array.zeroCreate Constants.Render.InstanceFieldCount
                 m4Identity.ToArray (instanceData, 0)
-                Buffer.uploadArray instanceData instanceBuffer vkc
+                VulkanBuffer.uploadArray instanceData instanceBuffer vkc
                 
                 // fin
                 ([||], [||], vertexBuffer, instanceBuffer, indexBuffer)
@@ -1504,7 +1504,7 @@ module PhysicallyBased =
                 let indices = indexData.ToArray ()
 
                 // fin
-                (vertices, indices, Unchecked.defaultof<Nu.Vulkan.Buffer>, Unchecked.defaultof<Nu.Vulkan.Buffer>, Unchecked.defaultof<Nu.Vulkan.Buffer>)
+                (vertices, indices, Unchecked.defaultof<VulkanBuffer>, Unchecked.defaultof<VulkanBuffer>, Unchecked.defaultof<VulkanBuffer>)
 
         // make physically-based geometry
         let geometry =
@@ -1552,14 +1552,14 @@ module PhysicallyBased =
             | Some vkc ->
 
                 // create buffers
-                let vertexBuffer = Buffer.createVertexStagedFromMemory vertexData vkc
-                let instanceBuffer = Buffer.create Instance (Constants.Render.InstanceFieldCount * sizeof<single>) vkc
-                let indexBuffer = Buffer.createIndexStagedFromMemory indexData vkc
+                let vertexBuffer = VulkanBuffer.createVertexStagedFromMemory vertexData vkc
+                let instanceBuffer = VulkanBuffer.create Instance (Constants.Render.InstanceFieldCount * sizeof<single>) vkc
+                let indexBuffer = VulkanBuffer.createIndexStagedFromMemory indexData vkc
 
                 // prepare instance buffer
                 let instanceData = Array.zeroCreate Constants.Render.InstanceFieldCount
                 m4Identity.ToArray (instanceData, 0)
-                Buffer.uploadArray instanceData instanceBuffer vkc
+                VulkanBuffer.uploadArray instanceData instanceBuffer vkc
                 
                 // fin
                 ([||], [||], vertexBuffer, instanceBuffer, indexBuffer)
@@ -1579,7 +1579,7 @@ module PhysicallyBased =
                 let indices = indexData.ToArray ()
 
                 // fin
-                (vertices, indices, Unchecked.defaultof<Nu.Vulkan.Buffer>, Unchecked.defaultof<Nu.Vulkan.Buffer>, Unchecked.defaultof<Nu.Vulkan.Buffer>)
+                (vertices, indices, Unchecked.defaultof<VulkanBuffer>, Unchecked.defaultof<VulkanBuffer>, Unchecked.defaultof<VulkanBuffer>)
 
         // make physically-based geometry
         let geometry =
@@ -1645,9 +1645,9 @@ module PhysicallyBased =
 
     /// Destroy physically-based geometry resources.
     let destroyPhysicallyBasedGeometry geometry vkc =
-        Buffer.destroy geometry.VertexBuffer vkc
-        Buffer.destroy geometry.InstanceBuffer vkc
-        Buffer.destroy geometry.IndexBuffer vkc
+        VulkanBuffer.destroy geometry.VertexBuffer vkc
+        VulkanBuffer.destroy geometry.InstanceBuffer vkc
+        VulkanBuffer.destroy geometry.IndexBuffer vkc
 
     /// Destroy physically-based model resources.
     /// NOTE: models are created via a PhysicallyBasedSceneClient instance.
@@ -1659,11 +1659,11 @@ module PhysicallyBased =
     let createPhysicallyBasedShadowPipeline shaderPath vertexBindings colorAttachmentFormats depthTestFormat vkc =
 
         // create set 0 uniform buffers
-        let shadowVertUniform = Buffer.create Uniform sizeof<ShadowVert> vkc
-        let shadowFragUniform = Buffer.create Uniform sizeof<ShadowFrag> vkc
+        let shadowVertUniform = VulkanBuffer.create Uniform sizeof<ShadowVert> vkc
+        let shadowFragUniform = VulkanBuffer.create Uniform sizeof<ShadowFrag> vkc
 
         // create set 1 uniform buffers
-        let boneUniform = Buffer.create Uniform (Constants.Render.BonesMax * sizeof<Matrix4x4>) vkc
+        let boneUniform = VulkanBuffer.create Uniform (Constants.Render.BonesMax * sizeof<Matrix4x4>) vkc
 
         // create pipeline
         let pipeline =
@@ -1724,12 +1724,12 @@ module PhysicallyBased =
 
             // specify shadow vert
             let shadowVert = ShadowVert (viewProjection = viewProjection)
-            Buffer.uploadValue shadowVert pipeline.ShadowVertUniform vkc
+            VulkanBuffer.uploadValue shadowVert pipeline.ShadowVertUniform vkc
             Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.ShadowVertUniform vkSet
 
             // specify shadow frag
             let shadowFrag = ShadowFrag (eyeCenter = eyeCenter, lightShadowExponent = lightShadowExponent)
-            Buffer.uploadValue shadowFrag pipeline.ShadowFragUniform vkc
+            VulkanBuffer.uploadValue shadowFrag pipeline.ShadowFragUniform vkc
             Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.ShadowFragUniform vkSet
 
         // fin
@@ -1755,7 +1755,7 @@ module PhysicallyBased =
 
                 // specify instancing
                 use instanceFieldsPin = new ArrayPin<_> (instanceFields)
-                Buffer.uploadData (Constants.Render.InstanceFieldCount * sizeof<single>) surfacesCount instanceFieldsPin.NativeInt geometry.InstanceBuffer vkc
+                VulkanBuffer.uploadData (Constants.Render.InstanceFieldCount * sizeof<single>) surfacesCount instanceFieldsPin.NativeInt geometry.InstanceBuffer vkc
 
                 // specify dynamic when animated
                 let mutable dynamicDescriptorSet =
@@ -1764,7 +1764,7 @@ module PhysicallyBased =
                     else
                         Pipeline.specifyDescriptorSet 1 pipeline.Pipeline.DrawIndex pipeline.Pipeline $ fun vkSet ->
                             use bonesPin = new ArrayPin<_> (bones)
-                            Buffer.uploadData sizeof<Matrix4x4> (min bones.Length Constants.Render.BonesMax) bonesPin.NativeInt pipeline.BoneUniform vkc
+                            VulkanBuffer.uploadData sizeof<Matrix4x4> (min bones.Length Constants.Render.BonesMax) bonesPin.NativeInt pipeline.BoneUniform vkc
                             Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.BoneUniform vkSet
 
                 // set up pipeline
@@ -1789,7 +1789,7 @@ module PhysicallyBased =
                 VulkanDevice.vkCmdDrawIndexed (vkc.RenderCommandBuffer, uint geometry.ElementCount, uint surfacesCount, 0u, 0, 0u)
 
                 // advance instancing
-                Buffer.advance geometry.InstanceBuffer
+                VulkanBuffer.advance geometry.InstanceBuffer
 
                 // advance pipeline
                 Pipeline.advance surfacesCount pipeline.Pipeline
@@ -1813,16 +1813,16 @@ module PhysicallyBased =
     let createPhysicallyBasedPipeline lightMapsMax lightsMax shaderPath blends cullModes vertexBindings colorAttachmentFormats depthTestOpt vkc =
 
         // create set 0 uniform buffers
-        let eyeUniform = Buffer.create Uniform sizeof<Eye> vkc
-        let lightingUniform = Buffer.create Uniform sizeof<Lighting> vkc
+        let eyeUniform = VulkanBuffer.create Uniform sizeof<Eye> vkc
+        let lightingUniform = VulkanBuffer.create Uniform sizeof<Lighting> vkc
 
         // create set 2 uniform buffers
         let shadowMatrixMax = Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels
-        let boneUniform = Buffer.create Uniform (Constants.Render.BonesMax * sizeof<Matrix4x4>) vkc
-        let lightMapsUniform = Buffer.create Uniform (lightMapsMax * sizeof<LightMap'>) vkc
-        let lightsGeneralUniform = Buffer.create Uniform sizeof<LightsGeneral> vkc
-        let lightsUniform = Buffer.create Uniform (lightsMax * sizeof<Light>) vkc
-        let shadowMatrixUniform = Buffer.create Uniform (shadowMatrixMax * sizeof<Matrix4x4>) vkc
+        let boneUniform = VulkanBuffer.create Uniform (Constants.Render.BonesMax * sizeof<Matrix4x4>) vkc
+        let lightMapsUniform = VulkanBuffer.create Uniform (lightMapsMax * sizeof<LightMap'>) vkc
+        let lightsGeneralUniform = VulkanBuffer.create Uniform sizeof<LightsGeneral> vkc
+        let lightsUniform = VulkanBuffer.create Uniform (lightsMax * sizeof<Light>) vkc
+        let shadowMatrixUniform = VulkanBuffer.create Uniform (shadowMatrixMax * sizeof<Matrix4x4>) vkc
 
         // create pipeline
         let pipeline =
@@ -1926,7 +1926,7 @@ module PhysicallyBased =
         // specify eye
         let mutable eyeDescriptorSet = Pipeline.specifyDescriptorSet 0 renderPassIndex pipeline.Pipeline $ fun vkSet ->
             let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
-            Buffer.uploadValue eye pipeline.EyeUniform vkc
+            VulkanBuffer.uploadValue eye pipeline.EyeUniform vkc
             Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.EyeUniform vkSet
 
         // specify samplers
@@ -1965,7 +1965,7 @@ module PhysicallyBased =
 
                 // specify instancing
                 use instanceFieldsPin = new ArrayPin<_> (instanceFields)
-                Buffer.uploadData (Constants.Render.InstanceFieldCount * sizeof<single>) surfacesCount instanceFieldsPin.NativeInt geometry.InstanceBuffer vkc
+                VulkanBuffer.uploadData (Constants.Render.InstanceFieldCount * sizeof<single>) surfacesCount instanceFieldsPin.NativeInt geometry.InstanceBuffer vkc
 
                 // specify material
                 let mutable materialDescriptorSet = Pipeline.specifyDescriptorSet 1 material pipeline.Pipeline $ fun vkSet ->
@@ -1990,7 +1990,7 @@ module PhysicallyBased =
                     else
                         Pipeline.specifyDescriptorSet 2 pipeline.Pipeline.DrawIndex pipeline.Pipeline $ fun vkSet ->
                             use bonesPin = new ArrayPin<_> (bones)
-                            Buffer.uploadData sizeof<Matrix4x4> (min bones.Length Constants.Render.BonesMax) bonesPin.NativeInt pipeline.BoneUniform vkc
+                            VulkanBuffer.uploadData sizeof<Matrix4x4> (min bones.Length Constants.Render.BonesMax) bonesPin.NativeInt pipeline.BoneUniform vkc
                             Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.BoneUniform vkSet
 
                 // set up pipeline
@@ -2017,7 +2017,7 @@ module PhysicallyBased =
                 VulkanDevice.vkCmdDrawIndexed (vkc.RenderCommandBuffer, uint geometry.ElementCount, uint surfacesCount, 0u, 0, 0u)
                     
                 // advance instancing
-                Buffer.advance geometry.InstanceBuffer
+                VulkanBuffer.advance geometry.InstanceBuffer
 
                 // advance pipeline
                 Pipeline.advance surfacesCount pipeline.Pipeline
@@ -2042,10 +2042,10 @@ module PhysicallyBased =
 
         // create uniform buffers
         let shadowMatrixMax = Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels
-        let eyeUniform = Buffer.create Uniform sizeof<Eye> vkc
-        let lightingUniform = Buffer.create Uniform sizeof<Lighting2> vkc
-        let lightUniform = Buffer.create Uniform (Constants.Render.LightsMaxDeferred * sizeof<Light>) vkc
-        let shadowMatrixUniform = Buffer.create Uniform (shadowMatrixMax * sizeof<Matrix4x4>) vkc
+        let eyeUniform = VulkanBuffer.create Uniform sizeof<Eye> vkc
+        let lightingUniform = VulkanBuffer.create Uniform sizeof<Lighting2> vkc
+        let lightUniform = VulkanBuffer.create Uniform (Constants.Render.LightsMaxDeferred * sizeof<Light>) vkc
+        let shadowMatrixUniform = VulkanBuffer.create Uniform (shadowMatrixMax * sizeof<Matrix4x4>) vkc
 
         // create pipeline
         let pipeline =
@@ -2156,7 +2156,7 @@ module PhysicallyBased =
 
                 // specify eye
                 let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
-                Buffer.uploadValue eye pipeline.EyeUniform vkc
+                VulkanBuffer.uploadValue eye pipeline.EyeUniform vkc
                 Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.EyeUniform vkSet
 
                 // specify lighting
@@ -2171,7 +2171,7 @@ module PhysicallyBased =
                 lighting.sssEnabled <- sssEnabled
                 lighting.lightsCount <- lightsCount
                 lighting.shadowNear <- shadowNear
-                Buffer.uploadValue lighting pipeline.Lighting2Uniform vkc
+                VulkanBuffer.uploadValue lighting pipeline.Lighting2Uniform vkc
                 Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.Lighting2Uniform vkSet
 
                 // specify lights
@@ -2192,14 +2192,14 @@ module PhysicallyBased =
                         light.lightDesireFogs <- lightDesireFogs[i]
                         light.lightShadowIndices <- lightShadowIndices[i]
                     else light <- Unchecked.defaultof<_>
-                    Buffer.writeSubdata (i * sizeof<Light>) 0 sizeof<Light> 1 (NativePtr.toNativeInt lightPtr) pipeline.LightUniform vkc
-                Buffer.flushSubdata 0 0 sizeof<Light> Constants.Render.LightsMaxDeferred pipeline.LightUniform vkc
+                    VulkanBuffer.writeSubdata (i * sizeof<Light>) 0 sizeof<Light> 1 (NativePtr.toNativeInt lightPtr) pipeline.LightUniform vkc
+                VulkanBuffer.flushSubdata 0 0 sizeof<Light> Constants.Render.LightsMaxDeferred pipeline.LightUniform vkc
                 Pipeline.writeDescriptorUniformBuffer 2 0 pipeline.LightUniform vkSet
 
                 // specify shadow matrices
                 use shadowMatricesPin = new ArrayPin<_> (shadowMatrices)
                 let shadowMatricesCount = min shadowMatrices.Length (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels)
-                Buffer.uploadData sizeof<Matrix4x4> shadowMatricesCount shadowMatricesPin.NativeInt pipeline.ShadowMatrixUniform vkc
+                VulkanBuffer.uploadData sizeof<Matrix4x4> shadowMatricesCount shadowMatricesPin.NativeInt pipeline.ShadowMatrixUniform vkc
                 Pipeline.writeDescriptorUniformBuffer 3 0 pipeline.ShadowMatrixUniform vkSet
 
                 // specify textures
@@ -2267,11 +2267,11 @@ module PhysicallyBased =
 
         // create uniform buffers
         let shadowMatrixMax = Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels
-        let eyeUniform = Buffer.create Uniform sizeof<Eye> vkc
-        let lightingUniform = Buffer.create Uniform sizeof<Lighting> vkc
-        let lightsGeneralUniform = Buffer.create Uniform sizeof<LightsGeneral> vkc
-        let lightsUniform = Buffer.create Uniform (Constants.Render.LightsMaxDeferred * sizeof<Light>) vkc
-        let shadowMatricesUniform = Buffer.create Uniform (shadowMatrixMax * sizeof<Matrix4x4>) vkc
+        let eyeUniform = VulkanBuffer.create Uniform sizeof<Eye> vkc
+        let lightingUniform = VulkanBuffer.create Uniform sizeof<Lighting> vkc
+        let lightsGeneralUniform = VulkanBuffer.create Uniform sizeof<LightsGeneral> vkc
+        let lightsUniform = VulkanBuffer.create Uniform (Constants.Render.LightsMaxDeferred * sizeof<Light>) vkc
+        let shadowMatricesUniform = VulkanBuffer.create Uniform (shadowMatrixMax * sizeof<Matrix4x4>) vkc
 
         // create pipeline
         let pipeline =
@@ -2371,7 +2371,7 @@ module PhysicallyBased =
 
                 // specify eye
                 let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
-                Buffer.uploadValue eye pipeline.EyeUniform vkc
+                VulkanBuffer.uploadValue eye pipeline.EyeUniform vkc
                 Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.EyeUniform vkSet
 
                 // specify lighting
@@ -2381,7 +2381,7 @@ module PhysicallyBased =
                 lighting.ssvfIntensity <- ssvfIntensity
                 lighting.ssvfSteps <- ssvfSteps
                 lighting.ssvfAsymmetry <- ssvfAsymmetry
-                Buffer.uploadValue lighting pipeline.LightingUniform vkc
+                VulkanBuffer.uploadValue lighting pipeline.LightingUniform vkc
                 Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.LightingUniform vkSet
 
                 // specify lights general
@@ -2389,7 +2389,7 @@ module PhysicallyBased =
                 lightsGeneral.lightMapsCount <- lightMapsCount
                 lightsGeneral.lightMapSingletonBlendMargin <- lightMapSingletonBlendMargin
                 lightsGeneral.lightsCount <- lightsCount
-                Buffer.uploadValue lightsGeneral pipeline.LightsGeneralUniform vkc
+                VulkanBuffer.uploadValue lightsGeneral pipeline.LightsGeneralUniform vkc
                 Pipeline.writeDescriptorUniformBuffer 2 0 pipeline.LightsGeneralUniform vkSet
 
                 // specify lights
@@ -2410,14 +2410,14 @@ module PhysicallyBased =
                         light.lightDesireFogs <- lightDesireFogs[i]
                         light.lightShadowIndices <- lightShadowIndices[i]
                     else light <- Unchecked.defaultof<_>
-                    Buffer.writeSubdata (i * sizeof<Light>) 0 sizeof<Light> 1 (NativePtr.toNativeInt lightPtr) pipeline.LightsUniform vkc
-                Buffer.flushSubdata 0 0 sizeof<Light> Constants.Render.LightsMaxDeferred pipeline.LightsUniform vkc
+                    VulkanBuffer.writeSubdata (i * sizeof<Light>) 0 sizeof<Light> 1 (NativePtr.toNativeInt lightPtr) pipeline.LightsUniform vkc
+                VulkanBuffer.flushSubdata 0 0 sizeof<Light> Constants.Render.LightsMaxDeferred pipeline.LightsUniform vkc
                 Pipeline.writeDescriptorUniformBuffer 3 0 pipeline.LightsUniform vkSet
 
                 // specify shadow matrices
                 use shadowMatricesPin = new ArrayPin<_> (shadowMatrices)
                 let shadowMatricesCount = min shadowMatrices.Length (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels)
-                Buffer.uploadData sizeof<Matrix4x4> shadowMatricesCount shadowMatricesPin.NativeInt pipeline.ShadowMatricesUniform vkc
+                VulkanBuffer.uploadData sizeof<Matrix4x4> shadowMatricesCount shadowMatricesPin.NativeInt pipeline.ShadowMatricesUniform vkc
                 Pipeline.writeDescriptorUniformBuffer 4 0 pipeline.ShadowMatricesUniform vkSet
 
                 // specify textures
@@ -2478,9 +2478,9 @@ module PhysicallyBased =
     let createPhysicallyBasedDeferredLightMappingPipeline colorAttachmentFormat vkc =
 
         // create uniform buffers
-        let eyeUniform = Buffer.create Uniform sizeof<Eye> vkc
-        let lightMapsUniform = Buffer.create Uniform (Constants.Render.LightMapsMaxDeferred * sizeof<LightMap'>) vkc
-        let lightsGeneralUniform = Buffer.create Uniform sizeof<LightsGeneral> vkc
+        let eyeUniform = VulkanBuffer.create Uniform sizeof<Eye> vkc
+        let lightMapsUniform = VulkanBuffer.create Uniform (Constants.Render.LightMapsMaxDeferred * sizeof<LightMap'>) vkc
+        let lightsGeneralUniform = VulkanBuffer.create Uniform sizeof<LightsGeneral> vkc
 
         // create pipeline
         let pipeline =
@@ -2554,7 +2554,7 @@ module PhysicallyBased =
 
                 // specify eye
                 let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
-                Buffer.uploadValue eye pipeline.EyeUniform vkc
+                VulkanBuffer.uploadValue eye pipeline.EyeUniform vkc
                 Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.EyeUniform vkSet
 
                 // specify light maps
@@ -2568,8 +2568,8 @@ module PhysicallyBased =
                         lightMap.lightMapAmbientColors <- lightMapAmbientColors[i].V3
                         lightMap.lightMapAmbientBrightnesses <- lightMapAmbientBrightnesses[i]
                     else lightMap <- Unchecked.defaultof<_>
-                    Buffer.writeSubdata (i * sizeof<LightMap'>) 0 sizeof<LightMap'> 1 (NativePtr.toNativeInt lightMapPtr) pipeline.LightMapsUniform vkc
-                Buffer.flushSubdata 0 0 sizeof<LightMap'> Constants.Render.LightMapsMaxDeferred pipeline.LightMapsUniform vkc
+                    VulkanBuffer.writeSubdata (i * sizeof<LightMap'>) 0 sizeof<LightMap'> 1 (NativePtr.toNativeInt lightMapPtr) pipeline.LightMapsUniform vkc
+                VulkanBuffer.flushSubdata 0 0 sizeof<LightMap'> Constants.Render.LightMapsMaxDeferred pipeline.LightMapsUniform vkc
                 Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.LightMapsUniform vkSet
 
                 // specify lights general
@@ -2577,7 +2577,7 @@ module PhysicallyBased =
                 lightsGeneral.lightMapsCount <- lightMapsCount
                 lightsGeneral.lightMapSingletonBlendMargin <- lightMapSingletonBlendMargin
                 lightsGeneral.lightsCount <- lightsCount
-                Buffer.uploadValue lightsGeneral pipeline.LightsGeneralUniform vkc
+                VulkanBuffer.uploadValue lightsGeneral pipeline.LightsGeneralUniform vkc
                 Pipeline.writeDescriptorUniformBuffer 2 0 pipeline.LightsGeneralUniform vkSet
 
                 // specify static environment textures
@@ -2634,9 +2634,9 @@ module PhysicallyBased =
     let createPhysicallyBasedDeferredAmbientPipeline colorAttachmentFormat vkc =
 
         // create uniform buffers
-        let eyeUniform = Buffer.create Uniform sizeof<Eye> vkc
-        let lightMapUniform = Buffer.create Uniform sizeof<LightMap'> vkc
-        let lightMapsUniform = Buffer.create Uniform (Constants.Render.LightMapsMaxDeferred * sizeof<LightMap'>) vkc
+        let eyeUniform = VulkanBuffer.create Uniform sizeof<Eye> vkc
+        let lightMapUniform = VulkanBuffer.create Uniform sizeof<LightMap'> vkc
+        let lightMapsUniform = VulkanBuffer.create Uniform (Constants.Render.LightMapsMaxDeferred * sizeof<LightMap'>) vkc
 
         // create pipeline
         let pipeline =
@@ -2706,14 +2706,14 @@ module PhysicallyBased =
 
                 // specify eye
                 let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
-                Buffer.uploadValue eye pipeline.EyeUniform vkc
+                VulkanBuffer.uploadValue eye pipeline.EyeUniform vkc
                 Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.EyeUniform vkSet
 
                 // specify light map
                 let mutable lightMap = LightMap' ()
                 lightMap.lightMapAmbientColors <- lightMapAmbientColor.V3
                 lightMap.lightMapAmbientBrightnesses <- lightMapAmbientBrightness
-                Buffer.uploadValue lightMap pipeline.LightMapUniform vkc
+                VulkanBuffer.uploadValue lightMap pipeline.LightMapUniform vkc
                 Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.LightMapUniform vkSet
 
                 // specify light maps
@@ -2723,8 +2723,8 @@ module PhysicallyBased =
                         lightMap.lightMapAmbientColors <- lightMapAmbientColors[i].V3
                         lightMap.lightMapAmbientBrightnesses <- lightMapAmbientBrightnesses[i]
                     else lightMap <- Unchecked.defaultof<_>
-                    Buffer.writeSubdata (i * sizeof<LightMap'>) 0 sizeof<LightMap'> 1 (NativePtr.toNativeInt lightMapPtr) pipeline.LightMapsUniform vkc
-                Buffer.flushSubdata 0 0 sizeof<LightMap'> Constants.Render.LightMapsMaxDeferred pipeline.LightMapsUniform vkc
+                    VulkanBuffer.writeSubdata (i * sizeof<LightMap'>) 0 sizeof<LightMap'> 1 (NativePtr.toNativeInt lightMapPtr) pipeline.LightMapsUniform vkc
+                VulkanBuffer.flushSubdata 0 0 sizeof<LightMap'> Constants.Render.LightMapsMaxDeferred pipeline.LightMapsUniform vkc
                 Pipeline.writeDescriptorUniformBuffer 2 0 pipeline.LightMapsUniform vkSet
 
                 // specify static environment textures
@@ -2781,7 +2781,7 @@ module PhysicallyBased =
     let createPhysicallyBasedDeferredIrradiancePipeline colorAttachmentFormat vkc =
 
         // create uniform buffers
-        let eyeUniform = Buffer.create Uniform sizeof<Eye> vkc
+        let eyeUniform = VulkanBuffer.create Uniform sizeof<Eye> vkc
 
         // create pipeline
         let pipeline =
@@ -2851,7 +2851,7 @@ module PhysicallyBased =
 
                 // specify eye
                 let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
-                Buffer.uploadValue eye pipeline.EyeUniform vkc
+                VulkanBuffer.uploadValue eye pipeline.EyeUniform vkc
                 Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.EyeUniform vkSet
 
                 // specify static environment textures
@@ -2912,8 +2912,8 @@ module PhysicallyBased =
     let createPhysicallyBasedDeferredEnvironmentFilterPipeline colorAttachmentFormat vkc =
 
         // create uniform buffers
-        let eyeUniform = Buffer.create Uniform sizeof<Eye> vkc
-        let lightMapsUniform = Buffer.create Uniform (Constants.Render.LightMapsMaxDeferred * sizeof<LightMap'>) vkc
+        let eyeUniform = VulkanBuffer.create Uniform sizeof<Eye> vkc
+        let lightMapsUniform = VulkanBuffer.create Uniform (Constants.Render.LightMapsMaxDeferred * sizeof<LightMap'>) vkc
 
         // create pipeline
         let pipeline =
@@ -2994,7 +2994,7 @@ module PhysicallyBased =
 
                 // specify eye
                 let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
-                Buffer.uploadValue eye pipeline.EyeUniform vkc
+                VulkanBuffer.uploadValue eye pipeline.EyeUniform vkc
                 Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.EyeUniform vkSet
 
                 // specify light maps
@@ -3008,8 +3008,8 @@ module PhysicallyBased =
                         lightMap.lightMapAmbientColors <- lightMapAmbientColors[i].V3
                         lightMap.lightMapAmbientBrightnesses <- lightMapAmbientBrightnesses[i]
                     else lightMap <- Unchecked.defaultof<_>
-                    Buffer.writeSubdata (i * sizeof<LightMap'>) 0 sizeof<LightMap'> 1 (NativePtr.toNativeInt lightMapPtr) pipeline.LightMapsUniform vkc
-                Buffer.flushSubdata 0 0 sizeof<LightMap'> Constants.Render.LightMapsMaxDeferred pipeline.LightMapsUniform vkc
+                    VulkanBuffer.writeSubdata (i * sizeof<LightMap'>) 0 sizeof<LightMap'> 1 (NativePtr.toNativeInt lightMapPtr) pipeline.LightMapsUniform vkc
+                VulkanBuffer.flushSubdata 0 0 sizeof<LightMap'> Constants.Render.LightMapsMaxDeferred pipeline.LightMapsUniform vkc
                 Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.LightMapsUniform vkSet
 
                 // specify static environment textures
@@ -3072,8 +3072,8 @@ module PhysicallyBased =
     let createPhysicallyBasedDeferredSsaoPipeline colorAttachmentFormat vkc =
 
         // create set 0 uniform buffers
-        let eyeUniform = Buffer.create Uniform sizeof<Eye> vkc
-        let ssaoUniform = Buffer.create Uniform sizeof<Ssao> vkc
+        let eyeUniform = VulkanBuffer.create Uniform sizeof<Eye> vkc
+        let ssaoUniform = VulkanBuffer.create Uniform sizeof<Ssao> vkc
 
         // create pipeline
         let pipeline =
@@ -3143,12 +3143,12 @@ module PhysicallyBased =
 
                 // specify eye
                 let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
-                Buffer.uploadValue eye pipeline.EyeUniform vkc
+                VulkanBuffer.uploadValue eye pipeline.EyeUniform vkc
                 Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.EyeUniform vkSet
 
                 // specify ssao
                 let ssao = Ssao (resolution = resolution, intensity = intensity, bias = bias, radius = radius, distanceMax = distanceMax, sampleCount = sampleCount)
-                Buffer.uploadValue ssao pipeline.SsaoUniform vkc
+                VulkanBuffer.uploadValue ssao pipeline.SsaoUniform vkc
                 Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.SsaoUniform vkSet
 
                 // specify textures
@@ -3205,8 +3205,8 @@ module PhysicallyBased =
     let createPhysicallyBasedDeferredColoringPipeline colorAttachmentFormats vkc =
 
         // create uniform buffers
-        let eyeUniform = Buffer.create Uniform sizeof<Eye> vkc
-        let lightingUniform = Buffer.create Uniform sizeof<Lighting> vkc
+        let eyeUniform = VulkanBuffer.create Uniform sizeof<Eye> vkc
+        let lightingUniform = VulkanBuffer.create Uniform sizeof<Lighting> vkc
 
         // create pipeline
         let pipeline =
@@ -3309,7 +3309,7 @@ module PhysicallyBased =
 
                 // specify eye
                 let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
-                Buffer.uploadValue eye pipeline.EyeUniform vkc
+                VulkanBuffer.uploadValue eye pipeline.EyeUniform vkc
                 Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.EyeUniform vkSet
 
                 // specify lighting
@@ -3332,7 +3332,7 @@ module PhysicallyBased =
                 lighting.ssrlSlopeCutoffMargin <- ssrlSlopeCutoffMargin
                 lighting.ssrlEdgeHorizontalMargin <- ssrlEdgeHorizontalMargin
                 lighting.ssrlEdgeVerticalMargin <- ssrlEdgeVerticalMargin
-                Buffer.uploadValue lighting pipeline.LightingUniform vkc
+                VulkanBuffer.uploadValue lighting pipeline.LightingUniform vkc
                 Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.LightingUniform vkSet
 
                 // specify textures
@@ -3400,8 +3400,8 @@ module PhysicallyBased =
     let createPhysicallyBasedDeferredCompositionPipeline colorAttachmentFormat vkc =
 
         // create uniform buffers
-        let eyeUniform = Buffer.create Uniform sizeof<Eye> vkc
-        let lightingUniform = Buffer.create Uniform sizeof<Lighting> vkc
+        let eyeUniform = VulkanBuffer.create Uniform sizeof<Eye> vkc
+        let lightingUniform = VulkanBuffer.create Uniform sizeof<Lighting> vkc
 
         // create pipeline
         let pipeline =
@@ -3473,7 +3473,7 @@ module PhysicallyBased =
 
                 // specify eye
                 let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
-                Buffer.uploadValue eye pipeline.EyeUniform vkc
+                VulkanBuffer.uploadValue eye pipeline.EyeUniform vkc
                 Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.EyeUniform vkSet
 
                 // specify lighting
@@ -3484,7 +3484,7 @@ module PhysicallyBased =
                 lighting.fogFinish <- fogFinish
                 lighting.fogDensity <- fogDensity
                 lighting.fogColor <- fogColor.V4
-                Buffer.uploadValue lighting pipeline.LightingUniform vkc
+                VulkanBuffer.uploadValue lighting pipeline.LightingUniform vkc
                 Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.LightingUniform vkSet
 
                 // specify textures
@@ -3603,7 +3603,7 @@ module PhysicallyBased =
 
             // specify eye
             let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
-            Buffer.uploadValue eye pipeline.EyeUniform vkc
+            VulkanBuffer.uploadValue eye pipeline.EyeUniform vkc
             Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.EyeUniform vkSet
 
             // specify lighting
@@ -3638,7 +3638,7 @@ module PhysicallyBased =
             lighting.ssrrEdgeHorizontalMargin <- ssrrEdgeHorizontalMargin
             lighting.ssrrEdgeVerticalMargin <- ssrrEdgeVerticalMargin
             lighting.shadowNear <- shadowNear
-            Buffer.uploadValue lighting pipeline.LightingUniform vkc
+            VulkanBuffer.uploadValue lighting pipeline.LightingUniform vkc
             Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.LightingUniform vkSet
 
             // specify static environment textures
@@ -3720,7 +3720,7 @@ module PhysicallyBased =
 
             // specify instancing
             use instanceFieldsPin = new ArrayPin<_> (instanceFields)
-            Buffer.uploadData (Constants.Render.InstanceFieldCount * sizeof<single>) surfacesCount instanceFieldsPin.NativeInt geometry.InstanceBuffer vkc
+            VulkanBuffer.uploadData (Constants.Render.InstanceFieldCount * sizeof<single>) surfacesCount instanceFieldsPin.NativeInt geometry.InstanceBuffer vkc
 
             // specify material
             let mutable materialDescriptorSet = Pipeline.specifyDescriptorSet 1 material pipeline.Pipeline $ fun vkSet ->
@@ -3741,7 +3741,7 @@ module PhysicallyBased =
                 if bones.Length > 0 then
                     use bonesPin = new ArrayPin<_> (bones)
                     let bonesCount = min bones.Length Constants.Render.BonesMax
-                    Buffer.uploadData sizeof<Matrix4x4> bonesCount bonesPin.NativeInt pipeline.BoneUniform vkc
+                    VulkanBuffer.uploadData sizeof<Matrix4x4> bonesCount bonesPin.NativeInt pipeline.BoneUniform vkc
                     Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.BoneUniform vkSet
 
                 // specify light maps
@@ -3755,8 +3755,8 @@ module PhysicallyBased =
                         lightMap.lightMapAmbientColors <- lightMapAmbientColors[i].V3
                         lightMap.lightMapAmbientBrightnesses <- lightMapAmbientBrightnesses[i]
                     else lightMap <- Unchecked.defaultof<_>
-                    Buffer.writeSubdata (i * sizeof<LightMap'>) 0 sizeof<LightMap'> 1 (NativePtr.toNativeInt lightMapPtr) pipeline.LightMapUniform vkc
-                Buffer.flushSubdata 0 0 sizeof<LightMap'> Constants.Render.LightMapsMaxForward pipeline.LightMapUniform vkc
+                    VulkanBuffer.writeSubdata (i * sizeof<LightMap'>) 0 sizeof<LightMap'> 1 (NativePtr.toNativeInt lightMapPtr) pipeline.LightMapUniform vkc
+                VulkanBuffer.flushSubdata 0 0 sizeof<LightMap'> Constants.Render.LightMapsMaxForward pipeline.LightMapUniform vkc
                 Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.LightMapUniform vkSet
 
                 // specify lights general
@@ -3764,7 +3764,7 @@ module PhysicallyBased =
                 lightsGeneral.lightMapsCount <- lightMapsCount
                 lightsGeneral.lightMapSingletonBlendMargin <- lightMapSingletonBlendMargin
                 lightsGeneral.lightsCount <- lightsCount
-                Buffer.uploadValue lightsGeneral pipeline.LightsGeneralUniform vkc
+                VulkanBuffer.uploadValue lightsGeneral pipeline.LightsGeneralUniform vkc
                 Pipeline.writeDescriptorUniformBuffer 2 0 pipeline.LightsGeneralUniform vkSet
 
                 // specify lights
@@ -3785,14 +3785,14 @@ module PhysicallyBased =
                         light.lightDesireFogs <- lightDesireFogs[i]
                         light.lightShadowIndices <- lightShadowIndices[i]
                     else light <- Unchecked.defaultof<_>
-                    Buffer.writeSubdata (i * sizeof<Light>) 0 sizeof<Light> 1 (NativePtr.toNativeInt lightPtr) pipeline.LightUniform vkc
-                Buffer.flushSubdata 0 0 sizeof<Light> Constants.Render.LightsMaxForward pipeline.LightUniform vkc
+                    VulkanBuffer.writeSubdata (i * sizeof<Light>) 0 sizeof<Light> 1 (NativePtr.toNativeInt lightPtr) pipeline.LightUniform vkc
+                VulkanBuffer.flushSubdata 0 0 sizeof<Light> Constants.Render.LightsMaxForward pipeline.LightUniform vkc
                 Pipeline.writeDescriptorUniformBuffer 3 0 pipeline.LightUniform vkSet
 
                 // specify shadow matrices
                 use shadowMatricesPin = new ArrayPin<_> (shadowMatrices)
                 let shadowMatricesCount = min shadowMatricesFlipped.Length (Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels)
-                Buffer.uploadData sizeof<Matrix4x4> shadowMatricesCount shadowMatricesPin.NativeInt pipeline.ShadowMatrixUniform vkc
+                VulkanBuffer.uploadData sizeof<Matrix4x4> shadowMatricesCount shadowMatricesPin.NativeInt pipeline.ShadowMatrixUniform vkc
                 Pipeline.writeDescriptorUniformBuffer 4 0 pipeline.ShadowMatrixUniform vkSet
 
                 // specify dynamic environment textures
@@ -3826,7 +3826,7 @@ module PhysicallyBased =
             VulkanDevice.vkCmdDrawIndexed (vkc.RenderCommandBuffer, uint geometry.ElementCount, uint surfacesCount, 0u, 0, 0u)
 
             // advance instancing
-            Buffer.advance geometry.InstanceBuffer
+            VulkanBuffer.advance geometry.InstanceBuffer
 
             // advance pipeline
             Pipeline.advance surfacesCount pipeline.Pipeline
@@ -3944,7 +3944,7 @@ module PhysicallyBased =
     let createFilterGaussianEsmPipeline colorAttachmentFormat vkc =
 
         // create set 0 uniform buffers
-        let gaussianEsmUniform = Buffer.create Uniform sizeof<GaussianEsm> vkc
+        let gaussianEsmUniform = VulkanBuffer.create Uniform sizeof<GaussianEsm> vkc
 
         // create pipeline
         let pipeline =
@@ -3996,7 +3996,7 @@ module PhysicallyBased =
             // specify gaussianEsm
             let mutable gaussianEsmDescriptorSet = Pipeline.specifyDescriptorSet 0 renderPassIndex pipeline.Pipeline $ fun vkSet ->
                 let gaussianEsm = GaussianEsm (scale = scale, radius = radius)
-                Buffer.uploadValue gaussianEsm pipeline.GaussianEsmUniform vkc
+                VulkanBuffer.uploadValue gaussianEsm pipeline.GaussianEsmUniform vkc
                 Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.GaussianEsmUniform vkSet
 
             // specify image views
@@ -4054,7 +4054,7 @@ module PhysicallyBased =
     let createFilterToneMappingPipeline colorAttachmentFormat vkc =
 
         // create set 0 uniform buffers
-        let toneMappingUniform = Buffer.create Uniform sizeof<ToneMapping> vkc
+        let toneMappingUniform = VulkanBuffer.create Uniform sizeof<ToneMapping> vkc
 
         // create pipeline
         let pipeline =
@@ -4120,7 +4120,7 @@ module PhysicallyBased =
                          toneMapPower = toneMapPower,
                          toneMapSaturation = toneMapSaturation,
                          toneMapWhitePoint = toneMapWhitePoint)
-                Buffer.uploadValue toneMapping pipeline.ToneMappingUniform vkc
+                VulkanBuffer.uploadValue toneMapping pipeline.ToneMappingUniform vkc
                 Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.ToneMappingUniform vkSet
 
                 // specify input texture
@@ -4176,7 +4176,7 @@ module PhysicallyBased =
     let createFilterFxaaPipeline colorAttachmentFormat vkc =
 
         // create set 0 uniform buffers
-        let fxaaUniform = Buffer.create Uniform sizeof<Fxaa> vkc
+        let fxaaUniform = VulkanBuffer.create Uniform sizeof<Fxaa> vkc
 
         // create pipeline
         let pipeline =
@@ -4230,7 +4230,7 @@ module PhysicallyBased =
                 
                 // specify fxaa
                 let fxaa = Fxaa (spanMax = spanMax, reduceMinDivisor = reduceMinDivisor, reduceMulDivisor = reduceMulDivisor)
-                Buffer.uploadValue fxaa pipeline.FxaaUniform vkc
+                VulkanBuffer.uploadValue fxaa pipeline.FxaaUniform vkc
                 Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.FxaaUniform vkSet
 
                 // specify input texture

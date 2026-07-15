@@ -199,7 +199,7 @@ type TextureVulkan =
       LayerViews : VkImageView array
       SubViews : VkImageView array2d
       TextureMetadata : TextureMetadata
-      StagingBuffers : Nu.Vulkan.Buffer List }
+      StagingBuffers : VulkanBuffer List }
 
     static member private createImage vkFormat extent mipLevels (textureType : TextureType) usageFlags (vkc : VulkanContext) =
         let mutable iInfo = VkImageCreateInfo ()
@@ -280,7 +280,7 @@ type TextureVulkan =
                 VulkanDevice.vkDestroyImageView (texture.SubViews[i, j], nullPtr)
         Vma.vmaDestroyImage (vkc.VmaAllocator, texture.Image, texture.Allocation)
         for i in 0 .. dec texture.StagingBuffers.Count do
-            Buffer.destroy texture.StagingBuffers[i] vkc
+            VulkanBuffer.destroy texture.StagingBuffers[i] vkc
 
 [<AutoOpen>]
 module TextureModule =
@@ -771,7 +771,7 @@ type [<CustomEquality; NoComparison>] TextureInternal =
         match textureInternal.AttachmentMode_ with
         | AttachmentNone ->
             let uploadSize = ImageFormat.getImageSize metadata.TextureWidth metadata.TextureHeight textureInternal.InternalFormat_
-            let stagingBuffer = Buffer.stageData uploadSize pixels vkc
+            let stagingBuffer = VulkanBuffer.stageData uploadSize pixels vkc
             textureInternal.TextureVulkan_.StagingBuffers.Add stagingBuffer // TODO: P0: make sure this isn't a source of leaks and deal with it if it is!
             VulkanHl.recordBufferToImageCopy commandBuffer metadata.TextureWidth metadata.TextureHeight mipLevel layer stagingBuffer.VkBuffer textureInternal.Image
         | AttachmentColor _
@@ -787,7 +787,7 @@ type [<CustomEquality; NoComparison>] TextureInternal =
         // destroy staging buffer (only) if it was created by async function in synchronous context to prevent massive waste of vram
         if textureInternal.AttachmentMode_.IsAttachmentNone then
             let lastIndex = dec textureInternal.TextureVulkan_.StagingBuffers.Count
-            Buffer.destroy textureInternal.TextureVulkan_.StagingBuffers[lastIndex] vkc
+            VulkanBuffer.destroy textureInternal.TextureVulkan_.StagingBuffers[lastIndex] vkc
             textureInternal.TextureVulkan_.StagingBuffers.RemoveAt lastIndex
 
     /// Record commands to upload array of pixel data to TextureInternal. Can only be done once.

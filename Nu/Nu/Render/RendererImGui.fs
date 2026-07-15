@@ -54,9 +54,9 @@ type VulkanRendererImGui
     let mutable assetSampler = Unchecked.defaultof<Sampler>
     let mutable fontTexture = Unchecked.defaultof<Texture>
     let mutable vertexBufferSize = 8192 // TODO: populate from a constant.
-    let mutable vertexBuffer = Unchecked.defaultof<Nu.Vulkan.Buffer>
+    let mutable vertexBuffer = Unchecked.defaultof<VulkanBuffer>
     let mutable indexBufferSize = 1024 // TODO: populate from a constant.
-    let mutable indexBuffer = Unchecked.defaultof<Nu.Vulkan.Buffer>
+    let mutable indexBuffer = Unchecked.defaultof<VulkanBuffer>
     let mutable textureIdCounter = 0u
     
     // in the event of clearing asset textures, we keep a blacklist of texture ids that have been recently destroyed.
@@ -120,8 +120,8 @@ type VulkanRendererImGui
             fonts.ClearTexData ()
 
             // create vertex and index buffers
-            vertexBuffer <- Nu.Vulkan.Buffer.create (Vertex true) vertexBufferSize vkc
-            indexBuffer <- Nu.Vulkan.Buffer.create (Index true) indexBufferSize vkc
+            vertexBuffer <- VulkanBuffer.create (Vertex true) vertexBufferSize vkc
+            indexBuffer <- VulkanBuffer.create (Index true) indexBufferSize vkc
 
             // create pipeline
             pipeline <-
@@ -141,8 +141,8 @@ type VulkanRendererImGui
         member renderer.PreRender renderMessages =
 
             // begin buffer usage
-            Buffer.beginFrame vertexBuffer
-            Buffer.beginFrame indexBuffer
+            VulkanBuffer.beginFrame vertexBuffer
+            VulkanBuffer.beginFrame indexBuffer
 
             // categorize render messages
             for renderMessage in renderMessages do
@@ -217,8 +217,8 @@ type VulkanRendererImGui
                     // enlarge buffer sizes if needed
                     while vertexBufferSizeTotal > vertexBufferSize do vertexBufferSize <- vertexBufferSize * 2
                     while indexBufferSizeTotal > indexBufferSize do indexBufferSize <- indexBufferSize * 2
-                    Nu.Vulkan.Buffer.ensureWidth vertexBufferSize vertexBuffer vkc
-                    Nu.Vulkan.Buffer.ensureWidth indexBufferSize indexBuffer vkc
+                    VulkanBuffer.ensureWidth vertexBufferSize vertexBuffer vkc
+                    VulkanBuffer.ensureWidth indexBufferSize indexBuffer vkc
 
                     // upload vertices and indices
                     let mutable vertexOffset = 0
@@ -227,14 +227,14 @@ type VulkanRendererImGui
                         let drawList = let range = drawData.CmdLists in range[i]
                         let vertexBufferSize = drawList.VtxBuffer.Size * sizeof<ImDrawVert>
                         let indexBufferSize = drawList.IdxBuffer.Size * sizeof<uint16>
-                        Nu.Vulkan.Buffer.writeSubdata vertexOffset 0 vertexBufferSize 1 drawList.VtxBuffer.Data vertexBuffer vkc
-                        Nu.Vulkan.Buffer.writeSubdata indexOffset 0 indexBufferSize 1 drawList.IdxBuffer.Data indexBuffer vkc
+                        VulkanBuffer.writeSubdata vertexOffset 0 vertexBufferSize 1 drawList.VtxBuffer.Data vertexBuffer vkc
+                        VulkanBuffer.writeSubdata indexOffset 0 indexBufferSize 1 drawList.IdxBuffer.Data indexBuffer vkc
                         vertexOffset <- vertexOffset + vertexBufferSize
                         indexOffset <- indexOffset + indexBufferSize
 
                     // flush data
-                    Nu.Vulkan.Buffer.flushSubdata 0 0 vertexBufferSizeTotal 1 vertexBuffer vkc
-                    Nu.Vulkan.Buffer.flushSubdata 0 0 indexBufferSizeTotal 1 indexBuffer vkc
+                    VulkanBuffer.flushSubdata 0 0 vertexBufferSizeTotal 1 vertexBuffer vkc
+                    VulkanBuffer.flushSubdata 0 0 indexBufferSizeTotal 1 indexBuffer vkc
 
                     // bind vertex and index buffers
                     let mutable vertexBuffer = vertexBuffer.VkBuffer

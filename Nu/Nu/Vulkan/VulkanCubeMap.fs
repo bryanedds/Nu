@@ -26,8 +26,8 @@ type CubeMapGeometry =
       PrimitiveTopology : VkPrimitiveTopology
       ElementCount : int
       Vertices : Vector3 array
-      VertexBuffer : Nu.Vulkan.Buffer
-      IndexBuffer : Nu.Vulkan.Buffer }
+      VertexBuffer : VulkanBuffer
+      IndexBuffer : VulkanBuffer }
 
 /// Describes a renderable cube map surface.
 type [<Struct>] CubeMapSurface =
@@ -40,7 +40,7 @@ type [<Struct>] CubeMapSurface =
 
 /// Describes a cube map pipeline that's loaded into GPU.
 type CubeMapPipeline =
-    { EyeUniform : Nu.Vulkan.Buffer
+    { EyeUniform : VulkanBuffer
       Pipeline : Pipeline }
 
 /// The key identifying a cube map.
@@ -198,8 +198,8 @@ module CubeMap =
             if renderable then
 
                 // create buffers
-                let vertexBuffer = Buffer.createVertexStagedFromMemory vertexData vkc
-                let indexBuffer = Buffer.createIndexStagedFromMemory indexData vkc
+                let vertexBuffer = VulkanBuffer.createVertexStagedFromMemory vertexData vkc
+                let indexBuffer = VulkanBuffer.createIndexStagedFromMemory indexData vkc
 
                 // fin
                 ([||], vertexBuffer, indexBuffer)
@@ -216,7 +216,7 @@ module CubeMap =
                     vertices[i] <- vertex
                 
                 // fin
-                (vertices, Unchecked.defaultof<Nu.Vulkan.Buffer>, Unchecked.defaultof<Nu.Vulkan.Buffer>)
+                (vertices, Unchecked.defaultof<VulkanBuffer>, Unchecked.defaultof<VulkanBuffer>)
 
         // make cube map geometry
         let geometry =
@@ -237,14 +237,14 @@ module CubeMap =
 
     /// Destroy cube map geometry.
     let destroyCubeMapGeometry geometry vkc =
-        Buffer.destroy geometry.VertexBuffer vkc
-        Buffer.destroy geometry.IndexBuffer vkc
+        VulkanBuffer.destroy geometry.VertexBuffer vkc
+        VulkanBuffer.destroy geometry.IndexBuffer vkc
     
     /// Create a CubeMapPipeline.
     let createCubeMapPipeline shaderPath colorAttachmentFormat (vkc : VulkanContext) =
 
         // create eye buffer
-        let eyeUniform = Buffer.create Uniform sizeof<Eye> vkc
+        let eyeUniform = VulkanBuffer.create Uniform sizeof<Eye> vkc
 
         // create pipeline
         let pipeline =
@@ -297,7 +297,7 @@ module CubeMap =
             // specify eye
             let mutable eyeDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.Pipeline.DrawIndex pipeline.Pipeline $ fun vkSet ->
                 let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
-                Buffer.uploadValue eye pipeline.EyeUniform vkc
+                VulkanBuffer.uploadValue eye pipeline.EyeUniform vkc
                 Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.EyeUniform vkSet
 
             // specify material

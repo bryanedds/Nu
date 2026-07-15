@@ -16,8 +16,8 @@ type EnvironmentFilter =
 
 /// Describes an environment filter pipeline that's loaded into GPU.
 type EnvironmentFilterPipeline =
-    { EyeUniform : Nu.Vulkan.Buffer
-      EnvironmentFilterUniform : Nu.Vulkan.Buffer
+    { EyeUniform : VulkanBuffer
+      EnvironmentFilterUniform : VulkanBuffer
       Pipeline : Pipeline }
 
 /// A collection of maps consisting a light map.
@@ -146,8 +146,8 @@ module LightMap =
     let createEnvironmentFilterPipeline shaderPath colorAttachmentFormat (vkc : VulkanContext) =
 
         // create uniform buffers
-        let eyeUniform = Buffer.create Uniform sizeof<Eye> vkc
-        let environmentFilterUniform = Buffer.create Uniform sizeof<EnvironmentFilter> vkc
+        let eyeUniform = VulkanBuffer.create Uniform sizeof<Eye> vkc
+        let environmentFilterUniform = VulkanBuffer.create Uniform sizeof<EnvironmentFilter> vkc
 
         // create pipeline
         let pipeline =
@@ -203,12 +203,12 @@ module LightMap =
 
                 // specify eye
                 let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
-                Buffer.uploadValue eye pipeline.EyeUniform vkc
+                VulkanBuffer.uploadValue eye pipeline.EyeUniform vkc
                 Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.EyeUniform vkSet
 
                 // specify environment filter
                 let environmentFilter = EnvironmentFilter (roughness = roughness, resolution = resolution)
-                Buffer.uploadValue environmentFilter pipeline.EnvironmentFilterUniform vkc
+                VulkanBuffer.uploadValue environmentFilter pipeline.EnvironmentFilterUniform vkc
                 Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.EnvironmentFilterUniform vkSet
 
             // specify cube map

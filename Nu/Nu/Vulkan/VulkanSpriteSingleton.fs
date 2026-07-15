@@ -27,8 +27,8 @@ module SpriteSingleton =
     let createSpriteSingletonPipeline (vkc : VulkanContext) =
 
         // create sprite uniform buffers
-        let spriteVertUniform = Buffer.create Uniform sizeof<SpriteVert> vkc
-        let spriteFragUniform = Buffer.create Uniform sizeof<SpriteFrag> vkc
+        let spriteVertUniform = VulkanBuffer.create Uniform sizeof<SpriteVert> vkc
+        let spriteFragUniform = VulkanBuffer.create Uniform sizeof<SpriteFrag> vkc
         
         // create sprite pipeline
         let pipeline =
@@ -70,16 +70,16 @@ module SpriteSingleton =
         let indexData = [|0u; 1u; 2u; 2u; 3u; 0u|]
         
         // create buffers
-        let vertexBuffer = Buffer.createVertexStagedFromArray vertexData vkc
-        let indexBuffer = Buffer.createIndexStagedFromArray indexData vkc
+        let vertexBuffer = VulkanBuffer.createVertexStagedFromArray vertexData vkc
+        let indexBuffer = VulkanBuffer.createIndexStagedFromArray indexData vkc
         
         // fin
         (vertexBuffer, indexBuffer)
 
     /// Draw a single sprite.
     let drawSpriteSingleton
-        (vertices : Nu.Vulkan.Buffer,
-         indices : Nu.Vulkan.Buffer,
+        (vertices : VulkanBuffer,
+         indices : VulkanBuffer,
          absolute,
          viewProjectionClipAbsolute : Matrix4x4 inref,
          viewProjectionClipRelative : Matrix4x4 inref,
@@ -93,8 +93,8 @@ module SpriteSingleton =
          texture : Texture,
          sampler : Sampler,
          viewport : Viewport,
-         spriteVertUniform : Nu.Vulkan.Buffer,
-         spriteFragUniform : Nu.Vulkan.Buffer,
+         spriteVertUniform : VulkanBuffer,
+         spriteFragUniform : VulkanBuffer,
          pipeline : Pipeline,
          vkc : VulkanContext) =
 
@@ -172,8 +172,8 @@ module SpriteSingleton =
                 let mutable uniformDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.DrawIndex pipeline $ fun vkSet ->
                     let spriteVert = SpriteVert (modelViewProjection = modelViewProjection, texCoords4 = v4 texCoords.Min.X texCoords.Min.Y texCoords.Size.X texCoords.Size.Y)
                     let spriteFrag = SpriteFrag (color = color.V4)
-                    Buffer.uploadValue spriteVert spriteVertUniform vkc
-                    Buffer.uploadValue spriteFrag spriteFragUniform vkc
+                    VulkanBuffer.uploadValue spriteVert spriteVertUniform vkc
+                    VulkanBuffer.uploadValue spriteFrag spriteFragUniform vkc
                     Pipeline.writeDescriptorUniformBuffer 0 0 spriteVertUniform vkSet
                     Pipeline.writeDescriptorUniformBuffer 1 0 spriteFragUniform vkSet
 

@@ -62,8 +62,8 @@ type [<ReferenceEquality>] SpriteBatchEnv =
           Pipeline : Pipeline
           UnfilteredSampler : Sampler
           FilteredSampler : Sampler
-          SpritesUniform : Nu.Vulkan.Buffer
-          ViewProjectionUniform : Nu.Vulkan.Buffer
+          SpritesUniform : VulkanBuffer
+          ViewProjectionUniform : VulkanBuffer
           Perimeters : Vector4 array
           Pivots : Vector2 array
           Rotations : single array
@@ -78,8 +78,8 @@ module SpriteBatch =
     let private createSpriteBatchPipeline (vkc : VulkanContext) =
 
         // create uniforms
-        let spritesUniform = Buffer.create Uniform (Constants.Render.SpriteBatchSize * sizeof<Sprite>) vkc
-        let viewProjectionUniform = Buffer.create Uniform sizeof<ViewProjection> vkc
+        let spritesUniform = VulkanBuffer.create Uniform (Constants.Render.SpriteBatchSize * sizeof<Sprite>) vkc
+        let viewProjectionUniform = VulkanBuffer.create Uniform sizeof<ViewProjection> vkc
         
         // create sprite batch pipeline
         let pipeline =
@@ -156,13 +156,13 @@ module SpriteBatch =
                             sprite.rotation <- env.Rotations[i]
                             sprite.texCoords <- env.TexCoordses[i]
                             sprite.color <- env.Colors[i]
-                            Buffer.writeSubdata (i * spriteSize) 0 spriteSize 1 (NativePtr.toNativeInt spritePtr) env.SpritesUniform env.VulkanContext
-                        Buffer.flushSubdata 0 0 spriteSize env.SpriteIndex env.SpritesUniform env.VulkanContext
+                            VulkanBuffer.writeSubdata (i * spriteSize) 0 spriteSize 1 (NativePtr.toNativeInt spritePtr) env.SpritesUniform env.VulkanContext
+                        VulkanBuffer.flushSubdata 0 0 spriteSize env.SpriteIndex env.SpritesUniform env.VulkanContext
                         Pipeline.writeDescriptorUniformBuffer 0 0 env.SpritesUniform vkSet
 
                         // specify viewProjection
                         let mutable viewProjection = ViewProjection (viewProjection = if env.State.Absolute then env.ViewProjection2dAbsolute else env.ViewProjection2dRelative)
-                        Buffer.uploadValue viewProjection env.ViewProjectionUniform env.VulkanContext
+                        VulkanBuffer.uploadValue viewProjection env.ViewProjectionUniform env.VulkanContext
                         Pipeline.writeDescriptorUniformBuffer 1 0 env.ViewProjectionUniform vkSet
 
                     // specify material

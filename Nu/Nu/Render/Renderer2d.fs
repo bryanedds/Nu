@@ -191,14 +191,14 @@ type [<ReferenceEquality>] VulkanRenderer2d =
     private
         { VulkanContext : VulkanContext
           mutable Viewport : Viewport
-          TextQuad : Nu.Vulkan.Buffer * Nu.Vulkan.Buffer
+          TextQuad : VulkanBuffer * VulkanBuffer
           TextureDumpster : TextureDumpster
           UnfilteredSampler : Sampler
           FilteredSampler : Sampler
           TextTextures : Dictionary<obj, bool ref * (int * int * Matrix4x4 * Texture)>
           SpriteBatchEnv : SpriteBatchEnv
-          SpritePipeline : Nu.Vulkan.Buffer * Nu.Vulkan.Buffer * Pipeline
-          ContourTessellationPipeline : Nu.Vulkan.Buffer * Nu.Vulkan.Buffer * Nu.Vulkan.Buffer * Pipeline
+          SpritePipeline : VulkanBuffer * VulkanBuffer * Pipeline
+          ContourTessellationPipeline : VulkanBuffer * VulkanBuffer * VulkanBuffer * Pipeline
           RenderPackages : Packages<RenderAsset, AssetClient>
           SpineSkeletonRenderers : Dictionary<uint64, bool ref * Spine.SkeletonRenderer>
           mutable RenderPackageCachedOpt : RenderPackageCached
@@ -1077,8 +1077,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             Sampler.destroy renderer.FilteredSampler
             Pipeline.destroy spritePipeline renderer.VulkanContext
             Pipeline.destroy tessellationPipeline renderer.VulkanContext
-            Nu.Vulkan.Buffer.destroy textVertexBuffer renderer.VulkanContext
-            Nu.Vulkan.Buffer.destroy textIndexBuffer renderer.VulkanContext
+            VulkanBuffer.destroy textVertexBuffer renderer.VulkanContext
+            VulkanBuffer.destroy textIndexBuffer renderer.VulkanContext
 
             // destroy sprite batch environment
             SpriteBatch.destroySpriteBatchEnv renderer.SpriteBatchEnv

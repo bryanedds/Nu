@@ -19,9 +19,9 @@ module ContourTessellation =
 
         // create buffers
         let count = 1024 // TODO: P1: make constant.
-        let vertexBuffer = Buffer.create (Vertex true) (count * sizeof<ContourVertex>) vkc
-        let indexBuffer = Buffer.create (BufferType.Index true) (count * sizeof<uint32>) vkc
-        let modelViewProjectionUniform = Buffer.create Uniform sizeof<Matrix4x4> vkc
+        let vertexBuffer = VulkanBuffer.create (Vertex true) (count * sizeof<ContourVertex>) vkc
+        let indexBuffer = VulkanBuffer.create (VulkanBufferType.Index true) (count * sizeof<uint32>) vkc
+        let modelViewProjectionUniform = VulkanBuffer.create Uniform sizeof<Matrix4x4> vkc
         
         // create pipeline
         let vertexSize = sizeof<ContourVertex> // = sizeof<Vector2> + sizeof<Color> = 2 * sizeof<single> + 4 * sizeof<single>
@@ -49,7 +49,7 @@ module ContourTessellation =
          modelViewProjection : Matrix4x4 inref,
          clipOpt : Box2 voption inref,
          viewport : Viewport,
-         (vertexBuffer : Nu.Vulkan.Buffer, indexBuffer : Nu.Vulkan.Buffer, modelViewProjectionUniform : Nu.Vulkan.Buffer, pipeline : Pipeline),
+         (vertexBuffer : VulkanBuffer, indexBuffer : VulkanBuffer, modelViewProjectionUniform : VulkanBuffer, pipeline : Pipeline),
          vkc : VulkanContext) =
             
         // only draw if scissor (and therefore also viewport) is valid
@@ -84,13 +84,13 @@ module ContourTessellation =
             | Some vkPipeline ->
 
                 // update vertices and indices
-                Buffer.uploadArray tessellation.Vertices vertexBuffer vkc
-                Buffer.uploadArray tessellation.Indices indexBuffer vkc
+                VulkanBuffer.uploadArray tessellation.Vertices vertexBuffer vkc
+                VulkanBuffer.uploadArray tessellation.Indices indexBuffer vkc
 
                 // specify uniforms
                 let modelViewProjection = modelViewProjection
                 let mutable uniformDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.DrawIndex pipeline $ fun vkSet ->
-                    Buffer.uploadValue modelViewProjection modelViewProjectionUniform vkc
+                    VulkanBuffer.uploadValue modelViewProjection modelViewProjectionUniform vkc
                     Pipeline.writeDescriptorUniformBuffer 0 0 modelViewProjectionUniform vkSet
 
                 // set up render
@@ -121,8 +121,8 @@ module ContourTessellation =
                 VulkanHl.reportDrawScope ()
 
                 // advance vertex and index buffers
-                Buffer.advance vertexBuffer
-                Buffer.advance indexBuffer
+                VulkanBuffer.advance vertexBuffer
+                VulkanBuffer.advance indexBuffer
 
                 // advance pipeline
                 Pipeline.advance 1 pipeline

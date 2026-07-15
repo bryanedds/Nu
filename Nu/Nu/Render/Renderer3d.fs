@@ -2783,7 +2783,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
         // begin instance buffer frames as requested on previous frame
         for geometry in renderer.GeometryInstanced do
-            Buffer.beginFrame geometry.InstanceBuffer
+            VulkanBuffer.beginFrame geometry.InstanceBuffer
         renderer.GeometryInstanced.Clear ()
 
         // begin pipeline frames
