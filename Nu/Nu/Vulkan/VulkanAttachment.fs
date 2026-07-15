@@ -106,7 +106,6 @@ module Attachment =
         Texture.destroy z context
     
     /// Create geometry attachments.
-    /// TODO: DJL: this z attachment is unused so maybe worth removing.
     let createGeometryAttachments resolutionX resolutionY context =
         let depth = createColorAttachment Texture2d VkImageUsageFlags.Sampled R32f Red resolutionX resolutionY context
         let albedo = createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba8 Rgba resolutionX resolutionY context

@@ -89,7 +89,6 @@ module LightMap =
             render false lightAmbientOverride origin view viewSkyBox frustum projection projection bounds i reflectionCubeMap.Image
 
             // take a snapshot for testing
-            // TODO: DJL: implement.
             //Hl.saveFramebufferRgbaToBitmap resolution resolution ("Reflection." + string reflectionCubeMapId + "." + string i + ".bmp")
 
         // end reflection rendering
@@ -136,7 +135,6 @@ module LightMap =
                 irradiancePipeline getCommandBuffer advanceCommandBufferWhenNeeded context
 
             // take a snapshot for testing
-            // TODO: DJL: implement.
             //Hl.saveFramebufferRgbaToBitmap resolution resolution ("Irradiance." + string cubeMapId + "." + string i + ".bmp")
 
         // end cubemap rendering
@@ -302,7 +300,6 @@ module LightMap =
                     environmentFilterPipeline getCommandBuffer advanceCommandBufferWhenNeeded context
 
                 // take a snapshot for testing
-                // TODO: DJL: implement.
                 //Hl.saveFramebufferRgbaToBitmap (int mipResolution) (int mipResolution) ("EnvironmentFilter." + string i + "." + string mip + ".bmp")
 
         // end cubemap rendering

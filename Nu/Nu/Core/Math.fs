@@ -1724,7 +1724,6 @@ module Math =
         else b % a = 0
 
     /// Compute the size of the stride.
-    /// TODO: DJL: perhaps calculating this stuff manually is a bad idea?
     let Stride (alignment, size) =
         if size = 0 then size // just to prevent division by 0; size should be > 0
         elif alignment = 0 then size

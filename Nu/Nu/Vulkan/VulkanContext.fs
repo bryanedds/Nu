@@ -677,7 +677,8 @@ type [<ReferenceEquality>] VulkanContext =
         // choose extensions
         use debugUtilsWrap = new StringWrap (Vulkan.VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
         let extensions =
-            Array.init (sdlExtensionCountInt + if Hl.ValidationLayersActivated then 1 else 0)
+            Array.init
+                (sdlExtensionCountInt + if Hl.ValidationLayersActivated then 1 else 0)
                 (fun i -> if i < sdlExtensionCountInt then NativePtr.get sdlExtensions i else debugUtilsWrap.Pointer)
 
         // check for portability enumeration extension - using MoltenVK in place of Vulkan loader won't support it (on iOS Simulator),
@@ -691,29 +692,29 @@ type [<ReferenceEquality>] VulkanContext =
             else extensions
         use extensionsPin = new ArrayPin<_> (extensions)
             
-        // TODO: P1: DJL: complete VkApplicationInfo before merging to master
+        // TODO: P0: complete VkApplicationInfo before merging to master
         // and check for available vulkan version (for the instance, NOT the physical device) as described in 
         // https://registry.khronos.org/vulkan/specs/1.3-extensions/html/chap4.html#VkApplicationInfo.
         // does the wrapper even cover NULL vkGetInstanceProcAddr for vkEnumerateInstanceVersion?
-        let mutable aInfo = VkApplicationInfo ()
+        let mutable appInfo = VkApplicationInfo ()
 
         // this is the *maximum* Vulkan version
-        aInfo.apiVersion <- VkVersion.Version_1_3
+        appInfo.apiVersion <- VkVersion.Version_1_3
 
         // create instance
-        let mutable info = VkInstanceCreateInfo ()
-        info.pApplicationInfo <- &&aInfo
-        info.enabledExtensionCount <- uint extensions.Length
-        info.ppEnabledExtensionNames <- extensionsPin.Pointer
+        let mutable instanceInfo = VkInstanceCreateInfo ()
+        instanceInfo.pApplicationInfo <- &&appInfo
+        instanceInfo.enabledExtensionCount <- uint extensions.Length
+        instanceInfo.ppEnabledExtensionNames <- extensionsPin.Pointer
         if Constants.Vulkan.MoltenVk && portabilityEnumerationAvailable then
-            info.flags <- VkInstanceCreateFlags.EnumeratePortabilityKHR
+            instanceInfo.flags <- VkInstanceCreateFlags.EnumeratePortabilityKHR
         if Hl.ValidationLayersActivated then
             let mutable debugInfo = debugInfo
-            info.pNext <- asVoidPtr &debugInfo
-            info.enabledLayerCount <- 1u
-            info.ppEnabledLayerNames <- layerWrap.Pointer
+            instanceInfo.pNext <- asVoidPtr &debugInfo
+            instanceInfo.enabledLayerCount <- 1u
+            instanceInfo.ppEnabledLayerNames <- layerWrap.Pointer
         let mutable instance = Unchecked.defaultof<VkInstance>
-        Vulkan.vkCreateInstance (&info, nullPtr, &instance) |> Hl.check
+        Vulkan.vkCreateInstance (&instanceInfo, nullPtr, &instance) |> Hl.check
         SetInstanceApi (Vulkan.GetApi instance)
         instance
 

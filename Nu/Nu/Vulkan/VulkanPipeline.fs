@@ -366,7 +366,6 @@ type Pipeline =
                 NativePtr.set infos i info
                 
             // create vulkan pipelines
-            // TODO: DJL: consider pipeline cache.
             let vkPipelines = Array.zeroCreate<VkPipeline> pipelineSettings.Length
             use vkPipelinesPin = new ArrayPin<_> (vkPipelines)
             DeviceApi.vkCreateGraphicsPipelines (VkPipelineCache.Null, uint vkPipelines.Length, infos, nullPtr, vkPipelinesPin.Pointer) |> Hl.check

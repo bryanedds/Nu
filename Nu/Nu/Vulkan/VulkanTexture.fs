@@ -788,7 +788,6 @@ type TextureClient (lazyTextureQueuesOpt : ConcurrentDictionary<_, _> option) =
         | (true, texture) -> Right texture
 
     /// Attempt to create a filtered memoized texture from a file.
-    /// TODO: DJL: maybe rename these methods as they no longer describe actual filtering.
     member this.TryCreateTextureFiltered desireLazy compression filePath thread context =
         this.TryCreateTexture desireLazy true compression filePath thread context
     

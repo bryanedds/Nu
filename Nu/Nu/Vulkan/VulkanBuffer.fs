@@ -13,8 +13,6 @@ open Vortice.Vulkan
 open Prime
 open Nu
 
-// TODO: DJL: doc comments!
-
 // The type of vulkan buffer being utilized.
 type VulkanBufferType =
     | Staging
