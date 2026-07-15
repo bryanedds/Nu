@@ -67,7 +67,7 @@ module SkyBox =
     let drawSkyBox
         (eyeCenter : Vector3)
         (view : Matrix4x4)
-        (projection : Matrix4x4)
+        (projectionUnflipped : Matrix4x4)
         (color : Color)
         (brightness : single)
         (cubeMap : Texture)
@@ -81,7 +81,7 @@ module SkyBox =
 
         // compute vulkan-appropriate matrices
         let viewInverse = view.Inverted
-        let projection = projection.Flipped
+        let projection = projectionUnflipped.Flipped
         let projectionInverse = projection.Inverted
         let viewProjection = view * projection
 
