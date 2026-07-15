@@ -702,6 +702,7 @@ type [<ReferenceEquality>] VulkanContext =
             info.ppEnabledLayerNames <- layerWrap.Pointer
         let mutable instance = Unchecked.defaultof<VkInstance>
         Vulkan.vkCreateInstance (&info, nullPtr, &instance) |> VulkanHl.check
+        VulkanInstance <- Vulkan.GetApi instance // initialize vulkan instance api
         instance
 
     // TODO: DJL: try separate this from validation status, same for create instance debug.
@@ -770,7 +771,7 @@ type [<ReferenceEquality>] VulkanContext =
         physicalDeviceOpt
     
     /// Create the logical device.
-    static member private createLogicalDevice (physicalDevice : PhysicalDevice) =
+    static member private createLogicalDevice instance (physicalDevice : PhysicalDevice) =
 
         // MoltenVK features
         let portabilitySubsetExtensionName = NativePtr.spanToString Vulkan.VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME
@@ -826,6 +827,7 @@ type [<ReferenceEquality>] VulkanContext =
         info.pEnabledFeatures <- &&features
         let mutable device = Unchecked.defaultof<VkDevice>
         VulkanInstance.vkCreateDevice (physicalDevice.VkPhysicalDevice, &info, nullPtr, &device) |> VulkanHl.check
+        VulkanDevice <- Vulkan.GetApi (instance, device) // initialize vulkan device api
         device
 
     /// Create the VMA allocator.
@@ -1067,9 +1069,6 @@ type [<ReferenceEquality>] VulkanContext =
         // create instance
         let instance = VulkanContext.createVulkanInstance debugInfo
 
-        // initialize vulkan instance api
-        VulkanInstance <- Vulkan.GetApi instance
-
         // create debug messenger if validation activated
         let debugMessengerOpt = VulkanContext.tryCreateDebugMessenger debugInfo
         
@@ -1081,10 +1080,7 @@ type [<ReferenceEquality>] VulkanContext =
         | Some physicalDevice ->
 
             // create device
-            let device = VulkanContext.createLogicalDevice physicalDevice
-
-            // initialize vulkan device api
-            VulkanDevice <- Vulkan.GetApi (instance, device)
+            let device = VulkanContext.createLogicalDevice instance physicalDevice
 
             // create vma allocator
             let allocator = VulkanContext.createVmaAllocator physicalDevice device instance
