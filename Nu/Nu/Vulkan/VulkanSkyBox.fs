@@ -140,11 +140,8 @@ module SkyBox =
             // tear down render
             DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
 
-            // report draw scope
-            Hl.reportDrawScope ()
-
             // advance pipeline
-            Pipeline.advance 1 pipeline.Pipeline
+            Pipeline.advance 1 true pipeline.Pipeline
 
             // advance rendering command buffer
             VulkanContext.advanceRenderCommandBuffer context

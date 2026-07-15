@@ -313,9 +313,9 @@ module Hl =
     let mutable internal ValidationLayersActivated = false
 
     let mutable internal DrawReportLock = obj ()
-    let mutable internal DrawScopeCount = 0
-    let mutable internal DrawCallCount = 0
     let mutable internal DrawInstanceCount = 0
+    let mutable internal DrawCallCount = 0
+    let mutable internal DrawScopeCount = 0
 
     // provides id for a texture on the gpu that is globally unique i.e. cannot be reused after texture is destroyed,
     // which is essential for tracking descriptor writes
@@ -1227,23 +1227,24 @@ module Hl =
             (minimalMipmapResolution, minimalMipmapBytes, remainingMipmapBytes)
         else (v2i dds.Width dds.Height, bytes, mipmapBytesArray)
 
-    /// Report the fact that a draw scope has been completed.
+    /// Report the fact that a draw call has just been made with the given number of instances.
     let reportDrawScope () =
         lock DrawReportLock (fun () ->
-            DrawScopeCount <- inc DrawCallCount)
+            DrawScopeCount <- inc DrawScopeCount )
 
     /// Report the fact that a draw call has just been made with the given number of instances.
-    let reportDrawCall drawInstances =
+    let reportDrawCall drawInstances drawScope =
         lock DrawReportLock (fun () ->
+            DrawInstanceCount <- DrawInstanceCount + drawInstances
             DrawCallCount <- inc DrawCallCount
-            DrawInstanceCount <- DrawInstanceCount + drawInstances)
+            if drawScope then DrawScopeCount <- inc DrawScopeCount )
 
-    /// Reset the running number of draw events.
+    /// Reset the running counts of draw events.
     let resetDrawCounters () =
         lock DrawReportLock (fun () ->
-            DrawScopeCount <- 0
+            DrawInstanceCount <- 0
             DrawCallCount <- 0
-            DrawInstanceCount <- 0)
+            DrawScopeCount <- 0)
 
     /// Get the running number of draw scopes.
     let getDrawScopeCount () =

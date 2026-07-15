@@ -1795,7 +1795,7 @@ module PhysicallyBased =
                 VulkanBuffer.advance geometry.InstanceBuffer
 
                 // advance pipeline
-                Pipeline.advance surfacesCount pipeline.Pipeline
+                Pipeline.advance surfacesCount false pipeline.Pipeline
 
             // abort
             | None -> Log.warnOnce ("Cannot draw " + getTypeName pipeline + " because VkPipeline does not exist.")
@@ -2023,7 +2023,7 @@ module PhysicallyBased =
                 VulkanBuffer.advance geometry.InstanceBuffer
 
                 // advance pipeline
-                Pipeline.advance surfacesCount pipeline.Pipeline
+                Pipeline.advance surfacesCount false pipeline.Pipeline
 
             // abort
             | None -> Log.warnOnce ("Cannot draw " + getTypeName pipeline + " because VkPipeline does not exist.")
@@ -2253,11 +2253,8 @@ module PhysicallyBased =
             // tear down render
             DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
 
-            // report draw scope
-            Hl.reportDrawScope ()
-
             // advance pipeline
-            Pipeline.advance 1 pipeline.Pipeline
+            Pipeline.advance 1 true pipeline.Pipeline
 
             // advance rendering command buffer
             VulkanContext.advanceRenderCommandBuffer context
@@ -2465,11 +2462,8 @@ module PhysicallyBased =
             // tear down render
             DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
 
-            // report draw scope
-            Hl.reportDrawScope ()
-
             // advance pipeline
-            Pipeline.advance 1 pipeline.Pipeline
+            Pipeline.advance 1 true pipeline.Pipeline
 
             // advance rendering command buffer
             VulkanContext.advanceRenderCommandBuffer context
@@ -2621,11 +2615,8 @@ module PhysicallyBased =
             // tear down render
             DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
 
-            // report draw scope
-            Hl.reportDrawScope ()
-
             // advance pipeline
-            Pipeline.advance 1 pipeline.Pipeline
+            Pipeline.advance 1 true pipeline.Pipeline
 
             // advance rendering command buffer
             VulkanContext.advanceRenderCommandBuffer context
@@ -2768,11 +2759,8 @@ module PhysicallyBased =
             // tear down render
             DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
 
-            // report draw scope
-            Hl.reportDrawScope ()
-
             // advance pipeline
-            Pipeline.advance 1 pipeline.Pipeline
+            Pipeline.advance 1 true pipeline.Pipeline
 
             // advance rendering command buffer
             VulkanContext.advanceRenderCommandBuffer context
@@ -2899,11 +2887,8 @@ module PhysicallyBased =
             // tear down render
             DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
 
-            // report draw scope
-            Hl.reportDrawScope ()
-
             // advance pipeline
-            Pipeline.advance 1 pipeline.Pipeline
+            Pipeline.advance 1 true pipeline.Pipeline
 
             // advance rendering command buffer
             VulkanContext.advanceRenderCommandBuffer context
@@ -3059,11 +3044,8 @@ module PhysicallyBased =
             // tear down render
             DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
 
-            // report draw scope
-            Hl.reportDrawScope ()
-
             // advance pipeline
-            Pipeline.advance 1 pipeline.Pipeline
+            Pipeline.advance 1 true pipeline.Pipeline
 
             // advance rendering command buffer
             VulkanContext.advanceRenderCommandBuffer context
@@ -3192,11 +3174,8 @@ module PhysicallyBased =
             // tear down render
             DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
 
-            // report draw scope
-            Hl.reportDrawScope ()
-
             // advance pipeline
-            Pipeline.advance 1 pipeline.Pipeline
+            Pipeline.advance 1 true pipeline.Pipeline
 
             // advance rendering command buffer
             VulkanContext.advanceRenderCommandBuffer context
@@ -3387,11 +3366,8 @@ module PhysicallyBased =
             // tear down render
             DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
 
-            // report draw scope
-            Hl.reportDrawScope ()
-
             // advance pipeline
-            Pipeline.advance 1 pipeline.Pipeline
+            Pipeline.advance 1 true pipeline.Pipeline
 
             // advance rendering command buffer
             VulkanContext.advanceRenderCommandBuffer context
@@ -3530,11 +3506,8 @@ module PhysicallyBased =
             // tear down render
             DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
 
-            // report draw scope
-            Hl.reportDrawScope ()
-
             // advance pipeline
-            Pipeline.advance 1 pipeline.Pipeline
+            Pipeline.advance 1 true pipeline.Pipeline
 
             // advance rendering command buffer
             VulkanContext.advanceRenderCommandBuffer context
@@ -3832,7 +3805,7 @@ module PhysicallyBased =
             VulkanBuffer.advance geometry.InstanceBuffer
 
             // advance pipeline
-            Pipeline.advance surfacesCount pipeline.Pipeline
+            Pipeline.advance surfacesCount false pipeline.Pipeline
 
         // abort
         | None -> Log.warnOnce ("Cannot draw " + getTypeName pipeline + " because VkPipeline does not exist.")
@@ -3931,11 +3904,8 @@ module PhysicallyBased =
             // tear down render
             DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
 
-            // report draw scope
-            Hl.reportDrawScope ()
-
             // advance pipeline
-            Pipeline.advance 1 pipeline.Pipeline
+            Pipeline.advance 1 true pipeline.Pipeline
 
             // advance rendering command buffer
             VulkanContext.advanceRenderCommandBuffer context
@@ -4041,11 +4011,8 @@ module PhysicallyBased =
             // tear down render
             DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
 
-            // report draw scope
-            Hl.reportDrawScope ()
-
             // advance pipeline
-            Pipeline.advance 1 pipeline.Pipeline
+            Pipeline.advance 1 true pipeline.Pipeline
 
             // advance rendering command buffer
             VulkanContext.advanceRenderCommandBuffer context
@@ -4163,11 +4130,8 @@ module PhysicallyBased =
             // tear down render
             DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
 
-            // report draw scope
-            Hl.reportDrawScope ()
-
             // advance pipeline
-            Pipeline.advance 1 pipeline.Pipeline
+            Pipeline.advance 1 true pipeline.Pipeline
 
             // advance rendering command buffer
             VulkanContext.advanceRenderCommandBuffer context
@@ -4273,11 +4237,8 @@ module PhysicallyBased =
             // tear down render
             DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
 
-            // report draw scope
-            Hl.reportDrawScope ()
-
             // advance pipeline
-            Pipeline.advance 1 pipeline.Pipeline
+            Pipeline.advance 1 true pipeline.Pipeline
 
             // advance rendering command buffer
             VulkanContext.advanceRenderCommandBuffer context
@@ -4367,11 +4328,8 @@ module PhysicallyBased =
             // tear down render
             DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
 
-            // report draw scope
-            Hl.reportDrawScope ()
-
             // advance pipeline
-            Pipeline.advance 1 pipeline.Pipeline
+            Pipeline.advance 1 true pipeline.Pipeline
 
             // advance rendering command buffer
             VulkanContext.advanceRenderCommandBuffer context
