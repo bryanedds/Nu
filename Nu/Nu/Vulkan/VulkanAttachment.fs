@@ -1,5 +1,8 @@
 ﻿// Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace Nu.Vulkan
 open System
@@ -128,16 +131,7 @@ module Attachment =
         Texture.updateSize metadata z context
 
     /// Destroy geometry attachments.
-    let destroyGeometryAttachments
-        (depth : Texture,
-         albedo : Texture,
-         material : Texture,
-         normalPlus : Texture,
-         subdermalPlus : Texture,
-         scatterPlus : Texture,
-         clearCoatPlus : Texture,
-         z : Texture)
-        context =
+    let destroyGeometryAttachments (depth : Texture, albedo : Texture, material : Texture, normalPlus : Texture, subdermalPlus : Texture, scatterPlus : Texture, clearCoatPlus : Texture, z : Texture) context =
         Texture.destroy depth context
         Texture.destroy albedo context
         Texture.destroy material context

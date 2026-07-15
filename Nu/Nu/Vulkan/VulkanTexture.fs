@@ -1,5 +1,8 @@
 ﻿// Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace Nu.Vulkan
 open System
@@ -391,14 +394,6 @@ type [<CustomEquality; NoComparison>] TextureInternal =
 
     /// Metadata describing the texture.
     member this.TextureMetadata = this.TextureMetadata_
-    
-    override this.Equals thatObj =
-        match thatObj with
-        | :? TextureInternal as that -> this.Id_ = that.Id_
-        | _ -> false
-
-    override this.GetHashCode () = 
-        hash this.Id_
 
     /// Determine which image usage flags to use.
     static member private inferImageUsageFlags (mipmapMode : MipmapMode) (attachmentMode : AttachmentMode) optionalUsageFlags =
@@ -410,15 +405,7 @@ type [<CustomEquality; NoComparison>] TextureInternal =
         optionalUsageFlags
 
     /// Create a TextureInternal.
-    static member create
-        mipmapMode
-        attachmentMode
-        textureType
-        optionalUsageFlags
-        (internalFormat : Nu.Vulkan.ImageFormat)
-        pixelFormat
-        metadata
-        (context : VulkanContext) =
+    static member create mipmapMode attachmentMode textureType optionalUsageFlags (internalFormat : Nu.Vulkan.ImageFormat) pixelFormat metadata (context : VulkanContext) =
 
         // determine mip levels
         let mipLevels =
@@ -598,6 +585,14 @@ type [<CustomEquality; NoComparison>] TextureInternal =
         match VulkanHl.EmptyTextureOpt with
         | Some (:? TextureInternal as empty) -> empty
         | Some _ | None -> failwith "TextureInternal.empty not initialized properly."
+    
+    override this.Equals thatObj =
+        match thatObj with
+        | :? TextureInternal as that -> this.Id_ = that.Id_
+        | _ -> false
+
+    override this.GetHashCode () = 
+        hash this.Id_
 
 
 /// A texture that can be loaded from another thread.

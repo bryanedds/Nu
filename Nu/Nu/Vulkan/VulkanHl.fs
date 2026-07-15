@@ -1,5 +1,8 @@
 ﻿// Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace Nu.Vulkan
 open System
@@ -842,7 +845,6 @@ module VulkanHl =
         VulkanDeviceApi.vkResetFences (1u, &&fence) |> check
 
     /// Create a transient command buffer.
-    /// TODO: DJL: review choice of transient command buffers over normal ones.
     /// TODO: create matching destroy fn and use that?
     let createTransientCommandBuffer commandPool =
         let commandBuffer = allocateCommandBuffer VkCommandBufferLevel.Primary commandPool

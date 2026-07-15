@@ -1,5 +1,8 @@
 ﻿// Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace Nu.Vulkan
 open System
@@ -158,30 +161,30 @@ type VulkanBufferInternal =
 /// such as storage data, uniform data, and streaming data.
 type VulkanBuffer =
     private
-        { mutable BufferInternalCursor_ : int
+        { mutable BufferInternalsCursor_ : int
           BufferInternals_ : VulkanBufferInternal List
           BufferType_ : VulkanBufferType }
 
     member private this.BufferInternal =
-        this.BufferInternals_[this.BufferInternalCursor_]
+        this.BufferInternals_[this.BufferInternalsCursor_]
 
     /// Get the vulkan buffer currently at the cursor.
     member this.VkBuffer =
         this.BufferInternal.VkBuffer
 
     static member private ensureHeight (buffer : VulkanBuffer) context =
-        while buffer.BufferInternalCursor_ >= buffer.BufferInternals_.Count do
+        while buffer.BufferInternalsCursor_ >= buffer.BufferInternals_.Count do
             let bufferInternals = Array.init buffer.BufferInternals_.Count (fun _ -> VulkanBufferInternal.create buffer.BufferType_ buffer.BufferInternals_[0].Size context)
             buffer.BufferInternals_.AddRange bufferInternals
 
     /// Expand buffer width as necessary, disregarding all existing content.
     static member ensureWidth size (buffer : VulkanBuffer) context =
         VulkanBuffer.ensureHeight buffer context
-        let bufferInternalOld = buffer.BufferInternals_[buffer.BufferInternalCursor_]
+        let bufferInternalOld = buffer.BufferInternals_[buffer.BufferInternalsCursor_]
         if bufferInternalOld.Size < size then
             let bufferInternalNew = VulkanBufferInternal.create buffer.BufferType_ size context
             VulkanBuffer.copyData bufferInternalOld.Size bufferInternalOld.VkBuffer_ bufferInternalNew.VkBuffer_ context
-            buffer.BufferInternals_[buffer.BufferInternalCursor_] <- bufferInternalNew
+            buffer.BufferInternals_[buffer.BufferInternalsCursor_] <- bufferInternalNew
             VulkanBufferInternal.destroy bufferInternalOld context
 
     /// Copy data from the source buffer to the destination buffer.
@@ -193,15 +196,15 @@ type VulkanBuffer =
 
     /// Begin use of this buffer for the current frame.
     static member beginFrame buffer =
-        buffer.BufferInternalCursor_ <- 0
+        buffer.BufferInternalsCursor_ <- 0
 
     /// Advance the cursor.
     static member advance buffer =
-        buffer.BufferInternalCursor_ <- inc buffer.BufferInternalCursor_
+        buffer.BufferInternalsCursor_ <- inc buffer.BufferInternalsCursor_
 
     /// Create a new Buffer.
     static member create (bufferType : VulkanBufferType) bufferSize context =
-        { BufferInternalCursor_ = 0
+        { BufferInternalsCursor_ = 0
           BufferInternals_ = List [VulkanBufferInternal.create bufferType bufferSize context]
           BufferType_ = bufferType }
 

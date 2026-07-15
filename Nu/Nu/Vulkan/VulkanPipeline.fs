@@ -1,5 +1,8 @@
 ﻿// Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace Nu.Vulkan
 open System
@@ -388,13 +391,15 @@ type Pipeline =
             Log.warn "VkPipeline creation aborted."
             Map.empty
 
+    /// Destroy the given VkPipelines.
     static member private destroyVkPipelines pipeline =
         Map.iter (fun _ vkPipeline -> VulkanDeviceApi.vkDestroyPipeline (vkPipeline, nullPtr)) pipeline.VkPipelines_
-    
+
     /// Try to get the VkPipeline built for the given settings.
     static member tryGetVkPipeline blend cullFace pipeline =
         Map.tryFind (blend, cullFace) pipeline.VkPipelines_
 
+    ///
     static member writeDescriptorUniformBuffer (binding : int) (descriptorIndex : int) (buffer : VulkanBuffer) vkDescriptorSet =
 
         // buffer info
@@ -415,6 +420,7 @@ type Pipeline =
         // advance buffer
         VulkanBuffer.advance buffer
 
+    ///
     static member writeDescriptorSampledImageView (binding : int) (descriptorIndex : int) (imageView : VkImageView) vkDescriptorSet =
 
         // image info
@@ -432,6 +438,7 @@ type Pipeline =
         write.pImageInfo <- &&info
         VulkanDeviceApi.vkUpdateDescriptorSets (1u, &&write, 0u, nullPtr)
 
+    ///
     static member writeDescriptorSampledImageViews (binding : int) (descriptorIndex : int) (imageViews : VkImageView array) vkDescriptorSet =
 
         // image infos
@@ -452,6 +459,7 @@ type Pipeline =
         write.pImageInfo <- infosPtr
         VulkanDeviceApi.vkUpdateDescriptorSets (1u, &&write, 0u, nullPtr)
 
+    ///
     static member writeDescriptorCombinedImageViewSampler (binding : int) (descriptorIndex : int) (imageView : VkImageView) (sampler : Sampler) vkDescriptorSet =
 
         // image info
@@ -470,16 +478,20 @@ type Pipeline =
         write.pImageInfo <- &&info
         VulkanDeviceApi.vkUpdateDescriptorSets (1u, &&write, 0u, nullPtr)
 
+    ///
     static member writeDescriptorSampledTexture binding descriptorIndex (texture : Texture) vkDescriptorSet =
         Pipeline.writeDescriptorSampledImageView binding descriptorIndex texture.ImageView vkDescriptorSet
 
+    ///
     static member writeDescriptorSampledTextures binding descriptorIndex (textures : Texture array) vkDescriptorSet =
         let imageViews = Array.map (fun (texture : Texture) -> texture.ImageView) textures
         Pipeline.writeDescriptorSampledImageViews binding descriptorIndex imageViews vkDescriptorSet
 
+    ///
     static member writeDescriptorCombinedTextureSampler binding descriptorIndex (texture : Texture) sampler vkDescriptorSet =
         Pipeline.writeDescriptorCombinedImageViewSampler binding descriptorIndex texture.ImageView sampler vkDescriptorSet
 
+    ///
     static member writeDescriptorSampler (binding : int) (descriptorIndex : int) (sampler : Sampler) vkDescriptorSet =
         
         // image info
