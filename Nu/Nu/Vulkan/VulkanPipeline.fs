@@ -594,9 +594,9 @@ type Pipeline =
         let vertexBindingDescriptions = Array.map (fun (binding : VertexBinding) -> Hl.makeVertexBinding binding.Binding binding.Stride binding.InputRate ) vertexBindings
         let vertexAttributes =
             [|for i in 0 .. dec vertexBindings.Length do
-                  for j in 0 .. dec vertexBindings[i].Attributes.Length do
-                      let attribute = vertexBindings[i].Attributes[j]
-                      yield Hl.makeVertexAttribute attribute.Location vertexBindings[i].Binding attribute.Format attribute.Offset |]
+                for j in 0 .. dec vertexBindings[i].Attributes.Length do
+                    let attribute = vertexBindings[i].Attributes[j]
+                    yield Hl.makeVertexAttribute attribute.Location vertexBindings[i].Binding attribute.Format attribute.Offset |]
         let pushConstantRanges = Array.map (fun pushConstant -> Hl.makePushConstantRange pushConstant.Offset pushConstant.Size pushConstant.ShaderStage) pushConstants
 
         // create descriptor set layouts
