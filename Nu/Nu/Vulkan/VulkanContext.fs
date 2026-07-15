@@ -511,7 +511,6 @@ type [<ReferenceEquality>] VulkanContext =
           TextureQueue_ : ConcurrentCommandQueue
           ImageAvailableSemaphore_ : VkSemaphore
           RenderFence_ : VkFence
-          PresentFence_ : VkFence
           TransientFence_ : VkFence
           TextureFence_ : VkFence }
 
@@ -1121,7 +1120,6 @@ type [<ReferenceEquality>] VulkanContext =
             // setup execution for presentation on render thread
             let presentCommandPool = VulkanContext.createCommandPool false physicalDevice.PresentQueueFamily
             let presentCommandBuffer = (Hl.allocateCommandBuffers 1 VkCommandBufferLevel.Primary renderCommandPool)[0]
-            let presentFence = Hl.createFence true
             let imageAvailableSemaphore = Hl.createSemaphore ()
 
             // setup transient (one time) execution on render thread
@@ -1158,7 +1156,6 @@ type [<ReferenceEquality>] VulkanContext =
                   TextureQueue_ = textureQueue
                   ImageAvailableSemaphore_ = imageAvailableSemaphore
                   RenderFence_ = renderFence
-                  PresentFence_ = presentFence
                   TransientFence_ = transientFence
                   TextureFence_ = textureFence }
 
