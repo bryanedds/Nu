@@ -49,12 +49,12 @@ type Sampler =
             info.maxAnisotropy <- min vkc.MaxAnisotropy Constants.Render.TextureAnisotropyMax
         info.maxLod <- Vulkan.VK_LOD_CLAMP_NONE
         let mutable vkSampler = Unchecked.defaultof<VkSampler>
-        VulkanDevice.vkCreateSampler (&info, nullPtr, &vkSampler) |> VulkanHl.check
+        VulkanDeviceApi.vkCreateSampler (&info, nullPtr, &vkSampler) |> VulkanHl.check
         { VkSampler_ = vkSampler }
 
     /// Destroy a Sampler.
     static member destroy sampler =
-        VulkanDevice.vkDestroySampler (sampler.VkSampler_, nullPtr)
+        VulkanDeviceApi.vkDestroySampler (sampler.VkSampler_, nullPtr)
 
 /// The thread on which a texture is loaded.
 type TextureLoadThread =
@@ -272,12 +272,12 @@ type TextureVulkan =
           StagingBuffers = List () }
 
     static member destroy texture (vkc : VulkanContext) =
-        VulkanDevice.vkDestroyImageView (texture.ImageView, nullPtr)
+        VulkanDeviceApi.vkDestroyImageView (texture.ImageView, nullPtr)
         for i in 0 .. dec (texture.LayerViews.Length) do
-            VulkanDevice.vkDestroyImageView (texture.LayerViews[i], nullPtr)
+            VulkanDeviceApi.vkDestroyImageView (texture.LayerViews[i], nullPtr)
         for i in 0 .. dec (texture.SubViews.GetLength 0) do
             for j in 0 .. dec (texture.SubViews.GetLength 1) do
-                VulkanDevice.vkDestroyImageView (texture.SubViews[i, j], nullPtr)
+                VulkanDeviceApi.vkDestroyImageView (texture.SubViews[i, j], nullPtr)
         Vma.vmaDestroyImage (vkc.VmaAllocator, texture.Image, texture.Allocation)
         for i in 0 .. dec texture.StagingBuffers.Count do
             VulkanBuffer.destroy texture.StagingBuffers[i] vkc
@@ -294,7 +294,7 @@ module TextureModule =
             let mutable region = VkBufferImageCopy ()
             region.imageSubresource <- VulkanHl.makeSubresourceLayers mipLevel layer VkImageAspectFlags.Color
             region.imageExtent <- VkExtent3D (width, height, 1)
-            VulkanDevice.vkCmdCopyBufferToImage
+            VulkanDeviceApi.vkCmdCopyBufferToImage
                 (commandBuffer, vkBuffer, vkImage,
                  TransferDst.VkImageLayout,
                  1u, &&region)
@@ -315,7 +315,7 @@ module TextureModule =
             barrier.oldLayout <- Undefined.VkImageLayout
             barrier.newLayout <- TransferDst.VkImageLayout
             barrier.subresourceRange <- VulkanHl.makeSubresourceRange 1 (mipLevels - 1) layer 1 VkImageAspectFlags.Color
-            VulkanDevice.vkCmdPipelineBarrier
+            VulkanDeviceApi.vkCmdPipelineBarrier
                 (commandBuffer,
                  Undefined.PipelineStage,
                  TransferDst.PipelineStage,
@@ -330,7 +330,7 @@ module TextureModule =
             barrier.newLayout <- TransferDst.VkImageLayout
             barrier.subresourceRange.baseMipLevel <- 0u
             barrier.subresourceRange.levelCount <- 1u // only one level at a time from here on
-            VulkanDevice.vkCmdPipelineBarrier
+            VulkanDeviceApi.vkCmdPipelineBarrier
                 (commandBuffer,
                  ColorAttachmentRead.PipelineStage,
                  TransferDst.PipelineStage,
@@ -349,7 +349,7 @@ module TextureModule =
                 barrier.oldLayout <- TransferDst.VkImageLayout
                 barrier.newLayout <- TransferSrc.VkImageLayout
                 barrier.subresourceRange.baseMipLevel <- uint (i - 1)
-                VulkanDevice.vkCmdPipelineBarrier
+                VulkanDeviceApi.vkCmdPipelineBarrier
                     (commandBuffer,
                      TransferDst.PipelineStage,
                      TransferSrc.PipelineStage,
@@ -365,14 +365,14 @@ module TextureModule =
                         (i - 1) i layer layer
                         (VkRect2D (0, 0, uint mipWidth, uint mipHeight))
                         (VkRect2D (0, 0, uint nextWidth, uint nextHeight))
-                VulkanDevice.vkCmdBlitImage (commandBuffer, vkImage, TransferSrc.VkImageLayout, vkImage, TransferDst.VkImageLayout, 1u, &&blit, VkFilter.Linear)
+                VulkanDeviceApi.vkCmdBlitImage (commandBuffer, vkImage, TransferSrc.VkImageLayout, vkImage, TransferDst.VkImageLayout, 1u, &&blit, VkFilter.Linear)
 
                 // transition layout of previous image to be read by shader
                 barrier.srcAccessMask <- TransferSrc.Access
                 barrier.dstAccessMask <- ColorAttachmentRead.Access
                 barrier.oldLayout <- TransferSrc.VkImageLayout
                 barrier.newLayout <- ColorAttachmentRead.VkImageLayout
-                VulkanDevice.vkCmdPipelineBarrier
+                VulkanDeviceApi.vkCmdPipelineBarrier
                     (commandBuffer,
                      TransferSrc.PipelineStage,
                      ColorAttachmentRead.PipelineStage,
@@ -390,7 +390,7 @@ module TextureModule =
             barrier.oldLayout <- TransferDst.VkImageLayout
             barrier.newLayout <- ColorAttachmentRead.VkImageLayout
             barrier.subresourceRange.baseMipLevel <- uint (mipLevels - 1)
-            VulkanDevice.vkCmdPipelineBarrier
+            VulkanDeviceApi.vkCmdPipelineBarrier
                 (commandBuffer,
                  TransferDst.PipelineStage,
                  ColorAttachmentRead.PipelineStage,
@@ -729,7 +729,7 @@ type [<CustomEquality; NoComparison>] TextureInternal =
                     // check if hardware supports mipmap generation; this is done here to prevent unused (i.e. blank) mip levels
                     // TODO: DJL: check for VkFormatFeatureFlags.BlitSrc/Dst as well.
                     let mutable formatProperties = Unchecked.defaultof<VkFormatProperties>
-                    VulkanInstance.vkGetPhysicalDeviceFormatProperties (vkc.VkPhysicalDevice, internalFormat.VkFormat, &formatProperties)
+                    VulkanInstanceApi.vkGetPhysicalDeviceFormatProperties (vkc.PhysicalDevice.VkPhysicalDevice, internalFormat.VkFormat, &formatProperties)
                     let mipGenSupport = formatProperties.optimalTilingFeatures &&& VkFormatFeatureFlags.SampledImageFilterLinear <> VkFormatFeatureFlags.None
                     
                     // calculate mip levels

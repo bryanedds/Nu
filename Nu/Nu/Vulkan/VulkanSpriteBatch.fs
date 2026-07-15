@@ -176,23 +176,23 @@ module SpriteBatch =
 
                     // set up render
                     let mutable renderingInfo = VulkanHl.makeRenderingInfo [|env.VulkanContext.SwapchainImageView|] None renderArea None
-                    VulkanDevice.vkCmdBeginRendering (env.VulkanContext.RenderCommandBuffer, &&renderingInfo)
-                    VulkanDevice.vkCmdSetViewport (env.VulkanContext.RenderCommandBuffer, 0u, 1u, &&vkViewport)
-                    VulkanDevice.vkCmdSetScissor (env.VulkanContext.RenderCommandBuffer, 0u, 1u, &&scissor)
+                    VulkanDeviceApi.vkCmdBeginRendering (env.VulkanContext.RenderCommandBuffer, &&renderingInfo)
+                    VulkanDeviceApi.vkCmdSetViewport (env.VulkanContext.RenderCommandBuffer, 0u, 1u, &&vkViewport)
+                    VulkanDeviceApi.vkCmdSetScissor (env.VulkanContext.RenderCommandBuffer, 0u, 1u, &&scissor)
 
                     // set up pipeline
-                    VulkanDevice.vkCmdBindPipeline (env.VulkanContext.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
+                    VulkanDeviceApi.vkCmdBindPipeline (env.VulkanContext.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
 
                     // bind descriptor sets
-                    VulkanDevice.vkCmdBindDescriptorSets (env.VulkanContext.RenderCommandBuffer, VkPipelineBindPoint.Graphics, env.Pipeline.PipelineLayout, 0u, 1u, &&uniformDescriptorSet, 0u, nullPtr)
-                    VulkanDevice.vkCmdBindDescriptorSets (env.VulkanContext.RenderCommandBuffer, VkPipelineBindPoint.Graphics, env.Pipeline.PipelineLayout, 1u, 1u, &&materialDescriptorSet, 0u, nullPtr)
-                    VulkanDevice.vkCmdBindDescriptorSets (env.VulkanContext.RenderCommandBuffer, VkPipelineBindPoint.Graphics, env.Pipeline.PipelineLayout, 2u, 1u, &&samplerDescriptorSet, 0u, nullPtr)
+                    VulkanDeviceApi.vkCmdBindDescriptorSets (env.VulkanContext.RenderCommandBuffer, VkPipelineBindPoint.Graphics, env.Pipeline.PipelineLayout, 0u, 1u, &&uniformDescriptorSet, 0u, nullPtr)
+                    VulkanDeviceApi.vkCmdBindDescriptorSets (env.VulkanContext.RenderCommandBuffer, VkPipelineBindPoint.Graphics, env.Pipeline.PipelineLayout, 1u, 1u, &&materialDescriptorSet, 0u, nullPtr)
+                    VulkanDeviceApi.vkCmdBindDescriptorSets (env.VulkanContext.RenderCommandBuffer, VkPipelineBindPoint.Graphics, env.Pipeline.PipelineLayout, 2u, 1u, &&samplerDescriptorSet, 0u, nullPtr)
 
                     // draw
-                    VulkanDevice.vkCmdDraw (env.VulkanContext.RenderCommandBuffer, uint (6 * env.SpriteIndex), 1u, 0u, 0u)
+                    VulkanDeviceApi.vkCmdDraw (env.VulkanContext.RenderCommandBuffer, uint (6 * env.SpriteIndex), 1u, 0u, 0u)
 
                     // tear down render
-                    VulkanDevice.vkCmdEndRendering env.VulkanContext.RenderCommandBuffer
+                    VulkanDeviceApi.vkCmdEndRendering env.VulkanContext.RenderCommandBuffer
 
                     // report draw scope
                     VulkanHl.reportDrawScope ()

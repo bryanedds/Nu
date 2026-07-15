@@ -101,7 +101,7 @@ and DescriptorSet<'k when 'k : equality> =
         info.poolSizeCount <- uint poolSizes.Length
         info.pPoolSizes <- poolSizesPin.Pointer
         let mutable descriptorPool = Unchecked.defaultof<VkDescriptorPool>
-        VulkanDevice.vkCreateDescriptorPool (&info, nullPtr, &descriptorPool) |> VulkanHl.check
+        VulkanDeviceApi.vkCreateDescriptorPool (&info, nullPtr, &descriptorPool) |> VulkanHl.check
         descriptorPool
 
     static member private allocateVkDescriptorSets capacity descriptorSetDefinitions descriptorSetLayout =
@@ -114,7 +114,7 @@ and DescriptorSet<'k when 'k : equality> =
         info.pSetLayouts <- vkDescriptorSetLayoutsPin.Pointer
         let vkDescriptorSets = Array.zeroCreate<VkDescriptorSet> capacity
         use vkDescriptorSetsPin = new ArrayPin<_> (vkDescriptorSets)
-        VulkanDevice.vkAllocateDescriptorSets (&&info, vkDescriptorSetsPin.Pointer) |> VulkanHl.check
+        VulkanDeviceApi.vkAllocateDescriptorSets (&&info, vkDescriptorSetsPin.Pointer) |> VulkanHl.check
         (vkDescriptorPool, Queue vkDescriptorSets)
 
     static member create<'a when 'a : equality> capacity (descriptorSetDefinition : 'a DescriptorSetDefinition) vkDescriptorSetLayout : 'a DescriptorSet =
@@ -160,7 +160,7 @@ and DescriptorSet<'k when 'k : equality> =
             | (true, vkDescriptorSet) -> vkDescriptorSet
 
         member this.Destroy () =
-            for pool in this.VkDescriptorPools_ do VulkanDevice.vkDestroyDescriptorPool (pool, nullPtr)
+            for pool in this.VkDescriptorPools_ do VulkanDeviceApi.vkDestroyDescriptorPool (pool, nullPtr)
 
 and DescriptorSetDefinition =
     interface
@@ -225,7 +225,7 @@ type Pipeline =
         info.bindingCount <- uint resourceBindings.Length
         info.pBindings <- resourceBindingsPin.Pointer
         let mutable descriptorSetLayout = Unchecked.defaultof<VkDescriptorSetLayout>
-        VulkanDevice.vkCreateDescriptorSetLayout (&info, nullPtr, &descriptorSetLayout) |> VulkanHl.check
+        VulkanDeviceApi.vkCreateDescriptorSetLayout (&info, nullPtr, &descriptorSetLayout) |> VulkanHl.check
         descriptorSetLayout
 
     /// Create the pipeline layout.
@@ -238,7 +238,7 @@ type Pipeline =
         info.pushConstantRangeCount <- uint pushConstantRanges.Length
         info.pPushConstantRanges <- pushConstantRangesPin.Pointer
         let mutable vkPipelineLayout = Unchecked.defaultof<VkPipelineLayout>
-        VulkanDevice.vkCreatePipelineLayout (&info, nullPtr, &vkPipelineLayout) |> VulkanHl.check
+        VulkanDeviceApi.vkCreatePipelineLayout (&info, nullPtr, &vkPipelineLayout) |> VulkanHl.check
         vkPipelineLayout
     
     /// Try to create the VkPipelines.
@@ -367,11 +367,11 @@ type Pipeline =
             // TODO: DJL: consider pipeline cache.
             let vkPipelines = Array.zeroCreate<VkPipeline> pipelineSettings.Length
             use vkPipelinesPin = new ArrayPin<_> (vkPipelines)
-            VulkanDevice.vkCreateGraphicsPipelines (VkPipelineCache.Null, uint vkPipelines.Length, infos, nullPtr, vkPipelinesPin.Pointer) |> VulkanHl.check
+            VulkanDeviceApi.vkCreateGraphicsPipelines (VkPipelineCache.Null, uint vkPipelines.Length, infos, nullPtr, vkPipelinesPin.Pointer) |> VulkanHl.check
             
             // destroy shader modules
-            VulkanDevice.vkDestroyShaderModule (vertModule, nullPtr)
-            VulkanDevice.vkDestroyShaderModule (fragModule, nullPtr)
+            VulkanDeviceApi.vkDestroyShaderModule (vertModule, nullPtr)
+            VulkanDeviceApi.vkDestroyShaderModule (fragModule, nullPtr)
             
             // pack vulkan pipelines with settings
             let vkPipelinesPacked = Array.zip pipelineSettings vkPipelines |> Map.ofArray
@@ -380,16 +380,16 @@ type Pipeline =
         // abort
         | (vertModuleResult, fragModuleResult) ->
             match vertModuleResult with
-            | Right vertModule -> VulkanDevice.vkDestroyShaderModule (vertModule, nullPtr)
+            | Right vertModule -> VulkanDeviceApi.vkDestroyShaderModule (vertModule, nullPtr)
             | Left msg -> Log.warn msg
             match fragModuleResult with
-            | Right fragModule -> VulkanDevice.vkDestroyShaderModule (fragModule, nullPtr)
+            | Right fragModule -> VulkanDeviceApi.vkDestroyShaderModule (fragModule, nullPtr)
             | Left msg -> Log.warn msg
             Log.warn "VkPipeline creation aborted."
             Map.empty
 
     static member private destroyVkPipelines pipeline =
-        Map.iter (fun _ vkPipeline -> VulkanDevice.vkDestroyPipeline (vkPipeline, nullPtr)) pipeline.VkPipelines_
+        Map.iter (fun _ vkPipeline -> VulkanDeviceApi.vkDestroyPipeline (vkPipeline, nullPtr)) pipeline.VkPipelines_
     
     /// Try to get the VkPipeline built for the given settings.
     static member tryGetVkPipeline blend cullFace pipeline =
@@ -410,7 +410,7 @@ type Pipeline =
         write.descriptorCount <- 1u
         write.descriptorType <- VkDescriptorType.UniformBuffer
         write.pBufferInfo <- &&info
-        VulkanDevice.vkUpdateDescriptorSets (1u, &&write, 0u, nullPtr)
+        VulkanDeviceApi.vkUpdateDescriptorSets (1u, &&write, 0u, nullPtr)
 
         // advance buffer
         VulkanBuffer.advance buffer
@@ -430,7 +430,7 @@ type Pipeline =
         write.descriptorCount <- 1u
         write.descriptorType <- VkDescriptorType.SampledImage
         write.pImageInfo <- &&info
-        VulkanDevice.vkUpdateDescriptorSets (1u, &&write, 0u, nullPtr)
+        VulkanDeviceApi.vkUpdateDescriptorSets (1u, &&write, 0u, nullPtr)
 
     static member writeDescriptorSampledImageViews (binding : int) (descriptorIndex : int) (imageViews : VkImageView array) vkDescriptorSet =
 
@@ -450,7 +450,7 @@ type Pipeline =
         write.descriptorCount <- uint imageViews.Length
         write.descriptorType <- VkDescriptorType.SampledImage
         write.pImageInfo <- infosPtr
-        VulkanDevice.vkUpdateDescriptorSets (1u, &&write, 0u, nullPtr)
+        VulkanDeviceApi.vkUpdateDescriptorSets (1u, &&write, 0u, nullPtr)
 
     static member writeDescriptorCombinedImageViewSampler (binding : int) (descriptorIndex : int) (imageView : VkImageView) (sampler : Sampler) vkDescriptorSet =
 
@@ -468,7 +468,7 @@ type Pipeline =
         write.descriptorCount <- 1u
         write.descriptorType <- VkDescriptorType.CombinedImageSampler
         write.pImageInfo <- &&info
-        VulkanDevice.vkUpdateDescriptorSets (1u, &&write, 0u, nullPtr)
+        VulkanDeviceApi.vkUpdateDescriptorSets (1u, &&write, 0u, nullPtr)
 
     static member writeDescriptorSampledTexture binding descriptorIndex (texture : Texture) vkDescriptorSet =
         Pipeline.writeDescriptorSampledImageView binding descriptorIndex texture.ImageView vkDescriptorSet
@@ -494,7 +494,7 @@ type Pipeline =
         write.descriptorCount <- 1u
         write.descriptorType <- VkDescriptorType.Sampler
         write.pImageInfo <- &&info
-        VulkanDevice.vkUpdateDescriptorSets (1u, &&write, 0u, nullPtr)
+        VulkanDeviceApi.vkUpdateDescriptorSets (1u, &&write, 0u, nullPtr)
 
     /// Describes a vertex attribute in the context of a vertex binding.
     [<DebuggerHidden; DebuggerStepThrough>]
@@ -631,7 +631,7 @@ type Pipeline =
     /// Destroy a Pipeline.
     static member destroy pipeline vkc =
         Pipeline.destroyVkPipelines pipeline
-        VulkanDevice.vkDestroyPipelineLayout (pipeline.PipelineLayout, nullPtr)
-        for vkLayout in pipeline.VkDescriptorSetLayouts_ do VulkanDevice.vkDestroyDescriptorSetLayout (vkLayout, nullPtr)
+        VulkanDeviceApi.vkDestroyPipelineLayout (pipeline.PipelineLayout, nullPtr)
+        for vkLayout in pipeline.VkDescriptorSetLayouts_ do VulkanDeviceApi.vkDestroyDescriptorSetLayout (vkLayout, nullPtr)
         for buffer in pipeline.Buffers_ do VulkanBuffer.destroy buffer vkc
         for set in pipeline.DescriptorSets_ do set.Destroy ()

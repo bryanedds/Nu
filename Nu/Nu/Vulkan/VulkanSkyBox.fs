@@ -111,31 +111,31 @@ module SkyBox =
             let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
             let mutable vkViewport = VulkanHl.makeViewport false renderArea
             let mutable renderingInfo = VulkanHl.makeRenderingInfo [|colorAttachment.ImageView|] (Some depthAttachment.ImageView) renderArea None
-            VulkanDevice.vkCmdBeginRendering (vkc.RenderCommandBuffer, &&renderingInfo)
-            VulkanDevice.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, &&vkViewport)
-            VulkanDevice.vkCmdSetScissor (vkc.RenderCommandBuffer, 0u, 1u, &&renderArea)
+            VulkanDeviceApi.vkCmdBeginRendering (vkc.RenderCommandBuffer, &&renderingInfo)
+            VulkanDeviceApi.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, &&vkViewport)
+            VulkanDeviceApi.vkCmdSetScissor (vkc.RenderCommandBuffer, 0u, 1u, &&renderArea)
 
             // set up pipeline
-            VulkanDevice.vkCmdBindPipeline (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
-            VulkanDevice.vkCmdSetDepthTestEnable (vkc.RenderCommandBuffer, true)
-            VulkanDevice.vkCmdSetDepthCompareOp (vkc.RenderCommandBuffer, VkCompareOp.LessOrEqual)
+            VulkanDeviceApi.vkCmdBindPipeline (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
+            VulkanDeviceApi.vkCmdSetDepthTestEnable (vkc.RenderCommandBuffer, true)
+            VulkanDeviceApi.vkCmdSetDepthCompareOp (vkc.RenderCommandBuffer, VkCompareOp.LessOrEqual)
                 
             // bind vertex and index buffers
             let mutable vertexBuffer = geometry.VertexBuffer.VkBuffer
             let mutable vertexOffset = 0UL
-            VulkanDevice.vkCmdBindVertexBuffers (vkc.RenderCommandBuffer, 0u, 1u, &&vertexBuffer, &&vertexOffset)
-            VulkanDevice.vkCmdBindIndexBuffer (vkc.RenderCommandBuffer, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
+            VulkanDeviceApi.vkCmdBindVertexBuffers (vkc.RenderCommandBuffer, 0u, 1u, &&vertexBuffer, &&vertexOffset)
+            VulkanDeviceApi.vkCmdBindIndexBuffer (vkc.RenderCommandBuffer, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
 
             // bind descriptor sets
-            VulkanDevice.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, &&uniformDescriptorSet, 0u, nullPtr)
-            VulkanDevice.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, &&materialDescriptorSet, 0u, nullPtr)
-            VulkanDevice.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 2u, 1u, &&samplerDescriptorSet, 0u, nullPtr)
+            VulkanDeviceApi.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, &&uniformDescriptorSet, 0u, nullPtr)
+            VulkanDeviceApi.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, &&materialDescriptorSet, 0u, nullPtr)
+            VulkanDeviceApi.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 2u, 1u, &&samplerDescriptorSet, 0u, nullPtr)
                 
             // draw
-            VulkanDevice.vkCmdDrawIndexed (vkc.RenderCommandBuffer, uint geometry.ElementCount, 1u, 0u, 0, 0u)
+            VulkanDeviceApi.vkCmdDrawIndexed (vkc.RenderCommandBuffer, uint geometry.ElementCount, 1u, 0u, 0, 0u)
         
             // tear down render
-            VulkanDevice.vkCmdEndRendering vkc.RenderCommandBuffer
+            VulkanDeviceApi.vkCmdEndRendering vkc.RenderCommandBuffer
 
             // report draw scope
             VulkanHl.reportDrawScope ()

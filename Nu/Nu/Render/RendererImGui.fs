@@ -202,10 +202,10 @@ type VulkanRendererImGui
                     |> VulkanHl.scaleRectForPixelDensity pixelDensity
                 let mutable renderingInfo = VulkanHl.makeRenderingInfo [|vkc.SwapchainImageView|] None renderArea None
                 let mutable viewport = VulkanHl.makeViewport false renderArea
-                VulkanDevice.vkCmdBeginRendering (vkc.RenderCommandBuffer, &&renderingInfo)
-                VulkanDevice.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, &&viewport)
+                VulkanDeviceApi.vkCmdBeginRendering (vkc.RenderCommandBuffer, &&renderingInfo)
+                VulkanDeviceApi.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, &&viewport)
                 let vkPipeline = Pipeline.tryGetVkPipeline VulkanImGui false pipeline |> Option.get // not supporting shader reload of Gaia itself
-                VulkanDevice.vkCmdBindPipeline (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
+                VulkanDeviceApi.vkCmdBindPipeline (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
                 
                 // compute offsets
                 if drawData.TotalVtxCount > 0 then
@@ -239,8 +239,8 @@ type VulkanRendererImGui
                     // bind vertex and index buffers
                     let mutable vertexBuffer = vertexBuffer.VkBuffer
                     let mutable vertexOffset = 0UL
-                    VulkanDevice.vkCmdBindVertexBuffers (vkc.RenderCommandBuffer, 0u, 1u, &&vertexBuffer, &&vertexOffset)
-                    VulkanDevice.vkCmdBindIndexBuffer (vkc.RenderCommandBuffer, indexBuffer.VkBuffer, 0UL, VkIndexType.Uint16)
+                    VulkanDeviceApi.vkCmdBindVertexBuffers (vkc.RenderCommandBuffer, 0u, 1u, &&vertexBuffer, &&vertexOffset)
+                    VulkanDeviceApi.vkCmdBindIndexBuffer (vkc.RenderCommandBuffer, indexBuffer.VkBuffer, 0UL, VkIndexType.Uint16)
 
                 // set up scale and translation
                 let scale = Array.zeroCreate<single> 2
@@ -251,8 +251,8 @@ type VulkanRendererImGui
                 translate[0] <- -1.0f - drawData.DisplayPos.X * scale[0]
                 translate[1] <- -1.0f - drawData.DisplayPos.Y * scale[1]
                 use translatePin = new ArrayPin<_> (translate)
-                VulkanDevice.vkCmdPushConstants (vkc.RenderCommandBuffer, pipeline.PipelineLayout, VertexStage.VkShaderStageFlags, 0u, 8u, scalePin.VoidPtr)
-                VulkanDevice.vkCmdPushConstants (vkc.RenderCommandBuffer, pipeline.PipelineLayout, VertexStage.VkShaderStageFlags, 8u, 8u, translatePin.VoidPtr)
+                VulkanDeviceApi.vkCmdPushConstants (vkc.RenderCommandBuffer, pipeline.PipelineLayout, VertexStage.VkShaderStageFlags, 0u, 8u, scalePin.VoidPtr)
+                VulkanDeviceApi.vkCmdPushConstants (vkc.RenderCommandBuffer, pipeline.PipelineLayout, VertexStage.VkShaderStageFlags, 8u, 8u, translatePin.VoidPtr)
 
                 // draw command lists, ignoring any commands that use blacklisted textures
                 let mutable globalVtxOffset = 0
@@ -288,7 +288,7 @@ type VulkanRendererImGui
                                 if VulkanHl.validateRect scissor then
 
                                     // set scissor
-                                    VulkanDevice.vkCmdSetScissor (vkc.RenderCommandBuffer, 0u, 1u, &&scissor)
+                                    VulkanDeviceApi.vkCmdSetScissor (vkc.RenderCommandBuffer, 0u, 1u, &&scissor)
 
                                     // identify requested texture and assign to it a descriptor set index
                                     let textureId = uint32 pcmd.TextureId
@@ -301,10 +301,10 @@ type VulkanRendererImGui
                                         Pipeline.writeDescriptorCombinedTextureSampler 0 0 texture sampler vkSet
 
                                     // bind descriptor set
-                                    VulkanDevice.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.PipelineLayout, 0u, 1u, &&materialDescriptorSet, 0u, nullPtr)
+                                    VulkanDeviceApi.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.PipelineLayout, 0u, 1u, &&materialDescriptorSet, 0u, nullPtr)
 
                                     // draw
-                                    VulkanDevice.vkCmdDrawIndexed (vkc.RenderCommandBuffer, pcmd.ElemCount, 1u, pcmd.IdxOffset + uint globalIdxOffset, int pcmd.VtxOffset + globalVtxOffset, 0u)
+                                    VulkanDeviceApi.vkCmdDrawIndexed (vkc.RenderCommandBuffer, pcmd.ElemCount, 1u, pcmd.IdxOffset + uint globalIdxOffset, int pcmd.VtxOffset + globalVtxOffset, 0u)
 
                                     // advance pipeline
                                     Pipeline.advance 1 pipeline
@@ -317,7 +317,7 @@ type VulkanRendererImGui
                     globalVtxOffset <- globalVtxOffset + drawList.VtxBuffer.Size
 
                 // tear down render
-                VulkanDevice.vkCmdEndRendering vkc.RenderCommandBuffer
+                VulkanDeviceApi.vkCmdEndRendering vkc.RenderCommandBuffer
 
                 // report draw scope
                 VulkanHl.reportDrawScope ()

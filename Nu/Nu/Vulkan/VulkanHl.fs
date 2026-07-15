@@ -264,10 +264,10 @@ module VulkanApis =
     let internal setVkDeviceApi vkDeviceApi = VkDeviceApi <- vkDeviceApi
 
     /// The Vulkan instance API.
-    let inline internal VulkanInstance<'a> = VkInstanceApi
+    let inline internal VulkanInstanceApi<'a> = VkInstanceApi
 
     /// The Vulkan device API.
-    let inline internal VulkanDevice<'a> = VkDeviceApi
+    let inline internal VulkanDeviceApi<'a> = VkDeviceApi
 
 [<RequireQualifiedAccess>]
 module VulkanHl =
@@ -391,7 +391,7 @@ module VulkanHl =
             | D24s8ui
             | D32fs8ui -> VkFormatFeatureFlags.DepthStencilAttachment
         let mutable properties = Unchecked.defaultof<VkFormatProperties>
-        VulkanInstance.vkGetPhysicalDeviceFormatProperties (vkPhysicalDevice, format.VkFormat, &properties)
+        VulkanInstanceApi.vkGetPhysicalDeviceFormatProperties (vkPhysicalDevice, format.VkFormat, &properties)
         properties.optimalTilingFeatures &&& requiredFeatures = requiredFeatures
 
     /// Check if an image format is supported for attachments, falling back to a standard format where possible.
@@ -651,7 +651,7 @@ module VulkanHl =
         match SurfaceState with
         | SurfaceReady
         | SurfaceLost ->
-            VulkanInstance.vkDestroySurfaceKHR (Surface, nullPtr)
+            VulkanInstanceApi.vkDestroySurfaceKHR (Surface, nullPtr)
             SurfaceState <- SurfaceDestroyed
 
             // inform the backgrounding callback that the required teardown of presentation is complete
@@ -682,7 +682,7 @@ module VulkanHl =
             // NOTE: DJL: using a high level overload here to avoid questions about reinterpret casting and memory alignment,
             // see https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Shader_modules#page_Creating-shader-modules.
             let mutable shaderModule = Unchecked.defaultof<VkShaderModule>
-            VulkanDevice.vkCreateShaderModule (shader.AsSpan (), nullPtr, &shaderModule) |> check
+            VulkanDeviceApi.vkCreateShaderModule (shader.AsSpan (), nullPtr, &shaderModule) |> check
             Right shaderModule
 
         | Left msg -> Left msg
@@ -690,10 +690,10 @@ module VulkanHl =
     /// Get the available vulkan present modes.
     let getPresentModes device =
         let mutable presentModeCount = 0u
-        VulkanInstance.vkGetPhysicalDeviceSurfacePresentModesKHR (device, Surface, &&presentModeCount, NativePtr.nullPtr) |> check
+        VulkanInstanceApi.vkGetPhysicalDeviceSurfacePresentModesKHR (device, Surface, &&presentModeCount, NativePtr.nullPtr) |> check
         let presentModes = Array.zeroCreate<VkPresentModeKHR> (int presentModeCount)
         use presentModesPin = new ArrayPin<_> (presentModes)
-        VulkanInstance.vkGetPhysicalDeviceSurfacePresentModesKHR (device, Surface, &&presentModeCount, presentModesPin.Pointer) |> check
+        VulkanInstanceApi.vkGetPhysicalDeviceSurfacePresentModesKHR (device, Surface, &&presentModeCount, presentModesPin.Pointer) |> check
         presentModes
 
     /// Record command to transition image layout.
@@ -713,7 +713,7 @@ module VulkanHl =
         barrier.dstQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
         barrier.image <- vkImage
         barrier.subresourceRange <- makeSubresourceRange mipLevel mipLevels layer layerCount imageAspect
-        VulkanDevice.vkCmdPipelineBarrier
+        VulkanDeviceApi.vkCmdPipelineBarrier
             (commandBuffer,
              oldLayout.PipelineStage,
              newLayout.PipelineStage,
@@ -724,7 +724,7 @@ module VulkanHl =
     /// Try get surface capabilities.
     let tryGetSurfaceCapabilities vkPhysicalDevice =
         let mutable capabilities = Unchecked.defaultof<VkSurfaceCapabilitiesKHR>
-        let result = VulkanInstance.vkGetPhysicalDeviceSurfaceCapabilitiesKHR (vkPhysicalDevice, Surface, &capabilities)
+        let result = VulkanInstanceApi.vkGetPhysicalDeviceSurfaceCapabilitiesKHR (vkPhysicalDevice, Surface, &capabilities)
         if result <> VkResult.ErrorSurfaceLostKHR then
             check result
             Some capabilities
@@ -766,7 +766,7 @@ module VulkanHl =
         info.components <- makeComponentMapping pixelFormat
         info.subresourceRange <- makeSubresourceRange mipLevel mipCount layer layerCount imageAspect
         let mutable imageView = Unchecked.defaultof<VkImageView>
-        VulkanDevice.vkCreateImageView (&info, nullPtr, &imageView) |> check
+        VulkanDeviceApi.vkCreateImageView (&info, nullPtr, &imageView) |> check
         imageView
 
     /// Allocate an array of command buffers.
@@ -777,7 +777,7 @@ module VulkanHl =
         info.commandBufferCount <- uint count
         let commandBuffers = Array.zeroCreate<VkCommandBuffer> count
         use commandBuffersPin = new ArrayPin<_> (commandBuffers)
-        VulkanDevice.vkAllocateCommandBuffers (&&info, commandBuffersPin.Pointer) |> check
+        VulkanDeviceApi.vkAllocateCommandBuffers (&&info, commandBuffersPin.Pointer) |> check
         commandBuffers
 
     /// Allocate a command buffer.
@@ -790,7 +790,7 @@ module VulkanHl =
     let createSemaphore () =
         let info = VkSemaphoreCreateInfo ()
         let mutable semaphore = Unchecked.defaultof<VkSemaphore>
-        VulkanDevice.vkCreateSemaphore (&info, nullPtr, &semaphore) |> check
+        VulkanDeviceApi.vkCreateSemaphore (&info, nullPtr, &semaphore) |> check
         semaphore
 
     /// Create a fence.
@@ -800,14 +800,14 @@ module VulkanHl =
             if createSignaled then VkFenceCreateInfo (flags = VkFenceCreateFlags.Signaled)
             else VkFenceCreateInfo ()
         let mutable fence = Unchecked.defaultof<VkFence>
-        VulkanDevice.vkCreateFence (&info, nullPtr, &fence) |> check
+        VulkanDeviceApi.vkCreateFence (&info, nullPtr, &fence) |> check
         fence
 
     /// Wait for a fence to signal and reset it for reuse.
     let awaitFence fence =
         let mutable fence = fence
-        VulkanDevice.vkWaitForFences (1u, &&fence, true, UInt64.MaxValue) |> check
-        VulkanDevice.vkResetFences (1u, &&fence) |> check
+        VulkanDeviceApi.vkWaitForFences (1u, &&fence, true, UInt64.MaxValue) |> check
+        VulkanDeviceApi.vkResetFences (1u, &&fence) |> check
 
     /// Create a transient command buffer.
     /// TODO: DJL: review choice of transient command buffers over normal ones.
@@ -815,7 +815,7 @@ module VulkanHl =
     let createTransientCommandBuffer commandPool =
         let commandBuffer = allocateCommandBuffer VkCommandBufferLevel.Primary commandPool
         let mutable cbInfo = VkCommandBufferBeginInfo (flags = VkCommandBufferUsageFlags.OneTimeSubmit)
-        VulkanDevice.vkBeginCommandBuffer (commandBuffer, &&cbInfo) |> check
+        VulkanDeviceApi.vkBeginCommandBuffer (commandBuffer, &&cbInfo) |> check
         commandBuffer
 
     ///
@@ -823,7 +823,7 @@ module VulkanHl =
 
         // get memory types
         let mutable memProperties = Unchecked.defaultof<VkPhysicalDeviceMemoryProperties>
-        VulkanInstance.vkGetPhysicalDeviceMemoryProperties (physicalDevice, &memProperties)
+        VulkanInstanceApi.vkGetPhysicalDeviceMemoryProperties (physicalDevice, &memProperties)
         let memoryTypes = NativePtr.fixedBufferToArray<VkMemoryType> (int memProperties.memoryTypeCount) memProperties.memoryTypes
 
         // try find suitable memory type

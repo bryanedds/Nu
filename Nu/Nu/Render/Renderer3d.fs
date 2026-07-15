@@ -3386,8 +3386,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         Texture.recordTransitionLayout DepthAttachmentRead DepthAttachmentWrite zTexture renderer.VulkanContext.RenderCommandBuffer
         let geometryTextureViews = [|depthTexture.ImageView; albedoTexture.ImageView; materialTexture.ImageView; normalPlusTexture.ImageView; subdermalPlusTexture.ImageView; scatterPlusTexture.ImageView; clearCoatPlusTexture.ImageView|]
         let mutable renderingInfo = VulkanHl.makeRenderingInfo geometryTextureViews (Some zTexture.ImageView) renderArea (Some clearColor)
-        VulkanDevice.vkCmdBeginRendering (renderer.VulkanContext.RenderCommandBuffer, &&renderingInfo)
-        VulkanDevice.vkCmdEndRendering renderer.VulkanContext.RenderCommandBuffer
+        VulkanDeviceApi.vkCmdBeginRendering (renderer.VulkanContext.RenderCommandBuffer, &&renderingInfo)
+        VulkanDeviceApi.vkCmdEndRendering renderer.VulkanContext.RenderCommandBuffer
         VulkanHl.reportDrawScope ()
 
         // begin deferred static surface rendering
@@ -3728,7 +3728,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             // blit from color full 0 back to tone mapping
             let bounds = VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)
             let mutable region = VulkanHl.makeBlit 0 0 0 0 bounds bounds
-            VulkanDevice.vkCmdBlitImage (renderer.VulkanContext.RenderCommandBuffer, colorFull0Texture.Image, TransferSrc.VkImageLayout, toneMappingTexture.Image, TransferDst.VkImageLayout, 1u, &&region, VkFilter.Nearest)
+            VulkanDeviceApi.vkCmdBlitImage (renderer.VulkanContext.RenderCommandBuffer, colorFull0Texture.Image, TransferSrc.VkImageLayout, toneMappingTexture.Image, TransferDst.VkImageLayout, 1u, &&region, VkFilter.Nearest)
             Texture.recordTransitionLayout TransferSrc ColorAttachmentRead colorFull0Texture renderer.VulkanContext.RenderCommandBuffer
             Texture.recordTransitionLayout TransferDst ColorAttachmentRead toneMappingTexture renderer.VulkanContext.RenderCommandBuffer
 
@@ -3744,7 +3744,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         Texture.recordTransitionLayout ColorAttachmentRead TransferSrc gammaCorrectionTexture renderer.VulkanContext.RenderCommandBuffer
         VulkanHl.recordTransitionLayout true 1 targetLayer 1 VkImageAspectFlags.Color ColorAttachmentWrite TransferDst targetImage renderer.VulkanContext.RenderCommandBuffer
         let mutable region = VulkanHl.makeBlit 0 0 0 targetLayer (VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)) targetBounds
-        VulkanDevice.vkCmdBlitImage (renderer.VulkanContext.RenderCommandBuffer, gammaCorrectionTexture.Image, TransferSrc.VkImageLayout, targetImage, TransferDst.VkImageLayout, 1u, &&region, VkFilter.Nearest)
+        VulkanDeviceApi.vkCmdBlitImage (renderer.VulkanContext.RenderCommandBuffer, gammaCorrectionTexture.Image, TransferSrc.VkImageLayout, targetImage, TransferDst.VkImageLayout, 1u, &&region, VkFilter.Nearest)
         VulkanHl.recordTransitionLayout true 1 targetLayer 1 VkImageAspectFlags.Color TransferDst ColorAttachmentWrite targetImage renderer.VulkanContext.RenderCommandBuffer
         Texture.recordTransitionLayout TransferSrc ColorAttachmentRead gammaCorrectionTexture renderer.VulkanContext.RenderCommandBuffer
 
@@ -3961,7 +3961,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 vkc
         let fence = VulkanHl.createFence false
         ConcurrentCommandQueue.executeTransient commandBuffer vkc.TransientCommandPool fence vkc.RenderQueue
-        VulkanDevice.vkDestroyFence (fence, nullPtr)
+        VulkanDeviceApi.vkDestroyFence (fence, nullPtr)
 
         // compute compressed image file extension
         let ext =
