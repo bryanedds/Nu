@@ -57,7 +57,7 @@ type VulkanBufferInternal =
         let mutable vkBuffer = Unchecked.defaultof<VkBuffer>
         let mutable vmaAllocation = Unchecked.defaultof<VmaAllocation>
         let mutable vmaAllocationInfo = Unchecked.defaultof<VmaAllocationInfo>
-        Vma.vmaCreateBuffer (context.VmaAllocator, &&bufferInfo, &&info, &vkBuffer, &vmaAllocation, &vmaAllocationInfo) |> VulkanHl.check
+        Vma.vmaCreateBuffer (context.VmaAllocator, &&bufferInfo, &&info, &vkBuffer, &vmaAllocation, &vmaAllocationInfo) |> Hl.check
 
         // make BufferInternal
         let bufferInternal =
@@ -142,7 +142,7 @@ type VulkanBufferInternal =
 
                     // manually flush as memory may not be host-coherent on non-windows platforms, see
                     // https://gpuopen-librariesandsdks.github.io/VulkanMemoryAllocator/html/memory_mapping.html#memory_mapping_cache_control
-                    Vma.vmaFlushAllocation (context.VmaAllocator, bufferInternal.VmaAllocation_, uint64 offset, uint64 (stride * count)) |> VulkanHl.check
+                    Vma.vmaFlushAllocation (context.VmaAllocator, bufferInternal.VmaAllocation_, uint64 offset, uint64 (stride * count)) |> Hl.check
 
                 else Log.warn "Flush of Vulkan buffer failed because it exceeded the size of that buffer."
             else Log.warn "Flush of Vulkan buffer failed because 'size' argument was less than or equal to zero."
@@ -189,9 +189,9 @@ type VulkanBuffer =
 
     /// Copy data from the source buffer to the destination buffer.
     static member private copyData size source destination (context : VulkanContext) =
-        let commandBuffer = VulkanHl.createTransientCommandBuffer context.TransientCommandPool
+        let commandBuffer = Hl.createTransientCommandBuffer context.TransientCommandPool
         let mutable region = VkBufferCopy (size = uint64 size)
-        VulkanDeviceApi.vkCmdCopyBuffer (commandBuffer, source, destination, 1u, &&region)
+        DeviceApi.vkCmdCopyBuffer (commandBuffer, source, destination, 1u, &&region)
         ConcurrentCommandQueue.executeTransient commandBuffer context.TransientCommandPool context.TransientFence context.RenderQueue
 
     /// Begin use of this buffer for the current frame.

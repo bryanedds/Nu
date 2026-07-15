@@ -62,17 +62,17 @@ type AssetClient (textureClient : TextureClient, cubeMapClient : CubeMapClient, 
             | Right (filePath, textureData) ->
                 let textureInternal =
                     if is2d then
-                        let filtered = VulkanHl.inferTextureFiltered2d filePath
+                        let filtered = Hl.inferTextureFiltered2d filePath
                         let textureInternal = TextureInternal.createFromData filtered Uncompressed textureData RenderThread context
                         EagerTexture textureInternal
                     elif textureData.LazyLoadable then
-                        let textureInternal = TextureInternal.createFromData true (VulkanHl.inferTextureCompression filePath) textureData RenderThread context
+                        let textureInternal = TextureInternal.createFromData true (Hl.inferTextureCompression filePath) textureData RenderThread context
                         let lazyTexture = new LazyTexture (filePath, textureInternal)
                         textureClient.LazyTextureQueue.Enqueue lazyTexture
                         LazyTexture lazyTexture
                     else
                         Log.infoOnce "One or more textures for non-2D usage are not streamable; consider using the BlockCompress refinement with them for more efficient loading."
-                        let textureInternal = TextureInternal.createFromData true (VulkanHl.inferTextureCompression filePath) textureData RenderThread context
+                        let textureInternal = TextureInternal.createFromData true (Hl.inferTextureCompression filePath) textureData RenderThread context
                         EagerTexture textureInternal
                 textureClient.Textures[filePath] <- textureInternal
             | Left error -> Log.info error

@@ -53,10 +53,10 @@ module ContourTessellation =
          context : VulkanContext) =
             
         // only draw if scissor (and therefore also viewport) is valid
-        let pixelDensity = VulkanHl.getWindowPixelDensity context.Window
+        let pixelDensity = Hl.getWindowPixelDensity context.Window
         let renderAreaLogical = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)
-        let mutable renderArea = VulkanHl.scaleRectForPixelDensity pixelDensity renderAreaLogical
-        let mutable vkViewport = VulkanHl.makeViewport true renderArea
+        let mutable renderArea = Hl.scaleRectForPixelDensity pixelDensity renderAreaLogical
+        let mutable vkViewport = Hl.makeViewport true renderArea
         let mutable scissor = renderArea
         match clipOpt with
         | ValueSome clip ->
@@ -74,10 +74,10 @@ module ContourTessellation =
                         (single renderAreaLogical.extent.height - minScissor.Y |> round |> int) + offset.Y,
                         uint sizeScissor.X,
                         uint sizeScissor.Y)
-            scissor <- VulkanHl.scaleRectForPixelDensity pixelDensity scissorLogical
-            scissor <- VulkanHl.clipRect renderArea scissor
+            scissor <- Hl.scaleRectForPixelDensity pixelDensity scissorLogical
+            scissor <- Hl.clipRect renderArea scissor
         | ValueNone -> ()
-        if VulkanHl.validateRect scissor then
+        if Hl.validateRect scissor then
                 
             // only draw if required vkPipeline exists
             match Pipeline.tryGetVkPipeline VulkanTransparent true pipeline with
@@ -94,31 +94,31 @@ module ContourTessellation =
                     Pipeline.writeDescriptorUniformBuffer 0 0 modelViewProjectionUniform vkSet
 
                 // set up render
-                let mutable renderingInfo = VulkanHl.makeRenderingInfo [|context.SwapchainImageView|] None renderArea None
-                VulkanDeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
-                VulkanDeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
-                VulkanDeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&scissor)
+                let mutable renderingInfo = Hl.makeRenderingInfo [|context.SwapchainImageView|] None renderArea None
+                DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
+                DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
+                DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&scissor)
 
                 // set up pipeline
-                VulkanDeviceApi.vkCmdBindPipeline (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
+                DeviceApi.vkCmdBindPipeline (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
 
                 // bind vertex and index buffers
                 let mutable vkVertexBuffer = vertexBuffer.VkBuffer
                 let mutable vkVertexOffset = 0UL
-                VulkanDeviceApi.vkCmdBindVertexBuffers (context.RenderCommandBuffer, 0u, 1u, &&vkVertexBuffer, &&vkVertexOffset)
-                VulkanDeviceApi.vkCmdBindIndexBuffer (context.RenderCommandBuffer, indexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
+                DeviceApi.vkCmdBindVertexBuffers (context.RenderCommandBuffer, 0u, 1u, &&vkVertexBuffer, &&vkVertexOffset)
+                DeviceApi.vkCmdBindIndexBuffer (context.RenderCommandBuffer, indexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
 
                 // bind descriptor set
-                VulkanDeviceApi.vkCmdBindDescriptorSets (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.PipelineLayout, 0u, 1u, &&uniformDescriptorSet, 0u, nullPtr)
+                DeviceApi.vkCmdBindDescriptorSets (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.PipelineLayout, 0u, 1u, &&uniformDescriptorSet, 0u, nullPtr)
 
                 // draw
-                VulkanDeviceApi.vkCmdDrawIndexed (context.RenderCommandBuffer, uint32 tessellation.Indices.Length, 1u, 0u, 0, 0u)
+                DeviceApi.vkCmdDrawIndexed (context.RenderCommandBuffer, uint32 tessellation.Indices.Length, 1u, 0u, 0, 0u)
                     
                 // tear down render
-                VulkanDeviceApi.vkCmdEndRendering context.RenderCommandBuffer
+                DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
 
                 // report draw scope
-                VulkanHl.reportDrawScope ()
+                Hl.reportDrawScope ()
 
                 // advance vertex and index buffers
                 VulkanBuffer.advance vertexBuffer

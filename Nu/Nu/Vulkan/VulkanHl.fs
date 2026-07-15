@@ -287,25 +287,25 @@ type internal BackgroundingResponseState =
     | PresentationTeardownComplete // presentation resources have been destroyed and restoration will commence when app is back in foreground
 
 [<AutoOpen>]
-module VulkanApis =
+module Vulkan =
 
     let mutable private VkInstanceApi = Unchecked.defaultof<VkInstanceApi>
     let mutable private VkDeviceApi = Unchecked.defaultof<VkDeviceApi>
 
     /// Set a VkInstanceApi value. Under normal operation, this can never be null.
-    let internal setVkInstanceApi vkInstanceApi = VkInstanceApi <- vkInstanceApi
+    let internal SetInstanceApi vkInstanceApi = VkInstanceApi <- vkInstanceApi
 
     /// Set a VkDeviceApi value. Under normal operation, this can never be null.
-    let internal setVkDeviceApi vkDeviceApi = VkDeviceApi <- vkDeviceApi
+    let internal SetDeviceApi vkDeviceApi = VkDeviceApi <- vkDeviceApi
 
-    /// The Vulkan instance API.
-    let inline internal VulkanInstanceApi<'a> = VkInstanceApi
+    /// The Vulkan instance API. Ignore the type parameter as it's only use to expose InstanceApi in a convenient way.
+    let inline internal InstanceApi<'a> = VkInstanceApi
 
-    /// The Vulkan device API.
-    let inline internal VulkanDeviceApi<'a> = VkDeviceApi
+    /// The Vulkan device API. Ignore the type parameter as it's only use to expose InstanceApi in a convenient way.
+    let inline internal DeviceApi<'a> = VkDeviceApi
 
 [<RequireQualifiedAccess>]
-module VulkanHl =
+module Hl =
 
     // TODO: DJL: all these free-floating variables, types and functions have become a
     // bit of a mess and need to be reordered, not to mention the inconsistent casing.
@@ -359,7 +359,7 @@ module VulkanHl =
             true
         | _ -> true
     let internal backgroundingCallback () =
-        let handle = Assembly.GetExecutingAssembly().GetType("Nu.Vulkan.VulkanHl").GetMethod(nameof handleBackgrounding, BindingFlags.NonPublic ||| BindingFlags.Static).MethodHandle
+        let handle = Assembly.GetExecutingAssembly().GetType("Nu.Vulkan.Hl").GetMethod(nameof handleBackgrounding, BindingFlags.NonPublic ||| BindingFlags.Static).MethodHandle
         handle.GetFunctionPointer ()
 
     /// Get the current pixel density of an SDL window.
@@ -426,7 +426,7 @@ module VulkanHl =
             | D24s8ui
             | D32fs8ui -> VkFormatFeatureFlags.DepthStencilAttachment
         let mutable properties = Unchecked.defaultof<VkFormatProperties>
-        VulkanInstanceApi.vkGetPhysicalDeviceFormatProperties (vkPhysicalDevice, format.VkFormat, &properties)
+        InstanceApi.vkGetPhysicalDeviceFormatProperties (vkPhysicalDevice, format.VkFormat, &properties)
         properties.optimalTilingFeatures &&& requiredFeatures = requiredFeatures
 
     /// Check if an image format is supported for attachments, falling back to a standard format where possible.
@@ -686,7 +686,7 @@ module VulkanHl =
         match SurfaceState with
         | SurfaceReady
         | SurfaceLost ->
-            VulkanInstanceApi.vkDestroySurfaceKHR (Surface, nullPtr)
+            InstanceApi.vkDestroySurfaceKHR (Surface, nullPtr)
             SurfaceState <- SurfaceDestroyed
 
             // inform the backgrounding callback that the required teardown of presentation is complete
@@ -717,7 +717,7 @@ module VulkanHl =
             // NOTE: DJL: using a high level overload here to avoid questions about reinterpret casting and memory alignment,
             // see https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Shader_modules#page_Creating-shader-modules.
             let mutable shaderModule = Unchecked.defaultof<VkShaderModule>
-            VulkanDeviceApi.vkCreateShaderModule (shader.AsSpan (), nullPtr, &shaderModule) |> check
+            DeviceApi.vkCreateShaderModule (shader.AsSpan (), nullPtr, &shaderModule) |> check
             Right shaderModule
 
         | Left msg -> Left msg
@@ -725,10 +725,10 @@ module VulkanHl =
     /// Get the available vulkan present modes.
     let getPresentModes device =
         let mutable presentModeCount = 0u
-        VulkanInstanceApi.vkGetPhysicalDeviceSurfacePresentModesKHR (device, Surface, &&presentModeCount, NativePtr.nullPtr) |> check
+        InstanceApi.vkGetPhysicalDeviceSurfacePresentModesKHR (device, Surface, &&presentModeCount, NativePtr.nullPtr) |> check
         let presentModes = Array.zeroCreate<VkPresentModeKHR> (int presentModeCount)
         use presentModesPin = new ArrayPin<_> (presentModes)
-        VulkanInstanceApi.vkGetPhysicalDeviceSurfacePresentModesKHR (device, Surface, &&presentModeCount, presentModesPin.Pointer) |> check
+        InstanceApi.vkGetPhysicalDeviceSurfacePresentModesKHR (device, Surface, &&presentModeCount, presentModesPin.Pointer) |> check
         presentModes
 
     /// Record command to transition image layout.
@@ -748,7 +748,7 @@ module VulkanHl =
         barrier.dstQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
         barrier.image <- vkImage
         barrier.subresourceRange <- makeSubresourceRange mipLevel mipLevels layer layerCount imageAspect
-        VulkanDeviceApi.vkCmdPipelineBarrier
+        DeviceApi.vkCmdPipelineBarrier
             (commandBuffer,
              oldLayout.PipelineStage,
              newLayout.PipelineStage,
@@ -759,7 +759,7 @@ module VulkanHl =
     /// Try get surface capabilities.
     let tryGetSurfaceCapabilities vkPhysicalDevice =
         let mutable capabilities = Unchecked.defaultof<VkSurfaceCapabilitiesKHR>
-        let result = VulkanInstanceApi.vkGetPhysicalDeviceSurfaceCapabilitiesKHR (vkPhysicalDevice, Surface, &capabilities)
+        let result = InstanceApi.vkGetPhysicalDeviceSurfaceCapabilitiesKHR (vkPhysicalDevice, Surface, &capabilities)
         if result <> VkResult.ErrorSurfaceLostKHR then
             check result
             Some capabilities
@@ -801,7 +801,7 @@ module VulkanHl =
         info.components <- makeComponentMapping pixelFormat
         info.subresourceRange <- makeSubresourceRange mipLevel mipCount layer layerCount imageAspect
         let mutable imageView = Unchecked.defaultof<VkImageView>
-        VulkanDeviceApi.vkCreateImageView (&info, nullPtr, &imageView) |> check
+        DeviceApi.vkCreateImageView (&info, nullPtr, &imageView) |> check
         imageView
 
     /// Allocate an array of command buffers.
@@ -812,7 +812,7 @@ module VulkanHl =
         info.commandBufferCount <- uint count
         let commandBuffers = Array.zeroCreate<VkCommandBuffer> count
         use commandBuffersPin = new ArrayPin<_> (commandBuffers)
-        VulkanDeviceApi.vkAllocateCommandBuffers (&&info, commandBuffersPin.Pointer) |> check
+        DeviceApi.vkAllocateCommandBuffers (&&info, commandBuffersPin.Pointer) |> check
         commandBuffers
 
     /// Allocate a command buffer.
@@ -825,7 +825,7 @@ module VulkanHl =
     let createSemaphore () =
         let info = VkSemaphoreCreateInfo ()
         let mutable semaphore = Unchecked.defaultof<VkSemaphore>
-        VulkanDeviceApi.vkCreateSemaphore (&info, nullPtr, &semaphore) |> check
+        DeviceApi.vkCreateSemaphore (&info, nullPtr, &semaphore) |> check
         semaphore
 
     /// Create a fence.
@@ -835,21 +835,21 @@ module VulkanHl =
             if createSignaled then VkFenceCreateInfo (flags = VkFenceCreateFlags.Signaled)
             else VkFenceCreateInfo ()
         let mutable fence = Unchecked.defaultof<VkFence>
-        VulkanDeviceApi.vkCreateFence (&info, nullPtr, &fence) |> check
+        DeviceApi.vkCreateFence (&info, nullPtr, &fence) |> check
         fence
 
     /// Wait for a fence to signal and reset it for reuse.
     let awaitFence fence =
         let mutable fence = fence
-        VulkanDeviceApi.vkWaitForFences (1u, &&fence, true, UInt64.MaxValue) |> check
-        VulkanDeviceApi.vkResetFences (1u, &&fence) |> check
+        DeviceApi.vkWaitForFences (1u, &&fence, true, UInt64.MaxValue) |> check
+        DeviceApi.vkResetFences (1u, &&fence) |> check
 
     /// Create a transient command buffer.
     /// TODO: create matching destroy fn and use that?
     let createTransientCommandBuffer commandPool =
         let commandBuffer = allocateCommandBuffer VkCommandBufferLevel.Primary commandPool
         let mutable cbInfo = VkCommandBufferBeginInfo (flags = VkCommandBufferUsageFlags.OneTimeSubmit)
-        VulkanDeviceApi.vkBeginCommandBuffer (commandBuffer, &&cbInfo) |> check
+        DeviceApi.vkBeginCommandBuffer (commandBuffer, &&cbInfo) |> check
         commandBuffer
 
     ///
@@ -857,7 +857,7 @@ module VulkanHl =
 
         // get memory types
         let mutable memProperties = Unchecked.defaultof<VkPhysicalDeviceMemoryProperties>
-        VulkanInstanceApi.vkGetPhysicalDeviceMemoryProperties (physicalDevice, &memProperties)
+        InstanceApi.vkGetPhysicalDeviceMemoryProperties (physicalDevice, &memProperties)
         let memoryTypes = NativePtr.fixedBufferToArray<VkMemoryType> (int memProperties.memoryTypeCount) memProperties.memoryTypes
 
         // try find suitable memory type
@@ -879,7 +879,7 @@ module VulkanHl =
         let mutable region = VkBufferImageCopy ()
         region.imageSubresource <- makeSubresourceLayers mipLevel layer VkImageAspectFlags.Color
         region.imageExtent <- VkExtent3D (width, height, 1)
-        VulkanDeviceApi.vkCmdCopyBufferToImage
+        DeviceApi.vkCmdCopyBufferToImage
             (commandBuffer, vkBuffer, vkImage,
                 TransferDst.VkImageLayout,
                 1u, &&region)
@@ -900,7 +900,7 @@ module VulkanHl =
         barrier.oldLayout <- Undefined.VkImageLayout
         barrier.newLayout <- TransferDst.VkImageLayout
         barrier.subresourceRange <- makeSubresourceRange 1 (mipLevels - 1) layer 1 VkImageAspectFlags.Color
-        VulkanDeviceApi.vkCmdPipelineBarrier
+        DeviceApi.vkCmdPipelineBarrier
             (commandBuffer,
                 Undefined.PipelineStage,
                 TransferDst.PipelineStage,
@@ -915,7 +915,7 @@ module VulkanHl =
         barrier.newLayout <- TransferDst.VkImageLayout
         barrier.subresourceRange.baseMipLevel <- 0u
         barrier.subresourceRange.levelCount <- 1u // only one level at a time from here on
-        VulkanDeviceApi.vkCmdPipelineBarrier
+        DeviceApi.vkCmdPipelineBarrier
             (commandBuffer,
                 ColorAttachmentRead.PipelineStage,
                 TransferDst.PipelineStage,
@@ -934,7 +934,7 @@ module VulkanHl =
             barrier.oldLayout <- TransferDst.VkImageLayout
             barrier.newLayout <- TransferSrc.VkImageLayout
             barrier.subresourceRange.baseMipLevel <- uint (i - 1)
-            VulkanDeviceApi.vkCmdPipelineBarrier
+            DeviceApi.vkCmdPipelineBarrier
                 (commandBuffer,
                     TransferDst.PipelineStage,
                     TransferSrc.PipelineStage,
@@ -950,14 +950,14 @@ module VulkanHl =
                     (i - 1) i layer layer
                     (VkRect2D (0, 0, uint mipWidth, uint mipHeight))
                     (VkRect2D (0, 0, uint nextWidth, uint nextHeight))
-            VulkanDeviceApi.vkCmdBlitImage (commandBuffer, vkImage, TransferSrc.VkImageLayout, vkImage, TransferDst.VkImageLayout, 1u, &&blit, VkFilter.Linear)
+            DeviceApi.vkCmdBlitImage (commandBuffer, vkImage, TransferSrc.VkImageLayout, vkImage, TransferDst.VkImageLayout, 1u, &&blit, VkFilter.Linear)
 
             // transition layout of previous image to be read by shader
             barrier.srcAccessMask <- TransferSrc.Access
             barrier.dstAccessMask <- ColorAttachmentRead.Access
             barrier.oldLayout <- TransferSrc.VkImageLayout
             barrier.newLayout <- ColorAttachmentRead.VkImageLayout
-            VulkanDeviceApi.vkCmdPipelineBarrier
+            DeviceApi.vkCmdPipelineBarrier
                 (commandBuffer,
                     TransferSrc.PipelineStage,
                     ColorAttachmentRead.PipelineStage,
@@ -975,7 +975,7 @@ module VulkanHl =
         barrier.oldLayout <- TransferDst.VkImageLayout
         barrier.newLayout <- ColorAttachmentRead.VkImageLayout
         barrier.subresourceRange.baseMipLevel <- uint (mipLevels - 1)
-        VulkanDeviceApi.vkCmdPipelineBarrier
+        DeviceApi.vkCmdPipelineBarrier
             (commandBuffer,
                 TransferDst.PipelineStage,
                 ColorAttachmentRead.PipelineStage,

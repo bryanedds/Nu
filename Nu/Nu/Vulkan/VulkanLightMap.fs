@@ -61,7 +61,7 @@ module LightMap =
               (v3Forward, v3Down)|] // (-z)
 
         // begin reflection rendering
-        VulkanHl.recordTransitionLayout true 1 0 6 VkImageAspectFlags.Color ColorAttachmentRead ColorAttachmentWrite reflectionCubeMap.Image (getCommandBuffer ())
+        Hl.recordTransitionLayout true 1 0 6 VkImageAspectFlags.Color ColorAttachmentRead ColorAttachmentWrite reflectionCubeMap.Image (getCommandBuffer ())
 
         // render reflection cube map faces
         for i in 0 .. dec 6 do
@@ -90,10 +90,10 @@ module LightMap =
 
             // take a snapshot for testing
             // TODO: DJL: implement.
-            //VulkanHl.saveFramebufferRgbaToBitmap resolution resolution ("Reflection." + string reflectionCubeMapId + "." + string i + ".bmp")
+            //Hl.saveFramebufferRgbaToBitmap resolution resolution ("Reflection." + string reflectionCubeMapId + "." + string i + ".bmp")
 
         // end reflection rendering
-        VulkanHl.recordTransitionLayout true 1 0 6 VkImageAspectFlags.Color ColorAttachmentWrite ColorAttachmentRead reflectionCubeMap.Image (getCommandBuffer ())
+        Hl.recordTransitionLayout true 1 0 6 VkImageAspectFlags.Color ColorAttachmentWrite ColorAttachmentRead reflectionCubeMap.Image (getCommandBuffer ())
 
         // fin
         reflectionCubeMap
@@ -121,7 +121,7 @@ module LightMap =
         let projection = Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, 0.1f, 10.0f)
 
         // begin cubemap rendering
-        VulkanHl.recordTransitionLayout true 1 0 6 VkImageAspectFlags.Color ColorAttachmentRead ColorAttachmentWrite cubeMap.Image (getCommandBuffer ())
+        Hl.recordTransitionLayout true 1 0 6 VkImageAspectFlags.Color ColorAttachmentRead ColorAttachmentWrite cubeMap.Image (getCommandBuffer ())
 
         // render faces to irradiance cube map
         for i in 0 .. dec 6 do
@@ -137,10 +137,10 @@ module LightMap =
 
             // take a snapshot for testing
             // TODO: DJL: implement.
-            //VulkanHl.saveFramebufferRgbaToBitmap resolution resolution ("Irradiance." + string cubeMapId + "." + string i + ".bmp")
+            //Hl.saveFramebufferRgbaToBitmap resolution resolution ("Irradiance." + string cubeMapId + "." + string i + ".bmp")
 
         // end cubemap rendering
-        VulkanHl.recordTransitionLayout true 1 0 6 VkImageAspectFlags.Color ColorAttachmentWrite ColorAttachmentRead cubeMap.Image (getCommandBuffer ())
+        Hl.recordTransitionLayout true 1 0 6 VkImageAspectFlags.Color ColorAttachmentWrite ColorAttachmentRead cubeMap.Image (getCommandBuffer ())
         
         // fin
         cubeMap
@@ -225,34 +225,34 @@ module LightMap =
             // set up render
             let commandBuffer = getCommandBuffer ()
             let mutable renderArea = VkRect2D (0, 0, uint resolution, uint resolution)
-            let mutable vkViewport = VulkanHl.makeViewport false renderArea
-            let mutable renderingInfo = VulkanHl.makeRenderingInfo [|colorAttachment|] None renderArea None
-            VulkanDeviceApi.vkCmdBeginRendering (commandBuffer, &&renderingInfo)
-            VulkanDeviceApi.vkCmdSetViewport (commandBuffer, 0u, 1u, &&vkViewport)
-            VulkanDeviceApi.vkCmdSetScissor (commandBuffer, 0u, 1u, &&renderArea)
+            let mutable vkViewport = Hl.makeViewport false renderArea
+            let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment|] None renderArea None
+            DeviceApi.vkCmdBeginRendering (commandBuffer, &&renderingInfo)
+            DeviceApi.vkCmdSetViewport (commandBuffer, 0u, 1u, &&vkViewport)
+            DeviceApi.vkCmdSetScissor (commandBuffer, 0u, 1u, &&renderArea)
 
             // set up pipeline
-            VulkanDeviceApi.vkCmdBindPipeline (commandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
+            DeviceApi.vkCmdBindPipeline (commandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
 
             // bind vertex and index buffers
             let mutable vertexBuffer = geometry.VertexBuffer.VkBuffer
             let mutable vertexOffset = 0UL
-            VulkanDeviceApi.vkCmdBindVertexBuffers (commandBuffer, 0u, 1u, &&vertexBuffer, &&vertexOffset)
-            VulkanDeviceApi.vkCmdBindIndexBuffer (commandBuffer, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
+            DeviceApi.vkCmdBindVertexBuffers (commandBuffer, 0u, 1u, &&vertexBuffer, &&vertexOffset)
+            DeviceApi.vkCmdBindIndexBuffer (commandBuffer, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
 
             // bind descriptor sets
-            VulkanDeviceApi.vkCmdBindDescriptorSets (commandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, &&uniformDescriptorSet, 0u, nullPtr)
-            VulkanDeviceApi.vkCmdBindDescriptorSets (commandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, &&cubeMapDescriptorSet, 0u, nullPtr)
-            VulkanDeviceApi.vkCmdBindDescriptorSets (commandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 2u, 1u, &&samplerDescriptorSet, 0u, nullPtr)
+            DeviceApi.vkCmdBindDescriptorSets (commandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, &&uniformDescriptorSet, 0u, nullPtr)
+            DeviceApi.vkCmdBindDescriptorSets (commandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, &&cubeMapDescriptorSet, 0u, nullPtr)
+            DeviceApi.vkCmdBindDescriptorSets (commandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 2u, 1u, &&samplerDescriptorSet, 0u, nullPtr)
 
             // draw
-            VulkanDeviceApi.vkCmdDrawIndexed (commandBuffer, uint geometry.ElementCount, 1u, 0u, 0, 0u)
+            DeviceApi.vkCmdDrawIndexed (commandBuffer, uint geometry.ElementCount, 1u, 0u, 0, 0u)
 
             // tear down render
-            VulkanDeviceApi.vkCmdEndRendering commandBuffer
+            DeviceApi.vkCmdEndRendering commandBuffer
 
             // report draw scope
-            VulkanHl.reportDrawScope ()
+            Hl.reportDrawScope ()
 
             // advance pipeline
             Pipeline.advance 1 pipeline.Pipeline
@@ -285,7 +285,7 @@ module LightMap =
         let projection = Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, 0.1f, 10.0f)
 
         // begin cubemap rendering
-        VulkanHl.recordTransitionLayout true cubeMap.MipLevels 0 6 VkImageAspectFlags.Color ColorAttachmentRead ColorAttachmentWrite cubeMap.Image (getCommandBuffer ())
+        Hl.recordTransitionLayout true cubeMap.MipLevels 0 6 VkImageAspectFlags.Color ColorAttachmentRead ColorAttachmentWrite cubeMap.Image (getCommandBuffer ())
 
         // render environment filter cube map mips
         for mip in 0 .. dec Constants.Render.EnvironmentFilterMips do
@@ -303,10 +303,10 @@ module LightMap =
 
                 // take a snapshot for testing
                 // TODO: DJL: implement.
-                //VulkanHl.saveFramebufferRgbaToBitmap (int mipResolution) (int mipResolution) ("EnvironmentFilter." + string i + "." + string mip + ".bmp")
+                //Hl.saveFramebufferRgbaToBitmap (int mipResolution) (int mipResolution) ("EnvironmentFilter." + string i + "." + string mip + ".bmp")
 
         // end cubemap rendering
-        VulkanHl.recordTransitionLayout true cubeMap.MipLevels 0 6 VkImageAspectFlags.Color ColorAttachmentWrite ColorAttachmentRead cubeMap.Image (getCommandBuffer ())
+        Hl.recordTransitionLayout true cubeMap.MipLevels 0 6 VkImageAspectFlags.Color ColorAttachmentWrite ColorAttachmentRead cubeMap.Image (getCommandBuffer ())
 
         // fin
         cubeMap

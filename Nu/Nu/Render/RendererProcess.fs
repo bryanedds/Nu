@@ -106,7 +106,7 @@ type RendererInline () =
                             | Right textureInternal -> textureInternal
                             | Left _ -> TextureInternal.createEmpty context
                         | None -> TextureInternal.createEmpty context
-                    VulkanHl.EmptyTextureOpt <- Some emptyTexture
+                    Hl.EmptyTextureOpt <- Some emptyTexture
 
                     // create 3d renderer
                     let renderer3d =
@@ -385,7 +385,7 @@ type RendererThread () =
                 | Right textureInternal -> textureInternal
                 | Left _ -> TextureInternal.createEmpty context
             | None -> TextureInternal.createEmpty context
-        VulkanHl.EmptyTextureOpt <- Some emptyTexture
+        Hl.EmptyTextureOpt <- Some emptyTexture
 
         // create 3d renderer
         let renderer3d =

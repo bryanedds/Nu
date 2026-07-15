@@ -1386,7 +1386,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
     static member private tryLoadTextureAsset (assetClient : AssetClient) (asset : Asset) renderer =
         VulkanRenderer3d.invalidateCaches renderer
-        match assetClient.TextureClient.TryCreateTextureFiltered true (VulkanHl.inferTextureCompression asset.FilePath) asset.FilePath RenderThread renderer.VulkanContext with
+        match assetClient.TextureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression asset.FilePath) asset.FilePath RenderThread renderer.VulkanContext with
         | Right texture ->
             Some texture
         | Left error ->
@@ -3385,10 +3385,10 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite clearCoatPlusTexture renderer.VulkanContext.RenderCommandBuffer
         Texture.recordTransitionLayout DepthAttachmentRead DepthAttachmentWrite zTexture renderer.VulkanContext.RenderCommandBuffer
         let geometryTextureViews = [|depthTexture.ImageView; albedoTexture.ImageView; materialTexture.ImageView; normalPlusTexture.ImageView; subdermalPlusTexture.ImageView; scatterPlusTexture.ImageView; clearCoatPlusTexture.ImageView|]
-        let mutable renderingInfo = VulkanHl.makeRenderingInfo geometryTextureViews (Some zTexture.ImageView) renderArea (Some clearColor)
-        VulkanDeviceApi.vkCmdBeginRendering (renderer.VulkanContext.RenderCommandBuffer, &&renderingInfo)
-        VulkanDeviceApi.vkCmdEndRendering renderer.VulkanContext.RenderCommandBuffer
-        VulkanHl.reportDrawScope ()
+        let mutable renderingInfo = Hl.makeRenderingInfo geometryTextureViews (Some zTexture.ImageView) renderArea (Some clearColor)
+        DeviceApi.vkCmdBeginRendering (renderer.VulkanContext.RenderCommandBuffer, &&renderingInfo)
+        DeviceApi.vkCmdEndRendering renderer.VulkanContext.RenderCommandBuffer
+        Hl.reportDrawScope ()
 
         // begin deferred static surface rendering
         let mutable counted = 0
@@ -3727,8 +3727,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
             // blit from color full 0 back to tone mapping
             let bounds = VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)
-            let mutable region = VulkanHl.makeBlit 0 0 0 0 bounds bounds
-            VulkanDeviceApi.vkCmdBlitImage (renderer.VulkanContext.RenderCommandBuffer, colorFull0Texture.Image, TransferSrc.VkImageLayout, toneMappingTexture.Image, TransferDst.VkImageLayout, 1u, &&region, VkFilter.Nearest)
+            let mutable region = Hl.makeBlit 0 0 0 0 bounds bounds
+            DeviceApi.vkCmdBlitImage (renderer.VulkanContext.RenderCommandBuffer, colorFull0Texture.Image, TransferSrc.VkImageLayout, toneMappingTexture.Image, TransferDst.VkImageLayout, 1u, &&region, VkFilter.Nearest)
             Texture.recordTransitionLayout TransferSrc ColorAttachmentRead colorFull0Texture renderer.VulkanContext.RenderCommandBuffer
             Texture.recordTransitionLayout TransferDst ColorAttachmentRead toneMappingTexture renderer.VulkanContext.RenderCommandBuffer
 
@@ -3742,10 +3742,10 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
         // blit from gamma-correction attachment to target image without filtering
         Texture.recordTransitionLayout ColorAttachmentRead TransferSrc gammaCorrectionTexture renderer.VulkanContext.RenderCommandBuffer
-        VulkanHl.recordTransitionLayout true 1 targetLayer 1 VkImageAspectFlags.Color ColorAttachmentWrite TransferDst targetImage renderer.VulkanContext.RenderCommandBuffer
-        let mutable region = VulkanHl.makeBlit 0 0 0 targetLayer (VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)) targetBounds
-        VulkanDeviceApi.vkCmdBlitImage (renderer.VulkanContext.RenderCommandBuffer, gammaCorrectionTexture.Image, TransferSrc.VkImageLayout, targetImage, TransferDst.VkImageLayout, 1u, &&region, VkFilter.Nearest)
-        VulkanHl.recordTransitionLayout true 1 targetLayer 1 VkImageAspectFlags.Color TransferDst ColorAttachmentWrite targetImage renderer.VulkanContext.RenderCommandBuffer
+        Hl.recordTransitionLayout true 1 targetLayer 1 VkImageAspectFlags.Color ColorAttachmentWrite TransferDst targetImage renderer.VulkanContext.RenderCommandBuffer
+        let mutable region = Hl.makeBlit 0 0 0 targetLayer (VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)) targetBounds
+        DeviceApi.vkCmdBlitImage (renderer.VulkanContext.RenderCommandBuffer, gammaCorrectionTexture.Image, TransferSrc.VkImageLayout, targetImage, TransferDst.VkImageLayout, 1u, &&region, VkFilter.Nearest)
+        Hl.recordTransitionLayout true 1 targetLayer 1 VkImageAspectFlags.Color TransferDst ColorAttachmentWrite targetImage renderer.VulkanContext.RenderCommandBuffer
         Texture.recordTransitionLayout TransferSrc ColorAttachmentRead gammaCorrectionTexture renderer.VulkanContext.RenderCommandBuffer
 
         // advance render pass index
@@ -3805,7 +3805,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                          renderer.WindowViewport.Outer.Max.Y - renderer.WindowViewport.Inner.Max.Y,
                          uint renderer.WindowViewport.Inner.Size.X,
                          uint renderer.WindowViewport.Inner.Size.Y)
-                    |> VulkanHl.scaleRectToWindowPixels renderer.VulkanContext.Window
+                    |> Hl.scaleRectToWindowPixels renderer.VulkanContext.Window
                 let normalPass = NormalPass
                 let normalTasks = VulkanRenderer3d.getRenderTasks normalPass renderer
                 VulkanRenderer3d.renderGeometry
@@ -3938,7 +3938,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             EagerTexture brdfTextureInternal
 
         // create default irradiance map and default environment filter map and set up transiently
-        let commandBuffer = VulkanHl.createTransientCommandBuffer context.TransientCommandPool
+        let commandBuffer = Hl.createTransientCommandBuffer context.TransientCommandPool
         let irradianceMap =
             LightMap.createIrradianceMap
                 Constants.Render.IrradianceMapResolution
@@ -3959,9 +3959,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 (fun () -> commandBuffer)
                 ignore
                 context
-        let fence = VulkanHl.createFence false
+        let fence = Hl.createFence false
         ConcurrentCommandQueue.executeTransient commandBuffer context.TransientCommandPool fence context.RenderQueue
-        VulkanDeviceApi.vkDestroyFence (fence, nullPtr)
+        DeviceApi.vkDestroyFence (fence, nullPtr)
 
         // compute compressed image file extension
         let ext =

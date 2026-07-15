@@ -314,34 +314,34 @@ module CubeMap =
             // set up render
             let commandBuffer = getCommandBuffer ()
             let mutable renderArea = VkRect2D (0, 0, uint resolution, uint resolution)
-            let mutable vkViewport = VulkanHl.makeViewport false renderArea
-            let mutable renderingInfo = VulkanHl.makeRenderingInfo [|colorAttachment|] None renderArea None
-            VulkanDeviceApi.vkCmdBeginRendering (commandBuffer, &&renderingInfo)
-            VulkanDeviceApi.vkCmdSetViewport (commandBuffer, 0u, 1u, &&vkViewport)
-            VulkanDeviceApi.vkCmdSetScissor (commandBuffer, 0u, 1u, &&renderArea)
+            let mutable vkViewport = Hl.makeViewport false renderArea
+            let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment|] None renderArea None
+            DeviceApi.vkCmdBeginRendering (commandBuffer, &&renderingInfo)
+            DeviceApi.vkCmdSetViewport (commandBuffer, 0u, 1u, &&vkViewport)
+            DeviceApi.vkCmdSetScissor (commandBuffer, 0u, 1u, &&renderArea)
 
             // set up pipeline
-            VulkanDeviceApi.vkCmdBindPipeline (commandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
+            DeviceApi.vkCmdBindPipeline (commandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
 
             // bind vertex and index buffers
             let mutable vertexBuffer = geometry.VertexBuffer.VkBuffer
             let mutable vertexOffset = 0UL
-            VulkanDeviceApi.vkCmdBindVertexBuffers (commandBuffer, 0u, 1u, &&vertexBuffer, &&vertexOffset)
-            VulkanDeviceApi.vkCmdBindIndexBuffer (commandBuffer, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
+            DeviceApi.vkCmdBindVertexBuffers (commandBuffer, 0u, 1u, &&vertexBuffer, &&vertexOffset)
+            DeviceApi.vkCmdBindIndexBuffer (commandBuffer, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
 
             // bind descriptor sets
-            VulkanDeviceApi.vkCmdBindDescriptorSets (commandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, &&eyeDescriptorSet, 0u, nullPtr)
-            VulkanDeviceApi.vkCmdBindDescriptorSets (commandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, &&materialDescriptorSet, 0u, nullPtr)
-            VulkanDeviceApi.vkCmdBindDescriptorSets (commandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 2u, 1u, &&samplerDescriptorSet, 0u, nullPtr)
+            DeviceApi.vkCmdBindDescriptorSets (commandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, &&eyeDescriptorSet, 0u, nullPtr)
+            DeviceApi.vkCmdBindDescriptorSets (commandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, &&materialDescriptorSet, 0u, nullPtr)
+            DeviceApi.vkCmdBindDescriptorSets (commandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 2u, 1u, &&samplerDescriptorSet, 0u, nullPtr)
 
             // draw
-            VulkanDeviceApi.vkCmdDrawIndexed (commandBuffer, uint geometry.ElementCount, 1u, 0u, 0, 0u)
+            DeviceApi.vkCmdDrawIndexed (commandBuffer, uint geometry.ElementCount, 1u, 0u, 0, 0u)
 
             // tear down render
-            VulkanDeviceApi.vkCmdEndRendering commandBuffer
+            DeviceApi.vkCmdEndRendering commandBuffer
 
             // report draw scope
-            VulkanHl.reportDrawScope ()
+            Hl.reportDrawScope ()
 
             // advance pipeline
             Pipeline.advance 1 pipeline.Pipeline
