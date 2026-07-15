@@ -3,11 +3,16 @@
 
 namespace Nu.Vulkan
 open System
+open System.Numerics
 open System.Reflection
 open System.Runtime.InteropServices
 open System.Threading
 open System.IO
 open FSharp.NativeInterop
+open AstcEncoder
+open BCnEncoder.Shared.ImageFiles
+open ImageMagick
+open Pfim
 open SDL
 open Vortice.ShaderCompiler
 open Vortice.Vulkan
@@ -236,6 +241,33 @@ type DescriptorType =
         | SampledImage -> VkDescriptorType.SampledImage
         | UniformBuffer -> VkDescriptorType.UniformBuffer
         | StorageBuffer -> VkDescriptorType.StorageBuffer
+
+/// The compression to use for a texture, if any.
+type TextureCompression =
+    | Uncompressed
+    | ColorCompression
+    | NormalCompression
+
+    /// The Vulkan internal format corresponding to this block compression. This can vary based on
+    /// Constants.Render.TextureBlockCompression.
+    member this.ImageFormat =
+        match this with
+        | Uncompressed ->
+            Rgba8
+        | ColorCompression ->
+            match Constants.Render.TextureBlockCompression with
+            | BcCompression -> Bc3
+            | AstcCompression -> Astc
+        | NormalCompression ->
+            match Constants.Render.TextureBlockCompression with
+            | BcCompression -> Bc5
+            | AstcCompression -> Astc
+
+    /// The Vulkan pixel format corresponding to this block compression.
+    member this.PixelFormat =
+        match this with
+        | Uncompressed -> Bgra
+        | ColorCompression | NormalCompression -> Rgba
 
 /// The state of the program's OS-provided rendering surface.
 type SurfaceState =
@@ -838,6 +870,360 @@ module VulkanHl =
         match memoryTypeOpt with
         | Some memoryType -> memoryType
         | None -> Log.fail "Failed to find suitable memory type!"
+
+    /// Record command to copy buffer to image.
+    let recordBufferToImageCopy commandBuffer width height mipLevel layer vkBuffer vkImage =
+        recordTransitionLayout false mipLevel layer 1 VkImageAspectFlags.Color Undefined TransferDst vkImage commandBuffer
+        let mutable region = VkBufferImageCopy ()
+        region.imageSubresource <- makeSubresourceLayers mipLevel layer VkImageAspectFlags.Color
+        region.imageExtent <- VkExtent3D (width, height, 1)
+        VulkanDeviceApi.vkCmdCopyBufferToImage
+            (commandBuffer, vkBuffer, vkImage,
+                TransferDst.VkImageLayout,
+                1u, &&region)
+        recordTransitionLayout false mipLevel layer 1 VkImageAspectFlags.Color TransferDst ColorAttachmentRead vkImage commandBuffer
+
+    /// Record commands to generate mipmaps.
+    let recordGenerateMipmaps commandBuffer width height mipLevels layer vkImage =
+
+        // use single barrier for all transfer operations
+        let mutable barrier = VkImageMemoryBarrier ()
+        barrier.srcQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
+        barrier.dstQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
+        barrier.image <- vkImage
+
+        // transition mipmap images from undefined as they haven't been touched yet
+        barrier.srcAccessMask <- Undefined.Access
+        barrier.dstAccessMask <- TransferDst.Access
+        barrier.oldLayout <- Undefined.VkImageLayout
+        barrier.newLayout <- TransferDst.VkImageLayout
+        barrier.subresourceRange <- makeSubresourceRange 1 (mipLevels - 1) layer 1 VkImageAspectFlags.Color
+        VulkanDeviceApi.vkCmdPipelineBarrier
+            (commandBuffer,
+                Undefined.PipelineStage,
+                TransferDst.PipelineStage,
+                VkDependencyFlags.None,
+                0u, nullPtr, 0u, nullPtr,
+                1u, &&barrier)
+
+        // transition original image separately as it's already set to shader read
+        barrier.srcAccessMask <- ColorAttachmentRead.Access
+        barrier.dstAccessMask <- TransferDst.Access
+        barrier.oldLayout <- ColorAttachmentRead.VkImageLayout
+        barrier.newLayout <- TransferDst.VkImageLayout
+        barrier.subresourceRange.baseMipLevel <- 0u
+        barrier.subresourceRange.levelCount <- 1u // only one level at a time from here on
+        VulkanDeviceApi.vkCmdPipelineBarrier
+            (commandBuffer,
+                ColorAttachmentRead.PipelineStage,
+                TransferDst.PipelineStage,
+                VkDependencyFlags.None,
+                0u, nullPtr, 0u, nullPtr,
+                1u, &&barrier)
+
+        // compute mipmap dimensions
+        let mutable mipWidth = width
+        let mutable mipHeight = height
+        for i in 1 .. dec mipLevels do
+
+            // transition layout of previous image to be copied from
+            barrier.srcAccessMask <- TransferDst.Access
+            barrier.dstAccessMask <- TransferSrc.Access
+            barrier.oldLayout <- TransferDst.VkImageLayout
+            barrier.newLayout <- TransferSrc.VkImageLayout
+            barrier.subresourceRange.baseMipLevel <- uint (i - 1)
+            VulkanDeviceApi.vkCmdPipelineBarrier
+                (commandBuffer,
+                    TransferDst.PipelineStage,
+                    TransferSrc.PipelineStage,
+                    VkDependencyFlags.None,
+                    0u, nullPtr, 0u, nullPtr,
+                    1u, &&barrier)
+
+            // generate the next mipmap image from the previous one
+            let nextWidth = if mipWidth > 1 then mipWidth / 2 else 1
+            let nextHeight = if mipHeight > 1 then mipHeight / 2 else 1
+            let mutable blit =
+                makeBlit
+                    (i - 1) i layer layer
+                    (VkRect2D (0, 0, uint mipWidth, uint mipHeight))
+                    (VkRect2D (0, 0, uint nextWidth, uint nextHeight))
+            VulkanDeviceApi.vkCmdBlitImage (commandBuffer, vkImage, TransferSrc.VkImageLayout, vkImage, TransferDst.VkImageLayout, 1u, &&blit, VkFilter.Linear)
+
+            // transition layout of previous image to be read by shader
+            barrier.srcAccessMask <- TransferSrc.Access
+            barrier.dstAccessMask <- ColorAttachmentRead.Access
+            barrier.oldLayout <- TransferSrc.VkImageLayout
+            barrier.newLayout <- ColorAttachmentRead.VkImageLayout
+            VulkanDeviceApi.vkCmdPipelineBarrier
+                (commandBuffer,
+                    TransferSrc.PipelineStage,
+                    ColorAttachmentRead.PipelineStage,
+                    VkDependencyFlags.None,
+                    0u, nullPtr, 0u, nullPtr,
+                    1u, &&barrier)
+
+            // update mipmap dimensions
+            mipWidth <- nextWidth
+            mipHeight <- nextHeight
+
+        // transition final mip image left unfinished by loop
+        barrier.srcAccessMask <- TransferDst.Access
+        barrier.dstAccessMask <- ColorAttachmentRead.Access
+        barrier.oldLayout <- TransferDst.VkImageLayout
+        barrier.newLayout <- ColorAttachmentRead.VkImageLayout
+        barrier.subresourceRange.baseMipLevel <- uint (mipLevels - 1)
+        VulkanDeviceApi.vkCmdPipelineBarrier
+            (commandBuffer,
+                TransferDst.PipelineStage,
+                ColorAttachmentRead.PipelineStage,
+                VkDependencyFlags.None,
+                0u, nullPtr, 0u, nullPtr,
+                1u, &&barrier)
+
+    /// Infer that an asset with the given file path should be filtered in a 2D rendering context.
+    let inferTextureFiltered2d (filePath : string) =
+        let name = PathF.GetFileNameWithoutExtension filePath
+        name.EndsWith "_f" ||
+        name.EndsWith "Filtered"
+        
+    /// Infer the type of block compression that an asset with the given file path should utilize.
+    let inferTextureCompression (filePath : string) =
+        let name = PathF.GetFileNameWithoutExtension filePath
+        if  name.EndsWith "_f" ||
+            name.EndsWith "_hm" ||
+            name.EndsWith "_b" ||
+            name.EndsWith "_t" ||
+            name.EndsWith "_u" ||
+            name.EndsWith "Face" ||
+            name.EndsWith "HeightMap" ||
+            name.EndsWith "Blend" ||
+            name.EndsWith "Tint" ||
+            name.EndsWith "Uncompressed" then Uncompressed
+        elif
+            name.EndsWith "_n" ||
+            name.EndsWith "_normal" ||
+            name.EndsWith "Normal" then NormalCompression
+        else ColorCompression
+
+    /// Detect that a dds file uses a compressed representation.
+    let detectTextureCompressionDds (dds : DdsFile) =
+        let format = dds.header.ddsPixelFormat.DxgiFormat
+        let formatStr = string format
+        formatStr.StartsWith "DxgiFormatBc" ||
+        formatStr.StartsWith "DxgiFormatAtc"
+
+    /// Detect that a ktx file uses a compressed representation.
+    let detectTextureCompressionKtx (ktx : KtxFile) =
+        let format = ktx.header.GlInternalFormat
+        let formatStr = string format
+        formatStr.StartsWith "GlCompressed"
+
+    /// Write the binary header of a ktx file.
+    /// Implementation based on https://registry.khronos.org/KTX/specs/1.0/ktxspec.v1.html
+    let writeKtxHeader (resolution : Vector2i) mipmapLevels compressed (writer : BinaryWriter) =
+        writer.Write                                                        // ktx identifier
+            [|0xABuy; 0x4Buy; 0x54uy; 0x58uy                                //
+              0x20uy; 0x31uy; 0x31uy; 0xBBuy                                //
+              0x0Duy; 0x0Auy; 0x1Auy; 0x0Auy|]                              //
+        writer.Write 0x04030201u                                            // endianness
+        if compressed                                                       // glType
+        then writer.Write 0x0000u                                           // (zero when compressed)
+        else writer.Write 0x1401u                                           // OpenGL.Gl.UNSIGNED_BYTE
+        writer.Write 1u                                                     // glTypeSize
+        if compressed                                                       // glFormat
+        then writer.Write 0x0000u                                           // (zero when compressed)
+        else writer.Write 0x80E1u                                           // OpenGL.PixelFormat.Bgra
+        if compressed                                                       // glInternalFormat
+        then writer.Write 0x93B0u                                           // OpenGL.InternalFormat.CompressedRgbaAstc4x4
+        else writer.Write 0x8058u                                           // OpenGL.InternalFormat.Rgba8
+        writer.Write 0x80E1                                                 // glBaseInternalFormat = OpenGL.PixelFormat.Bgra
+        writer.Write (uint32 resolution.X)                                  // width
+        writer.Write (uint32 resolution.Y)                                  // height
+        writer.Write 1u                                                     // depth
+        writer.Write 0u                                                     // array elements
+        writer.Write 1u                                                     // faces
+        writer.Write (uint32 mipmapLevels)                                  // mip levels
+        writer.Write 0u                                                     // key-value data size
+
+    /// Attempt to generate uncompressed astc bytes an MagickImage to astc bytes.
+    let tryGenerateUncompressedImage (image : MagickImage) =
+        let pixelBytes = image.GetPixels().ToByteArray(PixelMapping.RGBA)
+        let resolution = v2i (int image.Width) (int image.Height)
+        Some (resolution, pixelBytes)
+
+    /// Attempt to generate uncompressed astc mipmap bytes from a MagickImage.
+    let tryGenerateUncompressedMipmaps (image : MagickImage) =
+        let mutable (width, height) = (image.Width, image.Height)
+        let mipmapOpts =
+            [while width >= 1u && height >= 1u do
+                width <- width / 2u
+                height <- height / 2u
+                let mip = image.Clone () :?> MagickImage
+                mip.Resize (width, height)
+                tryGenerateUncompressedImage mip]
+        match List.definitizePlus mipmapOpts with
+        | (true, mipmaps) -> Some mipmaps
+        | (false, _) -> None
+
+    /// Attempt to compress a MagickImage to astc bytes.
+    let tryCompressImage (image : MagickImage) =
+    
+        // attempt to configure astc encoder
+        let pixelBytes = image.GetPixels().ToByteArray(PixelMapping.RGBA)
+        let blockSize = 4u
+        let mutable config = AstcencConfig ()
+        let status = Astcenc.AstcencConfigInit (AstcencProfile.AstcencPrfLdr, blockSize, blockSize, 1u, Astcenc.AstcencPreMedium, Unchecked.defaultof<AstcencFlags>, &config)
+        if status = AstcencError.AstcencSuccess then
+    
+            // attempt to initialize astc encoder
+            let mutable context = AstcencContext ()
+            let status = Astcenc.AstcencContextAlloc(ref config, 1u, &context)
+            if status = AstcencError.AstcencSuccess then
+    
+                // attempt to compress astc image
+                let mutable astcImage = AstcencImage (dimX = image.Width, dimY = image.Height, dimZ = 1u, dataType = AstcencType.AstcencTypeU8, data = [|pixelBytes|])
+                let swizzle = AstcencSwizzle (r = AstcencSwz.AstcencSwzR, g = AstcencSwz.AstcencSwzG, b = AstcencSwz.AstcencSwzB, a = AstcencSwz.AstcencSwzA)
+                let blockCountX = (uint image.Width + blockSize - 1u) / blockSize
+                let blockCountY = (uint image.Height + blockSize - 1u) / blockSize
+                let compressedLength = blockCountX * blockCountY * 16u
+                let compressedData = Array.zeroCreate<byte> (int compressedLength)
+                let status = Astcenc.AstcencCompressImage (context, &astcImage, swizzle, compressedData.AsSpan (), 0u)
+                if status = AstcencError.AstcencSuccess
+                then Some (v2i (int image.Width) (int image.Height), compressedData)
+                else None
+    
+            // failure
+            else None
+    
+        // failure
+        else None
+
+    /// Attempt to compress astc mipmap bytes from a MagickImage.
+    let tryCompressMipmaps (image : MagickImage) =
+        let mutable (width, height) = (image.Width, image.Height)
+        let mipmapOpts =
+            [while width >= 8u && height >= 8u do
+                width <- width / 2u
+                height <- height / 2u
+                let mip = image.Clone () :?> MagickImage
+                mip.Resize (width, height)
+                tryCompressImage mip]
+        match List.definitizePlus mipmapOpts with
+        | (true, mipmaps) -> Some mipmaps
+        | (false, _) -> None
+
+    /// Attempt to format an uncompressed pfim image texture (non-mipmap).
+    let tryFormatUncompressedPfimageTexture format height stride (data : byte array) =
+        match format with
+        | ImageFormat.Rgb24 ->
+            let converted =
+                [|let mutable y = 0
+                  while y < height do
+                    let mutable x = 0
+                    while x < stride - 2 do
+                        let i = x + stride * y
+                        data[i]; data[i+1]; data[i+2]; 255uy
+                        x <- x + 3
+                    y <- inc y|]
+            Some converted
+        | ImageFormat.Rgba32 ->
+            let converted =
+                [|let mutable y = 0
+                  while y < height do
+                    let mutable x = 0
+                    while x < stride - 3 do
+                        let i = x + stride * y
+                        data[i]; data[i+1]; data[i+2]; data[i+3]
+                        x <- x + 4
+                    y <- inc y|]
+            Some converted
+        | _ -> Log.info ("Unsupported image format '" + scstring format + "'."); None
+
+    /// Format an uncompressed pfim image mipmap.
+    let formatUncompressedPfimageMipmap format (mipmap : MipMapOffset) (data : byte array) =
+        match format with
+        | ImageFormat.Rgb24 ->
+            let converted =
+                [|let mutable y = 0
+                  while y < mipmap.Height do
+                    let mutable x = 0
+                    while x < mipmap.Stride - 2 do
+                        let i = x + mipmap.Stride * y + mipmap.DataOffset
+                        data[i]; data[i+1]; data[i+2]; 255uy
+                        x <- x + 3
+                    y <- inc y|]
+            (v2i mipmap.Width mipmap.Height, converted)
+        | ImageFormat.Rgba32 ->
+            let converted =
+                [|let mutable y = 0
+                  while y < mipmap.Height do
+                    let mutable x = 0
+                    while x < mipmap.Stride - 3 do
+                        let i = x + mipmap.Stride * y + mipmap.DataOffset
+                        data[i]; data[i+1]; data[i+2]; data[i+3]
+                        x <- x + 4
+                    y <- inc y|]
+            (v2i mipmap.Width mipmap.Height, converted)
+        | _ -> failwithumf ()
+
+    /// Attempt to format an uncompressed pfim image.
+    let tryFormatUncompressedPfimage minimal (image : IImage) =
+        let minimal = minimal && image.MipMaps.Length >= 1 // NOTE: at least one mipmap is needed for minimal load.
+        let data = image.Data // OPTIMIZATION: pulling all values out of image to avoid slow property calls.
+        let format = image.Format
+        let height = image.Height
+        let stride = image.Stride
+        let mipmaps = image.MipMaps
+        let bytesOpt =
+            if not minimal
+            then tryFormatUncompressedPfimageTexture format height stride data
+            else Some [||]
+        match bytesOpt with
+        | Some bytes ->
+            let minimalMipmapIndex =
+                if minimal
+                then min (dec mipmaps.Length) (dec Constants.Render.TextureMinimalMipmapIndex)
+                else 0
+            let mipmapBytesArray =
+                [|for i in minimalMipmapIndex .. dec mipmaps.Length do
+                    formatUncompressedPfimageMipmap format mipmaps[i] data|]
+            if minimal then
+                let (minimalMipmapResolution, minimalMipmapBytes) = mipmapBytesArray[0]
+                let remainingMipmapBytes = if minimalMipmapBytes.Length > 1 then Array.tail mipmapBytesArray else [||]
+                Some (minimalMipmapResolution, minimalMipmapBytes, remainingMipmapBytes)
+            else Some (v2i image.Width image.Height, bytes, mipmapBytesArray)
+        | None -> None
+
+    /// Format compressed pfim image data.
+    let formatCompressedPfdds minimal (dds : Dds) =
+        let minimal = minimal && dds.Header.MipMapCount >= 3u // NOTE: at least three mipmaps are needed for minimal load since the last 2 are not valid when compressed.
+        let mutable dims = v2i dds.Width dds.Height
+        let mutable size = ((dims.X + 3) / 4) * ((dims.Y + 3) / 4) * 16
+        let mutable index = 0
+        let bytes =
+            if not minimal
+            then dds.Data.AsSpan(index, size).ToArray()
+            else [||]
+        let minimalMipmapIndex =
+            if minimal
+            then min dds.Header.MipMapCount (uint Constants.Render.TextureMinimalMipmapIndex)
+            else 1u
+        let mipmapBytesArray =
+            if dds.Header.MipMapCount >= 2u then
+                [|for i in 1u .. dds.Header.MipMapCount do
+                    dims <- dims / 2
+                    index <- index + size
+                    size <- size / 4
+                    if  i >= minimalMipmapIndex &&
+                        size >= 16 then // NOTE: as mentioned above, mipmap with size < 16 can exist but isn't valid when compressed.
+                        (dims, dds.Data.AsSpan(index, size).ToArray())|]
+            else [||]
+        if minimal then
+            let (minimalMipmapResolution, minimalMipmapBytes) = mipmapBytesArray[0]
+            let remainingMipmapBytes = if minimalMipmapBytes.Length > 1 then Array.tail mipmapBytesArray else [||]
+            (minimalMipmapResolution, minimalMipmapBytes, remainingMipmapBytes)
+        else (v2i dds.Width dds.Height, bytes, mipmapBytesArray)
 
     /// Report the fact that a draw scope has been completed.
     let reportDrawScope () =

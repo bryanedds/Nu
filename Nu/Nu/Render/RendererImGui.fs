@@ -158,7 +158,7 @@ type VulkanRendererImGui
                 if not (assetTextureOpts.ContainsKey assetTag) then
                     match Metadata.tryGetFilePath assetTag with
                     | Some filePath ->
-                        match VulkanHl.tryCreateTextureInternal true false (VulkanHl.inferTextureCompression filePath) filePath RenderThread context with
+                        match TextureInternal.tryCreate true false (VulkanHl.inferTextureCompression filePath) filePath RenderThread context with
                         | Right textureInternal ->
                             let texture = EagerTexture textureInternal
                             let textureId = textureIdCounter

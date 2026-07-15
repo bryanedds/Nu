@@ -102,7 +102,7 @@ type RendererInline () =
                         let defaultImageTag = AssetTag.make Assets.Default.PackageName Assets.Default.ImageName
                         match Metadata.tryGetFilePath defaultImageTag with
                         | Some filePath ->
-                            match VulkanHl.tryCreateTextureInternal true false Uncompressed filePath RenderThread context with
+                            match TextureInternal.tryCreate true false Uncompressed filePath RenderThread context with
                             | Right textureInternal -> textureInternal
                             | Left _ -> TextureInternal.createEmpty context
                         | None -> TextureInternal.createEmpty context
@@ -377,11 +377,11 @@ type RendererThread () =
     member private rt.Run fonts geometryViewport windowViewport context =
 
         // create and populate the empty texture
-        let emptyTexture = 
+        let emptyTexture =
             let defaultImageTag = AssetTag.make Assets.Default.PackageName Assets.Default.ImageName
             match Metadata.tryGetFilePath defaultImageTag with
             | Some filePath ->
-                match VulkanHl.tryCreateTextureInternal true false Uncompressed filePath RenderThread context with
+                match TextureInternal.tryCreate true false Uncompressed filePath RenderThread context with
                 | Right textureInternal -> textureInternal
                 | Left _ -> TextureInternal.createEmpty context
             | None -> TextureInternal.createEmpty context

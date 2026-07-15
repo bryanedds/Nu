@@ -73,7 +73,7 @@ module CubeMap =
                         | BcCompression -> PathF.ChangeExtension (faceFilePath, ".dds")
                         | AstcCompression -> PathF.ChangeExtension (faceFilePath, ".ktx")
                     else faceFilePath
-                match VulkanHl.tryCreateTextureData false faceFilePath with
+                match TextureData.tryCreate false faceFilePath with
                 | Some textureData ->
                     match textureData with
                     | TextureData.TextureDataDotNet (metadata, bytes) ->

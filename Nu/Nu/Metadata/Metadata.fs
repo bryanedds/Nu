@@ -84,7 +84,7 @@ module Metadata =
                 Some (TextureMetadata.make image.Width image.Height)
             else
                 Log.infoOnce "Slow path used to load texture metadata."
-                match VulkanHl.tryCreateTextureData true filePath with
+                match TextureData.tryCreate true filePath with
                 | Some textureData ->
                     let metadata = textureData.Metadata
                     TextureData.destroy textureData
