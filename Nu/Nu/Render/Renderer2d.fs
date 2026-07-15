@@ -1017,26 +1017,26 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         ()
 
     /// Make a VulkanRenderer2d.
-    static member make viewport (vkc : VulkanContext) =
+    static member make viewport (context : VulkanContext) =
         
         // create samplers
-        let unfilteredSampler = Sampler.create VkSamplerAddressMode.Repeat VkFilter.Nearest VkFilter.Nearest false vkc
-        let filteredSampler = Sampler.create VkSamplerAddressMode.Repeat VkFilter.Linear VkFilter.Linear true vkc
+        let unfilteredSampler = Sampler.create VkSamplerAddressMode.Repeat VkFilter.Nearest VkFilter.Nearest false context
+        let filteredSampler = Sampler.create VkSamplerAddressMode.Repeat VkFilter.Linear VkFilter.Linear true context
         
         // create text resources
-        let spriteSingletonPipeline = SpriteSingleton.createSpriteSingletonPipeline vkc
-        let textQuad = SpriteSingleton.createSpriteQuad true vkc
+        let spriteSingletonPipeline = SpriteSingleton.createSpriteSingletonPipeline context
+        let textQuad = SpriteSingleton.createSpriteQuad true context
         let textureDumpster = TextureDumpster.create ()
 
         // create sprite batch env
-        let spriteBatchEnv = SpriteBatch.createSpriteBatchEnv unfilteredSampler filteredSampler vkc
+        let spriteBatchEnv = SpriteBatch.createSpriteBatchEnv unfilteredSampler filteredSampler context
 
         // create contour tessellation pipeline
-        let contourTesselationPipeline = ContourTessellation.createContourTessellationPipeline vkc
+        let contourTesselationPipeline = ContourTessellation.createContourTessellationPipeline context
         
         // make renderer
         let renderer =
-            { VulkanContext = vkc
+            { VulkanContext = context
               Viewport = viewport
               TextQuad = textQuad
               TextureDumpster = textureDumpster

@@ -555,8 +555,8 @@ type Pipeline =
         descriptorSet.Specify key specify
 
     /// Try to recreate VkPipelines with updated shaders.
-    static member reloadShaders pipeline (vkc : VulkanContext) =
-        ConcurrentCommandQueue.waitIdle vkc.RenderQueue // VkPipeline may still be in use by previous frame
+    static member reloadShaders pipeline (context : VulkanContext) =
+        ConcurrentCommandQueue.waitIdle context.RenderQueue // VkPipeline may still be in use by previous frame
         Pipeline.destroyVkPipelines pipeline
         pipeline.VkPipelines_ <-
             Pipeline.tryCreateVkPipelines
@@ -629,9 +629,9 @@ type Pipeline =
         pipeline
     
     /// Destroy a Pipeline.
-    static member destroy pipeline vkc =
+    static member destroy pipeline context =
         Pipeline.destroyVkPipelines pipeline
         VulkanDeviceApi.vkDestroyPipelineLayout (pipeline.PipelineLayout, nullPtr)
         for vkLayout in pipeline.VkDescriptorSetLayouts_ do VulkanDeviceApi.vkDestroyDescriptorSetLayout (vkLayout, nullPtr)
-        for buffer in pipeline.Buffers_ do VulkanBuffer.destroy buffer vkc
+        for buffer in pipeline.Buffers_ do VulkanBuffer.destroy buffer context
         for set in pipeline.DescriptorSets_ do set.Destroy ()

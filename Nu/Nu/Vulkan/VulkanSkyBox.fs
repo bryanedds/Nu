@@ -24,11 +24,11 @@ type SkyBoxPipeline =
 module SkyBox =
 
     /// Create a SkyBoxPipeline.
-    let createSkyBoxPipeline colorAttachmentFormat depthAttachmentFormat (vkc : VulkanContext) =
+    let createSkyBoxPipeline colorAttachmentFormat depthAttachmentFormat (context : VulkanContext) =
 
         // create uniform buffers
-        let eyeUniform = VulkanBuffer.create Uniform sizeof<Eye> vkc
-        let skyBoxPropertiesUniform = VulkanBuffer.create Uniform sizeof<SkyBox> vkc
+        let eyeUniform = VulkanBuffer.create Uniform sizeof<Eye> context
+        let skyBoxPropertiesUniform = VulkanBuffer.create Uniform sizeof<SkyBox> context
 
         // create pipeline
         let pipeline =
@@ -57,8 +57,8 @@ module SkyBox =
         skyBoxPipeline
 
     /// Destroy a SkyBoxPipeline.
-    let destroySkyBoxPipeline skyBoxPipeline vkc =
-        Pipeline.destroy skyBoxPipeline.Pipeline vkc
+    let destroySkyBoxPipeline skyBoxPipeline context =
+        Pipeline.destroy skyBoxPipeline.Pipeline context
 
     /// Draw a sky box.
     let drawSkyBox
@@ -74,7 +74,7 @@ module SkyBox =
         (colorAttachment : Texture)
         (depthAttachment : Texture)
         (pipeline : SkyBoxPipeline)
-        (vkc : VulkanContext) =
+        (context : VulkanContext) =
 
         // compute vulkan-appropriate matrices
         let viewInverse = view.Inverted
@@ -91,12 +91,12 @@ module SkyBox =
                     
                 // specify eye
                 let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
-                VulkanBuffer.uploadValue eye pipeline.EyeUniform vkc
+                VulkanBuffer.uploadValue eye pipeline.EyeUniform context
                 Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.EyeUniform vkSet
 
                 // specify sky box
                 let skyBox = SkyBox (color = color.V3, brightness = brightness)
-                VulkanBuffer.uploadValue skyBox pipeline.SkyBoxPropertiesUniform vkc
+                VulkanBuffer.uploadValue skyBox pipeline.SkyBoxPropertiesUniform context
                 Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.SkyBoxPropertiesUniform vkSet
 
             // specify material
@@ -111,31 +111,31 @@ module SkyBox =
             let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
             let mutable vkViewport = VulkanHl.makeViewport false renderArea
             let mutable renderingInfo = VulkanHl.makeRenderingInfo [|colorAttachment.ImageView|] (Some depthAttachment.ImageView) renderArea None
-            VulkanDeviceApi.vkCmdBeginRendering (vkc.RenderCommandBuffer, &&renderingInfo)
-            VulkanDeviceApi.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, &&vkViewport)
-            VulkanDeviceApi.vkCmdSetScissor (vkc.RenderCommandBuffer, 0u, 1u, &&renderArea)
+            VulkanDeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
+            VulkanDeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
+            VulkanDeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&renderArea)
 
             // set up pipeline
-            VulkanDeviceApi.vkCmdBindPipeline (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
-            VulkanDeviceApi.vkCmdSetDepthTestEnable (vkc.RenderCommandBuffer, true)
-            VulkanDeviceApi.vkCmdSetDepthCompareOp (vkc.RenderCommandBuffer, VkCompareOp.LessOrEqual)
+            VulkanDeviceApi.vkCmdBindPipeline (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
+            VulkanDeviceApi.vkCmdSetDepthTestEnable (context.RenderCommandBuffer, true)
+            VulkanDeviceApi.vkCmdSetDepthCompareOp (context.RenderCommandBuffer, VkCompareOp.LessOrEqual)
                 
             // bind vertex and index buffers
             let mutable vertexBuffer = geometry.VertexBuffer.VkBuffer
             let mutable vertexOffset = 0UL
-            VulkanDeviceApi.vkCmdBindVertexBuffers (vkc.RenderCommandBuffer, 0u, 1u, &&vertexBuffer, &&vertexOffset)
-            VulkanDeviceApi.vkCmdBindIndexBuffer (vkc.RenderCommandBuffer, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
+            VulkanDeviceApi.vkCmdBindVertexBuffers (context.RenderCommandBuffer, 0u, 1u, &&vertexBuffer, &&vertexOffset)
+            VulkanDeviceApi.vkCmdBindIndexBuffer (context.RenderCommandBuffer, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
 
             // bind descriptor sets
-            VulkanDeviceApi.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, &&uniformDescriptorSet, 0u, nullPtr)
-            VulkanDeviceApi.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, &&materialDescriptorSet, 0u, nullPtr)
-            VulkanDeviceApi.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 2u, 1u, &&samplerDescriptorSet, 0u, nullPtr)
+            VulkanDeviceApi.vkCmdBindDescriptorSets (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, &&uniformDescriptorSet, 0u, nullPtr)
+            VulkanDeviceApi.vkCmdBindDescriptorSets (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, &&materialDescriptorSet, 0u, nullPtr)
+            VulkanDeviceApi.vkCmdBindDescriptorSets (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 2u, 1u, &&samplerDescriptorSet, 0u, nullPtr)
                 
             // draw
-            VulkanDeviceApi.vkCmdDrawIndexed (vkc.RenderCommandBuffer, uint geometry.ElementCount, 1u, 0u, 0, 0u)
+            VulkanDeviceApi.vkCmdDrawIndexed (context.RenderCommandBuffer, uint geometry.ElementCount, 1u, 0u, 0, 0u)
         
             // tear down render
-            VulkanDeviceApi.vkCmdEndRendering vkc.RenderCommandBuffer
+            VulkanDeviceApi.vkCmdEndRendering context.RenderCommandBuffer
 
             // report draw scope
             VulkanHl.reportDrawScope ()
@@ -144,7 +144,7 @@ module SkyBox =
             Pipeline.advance 1 pipeline.Pipeline
 
             // advance rendering command buffer
-            VulkanContext.advanceRenderCommandBuffer vkc
+            VulkanContext.advanceRenderCommandBuffer context
 
         // abort
         | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."

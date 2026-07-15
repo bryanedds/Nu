@@ -34,14 +34,14 @@ type [<Struct>] LightMap =
 module LightMap =
 
     /// Create a reflection map.
-    let createReflectionMap render resolution origin ambientColor ambientBrightness getCommandBuffer advanceCommandBufferWhenNeeded vkc =
+    let createReflectionMap render resolution origin ambientColor ambientBrightness getCommandBuffer advanceCommandBufferWhenNeeded context =
 
         // create reflection cube map
         let metadata = TextureMetadata.make resolution resolution
         let reflectionCubeMapInternal =
             TextureInternal.create
                 MipmapNone (AttachmentColor false) TextureCubeMap (VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferDst)
-                Rgba16f Rgba metadata vkc
+                Rgba16f Rgba metadata context
         let reflectionCubeMap = EagerTexture reflectionCubeMapInternal
 
         // construct geometry viewport
@@ -95,14 +95,14 @@ module LightMap =
         // fin
         reflectionCubeMap
 
-    let createIrradianceMap resolution (cubeMapSurface : CubeMapSurface) sampler colorFormat irradiancePipeline getCommandBuffer advanceCommandBufferWhenNeeded vkc =
+    let createIrradianceMap resolution (cubeMapSurface : CubeMapSurface) sampler colorFormat irradiancePipeline getCommandBuffer advanceCommandBufferWhenNeeded context =
 
         // create irradiance cube map
         let metadata = TextureMetadata.make resolution resolution
         let cubeMapInternal =
             TextureInternal.create
                 MipmapNone (AttachmentColor false) TextureCubeMap VkImageUsageFlags.Sampled
-                colorFormat Rgba metadata vkc
+                colorFormat Rgba metadata context
         let cubeMap = EagerTexture cubeMapInternal
 
         // construct eye rotations
@@ -130,7 +130,7 @@ module LightMap =
             CubeMap.drawCubeMap
                 eyeCenter view projection cubeMapSurface.CubeMap sampler
                 cubeMapSurface.CubeMapGeometry resolution cubeMap.SubViews[0, i]
-                irradiancePipeline getCommandBuffer advanceCommandBufferWhenNeeded vkc
+                irradiancePipeline getCommandBuffer advanceCommandBufferWhenNeeded context
 
             // take a snapshot for testing
             // TODO: DJL: implement.
@@ -143,11 +143,11 @@ module LightMap =
         cubeMap
     
     /// Create an EnvironmentFilterPipeline.
-    let createEnvironmentFilterPipeline shaderPath colorAttachmentFormat (vkc : VulkanContext) =
+    let createEnvironmentFilterPipeline shaderPath colorAttachmentFormat (context : VulkanContext) =
 
         // create uniform buffers
-        let eyeUniform = VulkanBuffer.create Uniform sizeof<Eye> vkc
-        let environmentFilterUniform = VulkanBuffer.create Uniform sizeof<EnvironmentFilter> vkc
+        let eyeUniform = VulkanBuffer.create Uniform sizeof<Eye> context
+        let environmentFilterUniform = VulkanBuffer.create Uniform sizeof<EnvironmentFilter> context
 
         // create pipeline
         let pipeline =
@@ -169,8 +169,8 @@ module LightMap =
         { EyeUniform = eyeUniform; EnvironmentFilterUniform = environmentFilterUniform; Pipeline = pipeline }
     
     /// Destroy an EnvironmentFilterPipeline.
-    let destroyEnvironmentFilterPipeline environmentFilterPipeline vkc =
-        Pipeline.destroy environmentFilterPipeline.Pipeline vkc
+    let destroyEnvironmentFilterPipeline environmentFilterPipeline context =
+        Pipeline.destroy environmentFilterPipeline.Pipeline context
     
     /// Draw an environment filter.
     let drawEnvironmentFilter
@@ -186,7 +186,7 @@ module LightMap =
         (pipeline : EnvironmentFilterPipeline)
         (getCommandBuffer : unit -> VkCommandBuffer)
         (advanceCommandBufferWhenNeeded : unit -> unit)
-        (vkc : VulkanContext) =
+        (context : VulkanContext) =
 
         // compute vulkan-appropriate matrices
         let viewInverse = view.Inverted
@@ -203,12 +203,12 @@ module LightMap =
 
                 // specify eye
                 let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
-                VulkanBuffer.uploadValue eye pipeline.EyeUniform vkc
+                VulkanBuffer.uploadValue eye pipeline.EyeUniform context
                 Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.EyeUniform vkSet
 
                 // specify environment filter
                 let environmentFilter = EnvironmentFilter (roughness = roughness, resolution = resolution)
-                VulkanBuffer.uploadValue environmentFilter pipeline.EnvironmentFilterUniform vkc
+                VulkanBuffer.uploadValue environmentFilter pipeline.EnvironmentFilterUniform context
                 Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.EnvironmentFilterUniform vkSet
 
             // specify cube map
@@ -261,14 +261,14 @@ module LightMap =
         | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
     
     /// Create an environment filter map.
-    let createEnvironmentFilterMap resolution (environmentFilterSurface : CubeMapSurface) sampler colorFormat environmentFilterPipeline getCommandBuffer advanceCommandBufferWhenNeeded vkc =
+    let createEnvironmentFilterMap resolution (environmentFilterSurface : CubeMapSurface) sampler colorFormat environmentFilterPipeline getCommandBuffer advanceCommandBufferWhenNeeded context =
 
         // create environment filter cube map
         let metadata = TextureMetadata.make resolution resolution
         let cubeMapInternal =
             TextureInternal.create
                 (MipmapManual Constants.Render.EnvironmentFilterMips) (AttachmentColor false) TextureCubeMap VkImageUsageFlags.Sampled
-                colorFormat Rgba metadata vkc
+                colorFormat Rgba metadata context
         let cubeMap = EagerTexture cubeMapInternal
         
         // compute views and projection
@@ -296,7 +296,7 @@ module LightMap =
                 drawEnvironmentFilter
                     eyeCenter view projection mipRoughness mipResolution environmentFilterSurface.CubeMap sampler
                     environmentFilterSurface.CubeMapGeometry cubeMap.SubViews[mip, i]
-                    environmentFilterPipeline getCommandBuffer advanceCommandBufferWhenNeeded vkc
+                    environmentFilterPipeline getCommandBuffer advanceCommandBufferWhenNeeded context
 
                 // take a snapshot for testing
                 // TODO: DJL: implement.
@@ -319,6 +319,6 @@ module LightMap =
           EnvironmentFilterMap = environmentFilterMap }
 
     /// Destroy a light map, including its irradiance environment filter maps.
-    let destroyLightMap lightMap vkc =
-        Texture.destroy lightMap.IrradianceMap vkc
-        Texture.destroy lightMap.EnvironmentFilterMap vkc
+    let destroyLightMap lightMap context =
+        Texture.destroy lightMap.IrradianceMap context
+        Texture.destroy lightMap.EnvironmentFilterMap context

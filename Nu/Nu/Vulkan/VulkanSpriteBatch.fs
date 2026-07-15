@@ -75,11 +75,11 @@ type [<ReferenceEquality>] SpriteBatchEnv =
 module SpriteBatch =
 
     /// Create a sprite batch pipeline.
-    let private createSpriteBatchPipeline (vkc : VulkanContext) =
+    let private createSpriteBatchPipeline (context : VulkanContext) =
 
         // create uniforms
-        let spritesUniform = VulkanBuffer.create Uniform (Constants.Render.SpriteBatchSize * sizeof<Sprite>) vkc
-        let viewProjectionUniform = VulkanBuffer.create Uniform sizeof<ViewProjection> vkc
+        let spritesUniform = VulkanBuffer.create Uniform (Constants.Render.SpriteBatchSize * sizeof<Sprite>) context
+        let viewProjectionUniform = VulkanBuffer.create Uniform sizeof<ViewProjection> context
         
         // create sprite batch pipeline
         let pipeline =
@@ -93,15 +93,15 @@ module SpriteBatch =
                     [|Pipeline.descriptor 0 SampledImage FragmentStage 1|]
                   Pipeline.descriptorSet<Sampler>
                     [|Pipeline.descriptor 0 Sampler FragmentStage 1|]|]
-                [||] [|vkc.SwapFormat|] None
+                [||] [|context.SwapFormat|] None
                 [|spritesUniform; viewProjectionUniform|]
 
         // fin
         (spritesUniform, viewProjectionUniform, pipeline)
     
     /// Reload the shaders used by the environment.
-    let reloadShaders env (vkc : VulkanContext) =
-        Pipeline.reloadShaders env.Pipeline vkc
+    let reloadShaders env (context : VulkanContext) =
+        Pipeline.reloadShaders env.Pipeline context
 
     let private beginSpriteBatch state env =
         env.State <- state
@@ -269,16 +269,16 @@ module SpriteBatch =
         env.SpriteIndex <- inc env.SpriteIndex
 
     /// Destroy the given sprite batch environment.
-    let createSpriteBatchEnv unfilteredSampler filteredSampler vkc =
+    let createSpriteBatchEnv unfilteredSampler filteredSampler context =
         
         // create pipeline
-        let (spritesUniform, viewProjectionUniform, pipeline) = createSpriteBatchPipeline vkc
+        let (spritesUniform, viewProjectionUniform, pipeline) = createSpriteBatchPipeline context
 
         // create env
         { SpriteIndex = 0;
           ViewProjection2dAbsolute = m4Identity; ViewProjection2dRelative = m4Identity
           ViewProjectionClipAbsolute = m4Identity; ViewProjectionClipRelative = m4Identity
-          VulkanContext = vkc; Pipeline = pipeline; UnfilteredSampler = unfilteredSampler; FilteredSampler = filteredSampler
+          VulkanContext = context; Pipeline = pipeline; UnfilteredSampler = unfilteredSampler; FilteredSampler = filteredSampler
           SpritesUniform = spritesUniform; ViewProjectionUniform = viewProjectionUniform
           Perimeters = Array.zeroCreate Constants.Render.SpriteBatchSize
           Pivots = Array.zeroCreate Constants.Render.SpriteBatchSize
