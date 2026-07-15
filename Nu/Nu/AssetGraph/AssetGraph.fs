@@ -170,7 +170,7 @@ module AssetGraph =
                             let mipmapLevels = inc mipmapTail.Length
                             use stream = File.OpenWrite refinementFilePath
                             use writer = new BinaryWriter (stream)
-                            VulkanHl.writeKtxHeader resolution mipmapLevels false writer                      // ktx header
+                            VulkanHl.writeKtxHeader resolution mipmapLevels false writer                // ktx header
                             writer.Write (uint mipmapHead.Length)                                       // mip head size
                             writer.Write mipmapHead                                                     // mip head data
                             let padding = Array.zeroCreate<byte> ((4 - (mipmapHead.Length % 4)) % 4)    // mip head padding
@@ -201,7 +201,7 @@ module AssetGraph =
                             let mipmapLevels = inc mipmapTail.Length
                             use stream = File.OpenWrite refinementFilePath
                             use writer = new BinaryWriter (stream)
-                            VulkanHl.writeKtxHeader resolution mipmapLevels true writer                       // mip header
+                            VulkanHl.writeKtxHeader resolution mipmapLevels true writer                 // mip header
                             writer.Write (uint mipmapHead.Length)                                       // mip head size
                             writer.Write mipmapHead                                                     // mip head data
                             let padding = 3 - (mipmapHead.Length + 3) % 4 |> Array.zeroCreate<byte>     // mip head padding
@@ -237,7 +237,7 @@ module AssetGraph =
                             let mipmapLevels = inc mipmapTail.Length
                             use stream = File.OpenWrite refinementFilePath
                             use writer = new BinaryWriter (stream)
-                            VulkanHl.writeKtxHeader resolution mipmapLevels true writer                       // mip header
+                            VulkanHl.writeKtxHeader resolution mipmapLevels true writer                 // mip header
                             writer.Write (uint mipmapHead.Length)                                       // mip head size
                             writer.Write mipmapHead                                                     // mip head data
                             let padding = 3 - (mipmapHead.Length + 3) % 4 |> Array.zeroCreate<byte>     // mip head padding
