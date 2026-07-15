@@ -41,7 +41,7 @@ type AssetClient (textureClient : TextureClient, cubeMapClient : CubeMapClient, 
         let textureDataLoadOps =
             [for textureAsset in textureAssets do
                 vsync {
-                    match Hl.tryCreateTextureData (not is2d) textureAsset.FilePath with
+                    match VulkanHl.tryCreateTextureData (not is2d) textureAsset.FilePath with
                     | Some textureData -> return Right (textureAsset.FilePath, textureData)
                     | None -> return Left ("Error creating texture data from '" + textureAsset.FilePath + "'") }]
 
@@ -63,18 +63,18 @@ type AssetClient (textureClient : TextureClient, cubeMapClient : CubeMapClient, 
                 let textureInternal =
                     if is2d then
                         let textureInternal =
-                            if Hl.inferTextureFiltered2d filePath
-                            then Hl.createTextureInternalFromData true Uncompressed textureData RenderThread vkc
-                            else Hl.createTextureInternalFromData false Uncompressed textureData RenderThread vkc
+                            if VulkanHl.inferTextureFiltered2d filePath
+                            then VulkanHl.createTextureInternalFromData true Uncompressed textureData RenderThread vkc
+                            else VulkanHl.createTextureInternalFromData false Uncompressed textureData RenderThread vkc
                         EagerTexture textureInternal
                     elif textureData.LazyLoadable then
-                        let textureInternal = Hl.createTextureInternalFromData true (Hl.inferTextureCompression filePath) textureData RenderThread vkc
+                        let textureInternal = VulkanHl.createTextureInternalFromData true (VulkanHl.inferTextureCompression filePath) textureData RenderThread vkc
                         let lazyTexture = new LazyTexture (filePath, textureInternal)
                         textureClient.LazyTextureQueue.Enqueue lazyTexture
                         LazyTexture lazyTexture
                     else
                         Log.infoOnce "One or more textures for non-2D usage are not streamable; consider using the BlockCompress refinement with them for more efficient loading."
-                        let textureInternal = Hl.createTextureInternalFromData true (Hl.inferTextureCompression filePath) textureData RenderThread vkc
+                        let textureInternal = VulkanHl.createTextureInternalFromData true (VulkanHl.inferTextureCompression filePath) textureData RenderThread vkc
                         EagerTexture textureInternal
                 textureClient.Textures[filePath] <- textureInternal
             | Left error -> Log.info error

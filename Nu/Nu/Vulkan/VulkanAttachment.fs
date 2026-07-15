@@ -18,7 +18,7 @@ module Attachment =
         let textureInternal =
             TextureInternal.create
                 MipmapNone (AttachmentColor true) textureType optionalUsages
-                (Hl.checkAttachmentFormat vkc.VkPhysicalDevice internalFormat) pixelFormat metadata vkc
+                (VulkanHl.checkAttachmentFormat vkc.VkPhysicalDevice internalFormat) pixelFormat metadata vkc
         EagerTexture textureInternal
 
     /// Update size of color attachment.
@@ -36,7 +36,7 @@ module Attachment =
         let textureInternal =
             TextureInternal.create
                 MipmapNone (AttachmentDepth true) Texture2d optionalUsages
-                (Hl.checkAttachmentFormat vkc.VkPhysicalDevice D32f) Depth metadata vkc
+                (VulkanHl.checkAttachmentFormat vkc.VkPhysicalDevice D32f) Depth metadata vkc
         EagerTexture textureInternal
 
     /// Update size of depth attachment.

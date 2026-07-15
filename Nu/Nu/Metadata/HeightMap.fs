@@ -44,7 +44,7 @@ type [<StructuralEquality; NoComparison>] HeightMap =
     static member private tryGetTextureData tryGetFilePath (assetTag : Image AssetTag) =
         match tryGetFilePath assetTag with
         | Some filePath ->
-            match Hl.tryCreateTextureData false filePath with
+            match VulkanHl.tryCreateTextureData false filePath with
             | Some textureData ->
                 let metadata = textureData.Metadata
                 let (compressed, bytes) = textureData.Bytes

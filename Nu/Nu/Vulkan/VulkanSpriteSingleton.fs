@@ -46,7 +46,6 @@ module SpriteSingleton =
                     [|Pipeline.descriptor 0 Sampler FragmentStage 1|]|]
                 [||] [|vkc.SwapFormat|] None
                 [|spriteVertUniform; spriteFragUniform|]
-                vkc
 
         // fin
         (spriteVertUniform, spriteFragUniform, pipeline)
@@ -100,10 +99,10 @@ module SpriteSingleton =
          vkc : VulkanContext) =
 
         // only draw if scissor (and therefore also viewport) is valid
-        let pixelDensity = Hl.getWindowPixelDensity vkc.Window
+        let pixelDensity = VulkanHl.getWindowPixelDensity vkc.Window
         let renderAreaLogical = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)
-        let mutable renderArea = Hl.scaleRectForPixelDensity pixelDensity renderAreaLogical
-        let mutable vkViewport = Hl.makeViewport true renderArea
+        let mutable renderArea = VulkanHl.scaleRectForPixelDensity pixelDensity renderAreaLogical
+        let mutable vkViewport = VulkanHl.makeViewport true renderArea
         let mutable scissor = renderArea
         match clipOpt with
         | ValueSome clip ->
@@ -121,10 +120,10 @@ module SpriteSingleton =
                         (single renderAreaLogical.extent.height - minScissor.Y |> round |> int) + offset.Y,
                         uint sizeScissor.X,
                         uint sizeScissor.Y)
-            scissor <- Hl.scaleRectForPixelDensity pixelDensity scissorLogical
-            scissor <- Hl.clipRect renderArea scissor
+            scissor <- VulkanHl.scaleRectForPixelDensity pixelDensity scissorLogical
+            scissor <- VulkanHl.clipRect renderArea scissor
         | ValueNone -> ()
-        if Hl.validateRect scissor then
+        if VulkanHl.validateRect scissor then
 
             // only draw if required vkPipeline exists
             match Pipeline.tryGetVkPipeline VulkanTransparent true pipeline with
@@ -170,50 +169,50 @@ module SpriteSingleton =
 
                 // specify uniforms
                 let color = color
-                let mutable uniformDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.DrawIndex pipeline vkc $ fun vkSet ->
+                let mutable uniformDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.DrawIndex pipeline $ fun vkSet ->
                     let spriteVert = SpriteVert (modelViewProjection = modelViewProjection, texCoords4 = v4 texCoords.Min.X texCoords.Min.Y texCoords.Size.X texCoords.Size.Y)
                     let spriteFrag = SpriteFrag (color = color.V4)
                     Buffer.uploadValue spriteVert spriteVertUniform vkc
                     Buffer.uploadValue spriteFrag spriteFragUniform vkc
-                    Pipeline.writeDescriptorUniformBuffer 0 0 spriteVertUniform vkSet vkc
-                    Pipeline.writeDescriptorUniformBuffer 1 0 spriteFragUniform vkSet vkc
+                    Pipeline.writeDescriptorUniformBuffer 0 0 spriteVertUniform vkSet
+                    Pipeline.writeDescriptorUniformBuffer 1 0 spriteFragUniform vkSet
 
                 // specify material
-                let mutable materialDescriptorSet = Pipeline.specifyDescriptorSet 1 texture pipeline vkc $ fun vkSet ->
-                    Pipeline.writeDescriptorSampledTexture 0 0 texture vkSet vkc
+                let mutable materialDescriptorSet = Pipeline.specifyDescriptorSet 1 texture pipeline $ fun vkSet ->
+                    Pipeline.writeDescriptorSampledTexture 0 0 texture vkSet
 
                 // specify sampler
-                let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 2 sampler pipeline vkc $ fun vkSet ->
-                    Pipeline.writeDescriptorSampler 0 0 sampler vkSet vkc
+                let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 2 sampler pipeline $ fun vkSet ->
+                    Pipeline.writeDescriptorSampler 0 0 sampler vkSet
                     
                 // set up render
-                let mutable renderingInfo = Hl.makeRenderingInfo [|vkc.SwapchainImageView|] None renderArea None
-                Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, &&renderingInfo)
-                Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, &&vkViewport)
-                Vulkan.vkCmdSetScissor (vkc.RenderCommandBuffer, 0u, 1u, &&scissor)
+                let mutable renderingInfo = VulkanHl.makeRenderingInfo [|vkc.SwapchainImageView|] None renderArea None
+                VulkanDevice.vkCmdBeginRendering (vkc.RenderCommandBuffer, &&renderingInfo)
+                VulkanDevice.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, &&vkViewport)
+                VulkanDevice.vkCmdSetScissor (vkc.RenderCommandBuffer, 0u, 1u, &&scissor)
                 
                 // set up pipeline
-                Vulkan.vkCmdBindPipeline (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
+                VulkanDevice.vkCmdBindPipeline (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
                     
                 // bind vertex and index buffers
                 let mutable vertexBuffer = vertices.VkBuffer
                 let mutable vertexOffset = 0UL
-                Vulkan.vkCmdBindVertexBuffers (vkc.RenderCommandBuffer, 0u, 1u, &&vertexBuffer, &&vertexOffset)
-                Vulkan.vkCmdBindIndexBuffer (vkc.RenderCommandBuffer, indices.VkBuffer, 0UL, VkIndexType.Uint32)
+                VulkanDevice.vkCmdBindVertexBuffers (vkc.RenderCommandBuffer, 0u, 1u, &&vertexBuffer, &&vertexOffset)
+                VulkanDevice.vkCmdBindIndexBuffer (vkc.RenderCommandBuffer, indices.VkBuffer, 0UL, VkIndexType.Uint32)
 
                 // bind descriptor sets
-                Vulkan.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.PipelineLayout, 0u, 1u, &&uniformDescriptorSet, 0u, nullPtr)
-                Vulkan.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.PipelineLayout, 1u, 1u, &&materialDescriptorSet, 0u, nullPtr)
-                Vulkan.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.PipelineLayout, 2u, 1u, &&samplerDescriptorSet, 0u, nullPtr)
+                VulkanDevice.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.PipelineLayout, 0u, 1u, &&uniformDescriptorSet, 0u, nullPtr)
+                VulkanDevice.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.PipelineLayout, 1u, 1u, &&materialDescriptorSet, 0u, nullPtr)
+                VulkanDevice.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.PipelineLayout, 2u, 1u, &&samplerDescriptorSet, 0u, nullPtr)
 
                 // draw
-                Vulkan.vkCmdDrawIndexed (vkc.RenderCommandBuffer, 6u, 1u, 0u, 0, 0u)
+                VulkanDevice.vkCmdDrawIndexed (vkc.RenderCommandBuffer, 6u, 1u, 0u, 0, 0u)
             
                 // tear down render
-                Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
+                VulkanDevice.vkCmdEndRendering vkc.RenderCommandBuffer
 
                 // report draw scope
-                Hl.reportDrawScope ()
+                VulkanHl.reportDrawScope ()
 
                 // advance pipeline
                 Pipeline.advance 1 pipeline

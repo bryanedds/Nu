@@ -102,11 +102,11 @@ type RendererInline () =
                         let defaultImageTag = AssetTag.make Assets.Default.PackageName Assets.Default.ImageName
                         match Metadata.tryGetFilePath defaultImageTag with
                         | Some filePath ->
-                            match Hl.tryCreateTextureInternal true false Uncompressed filePath RenderThread vkc with
+                            match VulkanHl.tryCreateTextureInternal true false Uncompressed filePath RenderThread vkc with
                             | Right textureInternal -> textureInternal
                             | Left _ -> TextureInternal.createEmpty vkc
                         | None -> TextureInternal.createEmpty vkc
-                    Hl.EmptyTextureOpt <- Some emptyTexture
+                    VulkanHl.EmptyTextureOpt <- Some emptyTexture
 
                     // create 3d renderer
                     let renderer3d =
@@ -381,11 +381,11 @@ type RendererThread () =
             let defaultImageTag = AssetTag.make Assets.Default.PackageName Assets.Default.ImageName
             match Metadata.tryGetFilePath defaultImageTag with
             | Some filePath ->
-                match Hl.tryCreateTextureInternal true false Uncompressed filePath RenderThread vkc with
+                match VulkanHl.tryCreateTextureInternal true false Uncompressed filePath RenderThread vkc with
                 | Right textureInternal -> textureInternal
                 | Left _ -> TextureInternal.createEmpty vkc
             | None -> TextureInternal.createEmpty vkc
-        Hl.EmptyTextureOpt <- Some emptyTexture
+        VulkanHl.EmptyTextureOpt <- Some emptyTexture
 
         // create 3d renderer
         let renderer3d =

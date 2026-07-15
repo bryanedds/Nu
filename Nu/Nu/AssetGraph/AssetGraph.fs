@@ -151,7 +151,7 @@ module AssetGraph =
                     File.Copy (intermediateFilePath, refinementFilePath, true)
 
         | BlockCompress ->
-            match Hl.inferTextureCompression refinementFilePath with
+            match VulkanHl.inferTextureCompression refinementFilePath with
             | Uncompressed ->
                 match blockCompression with
                 | BcCompression ->
@@ -163,14 +163,14 @@ module AssetGraph =
                     image.Write (stream, defines)
                 | AstcCompression ->
                     use image = new MagickImage (intermediateFilePath)
-                    match Hl.tryGenerateUncompressedImage image with
+                    match VulkanHl.tryGenerateUncompressedImage image with
                     | Some (resolution, mipmapHead) ->
-                        match Hl.tryGenerateUncompressedMipmaps image with
+                        match VulkanHl.tryGenerateUncompressedMipmaps image with
                         | Some mipmapTail ->
                             let mipmapLevels = inc mipmapTail.Length
                             use stream = File.OpenWrite refinementFilePath
                             use writer = new BinaryWriter (stream)
-                            Hl.writeKtxHeader resolution mipmapLevels false writer                      // ktx header
+                            VulkanHl.writeKtxHeader resolution mipmapLevels false writer                      // ktx header
                             writer.Write (uint mipmapHead.Length)                                       // mip head size
                             writer.Write mipmapHead                                                     // mip head data
                             let padding = Array.zeroCreate<byte> ((4 - (mipmapHead.Length % 4)) % 4)    // mip head padding
@@ -194,14 +194,14 @@ module AssetGraph =
                     image.Write (stream, defines)
                 | AstcCompression ->
                     use image = new MagickImage (intermediateFilePath)
-                    match Hl.tryCompressImage image with
+                    match VulkanHl.tryCompressImage image with
                     | Some (resolution, mipmapHead) ->
-                        match Hl.tryCompressMipmaps image with
+                        match VulkanHl.tryCompressMipmaps image with
                         | Some mipmapTail ->
                             let mipmapLevels = inc mipmapTail.Length
                             use stream = File.OpenWrite refinementFilePath
                             use writer = new BinaryWriter (stream)
-                            Hl.writeKtxHeader resolution mipmapLevels true writer                       // mip header
+                            VulkanHl.writeKtxHeader resolution mipmapLevels true writer                       // mip header
                             writer.Write (uint mipmapHead.Length)                                       // mip head size
                             writer.Write mipmapHead                                                     // mip head data
                             let padding = 3 - (mipmapHead.Length + 3) % 4 |> Array.zeroCreate<byte>     // mip head padding
@@ -230,14 +230,14 @@ module AssetGraph =
                     encoder.EncodeToStream (bytes, int image.Width, int image.Height, PixelFormat.Rgba32, stream)
                 | AstcCompression ->
                     use image = new MagickImage (intermediateFilePath)
-                    match Hl.tryCompressImage image with
+                    match VulkanHl.tryCompressImage image with
                     | Some (resolution, mipmapHead) ->
-                        match Hl.tryCompressMipmaps image with
+                        match VulkanHl.tryCompressMipmaps image with
                         | Some mipmapTail ->
                             let mipmapLevels = inc mipmapTail.Length
                             use stream = File.OpenWrite refinementFilePath
                             use writer = new BinaryWriter (stream)
-                            Hl.writeKtxHeader resolution mipmapLevels true writer                       // mip header
+                            VulkanHl.writeKtxHeader resolution mipmapLevels true writer                       // mip header
                             writer.Write (uint mipmapHead.Length)                                       // mip head size
                             writer.Write mipmapHead                                                     // mip head data
                             let padding = 3 - (mipmapHead.Length + 3) % 4 |> Array.zeroCreate<byte>     // mip head padding

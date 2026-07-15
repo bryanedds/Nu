@@ -232,7 +232,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         match PathF.GetExtensionLower asset.FilePath with
         | ImageExtension _ ->
             let textureEir =
-                if Hl.inferTextureFiltered2d asset.FilePath
+                if VulkanHl.inferTextureFiltered2d asset.FilePath
                 then assetClient.TextureClient.TryCreateTextureFiltered false Uncompressed asset.FilePath RenderThread renderer.VulkanContext
                 else assetClient.TextureClient.TryCreateTextureUnfiltered false asset.FilePath RenderThread renderer.VulkanContext
             match textureEir with
@@ -1073,8 +1073,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             for (_, _, _, textTexture) in Seq.map snd renderer.TextTextures.Values do Texture.destroy textTexture renderer.VulkanContext
             renderer.TextTextures.Clear ()
             TextureDumpster.destroy renderer.TextureDumpster renderer.VulkanContext
-            Sampler.destroy renderer.UnfilteredSampler renderer.VulkanContext
-            Sampler.destroy renderer.FilteredSampler renderer.VulkanContext
+            Sampler.destroy renderer.UnfilteredSampler
+            Sampler.destroy renderer.FilteredSampler
             Pipeline.destroy spritePipeline renderer.VulkanContext
             Pipeline.destroy tessellationPipeline renderer.VulkanContext
             Nu.Vulkan.Buffer.destroy textVertexBuffer renderer.VulkanContext

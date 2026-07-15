@@ -54,7 +54,7 @@ type BufferInternal =
         let mutable vkBuffer = Unchecked.defaultof<VkBuffer>
         let mutable vmaAllocation = Unchecked.defaultof<VmaAllocation>
         let mutable vmaAllocationInfo = Unchecked.defaultof<VmaAllocationInfo>
-        Vma.vmaCreateBuffer (vkc.VmaAllocator, &&bufferInfo, &&info, &vkBuffer, &vmaAllocation, &vmaAllocationInfo) |> Hl.check
+        Vma.vmaCreateBuffer (vkc.VmaAllocator, &&bufferInfo, &&info, &vkBuffer, &vmaAllocation, &vmaAllocationInfo) |> VulkanHl.check
 
         // make BufferInternal
         let bufferInternal =
@@ -139,7 +139,7 @@ type BufferInternal =
 
                     // manually flush as memory may not be host-coherent on non-windows platforms, see
                     // https://gpuopen-librariesandsdks.github.io/VulkanMemoryAllocator/html/memory_mapping.html#memory_mapping_cache_control
-                    Vma.vmaFlushAllocation (vkc.VmaAllocator, bufferInternal.VmaAllocation_, uint64 offset, uint64 (stride * count)) |> Hl.check
+                    Vma.vmaFlushAllocation (vkc.VmaAllocator, bufferInternal.VmaAllocation_, uint64 offset, uint64 (stride * count)) |> VulkanHl.check
 
                 else Log.warn "Flush of Vulkan buffer failed because it exceeded the size of that buffer."
             else Log.warn "Flush of Vulkan buffer failed because 'size' argument was less than or equal to zero."
@@ -188,10 +188,10 @@ type Buffer =
 
     /// Copy data from the source buffer to the destination buffer.
     static member private copyData size source destination (vkc : VulkanContext) =
-        let commandBuffer = Hl.createTransientCommandBuffer vkc.TransientCommandPool vkc.Device
+        let commandBuffer = VulkanHl.createTransientCommandBuffer vkc.TransientCommandPool
         let mutable region = VkBufferCopy (size = uint64 size)
-        Vulkan.vkCmdCopyBuffer (commandBuffer, source, destination, 1u, &&region)
-        ConcurrentCommandQueue.executeTransient commandBuffer vkc.TransientCommandPool vkc.TransientFence vkc.RenderQueue vkc.Device
+        VulkanDevice.vkCmdCopyBuffer (commandBuffer, source, destination, 1u, &&region)
+        ConcurrentCommandQueue.executeTransient commandBuffer vkc.TransientCommandPool vkc.TransientFence vkc.RenderQueue
 
     /// Begin use of this buffer for the current frame.
     static member beginFrame buffer =

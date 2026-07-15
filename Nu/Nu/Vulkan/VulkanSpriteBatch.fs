@@ -94,15 +94,15 @@ module SpriteBatch =
                   Pipeline.descriptorSet<Sampler>
                     [|Pipeline.descriptor 0 Sampler FragmentStage 1|]|]
                 [||] [|vkc.SwapFormat|] None
-                [|spritesUniform; viewProjectionUniform|] vkc
+                [|spritesUniform; viewProjectionUniform|]
 
         // fin
         (spritesUniform, viewProjectionUniform, pipeline)
     
     /// Reload the shaders used by the environment.
-    let reloadShaders env vkc =
+    let reloadShaders env (vkc : VulkanContext) =
         Pipeline.reloadShaders env.Pipeline vkc
-    
+
     let private beginSpriteBatch state env =
         env.State <- state
 
@@ -113,10 +113,10 @@ module SpriteBatch =
         | ValueSome texture when env.SpriteIndex > 0 ->
                 
             // only draw if scissor (and therefore also viewport) is valid
-            let pixelDensity = Hl.getWindowPixelDensity env.VulkanContext.Window
+            let pixelDensity = VulkanHl.getWindowPixelDensity env.VulkanContext.Window
             let renderAreaLogical = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)
-            let mutable renderArea = Hl.scaleRectForPixelDensity pixelDensity renderAreaLogical
-            let mutable vkViewport = Hl.makeViewport true renderArea
+            let mutable renderArea = VulkanHl.scaleRectForPixelDensity pixelDensity renderAreaLogical
+            let mutable vkViewport = VulkanHl.makeViewport true renderArea
             let mutable scissor = renderArea
             match env.State.ClipOpt with
             | ValueSome clip ->
@@ -134,17 +134,17 @@ module SpriteBatch =
                          (single renderAreaLogical.extent.height - minScissor.Y |> round |> int) + offset.Y,
                          uint sizeScissor.X,
                          uint sizeScissor.Y)
-                scissor <- Hl.scaleRectForPixelDensity pixelDensity scissorLogical
-                scissor <- Hl.clipRect renderArea scissor
+                scissor <- VulkanHl.scaleRectForPixelDensity pixelDensity scissorLogical
+                scissor <- VulkanHl.clipRect renderArea scissor
             | ValueNone -> ()
-            if Hl.validateRect scissor then
+            if VulkanHl.validateRect scissor then
 
                 // only draw if required vkPipeline exists
                 match Pipeline.tryGetVkPipeline env.State.Blend true env.Pipeline with
                 | Some vkPipeline ->
                     
                     // specify uniforms
-                    let mutable uniformDescriptorSet = Pipeline.specifyDescriptorSet 0 env.Pipeline.DrawIndex env.Pipeline env.VulkanContext $ fun vkSet ->
+                    let mutable uniformDescriptorSet = Pipeline.specifyDescriptorSet 0 env.Pipeline.DrawIndex env.Pipeline $ fun vkSet ->
 
                         // specify sprites
                         let mutable sprite = Sprite ()
@@ -158,44 +158,44 @@ module SpriteBatch =
                             sprite.color <- env.Colors[i]
                             Buffer.writeSubdata (i * spriteSize) 0 spriteSize 1 (NativePtr.toNativeInt spritePtr) env.SpritesUniform env.VulkanContext
                         Buffer.flushSubdata 0 0 spriteSize env.SpriteIndex env.SpritesUniform env.VulkanContext
-                        Pipeline.writeDescriptorUniformBuffer 0 0 env.SpritesUniform vkSet env.VulkanContext
+                        Pipeline.writeDescriptorUniformBuffer 0 0 env.SpritesUniform vkSet
 
                         // specify viewProjection
                         let mutable viewProjection = ViewProjection (viewProjection = if env.State.Absolute then env.ViewProjection2dAbsolute else env.ViewProjection2dRelative)
                         Buffer.uploadValue viewProjection env.ViewProjectionUniform env.VulkanContext
-                        Pipeline.writeDescriptorUniformBuffer 1 0 env.ViewProjectionUniform vkSet env.VulkanContext
+                        Pipeline.writeDescriptorUniformBuffer 1 0 env.ViewProjectionUniform vkSet
 
                     // specify material
-                    let mutable materialDescriptorSet = Pipeline.specifyDescriptorSet 1 texture env.Pipeline env.VulkanContext $ fun vkSet ->
-                        Pipeline.writeDescriptorSampledTexture 0 0 texture vkSet env.VulkanContext
+                    let mutable materialDescriptorSet = Pipeline.specifyDescriptorSet 1 texture env.Pipeline $ fun vkSet ->
+                        Pipeline.writeDescriptorSampledTexture 0 0 texture vkSet
 
                     // specify sampler
                     let sampler = if texture.MipLevels = 1 then env.UnfilteredSampler else env.FilteredSampler
-                    let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 2 sampler env.Pipeline env.VulkanContext $ fun vkSet ->
-                        Pipeline.writeDescriptorSampler 0 0 sampler vkSet env.VulkanContext
-    
+                    let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 2 sampler env.Pipeline $ fun vkSet ->
+                        Pipeline.writeDescriptorSampler 0 0 sampler vkSet
+
                     // set up render
-                    let mutable renderingInfo = Hl.makeRenderingInfo [|env.VulkanContext.SwapchainImageView|] None renderArea None
-                    Vulkan.vkCmdBeginRendering (env.VulkanContext.RenderCommandBuffer, &&renderingInfo)
-                    Vulkan.vkCmdSetViewport (env.VulkanContext.RenderCommandBuffer, 0u, 1u, &&vkViewport)
-                    Vulkan.vkCmdSetScissor (env.VulkanContext.RenderCommandBuffer, 0u, 1u, &&scissor)
-                
+                    let mutable renderingInfo = VulkanHl.makeRenderingInfo [|env.VulkanContext.SwapchainImageView|] None renderArea None
+                    VulkanDevice.vkCmdBeginRendering (env.VulkanContext.RenderCommandBuffer, &&renderingInfo)
+                    VulkanDevice.vkCmdSetViewport (env.VulkanContext.RenderCommandBuffer, 0u, 1u, &&vkViewport)
+                    VulkanDevice.vkCmdSetScissor (env.VulkanContext.RenderCommandBuffer, 0u, 1u, &&scissor)
+
                     // set up pipeline
-                    Vulkan.vkCmdBindPipeline (env.VulkanContext.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
+                    VulkanDevice.vkCmdBindPipeline (env.VulkanContext.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
 
                     // bind descriptor sets
-                    Vulkan.vkCmdBindDescriptorSets (env.VulkanContext.RenderCommandBuffer, VkPipelineBindPoint.Graphics, env.Pipeline.PipelineLayout, 0u, 1u, &&uniformDescriptorSet, 0u, nullPtr)
-                    Vulkan.vkCmdBindDescriptorSets (env.VulkanContext.RenderCommandBuffer, VkPipelineBindPoint.Graphics, env.Pipeline.PipelineLayout, 1u, 1u, &&materialDescriptorSet, 0u, nullPtr)
-                    Vulkan.vkCmdBindDescriptorSets (env.VulkanContext.RenderCommandBuffer, VkPipelineBindPoint.Graphics, env.Pipeline.PipelineLayout, 2u, 1u, &&samplerDescriptorSet, 0u, nullPtr)
+                    VulkanDevice.vkCmdBindDescriptorSets (env.VulkanContext.RenderCommandBuffer, VkPipelineBindPoint.Graphics, env.Pipeline.PipelineLayout, 0u, 1u, &&uniformDescriptorSet, 0u, nullPtr)
+                    VulkanDevice.vkCmdBindDescriptorSets (env.VulkanContext.RenderCommandBuffer, VkPipelineBindPoint.Graphics, env.Pipeline.PipelineLayout, 1u, 1u, &&materialDescriptorSet, 0u, nullPtr)
+                    VulkanDevice.vkCmdBindDescriptorSets (env.VulkanContext.RenderCommandBuffer, VkPipelineBindPoint.Graphics, env.Pipeline.PipelineLayout, 2u, 1u, &&samplerDescriptorSet, 0u, nullPtr)
 
                     // draw
-                    Vulkan.vkCmdDraw (env.VulkanContext.RenderCommandBuffer, uint (6 * env.SpriteIndex), 1u, 0u, 0u)
+                    VulkanDevice.vkCmdDraw (env.VulkanContext.RenderCommandBuffer, uint (6 * env.SpriteIndex), 1u, 0u, 0u)
 
                     // tear down render
-                    Vulkan.vkCmdEndRendering env.VulkanContext.RenderCommandBuffer
+                    VulkanDevice.vkCmdEndRendering env.VulkanContext.RenderCommandBuffer
 
                     // report draw scope
-                    Hl.reportDrawScope ()
+                    VulkanHl.reportDrawScope ()
 
                     // advance pipeline
                     Pipeline.advance env.SpriteIndex env.Pipeline

@@ -1269,8 +1269,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                           """<PackageReference Include="ppy.SDL3_image-CS" Version="2026.512.0" />"""
                           """<PackageReference Include="ppy.SDL3_mixer-CS" Version="2026.512.0" />"""
                           """<PackageReference Include="Vortice.ShaderCompiler" Version="1.8.0" />"""
-                          """<PackageReference Include="Vortice.Vulkan" Version="2.1.1" />"""
-                          """<PackageReference Include="Vortice.VulkanMemoryAllocator" Version="1.6.1" />"""|]
+                          """<PackageReference Include="Vortice.Vulkan" Version="3.2.3" />"""
+                          """<PackageReference Include="Vortice.VulkanMemoryAllocator" Version="1.7.0" />"""|]
                         |> Array.append (File.ReadAllLines fsprojFilePath)
                     let fsprojNugetPaths =
                         fsprojFileLines
@@ -3184,17 +3184,17 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             // draw scope count
             ImGui.Text "Draw Scope Count:"
             ImGui.SameLine ()
-            ImGui.Text (string (Nu.Vulkan.Hl.getDrawScopeCount ()))
+            ImGui.Text (string (Nu.Vulkan.VulkanHl.getDrawScopeCount ()))
 
             // draw call count
             ImGui.Text "Draw Call Count:"
             ImGui.SameLine ()
-            ImGui.Text (string (Nu.Vulkan.Hl.getDrawCallCount ()))
+            ImGui.Text (string (Nu.Vulkan.VulkanHl.getDrawCallCount ()))
 
             // draw instance count
             ImGui.Text "Draw Instance Count:"
             ImGui.SameLine ()
-            ImGui.Text (string (Nu.Vulkan.Hl.getDrawInstanceCount ()))
+            ImGui.Text (string (Nu.Vulkan.VulkanHl.getDrawInstanceCount ()))
 
             // frame timing plot
             GcTimings.Enqueue (single world.Timers.GcFrameTime.TotalMilliseconds)
