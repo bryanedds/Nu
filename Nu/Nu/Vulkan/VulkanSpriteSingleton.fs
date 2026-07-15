@@ -214,7 +214,7 @@ module SpriteSingleton =
                 // tear down render
                 DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
 
-                // report draws
+                // report drawing
                 Hl.reportDrawCall 1 true
 
                 // advance pipeline

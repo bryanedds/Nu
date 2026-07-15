@@ -306,7 +306,7 @@ type VulkanRendererImGui
                                     // draw
                                     DeviceApi.vkCmdDrawIndexed (context.RenderCommandBuffer, pcmd.ElemCount, 1u, pcmd.IdxOffset + uint globalIdxOffset, int pcmd.VtxOffset + globalVtxOffset, 0u)
 
-                                    // report draws
+                                    // report drawing
                                     Hl.reportDrawCall 1 false
 
                                     // advance pipeline

@@ -117,7 +117,7 @@ module ContourTessellation =
                 // tear down render
                 DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
 
-                // report draws
+                // report drawing
                 Hl.reportDrawCall 1 true
 
                 // advance vertex and index buffers

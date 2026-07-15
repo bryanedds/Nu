@@ -340,7 +340,7 @@ module CubeMap =
             // tear down render
             DeviceApi.vkCmdEndRendering commandBuffer
 
-            // report draws
+            // report drawing
             Hl.reportDrawCall 1 true
 
             // advance pipeline

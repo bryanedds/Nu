@@ -1791,7 +1791,7 @@ module PhysicallyBased =
                 // draw
                 DeviceApi.vkCmdDrawIndexed (context.RenderCommandBuffer, uint geometry.ElementCount, uint surfacesCount, 0u, 0, 0u)
 
-                // report draws
+                // report drawing
                 Hl.reportDrawCall surfacesCount false
 
                 // advance instancing
@@ -2022,7 +2022,7 @@ module PhysicallyBased =
                 // draw
                 DeviceApi.vkCmdDrawIndexed (context.RenderCommandBuffer, uint geometry.ElementCount, uint surfacesCount, 0u, 0, 0u)
 
-                // report draws
+                // report drawing
                 Hl.reportDrawCall surfacesCount false
                     
                 // advance instancing
@@ -2256,7 +2256,7 @@ module PhysicallyBased =
             // tear down render
             DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
 
-            // report draws
+            // report drawing
             Hl.reportDrawCall 1 true
 
             // advance pipeline
@@ -2465,7 +2465,7 @@ module PhysicallyBased =
             // tear down render
             DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
 
-            // report draws
+            // report drawing
             Hl.reportDrawCall 1 true
 
             // advance pipeline
@@ -2621,7 +2621,7 @@ module PhysicallyBased =
             // tear down render
             DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
 
-            // report draws
+            // report drawing
             Hl.reportDrawCall 1 true
 
             // advance pipeline
@@ -2768,7 +2768,7 @@ module PhysicallyBased =
             // tear down render
             DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
 
-            // report draws
+            // report drawing
             Hl.reportDrawCall 1 true
 
             // advance pipeline
@@ -2899,7 +2899,7 @@ module PhysicallyBased =
             // tear down render
             DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
 
-            // report draws
+            // report drawing
             Hl.reportDrawCall 1 true
 
             // advance pipeline
@@ -3059,7 +3059,7 @@ module PhysicallyBased =
             // tear down render
             DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
 
-            // report draws
+            // report drawing
             Hl.reportDrawCall 1 true
 
             // advance pipeline
@@ -3192,7 +3192,7 @@ module PhysicallyBased =
             // tear down render
             DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
 
-            // report draws
+            // report drawing
             Hl.reportDrawCall 1 true
 
             // advance pipeline
@@ -3387,7 +3387,7 @@ module PhysicallyBased =
             // tear down render
             DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
 
-            // report draws
+            // report drawing
             Hl.reportDrawCall 1 true
 
             // advance pipeline
@@ -3530,7 +3530,7 @@ module PhysicallyBased =
             // tear down render
             DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
 
-            // report draws
+            // report drawing
             Hl.reportDrawCall 1 true
 
             // advance pipeline
@@ -3825,7 +3825,7 @@ module PhysicallyBased =
             // draw
             DeviceApi.vkCmdDrawIndexed (context.RenderCommandBuffer, uint geometry.ElementCount, uint surfacesCount, 0u, 0, 0u)
 
-            // report draws
+            // report drawing
             Hl.reportDrawCall surfacesCount false
 
             // advance instancing
@@ -3931,7 +3931,7 @@ module PhysicallyBased =
             // tear down render
             DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
 
-            // report draws
+            // report drawing
             Hl.reportDrawCall 1 true
 
             // advance pipeline
@@ -4041,7 +4041,7 @@ module PhysicallyBased =
             // tear down render
             DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
 
-            // report draws
+            // report drawing
             Hl.reportDrawCall 1 true
 
             // advance pipeline
@@ -4163,7 +4163,7 @@ module PhysicallyBased =
             // tear down render
             DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
 
-            // report draws
+            // report drawing
             Hl.reportDrawCall 1 true
 
             // advance pipeline
@@ -4273,7 +4273,7 @@ module PhysicallyBased =
             // tear down render
             DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
 
-            // report draws
+            // report drawing
             Hl.reportDrawCall 1 true
 
             // advance pipeline
@@ -4367,7 +4367,7 @@ module PhysicallyBased =
             // tear down render
             DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
 
-            // report draws
+            // report drawing
             Hl.reportDrawCall 1 true
 
             // advance pipeline
