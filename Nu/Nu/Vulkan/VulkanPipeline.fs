@@ -213,9 +213,8 @@ type Pipeline =
         pipeline.DrawIndex_ <- 0
 
     /// Advance the state of the pipeline for additional drawing.
-    static member advance drawInstances drawScope pipeline =
+    static member advance pipeline =
         pipeline.DrawIndex_ <- inc pipeline.DrawIndex_
-        Hl.reportDrawCall drawInstances drawScope
 
     /// The descriptor set of the given number for the current frame.
     static member getDescriptorSet set pipeline =

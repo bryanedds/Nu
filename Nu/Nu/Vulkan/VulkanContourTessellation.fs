@@ -117,12 +117,15 @@ module ContourTessellation =
                 // tear down render
                 DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
 
+                // report draws
+                Hl.reportDrawCall 1 true
+
                 // advance vertex and index buffers
                 VulkanBuffer.advance vertexBuffer
                 VulkanBuffer.advance indexBuffer
 
                 // advance pipeline
-                Pipeline.advance 1 true pipeline
+                Pipeline.advance pipeline
 
                 // intermittently advance rendering command buffer
                 VulkanContext.advanceRenderCommandBuffer context

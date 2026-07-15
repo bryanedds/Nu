@@ -214,8 +214,11 @@ module SpriteSingleton =
                 // tear down render
                 DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
 
+                // report draws
+                Hl.reportDrawCall 1 true
+
                 // advance pipeline
-                Pipeline.advance 1 true pipeline
+                Pipeline.advance pipeline
 
                 // intermittently intermittently advance rendering command buffer
                 VulkanContext.advanceRenderCommandBuffer context

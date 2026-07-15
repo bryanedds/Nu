@@ -251,8 +251,11 @@ module LightMap =
             // tear down render
             DeviceApi.vkCmdEndRendering commandBuffer
 
+            // report draws
+            Hl.reportDrawCall 1 true
+
             // advance pipeline
-            Pipeline.advance 1 true pipeline.Pipeline
+            Pipeline.advance pipeline.Pipeline
 
             // advance rendering command buffer when needed
             advanceCommandBufferWhenNeeded ()

@@ -306,8 +306,11 @@ type VulkanRendererImGui
                                     // draw
                                     DeviceApi.vkCmdDrawIndexed (context.RenderCommandBuffer, pcmd.ElemCount, 1u, pcmd.IdxOffset + uint globalIdxOffset, int pcmd.VtxOffset + globalVtxOffset, 0u)
 
+                                    // report draws
+                                    Hl.reportDrawCall 1 false
+
                                     // advance pipeline
-                                    Pipeline.advance 1 false pipeline
+                                    Pipeline.advance pipeline
 
                             // otherwise we don't have a way to handle user callbacks, so throw in that case
                             else Log.warn "Encountered ImGui user callback; ignoring."

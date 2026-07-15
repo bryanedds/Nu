@@ -197,8 +197,11 @@ module SpriteBatch =
                     // tear down render
                     DeviceApi.vkCmdEndRendering env.VulkanContext.RenderCommandBuffer
 
+                    // report draws
+                    Hl.reportDrawCall env.SpriteIndex true
+
                     // advance pipeline
-                    Pipeline.advance env.SpriteIndex true env.Pipeline
+                    Pipeline.advance env.Pipeline
 
                     // intermittently advance rendering command buffer
                     VulkanContext.advanceRenderCommandBuffer env.VulkanContext
