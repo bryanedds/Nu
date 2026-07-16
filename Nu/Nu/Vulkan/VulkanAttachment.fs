@@ -237,7 +237,7 @@ module Attachment =
 
     /// Create composition attachments.
     let createCompositionAttachments resolutionX resolutionY context =
-        createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgb32f Rgb resolutionX resolutionY context
+        createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgb16f Rgb resolutionX resolutionY context
 
     /// Update size of composition attachments.
     let updateCompositionAttachmentSize resolutionX resolutionY color context =

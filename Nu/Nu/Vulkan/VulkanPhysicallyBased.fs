@@ -808,8 +808,8 @@ module PhysicallyBased =
 
         // create ssao attachments
         let ssaoUsageFlags = VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferSrc ||| VkImageUsageFlags.TransferDst
-        let ssaoUnfilteredAttachment = Attachment.createColorAttachment Texture2d ssaoUsageFlags R32f Red geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y context
-        let ssaoFilteredAttachment = Attachment.createColorAttachment Texture2d ssaoUsageFlags R32f Red geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y context
+        let ssaoUnfilteredAttachment = Attachment.createColorAttachment Texture2d ssaoUsageFlags R16f Red geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y context
+        let ssaoFilteredAttachment = Attachment.createColorAttachment Texture2d ssaoUsageFlags R16f Red geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y context
 
         // create coloring attachments
         let coloringAttachments = Attachment.createColoringAttachments geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y context
