@@ -195,8 +195,8 @@ type PhysicalDevice =
             Some physicalDevice
         | (_, _) -> None
 
-/// A single swapchain and its assets.
-type SwapchainSingleton =
+/// A wrapper for a vulkan swapchain and its assets.
+type SwapchainWrapper =
     { VkSwapchain : VkSwapchainKHR
       Images : VkImage array
       ImageViews : VkImageView array
@@ -290,25 +290,25 @@ type SwapchainSingleton =
         for i in 0 .. dec semaphores.Length do semaphores.[i] <- Hl.createSemaphore ()
         semaphores
     
-    /// Try create a SwapchainSingleton.
+    /// Try create a SwapchainWrapper.
     static member tryCreate surfaceFormat oldVkSwapchainOpt physicalDevice window =
         
         // try create vkSwapchain and its assets
-        match SwapchainSingleton.tryCreateVkSwapchain surfaceFormat oldVkSwapchainOpt physicalDevice window with
+        match SwapchainWrapper.tryCreateVkSwapchain surfaceFormat oldVkSwapchainOpt physicalDevice window with
         | Some (vkSwapchain, swapExtent) ->
 
             // create images / views
-            let images = SwapchainSingleton.getSwapchainImages vkSwapchain
-            let imageViews = SwapchainSingleton.createImageViews surfaceFormat.format images
+            let images = SwapchainWrapper.getSwapchainImages vkSwapchain
+            let imageViews = SwapchainWrapper.createImageViews surfaceFormat.format images
 
             // render finished semaphores based on swapchain images rather than frames in flight to address
             // safety issue described in https://docs.vulkan.org/guide/latest/swapchain_semaphore_reuse.html.
             // these should naturally be associated with the vkSwapchain itself, especially to prevent validation
             // errors triggered by reuse of semaphores that "may still be in use" by obsolete vkSwapchains.
-            let renderFinishedSemaphores = SwapchainSingleton.createRenderFinishedSemaphores images.Length
+            let renderFinishedSemaphores = SwapchainWrapper.createRenderFinishedSemaphores images.Length
 
-            // make SwapchainSingleton
-            let swapchainSingleton =
+            // make SwapchainWrapper
+            let swapchainWrapper =
                 { VkSwapchain = vkSwapchain
                   Images = images
                   ImageViews = imageViews
@@ -316,62 +316,62 @@ type SwapchainSingleton =
                   SwapExtent = swapExtent }
 
             // fin
-            Some swapchainSingleton
+            Some swapchainWrapper
         | None -> None
     
-    /// Destroy a SwapchainSingleton.
-    static member destroy renderQueue presentQueue swapchainSingleton =
+    /// Destroy a SwapchainWrapper.
+    static member destroy renderQueue presentQueue swapchainWrapper =
         
         // TODO: DJL: this is not sufficient to ensure resources not still in use, that requires an extension!!
         // https://docs.vulkan.org/guide/latest/swapchain_semaphore_reuse.html#_vk_ext_swapchain_maintenance1_extension
         ConcurrentCommandQueue.waitIdle renderQueue
         ConcurrentCommandQueue.waitIdle presentQueue
-        for i in 0 .. dec swapchainSingleton.ImageViews.Length do DeviceApi.vkDestroyImageView (swapchainSingleton.ImageViews[i], nullPtr)
-        DeviceApi.vkDestroySwapchainKHR (swapchainSingleton.VkSwapchain, nullPtr)
-        for i in 0 .. dec swapchainSingleton.RenderFinishedSemaphores.Length do DeviceApi.vkDestroySemaphore (swapchainSingleton.RenderFinishedSemaphores.[i], nullPtr)
+        for i in 0 .. dec swapchainWrapper.ImageViews.Length do DeviceApi.vkDestroyImageView (swapchainWrapper.ImageViews[i], nullPtr)
+        DeviceApi.vkDestroySwapchainKHR (swapchainWrapper.VkSwapchain, nullPtr)
+        for i in 0 .. dec swapchainWrapper.RenderFinishedSemaphores.Length do DeviceApi.vkDestroySemaphore (swapchainWrapper.RenderFinishedSemaphores.[i], nullPtr)
 
 /// A swapchain and its assets that may be refreshed for a different screen size.
 type Swapchain =
     private
-        { SwapchainSingletonOpts_ : SwapchainSingleton option array
+        { SwapchainWrapperOpts_ : SwapchainWrapper option array
           Window_ : SDL_Window nativeptr
           SurfaceFormat_ : VkSurfaceFormatKHR
           mutable SwapchainIndex_ : int }
 
-    /// The current SwapchainSingletonOpt.
-    member this.SwapchainSingletonOpt = this.SwapchainSingletonOpts_[this.SwapchainIndex_]
+    /// The current SwapchainWrapperOpt.
+    member this.SwapchainWrapperOpt = this.SwapchainWrapperOpts_[this.SwapchainIndex_]
     
     /// The Vulkan swapchain itself.
-    member this.VkSwapchain = (Option.get this.SwapchainSingletonOpts_[this.SwapchainIndex_]).VkSwapchain
+    member this.VkSwapchain = (Option.get this.SwapchainWrapperOpts_[this.SwapchainIndex_]).VkSwapchain
 
     /// The number of swapchain images.
-    member this.ImageCount = (Option.get this.SwapchainSingletonOpts_[this.SwapchainIndex_]).Images.Length
+    member this.ImageCount = (Option.get this.SwapchainWrapperOpts_[this.SwapchainIndex_]).Images.Length
     
     /// The current swapchain image.
-    member this.Image = (Option.get this.SwapchainSingletonOpts_[this.SwapchainIndex_]).Images[int Hl.ImageIndex]
+    member this.Image = (Option.get this.SwapchainWrapperOpts_[this.SwapchainIndex_]).Images[int Hl.ImageIndex]
 
     /// The image view for the current swapchain image.
-    member this.ImageView = (Option.get this.SwapchainSingletonOpts_[this.SwapchainIndex_]).ImageViews[int Hl.ImageIndex]
+    member this.ImageView = (Option.get this.SwapchainWrapperOpts_[this.SwapchainIndex_]).ImageViews[int Hl.ImageIndex]
 
     /// The render finished semaphore for the current swapchain image.
-    member this.RenderFinishedSemaphore = (Option.get this.SwapchainSingletonOpts_.[this.SwapchainIndex_]).RenderFinishedSemaphores.[int Hl.ImageIndex]
+    member this.RenderFinishedSemaphore = (Option.get this.SwapchainWrapperOpts_.[this.SwapchainIndex_]).RenderFinishedSemaphores.[int Hl.ImageIndex]
 
     /// The swap extent of the current vkSwapchain.
-    member this.SwapExtent = (Option.get this.SwapchainSingletonOpts_[this.SwapchainIndex_]).SwapExtent
+    member this.SwapExtent = (Option.get this.SwapchainWrapperOpts_[this.SwapchainIndex_]).SwapExtent
 
     static member private clear renderQueue presentQueue swapchain =
-        for i in 0 .. dec swapchain.SwapchainSingletonOpts_.Length do
-            match swapchain.SwapchainSingletonOpts_[i] with
-            | Some swapchainSingleton ->
-                SwapchainSingleton.destroy renderQueue presentQueue swapchainSingleton
-                swapchain.SwapchainSingletonOpts_[i] <- None
+        for i in 0 .. dec swapchain.SwapchainWrapperOpts_.Length do
+            match swapchain.SwapchainWrapperOpts_[i] with
+            | Some swapchainWrapper ->
+                SwapchainWrapper.destroy renderQueue presentQueue swapchainWrapper
+                swapchain.SwapchainWrapperOpts_[i] <- None
             | None -> ()
     
     static member private destroySurface renderQueue presentQueue swapchain =
         Swapchain.clear renderQueue presentQueue swapchain // must do this first
         Hl.destroyVulkanSurface ()
     
-    static member private tryCreateSurfaceAndSwapchainSingleton physicalDevice renderQueue presentQueue swapchain instance =
+    static member private tryCreateSurfaceAndSwapchainWrapper physicalDevice renderQueue presentQueue swapchain instance =
         
         // check if app is not in background
         if not (Hl.getBackgrounded ()) then
@@ -385,9 +385,9 @@ type Swapchain =
                     // check window not minimized
                     if not (Swapchain.isWindowMinimized swapchain.Window_) then
 
-                        // try create SwapchainSingleton
-                        let swapchainSingletonOpt = SwapchainSingleton.tryCreate swapchain.SurfaceFormat_ VkSwapchainKHR.Null physicalDevice swapchain.Window_
-                        swapchain.SwapchainSingletonOpts_[swapchain.SwapchainIndex_] <- swapchainSingletonOpt
+                        // try create SwapchainWrapper
+                        let swapchainWrapperOpt = SwapchainWrapper.tryCreate swapchain.SurfaceFormat_ VkSwapchainKHR.Null physicalDevice swapchain.Window_
+                        swapchain.SwapchainWrapperOpts_[swapchain.SwapchainIndex_] <- swapchainWrapperOpt
                         
                         // destroy surface if lost again or if pause triggered during swapchain creation
                         if Hl.SurfaceState = SurfaceLost || Hl.getBackgroundingRequested ()
@@ -425,19 +425,19 @@ type Swapchain =
             
                 // use current VkSwapchain to create new one
                 let oldVkSwapchainOpt =
-                    match swapchain.SwapchainSingletonOpts_[swapchain.SwapchainIndex_] with
-                    | Some swapchainSingleton -> if swapchain.SwapchainSingletonOpts_.Length > 1 then swapchainSingleton.VkSwapchain else VkSwapchainKHR.Null
+                    match swapchain.SwapchainWrapperOpts_[swapchain.SwapchainIndex_] with
+                    | Some swapchainWrapper -> if swapchain.SwapchainWrapperOpts_.Length > 1 then swapchainWrapper.VkSwapchain else VkSwapchainKHR.Null
                     | None -> VkSwapchainKHR.Null
 
                 // advance swapchain index
-                if Option.isSome swapchain.SwapchainSingletonOpts_[swapchain.SwapchainIndex_] then
-                    swapchain.SwapchainIndex_ <- (inc swapchain.SwapchainIndex_) % swapchain.SwapchainSingletonOpts_.Length
+                if Option.isSome swapchain.SwapchainWrapperOpts_[swapchain.SwapchainIndex_] then
+                    swapchain.SwapchainIndex_ <- (inc swapchain.SwapchainIndex_) % swapchain.SwapchainWrapperOpts_.Length
 
-                // destroy SwapchainSingleton at new index if present
-                match swapchain.SwapchainSingletonOpts_[swapchain.SwapchainIndex_] with
-                | Some swapchainSingleton ->
-                    SwapchainSingleton.destroy renderQueue presentQueue swapchainSingleton
-                    swapchain.SwapchainSingletonOpts_[swapchain.SwapchainIndex_] <- None
+                // destroy SwapchainWrapper at new index if present
+                match swapchain.SwapchainWrapperOpts_[swapchain.SwapchainIndex_] with
+                | Some swapchainWrapper ->
+                    SwapchainWrapper.destroy renderQueue presentQueue swapchainWrapper
+                    swapchain.SwapchainWrapperOpts_[swapchain.SwapchainIndex_] <- None
                 | None -> ()
                 
                 // check once more for app pause (triggered during swapchain destruction) before attempting swapchain creation
@@ -447,32 +447,32 @@ type Swapchain =
                     if not (Swapchain.isWindowMinimized swapchain.Window_) then
                     
                         // try create new swapchain internal
-                        let swapchainSingletonOpt = SwapchainSingleton.tryCreate swapchain.SurfaceFormat_ oldVkSwapchainOpt physicalDevice swapchain.Window_
-                        swapchain.SwapchainSingletonOpts_[swapchain.SwapchainIndex_] <- swapchainSingletonOpt
+                        let swapchainWrapperOpt = SwapchainWrapper.tryCreate swapchain.SurfaceFormat_ oldVkSwapchainOpt physicalDevice swapchain.Window_
+                        swapchain.SwapchainWrapperOpts_[swapchain.SwapchainIndex_] <- swapchainWrapperOpt
 
                         // if surface is lost here (or pause triggered during pipeline creation!), destroy and attempt to recover on the spot
                         if Hl.SurfaceState = SurfaceLost || Hl.getBackgroundingRequested () then
                             Swapchain.destroySurface renderQueue presentQueue swapchain
-                            Swapchain.tryCreateSurfaceAndSwapchainSingleton physicalDevice renderQueue presentQueue swapchain instance
+                            Swapchain.tryCreateSurfaceAndSwapchainWrapper physicalDevice renderQueue presentQueue swapchain instance
 
                 // destroy surface and recreate if already possible
                 else
                     Swapchain.destroySurface renderQueue presentQueue swapchain
-                    Swapchain.tryCreateSurfaceAndSwapchainSingleton physicalDevice renderQueue presentQueue swapchain instance
+                    Swapchain.tryCreateSurfaceAndSwapchainWrapper physicalDevice renderQueue presentQueue swapchain instance
 
             // destroy surface and recreate if already possible
             else
                 Swapchain.destroySurface renderQueue presentQueue swapchain
-                Swapchain.tryCreateSurfaceAndSwapchainSingleton physicalDevice renderQueue presentQueue swapchain instance
+                Swapchain.tryCreateSurfaceAndSwapchainWrapper physicalDevice renderQueue presentQueue swapchain instance
 
         // handle surface loss and attempt to recreate surface and swapchain immediately
         | SurfaceLost ->
             Swapchain.destroySurface renderQueue presentQueue swapchain
-            Swapchain.tryCreateSurfaceAndSwapchainSingleton physicalDevice renderQueue presentQueue swapchain instance
+            Swapchain.tryCreateSurfaceAndSwapchainWrapper physicalDevice renderQueue presentQueue swapchain instance
 
         // attempt to recreate surface and swapchain when app is in foreground
         | SurfaceDestroyed ->
-            Swapchain.tryCreateSurfaceAndSwapchainSingleton physicalDevice renderQueue presentQueue swapchain instance
+            Swapchain.tryCreateSurfaceAndSwapchainWrapper physicalDevice renderQueue presentQueue swapchain instance
 
     /// Create a Swapchain.
     static member create surfaceFormat physicalDevice window =
@@ -480,23 +480,23 @@ type Swapchain =
         // swapchain index starts at zero
         let swapchainIndex = 0
 
-        // create SwapchainSingleton array
+        // create SwapchainWrapper array
         // NOTE: DJL: must allow for frames in flight plus 1 to prevent destroying semaphores while still in use
         // because swapchain can be refreshed at the end of one frame AND at the beginning of the next,
         // but can still only be refreshed once per frame.
-        let swapchainSingletonOpts = Array.create 2 None
+        let swapchainWrapperOpts = Array.create 2 None
 
         // check if window is minimized at startup
         let windowMinimized = Swapchain.isWindowMinimized window
 
-        // try create first SwapchainSingleton if window is not minimized or app paused
+        // try create first SwapchainWrapper if window is not minimized or app paused
         if not (windowMinimized || Hl.getBackgroundingRequested ()) then
-            let swapchainSingletonOpt = SwapchainSingleton.tryCreate surfaceFormat VkSwapchainKHR.Null physicalDevice window
-            swapchainSingletonOpts[swapchainIndex] <- swapchainSingletonOpt
+            let swapchainWrapperOpt = SwapchainWrapper.tryCreate surfaceFormat VkSwapchainKHR.Null physicalDevice window
+            swapchainWrapperOpts[swapchainIndex] <- swapchainWrapperOpt
 
         // make Swapchain
         let swapchain =
-            { SwapchainSingletonOpts_ = swapchainSingletonOpts
+            { SwapchainWrapperOpts_ = swapchainWrapperOpts
               Window_ = window
               SurfaceFormat_ = surfaceFormat
               SwapchainIndex_ = swapchainIndex }
@@ -992,7 +992,7 @@ type [<ReferenceEquality>] VulkanContext =
 
         // update render allowed flag and check if current swapchain is non-existent, typically because app is backgrounded
         context.RenderAllowed_ <- false
-        if Option.isNone context.Swapchain_.SwapchainSingletonOpt then VulkanContext.handleBackgrounding context
+        if Option.isNone context.Swapchain_.SwapchainWrapperOpt then VulkanContext.handleBackgrounding context
         else
             // check for handling of minimized window from previous frame(s); if *still* minimized then do nothing; if restored then refresh swapchain
             if context.WaitingForWindowRestore_ then VulkanContext.handleWindowSize context
