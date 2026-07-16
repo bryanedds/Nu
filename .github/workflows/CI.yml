@@ -76,7 +76,7 @@ jobs:
           xcode-version: ${{ steps.ios-version.outputs.xcode-version }}
       - name: Build all (if not Linux ARM)
         if: "!(contains(matrix.os, 'ubuntu') && contains(matrix.os, 'arm'))"
-        run: dotnet build -p BuildMobile=true
+        run: dotnet build -p BuildMobile=true -p ValidateXcodeVersion=false # temporarily work around Xcode version check
   test:
     strategy:
       matrix:

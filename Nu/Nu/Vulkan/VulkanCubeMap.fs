@@ -1,5 +1,8 @@
 ﻿// Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace Nu.Vulkan
 open System
@@ -26,8 +29,8 @@ type CubeMapGeometry =
       PrimitiveTopology : VkPrimitiveTopology
       ElementCount : int
       Vertices : Vector3 array
-      VertexBuffer : Nu.Vulkan.Buffer
-      IndexBuffer : Nu.Vulkan.Buffer }
+      VertexBuffer : VulkanBuffer
+      IndexBuffer : VulkanBuffer }
 
 /// Describes a renderable cube map surface.
 type [<Struct>] CubeMapSurface =
@@ -40,7 +43,7 @@ type [<Struct>] CubeMapSurface =
 
 /// Describes a cube map pipeline that's loaded into GPU.
 type CubeMapPipeline =
-    { EyeUniform : Nu.Vulkan.Buffer
+    { EyeUniform : VulkanBuffer
       Pipeline : Pipeline }
 
 /// The key identifying a cube map.
@@ -56,7 +59,7 @@ module CubeMap =
     /// Attempt to create a cube map from 6 files.
     /// Uses file name-based inferences to look for texture files in case the ones that were hard-coded in the included
     /// files can't be located.
-    let tryCreateCubeMap faceRightFilePath faceLeftFilePath faceTopFilePath faceBottomFilePath faceBackFilePath faceFrontFilePath thread vkc =
+    let tryCreateCubeMap faceRightFilePath faceLeftFilePath faceTopFilePath faceBottomFilePath faceBackFilePath faceFrontFilePath thread context =
 
         // load faces into cube map
         // TODO: DJL: maybe check that size and compression match?
@@ -73,7 +76,7 @@ module CubeMap =
                         | BcCompression -> PathF.ChangeExtension (faceFilePath, ".dds")
                         | AstcCompression -> PathF.ChangeExtension (faceFilePath, ".ktx")
                     else faceFilePath
-                match Hl.tryCreateTextureData false faceFilePath with
+                match TextureData.tryCreate false faceFilePath with
                 | Some textureData ->
                     match textureData with
                     | TextureData.TextureDataDotNet (metadata, bytes) ->
@@ -83,9 +86,9 @@ module CubeMap =
                             | None ->
                                 TextureInternal.create
                                     MipmapNone AttachmentNone TextureCubeMap VkImageUsageFlags.None
-                                    Uncompressed.ImageFormat Uncompressed.PixelFormat metadata vkc
+                                    Uncompressed.ImageFormat Uncompressed.PixelFormat metadata context
                         textureInternalOpt <- Some textureInternal
-                        TextureInternal.uploadArray metadata 0 i bytes thread textureInternal vkc
+                        TextureInternal.uploadArray metadata 0 i bytes thread textureInternal context
                     | TextureData.TextureDataMipmap (metadata, compressed, bytes, _) ->
                         let textureInternal =
                             match textureInternalOpt with
@@ -94,9 +97,9 @@ module CubeMap =
                                 let compression = if compressed then ColorCompression else Uncompressed
                                 TextureInternal.create
                                     MipmapNone AttachmentNone TextureCubeMap VkImageUsageFlags.None
-                                    compression.ImageFormat compression.PixelFormat metadata vkc
+                                    compression.ImageFormat compression.PixelFormat metadata context
                         textureInternalOpt <- Some textureInternal
-                        TextureInternal.uploadArray metadata 0 i bytes thread textureInternal vkc
+                        TextureInternal.uploadArray metadata 0 i bytes thread textureInternal context
                     | TextureData.TextureDataNative (metadata, bytesPtr, disposer) ->
                         use _ = disposer
                         let textureInternal =
@@ -105,9 +108,9 @@ module CubeMap =
                             | None ->
                                 TextureInternal.create
                                     MipmapNone AttachmentNone TextureCubeMap VkImageUsageFlags.None
-                                    Uncompressed.ImageFormat Uncompressed.PixelFormat metadata vkc
+                                    Uncompressed.ImageFormat Uncompressed.PixelFormat metadata context
                         textureInternalOpt <- Some textureInternal
-                        TextureInternal.upload metadata 0 i bytesPtr thread textureInternal vkc
+                        TextureInternal.upload metadata 0 i bytesPtr thread textureInternal context
                 | None -> errorOpt <- Some ("Could not create surface for image from '" + faceFilePath + "'")
 
         // attempt to finalize cube map
@@ -118,7 +121,7 @@ module CubeMap =
             Right cubeMap
         | Some error ->
             match textureInternalOpt with
-            | Some textureInternal -> TextureInternal.destroy textureInternal vkc
+            | Some textureInternal -> TextureInternal.destroy textureInternal context
             | None -> ()
             Left error
 
@@ -189,7 +192,7 @@ module CubeMap =
         (vertexData, indexData, bounds)
     
     /// Create cube map geometry from a mesh.
-    let createCubeMapGeometryFromMesh renderable (vertexData : single Memory) (indexData : int Memory) bounds vkc =
+    let createCubeMapGeometryFromMesh renderable (vertexData : single Memory) (indexData : int Memory) bounds context =
 
         // make buffers
         let (vertices, vertexBuffer, indexBuffer) =
@@ -198,8 +201,8 @@ module CubeMap =
             if renderable then
 
                 // create buffers
-                let vertexBuffer = Buffer.createVertexStagedFromMemory vertexData vkc
-                let indexBuffer = Buffer.createIndexStagedFromMemory indexData vkc
+                let vertexBuffer = VulkanBuffer.createVertexStagedFromMemory vertexData context
+                let indexBuffer = VulkanBuffer.createIndexStagedFromMemory indexData context
 
                 // fin
                 ([||], vertexBuffer, indexBuffer)
@@ -216,7 +219,7 @@ module CubeMap =
                     vertices[i] <- vertex
                 
                 // fin
-                (vertices, Unchecked.defaultof<Nu.Vulkan.Buffer>, Unchecked.defaultof<Nu.Vulkan.Buffer>)
+                (vertices, Unchecked.defaultof<VulkanBuffer>, Unchecked.defaultof<VulkanBuffer>)
 
         // make cube map geometry
         let geometry =
@@ -231,20 +234,20 @@ module CubeMap =
         geometry
 
     /// Create cube map geometry.
-    let createCubeMapGeometry renderable vkc =
+    let createCubeMapGeometry renderable context =
         let (vertexData, indexData, bounds) = createCubeMapMesh ()
-        createCubeMapGeometryFromMesh renderable (vertexData.AsMemory ()) (indexData.AsMemory ()) bounds vkc
+        createCubeMapGeometryFromMesh renderable (vertexData.AsMemory ()) (indexData.AsMemory ()) bounds context
 
     /// Destroy cube map geometry.
-    let destroyCubeMapGeometry geometry vkc =
-        Buffer.destroy geometry.VertexBuffer vkc
-        Buffer.destroy geometry.IndexBuffer vkc
+    let destroyCubeMapGeometry geometry context =
+        VulkanBuffer.destroy geometry.VertexBuffer context
+        VulkanBuffer.destroy geometry.IndexBuffer context
     
     /// Create a CubeMapPipeline.
-    let createCubeMapPipeline shaderPath colorAttachmentFormat (vkc : VulkanContext) =
+    let createCubeMapPipeline shaderPath colorAttachmentFormat (context : VulkanContext) =
 
         // create eye buffer
-        let eyeUniform = Buffer.create Uniform sizeof<Eye> vkc
+        let eyeUniform = VulkanBuffer.create Uniform sizeof<Eye> context
 
         // create pipeline
         let pipeline =
@@ -261,14 +264,13 @@ module CubeMap =
                 [||] [|colorAttachmentFormat|]
                 None // NOTE: DJL: not porting currently meaningless depth test as it imposes complexity cost in vulkan.
                 [|eyeUniform|]
-                vkc
 
         // fin
         { EyeUniform = eyeUniform; Pipeline = pipeline }
     
     /// Destroy a CubeMapPipeline.
-    let destroyCubeMapPipeline cubeMapPipeline vkc =
-        Pipeline.destroy cubeMapPipeline vkc
+    let destroyCubeMapPipeline cubeMapPipeline context =
+        Pipeline.destroy cubeMapPipeline context
     
     /// Draw a cube map.
     let drawCubeMap
@@ -283,7 +285,7 @@ module CubeMap =
         (pipeline : CubeMapPipeline)
         (getCommandBuffer : unit -> VkCommandBuffer)
         (advanceCommandBufferWhenNeeded : unit -> unit)
-        (vkc : VulkanContext) =
+        (context : VulkanContext) =
 
         // compute vulkan-appropriate matrices
         // NOTE: we do NOT flip when rendering to a cube map face!
@@ -296,53 +298,53 @@ module CubeMap =
         | Some vkPipeline ->
 
             // specify eye
-            let mutable eyeDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.Pipeline.DrawIndex pipeline.Pipeline vkc $ fun vkSet ->
+            let mutable eyeDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.Pipeline.DrawIndex pipeline.Pipeline $ fun vkSet ->
                 let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
-                Buffer.uploadValue eye pipeline.EyeUniform vkc
-                Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.EyeUniform vkSet vkc
+                VulkanBuffer.uploadValue eye pipeline.EyeUniform context
+                Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.EyeUniform vkSet
 
             // specify material
-            let mutable materialDescriptorSet = Pipeline.specifyDescriptorSet 1 cubeMap pipeline.Pipeline vkc $ fun vkSet ->
-                Pipeline.writeDescriptorSampledTexture 0 0 cubeMap vkSet vkc
+            let mutable materialDescriptorSet = Pipeline.specifyDescriptorSet 1 cubeMap pipeline.Pipeline $ fun vkSet ->
+                Pipeline.writeDescriptorSampledTexture 0 0 cubeMap vkSet
 
             // specify sampler
-            let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 2 sampler pipeline.Pipeline vkc $ fun vkSet ->
-                Pipeline.writeDescriptorSampler 0 0 sampler vkSet vkc
+            let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 2 sampler pipeline.Pipeline $ fun vkSet ->
+                Pipeline.writeDescriptorSampler 0 0 sampler vkSet
 
             // set up render
             let commandBuffer = getCommandBuffer ()
             let mutable renderArea = VkRect2D (0, 0, uint resolution, uint resolution)
             let mutable vkViewport = Hl.makeViewport false renderArea
             let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment|] None renderArea None
-            Vulkan.vkCmdBeginRendering (commandBuffer, &&renderingInfo)
-            Vulkan.vkCmdSetViewport (commandBuffer, 0u, 1u, &&vkViewport)
-            Vulkan.vkCmdSetScissor (commandBuffer, 0u, 1u, &&renderArea)
+            DeviceApi.vkCmdBeginRendering (commandBuffer, &&renderingInfo)
+            DeviceApi.vkCmdSetViewport (commandBuffer, 0u, 1u, &&vkViewport)
+            DeviceApi.vkCmdSetScissor (commandBuffer, 0u, 1u, &&renderArea)
 
             // set up pipeline
-            Vulkan.vkCmdBindPipeline (commandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
+            DeviceApi.vkCmdBindPipeline (commandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
 
             // bind vertex and index buffers
             let mutable vertexBuffer = geometry.VertexBuffer.VkBuffer
             let mutable vertexOffset = 0UL
-            Vulkan.vkCmdBindVertexBuffers (commandBuffer, 0u, 1u, &&vertexBuffer, &&vertexOffset)
-            Vulkan.vkCmdBindIndexBuffer (commandBuffer, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
+            DeviceApi.vkCmdBindVertexBuffers (commandBuffer, 0u, 1u, &&vertexBuffer, &&vertexOffset)
+            DeviceApi.vkCmdBindIndexBuffer (commandBuffer, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
 
             // bind descriptor sets
-            Vulkan.vkCmdBindDescriptorSets (commandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, &&eyeDescriptorSet, 0u, nullPtr)
-            Vulkan.vkCmdBindDescriptorSets (commandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, &&materialDescriptorSet, 0u, nullPtr)
-            Vulkan.vkCmdBindDescriptorSets (commandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 2u, 1u, &&samplerDescriptorSet, 0u, nullPtr)
+            DeviceApi.vkCmdBindDescriptorSets (commandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, &&eyeDescriptorSet, 0u, nullPtr)
+            DeviceApi.vkCmdBindDescriptorSets (commandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, &&materialDescriptorSet, 0u, nullPtr)
+            DeviceApi.vkCmdBindDescriptorSets (commandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 2u, 1u, &&samplerDescriptorSet, 0u, nullPtr)
 
             // draw
-            Vulkan.vkCmdDrawIndexed (commandBuffer, uint geometry.ElementCount, 1u, 0u, 0, 0u)
+            DeviceApi.vkCmdDrawIndexed (commandBuffer, uint geometry.ElementCount, 1u, 0u, 0, 0u)
 
             // tear down render
-            Vulkan.vkCmdEndRendering commandBuffer
+            DeviceApi.vkCmdEndRendering commandBuffer
 
-            // report draw scope
-            Hl.reportDrawScope ()
+            // report drawing
+            Hl.reportDrawCall 1 true
 
             // advance pipeline
-            Pipeline.advance 1 pipeline.Pipeline
+            Pipeline.advance pipeline.Pipeline
 
             // advance rendering command buffer when needed
             advanceCommandBufferWhenNeeded ()
@@ -359,7 +361,7 @@ type CubeMapClient () =
     member this.CubeMaps = cubeMaps
 
     /// Attempt to create a cube map from 6 files.
-    member this.TryCreateCubeMap cubeMapKey thread vkc =
+    member this.TryCreateCubeMap cubeMapKey thread context =
 
         // memoize cube map
         match cubeMaps.TryGetValue cubeMapKey with
@@ -367,7 +369,7 @@ type CubeMapClient () =
 
             // attempt to create cube map
             let (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath) = cubeMapKey
-            match CubeMap.tryCreateCubeMap faceRightFilePath faceLeftFilePath faceTopFilePath faceBottomFilePath faceBackFilePath faceFrontFilePath thread vkc with
+            match CubeMap.tryCreateCubeMap faceRightFilePath faceLeftFilePath faceTopFilePath faceBottomFilePath faceBackFilePath faceFrontFilePath thread context with
             | Right cubeMap ->
                 cubeMaps.Add (cubeMapKey, cubeMap)
                 Right cubeMap

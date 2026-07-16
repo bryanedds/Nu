@@ -15,13 +15,13 @@ open Nu
 module ContourTessellation =
 
     /// Create pipeline for vector graphics contour rendering.
-    let createContourTessellationPipeline vkc =
+    let createContourTessellationPipeline context =
 
         // create buffers
         let count = 1024 // TODO: P1: make constant.
-        let vertexBuffer = Buffer.create (Vertex true) (count * sizeof<ContourVertex>) vkc
-        let indexBuffer = Buffer.create (BufferType.Index true) (count * sizeof<uint32>) vkc
-        let modelViewProjectionUniform = Buffer.create Uniform sizeof<Matrix4x4> vkc
+        let vertexBuffer = VulkanBuffer.create (Vertex true) (count * sizeof<ContourVertex>) context
+        let indexBuffer = VulkanBuffer.create (VulkanBufferType.Index true) (count * sizeof<uint32>) context
+        let modelViewProjectionUniform = VulkanBuffer.create Uniform sizeof<Matrix4x4> context
         
         // create pipeline
         let vertexSize = sizeof<ContourVertex> // = sizeof<Vector2> + sizeof<Color> = 2 * sizeof<single> + 4 * sizeof<single>
@@ -34,9 +34,8 @@ module ContourTessellation =
                       Pipeline.attribute 1 Single4 sizeof<Vector2>|]|]
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer VertexStage 1|]|]
-                [||] [|vkc.SwapFormat|] None
+                [||] [|context.SwapFormat|] None
                 [|vertexBuffer; indexBuffer; modelViewProjectionUniform|]
-                vkc
 
         // fin
         (vertexBuffer, indexBuffer, modelViewProjectionUniform, pipeline)
@@ -50,11 +49,11 @@ module ContourTessellation =
          modelViewProjection : Matrix4x4 inref,
          clipOpt : Box2 voption inref,
          viewport : Viewport,
-         (vertexBuffer : Nu.Vulkan.Buffer, indexBuffer : Nu.Vulkan.Buffer, modelViewProjectionUniform : Nu.Vulkan.Buffer, pipeline : Pipeline),
-         vkc : VulkanContext) =
+         (vertexBuffer : VulkanBuffer, indexBuffer : VulkanBuffer, modelViewProjectionUniform : VulkanBuffer, pipeline : Pipeline),
+         context : VulkanContext) =
             
         // only draw if scissor (and therefore also viewport) is valid
-        let pixelDensity = Hl.getWindowPixelDensity vkc.Window
+        let pixelDensity = Hl.getWindowPixelDensity context.Window
         let renderAreaLogical = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)
         let mutable renderArea = Hl.scaleRectForPixelDensity pixelDensity renderAreaLogical
         let mutable vkViewport = Hl.makeViewport true renderArea
@@ -85,51 +84,51 @@ module ContourTessellation =
             | Some vkPipeline ->
 
                 // update vertices and indices
-                Buffer.uploadArray tessellation.Vertices vertexBuffer vkc
-                Buffer.uploadArray tessellation.Indices indexBuffer vkc
+                VulkanBuffer.uploadArray tessellation.Vertices vertexBuffer context
+                VulkanBuffer.uploadArray tessellation.Indices indexBuffer context
 
                 // specify uniforms
                 let modelViewProjection = modelViewProjection
-                let mutable uniformDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.DrawIndex pipeline vkc $ fun vkSet ->
-                    Buffer.uploadValue modelViewProjection modelViewProjectionUniform vkc
-                    Pipeline.writeDescriptorUniformBuffer 0 0 modelViewProjectionUniform vkSet vkc
+                let mutable uniformDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.DrawIndex pipeline $ fun vkSet ->
+                    VulkanBuffer.uploadValue modelViewProjection modelViewProjectionUniform context
+                    Pipeline.writeDescriptorUniformBuffer 0 0 modelViewProjectionUniform vkSet
 
                 // set up render
-                let mutable renderingInfo = Hl.makeRenderingInfo [|vkc.SwapchainImageView|] None renderArea None
-                Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, &&renderingInfo)
-                Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, &&vkViewport)
-                Vulkan.vkCmdSetScissor (vkc.RenderCommandBuffer, 0u, 1u, &&scissor)
+                let mutable renderingInfo = Hl.makeRenderingInfo [|context.SwapchainImageView|] None renderArea None
+                DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
+                DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
+                DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&scissor)
 
                 // set up pipeline
-                Vulkan.vkCmdBindPipeline (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
+                DeviceApi.vkCmdBindPipeline (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
 
                 // bind vertex and index buffers
                 let mutable vkVertexBuffer = vertexBuffer.VkBuffer
                 let mutable vkVertexOffset = 0UL
-                Vulkan.vkCmdBindVertexBuffers (vkc.RenderCommandBuffer, 0u, 1u, &&vkVertexBuffer, &&vkVertexOffset)
-                Vulkan.vkCmdBindIndexBuffer (vkc.RenderCommandBuffer, indexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
+                DeviceApi.vkCmdBindVertexBuffers (context.RenderCommandBuffer, 0u, 1u, &&vkVertexBuffer, &&vkVertexOffset)
+                DeviceApi.vkCmdBindIndexBuffer (context.RenderCommandBuffer, indexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
 
                 // bind descriptor set
-                Vulkan.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.PipelineLayout, 0u, 1u, &&uniformDescriptorSet, 0u, nullPtr)
+                DeviceApi.vkCmdBindDescriptorSets (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.PipelineLayout, 0u, 1u, &&uniformDescriptorSet, 0u, nullPtr)
 
                 // draw
-                Vulkan.vkCmdDrawIndexed (vkc.RenderCommandBuffer, uint32 tessellation.Indices.Length, 1u, 0u, 0, 0u)
+                DeviceApi.vkCmdDrawIndexed (context.RenderCommandBuffer, uint32 tessellation.Indices.Length, 1u, 0u, 0, 0u)
                     
                 // tear down render
-                Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
+                DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
 
-                // report draw scope
-                Hl.reportDrawScope ()
+                // report drawing
+                Hl.reportDrawCall 1 true
 
                 // advance vertex and index buffers
-                Buffer.advance vertexBuffer
-                Buffer.advance indexBuffer
+                VulkanBuffer.advance vertexBuffer
+                VulkanBuffer.advance indexBuffer
 
                 // advance pipeline
-                Pipeline.advance 1 pipeline
+                Pipeline.advance pipeline
 
                 // intermittently advance rendering command buffer
-                VulkanContext.advanceRenderCommandBuffer vkc
+                VulkanContext.advanceRenderCommandBuffer context
 
             // abort
             | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."

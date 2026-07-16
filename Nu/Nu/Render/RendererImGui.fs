@@ -45,7 +45,7 @@ type VulkanRendererImGui
     (assetTextureRequests : ConcurrentDictionary<AssetTag, unit>,
      assetTextureOpts : ConcurrentDictionary<AssetTag, uint32 voption>,
      viewport : Viewport,
-     vkc : VulkanContext) =
+     context : VulkanContext) =
 
     let assetTextureStorage = dictPlus<uint32, Texture> HashIdentity.Structural []
     let mutable viewport = viewport
@@ -54,10 +54,9 @@ type VulkanRendererImGui
     let mutable assetSampler = Unchecked.defaultof<Sampler>
     let mutable fontTexture = Unchecked.defaultof<Texture>
     let mutable vertexBufferSize = 8192 // TODO: populate from a constant.
-    let mutable vertexBuffer = Unchecked.defaultof<Nu.Vulkan.Buffer>
+    let mutable vertexBuffer = Unchecked.defaultof<VulkanBuffer>
     let mutable indexBufferSize = 1024 // TODO: populate from a constant.
-    let mutable indexBuffer = Unchecked.defaultof<Nu.Vulkan.Buffer>
-    let mutable textureIdCounter = 0u
+    let mutable indexBuffer = Unchecked.defaultof<VulkanBuffer>
     
     // in the event of clearing asset textures, we keep a blacklist of texture ids that have been recently destroyed.
     // In the code, we make an attempt to clear all artifacts that might have a potentially invalidated texture id
@@ -66,13 +65,13 @@ type VulkanRendererImGui
     let mutable textureIdBlacklist = hashSetPlus<uint32> HashIdentity.Structural []
     
     member private renderer.DestroyAssetTextures (destroyedTextureIdsOpt : uint32 HashSet option) =
-        ConcurrentCommandQueue.waitIdle vkc.RenderQueue
-        for assetTextureOpt in assetTextureOpts.Values do
-            match assetTextureOpt with
+        ConcurrentCommandQueue.waitIdle context.RenderQueue
+        for texturedIdOpt in assetTextureOpts.Values do
+            match texturedIdOpt with
             | ValueSome textureId ->
                 match Dictionary.tryFind textureId assetTextureStorage with
                 | Some texture ->
-                    Texture.destroy texture vkc
+                    Texture.destroy texture context
                     assetTextureStorage.Remove textureId |> ignore<bool>
                 | None -> ()
                 match destroyedTextureIdsOpt with
@@ -82,15 +81,18 @@ type VulkanRendererImGui
         assetTextureOpts.Clear ()
     
     member private renderer.GetTexture textureId =
-        if textureId = 0u then fontTexture
+        if textureId = fontTexture.Id
+        then fontTexture
         else
             match Dictionary.tryFind textureId assetTextureStorage with
             | Some texture -> texture
             | None -> Texture.EmptyTexture
-    
+
     member private renderer.GetSampler textureId =
-        if textureId = 0u then fontSampler else assetSampler
-    
+        if textureId = fontTexture.Id
+        then fontSampler
+        else assetSampler
+
     interface RendererImGui with
         
         member renderer.Initialize (fonts : ImFontAtlasPtr) =
@@ -104,24 +106,24 @@ type VulkanRendererImGui
 
             // create the font atlas texture
             let metadata = TextureMetadata.make fontWidth fontHeight
-            let textureInternal = TextureInternal.create MipmapNone AttachmentNone Texture2d VkImageUsageFlags.None Uncompressed.ImageFormat Rgba metadata vkc
-            TextureInternal.upload metadata 0 0 pixels RenderThread textureInternal vkc
+            let textureInternal = TextureInternal.create MipmapNone AttachmentNone Texture2d VkImageUsageFlags.None Uncompressed.ImageFormat Rgba metadata context
+            TextureInternal.upload metadata 0 0 pixels RenderThread textureInternal context
             fontTexture <- EagerTexture textureInternal
             
             // create samplers
-            fontSampler <- Sampler.create VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false vkc
-            assetSampler <- Sampler.create VkSamplerAddressMode.Repeat VkFilter.Nearest VkFilter.Nearest false vkc
-            
-            // set font atlas TexId to 0
-            fonts.SetTexID (nativeint textureIdCounter)
-            textureIdCounter <- inc textureIdCounter
+            // TODO: P0: see if we really need different samplers here.
+            fontSampler <- Sampler.create VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false context
+            assetSampler <- Sampler.create VkSamplerAddressMode.Repeat VkFilter.Nearest VkFilter.Nearest false context
+
+            // set font atlas TexId
+            fonts.SetTexID (nativeint fontTexture.Id)
             
             // NOTE: DJL: this is not used in the dear imgui vulkan backend.
             fonts.ClearTexData ()
 
             // create vertex and index buffers
-            vertexBuffer <- Nu.Vulkan.Buffer.create (Vertex true) vertexBufferSize vkc
-            indexBuffer <- Nu.Vulkan.Buffer.create (Index true) indexBufferSize vkc
+            vertexBuffer <- VulkanBuffer.create (Vertex true) vertexBufferSize context
+            indexBuffer <- VulkanBuffer.create (Index true) indexBufferSize context
 
             // create pipeline
             pipeline <-
@@ -135,14 +137,17 @@ type VulkanRendererImGui
                     [|Pipeline.descriptorSet<Texture * Sampler>
                         [|Pipeline.descriptor 0 CombinedImageSampler FragmentStage 1|]|]
                     [|Pipeline.pushConstant 0 (sizeof<Single> * 4) VertexStage|]
-                    [|vkc.SwapFormat|] None
-                    [|vertexBuffer; indexBuffer|] vkc
+                    [|context.SwapFormat|] None
+                    [|vertexBuffer; indexBuffer|]
 
         member renderer.PreRender renderMessages =
 
             // begin buffer usage
-            Buffer.beginFrame vertexBuffer
-            Buffer.beginFrame indexBuffer
+            VulkanBuffer.beginFrame vertexBuffer
+            VulkanBuffer.beginFrame indexBuffer
+
+            // clear blacklist
+            textureIdBlacklist.Clear ()
 
             // categorize render messages
             for renderMessage in renderMessages do
@@ -158,13 +163,11 @@ type VulkanRendererImGui
                 if not (assetTextureOpts.ContainsKey assetTag) then
                     match Metadata.tryGetFilePath assetTag with
                     | Some filePath ->
-                        match Hl.tryCreateTextureInternal true false (Hl.inferTextureCompression filePath) filePath RenderThread vkc with
+                        match TextureInternal.tryCreate true false (Hl.inferTextureCompression filePath) filePath RenderThread context with
                         | Right textureInternal ->
                             let texture = EagerTexture textureInternal
-                            let textureId = textureIdCounter
-                            textureIdCounter <- inc textureIdCounter
-                            assetTextureStorage.Add (textureId, texture)
-                            assetTextureOpts[assetTag] <- ValueSome textureId
+                            assetTextureStorage.Add (texture.Id, texture)
+                            assetTextureOpts[assetTag] <- ValueSome texture.Id
                         | Left _ -> assetTextureOpts[assetTag] <- ValueNone
                     | None -> ()
                 let mutable removed = ()
@@ -173,7 +176,7 @@ type VulkanRendererImGui
         member renderer.Render viewport_ (drawData : ImDrawDataPtr) =
 
             // update imgui's display frame buffer scale
-            let pixelDensity = Hl.getWindowPixelDensity vkc.Window
+            let pixelDensity = Hl.getWindowPixelDensity context.Window
             let io = ImGui.GetIO ()
             io.DisplayFramebufferScale <- v2Dup pixelDensity
 
@@ -183,29 +186,31 @@ type VulkanRendererImGui
                 viewport <- viewport_
 
             // check that viewport bounds assumed by drawData match the actual viewport, as they sometimes lag behind upon resize, triggering validation errors when viewport bounds are exceeded.
-            let pixelDensity = Hl.getWindowPixelDensity vkc.Window
+            let pixelDensity = Hl.getWindowPixelDensity context.Window
             let viewportPixelWidth = int (round (single viewport.Bounds.Width * pixelDensity))
             let viewportPixelHeight = int (round (single viewport.Bounds.Height * pixelDensity))
             let drawDataMatchesViewport =
                 int (round (drawData.DisplaySize.X * drawData.FramebufferScale.X)) = viewportPixelWidth &&
                 int (round (drawData.DisplaySize.Y * drawData.FramebufferScale.Y)) = viewportPixelHeight
-            
+
             // render when allowed and drawData matches viewport
-            if vkc.RenderAllowed && drawDataMatchesViewport then
+            if context.RenderAllowed && drawDataMatchesViewport then
 
                 // images added as needed for current frame, associated with descriptor sets by index
                 let usedImages = List ()
-                
+
+                // grab pipeline, asserting non-None since shader reload for ImGui isn't supported
+                let vkPipeline = Pipeline.tryGetVkPipeline VulkanImGui false pipeline |> Option.get
+
                 // set up render
                 let mutable renderArea =
                     VkRect2D (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
                     |> Hl.scaleRectForPixelDensity pixelDensity
-                let mutable renderingInfo = Hl.makeRenderingInfo [|vkc.SwapchainImageView|] None renderArea None
+                let mutable renderingInfo = Hl.makeRenderingInfo [|context.SwapchainImageView|] None renderArea None
                 let mutable viewport = Hl.makeViewport false renderArea
-                Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, &&renderingInfo)
-                Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, &&viewport)
-                let vkPipeline = Pipeline.tryGetVkPipeline VulkanImGui false pipeline |> Option.get // not supporting shader reload of Gaia itself
-                Vulkan.vkCmdBindPipeline (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
+                DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
+                DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&viewport)
+                DeviceApi.vkCmdBindPipeline (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
                 
                 // compute offsets
                 if drawData.TotalVtxCount > 0 then
@@ -217,8 +222,8 @@ type VulkanRendererImGui
                     // enlarge buffer sizes if needed
                     while vertexBufferSizeTotal > vertexBufferSize do vertexBufferSize <- vertexBufferSize * 2
                     while indexBufferSizeTotal > indexBufferSize do indexBufferSize <- indexBufferSize * 2
-                    Nu.Vulkan.Buffer.ensureWidth vertexBufferSize vertexBuffer vkc
-                    Nu.Vulkan.Buffer.ensureWidth indexBufferSize indexBuffer vkc
+                    VulkanBuffer.ensureWidth vertexBufferSize vertexBuffer context
+                    VulkanBuffer.ensureWidth indexBufferSize indexBuffer context
 
                     // upload vertices and indices
                     let mutable vertexOffset = 0
@@ -227,20 +232,20 @@ type VulkanRendererImGui
                         let drawList = let range = drawData.CmdLists in range[i]
                         let vertexBufferSize = drawList.VtxBuffer.Size * sizeof<ImDrawVert>
                         let indexBufferSize = drawList.IdxBuffer.Size * sizeof<uint16>
-                        Nu.Vulkan.Buffer.writeSubdata vertexOffset 0 vertexBufferSize 1 drawList.VtxBuffer.Data vertexBuffer vkc
-                        Nu.Vulkan.Buffer.writeSubdata indexOffset 0 indexBufferSize 1 drawList.IdxBuffer.Data indexBuffer vkc
+                        VulkanBuffer.writeSubdata vertexOffset 0 vertexBufferSize 1 drawList.VtxBuffer.Data vertexBuffer context
+                        VulkanBuffer.writeSubdata indexOffset 0 indexBufferSize 1 drawList.IdxBuffer.Data indexBuffer context
                         vertexOffset <- vertexOffset + vertexBufferSize
                         indexOffset <- indexOffset + indexBufferSize
 
                     // flush data
-                    Nu.Vulkan.Buffer.flushSubdata 0 0 vertexBufferSizeTotal 1 vertexBuffer vkc
-                    Nu.Vulkan.Buffer.flushSubdata 0 0 indexBufferSizeTotal 1 indexBuffer vkc
+                    VulkanBuffer.flushSubdata 0 0 vertexBufferSizeTotal 1 vertexBuffer context
+                    VulkanBuffer.flushSubdata 0 0 indexBufferSizeTotal 1 indexBuffer context
 
                     // bind vertex and index buffers
                     let mutable vertexBuffer = vertexBuffer.VkBuffer
                     let mutable vertexOffset = 0UL
-                    Vulkan.vkCmdBindVertexBuffers (vkc.RenderCommandBuffer, 0u, 1u, &&vertexBuffer, &&vertexOffset)
-                    Vulkan.vkCmdBindIndexBuffer (vkc.RenderCommandBuffer, indexBuffer.VkBuffer, 0UL, VkIndexType.Uint16)
+                    DeviceApi.vkCmdBindVertexBuffers (context.RenderCommandBuffer, 0u, 1u, &&vertexBuffer, &&vertexOffset)
+                    DeviceApi.vkCmdBindIndexBuffer (context.RenderCommandBuffer, indexBuffer.VkBuffer, 0UL, VkIndexType.Uint16)
 
                 // set up scale and translation
                 let scale = Array.zeroCreate<single> 2
@@ -251,8 +256,8 @@ type VulkanRendererImGui
                 translate[0] <- -1.0f - drawData.DisplayPos.X * scale[0]
                 translate[1] <- -1.0f - drawData.DisplayPos.Y * scale[1]
                 use translatePin = new ArrayPin<_> (translate)
-                Vulkan.vkCmdPushConstants (vkc.RenderCommandBuffer, pipeline.PipelineLayout, VertexStage.VkShaderStageFlags, 0u, 8u, scalePin.VoidPtr)
-                Vulkan.vkCmdPushConstants (vkc.RenderCommandBuffer, pipeline.PipelineLayout, VertexStage.VkShaderStageFlags, 8u, 8u, translatePin.VoidPtr)
+                DeviceApi.vkCmdPushConstants (context.RenderCommandBuffer, pipeline.PipelineLayout, VertexStage.VkShaderStageFlags, 0u, 8u, scalePin.VoidPtr)
+                DeviceApi.vkCmdPushConstants (context.RenderCommandBuffer, pipeline.PipelineLayout, VertexStage.VkShaderStageFlags, 8u, 8u, translatePin.VoidPtr)
 
                 // draw command lists, ignoring any commands that use blacklisted textures
                 let mutable globalVtxOffset = 0
@@ -288,7 +293,7 @@ type VulkanRendererImGui
                                 if Hl.validateRect scissor then
 
                                     // set scissor
-                                    Vulkan.vkCmdSetScissor (vkc.RenderCommandBuffer, 0u, 1u, &&scissor)
+                                    DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&scissor)
 
                                     // identify requested texture and assign to it a descriptor set index
                                     let textureId = uint32 pcmd.TextureId
@@ -297,17 +302,20 @@ type VulkanRendererImGui
 
                                     // specify material
                                     let (texture, sampler) as combined = (renderer.GetTexture textureId, renderer.GetSampler textureId)
-                                    let mutable materialDescriptorSet = Pipeline.specifyDescriptorSet descriptorSetIndex combined pipeline vkc $ fun vkSet ->
-                                        Pipeline.writeDescriptorCombinedTextureSampler 0 0 texture sampler vkSet vkc
+                                    let mutable materialDescriptorSet = Pipeline.specifyDescriptorSet descriptorSetIndex combined pipeline $ fun vkSet ->
+                                        Pipeline.writeDescriptorCombinedTextureSampler 0 0 texture sampler vkSet
 
                                     // bind descriptor set
-                                    Vulkan.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.PipelineLayout, 0u, 1u, &&materialDescriptorSet, 0u, nullPtr)
+                                    DeviceApi.vkCmdBindDescriptorSets (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.PipelineLayout, 0u, 1u, &&materialDescriptorSet, 0u, nullPtr)
 
                                     // draw
-                                    Vulkan.vkCmdDrawIndexed (vkc.RenderCommandBuffer, pcmd.ElemCount, 1u, pcmd.IdxOffset + uint globalIdxOffset, int pcmd.VtxOffset + globalVtxOffset, 0u)
+                                    DeviceApi.vkCmdDrawIndexed (context.RenderCommandBuffer, pcmd.ElemCount, 1u, pcmd.IdxOffset + uint globalIdxOffset, int pcmd.VtxOffset + globalVtxOffset, 0u)
+
+                                    // report drawing
+                                    Hl.reportDrawCall 1 false
 
                                     // advance pipeline
-                                    Pipeline.advance 1 pipeline
+                                    Pipeline.advance pipeline
 
                             // otherwise we don't have a way to handle user callbacks, so throw in that case
                             else Log.warn "Encountered ImGui user callback; ignoring."
@@ -317,30 +325,27 @@ type VulkanRendererImGui
                     globalVtxOffset <- globalVtxOffset + drawList.VtxBuffer.Size
 
                 // tear down render
-                Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
+                DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
 
                 // report draw scope
                 Hl.reportDrawScope ()
 
                 // advance rendering command buffer
-                VulkanContext.advanceRenderCommandBuffer vkc
-
-                // clear blacklist
-                textureIdBlacklist.Clear ()
+                VulkanContext.advanceRenderCommandBuffer context
 
         member renderer.CleanUp () =
-            Sampler.destroy fontSampler vkc
-            Sampler.destroy assetSampler vkc
+            Sampler.destroy fontSampler
+            Sampler.destroy assetSampler
             renderer.DestroyAssetTextures None
-            Texture.destroy fontTexture vkc
-            Pipeline.destroy pipeline vkc
+            Texture.destroy fontTexture context
+            Pipeline.destroy pipeline context
 
 /// VulkanRendererImGui functions.
 [<RequireQualifiedAccess>]
 module VulkanRendererImGui =
 
     /// Make a Vulkan imgui renderer.
-    let make assetTextureRequests assetTextures fonts viewport vkc =
-        let rendererImGui = VulkanRendererImGui (assetTextureRequests, assetTextures, viewport, vkc)
+    let make assetTextureRequests assetTextures fonts viewport context =
+        let rendererImGui = VulkanRendererImGui (assetTextureRequests, assetTextures, viewport, context)
         (rendererImGui :> RendererImGui).Initialize fonts
         rendererImGui
