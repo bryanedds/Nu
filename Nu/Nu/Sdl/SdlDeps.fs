@@ -188,8 +188,8 @@ module SdlDeps =
     let private tryRenderPreSplash (window : SDL_Window nativeptr) =
 
         // attempt to utilize pre-splash graphics from manifest resource
-        let assembly = Assembly.GetEntryAssembly ()
-        let svgStreamOpt = assembly.GetManifestResourceStream "PreSplash"
+        let assemblyOpt = Assembly.GetEntryAssembly () // is null on Android since the entry point is outside .NET
+        let svgStreamOpt = if notNull assemblyOpt then assemblyOpt.GetManifestResourceStream "PreSplash" else null
         if notNull svgStreamOpt then
 
             // attempt to copy svg to memory
@@ -222,7 +222,7 @@ module SdlDeps =
 
                         // attempt to fill window background with pre-splash color
                         let windowSurfacePtr = SDL3.SDL_GetWindowSurface window
-                        let colorStreamOpt = assembly.GetManifestResourceStream "PreSplashColor"
+                        let colorStreamOpt = assemblyOpt.GetManifestResourceStream "PreSplashColor"
                         if notNull colorStreamOpt then
                             use colorReader = new StreamReader (colorStreamOpt)
                             let colorStr = colorReader.ReadToEnd ()
