@@ -34,6 +34,7 @@ jobs:
         run:
           dotnet build "Projects/Mobile" -t:InstallAndroidDependencies -f net10.0-android -p BuildMobile=true,AcceptAndroidSdkLicenses=True
       - name: Get Xcode version from Apple workload
+        if: contains(matrix.os, 'macos')
         id: ios-version
         run: |
           # NOTE: .NET for iOS/tvOS/MacCatalyst checks the major.minor version of Xcode for version validation.
@@ -48,6 +49,7 @@ jobs:
           XCODE_VERSION=$(echo "$XCODE_VERSION" | cut -d. -f1-2) # Keep only major.minor
           echo "xcode-version=${XCODE_VERSION:-latest-stable}" >> "$GITHUB_OUTPUT"
       - uses: maxim-lobanov/setup-xcode@v1
+        if: contains(matrix.os, 'macos')
         with:
           xcode-version: ${{ steps.ios-version.outputs.xcode-version }}
       - name: Build all (if not Linux ARM)
