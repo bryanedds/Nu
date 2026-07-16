@@ -43,6 +43,7 @@ module Assimp =
 [<RequireQualifiedAccess>]
 module Vulkan =
 
+    let [<Uniform>] FramesInFlight = 1 // NOTE: no use of multiple FiF - https://vsynchronicity.wordpress.com/2026/06/25/saying-no-to-multiple-frames-in-flight-in-nu-game-engine/
     let [<Uniform>] MoltenVk = OperatingSystem.IsIOS () || match ConfigurationManager.AppSettings.["MoltenVk"] with null -> true | value -> scvalue value
     let [<Literal>] RenderCommandBufferCountDefault = 32
     let [<Literal>] DescriptorSetCountDefault = 32
