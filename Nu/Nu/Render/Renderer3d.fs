@@ -2799,20 +2799,79 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         renderer =
 
         // render light maps as needed
-            for (renderPass, renderTasks) in renderer.RenderPasses.Pairs do
+        for (renderPass, renderTasks) in renderer.RenderPasses.Pairs do
                 
-                // fallback light map pre-pass
-                match VulkanRenderer3d.getLastSkyBoxOpt renderPass renderer |> __c with
-                | Some (_, _, cubeMap, irradianceAndEnvironmentMapsOptRef : (Texture * Texture) option ref) ->
+            // fallback light map pre-pass
+            match VulkanRenderer3d.getLastSkyBoxOpt renderPass renderer |> __c with
+            | Some (_, _, cubeMap, irradianceAndEnvironmentMapsOptRef : (Texture * Texture) option ref) ->
 
-                    // render fallback irradiance and env filter maps
-                    if Option.isNone irradianceAndEnvironmentMapsOptRef.Value then
+                // render fallback irradiance and env filter maps
+                if Option.isNone irradianceAndEnvironmentMapsOptRef.Value then
 
-                        // render fallback irradiance map
+                    // render fallback irradiance map
+                    let irradianceMap =
+                        LightMap.createIrradianceMap
+                            Constants.Render.IrradianceMapResolution
+                            (CubeMapSurface.make cubeMap renderer.CubeMapGeometry)
+                            renderer.CubeMapSampler
+                            renderer.IrradianceMap.InternalFormat
+                            renderer.IrradiancePipeline
+                            (fun () -> renderer.VulkanContext.RenderCommandBuffer)
+                            (fun () -> VulkanContext.advanceRenderCommandBuffer renderer.VulkanContext)
+                            renderer.VulkanContext
+
+                    // render fallback env filter map
+                    let environmentFilterMap =
+                        LightMap.createEnvironmentFilterMap
+                            Constants.Render.EnvironmentFilterResolution
+                            (CubeMapSurface.make cubeMap renderer.CubeMapGeometry)
+                            renderer.CubeMapSampler
+                            renderer.EnvironmentFilterMap.InternalFormat
+                            renderer.EnvironmentFilterPipeline
+                            (fun () -> renderer.VulkanContext.RenderCommandBuffer)
+                            (fun () -> VulkanContext.advanceRenderCommandBuffer renderer.VulkanContext)
+                            renderer.VulkanContext
+
+                    // add to cache and create light map
+                    irradianceAndEnvironmentMapsOptRef.Value <- Some (irradianceMap, environmentFilterMap)
+
+                // nothing to do
+                | None -> ()
+
+            // render light map
+            match renderPass with
+            | LightMapPass (lightProbeId, _) ->
+                if renderTasks.LightMapRenders.Contains lightProbeId then
+
+                    // destroy any existing light map
+                    match renderer.LightMaps.TryGetValue lightProbeId with
+                    | (true, lightMap) ->
+                        TextureDumpster.toss lightMap.IrradianceMap renderer.TextureDumpster
+                        TextureDumpster.toss lightMap.EnvironmentFilterMap renderer.TextureDumpster
+                        renderer.LightMaps.Remove lightProbeId |> ignore<bool>
+                    | (false, _) -> ()
+                            
+                    // create new light map
+                    match renderTasks.LightProbes.TryGetValue lightProbeId with
+                    | (true, struct (lightProbeEnabled, lightProbeOrigin, lightProbeAmbientColor, lightProbeAmbientBrightness, lightProbeBounds)) ->
+
+                        // create reflection map
+                        let reflectionMap =
+                            LightMap.createReflectionMap
+                                (VulkanRenderer3d.renderGeometry frustumInterior frustumExterior frustumImposter renderPass (VulkanRenderer3d.getRenderTasks renderPass renderer) renderer)
+                                Constants.Render.ReflectionMapResolution
+                                lightProbeOrigin
+                                lightProbeAmbientColor
+                                lightProbeAmbientBrightness
+                                (fun () -> renderer.VulkanContext.RenderCommandBuffer)
+                                (fun () -> VulkanContext.advanceRenderCommandBuffer renderer.VulkanContext)
+                                renderer.VulkanContext
+
+                        // create irradiance map
                         let irradianceMap =
                             LightMap.createIrradianceMap
                                 Constants.Render.IrradianceMapResolution
-                                (CubeMapSurface.make cubeMap renderer.CubeMapGeometry)
+                                (CubeMapSurface.make reflectionMap renderer.CubeMapGeometry)
                                 renderer.CubeMapSampler
                                 renderer.IrradianceMap.InternalFormat
                                 renderer.IrradiancePipeline
@@ -2820,11 +2879,11 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                                 (fun () -> VulkanContext.advanceRenderCommandBuffer renderer.VulkanContext)
                                 renderer.VulkanContext
 
-                        // render fallback env filter map
+                        // create env filter map
                         let environmentFilterMap =
                             LightMap.createEnvironmentFilterMap
                                 Constants.Render.EnvironmentFilterResolution
-                                (CubeMapSurface.make cubeMap renderer.CubeMapGeometry)
+                                (CubeMapSurface.make reflectionMap renderer.CubeMapGeometry)
                                 renderer.CubeMapSampler
                                 renderer.EnvironmentFilterMap.InternalFormat
                                 renderer.EnvironmentFilterPipeline
@@ -2832,76 +2891,17 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                                 (fun () -> VulkanContext.advanceRenderCommandBuffer renderer.VulkanContext)
                                 renderer.VulkanContext
 
-                        // add to cache and create light map
-                        irradianceAndEnvironmentMapsOptRef.Value <- Some (irradianceMap, environmentFilterMap)
+                        // destroy reflection map
+                        TextureDumpster.toss reflectionMap renderer.TextureDumpster
 
-                    // nothing to do
-                    | None -> ()
+                        // create light map
+                        let lightMap = LightMap.createLightMap lightProbeEnabled lightProbeOrigin lightProbeAmbientColor lightProbeAmbientBrightness lightProbeBounds irradianceMap environmentFilterMap
 
-                // render light map
-                match renderPass with
-                | LightMapPass (lightProbeId, _) ->
-                    if renderTasks.LightMapRenders.Contains lightProbeId then
+                        // add light map to cache
+                        renderer.LightMaps[lightProbeId] <- lightMap
 
-                        // destroy any existing light map
-                        match renderer.LightMaps.TryGetValue lightProbeId with
-                        | (true, lightMap) ->
-                            TextureDumpster.toss lightMap.IrradianceMap renderer.TextureDumpster
-                            TextureDumpster.toss lightMap.EnvironmentFilterMap renderer.TextureDumpster
-                            renderer.LightMaps.Remove lightProbeId |> ignore<bool>
-                        | (false, _) -> ()
-                            
-                        // create new light map
-                        match renderTasks.LightProbes.TryGetValue lightProbeId with
-                        | (true, struct (lightProbeEnabled, lightProbeOrigin, lightProbeAmbientColor, lightProbeAmbientBrightness, lightProbeBounds)) ->
-
-                            // create reflection map
-                            let reflectionMap =
-                                LightMap.createReflectionMap
-                                    (VulkanRenderer3d.renderGeometry frustumInterior frustumExterior frustumImposter renderPass (VulkanRenderer3d.getRenderTasks renderPass renderer) renderer)
-                                    Constants.Render.ReflectionMapResolution
-                                    lightProbeOrigin
-                                    lightProbeAmbientColor
-                                    lightProbeAmbientBrightness
-                                    (fun () -> renderer.VulkanContext.RenderCommandBuffer)
-                                    (fun () -> VulkanContext.advanceRenderCommandBuffer renderer.VulkanContext)
-                                    renderer.VulkanContext
-
-                            // create irradiance map
-                            let irradianceMap =
-                                LightMap.createIrradianceMap
-                                    Constants.Render.IrradianceMapResolution
-                                    (CubeMapSurface.make reflectionMap renderer.CubeMapGeometry)
-                                    renderer.CubeMapSampler
-                                    renderer.IrradianceMap.InternalFormat
-                                    renderer.IrradiancePipeline
-                                    (fun () -> renderer.VulkanContext.RenderCommandBuffer)
-                                    (fun () -> VulkanContext.advanceRenderCommandBuffer renderer.VulkanContext)
-                                    renderer.VulkanContext
-
-                            // create env filter map
-                            let environmentFilterMap =
-                                LightMap.createEnvironmentFilterMap
-                                    Constants.Render.EnvironmentFilterResolution
-                                    (CubeMapSurface.make reflectionMap renderer.CubeMapGeometry)
-                                    renderer.CubeMapSampler
-                                    renderer.EnvironmentFilterMap.InternalFormat
-                                    renderer.EnvironmentFilterPipeline
-                                    (fun () -> renderer.VulkanContext.RenderCommandBuffer)
-                                    (fun () -> VulkanContext.advanceRenderCommandBuffer renderer.VulkanContext)
-                                    renderer.VulkanContext
-
-                            // destroy reflection map
-                            TextureDumpster.toss reflectionMap renderer.TextureDumpster
-
-                            // create light map
-                            let lightMap = LightMap.createLightMap lightProbeEnabled lightProbeOrigin lightProbeAmbientColor lightProbeAmbientBrightness lightProbeBounds irradianceMap environmentFilterMap
-
-                            // add light map to cache
-                            renderer.LightMaps[lightProbeId] <- lightMap
-
-                        | (false, _) -> ()
-                    | _ -> ()
+                    | (false, _) -> ()
+                | _ -> ()
 
     static member private renderShadow
         lightOrigin

@@ -399,7 +399,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         for packageName in renderer.RenderPackages |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq do
             VulkanRenderer2d.tryLoadRenderPackage packageName renderer
     
-    static member private handleRenderMessage renderMessage renderer =
+    static member private categorizeRenderMessage renderMessage renderer =
         match renderMessage with
         | LayeredOperation2d operation -> renderer.LayeredOperations.Add operation
         | LoadRenderPackage2d hintPackageUse -> VulkanRenderer2d.handleLoadRenderPackage hintPackageUse renderer
@@ -408,7 +408,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
 
     static member private categorizeRenderMessages renderMessages renderer =
         for renderMessage in renderMessages do
-            VulkanRenderer2d.handleRenderMessage renderMessage renderer
+            VulkanRenderer2d.categorizeRenderMessage renderMessage renderer
     
     static member private sortLayeredOperations renderer =
         renderer.LayeredOperations.Sort (LayeredOperation2dComparer ())
@@ -953,7 +953,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         // being contour frame
         match renderer.ContourTessellationPipeline with (_, _, _, pipeline) -> Pipeline.beginFrame pipeline
 
-        // handle render messages
+        // categorzie render messages
         VulkanRenderer2d.categorizeRenderMessages renderMessages renderer
 
         // sort layered operations
@@ -984,6 +984,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         // render layered operations
         if renderer.VulkanContext.RenderAllowed then
             VulkanRenderer2d.renderLayeredOperations eyeCenter eyeSize renderer
+        //else TODO: P0: add something like this.
+        //    assert SpriteBatch.isEmpty renderer.SpriteBatchEnv
 
         // clear layered operations
         renderer.LayeredOperations.Clear ()

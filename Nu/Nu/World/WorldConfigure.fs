@@ -34,8 +34,8 @@ module Configure =
                 | nameof Constants.Engine.OctreeDepth -> Constants.Engine.OctreeDepth <- scvalue value
                 | nameof Constants.Engine.EventTracing -> Constants.Engine.EventTracing <- scvalue value
                 | nameof Constants.Engine.EventFilter -> Constants.Engine.EventFilter <- scvalue value
-                | nameof Constants.Render.Debug -> Constants.Render.Debug <- scvalue value
-                | nameof Constants.Render.Vsync -> Constants.Render.Vsync <- scvalue value
+                | nameof Constants.Render.RenderDebug -> Constants.Render.RenderDebug <- scvalue value
+                | nameof Constants.Render.RenderVsync -> Constants.Render.RenderVsync <- scvalue value
                 | nameof Constants.Render.NearPlaneDistanceInterior -> Constants.Render.NearPlaneDistanceInterior <- scvalue value
                 | nameof Constants.Render.FarPlaneDistanceInterior -> Constants.Render.FarPlaneDistanceInterior <- scvalue value
                 | nameof Constants.Render.NearPlaneDistanceExterior -> Constants.Render.NearPlaneDistanceExterior <- scvalue value

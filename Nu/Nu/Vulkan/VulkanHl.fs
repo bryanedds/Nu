@@ -320,7 +320,7 @@ module Hl =
     // provides id for a texture on the gpu that is globally unique i.e. cannot be reused after texture is destroyed,
     // which is essential for tracking descriptor writes
     let mutable private TextureIdGenerationLock = obj ()
-    let mutable private TextureIdCounter = 0UL
+    let mutable private TextureIdCounter = 0u
 
     /// Index of the current Swapchain image.
     let mutable internal ImageIndex = 0u
@@ -837,12 +837,6 @@ module Hl =
         let mutable fence = Unchecked.defaultof<VkFence>
         DeviceApi.vkCreateFence (&info, nullPtr, &fence) |> check
         fence
-
-    /// Wait for a fence to signal and reset it for reuse.
-    let awaitFence fence =
-        let mutable fence = fence
-        DeviceApi.vkWaitForFences (1u, &&fence, true, UInt64.MaxValue) |> check
-        DeviceApi.vkResetFences (1u, &&fence) |> check
 
     /// Create a transient command buffer.
     /// TODO: create matching destroy fn and use that?

@@ -57,7 +57,6 @@ type VulkanRendererImGui
     let mutable vertexBuffer = Unchecked.defaultof<VulkanBuffer>
     let mutable indexBufferSize = 1024 // TODO: populate from a constant.
     let mutable indexBuffer = Unchecked.defaultof<VulkanBuffer>
-    let mutable textureIdCounter = 0u
     
     // in the event of clearing asset textures, we keep a blacklist of texture ids that have been recently destroyed.
     // In the code, we make an attempt to clear all artifacts that might have a potentially invalidated texture id
@@ -67,8 +66,8 @@ type VulkanRendererImGui
     
     member private renderer.DestroyAssetTextures (destroyedTextureIdsOpt : uint32 HashSet option) =
         ConcurrentCommandQueue.waitIdle context.RenderQueue
-        for assetTextureOpt in assetTextureOpts.Values do
-            match assetTextureOpt with
+        for texturedIdOpt in assetTextureOpts.Values do
+            match texturedIdOpt with
             | ValueSome textureId ->
                 match Dictionary.tryFind textureId assetTextureStorage with
                 | Some texture ->
@@ -82,15 +81,18 @@ type VulkanRendererImGui
         assetTextureOpts.Clear ()
     
     member private renderer.GetTexture textureId =
-        if textureId = 0u then fontTexture
+        if textureId = fontTexture.Id
+        then fontTexture
         else
             match Dictionary.tryFind textureId assetTextureStorage with
             | Some texture -> texture
             | None -> Texture.EmptyTexture
-    
+
     member private renderer.GetSampler textureId =
-        if textureId = 0u then fontSampler else assetSampler
-    
+        if textureId = fontTexture.Id
+        then fontSampler
+        else assetSampler
+
     interface RendererImGui with
         
         member renderer.Initialize (fonts : ImFontAtlasPtr) =
@@ -109,12 +111,12 @@ type VulkanRendererImGui
             fontTexture <- EagerTexture textureInternal
             
             // create samplers
+            // TODO: P0: see if we really need different samplers here.
             fontSampler <- Sampler.create VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false context
             assetSampler <- Sampler.create VkSamplerAddressMode.Repeat VkFilter.Nearest VkFilter.Nearest false context
-            
-            // set font atlas TexId to 0
-            fonts.SetTexID (nativeint textureIdCounter)
-            textureIdCounter <- inc textureIdCounter
+
+            // set font atlas TexId
+            fonts.SetTexID (nativeint fontTexture.Id)
             
             // NOTE: DJL: this is not used in the dear imgui vulkan backend.
             fonts.ClearTexData ()
@@ -144,6 +146,9 @@ type VulkanRendererImGui
             VulkanBuffer.beginFrame vertexBuffer
             VulkanBuffer.beginFrame indexBuffer
 
+            // clear blacklist
+            textureIdBlacklist.Clear ()
+
             // categorize render messages
             for renderMessage in renderMessages do
                 match renderMessage with
@@ -161,10 +166,8 @@ type VulkanRendererImGui
                         match TextureInternal.tryCreate true false (Hl.inferTextureCompression filePath) filePath RenderThread context with
                         | Right textureInternal ->
                             let texture = EagerTexture textureInternal
-                            let textureId = textureIdCounter
-                            textureIdCounter <- inc textureIdCounter
-                            assetTextureStorage.Add (textureId, texture)
-                            assetTextureOpts[assetTag] <- ValueSome textureId
+                            assetTextureStorage.Add (texture.Id, texture)
+                            assetTextureOpts[assetTag] <- ValueSome texture.Id
                         | Left _ -> assetTextureOpts[assetTag] <- ValueNone
                     | None -> ()
                 let mutable removed = ()
@@ -189,13 +192,16 @@ type VulkanRendererImGui
             let drawDataMatchesViewport =
                 int (round (drawData.DisplaySize.X * drawData.FramebufferScale.X)) = viewportPixelWidth &&
                 int (round (drawData.DisplaySize.Y * drawData.FramebufferScale.Y)) = viewportPixelHeight
-            
+
             // render when allowed and drawData matches viewport
             if context.RenderAllowed && drawDataMatchesViewport then
 
                 // images added as needed for current frame, associated with descriptor sets by index
                 let usedImages = List ()
-                
+
+                // grab pipeline, asserting non-None since shader reload for ImGui isn't supported
+                let vkPipeline = Pipeline.tryGetVkPipeline VulkanImGui false pipeline |> Option.get
+
                 // set up render
                 let mutable renderArea =
                     VkRect2D (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
@@ -204,7 +210,6 @@ type VulkanRendererImGui
                 let mutable viewport = Hl.makeViewport false renderArea
                 DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
                 DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&viewport)
-                let vkPipeline = Pipeline.tryGetVkPipeline VulkanImGui false pipeline |> Option.get // not supporting shader reload of Gaia itself
                 DeviceApi.vkCmdBindPipeline (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
                 
                 // compute offsets
@@ -327,9 +332,6 @@ type VulkanRendererImGui
 
                 // advance rendering command buffer
                 VulkanContext.advanceRenderCommandBuffer context
-
-                // clear blacklist
-                textureIdBlacklist.Clear ()
 
         member renderer.CleanUp () =
             Sampler.destroy fontSampler

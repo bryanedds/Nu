@@ -358,7 +358,7 @@ type TextureWrapper =
 /// An internal representation of a texture as managed by Vulkan.
 type [<CustomEquality; NoComparison>] TextureInternal =
     private
-        { Id_ : uint64
+        { Id_ : uint32
           InternalFormat_ : Vulkan.ImageFormat
           PixelFormat_ : PixelFormat
           MipLevels_ : int

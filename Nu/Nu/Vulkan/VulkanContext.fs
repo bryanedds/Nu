@@ -30,12 +30,12 @@ type [<ReferenceEquality>] ConcurrentCommandQueue =
           Lock_ : obj }
 
     /// Perform an arbitrary operation on the internal vulkan queue.
-    static member withLock queue (op : VkQueue -> unit) =
+    static member withLock<'a> queue (op : VkQueue -> 'a) : 'a =
         //let sw = System.Diagnostics.Stopwatch.StartNew ()
         lock queue.Lock_ (fun () ->
             //sw.Stop ()
             //Log.info ("ConcurrentCommandQueue.withLock: " + string sw.ElapsedTicks)
-            op queue.VkQueue_) : unit
+            op queue.VkQueue_)
 
     /// Wait for Queue to finish execution.
     static member waitIdle queue =
@@ -58,7 +58,9 @@ type [<ReferenceEquality>] ConcurrentCommandQueue =
             DeviceApi.vkQueueSubmit (vkQueue, 1u, &&info, finishFence) |> Hl.check
 
             // wait for execution to finish
-            Hl.awaitFence finishFence
+            let mutable finishFence = finishFence
+            DeviceApi.vkWaitForFences (1u, &&finishFence, true, UInt64.MaxValue) |> Hl.check
+            DeviceApi.vkResetFences (1u, &&finishFence) |> Hl.check
 
             // free command buffer
             DeviceApi.vkFreeCommandBuffers (commandPool, 1u, &&commandBuffer))
@@ -198,6 +200,7 @@ type SwapchainSingleton =
     { VkSwapchain : VkSwapchainKHR
       Images : VkImage array
       ImageViews : VkImageView array
+      RenderFinishedSemaphores : VkSemaphore array
       SwapExtent : VkExtent2D }
 
     /// Try create the VkSwapchain.
@@ -246,7 +249,7 @@ type SwapchainSingleton =
                 elif capabilities.supportedCompositeAlpha &&& VkCompositeAlphaFlagsKHR.PostMultiplied <> VkCompositeAlphaFlagsKHR.None then VkCompositeAlphaFlagsKHR.PostMultiplied
                 else VkCompositeAlphaFlagsKHR.Inherit
             info.presentMode <-
-                if Constants.Render.Vsync then
+                if Constants.Render.RenderVsync then
                     if canUseMailbox
                     then VkPresentModeKHR.Mailbox
                     else VkPresentModeKHR.Fifo
@@ -280,6 +283,12 @@ type SwapchainSingleton =
         let imageViews = Array.zeroCreate<VkImageView> images.Length
         for i in 0 .. dec imageViews.Length do imageViews[i] <- Hl.createImageView Rgba format 0 1 0 1 VkImageViewType.Image2D VkImageAspectFlags.Color images[i]
         imageViews
+        
+    /// Create render finished semaphores.
+    static member private createRenderFinishedSemaphores imageCount =
+        let semaphores = Array.zeroCreate<VkSemaphore> imageCount
+        for i in 0 .. dec semaphores.Length do semaphores.[i] <- Hl.createSemaphore ()
+        semaphores
     
     /// Try create a SwapchainSingleton.
     static member tryCreate surfaceFormat oldVkSwapchainOpt physicalDevice window =
@@ -288,13 +297,22 @@ type SwapchainSingleton =
         match SwapchainSingleton.tryCreateVkSwapchain surfaceFormat oldVkSwapchainOpt physicalDevice window with
         | Some (vkSwapchain, swapExtent) ->
 
-            // make SwapchainSingleton
+            // create images / views
             let images = SwapchainSingleton.getSwapchainImages vkSwapchain
             let imageViews = SwapchainSingleton.createImageViews surfaceFormat.format images
+
+            // render finished semaphores based on swapchain images rather than frames in flight to address
+            // safety issue described in https://docs.vulkan.org/guide/latest/swapchain_semaphore_reuse.html.
+            // these should naturally be associated with the vkSwapchain itself, especially to prevent validation
+            // errors triggered by reuse of semaphores that "may still be in use" by obsolete vkSwapchains.
+            let renderFinishedSemaphores = SwapchainSingleton.createRenderFinishedSemaphores images.Length
+
+            // make SwapchainSingleton
             let swapchainSingleton =
                 { VkSwapchain = vkSwapchain
                   Images = images
                   ImageViews = imageViews
+                  RenderFinishedSemaphores = renderFinishedSemaphores
                   SwapExtent = swapExtent }
 
             // fin
@@ -310,6 +328,7 @@ type SwapchainSingleton =
         ConcurrentCommandQueue.waitIdle presentQueue
         for i in 0 .. dec swapchainSingleton.ImageViews.Length do DeviceApi.vkDestroyImageView (swapchainSingleton.ImageViews[i], nullPtr)
         DeviceApi.vkDestroySwapchainKHR (swapchainSingleton.VkSwapchain, nullPtr)
+        for i in 0 .. dec swapchainSingleton.RenderFinishedSemaphores.Length do DeviceApi.vkDestroySemaphore (swapchainSingleton.RenderFinishedSemaphores.[i], nullPtr)
 
 /// A swapchain and its assets that may be refreshed for a different screen size.
 type Swapchain =
@@ -333,6 +352,9 @@ type Swapchain =
 
     /// The image view for the current swapchain image.
     member this.ImageView = (Option.get this.SwapchainSingletonOpts_[this.SwapchainIndex_]).ImageViews[int Hl.ImageIndex]
+
+    /// The render finished semaphore for the current swapchain image.
+    member this.RenderFinishedSemaphore = (Option.get this.SwapchainSingletonOpts_.[this.SwapchainIndex_]).RenderFinishedSemaphores.[int Hl.ImageIndex]
 
     /// The swap extent of the current vkSwapchain.
     member this.SwapExtent = (Option.get this.SwapchainSingletonOpts_[this.SwapchainIndex_]).SwapExtent
@@ -454,7 +476,7 @@ type Swapchain =
 
     /// Create a Swapchain.
     static member create surfaceFormat physicalDevice window =
-        
+
         // swapchain index starts at zero
         let swapchainIndex = 0
 
@@ -652,11 +674,11 @@ type [<ReferenceEquality>] VulkanContext =
         // TODO: DJL: try to automatically prevent validation from interfering with Nsight, starting with VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT.
         let validationLayerName = "VK_LAYER_KHRONOS_validation"
         let validationLayerExists = Array.exists (fun x -> Hl.getLayerName x = validationLayerName) layers
-        if Constants.Render.Debug && not validationLayerExists then
+        if Constants.Render.RenderDebug && not validationLayerExists then
             Log.info (validationLayerName + " is not available. Vulkan programmers must install the Vulkan SDK to enable validation.")
 
         // attempt to use validation layer when desired
-        Hl.ValidationLayersActivated <- Constants.Render.Debug && validationLayerExists
+        Hl.ValidationLayersActivated <- Constants.Render.RenderDebug && validationLayerExists
         use layerWrap = new StringArrayWrap ([|validationLayerName|]) // must remain in scope until vkCreateInstance
 
         // get sdl extensions
@@ -939,6 +961,11 @@ type [<ReferenceEquality>] VulkanContext =
             | MiddleSubmission ->
                 DeviceApi.vkQueueSubmit (vkQueue, 1u, &&submitInfo, VkFence.Null) |> Hl.check
             | LastSubmission ->
+                let mutable renderFinishedSemaphore = context.Swapchain_.RenderFinishedSemaphore
+                let mutable stageFlag = VkPipelineStageFlags.ColorAttachmentOutput
+                submitInfo.signalSemaphoreCount <- 1u
+                submitInfo.pSignalSemaphores <- &&renderFinishedSemaphore
+                submitInfo.pWaitDstStageMask <- &&stageFlag
                 DeviceApi.vkQueueSubmit (vkQueue, 1u, &&submitInfo, context.RenderFence_) |> Hl.check
 
             // advance cursor
@@ -954,9 +981,14 @@ type [<ReferenceEquality>] VulkanContext =
 
         // wait for current frame to be ready
         //let sw = System.Diagnostics.Stopwatch.StartNew ()
-        Hl.awaitFence context.RenderFence_
+        let mutable renderFence = context.RenderFence_
+        DeviceApi.vkWaitForFences (1u, &&renderFence, true, UInt64.MaxValue) |> Hl.check
+
         //sw.Stop ()
         //Log.info ("Hl.awaitFence: " + string sw.ElapsedTicks)
+
+        // reset render command buffers cursor
+        context.RenderCommandBuffersCursor_ <- 0
 
         // update render allowed flag and check if current swapchain is non-existent, typically because app is backgrounded
         context.RenderAllowed_ <- false
@@ -979,85 +1011,95 @@ type [<ReferenceEquality>] VulkanContext =
                             let swapchainBounds = box2i v2iZero (v2i (int extent.width) (int extent.height))
                             if  swapchainBounds.ContainsInclusive windowViewport.Bounds = ContainmentType.Contains &&
                                 windowViewport.Bounds.ContainsInclusive windowViewport.Inner = ContainmentType.Contains then
+
                                 // try to acquire image from swapchain to draw onto
+                                // NOTE: DJL: due to semaphore, if this is successful, the render *must* proceed!
                                 //let sw = System.Diagnostics.Stopwatch.StartNew ()
                                 let result = DeviceApi.vkAcquireNextImageKHR (context.Swapchain_.VkSwapchain, UInt64.MaxValue, context.ImageAvailableSemaphore_, VkFence.Null, &Hl.ImageIndex)
                                 //sw.Stop ()
                                 //Log.info ("VulkanDevice.vkAcquireNextImageKHR: " + string sw.ElapsedTicks)
-                                if result = VkResult.ErrorOutOfDateKHR then VulkanContext.handleWindowSize context // refresh swapchain if out of date
-                                else
-                                    // destroy surface if lost
-                                    if result = VkResult.ErrorSurfaceLostKHR then
-                                        Hl.SurfaceState <- SurfaceLost
-                                        Swapchain.update context.PhysicalDevice_ context.RenderQueue_ context.PresentQueue_ context.Swapchain_ context.Instance_
-                                    else
-                                        Hl.check result // NOTE: DJL: this will report a suboptimal swapchain image.
-                                        context.RenderAllowed_ <- true // permit rendering
+                                match result with
+                                | VkResult.ErrorOutOfDateKHR ->
+                                    VulkanContext.handleWindowSize context // refresh swapchain if out of date
+                                | VkResult.ErrorSurfaceLostKHR ->
+                                    Hl.SurfaceState <- SurfaceLost
+                                    Swapchain.update context.PhysicalDevice_ context.RenderQueue_ context.PresentQueue_ context.Swapchain_ context.Instance_
+                                | _ ->
+                                    context.RenderAllowed_ <- true // permit rendering
+                                    Hl.check result // NOTE: DJL: this will report a suboptimal swapchain image.
 
-        // reset render command buffers cursor
-        context.RenderCommandBuffersCursor_ <- 0
+        //
+        if context.RenderAllowed_ then
 
-        // begin render command recording
-        VulkanContext.beginRenderCommandBuffer context
+            // begin render command recording
+            VulkanContext.beginRenderCommandBuffer context
 
-        // make swapchain image is ready to be rendered to
-        let pixelDensity = Hl.getWindowPixelDensity context.Window
-        let renderArea =
-            VkRect2D (0, 0, uint windowViewport.Bounds.Size.X, uint windowViewport.Bounds.Size.Y)
-            |> Hl.scaleRectForPixelDensity pixelDensity
-        let clearColor = VkClearValue (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
-        let mutable renderingInfo = Hl.makeRenderingInfo [|context.SwapchainImageView|] None renderArea (Some clearColor)
-        Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color Undefined ColorAttachmentWrite context.SwapchainImage context.RenderCommandBuffer
-        DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
-        DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
-        Hl.reportDrawScope ()
+            // make swapchain image is ready to be rendered to
+            let pixelDensity = Hl.getWindowPixelDensity context.Window
+            let renderArea =
+                VkRect2D (0, 0, uint windowViewport.Bounds.Size.X, uint windowViewport.Bounds.Size.Y)
+                |> Hl.scaleRectForPixelDensity pixelDensity
+            let clearColor = VkClearValue (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
+            let mutable renderingInfo = Hl.makeRenderingInfo [|context.SwapchainImageView|] None renderArea (Some clearColor)
+            Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color Undefined ColorAttachmentWrite context.SwapchainImage context.RenderCommandBuffer
+            DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
+            DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
+            Hl.reportDrawScope ()
 
     /// End the frame.
     static member endFrame context =
 
-        // transition swapchain image layout to presentation
-        Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color ColorAttachmentWrite Present context.Swapchain_.Image context.RenderCommandBuffer
+        //
+        if context.RenderAllowed_ then
 
-        // end rendering
-        VulkanContext.endRenderCommandBuffer LastSubmission context
+            // transition swapchain image layout to presentation
+            Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color ColorAttachmentWrite Present context.Swapchain_.Image context.RenderCommandBuffer
+
+            // reset render fence as late as possible
+            let mutable renderFence = context.RenderFence_
+            DeviceApi.vkResetFences (1u, &&renderFence) |> Hl.check
+
+            // end rendering
+            VulkanContext.endRenderCommandBuffer LastSubmission context
 
         // reset draw counters
         Hl.resetDrawCounters ()
 
     /// Present the image back to the swapchain to appear on screen.
-    static member present context =
+    static member present (context : VulkanContext) =
 
-        // lock to get access to vulkan queue
-        ConcurrentCommandQueue.withLock context.PresentQueue_ (fun vkQueue ->
+        //
+        if context.RenderAllowed_ then
 
-            // one more check for app backgrounding before we present
-            if not (Hl.getBackgroundingRequested ()) then
+            // lock to get access to vulkan queue
+            ConcurrentCommandQueue.withLock context.PresentQueue_ (fun vkQueue ->
 
-                // try to present image
-                let mutable vkSwapchain = context.Swapchain_.VkSwapchain
-                let mutable info = VkPresentInfoKHR ()
-                info.swapchainCount <- 1u
-                info.pSwapchains <- &&vkSwapchain
-                info.pImageIndices <- &&Hl.ImageIndex
-                //let sw = System.Diagnostics.Stopwatch.StartNew ()
-                let result = DeviceApi.vkQueuePresentKHR (vkQueue, &&info)
-                //sw.Stop ()
-                //Log.info ("VulkanDevice.vkQueuePresentKHR: " + string sw.ElapsedTicks)
+                // one more check for app backgrounding before we present
+                if not (Hl.getBackgroundingRequested ()) then
 
-                // refresh swapchain if framebuffer out of date or suboptimal
-                if result = VkResult.ErrorOutOfDateKHR || result = VkResult.SuboptimalKHR then
-                    VulkanContext.handleWindowSize context
-                
-                // destroy surface if lost
-                elif result = VkResult.ErrorSurfaceLostKHR then
-                    Hl.SurfaceState <- SurfaceLost
-                    Swapchain.update context.PhysicalDevice_ context.RenderQueue_ context.PresentQueue_ context.Swapchain_ context.Instance_
-                
-                // normal check
-                else Hl.check result
+                    // attempt to present image
+                    let mutable renderFinishedSemaphore = context.Swapchain_.RenderFinishedSemaphore
+                    let mutable vkSwapchain = context.Swapchain_.VkSwapchain
+                    let mutable info = VkPresentInfoKHR ()
+                    info.waitSemaphoreCount <- 1u
+                    info.pWaitSemaphores <- &&renderFinishedSemaphore
+                    info.swapchainCount <- 1u
+                    info.pSwapchains <- &&vkSwapchain
+                    info.pImageIndices <- &&Hl.ImageIndex
+                    //let sw = System.Diagnostics.Stopwatch.StartNew ()
+                    //sw.Stop ()
+                    let result = DeviceApi.vkQueuePresentKHR (vkQueue, &&info)
+                    //Log.info ("VulkanDevice.vkQueuePresentKHR: " + string sw.ElapsedTicks)
+                    match result with
+                    | VkResult.ErrorOutOfDateKHR | VkResult.SuboptimalKHR ->
+                        VulkanContext.handleWindowSize context
+                    | VkResult.ErrorSurfaceLostKHR ->
+                        Hl.SurfaceState <- SurfaceLost
+                        Swapchain.update context.PhysicalDevice_ context.RenderQueue_ context.PresentQueue_ context.Swapchain_ context.Instance_
+                    | _ -> Hl.check result
 
-            // still need to update the swapchain even if we haven't rendered
-            else Swapchain.update context.PhysicalDevice_ context.RenderQueue_ context.PresentQueue_ context.Swapchain_ context.Instance_)
+                // still need to update the swapchain even if we haven't rendered
+                else Swapchain.update context.PhysicalDevice_ context.RenderQueue_ context.PresentQueue_ context.Swapchain_ context.Instance_)
 
     /// Wait for all device operations to complete before cleaning up resources.
     static member waitIdle context =
