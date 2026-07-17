@@ -54,7 +54,7 @@ module Vulkan =
 [<RequireQualifiedAccess>]
 module ImGui =
 
-    let [<Uniform>] mutable FontSize = match ConfigurationManager.AppSettings["ImGuiFontSize"] with null -> 13.0f | value -> scvalue value
+    let [<Uniform>] mutable ImGuiFontSize = match ConfigurationManager.AppSettings["ImGuiFontSize"] with null -> 13.0f | value -> scvalue value
 
 [<RequireQualifiedAccess>]
 module Engine =
