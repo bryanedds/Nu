@@ -308,13 +308,13 @@ module WorldModuleGame =
         /// Get the bounds of the 2d play zone irrespective of eye center.
         static member getPlayBounds2dAbsolute world =
             let gameState = World.getGameState Game.Handle world
-            let eyeViewable = gameState.Eye2dSize + gameState.Eye2dSize * Constants.Engine.EyeMarginMaxScalar
+            let eyeViewable = gameState.Eye2dSize + gameState.Eye2dSize * 2.0f * Constants.Engine.EyeMarginMaxScalar
             box2 (eyeViewable * -0.5f) eyeViewable
 
         /// Get the bounds of the 2d play zone relative to eye center.
         static member getPlayBounds2dRelative world =
             let gameState = World.getGameState Game.Handle world
-            let eyeViewable = gameState.Eye2dSize + gameState.Eye2dSize * Constants.Engine.EyeMarginMaxScalar
+            let eyeViewable = gameState.Eye2dSize + gameState.Eye2dSize * 2.0f * Constants.Engine.EyeMarginMaxScalar
             box2 (gameState.Eye2dCenter - eyeViewable * 0.5f) eyeViewable
 
         /// Check that the given bounds is within the 2d eye's sight irrespective of eye center.

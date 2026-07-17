@@ -2222,7 +2222,7 @@ and [<NoEquality; NoComparison>] World =
     /// Get the viewable size of the 2D eye, for any potential window dimension.
     member this.Eye2dViewable =
         let eyeSize = this.Eye2dSize
-        eyeSize + eyeSize * Constants.Engine.EyeMarginMaxScalar
+        eyeSize + eyeSize * 2.0f * Constants.Engine.EyeMarginMaxScalar
 
     /// Get the bounds of the 2D eye, viewable for all window dimensions.
     member this.Eye2dBounds =
