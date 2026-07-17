@@ -5,304 +5,577 @@
 // See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace Nu
+open System
 open System.Collections.Generic
 open System.Numerics
-open System.Runtime.InteropServices
-open LibTessDotNet
 open Prime
-open Nu
 
-/// Represents a contour command.
-type [<Struct>] ContourCommand =
-    | MoveTo of EndPoint : Vector2
-    | LineTo of EndPoint : Vector2
-    | QuadraticCurveTo of Control : Vector2 * EndPoint : Vector2
-    | CubicCurveTo of Control1 : Vector2 * Control2 : Vector2 * EndPoint : Vector2
-    | CloseContour
+[<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module Contour =
 
-/// The winding rule to fill a contour.
-type [<Struct>] ContourWinding =
-    | EvenOdd // default winding from LibTessDotNet
-    | NonZero
-    | Positive
-    | Negative
-    | AbsGeqTwo
+    // The epsilon used by the reference Slug implementation for nearly-linear curves.
+    let [<Literal>] private kSlugEpsilon = 1.0f / 65536.0f
 
-/// Describes how to fill a contour.
-type [<Struct>] ContourFill =
-    { Color : Color
-      Winding : ContourWinding }
-    static member val none = { Color = Color.Zero; Winding = ContourWinding.EvenOdd }
-    static member ofColor color = { Color = color; Winding = ContourWinding.EvenOdd }
-    static member ofColorWinding color winding = { Color = color; Winding = winding }
-    
-/// Represents the stroke of a contour.
-type [<Struct>] ContourStroke =
-    { Color : Color
-      Thickness : single
-      FringeWidth : single }
-    static member val defaultFringeWidth = 0.01f
-    static member val none = { Color = Color.Zero; Thickness = 0.0f; FringeWidth = 0.0f }
-    static member aliased color thickness = { Color = color; Thickness = thickness; FringeWidth = 0.0f }
-    static member antiAliased color thickness = { Color = color; Thickness = thickness; FringeWidth = ContourStroke.defaultFringeWidth }
-    static member antiAliasedWithFringe color thickness fringeWidth = { Color = color; Thickness = thickness; FringeWidth = fringeWidth }
+    // Epsilon used for band overlap, in em-space (reference recommends 1/1024).
+    let [<Literal>] private kBandOverlap = 1.0f / 1024.0f
 
-/// Represents a tessellated vertex for vector path rendering.
-type [<Struct; StructLayout (LayoutKind.Sequential)>] ContourVertex =
-    { Position : Vector2
-      Color : Color }
+    // Default number of bands when bounds are degenerate.
+    let [<Literal>] private kDefaultBands = 1
 
-/// Represents a tessellated contour.
-type ContourTessellation =
-    { Vertices : ContourVertex array
-      Indices : uint32 array }
+    // Maximum number of subdivision iterations for adaptive cubic-to-quadratic conversion.
+    let [<Literal>] private kMaxCubicSubdivisions = 8
 
-[<RequireQualifiedAccess>]
-module ContourTessellation =
-        
-    let private fromTess (v : LibTessDotNet.ContourVertex inref) =
-        Vector2 (v.Position.X, v.Position.Y)
+    /// Compute the maximum x-coordinate among the three control points of a curve.
+    let private curveMaxX (c : ContourCurve) =
+        max (max c.P1X c.P2X) c.P3X
 
-    let private toTess (v : Vector2 inref) =
-        LibTessDotNet.ContourVertex (Vec3 (v.X, v.Y, 0.0f))
+    /// Compute the maximum y-coordinate among the three control points of a curve.
+    let private curveMaxY (c : ContourCurve) =
+        max (max c.P1Y c.P2Y) c.P3Y
 
-    /// Helper to create bezier curve points.
-    let private evaluateQuadraticBezier (p0 : Vector2) (p1 : Vector2) (p2 : Vector2) (t : single) =
-        let t1 = 1.0f - t
-        t1 * t1 * p0 + 2.0f * t1 * t * p1 + t * t * p2
+    /// Determine whether a quadratic Bézier curve is a straight horizontal line
+    /// (all three control points have the same y). Such curves never contribute
+    /// to horizontal ray winding.
+    let private isStraightHorizontal (c : ContourCurve) =
+        c.P1Y = c.P2Y && c.P2Y = c.P3Y
 
-    /// Helper to create cubic bezier curve points.
-    let private evaluateCubicBezier (p0 : Vector2) (p1 : Vector2) (p2 : Vector2) (p3 : Vector2) (t : single) =
-        let t1 = 1.0f - t
-        t1 * t1 * t1 * p0 + 3.0f * t1 * t1 * t * p1 + 3.0f * t1 * t * t * p2 + t * t * t * p3
-    
-    /// Compute miter joint for two consecutive line segments with anti-aliasing fringe.
-    let private computeMiterWithFringe (p0 : Vector2) (p1 : Vector2) (p2 : Vector2) (halfWidth : single) (fringeWidth : single) =
+    /// Determine whether a quadratic Bézier curve is a straight vertical line
+    /// (all three control points have the same x). Such curves never contribute
+    /// to vertical ray winding.
+    let private isStraightVertical (c : ContourCurve) =
+        c.P1X = c.P2X && c.P2X = c.P3X
 
-        // compute miter direction and length
-        let dir1 = Vector2.Normalize (p1 - p0)
-        let dir2 = Vector2.Normalize (p2 - p1)
-        let n1 = v2 -dir1.Y dir1.X
-        let n2 = v2 -dir2.Y dir2.X
-        let miterDir = Vector2.Normalize (n1 + n2)
-        let miterLength = 
-            let sinHalfAngle = Vector2.Cross (dir1, dir2) |> abs
-            if sinHalfAngle > 0.01f then halfWidth / sinHalfAngle else halfWidth
-        let miterLimit = halfWidth * 4.0f
-        let actualMiterLength = if miterLength <= miterLimit then miterLength else halfWidth
-        
-        // inner edge (solid)
-        let innerOffset1 = miterDir * actualMiterLength
-        let innerOffset2 = miterDir * -actualMiterLength
-        
-        // outer edge (transparent for anti-aliasing)
-        let fringeMiterLength = 
-            let fringeHalfWidth = halfWidth + fringeWidth
-            let fringeMiterLength = 
-                let sinHalfAngle = Vector2.Cross (dir1, dir2) |> abs
-                if sinHalfAngle > 0.01f then fringeHalfWidth / sinHalfAngle else fringeHalfWidth
-            if fringeMiterLength <= miterLimit * 1.5f then fringeMiterLength else fringeHalfWidth
-        let outerOffset1 = miterDir * fringeMiterLength
-        let outerOffset2 = miterDir * -fringeMiterLength
-        
-        // fin
-        (innerOffset1, innerOffset2, outerOffset1, outerOffset2)
+    /// Pack a ContourCurve into two float4 values for GPU consumption:
+    ///   field0 = (p1.x, p1.y, p2.x, p2.y)
+    ///   field1 = (p3.x, p3.y, 0, 0)
+    let private packCurveGPU (curve : ContourCurve) =
+        struct (Vector4 (curve.P1X, curve.P1Y, curve.P2X, curve.P2Y),
+                Vector4 (curve.P3X, curve.P3Y, 0.0f, 0.0f))
 
-    /// The empty tessellation.
-    let empty =
-        { Vertices = Array.empty; Indices = Array.empty }
+    /// Pack an array of ContourCurves into a flat float4 array for GPU upload.
+    let packCurvesGPU (curves : ContourCurve array) =
+        let gpuData = Array.zeroCreate<Vector4> (curves.Length * 2)
+        for i in 0 .. dec curves.Length do
+            let struct (f0, f1) = packCurveGPU curves[i]
+            gpuData[i * 2] <- f0
+            gpuData[i * 2 + 1] <- f1
+        gpuData
 
-    /// Make from contour commands into tessellated triangle vertices.
-    let make (commands : ContourCommand seq) (fill : ContourFill) (stroke : ContourStroke) (scale: Vector2) =
-        
-        // prepare context variables for processing
-        let fillTess = Tess ()
-        let isFill = fill.Color.A > 0.0f
-        let isStroke = stroke.Color.A > 0.0f && stroke.Thickness > 0.0f
-        let epsilon = 0.0001f
+    // ---- Adaptive cubic-to-quadratic conversion ----
+
+    /// Fit one quadratic Bézier to a cubic while preserving both endpoints.
+    /// This averages the control points implied by degree elevation at each end.
+    let private fitQuadraticToCubic (p0 : Vector2) (p1 : Vector2) (p2 : Vector2) (p3 : Vector2) =
+        let control = (3.0f * p1 + 3.0f * p2 - p0 - p3) * 0.25f
+        { P1X = p0.X; P1Y = p0.Y
+          P2X = control.X; P2Y = control.Y
+          P3X = p3.X; P3Y = p3.Y }
+
+    /// Return a conservative, global error bound for the fitted quadratic.
+    /// Degree-elevating the candidate produces a cubic whose difference from the source
+    /// has Bézier controls {0, p1-q1, p2-q2, 0}; the curve remains in their convex hull.
+    let private cubicToQuadError (p0 : Vector2) (p1 : Vector2) (p2 : Vector2) (p3 : Vector2) (candidate : ContourCurve) =
+        let control = v2 candidate.P2X candidate.P2Y
+        let q1 = (p0 + 2.0f * control) / 3.0f
+        let q2 = (p3 + 2.0f * control) / 3.0f
+        max (Vector2.Distance (p1, q1)) (Vector2.Distance (p2, q2))
+
+    /// Recursively subdivide a cubic Bézier until the fitted quadratic error is below tolerance.
+    let rec private subdivideCubic (tolerance : single) (p0 : Vector2) (p1 : Vector2) (p2 : Vector2) (p3 : Vector2) (depth : int) (quads : List<ContourCurve>) =
+        let candidate = fitQuadraticToCubic p0 p1 p2 p3
+        if depth >= kMaxCubicSubdivisions || cubicToQuadError p0 p1 p2 p3 candidate <= tolerance then
+            quads.Add candidate
+        else
+            // Subdivide at t = 0.5 using de Casteljau construction.
+            let p01 = (p0 + p1) * 0.5f
+            let p12 = (p1 + p2) * 0.5f
+            let p23 = (p2 + p3) * 0.5f
+            let p012 = (p01 + p12) * 0.5f
+            let p123 = (p12 + p23) * 0.5f
+            let mid = (p012 + p123) * 0.5f
+            subdivideCubic tolerance p0 p01 p012 mid (depth + 1) quads
+            subdivideCubic tolerance mid p123 p23 p3 (depth + 1) quads
+
+    /// Convert a single cubic Bézier to quadratic approximations using adaptive subdivision.
+    let private cubicToQuadratics (p0 : Vector2) (p1 : Vector2) (p2 : Vector2) (p3 : Vector2) =
+        let quads = List<ContourCurve> ()
+        subdivideCubic 0.001f p0 p1 p2 p3 0 quads
+        quads.ToArray ()
+
+    // ---- Contour decomposition ----
+
+    /// Convert contour commands to quadratic Bézier curves.
+    let private decomposeToCurves (commands : ContourCommand seq) =
+
+        let curves = List<ContourCurve> ()
         let mutable currentPoint = v2Zero
-        let mutable pathStart = v2Zero // for contour closing
-        let fillContourPoints = List<LibTessDotNet.ContourVertex> ()
-        let strokeContours = List<List<Vector2>> ()
-        let mutable currentStrokeContour = List<Vector2> ()
-        
-        /// Helper to save current contours to tessellator and stroke contour list, and clear them for the next contour.
-        let saveCurrentContours () =
-            if fillContourPoints.Count > 0 then
-                fillTess.AddContour fillContourPoints
-                fillContourPoints.Clear ()
-            if currentStrokeContour.Count > 0 then
-                strokeContours.Add currentStrokeContour
-                currentStrokeContour <- List<Vector2> ()
-        
-        // process contour commands
-        for command in commands do
+        let mutable contourStart = v2Zero
+        let mutable hasSubpath = false
 
-            // process contour command
+        // SVG-style fills implicitly close every subpath at a subsequent MoveTo and at end of path.
+        let closeSubpath () =
+            if hasSubpath then
+                if Vector2.DistanceSquared (currentPoint, contourStart) > 0.0001f then
+                    curves.Add { P1X = currentPoint.X; P1Y = currentPoint.Y
+                                 P2X = contourStart.X; P2Y = contourStart.Y
+                                 P3X = contourStart.X; P3Y = contourStart.Y }
+                currentPoint <- contourStart
+
+        let beginImplicitSubpath () =
+            if not hasSubpath then
+                contourStart <- currentPoint
+                hasSubpath <- true
+
+        for command in commands do
             match command with
             | MoveTo point ->
-                let point = point * scale
-                saveCurrentContours ()
+                closeSubpath ()
                 currentPoint <- point
-                pathStart <- point
-                if isFill then fillContourPoints.Add (toTess &point)
-                if isStroke then currentStrokeContour.Add point
-                
+                contourStart <- point
+                hasSubpath <- true
+
             | LineTo point ->
-                let point = point * scale
-                if isFill then fillContourPoints.Add (toTess &point)
-                if isStroke then currentStrokeContour.Add point
+                beginImplicitSubpath ()
+                // Line encoded as {p1, p2, p2} per Slug reference.
+                curves.Add { P1X = currentPoint.X; P1Y = currentPoint.Y
+                             P2X = point.X; P2Y = point.Y
+                             P3X = point.X; P3Y = point.Y }
                 currentPoint <- point
-                
+
             | QuadraticCurveTo (control, endpoint) ->
-                let (control, endpoint) = (control * scale, endpoint * scale) 
-                let steps = 20
-                for i in 1 .. steps do
-                    let t = single i / single steps
-                    let point = evaluateQuadraticBezier currentPoint control endpoint t
-                    if isFill then fillContourPoints.Add (toTess &point)
-                    if isStroke then currentStrokeContour.Add point
+                beginImplicitSubpath ()
+                curves.Add { P1X = currentPoint.X; P1Y = currentPoint.Y
+                             P2X = control.X; P2Y = control.Y
+                             P3X = endpoint.X; P3Y = endpoint.Y }
                 currentPoint <- endpoint
-                
+
             | CubicCurveTo (control1, control2, endpoint) ->
-                let (control1, control2, endpoint) = (control1 * scale, control2 * scale, endpoint * scale)
-                let steps = 20
-                for i in 1 .. steps do
-                    let t = single i / single steps
-                    let point = evaluateCubicBezier currentPoint control1 control2 endpoint t
-                    if isFill then fillContourPoints.Add (toTess &point)     
-                    if isStroke then currentStrokeContour.Add point
+                beginImplicitSubpath ()
+                let quads = cubicToQuadratics currentPoint control1 control2 endpoint
+                curves.AddRange quads
                 currentPoint <- endpoint
-                
+
             | CloseContour ->
-                if Vector2.DistanceSquared (currentPoint, pathStart) >= epsilon then
-                    if fillContourPoints.Count > 0 then fillContourPoints.Add (toTess &pathStart)
-                    if currentStrokeContour.Count > 0 then currentStrokeContour.Add pathStart
-                saveCurrentContours ()
-        
-        // tessellate any remaining contours
-        saveCurrentContours ()
-        
-        // tessellate fill geometry
-        let triangle = 3
-        let tessWindingRule =
-            match fill.Winding with
-            | EvenOdd -> LibTessDotNet.WindingRule.EvenOdd
-            | NonZero -> LibTessDotNet.WindingRule.NonZero
-            | Positive -> LibTessDotNet.WindingRule.Positive
-            | Negative -> LibTessDotNet.WindingRule.Negative
-            | AbsGeqTwo -> LibTessDotNet.WindingRule.AbsGeqTwo
-        fillTess.Tessellate (tessWindingRule, polySize = triangle)
-        
-        // build stroke geometry with proper miter joins directly from contour commands
-        let strokeVertices = List<ContourVertex> ()
-        let strokeIndices = List<uint32> ()
-        let halfWidth = stroke.Thickness * 0.5f
-        
-        /// Helper to add stroke segment indices
-        let addStrokeSegment vertexBase currIdx nextIdx =
-            let c0 = vertexBase + uint32 currIdx        // current inner edge 1
-            let c1 = vertexBase + uint32 currIdx + 1u   // current inner edge 2
-            let c2 = vertexBase + uint32 currIdx + 2u   // current outer edge 1
-            let c3 = vertexBase + uint32 currIdx + 3u   // current outer edge 2
-            let n0 = vertexBase + uint32 nextIdx        // next inner edge 1
-            let n1 = vertexBase + uint32 nextIdx + 1u   // next inner edge 2
-            let n2 = vertexBase + uint32 nextIdx + 2u   // next outer edge 1
-            let n3 = vertexBase + uint32 nextIdx + 3u   // next outer edge 2
-            
-            // solid center quad
-            strokeIndices.Add c0
-            strokeIndices.Add c1
-            strokeIndices.Add n0
-            strokeIndices.Add c1
-            strokeIndices.Add n1
-            strokeIndices.Add n0
-            
-            // anti-aliasing fringe quad (top edge)
-            strokeIndices.Add c0
-            strokeIndices.Add n0
-            strokeIndices.Add c2
-            strokeIndices.Add n0
-            strokeIndices.Add n2
-            strokeIndices.Add c2
-            
-            // anti-aliasing fringe quad (bottom edge)
-            strokeIndices.Add c1
-            strokeIndices.Add c3
-            strokeIndices.Add n1
-            strokeIndices.Add c3
-            strokeIndices.Add n3
-            strokeIndices.Add n1
-        
-        // generate stroke geometry with proper miter joins and anti-aliasing fringe
-        if isStroke && strokeContours.Count > 0 then
-            for contour in strokeContours do
-                let contourCount = contour.Count
-                if contourCount >= 2 then
-                    let vertexBase = uint32 strokeVertices.Count
-                    
-                    // determine if this is a closed contour (last point equals first point)
-                    let isClosed = 
-                        contourCount >= 3 && 
-                        Vector2.DistanceSquared (contour[0], contour[contourCount - 1]) < epsilon
-                    
-                    // generate vertices with proper miter joins and anti-aliasing fringe
-                    let vertexCount = if isClosed then contourCount - 1 else contourCount
-                    for i in 0 .. vertexCount - 1 do
-                        let idxCurr = i
-                        let (pPrev, pCurr, pNext) =
-                            if isClosed then
-                                let idxPrev = if i = 0 then vertexCount - 1 else i - 1
-                                let idxNext = if i = vertexCount - 1 then 0 else i + 1
-                                (contour[idxPrev], contour[idxCurr], contour[idxNext])
-                            else
-                                // for open contours, replace actual prev/next with straight perpendiculars at endpoints
-                                if i = 0 then
-                                    let pCurr = contour[0]
-                                    let pNext = contour[1]
-                                    let dir = Vector2.Normalize (pNext - pCurr)
-                                    let pPrev = pCurr - dir * 0.1f // virtual prev point for perpendicular (any closer would produce too wide stroke ends)
-                                    (pPrev, pCurr, pNext)
-                                elif i = vertexCount - 1 then
-                                    let pPrev = contour[i - 1]
-                                    let pCurr = contour[i]
-                                    let dir = Vector2.Normalize (pCurr - pPrev)
-                                    let pNext = pCurr + dir * 0.1f // virtual next point for perpendicular (any closer would produce too wide stroke ends)
-                                    (pPrev, pCurr, pNext)
-                                else
-                                    (contour[i - 1], contour[i], contour[i + 1])
-                        
-                        // compute miter offset with fringe for anti-aliasing
-                        let (innerOffset1, innerOffset2, outerOffset1, outerOffset2) = 
-                            computeMiterWithFringe pPrev pCurr pNext halfWidth stroke.FringeWidth
-                        
-                        // add 4 vertices per point: 2 inner (solid) + 2 outer (transparent)
-                        strokeVertices.Add { Position = pCurr + innerOffset1; Color = stroke.Color }
-                        strokeVertices.Add { Position = pCurr + innerOffset2; Color = stroke.Color }
-                        strokeVertices.Add { Position = pCurr + outerOffset1; Color = Color.Zero }
-                        strokeVertices.Add { Position = pCurr + outerOffset2; Color = Color.Zero }
-                    
-                    // generate triangle indices connecting the stroke segments
-                    let segmentCount = if isClosed then vertexCount else vertexCount - 1
-                    for i in 0 .. segmentCount - 1 do
-                        let nextIdx = if isClosed && i = segmentCount - 1 then 0 else i + 1
-                        addStrokeSegment vertexBase (i * 4) (nextIdx * 4)
-        
-        // combine fill and stroke geometry
-        let fillVertexCount = fillTess.VertexCount
-        let totalVertexCount = fillVertexCount + strokeVertices.Count
-        let vertices = Array.init totalVertexCount (fun i ->
-            if i < fillVertexCount
-            then { Position = fromTess &fillTess.Vertices[i]; Color = fill.Color }
-            else strokeVertices[i - fillVertexCount])
-        
-        // combine fill and stroke geometry at offset (stroke indices need to be shifted by fill vertex count)
-        let fillIndexCount = fillTess.ElementCount * triangle
-        let totalIndexCount = fillIndexCount + strokeIndices.Count
-        let indices = Array.init totalIndexCount (fun i ->
-            if i < fillIndexCount
-            then uint32 fillTess.Elements[i]
-            else strokeIndices[i - fillIndexCount] + uint32 fillVertexCount)
-        
-        // fin
-        { Vertices = vertices; Indices = indices }
+                closeSubpath ()
+                hasSubpath <- false
+
+        closeSubpath ()
+
+        curves.ToArray ()
+
+    // ---- Bounding box ----
+
+    /// Compute the bounding box of a set of curves.
+    let private computeBounds (curves : ContourCurve array) =
+        if curves.Length = 0 then Box2 (v2Zero, v2One)
+        else
+            let mutable minX = Single.MaxValue
+            let mutable minY = Single.MaxValue
+            let mutable maxX = Single.MinValue
+            let mutable maxY = Single.MinValue
+            for c in curves do
+                for p in [| v2 c.P1X c.P1Y; v2 c.P2X c.P2Y; v2 c.P3X c.P3Y |] do
+                    if p.X < minX then minX <- p.X
+                    if p.Y < minY then minY <- p.Y
+                    if p.X > maxX then maxX <- p.X
+                    if p.Y > maxY then maxY <- p.Y
+            Box2 (v2 minX minY, v2 (maxX - minX) (maxY - minY))
+
+    // ---- Band building ----
+
+    /// Build horizontal and vertical band data for Slug rendering.
+    /// Returns (bandEntries, bandCurveIndices, numHBands, numVBands, bandTransform).
+    let private buildBands (curves : ContourCurve array) (bounds : Box2) =
+
+        if Array.isEmpty curves then
+            (Array.empty, Array.empty, 0, 0, Vector4.Zero)
+        else
+            let emEpsilon = kBandOverlap
+
+            // ---- Horizontal bands (split y-range) ----
+            let hBandThickness =
+                let ideal = bounds.Size.Y / 8.0f
+                if ideal < emEpsilon then emEpsilon else ideal
+            let nHBands = max 1 (int (bounds.Size.Y / hBandThickness))
+
+            // For each curve, determine which horizontal bands it belongs to.
+            let hAssignments = List<int * int>() // (bandIndex, curveIndex)
+            for ci = 0 to curves.Length - 1 do
+                let c = curves.[ci]
+                if not (isStraightHorizontal c) then
+                    let minY = min (min c.P1Y c.P2Y) c.P3Y
+                    let maxY = max (max c.P1Y c.P2Y) c.P3Y
+                    // With epsilon overlap so pixels near band boundaries get both bands.
+                    let firstBand = max 0 (int ((minY - emEpsilon - bounds.Min.Y) / hBandThickness))
+                    let lastBand = min (nHBands - 1) (int ((maxY + emEpsilon - bounds.Min.Y) / hBandThickness))
+                    for b = firstBand to lastBand do
+                        hAssignments.Add (b, ci)
+
+            // Group by band index and sort each group by descending max x.
+            let hGroups =
+                hAssignments
+                |> Seq.groupBy fst
+                |> Seq.map (fun (band, items) ->
+                    let indices = items |> Seq.map snd |> Seq.toArray
+                    let sorted = indices |> Array.sortByDescending (fun ci -> curveMaxX curves.[ci])
+                    (band, sorted))
+                |> Seq.sortBy fst
+                |> Seq.toArray
+
+            // Build flat arrays.
+            let hEntries = List<ContourBandEntry> ()
+            let hIndices = List<uint32> ()
+            for (band, indices) in hGroups do
+                // Pad with empty entries for bands that have no curves (they still need an entry slot).
+                while hEntries.Count < band do
+                    hEntries.Add { CurveCount = 0u; CurveOffset = uint32 hIndices.Count }
+                let offset = uint32 hIndices.Count
+                for ci in indices do
+                    hIndices.Add (uint32 ci)
+                hEntries.Add { CurveCount = uint32 indices.Length; CurveOffset = offset }
+            // Pad remaining bands.
+            while hEntries.Count < nHBands do
+                hEntries.Add { CurveCount = 0u; CurveOffset = uint32 hIndices.Count }
+
+            // ---- Vertical bands (split x-range) ----
+            let vBandThickness =
+                let ideal = bounds.Size.X / 8.0f
+                if ideal < emEpsilon then emEpsilon else ideal
+            let nVBands = max 1 (int (bounds.Size.X / vBandThickness))
+
+            let vAssignments = List<int * int>()
+            for ci = 0 to curves.Length - 1 do
+                let c = curves.[ci]
+                if not (isStraightVertical c) then
+                    let minX = min (min c.P1X c.P2X) c.P3X
+                    let maxX = max (max c.P1X c.P2X) c.P3X
+                    let firstBand = max 0 (int ((minX - emEpsilon - bounds.Min.X) / vBandThickness))
+                    let lastBand = min (nVBands - 1) (int ((maxX + emEpsilon - bounds.Min.X) / vBandThickness))
+                    for b = firstBand to lastBand do
+                        vAssignments.Add (b, ci)
+
+            let vGroups =
+                vAssignments
+                |> Seq.groupBy fst
+                |> Seq.map (fun (band, items) ->
+                    let indices = items |> Seq.map snd |> Seq.toArray
+                    let sorted = indices |> Array.sortByDescending (fun ci -> curveMaxY curves.[ci])
+                    (band, sorted))
+                |> Seq.sortBy fst
+                |> Seq.toArray
+
+            let vEntries = List<ContourBandEntry> ()
+            let vIndices = List<uint32> ()
+            for (band, indices) in vGroups do
+                while vEntries.Count < band do
+                    vEntries.Add { CurveCount = 0u; CurveOffset = uint32 vIndices.Count }
+                let offset = uint32 vIndices.Count
+                for ci in indices do
+                    vIndices.Add (uint32 ci)
+                vEntries.Add { CurveCount = uint32 indices.Length; CurveOffset = offset }
+            while vEntries.Count < nVBands do
+                vEntries.Add { CurveCount = 0u; CurveOffset = uint32 vIndices.Count }
+
+            // ---- Band transform ----
+            // Maps renderCoord -> band index: bandIndex = renderCoord * scale + offset
+            let hbScale =
+                if bounds.Size.Y > 0.0f then single nHBands / bounds.Size.Y else 1.0f
+            let hbOffset =
+                -bounds.Min.Y * hbScale
+            let vbScale =
+                if bounds.Size.X > 0.0f then single nVBands / bounds.Size.X else 1.0f
+            let vbOffset =
+                -bounds.Min.X * vbScale
+
+            // Offset vertical-band CurveOffsets so they point into the
+            // concatenated flat index array (not just the vIndices section).
+            let hIndicesCount = hIndices.Count
+            let vEntriesFixed =
+                vEntries.ToArray ()
+                |> Array.map (fun entry ->
+                    if entry.CurveCount > 0u
+                    then { entry with CurveOffset = entry.CurveOffset + uint32 hIndicesCount }
+                    else entry)
+
+            // Pack entries: first all H-band entries, then all V-band entries.
+            let allEntries = Array.append (hEntries.ToArray ()) (vEntriesFixed)
+            let allIndices = Array.append (hIndices.ToArray ()) (vIndices.ToArray ())
+
+            (allEntries, allIndices, nHBands, nVBands,
+             Vector4 (vbScale, hbScale, vbOffset, hbOffset))
+
+    // ---- Curve scaling ----
+
+    /// Scale a curve's control points by the given factor.
+    let private scaleCurve (scale : Vector2) (curve : ContourCurve) =
+        { P1X = curve.P1X * scale.X; P1Y = curve.P1Y * scale.Y
+          P2X = curve.P2X * scale.X; P2Y = curve.P2Y * scale.Y
+          P3X = curve.P3X * scale.X; P3Y = curve.P3Y * scale.Y }
+
+    // ---- Adaptive polyline sampling for stroke offset ----
+
+    /// Tolerance for chord error when flattening curves to polylines (in em-space).
+    let [<Literal>] private kStrokeFlatness = 0.05f
+
+    /// Sample a quadratic Bézier with adaptive subdivision so chord error < tolerance.
+    let private sampleQuadratic (p0 : Vector2) (p1 : Vector2) (p2 : Vector2) (tolerance : single) =
+        let points = List<Vector2> ()
+        let rec sub (p0 : Vector2) (p1 : Vector2) (p2 : Vector2) depth =
+            if depth > 8 then
+                points.Add p2
+            else
+                // Midpoint of the quadratic
+                let mid = (p0 + 2.0f * p1 + p2) * 0.25f
+                // Distance from midpoint to chord
+                let chord = p2 - p0
+                let chordLen = chord.Length ()
+                let err =
+                    if chordLen > 0.0001f then
+                        let perp = v2 -chord.Y chord.X / chordLen
+                        abs (Vector2.Dot (mid - p0, perp))
+                    else 0.0f
+                if err <= tolerance then
+                    points.Add p2
+                else
+                    // Split at t = 0.5
+                    let p01 = (p0 + p1) * 0.5f
+                    let p12 = (p1 + p2) * 0.5f
+                    let p012 = (p01 + p12) * 0.5f
+                    sub p0 p01 p012 (depth + 1)
+                    sub p012 p12 p2 (depth + 1)
+        sub p0 p1 p2 0
+        points.ToArray ()
+
+    // ---- Command scaling ----
+
+    /// Scale all coordinates in a contour command by the given factor.
+    let private scaleCommand (scale : Vector2) (cmd : ContourCommand) =
+        match cmd with
+        | MoveTo pos -> MoveTo (pos * scale)
+        | LineTo pos -> LineTo (pos * scale)
+        | QuadraticCurveTo (ctl, endp) -> QuadraticCurveTo (ctl * scale, endp * scale)
+        | CubicCurveTo (ctl1, ctl2, endp) -> CubicCurveTo (ctl1 * scale, ctl2 * scale, endp * scale)
+        | CloseContour -> CloseContour
+
+    // ---- Subpath parsing ----
+
+    /// Parse a command sequence into separate closed subpaths.
+    /// Each subpath begins with a MoveTo and ends when another MoveTo or end-of-sequence is reached.
+    let private parseSubpaths (commands : ContourCommand seq) =
+        let subpaths = List<ContourCommand list> ()
+        let mutable current = []
+        let mutable hasContent = false
+        let flush () =
+            if hasContent && not (List.isEmpty current) then
+                subpaths.Add (List.rev current)
+                current <- []
+                hasContent <- false
+        for cmd in commands do
+            match cmd with
+            | MoveTo _ ->
+                flush ()
+                current <- cmd :: current
+                hasContent <- true
+            | _ ->
+                if hasContent then
+                    current <- cmd :: current
+        flush ()
+        subpaths.ToArray ()
+
+    // ---- Subpath flattening ----
+
+    /// Flatten a subpath into a polyline using adaptive sampling.
+    /// Closed subpaths omit the duplicated final start point because the offsetter closes them explicitly.
+    let private flattenSubpath (commands : ContourCommand list) (tolerance : single) (closed : bool) =
+        let points = List<Vector2> ()
+        let mutable current = v2Zero
+        let mutable start = v2Zero
+        let mutable first = true
+        for cmd in commands do
+            match cmd with
+            | MoveTo pt ->
+                current <- pt
+                start <- pt
+                points.Add pt
+                first <- false
+            | LineTo pt ->
+                if first then
+                    start <- current
+                    points.Add current
+                    first <- false
+                current <- pt
+                points.Add pt
+            | QuadraticCurveTo (ctrl, endp) ->
+                if first then
+                    start <- current
+                    points.Add current
+                    first <- false
+                let samples = sampleQuadratic current ctrl endp tolerance
+                points.AddRange samples
+                current <- endp
+            | CubicCurveTo (ctrl1, ctrl2, endp) ->
+                if first then
+                    start <- current
+                    points.Add current
+                    first <- false
+                // Convert cubic to quadratics first, then sample each quadratic adaptively.
+                let quads = cubicToQuadratics current ctrl1 ctrl2 endp
+                for q in quads do
+                    let p1 = v2 q.P1X q.P1Y
+                    let p2 = v2 q.P2X q.P2Y
+                    let p3 = v2 q.P3X q.P3Y
+                    let samples = sampleQuadratic p1 p2 p3 tolerance
+                    points.AddRange samples
+                current <- endp
+            | CloseContour ->
+                current <- start
+
+        // Remove an explicit closing endpoint; the closed offset path supplies its own closing edge.
+        if closed && points.Count > 1 && Vector2.DistanceSquared (points.[points.Count - 1], start) <= 0.0001f then
+            points.RemoveAt (points.Count - 1)
+        points.ToArray ()
+
+    // ---- Stroke offset helpers ----
+
+    /// Offset an open or closed polyline by halfWidth, producing left and right rails
+    /// with miter joints and square caps for open paths.
+    let private offsetPolyline (points : Vector2 array) (halfWidth : single) (closed : bool) =
+        let n = points.Length
+        if n < 2 then (Array.empty, Array.empty)
+        else
+            let edgeCount = if closed then n else n - 1
+            let normals = Array.zeroCreate<Vector2> edgeCount
+            for i in 0 .. edgeCount - 1 do
+                let next = if i = n - 1 then 0 else i + 1
+                let dir = points.[next] - points.[i]
+                let len = dir.Length ()
+                if len > 0.0001f then
+                    let dirN = dir / len
+                    normals.[i] <- v2 -dirN.Y dirN.X
+                else
+                    normals.[i] <- v2Zero
+
+            let miterOffset (previousNormal : Vector2) nextNormal =
+                let sum = previousNormal + nextNormal
+                let lenSq = sum.LengthSquared ()
+                let miterDir =
+                    if lenSq > 0.001f then sum / sqrt lenSq
+                    else nextNormal
+                let dot = abs (Vector2.Dot (nextNormal, miterDir))
+                let miterLen = if dot > 0.001f then halfWidth / dot else halfWidth
+                miterDir * min miterLen (halfWidth * 3.0f)
+
+            let left = Array.zeroCreate<Vector2> n
+            let right = Array.zeroCreate<Vector2> n
+            for i in 0 .. n - 1 do
+                let previousNormal, nextNormal =
+                    if not closed && i = 0 then normals.[0], normals.[0]
+                    elif not closed && i = n - 1 then normals.[edgeCount - 1], normals.[edgeCount - 1]
+                    else
+                        let previous = if i = 0 then normals.[edgeCount - 1] else normals.[i - 1]
+                        previous, normals.[i]
+                let offset = miterOffset previousNormal nextNormal
+                left.[i] <- points.[i] + offset
+                right.[i] <- points.[i] - offset
+            left, right
+
+    /// Convert offset rails into a filled stroke contour.
+    let private polygonToCommands (leftRail : Vector2 array) (rightRail : Vector2 array) (closed : bool) =
+        let cmds = List<ContourCommand> ()
+        if leftRail.Length > 0 then
+            cmds.Add (MoveTo leftRail[0])
+            for i in 1 .. leftRail.Length - 1 do
+                cmds.Add (LineTo leftRail[i])
+            if closed then
+                // Close the first rail before traversing the opposite rail in reverse.
+                // The two rail loops have opposite winding and the connecting edge is retraced.
+                cmds.Add (LineTo leftRail[0])
+                cmds.Add (LineTo rightRail[0])
+            for i in rightRail.Length - 1 .. -1 .. 0 do
+                cmds.Add (LineTo rightRail[i])
+            cmds.Add CloseContour
+        cmds
+
+    // ---- Stroke outline generation ----
+
+    /// Generate a centered stroke outline from contour commands.
+    /// Supports compound contours with multiple closed subpaths:
+    /// each subpath is flattened independently, offset left and right,
+    /// and converted into a closed ring.  All rings are concatenated
+    /// into a single command sequence that can be fed to
+    /// makeFillSlugData with NonZero winding.
+    ///
+    /// Join style: miter with clamped miter length (3× halfWidth).
+    /// Cap style: only closed subpaths are supported; open contours
+    /// will produce artifacts.  Round caps/joins are future work.
+    let private buildStrokeOutline (commands : ContourCommand seq) (thickness : single) =
+        if thickness <= 0.0f then Seq.empty
+        else
+            let halfWidth = thickness * 0.5f
+            let subpaths = parseSubpaths commands
+            if Array.isEmpty subpaths then Seq.empty
+            else
+                let allCmds = List<ContourCommand> ()
+                let tolerance = kStrokeFlatness
+                for sub in subpaths do
+                    let isClosed = sub |> List.exists (function CloseContour -> true | _ -> false)
+                    let polyline = flattenSubpath sub tolerance isClosed
+                    if polyline.Length >= 2 then
+                        let leftRail, rightRail = offsetPolyline polyline halfWidth isClosed
+                        if leftRail.Length >= 2 then
+                            let cmds = polygonToCommands leftRail rightRail isClosed
+                            allCmds.AddRange cmds
+                allCmds :> ContourCommand seq
+
+    // ---- Main entry points ----
+
+    /// Convert contour commands into pure Slug geometry (curves + bands only).
+    /// No paint or stroke data.
+    let private makeFillSlugData
+        (fillWinding : ContourWinding)
+        (commands : ContourCommand seq)
+        (scale : Vector2) =
+
+        let curves = decomposeToCurves commands
+        let curves = Array.map (scaleCurve scale) curves
+        let bounds = computeBounds curves
+        let (bandEntries, bandCurveIndices, nHBands, nVBands, bandTransform) =
+            buildBands curves bounds
+
+        { Curves = curves
+          BandEntries = bandEntries
+          BandCurveIndices = bandCurveIndices
+          HBands = nHBands
+          VBands = nVBands
+          BandTransform = bandTransform
+          LocalBounds = bounds
+          FillWinding = fillWinding }
+
+    /// Prepare a contour for two-pass rendering with optional fill and optional stroke geometries.
+    let make
+        (fill : ContourFill)
+        (stroke : ContourStroke)
+        (commands : ContourCommand seq)
+        (scale : Vector2) =
+
+        let fillGeomOpt =
+            if fill.Color.A > 0.0f then
+                let geom = makeFillSlugData fill.Winding commands scale
+                ValueSome geom
+            else ValueNone
+
+        let strokeGeomOpt =
+            if stroke.Thickness > 0.0f && stroke.Color.A > 0.0f then
+                // Scale commands to world space so the stroke offset is uniform in virtual pixels
+                let scaledCommands = commands |> Seq.map (scaleCommand scale)
+                let strokeCommands = buildStrokeOutline scaledCommands stroke.Thickness
+                if Seq.isEmpty strokeCommands then ValueNone
+                else
+                    let geom = makeFillSlugData NonZero strokeCommands v2One
+                    ValueSome geom
+            else ValueNone
+
+        { FillGeometryOpt = fillGeomOpt
+          FillColor = fill.Color
+          StrokeGeometryOpt = strokeGeomOpt
+          StrokeColor = stroke.Color }
