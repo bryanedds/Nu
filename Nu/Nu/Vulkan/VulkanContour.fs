@@ -57,7 +57,7 @@ module Contour =
     let createPipeline vkc =
 
         let quadVertexBuffer = VulkanBuffer.create (Vertex true) (sizeof<Vector2> * ContourQuad.vertices.Length) vkc
-        let quadIndexBuffer = VulkanBuffer.create (VulkanBufferType.Index true) (sizeof<uint32> * ContourQuad.indices.Length) vkc
+        let quadIndexBuffer = VulkanBuffer.create (BufferType.Index true) (sizeof<uint32> * ContourQuad.indices.Length) vkc
 
         VulkanBuffer.uploadArray ContourQuad.vertices quadVertexBuffer vkc
         VulkanBuffer.uploadArray ContourQuad.indices quadIndexBuffer vkc

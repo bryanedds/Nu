@@ -14,7 +14,7 @@ open Prime
 open Nu
 
 // The type of vulkan buffer being utilized.
-type VulkanBufferType =
+type BufferType =
     | Staging
     | Vertex of UploadEnabled : bool
     | Index of UploadEnabled : bool
@@ -22,8 +22,8 @@ type VulkanBufferType =
     | Uniform
     | Storage
 
-/// Internal representation of a vulkan buffer.
-type VulkanBufferInternal =
+/// Wraps a vulkan buffer and its metadata.
+type BufferWrapper =
     private
         { mutable VkBuffer_ : VkBuffer // set to VkBuffer.Null when buffer destroyed
           VmaAllocation_ : VmaAllocation
@@ -37,14 +37,14 @@ type VulkanBufferInternal =
     /// The size of the buffer.
     member this.Size = this.Size_
 
-    static member private makeBufferCreateInfo usage (size : int) =
+    static member private makeCreateInfo usage (size : int) =
         let mutable info = VkBufferCreateInfo ()
         info.usage <- usage
         info.size <- uint64 size
         info.sharingMode <- VkSharingMode.Exclusive
         info
 
-    /// Create BufferInternal.
+    /// Create buffer wrapper.
     static member createPlus (uploadEnabled, bufferUsage, bufferInfo : VkBufferCreateInfo byref, context : VulkanContext) =
 
         // allocation create info
@@ -58,8 +58,8 @@ type VulkanBufferInternal =
         let mutable vmaAllocationInfo = Unchecked.defaultof<VmaAllocationInfo>
         Vma.vmaCreateBuffer (context.VmaAllocator, &&bufferInfo, &&info, &vkBuffer, &vmaAllocation, &vmaAllocationInfo) |> Hl.check
 
-        // make BufferInternal
-        let bufferInternal =
+        // make buffer wrapper
+        let bufferWrapper =
             { VkBuffer_ = vkBuffer
               VmaAllocation_ = vmaAllocation
               Mapping_ = vmaAllocationInfo.pMappedData
@@ -67,9 +67,9 @@ type VulkanBufferInternal =
               UploadEnabled_ = uploadEnabled }
 
         // fin
-        bufferInternal
+        bufferWrapper
 
-    /// Create BufferInternal.
+    /// Create buffer wrapper.
     static member create bufferType bufferSize context =
 
         // compute uploadability
@@ -89,73 +89,73 @@ type VulkanBufferInternal =
             match bufferType with
             | Staging ->
                 let usage = VkBufferUsageFlags.TransferSrc
-                VulkanBufferInternal.makeBufferCreateInfo usage bufferSize
+                BufferWrapper.makeCreateInfo usage bufferSize
             | Vertex uploadEnabled ->
                 let usage =
                     if uploadEnabled
                     then VkBufferUsageFlags.VertexBuffer ||| VkBufferUsageFlags.TransferSrc ||| VkBufferUsageFlags.TransferDst
                     else VkBufferUsageFlags.VertexBuffer ||| VkBufferUsageFlags.TransferDst
-                VulkanBufferInternal.makeBufferCreateInfo usage bufferSize
+                BufferWrapper.makeCreateInfo usage bufferSize
             | Index uploadEnabled ->
                 let usage =
                     if uploadEnabled
                     then VkBufferUsageFlags.IndexBuffer ||| VkBufferUsageFlags.TransferSrc ||| VkBufferUsageFlags.TransferDst
                     else VkBufferUsageFlags.IndexBuffer ||| VkBufferUsageFlags.TransferDst
-                VulkanBufferInternal.makeBufferCreateInfo usage bufferSize
+                BufferWrapper.makeCreateInfo usage bufferSize
             | Instance ->
                 let usage = VkBufferUsageFlags.VertexBuffer ||| VkBufferUsageFlags.TransferSrc ||| VkBufferUsageFlags.TransferDst
-                VulkanBufferInternal.makeBufferCreateInfo usage bufferSize
+                BufferWrapper.makeCreateInfo usage bufferSize
             | Uniform ->
                 let usage = VkBufferUsageFlags.UniformBuffer ||| VkBufferUsageFlags.TransferSrc ||| VkBufferUsageFlags.TransferDst
-                VulkanBufferInternal.makeBufferCreateInfo usage bufferSize
+                BufferWrapper.makeCreateInfo usage bufferSize
             | Storage ->
                 let usage = VkBufferUsageFlags.StorageBuffer ||| VkBufferUsageFlags.TransferSrc ||| VkBufferUsageFlags.TransferDst
-                VulkanBufferInternal.makeBufferCreateInfo usage bufferSize
+                BufferWrapper.makeCreateInfo usage bufferSize
 
         // make buffer
-        VulkanBufferInternal.createPlus (uploadEnabled, bufferUsage, &createInfo, context)
+        BufferWrapper.createPlus (uploadEnabled, bufferUsage, &createInfo, context)
 
     /// Write data to buffer if upload is enabled.
-    static member write offset alignment size count data bufferInternal (_ : VulkanContext) =
-        if bufferInternal.UploadEnabled_ then
+    static member write offset alignment size count data bufferWrapper (_ : VulkanContext) =
+        if bufferWrapper.UploadEnabled_ then
             if size > 0 then
                 let stride = Math.Stride (alignment, size)
                 let offset = Math.AlignOffset (offset, alignment)
-                if offset + stride * count <= bufferInternal.Size_ then
+                if offset + stride * count <= bufferWrapper.Size_ then
                     
                     // upload as single blob if possible, otherwise upload one value at a time to create padding
                     if size = stride then
-                        NativePtr.memCopy offset (size * count) (NativePtr.nativeintToVoidPtr data) bufferInternal.Mapping_
+                        NativePtr.memCopy offset (size * count) (NativePtr.nativeintToVoidPtr data) bufferWrapper.Mapping_
                     else
                         for i in 0 .. dec count do
                             let ptr = NativePtr.add (NativePtr.nativeintToBytePtr data) (i * size)
-                            NativePtr.memCopy (offset + i * stride) size (NativePtr.toVoidPtr ptr) bufferInternal.Mapping_
+                            NativePtr.memCopy (offset + i * stride) size (NativePtr.toVoidPtr ptr) bufferWrapper.Mapping_
 
                 else Log.warn "Write to Vulkan buffer failed because it exceeded the size of that buffer."
             else Log.warn "Write to Vulkan buffer failed because 'size' argument was less than or equal to zero."
         else Log.warn "Write to Vulkan buffer failed because upload was not enabled for that buffer."
 
     /// Flush data to buffer if upload is enabled.
-    static member flush offset alignment size count bufferInternal (context : VulkanContext) =
-        if bufferInternal.UploadEnabled_ then
+    static member flush offset alignment size count bufferWrapper (context : VulkanContext) =
+        if bufferWrapper.UploadEnabled_ then
             if size > 0 then
                 let stride = Math.Stride (alignment, size)
                 let offset = Math.AlignOffset (offset, alignment)
-                if offset + stride * count <= bufferInternal.Size_ then
+                if offset + stride * count <= bufferWrapper.Size_ then
 
                     // manually flush as memory may not be host-coherent on non-windows platforms, see
                     // https://gpuopen-librariesandsdks.github.io/VulkanMemoryAllocator/html/memory_mapping.html#memory_mapping_cache_control
-                    Vma.vmaFlushAllocation (context.VmaAllocator, bufferInternal.VmaAllocation_, uint64 offset, uint64 (stride * count)) |> Hl.check
+                    Vma.vmaFlushAllocation (context.VmaAllocator, bufferWrapper.VmaAllocation_, uint64 offset, uint64 (stride * count)) |> Hl.check
 
                 else Log.warn "Flush of Vulkan buffer failed because it exceeded the size of that buffer."
             else Log.warn "Flush of Vulkan buffer failed because 'size' argument was less than or equal to zero."
         else Log.warn "Flush of Vulkan buffer failed because upload was not enabled for that buffer."
 
     /// Destroy buffer and allocation.
-    static member destroy (bufferInternal : VulkanBufferInternal) (context : VulkanContext) =
-        if bufferInternal.VkBuffer_.IsNotNull then
-            Vma.vmaDestroyBuffer (context.VmaAllocator, bufferInternal.VkBuffer, bufferInternal.VmaAllocation_)
-            bufferInternal.VkBuffer_ <- VkBuffer.Null
+    static member destroy (bufferWrapper : BufferWrapper) (context : VulkanContext) =
+        if bufferWrapper.VkBuffer_.IsNotNull then
+            Vma.vmaDestroyBuffer (context.VmaAllocator, bufferWrapper.VkBuffer, bufferWrapper.VmaAllocation_)
+            bufferWrapper.VkBuffer_ <- VkBuffer.Null
 
 /// Represents a dynamically growing multibuffer with parallel underlying vulkan buffers. Maintains an internal
 /// cursor that selects the currently active buffer, which is reset via beginFrame and advanced to the next vulkan
@@ -164,31 +164,31 @@ type VulkanBufferInternal =
 /// such as storage data, uniform data, and streaming data.
 type VulkanBuffer =
     private
-        { mutable BufferInternalsCursor_ : int
-          BufferInternals_ : VulkanBufferInternal List
-          BufferType_ : VulkanBufferType }
+        { mutable BufferWrappersCursor_ : int
+          BufferWrappers_ : BufferWrapper List
+          BufferType_ : BufferType }
 
-    member private this.BufferInternal =
-        this.BufferInternals_[this.BufferInternalsCursor_]
+    member private this.BufferWrapper =
+        this.BufferWrappers_[this.BufferWrappersCursor_]
 
     /// Get the vulkan buffer currently at the cursor.
     member this.VkBuffer =
-        this.BufferInternal.VkBuffer
+        this.BufferWrapper.VkBuffer
 
     static member private ensureHeight (buffer : VulkanBuffer) context =
-        while buffer.BufferInternalsCursor_ >= buffer.BufferInternals_.Count do
-            let bufferInternals = Array.init buffer.BufferInternals_.Count (fun _ -> VulkanBufferInternal.create buffer.BufferType_ buffer.BufferInternals_[0].Size context)
-            buffer.BufferInternals_.AddRange bufferInternals
+        while buffer.BufferWrappersCursor_ >= buffer.BufferWrappers_.Count do
+            let bufferWrappers = Array.init buffer.BufferWrappers_.Count (fun _ -> BufferWrapper.create buffer.BufferType_ buffer.BufferWrappers_[0].Size context)
+            buffer.BufferWrappers_.AddRange bufferWrappers
 
     /// Expand buffer width as necessary, disregarding all existing content.
     static member ensureWidth size (buffer : VulkanBuffer) context =
         VulkanBuffer.ensureHeight buffer context
-        let bufferInternalOld = buffer.BufferInternals_[buffer.BufferInternalsCursor_]
-        if bufferInternalOld.Size < size then
-            let bufferInternalNew = VulkanBufferInternal.create buffer.BufferType_ size context
-            VulkanBuffer.copyData bufferInternalOld.Size bufferInternalOld.VkBuffer_ bufferInternalNew.VkBuffer_ context
-            buffer.BufferInternals_[buffer.BufferInternalsCursor_] <- bufferInternalNew
-            VulkanBufferInternal.destroy bufferInternalOld context
+        let bufferWrapperOld = buffer.BufferWrappers_[buffer.BufferWrappersCursor_]
+        if bufferWrapperOld.Size < size then
+            let bufferWrapperNew = BufferWrapper.create buffer.BufferType_ size context
+            VulkanBuffer.copyData bufferWrapperOld.Size bufferWrapperOld.VkBuffer_ bufferWrapperNew.VkBuffer_ context
+            buffer.BufferWrappers_[buffer.BufferWrappersCursor_] <- bufferWrapperNew
+            BufferWrapper.destroy bufferWrapperOld context
 
     /// Copy data from the source buffer to the destination buffer.
     static member private copyData size source destination (context : VulkanContext) =
@@ -199,35 +199,35 @@ type VulkanBuffer =
 
     /// Begin use of this buffer for the current frame.
     static member beginFrame buffer =
-        buffer.BufferInternalsCursor_ <- 0
+        buffer.BufferWrappersCursor_ <- 0
 
     /// Advance the cursor.
     static member advance buffer =
-        buffer.BufferInternalsCursor_ <- inc buffer.BufferInternalsCursor_
+        buffer.BufferWrappersCursor_ <- inc buffer.BufferWrappersCursor_
 
     /// Create a new Buffer.
-    static member create (bufferType : VulkanBufferType) bufferSize context =
-        { BufferInternalsCursor_ = 0
-          BufferInternals_ = List [VulkanBufferInternal.create bufferType bufferSize context]
+    static member create (bufferType : BufferType) bufferSize context =
+        { BufferWrappersCursor_ = 0
+          BufferWrappers_ = List [BufferWrapper.create bufferType bufferSize context]
           BufferType_ = bufferType }
 
     /// Write subdata to Buffer. Caller is reponsible for ensuring buffer width and height.
     static member writeSubdata offset alignment size count data (buffer : VulkanBuffer) context =
         VulkanBuffer.ensureHeight buffer context
-        VulkanBufferInternal.write offset alignment size count data buffer.BufferInternal context
+        BufferWrapper.write offset alignment size count data buffer.BufferWrapper context
 
     /// Flush subdata from Buffer. Caller is reponsible for ensuring buffer width and height.
     static member flushSubdata offset alignment size count (buffer : VulkanBuffer) context =
         VulkanBuffer.ensureHeight buffer context
-        VulkanBufferInternal.flush offset alignment size count buffer.BufferInternal context
+        BufferWrapper.flush offset alignment size count buffer.BufferWrapper context
 
     /// Upload data to Buffer.
     static member uploadData size count data (buffer : VulkanBuffer) context =
         let bufferSize = size * count
         VulkanBuffer.ensureHeight buffer context
         VulkanBuffer.ensureWidth bufferSize buffer context
-        VulkanBufferInternal.write 0 0 size count data buffer.BufferInternal context
-        VulkanBufferInternal.flush 0 0 size count buffer.BufferInternal context
+        BufferWrapper.write 0 0 size count data buffer.BufferWrapper context
+        BufferWrapper.flush 0 0 size count buffer.BufferWrapper context
 
     /// Upload a value to Buffer.
     static member uploadValue (value : 'a) buffer context =
@@ -249,7 +249,7 @@ type VulkanBuffer =
     static member createVertexStaged size data context =
         let stagingBuffer = VulkanBuffer.stageData size data context
         let vertexBuffer = VulkanBuffer.create (Vertex false) size context
-        VulkanBuffer.copyData size stagingBuffer.BufferInternal.VkBuffer vertexBuffer.BufferInternal.VkBuffer context
+        VulkanBuffer.copyData size stagingBuffer.BufferWrapper.VkBuffer vertexBuffer.BufferWrapper.VkBuffer context
         VulkanBuffer.destroy stagingBuffer context
         vertexBuffer
 
@@ -257,7 +257,7 @@ type VulkanBuffer =
     static member createIndexStaged size data context =
         let stagingBuffer = VulkanBuffer.stageData size data context
         let indexBuffer = VulkanBuffer.create (Index false) size context
-        VulkanBuffer.copyData size stagingBuffer.BufferInternal.VkBuffer indexBuffer.BufferInternal.VkBuffer context
+        VulkanBuffer.copyData size stagingBuffer.BufferWrapper.VkBuffer indexBuffer.BufferWrapper.VkBuffer context
         VulkanBuffer.destroy stagingBuffer context
         indexBuffer
 
@@ -287,5 +287,5 @@ type VulkanBuffer =
     
     /// Destroy Buffer.
     static member destroy (buffer : VulkanBuffer) context =
-        for i in 0 .. dec buffer.BufferInternals_.Count do
-            VulkanBufferInternal.destroy buffer.BufferInternals_[i] context
+        for i in 0 .. dec buffer.BufferWrappers_.Count do
+            BufferWrapper.destroy buffer.BufferWrappers_[i] context
