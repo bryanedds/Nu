@@ -1,5 +1,8 @@
 ﻿// Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace Nu.Vulkan
 open System
@@ -69,8 +72,8 @@ type DescriptorBinding =
 type DescriptorSet =
     interface
         abstract BeginFrame : unit -> unit
-        abstract Specify : obj -> VulkanContext -> (VkDescriptorSet -> unit) -> VkDescriptorSet // TODO: P0: attempt to get rid of boxing here!
-        abstract Destroy : VulkanContext -> unit
+        abstract Specify : obj -> (VkDescriptorSet -> unit) -> VkDescriptorSet // TODO: P0: attempt to get rid of boxing here!
+        abstract Destroy : unit -> unit
         end
 
 and DescriptorSet<'k when 'k : equality> =
@@ -81,7 +84,7 @@ and DescriptorSet<'k when 'k : equality> =
           VkDescriptorSets_ : Dictionary<'k, VkDescriptorSet>
           mutable VkDescriptorSetsAvailable_ : VkDescriptorSet Queue }
 
-    static member private createDescriptorPool (capacity : int) (descriptorSetDefinition : DescriptorSetDefinition) (vkc : VulkanContext) =
+    static member private createDescriptorPool (capacity : int) (descriptorSetDefinition : DescriptorSetDefinition) =
 
         // derive pool sizes merged by descriptor type
         let poolSizes =
@@ -101,11 +104,11 @@ and DescriptorSet<'k when 'k : equality> =
         info.poolSizeCount <- uint poolSizes.Length
         info.pPoolSizes <- poolSizesPin.Pointer
         let mutable descriptorPool = Unchecked.defaultof<VkDescriptorPool>
-        Vulkan.vkCreateDescriptorPool (vkc.Device, &info, nullPtr, &descriptorPool) |> Hl.check
+        DeviceApi.vkCreateDescriptorPool (&info, nullPtr, &descriptorPool) |> Hl.check
         descriptorPool
 
-    static member private allocateVkDescriptorSets capacity descriptorSetDefinitions descriptorSetLayout vkc =
-        let vkDescriptorPool = DescriptorSet.createDescriptorPool capacity descriptorSetDefinitions vkc
+    static member private allocateVkDescriptorSets capacity descriptorSetDefinitions descriptorSetLayout =
+        let vkDescriptorPool = DescriptorSet.createDescriptorPool capacity descriptorSetDefinitions
         let vkDescriptorSetLayouts = Array.create<VkDescriptorSetLayout> capacity descriptorSetLayout
         use vkDescriptorSetLayoutsPin = new ArrayPin<_> (vkDescriptorSetLayouts)
         let mutable info = VkDescriptorSetAllocateInfo ()
@@ -114,14 +117,14 @@ and DescriptorSet<'k when 'k : equality> =
         info.pSetLayouts <- vkDescriptorSetLayoutsPin.Pointer
         let vkDescriptorSets = Array.zeroCreate<VkDescriptorSet> capacity
         use vkDescriptorSetsPin = new ArrayPin<_> (vkDescriptorSets)
-        Vulkan.vkAllocateDescriptorSets (vkc.Device, asPointer &info, vkDescriptorSetsPin.Pointer) |> Hl.check
+        DeviceApi.vkAllocateDescriptorSets (&&info, vkDescriptorSetsPin.Pointer) |> Hl.check
         (vkDescriptorPool, Queue vkDescriptorSets)
 
-    static member create<'a when 'a : equality> capacity (descriptorSetDefinition : 'a DescriptorSetDefinition) vkDescriptorSetLayout (vkc : VulkanContext) : 'a DescriptorSet =
+    static member create<'a when 'a : equality> capacity (descriptorSetDefinition : 'a DescriptorSetDefinition) vkDescriptorSetLayout : 'a DescriptorSet =
 
         // allocate pool and use its descriptor sets
         let (vkDescriptorPool, vkDescriptorSets) =
-            DescriptorSet<_>.allocateVkDescriptorSets capacity descriptorSetDefinition vkDescriptorSetLayout vkc
+            DescriptorSet<_>.allocateVkDescriptorSets capacity descriptorSetDefinition vkDescriptorSetLayout
 
         // make DescriptorSet
         let descriptorSet =
@@ -141,7 +144,7 @@ and DescriptorSet<'k when 'k : equality> =
                 this.VkDescriptorSetsAvailable_.Enqueue entry.Value
             this.VkDescriptorSets_.Clear ()
 
-        member this.Specify (keyObj : obj) (vkc : VulkanContext) (specify : VkDescriptorSet -> unit) : VkDescriptorSet =
+        member this.Specify (keyObj : obj) (specify : VkDescriptorSet -> unit) : VkDescriptorSet =
             let key = keyObj :?> 'k
             match this.VkDescriptorSets_.TryGetValue key with
             | (false, _) ->
@@ -150,7 +153,7 @@ and DescriptorSet<'k when 'k : equality> =
                 if not found then
                     let count = this.VkDescriptorSets_.Count
                     let (vkDescriptorPool, vkDescriptorSets) =
-                        DescriptorSet<_>.allocateVkDescriptorSets count this.DescriptorSetDefinition_ this.VkDescriptorSetLayout_ vkc
+                        DescriptorSet<_>.allocateVkDescriptorSets count this.DescriptorSetDefinition_ this.VkDescriptorSetLayout_
                     this.VkDescriptorPools_.Add vkDescriptorPool
                     this.VkDescriptorSetsAvailable_ <- vkDescriptorSets
                     vkDescriptorSet <- this.VkDescriptorSetsAvailable_.Dequeue ()
@@ -159,13 +162,13 @@ and DescriptorSet<'k when 'k : equality> =
                 vkDescriptorSet
             | (true, vkDescriptorSet) -> vkDescriptorSet
 
-        member this.Destroy vkc =
-            for pool in this.VkDescriptorPools_ do Vulkan.vkDestroyDescriptorPool (vkc.Device, pool, nullPtr)
+        member this.Destroy () =
+            for pool in this.VkDescriptorPools_ do DeviceApi.vkDestroyDescriptorPool (pool, nullPtr)
 
 and DescriptorSetDefinition =
     interface
         abstract DescriptorBindings : DescriptorBinding array
-        abstract CreateDescriptorSet : VkDescriptorSetLayout -> VulkanContext -> DescriptorSet
+        abstract CreateDescriptorSet : VkDescriptorSetLayout -> DescriptorSet
         end
 
 /// Describes a descriptor set.
@@ -173,7 +176,7 @@ and DescriptorSetDefinition<'k when 'k : equality> =
     { DescriptorBindings : DescriptorBinding array }
     interface DescriptorSetDefinition with
         member this.DescriptorBindings = this.DescriptorBindings
-        member this.CreateDescriptorSet layout vkc = DescriptorSet<_>.create<'k> Constants.Vulkan.DescriptorSetCountDefault this layout vkc
+        member this.CreateDescriptorSet layout = DescriptorSet<_>.create<'k> Constants.Vulkan.DescriptorSetCountDefault this layout
 
 /// Describes a push constant.
 type PushConstant =
@@ -185,7 +188,7 @@ type PushConstant =
 type Pipeline =
     private
         { mutable VkPipelines_ : Map<VulkanBlend * bool, VkPipeline> // TODO: P0: make sure no allocation happens on look-up.
-          Buffers_ : Nu.Vulkan.Buffer array
+          Buffers_ : VulkanBuffer array
           DescriptorSets_ : DescriptorSet array
           VkPipelineLayout_ : VkPipelineLayout
           VkDescriptorSetLayouts_ : VkDescriptorSetLayout array
@@ -205,31 +208,30 @@ type Pipeline =
 
     /// Begin use of the pipeline this frame.
     static member beginFrame pipeline =
-        for buffer in pipeline.Buffers_ do Buffer.beginFrame buffer
+        for buffer in pipeline.Buffers_ do VulkanBuffer.beginFrame buffer
         for set in pipeline.DescriptorSets_ do set.BeginFrame ()
         pipeline.DrawIndex_ <- 0
 
     /// Advance the state of the pipeline for additional drawing.
-    static member advance drawInstances pipeline =
+    static member advance pipeline =
         pipeline.DrawIndex_ <- inc pipeline.DrawIndex_
-        Hl.reportDrawCall drawInstances
 
     /// The descriptor set of the given number for the current frame.
     static member getDescriptorSet set pipeline =
         pipeline.DescriptorSets_[set]
 
     /// Create the descriptor set layout.
-    static member private createDescriptorSetLayout (resourceBindings : VkDescriptorSetLayoutBinding array) (vkc : VulkanContext) =
+    static member private createDescriptorSetLayout (resourceBindings : VkDescriptorSetLayoutBinding array) =
         use resourceBindingsPin = new ArrayPin<_> (resourceBindings)
         let mutable info = VkDescriptorSetLayoutCreateInfo ()
         info.bindingCount <- uint resourceBindings.Length
         info.pBindings <- resourceBindingsPin.Pointer
         let mutable descriptorSetLayout = Unchecked.defaultof<VkDescriptorSetLayout>
-        Vulkan.vkCreateDescriptorSetLayout (vkc.Device, &info, nullPtr, &descriptorSetLayout) |> Hl.check
+        DeviceApi.vkCreateDescriptorSetLayout (&info, nullPtr, &descriptorSetLayout) |> Hl.check
         descriptorSetLayout
 
     /// Create the pipeline layout.
-    static member private createVkPipelineLayout (descriptorSetLayouts : VkDescriptorSetLayout array) (pushConstantRanges : VkPushConstantRange array) (vkc : VulkanContext) =
+    static member private createVkPipelineLayout (descriptorSetLayouts : VkDescriptorSetLayout array) (pushConstantRanges : VkPushConstantRange array) =
         use descriptorSetLayoutsPin = new ArrayPin<_> (descriptorSetLayouts)
         use pushConstantRangesPin = new ArrayPin<_> (pushConstantRanges)
         let mutable info = VkPipelineLayoutCreateInfo ()
@@ -238,7 +240,7 @@ type Pipeline =
         info.pushConstantRangeCount <- uint pushConstantRanges.Length
         info.pPushConstantRanges <- pushConstantRangesPin.Pointer
         let mutable vkPipelineLayout = Unchecked.defaultof<VkPipelineLayout>
-        Vulkan.vkCreatePipelineLayout (vkc.Device, &info, nullPtr, &vkPipelineLayout) |> Hl.check
+        DeviceApi.vkCreatePipelineLayout (&info, nullPtr, &vkPipelineLayout) |> Hl.check
         vkPipelineLayout
     
     /// Try to create the VkPipelines.
@@ -249,13 +251,12 @@ type Pipeline =
         (vertexAttributes : VkVertexInputAttributeDescription array)
         pipelineLayout
         (colorAttachmentFormats : VkFormat array)
-        depthTestFormatOpt
-        (vkc : VulkanContext) =
+        depthTestFormatOpt =
         
         // try to create shader modules
         let moduleResults =
-            (Hl.tryCreateShaderModuleFromGlsl (shaderPath + ".vert") ShaderKind.VertexShader vkc.Device,
-             Hl.tryCreateShaderModuleFromGlsl (shaderPath + ".frag") ShaderKind.FragmentShader vkc.Device)
+            (Hl.tryCreateShaderModuleFromGlsl (shaderPath + ".vert") ShaderKind.VertexShader,
+             Hl.tryCreateShaderModuleFromGlsl (shaderPath + ".frag") ShaderKind.FragmentShader)
 
         // only proceed if shader module creation successful
         match moduleResults with
@@ -351,28 +352,27 @@ type Pipeline =
                 info.pNext <- asVoidPtr &rnInfo
                 info.stageCount <- uint ssInfos.Length
                 info.pStages <- ssInfosPin.Pointer
-                info.pVertexInputState <- asPointer &viInfo
-                info.pInputAssemblyState <- asPointer &iaInfo
-                info.pViewportState <- asPointer &vInfo
+                info.pVertexInputState <- &&viInfo
+                info.pInputAssemblyState <- &&iaInfo
+                info.pViewportState <- &&vInfo
                 info.pRasterizationState <- NativePtr.add rInfos i
-                info.pMultisampleState <- asPointer &mInfo
-                info.pDepthStencilState <- asPointer &dInfo
+                info.pMultisampleState <- &&mInfo
+                info.pDepthStencilState <- &&dInfo
                 info.pColorBlendState <- NativePtr.add bInfos i
-                info.pDynamicState <- asPointer &dsInfo
+                info.pDynamicState <- &&dsInfo
                 info.layout <- pipelineLayout
                 info.renderPass <- VkRenderPass.Null
                 info.subpass <- 0u
                 NativePtr.set infos i info
                 
             // create vulkan pipelines
-            // TODO: DJL: consider pipeline cache.
             let vkPipelines = Array.zeroCreate<VkPipeline> pipelineSettings.Length
             use vkPipelinesPin = new ArrayPin<_> (vkPipelines)
-            Vulkan.vkCreateGraphicsPipelines (vkc.Device, VkPipelineCache.Null, uint vkPipelines.Length, infos, nullPtr, vkPipelinesPin.Pointer) |> Hl.check
+            DeviceApi.vkCreateGraphicsPipelines (VkPipelineCache.Null, uint vkPipelines.Length, infos, nullPtr, vkPipelinesPin.Pointer) |> Hl.check
             
             // destroy shader modules
-            Vulkan.vkDestroyShaderModule (vkc.Device, vertModule, nullPtr)
-            Vulkan.vkDestroyShaderModule (vkc.Device, fragModule, nullPtr)
+            DeviceApi.vkDestroyShaderModule (vertModule, nullPtr)
+            DeviceApi.vkDestroyShaderModule (fragModule, nullPtr)
             
             // pack vulkan pipelines with settings
             let vkPipelinesPacked = Array.zip pipelineSettings vkPipelines |> Map.ofArray
@@ -381,22 +381,44 @@ type Pipeline =
         // abort
         | (vertModuleResult, fragModuleResult) ->
             match vertModuleResult with
-            | Right vertModule -> Vulkan.vkDestroyShaderModule (vkc.Device, vertModule, nullPtr)
+            | Right vertModule -> DeviceApi.vkDestroyShaderModule (vertModule, nullPtr)
             | Left msg -> Log.warn msg
             match fragModuleResult with
-            | Right fragModule -> Vulkan.vkDestroyShaderModule (vkc.Device, fragModule, nullPtr)
+            | Right fragModule -> DeviceApi.vkDestroyShaderModule (fragModule, nullPtr)
             | Left msg -> Log.warn msg
             Log.warn "VkPipeline creation aborted."
             Map.empty
 
-    static member private destroyVkPipelines pipeline (vkc : VulkanContext) =
-        Map.iter (fun _ vkPipeline -> Vulkan.vkDestroyPipeline (vkc.Device, vkPipeline, nullPtr)) pipeline.VkPipelines_
-    
+    /// Destroy the given VkPipelines.
+    static member private destroyVkPipelines pipeline =
+        Map.iter (fun _ vkPipeline -> DeviceApi.vkDestroyPipeline (vkPipeline, nullPtr)) pipeline.VkPipelines_
+
     /// Try to get the VkPipeline built for the given settings.
     static member tryGetVkPipeline blend cullFace pipeline =
         Map.tryFind (blend, cullFace) pipeline.VkPipelines_
 
-    static member writeDescriptorStorageBuffer (binding : int) (descriptorIndex : int) (buffer : Nu.Vulkan.Buffer) vkDescriptorSet (vkc : VulkanContext) =
+    ///
+    static member writeDescriptorUniformBuffer (binding : int) (descriptorIndex : int) (buffer : VulkanBuffer) vkDescriptorSet =
+
+        // buffer info
+        let mutable info = VkDescriptorBufferInfo ()
+        info.buffer <- buffer.VkBuffer
+        info.range <- Vulkan.VK_WHOLE_SIZE
+
+        // write descriptor set
+        let mutable write = VkWriteDescriptorSet ()
+        write.dstSet <- vkDescriptorSet
+        write.dstBinding <- uint binding
+        write.dstArrayElement <- uint descriptorIndex
+        write.descriptorCount <- 1u
+        write.descriptorType <- VkDescriptorType.UniformBuffer
+        write.pBufferInfo <- &&info
+        DeviceApi.vkUpdateDescriptorSets (1u, &&write, 0u, nullPtr)
+
+        // advance buffer
+        VulkanBuffer.advance buffer
+
+    static member writeDescriptorStorageBuffer (binding : int) (descriptorIndex : int) (buffer : VulkanBuffer) vkDescriptorSet =
 
         // buffer info
         let mutable info = VkDescriptorBufferInfo ()
@@ -410,17 +432,17 @@ type Pipeline =
         write.dstArrayElement <- uint descriptorIndex
         write.descriptorCount <- 1u
         write.descriptorType <- VkDescriptorType.StorageBuffer
-        write.pBufferInfo <- asPointer &info
-        Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
+        write.pBufferInfo <- &&info
+        DeviceApi.vkUpdateDescriptorSets (1u, &&write, 0u, nullPtr)
 
         // advance buffer
-        Buffer.advance buffer
+        VulkanBuffer.advance buffer
 
-    static member writeDescriptorSampledImage (binding : int) (descriptorIndex : int) (texture : Texture) vkDescriptorSet (vkc : VulkanContext) =
+    static member writeDescriptorSampledImageView (binding : int) (descriptorIndex : int) (imageView : VkImageView) vkDescriptorSet =
 
         // image info
         let mutable info = VkDescriptorImageInfo ()
-        info.imageView <- texture.ImageView
+        info.imageView <- imageView
         info.imageLayout <- ColorAttachmentRead.VkImageLayout
 
         // write descriptor set
@@ -430,16 +452,17 @@ type Pipeline =
         write.dstArrayElement <- uint descriptorIndex
         write.descriptorCount <- 1u
         write.descriptorType <- VkDescriptorType.SampledImage
-        write.pImageInfo <- asPointer &info
-        Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
+        write.pImageInfo <- &&info
+        DeviceApi.vkUpdateDescriptorSets (1u, &&write, 0u, nullPtr)
 
-    static member writeDescriptorSampledImages (binding : int) (descriptorIndex : int) (textures : Texture array) vkDescriptorSet (vkc : VulkanContext) =
+    ///
+    static member writeDescriptorSampledImageViews (binding : int) (descriptorIndex : int) (imageViews : VkImageView array) vkDescriptorSet =
 
         // image infos
-        let infosPtr = NativePtr.stackalloc<VkDescriptorImageInfo> textures.Length
-        for i in 0 .. dec textures.Length do
+        let infosPtr = NativePtr.stackalloc<VkDescriptorImageInfo> imageViews.Length
+        for i in 0 .. dec imageViews.Length do
             let mutable info = VkDescriptorImageInfo ()
-            info.imageView <- textures[i].ImageView
+            info.imageView <- imageViews[i]
             info.imageLayout <- ColorAttachmentRead.VkImageLayout
             NativePtr.set infosPtr i info
 
@@ -448,12 +471,45 @@ type Pipeline =
         write.dstSet <- vkDescriptorSet
         write.dstBinding <- uint binding
         write.dstArrayElement <- uint descriptorIndex
-        write.descriptorCount <- uint textures.Length
+        write.descriptorCount <- uint imageViews.Length
         write.descriptorType <- VkDescriptorType.SampledImage
         write.pImageInfo <- infosPtr
-        Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
+        DeviceApi.vkUpdateDescriptorSets (1u, &&write, 0u, nullPtr)
 
-    static member writeDescriptorSampler (binding : int) (descriptorIndex : int) (sampler : Sampler) vkDescriptorSet (vkc : VulkanContext) =
+    ///
+    static member writeDescriptorCombinedImageViewSampler (binding : int) (descriptorIndex : int) (imageView : VkImageView) (sampler : Sampler) vkDescriptorSet =
+
+        // image info
+        let mutable info = VkDescriptorImageInfo ()
+        info.sampler <- sampler.VkSampler
+        info.imageView <- imageView
+        info.imageLayout <- ColorAttachmentRead.VkImageLayout
+
+        // write descriptor set
+        let mutable write = VkWriteDescriptorSet ()
+        write.dstSet <- vkDescriptorSet
+        write.dstBinding <- uint binding
+        write.dstArrayElement <- uint descriptorIndex
+        write.descriptorCount <- 1u
+        write.descriptorType <- VkDescriptorType.CombinedImageSampler
+        write.pImageInfo <- &&info
+        DeviceApi.vkUpdateDescriptorSets (1u, &&write, 0u, nullPtr)
+
+    ///
+    static member writeDescriptorSampledTexture binding descriptorIndex (texture : Texture) vkDescriptorSet =
+        Pipeline.writeDescriptorSampledImageView binding descriptorIndex texture.ImageView vkDescriptorSet
+
+    ///
+    static member writeDescriptorSampledTextures binding descriptorIndex (textures : Texture array) vkDescriptorSet =
+        let imageViews = Array.map (fun (texture : Texture) -> texture.ImageView) textures
+        Pipeline.writeDescriptorSampledImageViews binding descriptorIndex imageViews vkDescriptorSet
+
+    ///
+    static member writeDescriptorCombinedTextureSampler binding descriptorIndex (texture : Texture) sampler vkDescriptorSet =
+        Pipeline.writeDescriptorCombinedImageViewSampler binding descriptorIndex texture.ImageView sampler vkDescriptorSet
+
+    ///
+    static member writeDescriptorSampler (binding : int) (descriptorIndex : int) (sampler : Sampler) vkDescriptorSet =
         
         // image info
         let mutable info = VkDescriptorImageInfo ()
@@ -466,26 +522,8 @@ type Pipeline =
         write.dstArrayElement <- uint descriptorIndex
         write.descriptorCount <- 1u
         write.descriptorType <- VkDescriptorType.Sampler
-        write.pImageInfo <- asPointer &info
-        Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
-    
-    static member writeDescriptorCombinedImageSampler (binding : int) (descriptorIndex : int) (texture : Texture) (sampler : Sampler) vkDescriptorSet (vkc : VulkanContext) =
-
-        // image info
-        let mutable info = VkDescriptorImageInfo ()
-        info.sampler <- sampler.VkSampler
-        info.imageView <- texture.ImageView
-        info.imageLayout <- ColorAttachmentRead.VkImageLayout
-
-        // write descriptor set
-        let mutable write = VkWriteDescriptorSet ()
-        write.dstSet <- vkDescriptorSet
-        write.dstBinding <- uint binding
-        write.dstArrayElement <- uint descriptorIndex
-        write.descriptorCount <- 1u
-        write.descriptorType <- VkDescriptorType.CombinedImageSampler
-        write.pImageInfo <- asPointer &info
-        Vulkan.vkUpdateDescriptorSets (vkc.Device, 1u, asPointer &write, 0u, nullPtr)
+        write.pImageInfo <- &&info
+        DeviceApi.vkUpdateDescriptorSets (1u, &&write, 0u, nullPtr)
 
     /// Describes a vertex attribute in the context of a vertex binding.
     [<DebuggerHidden; DebuggerStepThrough>]
@@ -541,14 +579,14 @@ type Pipeline =
         | AlwaysPassTest -> VkCompareOp.Always
 
     /// Specify a descriptor set.
-    static member specifyDescriptorSet<'k when 'k : equality> set (key : 'k) pipeline vkc specify =
+    static member specifyDescriptorSet<'k when 'k : equality> set (key : 'k) pipeline specify =
         let descriptorSet = Pipeline.getDescriptorSet set pipeline
-        descriptorSet.Specify key vkc specify
+        descriptorSet.Specify key specify
 
     /// Try to recreate VkPipelines with updated shaders.
-    static member reloadShaders pipeline (vkc : VulkanContext) =
-        ConcurrentCommandQueue.waitIdle vkc.RenderQueue // VkPipeline may still be in use by previous frame
-        Pipeline.destroyVkPipelines pipeline vkc
+    static member reloadShaders pipeline (context : VulkanContext) =
+        ConcurrentCommandQueue.waitIdle context.RenderQueue // VkPipeline may still be in use by previous frame
+        Pipeline.destroyVkPipelines pipeline
         pipeline.VkPipelines_ <-
             Pipeline.tryCreateVkPipelines
                 pipeline.ShaderPath_
@@ -558,7 +596,6 @@ type Pipeline =
                 pipeline.VkPipelineLayout_
                 pipeline.VkColorAttachmentFormats_
                 pipeline.VkDepthTestFormatOpt_
-                vkc
 
     /// Create a Pipeline.
     static member create<'k when 'k : equality>
@@ -570,16 +607,15 @@ type Pipeline =
         (pushConstants : PushConstant array)
         colorAttachmentFormats
         depthTestFormatOpt
-        buffers
-        (vkc : VulkanContext) =
-        
+        buffers =
+
         // convert vertex and push constant data to vulkan objects
         let vertexBindingDescriptions = Array.map (fun (binding : VertexBinding) -> Hl.makeVertexBinding binding.Binding binding.Stride binding.InputRate ) vertexBindings
         let vertexAttributes =
             [|for i in 0 .. dec vertexBindings.Length do
-                  for j in 0 .. dec vertexBindings[i].Attributes.Length do
-                      let attribute = vertexBindings[i].Attributes[j]
-                      yield Hl.makeVertexAttribute attribute.Location vertexBindings[i].Binding attribute.Format attribute.Offset |]
+                for j in 0 .. dec vertexBindings[i].Attributes.Length do
+                    let attribute = vertexBindings[i].Attributes[j]
+                    yield Hl.makeVertexAttribute attribute.Location vertexBindings[i].Binding attribute.Format attribute.Offset |]
         let pushConstantRanges = Array.map (fun pushConstant -> Hl.makePushConstantRange pushConstant.Offset pushConstant.Size pushConstant.ShaderStage) pushConstants
 
         // create descriptor set layouts
@@ -589,20 +625,20 @@ type Pipeline =
             layoutBindingsSets[i] <-
                 descriptorSetDefinitions[i].DescriptorBindings
                 |> Array.map (fun binding -> Hl.makeDescriptorBinding binding.Binding binding.DescriptorType binding.DescriptorCount binding.ShaderStage)
-            descriptorSetLayouts[i] <- Pipeline.createDescriptorSetLayout layoutBindingsSets[i] vkc
-        
+            descriptorSetLayouts[i] <- Pipeline.createDescriptorSetLayout layoutBindingsSets[i]
+
         // create descriptor sets
         let descriptorSets = Array.zeroCreate descriptorSetDefinitions.Length
         for i in 0 .. dec descriptorSetDefinitions.Length do
             let definition = descriptorSetDefinitions[i]
-            descriptorSets[i] <- definition.CreateDescriptorSet descriptorSetLayouts[i] vkc
-        
+            descriptorSets[i] <- definition.CreateDescriptorSet descriptorSetLayouts[i]
+
         // create pipeline layout and vkPipelines
         if blends.Length < 1 then Log.fail "No pipeline blend was specified."
         let pipelineSettings = Array.allPairs blends cullModes
-        let vkPipelineLayout = Pipeline.createVkPipelineLayout descriptorSetLayouts pushConstantRanges vkc
-        let vkPipelines = Pipeline.tryCreateVkPipelines shaderPath pipelineSettings vertexBindingDescriptions vertexAttributes vkPipelineLayout colorAttachmentFormats depthTestFormatOpt vkc
-        
+        let vkPipelineLayout = Pipeline.createVkPipelineLayout descriptorSetLayouts pushConstantRanges
+        let vkPipelines = Pipeline.tryCreateVkPipelines shaderPath pipelineSettings vertexBindingDescriptions vertexAttributes vkPipelineLayout colorAttachmentFormats depthTestFormatOpt
+
         // make Pipeline
         let pipeline =
             { VkPipelines_ = vkPipelines
@@ -622,9 +658,9 @@ type Pipeline =
         pipeline
     
     /// Destroy a Pipeline.
-    static member destroy pipeline (vkc : VulkanContext) =
-        Pipeline.destroyVkPipelines pipeline vkc
-        Vulkan.vkDestroyPipelineLayout (vkc.Device, pipeline.PipelineLayout, nullPtr)
-        for vkLayout in pipeline.VkDescriptorSetLayouts_ do Vulkan.vkDestroyDescriptorSetLayout (vkc.Device, vkLayout, nullPtr)
-        for buffer in pipeline.Buffers_ do Buffer.destroy buffer vkc
-        for set in pipeline.DescriptorSets_ do set.Destroy vkc
+    static member destroy pipeline context =
+        Pipeline.destroyVkPipelines pipeline
+        DeviceApi.vkDestroyPipelineLayout (pipeline.PipelineLayout, nullPtr)
+        for vkLayout in pipeline.VkDescriptorSetLayouts_ do DeviceApi.vkDestroyDescriptorSetLayout (vkLayout, nullPtr)
+        for buffer in pipeline.Buffers_ do VulkanBuffer.destroy buffer context
+        for set in pipeline.DescriptorSets_ do set.Destroy ()

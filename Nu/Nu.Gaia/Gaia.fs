@@ -101,9 +101,8 @@ module Gaia =
 
     (* Configuration States *)
 
-    let mutable private CaptureMode = false
-    let mutable private FreeMode = false
     let mutable private OverlayMode = false
+    let mutable private ViewMode = NormalMode
     let mutable private EditWhileAdvancing = false
     let mutable private ManipulationWorld = true
     let mutable private Snaps2dSelected = true
@@ -493,9 +492,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private canEditWithMouse (world : World) =
         let io = ImGui.GetIO ()
-        not CaptureMode &&
-        not io.WantCaptureMouseGlobal &&
-        (world.Halted || EditWhileAdvancing)
+        match ViewMode with
+        | NormalMode | FreeMode ->
+            not io.WantCaptureMouseGlobal &&
+            (world.Halted || EditWhileAdvancing)
+        | CaptureMode -> false
 
     let private canEditWithKeyboard (world : World) =
         let io = ImGui.GetIO ()
@@ -601,18 +602,21 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             // actually set the selection
             SelectedEntityOpt <- entityOpt
 
-    let private setFreeMode freeMode world =
+    let private setViewMode viewMode world =
         ignore<World> world // not yet used for anything here
-        if FreeMode && not freeMode then SelectedWindowRestoreRequested <- 1
-        FreeMode <- freeMode
-        if not FreeMode then CaptureMode <- false
+        match (ViewMode, viewMode) with
+        | (NormalMode, NormalMode) | (FreeMode, FreeMode) | (CaptureMode, CaptureMode) -> ()
+        | (NormalMode, FreeMode) -> ViewMode <- viewMode
+        | (FreeMode, NormalMode) -> ViewMode <- viewMode; SelectedWindowRestoreRequested <- 1
+        | (NormalMode, CaptureMode) -> ViewMode <- viewMode
+        | (CaptureMode, NormalMode) -> ViewMode <- viewMode; SelectedWindowRestoreRequested <- 1
+        | (FreeMode, CaptureMode) -> ViewMode <- viewMode
+        | (CaptureMode, FreeMode) -> ViewMode <- viewMode
 
-    let private setCaptureMode captureMode world =
-        CaptureMode <- captureMode
-        if CaptureMode then
-            selectEntityOpt None world
-            setFreeMode true world
-        else setFreeMode false world
+    let private toggleViewMode viewMode world =
+        if ViewMode = viewMode
+        then setViewMode NormalMode world
+        else setViewMode viewMode world
 
     let private tryUndo (world : World) =
         if  not (World.getImperative world) &&
@@ -810,26 +814,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         then Assembly.LoadFrom assemblyFilePath
         else null
 
-    let private nuPluginTypeFilter (metadataReader : MetadataReader) ty =
-        let typeDef = metadataReader.GetTypeDefinition ty
-        let baseType = typeDef.BaseType
-        match baseType.Kind with
-        | HandleKind.TypeReference ->
-            let typeRef = metadataReader.GetTypeReference (TypeReferenceHandle.op_Explicit baseType)
-            metadataReader.GetString typeRef.Name = nameof NuPlugin
-        | HandleKind.TypeDefinition -> false // base type must not be defined in the same assembly
-        | HandleKind.TypeSpecification -> false // base type is not a constructed generic type, pointer or array
-        | _ -> false
-
-    let private nuAssemblyFileFilter filePath =
-        try use fileStream = new FileStream (filePath, FileMode.Open, FileAccess.Read)
-            use peReader = new PortableExecutable.PEReader (fileStream)
-            peReader.HasMetadata &&
-            let metadataReader = PEReaderExtensions.GetMetadataReader peReader in metadataReader.IsAssembly &&
-            Seq.exists (metadataReader.GetAssemblyReference >> _.Name >> metadataReader.GetString >> (=) "Nu") metadataReader.AssemblyReferences &&
-            Seq.exists (nuPluginTypeFilter metadataReader) metadataReader.TypeDefinitions
-        with _ -> false
-
     // NOTE: this function isn't used, but it is kept around as it's a good tool to surface memory leaks deep in large libs like FSI.
     let private scanAndNullifyFields (root : obj) (targetType : Type) =
         let bindingFlags = BindingFlags.NonPublic ||| BindingFlags.Public ||| BindingFlags.Instance
@@ -890,8 +874,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         | _ -> ()
         Cascade
 
-    let private handleNuSelectedScreenOptChange (evt : Event<ChangeData, Game>) world =
-        match evt.Data.Value :?> Screen option with
+    let private handleNuSelectedScreenOptChange (evt : Event<Screen option, Game>) world =
+        match evt.Data with
         | Some screen ->
             selectScreen true screen
             selectGroupInitial screen world
@@ -1276,7 +1260,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                           """<PackageReference Include="JoltPhysicsSharp" Version="2.19.5" />"""
                           """<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.14.0" />"""
                           """<PackageReference Include="Pfim" Version="0.11.4" />"""
-                          """<PackageReference Include="Prime" Version="11.5.0" />"""
+                          """<PackageReference Include="Prime" Version="11.5.1" />"""
                           """<PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.1" />"""
                           """<PackageReference Include="System.Drawing.Common" Version="10.0.1" />"""
                           """<PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" />"""
@@ -1285,8 +1269,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                           """<PackageReference Include="ppy.SDL3_image-CS" Version="2026.512.0" />"""
                           """<PackageReference Include="ppy.SDL3_mixer-CS" Version="2026.512.0" />"""
                           """<PackageReference Include="Vortice.ShaderCompiler" Version="1.8.0" />"""
-                          """<PackageReference Include="Vortice.Vulkan" Version="2.1.1" />"""
-                          """<PackageReference Include="Vortice.VulkanMemoryAllocator" Version="1.6.1" />"""|]
+                          """<PackageReference Include="Vortice.Vulkan" Version="3.2.3" />"""
+                          """<PackageReference Include="Vortice.VulkanMemoryAllocator" Version="1.7.0" />"""|]
                         |> Array.append (File.ReadAllLines fsprojFilePath)
                     let fsprojNugetPaths =
                         fsprojFileLines
@@ -1527,6 +1511,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         World.setSelectedScreen screen world
                         let eventTrace = EventTrace.debug "World" "selectScreen" "Select" EventTrace.empty
                         World.publishPlus () screen.SelectEvent eventTrace screen false false world
+                        let eventTrace = EventTrace.debug "World" "selectScreen" "PostSelect" EventTrace.empty
+                        World.publishPlus (Some screen) Game.PostSelectEvent eventTrace screen false false world
                         screen
                     else screen
                 | Some screen -> screen
@@ -1777,9 +1763,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             elif ImGui.IsKeyPressed ImGuiKey.F8 then ReloadAssetsRequested <- 1
             elif ImGui.IsKeyPressed ImGuiKey.F9 && ImGui.IsShiftUp () then ReloadCodeRequested <- (false, 1)
             elif ImGui.IsKeyPressed ImGuiKey.F9 && ImGui.IsShiftDown () then ReloadCodeRequested <- (true, 1)
-            elif ImGui.IsKeyPressed ImGuiKey.F10 then setCaptureMode (not CaptureMode) world
-            elif ImGui.IsKeyPressed ImGuiKey.F11 then setFreeMode (not FreeMode) world
-            elif ImGui.IsKeyPressed ImGuiKey.F12 then OverlayMode <- not OverlayMode
+            elif ImGui.IsKeyPressed ImGuiKey.F10 then OverlayMode <- not OverlayMode
+            elif ImGui.IsKeyPressed ImGuiKey.F11 then toggleViewMode FreeMode world
+            elif ImGui.IsKeyPressed ImGuiKey.F12 then toggleViewMode CaptureMode world
             elif ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then World.tryToggleWindowFullScreen world
             elif ImGui.IsKeyPressed ImGuiKey.UpArrow && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then tryReorderSelectedEntity true world
             elif ImGui.IsKeyPressed ImGuiKey.DownArrow && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then tryReorderSelectedEntity false world
@@ -2292,7 +2278,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         ImGui.SetNextWindowSize io.DisplaySize
         if ImGui.IsKeyReleased ImGuiKey.Escape && not (modal ()) then ImGui.SetNextWindowFocus ()
         if ImGui.Begin ("Viewport", ImGuiWindowFlags.NoBackground ||| ImGuiWindowFlags.NoTitleBar ||| ImGuiWindowFlags.NoInputs ||| ImGuiWindowFlags.NoNav) then
-            if not CaptureMode then
+            if not ViewMode.IsCaptureMode then
 
                 // physics debug rendering
                 if PhysicsDebugRendering3d then
@@ -2520,7 +2506,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         let eyeRotationArray = Matrix4x4.CreateFromQuaternion(eyeRotationOld).Transposed.ToArray()
                         let size = v2 128.0f 128.0f
                         let position =
-                            if OverlayMode && not FreeMode
+                            if OverlayMode && not ViewMode.IsFreeMode
                             then v2 (single windowViewport.Bounds.Size.X - 475.0f) 100.0f
                             else v2 (innerImGui.Max.X - 178.0f) (innerImGui.Min.Y + 44.0f)
                         ImGuizmo.ViewManipulate (&eyeRotationArray[0], 1.0f, position, size, uint 0x00000000)
@@ -2543,23 +2529,23 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         ImGui.End ()
 
     let private imGuiFullScreenWindow world =
-        if not CaptureMode then
+        if ViewMode.IsFreeMode then
             if ImGui.Begin ("Full Screen Enabled", ImGuiWindowFlags.NoNav ||| ImGuiWindowFlags.AlwaysAutoResize) then
-                ImGui.Text "Capture Mode (F10)"
+                ImGui.Text "Free Mode (F11)"
                 ImGui.SameLine ()
-                let mutable captureMode = CaptureMode
-                if ImGui.Checkbox ("##captureMode", &captureMode) then
-                    setCaptureMode captureMode world
-                if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                    ImGui.Text "Toggle capture mode (F10 to toggle)."
-                    ImGui.EndTooltip ()
-                ImGui.Text "Full Screen (F11)"
-                ImGui.SameLine ()
-                let mutable freeMode = FreeMode
-                ImGui.Checkbox ("##freeMode", &freeMode) |> ignore<bool>
-                setFreeMode freeMode world
+                let mutable freeMode = ViewMode.IsFreeMode
+                if ImGui.Checkbox ("##freeMode", &freeMode) then
+                    setViewMode (if freeMode then FreeMode else NormalMode) world
                 if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                     ImGui.Text "Toggle free mode (F11 to toggle)."
+                    ImGui.EndTooltip ()
+                ImGui.Text "Capture Mode (F12)"
+                ImGui.SameLine ()
+                let mutable captureMode = ViewMode.IsCaptureMode
+                if ImGui.Checkbox ("##captureMode", &captureMode) then
+                    setViewMode (if captureMode then CaptureMode else NormalMode) world
+                if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                    ImGui.Text "Toggle capture mode (F12 to toggle)."
                     ImGui.EndTooltip ()
             ImGui.End ()
 
@@ -2778,29 +2764,29 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             ImGui.SameLine ()
             ImGui.Text "|"
             ImGui.SameLine ()
-            ImGui.Text "Capture Mode"
-            ImGui.SameLine ()
-            let mutable captureMode = CaptureMode
-            ImGui.Checkbox ("##captureMode", &captureMode) |> ignore<bool>
-            setCaptureMode captureMode world
-            if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                ImGui.Text "Toggle capture mode view (F10 to toggle)."
-                ImGui.EndTooltip ()
-            ImGui.SameLine ()
-            ImGui.Text "Free Mode"
-            ImGui.SameLine ()
-            let mutable freeMode = FreeMode
-            ImGui.Checkbox ("##freeMode", &freeMode) |> ignore<bool>
-            setFreeMode freeMode world
-            if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                ImGui.Text "Toggle free mode (F11 to toggle)."
-                ImGui.EndTooltip ()
-            ImGui.SameLine ()
             ImGui.Text "Overlay Mode"
             ImGui.SameLine ()
             ImGui.Checkbox ("##overlayMode", &OverlayMode) |> ignore<bool>
             if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                ImGui.Text "Toggle overlay mode (F12 to toggle)."
+                ImGui.Text "Toggle overlay mode (F10 to toggle)."
+                ImGui.EndTooltip ()
+            ImGui.SameLine ()
+            ImGui.Text "Free Mode"
+            ImGui.SameLine ()
+            let mutable freeMode = ViewMode.IsFreeMode
+            if ImGui.Checkbox ("##freeMode", &freeMode) then
+                setViewMode (if freeMode then FreeMode else NormalMode) world
+            if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                ImGui.Text "Toggle free mode (F11 to toggle)."
+                ImGui.EndTooltip ()
+            ImGui.SameLine ()
+            ImGui.Text "Capture Mode"
+            ImGui.SameLine ()
+            let mutable captureMode = ViewMode.IsCaptureMode
+            if ImGui.Checkbox ("##captureMode", &captureMode) then
+                setViewMode (if captureMode then FreeMode else NormalMode) world
+            if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                ImGui.Text "Toggle capture mode view (F12 to toggle)."
                 ImGui.EndTooltip ()
         ImGui.End ()
 
@@ -3195,15 +3181,20 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             let frames = time / elapsedDateTime.TotalSeconds
             ImGui.Text (if not (Double.IsNaN frames) then String.Format ("{0:f2}", frames) else "0.00")
 
+            // draw scope count
+            ImGui.Text "Draw Scope Count:"
+            ImGui.SameLine ()
+            ImGui.Text (string (Vulkan.Hl.getDrawScopeCount ()))
+
             // draw call count
             ImGui.Text "Draw Call Count:"
             ImGui.SameLine ()
-            ImGui.Text (string (OpenGL.Hl.GetDrawCallCount ()))
+            ImGui.Text (string (Vulkan.Hl.getDrawCallCount ()))
 
             // draw instance count
             ImGui.Text "Draw Instance Count:"
             ImGui.SameLine ()
-            ImGui.Text (string (OpenGL.Hl.GetDrawInstanceCount ()))
+            ImGui.Text (string (Vulkan.Hl.getDrawInstanceCount ()))
 
             // frame timing plot
             GcTimings.Enqueue (single world.Timers.GcFrameTime.TotalMilliseconds)
@@ -3296,7 +3287,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         "#r \"DotRecast.Recast.Toolset.dll\"\n" +
                         "#r \"FParsec.dll\"\n" +
                         "#r \"Magick.NET-Q8-AnyCPU.dll\"\n" +
-                        "#r \"OpenGL.Net.dll\"\n" +
                         "#r \"Pfim.dll\"\n" +
                         "#r \"SDL3-CS.dll\"\n" +
                         "#r \"SDL3_image-CS.dll\"\n" +
@@ -3801,25 +3791,29 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             let openProjectDlls =
                 match OpenProjectDllsOpt with
                 | None ->
-                    let projectsDirPaths = PathF.GetFullPath (gaiaDir + "/../../../../../Projects")
                     let openProjectDlls =
-                        Directory.EnumerateDirectories projectsDirPaths
-                        |> Seq.collect (fun dir -> Directory.EnumerateDirectories (dir, "bin"))
-                        |> Seq.collect (fun dir -> Directory.EnumerateDirectories (dir, Constants.Gaia.BuildName))
-                        |> Seq.collect (fun dir -> Directory.EnumerateDirectories dir)
-                        |> Seq.collect (fun dir -> Directory.EnumerateFiles (dir, "*.dll"))
-                        |> Seq.map PathF.Normalize // ensure we're in '/' mode
-                        |> Seq.filter nuAssemblyFileFilter
-                        |> Seq.toArray
+                        gaiaDir + "../../../../../Projects" // scan project directories for DLLs
+                        |> PathF.GetFullPath
+                        |> Directory.GetDirectories 
+                        |> Array.collect (fun projectDir ->
+                            let projectDir = PathF.Normalize projectDir
+                            let projectName = PathF.GetFileName projectDir
+                            let dllDir = projectDir + "/bin/" + Constants.Gaia.BuildName + "/" + Constants.Engine.TargetFramework
+                            if Directory.Exists dllDir
+                            then Directory.GetFiles (dllDir, projectName + ".dll") |> Array.map PathF.Normalize
+                            else [||])
                     let openProjectNames =
-                        openProjectDlls
-                        |> Array.map (fun (filePath : string) ->
-                            try let names = filePath.Split "/"
-                                let projectName = names[names.Length - 1] + " (" + names[names.Length - 2] + ")"
-                                Some projectName
-                            with _ -> None)
-                        |> Array.definitize
-                    let openProjectIndex = Array.IndexOf (openProjectDlls, ProjectDllPath)
+                        Array.map PathF.GetFileNameWithoutExtension openProjectDlls
+                    let (openProjectDlls, openProjectNames, openProjectIndex) =
+                        if Array.contains ProjectDllPath openProjectDlls then
+                            (openProjectDlls, openProjectNames, Array.IndexOf (openProjectDlls, ProjectDllPath))
+                        elif String.isEmpty ProjectDllPath then // no selected item
+                            (openProjectDlls, openProjectNames, -1)
+                        else // ensure currently opened DLL is in the list even if from a different TargetFramework
+                            let projectDllDirectories = ProjectDllPath.Split "/"
+                            (Array.append openProjectDlls [|ProjectDllPath|],
+                             Array.append openProjectNames [|PathF.GetFileNameWithoutExtension ProjectDllPath + " (" + projectDllDirectories[projectDllDirectories.Length - 2] + ")"|],
+                             Array.length openProjectDlls)
                     OpenProjectDllsOpt <- Some openProjectDlls
                     OpenProjectNames <- openProjectNames
                     OpenProjectIndex <- openProjectIndex
@@ -3833,7 +3827,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             if ImGui.Button "Open" || ImGui.IsKeyReleased ImGuiKey.Enter then
                 ShowOpenProjectDialog <- false
                 let gaiaState = makeGaiaState openProjectDlls[OpenProjectIndex] (Some OpenProjectEditMode) true world
-                try File.WriteAllText (gaiaDir + "/" + Constants.Gaia.StateFilePath, printGaiaState gaiaState)
+                try File.WriteAllText (gaiaDir + Constants.Gaia.StateFilePath, printGaiaState gaiaState)
                     Directory.SetCurrentDirectory gaiaDir
                     ShowRestartDialog <- true
                 with _ ->
@@ -4286,7 +4280,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
                 // windows
                 let entityHierarchyFocused =
-                    if FreeMode then
+                    if not ViewMode.IsNormalMode then
                         imGuiFullScreenWindow world
                         false
                     else
@@ -4382,7 +4376,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
     let private imGuiRender world =
 
         // augmentative rendering while not in capture mode
-        if not CaptureMode then
+        if not ViewMode.IsCaptureMode then
 
             // HACK: in order to successfully focus entity properties when clicking in the viewport in the current version
             // of Dear ImGui, we seem to have to the the window focus command AFTER normal processing.
@@ -4619,7 +4613,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 World.subscribe handleNuMouseButton Game.MouseRightDownEvent Game world |> ignore
                 World.subscribe handleNuMouseButton Game.MouseRightUpEvent Game world |> ignore
                 World.subscribe handleNuLifeCycleGroup (Game.LifeCycleEvent (nameof Group)) Game world |> ignore
-                World.subscribe handleNuSelectedScreenOptChange Game.SelectedScreenOpt.ChangeEvent Game world |> ignore
+                World.subscribe handleNuSelectedScreenOptChange Game.PostSelectEvent Game world |> ignore
                 World.subscribe handleNuExitRequest Game.ExitRequestEvent Game world |> ignore
 
                 // run the world

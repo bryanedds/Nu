@@ -1,6 +1,6 @@
 [GroupDispatcher
  [[Editing True]
-  [Model ["Microsoft.FSharp.Core.Unit, FSharp.Core, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" []]]
+  [Model ["Microsoft.FSharp.Core.Unit, FSharp.Core, Version=10.1.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" []]]
   [Name Scene]
   [Persistent True]]
  [[Entity3dDispatcher
@@ -57,6 +57,7 @@
         [LightShadowBias 0.05]
         [LightShadowSampleScalar 0.02]
         [LightShadowExponent 80]
+        [LightShadowRadius 1.5]
         [LightShadowDensity 7]
         [LightMapSingletonBlendMargin 0.1]
         [LightExposure 1]

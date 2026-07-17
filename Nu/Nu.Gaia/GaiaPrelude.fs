@@ -11,6 +11,11 @@ open Prime
 open Nu
 open Nu.Gaia
 
+type ViewMode =
+    | NormalMode
+    | FreeMode
+    | CaptureMode
+
 type DragEntityState =
     | DragEntityPosition2d of DateTime : DateTimeOffset * Snapshotted : bool ref * MousePositionWorldOrig : Vector2 * EntityDragOffset : Vector2 * Entity : Entity
     | DragEntityRotation2d of DateTime : DateTimeOffset * Snapshotted : bool ref * MousePositionWorldOrig : Vector2 * EntityDragOffset : single * Entity : Entity

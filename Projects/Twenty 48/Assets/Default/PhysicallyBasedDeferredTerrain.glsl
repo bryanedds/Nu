@@ -1,5 +1,5 @@
 #shader vertex
-#version 460 core
+#version 450 core
 
 const int TEX_COORDS_OFFSET_VERTS = 6;
 const int TERRAIN_LAYERS_MAX = 6;
@@ -65,7 +65,7 @@ void main()
 }
 
 #shader fragment
-#version 460 core
+#version 450 core
 
 const float GAMMA = 2.2;
 const int TERRAIN_LAYERS_MAX = 6;

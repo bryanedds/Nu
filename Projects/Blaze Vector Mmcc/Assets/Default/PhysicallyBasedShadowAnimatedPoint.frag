@@ -6,7 +6,7 @@ struct ShadowFrag
     float lightShadowExponent;
 };
 
-layout(set = 0, binding = 1) buffer readonly ShadowFragBlock { ShadowFrag shadowFrag; };
+layout(set = 0, binding = 1) uniform ShadowFragBlock { ShadowFrag shadowFrag; };
 
 layout(location = 0) out float depth;
 

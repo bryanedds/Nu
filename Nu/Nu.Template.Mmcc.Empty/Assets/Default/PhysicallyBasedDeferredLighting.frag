@@ -53,10 +53,10 @@ struct Light
     int lightShadowIndices;
 };
 
-layout(set = 0, binding = 0) buffer readonly EyeBlock { Eye eye; };
-layout(set = 0, binding = 1) buffer readonly Lighting2Block { Lighting2 lighting; };
-layout(set = 0, binding = 2) buffer readonly LightBlock { Light lights[LIGHTS_MAX]; };
-layout(set = 0, binding = 3) buffer readonly ShadowMatrixBlock { mat4 shadowMatrices[SHADOW_TEXTURES_MAX + SHADOW_CASCADES_MAX * SHADOW_CASCADE_LEVELS]; };
+layout(set = 0, binding = 0) uniform EyeBlock { Eye eye; };
+layout(set = 0, binding = 1) uniform Lighting2Block { Lighting2 lighting; };
+layout(set = 0, binding = 2) uniform LightBlock { Light lights[LIGHTS_MAX]; };
+layout(set = 0, binding = 3) uniform ShadowMatrixBlock { mat4 shadowMatrices[SHADOW_TEXTURES_MAX + SHADOW_CASCADES_MAX * SHADOW_CASCADE_LEVELS]; };
 layout(set = 0, binding = 4) uniform texture2D depthTexture;
 layout(set = 0, binding = 5) uniform texture2D albedoTexture;
 layout(set = 0, binding = 6) uniform texture2D materialTexture;

@@ -33,43 +33,21 @@ jobs:
         if: "contains(matrix.os, 'windows') && contains(matrix.os, 'arm')"
         run:
           dotnet build "Projects/Mobile" -t:InstallAndroidDependencies -f net10.0-android -p BuildMobile=true,AcceptAndroidSdkLicenses=True
-      # Apple syncs version numbers across iOS, macOS, and Xcode; the .NET iOS
-      # workload version matches: 26.5.10284 → iOS 26.5 → Xcode 26.5.
-      # (https://github.com/dotnet/macios/issues/25818#issuecomment-4799784136)
-      # We derive Xcode version from the installed iOS workload manifest by
-      # scanning all SDK band directories for `microsoft.net.sdk.ios/` and
-      # metadata/workloads/InstalledManifests/, then picking the latest version.
-      # We query the dotnet binary directly because actions/setup-dotnet may set
-      # $DOTNET_ROOT to $HOME/.dotnet while the actual SDK lives elsewhere.
-      - name: Get Xcode version from iOS workload
-        id: ios-version
+      - name: Get Xcode version from Apple workload
         if: contains(matrix.os, 'macos')
+        id: ios-version
         run: |
-          echo "::group::Resolve Xcode version from iOS workload"
-          echo "dotnet version: $(dotnet --version)"
-          DOTNET_ROOT_REAL=$(command -v dotnet)
-          while [ -L "$DOTNET_ROOT_REAL" ]; do
-            DOTNET_ROOT_REAL=$(readlink "$DOTNET_ROOT_REAL") # Resolve symlinks - needed when actions/setup-dotnet didn't install a new SDK
-          done
-          DOTNET_ROOT_REAL=$(dirname "$DOTNET_ROOT_REAL")
-          echo "dotnet root: $DOTNET_ROOT_REAL"
-          _all_versions=
-          for _kind in sdk-manifests metadata/workloads/InstalledManifests; do
-            _dir="$DOTNET_ROOT_REAL/$_kind"
-            [ -d "$_dir" ] || { echo "  $_kind: not found"; continue; }
-            echo "  scanning $_dir ..."
-            for _sub in "$_dir"/*/; do
-              _ios="$_sub/microsoft.net.sdk.ios"
-              [ -d "$_ios" ] || continue
-              _versions=$(ls "$_ios/" 2>/dev/null)
-              echo "  found: $_ios -> $_versions"
-              _all_versions="$_all_versions $_versions"
-            done
-          done
-          IOS_VERSION=$(echo "$_all_versions" | tr ' ' '\n' | grep -v '^$' | sort -t. -k1,1n -k2,2n -k3,3n | tail -1 | cut -d. -f1-2)
-          echo "Resolved Xcode version: ${IOS_VERSION:-latest-stable}"
-          echo "xcode-version=${IOS_VERSION:-latest-stable}" >> "$GITHUB_OUTPUT"
-          echo "::endgroup::"
+          # NOTE: .NET for iOS/tvOS/MacCatalyst checks the major.minor version of Xcode for version validation.
+          # Meanwhile, the available property for us (_RecommendedXcodeVersion) may include a build number like 26.6.1.
+          # We strip any patch component so setup-xcode uses semver range matching (bare "26.6" matches any 26.6.x).
+          # If we passed the full 3-component version like "26.6.1", Node.js's semver.satisfies would require
+          # an exact patch match, which could fail if the runner only has "26.6.0" (or vice versa).
+          # This property is more reliable than trying to derive the Xcode version from the workload version number, since the mapping is
+          # not always 1:1 (e.g. iOS 26.5 → Xcode 26.6), see https://github.com/dotnet/macios/issues/25818
+          XCODE_VERSION=$(dotnet build "Projects/Mobile" -f net10.0-ios -getProperty:_RecommendedXcodeVersion 2>/dev/null) # Note the project used should have OutputType=Exe, because OutputType=Library has a different version returned
+          echo "Recommended Xcode version is $XCODE_VERSION"
+          XCODE_VERSION=$(echo "$XCODE_VERSION" | cut -d. -f1-2) # Keep only major.minor
+          echo "xcode-version=${XCODE_VERSION:-latest-stable}" >> "$GITHUB_OUTPUT"
       - uses: maxim-lobanov/setup-xcode@v1
         if: contains(matrix.os, 'macos')
         with:

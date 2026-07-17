@@ -1,5 +1,8 @@
 ﻿// Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace Nu.Vulkan
 open System
@@ -16,19 +19,19 @@ type SkyBox =
 
 /// Describes a sky box pipeline that's loaded into GPU.
 type SkyBoxPipeline =
-    { EyeUniform : Nu.Vulkan.Buffer
-      SkyBoxPropertiesUniform : Nu.Vulkan.Buffer
+    { EyeUniform : VulkanBuffer
+      SkyBoxPropertiesUniform : VulkanBuffer
       Pipeline : Pipeline }
 
 [<RequireQualifiedAccess>]
 module SkyBox =
 
     /// Create a SkyBoxPipeline.
-    let createSkyBoxPipeline colorAttachmentFormat depthAttachmentFormat (vkc : VulkanContext) =
+    let createSkyBoxPipeline colorAttachmentFormat depthAttachmentFormat (context : VulkanContext) =
 
         // create uniform buffers
-        let eyeUniform = Buffer.create sizeof<Eye> Storage vkc
-        let skyBoxPropertiesUniform = Buffer.create sizeof<SkyBox> Storage vkc
+        let eyeUniform = VulkanBuffer.create Uniform sizeof<Eye> context
+        let skyBoxPropertiesUniform = VulkanBuffer.create Uniform sizeof<SkyBox> context
 
         // create pipeline
         let pipeline =
@@ -38,14 +41,14 @@ module SkyBox =
                 [|Pipeline.vertex 0 CubeMap.VertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Single3 0|]|]
                 [|Pipeline.descriptorSet<int>
-                    [|Pipeline.descriptor 0 StorageBuffer VertexStage 1
-                      Pipeline.descriptor 1 StorageBuffer FragmentStage 1|]
+                    [|Pipeline.descriptor 0 UniformBuffer VertexStage 1
+                      Pipeline.descriptor 1 UniformBuffer FragmentStage 1|]
                   Pipeline.descriptorSet<Texture>
                     [|Pipeline.descriptor 0 SampledImage FragmentStage 1|]
                   Pipeline.descriptorSet<Unit>
                     [|Pipeline.descriptor 0 Sampler FragmentStage 1|]|]
                 [||] [|colorAttachmentFormat|] (Some depthAttachmentFormat)
-                [|eyeUniform; skyBoxPropertiesUniform|] vkc
+                [|eyeUniform; skyBoxPropertiesUniform|]
         
         // make SkyBoxPipeline
         let skyBoxPipeline =
@@ -57,14 +60,14 @@ module SkyBox =
         skyBoxPipeline
 
     /// Destroy a SkyBoxPipeline.
-    let destroySkyBoxPipeline skyBoxPipeline vkc =
-        Pipeline.destroy skyBoxPipeline.Pipeline vkc
+    let destroySkyBoxPipeline skyBoxPipeline context =
+        Pipeline.destroy skyBoxPipeline.Pipeline context
 
     /// Draw a sky box.
     let drawSkyBox
         (eyeCenter : Vector3)
         (view : Matrix4x4)
-        (projection : Matrix4x4)
+        (projectionUnflipped : Matrix4x4)
         (color : Color)
         (brightness : single)
         (cubeMap : Texture)
@@ -74,11 +77,11 @@ module SkyBox =
         (colorAttachment : Texture)
         (depthAttachment : Texture)
         (pipeline : SkyBoxPipeline)
-        (vkc : VulkanContext) =
+        (context : VulkanContext) =
 
         // compute vulkan-appropriate matrices
         let viewInverse = view.Inverted
-        let projection = projection.Flipped
+        let projection = projectionUnflipped.Flipped
         let projectionInverse = projection.Inverted
         let viewProjection = view * projection
 
@@ -87,64 +90,64 @@ module SkyBox =
         | Some vkPipeline ->
 
             // specify uniforms
-            let mutable uniformDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.Pipeline.DrawIndex pipeline.Pipeline vkc $ fun vkSet ->
+            let mutable uniformDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.Pipeline.DrawIndex pipeline.Pipeline $ fun vkSet ->
                     
                 // specify eye
                 let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
-                Buffer.uploadValue eye pipeline.EyeUniform vkc
-                Pipeline.writeDescriptorStorageBuffer 0 0 pipeline.EyeUniform vkSet vkc
+                VulkanBuffer.uploadValue eye pipeline.EyeUniform context
+                Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.EyeUniform vkSet
 
                 // specify sky box
                 let skyBox = SkyBox (color = color.V3, brightness = brightness)
-                Buffer.uploadValue skyBox pipeline.SkyBoxPropertiesUniform vkc
-                Pipeline.writeDescriptorStorageBuffer 1 0 pipeline.SkyBoxPropertiesUniform vkSet vkc
+                VulkanBuffer.uploadValue skyBox pipeline.SkyBoxPropertiesUniform context
+                Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.SkyBoxPropertiesUniform vkSet
 
             // specify material
-            let mutable materialDescriptorSet = Pipeline.specifyDescriptorSet 1 cubeMap pipeline.Pipeline vkc $ fun vkSet ->
-                Pipeline.writeDescriptorSampledImage 0 0 cubeMap vkSet vkc
+            let mutable materialDescriptorSet = Pipeline.specifyDescriptorSet 1 cubeMap pipeline.Pipeline $ fun vkSet ->
+                Pipeline.writeDescriptorSampledTexture 0 0 cubeMap vkSet
 
             // specify sampler
-            let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 2 Unit pipeline.Pipeline vkc $ fun vkSet ->
-                Pipeline.writeDescriptorSampler 0 0 sampler vkSet vkc
+            let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 2 Unit pipeline.Pipeline $ fun vkSet ->
+                Pipeline.writeDescriptorSampler 0 0 sampler vkSet
 
             // set up render
             let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
             let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] (Some depthAttachment.ImageView) renderArea None
-            Vulkan.vkCmdBeginRendering (vkc.RenderCommandBuffer, asPointer &renderingInfo)
-            Vulkan.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, asPointer &vkViewport)
-            Vulkan.vkCmdSetScissor (vkc.RenderCommandBuffer, 0u, 1u, asPointer &renderArea)
+            DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
+            DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
+            DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&renderArea)
 
             // set up pipeline
-            Vulkan.vkCmdBindPipeline (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
-            Vulkan.vkCmdSetDepthTestEnable (vkc.RenderCommandBuffer, true)
-            Vulkan.vkCmdSetDepthCompareOp (vkc.RenderCommandBuffer, VkCompareOp.LessOrEqual)
+            DeviceApi.vkCmdBindPipeline (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
+            DeviceApi.vkCmdSetDepthTestEnable (context.RenderCommandBuffer, true)
+            DeviceApi.vkCmdSetDepthCompareOp (context.RenderCommandBuffer, VkCompareOp.LessOrEqual)
                 
             // bind vertex and index buffers
             let mutable vertexBuffer = geometry.VertexBuffer.VkBuffer
             let mutable vertexOffset = 0UL
-            Vulkan.vkCmdBindVertexBuffers (vkc.RenderCommandBuffer, 0u, 1u, asPointer &vertexBuffer, asPointer &vertexOffset)
-            Vulkan.vkCmdBindIndexBuffer (vkc.RenderCommandBuffer, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
+            DeviceApi.vkCmdBindVertexBuffers (context.RenderCommandBuffer, 0u, 1u, &&vertexBuffer, &&vertexOffset)
+            DeviceApi.vkCmdBindIndexBuffer (context.RenderCommandBuffer, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
 
             // bind descriptor sets
-            Vulkan.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, asPointer &uniformDescriptorSet, 0u, nullPtr)
-            Vulkan.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, asPointer &materialDescriptorSet, 0u, nullPtr)
-            Vulkan.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 2u, 1u, asPointer &samplerDescriptorSet, 0u, nullPtr)
-                
+            DeviceApi.vkCmdBindDescriptorSets (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, &&uniformDescriptorSet, 0u, nullPtr)
+            DeviceApi.vkCmdBindDescriptorSets (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, &&materialDescriptorSet, 0u, nullPtr)
+            DeviceApi.vkCmdBindDescriptorSets (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 2u, 1u, &&samplerDescriptorSet, 0u, nullPtr)
+
             // draw
-            Vulkan.vkCmdDrawIndexed (vkc.RenderCommandBuffer, uint geometry.ElementCount, 1u, 0u, 0, 0u)
+            DeviceApi.vkCmdDrawIndexed (context.RenderCommandBuffer, uint geometry.ElementCount, 1u, 0u, 0, 0u)
         
             // tear down render
-            Vulkan.vkCmdEndRendering vkc.RenderCommandBuffer
+            DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
 
-            // report draw scope
-            Hl.reportDrawScope ()
+            // report drawing
+            Hl.reportDrawCall 1 true
 
             // advance pipeline
-            Pipeline.advance 1 pipeline.Pipeline
+            Pipeline.advance pipeline.Pipeline
 
             // advance rendering command buffer
-            VulkanContext.advanceRenderCommandBuffer vkc
+            VulkanContext.advanceRenderCommandBuffer context
 
         // abort
         | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."

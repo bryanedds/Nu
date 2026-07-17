@@ -1724,7 +1724,6 @@ module Math =
         else b % a = 0
 
     /// Compute the size of the stride.
-    /// TODO: DJL: perhaps calculating this stuff manually is a bad idea?
     let Stride (alignment, size) =
         if size = 0 then size // just to prevent division by 0; size should be > 0
         elif alignment = 0 then size
@@ -1819,6 +1818,12 @@ type LightType =
         | SpotLight _ -> 1
         | DirectionalLight _ -> 2
         | CascadedLight -> 3
+
+    /// Whether the shadows for this light render to a cube map.
+    member this.ShadowsUseCubeMap =
+        match this with
+        | PointLight -> true
+        | SpotLight _ | DirectionalLight _ | CascadedLight -> false
 
     /// Check that the light should shadow interior surfaces with the given shadowIndexInfoOpt information.
     static member shouldShadowInterior lightType =

@@ -24,8 +24,7 @@ module Configure =
                 match key with
                 | nameof Constants.Runtime.GcDebug -> Constants.Runtime.GcDebug <- scvalue value
                 | nameof Constants.GameTime.DesiredFrameRate -> Constants.GameTime.DesiredFrameRate <- scvalue value
-                | nameof Constants.Vulkan.HlDebug -> Constants.Vulkan.HlDebug <- scvalue value
-                | nameof Constants.ImGui.FontSize -> Constants.ImGui.FontSize <- scvalue value
+                | nameof Constants.ImGui.ImGuiFontSize -> Constants.ImGui.ImGuiFontSize <- scvalue value
                 | nameof Constants.Engine.Meter2d -> Constants.Engine.Meter2d <- scvalue value
                 | nameof Constants.Engine.RunSynchronously -> Constants.Engine.RunSynchronously <- scvalue value
                 | nameof Constants.Engine.TickDeltaAveraging -> Constants.Engine.TickDeltaAveraging <- scvalue value
@@ -35,7 +34,8 @@ module Configure =
                 | nameof Constants.Engine.OctreeDepth -> Constants.Engine.OctreeDepth <- scvalue value
                 | nameof Constants.Engine.EventTracing -> Constants.Engine.EventTracing <- scvalue value
                 | nameof Constants.Engine.EventFilter -> Constants.Engine.EventFilter <- scvalue value
-                | nameof Constants.Render.Vsync -> Constants.Render.Vsync <- scvalue value
+                | nameof Constants.Render.RenderDebug -> Constants.Render.RenderDebug <- scvalue value
+                | nameof Constants.Render.RenderVsync -> Constants.Render.RenderVsync <- scvalue value
                 | nameof Constants.Render.NearPlaneDistanceInterior -> Constants.Render.NearPlaneDistanceInterior <- scvalue value
                 | nameof Constants.Render.FarPlaneDistanceInterior -> Constants.Render.FarPlaneDistanceInterior <- scvalue value
                 | nameof Constants.Render.NearPlaneDistanceExterior -> Constants.Render.NearPlaneDistanceExterior <- scvalue value

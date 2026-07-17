@@ -1,5 +1,8 @@
 ﻿// Nu Game Engine.
+// Required Notice:
 // Copyright (C) Bryan Edds.
+// Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
+// See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace Nu.Vulkan
 open System
@@ -13,270 +16,260 @@ module Attachment =
     // from color component attachments using the name "depth". Otherwise color and depth component textures are just called "color" and "depth" attachments,
     // as they are called when passed to Vulkan structures.
 
-    let createColorAttachment textureType optionalUsages internalFormat pixelFormat resolutionX resolutionY (vkc : VulkanContext) =
+    let createColorAttachment textureType optionalUsages internalFormat pixelFormat resolutionX resolutionY (context : VulkanContext) =
         let metadata = TextureMetadata.make resolutionX resolutionY
         let textureInternal =
             TextureInternal.create
                 MipmapNone (AttachmentColor true) textureType optionalUsages
-                (Hl.checkAttachmentFormat vkc.VkPhysicalDevice internalFormat) pixelFormat metadata vkc
+                (Hl.checkAttachmentFormat context.PhysicalDevice.VkPhysicalDevice internalFormat) pixelFormat metadata context
         EagerTexture textureInternal
 
     /// Update size of color attachment.
-    let updateColorAttachmentSize resolutionX resolutionY color vkc =
+    let updateColorAttachmentSize resolutionX resolutionY color context =
         let metadata = TextureMetadata.make resolutionX resolutionY
-        Texture.updateSize metadata color vkc
+        Texture.updateSize metadata color context
 
     /// Destroy color attachment.
-    let destroyColorAttachment (color : Texture) vkc =
-        Texture.destroy color vkc
+    let destroyColorAttachment (color : Texture) context =
+        Texture.destroy color context
 
     /// Create depth attachment.
-    let private createDepthAttachment optionalUsages resolutionX resolutionY (vkc : VulkanContext) =
+    let private createDepthAttachment optionalUsages resolutionX resolutionY (context : VulkanContext) =
         let metadata = TextureMetadata.make resolutionX resolutionY
         let textureInternal =
             TextureInternal.create
                 MipmapNone (AttachmentDepth true) Texture2d optionalUsages
-                (Hl.checkAttachmentFormat vkc.VkPhysicalDevice D32f) Depth metadata vkc
+                (Hl.checkAttachmentFormat context.PhysicalDevice.VkPhysicalDevice D32f) Depth metadata context
         EagerTexture textureInternal
 
     /// Update size of depth attachment.
-    let updateDepthAttachmentSize resolutionX resolutionY depth vkc =
+    let updateDepthAttachmentSize resolutionX resolutionY depth context =
         let metadata = TextureMetadata.make resolutionX resolutionY
-        Texture.updateSize metadata depth vkc
+        Texture.updateSize metadata depth context
 
     /// Destroy depth attachment.
-    let destroyDepthAttachment (depth : Texture) vkc =
-        Texture.destroy depth vkc
+    let destroyDepthAttachment (depth : Texture) context =
+        Texture.destroy depth context
 
     /// Create shadow texture array attachments.
-    let createShadowTextureArrayAttachments shadowResolutionX shadowResolutionY shadowResolutionZ vkc =
-        let color = createColorAttachment (Texture2dArray shadowResolutionZ) VkImageUsageFlags.Sampled Rg32f Rg shadowResolutionX shadowResolutionY vkc
-        let z = createDepthAttachment VkImageUsageFlags.None shadowResolutionX shadowResolutionY vkc
+    let createShadowTextureArrayAttachments shadowResolutionX shadowResolutionY shadowResolutionZ context =
+        let color = createColorAttachment (Texture2dArray shadowResolutionZ) VkImageUsageFlags.Sampled Rg32f Rg shadowResolutionX shadowResolutionY context
+        let z = createDepthAttachment VkImageUsageFlags.None shadowResolutionX shadowResolutionY context
         (color, z)
     
     /// Update size of shadow texture array attachments.
-    let updateShadowTextureArrayAttachmentsSize resolutionX resolutionY (color, z) vkc =
+    let updateShadowTextureArrayAttachmentsSize resolutionX resolutionY (color, z) context =
         let metadata = TextureMetadata.make resolutionX resolutionY
-        Texture.updateSize metadata color vkc
-        Texture.updateSize metadata z vkc
+        Texture.updateSize metadata color context
+        Texture.updateSize metadata z context
 
     /// Destroy shadow texture array attachments.
-    let destroyShadowTextureArrayAttachments (color : Texture, z : Texture) vkc =
-        Texture.destroy color vkc
-        Texture.destroy z vkc
+    let destroyShadowTextureArrayAttachments (color : Texture, z : Texture) context =
+        Texture.destroy color context
+        Texture.destroy z context
     
     /// Create shadow map attachments.
-    let createShadowMapAttachments shadowResolutionX shadowResolutionY vkc =
-        let color = createColorAttachment TextureCubeMap VkImageUsageFlags.Sampled R16f Red shadowResolutionX shadowResolutionY vkc
-        let z = createDepthAttachment VkImageUsageFlags.None shadowResolutionX shadowResolutionY vkc
+    let createShadowMapAttachments shadowResolutionX shadowResolutionY context =
+        let color = createColorAttachment TextureCubeMap VkImageUsageFlags.Sampled R16f Red shadowResolutionX shadowResolutionY context
+        let z = createDepthAttachment VkImageUsageFlags.None shadowResolutionX shadowResolutionY context
         (color, z)
 
     /// Update size of shadow map attachments.
-    let updateShadowMapAttachmentsSize resolutionX resolutionY (color, z) vkc =
+    let updateShadowMapAttachmentsSize resolutionX resolutionY (color, z) context =
         let metadata = TextureMetadata.make resolutionX resolutionY
-        Texture.updateSize metadata color vkc
-        Texture.updateSize metadata z vkc
+        Texture.updateSize metadata color context
+        Texture.updateSize metadata z context
 
     /// Destroy shadow map attachments.
-    let destroyShadowMapAttachments (color : Texture, z : Texture) vkc =
-        Texture.destroy color vkc
-        Texture.destroy z vkc
+    let destroyShadowMapAttachments (color : Texture, z : Texture) context =
+        Texture.destroy color context
+        Texture.destroy z context
     
     /// Create shadow cascade array attachments.
-    let createShadowCascadeArrayAttachments shadowCascadeResolutionX shadowCascadeResolutionY shadowCascadeLevels vkc =
+    let createShadowCascadeArrayAttachments shadowCascadeResolutionX shadowCascadeResolutionY shadowCascadeLevels context =
         let color =
             createColorAttachment
                 (Texture2dArray shadowCascadeLevels) VkImageUsageFlags.Sampled
-                Rg32f Rg shadowCascadeResolutionX shadowCascadeResolutionY vkc
-        let z = createDepthAttachment VkImageUsageFlags.None shadowCascadeResolutionX shadowCascadeResolutionY vkc
+                Rg32f Rg shadowCascadeResolutionX shadowCascadeResolutionY context
+        let z = createDepthAttachment VkImageUsageFlags.None shadowCascadeResolutionX shadowCascadeResolutionY context
         (color, z)
     
     /// Update size of shadow cascade array attachments.
-    let updateShadowCascadeArrayAttachmentsSize resolutionX resolutionY (color, z) vkc =
+    let updateShadowCascadeArrayAttachmentsSize resolutionX resolutionY (color, z) context =
         let metadata = TextureMetadata.make resolutionX resolutionY
-        Texture.updateSize metadata color vkc
-        Texture.updateSize metadata z vkc
+        Texture.updateSize metadata color context
+        Texture.updateSize metadata z context
 
     /// Destroy shadow cascade array attachments.
-    let destroyShadowCascadeArrayAttachments (color : Texture, z : Texture) vkc =
-        Texture.destroy color vkc
-        Texture.destroy z vkc
+    let destroyShadowCascadeArrayAttachments (color : Texture, z : Texture) context =
+        Texture.destroy color context
+        Texture.destroy z context
     
     /// Create geometry attachments.
-    /// TODO: DJL: this z attachment is unused so maybe worth removing.
-    let createGeometryAttachments resolutionX resolutionY vkc =
-        let depth = createColorAttachment Texture2d VkImageUsageFlags.Sampled R32f Red resolutionX resolutionY vkc
-        let albedo = createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba8 Rgba resolutionX resolutionY vkc
-        let material = createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba8 Rgba resolutionX resolutionY vkc
-        let normalPlus = createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba16f Rgba resolutionX resolutionY vkc
-        let subdermalPlus = createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba8 Rgba resolutionX resolutionY vkc
-        let scatterPlus = createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba8 Rgba resolutionX resolutionY vkc
-        let clearCoatPlus = createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba16f Rgba resolutionX resolutionY vkc
-        let z = createDepthAttachment VkImageUsageFlags.None resolutionX resolutionY vkc
+    let createGeometryAttachments resolutionX resolutionY context =
+        let depth = createColorAttachment Texture2d VkImageUsageFlags.Sampled R32f Red resolutionX resolutionY context
+        let albedo = createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba8 Rgba resolutionX resolutionY context
+        let material = createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba8 Rgba resolutionX resolutionY context
+        let normalPlus = createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba16f Rgba resolutionX resolutionY context
+        let subdermalPlus = createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba8 Rgba resolutionX resolutionY context
+        let scatterPlus = createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba8 Rgba resolutionX resolutionY context
+        let clearCoatPlus = createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba16f Rgba resolutionX resolutionY context
+        let z = createDepthAttachment VkImageUsageFlags.None resolutionX resolutionY context
         (depth, albedo, material, normalPlus, subdermalPlus, scatterPlus, clearCoatPlus, z)
     
     /// Update size of geometry attachments.
-    let updateGeometryAttachmentsSize resolutionX resolutionY (depth, albedo, material, normalPlus, subdermalPlus, scatterPlus, clearCoatPlus, z) vkc =
+    let updateGeometryAttachmentsSize resolutionX resolutionY (depth, albedo, material, normalPlus, subdermalPlus, scatterPlus, clearCoatPlus, z) context =
         let metadata = TextureMetadata.make resolutionX resolutionY
-        Texture.updateSize metadata depth vkc
-        Texture.updateSize metadata albedo vkc
-        Texture.updateSize metadata material vkc
-        Texture.updateSize metadata normalPlus vkc
-        Texture.updateSize metadata subdermalPlus vkc
-        Texture.updateSize metadata scatterPlus vkc
-        Texture.updateSize metadata clearCoatPlus vkc
-        Texture.updateSize metadata z vkc
+        Texture.updateSize metadata depth context
+        Texture.updateSize metadata albedo context
+        Texture.updateSize metadata material context
+        Texture.updateSize metadata normalPlus context
+        Texture.updateSize metadata subdermalPlus context
+        Texture.updateSize metadata scatterPlus context
+        Texture.updateSize metadata clearCoatPlus context
+        Texture.updateSize metadata z context
 
     /// Destroy geometry attachments.
-    let destroyGeometryAttachments
-        (depth : Texture,
-         albedo : Texture,
-         material : Texture,
-         normalPlus : Texture,
-         subdermalPlus : Texture,
-         scatterPlus : Texture,
-         clearCoatPlus : Texture,
-         z : Texture)
-        vkc =
-        Texture.destroy depth vkc
-        Texture.destroy albedo vkc
-        Texture.destroy material vkc
-        Texture.destroy normalPlus vkc
-        Texture.destroy subdermalPlus vkc
-        Texture.destroy scatterPlus vkc
-        Texture.destroy clearCoatPlus vkc
-        Texture.destroy z vkc
+    let destroyGeometryAttachments (depth : Texture, albedo : Texture, material : Texture, normalPlus : Texture, subdermalPlus : Texture, scatterPlus : Texture, clearCoatPlus : Texture, z : Texture) context =
+        Texture.destroy depth context
+        Texture.destroy albedo context
+        Texture.destroy material context
+        Texture.destroy normalPlus context
+        Texture.destroy subdermalPlus context
+        Texture.destroy scatterPlus context
+        Texture.destroy clearCoatPlus context
+        Texture.destroy z context
 
     /// Create lighting attachment.
-    let createLightingAttachment resolutionX resolutionY vkc =
-        createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgb16f Rgb resolutionX resolutionY vkc
+    let createLightingAttachment resolutionX resolutionY context =
+        createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgb16f Rgb resolutionX resolutionY context
 
     /// Update size of lighting attachment.
-    let updateLightingAttachmentSize resolutionX resolutionY lighting vkc =
+    let updateLightingAttachmentSize resolutionX resolutionY lighting context =
         let metadata = TextureMetadata.make resolutionX resolutionY
-        Texture.updateSize metadata lighting vkc
+        Texture.updateSize metadata lighting context
 
     /// Destroy lighting attachment.
-    let destroyLightingAttachment (lighting : Texture) vkc =
-        Texture.destroy lighting vkc
+    let destroyLightingAttachment (lighting : Texture) context =
+        Texture.destroy lighting context
 
     /// Create light mapping attachment.
-    let createLightMappingAttachment resolutionX resolutionY vkc =
-        createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba16f Rgba resolutionX resolutionY vkc
+    let createLightMappingAttachment resolutionX resolutionY context =
+        createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba16f Rgba resolutionX resolutionY context
 
     /// Update size of light mapping attachment.
-    let updateLightMappingAttachmentSize resolutionX resolutionY lightmapping vkc =
+    let updateLightMappingAttachmentSize resolutionX resolutionY lightmapping context =
         let metadata = TextureMetadata.make resolutionX resolutionY
-        Texture.updateSize metadata lightmapping vkc
+        Texture.updateSize metadata lightmapping context
 
     /// Destroy light mapping attachment.
-    let destroyLightMappingAttachment (lightmapping : Texture) vkc =
-        Texture.destroy lightmapping vkc
+    let destroyLightMappingAttachment (lightmapping : Texture) context =
+        Texture.destroy lightmapping context
 
     /// Create ambient attachment.
-    let createAmbientAttachment resolutionX resolutionY vkc =
-        createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba16f Rgba resolutionX resolutionY vkc
+    let createAmbientAttachment resolutionX resolutionY context =
+        createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba16f Rgba resolutionX resolutionY context
 
     /// Update size of ambient attachment.
-    let updateAmbientAttachmentSize resolutionX resolutionY ambient vkc =
+    let updateAmbientAttachmentSize resolutionX resolutionY ambient context =
         let metadata = TextureMetadata.make resolutionX resolutionY
-        Texture.updateSize metadata ambient vkc
+        Texture.updateSize metadata ambient context
 
     /// Destroy ambient attachment.
-    let destroyAmbientAttachment (ambient : Texture) vkc =
-        Texture.destroy ambient vkc
+    let destroyAmbientAttachment (ambient : Texture) context =
+        Texture.destroy ambient context
 
     /// Create irradiance attachment.
-    let createIrradianceAttachment resolutionX resolutionY vkc =
-        createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba16f Rgba resolutionX resolutionY vkc
+    let createIrradianceAttachment resolutionX resolutionY context =
+        createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba16f Rgba resolutionX resolutionY context
 
     /// Update size of irradiance attachment.
-    let updateIrradianceAttachmentSize resolutionX resolutionY irradiance vkc =
+    let updateIrradianceAttachmentSize resolutionX resolutionY irradiance context =
         let metadata = TextureMetadata.make resolutionX resolutionY
-        Texture.updateSize metadata irradiance vkc
+        Texture.updateSize metadata irradiance context
 
     /// Destroy irradiance attachment.
-    let destroyIrradianceAttachment (irradiance : Texture) vkc =
-        Texture.destroy irradiance vkc
+    let destroyIrradianceAttachment (irradiance : Texture) context =
+        Texture.destroy irradiance context
 
     /// Create environment filter attachment.
-    let createEnvironmentFilterAttachment resolutionX resolutionY vkc =
-        createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba16f Rgba resolutionX resolutionY vkc
+    let createEnvironmentFilterAttachment resolutionX resolutionY context =
+        createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba16f Rgba resolutionX resolutionY context
 
     /// Update size of environment filter attachment.
-    let updateEnvironmentFilterAttachmentSize resolutionX resolutionY environmentfilter vkc =
+    let updateEnvironmentFilterAttachmentSize resolutionX resolutionY environmentfilter context =
         let metadata = TextureMetadata.make resolutionX resolutionY
-        Texture.updateSize metadata environmentfilter vkc
+        Texture.updateSize metadata environmentfilter context
 
     /// Destroy environment filter attachment.
-    let destroyEnvironmentFilterAttachment (environmentfilter : Texture) vkc =
-        Texture.destroy environmentfilter vkc
+    let destroyEnvironmentFilterAttachment (environmentfilter : Texture) context =
+        Texture.destroy environmentfilter context
 
     /// Create fogging attachment.
-    let createFoggingAttachment resolutionX resolutionY vkc =
-        createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgb16f Rgb resolutionX resolutionY vkc
+    let createFoggingAttachment resolutionX resolutionY context =
+        createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgb16f Rgb resolutionX resolutionY context
 
     /// Update size of fogging attachment.
-    let updateFoggingAttachmentSize resolutionX resolutionY fogging vkc =
+    let updateFoggingAttachmentSize resolutionX resolutionY fogging context =
         let metadata = TextureMetadata.make resolutionX resolutionY
-        Texture.updateSize metadata fogging vkc
+        Texture.updateSize metadata fogging context
 
     /// Destroy fogging attachment.
-    let destroyFoggingAttachment (fogging : Texture) vkc =
-        Texture.destroy fogging vkc
+    let destroyFoggingAttachment (fogging : Texture) context =
+        Texture.destroy fogging context
 
     /// Create coloring attachments.
-    let createColoringAttachments resolutionX resolutionY vkc =
-        let color = createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgb16f Rgb resolutionX resolutionY vkc
-        let depth = createColorAttachment Texture2d VkImageUsageFlags.Sampled R16f Red resolutionX resolutionY vkc
+    let createColoringAttachments resolutionX resolutionY context =
+        let color = createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgb16f Rgb resolutionX resolutionY context
+        let depth = createColorAttachment Texture2d VkImageUsageFlags.Sampled R16f Red resolutionX resolutionY context
         (color, depth)
 
     /// Update size of coloring attachments.
-    let updateColoringAttachmentsSize resolutionX resolutionY (color, depth) vkc =
+    let updateColoringAttachmentsSize resolutionX resolutionY (color, depth) context =
         let metadata = TextureMetadata.make resolutionX resolutionY
-        Texture.updateSize metadata color vkc
-        Texture.updateSize metadata depth vkc
+        Texture.updateSize metadata color context
+        Texture.updateSize metadata depth context
 
     /// Destroy coloring attachments.
-    let destroyColoringAttachments (color : Texture, depth : Texture) vkc =
-        Texture.destroy color vkc
-        Texture.destroy depth vkc
+    let destroyColoringAttachments (color : Texture, depth : Texture) context =
+        Texture.destroy color context
+        Texture.destroy depth context
 
     /// Create composition attachments.
-    let createCompositionAttachments resolutionX resolutionY vkc =
-        createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgb32f Rgb resolutionX resolutionY vkc
+    let createCompositionAttachments resolutionX resolutionY context =
+        createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgb16f Rgb resolutionX resolutionY context
 
     /// Update size of composition attachments.
-    let updateCompositionAttachmentSize resolutionX resolutionY color vkc =
+    let updateCompositionAttachmentSize resolutionX resolutionY color context =
         let metadata = TextureMetadata.make resolutionX resolutionY
-        Texture.updateSize metadata color vkc
+        Texture.updateSize metadata color context
 
     /// Destroy composition attachments.
-    let destroyCompositionAttachment (color : Texture) vkc =
-        Texture.destroy color vkc
+    let destroyCompositionAttachment (color : Texture) context =
+        Texture.destroy color context
 
     /// Create tone-mapping attachments.
-    let createToneMappingAttachments resolutionX resolutionY vkc =
-        createColorAttachment Texture2d (VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferDst) Rgba16f Rgba resolutionX resolutionY vkc
+    let createToneMappingAttachments resolutionX resolutionY context =
+        createColorAttachment Texture2d (VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferDst) Rgba16f Rgba resolutionX resolutionY context
 
     /// Update size of tone-mapping attachments.
-    let updateToneMappingAttachmentSize resolutionX resolutionY toneMapping vkc =
+    let updateToneMappingAttachmentSize resolutionX resolutionY toneMapping context =
         let metadata = TextureMetadata.make resolutionX resolutionY
-        Texture.updateSize metadata toneMapping vkc
+        Texture.updateSize metadata toneMapping context
 
     /// Destroy tone-mapping attachments.
-    let destroyToneMappingAttachment (toneMapping : Texture) vkc =
-        Texture.destroy toneMapping vkc
+    let destroyToneMappingAttachment (toneMapping : Texture) context =
+        Texture.destroy toneMapping context
 
     /// Create gamma correction attachments.
-    let createGammaCorrectionAttachments resolutionX resolutionY vkc =
-        createColorAttachment Texture2d (VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferSrc) Rgba16f Rgba resolutionX resolutionY vkc
+    let createGammaCorrectionAttachments resolutionX resolutionY context =
+        createColorAttachment Texture2d (VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferSrc) Rgba16f Rgba resolutionX resolutionY context
 
     /// Update size of gamma-correction attachments.
-    let updateGammaCorrectionAttachmentSize resolutionX resolutionY gammaCorrection vkc =
+    let updateGammaCorrectionAttachmentSize resolutionX resolutionY gammaCorrection context =
         let metadata = TextureMetadata.make resolutionX resolutionY
-        Texture.updateSize metadata gammaCorrection vkc
+        Texture.updateSize metadata gammaCorrection context
 
     /// Destroy gamma-correction attachments.
-    let destroyGammaCorrectionAttachment (gammaCorrection : Texture) vkc =
-        Texture.destroy gammaCorrection vkc
+    let destroyGammaCorrectionAttachment (gammaCorrection : Texture) context =
+        Texture.destroy gammaCorrection context

@@ -24,7 +24,7 @@ type AssetClient (textureClient : TextureClient, cubeMapClient : CubeMapClient, 
     member this.SceneClient = sceneClient
 
     /// Preload assets.
-    member this.PreloadAssets (is2d, assets : Asset seq, vkc) =
+    member this.PreloadAssets (is2d, assets : Asset seq, context) =
 
         // collect loadable assets
         let textureAssets = List ()
@@ -41,7 +41,7 @@ type AssetClient (textureClient : TextureClient, cubeMapClient : CubeMapClient, 
         let textureDataLoadOps =
             [for textureAsset in textureAssets do
                 vsync {
-                    match Hl.tryCreateTextureData (not is2d) textureAsset.FilePath with
+                    match TextureData.tryCreate (not is2d) textureAsset.FilePath with
                     | Some textureData -> return Right (textureAsset.FilePath, textureData)
                     | None -> return Left ("Error creating texture data from '" + textureAsset.FilePath + "'") }]
 
@@ -62,19 +62,17 @@ type AssetClient (textureClient : TextureClient, cubeMapClient : CubeMapClient, 
             | Right (filePath, textureData) ->
                 let textureInternal =
                     if is2d then
-                        let textureInternal =
-                            if Hl.inferTextureFiltered2d filePath
-                            then Hl.createTextureInternalFromData true Uncompressed textureData RenderThread vkc
-                            else Hl.createTextureInternalFromData false Uncompressed textureData RenderThread vkc
+                        let filtered = Hl.inferTextureFiltered2d filePath
+                        let textureInternal = TextureInternal.createFromData filtered Uncompressed textureData RenderThread context
                         EagerTexture textureInternal
                     elif textureData.LazyLoadable then
-                        let textureInternal = Hl.createTextureInternalFromData true (Hl.inferTextureCompression filePath) textureData RenderThread vkc
+                        let textureInternal = TextureInternal.createFromData true (Hl.inferTextureCompression filePath) textureData RenderThread context
                         let lazyTexture = new LazyTexture (filePath, textureInternal)
                         textureClient.LazyTextureQueue.Enqueue lazyTexture
                         LazyTexture lazyTexture
                     else
                         Log.infoOnce "One or more textures for non-2D usage are not streamable; consider using the BlockCompress refinement with them for more efficient loading."
-                        let textureInternal = Hl.createTextureInternalFromData true (Hl.inferTextureCompression filePath) textureData RenderThread vkc
+                        let textureInternal = TextureInternal.createFromData true (Hl.inferTextureCompression filePath) textureData RenderThread context
                         EagerTexture textureInternal
                 textureClient.Textures[filePath] <- textureInternal
             | Left error -> Log.info error
@@ -97,7 +95,7 @@ type AssetClient (textureClient : TextureClient, cubeMapClient : CubeMapClient, 
                 let faceBackFilePath = dirPath + "/" + faceBackFilePath.Trim ()
                 let faceFrontFilePath = dirPath + "/" + faceFrontFilePath.Trim ()
                 let cubeMapKey = (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath)
-                match CubeMap.tryCreateCubeMap faceRightFilePath faceLeftFilePath faceTopFilePath faceBottomFilePath faceBackFilePath faceFrontFilePath RenderThread vkc with
+                match CubeMap.tryCreateCubeMap faceRightFilePath faceLeftFilePath faceTopFilePath faceBottomFilePath faceBackFilePath faceFrontFilePath RenderThread context with
                 | Right cubeMap -> cubeMapClient.CubeMaps[cubeMapKey] <- cubeMap
                 | Left error -> Log.info ("Could not load cube map '" + cubeMap.FilePath + "' due to: " + error)
             | _ -> Log.info ("Could not load cube map '" + cubeMap.FilePath + "' due to requiring exactly 6 file paths with each file path on its own line.")

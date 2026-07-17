@@ -162,6 +162,9 @@ module Events =
     /// Raised when post-update processing on a simulant occurs (except on entities for efficiency).
     let PostUpdateEvent = stoa<unit> "PostUpdate/Event"
 
+    /// Raised just after optional screen selection has taken place.
+    let PostSelectEvent = stoa<Screen option> "PostSelect/Event"
+
     /// Raised when the engine's representation of current time changes.
     let TimeUpdateEvent = stoa<unit> "TimeUpdate/Event"
 

@@ -30,9 +30,9 @@ struct LightsGeneral
     int lightsCount;
 };
 
-layout(set = 0, binding = 0) buffer readonly EyeBlock { Eye eye; };
-layout(set = 0, binding = 1) buffer readonly LightMapsBlock { LightMap lightMaps[LIGHT_MAPS_MAX]; };
-layout(set = 0, binding = 2) buffer readonly LightsGeneralBlock { LightsGeneral lightsGeneral; };
+layout(set = 0, binding = 0) uniform EyeBlock { Eye eye; };
+layout(set = 0, binding = 1) uniform LightMapsBlock { LightMap lightMaps[LIGHT_MAPS_MAX]; };
+layout(set = 0, binding = 2) uniform LightsGeneralBlock { LightsGeneral lightsGeneral; };
 layout(set = 0, binding = 3) uniform texture2D depthTexture;
 layout(set = 0, binding = 4) uniform texture2D normalPlusTexture;
 

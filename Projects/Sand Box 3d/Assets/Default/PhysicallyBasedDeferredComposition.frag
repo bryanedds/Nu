@@ -60,8 +60,8 @@ struct Lighting
     float shadowNear;
 };
 
-layout(set = 0, binding = 0) buffer readonly EyeBlock { Eye eye; };
-layout(set = 0, binding = 1) buffer readonly LightingBlock { Lighting lighting; };
+layout(set = 0, binding = 0) uniform EyeBlock { Eye eye; };
+layout(set = 0, binding = 1) uniform LightingBlock { Lighting lighting; };
 layout(set = 0, binding = 2) uniform texture2D depthTexture;
 layout(set = 0, binding = 3) uniform texture2D colorTexture;
 layout(set = 0, binding = 4) uniform texture2D fogAccumTexture;

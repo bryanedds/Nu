@@ -7,7 +7,7 @@ struct Fxaa
     float reduceMulDivisor;
 };
 
-layout(set = 0, binding = 0) buffer readonly FxaaBlock { Fxaa fxaa; };
+layout(set = 0, binding = 0) uniform FxaaBlock { Fxaa fxaa; };
 layout(set = 0, binding = 1) uniform texture2D inputTexture;
 
 layout(set = 1, binding = 0) uniform sampler inputSampler;

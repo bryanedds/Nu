@@ -8,9 +8,9 @@ struct ShadowVert
     mat4 viewProjection;
 };
 
-layout(set = 0, binding = 0) buffer readonly ShadowVertBlock { ShadowVert shadowVert; };
+layout(set = 0, binding = 0) uniform ShadowVertBlock { ShadowVert shadowVert; };
 
-layout(set = 1, binding = 0) buffer readonly BonesBlock { mat4 bones[BONES_MAX]; };
+layout(set = 1, binding = 0) uniform BonesBlock { mat4 bones[BONES_MAX]; };
 
 layout(location = 0) in vec3 position;
 layout(location = 3) in vec4 boneIds;
