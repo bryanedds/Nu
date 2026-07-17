@@ -195,7 +195,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
           TextureDumpster : TextureDumpster
           UnfilteredSampler : Sampler
           FilteredSampler : Sampler
-          TextTextures : Dictionary<obj, bool ref * (int * int * Matrix4x4 * Texture)>
+          TextTextures : Dictionary<obj, bool ref * (int * int * Vector2 * Texture)>
           SpriteBatchEnv : SpriteBatchEnv
           SpritePipeline : VulkanBuffer * VulkanBuffer * Pipeline
           ContourPipeline : VulkanBuffer * VulkanBuffer * VulkanBuffer * VulkanBuffer * VulkanBuffer * Pipeline
@@ -825,13 +825,6 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                     // construct mvp matrix
                                     let textSurfaceWidth = textSurface.pitch / 4 // NOTE: textSurface.w may be an innacurate representation of texture width in SDL2_ttf versions beyond v2.0.15 because... I don't know why.
                                     let textSurfaceHeight = textSurface.h
-                                    let translation = (position + offset).V3
-                                    let scale = v3 (single textSurfaceWidth) (single textSurfaceHeight) 1.0f
-                                    let modelTranslation = Matrix4x4.CreateTranslation translation
-                                    let modelScale = Matrix4x4.CreateScale scale
-                                    let modelMatrix = modelScale * modelTranslation
-                                    let modelViewProjection = modelMatrix * viewProjection2d
-
                                     // create and load texture
                                     let metadata = TextureMetadata.make textSurfaceWidth textSurfaceHeight
                                     let textTextureInternal =
@@ -848,21 +841,29 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                     SDL3.SDL_DestroySurface textSurfacePtr
 
                                     // register texture for reuse
-                                    renderer.TextTextures.Add (textTextureKey, (ref true, (textSurfaceWidth, textSurfaceHeight, modelViewProjection, textTexture)))
-                                    Some (textSurfaceWidth, textSurfaceHeight, modelViewProjection, textTexture)
+                                    renderer.TextTextures.Add (textTextureKey, (ref true, (textSurfaceWidth, textSurfaceHeight, offset, textTexture)))
+                                    Some (textSurfaceWidth, textSurfaceHeight, offset, textTexture)
 
                                 // error
                                 else None
 
                             // already exists, so mark as used and reuse
-                            | (true, (used, (textSurfaceWidth, textSurfaceHeight, modelViewProjection, textTexture))) ->
+                            | (true, (used, (textSurfaceWidth, textSurfaceHeight, offset, textTexture))) ->
                                 used.Value <- true
-                                Some (textSurfaceWidth, textSurfaceHeight, modelViewProjection, textTexture)
+                                Some (textSurfaceWidth, textSurfaceHeight, offset, textTexture)
 
                         // attempt to render text
                         match textTextureOpt with
-                        | Some (textSurfaceWidth, textSurfaceHeight, modelViewProjection, textTexture) ->   
+                        | Some (textSurfaceWidth, textSurfaceHeight, offset, textTexture) ->   
                          
+                            // construct mvp matrix from current view projection (not cached, as it changes with window resize)
+                            let translation = (position + offset).V3
+                            let scale = v3 (single textSurfaceWidth) (single textSurfaceHeight) 1.0f
+                            let modelTranslation = Matrix4x4.CreateTranslation translation
+                            let modelScale = Matrix4x4.CreateScale scale
+                            let modelMatrix = modelScale * modelTranslation
+                            let modelViewProjection = modelMatrix * viewProjection2d
+
                             // draw text sprite
                             let (vertices, indices) = renderer.TextQuad
                             let (spriteVertUniform, spriteFragUniform, pipeline) = renderer.SpritePipeline
