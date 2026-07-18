@@ -27,7 +27,6 @@ struct ViewProjection
 };
 
 layout(set = 0, binding = 0) uniform SpriteBlock { Sprite sprites[SPRITE_BATCH_SIZE]; };
-
 layout(set = 0, binding = 1) uniform ViewProjectionBlock { ViewProjection viewProjection; };
 
 layout(location = 0) out vec2 texCoords;
@@ -50,12 +49,11 @@ void main()
     // compute position
     vec4 filt = FILTERS[vertexId];
     Sprite sprite = sprites[spriteId];
-    mat4 viewProjection = viewProjection.viewProjection;
     vec4 perimeter = sprite.perimeter * filt;
     vec2 position = vec2(perimeter.x + perimeter.z, perimeter.y + perimeter.w);
     vec2 pivot = sprite.pivot;
     vec2 positionRotated = rotate(position + pivot, sprite.rotation) - pivot;
-    gl_Position = viewProjection * vec4(positionRotated.x, positionRotated.y, 0, 1);
+    gl_Position = viewProjection.viewProjection * vec4(positionRotated.x, positionRotated.y, 0, 1);
 
     // compute tex coords
     vec4 texCoords4 = sprite.texCoords * filt;
