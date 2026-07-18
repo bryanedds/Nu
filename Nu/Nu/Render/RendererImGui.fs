@@ -163,7 +163,11 @@ type VulkanRendererImGui
                 if not (assetTextureOpts.ContainsKey assetTag) then
                     match Metadata.tryGetFilePath assetTag with
                     | Some filePath ->
-                        match TextureInternal.tryCreate true false (Hl.inferTextureCompression filePath) filePath RenderThread context with
+                        let compression =
+                            match PathF.GetExtensionLower filePath with
+                            | ".dds" | ".ktx" -> Hl.inferTextureCompression filePath
+                            | _ -> Uncompressed
+                        match TextureInternal.tryCreate true false compression filePath RenderThread context with
                         | Right textureInternal ->
                             let texture = EagerTexture textureInternal
                             assetTextureStorage.Add (texture.Id, texture)
