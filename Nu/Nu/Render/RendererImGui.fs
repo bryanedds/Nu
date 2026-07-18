@@ -196,9 +196,6 @@ type VulkanRendererImGui
             // render when allowed and drawData matches viewport
             if context.RenderAllowed && drawDataMatchesViewport then
 
-                // images added as needed for current frame, associated with descriptor sets by index
-                let usedImages = List ()
-
                 // grab pipeline, asserting non-None since shader reload for ImGui isn't supported
                 let vkPipeline = Pipeline.tryGetVkPipeline VulkanImGui false pipeline |> Option.get
 
