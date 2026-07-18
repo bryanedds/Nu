@@ -17,7 +17,6 @@ open FSharp.NativeInterop
 open SDL
 open ImageMagick
 open BCnEncoder.Shared.ImageFiles
-open AstcEncoder
 open Pfim
 open Vortice.Vulkan
 open Prime
