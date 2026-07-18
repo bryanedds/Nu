@@ -1812,7 +1812,7 @@ module PhysicallyBased =
         // report draw scope
         Hl.reportDrawScope ()
 
-        // intermittently advance rendering command buffer
+        // advance rendering command buffer
         VulkanContext.advanceRenderCommandBuffer context
 
     /// Create a physically-based pipeline.
@@ -2043,7 +2043,7 @@ module PhysicallyBased =
         // report draw scope
         Hl.reportDrawScope ()
 
-        // intermittently advance rendering command buffer
+        // advance rendering command buffer
         VulkanContext.advanceRenderCommandBuffer context
 
     /// Create a PhysicallyBasedDeferredLightingPipeline.
@@ -3846,7 +3846,7 @@ module PhysicallyBased =
         // report draw scope
         Hl.reportDrawScope ()
 
-        // intermittently advance rendering command buffer
+        // advance rendering command buffer
         VulkanContext.advanceRenderCommandBuffer context
 
     /// Create a box filter pipeline.

@@ -243,7 +243,7 @@ module Contour =
                         // advance pipeline
                         Pipeline.advance pipeline
 
-                        // intermittently advance rendering command buffer
+                        // advance rendering command buffer
                         VulkanContext.advanceRenderCommandBuffer vkc
 
                 // abort

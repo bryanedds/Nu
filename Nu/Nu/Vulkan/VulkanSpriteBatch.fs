@@ -203,7 +203,7 @@ module SpriteBatch =
                     // advance pipeline
                     Pipeline.advance env.Pipeline
 
-                    // intermittently advance rendering command buffer
+                    // advance rendering command buffer
                     VulkanContext.advanceRenderCommandBuffer env.VulkanContext
 
                 // abort
