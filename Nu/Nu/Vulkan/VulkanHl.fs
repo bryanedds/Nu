@@ -978,29 +978,37 @@ module Hl =
                 1u, &&barrier)
 
     /// Infer that an asset with the given file path should be filtered in a 2D rendering context.
-    let inferTextureFiltered2d (filePath : string) =
+    let inferTextureFiltered2d filePath =
         let name = PathF.GetFileNameWithoutExtension filePath
         name.EndsWith "_f" ||
         name.EndsWith "Filtered"
         
+    /// Infer whether the texture at the given file path may be compressed.
+    let inferTextureCompressible filePath =
+        match PathF.GetExtensionLower filePath with
+        | ".dds" | ".ktx" -> true
+        | _ -> false
+        
     /// Infer the type of block compression that an asset with the given file path should utilize.
-    let inferTextureCompression (filePath : string) =
-        let name = PathF.GetFileNameWithoutExtension filePath
-        if  name.EndsWith "_f" ||
-            name.EndsWith "_hm" ||
-            name.EndsWith "_b" ||
-            name.EndsWith "_t" ||
-            name.EndsWith "_u" ||
-            name.EndsWith "Face" ||
-            name.EndsWith "HeightMap" ||
-            name.EndsWith "Blend" ||
-            name.EndsWith "Tint" ||
-            name.EndsWith "Uncompressed" then Uncompressed
-        elif
-            name.EndsWith "_n" ||
-            name.EndsWith "_normal" ||
-            name.EndsWith "Normal" then NormalCompression
-        else ColorCompression
+    let inferTextureCompression filePath =
+        if inferTextureCompressible filePath then
+            let name = PathF.GetFileNameWithoutExtension filePath
+            if  name.EndsWith "_f" ||
+                name.EndsWith "_hm" ||
+                name.EndsWith "_b" ||
+                name.EndsWith "_t" ||
+                name.EndsWith "_u" ||
+                name.EndsWith "Face" ||
+                name.EndsWith "HeightMap" ||
+                name.EndsWith "Blend" ||
+                name.EndsWith "Tint" ||
+                name.EndsWith "Uncompressed" then Uncompressed
+            elif
+                name.EndsWith "_n" ||
+                name.EndsWith "_normal" ||
+                name.EndsWith "Normal" then NormalCompression
+            else ColorCompression
+        else Uncompressed
 
     /// Detect that a dds file uses a compressed representation.
     let detectTextureCompressionDds (dds : DdsFile) =
