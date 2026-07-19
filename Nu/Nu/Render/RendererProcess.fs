@@ -444,7 +444,6 @@ type RendererThread () =
                 // end frame
                 VulkanContext.endFrame context
 
-
                 // guard against early termination
                 if not terminated then
 

@@ -274,7 +274,7 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial =
 
     /// Determing equality.
     static member equals left right =
-        refEq left right && // OPTIMIZATION: first check ref equality.
+        refEq left right || // OPTIMIZATION: first check ref equality.
         left.AlbedoTexture = right.AlbedoTexture &&
         left.RoughnessTexture = right.RoughnessTexture &&
         left.MetallicTexture = right.MetallicTexture &&
