@@ -256,7 +256,7 @@ module SpriteBatch =
         env.Colors[env.SpriteIndex] <- color.V4
 
     /// Submit a sprite to the appropriate sprite batch.
-    let submitSpriteBatchSprite (absolute, min : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2 inref, clipOpt : (Box2 voption) inref, color : Color inref, blend, texture : Texture, viewport, env) =
+    let submitSpriteBatchSprite (absolute, min : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2 inref, clipOpt : Box2 voption inref, color : Color inref, blend, texture : Texture, viewport, env) =
 
         // adjust to potential sprite batch state changes
         let state = SpriteBatchState.make absolute clipOpt blend texture
