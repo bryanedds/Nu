@@ -219,14 +219,14 @@ type VertexAttribFormat =
 type ShaderStage =
     | VertexStage
     | FragmentStage
-    | VertexFragmentStage
+    | VertexAndFragmentStage
 
     /// The VkShaderStageFlags.
     member this.VkShaderStageFlags =
         match this with
         | VertexStage -> VkShaderStageFlags.Vertex
         | FragmentStage -> VkShaderStageFlags.Fragment
-        | VertexFragmentStage -> VkShaderStageFlags.Vertex ||| VkShaderStageFlags.Fragment
+        | VertexAndFragmentStage -> VkShaderStageFlags.Vertex ||| VkShaderStageFlags.Fragment
     
 /// The type of a resource descriptor.
 type DescriptorType =

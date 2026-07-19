@@ -207,7 +207,7 @@ module SpriteBatch =
                     VulkanContext.advanceRenderCommandBuffer env.VulkanContext
 
                 // abort
-                | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
+                | None -> Log.warnOnce ("Cannot draw " + getTypeName env.Pipeline + " because VkPipeline does not exist.")
 
             // next batch
             env.SpriteIndex <- 0

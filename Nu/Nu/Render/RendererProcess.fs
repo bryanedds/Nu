@@ -264,7 +264,7 @@ type RendererThread () =
     let cachedSpriteMessagesLock = obj ()
     let cachedSpriteMessages = System.Collections.Generic.Queue ()
     let [<VolatileField>] mutable cachedSpriteMessagesCapacity = Constants.Render.SpriteMessagesPrealloc
-    let mutable vkcOpt = None
+    let mutable contextOpt = None
 
     let allocStaticModelMessage () =
         lock cachedStaticModelMessagesLock (fun () ->
@@ -484,7 +484,7 @@ type RendererThread () =
                     match VulkanContext.tryCreate window with
                     | Some context -> context
                     | None -> Log.fail "Could not create Vulkan context." // TODO: P0: handle failure more gracefully here?
-                vkcOpt <- Some context
+                contextOpt <- Some context
 
                 // start real thread
                 let thread = Thread (ThreadStart (fun () -> rt.Run fonts geometryViewport windowViewport context))
@@ -715,9 +715,9 @@ type RendererThread () =
             if terminated then raise (InvalidOperationException "Redundant Terminate calls.")
             terminated <- true
             thread.Join ()
-            match vkcOpt with
+            match contextOpt with
             | Some context ->
                 VulkanContext.cleanup context
-                vkcOpt <- None
+                contextOpt <- None
             | None -> ()
             threadOpt <- None

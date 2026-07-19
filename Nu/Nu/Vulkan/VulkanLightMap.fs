@@ -259,7 +259,7 @@ module LightMap =
             advanceCommandBufferWhenNeeded ()
 
         // abort
-        | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
+        | None -> Log.warnOnce ("Cannot draw " + getTypeName pipeline + " because VkPipeline does not exist.")
     
     /// Create an environment filter map.
     let createEnvironmentFilterMap resolution (environmentFilterSurface : CubeMapSurface) sampler colorFormat environmentFilterPipeline getCommandBuffer advanceCommandBufferWhenNeeded context =

@@ -74,7 +74,7 @@ module Contour =
                 [|Pipeline.vertex 0 vertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Single2 0|]|]
                 [|Pipeline.descriptorSet<int>
-                    [|Pipeline.descriptor 0 UniformBuffer VertexFragmentStage 1
+                    [|Pipeline.descriptor 0 UniformBuffer VertexAndFragmentStage 1
                       Pipeline.descriptor 1 StorageBuffer FragmentStage 1
                       Pipeline.descriptor 2 StorageBuffer FragmentStage 1|]|]
                 [||] [|vkc.SwapFormat|] None
@@ -247,7 +247,7 @@ module Contour =
                         VulkanContext.advanceRenderCommandBuffer vkc
 
                 // abort
-                | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
+                | None -> Log.warnOnce ("Cannot draw " + getTypeName pipeline + " because VkPipeline does not exist.")
 
     /// Draw a Contour as up to two separate Slug passes (fill then stroke).
     let drawContour
