@@ -1,6 +1,7 @@
 #version 450 core
 
 const int TEX_COORDS_OFFSET_VERTS = 6;
+const int TERRAIN_LAYERS_MAX = 6;
 
 const vec2 TEX_COORDS_OFFSET_FILTERS[TEX_COORDS_OFFSET_VERTS] =
     vec2[TEX_COORDS_OFFSET_VERTS](
@@ -35,22 +36,23 @@ layout(set = 0, binding = 0) uniform EyeBlock { Eye eye; };
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec2 texCoords;
 layout(location = 2) in vec3 normal;
-layout(location = 3) in mat4 model;
-layout(location = 7) in vec4 texCoordsOffset;
-layout(location = 8) in vec4 albedo;
-layout(location = 9) in vec4 material;
-layout(location = 10) in vec4 heightPlus;
-layout(location = 11) in vec4 subsurfacePlus;
-layout(location = 12) in vec4 clearCoatPlus; // NOTE: z and w are free for additional parameters.
+layout(location = 3) in vec3 tint;
+layout(location = 4) in vec4 blends[2];
+layout(location = 6) in mat4 model;
+layout(location = 10) in vec4 texCoordsOffset;
+layout(location = 11) in vec4 albedo;
+layout(location = 12) in vec4 material;
+layout(location = 13) in vec4 heightPlus;
+layout(location = 14) in vec4 subsurfacePlus; // NOTE: currently unutilized, but kept around to stay in sync with instance field count.
 
 layout(location = 0) out vec4 positionOut;
 layout(location = 1) out vec2 texCoordsOut;
 layout(location = 2) out vec3 normalOut;
-flat layout(location = 3) out vec4 albedoOut;
-flat layout(location = 4) out vec4 materialOut;
-flat layout(location = 5) out vec4 heightPlusOut;
-flat layout(location = 6) out vec4 subsurfacePlusOut;
-flat layout(location = 7) out vec4 clearCoatPlusOut;
+layout(location = 3) out vec4 blendsOut[2];
+layout(location = 5) out vec3 tintOut;
+flat layout(location = 6) out vec4 albedoOut;
+flat layout(location = 7) out vec4 materialOut;
+flat layout(location = 8) out vec4 heightPlusOut;
 
 void main()
 {
@@ -63,7 +65,8 @@ void main()
     materialOut = material;
     normalOut = transpose(inverse(mat3(model))) * normal;
     heightPlusOut = heightPlus;
-    subsurfacePlusOut = subsurfacePlus;
-    clearCoatPlusOut = clearCoatPlus;
+    blendsOut[0] = blends[0];
+    blendsOut[1] = blends[1];
+    tintOut = tint;
     gl_Position = eye.viewProjection * positionOut;
 }

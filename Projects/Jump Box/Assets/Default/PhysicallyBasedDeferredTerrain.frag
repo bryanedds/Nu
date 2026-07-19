@@ -1,70 +1,3 @@
-#shader vertex
-#version 450 core
-
-const int TEX_COORDS_OFFSET_VERTS = 6;
-const int TERRAIN_LAYERS_MAX = 6;
-
-const vec2 TEX_COORDS_OFFSET_FILTERS[TEX_COORDS_OFFSET_VERTS] =
-    vec2[TEX_COORDS_OFFSET_VERTS](
-        vec2(1,1),
-        vec2(0,1),
-        vec2(0,0),
-        vec2(1,1),
-        vec2(0,0),
-        vec2(1,0));
-
-const vec2 TEX_COORDS_OFFSET_FILTERS_2[TEX_COORDS_OFFSET_VERTS] =
-    vec2[TEX_COORDS_OFFSET_VERTS](
-        vec2(0,0),
-        vec2(1,0),
-        vec2(1,1),
-        vec2(0,0),
-        vec2(1,1),
-        vec2(0,1));
-
-uniform mat4 view;
-uniform mat4 projection;
-uniform mat4 viewProjection;
-
-layout(location = 0) in vec3 position;
-layout(location = 1) in vec2 texCoords;
-layout(location = 2) in vec3 normal;
-layout(location = 3) in vec3 tint;
-layout(location = 4) in vec4 blends[2];
-layout(location = 6) in mat4 model;
-layout(location = 10) in vec4 texCoordsOffset;
-layout(location = 11) in vec4 albedo;
-layout(location = 12) in vec4 material;
-layout(location = 13) in vec4 heightPlus;
-layout(location = 14) in vec4 subsurfacePlus; // NOTE: currently unutilized, but kept around to stay in sync with instance field count.
-
-out vec4 positionOut;
-out vec2 texCoordsOut;
-out vec3 normalOut;
-out vec4 blendsOut[2];
-out vec3 tintOut;
-flat out vec4 albedoOut;
-flat out vec4 materialOut;
-flat out vec4 heightPlusOut;
-
-void main()
-{
-    positionOut = model * vec4(position, 1.0);
-    int texCoordsOffsetIndex = gl_VertexID % TEX_COORDS_OFFSET_VERTS;
-    vec2 texCoordsOffsetFilter = TEX_COORDS_OFFSET_FILTERS[texCoordsOffsetIndex];
-    vec2 texCoordsOffsetFilter2 = TEX_COORDS_OFFSET_FILTERS_2[texCoordsOffsetIndex];
-    texCoordsOut = texCoords + texCoordsOffset.xy * texCoordsOffsetFilter + texCoordsOffset.zw * texCoordsOffsetFilter2;
-    albedoOut = albedo;
-    materialOut = material;
-    normalOut = transpose(inverse(mat3(model))) * normal;
-    heightPlusOut = heightPlus;
-    blendsOut[0] = blends[0];
-    blendsOut[1] = blends[1];
-    tintOut = tint;
-    gl_Position = viewProjection * positionOut;
-}
-
-#shader fragment
 #version 450 core
 
 const float GAMMA = 2.2;
@@ -72,22 +5,45 @@ const int TERRAIN_LAYERS_MAX = 6;
 const float SAA_VARIANCE = 0.1; // TODO: consider exposing as lighting config property.
 const float SAA_THRESHOLD = 0.1; // TODO: consider exposing as lighting config property.
 
-uniform vec3 eyeCenter;
-uniform int layersCount;
-uniform sampler2D albedoTextures[TERRAIN_LAYERS_MAX];
-uniform sampler2D roughnessTextures[TERRAIN_LAYERS_MAX];
-uniform sampler2D ambientOcclusionTextures[TERRAIN_LAYERS_MAX];
-uniform sampler2D normalTextures[TERRAIN_LAYERS_MAX];
-uniform sampler2D heightTextures[TERRAIN_LAYERS_MAX];
+struct Eye
+{
+    vec3 center;
+    mat4 view;
+    mat4 viewInverse;
+    mat4 projection;
+    mat4 projectionInverse;
+    mat4 viewProjection;
+};
 
-in vec4 positionOut;
-in vec2 texCoordsOut;
-in vec3 normalOut;
-in vec4 blendsOut[2];
-in vec3 tintOut;
-flat in vec4 albedoOut;
-flat in vec4 materialOut;
-flat in vec4 heightPlusOut;
+struct Lighting3
+{
+    int lightShadowSamples;
+    float lightShadowBias;
+    float lightShadowSampleScalar;
+    float lightShadowExponent;
+    float lightShadowDensity;
+    int layersCount;
+};
+
+layout(set = 0, binding = 0) uniform EyeBlock { Eye eye; };
+layout(set = 0, binding = 1) uniform Lighting3Block { Lighting3 lighting; };
+
+layout(set = 1, binding = 0) uniform texture2D albedoTextures[TERRAIN_LAYERS_MAX];
+layout(set = 1, binding = 1) uniform texture2D roughnessTextures[TERRAIN_LAYERS_MAX];
+layout(set = 1, binding = 2) uniform texture2D ambientOcclusionTextures[TERRAIN_LAYERS_MAX];
+layout(set = 1, binding = 3) uniform texture2D normalTextures[TERRAIN_LAYERS_MAX];
+layout(set = 1, binding = 4) uniform texture2D heightTextures[TERRAIN_LAYERS_MAX];
+
+layout(set = 2, binding = 0) uniform sampler filteredSampler;
+
+layout(location = 0) in vec4 positionOut;
+layout(location = 1) in vec2 texCoordsOut;
+layout(location = 2) in vec3 normalOut;
+layout(location = 3) in vec4 blendsOut[2];
+layout(location = 5) in vec3 tintOut;
+flat layout(location = 6) in vec4 albedoOut;
+flat layout(location = 7) in vec4 materialOut;
+flat layout(location = 8) in vec4 heightPlusOut;
 
 layout(location = 0) out float depth;
 layout(location = 1) out vec3 albedo;
@@ -106,7 +62,7 @@ vec3 decodeNormal(vec2 normalEncoded)
 void main()
 {
     // ensure layers count is in range
-    float layersCountCeil = max(min(layersCount, TERRAIN_LAYERS_MAX), 0);
+    float layersCountCeil = max(min(lighting.layersCount, TERRAIN_LAYERS_MAX), 0);
 
     // compute spatial converters
     vec3 q1 = dFdx(positionOut.xyz);
@@ -123,11 +79,12 @@ void main()
 
     // compute height blend, height, and ignore local light maps
     float heightBlend = 0.0;
-    for (int i = 0; i < layersCountCeil; ++i) heightBlend += texture(heightTextures[i], texCoordsOut).r * blendsOut[i/4][i%4];
+    for (int i = 0; i < layersCountCeil; ++i)
+        heightBlend += texture(sampler2D(heightTextures[i], filteredSampler), texCoordsOut).r * blendsOut[i/4][i%4];
     float height = heightBlend * heightPlusOut.x;
 
     // compute tex coords in parallax space
-    vec3 eyeCenterTangent = toTangent * eyeCenter;
+    vec3 eyeCenterTangent = toTangent * eye.center;
     vec3 positionTangent = toTangent * positionOut.xyz;
     vec3 toEyeTangent = normalize(eyeCenterTangent - positionTangent);
     vec2 parallax = toEyeTangent.xy * height;
@@ -141,11 +98,11 @@ void main()
     for (int i = 0; i < layersCountCeil; ++i)
     {
         float blend = blendsOut[i/4][i%4];
-        albedoBlend += texture(albedoTextures[i], texCoords) * blend;
-        vec4 roughness = texture(roughnessTextures[i], texCoords);
+        albedoBlend += texture(sampler2D(albedoTextures[i], filteredSampler), texCoords) * blend;
+        vec4 roughness = texture(sampler2D(roughnessTextures[i], filteredSampler), texCoords);
         roughnessBlend += (roughness.a == 1.0f ? roughness.r : roughness.a) * blend;
-        ambientOcclusionBlend += texture(ambientOcclusionTextures[i], texCoords).b * blend;
-        normalBlend += decodeNormal(texture(normalTextures[i], texCoords).xy) * blend;
+        ambientOcclusionBlend += texture(sampler2D(ambientOcclusionTextures[i], filteredSampler), texCoords).b * blend;
+        normalBlend += decodeNormal(texture(sampler2D(normalTextures[i], filteredSampler), texCoords).xy) * blend;
     }
 
     // compute normal and ignore local height maps
