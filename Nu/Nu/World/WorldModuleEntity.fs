@@ -86,7 +86,7 @@ module WorldModuleEntity =
             world.Simulants.Remove entity |> ignore<bool>
             world.EntityStates.Remove entity |> ignore<bool>
 
-        static member private entityStateSetter entityState (entity : Entity) world =
+        static member internal entityStateSetter entityState (entity : Entity) (world : World) =
 #if DEBUG
             if not (world.EntityStates.ContainsKey entity) then
                 failwith ("Cannot set the state of a non-existent entity '" + scstring entity + "'")

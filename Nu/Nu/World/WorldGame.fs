@@ -56,6 +56,7 @@ module WorldGameModule =
         member this.PreUpdateEvent = Events.PreUpdateEvent --> Game.Handle
         member this.UpdateEvent = Events.UpdateEvent --> Game.Handle
         member this.PostUpdateEvent = Events.PostUpdateEvent --> Game.Handle
+        member this.PostSelectEvent = Events.PostSelectEvent --> Game.Handle
         member this.TimeUpdateEvent = Events.TimeUpdateEvent --> Game.Handle
         member this.KeyedValueChangeEvent key = Events.KeyedValueChangeEvent key --> Game.Handle
         member this.MouseMoveEvent = Events.MouseMoveEvent --> Game.Handle

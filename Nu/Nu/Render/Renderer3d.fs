@@ -1154,9 +1154,9 @@ type [<ReferenceEquality>] private RenderTasks =
                     | (true, valueCached) ->
                         if  value.Count <> valueCached.Count ||
                             Seq.exists2 (fun struct (m, cs, _, _, _) struct (mCached, csCached, _, _, _) -> m <> mCached || cs <> csCached) value valueCached then
-                            changed <- false
+                            changed <- true
                     | (false, _) -> changed <- true
-                changed
+                not changed
             let deferredStaticClippedCached =
                 renderTasks.DeferredStaticClipped.Count = renderTasksCached.DeferredStaticClipped.Count &&
                 let mutable changed = false
@@ -1168,9 +1168,9 @@ type [<ReferenceEquality>] private RenderTasks =
                     | (true, valueCached) ->
                         if  value.Count <> valueCached.Count ||
                             Seq.exists2 (fun struct (m, cs, _, _, _) struct (mCached, csCached, _, _, _) -> m <> mCached || cs <> csCached) value valueCached then
-                            changed <- false
+                            changed <- true
                     | (false, _) -> changed <- true
-                changed
+                not changed
             let deferredStaticPreBatchesCached =
                 renderTasks.DeferredStaticPreBatches.Count = renderTasksCached.DeferredStaticPreBatches.Count &&
                 renderTasks.DeferredStaticPreBatches |> Seq.forall (fun preBatch -> renderTasksCached.DeferredStaticPreBatches.ContainsKey preBatch.Key)
@@ -1188,9 +1188,9 @@ type [<ReferenceEquality>] private RenderTasks =
                     | (true, valueCached) ->
                         if  value.Count <> valueCached.Count ||
                             Seq.exists2 (fun struct (m, cs, _, _, _) struct (mCached, csCached, _, _, _) -> m <> mCached || cs <> csCached) value valueCached then
-                            changed <- false
+                            changed <- true
                     | (false, _) -> changed <- true
-                changed
+                not changed
             let deferredTerrainsCached =
                 renderTasks.DeferredTerrains.Count = renderTasksCached.DeferredTerrains.Count &&
                 (renderTasks.DeferredTerrains, renderTasksCached.DeferredTerrains)
