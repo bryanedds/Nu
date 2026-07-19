@@ -130,8 +130,8 @@ module LightMap =
             let (eyeForward, eyeUp) = eyeRotations[i]
             let view = Matrix4x4.CreateLookAt (v3Zero, eyeForward, eyeUp)
             CubeMap.drawCubeMap
-                eyeCenter view projection cubeMapSurface.CubeMap sampler
-                cubeMapSurface.CubeMapGeometry resolution cubeMap.SubViews[0, i]
+                eyeCenter view projection cubeMapSurface.Flipped cubeMapSurface.CubeMap sampler
+                cubeMapSurface.Geometry resolution cubeMap.SubViews[0, i]
                 irradiancePipeline getCommandBuffer advanceCommandBufferWhenNeeded context
 
             // take a snapshot for testing
@@ -180,6 +180,7 @@ module LightMap =
         (projectionUnflipped : Matrix4x4)
         (roughness : single)
         (resolution : single)
+        (flipped : bool)
         (cubeMap : Texture)
         (sampler : Sampler)
         (geometry : CubeMapGeometry)
@@ -191,7 +192,7 @@ module LightMap =
 
         // compute vulkan-appropriate matrices
         let viewInverse = view.Inverted
-        let projection = projectionUnflipped.Flipped
+        let projection = if flipped then projectionUnflipped.Flipped else projectionUnflipped
         let projectionInverse = projection.Inverted
         let viewProjection = view * projection
 
@@ -295,8 +296,8 @@ module LightMap =
                 let eyeCenter = v3Zero // assuming origin
                 let view = views[i]
                 drawEnvironmentFilter
-                    eyeCenter view projection mipRoughness mipResolution environmentFilterSurface.CubeMap sampler
-                    environmentFilterSurface.CubeMapGeometry cubeMap.SubViews[mip, i]
+                    eyeCenter view projection mipRoughness mipResolution environmentFilterSurface.Flipped environmentFilterSurface.CubeMap sampler
+                    environmentFilterSurface.Geometry cubeMap.SubViews[mip, i]
                     environmentFilterPipeline getCommandBuffer advanceCommandBufferWhenNeeded context
 
                 // take a snapshot for testing
