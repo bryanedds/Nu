@@ -3162,7 +3162,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
         // render light maps as needed
         for (renderPass, renderTasks) in renderer.RenderPasses.Pairs do
-                
+
             // fallback light map pre-pass
             match VulkanRenderer3d.getLastSkyBoxOpt renderPass renderer |> __c with
             | Some (_, _, cubeMap, irradianceAndEnvironmentMapsOptRef : (Texture * Texture) option ref) ->
