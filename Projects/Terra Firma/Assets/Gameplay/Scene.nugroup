@@ -67,7 +67,7 @@
         [LightShadowBias 0.05]
         [LightShadowSampleScalar 0.02]
         [LightShadowExponent 80]
-        [LightShadowRadius 1.5]
+        [LightShadowRadius 1.25]
         [LightShadowDensity 7]
         [LightMapSingletonBlendMargin 0.1]
         [LightExposure 1]

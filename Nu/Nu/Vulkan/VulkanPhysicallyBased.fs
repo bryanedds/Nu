@@ -173,6 +173,7 @@ type PhysicallyBasedAttachments =
       ColoringAttachments : Texture * Texture
       CompositionAttachment : Texture
       GaussianEsmAttachment : Texture
+      GaussianEsmArrayAttachment : Texture
       ColorFull0Attachment : Texture
       ColorFull1Attachment : Texture
       ColorHalf0Attachment : Texture
@@ -845,6 +846,10 @@ module PhysicallyBased =
         let gaussianEsmResolution = geometryViewport.ShadowTextureResolution
         let gaussianEsmAttachment = Attachment.createColorAttachment Texture2d VkImageUsageFlags.Sampled Rg32f Rg gaussianEsmResolution.X gaussianEsmResolution.Y context
 
+        // create gaussian esm array attachments
+        let gaussianEsmArrayResolution = geometryViewport.ShadowCascadeResolution
+        let gaussianEsmArrayAttachment = Attachment.createColorAttachment (Texture2dArray Constants.Render.ShadowCascadeLevels) VkImageUsageFlags.Sampled Rg32f Rg gaussianEsmArrayResolution.X gaussianEsmArrayResolution.Y context
+
         // create color full attachments
         let colorFullUsageFlags = VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferSrc ||| VkImageUsageFlags.TransferDst
         let colorFull0Attachment = Attachment.createColorAttachment Texture2d colorFullUsageFlags Rgba16f Rgba geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y context
@@ -877,6 +882,7 @@ module PhysicallyBased =
           ColoringAttachments = coloringAttachments
           CompositionAttachment = compositionAttachment
           GaussianEsmAttachment = gaussianEsmAttachment
+          GaussianEsmArrayAttachment = gaussianEsmArrayAttachment
           ColorFull0Attachment = colorFull0Attachment
           ColorFull1Attachment = colorFull1Attachment
           ColorHalf0Attachment = colorHalf0Attachment

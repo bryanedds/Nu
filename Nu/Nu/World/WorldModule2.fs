@@ -1790,12 +1790,7 @@ module WorldModule2 =
                             let shadowNearDistance = Constants.Render.NearPlaneDistanceInterior
                             let shadowFarDistance = max shadowCutoff (shadowNearDistance * 2.0f)
                             let cullView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + shadowForward, shadowUp)
-                            let cullProjection =
-                                Matrix4x4.CreateOrthographic
-                                    (shadowFarDistance * +2.0f * inc Constants.Render.ShadowDirectionalMarginRatioCull,
-                                     shadowFarDistance * +2.0f * inc Constants.Render.ShadowDirectionalMarginRatioCull,
-                                     shadowFarDistance * -1.0f * inc Constants.Render.ShadowDirectionalMarginRatioCull,
-                                     shadowFarDistance * +1.0f * inc Constants.Render.ShadowDirectionalMarginRatioCull)
+                            let cullProjection = Matrix4x4.CreateOrthographic (shadowFarDistance * +2.0f, shadowFarDistance * +2.0f, shadowFarDistance * -1.0f, shadowFarDistance * +1.0f)
                             let cullFrustum = Frustum (cullView * cullProjection)
 
                             // render
@@ -1828,12 +1823,7 @@ module WorldModule2 =
 
                             // compute cull frustum
                             let cullView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + shadowForward, shadowUp)
-                            let cullProjection =
-                                Matrix4x4.CreateOrthographic
-                                    (shadowFarDistance * +2.0f * inc Constants.Render.ShadowCascadeMarginRatioCull,
-                                     shadowFarDistance * +2.0f * inc Constants.Render.ShadowCascadeMarginRatioCull,
-                                     shadowFarDistance * -1.0f * inc Constants.Render.ShadowCascadeMarginRatioCull,
-                                     shadowFarDistance * +1.0f * inc Constants.Render.ShadowCascadeMarginRatioCull)
+                            let cullProjection = Matrix4x4.CreateOrthographic(shadowFarDistance * +2.0f, shadowFarDistance * +2.0f, shadowFarDistance * -1.0f, shadowFarDistance * +1.0f)
                             let cullFrustum = Frustum (cullView * cullProjection)
                             
                             // use a finally block to free cached values
