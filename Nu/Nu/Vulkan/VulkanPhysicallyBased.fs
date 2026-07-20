@@ -344,6 +344,7 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedSurface =
         refEq left right || // OPTIMIZATION: first check ref equality.
         left.HashCode = right.HashCode && // OPTIMIZATION: check hash equality to bail as quickly as possible.
         left.SurfaceMaterial = right.SurfaceMaterial &&
+        left.SurfaceMaterialIndex = right.SurfaceMaterialIndex &&
         refEq left.PhysicallyBasedGeometry right.PhysicallyBasedGeometry
 
     static member comparer =
@@ -482,6 +483,7 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedSurface =
     static member make names (surfaceMatrix : Matrix4x4) bounds properties material materialIndex surfaceNode geometry =
         let hashCode =
             hash material ^^^
+            hash materialIndex ^^^
             Runtime.CompilerServices.RuntimeHelpers.GetHashCode geometry
         { HashCode = hashCode
           SurfaceNames = names
