@@ -87,6 +87,16 @@ type Lighting2 =
     [<FieldOffset(28)>] val mutable lightsCount : int
     [<FieldOffset(32)>] val mutable shadowNear : single
 
+// TODO: P1: see if we can come up with a better alternative name than Lighting3?
+[<Struct; StructLayout (LayoutKind.Explicit)>]
+type Lighting3 =
+    [<FieldOffset(0)>] val mutable lightShadowSamples : int
+    [<FieldOffset(4)>] val mutable lightShadowBias : single
+    [<FieldOffset(8)>] val mutable lightShadowSampleScalar : single
+    [<FieldOffset(12)>] val mutable lightShadowExponent : single
+    [<FieldOffset(16)>] val mutable lightShadowDensity : single
+    [<FieldOffset(20)>] val mutable layersCount : int
+
 [<Struct; StructLayout (LayoutKind.Explicit)>]
 type LightMap' =
     [<FieldOffset(0)>] val mutable lightMapOrigins : Vector3
@@ -163,6 +173,7 @@ type PhysicallyBasedAttachments =
       ColoringAttachments : Texture * Texture
       CompositionAttachment : Texture
       GaussianEsmAttachment : Texture
+      GaussianEsmArrayAttachment : Texture
       ColorFull0Attachment : Texture
       ColorFull1Attachment : Texture
       ColorHalf0Attachment : Texture
@@ -264,7 +275,7 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial =
 
     /// Determing equality.
     static member equals left right =
-        refEq left right && // OPTIMIZATION: first check ref equality.
+        refEq left right || // OPTIMIZATION: first check ref equality.
         left.AlbedoTexture = right.AlbedoTexture &&
         left.RoughnessTexture = right.RoughnessTexture &&
         left.MetallicTexture = right.MetallicTexture &&
@@ -569,6 +580,12 @@ type PhysicallyBasedPipeline =
       ShadowMatrixUniform : VulkanBuffer
       Pipeline : Pipeline }
 
+/// Describes a physically-based deferred terrain pipeline that's loaded into GPU.
+type PhysicallyBasedDeferredTerrainPipeline =
+    { EyeUniform : VulkanBuffer
+      Lighting3Uniform : VulkanBuffer
+      Pipeline : Pipeline }
+
 /// Describes the lighting pass of a deferred physically-based pipeline that's loaded into GPU.
 type PhysicallyBasedDeferredLightingPipeline =
     { EyeUniform : VulkanBuffer
@@ -663,6 +680,7 @@ type PhysicallyBasedPipelines =
       DeferredStaticPipeline : PhysicallyBasedPipeline
       DeferredStaticClippedPipeline : PhysicallyBasedPipeline
       DeferredAnimatedPipeline : PhysicallyBasedPipeline
+      DeferredTerrainPipeline : PhysicallyBasedDeferredTerrainPipeline
       DeferredLightingPipeline : PhysicallyBasedDeferredLightingPipeline
       DeferredFoggingPipeline : PhysicallyBasedDeferredFoggingPipeline
       DeferredLightMappingPipeline : PhysicallyBasedDeferredLightMappingPipeline
@@ -686,12 +704,19 @@ module PhysicallyBased =
     let StaticTexCoordsOffset =     (3 (*position*)) * sizeof<single>
     let StaticNormalOffset =        (3 (*position*) + 2 (*tex coords*)) * sizeof<single>
     let StaticVertexSize =          (3 (*position*) + 2 (*tex coords*) + 3 (*normal*)) * sizeof<single>
-    
+
     let AnimatedTexCoordsOffset =   (3 (*position*)) * sizeof<single>
     let AnimatedNormalOffset =      (3 (*position*) + 2 (*tex coords*)) * sizeof<single>
     let AnimatedBoneIdsOffset =     (3 (*position*) + 2 (*tex coords*) + 3 (*normal*)) * sizeof<single>
     let AnimatedWeightsOffset =     (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 4 (*boneIds*)) * sizeof<single>
     let AnimatedVertexSize =        (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 4 (*boneIds*) + 4 (*weights*)) * sizeof<single>
+
+    let TerrainTexCoordsOffset =    (3 (*position*)) * sizeof<single>
+    let TerrainNormalOffset =       (3 (*position*) + 2 (*tex coords*)) * sizeof<single>
+    let TerrainTintOffset =         (3 (*position*) + 2 (*tex coords*) + 3 (*normal*)) * sizeof<single>
+    let TerrainBlendsOffset =       (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 3 (*tint*)) * sizeof<single>
+    let TerrainBlends2Offset =      (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 3 (*tint*) + 4 (*blends*)) * sizeof<single>
+    let TerrainVertexSize =         (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 3 (*tint*) + 4 (*blends*) + 4 (*blends2*)) * sizeof<single>
 
     /// Create a mesh for a physically-based quad.
     let createPhysicallyBasedQuadMesh () =
@@ -821,6 +846,10 @@ module PhysicallyBased =
         let gaussianEsmResolution = geometryViewport.ShadowTextureResolution
         let gaussianEsmAttachment = Attachment.createColorAttachment Texture2d VkImageUsageFlags.Sampled Rg32f Rg gaussianEsmResolution.X gaussianEsmResolution.Y context
 
+        // create gaussian esm array attachments
+        let gaussianEsmArrayResolution = geometryViewport.ShadowCascadeResolution
+        let gaussianEsmArrayAttachment = Attachment.createColorAttachment (Texture2dArray Constants.Render.ShadowCascadeLevels) VkImageUsageFlags.Sampled Rg32f Rg gaussianEsmArrayResolution.X gaussianEsmArrayResolution.Y context
+
         // create color full attachments
         let colorFullUsageFlags = VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferSrc ||| VkImageUsageFlags.TransferDst
         let colorFull0Attachment = Attachment.createColorAttachment Texture2d colorFullUsageFlags Rgba16f Rgba geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y context
@@ -853,6 +882,7 @@ module PhysicallyBased =
           ColoringAttachments = coloringAttachments
           CompositionAttachment = compositionAttachment
           GaussianEsmAttachment = gaussianEsmAttachment
+          GaussianEsmArrayAttachment = gaussianEsmArrayAttachment
           ColorFull0Attachment = colorFull0Attachment
           ColorFull1Attachment = colorFull1Attachment
           ColorHalf0Attachment = colorHalf0Attachment
@@ -915,8 +945,8 @@ module PhysicallyBased =
     /// Create physically-based material from an assimp mesh, falling back on defaults in case of missing textures.
     /// Uses file name-based inferences to look for texture files in case the ones that were hard-coded in the model
     /// files can't be located.
-    /// Thread-safe if vkcOpt = None.
-    let createPhysicallyBasedMaterial dirPath defaultMaterial (textureClient : TextureClient) (material : Assimp.Material) vkcOpt =
+    /// Thread-safe if contextOpt = None.
+    let createPhysicallyBasedMaterial dirPath defaultMaterial (textureClient : TextureClient) (material : Assimp.Material) contextOpt =
 
         // compute the directory string to prefix to a local asset file path
         let dirPrefix = if dirPath <> "" then dirPath + "/" else ""
@@ -953,7 +983,7 @@ module PhysicallyBased =
                     found <- true
                 else i <- inc i
         let albedoTexture =
-            match vkcOpt with
+            match contextOpt with
             | Some context ->
                 match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression albedoTextureSlotFilePath) (dirPrefix + albedoTextureSlotFilePath) RenderThread context with
                 | Right texture -> texture
@@ -1009,7 +1039,7 @@ module PhysicallyBased =
         if isNull roughnessTextureSlot.FilePath then roughnessTextureSlot.FilePath <- "" // ensure not null
         roughnessTextureSlot.FilePath <- roughnessTextureSlot.FilePath // trim
         let roughnessTexture =
-            match vkcOpt with
+            match contextOpt with
             | Some context ->
                 match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression roughnessTextureSlot.FilePath) (dirPrefix + roughnessTextureSlot.FilePath) RenderThread context with
                 | Right texture -> texture
@@ -1044,7 +1074,7 @@ module PhysicallyBased =
         then metallicTextureSlot.FilePath <- "" // ensure not null
         else metallicTextureSlot.FilePath <- PathF.Normalize metallicTextureSlot.FilePath
         let metallicTexture =
-            match vkcOpt with
+            match contextOpt with
             | Some context ->
                 match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression metallicTextureSlot.FilePath) (dirPrefix + metallicTextureSlot.FilePath) RenderThread context with
                 | Right texture -> texture
@@ -1082,7 +1112,7 @@ module PhysicallyBased =
                 else ambientOcclusionTextureSlotB.FilePath
             else ambientOcclusionTextureSlotA.FilePath
         let ambientOcclusionTexture =
-            match vkcOpt with
+            match contextOpt with
             | Some context ->
                 match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression ambientOcclusionTextureSlotFilePath) (dirPrefix + ambientOcclusionTextureSlotFilePath) RenderThread context with
                 | Right texture -> texture
@@ -1114,7 +1144,7 @@ module PhysicallyBased =
         then emissionTextureSlot.FilePath <- "" // ensure not null
         else emissionTextureSlot.FilePath <- PathF.Normalize emissionTextureSlot.FilePath
         let emissionTexture =
-            match vkcOpt with
+            match contextOpt with
             | Some context ->
                 match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression emissionTextureSlot.FilePath) (dirPrefix + emissionTextureSlot.FilePath) RenderThread context with
                 | Right texture -> texture
@@ -1136,7 +1166,7 @@ module PhysicallyBased =
         then normalTextureSlot.FilePath <- "" // ensure not null
         else normalTextureSlot.FilePath <- PathF.Normalize normalTextureSlot.FilePath
         let normalTexture =
-            match vkcOpt with
+            match contextOpt with
             | Some context ->
                 match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression normalTextureSlot.FilePath) (dirPrefix + normalTextureSlot.FilePath) RenderThread context with
                 | Right texture -> texture
@@ -1156,7 +1186,7 @@ module PhysicallyBased =
         then heightTextureSlot.FilePath <- "" // ensure not null
         else heightTextureSlot.FilePath <- PathF.Normalize heightTextureSlot.FilePath
         let heightTexture =
-            match vkcOpt with
+            match contextOpt with
             | Some context ->
                 match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression heightTextureSlot.FilePath) (dirPrefix + heightTextureSlot.FilePath) RenderThread context with
                 | Right texture -> texture
@@ -1183,7 +1213,7 @@ module PhysicallyBased =
 
         // attempt to load subdermal info
         let subdermalTexture =
-            match vkcOpt with
+            match contextOpt with
             | Some context ->
                 match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression subdermalTextureFilePath) (dirPrefix + subdermalTextureFilePath) RenderThread context with
                 | Right texture -> texture
@@ -1196,7 +1226,7 @@ module PhysicallyBased =
         // attempt to load fineness info
         let finenessOffset = Constants.Render.FinenessOffsetDefault
         let finenessTexture =
-            match vkcOpt with
+            match contextOpt with
             | Some context ->
                 match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression finenessTextureFilePath) (dirPrefix + finenessTextureFilePath) RenderThread context with
                 | Right texture -> texture
@@ -1209,7 +1239,7 @@ module PhysicallyBased =
         // attempt to load scatter info
         let scatterType = Constants.Render.ScatterTypeDefault
         let scatterTexture =
-            match vkcOpt with
+            match contextOpt with
             | Some context ->
                 match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression scatterTextureFilePath) (dirPrefix + scatterTextureFilePath) RenderThread context with
                 | Right texture -> texture
@@ -1246,7 +1276,7 @@ module PhysicallyBased =
         // attempt to load clear coat info
         let clearCoat = Constants.Render.ClearCoatDefault
         let clearCoatTexture =
-            match vkcOpt with
+            match contextOpt with
             | Some context ->
                 match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression clearCoatTextureFilePath) (dirPrefix + clearCoatTextureFilePath) RenderThread context with
                 | Right texture -> texture
@@ -1259,7 +1289,7 @@ module PhysicallyBased =
         // attempt to load clear coat roughness info
         let clearCoatRoughness = Constants.Render.ClearCoatRoughnessDefault
         let clearCoatRoughnessTexture =
-            match vkcOpt with
+            match contextOpt with
             | Some context ->
                 match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression clearCoatRoughnessTextureFilePath) (dirPrefix + clearCoatRoughnessTextureFilePath) RenderThread context with
                 | Right texture -> texture
@@ -1271,7 +1301,7 @@ module PhysicallyBased =
 
         // attempt to load clear coat normal info
         let clearCoatNormalTexture =
-            match vkcOpt with
+            match contextOpt with
             | Some context ->
                 match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression clearCoatNormalTextureFilePath) (dirPrefix + clearCoatNormalTextureFilePath) RenderThread context with
                 | Right texture -> texture
@@ -1295,7 +1325,7 @@ module PhysicallyBased =
 
         // compose names when not rendering so that surfaces can be correlated without textures
         let names =
-            match vkcOpt with
+            match contextOpt with
             | Some _ ->
                 albedoTextureSlotFilePath + "/" +
                 roughnessTextureSlot.FilePath + "/" +
@@ -1349,13 +1379,13 @@ module PhysicallyBased =
         (properties, material)
 
     /// Attempt to create physically-based material from an assimp scene.
-    /// Thread-safe if vkcOpt = None.
-    let tryCreatePhysicallyBasedMaterials dirPath defaultMaterial textureClient (scene : Assimp.Scene) vkcOpt =
+    /// Thread-safe if contextOpt = None.
+    let tryCreatePhysicallyBasedMaterials dirPath defaultMaterial textureClient (scene : Assimp.Scene) contextOpt =
         let mutable errorOpt = None
         let propertiesAndMaterials = Array.zeroCreate scene.Materials.Count
         for i in 0 .. dec scene.Materials.Count do
             if Option.isNone errorOpt then
-                let (properties, material) = createPhysicallyBasedMaterial dirPath defaultMaterial textureClient scene.Materials[i] vkcOpt
+                let (properties, material) = createPhysicallyBasedMaterial dirPath defaultMaterial textureClient scene.Materials[i] contextOpt
                 propertiesAndMaterials[i] <- (properties, material)
         match errorOpt with
         | Some error -> Left error
@@ -1470,13 +1500,13 @@ module PhysicallyBased =
         (vertexData, indexData, bounds)
 
     /// Create physically-based static geometry from a mesh.
-    let createPhysicallyBasedStaticGeometry primitiveTopology (vertexData : single Memory) (indexData : int Memory) bounds vkcOpt =
+    let createPhysicallyBasedStaticGeometry primitiveTopology (vertexData : single Memory) (indexData : int Memory) bounds contextOpt =
 
         // make buffers
         let (vertices, indices, vertexBuffer, instanceBuffer, indexBuffer) =
 
             // make renderable
-            match vkcOpt with
+            match contextOpt with
             | Some context ->
 
                 // create buffers
@@ -1525,33 +1555,33 @@ module PhysicallyBased =
         geometry
 
     /// Create physically-based quad geometry.
-    let createPhysicallyBasedQuadGeometry vkcOpt =
+    let createPhysicallyBasedQuadGeometry contextOpt =
         let (vertexData, indexData, bounds) = createPhysicallyBasedQuadMesh ()
-        createPhysicallyBasedStaticGeometry VkPrimitiveTopology.TriangleList (vertexData.AsMemory ()) (indexData.AsMemory ()) bounds vkcOpt
+        createPhysicallyBasedStaticGeometry VkPrimitiveTopology.TriangleList (vertexData.AsMemory ()) (indexData.AsMemory ()) bounds contextOpt
 
     /// Create physically-based particle geometry.
-    let createPhysicallyBasedParticleGeometry vkcOpt =
+    let createPhysicallyBasedParticleGeometry contextOpt =
         let (vertexData, indexData, bounds) = createPhysicallyBasedParticleMesh ()
-        createPhysicallyBasedStaticGeometry VkPrimitiveTopology.TriangleList (vertexData.AsMemory ()) (indexData.AsMemory ()) bounds vkcOpt
+        createPhysicallyBasedStaticGeometry VkPrimitiveTopology.TriangleList (vertexData.AsMemory ()) (indexData.AsMemory ()) bounds contextOpt
 
     /// Create physically-based billboard geometry.
-    let createPhysicallyBasedBillboardGeometry vkcOpt =
+    let createPhysicallyBasedBillboardGeometry contextOpt =
         let (vertexData, indexData, bounds) = createPhysicallyBasedBillboardMesh ()
-        createPhysicallyBasedStaticGeometry VkPrimitiveTopology.TriangleList (vertexData.AsMemory ()) (indexData.AsMemory ()) bounds vkcOpt
+        createPhysicallyBasedStaticGeometry VkPrimitiveTopology.TriangleList (vertexData.AsMemory ()) (indexData.AsMemory ()) bounds contextOpt
 
     /// Create physically-based static geometry from an assimp mesh.
-    let createPhysicallyBasedStaticGeometryFromMesh indexData (mesh : Assimp.Mesh) vkcOpt =
+    let createPhysicallyBasedStaticGeometryFromMesh indexData (mesh : Assimp.Mesh) contextOpt =
         match createPhysicallyBasedStaticMesh indexData mesh with
-        | (vertexData, indexData, bounds) -> createPhysicallyBasedStaticGeometry VkPrimitiveTopology.TriangleList (vertexData.AsMemory ()) (indexData.AsMemory ()) bounds vkcOpt
+        | (vertexData, indexData, bounds) -> createPhysicallyBasedStaticGeometry VkPrimitiveTopology.TriangleList (vertexData.AsMemory ()) (indexData.AsMemory ()) bounds contextOpt
 
     /// Create physically-based animated geometry from a mesh.
-    let createPhysicallyBasedAnimatedGeometry primitiveTopology (vertexData : single Memory) (indexData : int Memory) bounds vkcOpt =
+    let createPhysicallyBasedAnimatedGeometry primitiveTopology (vertexData : single Memory) (indexData : int Memory) bounds contextOpt =
 
         // make buffers
         let (vertices, indices, vertexBuffer, instanceBuffer, indexBuffer) =
 
             // make renderable
-            match vkcOpt with
+            match contextOpt with
             | Some context ->
 
                 // create buffers
@@ -1600,13 +1630,13 @@ module PhysicallyBased =
         geometry
 
     /// Create physically-based animated geometry from an assimp mesh.
-    let createPhysicallyBasedAnimatedGeometryFromMesh indexData (mesh : Assimp.Mesh) vkcOpt =
+    let createPhysicallyBasedAnimatedGeometryFromMesh indexData (mesh : Assimp.Mesh) contextOpt =
         match createPhysicallyBasedAnimatedMesh indexData mesh with
-        | (vertexData, indexData, bounds) -> createPhysicallyBasedAnimatedGeometry VkPrimitiveTopology.TriangleList (vertexData.AsMemory ()) (indexData.AsMemory ()) bounds vkcOpt
+        | (vertexData, indexData, bounds) -> createPhysicallyBasedAnimatedGeometry VkPrimitiveTopology.TriangleList (vertexData.AsMemory ()) (indexData.AsMemory ()) bounds contextOpt
 
     /// Create physically-based static geometries from an assimp scene.
     /// OPTIMIZATION: duplicate geometry is detected and deduplicated here, which does have some run-time cost.
-    let createPhysicallyBasedStaticGeometries (scene : Assimp.Scene) vkcOpt =
+    let createPhysicallyBasedStaticGeometries (scene : Assimp.Scene) contextOpt =
         let meshAndGeometryLists = Dictionary<int * int * Assimp.BoundingBox, (Assimp.Mesh * PhysicallyBasedGeometry) List> HashIdentity.Structural
         let geometries = SList.make ()
         for i in 0 .. dec scene.Meshes.Count do
@@ -1627,7 +1657,7 @@ module PhysicallyBased =
                         found <- true
             | None -> ()
             if not found then
-                let geometry = createPhysicallyBasedStaticGeometryFromMesh indexData mesh vkcOpt
+                let geometry = createPhysicallyBasedStaticGeometryFromMesh indexData mesh contextOpt
                 match meshAndGeometryListOpt with
                 | Some meshesAndGeometries -> meshesAndGeometries.Add (mesh, geometry)
                 | None -> meshAndGeometryLists[(mesh.VertexCount, mesh.FaceCount, mesh.BoundingBox)] <- List [(mesh, geometry)]
@@ -1636,15 +1666,70 @@ module PhysicallyBased =
 
     /// Create physically-based animated geometries from an assimp scene.
     /// TODO: consider deduplicating geometry like in createPhysicallyBasedStaticGeometries?
-    let createPhysicallyBasedAnimatedGeometries (scene : Assimp.Scene) vkcOpt =
+    let createPhysicallyBasedAnimatedGeometries (scene : Assimp.Scene) contextOpt =
         let geometries = SList.make ()
         for i in 0 .. dec scene.Meshes.Count do
             let indexDataEntry = scene.Metadata["IndexData" + string i]
             let indexData = indexDataEntry.Data :?> int array
             let mesh = scene.Meshes[i]
-            let geometry = createPhysicallyBasedAnimatedGeometryFromMesh indexData mesh vkcOpt
+            let geometry = createPhysicallyBasedAnimatedGeometryFromMesh indexData mesh contextOpt
             geometries.Add geometry
         geometries
+
+    /// Create physically-based terrain geometry from a mesh.
+    let createPhysicallyBasedTerrainGeometry primitiveTopology (vertexData : single Memory) (indexData : int Memory) bounds contextOpt =
+
+        // make buffers
+        let (vertices, indices, vertexBuffer, instanceBuffer, indexBuffer) =
+
+            // make renderable
+            match contextOpt with
+            | Some context ->
+
+                // create buffers
+                let vertexBuffer = VulkanBuffer.createVertexStagedFromMemory vertexData context
+                let instanceBuffer = VulkanBuffer.create Instance (Constants.Render.InstanceFieldCount * sizeof<single>) context
+                let indexBuffer = VulkanBuffer.createIndexStagedFromMemory indexData context
+
+                // prepare instance buffer
+                let instanceData = Array.zeroCreate Constants.Render.InstanceFieldCount
+                m4Identity.ToArray (instanceData, 0)
+                VulkanBuffer.uploadArray instanceData instanceBuffer context
+                
+                // fin
+                ([||], [||], vertexBuffer, instanceBuffer, indexBuffer)
+
+            // fake buffers
+            | None ->
+
+                // compute vertices
+                let vertices = Array.zeroCreate (vertexData.Length / 19)
+                let vertexData = vertexData.Span
+                for i in 0 .. dec vertices.Length do
+                    let j = i * 19
+                    let vertex = v3 vertexData[j] vertexData[j+1] vertexData[j+2]
+                    vertices[i] <- vertex
+
+                // create indices
+                let indices = indexData.ToArray ()
+
+                // fin
+                (vertices, indices, Unchecked.defaultof<VulkanBuffer>, Unchecked.defaultof<VulkanBuffer>, Unchecked.defaultof<VulkanBuffer>)
+
+        // make physically-based geometry
+        let geometry =
+            { Bounds = bounds
+              PrimitiveTopology = primitiveTopology
+              ElementCount = indexData.Length
+              Vertices = vertices
+              Indices = indices
+              TrianglesCached = None
+              VertexBuffer = vertexBuffer
+              InstanceBuffer = instanceBuffer
+              IndexBuffer = indexBuffer }
+
+        // fin
+        geometry
 
     /// Destroy physically-based geometry resources.
     let destroyPhysicallyBasedGeometry geometry context =
@@ -1812,7 +1897,7 @@ module PhysicallyBased =
         // report draw scope
         Hl.reportDrawScope ()
 
-        // intermittently advance rendering command buffer
+        // advance rendering command buffer
         VulkanContext.advanceRenderCommandBuffer context
 
     /// Create a physically-based pipeline.
@@ -1837,7 +1922,7 @@ module PhysicallyBased =
                 
                 // descriptor set 0: per render pass
                 [|Pipeline.descriptorSet<int>
-                    [|Pipeline.descriptor 0 UniformBuffer VertexFragmentStage 1 // eye
+                    [|Pipeline.descriptor 0 UniformBuffer VertexAndFragmentStage 1 // eye
                       Pipeline.descriptor 1 UniformBuffer FragmentStage 1 // lighting
                       Pipeline.descriptor 2 SampledImage FragmentStage 1 // depthTexture
                       Pipeline.descriptor 3 SampledImage FragmentStage 1 // colorTexture
@@ -1907,8 +1992,8 @@ module PhysicallyBased =
         physicallyBasedPipeline
     
     /// Destroy PhysicallyBasedPipeline.
-    let destroyPhysicallyBasedPipeline (physicallyBasedPipeline : PhysicallyBasedPipeline) context =
-        Pipeline.destroy physicallyBasedPipeline.Pipeline context
+    let destroyPhysicallyBasedPipeline (pipeline : PhysicallyBasedPipeline) context =
+        Pipeline.destroy pipeline.Pipeline context
 
     /// Begin drawing a batch of physically-based deferred surfaces.
     let beginPhysicallyBasedDeferredSurfaces
@@ -2043,7 +2128,181 @@ module PhysicallyBased =
         // report draw scope
         Hl.reportDrawScope ()
 
-        // intermittently advance rendering command buffer
+        // advance rendering command buffer
+        VulkanContext.advanceRenderCommandBuffer context
+
+    let createPhysicallyBasedTerrainPipeline colorAttachmentFormats depthTest context =
+
+        // create uniform buffers
+        let eyeUniform = VulkanBuffer.create Uniform sizeof<Eye> context
+        let lightingUniform = VulkanBuffer.create Uniform sizeof<Lighting3> context
+
+        // create pipeline
+        let pipeline =
+            Pipeline.create
+                Constants.Paths.PhysicallyBasedDeferredTerrainShaderFilePath
+                [|VulkanUnblended|] [|true|]
+                [|Pipeline.vertex 0 TerrainVertexSize VkVertexInputRate.Vertex
+                    [|Pipeline.attribute 0 Single3 0
+                      Pipeline.attribute 1 Single2 TerrainTexCoordsOffset
+                      Pipeline.attribute 2 Single3 TerrainNormalOffset
+                      Pipeline.attribute 3 Single3 TerrainTintOffset
+                      Pipeline.attribute 4 Single4 TerrainBlendsOffset
+                      Pipeline.attribute 5 Single4 TerrainBlends2Offset|]
+                  Pipeline.vertex 1 (Constants.Render.InstanceFieldCount * sizeof<single>) VkVertexInputRate.Instance
+                    [|Pipeline.attribute 6 Single4 0
+                      Pipeline.attribute 7 Single4 (4 * sizeof<single>)
+                      Pipeline.attribute 8 Single4 (8 * sizeof<single>)
+                      Pipeline.attribute 9 Single4 (12 * sizeof<single>)
+                      Pipeline.attribute 10 Single4 (16 * sizeof<single>)
+                      Pipeline.attribute 11 Single4 (20 * sizeof<single>)
+                      Pipeline.attribute 12 Single4 (24 * sizeof<single>)
+                      Pipeline.attribute 13 Single4 (28 * sizeof<single>)
+                      Pipeline.attribute 14 Single4 (32 * sizeof<single>)|]|]
+                [|Pipeline.descriptorSet<int>
+                    [|Pipeline.descriptor 0 UniformBuffer VertexAndFragmentStage 1 // eye
+                      Pipeline.descriptor 1 UniformBuffer FragmentStage 1|] // lighting3
+                  Pipeline.descriptorSet<PhysicallyBasedMaterial array>
+                    [|Pipeline.descriptor 0 SampledImage FragmentStage Constants.Render.TerrainLayersMax // albedoTextures
+                      Pipeline.descriptor 1 SampledImage FragmentStage Constants.Render.TerrainLayersMax // roughnessTextures
+                      Pipeline.descriptor 2 SampledImage FragmentStage Constants.Render.TerrainLayersMax // ambientOcclusionTextures
+                      Pipeline.descriptor 3 SampledImage FragmentStage Constants.Render.TerrainLayersMax // normalTextures
+                      Pipeline.descriptor 4 SampledImage FragmentStage Constants.Render.TerrainLayersMax|] // heightTextures
+                  Pipeline.descriptorSet<Unit>
+                    [|Pipeline.descriptor 0 Sampler FragmentStage 1|]|]
+                [||] colorAttachmentFormats (Some depthTest)
+                [|eyeUniform; lightingUniform|]
+
+        // make PhysicallyBasedDeferredLightingPipeline
+        let physicallyBasedDeferredTerrainPipeline =
+            { EyeUniform = eyeUniform
+              Lighting3Uniform = lightingUniform
+              Pipeline = pipeline }
+        
+        // fin
+        physicallyBasedDeferredTerrainPipeline
+    
+    /// Destroy PhysicallyBasedTerrainPipeline.
+    let destroyPhysicallyBasedDeferredTerrainPipeline (pipeline : PhysicallyBasedDeferredTerrainPipeline) context =
+        Pipeline.destroy pipeline.Pipeline context
+
+    let drawPhysicallyBasedTerrain
+        (eyeCenter : Vector3)
+        (view : Matrix4x4)
+        (projectionUnflipped : Matrix4x4)
+        (instanceFields : single array)
+        (lightShadowSamples : int)
+        (lightShadowBias : single)
+        (lightShadowSampleScalar : single)
+        (lightShadowExponent : single)
+        (lightShadowDensity : single)
+        (materials : PhysicallyBasedMaterial array)
+        (filteredSampler : Sampler)
+        (geometry : PhysicallyBasedGeometry)
+        (colorAttachments : VkImageView array)
+        (depthAttachment : Texture)
+        (viewport : Viewport)
+        (renderPassIndex : int)
+        (pipeline : PhysicallyBasedDeferredTerrainPipeline)
+        (context : VulkanContext) =
+
+        // compute vulkan-appropriate matrices
+        let viewInverse = view.Inverted
+        let projection = projectionUnflipped.Flipped
+        let projectionInverse = projection.Inverted
+        let viewProjection = view * projection
+
+        // enforce layer limit
+        let layersCount = min materials.Length Constants.Render.TerrainLayersMax
+            
+        // set up render
+        let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
+        let mutable vkViewport = Hl.makeViewport false renderArea
+        let mutable renderingInfo = Hl.makeRenderingInfo colorAttachments (Some depthAttachment.ImageView) renderArea None
+        DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
+        DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
+        DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&renderArea)
+
+        // only draw if required vkPipeline exists
+        match Pipeline.tryGetVkPipeline VulkanUnblended true pipeline.Pipeline with
+        | Some vkPipeline ->
+
+            // specify uniforms
+            let mutable uniformsDescriptorSet = Pipeline.specifyDescriptorSet 0 renderPassIndex pipeline.Pipeline $ fun vkSet ->
+
+                // specify eye
+                let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
+                VulkanBuffer.uploadValue eye pipeline.EyeUniform context
+                Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.EyeUniform vkSet
+
+                // specify lighting
+                let mutable lighting = Lighting3 ()
+                lighting.lightShadowSamples <- lightShadowSamples
+                lighting.lightShadowBias <- lightShadowBias
+                lighting.lightShadowSampleScalar <- lightShadowSampleScalar
+                lighting.lightShadowExponent <- lightShadowExponent
+                lighting.lightShadowDensity <- lightShadowDensity
+                lighting.layersCount <- layersCount
+                VulkanBuffer.uploadValue lighting pipeline.Lighting3Uniform context
+                Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.Lighting3Uniform vkSet
+
+            // specify materials
+            // TODO: maybe receive these arrays pre-formed?
+            let mutable materialsDescriptorSet = Pipeline.specifyDescriptorSet 1 materials pipeline.Pipeline $ fun vkSet ->
+                Pipeline.writeDescriptorSampledTextures 0 0 (materials |> Array.map _.AlbedoTexture) vkSet
+                Pipeline.writeDescriptorSampledTextures 1 0 (materials |> Array.map _.RoughnessTexture) vkSet
+                Pipeline.writeDescriptorSampledTextures 2 0 (materials |> Array.map _.AmbientOcclusionTexture) vkSet
+                Pipeline.writeDescriptorSampledTextures 3 0 (materials |> Array.map _.NormalTexture) vkSet
+                Pipeline.writeDescriptorSampledTextures 4 0 (materials |> Array.map _.HeightTexture) vkSet
+
+            // specify samplers
+            let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 2 Unit pipeline.Pipeline $ fun vkSet ->
+                Pipeline.writeDescriptorSampler 0 0 filteredSampler vkSet
+
+            // specify instancing
+            use instanceFieldsPin = new ArrayPin<_> (instanceFields)
+            VulkanBuffer.uploadData (Constants.Render.InstanceFieldCount * sizeof<single>) 1 instanceFieldsPin.NativeInt geometry.InstanceBuffer context
+
+            // set up pipeline
+            DeviceApi.vkCmdBindPipeline (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
+            DeviceApi.vkCmdSetDepthTestEnable (context.RenderCommandBuffer, true)
+            DeviceApi.vkCmdSetDepthCompareOp (context.RenderCommandBuffer, VkCompareOp.Less)
+
+            // bind vertex and index buffers
+            let vertexBuffers = [|geometry.VertexBuffer.VkBuffer; geometry.InstanceBuffer.VkBuffer|]
+            let vertexOffsets = [|0UL; 0UL|]
+            use vertexBuffersPin = new ArrayPin<_> (vertexBuffers)
+            use vertexOffsetsPin = new ArrayPin<_> (vertexOffsets)
+            DeviceApi.vkCmdBindVertexBuffers (context.RenderCommandBuffer, 0u, 2u, vertexBuffersPin.Pointer, vertexOffsetsPin.Pointer)
+            DeviceApi.vkCmdBindIndexBuffer (context.RenderCommandBuffer, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
+
+            // bind descriptor sets
+            DeviceApi.vkCmdBindDescriptorSets (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, &&uniformsDescriptorSet, 0u, nullPtr)
+            DeviceApi.vkCmdBindDescriptorSets (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, &&materialsDescriptorSet, 0u, nullPtr)
+            DeviceApi.vkCmdBindDescriptorSets (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 2u, 1u, &&samplerDescriptorSet, 0u, nullPtr)
+
+            // draw
+            DeviceApi.vkCmdDrawIndexed (context.RenderCommandBuffer, uint geometry.ElementCount, 1u, 0u, 0, 0u)
+
+            // report drawing
+            Hl.reportDrawCall 1 false
+
+            // advance instancing
+            VulkanBuffer.advance geometry.InstanceBuffer
+
+            // advance pipeline
+            Pipeline.advance pipeline.Pipeline
+
+        // abort
+        | None -> Log.warnOnce ("Cannot draw " + getTypeName pipeline + " because VkPipeline does not exist.")
+
+        // tear down render
+        DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
+
+        // report draw scope
+        Hl.reportDrawScope ()
+
+        // advance rendering command buffer
         VulkanContext.advanceRenderCommandBuffer context
 
     /// Create a PhysicallyBasedDeferredLightingPipeline.
@@ -3846,7 +4105,7 @@ module PhysicallyBased =
         // report draw scope
         Hl.reportDrawScope ()
 
-        // intermittently advance rendering command buffer
+        // advance rendering command buffer
         VulkanContext.advanceRenderCommandBuffer context
 
     /// Create a box filter pipeline.
@@ -4534,6 +4793,18 @@ module PhysicallyBased =
                   clearCoatPlus.VkFormat|]
                 (Some z.VkFormat)
                 context
+
+        // create deferred terrain pipeline
+        let deferredTerrainPipeline =
+            createPhysicallyBasedTerrainPipeline
+                [|depth.VkFormat
+                  albedo.VkFormat
+                  material.VkFormat
+                  normalPlus.VkFormat
+                  subdermalPlus.VkFormat
+                  scatterPlus.VkFormat|]
+                z.VkFormat
+                context
         
         // create deferred lighting pipelines
         let deferredLightingPipeline = createPhysicallyBasedDeferredLightingPipeline attachments.LightingAttachment.VkFormat context
@@ -4574,7 +4845,8 @@ module PhysicallyBased =
                 context
 
         // create 1d box filter pipeline
-        let filterBox1dPipeline = createFilterBoxPipeline Constants.Paths.FilterBox1dShaderFilePath R32f.VkFormat
+        // TODO: P0: make this pipeline specialized to SSAO since it's 16f!
+        let filterBox1dPipeline = createFilterBoxPipeline Constants.Paths.FilterBox1dShaderFilePath R16f.VkFormat
 
         // create esm gaussian filter pipeline
         let filterGaussianEsmPipeline = createFilterGaussianEsmPipeline Rg32f.VkFormat context
@@ -4599,6 +4871,7 @@ module PhysicallyBased =
               DeferredStaticPipeline = deferredStaticPipeline
               DeferredStaticClippedPipeline = deferredStaticClippedPipeline
               DeferredAnimatedPipeline = deferredAnimatedPipeline
+              DeferredTerrainPipeline = deferredTerrainPipeline
               DeferredLightingPipeline = deferredLightingPipeline
               DeferredFoggingPipeline = deferredFoggingPipeline
               DeferredLightMappingPipeline = deferredLightMappingPipeline
@@ -4629,6 +4902,7 @@ module PhysicallyBased =
         Pipeline.beginFrame physicallyBasedPipelines.DeferredStaticPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.DeferredStaticClippedPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.DeferredAnimatedPipeline.Pipeline
+        Pipeline.beginFrame physicallyBasedPipelines.DeferredTerrainPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.DeferredLightingPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.DeferredFoggingPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.DeferredLightMappingPipeline.Pipeline
@@ -4656,6 +4930,7 @@ module PhysicallyBased =
         destroyPhysicallyBasedPipeline physicallyBasedPipelines.DeferredStaticPipeline context
         destroyPhysicallyBasedPipeline physicallyBasedPipelines.DeferredStaticClippedPipeline context
         destroyPhysicallyBasedPipeline physicallyBasedPipelines.DeferredAnimatedPipeline context
+        destroyPhysicallyBasedDeferredTerrainPipeline physicallyBasedPipelines.DeferredTerrainPipeline context
         destroyPhysicallyBasedDeferredLightingPipeline physicallyBasedPipelines.DeferredLightingPipeline context
         destroyPhysicallyBasedDeferredFoggingPipeline physicallyBasedPipelines.DeferredFoggingPipeline context
         destroyPhysicallyBasedDeferredLightMappingPipeline physicallyBasedPipelines.DeferredLightMappingPipeline context
@@ -4704,20 +4979,20 @@ module PhysicallyBased =
 type PhysicallyBasedSceneClient () =
 
     /// Attempt to create physically-based model from a model file with assimp.
-    /// Thread-safe if vkcOpt = None.
-    member this.TryCreatePhysicallyBasedModel filePath defaultMaterial textureClient vkcOpt =
+    /// Thread-safe if contextOpt = None.
+    member this.TryCreatePhysicallyBasedModel filePath defaultMaterial textureClient contextOpt =
 
         // attempt to import from assimp scene
         match AssimpContext.TryGetScene filePath with
         | Right scene ->
             let dirPath = PathF.GetDirectoryName filePath
-            match PhysicallyBased.tryCreatePhysicallyBasedMaterials dirPath defaultMaterial textureClient scene vkcOpt with
+            match PhysicallyBased.tryCreatePhysicallyBasedMaterials dirPath defaultMaterial textureClient scene contextOpt with
             | Right materials ->
                 let animated = scene.Animations.Count <> 0
                 let geometries =
                     if animated
-                    then PhysicallyBased.createPhysicallyBasedAnimatedGeometries scene vkcOpt
-                    else PhysicallyBased.createPhysicallyBasedStaticGeometries scene vkcOpt
+                    then PhysicallyBased.createPhysicallyBasedAnimatedGeometries scene contextOpt
+                    else PhysicallyBased.createPhysicallyBasedStaticGeometries scene contextOpt
 
                 // collect light nodes
                 let lightNodes =

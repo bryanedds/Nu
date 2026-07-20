@@ -264,7 +264,7 @@ type RendererThread () =
     let cachedSpriteMessagesLock = obj ()
     let cachedSpriteMessages = System.Collections.Generic.Queue ()
     let [<VolatileField>] mutable cachedSpriteMessagesCapacity = Constants.Render.SpriteMessagesPrealloc
-    let mutable vkcOpt = None
+    let mutable contextOpt = None
 
     let allocStaticModelMessage () =
         lock cachedStaticModelMessagesLock (fun () ->
@@ -416,30 +416,30 @@ type RendererThread () =
                 // pre-render 3d. OPTIMIZATION: don't render geometry when no 3D messages are encountered.
                 let renderGeometry = messages3d.Count > 0
                 renderer3d.PreRender frustumInterior frustumExterior frustumImposter eye3dCenter eye3dRotation messages3d
-                freeStaticModelMessages messages3d
-                freeStaticModelSurfaceMessages messages3d
-                freeAnimatedModelMessages messages3d
                 renderer3dConfig <- renderer3d.RendererConfig
 
                 // pre-render 2d
                 renderer2d.PreRender eye2dCenter eye2dSize windowViewport messages2d
-                freeSpriteMessages messages2d
 
                 // pre-render imgui
                 rendererImGui.PreRender messagesImGui
-                messagesImGui.Clear ()
 
                 // begin frame
                 VulkanContext.beginFrame windowViewport context
 
-                // render 3d
+                // render 3d, freeing allocated messaages after use
                 renderer3d.Render frustumInterior frustumExterior frustumImposter eye3dCenter eye3dRotation eye3dFieldOfView geometryViewport windowViewport renderGeometry
+                freeStaticModelMessages messages3d
+                freeStaticModelSurfaceMessages messages3d
+                freeAnimatedModelMessages messages3d
 
-                // render 2d
+                // render 2d, freeing allocated messaages after use
                 renderer2d.Render eye2dCenter eye2dSize windowViewport
+                freeSpriteMessages messages2d
 
-                // render imgui
+                // render imgui, freeing allocated messaages after use
                 rendererImGui.Render windowViewport drawData
+                messagesImGui.Clear ()
 
                 // end frame
                 VulkanContext.endFrame context
@@ -483,7 +483,7 @@ type RendererThread () =
                     match VulkanContext.tryCreate window with
                     | Some context -> context
                     | None -> Log.fail "Could not create Vulkan context." // TODO: P0: handle failure more gracefully here?
-                vkcOpt <- Some context
+                contextOpt <- Some context
 
                 // start real thread
                 let thread = Thread (ThreadStart (fun () -> rt.Run fonts geometryViewport windowViewport context))
@@ -714,9 +714,9 @@ type RendererThread () =
             if terminated then raise (InvalidOperationException "Redundant Terminate calls.")
             terminated <- true
             thread.Join ()
-            match vkcOpt with
+            match contextOpt with
             | Some context ->
                 VulkanContext.cleanup context
-                vkcOpt <- None
+                contextOpt <- None
             | None -> ()
             threadOpt <- None

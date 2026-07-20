@@ -17,7 +17,6 @@ open FSharp.NativeInterop
 open SDL
 open ImageMagick
 open BCnEncoder.Shared.ImageFiles
-open AstcEncoder
 open Pfim
 open Vortice.Vulkan
 open Prime
@@ -593,7 +592,6 @@ type [<CustomEquality; NoComparison>] TextureInternal =
 
     override this.GetHashCode () = 
         hash this.Id_
-
 
 /// A texture that can be loaded from another thread.
 type LazyTexture (filePath : string, minimalTexture : TextureInternal) =

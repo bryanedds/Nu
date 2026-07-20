@@ -71,7 +71,7 @@ type ImGui (stub : bool, displaySize : Vector2i) =
         // add default font with the configured font size
         let fontConfig = ImGuiNative.ImFontConfig_ImFontConfig ()
         let fontConfigPtr = ImFontConfigPtr fontConfig
-        fontConfigPtr.SizePixels <- Constants.ImGui.FontSize
+        fontConfigPtr.SizePixels <- Constants.ImGui.ImGuiFontSize
         Font <- fonts.AddFontDefault fontConfigPtr
 
     static member MouseLeftId =

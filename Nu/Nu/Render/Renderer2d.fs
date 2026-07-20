@@ -107,7 +107,7 @@ type TextDescriptor =
 type [<NoEquality; NoComparison>] ContourDescriptor =
     { mutable Transform : Transform
       ClipOpt : Box2 voption
-      Tessellation : ContourTessellation }
+      Contour : Contour }
 
 /// Describes a 2d rendering operation.
 type RenderOperation2d =
@@ -198,7 +198,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
           TextTextures : Dictionary<obj, bool ref * (int * int * Matrix4x4 * Texture)>
           SpriteBatchEnv : SpriteBatchEnv
           SpritePipeline : VulkanBuffer * VulkanBuffer * Pipeline
-          ContourTessellationPipeline : VulkanBuffer * VulkanBuffer * VulkanBuffer * Pipeline
+          ContourPipeline : VulkanBuffer * VulkanBuffer * VulkanBuffer * VulkanBuffer * VulkanBuffer * Pipeline
           RenderPackages : Packages<RenderAsset, AssetClient>
           SpineSkeletonRenderers : Dictionary<uint64, bool ref * Spine.SkeletonRenderer>
           mutable RenderPackageCachedOpt : RenderPackageCached
@@ -389,7 +389,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
 
     static member private handleReloadShaders renderer =
         let (_, _, spritePipeline) = renderer.SpritePipeline
-        let (_, _, _, contourPipeline) = renderer.ContourTessellationPipeline
+        let (_, _, _, _, _, contourPipeline) = renderer.ContourPipeline
         Pipeline.reloadShaders spritePipeline renderer.VulkanContext
         Pipeline.reloadShaders contourPipeline renderer.VulkanContext
         SpriteBatch.reloadShaders renderer.SpriteBatchEnv renderer.VulkanContext
@@ -671,43 +671,37 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             ssRenderer.Draw (getTextureId, spineSkeleton, &modelViewProjection)*)
         ()
 
-    /// Render vector graphic contour.
+    /// Render vector graphic contour via analytic coverage pipeline.
     static member renderContour
         (descriptor : ContourDescriptor)
         (eyeCenter : Vector2)
         (eyeSize : Vector2)
         (renderer : VulkanRenderer2d) =
 
-        // only render if we have geometry
-        if descriptor.Tessellation.Indices.Length > 0 then
-
-            // interrupt sprite batch to render contour
+        let prepared = descriptor.Contour
+        if prepared.FillGeometryOpt.IsSome || prepared.StrokeGeometryOpt.IsSome then
             flip3 SpriteBatch.InterruptSpriteBatchFrame renderer.Viewport renderer.SpriteBatchEnv $ fun () ->
             
-                // gather context for rendering contour
                 let viewProjection2d = Viewport.getViewProjection2d descriptor.Transform.Absolute eyeCenter eyeSize renderer.Viewport
                 let viewProjectionClipAbsolute = Viewport.getViewProjectionClip true eyeCenter eyeSize renderer.Viewport
                 let viewProjectionClipRelative = Viewport.getViewProjectionClip false eyeCenter eyeSize renderer.Viewport
                 
-                // construct model matrix (converts tesselated coords to screen pixel position)
                 let mutable affineMatrix = descriptor.Transform.RotationMatrix
-                affineMatrix.Translation <- descriptor.Transform.Position // NOTE: scale is omitted because it's considered during tessellation.
+                affineMatrix.Translation <- descriptor.Transform.Position
                 let modelViewProjection =
                     affineMatrix *
                     Matrix4x4.CreateScale (single renderer.Viewport.DisplayScalar) *
                     viewProjection2d
 
-                // draw contour
-                ContourTessellation.drawContourTessellation
-                    (descriptor.Tessellation,
-                     descriptor.Transform.Absolute,
-                     &viewProjectionClipAbsolute,
-                     &viewProjectionClipRelative,
-                     &modelViewProjection,
-                     &descriptor.ClipOpt,
-                     renderer.Viewport,
-                     renderer.ContourTessellationPipeline,
-                     renderer.VulkanContext)
+                Contour.drawContour prepared
+                    descriptor.Transform.Absolute
+                    &viewProjectionClipAbsolute
+                    &viewProjectionClipRelative
+                    &modelViewProjection
+                    &descriptor.ClipOpt
+                    renderer.Viewport
+                    renderer.ContourPipeline
+                    renderer.VulkanContext
 
     /// Render text.
     static member renderText
@@ -951,7 +945,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         match renderer.SpritePipeline with (_, _, pipeline) -> Pipeline.beginFrame pipeline
 
         // being contour frame
-        match renderer.ContourTessellationPipeline with (_, _, _, pipeline) -> Pipeline.beginFrame pipeline
+        match renderer.ContourPipeline with (_, _, _, _, _, pipeline) -> Pipeline.beginFrame pipeline
 
         // categorzie render messages
         VulkanRenderer2d.categorizeRenderMessages renderMessages renderer
@@ -1033,8 +1027,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         // create sprite batch env
         let spriteBatchEnv = SpriteBatch.createSpriteBatchEnv unfilteredSampler filteredSampler context
 
-        // create contour tessellation pipeline
-        let contourTesselationPipeline = ContourTessellation.createContourTessellationPipeline context
+        // create contour pipeline (Slug analytic coverage)
+        let contourPipeline = Contour.createPipeline context
         
         // make renderer
         let renderer =
@@ -1047,7 +1041,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
               TextTextures = dictPlus HashIdentity.Structural []
               SpriteBatchEnv = spriteBatchEnv
               SpritePipeline = spriteSingletonPipeline
-              ContourTessellationPipeline = contourTesselationPipeline
+              ContourPipeline = contourPipeline
               RenderPackages = dictPlus StringComparer.Ordinal []
               SpineSkeletonRenderers = dictPlus HashIdentity.Structural []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
@@ -1071,14 +1065,14 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             // destroy vulkan resources
             let (_, _, spritePipeline) = renderer.SpritePipeline
             let (textVertexBuffer, textIndexBuffer) = renderer.TextQuad
-            let (_, _, _, tessellationPipeline) = renderer.ContourTessellationPipeline
+            let (_, _, _, _, _, contourPipeline) = renderer.ContourPipeline
             for (_, _, _, textTexture) in Seq.map snd renderer.TextTextures.Values do Texture.destroy textTexture renderer.VulkanContext
             renderer.TextTextures.Clear ()
             TextureDumpster.destroy renderer.TextureDumpster renderer.VulkanContext
             Sampler.destroy renderer.UnfilteredSampler
             Sampler.destroy renderer.FilteredSampler
             Pipeline.destroy spritePipeline renderer.VulkanContext
-            Pipeline.destroy tessellationPipeline renderer.VulkanContext
+            Pipeline.destroy contourPipeline renderer.VulkanContext
             VulkanBuffer.destroy textVertexBuffer renderer.VulkanContext
             VulkanBuffer.destroy textIndexBuffer renderer.VulkanContext
 

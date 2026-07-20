@@ -203,11 +203,11 @@ module SpriteBatch =
                     // advance pipeline
                     Pipeline.advance env.Pipeline
 
-                    // intermittently advance rendering command buffer
+                    // advance rendering command buffer
                     VulkanContext.advanceRenderCommandBuffer env.VulkanContext
 
                 // abort
-                | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
+                | None -> Log.warnOnce ("Cannot draw " + getTypeName env.Pipeline + " because VkPipeline does not exist.")
 
             // next batch
             env.SpriteIndex <- 0
@@ -256,7 +256,7 @@ module SpriteBatch =
         env.Colors[env.SpriteIndex] <- color.V4
 
     /// Submit a sprite to the appropriate sprite batch.
-    let submitSpriteBatchSprite (absolute, min : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2 inref, clipOpt : (Box2 voption) inref, color : Color inref, blend, texture : Texture, viewport, env) =
+    let submitSpriteBatchSprite (absolute, min : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2 inref, clipOpt : Box2 voption inref, color : Color inref, blend, texture : Texture, viewport, env) =
 
         // adjust to potential sprite batch state changes
         let state = SpriteBatchState.make absolute clipOpt blend texture
@@ -281,7 +281,8 @@ module SpriteBatch =
         { SpriteIndex = 0;
           ViewProjection2dAbsolute = m4Identity; ViewProjection2dRelative = m4Identity
           ViewProjectionClipAbsolute = m4Identity; ViewProjectionClipRelative = m4Identity
-          VulkanContext = context; Pipeline = pipeline; UnfilteredSampler = unfilteredSampler; FilteredSampler = filteredSampler
+          VulkanContext = context; Pipeline = pipeline
+          UnfilteredSampler = unfilteredSampler; FilteredSampler = filteredSampler
           SpritesUniform = spritesUniform; ViewProjectionUniform = viewProjectionUniform
           Perimeters = Array.zeroCreate Constants.Render.SpriteBatchSize
           Pivots = Array.zeroCreate Constants.Render.SpriteBatchSize

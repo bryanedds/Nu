@@ -1790,12 +1790,7 @@ module WorldModule2 =
                             let shadowNearDistance = Constants.Render.NearPlaneDistanceInterior
                             let shadowFarDistance = max shadowCutoff (shadowNearDistance * 2.0f)
                             let cullView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + shadowForward, shadowUp)
-                            let cullProjection =
-                                Matrix4x4.CreateOrthographic
-                                    (shadowFarDistance * +2.0f * inc Constants.Render.ShadowDirectionalMarginRatioCull,
-                                     shadowFarDistance * +2.0f * inc Constants.Render.ShadowDirectionalMarginRatioCull,
-                                     shadowFarDistance * -1.0f * inc Constants.Render.ShadowDirectionalMarginRatioCull,
-                                     shadowFarDistance * +1.0f * inc Constants.Render.ShadowDirectionalMarginRatioCull)
+                            let cullProjection = Matrix4x4.CreateOrthographic (shadowFarDistance * +2.0f, shadowFarDistance * +2.0f, shadowFarDistance * -1.0f, shadowFarDistance * +1.0f)
                             let cullFrustum = Frustum (cullView * cullProjection)
 
                             // render
@@ -1828,14 +1823,9 @@ module WorldModule2 =
 
                             // compute cull frustum
                             let cullView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + shadowForward, shadowUp)
-                            let cullProjection =
-                                Matrix4x4.CreateOrthographic
-                                    (shadowFarDistance * +2.0f * inc Constants.Render.ShadowCascadeMarginRatioCull,
-                                     shadowFarDistance * +2.0f * inc Constants.Render.ShadowCascadeMarginRatioCull,
-                                     shadowFarDistance * -1.0f * inc Constants.Render.ShadowCascadeMarginRatioCull,
-                                     shadowFarDistance * +1.0f * inc Constants.Render.ShadowCascadeMarginRatioCull)
+                            let cullProjection = Matrix4x4.CreateOrthographic (shadowFarDistance * +2.0f, shadowFarDistance * +2.0f,shadowFarDistance * -1.0f, shadowFarDistance * +1.0f)
                             let cullFrustum = Frustum (cullView * cullProjection)
-                            
+
                             // use a finally block to free cached values
                             try
 
@@ -1889,15 +1879,8 @@ module WorldModule2 =
                                         minZ <- min minZ cornerView.Z
                                         maxZ <- max maxZ cornerView.Z
 
-                                    // add margins to section along Z's
-                                    let depth = maxZ - minZ
-                                    let margin = depth * Constants.Render.ShadowCascadeMarginRatio
-                                    let margin = max margin Constants.Render.ShadowCascadeMarginSizeMin
-                                    let minZ' = minZ - margin
-                                    let maxZ' = maxZ + margin
-
                                     // compute ortho projection
-                                    let sectionProjectionOrtho = Matrix4x4.CreateOrthographicOffCenter (minX, maxX, minY, maxY, minZ', maxZ')
+                                    let sectionProjectionOrtho = Matrix4x4.CreateOrthographicOffCenter (minX, maxX, minY, maxY, minZ, maxZ)
 
                                     // render
                                     World.renderSimulantsInternal8

@@ -163,7 +163,8 @@ type VulkanRendererImGui
                 if not (assetTextureOpts.ContainsKey assetTag) then
                     match Metadata.tryGetFilePath assetTag with
                     | Some filePath ->
-                        match TextureInternal.tryCreate true false (Hl.inferTextureCompression filePath) filePath RenderThread context with
+                        let compression = Hl.inferTextureCompression filePath
+                        match TextureInternal.tryCreate true false compression filePath RenderThread context with
                         | Right textureInternal ->
                             let texture = EagerTexture textureInternal
                             assetTextureStorage.Add (texture.Id, texture)
@@ -195,9 +196,6 @@ type VulkanRendererImGui
 
             // render when allowed and drawData matches viewport
             if context.RenderAllowed && drawDataMatchesViewport then
-
-                // images added as needed for current frame, associated with descriptor sets by index
-                let usedImages = List ()
 
                 // grab pipeline, asserting non-None since shader reload for ImGui isn't supported
                 let vkPipeline = Pipeline.tryGetVkPipeline VulkanImGui false pipeline |> Option.get
@@ -295,14 +293,10 @@ type VulkanRendererImGui
                                     // set scissor
                                     DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&scissor)
 
-                                    // identify requested texture and assign to it a descriptor set index
-                                    let textureId = uint32 pcmd.TextureId
-                                    if not (usedImages.Contains textureId) then usedImages.Add textureId
-                                    let descriptorSetIndex = usedImages.IndexOf textureId
-
                                     // specify material
+                                    let textureId = uint32 pcmd.TextureId
                                     let (texture, sampler) as combined = (renderer.GetTexture textureId, renderer.GetSampler textureId)
-                                    let mutable materialDescriptorSet = Pipeline.specifyDescriptorSet descriptorSetIndex combined pipeline $ fun vkSet ->
+                                    let mutable materialDescriptorSet = Pipeline.specifyDescriptorSet 0 combined pipeline $ fun vkSet ->
                                         Pipeline.writeDescriptorCombinedTextureSampler 0 0 texture sampler vkSet
 
                                     // bind descriptor set

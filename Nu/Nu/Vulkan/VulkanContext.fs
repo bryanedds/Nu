@@ -957,7 +957,7 @@ type [<ReferenceEquality>] VulkanContext =
                 submitInfo.waitSemaphoreCount <- 1u
                 submitInfo.pWaitSemaphores <- &&imageAvailableSemaphore
                 submitInfo.pWaitDstStageMask <- &&stageFlag
-                DeviceApi.vkQueueSubmit (vkQueue, 1u, &&submitInfo, VkFence.Null) |> Hl.check // fine without waiting because we've already waited on the render fence
+                DeviceApi.vkQueueSubmit (vkQueue, 1u, &&submitInfo, VkFence.Null) |> Hl.check
             | MiddleSubmission ->
                 DeviceApi.vkQueueSubmit (vkQueue, 1u, &&submitInfo, VkFence.Null) |> Hl.check
             | LastSubmission ->

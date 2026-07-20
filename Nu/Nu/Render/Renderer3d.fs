@@ -954,6 +954,24 @@ type private SortableLight =
                 lightsArray[i] <- struct (light.SortableLightId, light.SortableLightOrigin, light.SortableLightCutoff, light.SortableLightConeOuter, light.SortableLightDesireShadows)
         lightsArray
 
+    /// Sort shadowing cascaded lights.
+    /// TODO: see if we can get rid of allocation here.
+    static member sortShadowingCascadedLightsIntoArray lightsMax position lights =
+        let lightsArray = Array.zeroCreate<_> lightsMax
+        for light in lights do
+            light.SortableLightDistance <-
+                (light.SortableLightOrigin - position).Magnitude - light.SortableLightCutoff |> max 0.0f
+        let lightsSorted =
+            lights
+            |> Seq.toArray
+            |> Array.filter (fun light -> light.SortableLightDesireShadows = 1 && light.SortableLightType = 3)
+            |> Array.sortBy SortableLight.project
+        for i in 0 .. dec lightsMax do
+            if i < lightsSorted.Length then
+                let light = lightsSorted[i]
+                lightsArray[i] <- struct (light.SortableLightId, light.SortableLightOrigin, light.SortableLightCutoff, light.SortableLightConeOuter, light.SortableLightDesireShadows)
+        lightsArray
+
     /// Sort lights into float array for uploading to Vulkan.
     /// TODO: see if we can get rid of allocation here.
     static member sortLights lightsMax position lights =
@@ -1265,6 +1283,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           CubeMapGeometry : CubeMapGeometry
           BillboardGeometry : PhysicallyBasedGeometry
           QuadGeometry : PhysicallyBasedGeometry
+          TerrainGeometries : Dictionary<TerrainGeometryDescriptor, Dictionary<TerrainPatchDescriptor, PhysicallyBasedGeometry>>
+          TerrainGeometriesUtilized : TerrainGeometryDescriptor HashSet
           CubeMap : Texture
           WhiteTexture : Texture
           BlackTexture : Texture
@@ -1622,6 +1642,42 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     else VulkanRenderer3d.logRenderAssetUnavailableOnce assetTag; ValueNone
                 | (false, _) -> ValueNone
 
+    static member private tryGetFilePath (assetTag : AssetTag) renderer =
+        match VulkanRenderer3d.tryGetRenderAsset assetTag renderer with
+        | ValueSome _ ->
+            match renderer.RenderPackages.TryGetValue assetTag.PackageName with
+            | (true, package) ->
+                match package.Assets.TryGetValue assetTag.AssetName with
+                | (true, (_, asset, _)) -> Some asset.FilePath
+                | (false, _) -> None
+            | (false, _) -> None
+        | ValueNone -> None
+
+    static member private tryGetTextureData minimal (assetTag : Image AssetTag) renderer =
+        match VulkanRenderer3d.tryGetFilePath assetTag renderer with
+        | Some filePath ->
+            match TextureData.tryCreate minimal filePath with
+            | Some textureData ->
+                let metadata = textureData.Metadata
+                let (compressed, bytes) = textureData.Bytes
+                TextureData.destroy textureData
+                Some (metadata, compressed, bytes)
+            | None -> None
+        | None -> None
+
+    static member private tryGetHeightMapResolution heightMap renderer =
+        match heightMap with
+        | ImageHeightMap image ->
+            match VulkanRenderer3d.tryGetRenderAsset image renderer with
+            | ValueSome renderAsset ->
+                match renderAsset with
+                | TextureAsset texture ->
+                    let metadata = texture.TextureMetadata
+                    Some (metadata.TextureWidth, metadata.TextureHeight)
+                | _ -> None
+            | ValueNone -> None
+        | RawHeightMap map -> Some (map.Resolution.X, map.Resolution.Y)
+
     static member private getRenderTasks renderPass renderer =
         let mutable renderTasks = Unchecked.defaultof<RenderTasks> // OPTIMIZATION: seems like TryGetValue allocates here if we use the tupling idiom (this may only be the case in Debug builds tho).
         if renderer.RenderPasses.TryGetValue (renderPass, &renderTasks)
@@ -1660,6 +1716,211 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 Log.info "Could not utilize sky box due to non-existent cube map asset."
                 (lightAmbientColor, lightAmbientBrightness, None)
         | None -> (Color.White, 1.0f, None)
+        
+    static member private tryComputeTerrainPatches (geometryDescriptor : TerrainGeometryDescriptor) (heightMapMetadata : HeightMapMetadata) =
+
+        // clamp patch count and validate terrain resolution
+        let patches = geometryDescriptor.Patches
+        let patches = v2i (max 1 patches.X) (max 1 patches.Y)
+        let patches = v2i (min 64 patches.X) (min 64 patches.Y)
+        let terrainBounds = geometryDescriptor.Bounds
+        let terrainResolution = heightMapMetadata.Resolution
+        if  dec terrainResolution.X >= 1 &&
+            dec terrainResolution.Y >= 1 then
+
+            // compute patch resolution
+            let patchResolution =
+                if  patches.X >= dec terrainResolution.X ||
+                    patches.Y >= dec terrainResolution.Y then
+                    v2iDup 2
+                else
+                    let patchResolutionX = single (dec terrainResolution.X) / single patches.X |> ceil |> int |> inc
+                    let patchResolutionY = single (dec terrainResolution.Y) / single patches.Y |> ceil |> int |> inc
+                    v2i patchResolutionX patchResolutionY
+
+            // handle single patch case
+            if  patchResolution.X > terrainResolution.X ||
+                patchResolution.Y > terrainResolution.Y ||
+                patchResolution = terrainResolution then
+                [|{ PatchId = v2iZero
+                    PatchBounds = geometryDescriptor.Bounds
+                    PatchOffset = v2iZero
+                    PatchResolution = terrainResolution }|] |> Some
+            
+            // otherwise, handle multi-patch case
+            else
+
+                // compute patch cell size
+                let cellSize =
+                    v3
+                        (terrainBounds.Size.X / single terrainResolution.X)
+                        terrainBounds.Size.Y
+                        (terrainBounds.Size.Z / single terrainResolution.Y)
+
+                // compute full patch size (without underflow taken into account)
+                let patchSizeFull =
+                    v3
+                        (single terrainResolution.X * cellSize.X)
+                        terrainBounds.Size.Y
+                        (single terrainResolution.Y * cellSize.Z)
+
+                // compute patches
+                [|for patchY in 0 .. dec patches.Y do
+                    for patchX in 0 .. dec patches.X do
+
+                        // compute patch min
+                        let patchOffset =
+                            v2i
+                                (patchX * dec patchResolution.X)
+                                (patchY * dec patchResolution.Y)
+                        let patchMin =
+                            v3
+                                (terrainBounds.Min.X + single patchOffset.X * cellSize.X)
+                                terrainBounds.Min.Y
+                                (terrainBounds.Min.Z + single patchOffset.Y * cellSize.Z)
+
+                        // compute patch size
+                        let patchOverflow =
+                            v2i
+                                (patchOffset.X + patchResolution.X - terrainResolution.X |> max 0)
+                                (patchOffset.Y + patchResolution.Y - terrainResolution.Y |> max 0)
+                        let patchResolution =
+                            patchResolution - patchOverflow
+                        let patchSize =
+                            v3
+                                (single patchResolution.X * cellSize.X)
+                                patchSizeFull.Y
+                                (single patchResolution.Y * cellSize.Z)
+
+                        // fin
+                        { PatchId = v2i patchX patchY
+                          PatchResolution = patchResolution
+                          PatchBounds = box3 patchMin patchSize
+                          PatchOffset = patchOffset }|] |> Some
+
+        // invalid terrain resolution
+        else Log.error "Terrain resolution must be at least 2x2."; None
+
+    static member private createPhysicallyBasedTerrainNormals (resolution : Vector2i) (positionsAndTexCoordses : struct (Vector3 * Vector2) array) =
+        [|for y in 0 .. dec resolution.Y do
+            for x in 0 .. dec resolution.X do
+                if x > 0 && y > 0 && x < dec resolution.X && y < dec resolution.Y then
+                    let v  = fst' positionsAndTexCoordses[resolution.X * y + x]
+                    let n  = fst' positionsAndTexCoordses[resolution.X * dec y + x]
+                    let ne = fst' positionsAndTexCoordses[resolution.X * dec y + inc x]
+                    let e  = fst' positionsAndTexCoordses[resolution.X * y + inc x]
+                    let s  = fst' positionsAndTexCoordses[resolution.X * inc y + x]
+                    let sw = fst' positionsAndTexCoordses[resolution.X * inc y + dec x]
+                    let w  = fst' positionsAndTexCoordses[resolution.X * y + dec x]
+                    let normalSum =
+                        Vector3.Cross (ne - v, n - v) +
+                        Vector3.Cross (e - v,  ne - v) +
+                        Vector3.Cross (s - v,  e - v) +
+                        Vector3.Cross (sw - v, s - v) +
+                        Vector3.Cross (w - v,  sw - v) +
+                        Vector3.Cross (n - v,  w - v)
+                    let normal = normalSum.Normalized
+                    normal
+                else v3Up|]
+
+    static member private tryCreatePhysicallyBasedTerrainGeometryData (geometryDescriptor : TerrainGeometryDescriptor) (heightMapMetadata : HeightMapMetadata) renderer =
+
+        // compute normals
+        let resolution = heightMapMetadata.Resolution
+        let positionsAndTexCoordses = heightMapMetadata.PositionsAndTexCoordses
+        let normalsOpt =
+            match geometryDescriptor.NormalImageOpt with
+            | Some normalImage ->
+                match VulkanRenderer3d.tryGetTextureData false normalImage renderer with
+                | Some (metadata, compressed, bytes) ->
+                    if metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length then
+                        if not compressed then
+                            let scalar = 1.0f / single Byte.MaxValue
+                            bytes
+                            |> Array.map (fun b -> single b * scalar)
+                            |> Array.chunkBySize 4
+                            |> Array.map (fun b ->
+                                let tangent = (v3 b[2] b[1] b[0] * 2.0f - v3One).Normalized
+                                let normal = v3 tangent.X tangent.Z -tangent.Y
+                                normal)
+                            |> Some
+                        else Log.info "Block-compressed images not supported for terrain normal images."; None
+                    else Log.info "Normal image resolution does not match terrain resolution."; None
+                | None -> Some (VulkanRenderer3d.createPhysicallyBasedTerrainNormals resolution positionsAndTexCoordses)
+            | None -> Some (VulkanRenderer3d.createPhysicallyBasedTerrainNormals resolution positionsAndTexCoordses)
+
+        // compute tint
+        let tintOpt =
+            match geometryDescriptor.TintImageOpt with
+            | Some tintImage ->
+                match VulkanRenderer3d.tryGetTextureData false tintImage renderer with
+                | Some (metadata, compressed, bytes) ->
+                    if metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length then
+                        if not compressed then
+                            let scalar = 1.0f / single Byte.MaxValue
+                            bytes
+                            |> Array.map (fun b -> single b * scalar)
+                            |> Array.chunkBySize 4
+                            |> Array.map (fun b -> v3 b[2] b[1] b[0])
+                            |> Some
+                        else Log.info "Block-compressed images not supported for terrain tint images."; None
+                    else Log.info "Tint image resolution does not match terrain resolution."; None
+                | None -> Some (Array.init positionsAndTexCoordses.Length (fun _ -> v3One))
+            | _ -> Some (Array.init positionsAndTexCoordses.Length (fun _ -> v3One))
+
+        // compute blendses, logging if more than the safe number of terrain layers is utilized
+        // NOTE: there are 8 blends, each of which we account for regardless of TerrainLayersMax.
+        let blendses = Array2D.zeroCreate<single> positionsAndTexCoordses.Length 8
+        match geometryDescriptor.Material with
+        | BlendMaterial blendMaterial ->
+            if blendMaterial.TerrainLayers.Length > Constants.Render.TerrainLayersMax then
+                Log.infoOnce
+                    ("Terrain has more than " +
+                     string Constants.Render.TerrainLayersMax +
+                     " layers which references more than the number of supported fragment shader textures.")
+            match blendMaterial.BlendMap with
+            | RgbaMap rgbaMap ->
+                match VulkanRenderer3d.tryGetTextureData false rgbaMap renderer with
+                | Some (metadata, compressed, bytes) ->
+                    if metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length then
+                        if not compressed then
+                            let scalar = 1.0f / single Byte.MaxValue
+                            for i in 0 .. dec positionsAndTexCoordses.Length do
+                                // ARGB reverse byte order, from Drawing.Bitmap (windows).
+                                // TODO: confirm it is the same for SDL (linux).
+                                blendses[i, 0] <- single bytes[i * 4 + 2] * scalar
+                                blendses[i, 1] <- single bytes[i * 4 + 1] * scalar
+                                blendses[i, 2] <- single bytes[i * 4 + 0] * scalar
+                                blendses[i, 3] <- single bytes[i * 4 + 3] * scalar
+                        else Log.info "Block-compressed images not supported for terrain blend iamges."
+                    else Log.info "Blend image resolution does not match terrain resolution."
+                | None -> Log.info ("Could not locate texture data for blend image '" + scstring rgbaMap + "'.")
+            | RedsMap reds ->
+                let scalar = 1.0f / single Byte.MaxValue
+                for i in 0 .. dec (min reds.Length 8) do
+                    let red = reds[i]
+                    match VulkanRenderer3d.tryGetTextureData false red renderer with
+                    | Some (metadata, compressed, bytes) ->
+                        if metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length then
+                            if not compressed then
+                                for j in 0 .. dec positionsAndTexCoordses.Length do
+                                    blendses[j, i] <- single bytes[j * 4 + 2] * scalar
+                            else Log.info "Block-compressed images not supported for terrain blend images."
+                        else Log.info "Blend image resolution does not match terrain resolution."
+                    | None -> Log.info ("Could not locate texture data for blend image '" + scstring red + "'.")
+        | FlatMaterial _ ->
+            for i in 0 .. dec positionsAndTexCoordses.Length do
+                blendses[i,0] <- 1.0f
+
+        // ensure we've got usable input data
+        match (normalsOpt, tintOpt) with
+        | (Some normals, Some tint) ->
+                
+            // provide data necessary for creating geometry
+            Some (positionsAndTexCoordses, normals, blendses, tint)
+
+        // error
+        | (_, _) -> None
 
     static member private makeBillboardMaterial (properties : MaterialProperties inref, material : Material inref, renderer) =
         let albedoTexture =
@@ -2365,6 +2626,122 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             | _ -> Log.infoOnce ("Cannot render animated model with a non-animated model asset '" + scstring animatedModel + "'.")
         | ValueNone -> Log.infoOnce ("Cannot render animated model due to unloadable asset(s) for '" + scstring animatedModel + "'.")
 
+    static member private categorizeTerrain
+        (visible : bool,
+         terrainDescriptor : TerrainDescriptor,
+         renderTasks : RenderTasks,
+         renderer) =
+
+        // attempt to create terrain geometry when not already cached
+        let geometryDescriptor = terrainDescriptor.TerrainGeometryDescriptor
+        if not (renderer.TerrainGeometries.ContainsKey geometryDescriptor) then
+
+            // attempt to get height map metadata to compute patches
+            let heightMapMetadataOpt =
+                HeightMap.tryGetMetadata
+                    (fun assetTag -> VulkanRenderer3d.tryGetFilePath assetTag renderer)
+                    terrainDescriptor.Bounds
+                    terrainDescriptor.Tiles
+                    terrainDescriptor.HeightMap
+
+            // attempt to extract height map metadata for geometry creation
+            match heightMapMetadataOpt with
+            | ValueSome heightMapMetadata ->
+
+                // attempt to create geometry data for the entire terrain
+                match VulkanRenderer3d.tryCreatePhysicallyBasedTerrainGeometryData geometryDescriptor heightMapMetadata renderer with
+                | Some (positionsAndTexCoordses, normals, blendses, tint) ->
+
+                    // attempt to compute patches for the terrain
+                    match VulkanRenderer3d.tryComputeTerrainPatches geometryDescriptor heightMapMetadata with
+                    | Some patches ->
+
+                        // create geometry for each patch
+                        for patchDescriptor in patches do
+
+                            // extract positions and texture coordinates for this patch
+                            let patchResolution = patchDescriptor.PatchResolution
+                            let patchOffset = patchDescriptor.PatchOffset
+                            let patchPositionsAndTexCoordses =
+                                [|for y in 0 .. dec patchResolution.Y do
+                                    for x in 0 .. dec patchResolution.X do
+                                        let i = (patchOffset.Y + y) * heightMapMetadata.Resolution.X + (patchOffset.X + x)
+                                        positionsAndTexCoordses[i]|]
+
+                            // extract normals
+                            let patchNormals =
+                                [|for y in 0 .. dec patchResolution.Y do
+                                    for x in 0 .. dec patchResolution.X do
+                                        let i = (patchOffset.Y + y) * heightMapMetadata.Resolution.X + (patchOffset.X + x)
+                                        normals[i]|]
+
+                            // extract blendses
+                            let patchBlendses =
+                                [|for y in 0 .. dec patchResolution.Y do
+                                    for x in 0 .. dec patchResolution.X do
+                                        let i = (patchOffset.Y + y) * heightMapMetadata.Resolution.X + (patchOffset.X + x)
+                                        [|for j in 0 .. dec 8 do blendses[i, j]|]|]
+
+                            // extract tint
+                            let patchTint =
+                                [|for y in 0 .. dec patchResolution.Y do
+                                    for x in 0 .. dec patchResolution.X do
+                                        let i = (patchOffset.Y + y) * heightMapMetadata.Resolution.X + (patchOffset.X + x)
+                                        tint[i]|]
+
+                            // compute vertices
+                            let vertices =
+                                [|for i in 0 .. dec patchPositionsAndTexCoordses.Length do
+                                    let struct (p, tc) = patchPositionsAndTexCoordses[i]
+                                    let n = patchNormals[i]
+                                    let s = patchBlendses
+                                    let t = patchTint[i]
+                                    yield!
+                                        [|p.X; p.Y; p.Z
+                                          tc.X; tc.Y
+                                          n.X; n.Y; n.Z
+                                          t.X; t.Y; t.Z
+                                          s[i][0]; s[i][1]; s[i][2]; s[i][3]; s[i][4]; s[i][5]; s[i][6]; s[i][7]|]|]
+
+                            // compute indices, splitting quad along the standard orientation (as used by World Creator, AFAIK).
+                            let indices =
+                                [|for y in 0 .. dec patchResolution.Y - 1 do
+                                    for x in 0 .. dec patchResolution.X - 1 do
+                                        yield patchResolution.X * y + x
+                                        yield patchResolution.X * inc y + x
+                                        yield patchResolution.X * y + inc x
+                                        yield patchResolution.X * inc y + x
+                                        yield patchResolution.X * inc y + inc x
+                                        yield patchResolution.X * y + inc x|]
+
+                            // create the actual geometry
+                            let geometry = PhysicallyBased.createPhysicallyBasedTerrainGeometry VkPrimitiveTopology.TriangleList (vertices.AsMemory ()) (indices.AsMemory ()) geometryDescriptor.Bounds (Some renderer.VulkanContext)
+                            match renderer.TerrainGeometries.TryGetValue geometryDescriptor with
+                            | (true, existingGeometry) -> existingGeometry.Add (patchDescriptor, geometry)
+                            | (false, _) -> renderer.TerrainGeometries.Add (geometryDescriptor, dictPlus HashIdentity.Structural [(patchDescriptor, geometry)])
+
+                    // could not create geometry
+                    | None -> ()
+
+                // could not compute patches
+                | None -> ()
+
+            // could not extract height map metadata
+            | ValueNone -> ()
+
+        // attempt to add patch to appropriate render list when visible
+        if visible then
+            match renderer.TerrainGeometries.TryGetValue geometryDescriptor with
+            | (true, patchGeometries) ->
+                for entry in patchGeometries do
+                    let patchDescriptor = entry.Key
+                    let patchGeometry = entry.Value
+                    renderTasks.DeferredTerrains.Add struct (terrainDescriptor, patchDescriptor, patchGeometry)
+            | (false, _) -> ()
+
+        // mark patch geometry as utilized regardless of visibility (to keep it from being destroyed)
+        renderer.TerrainGeometriesUtilized.Add geometryDescriptor |> ignore<bool>
+
     static member private categorize
         frustumInterior
         frustumExterior
@@ -2483,6 +2860,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             | RenderCachedAnimatedModel camm ->
                 let renderTasks = VulkanRenderer3d.getRenderTasks camm.CachedAnimatedModelRenderPass renderer
                 VulkanRenderer3d.categorizeAnimatedModel (&camm.CachedAnimatedModelMatrix, camm.CachedAnimatedModelCastShadow, camm.CachedAnimatedModelPresence, &camm.CachedAnimatedModelInsetOpt, &camm.CachedAnimatedModelMaterialProperties, camm.CachedAnimatedModelBoneTransforms, camm.CachedAnimatedModel, camm.CachedAnimatedModelSubsortOffsets, camm.CachedAnimatedModelDualRenderedSurfaceIndices, camm.CachedAnimatedModelDepthTest, camm.CachedAnimatedModelRenderType, renderTasks, renderer)
+            | RenderTerrain rt ->
+                let renderTasks = VulkanRenderer3d.getRenderTasks rt.RenderPass renderer
+                VulkanRenderer3d.categorizeTerrain (rt.Visible, rt.TerrainDescriptor, renderTasks, renderer)
             | ConfigureLighting3d l3c ->
                 if renderer.LightingConfig <> l3c then renderer.LightingConfigChanged <- true
                 renderer.LightingConfig <- l3c
@@ -2800,7 +3180,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
         // render light maps as needed
         for (renderPass, renderTasks) in renderer.RenderPasses.Pairs do
-                
+
             // fallback light map pre-pass
             match VulkanRenderer3d.getLastSkyBoxOpt renderPass renderer |> __c with
             | Some (_, _, cubeMap, irradianceAndEnvironmentMapsOptRef : (Texture * Texture) option ref) ->
@@ -2812,7 +3192,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     let irradianceMap =
                         LightMap.createIrradianceMap
                             Constants.Render.IrradianceMapResolution
-                            (CubeMapSurface.make cubeMap renderer.CubeMapGeometry)
+                            (CubeMapSurface.make false cubeMap renderer.CubeMapGeometry)
                             renderer.CubeMapSampler
                             renderer.IrradianceMap.InternalFormat
                             renderer.IrradiancePipeline
@@ -2824,7 +3204,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     let environmentFilterMap =
                         LightMap.createEnvironmentFilterMap
                             Constants.Render.EnvironmentFilterResolution
-                            (CubeMapSurface.make cubeMap renderer.CubeMapGeometry)
+                            (CubeMapSurface.make false cubeMap renderer.CubeMapGeometry)
                             renderer.CubeMapSampler
                             renderer.EnvironmentFilterMap.InternalFormat
                             renderer.EnvironmentFilterPipeline
@@ -2855,7 +3235,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     match renderTasks.LightProbes.TryGetValue lightProbeId with
                     | (true, struct (lightProbeEnabled, lightProbeOrigin, lightProbeAmbientColor, lightProbeAmbientBrightness, lightProbeBounds)) ->
 
-                        // create reflection map
+                        // create reflection map (this will be flipped)
                         let reflectionMap =
                             LightMap.createReflectionMap
                                 (VulkanRenderer3d.renderGeometry frustumInterior frustumExterior frustumImposter renderPass (VulkanRenderer3d.getRenderTasks renderPass renderer) renderer)
@@ -2871,7 +3251,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                         let irradianceMap =
                             LightMap.createIrradianceMap
                                 Constants.Render.IrradianceMapResolution
-                                (CubeMapSurface.make reflectionMap renderer.CubeMapGeometry)
+                                (CubeMapSurface.make true reflectionMap renderer.CubeMapGeometry)
                                 renderer.CubeMapSampler
                                 renderer.IrradianceMap.InternalFormat
                                 renderer.IrradiancePipeline
@@ -2883,7 +3263,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                         let environmentFilterMap =
                             LightMap.createEnvironmentFilterMap
                                 Constants.Render.EnvironmentFilterResolution
-                                (CubeMapSurface.make reflectionMap renderer.CubeMapGeometry)
+                                (CubeMapSurface.make true reflectionMap renderer.CubeMapGeometry)
                                 renderer.CubeMapSampler
                                 renderer.EnvironmentFilterMap.InternalFormat
                                 renderer.EnvironmentFilterPipeline
@@ -2940,8 +3320,10 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             let clearColorValueOpt =
                 if clear then
                     match lightType with
-                    | PointLight -> Some (VkClearValue (lightCutoff, 0.0f, 0.0f, 0.0f)) // TODO: P1: make derived from constant.
-                    | SpotLight _ | DirectionalLight _ -> Some (VkClearValue (1.0f, Single.MaxValue, 0.0f, 0.0f)) // TODO: P1: make derived from constant.
+                    | PointLight | CascadedLight ->
+                        Some (VkClearValue (lightCutoff, 0.0f, 0.0f, 0.0f)) // TODO: make derived from constant.
+                    | SpotLight _ | DirectionalLight _ ->
+                        Some (VkClearValue (1.0f, Single.MaxValue, 0.0f, 0.0f)) // TODO: make derived from constant.
                 else None
             uniformsDescriptorSet <-
                 VulkanRenderer3d.beginPhysicallyBasedShadowSurfaces
@@ -3096,6 +3478,25 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
         // actually render to shadow cube map face
         VulkanRenderer3d.renderShadow lightOrigin shadowView shadowProjection shadowFrustum PointLight lightCutoff shadowResolution colorAttachment depthAttachment renderTasks renderer
+
+    static member private renderShadowCascade
+        (lightOrigin : Vector3)
+        (lightCutoff : single)
+        (shadowView : Matrix4x4)
+        (shadowProjection : Matrix4x4)
+        (shadowFrustum : Frustum)
+        (shadowResolution : Vector2i)
+        (colorAttachment : VkImageView)
+        (depthAttachment : Texture)
+        renderTasks
+        renderer =
+
+        // send forward surfaces directly to sorted buffer since no sorting is needed for shadows
+        for struct (_, _, model, castShadow, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest) in renderTasks.Forward do
+            renderTasks.ForwardSorted.Add struct (model, castShadow, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest)
+
+        // actually render to shadow cube map face
+        VulkanRenderer3d.renderShadow lightOrigin shadowView shadowProjection shadowFrustum CascadedLight lightCutoff shadowResolution colorAttachment depthAttachment renderTasks renderer
 
     static member private renderShadows eyeCenter renderer =
 
@@ -3253,6 +3654,209 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
                         | SpotLight (_, _) | DirectionalLight _ | CascadedLight -> failwithumf ()
                     | _ -> ()
+
+        // sort cascaded lights according to how they are utilized by shadows
+        let cascadedLightsArray = SortableLight.sortShadowingCascadedLightsIntoArray Constants.Render.ShadowCascadesMax eyeCenter normalTasks.Lights
+
+        // sort cascaded lights so that shadows that have the possibility of cache reuse come to the front
+        // NOTE: this approach has O(n^2) complexity altho perhaps it could be optimized.
+        let cascadedLightsArray =
+            Array.sortBy (fun struct (id, _, _, _, _) ->
+                renderer.RenderPasses2.Pairs
+                |> Seq.choose (fun (renderPass, renderTasks) -> match renderPass with ShadowPass (id2, indexInfoOpt, _, _, _, _) when id2 = id && indexInfoOpt.IsSome -> renderTasks.ShadowBufferIndexOpt | _ -> None)
+                |> Seq.headOrDefault Int32.MaxValue)
+                cascadedLightsArray
+
+        // shadow cascade pre-passes
+        let mutable shadowCascadeBufferIndex = 0
+        for struct (lightId, lightOrigin, lightCutoff, _, lightDesireShadows) in cascadedLightsArray do
+            if renderer.RendererConfig.LightShadowingEnabled && lightDesireShadows = 1 then
+                for (renderPass, renderTasks) in renderer.RenderPasses.Pairs do
+                    match renderPass with
+                    | ShadowPass (shadowLightId, shadowIndexInfoOpt, shadowLightType, _, _, shadowFrustum) when
+                        lightId = shadowLightId && shadowIndexInfoOpt.IsSome && shadowCascadeBufferIndex < Constants.Render.ShadowCascadesMax ->
+                        match shadowLightType with
+                        | CascadedLight ->
+
+                            // destructure shadow index info
+                            let (shadowCascadeLevel, shadowView, shadowProjection) = shadowIndexInfoOpt.Value
+
+                            // draw shadow cascade when not cached
+                            let shouldDraw =
+                                match renderer.RenderPasses2.TryGetValue renderPass with
+                                | (true, renderTasksCached) ->
+                                    if Option.contains (shadowCascadeBufferIndex + Constants.Render.ShadowTexturesMax) renderTasksCached.ShadowBufferIndexOpt then
+                                        let upToDate = RenderTasks.shadowUpToDate renderer.LightingConfigChanged renderer.RendererConfigChanged renderTasks renderTasksCached
+                                        not upToDate
+                                    else true
+                                | (_, _) -> true
+                            if shouldDraw then
+
+                                // draw shadow cascade
+                                let shadowResolution = renderer.GeometryViewport.ShadowCascadeResolution
+                                let (shadowCascadeArray, shadowZTexture) = renderer.PhysicallyBasedAttachments.ShadowCascadeArrayAttachmentsArray[shadowCascadeBufferIndex]
+                                VulkanRenderer3d.renderShadowCascade lightOrigin lightCutoff shadowView shadowProjection shadowFrustum shadowResolution shadowCascadeArray.LayerViews[shadowCascadeLevel] shadowZTexture renderTasks renderer
+
+                                // filter shadows on the x
+                                let gaussianEsmArrayTexture = renderer.PhysicallyBasedAttachments.GaussianEsmArrayAttachment
+                                Hl.recordTransitionLayout true 1 shadowCascadeLevel 1 VkImageAspectFlags.Color ColorAttachmentRead ColorAttachmentWrite gaussianEsmArrayTexture.Image renderer.VulkanContext.RenderCommandBuffer
+                                PhysicallyBased.drawFilterGaussianEsmSurface
+                                    (v2 (1.0f / single shadowResolution.X) 0.0f) renderer.LightingConfig.LightShadowRadius
+                                    shadowCascadeArray.LayerViews[shadowCascadeLevel] renderer.FilteredSampler shadowResolution gaussianEsmArrayTexture.LayerViews[shadowCascadeLevel]
+                                    renderer.RenderPassIndex renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterGaussianEsmPipeline renderer.VulkanContext
+                                Hl.recordTransitionLayout true 1 shadowCascadeLevel 1 VkImageAspectFlags.Color ColorAttachmentWrite ColorAttachmentRead gaussianEsmArrayTexture.Image renderer.VulkanContext.RenderCommandBuffer
+
+                                // filter shadows on the y
+                                Hl.recordTransitionLayout true 1 shadowCascadeLevel 1 VkImageAspectFlags.Color ColorAttachmentRead ColorAttachmentWrite shadowCascadeArray.Image renderer.VulkanContext.RenderCommandBuffer
+                                PhysicallyBased.drawFilterGaussianEsmSurface
+                                    (v2 0.0f (1.0f / single shadowResolution.Y)) renderer.LightingConfig.LightShadowRadius
+                                    gaussianEsmArrayTexture.LayerViews[shadowCascadeLevel] renderer.FilteredSampler shadowResolution shadowCascadeArray.LayerViews[shadowCascadeLevel]
+                                    renderer.RenderPassIndex renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterGaussianEsmPipeline renderer.VulkanContext
+                                Hl.recordTransitionLayout true 1 shadowCascadeLevel 1 VkImageAspectFlags.Color ColorAttachmentWrite ColorAttachmentRead shadowCascadeArray.Image renderer.VulkanContext.RenderCommandBuffer
+
+                            // remember the utilized index for the next frame
+                            renderTasks.ShadowBufferIndexOpt <- Some (shadowCascadeBufferIndex + Constants.Render.ShadowTexturesMax)
+
+                            // update renderer values or next shadow
+                            // NOTE: this behavior completely DEPENDS on shadow index messages for a shadow cascade
+                            // being received and processed in numerical order.
+                            renderer.ShadowMatricesFlipped
+                                [shadowCascadeBufferIndex * Constants.Render.ShadowCascadeLevels + shadowCascadeLevel + Constants.Render.ShadowTexturesMax] <-
+                                shadowView * shadowProjection.Flipped
+                            if shadowCascadeLevel = 0 then
+                                renderer.LightShadowIndices[lightId] <- shadowCascadeBufferIndex + Constants.Render.ShadowTexturesMax
+                            elif shadowCascadeLevel = dec Constants.Render.ShadowCascadeLevels then
+                                shadowCascadeBufferIndex <- inc shadowCascadeBufferIndex
+
+                        | PointLight | SpotLight (_, _) | DirectionalLight _ -> failwithumf ()
+                    | _ -> ()
+
+    // TODO: apply intention blocks to this function.
+    static member private renderPhysicallyBasedTerrain
+        eyeCenter view projection
+        lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity
+        (terrainDescriptor : TerrainDescriptor) filteredSampler geometry colorAttachments depthAttachment viewport renderPassIndex pipeline renderer =
+        let terrainMaterialProperties = terrainDescriptor.MaterialProperties
+        let materialProperties =
+            { Albedo = Option.defaultValue Constants.Render.AlbedoDefault terrainMaterialProperties.AlbedoOpt
+              Roughness = Option.defaultValue Constants.Render.RoughnessDefault terrainMaterialProperties.RoughnessOpt
+              Metallic = Constants.Render.MetallicDefault
+              AmbientOcclusion = Option.defaultValue Constants.Render.AmbientOcclusionDefault terrainMaterialProperties.AmbientOcclusionOpt
+              Emission = Constants.Render.EmissionDefault
+              Height = Option.defaultValue Constants.Render.HeightDefault terrainMaterialProperties.HeightOpt
+              IgnoreLightMaps = Option.defaultValue Constants.Render.IgnoreLightMapsDefault terrainMaterialProperties.IgnoreLightMapsOpt
+              OpaqueDistance = Constants.Render.OpaqueDistanceDefault
+              FinenessOffset = Constants.Render.FinenessOffsetDefault
+              ScatterType = Constants.Render.ScatterTypeDefault
+              SpecularScalar = Constants.Render.SpecularScalarDefault
+              SubsurfaceCutoff = Constants.Render.SubsurfaceCutoffDefault
+              SubsurfaceCutoffMargin = Constants.Render.SubsurfaceCutoffMarginDefault
+              RefractiveIndex = Constants.Render.RefractiveIndexDefault
+              ClearCoat = Constants.Render.ClearCoatDefault
+              ClearCoatRoughness = Constants.Render.ClearCoatRoughnessDefault }
+        let (texelWidth, texelHeight, materials) =
+            match terrainDescriptor.Material with
+            | BlendMaterial blendMaterial ->
+                let mutable texelWidth = Single.MaxValue
+                let mutable texelHeight = Single.MaxValue
+                let materials =
+                    [|for i in 0 .. dec blendMaterial.TerrainLayers.Length do
+                        let layer =
+                            blendMaterial.TerrainLayers[i]
+                        let defaultMaterial =
+                            renderer.PhysicallyBasedMaterial
+                        let albedoTexture =
+                            match VulkanRenderer3d.tryGetRenderAsset layer.AlbedoImage renderer with
+                            | ValueSome renderAsset -> match renderAsset with TextureAsset texture -> texture | _ -> defaultMaterial.AlbedoTexture
+                            | ValueNone -> defaultMaterial.AlbedoTexture
+                        let roughnessTexture =
+                            match VulkanRenderer3d.tryGetRenderAsset layer.RoughnessImage renderer with
+                            | ValueSome renderAsset -> match renderAsset with TextureAsset texture -> texture | _ -> defaultMaterial.RoughnessTexture
+                            | ValueNone -> defaultMaterial.RoughnessTexture
+                        let ambientOcclusionTexture =
+                            match VulkanRenderer3d.tryGetRenderAsset layer.AmbientOcclusionImage renderer with
+                            | ValueSome renderAsset -> match renderAsset with TextureAsset texture -> texture | _ -> defaultMaterial.AmbientOcclusionTexture
+                            | ValueNone -> defaultMaterial.AmbientOcclusionTexture
+                        let normalTexture =
+                            match VulkanRenderer3d.tryGetRenderAsset layer.NormalImage renderer with
+                            | ValueSome renderAsset -> match renderAsset with TextureAsset texture -> texture | _ -> defaultMaterial.NormalTexture
+                            | ValueNone -> defaultMaterial.NormalTexture
+                        let heightTexture =
+                            match VulkanRenderer3d.tryGetRenderAsset layer.HeightImage renderer with
+                            | ValueSome renderAsset -> match renderAsset with TextureAsset texture -> texture | _ -> defaultMaterial.HeightTexture
+                            | ValueNone -> defaultMaterial.HeightTexture
+                        let albedoMetadata = albedoTexture.TextureMetadata
+                        texelWidth <- min texelWidth albedoMetadata.TextureTexelWidth
+                        texelHeight <- min texelHeight albedoMetadata.TextureTexelHeight
+                        { defaultMaterial with
+                            AlbedoTexture = albedoTexture
+                            RoughnessTexture = roughnessTexture
+                            AmbientOcclusionTexture = ambientOcclusionTexture
+                            NormalTexture = normalTexture
+                            HeightTexture = heightTexture }|]
+                (texelWidth, texelHeight, materials)
+            | FlatMaterial flatMaterial ->
+                let defaultMaterial =
+                    renderer.PhysicallyBasedMaterial
+                let albedoTexture =
+                    match VulkanRenderer3d.tryGetRenderAsset flatMaterial.AlbedoImage renderer with
+                    | ValueSome renderAsset -> match renderAsset with TextureAsset texture -> texture | _ -> defaultMaterial.AlbedoTexture
+                    | ValueNone -> defaultMaterial.AlbedoTexture
+                let roughnessTexture =
+                    match VulkanRenderer3d.tryGetRenderAsset flatMaterial.RoughnessImage renderer with
+                    | ValueSome renderAsset -> match renderAsset with TextureAsset texture -> texture | _ -> defaultMaterial.RoughnessTexture
+                    | ValueNone -> defaultMaterial.RoughnessTexture
+                let ambientOcclusionTexture =
+                    match VulkanRenderer3d.tryGetRenderAsset flatMaterial.AmbientOcclusionImage renderer with
+                    | ValueSome renderAsset -> match renderAsset with TextureAsset texture -> texture | _ -> defaultMaterial.AmbientOcclusionTexture
+                    | ValueNone -> defaultMaterial.AmbientOcclusionTexture
+                let normalTexture =
+                    match VulkanRenderer3d.tryGetRenderAsset flatMaterial.NormalImage renderer with
+                    | ValueSome renderAsset -> match renderAsset with TextureAsset texture -> texture | _ -> defaultMaterial.NormalTexture
+                    | ValueNone -> defaultMaterial.NormalTexture
+                let heightTexture =
+                    match VulkanRenderer3d.tryGetRenderAsset flatMaterial.HeightImage renderer with
+                    | ValueSome renderAsset -> match renderAsset with TextureAsset texture -> texture | _ -> defaultMaterial.HeightTexture
+                    | ValueNone -> defaultMaterial.HeightTexture
+                let material =
+                    { defaultMaterial with
+                        AlbedoTexture = albedoTexture
+                        RoughnessTexture = roughnessTexture
+                        AmbientOcclusionTexture = ambientOcclusionTexture
+                        NormalTexture = normalTexture
+                        HeightTexture = heightTexture }
+                let albedoMetadata = albedoTexture.TextureMetadata
+                (albedoMetadata.TextureTexelWidth, albedoMetadata.TextureTexelHeight, [|material|])
+        let texCoordsOffset =
+            match terrainDescriptor.InsetOpt with
+            | Some inset ->
+                let texelWidth = texelWidth
+                let texelHeight = texelHeight
+                let px = inset.Min.X * texelWidth
+                let py = (inset.Min.Y + inset.Size.Y) * texelHeight
+                let sx = inset.Size.X * texelWidth
+                let sy = -inset.Size.Y * texelHeight
+                Box2 (px, py, sx, sy)
+            | None -> box2 v2Zero v2Zero
+        let instanceFields = Array.zeroCreate Constants.Render.InstanceFieldCount
+        m4Identity.ToArray (instanceFields, 0)
+        instanceFields[16] <- texCoordsOffset.Min.X
+        instanceFields[17] <- texCoordsOffset.Min.Y
+        instanceFields[18] <- texCoordsOffset.Min.X + texCoordsOffset.Size.X
+        instanceFields[19] <- texCoordsOffset.Min.Y + texCoordsOffset.Size.Y
+        instanceFields[20] <- materialProperties.Albedo.R
+        instanceFields[21] <- materialProperties.Albedo.G
+        instanceFields[22] <- materialProperties.Albedo.B
+        instanceFields[23] <- materialProperties.Albedo.A
+        instanceFields[24] <- materialProperties.Roughness
+        instanceFields[25] <- materialProperties.Metallic
+        instanceFields[26] <- materialProperties.AmbientOcclusion
+        instanceFields[27] <- materialProperties.Emission
+        instanceFields[28] <- texelHeight * materialProperties.Height
+        PhysicallyBased.drawPhysicallyBasedTerrain
+            eyeCenter view projection
+            instanceFields lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity
+            materials filteredSampler geometry colorAttachments depthAttachment viewport renderPassIndex pipeline renderer.VulkanContext
 
     static member private renderGeometry
         frustumInterior
@@ -3477,6 +4081,15 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // end deferred animated rendering
         VulkanRenderer3d.endPhysicallyBasedDeferredSurfaces
             renderer.PhysicallyBasedPipelines.DeferredAnimatedPipeline renderer.VulkanContext
+
+        // render terrains deferred
+        let terrainTextureViews = [|depthTexture.ImageView; albedoTexture.ImageView; materialTexture.ImageView; normalPlusTexture.ImageView; subdermalPlusTexture.ImageView; scatterPlusTexture.ImageView|]
+        for struct (descriptor, _, geometry) in renderTasks.DeferredTerrains do
+            VulkanRenderer3d.renderPhysicallyBasedTerrain
+                eyeCenter view geometryProjection
+                renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowDensity
+                descriptor renderer.FilteredSampler geometry terrainTextureViews zTexture
+                renderer.GeometryViewport renderer.RenderPassIndex renderer.PhysicallyBasedPipelines.DeferredTerrainPipeline renderer
 
         // transition geometry attachments (except zTexture) back to reading
         Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead depthTexture renderer.VulkanContext.RenderCommandBuffer
@@ -3828,6 +4441,16 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         //    VulkanRenderer3d.tryDestroyUserDefinedStaticModel staticModel renderer
         renderer.UserDefinedStaticModelsToDestroy.Clear ()
 
+        // destroy cached terrain geometries that weren't rendered this frame
+        for geometry in renderer.TerrainGeometries do
+            if not (renderer.TerrainGeometriesUtilized.Contains geometry.Key) then
+                for patchGeometry in geometry.Value do
+                    PhysicallyBased.destroyPhysicallyBasedGeometry patchGeometry.Value renderer.VulkanContext
+                    renderer.TerrainGeometries.Remove geometry.Key |> ignore<bool>
+
+        // reset terrain geometry book-keeping
+        renderer.TerrainGeometriesUtilized.Clear ()
+
         // swap render passes
         for renderTasks in renderer.RenderPasses.Values do RenderTasks.sweep renderTasks
         for renderTasks in renderer.RenderPasses2.Values do RenderTasks.clear true renderTasks
@@ -3898,9 +4521,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
         // create physically-based quad
         let quadGeometry = PhysicallyBased.createPhysicallyBasedQuadGeometry (Some context)
-        
+
         // create cube map surface
-        let cubeMapSurface = CubeMapSurface.make cubeMap cubeMapGeometry
+        let cubeMapSurface = CubeMapSurface.make false cubeMap cubeMapGeometry
         
         // create white texture
         let whiteTexture =
@@ -4083,6 +4706,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               CubeMapGeometry = cubeMapGeometry
               BillboardGeometry = billboardGeometry
               QuadGeometry = quadGeometry
+              TerrainGeometries = Dictionary HashIdentity.Structural
+              TerrainGeometriesUtilized = HashSet HashIdentity.Structural
               CubeMap = cubeMapSurface.CubeMap
               WhiteTexture = whiteTexture
               BlackTexture = blackTexture
