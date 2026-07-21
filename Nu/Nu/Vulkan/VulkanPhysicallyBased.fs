@@ -4150,7 +4150,6 @@ module PhysicallyBased =
         (inputSampler : Sampler)
         (colorAttachment : Texture)
         (resolution : Vector2i)
-        (renderPassIndex : int)
         (geometry : PhysicallyBasedGeometry)
         (pipeline : FilterBoxPipeline)
         (context : VulkanContext) =
@@ -4160,7 +4159,7 @@ module PhysicallyBased =
         | Some vkPipeline ->
 
             // specify texture
-            let mutable textureDescriptorSet = Pipeline.specifyDescriptorSet 0 renderPassIndex pipeline.Pipeline $ fun vkSet ->
+            let mutable textureDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.Pipeline.DrawIndex pipeline.Pipeline $ fun vkSet ->
                 Pipeline.writeDescriptorSampledTexture 0 0 inputTexture vkSet
 
             // specify sampler
@@ -4249,7 +4248,6 @@ module PhysicallyBased =
         (filteredSampler : Sampler)
         (resolution : Vector2i)
         (colorAttachment : VkImageView)
-        (renderPassIndex : int) // TODO: use this for just gaussian esm uniforms...
         (geometry : PhysicallyBasedGeometry)
         (pipeline : FilterGaussianEsmPipeline)
         (context : VulkanContext) =
@@ -4259,7 +4257,7 @@ module PhysicallyBased =
         | Some vkPipeline ->
 
             // specify gaussianEsm
-            let mutable gaussianEsmDescriptorSet = Pipeline.specifyDescriptorSet 0 renderPassIndex pipeline.Pipeline $ fun vkSet ->
+            let mutable gaussianEsmDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.Pipeline.DrawIndex pipeline.Pipeline $ fun vkSet ->
                 let gaussianEsm = GaussianEsm (scale = scale, radius = radius)
                 VulkanBuffer.uploadValue gaussianEsm pipeline.GaussianEsmUniform context
                 Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.GaussianEsmUniform vkSet
@@ -4359,7 +4357,6 @@ module PhysicallyBased =
         (inputSampler : Sampler)
         (colorAttachment : Texture)
         (resolution : Vector2i)
-        (renderPassIndex : int)
         (geometry : PhysicallyBasedGeometry)
         (pipeline : FilterToneMappingPipeline)
         (context : VulkanContext) =
@@ -4369,7 +4366,7 @@ module PhysicallyBased =
         | Some vkPipeline ->
 
             // specify uniforms
-            let mutable uniformsDescriptorSet = Pipeline.specifyDescriptorSet 0 renderPassIndex pipeline.Pipeline $ fun vkSet ->
+            let mutable uniformsDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.Pipeline.DrawIndex pipeline.Pipeline $ fun vkSet ->
                 
                 // specify tone-mapping
                 let toneMapping =
@@ -4473,7 +4470,6 @@ module PhysicallyBased =
         (inputSampler : Sampler)
         (colorAttachment : Texture)
         (resolution : Vector2i)
-        (renderPassIndex : int)
         (geometry : PhysicallyBasedGeometry)
         (pipeline : FilterFxaaPipeline)
         (context : VulkanContext) =
@@ -4483,7 +4479,7 @@ module PhysicallyBased =
         | Some vkPipeline ->
 
             // specify uniforms
-            let mutable uniformsDescriptorSet = Pipeline.specifyDescriptorSet 0 renderPassIndex pipeline.Pipeline $ fun vkSet ->
+            let mutable uniformsDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.Pipeline.DrawIndex pipeline.Pipeline $ fun vkSet ->
                 
                 // specify fxaa
                 let fxaa = Fxaa (spanMax = spanMax, reduceMinDivisor = reduceMinDivisor, reduceMulDivisor = reduceMulDivisor)
@@ -4570,7 +4566,6 @@ module PhysicallyBased =
         (inputSampler : Sampler)
         (colorAttachment : Texture)
         (resolution : Vector2i)
-        (renderPassIndex : int)
         (geometry : PhysicallyBasedGeometry)
         (pipeline : FilterGammaCorrectionPipeline)
         (context : VulkanContext) =
@@ -4580,7 +4575,7 @@ module PhysicallyBased =
         | Some vkPipeline ->
 
             // specify uniforms
-            let mutable uniformsDescriptorSet = Pipeline.specifyDescriptorSet 0 renderPassIndex pipeline.Pipeline $ fun vkSet ->
+            let mutable uniformsDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.Pipeline.DrawIndex pipeline.Pipeline $ fun vkSet ->
                 Pipeline.writeDescriptorSampledTexture 0 0 inputTexture vkSet
 
             // specify sampler

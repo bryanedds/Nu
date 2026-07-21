@@ -3563,7 +3563,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                             PhysicallyBased.drawFilterGaussianEsmSurface
                                 (v2 (1.0f / single shadowResolution.X) 0.0f) renderer.LightingConfig.LightShadowRadius
                                 shadowColorTexture.LayerViews[shadowTextureIndex] renderer.FilteredSampler shadowResolution gaussianEsmTexture.ImageView
-                                renderer.RenderPassIndex renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterGaussianEsmPipeline renderer.VulkanContext
+                                renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterGaussianEsmPipeline renderer.VulkanContext
                             Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead gaussianEsmTexture renderer.VulkanContext.RenderCommandBuffer
 
                             // filter shadows on the y
@@ -3571,7 +3571,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                             PhysicallyBased.drawFilterGaussianEsmSurface
                                 (v2 0.0f (1.0f / single shadowResolution.Y)) renderer.LightingConfig.LightShadowRadius
                                 gaussianEsmTexture.ImageView renderer.FilteredSampler shadowResolution shadowColorTexture.LayerViews[shadowTextureIndex]
-                                renderer.RenderPassIndex renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterGaussianEsmPipeline renderer.VulkanContext
+                                renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterGaussianEsmPipeline renderer.VulkanContext
                             Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead shadowColorTexture renderer.VulkanContext.RenderCommandBuffer
 
                         // remember the utilized index for the next frame
@@ -3694,7 +3694,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                                 PhysicallyBased.drawFilterGaussianEsmSurface
                                     (v2 (1.0f / single shadowResolution.X) 0.0f) renderer.LightingConfig.LightShadowRadius
                                     shadowCascadeArray.LayerViews[shadowCascadeLevel] renderer.FilteredSampler shadowResolution gaussianEsmArrayTexture.LayerViews[shadowCascadeLevel]
-                                    renderer.RenderPassIndex renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterGaussianEsmPipeline renderer.VulkanContext
+                                    renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterGaussianEsmPipeline renderer.VulkanContext
                                 Hl.recordTransitionLayout true 1 shadowCascadeLevel 1 VkImageAspectFlags.Color ColorAttachmentWrite ColorAttachmentRead gaussianEsmArrayTexture.Image renderer.VulkanContext.RenderCommandBuffer
 
                                 // filter shadows on the y
@@ -3702,7 +3702,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                                 PhysicallyBased.drawFilterGaussianEsmSurface
                                     (v2 0.0f (1.0f / single shadowResolution.Y)) renderer.LightingConfig.LightShadowRadius
                                     gaussianEsmArrayTexture.LayerViews[shadowCascadeLevel] renderer.FilteredSampler shadowResolution shadowCascadeArray.LayerViews[shadowCascadeLevel]
-                                    renderer.RenderPassIndex renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterGaussianEsmPipeline renderer.VulkanContext
+                                    renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterGaussianEsmPipeline renderer.VulkanContext
                                 Hl.recordTransitionLayout true 1 shadowCascadeLevel 1 VkImageAspectFlags.Color ColorAttachmentWrite ColorAttachmentRead shadowCascadeArray.Image renderer.VulkanContext.RenderCommandBuffer
 
                             // remember the utilized index for the next frame
@@ -4198,8 +4198,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 let ssaoFilteredTexture = renderer.PhysicallyBasedAttachments.SsaoFilteredAttachment
                 Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite ssaoFilteredTexture renderer.VulkanContext.RenderCommandBuffer
                 PhysicallyBased.drawFilterBoxSurface
-                    ssaoUnfilteredTexture renderer.ColorSampler ssaoFilteredTexture
-                    ssaoUnfilteredResolution renderer.RenderPassIndex renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterBox1dPipeline renderer.VulkanContext
+                    ssaoUnfilteredTexture renderer.ColorSampler ssaoFilteredTexture ssaoUnfilteredResolution
+                    renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterBox1dPipeline renderer.VulkanContext
                 Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead ssaoFilteredTexture renderer.VulkanContext.RenderCommandBuffer
                 ssaoFilteredTexture
 
@@ -4316,8 +4316,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         PhysicallyBased.drawFilterToneMappingSurface
             renderer.LightingConfig.LightExposure renderer.LightingConfig.ToneMapType renderer.LightingConfig.ToneMapSlope renderer.LightingConfig.ToneMapOffset
             renderer.LightingConfig.ToneMapPower renderer.LightingConfig.ToneMapSaturation renderer.LightingConfig.ToneMapWhitePoint
-            compositionTexture renderer.ColorSampler toneMappingTexture
-            geometryResolution renderer.RenderPassIndex renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterToneMappingPipeline renderer.VulkanContext
+            compositionTexture renderer.ColorSampler toneMappingTexture geometryResolution
+            renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterToneMappingPipeline renderer.VulkanContext
         Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead toneMappingTexture renderer.VulkanContext.RenderCommandBuffer
 
         // apply fxaa filter when desired
@@ -4328,8 +4328,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite colorFull0Texture renderer.VulkanContext.RenderCommandBuffer
             PhysicallyBased.drawFilterFxaaSurface
                 renderer.RendererConfig.FxaaSpanMax renderer.RendererConfig.FxaaReduceMinDivisor renderer.RendererConfig.FxaaReduceMulDivisor
-                toneMappingTexture renderer.ColorSampler colorFull0Texture
-                geometryResolution renderer.RenderPassIndex renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterFxaaPipeline renderer.VulkanContext
+                toneMappingTexture renderer.ColorSampler colorFull0Texture geometryResolution
+                renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterFxaaPipeline renderer.VulkanContext
             Texture.recordTransitionLayout ColorAttachmentWrite TransferSrc colorFull0Texture renderer.VulkanContext.RenderCommandBuffer
             Texture.recordTransitionLayout ColorAttachmentRead TransferDst toneMappingTexture renderer.VulkanContext.RenderCommandBuffer
 
@@ -4344,8 +4344,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let gammaCorrectionTexture = renderer.PhysicallyBasedAttachments.GammaCorrectionAttachment
         Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite gammaCorrectionTexture renderer.VulkanContext.RenderCommandBuffer
         PhysicallyBased.drawFilterGammaCorrectionSurface
-            toneMappingTexture renderer.ColorSampler gammaCorrectionTexture
-            geometryResolution renderer.RenderPassIndex renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterGammaCorrectionPipeline renderer.VulkanContext
+            toneMappingTexture renderer.ColorSampler gammaCorrectionTexture geometryResolution
+            renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterGammaCorrectionPipeline renderer.VulkanContext
         Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead gammaCorrectionTexture renderer.VulkanContext.RenderCommandBuffer
 
         // blit from gamma-correction attachment to target image without filtering
