@@ -3818,6 +3818,10 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                         HeightTexture = heightTexture }
                 let albedoMetadata = albedoTexture.TextureMetadata
                 (albedoMetadata.TextureTexelWidth, albedoMetadata.TextureTexelHeight, [|material|])
+        let materials =
+            Array.create Constants.Render.TerrainLayersMax PhysicallyBasedMaterial.empty
+            |> Array.append materials
+            |> Array.take Constants.Render.TerrainLayersMax
         let texCoordsOffset =
             match terrainDescriptor.InsetOpt with
             | Some inset ->
