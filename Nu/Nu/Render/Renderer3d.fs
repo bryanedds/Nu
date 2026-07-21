@@ -4082,7 +4082,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         for struct (descriptor, _, geometry) in renderTasks.DeferredTerrains do
             VulkanRenderer3d.renderPhysicallyBasedTerrain
                 false eyeCenter view geometryProjection
-                renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowDensity
+                renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
                 descriptor renderer.FilteredSampler geometry terrainTextureViews zTexture
                 renderer.GeometryViewport renderer.RenderPassIndex renderer.PhysicallyBasedPipelines.DeferredTerrainPipeline renderer
 
