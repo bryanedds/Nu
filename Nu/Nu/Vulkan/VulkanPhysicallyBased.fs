@@ -1847,10 +1847,10 @@ module PhysicallyBased =
         (view : Matrix4x4)
         (projectionUnflipped : Matrix4x4)
         (lightShadowExponent : single)
-        (resolution : Vector2i)
         (colorClearValueOpt : VkClearValue option)
         (colorAttachment : VkImageView)
         (depthAttachment : Texture)
+        (resolution : Vector2i)
         (renderPassIndex : int)
         (pipeline : PhysicallyBasedShadowPipeline)
         (context : VulkanContext) =
@@ -2065,7 +2065,7 @@ module PhysicallyBased =
         (filteredSampler : Sampler)
         (colorAttachments : VkImageView array)
         (depthAttachment : Texture)
-        (viewport : Viewport)
+        (resolution : Vector2i)
         (renderPassIndex : int)
         (pipeline : PhysicallyBasedPipeline)
         (context : VulkanContext) =
@@ -2087,7 +2087,7 @@ module PhysicallyBased =
             Pipeline.writeDescriptorSampler 0 0 filteredSampler vkSet
             
         // set up render
-        let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
+        let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
         let mutable vkViewport = Hl.makeViewport false renderArea
         let mutable renderingInfo = Hl.makeRenderingInfo colorAttachments (Some depthAttachment.ImageView) renderArea None
         DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
@@ -2247,7 +2247,7 @@ module PhysicallyBased =
         (geometry : PhysicallyBasedGeometry)
         (colorAttachments : VkImageView array)
         (depthAttachment : Texture)
-        (viewport : Viewport)
+        (resolution : Vector2i)
         (renderPassIndex : int)
         (pipeline : PhysicallyBasedDeferredTerrainPipeline)
         (context : VulkanContext) =
@@ -2263,7 +2263,7 @@ module PhysicallyBased =
         let layersCount = min materials.Length Constants.Render.TerrainLayersMax
             
         // set up render
-        let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
+        let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
         let mutable vkViewport = Hl.makeViewport false renderArea
         let mutable renderingInfo = Hl.makeRenderingInfo colorAttachments (Some depthAttachment.ImageView) renderArea None
         DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
@@ -2442,7 +2442,7 @@ module PhysicallyBased =
         (shadowMatrices : Matrix4x4 array)
         (geometrySampler : Sampler)
         (shadowSampler : Sampler)
-        (viewport : Viewport)
+        (resolution : Vector2i)
         (renderPassIndex : int)
         (geometry : PhysicallyBasedGeometry)
         (lightAccumAttachment : Texture)
@@ -2529,7 +2529,7 @@ module PhysicallyBased =
 
             // set up render
             let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
-            let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
+            let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
             let mutable renderingInfo = Hl.makeRenderingInfo [|lightAccumAttachment.ImageView|] None renderArea (Some clearValue)
             DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
@@ -2651,7 +2651,7 @@ module PhysicallyBased =
         (colorSampler : Sampler)
         (shadowSampler : Sampler)
         (foggingAttachment : Texture)
-        (viewport : Viewport)
+        (resolution : Vector2i)
         (renderPassIndex : int)
         (geometry : PhysicallyBasedGeometry)
         (pipeline : PhysicallyBasedDeferredFoggingPipeline)
@@ -2734,7 +2734,7 @@ module PhysicallyBased =
 
             // set up render
             let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
-            let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
+            let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
             let mutable renderingInfo = Hl.makeRenderingInfo [|foggingAttachment.ImageView|] None renderArea (Some clearValue)
             DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
@@ -2830,7 +2830,7 @@ module PhysicallyBased =
         (normalPlusTexture : Texture)
         (colorSampler : Sampler)
         (colorAttachment : Texture)
-        (viewport : Viewport)
+        (resolution : Vector2i)
         (renderPassIndex : int)
         (geometry : PhysicallyBasedGeometry)
         (pipeline : PhysicallyBasedDeferredLightMappingPipeline)
@@ -2887,7 +2887,7 @@ module PhysicallyBased =
 
             // set up render
             let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
-            let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
+            let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
             let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue)
             DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
@@ -2978,7 +2978,7 @@ module PhysicallyBased =
         (lightMappingTexture : Texture)
         (colorSampler : Sampler)
         (colorAttachment : Texture)
-        (viewport : Viewport)
+        (resolution : Vector2i)
         (renderPassIndex : int)
         (geometry : PhysicallyBasedGeometry)
         (pipeline : PhysicallyBasedDeferredAmbientPipeline)
@@ -3030,7 +3030,7 @@ module PhysicallyBased =
 
             // set up render
             let clearValue = VkClearValue (r = Constants.Render.AmbientClearColor.R, g = Constants.Render.AmbientClearColor.G, b = Constants.Render.AmbientClearColor.B, a = Constants.Render.AmbientClearColor.A)
-            let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
+            let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
             let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue)
             DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
@@ -3119,7 +3119,7 @@ module PhysicallyBased =
         (colorSampler : Sampler)
         (irradianceSampler : Sampler)
         (colorAttachment : Texture)
-        (viewport : Viewport)
+        (resolution : Vector2i)
         (renderPassIndex : int)
         (geometry : PhysicallyBasedGeometry)
         (pipeline : PhysicallyBasedDeferredIrradiancePipeline)
@@ -3157,7 +3157,7 @@ module PhysicallyBased =
 
             // set up render
             let clearValue = VkClearValue (r = Constants.Render.IrradianceClearColor.R, g = Constants.Render.IrradianceClearColor.G, b = Constants.Render.IrradianceClearColor.B, a = Constants.Render.IrradianceClearColor.A)
-            let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
+            let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
             let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue)
             DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
@@ -3258,7 +3258,7 @@ module PhysicallyBased =
         (colorSampler : Sampler)
         (environmentFilterSampler : Sampler)
         (colorAttachment : Texture)
-        (viewport : Viewport)
+        (resolution : Vector2i)
         (renderPassIndex : int)
         (geometry : PhysicallyBasedGeometry)
         (pipeline : PhysicallyBasedDeferredEnvironmentFilterPipeline)
@@ -3313,7 +3313,7 @@ module PhysicallyBased =
 
             // set up render
             let clearValue = VkClearValue (r = Constants.Render.EnvironmentClearColor.R, g = Constants.Render.EnvironmentClearColor.G, b = Constants.Render.EnvironmentClearColor.B, a = Constants.Render.EnvironmentClearColor.A)
-            let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
+            let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
             let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue)
             DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
@@ -3393,7 +3393,6 @@ module PhysicallyBased =
         (eyeCenter : Vector3)
         (view : Matrix4x4)
         (projectionUnflipped : Matrix4x4)
-        (resolution : Vector2i)
         (intensity : single)
         (bias : single)
         (radius : single)
@@ -3403,7 +3402,7 @@ module PhysicallyBased =
         (normalPlusTexture : Texture)
         (colorSampler : Sampler)
         (colorAttachment : Texture)
-        (viewport : Viewport)
+        (resolution : Vector2i)
         (renderPassIndex : int)
         (geometry : PhysicallyBasedGeometry)
         (pipeline : PhysicallyBasedDeferredSsaoPipeline)
@@ -3442,7 +3441,7 @@ module PhysicallyBased =
 
             // set up render
             let clearValue = VkClearValue (r = Constants.Render.SsaoClearColor.R, g = Constants.Render.SsaoClearColor.G, b = Constants.Render.SsaoClearColor.B, a = Constants.Render.SsaoClearColor.A)
-            let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
+            let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
             let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue)
             DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
@@ -3565,7 +3564,7 @@ module PhysicallyBased =
         (brdfSampler : Sampler)
         (coloringAttachment : Texture)
         (depthAttachment : Texture)
-        (viewport : Viewport)
+        (resolution : Vector2i)
         (renderPassIndex : int)
         (geometry : PhysicallyBasedGeometry)
         (pipeline : PhysicallyBasedDeferredColoringPipeline)
@@ -3632,7 +3631,7 @@ module PhysicallyBased =
 
             // set up render
             let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
-            let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
+            let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
             let mutable renderingInfo = Hl.makeRenderingInfo [|coloringAttachment.ImageView; depthAttachment.ImageView|] None renderArea (Some clearValue)
             DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
@@ -3725,7 +3724,7 @@ module PhysicallyBased =
         (fogAccumTexture : Texture)
         (colorSampler : Sampler)
         (compositionAttachment : Texture)
-        (viewport : Viewport)
+        (resolution : Vector2i)
         (renderPassIndex : int)
         (geometry : PhysicallyBasedGeometry)
         (pipeline : PhysicallyBasedDeferredCompositionPipeline)
@@ -3771,7 +3770,7 @@ module PhysicallyBased =
 
             // set up render
             let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
-            let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
+            let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
             let mutable renderingInfo = Hl.makeRenderingInfo [|compositionAttachment.ImageView|] None renderArea (Some clearValue)
             DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
@@ -3860,7 +3859,7 @@ module PhysicallyBased =
         (brdfSampler : Sampler)
         (colorAttachment : Texture)
         (depthAttachment : Texture)
-        (viewport : Viewport)
+        (resolution : Vector2i)
         (renderPassIndex : int)
         (pipeline : PhysicallyBasedPipeline)
         (context : VulkanContext) =
@@ -3931,7 +3930,7 @@ module PhysicallyBased =
             Pipeline.writeDescriptorSampler 5 0 brdfSampler vkSet
 
         // set up render
-        let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
+        let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
         let mutable vkViewport = Hl.makeViewport false renderArea
         let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] (Some depthAttachment.ImageView) renderArea None
         DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
@@ -4150,7 +4149,7 @@ module PhysicallyBased =
         (inputTexture : Texture)
         (inputSampler : Sampler)
         (colorAttachment : Texture)
-        (viewport : Viewport)
+        (resolution : Vector2i)
         (renderPassIndex : int)
         (geometry : PhysicallyBasedGeometry)
         (pipeline : FilterBoxPipeline)
@@ -4170,7 +4169,7 @@ module PhysicallyBased =
 
             // set up render
             let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
-            let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
+            let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
             let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue)
             DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
@@ -4359,7 +4358,7 @@ module PhysicallyBased =
         (inputTexture : Texture)
         (inputSampler : Sampler)
         (colorAttachment : Texture)
-        (viewport : Viewport)
+        (resolution : Vector2i)
         (renderPassIndex : int)
         (geometry : PhysicallyBasedGeometry)
         (pipeline : FilterToneMappingPipeline)
@@ -4394,7 +4393,7 @@ module PhysicallyBased =
 
             // set up render
             let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
-            let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
+            let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
             let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue)
             DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
@@ -4473,7 +4472,7 @@ module PhysicallyBased =
         (inputTexture : Texture)
         (inputSampler : Sampler)
         (colorAttachment : Texture)
-        (viewport : Viewport)
+        (resolution : Vector2i)
         (renderPassIndex : int)
         (geometry : PhysicallyBasedGeometry)
         (pipeline : FilterFxaaPipeline)
@@ -4500,7 +4499,7 @@ module PhysicallyBased =
 
             // set up render
             let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
-            let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
+            let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
             let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue)
             DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
@@ -4570,7 +4569,7 @@ module PhysicallyBased =
         (inputTexture : Texture)
         (inputSampler : Sampler)
         (colorAttachment : Texture)
-        (viewport : Viewport)
+        (resolution : Vector2i)
         (renderPassIndex : int)
         (geometry : PhysicallyBasedGeometry)
         (pipeline : FilterGammaCorrectionPipeline)
@@ -4590,7 +4589,7 @@ module PhysicallyBased =
 
             // set up render
             let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
-            let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
+            let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
             let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue)
             DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
