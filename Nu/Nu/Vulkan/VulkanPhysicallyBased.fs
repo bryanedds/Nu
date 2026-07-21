@@ -2253,6 +2253,7 @@ module PhysicallyBased =
         (context : VulkanContext) =
 
         // compute vulkan-appropriate matrices
+        // NOTE: we do NOT flip when rendering to a shadow cube map face!
         let viewInverse = view.Inverted
         let projection = if shadowCubeMapFace then projectionUnflipped else projectionUnflipped.Flipped
         let projectionInverse = projection.Inverted
