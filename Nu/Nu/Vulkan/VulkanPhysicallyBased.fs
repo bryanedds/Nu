@@ -2232,6 +2232,7 @@ module PhysicallyBased =
         Pipeline.destroy pipeline.Pipeline context
 
     let drawPhysicallyBasedTerrain
+        (shadowCubeMapFace : bool)
         (eyeCenter : Vector3)
         (view : Matrix4x4)
         (projectionUnflipped : Matrix4x4)
@@ -2253,7 +2254,7 @@ module PhysicallyBased =
 
         // compute vulkan-appropriate matrices
         let viewInverse = view.Inverted
-        let projection = projectionUnflipped.Flipped
+        let projection = if shadowCubeMapFace then projectionUnflipped else projectionUnflipped.Flipped
         let projectionInverse = projection.Inverted
         let viewProjection = view * projection
 

@@ -3382,7 +3382,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         for struct (descriptor, patchDescriptor, geometry) in renderTasks.DeferredTerrains do
             if lightFrustum.Intersects patchDescriptor.PatchBounds then
                 VulkanRenderer3d.renderPhysicallyBasedTerrain
-                    lightOrigin lightView lightProjection
+                    lightType.ShadowsUseCubeMap lightOrigin lightView lightProjection
                     renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
                     descriptor renderer.FilteredSampler geometry [|colorAttachment|] depthAttachment renderer.GeometryViewport renderer.RenderPassIndex shadowTerrainPipeline renderer
 
@@ -3724,7 +3724,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
     // TODO: apply intention blocks to this function.
     static member private renderPhysicallyBasedTerrain
-        eyeCenter view projection
+        shadowCubeMapFace eyeCenter view projection
         lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity
         (terrainDescriptor : TerrainDescriptor) filteredSampler geometry colorAttachments depthAttachment viewport renderPassIndex pipeline renderer =
         let terrainMaterialProperties = terrainDescriptor.MaterialProperties
@@ -3849,7 +3849,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         instanceFields[27] <- materialProperties.Emission
         instanceFields[28] <- texelHeight * materialProperties.Height
         PhysicallyBased.drawPhysicallyBasedTerrain
-            eyeCenter view projection
+            shadowCubeMapFace eyeCenter view projection
             instanceFields lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity
             materials filteredSampler geometry colorAttachments depthAttachment viewport renderPassIndex pipeline renderer.VulkanContext
 
@@ -4081,7 +4081,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let terrainTextureViews = [|depthTexture.ImageView; albedoTexture.ImageView; materialTexture.ImageView; normalPlusTexture.ImageView; subdermalPlusTexture.ImageView; scatterPlusTexture.ImageView|]
         for struct (descriptor, _, geometry) in renderTasks.DeferredTerrains do
             VulkanRenderer3d.renderPhysicallyBasedTerrain
-                eyeCenter view geometryProjection
+                false eyeCenter view geometryProjection
                 renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowDensity
                 descriptor renderer.FilteredSampler geometry terrainTextureViews zTexture
                 renderer.GeometryViewport renderer.RenderPassIndex renderer.PhysicallyBasedPipelines.DeferredTerrainPipeline renderer
