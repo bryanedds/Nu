@@ -3181,11 +3181,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             let frames = time / elapsedDateTime.TotalSeconds
             ImGui.Text (if not (Double.IsNaN frames) then String.Format ("{0:f2}", frames) else "0.00")
 
-            // draw scope count
-            ImGui.Text "Draw Scope Count:"
-            ImGui.SameLine ()
-            ImGui.Text (string (Vulkan.Hl.getDrawScopeCount ()))
-
             // draw call count
             ImGui.Text "Draw Call Count:"
             ImGui.SameLine ()
