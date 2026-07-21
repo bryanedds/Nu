@@ -679,6 +679,9 @@ type PhysicallyBasedPipelines =
       ShadowAnimatedPointPipeline : PhysicallyBasedShadowPipeline
       ShadowAnimatedSpotPipeline : PhysicallyBasedShadowPipeline
       ShadowAnimatedDirectionalPipeline : PhysicallyBasedShadowPipeline
+      ShadowTerrainPointPipeline : PhysicallyBasedDeferredTerrainPipeline
+      ShadowTerrainSpotPipeline : PhysicallyBasedDeferredTerrainPipeline
+      ShadowTerrainDirectionalPipeline : PhysicallyBasedDeferredTerrainPipeline
       DeferredStaticPipeline : PhysicallyBasedPipeline
       DeferredStaticClippedPipeline : PhysicallyBasedPipeline
       DeferredAnimatedPipeline : PhysicallyBasedPipeline
@@ -703,22 +706,77 @@ type PhysicallyBasedPipelines =
 [<RequireQualifiedAccess>]
 module PhysicallyBased =
     
+    // static vertex definition
     let StaticTexCoordsOffset =     (3 (*position*)) * sizeof<single>
     let StaticNormalOffset =        (3 (*position*) + 2 (*tex coords*)) * sizeof<single>
     let StaticVertexSize =          (3 (*position*) + 2 (*tex coords*) + 3 (*normal*)) * sizeof<single>
+    let StaticVertices =
+        [|Pipeline.vertex 0 StaticVertexSize VkVertexInputRate.Vertex
+            [|Pipeline.attribute 0 Single3 0
+              Pipeline.attribute 1 Single2 StaticTexCoordsOffset
+              Pipeline.attribute 2 Single3 StaticNormalOffset|]
+          Pipeline.vertex 1 (Constants.Render.InstanceFieldCount * sizeof<single>) VkVertexInputRate.Instance
+            [|Pipeline.attribute 3 Single4 0
+              Pipeline.attribute 4 Single4 (4 * sizeof<single>)
+              Pipeline.attribute 5 Single4 (8 * sizeof<single>)
+              Pipeline.attribute 6 Single4 (12 * sizeof<single>)
+              Pipeline.attribute 7 Single4 (16 * sizeof<single>)
+              Pipeline.attribute 8 Single4 (20 * sizeof<single>)
+              Pipeline.attribute 9 Single4 (24 * sizeof<single>)
+              Pipeline.attribute 10 Single4 (28 * sizeof<single>)
+              Pipeline.attribute 11 Single4 (32 * sizeof<single>)
+              Pipeline.attribute 12 Single4 (36 * sizeof<single>)|]|]
 
+    // animated vertex definition
     let AnimatedTexCoordsOffset =   (3 (*position*)) * sizeof<single>
     let AnimatedNormalOffset =      (3 (*position*) + 2 (*tex coords*)) * sizeof<single>
     let AnimatedBoneIdsOffset =     (3 (*position*) + 2 (*tex coords*) + 3 (*normal*)) * sizeof<single>
     let AnimatedWeightsOffset =     (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 4 (*boneIds*)) * sizeof<single>
     let AnimatedVertexSize =        (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 4 (*boneIds*) + 4 (*weights*)) * sizeof<single>
+    let AnimatedVertices =
+        [|Pipeline.vertex 0 AnimatedVertexSize VkVertexInputRate.Vertex
+            [|Pipeline.attribute 0 Single3 0
+              Pipeline.attribute 1 Single2 AnimatedTexCoordsOffset
+              Pipeline.attribute 2 Single3 AnimatedNormalOffset
+              Pipeline.attribute 3 Single4 AnimatedBoneIdsOffset
+              Pipeline.attribute 4 Single4 AnimatedWeightsOffset|]
+          Pipeline.vertex 1 (Constants.Render.InstanceFieldCount * sizeof<single>) VkVertexInputRate.Instance
+            [|Pipeline.attribute 5 Single4 0
+              Pipeline.attribute 6 Single4 (4 * sizeof<single>)
+              Pipeline.attribute 7 Single4 (8 * sizeof<single>)
+              Pipeline.attribute 8 Single4 (12 * sizeof<single>)
+              Pipeline.attribute 9 Single4 (16 * sizeof<single>)
+              Pipeline.attribute 10 Single4 (20 * sizeof<single>)
+              Pipeline.attribute 11 Single4 (24 * sizeof<single>)
+              Pipeline.attribute 12 Single4 (28 * sizeof<single>)
+              Pipeline.attribute 13 Single4 (32 * sizeof<single>)
+              Pipeline.attribute 14 Single4 (36 * sizeof<single>)|]|]
 
+    // terrain vertex definition
     let TerrainTexCoordsOffset =    (3 (*position*)) * sizeof<single>
     let TerrainNormalOffset =       (3 (*position*) + 2 (*tex coords*)) * sizeof<single>
     let TerrainTintOffset =         (3 (*position*) + 2 (*tex coords*) + 3 (*normal*)) * sizeof<single>
     let TerrainBlendsOffset =       (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 3 (*tint*)) * sizeof<single>
     let TerrainBlends2Offset =      (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 3 (*tint*) + 4 (*blends*)) * sizeof<single>
     let TerrainVertexSize =         (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 3 (*tint*) + 4 (*blends*) + 4 (*blends2*)) * sizeof<single>
+    let TerrainVertices =
+        [|Pipeline.vertex 0 TerrainVertexSize VkVertexInputRate.Vertex
+            [|Pipeline.attribute 0 Single3 0
+              Pipeline.attribute 1 Single2 TerrainTexCoordsOffset
+              Pipeline.attribute 2 Single3 TerrainNormalOffset
+              Pipeline.attribute 3 Single3 TerrainTintOffset
+              Pipeline.attribute 4 Single4 TerrainBlendsOffset
+              Pipeline.attribute 5 Single4 TerrainBlends2Offset|]
+          Pipeline.vertex 1 (Constants.Render.InstanceFieldCount * sizeof<single>) VkVertexInputRate.Instance
+            [|Pipeline.attribute 6 Single4 0
+              Pipeline.attribute 7 Single4 (4 * sizeof<single>)
+              Pipeline.attribute 8 Single4 (8 * sizeof<single>)
+              Pipeline.attribute 9 Single4 (12 * sizeof<single>)
+              Pipeline.attribute 10 Single4 (16 * sizeof<single>)
+              Pipeline.attribute 11 Single4 (20 * sizeof<single>)
+              Pipeline.attribute 12 Single4 (24 * sizeof<single>)
+              Pipeline.attribute 13 Single4 (28 * sizeof<single>)
+              Pipeline.attribute 14 Single4 (32 * sizeof<single>)|]|]
 
     /// Create a mesh for a physically-based quad.
     let createPhysicallyBasedQuadMesh () =
@@ -1758,7 +1816,8 @@ module PhysicallyBased =
         // create pipeline
         let pipeline =
             Pipeline.create
-                shaderPath [|VulkanUnblended|] [|false; true|] vertexBindings
+                shaderPath
+                [|VulkanUnblended|] [|false; true|] vertexBindings
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer VertexStage 1
                       Pipeline.descriptor 1 UniformBuffer FragmentStage 1|]
@@ -1920,7 +1979,8 @@ module PhysicallyBased =
         // create pipeline
         let pipeline =
             Pipeline.create
-                shaderPath blends cullModes vertexBindings
+                shaderPath
+                blends cullModes vertexBindings
                 
                 // descriptor set 0: per render pass
                 [|Pipeline.descriptorSet<int>
@@ -2133,7 +2193,7 @@ module PhysicallyBased =
         // advance rendering command buffer
         VulkanContext.advanceRenderCommandBuffer context
 
-    let createPhysicallyBasedTerrainPipeline colorAttachmentFormats depthTest context =
+    let createPhysicallyBasedTerrainPipeline shaderFilePath colorAttachmentFormats depthTest context =
 
         // create uniform buffers
         let eyeUniform = VulkanBuffer.create Uniform sizeof<Eye> context
@@ -2142,25 +2202,8 @@ module PhysicallyBased =
         // create pipeline
         let pipeline =
             Pipeline.create
-                Constants.Paths.PhysicallyBasedDeferredTerrainShaderFilePath
-                [|VulkanUnblended|] [|true|]
-                [|Pipeline.vertex 0 TerrainVertexSize VkVertexInputRate.Vertex
-                    [|Pipeline.attribute 0 Single3 0
-                      Pipeline.attribute 1 Single2 TerrainTexCoordsOffset
-                      Pipeline.attribute 2 Single3 TerrainNormalOffset
-                      Pipeline.attribute 3 Single3 TerrainTintOffset
-                      Pipeline.attribute 4 Single4 TerrainBlendsOffset
-                      Pipeline.attribute 5 Single4 TerrainBlends2Offset|]
-                  Pipeline.vertex 1 (Constants.Render.InstanceFieldCount * sizeof<single>) VkVertexInputRate.Instance
-                    [|Pipeline.attribute 6 Single4 0
-                      Pipeline.attribute 7 Single4 (4 * sizeof<single>)
-                      Pipeline.attribute 8 Single4 (8 * sizeof<single>)
-                      Pipeline.attribute 9 Single4 (12 * sizeof<single>)
-                      Pipeline.attribute 10 Single4 (16 * sizeof<single>)
-                      Pipeline.attribute 11 Single4 (20 * sizeof<single>)
-                      Pipeline.attribute 12 Single4 (24 * sizeof<single>)
-                      Pipeline.attribute 13 Single4 (28 * sizeof<single>)
-                      Pipeline.attribute 14 Single4 (32 * sizeof<single>)|]|]
+                shaderFilePath
+                [|VulkanUnblended|] [|true|] TerrainVertices
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer VertexAndFragmentStage 1 // eye
                       Pipeline.descriptor 1 UniformBuffer FragmentStage 1|] // lighting3
@@ -2321,11 +2364,7 @@ module PhysicallyBased =
         let pipeline =
             Pipeline.create
                 Constants.Paths.PhysicallyBasedDeferredLightingShaderFilePath
-                [|VulkanUnblended|] [|false|]
-                [|Pipeline.vertex 0 StaticVertexSize VkVertexInputRate.Vertex
-                    [|Pipeline.attribute 0 Single3 0
-                      Pipeline.attribute 1 Single2 StaticTexCoordsOffset
-                      Pipeline.attribute 2 Single3 StaticNormalOffset|]|]
+                [|VulkanUnblended|] [|false|] StaticVertices
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // eye
                       Pipeline.descriptor 1 UniformBuffer FragmentStage 1 // lighting
@@ -2544,11 +2583,7 @@ module PhysicallyBased =
         let pipeline =
             Pipeline.create
                 Constants.Paths.PhysicallyBasedDeferredFoggingShaderFilePath
-                [|VulkanUnblended|] [|false|]
-                [|Pipeline.vertex 0 StaticVertexSize VkVertexInputRate.Vertex
-                    [|Pipeline.attribute 0 Single3 0
-                      Pipeline.attribute 1 Single2 StaticTexCoordsOffset
-                      Pipeline.attribute 2 Single3 StaticNormalOffset|]|]
+                [|VulkanUnblended|] [|false|] StaticVertices
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // eye
                       Pipeline.descriptor 1 UniformBuffer FragmentStage 1 // lighting
@@ -2750,11 +2785,7 @@ module PhysicallyBased =
         let pipeline =
             Pipeline.create
                 Constants.Paths.PhysicallyBasedDeferredLightMappingShaderFilePath
-                [|VulkanUnblended|] [|false|]
-                [|Pipeline.vertex 0 StaticVertexSize VkVertexInputRate.Vertex
-                    [|Pipeline.attribute 0 Single3 0
-                      Pipeline.attribute 1 Single2 StaticTexCoordsOffset
-                      Pipeline.attribute 2 Single3 StaticNormalOffset|]|]
+                [|VulkanUnblended|] [|false|] StaticVertices
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // eye
                       Pipeline.descriptor 1 UniformBuffer FragmentStage 1 // lightMaps
@@ -2906,11 +2937,7 @@ module PhysicallyBased =
         let pipeline =
             Pipeline.create
                 Constants.Paths.PhysicallyBasedDeferredAmbientShaderFilePath
-                [|VulkanUnblended|] [|false|]
-                [|Pipeline.vertex 0 StaticVertexSize VkVertexInputRate.Vertex
-                    [|Pipeline.attribute 0 Single3 0
-                      Pipeline.attribute 1 Single2 StaticTexCoordsOffset
-                      Pipeline.attribute 2 Single3 StaticNormalOffset|]|]
+                [|VulkanUnblended|] [|false|] StaticVertices
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // eye
                       Pipeline.descriptor 1 UniformBuffer FragmentStage 1 // lightMap
@@ -3051,11 +3078,7 @@ module PhysicallyBased =
         let pipeline =
             Pipeline.create
                 Constants.Paths.PhysicallyBasedDeferredIrradianceShaderFilePath
-                [|VulkanUnblended|] [|false|]
-                [|Pipeline.vertex 0 StaticVertexSize VkVertexInputRate.Vertex
-                    [|Pipeline.attribute 0 Single3 0
-                      Pipeline.attribute 1 Single2 StaticTexCoordsOffset
-                      Pipeline.attribute 2 Single3 StaticNormalOffset|]|]
+                [|VulkanUnblended|] [|false|] StaticVertices
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // eye
                       Pipeline.descriptor 1 SampledImage FragmentStage 1 // depth
@@ -3183,11 +3206,7 @@ module PhysicallyBased =
         let pipeline =
             Pipeline.create
                 Constants.Paths.PhysicallyBasedDeferredEnvironmentFilterShaderFilePath
-                [|VulkanUnblended|] [|false|]
-                [|Pipeline.vertex 0 StaticVertexSize VkVertexInputRate.Vertex
-                    [|Pipeline.attribute 0 Single3 0
-                      Pipeline.attribute 1 Single2 StaticTexCoordsOffset
-                      Pipeline.attribute 2 Single3 StaticNormalOffset|]|]
+                [|VulkanUnblended|] [|false|] StaticVertices
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // eye
                       Pipeline.descriptor 1 UniformBuffer FragmentStage 1 // lightMaps
@@ -3343,11 +3362,7 @@ module PhysicallyBased =
         let pipeline =
             Pipeline.create
                 Constants.Paths.PhysicallyBasedDeferredSsaoShaderFilePath
-                [|VulkanUnblended|] [|false|]
-                [|Pipeline.vertex 0 StaticVertexSize VkVertexInputRate.Vertex
-                    [|Pipeline.attribute 0 Single3 0
-                      Pipeline.attribute 1 Single2 StaticTexCoordsOffset
-                      Pipeline.attribute 2 Single3 StaticNormalOffset|]|]
+                [|VulkanUnblended|] [|false|] StaticVertices
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // eye
                       Pipeline.descriptor 1 UniformBuffer FragmentStage 1 // ssao
@@ -3476,11 +3491,7 @@ module PhysicallyBased =
         let pipeline =
             Pipeline.create
                 Constants.Paths.PhysicallyBasedDeferredColoringShaderFilePath
-                [|VulkanUnblended|] [|false|]
-                [|Pipeline.vertex 0 StaticVertexSize VkVertexInputRate.Vertex
-                    [|Pipeline.attribute 0 Single3 0
-                      Pipeline.attribute 1 Single2 StaticTexCoordsOffset
-                      Pipeline.attribute 2 Single3 StaticNormalOffset|]|]
+                [|VulkanUnblended|] [|false|] StaticVertices
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // eye
                       Pipeline.descriptor 1 UniformBuffer FragmentStage 1 // lighting
@@ -3671,11 +3682,7 @@ module PhysicallyBased =
         let pipeline =
             Pipeline.create
                 Constants.Paths.PhysicallyBasedDeferredCompositionShaderFilePath
-                [|VulkanUnblended|] [|false|]
-                [|Pipeline.vertex 0 StaticVertexSize VkVertexInputRate.Vertex
-                    [|Pipeline.attribute 0 Single3 0
-                      Pipeline.attribute 1 Single2 StaticTexCoordsOffset
-                      Pipeline.attribute 2 Single3 StaticNormalOffset|]|]
+                [|VulkanUnblended|] [|false|] StaticVertices
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // eye
                       Pipeline.descriptor 1 UniformBuffer FragmentStage 1 // lighting
@@ -4116,11 +4123,8 @@ module PhysicallyBased =
         // create pipeline
         let pipeline =
             Pipeline.create
-                shaderPath [|VulkanUnblended|] [|false|]
-                [|Pipeline.vertex 0 StaticVertexSize VkVertexInputRate.Vertex
-                    [|Pipeline.attribute 0 Single3 0
-                      Pipeline.attribute 1 Single2 StaticTexCoordsOffset
-                      Pipeline.attribute 2 Single3 StaticNormalOffset|]|]
+                shaderPath
+                [|VulkanUnblended|] [|false|] StaticVertices
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 SampledImage FragmentStage 1|] // inputTexture
                   Pipeline.descriptorSet<Unit>
@@ -4214,11 +4218,7 @@ module PhysicallyBased =
         let pipeline =
             Pipeline.create
                 Constants.Paths.FilterGaussianEsmShaderFilePath
-                [|VulkanUnblended|] [|false|]
-                [|Pipeline.vertex 0 StaticVertexSize VkVertexInputRate.Vertex
-                    [|Pipeline.attribute 0 Single3 0
-                      Pipeline.attribute 1 Single2 StaticTexCoordsOffset
-                      Pipeline.attribute 2 Single3 StaticNormalOffset|]|]
+                [|VulkanUnblended|] [|false|] StaticVertices
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1|] // gaussianEsm
                   Pipeline.descriptorSet<int>
@@ -4324,11 +4324,7 @@ module PhysicallyBased =
         let pipeline =
             Pipeline.create
                 Constants.Paths.FilterToneMappingShaderFilePath
-                [|VulkanUnblended|] [|false|]
-                [|Pipeline.vertex 0 StaticVertexSize VkVertexInputRate.Vertex
-                    [|Pipeline.attribute 0 Single3 0
-                      Pipeline.attribute 1 Single2 StaticTexCoordsOffset
-                      Pipeline.attribute 2 Single3 StaticNormalOffset|]|]
+                [|VulkanUnblended|] [|false|] StaticVertices
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // toneMapping
                       Pipeline.descriptor 1 SampledImage FragmentStage 1|] // inputTexture
@@ -4446,11 +4442,7 @@ module PhysicallyBased =
         let pipeline =
             Pipeline.create
                 Constants.Paths.FilterFxaaShaderFilePath
-                [|VulkanUnblended|] [|false|]
-                [|Pipeline.vertex 0 StaticVertexSize VkVertexInputRate.Vertex
-                    [|Pipeline.attribute 0 Single3 0
-                      Pipeline.attribute 1 Single2 StaticTexCoordsOffset
-                      Pipeline.attribute 2 Single3 StaticNormalOffset|]|]
+                [|VulkanUnblended|] [|false|] StaticVertices
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // fxaa
                       Pipeline.descriptor 1 SampledImage FragmentStage 1|] // inputTexture
@@ -4553,11 +4545,7 @@ module PhysicallyBased =
         let pipeline =
             Pipeline.create
                 Constants.Paths.FilterGammaCorrectionShaderFilePath
-                [|VulkanUnblended|] [|false|]
-                [|Pipeline.vertex 0 StaticVertexSize VkVertexInputRate.Vertex
-                    [|Pipeline.attribute 0 Single3 0
-                      Pipeline.attribute 1 Single2 StaticTexCoordsOffset
-                      Pipeline.attribute 2 Single3 StaticNormalOffset|]|]
+                [|VulkanUnblended|] [|false|] StaticVertices
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 SampledImage FragmentStage 1|] // inputTexture
                   Pipeline.descriptorSet<Unit>
@@ -4642,50 +4630,12 @@ module PhysicallyBased =
 
     let createPhysicallyBasedPipelines lightMapsMax lightsMax attachments context =
 
-        // static vertices
-        let staticVertices =
-            [|Pipeline.vertex 0 StaticVertexSize VkVertexInputRate.Vertex
-                [|Pipeline.attribute 0 Single3 0
-                  Pipeline.attribute 1 Single2 StaticTexCoordsOffset
-                  Pipeline.attribute 2 Single3 StaticNormalOffset|]
-              Pipeline.vertex 1 (Constants.Render.InstanceFieldCount * sizeof<single>) VkVertexInputRate.Instance
-                [|Pipeline.attribute 3 Single4 0
-                  Pipeline.attribute 4 Single4 (4 * sizeof<single>)
-                  Pipeline.attribute 5 Single4 (8 * sizeof<single>)
-                  Pipeline.attribute 6 Single4 (12 * sizeof<single>)
-                  Pipeline.attribute 7 Single4 (16 * sizeof<single>)
-                  Pipeline.attribute 8 Single4 (20 * sizeof<single>)
-                  Pipeline.attribute 9 Single4 (24 * sizeof<single>)
-                  Pipeline.attribute 10 Single4 (28 * sizeof<single>)
-                  Pipeline.attribute 11 Single4 (32 * sizeof<single>)
-                  Pipeline.attribute 12 Single4 (36 * sizeof<single>)|]|]
-
-        // animated vertices
-        let animatedVertices =
-            [|Pipeline.vertex 0 AnimatedVertexSize VkVertexInputRate.Vertex
-                [|Pipeline.attribute 0 Single3 0
-                  Pipeline.attribute 1 Single2 AnimatedTexCoordsOffset
-                  Pipeline.attribute 2 Single3 AnimatedNormalOffset
-                  Pipeline.attribute 3 Single4 AnimatedBoneIdsOffset
-                  Pipeline.attribute 4 Single4 AnimatedWeightsOffset|]
-              Pipeline.vertex 1 (Constants.Render.InstanceFieldCount * sizeof<single>) VkVertexInputRate.Instance
-                [|Pipeline.attribute 5 Single4 0
-                  Pipeline.attribute 6 Single4 (4 * sizeof<single>)
-                  Pipeline.attribute 7 Single4 (8 * sizeof<single>)
-                  Pipeline.attribute 8 Single4 (12 * sizeof<single>)
-                  Pipeline.attribute 9 Single4 (16 * sizeof<single>)
-                  Pipeline.attribute 10 Single4 (20 * sizeof<single>)
-                  Pipeline.attribute 11 Single4 (24 * sizeof<single>)
-                  Pipeline.attribute 12 Single4 (28 * sizeof<single>)
-                  Pipeline.attribute 13 Single4 (32 * sizeof<single>)
-                  Pipeline.attribute 14 Single4 (36 * sizeof<single>)|]|]
-
         // create shadow static point pipeline
         let (shadowMapColorAttachment, shadowMapZAttachment) = attachments.ShadowMapAttachmentsArray[0] // assume all like first
         let shadowStaticPointPipeline =
             createPhysicallyBasedShadowPipeline
                 Constants.Paths.PhysicallyBasedShadowStaticPointShaderFilePath
-                staticVertices
+                StaticVertices
                 [|shadowMapColorAttachment.VkFormat|]
                 shadowMapZAttachment.VkFormat
                 context
@@ -4695,7 +4645,7 @@ module PhysicallyBased =
         let shadowStaticSpotPipeline =
             createPhysicallyBasedShadowPipeline
                 Constants.Paths.PhysicallyBasedShadowStaticSpotShaderFilePath
-                staticVertices
+                StaticVertices
                 [|shadowTextureArrayColorAttachment.VkFormat|]
                 shadowTextureArrayZAttachment.VkFormat
                 context
@@ -4704,7 +4654,7 @@ module PhysicallyBased =
         let shadowStaticDirectionalPipeline =
             createPhysicallyBasedShadowPipeline
                 Constants.Paths.PhysicallyBasedShadowStaticDirectionalShaderFilePath
-                staticVertices
+                StaticVertices
                 [|shadowTextureArrayColorAttachment.VkFormat|]
                 shadowTextureArrayZAttachment.VkFormat
                 context
@@ -4713,7 +4663,7 @@ module PhysicallyBased =
         let shadowAnimatedPointPipeline =
             createPhysicallyBasedShadowPipeline
                 Constants.Paths.PhysicallyBasedShadowAnimatedPointShaderFilePath
-                animatedVertices
+                AnimatedVertices
                 [|shadowMapColorAttachment.VkFormat|]
                 shadowMapZAttachment.VkFormat
                 context
@@ -4722,7 +4672,7 @@ module PhysicallyBased =
         let shadowAnimatedSpotPipeline =
             createPhysicallyBasedShadowPipeline
                 Constants.Paths.PhysicallyBasedShadowAnimatedSpotShaderFilePath
-                animatedVertices
+                AnimatedVertices
                 [|shadowTextureArrayColorAttachment.VkFormat|]
                 shadowTextureArrayZAttachment.VkFormat
                 context
@@ -4731,7 +4681,31 @@ module PhysicallyBased =
         let shadowAnimatedDirectionalPipeline =
             createPhysicallyBasedShadowPipeline
                 Constants.Paths.PhysicallyBasedShadowAnimatedDirectionalShaderFilePath
-                animatedVertices
+                AnimatedVertices
+                [|shadowTextureArrayColorAttachment.VkFormat|]
+                shadowTextureArrayZAttachment.VkFormat
+                context
+
+        // create shadow terrain point pipeline
+        let shadowTerrainPointPipeline =
+            createPhysicallyBasedTerrainPipeline
+                Constants.Paths.PhysicallyBasedShadowTerrainPointShaderFilePath
+                [|shadowMapColorAttachment.VkFormat|]
+                shadowTextureArrayZAttachment.VkFormat
+                context
+
+        // create shadow terrain spot pipeline
+        let shadowTerrainSpotPipeline =
+            createPhysicallyBasedTerrainPipeline
+                Constants.Paths.PhysicallyBasedShadowTerrainSpotShaderFilePath
+                [|shadowTextureArrayColorAttachment.VkFormat|]
+                shadowTextureArrayZAttachment.VkFormat
+                context
+
+        // create shadow terrain directional pipeline
+        let shadowTerrainDirectionalPipeline =
+            createPhysicallyBasedTerrainPipeline
+                Constants.Paths.PhysicallyBasedShadowTerrainDirectionalShaderFilePath
                 [|shadowTextureArrayColorAttachment.VkFormat|]
                 shadowTextureArrayZAttachment.VkFormat
                 context
@@ -4747,7 +4721,7 @@ module PhysicallyBased =
                 Constants.Paths.PhysicallyBasedDeferredStaticShaderFilePath
                 [|VulkanUnblended|]
                 [|false; true|]
-                staticVertices
+                StaticVertices
                 [|depth.VkFormat
                   albedo.VkFormat
                   material.VkFormat
@@ -4766,7 +4740,7 @@ module PhysicallyBased =
                 Constants.Paths.PhysicallyBasedDeferredStaticClippedShaderFilePath
                 [|VulkanUnblended|]
                 [|false; true|]
-                staticVertices
+                StaticVertices
                 [|depth.VkFormat
                   albedo.VkFormat
                   material.VkFormat
@@ -4785,7 +4759,7 @@ module PhysicallyBased =
                 Constants.Paths.PhysicallyBasedDeferredAnimatedShaderFilePath
                 [|VulkanUnblended|]
                 [|false; true|]
-                animatedVertices
+                AnimatedVertices
                 [|depth.VkFormat
                   albedo.VkFormat
                   material.VkFormat
@@ -4799,6 +4773,7 @@ module PhysicallyBased =
         // create deferred terrain pipeline
         let deferredTerrainPipeline =
             createPhysicallyBasedTerrainPipeline
+                Constants.Paths.PhysicallyBasedDeferredTerrainShaderFilePath
                 [|depth.VkFormat
                   albedo.VkFormat
                   material.VkFormat
@@ -4828,7 +4803,7 @@ module PhysicallyBased =
                 Constants.Paths.PhysicallyBasedForwardStaticShaderFilePath
                 [|VulkanUnblended; VulkanTransparent|]
                 [|false; true|]
-                staticVertices
+                StaticVertices
                 [|composition.VkFormat|]
                 (Some z.VkFormat)
                 context
@@ -4841,7 +4816,7 @@ module PhysicallyBased =
                 Constants.Paths.PhysicallyBasedForwardAnimatedShaderFilePath
                 [|VulkanUnblended; VulkanTransparent|]
                 [|false; true|]
-                animatedVertices
+                AnimatedVertices
                 [|composition.VkFormat|]
                 (Some z.VkFormat)
                 context
@@ -4870,6 +4845,9 @@ module PhysicallyBased =
               ShadowAnimatedPointPipeline = shadowAnimatedPointPipeline
               ShadowAnimatedSpotPipeline = shadowAnimatedSpotPipeline
               ShadowAnimatedDirectionalPipeline = shadowAnimatedDirectionalPipeline
+              ShadowTerrainPointPipeline = shadowTerrainPointPipeline
+              ShadowTerrainSpotPipeline = shadowTerrainSpotPipeline
+              ShadowTerrainDirectionalPipeline = shadowTerrainDirectionalPipeline
               DeferredStaticPipeline = deferredStaticPipeline
               DeferredStaticClippedPipeline = deferredStaticClippedPipeline
               DeferredAnimatedPipeline = deferredAnimatedPipeline
@@ -4901,6 +4879,9 @@ module PhysicallyBased =
         Pipeline.beginFrame physicallyBasedPipelines.ShadowAnimatedPointPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.ShadowAnimatedSpotPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.ShadowAnimatedDirectionalPipeline.Pipeline
+        Pipeline.beginFrame physicallyBasedPipelines.ShadowTerrainPointPipeline.Pipeline
+        Pipeline.beginFrame physicallyBasedPipelines.ShadowTerrainSpotPipeline.Pipeline
+        Pipeline.beginFrame physicallyBasedPipelines.ShadowTerrainDirectionalPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.DeferredStaticPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.DeferredStaticClippedPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.DeferredAnimatedPipeline.Pipeline
@@ -4929,6 +4910,9 @@ module PhysicallyBased =
         destroyPhysicallyBasedShadowPipeline physicallyBasedPipelines.ShadowAnimatedPointPipeline context
         destroyPhysicallyBasedShadowPipeline physicallyBasedPipelines.ShadowAnimatedSpotPipeline context
         destroyPhysicallyBasedShadowPipeline physicallyBasedPipelines.ShadowAnimatedDirectionalPipeline context
+        destroyPhysicallyBasedDeferredTerrainPipeline physicallyBasedPipelines.ShadowTerrainPointPipeline context
+        destroyPhysicallyBasedDeferredTerrainPipeline physicallyBasedPipelines.ShadowTerrainSpotPipeline context
+        destroyPhysicallyBasedDeferredTerrainPipeline physicallyBasedPipelines.ShadowTerrainDirectionalPipeline context
         destroyPhysicallyBasedPipeline physicallyBasedPipelines.DeferredStaticPipeline context
         destroyPhysicallyBasedPipeline physicallyBasedPipelines.DeferredStaticClippedPipeline context
         destroyPhysicallyBasedPipeline physicallyBasedPipelines.DeferredAnimatedPipeline context
@@ -4957,6 +4941,9 @@ module PhysicallyBased =
         Pipeline.reloadShaders physicallyBasedPipelines.ShadowAnimatedPointPipeline.Pipeline context
         Pipeline.reloadShaders physicallyBasedPipelines.ShadowAnimatedSpotPipeline.Pipeline context
         Pipeline.reloadShaders physicallyBasedPipelines.ShadowAnimatedDirectionalPipeline.Pipeline context
+        Pipeline.reloadShaders physicallyBasedPipelines.ShadowTerrainPointPipeline.Pipeline context
+        Pipeline.reloadShaders physicallyBasedPipelines.ShadowTerrainSpotPipeline.Pipeline context
+        Pipeline.reloadShaders physicallyBasedPipelines.ShadowTerrainDirectionalPipeline.Pipeline context
         Pipeline.reloadShaders physicallyBasedPipelines.DeferredStaticPipeline.Pipeline context
         Pipeline.reloadShaders physicallyBasedPipelines.DeferredStaticClippedPipeline.Pipeline context
         Pipeline.reloadShaders physicallyBasedPipelines.DeferredAnimatedPipeline.Pipeline context

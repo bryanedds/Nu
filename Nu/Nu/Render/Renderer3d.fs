@@ -3302,15 +3302,15 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             | PointLight ->
                 (renderer.PhysicallyBasedPipelines.ShadowStaticPointPipeline,
                  renderer.PhysicallyBasedPipelines.ShadowAnimatedPointPipeline,
-                 Unchecked.defaultof<_>)//renderer.PhysicallyBasedPipelines.ShadowTerrainPointPipeline)
+                 renderer.PhysicallyBasedPipelines.ShadowTerrainPointPipeline)
             | SpotLight (_, _) ->
                 (renderer.PhysicallyBasedPipelines.ShadowStaticSpotPipeline,
                  renderer.PhysicallyBasedPipelines.ShadowAnimatedSpotPipeline,
-                 Unchecked.defaultof<_>)//renderer.PhysicallyBasedPipelines.ShadowTerrainSpotPipeline)
+                 renderer.PhysicallyBasedPipelines.ShadowTerrainSpotPipeline)
             | DirectionalLight _ | CascadedLight ->
                 (renderer.PhysicallyBasedPipelines.ShadowStaticDirectionalPipeline,
                  renderer.PhysicallyBasedPipelines.ShadowAnimatedDirectionalPipeline,
-                 Unchecked.defaultof<_>)//renderer.PhysicallyBasedPipelines.ShadowTerrainDirectionalPipeline)
+                 renderer.PhysicallyBasedPipelines.ShadowTerrainDirectionalPipeline)
 
         // begin deferred static surface shadow rendering
         let mutable counted = 0
@@ -3378,22 +3378,13 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // end shadow animated pipeline
         VulkanRenderer3d.endPhysicallyBasedShadowSurfaces shadowAnimatedPipeline renderer.VulkanContext
 
-        // TODO: P0: implement terrain shadows.
-        //// begin shadow terrain pipeline
-        //let uniformsDescriptorSet =
-        //    VulkanRenderer3d.beginPhysicallyBasedShadowPipeline
-        //        lightOrigin lightViewProjection renderer.LightingConfig.LightShadowExponent renderer.RenderPassIndex shadowTerrainPipeline renderer
-        //
-        //// attempt to deferred render terrain shadows
-        //for struct (descriptor, patchDescriptor, geometry) in renderTasks.DeferredTerrains do
-        //    if lightFrustum.Intersects patchDescriptor.PatchBounds then
-        //        VulkanRenderer3d.renderPhysicallyBasedTerrain
-        //            lightViewArray lightProjectionArray lightViewProjectionArray lightOrigin
-        //            renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
-        //            descriptor geometry shadowTerrainShader renderer.PhysicallyBasedTerrainVao renderer
-        //
-        //// end shadow terrain pipeline
-        //VulkanRenderer3d.endPhysicallyBasedShadowPipeline shadowTerrainPipeline
+        // attempt to deferred render terrain shadows
+        for struct (descriptor, patchDescriptor, geometry) in renderTasks.DeferredTerrains do
+            if lightFrustum.Intersects patchDescriptor.PatchBounds then
+                VulkanRenderer3d.renderPhysicallyBasedTerrain
+                    lightOrigin lightView lightProjection
+                    renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
+                    descriptor renderer.FilteredSampler geometry [|colorAttachment|] depthAttachment renderer.GeometryViewport renderer.RenderPassIndex shadowTerrainPipeline renderer
 
         // render forward (static and animated) surface shadows
         let mutable counted = 0
