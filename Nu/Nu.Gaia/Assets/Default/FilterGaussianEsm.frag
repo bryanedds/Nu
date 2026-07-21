@@ -22,11 +22,9 @@ void main()
         gaussianEsm.scale *
         gaussianEsm.radius;
     frag =
-        texture(sampler2D(esmTexture, filteredSampler), texCoordsOut + vec2(-3.0) * scalar).xy * (1.0 / 64.0) +
-        texture(sampler2D(esmTexture, filteredSampler), texCoordsOut + vec2(-2.0) * scalar).xy * (6.0 / 64.0) +
-        texture(sampler2D(esmTexture, filteredSampler), texCoordsOut + vec2(-1.0) * scalar).xy * (15.0 / 64.0) +
-        texture(sampler2D(esmTexture, filteredSampler), texCoordsOut + vec2( 0.0) * scalar).xy * (20.0 / 64.0) +
-        texture(sampler2D(esmTexture, filteredSampler), texCoordsOut + vec2( 1.0) * scalar).xy * (15.0 / 64.0) +
-        texture(sampler2D(esmTexture, filteredSampler), texCoordsOut + vec2( 2.0) * scalar).xy * (6.0 / 64.0) +
-        texture(sampler2D(esmTexture, filteredSampler), texCoordsOut + vec2( 3.0) * scalar).xy * (1.0 / 64.0);
+        texture(sampler2D(esmTexture, filteredSampler), texCoordsOut + vec2(-2.0) * scalar).xy * (1.0 / 16.0) +
+        texture(sampler2D(esmTexture, filteredSampler), texCoordsOut + vec2(-1.0) * scalar).xy * (4.0 / 16.0) +
+        texture(sampler2D(esmTexture, filteredSampler), texCoordsOut + vec2( 0.0) * scalar).xy * (6.0 / 16.0) +
+        texture(sampler2D(esmTexture, filteredSampler), texCoordsOut + vec2( 1.0) * scalar).xy * (4.0 / 16.0) +
+        texture(sampler2D(esmTexture, filteredSampler), texCoordsOut + vec2( 2.0) * scalar).xy * (1.0 / 16.0);
 }
