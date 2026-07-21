@@ -15,8 +15,10 @@ layout(set = 0, binding = 0) uniform EyeBlock { Eye eye; };
 layout(location = 0) in vec3 position;
 layout(location = 6) in mat4 model;
 
+layout(location = 0) out vec4 positionOut;
+
 void main()
 {
-	vec4 positionOut = model * vec4(position, 1.0);
+	positionOut = model * vec4(position, 1.0);
 	gl_Position = eye.viewProjection * positionOut;
 }
