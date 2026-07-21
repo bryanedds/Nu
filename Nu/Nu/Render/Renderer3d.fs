@@ -4583,7 +4583,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 ignore
                 context
         let fence = Hl.createFence false
-        ConcurrentCommandQueue.executeTransient commandBuffer context.TransientCommandPool fence context.RenderQueue
+        ConcurrentCommandQueue.runTransient commandBuffer context.TransientCommandPool fence context.RenderQueue
         DeviceApi.vkDestroyFence (fence, nullPtr)
 
         // compute compressed image file extension

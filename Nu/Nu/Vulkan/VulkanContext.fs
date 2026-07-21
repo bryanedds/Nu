@@ -41,8 +41,9 @@ type [<ReferenceEquality>] ConcurrentCommandQueue =
     static member waitIdle queue =
         ConcurrentCommandQueue.withLock queue (fun vkQueue -> DeviceApi.vkQueueWaitIdle vkQueue |> Hl.check)
 
-    /// Execute and free transient command buffer. Command pool and fence must NOT be shared between threads!
-    static member executeTransient commandBuffer commandPool finishFence (commandQueue : ConcurrentCommandQueue) =
+    /// Transiently run and then free the given command buffer. Command pool and finish fence must NOT be shared
+    /// between threads!
+    static member runTransient commandBuffer commandPool finishFence (commandQueue : ConcurrentCommandQueue) =
 
         // lock to get access to vulkan queue
         let mutable commandBuffer = commandBuffer
@@ -57,7 +58,7 @@ type [<ReferenceEquality>] ConcurrentCommandQueue =
             info.pCommandBuffers <- &&commandBuffer
             DeviceApi.vkQueueSubmit (vkQueue, 1u, &&info, finishFence) |> Hl.check
 
-            // wait for execution to finish
+            // wait for run to finish
             let mutable finishFence = finishFence
             DeviceApi.vkWaitForFences (1u, &&finishFence, true, UInt64.MaxValue) |> Hl.check
             DeviceApi.vkResetFences (1u, &&finishFence) |> Hl.check
@@ -69,8 +70,7 @@ type [<ReferenceEquality>] ConcurrentCommandQueue =
     static member create queueFamilyIndex queueIndex =
         let mutable vkQueue = Unchecked.defaultof<VkQueue>
         DeviceApi.vkGetDeviceQueue (queueFamilyIndex, queueIndex, &vkQueue)
-        let queue = { VkQueue_ = vkQueue; Lock_ = obj () }
-        queue
+        { VkQueue_ = vkQueue; Lock_ = obj () }
 
 /// A physical device and associated data.
 type PhysicalDevice =
@@ -89,7 +89,7 @@ type PhysicalDevice =
         this.Features.samplerAnisotropy = VkBool32.True
     
     static member private checkSurface window instance =
-        if Hl.getBackgroundingRequested () then
+        if  Hl.getBackgroundingRequested () then
             Hl.destroyVulkanSurface ()
             Hl.createVulkanSurface window instance
     
@@ -390,8 +390,9 @@ type Swapchain =
                         swapchain.SwapchainWrapperOpts_[swapchain.SwapchainIndex_] <- swapchainWrapperOpt
                         
                         // destroy surface if lost again or if pause triggered during swapchain creation
-                        if Hl.SurfaceState = SurfaceLost || Hl.getBackgroundingRequested ()
-                        then Swapchain.destroySurface renderQueue presentQueue swapchain
+                        if  Hl.SurfaceState = SurfaceLost ||
+                            Hl.getBackgroundingRequested () then
+                            Swapchain.destroySurface renderQueue presentQueue swapchain
 
                 // abort
                 else Swapchain.destroySurface renderQueue presentQueue swapchain
@@ -413,7 +414,7 @@ type Swapchain =
         // the surface and app backgrounding, anticipated or not, regardless of the calling context, which just needs 
         // to detect *if* method must be called. It should have a valid and appropriate result whatever the environment
         // throws at it.
-        
+
         // handle surface state
         match Hl.SurfaceState with
         
@@ -583,12 +584,12 @@ type [<ReferenceEquality>] VulkanContext =
 
     /// The render fence.
     member this.RenderFence = this.RenderFence_
-
-    /// The texture fence.
-    member this.TextureFence = this.TextureFence_
     
     /// The transient fence.
     member this.TransientFence = this.TransientFence_
+
+    /// The texture fence.
+    member this.TextureFence = this.TextureFence_
     
     /// The current swapchain image.
     member this.SwapchainImage = this.Swapchain_.Image
@@ -708,8 +709,8 @@ type [<ReferenceEquality>] VulkanContext =
         use portabilityWrap = new StringWrap (portabilityEnumeration)
         let portabilityEnumerationAvailable = Array.contains portabilityEnumeration availableExtensions
         let extensions =
-            if Constants.Vulkan.MoltenVk && portabilityEnumerationAvailable then
-                Array.append extensions [|portabilityWrap.Pointer|]
+            if Constants.Vulkan.MoltenVk && portabilityEnumerationAvailable
+            then Array.append extensions [|portabilityWrap.Pointer|]
             else extensions
         use extensionsPin = new ArrayPin<_> (extensions)
             
@@ -1213,11 +1214,11 @@ type [<ReferenceEquality>] VulkanContext =
         Swapchain.destroy context.RenderQueue_ context.PresentQueue_ context.Swapchain_
         DeviceApi.vkDestroySemaphore (context.ImageAvailableSemaphore_, nullPtr)
         DeviceApi.vkDestroyFence (context.RenderFence_, nullPtr)
-        DeviceApi.vkDestroyFence (context.TextureFence, nullPtr)
         DeviceApi.vkDestroyFence (context.TransientFence, nullPtr)
+        DeviceApi.vkDestroyFence (context.TextureFence, nullPtr)
         DeviceApi.vkDestroyCommandPool (context.RenderCommandPool_, nullPtr)
-        DeviceApi.vkDestroyCommandPool (context.TextureCommandPool_, nullPtr)
         DeviceApi.vkDestroyCommandPool (context.TransientCommandPool, nullPtr)
+        DeviceApi.vkDestroyCommandPool (context.TextureCommandPool_, nullPtr)
         Vma.vmaDestroyAllocator context.VmaAllocator
         DeviceApi.vkDestroyDevice (nullPtr)
         Hl.destroyVulkanSurface ()

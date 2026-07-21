@@ -332,7 +332,7 @@ type TextureWrapper =
             | AttachmentColor _ -> Hl.recordTransitionLayout true mipLevels 0 textureType.Layers internalFormat.VkImageAspectFlags Undefined ColorAttachmentRead image commandBuffer
             | AttachmentDepth _ -> Hl.recordTransitionLayout true mipLevels 0 textureType.Layers internalFormat.VkImageAspectFlags Undefined DepthAttachmentRead image commandBuffer
             | _ -> ()
-            ConcurrentCommandQueue.executeTransient commandBuffer pool fence queue
+            ConcurrentCommandQueue.runTransient commandBuffer pool fence queue
 
         // fin
         { Image = image
@@ -551,7 +551,7 @@ type [<CustomEquality; NoComparison>] TextureInternal =
         let (queue, pool, fence) = TextureLoadThread.getResources thread context
         let commandBuffer = Hl.createTransientCommandBuffer pool
         TextureInternal.uploadAsync commandBuffer metadata mipLevel layer pixels textureInternal context
-        ConcurrentCommandQueue.executeTransient commandBuffer pool fence queue
+        ConcurrentCommandQueue.runTransient commandBuffer pool fence queue
         
         // destroy staging buffer (only) if it was created by async function in synchronous context to prevent massive waste of vram
         if textureInternal.AttachmentMode_.IsAttachmentNone then
@@ -576,7 +576,7 @@ type [<CustomEquality; NoComparison>] TextureInternal =
             let (queue, pool, fence) = TextureLoadThread.getResources thread context
             let commandBuffer = Hl.createTransientCommandBuffer pool
             Hl.recordGenerateMipmaps commandBuffer metadata.TextureWidth metadata.TextureHeight textureInternal.MipLevels layer textureInternal.Image
-            ConcurrentCommandQueue.executeTransient commandBuffer pool fence queue
+            ConcurrentCommandQueue.runTransient commandBuffer pool fence queue
         else Log.warn "Mipmap generation attempted on texture with only one mip level."
 
     /// Represents the empty texture used in Vulkan.
