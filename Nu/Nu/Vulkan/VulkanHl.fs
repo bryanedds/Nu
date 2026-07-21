@@ -312,7 +312,7 @@ module Hl =
 
     let mutable internal ValidationLayersActivated = false
 
-    let mutable internal DrawReportLock = obj ()
+    let mutable internal DrawCountersLock = obj ()
     let mutable internal DrawInstanceCount = 0
     let mutable internal DrawCallCount = 0
     let mutable internal DrawScopeCount = 0
@@ -1231,31 +1231,31 @@ module Hl =
 
     /// Report the fact that a draw call has just been made with the given number of instances.
     let reportDrawScope () =
-        lock DrawReportLock (fun () ->
+        lock DrawCountersLock (fun () ->
             DrawScopeCount <- inc DrawScopeCount )
 
     /// Report the fact that a draw call has just been made with the given number of instances.
     let reportDrawCall drawInstances drawScope =
-        lock DrawReportLock (fun () ->
+        lock DrawCountersLock (fun () ->
             DrawInstanceCount <- DrawInstanceCount + drawInstances
             DrawCallCount <- inc DrawCallCount
             if drawScope then DrawScopeCount <- inc DrawScopeCount )
 
     /// Reset the running counts of draw events.
     let resetDrawCounters () =
-        lock DrawReportLock (fun () ->
+        lock DrawCountersLock (fun () ->
             DrawInstanceCount <- 0
             DrawCallCount <- 0
             DrawScopeCount <- 0)
 
     /// Get the running number of draw scopes.
     let getDrawScopeCount () =
-        lock DrawReportLock (fun () -> DrawScopeCount)
+        lock DrawCountersLock (fun () -> DrawScopeCount)
 
     /// Get the running number of draw calls.
     let getDrawCallCount () =
-        lock DrawReportLock (fun () -> DrawCallCount)
+        lock DrawCountersLock (fun () -> DrawCallCount)
 
     /// Get the running number of draw calls.
     let getDrawInstanceCount () =
-        lock DrawReportLock (fun () -> DrawInstanceCount)
+        lock DrawCountersLock (fun () -> DrawInstanceCount)

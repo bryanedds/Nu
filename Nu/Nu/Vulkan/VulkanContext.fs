@@ -1032,6 +1032,9 @@ type [<ReferenceEquality>] VulkanContext =
         //
         if context.RenderAllowed_ then
 
+            // reset draw counters
+            Hl.resetDrawCounters ()
+
             // begin render command recording
             VulkanContext.beginRenderCommandBuffer context
 
@@ -1062,9 +1065,6 @@ type [<ReferenceEquality>] VulkanContext =
 
             // end rendering
             VulkanContext.endRenderCommandBuffer LastSubmission context
-
-        // reset draw counters
-        Hl.resetDrawCounters ()
 
     /// Present the image back to the swapchain to appear on screen.
     static member present (context : VulkanContext) =
