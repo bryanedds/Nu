@@ -629,13 +629,12 @@ type [<ReferenceEquality>] VulkanContext =
             | _ -> ""
         let header = "Vulkan" + typeLabel + severityLabel
 
-        // decide when to log
-        if messageType = VkDebugUtilsMessageTypeFlagsEXT.Performance then
-            if messageSeverity > VkDebugUtilsMessageSeverityFlagsEXT.Warning then
-                Log.custom header message
-        else
-            if messageSeverity > VkDebugUtilsMessageSeverityFlagsEXT.Info then
-                Log.custom header message
+        // log when appropriate
+        let shouldLog =
+            if messageType = VkDebugUtilsMessageTypeFlagsEXT.Performance
+            then messageSeverity > VkDebugUtilsMessageSeverityFlagsEXT.Warning
+            else messageSeverity > VkDebugUtilsMessageSeverityFlagsEXT.Info
+        if shouldLog then Log.custom header message
 
         // finish passively
         ignore pUserData
