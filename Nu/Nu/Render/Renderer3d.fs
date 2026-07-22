@@ -3254,7 +3254,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                         let irradianceMap =
                             LightMap.createIrradianceMap
                                 Constants.Render.IrradianceMapResolution
-                                (CubeMapSurface.make false reflectionMap renderer.CubeMapGeometry)
+                                (CubeMapSurface.make true reflectionMap renderer.CubeMapGeometry)
                                 renderer.CubeMapSampler
                                 renderer.IrradianceMap.InternalFormat
                                 renderer.IrradiancePipeline
@@ -3266,7 +3266,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                         let environmentFilterMap =
                             LightMap.createEnvironmentFilterMap
                                 Constants.Render.EnvironmentFilterResolution
-                                (CubeMapSurface.make false reflectionMap renderer.CubeMapGeometry)
+                                (CubeMapSurface.make true reflectionMap renderer.CubeMapGeometry)
                                 renderer.CubeMapSampler
                                 renderer.EnvironmentFilterMap.InternalFormat
                                 renderer.EnvironmentFilterPipeline
