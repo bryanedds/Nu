@@ -4707,7 +4707,10 @@ module PhysicallyBased =
                 context
 
         // create deferred static pipeline
-        let (depth, albedo, material, normalPlus, subdermalPlus, scatterPlus, clearCoatPlus, z) = attachments.GeometryAttachments
+        let (depth, albedo, material, normalPlus, subdermalPlus, scatterPlus, clearCoatPlus, z) =
+            attachments.GeometryAttachments
+        let deferredColorAttachmentFormats =
+            [|depth.VkFormat; albedo.VkFormat; material.VkFormat; normalPlus.VkFormat; subdermalPlus.VkFormat; scatterPlus.VkFormat; clearCoatPlus.VkFormat|]
         let deferredStaticPipeline =
             createPhysicallyBasedPipeline
                 lightMapsMax
@@ -4716,13 +4719,7 @@ module PhysicallyBased =
                 [|VulkanUnblended|]
                 [|false; true|]
                 StaticVertices
-                [|depth.VkFormat
-                  albedo.VkFormat
-                  material.VkFormat
-                  normalPlus.VkFormat
-                  subdermalPlus.VkFormat
-                  scatterPlus.VkFormat
-                  clearCoatPlus.VkFormat|]
+                deferredColorAttachmentFormats
                 (Some z.VkFormat)
                 context
 
@@ -4735,13 +4732,7 @@ module PhysicallyBased =
                 [|VulkanUnblended|]
                 [|false; true|]
                 StaticVertices
-                [|depth.VkFormat
-                  albedo.VkFormat
-                  material.VkFormat
-                  normalPlus.VkFormat
-                  subdermalPlus.VkFormat
-                  scatterPlus.VkFormat
-                  clearCoatPlus.VkFormat|]
+                deferredColorAttachmentFormats
                 (Some z.VkFormat)
                 context
 
@@ -4754,26 +4745,17 @@ module PhysicallyBased =
                 [|VulkanUnblended|]
                 [|false; true|]
                 AnimatedVertices
-                [|depth.VkFormat
-                  albedo.VkFormat
-                  material.VkFormat
-                  normalPlus.VkFormat
-                  subdermalPlus.VkFormat
-                  scatterPlus.VkFormat
-                  clearCoatPlus.VkFormat|]
+                deferredColorAttachmentFormats
                 (Some z.VkFormat)
                 context
 
         // create deferred terrain pipeline
+        let deferredTerrainColorAttachmentFormats =
+            [|depth.VkFormat; albedo.VkFormat; material.VkFormat; normalPlus.VkFormat; subdermalPlus.VkFormat; scatterPlus.VkFormat|]
         let deferredTerrainPipeline =
             createPhysicallyBasedTerrainPipeline
                 Constants.Paths.PhysicallyBasedDeferredTerrainShaderFilePath
-                [|depth.VkFormat
-                  albedo.VkFormat
-                  material.VkFormat
-                  normalPlus.VkFormat
-                  subdermalPlus.VkFormat
-                  scatterPlus.VkFormat|]
+                deferredTerrainColorAttachmentFormats
                 z.VkFormat
                 context
         
