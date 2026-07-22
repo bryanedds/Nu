@@ -3144,7 +3144,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             irradianceMaps environmentFilterMaps shadowTextureArray shadowMaps shadowCascades lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses lightMapsCount lightMapSingletonBlendMargin
             lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices lightsCount shadowMatricesFlipped
             surface.SurfaceMaterial surface.PhysicallyBasedGeometry depthTest blending uniformsDescriptorSet samplersDescriptorSet pipeline renderer.VulkanContext
-             
+
         // track geometry instancing
         renderer.GeometryInstanced.Add surface.PhysicallyBasedGeometry |> ignore<bool>
 
@@ -3167,6 +3167,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         renderer.GeometryInstanced.Clear ()
 
         // begin pipeline frames
+        Pipeline.beginFrame renderer.SkyBoxPipeline.Pipeline
+        Pipeline.beginFrame renderer.IrradiancePipeline.Pipeline
+        Pipeline.beginFrame renderer.EnvironmentFilterPipeline.Pipeline
         PhysicallyBased.beginPhysicallyBasedPipelines renderer.PhysicallyBasedPipelines
 
         // categorize messages
@@ -3852,6 +3855,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             shadowCubeMapFace eyeCenter view projection
             instanceFields lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity
             materials filteredSampler geometry colorAttachments depthAttachment resolution renderPassIndex pipeline renderer.VulkanContext
+
+        // track geometry instancing
+        renderer.GeometryInstanced.Add geometry |> ignore<bool>
 
     static member private renderGeometry
         frustumInterior

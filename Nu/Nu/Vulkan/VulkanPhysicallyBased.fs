@@ -2600,7 +2600,7 @@ module PhysicallyBased =
                     [|Pipeline.descriptor 0 Sampler FragmentStage 1
                       Pipeline.descriptor 1 Sampler FragmentStage 1|]|]
                 [||] [|colorAttachmentFormat|] None
-                [|eyeUniform; lightingUniform; lightsGeneralUniform; lightsUniform|]
+                [|eyeUniform; lightingUniform; lightsGeneralUniform; lightsUniform; shadowMatricesUniform|]
 
         // make PhysicallyBasedDeferredFoggingPipeline
         let physicallyBasedDeferredFoggingPipeline =
