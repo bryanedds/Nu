@@ -459,7 +459,7 @@ module Hl =
                     checkAttachmentFormat vkPhysicalDevice D16s8ui
                 | D16s8ui ->
                     Log.fail "Could not find a suitable format for depth attachment textures."
-            Log.warn ("Falling back to " + scstring formatFallback.VkFormat + " attachment format due to unavailability of " + scstring format.VkFormat + " attachment format.")
+            Log.info ("Falling back to " + scstring formatFallback.VkFormat + " attachment format due to unavailability of " + scstring format.VkFormat + " attachment format.")
             formatFallback
 
         else format

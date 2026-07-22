@@ -659,7 +659,7 @@ type [<ReferenceEquality>] VulkanContext =
         Unsafe.WriteUnaligned (NativePtr.toByRef<byte> fieldRef, callbackPointer) // TODO: report this F# compiler bug that allows direct assignment to compile without error but causes a crash at runtime
         info.pUserData <- NativePtr.toVoidPtr NativePtr.nullPtr<byte>
         info
-    
+
     /// Create the Vulkan instance.
     static member private createVulkanInstance debugInfo =
 
