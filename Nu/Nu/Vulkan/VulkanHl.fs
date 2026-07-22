@@ -654,7 +654,7 @@ module Hl =
             let windowProperties = SDL3.SDL_GetWindowProperties window
             let windowPointer = SDL3.SDL_GetPointerProperty (windowProperties, SDL3.SDL_PROP_WINDOW_ANDROID_WINDOW_POINTER, 0n)
             windowPointer <> 0n
-        else true // will presumably never be blocked on non-adroid platforms
+        else true // will presumably never be blocked on other platforms
 
     let tryCreateVulkanSurface window instance =
 
