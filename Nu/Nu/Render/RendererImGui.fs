@@ -118,7 +118,7 @@ type VulkanRendererImGui
             // set font atlas TexId
             fonts.SetTexID (nativeint fontTexture.Id)
             
-            // NOTE: DJL: this is not used in the dear imgui vulkan backend.
+            // NOTE: this is not used in the dear imgui vulkan backend.
             fonts.ClearTexData ()
 
             // create vertex and index buffers
@@ -183,7 +183,7 @@ type VulkanRendererImGui
 
             // update viewport, updating the imgui display size as needed
             if viewport <> viewport_ then
-                io.DisplaySize <- viewport_.Bounds.Size.V2 // NOTE: DJL: this is not set in the dear imgui vulkan backend but IS necessary!
+                io.DisplaySize <- viewport_.Bounds.Size.V2 // NOTE: this is not set in the dear imgui vulkan backend but IS necessary!
                 viewport <- viewport_
 
             // check that viewport bounds assumed by drawData match the actual viewport, as they sometimes lag behind upon resize, triggering validation errors when viewport bounds are exceeded.

@@ -64,7 +64,6 @@ module CubeMap =
     let tryCreateCubeMap faceRightFilePath faceLeftFilePath faceTopFilePath faceBottomFilePath faceBackFilePath faceFrontFilePath thread context =
 
         // load faces into cube map
-        // TODO: DJL: maybe check that size and compression match?
         let mutable textureInternalOpt = None
         let mutable errorOpt = None
         let faceFilePaths = [|faceRightFilePath; faceLeftFilePath; faceTopFilePath; faceBottomFilePath; faceBackFilePath; faceFrontFilePath|]
@@ -263,8 +262,7 @@ module CubeMap =
                     [|Pipeline.descriptor 0 SampledImage FragmentStage 1|]
                   Pipeline.descriptorSet<Sampler>
                     [|Pipeline.descriptor 0 Sampler FragmentStage 1|]|]
-                [||] [|colorAttachmentFormat|]
-                None // NOTE: DJL: not porting currently meaningless depth test as it imposes complexity cost in vulkan.
+                [||] [|colorAttachmentFormat|] None
                 [|eyeUniform|]
 
         // fin

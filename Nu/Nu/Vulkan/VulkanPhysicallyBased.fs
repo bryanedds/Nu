@@ -4707,8 +4707,6 @@ module PhysicallyBased =
                 context
 
         // create deferred static pipeline
-        // NOTE: DJL: we use the composition z attachment directly to avoid having to find a depth format supporting copy operations,
-        // which is problematic on some mesa drivers.
         let (depth, albedo, material, normalPlus, subdermalPlus, scatterPlus, clearCoatPlus, z) = attachments.GeometryAttachments
         let deferredStaticPipeline =
             createPhysicallyBasedPipeline

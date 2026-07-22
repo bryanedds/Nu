@@ -423,7 +423,7 @@ type [<CustomEquality; NoComparison>] TextureInternal =
                 | AttachmentNone ->
 
                     // check if hardware supports mipmap generation; this is done here to prevent unused (i.e. blank) mip levels
-                    // TODO: DJL: check for VkFormatFeatureFlags.BlitSrc/Dst as well.
+                    // TODO: P0: check for VkFormatFeatureFlags.BlitSrc/Dst as well.
                     let mutable formatProperties = Unchecked.defaultof<VkFormatProperties>
                     InstanceApi.vkGetPhysicalDeviceFormatProperties (context.PhysicalDevice.VkPhysicalDevice, internalFormat.VkFormat, &formatProperties)
                     let mipGenSupport = formatProperties.optimalTilingFeatures &&& VkFormatFeatureFlags.SampledImageFilterLinear <> VkFormatFeatureFlags.None
@@ -454,7 +454,8 @@ type [<CustomEquality; NoComparison>] TextureInternal =
         textureInternal
 
     /// Create an empty TextureInternal.
-    /// NOTE: DJL: this is for fast empty texture creation. It is not preferred for TextureInternal.empty, which is created from Assets.Default.Image.
+    /// NOTE: this is for fast empty texture creation. It is not preferred for TextureInternal.empty, which is created
+    /// from Assets.Default.Image.
     static member createEmpty (context : VulkanContext) =
         TextureInternal.create
             MipmapNone AttachmentNone Texture2d VkImageUsageFlags.None
@@ -569,8 +570,7 @@ type [<CustomEquality; NoComparison>] TextureInternal =
         use arrayPin = new ArrayPin<_> (array)
         TextureInternal.upload metadata mipLevel layer arrayPin.NativeInt thread textureInternal context
 
-    /// Generate mipmaps in TextureInternal. Can only be done once, after upload to (only) mipLevel 0.
-    /// TODO: DJL: get this working with compressed textures.
+    /// Generate mipmaps in TextureInternal. Can be done only once, after upload to (only) mip level 0.
     static member generateMipmaps metadata layer thread (textureInternal : TextureInternal) (context : VulkanContext) =
         if textureInternal.MipLevels > 1 then
             let (queue, pool, fence) = TextureLoadThread.getResources thread context
@@ -697,7 +697,7 @@ type [<CustomEquality; NoComparison>] Texture =
     
     static member destroy texture context =
         match texture with
-        | EmptyTexture -> () // TODO: DJL: protect TextureInternal.empty from premature destruction.
+        | EmptyTexture -> ()
         | EagerTexture texture -> TextureInternal.destroy texture context
         | LazyTexture lazyTexture -> lazyTexture.Destroy context
 

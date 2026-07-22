@@ -273,7 +273,7 @@ module SdlDeps =
                 (fun () ->
 
                     // init sdl callback for app backgrounding on mobile devices
-                    // NOTE: DJL: this happens before SDL window creation to ensure no backgrounding events are missed.
+                    // NOTE: this happens before SDL window creation to ensure no backgrounding events are missed.
                     SDL3.SDL_SetEventFilter (Vulkan.Hl.backgroundingCallback (), 0n) // TODO: P0: pass this in as a parameter to reduce critical coupling.
                     
                     // attempt to create window

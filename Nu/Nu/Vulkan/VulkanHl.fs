@@ -165,9 +165,9 @@ type ImageLayout =
     /// The pipeline stage.
     member this.PipelineStage =
             
-        // NOTE: DJL: for Undefined as image layout transition source, texture upload and mipmap generation previously used VK_PIPELINE_STAGE_HOST_BIT.
-        // I can't remember why but it's not in the tutorial and apparently may lead to failure on Android devices. I suspect it was inherited
-        // from ImGui backend.
+        // NOTE: for Undefined as image layout transition source, texture upload and mipmap generation previously used
+        // VK_PIPELINE_STAGE_HOST_BIT. DJL can't remember why, but it's not in the tutorial and apparently may lead to
+        // failure on Android devices. DJL suspects it was inherited from ImGui backend.
         match this with
         | Undefined -> VkPipelineStageFlags.TopOfPipe
         | TransferSrc -> VkPipelineStageFlags.Transfer
@@ -280,7 +280,8 @@ type SurfaceState =
 
 /// Represents a strict cycle ensuring that any presentation resources (surface and swapchains) that exist or are being created during the onset
 /// of app backgrounding on a mobile device are torn down/cancelled.
-/// TODO: DJL: encapsulate most of this stuff into a Surface abstraction as it should not be visible to Swapchain and VulkanContext.
+/// TODO: consider encapsulating most of this stuff into a Surface abstraction as it should not be visible to Swapchain
+/// and VulkanContext.
 type internal BackgroundingResponseState =
     | PresentationSetupInitiated // setup of presentation resources has begun and may be complete
     | PresentationTeardownPending // presentation resources can no longer be trusted as app has commenced backgrounding
@@ -307,8 +308,8 @@ module Vulkan =
 [<RequireQualifiedAccess>]
 module Hl =
 
-    // TODO: DJL: all these free-floating variables, types and functions have become a
-    // bit of a mess and need to be reordered, not to mention the inconsistent casing.
+    // TODO: P0: these free-floating bindings have become a bit of a mess and need to be reordered or moved into vulkan
+    // context.
 
     let mutable internal ValidationLayersActivated = false
 
@@ -433,8 +434,8 @@ module Hl =
     let rec checkAttachmentFormat vkPhysicalDevice (format : ImageFormat) =
         if not (supportsAttachment vkPhysicalDevice format) then
             
-            // NOTE: DJL: formats required by spec - https://docs.vulkan.org/spec/latest/chapters/formats.html#features-required-format-support
-            // NOTE: DJL: format fallbacks must not be ints for blit conversion.
+            // NOTE: formats required by spec - https://docs.vulkan.org/spec/latest/chapters/formats.html#features-required-format-support
+            // NOTE: format fallbacks must not be ints for blit conversion.
             let (formatFallback : ImageFormat) =
                 match format with
                 | Bc3 | Bc5 | Astc ->
@@ -581,7 +582,7 @@ module Hl =
         blit
 
     /// Make a VkRenderingInfo.
-    /// NOTE: DJL: MUST be inline to keep pointers valid!
+    /// NOTE: this function MUST be declared inline to keep its pointers valid!
     let inline makeRenderingInfo (colorAttachments : VkImageView array) depthAttachmentOpt renderArea clearValueOpt =
 
         // color attachment infos
@@ -714,8 +715,9 @@ module Hl =
         match tryCompileShader shaderPath shaderKind with
         | Right shader ->
 
-            // NOTE: DJL: using a high level overload here to avoid questions about reinterpret casting and memory alignment,
-            // see https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Shader_modules#page_Creating-shader-modules.
+            // NOTE: using a high level overload here to avoid questions about reinterpret casting and memory
+            // alignment; see -
+            // https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Shader_modules#page_Creating-shader-modules
             let mutable shaderModule = Unchecked.defaultof<VkShaderModule>
             DeviceApi.vkCreateShaderModule (shader.AsSpan (), nullPtr, &shaderModule) |> check
             Right shaderModule
@@ -776,8 +778,8 @@ module Hl =
         else
 
             // get pixel resolution from sdl
-            // NOTE: DJL: unlike the GLFW counterpart, this does NOT return 0 when minimized.
-            // TODO: DJL: find out if that's still true for SDL3.
+            // NOTE: unlike the GLFW counterpart, this does NOT return 0 when minimized.
+            // TODO: P0: find out if that's still true for SDL3.
             let mutable width = Unchecked.defaultof<int>
             let mutable height = Unchecked.defaultof<int>
             if not (SDL3.SDL_GetWindowSizeInPixels (window, &&width, &&height)) then

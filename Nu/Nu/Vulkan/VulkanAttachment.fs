@@ -12,10 +12,7 @@ open Nu
 [<RequireQualifiedAccess>]
 module Attachment =
     
-    // NOTE: DJL: in the context of individual attachment textures, depth component attachments used for depth testing are named "z" to easily distinguish them
-    // from color component attachments using the name "depth". Otherwise color and depth component textures are just called "color" and "depth" attachments,
-    // as they are called when passed to Vulkan structures.
-
+    /// Create a color attachment.
     let createColorAttachment textureType optionalUsages internalFormat pixelFormat resolutionX resolutionY (context : VulkanContext) =
         let metadata = TextureMetadata.make resolutionX resolutionY
         let textureInternal =

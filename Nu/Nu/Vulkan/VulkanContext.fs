@@ -78,7 +78,7 @@ type PhysicalDevice =
       Properties : VkPhysicalDeviceProperties
       Features : VkPhysicalDeviceFeatures
       Extensions : VkExtensionProperties array
-      SurfaceCapabilities : VkSurfaceCapabilitiesKHR // NOTE: DJL: keep this here in case we want to use it for device selection.
+      SurfaceCapabilities : VkSurfaceCapabilitiesKHR // NOTE: keeping this here in case we want to use it for device selection.
       SurfaceFormats : VkSurfaceFormatKHR array
       GraphicsQueueFamily : uint
       PresentQueueFamily : uint
@@ -144,16 +144,17 @@ type PhysicalDevice =
         use queueFamilyPropsPin = new ArrayPin<_> (queueFamilyProps)
         InstanceApi.vkGetPhysicalDeviceQueueFamilyProperties (vkPhysicalDevice, &&queueFamilyCount, queueFamilyPropsPin.Pointer)
 
-        // NOTE: DJL: it is *essential* to use the *first* compatible queue families in the array, *not* the last, as per the tutorial and vortice vulkan sample.
-        // I discovered this by accident because the queue families on my AMD behaved exactly the same as the queue families on this one:
+        // NOTE: it is *essential* to use the *first* compatible queue families in the array, *not* the last, as per
+        // the tutorial and vortice vulkan sample. This was discovered this by accident because the queue families on
+        // my AMD behaved exactly the same as the queue families on this one:
         // https://computergraphics.stackexchange.com/questions/9707/queue-from-a-family-queue-that-supports-presentation-doesnt-work-vulkan
-        // general lesson: trust level for vendors is too low for deviation from common practices to be advisable.
+        // General Lesson: trust level for vendors is too low for deviation from common practices to be advisable.
         let mutable graphicsQueueFamilyOpt = None
         let mutable presentQueueFamilyOpt = None
         for i in 0 .. dec queueFamilyProps.Length do
 
             // try get graphics queue family
-            // NOTE: DJL: for reason described above, do not attempt to derive transfer queue from seperate family.
+            // NOTE: for reason noted above, do not attempt to derive transfer queue from seperate family.
             match graphicsQueueFamilyOpt with
             | None ->
                 let props = queueFamilyProps[i]
@@ -322,7 +323,7 @@ type SwapchainWrapper =
     /// Destroy a SwapchainWrapper.
     static member destroy renderQueue presentQueue swapchainWrapper =
         
-        // TODO: DJL: this is not sufficient to ensure resources not still in use, that requires an extension!!
+        // NOTE: this is not sufficient to ensure resources not still in use, that requires an extension!!!
         // https://docs.vulkan.org/guide/latest/swapchain_semaphore_reuse.html#_vk_ext_swapchain_maintenance1_extension
         ConcurrentCommandQueue.waitIdle renderQueue
         ConcurrentCommandQueue.waitIdle presentQueue
@@ -408,12 +409,11 @@ type Swapchain =
         | None -> true
 
     /// Update the swapchain.
+    /// NOTE: by design, this method should know exactly what to do based on the current and changing state of the
+    /// surface and app backgrounding, anticipated or not, regardless of the calling context, which just needs to
+    /// detect whether method must be called. It should have a valid and appropriate result whatever the environment
+    /// throws at it.
     static member update physicalDevice renderQueue presentQueue swapchain instance =
-        
-        // NOTE: DJL: by design, this method should know exactly what to do based on the current and changing state of
-        // the surface and app backgrounding, anticipated or not, regardless of the calling context, which just needs 
-        // to detect *if* method must be called. It should have a valid and appropriate result whatever the environment
-        // throws at it.
 
         // handle surface state
         match Hl.SurfaceState with
@@ -482,9 +482,9 @@ type Swapchain =
         let swapchainIndex = 0
 
         // create SwapchainWrapper array
-        // NOTE: DJL: must allow for frames in flight plus 1 to prevent destroying semaphores while still in use
-        // because swapchain can be refreshed at the end of one frame AND at the beginning of the next,
-        // but can still only be refreshed once per frame.
+        // NOTE: this must allow for frames in flight plus 1 to prevent destroying semaphores while still in use
+        // because swapchain can be refreshed at the end of one frame AND at the beginning of the next, but can still
+        // only be refreshed once per frame.
         let swapchainWrapperOpts = Array.create (Constants.Vulkan.FramesInFlight + 1) None
 
         // check if window is minimized at startup
@@ -670,8 +670,8 @@ type [<ReferenceEquality>] VulkanContext =
         use layersPin = new ArrayPin<_> (layers)
         Vulkan.vkEnumerateInstanceLayerProperties (&&layerCount, layersPin.Pointer) |> Hl.check
 
-        // check if validation layer exists
-        // TODO: DJL: try to automatically prevent validation from interfering with Nsight, starting with VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT.
+        // check whether validation layer exists
+        // TODO: try to automatically prevent validation from interfering with Nsight, starting with VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT.
         let validationLayerName = "VK_LAYER_KHRONOS_validation"
         let validationLayerExists = Array.exists (fun x -> Hl.getLayerName x = validationLayerName) layers
         if Constants.Render.RenderDebug && not validationLayerExists then
@@ -739,7 +739,7 @@ type [<ReferenceEquality>] VulkanContext =
         SetInstanceApi (Vulkan.GetApi instance)
         instance
 
-    // TODO: DJL: try separate this from validation status, same for create instance debug.
+    // TODO: try separate this from validation status, same for create instance debug.
     static member private tryCreateDebugMessenger info =
         if Hl.ValidationLayersActivated then
             let mutable debugMessenger = Unchecked.defaultof<VkDebugUtilsMessengerEXT>
@@ -792,7 +792,6 @@ type [<ReferenceEquality>] VulkanContext =
                 let physicalDevice = List.head candidatesFilteredAndOrdered
                 
                 // log any important data about physical device
-                // TODO: DJL: log device name!
                 if not physicalDevice.SupportsAnisotropy then Log.info "Graphics device does not support anisotropy."
                 
                 // return physical device
@@ -844,8 +843,8 @@ type [<ReferenceEquality>] VulkanContext =
             else [|swapchainExtensionName|]
         use extensionArrayWrap = new StringArrayWrap (extensionArray)
 
-        // NOTE: DJL: for particularly dated implementations of Vulkan, validation depends on device layers which
-        // are deprecated. These must be enabled if validation support for said implementations is desired.
+        // NOTE: for particularly dated implementations of Vulkan, validation depends on device layers which are
+        // deprecated. These must be enabled if validation support for said implementations is desired.
 
         // specify device features to be enabled
         let mutable features = VkPhysicalDeviceFeatures ()
@@ -911,8 +910,7 @@ type [<ReferenceEquality>] VulkanContext =
     /// Handle changes in window size, and check for minimization.
     static member private handleWindowSize context =
         
-        // query minimization status
-        // NOTE: DJL: this both detects the beginning of minimization and checks for the end.
+        // query minimization status. This both detects the beginning of minimization and checks for the end.
         context.WaitingForWindowRestore_ <- Swapchain.isWindowMinimized context.Swapchain_.Window_
 
         // update the swapchain if window is not minimized, which happens a) when the window size simply changes
@@ -1013,7 +1011,7 @@ type [<ReferenceEquality>] VulkanContext =
                                 windowViewport.Bounds.ContainsInclusive windowViewport.Inner = ContainmentType.Contains then
 
                                 // try to acquire image from swapchain to draw onto
-                                // NOTE: DJL: due to semaphore, if this is successful, the render *must* proceed!
+                                // NOTE: due to semaphore flow, when this is successful, the render *must* proceed!
                                 //let sw = System.Diagnostics.Stopwatch.StartNew ()
                                 let result = DeviceApi.vkAcquireNextImageKHR (context.Swapchain_.VkSwapchain, UInt64.MaxValue, context.ImageAvailableSemaphore_, VkFence.Null, &Hl.ImageIndex)
                                 //sw.Stop ()
@@ -1026,7 +1024,7 @@ type [<ReferenceEquality>] VulkanContext =
                                     Swapchain.update context.PhysicalDevice_ context.RenderQueue_ context.PresentQueue_ context.Swapchain_ context.Instance_
                                 | _ ->
                                     context.RenderAllowed_ <- true // permit rendering
-                                    Hl.check result // NOTE: DJL: this will report a suboptimal swapchain image.
+                                    Hl.check result // NOTE: this will report a suboptimal swapchain image.
 
         //
         if context.RenderAllowed_ then
