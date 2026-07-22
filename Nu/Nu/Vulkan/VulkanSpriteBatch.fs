@@ -114,7 +114,7 @@ module SpriteBatch =
         // ensure something to draw
         match env.State.TextureOpt with
         | ValueSome texture when env.SpriteIndex > 0 ->
-                
+
             // only draw if scissor (and therefore also viewport) is valid
             let pixelDensity = Hl.getWindowPixelDensity env.VulkanContext.Window
             let renderAreaLogical = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)

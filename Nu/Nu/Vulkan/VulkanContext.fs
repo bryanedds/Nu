@@ -656,7 +656,7 @@ type [<ReferenceEquality>] VulkanContext =
         let callbackPointer = debugCallbackMethod.GetFunctionPointer () // requires UnmanagedCallersOnly on the function! See https://learn.microsoft.com/en-us/dotnet/api/system.runtimemethodhandle.getfunctionpointer#remarks
         let offset = Marshal.OffsetOf<VkDebugUtilsMessengerCreateInfoEXT> (nameof info.pfnUserCallback)
         let fieldRef = NativePtr.ofNativeInt<byte> (NativePtr.toNativeInt &&info + offset)
-        Unsafe.WriteUnaligned (NativePtr.toByRef<byte> fieldRef, callbackPointer) // TODO: report this F# compiler bug that allows direct assignment to compile without error but causes a crash at runtime
+        Unsafe.WriteUnaligned (NativePtr.toByRef<byte> fieldRef, callbackPointer) // TODO: P1: report this F# compiler bug that allows direct assignment to compile without error but causes a crash at runtime.
         info.pUserData <- NativePtr.toVoidPtr NativePtr.nullPtr<byte>
         info
 
@@ -1117,13 +1117,13 @@ type [<ReferenceEquality>] VulkanContext =
 
         // make debug info
         let debugInfo = VulkanContext.makeDebugMessengerInfo ()
-        
+
         // create instance
         let instance = VulkanContext.createVulkanInstance debugInfo
 
         // create debug messenger if validation activated
         let debugMessengerOpt = VulkanContext.tryCreateDebugMessenger debugInfo
-        
+
         // create surface
         Hl.createVulkanSurface window instance
 
