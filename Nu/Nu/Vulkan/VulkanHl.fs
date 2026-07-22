@@ -652,6 +652,9 @@ module Hl =
 
         // attempt to recreate surface if destroyed
         match SurfaceState with
+        | SurfaceDestroyed when OperatingSystem.IsAndroid () &&
+            SDL3.SDL_GetPointerProperty (SDL3.SDL_GetWindowProperties window, SDL3.SDL_PROP_WINDOW_ANDROID_WINDOW_POINTER, 0n) = 0n ->
+            () // Android native window is not available for surface creation, usually because of backgrounding
         | SurfaceDestroyed ->
         
             // inform the backgrounding callback that we begin the process of creating the surface and swapchain
