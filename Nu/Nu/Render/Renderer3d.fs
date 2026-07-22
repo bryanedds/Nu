@@ -3191,11 +3191,14 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 // render fallback irradiance and env filter maps
                 if Option.isNone irradianceAndEnvironmentMapsOptRef.Value then
 
+                    // special handling for flip-ness of fallback
+                    let fallbackFlipped = true
+
                     // render fallback irradiance map
                     let irradianceMap =
                         LightMap.createIrradianceMap
                             Constants.Render.IrradianceMapResolution
-                            (CubeMapSurface.make false cubeMap renderer.CubeMapGeometry)
+                            (CubeMapSurface.make fallbackFlipped cubeMap renderer.CubeMapGeometry)
                             renderer.CubeMapSampler
                             renderer.IrradianceMap.InternalFormat
                             renderer.IrradiancePipeline
@@ -3207,7 +3210,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     let environmentFilterMap =
                         LightMap.createEnvironmentFilterMap
                             Constants.Render.EnvironmentFilterResolution
-                            (CubeMapSurface.make true cubeMap renderer.CubeMapGeometry)
+                            (CubeMapSurface.make (not fallbackFlipped) cubeMap renderer.CubeMapGeometry)
                             renderer.CubeMapSampler
                             renderer.EnvironmentFilterMap.InternalFormat
                             renderer.EnvironmentFilterPipeline
@@ -4461,15 +4464,15 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
     /// Make a VulkanRenderer3d.
     static member make geometryViewport windowViewport context =
-        
+
         // start lazy texture server
         let lazyTextureQueues = ConcurrentDictionary<LazyTexture ConcurrentQueue, LazyTexture ConcurrentQueue> HashIdentity.Reference
         let textureServer = TextureServer (lazyTextureQueues, context)
         textureServer.Start ()
-        
+
         // create texture dumpster
         let textureDumpster = TextureDumpster.create ()
-        
+
         // create samplers
         let filteredSampler = Sampler.create VkSamplerAddressMode.Repeat VkFilter.Linear VkFilter.Linear true context
         let cubeMapSampler = Sampler.create VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false context
@@ -4478,23 +4481,23 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let colorSampler = Sampler.create VkSamplerAddressMode.ClampToEdge VkFilter.Nearest VkFilter.Nearest false context
         let depthSampler = Sampler.create VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false context // using linear filtering since coloring depth attachment is the source for a down-sampling filter
         let brdfSampler = Sampler.create VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false context
-        
+
         // create physically-based attachments using the geometry viewport
         let physicallyBasedAttachments = PhysicallyBased.createPhysicallyBasedAttachments geometryViewport context
-        
+
         // create sky box pipeline
         let compositionTexture = physicallyBasedAttachments.CompositionAttachment
         let (_, _, _, _, _, _, _, zTexture) = physicallyBasedAttachments.GeometryAttachments
         let skyBoxPipeline = SkyBox.createSkyBoxPipeline compositionTexture.VkFormat zTexture.VkFormat context
-        
+
         // create irradiance pipeline
         let irradianceFormat = Rgba16f
         let irradiancePipeline = CubeMap.createCubeMapPipeline Constants.Paths.IrradianceShaderFilePath irradianceFormat.VkFormat context
-        
+
         // create environment filter pipeline
         let environmentFilterFormat = Rgba16f
         let environmentFilterPipeline = LightMap.createEnvironmentFilterPipeline Constants.Paths.EnvironmentFilterShaderFilePath environmentFilterFormat.VkFormat context
-        
+
         // create physically-based pipelines
         let physicallyBasedPipelines =
             PhysicallyBased.createPhysicallyBasedPipelines
@@ -4506,14 +4509,14 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // create shadow matrices flipped buffer
         let shadowMatricesFlippedCount = Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels
         let shadowMatricesFlipped = Array.zeroCreate<Matrix4x4> shadowMatricesFlippedCount
-        
+
         // create white cube map
         let cubeMap =
             let white = "Assets/Default/White.png"
             match CubeMap.tryCreateCubeMap white white white white white white RenderThread context with
             | Right cubeMap -> cubeMap
             | Left error -> failwith error
-        
+
         // create cube map geometry
         let cubeMapGeometry = CubeMap.createCubeMapGeometry true context
 
@@ -4522,9 +4525,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
         // create physically-based quad
         let quadGeometry = PhysicallyBased.createPhysicallyBasedQuadGeometry (Some context)
-
-        // create cube map surface
-        let cubeMapSurface = CubeMapSurface.make false cubeMap cubeMapGeometry
         
         // create white texture
         let whiteTexture =
@@ -4566,7 +4566,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let irradianceMap =
             LightMap.createIrradianceMap
                 Constants.Render.IrradianceMapResolution
-                cubeMapSurface
+                (CubeMapSurface.make false cubeMap cubeMapGeometry)
                 cubeMapSampler
                 irradianceFormat
                 irradiancePipeline
@@ -4576,7 +4576,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let environmentFilterMap =
             LightMap.createEnvironmentFilterMap
                 Constants.Render.EnvironmentFilterResolution
-                cubeMapSurface
+                (CubeMapSurface.make true cubeMap cubeMapGeometry)
                 cubeMapSampler
                 environmentFilterFormat
                 environmentFilterPipeline
@@ -4709,7 +4709,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               QuadGeometry = quadGeometry
               TerrainGeometries = Dictionary HashIdentity.Structural
               TerrainGeometriesUtilized = HashSet HashIdentity.Structural
-              CubeMap = cubeMapSurface.CubeMap
+              CubeMap = cubeMap
               WhiteTexture = whiteTexture
               BlackTexture = blackTexture
               BrdfTexture = brdfTexture
