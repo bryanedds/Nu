@@ -3191,14 +3191,14 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 // render fallback irradiance and env filter maps
                 if Option.isNone irradianceAndEnvironmentMapsOptRef.Value then
 
-                    // special handling for flip-ness of fallback
-                    let fallbackFlipped = true
+                    // special handling for flipped-ness of fallback
+                    let fallbackFlipped = false
 
                     // render fallback irradiance map
                     let irradianceMap =
                         LightMap.createIrradianceMap
                             Constants.Render.IrradianceMapResolution
-                            (CubeMapSurface.make fallbackFlipped cubeMap renderer.CubeMapGeometry)
+                            (CubeMapSurface.make (not fallbackFlipped) cubeMap renderer.CubeMapGeometry)
                             renderer.CubeMapSampler
                             renderer.IrradianceMap.InternalFormat
                             renderer.IrradiancePipeline
@@ -3210,7 +3210,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     let environmentFilterMap =
                         LightMap.createEnvironmentFilterMap
                             Constants.Render.EnvironmentFilterResolution
-                            (CubeMapSurface.make (not fallbackFlipped) cubeMap renderer.CubeMapGeometry)
+                            (CubeMapSurface.make fallbackFlipped cubeMap renderer.CubeMapGeometry)
                             renderer.CubeMapSampler
                             renderer.EnvironmentFilterMap.InternalFormat
                             renderer.EnvironmentFilterPipeline
