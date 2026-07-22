@@ -647,31 +647,42 @@ module Hl =
         result.extent.width <- uint extentWidth
         result.extent.height <- uint extentHeight
         result
+        
+    // Check whether window resource is availabile for utilization.
+    let private isWindowResourceAvailable window =
+        if OperatingSystem.IsAndroid () then
+            let windowProperties = SDL3.SDL_GetWindowProperties window
+            let windowPointer = SDL3.SDL_GetPointerProperty (windowProperties, SDL3.SDL_PROP_WINDOW_ANDROID_WINDOW_POINTER, 0n)
+            windowPointer <> 0n
+        else true // will presumably never be blocked on non-adroid platforms
 
     let tryCreateVulkanSurface window instance =
 
         // attempt to recreate surface if destroyed
         match SurfaceState with
-        | SurfaceDestroyed when OperatingSystem.IsAndroid () &&
-            SDL3.SDL_GetPointerProperty (SDL3.SDL_GetWindowProperties window, SDL3.SDL_PROP_WINDOW_ANDROID_WINDOW_POINTER, 0n) = 0n ->
-            () // Android native window is not available for surface creation, usually because of backgrounding
         | SurfaceDestroyed ->
-        
-            // inform the backgrounding callback that we begin the process of creating the surface and swapchain
-            // that may need to be aborted/destroyed at any point before *or* after completion due to a
-            // backgrounding event, hence setup *initiated*
-            setPresentationSetupInitiated ()
-            let mutable surfacePtr = Unchecked.defaultof<VkSurfaceKHR_T nativeptr>
-            let instance = NativePtr.ofNativeInt (VkInstance.op_Implicit instance)
-            if not (SDL3.SDL_Vulkan_CreateSurface (window, instance, NativePtr.nullPtr, &&surfacePtr)) then
-                Log.error (SDL3.SDL_GetError ())
-                setPresentationTeardownComplete () // inform callback to scratch that
-            else
-                Surface <- NativePtr.toNativeInt surfacePtr |> uint64 |> VkSurfaceKHR.op_Implicit
-                SurfaceState <- SurfaceReady
 
+            // ensure window resource is available for utilization
+            if isWindowResourceAvailable window then
+
+                // inform the backgrounding callback that we begin the process of creating the surface and swapchain
+                // that may need to be aborted/destroyed at any point before *or* after completion due to a
+                // backgrounding event, hence setup *initiated*
+                setPresentationSetupInitiated ()
+                let mutable surfacePtr = Unchecked.defaultof<VkSurfaceKHR_T nativeptr>
+                let instance = NativePtr.ofNativeInt (VkInstance.op_Implicit instance)
+                if not (SDL3.SDL_Vulkan_CreateSurface (window, instance, NativePtr.nullPtr, &&surfacePtr)) then
+                    Log.error (SDL3.SDL_GetError ())
+                    setPresentationTeardownComplete () // inform callback to scratch that
+                else
+                    Surface <- NativePtr.toNativeInt surfacePtr |> uint64 |> VkSurfaceKHR.op_Implicit
+                    SurfaceState <- SurfaceReady
+
+        // handle error cases
         | SurfaceReady -> Log.error "Attempted creation of Vulkan surface when existing surface has not been destroyed!"
         | SurfaceLost -> Log.error "Attempted creation of Vulkan surface when existing surface has been lost but not destroyed!"
+
+        // fin
         SurfaceState
 
     let createVulkanSurface window instance =
