@@ -234,7 +234,7 @@ module Attachment =
 
     /// Create composition attachments.
     let createCompositionAttachments resolutionX resolutionY context =
-        createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgb16f Rgb resolutionX resolutionY context
+        createColorAttachment Texture2d (VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferSrc ||| VkImageUsageFlags.TransferDst) Rgb16f Rgb resolutionX resolutionY context
 
     /// Update size of composition attachments.
     let updateCompositionAttachmentSize resolutionX resolutionY color context =
@@ -247,7 +247,7 @@ module Attachment =
 
     /// Create tone-mapping attachments.
     let createToneMappingAttachments resolutionX resolutionY context =
-        createColorAttachment Texture2d (VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferDst) Rgba16f Rgba resolutionX resolutionY context
+        createColorAttachment Texture2d (VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferSrc ||| VkImageUsageFlags.TransferDst) Rgba16f Rgba resolutionX resolutionY context
 
     /// Update size of tone-mapping attachments.
     let updateToneMappingAttachmentSize resolutionX resolutionY toneMapping context =

@@ -4319,51 +4319,59 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead compositionTexture renderer.VulkanContext.RenderCommandBuffer
         Texture.recordTransitionLayout DepthAttachmentWrite DepthAttachmentRead zTexture renderer.VulkanContext.RenderCommandBuffer
 
-        // run tone-mapping pass
-        let toneMappingTexture = renderer.PhysicallyBasedAttachments.ToneMappingAttachment
-        Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite toneMappingTexture renderer.VulkanContext.RenderCommandBuffer
-        PhysicallyBased.drawFilterToneMappingSurface
-            renderer.LightingConfig.LightExposure renderer.LightingConfig.ToneMapType renderer.LightingConfig.ToneMapSlope renderer.LightingConfig.ToneMapOffset
-            renderer.LightingConfig.ToneMapPower renderer.LightingConfig.ToneMapSaturation renderer.LightingConfig.ToneMapWhitePoint
-            compositionTexture renderer.ColorSampler toneMappingTexture geometryResolution
-            renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterToneMappingPipeline renderer.VulkanContext
-        Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead toneMappingTexture renderer.VulkanContext.RenderCommandBuffer
+        // run tone-mapping pass when appropriate
+        let intermediateTexture =
+            if topLevelRender then
+                let toneMappingTexture = renderer.PhysicallyBasedAttachments.ToneMappingAttachment
+                Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite toneMappingTexture renderer.VulkanContext.RenderCommandBuffer
+                PhysicallyBased.drawFilterToneMappingSurface
+                    renderer.LightingConfig.LightExposure renderer.LightingConfig.ToneMapType renderer.LightingConfig.ToneMapSlope renderer.LightingConfig.ToneMapOffset
+                    renderer.LightingConfig.ToneMapPower renderer.LightingConfig.ToneMapSaturation renderer.LightingConfig.ToneMapWhitePoint
+                    compositionTexture renderer.ColorSampler toneMappingTexture geometryResolution
+                    renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterToneMappingPipeline renderer.VulkanContext
+                Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead toneMappingTexture renderer.VulkanContext.RenderCommandBuffer
+                toneMappingTexture
+            else compositionTexture
 
         // apply fxaa filter when desired
         if renderer.RendererConfig.FxaaEnabled then
 
-            // run fxaa pass from tone mapping to color full 0
+            // run fxaa pass from intermediate texture to color full 0
             let colorFull0Texture = renderer.PhysicallyBasedAttachments.ColorFull0Attachment
             Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite colorFull0Texture renderer.VulkanContext.RenderCommandBuffer
             PhysicallyBased.drawFilterFxaaSurface
                 renderer.RendererConfig.FxaaSpanMax renderer.RendererConfig.FxaaReduceMinDivisor renderer.RendererConfig.FxaaReduceMulDivisor
-                toneMappingTexture renderer.ColorSampler colorFull0Texture geometryResolution
+                intermediateTexture renderer.ColorSampler colorFull0Texture geometryResolution
                 renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterFxaaPipeline renderer.VulkanContext
             Texture.recordTransitionLayout ColorAttachmentWrite TransferSrc colorFull0Texture renderer.VulkanContext.RenderCommandBuffer
-            Texture.recordTransitionLayout ColorAttachmentRead TransferDst toneMappingTexture renderer.VulkanContext.RenderCommandBuffer
+            Texture.recordTransitionLayout ColorAttachmentRead TransferDst intermediateTexture renderer.VulkanContext.RenderCommandBuffer
 
-            // blit from color full 0 back to tone mapping
+            // blit from color full 0 back to intermediate texture
             let bounds = VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)
             let mutable region = Hl.makeBlit 0 0 0 0 bounds bounds
-            DeviceApi.vkCmdBlitImage (renderer.VulkanContext.RenderCommandBuffer, colorFull0Texture.Image, TransferSrc.VkImageLayout, toneMappingTexture.Image, TransferDst.VkImageLayout, 1u, &&region, VkFilter.Nearest)
+            DeviceApi.vkCmdBlitImage (renderer.VulkanContext.RenderCommandBuffer, colorFull0Texture.Image, TransferSrc.VkImageLayout, intermediateTexture.Image, TransferDst.VkImageLayout, 1u, &&region, VkFilter.Nearest)
             Texture.recordTransitionLayout TransferSrc ColorAttachmentRead colorFull0Texture renderer.VulkanContext.RenderCommandBuffer
-            Texture.recordTransitionLayout TransferDst ColorAttachmentRead toneMappingTexture renderer.VulkanContext.RenderCommandBuffer
+            Texture.recordTransitionLayout TransferDst ColorAttachmentRead intermediateTexture renderer.VulkanContext.RenderCommandBuffer
 
-        // run gamma-correction pass
-        let gammaCorrectionTexture = renderer.PhysicallyBasedAttachments.GammaCorrectionAttachment
-        Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite gammaCorrectionTexture renderer.VulkanContext.RenderCommandBuffer
-        PhysicallyBased.drawFilterGammaCorrectionSurface
-            toneMappingTexture renderer.ColorSampler gammaCorrectionTexture geometryResolution
-            renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterGammaCorrectionPipeline renderer.VulkanContext
-        Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead gammaCorrectionTexture renderer.VulkanContext.RenderCommandBuffer
+        // run gamma-correction pass when needed
+        let intermediateTexture =
+            if topLevelRender then
+                let gammaCorrectionTexture = renderer.PhysicallyBasedAttachments.GammaCorrectionAttachment
+                Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite gammaCorrectionTexture renderer.VulkanContext.RenderCommandBuffer
+                PhysicallyBased.drawFilterGammaCorrectionSurface
+                    intermediateTexture renderer.ColorSampler gammaCorrectionTexture geometryResolution
+                    renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterGammaCorrectionPipeline renderer.VulkanContext
+                Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead gammaCorrectionTexture renderer.VulkanContext.RenderCommandBuffer
+                gammaCorrectionTexture
+            else intermediateTexture
 
-        // blit from gamma-correction attachment to target image without filtering
-        Texture.recordTransitionLayout ColorAttachmentRead TransferSrc gammaCorrectionTexture renderer.VulkanContext.RenderCommandBuffer
+        // blit from intermediate texture to target image without filtering
+        Texture.recordTransitionLayout ColorAttachmentRead TransferSrc intermediateTexture renderer.VulkanContext.RenderCommandBuffer
         Hl.recordTransitionLayout true 1 targetLayer 1 VkImageAspectFlags.Color ColorAttachmentWrite TransferDst targetImage renderer.VulkanContext.RenderCommandBuffer
         let mutable region = Hl.makeBlit 0 0 0 targetLayer (VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)) targetBounds
-        DeviceApi.vkCmdBlitImage (renderer.VulkanContext.RenderCommandBuffer, gammaCorrectionTexture.Image, TransferSrc.VkImageLayout, targetImage, TransferDst.VkImageLayout, 1u, &&region, VkFilter.Nearest)
+        DeviceApi.vkCmdBlitImage (renderer.VulkanContext.RenderCommandBuffer, intermediateTexture.Image, TransferSrc.VkImageLayout, targetImage, TransferDst.VkImageLayout, 1u, &&region, VkFilter.Nearest)
         Hl.recordTransitionLayout true 1 targetLayer 1 VkImageAspectFlags.Color TransferDst ColorAttachmentWrite targetImage renderer.VulkanContext.RenderCommandBuffer
-        Texture.recordTransitionLayout TransferSrc ColorAttachmentRead gammaCorrectionTexture renderer.VulkanContext.RenderCommandBuffer
+        Texture.recordTransitionLayout TransferSrc ColorAttachmentRead intermediateTexture renderer.VulkanContext.RenderCommandBuffer
 
         // advance render pass index
         renderer.RenderPassIndex <- inc renderer.RenderPassIndex
