@@ -3886,12 +3886,12 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let (lightAmbientColor, lightAmbientBrightness) = Option.defaultValue (lightAmbientColor, lightAmbientBrightness) lightAmbientOverride
         let lightMapFallback =
             match skyBoxOpt with
-            | Some (ambientColor, ambientBrightness, _, (irradianceAndEnvironmentMapsOptRef : (Texture * Texture) option ref)) ->
+            | Some (_, _, _, (irradianceAndEnvironmentMapsOptRef : (Texture * Texture) option ref)) ->
                 let (irradianceMap, environmentFilterMap) =
                     match irradianceAndEnvironmentMapsOptRef.Value with
                     | Some irradianceAndEnvironmentMaps -> irradianceAndEnvironmentMaps
                     | None -> (renderer.IrradianceMap, renderer.EnvironmentFilterMap)
-                LightMap.createLightMap true v3Zero ambientColor ambientBrightness box3Zero irradianceMap environmentFilterMap
+                LightMap.createLightMap true v3Zero lightAmbientColor lightAmbientBrightness box3Zero irradianceMap environmentFilterMap
             | None -> LightMap.createLightMap true v3Zero Color.White 1.0f box3Zero renderer.IrradianceMap renderer.EnvironmentFilterMap
 
         // destroy cached light maps whose originating probe no longer exists (top-level only)
