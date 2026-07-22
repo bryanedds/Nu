@@ -3274,14 +3274,14 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                                 (fun () -> VulkanContext.advanceRenderCommandBuffer renderer.VulkanContext)
                                 renderer.VulkanContext
 
-                        // destroy reflection map
-                        TextureDumpster.toss reflectionMap renderer.TextureDumpster
-
                         // create light map
                         let lightMap = LightMap.createLightMap lightProbeEnabled lightProbeOrigin lightProbeAmbientColor lightProbeAmbientBrightness lightProbeBounds irradianceMap environmentFilterMap
 
                         // add light map to cache
                         renderer.LightMaps[lightProbeId] <- lightMap
+
+                        // be rid of reflection map
+                        TextureDumpster.toss reflectionMap renderer.TextureDumpster
 
                     | (false, _) -> ()
                 | _ -> ()
@@ -4749,6 +4749,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
         member renderer.CleanUp () =
 
+            // destroy omnipresent samplers
             Sampler.destroy renderer.FilteredSampler
             Sampler.destroy renderer.CubeMapSampler
             Sampler.destroy renderer.GeometrySampler
@@ -4757,22 +4758,32 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             Sampler.destroy renderer.DepthSampler
             Sampler.destroy renderer.BrdfSampler
 
+            // destroy omnipresent pipelines
             SkyBox.destroySkyBoxPipeline renderer.SkyBoxPipeline renderer.VulkanContext
             CubeMap.destroyCubeMapPipeline renderer.IrradiancePipeline.Pipeline renderer.VulkanContext
             LightMap.destroyEnvironmentFilterPipeline renderer.EnvironmentFilterPipeline renderer.VulkanContext
             PhysicallyBased.destroyPhysicallyBasedPipelines renderer.PhysicallyBasedPipelines renderer.VulkanContext
 
+            // destroy omnipresent geometry
             CubeMap.destroyCubeMapGeometry renderer.CubeMapGeometry renderer.VulkanContext
+            PhysicallyBased.destroyPhysicallyBasedGeometry renderer.BillboardGeometry renderer.VulkanContext
+            PhysicallyBased.destroyPhysicallyBasedGeometry renderer.QuadGeometry renderer.VulkanContext
 
+            // destroy terrain geometry
+            for geometries in renderer.TerrainGeometries.Values do
+                for geometry in geometries.Values do
+                    PhysicallyBased.destroyPhysicallyBasedGeometry geometry renderer.VulkanContext
+            renderer.TerrainGeometries.Clear ()
+
+            // destroy omnipresent textures
             Texture.destroy renderer.CubeMap renderer.VulkanContext
             Texture.destroy renderer.WhiteTexture renderer.VulkanContext
             Texture.destroy renderer.BlackTexture renderer.VulkanContext
             Texture.destroy renderer.BrdfTexture renderer.VulkanContext
-
             Texture.destroy renderer.IrradianceMap renderer.VulkanContext
             Texture.destroy renderer.EnvironmentFilterMap renderer.VulkanContext
 
-            // destroy default physically-based material
+            // destroy omnipresent material
             Texture.destroy renderer.PhysicallyBasedMaterial.AlbedoTexture renderer.VulkanContext
             Texture.destroy renderer.PhysicallyBasedMaterial.RoughnessTexture renderer.VulkanContext
             Texture.destroy renderer.PhysicallyBasedMaterial.MetallicTexture renderer.VulkanContext
@@ -4787,19 +4798,22 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             Texture.destroy renderer.PhysicallyBasedMaterial.ClearCoatRoughnessTexture renderer.VulkanContext
             Texture.destroy renderer.PhysicallyBasedMaterial.ClearCoatNormalTexture renderer.VulkanContext
 
-            TextureDumpster.destroy renderer.TextureDumpster renderer.VulkanContext
-
+            // destroy omnipresent attachments
             PhysicallyBased.destroyPhysicallyBasedAttachments renderer.PhysicallyBasedAttachments renderer.VulkanContext
 
-            for lightMap in renderer.LightMaps.Values do LightMap.destroyLightMap lightMap renderer.VulkanContext
+            // destroy light maps
+            for lightMap in renderer.LightMaps.Values do
+                LightMap.destroyLightMap lightMap renderer.VulkanContext
             renderer.LightMaps.Clear ()
 
-            // free assets
-            // TODO: DJL: do we need to consider textures only loaded via model?
+            // destroy loaded assets
             let renderPackages = renderer.RenderPackages |> Seq.map (fun entry -> entry.Value)
             let renderAssets = renderPackages |> Seq.map (fun package -> package.Assets.Values) |> Seq.concat
             for (_, _, asset) in renderAssets do VulkanRenderer3d.freeRenderAsset asset renderer
             renderer.RenderPackages.Clear ()
+
+            // destroy texture dumpster
+            TextureDumpster.destroy renderer.TextureDumpster renderer.VulkanContext
 
             // terminate lazy texture server
             renderer.TextureServer.Terminate ()

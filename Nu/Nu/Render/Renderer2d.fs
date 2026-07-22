@@ -1068,7 +1068,6 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             let (_, _, _, _, _, contourPipeline) = renderer.ContourPipeline
             for (_, _, _, textTexture) in Seq.map snd renderer.TextTextures.Values do Texture.destroy textTexture renderer.VulkanContext
             renderer.TextTextures.Clear ()
-            TextureDumpster.destroy renderer.TextureDumpster renderer.VulkanContext
             Sampler.destroy renderer.UnfilteredSampler
             Sampler.destroy renderer.FilteredSampler
             Pipeline.destroy spritePipeline renderer.VulkanContext
@@ -1084,8 +1083,11 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             for spineSkeletonRenderer in Seq.map snd renderer.SpineSkeletonRenderers.Values do spineSkeletonRenderer.Destroy ()
             renderer.SpineSkeletonRenderers.Clear ()*)
 
-            // free assets
+            // destroy loaded assets
             let renderPackages = renderer.RenderPackages |> Seq.map (fun entry -> entry.Value)
             let renderAssets = renderPackages |> Seq.map (fun package -> package.Assets.Values) |> Seq.concat
             for (_, _, renderAsset) in renderAssets do VulkanRenderer2d.freeRenderAsset renderAsset renderer
             renderer.RenderPackages.Clear ()
+
+            // destroy texture dumpster
+            TextureDumpster.destroy renderer.TextureDumpster renderer.VulkanContext
