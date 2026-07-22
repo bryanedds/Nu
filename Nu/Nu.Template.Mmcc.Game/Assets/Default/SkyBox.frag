@@ -1,5 +1,7 @@
 #version 450 core
 
+const float GAMMA = 2.2;
+
 struct SkyBox
 {
     vec3 color;
@@ -18,6 +20,6 @@ layout(location = 0) out vec4 frag;
 
 void main()
 {
-    vec4 color4 = vec4(skyBox.color, 1.0);
-    frag = texture(samplerCube(cubeMap, samp), texCoordsOut) * color4 * skyBox.brightness;
+    vec3 color = texture(samplerCube(cubeMap, samp), texCoordsOut).rgb * skyBox.color * skyBox.brightness;
+    frag = vec4(pow(color, vec3(GAMMA)), 1.0); // NOTE: we approximately linearize color since we're not yet loading sky boxes from HDR.
 }
