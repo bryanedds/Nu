@@ -4320,38 +4320,34 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         Texture.recordTransitionLayout DepthAttachmentWrite DepthAttachmentRead zTexture renderer.VulkanContext.RenderCommandBuffer
 
         // run tone-mapping pass when appropriate
-        let intermediateTexture =
-            if topLevelRender then
-                let toneMappingTexture = renderer.PhysicallyBasedAttachments.ToneMappingAttachment
-                Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite toneMappingTexture renderer.VulkanContext.RenderCommandBuffer
-                PhysicallyBased.drawFilterToneMappingSurface
-                    renderer.LightingConfig.LightExposure renderer.LightingConfig.ToneMapType renderer.LightingConfig.ToneMapSlope renderer.LightingConfig.ToneMapOffset
-                    renderer.LightingConfig.ToneMapPower renderer.LightingConfig.ToneMapSaturation renderer.LightingConfig.ToneMapWhitePoint
-                    compositionTexture renderer.ColorSampler toneMappingTexture geometryResolution
-                    renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterToneMappingPipeline renderer.VulkanContext
-                Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead toneMappingTexture renderer.VulkanContext.RenderCommandBuffer
-                toneMappingTexture
-            else compositionTexture
+        let toneMappingTexture = renderer.PhysicallyBasedAttachments.ToneMappingAttachment
+        Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite toneMappingTexture renderer.VulkanContext.RenderCommandBuffer
+        PhysicallyBased.drawFilterToneMappingSurface
+            renderer.LightingConfig.LightExposure renderer.LightingConfig.ToneMapType renderer.LightingConfig.ToneMapSlope renderer.LightingConfig.ToneMapOffset
+            renderer.LightingConfig.ToneMapPower renderer.LightingConfig.ToneMapSaturation renderer.LightingConfig.ToneMapWhitePoint
+            compositionTexture renderer.ColorSampler toneMappingTexture geometryResolution
+            renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterToneMappingPipeline renderer.VulkanContext
+        Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead toneMappingTexture renderer.VulkanContext.RenderCommandBuffer
 
         // apply fxaa filter when desired
         if renderer.RendererConfig.FxaaEnabled then
 
-            // run fxaa pass from intermediate texture to color full 0
+            // run fxaa pass from tone-mapping texture to color full 0
             let colorFull0Texture = renderer.PhysicallyBasedAttachments.ColorFull0Attachment
             Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite colorFull0Texture renderer.VulkanContext.RenderCommandBuffer
             PhysicallyBased.drawFilterFxaaSurface
                 renderer.RendererConfig.FxaaSpanMax renderer.RendererConfig.FxaaReduceMinDivisor renderer.RendererConfig.FxaaReduceMulDivisor
-                intermediateTexture renderer.ColorSampler colorFull0Texture geometryResolution
+                toneMappingTexture renderer.ColorSampler colorFull0Texture geometryResolution
                 renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterFxaaPipeline renderer.VulkanContext
             Texture.recordTransitionLayout ColorAttachmentWrite TransferSrc colorFull0Texture renderer.VulkanContext.RenderCommandBuffer
-            Texture.recordTransitionLayout ColorAttachmentRead TransferDst intermediateTexture renderer.VulkanContext.RenderCommandBuffer
+            Texture.recordTransitionLayout ColorAttachmentRead TransferDst toneMappingTexture renderer.VulkanContext.RenderCommandBuffer
 
             // blit from color full 0 back to intermediate texture
             let bounds = VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)
             let mutable region = Hl.makeBlit 0 0 0 0 bounds bounds
-            DeviceApi.vkCmdBlitImage (renderer.VulkanContext.RenderCommandBuffer, colorFull0Texture.Image, TransferSrc.VkImageLayout, intermediateTexture.Image, TransferDst.VkImageLayout, 1u, &&region, VkFilter.Nearest)
+            DeviceApi.vkCmdBlitImage (renderer.VulkanContext.RenderCommandBuffer, colorFull0Texture.Image, TransferSrc.VkImageLayout, toneMappingTexture.Image, TransferDst.VkImageLayout, 1u, &&region, VkFilter.Nearest)
             Texture.recordTransitionLayout TransferSrc ColorAttachmentRead colorFull0Texture renderer.VulkanContext.RenderCommandBuffer
-            Texture.recordTransitionLayout TransferDst ColorAttachmentRead intermediateTexture renderer.VulkanContext.RenderCommandBuffer
+            Texture.recordTransitionLayout TransferDst ColorAttachmentRead toneMappingTexture renderer.VulkanContext.RenderCommandBuffer
 
         // run gamma-correction pass when needed
         let intermediateTexture =
@@ -4359,11 +4355,11 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 let gammaCorrectionTexture = renderer.PhysicallyBasedAttachments.GammaCorrectionAttachment
                 Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite gammaCorrectionTexture renderer.VulkanContext.RenderCommandBuffer
                 PhysicallyBased.drawFilterGammaCorrectionSurface
-                    intermediateTexture renderer.ColorSampler gammaCorrectionTexture geometryResolution
+                    toneMappingTexture renderer.ColorSampler gammaCorrectionTexture geometryResolution
                     renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterGammaCorrectionPipeline renderer.VulkanContext
                 Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead gammaCorrectionTexture renderer.VulkanContext.RenderCommandBuffer
                 gammaCorrectionTexture
-            else intermediateTexture
+            else toneMappingTexture
 
         // blit from intermediate texture to target image without filtering
         Texture.recordTransitionLayout ColorAttachmentRead TransferSrc intermediateTexture renderer.VulkanContext.RenderCommandBuffer
