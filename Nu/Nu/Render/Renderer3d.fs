@@ -4426,7 +4426,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                          renderer.WindowViewport.Outer.Max.Y - renderer.WindowViewport.Inner.Max.Y,
                          uint renderer.WindowViewport.Inner.Size.X,
                          uint renderer.WindowViewport.Inner.Size.Y)
-                    |> Hl.scaleRectToWindowPixels renderer.VulkanContext.Window
+                    |> Hl.scaleRectToWindowPixels
                 let normalPass = NormalPass
                 let normalTasks = VulkanRenderer3d.getRenderTasks normalPass renderer
                 VulkanRenderer3d.renderGeometry

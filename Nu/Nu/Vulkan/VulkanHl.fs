@@ -341,6 +341,10 @@ module Hl =
     let mutable private BackgroundingResponseState = PresentationTeardownComplete
     let mutable private Backgrounded = false
 
+    // cached window properties that have to come in from the main thread.
+    let mutable WindowProperties_ = WindowProperties.empty
+    let inline WindowProperties<'a> = WindowProperties_
+
     // callback to inform render loop about app backgrounding
     // official documentation for android case: https://github.com/libsdl-org/SDL/blob/main/docs/README-android.md#activity-lifecycle
 #nowarn 202
@@ -363,11 +367,14 @@ module Hl =
         let handle = Assembly.GetExecutingAssembly().GetType("Nu.Vulkan.Hl").GetMethod(nameof handleBackgrounding, BindingFlags.NonPublic ||| BindingFlags.Static).MethodHandle
         handle.GetFunctionPointer ()
 
-    /// Get the current pixel density of an SDL window.
-    let getWindowPixelDensity window =
-        let pixelDensity = SDL3.SDL_GetWindowPixelDensity window
+    let setWindowProperties windowProperties =
+        WindowProperties_ <- windowProperties
+
+    /// Get the current pixel density of the SDL window.
+    let getWindowPixelDensity () =
+        let pixelDensity = WindowProperties.WindowPixelDensity
         if pixelDensity > 0.0f then pixelDensity
-        else Log.error ("Failed to get window pixel density due to: " + SDL3.SDL_GetError ()); 1.0f
+        else Log.error "Invalid window pixel density."; 1.0f
 
     /// Scale a rectangle from window coordinate space to pixel coordinate space.
     let scaleRectForPixelDensity pixelDensity (rect : VkRect2D) =
@@ -375,8 +382,8 @@ module Hl =
         VkRect2D (int (scale rect.offset.x), int (scale rect.offset.y), uint (scale rect.extent.width), uint (scale rect.extent.height))
 
     /// Scale a rectangle from SDL window coordinates to SDL pixel coordinates.
-    let scaleRectToWindowPixels window rect =
-        scaleRectForPixelDensity (getWindowPixelDensity window) rect
+    let scaleRectToWindowPixels rect =
+        scaleRectForPixelDensity (getWindowPixelDensity ()) rect
 
     let internal setPresentationSetupInitiated () =
         lock BackgroundingResponseStateLock (fun () -> BackgroundingResponseState <- PresentationSetupInitiated)
@@ -649,9 +656,9 @@ module Hl =
         result
         
     // Check whether window resource is availabile for utilization.
-    let private isWindowResourceAvailable window =
+    let private isWindowResourceAvailable () =
         if OperatingSystem.IsAndroid () then
-            let windowProperties = SDL3.SDL_GetWindowProperties window
+            let windowProperties = WindowProperties.WindowProperties
             let windowPointer = SDL3.SDL_GetPointerProperty (windowProperties, SDL3.SDL_PROP_WINDOW_ANDROID_WINDOW_POINTER, 0n)
             windowPointer <> 0n
         else true // will presumably never be blocked on other platforms
@@ -663,7 +670,7 @@ module Hl =
         | SurfaceDestroyed ->
 
             // ensure window resource is available for utilization
-            if isWindowResourceAvailable window then
+            if isWindowResourceAvailable () then
 
                 // inform the backgrounding callback that we begin the process of creating the surface and swapchain
                 // that may need to be aborted/destroyed at any point before *or* after completion due to a
@@ -784,7 +791,7 @@ module Hl =
             None
 
     /// Get swap extent.
-    let getSwapExtent (capabilities : VkSurfaceCapabilitiesKHR) window =
+    let getSwapExtent (capabilities : VkSurfaceCapabilitiesKHR) =
 
         // check if window size is fixed or variable
         if capabilities.currentExtent.width <> UInt32.MaxValue
@@ -792,12 +799,10 @@ module Hl =
         else
 
             // get pixel resolution from sdl
-            // NOTE: unlike the GLFW counterpart, this does NOT return 0 when minimized.
+            // NOTE: unlike the GLFW counterpart, this is NOT 0 when minimized.
             // TODO: P0: find out if that's still true for SDL3.
-            let mutable width = Unchecked.defaultof<int>
-            let mutable height = Unchecked.defaultof<int>
-            if not (SDL3.SDL_GetWindowSizeInPixels (window, &&width, &&height)) then
-                Log.fail (SDL3.SDL_GetError ())
+            let mutable width = WindowProperties.WindowWidth
+            let mutable height = WindowProperties.WindowHeight
 
             // clamp resolution to size limits
             width <- max width (int capabilities.minImageExtent.width)

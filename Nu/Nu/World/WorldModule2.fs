@@ -904,7 +904,7 @@ module WorldModule2 =
                 World.unregisterEntityPhysics entity world
 
         static member private synchronizeViewports world =
-            let windowSize = World.getWindowSize world
+            let windowSize = World.getWindowSizeOtherwiseViewportSize world
             let windowViewport = Viewport.makeWindow1 windowSize
             World.setWindowViewport windowViewport world
             World.setGeometryViewport (Viewport.makeGeometry windowViewport.Bounds.Size) world
@@ -1130,18 +1130,18 @@ module WorldModule2 =
         static member internal processWindowResized (world : World) =
 
             // ensure window size is a factor of display virtual resolution, going to full screen otherwise
-            let windowSize = World.getWindowSize world
+            let windowSize = World.getWindowSizeOtherwiseViewportSize world
             let windowScalar =
                 max (single windowSize.X / single Constants.Render.DisplayVirtualResolution.X |> ceil |> int |> max 1)
                     (single windowSize.Y / single Constants.Render.DisplayVirtualResolution.Y |> ceil |> int |> max 1)
             let windowSize' = windowScalar * Constants.Render.DisplayVirtualResolution
             World.trySetWindowSize windowSize' world
-            let windowSize'' = World.getWindowSize world
+            let windowSize'' = World.getWindowSizeOtherwiseViewportSize world
             if windowSize''.X < windowSize'.X || windowSize''.Y < windowSize'.Y then
                 World.trySetWindowFullScreen true world
 
             // synchronize display virtual scalar
-            let windowSize'' = World.getWindowSize world
+            let windowSize'' = World.getWindowSizeOtherwiseViewportSize world
             let xScalar = windowSize''.X / Constants.Render.DisplayVirtualResolution.X
             let yScalar = windowSize''.Y / Constants.Render.DisplayVirtualResolution.Y
             Globals.Render.DisplayScalar <- min xScalar yScalar
@@ -2100,6 +2100,12 @@ module WorldModule2 =
                                                                     World.clearEditDeferrals world
                                                                     world.Timers.ImGuiTimer.Stop ()
 
+                                                                    // compute window properties
+                                                                    let windowProperties =
+                                                                        match World.tryGetWindowProperties world with
+                                                                        | Some windowProperties -> windowProperties
+                                                                        | None -> WindowProperties.empty
+
                                                                     // process rendering (2/2)
                                                                     rendererProcess.SubmitMessages
                                                                         world.Eye3dFrustumInterior
@@ -2110,10 +2116,10 @@ module WorldModule2 =
                                                                         world.Eye3dFieldOfView
                                                                         world.Eye2dCenter
                                                                         world.Eye2dSize
-                                                                        (World.getWindowSize world)
                                                                         world.GeometryViewport
                                                                         world.WindowViewport
                                                                         drawData
+                                                                        windowProperties
 
                                                                     // post-process imgui frame
                                                                     World.imGuiPostProcess world

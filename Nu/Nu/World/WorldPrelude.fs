@@ -705,6 +705,11 @@ module internal AmbientState =
         | Some window -> SDL3.SDL_SetWindowSize (window, size.X, size.Y) |> ignore
         | None -> ()
 
+    let internal tryGetWindowProperties state =
+        match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
+        | Some window -> Some (WindowProperties.make window)
+        | _ -> None
+
     let internal getSymbolicsBy by state =
         by state.Symbolics
 

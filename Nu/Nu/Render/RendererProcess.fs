@@ -54,7 +54,7 @@ type RendererProcess =
         abstract ClearMessages : unit -> unit
         
         /// Submit enqueued render messages for processing.
-        abstract SubmitMessages : Frustum -> Frustum -> Frustum -> Vector3 -> Quaternion -> single -> Vector2 -> Vector2 -> Vector2i -> Viewport -> Viewport -> ImDrawDataPtr -> unit
+        abstract SubmitMessages : Frustum -> Frustum -> Frustum -> Vector3 -> Quaternion -> single -> Vector2 -> Vector2 -> Viewport -> Viewport -> ImDrawDataPtr -> WindowProperties -> unit
         
         /// Request to swap the underlying render buffer.
         abstract RequestSwap : unit -> unit
@@ -64,7 +64,7 @@ type RendererProcess =
         end
 
 /// A non-threaded render process.
-type RendererInline () =
+type RendererInline (windowProperties) =
 
     let mutable started = false
     let mutable terminated = false
@@ -75,6 +75,8 @@ type RendererInline () =
     let mutable dependenciesOpt = Option<Renderer3d * Renderer2d * RendererImGui * VulkanContext>.None
     let assetTextureRequests = ConcurrentDictionary<AssetTag, unit> HashIdentity.Structural
     let assetTextureOpts = ConcurrentDictionary<AssetTag, uint32 voption> HashIdentity.Structural
+
+    do Hl.setWindowProperties windowProperties
 
     interface RendererProcess with
 
@@ -183,7 +185,12 @@ type RendererInline () =
             messages2d.Clear ()
             messagesImGui.Clear ()
 
-        member ri.SubmitMessages frustumInterior frustumExterior frustumImposter eye3dCenter eye3dRotation eye3dFieldOfView eye2dCenter eye2dSize windowSize geometryViewport windowViewport drawData =
+        member ri.SubmitMessages frustumInterior frustumExterior frustumImposter eye3dCenter eye3dRotation eye3dFieldOfView eye2dCenter eye2dSize geometryViewport windowViewport drawData windowProperties =
+
+            // update cached window properties
+            Hl.setWindowProperties windowProperties
+
+            // attempt to render with dependencies
             match dependenciesOpt with
             | Some (renderer3d, renderer2d, rendererImGui, context) ->
 
@@ -237,12 +244,12 @@ type RendererInline () =
             | None -> ()
 
 /// A threaded render process.
-type RendererThread () =
+type RendererThread (windowProperties) =
 
     let [<VolatileField>] mutable threadOpt = None
     let [<VolatileField>] mutable started = false
     let [<VolatileField>] mutable terminated = false
-    let [<VolatileField>] mutable submissionOpt = Option<Frustum * Frustum * Frustum * RenderMessage3d List * RenderMessage2d List * RenderMessageImGui List * Vector3 * Quaternion * single * Vector2 * Vector2 * Vector2i * Viewport * Viewport * ImDrawDataPtr>.None
+    let [<VolatileField>] mutable submissionOpt = Option<Frustum * Frustum * Frustum * RenderMessage3d List * RenderMessage2d List * RenderMessageImGui List * Vector3 * Quaternion * single * Vector2 * Vector2 * Viewport * Viewport * ImDrawDataPtr * WindowProperties>.None
     let [<VolatileField>] mutable swapRequested = false
     let [<VolatileField>] mutable swapRequestAcknowledged = false
     let [<VolatileField>] mutable renderer3dConfig = Renderer3dConfig.defaultConfig
@@ -265,6 +272,8 @@ type RendererThread () =
     let cachedSpriteMessages = System.Collections.Generic.Queue ()
     let [<VolatileField>] mutable cachedSpriteMessagesCapacity = Constants.Render.SpriteMessagesPrealloc
     let mutable contextOpt = None
+
+    do Hl.setWindowProperties windowProperties
 
     let allocStaticModelMessage () =
         lock cachedStaticModelMessagesLock (fun () ->
@@ -407,8 +416,11 @@ type RendererThread () =
 
             // wait until submission is provided
             while Option.isNone submissionOpt && not terminated do Thread.Yield () |> ignore<bool>
-            let (frustumInterior, frustumExterior, frustumImposter, messages3d, messages2d, messagesImGui, eye3dCenter, eye3dRotation, eye3dFieldOfView, eye2dCenter, eye2dSize, windowSize, geometryViewport, windowViewport, drawData) = Option.get submissionOpt
+            let (frustumInterior, frustumExterior, frustumImposter, messages3d, messages2d, messagesImGui, eye3dCenter, eye3dRotation, eye3dFieldOfView, eye2dCenter, eye2dSize, geometryViewport, windowViewport, drawData, windowProperties) = Option.get submissionOpt
             submissionOpt <- None
+
+            // update cached window properties
+            Hl.setWindowProperties windowProperties
 
             // guard against early termination
             if not terminated then
@@ -691,7 +703,7 @@ type RendererThread () =
             messageBuffers2d[messageBufferIndex].Clear ()
             messageBuffersImGui[messageBufferIndex].Clear ()
 
-        member rt.SubmitMessages frustumInterior frustumExterior frustumImposter eye3dCenter eye3dRotation eye3dFieldOfView eye2dCenter eye2dSize eyeMargin geometryViewport windowViewport drawData =
+        member rt.SubmitMessages frustumInterior frustumExterior frustumImposter eye3dCenter eye3dRotation eye3dFieldOfView eye2dCenter eye2dSize geometryViewport windowViewport drawData windowProperties =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             let messages3d = messageBuffers3d[messageBufferIndex]
             let messages2d = messageBuffers2d[messageBufferIndex]
@@ -700,7 +712,7 @@ type RendererThread () =
             messageBuffers3d[messageBufferIndex].Clear ()
             messageBuffers2d[messageBufferIndex].Clear ()
             messageBuffersImGui[messageBufferIndex].Clear ()
-            submissionOpt <- Some (frustumInterior, frustumExterior, frustumImposter, messages3d, messages2d, messagesImGui, eye3dCenter, eye3dRotation, eye3dFieldOfView, eye2dCenter, eye2dSize, eyeMargin, geometryViewport, windowViewport, drawData)
+            submissionOpt <- Some (frustumInterior, frustumExterior, frustumImposter, messages3d, messages2d, messagesImGui, eye3dCenter, eye3dRotation, eye3dFieldOfView, eye2dCenter, eye2dSize, geometryViewport, windowViewport, drawData, windowProperties)
 
         member rt.RequestSwap () =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")

@@ -177,7 +177,7 @@ type VulkanRendererImGui
         member renderer.Render viewport_ (drawData : ImDrawDataPtr) =
 
             // update imgui's display frame buffer scale
-            let pixelDensity = Hl.getWindowPixelDensity context.Window
+            let pixelDensity = Hl.getWindowPixelDensity ()
             let io = ImGui.GetIO ()
             io.DisplayFramebufferScale <- v2Dup pixelDensity
 
@@ -186,8 +186,8 @@ type VulkanRendererImGui
                 io.DisplaySize <- viewport_.Bounds.Size.V2 // NOTE: this is not set in the dear imgui vulkan backend but IS necessary!
                 viewport <- viewport_
 
-            // check that viewport bounds assumed by drawData match the actual viewport, as they sometimes lag behind upon resize, triggering validation errors when viewport bounds are exceeded.
-            let pixelDensity = Hl.getWindowPixelDensity context.Window
+            // check that viewport bounds assumed by drawData match the actual viewport, as they sometimes lag behind
+            // upon resize, triggering validation errors when viewport bounds are exceeded.
             let viewportPixelWidth = int (round (single viewport.Bounds.Width * pixelDensity))
             let viewportPixelHeight = int (round (single viewport.Bounds.Height * pixelDensity))
             let drawDataMatchesViewport =
