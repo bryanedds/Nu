@@ -205,13 +205,13 @@ type SwapchainWrapper =
       SwapExtent : VkExtent2D }
 
     /// Try create the VkSwapchain.
-    static member private tryCreateVkSwapchain (surfaceFormat : VkSurfaceFormatKHR) oldVkSwapchainOpt physicalDevice window =
+    static member private tryCreateVkSwapchain (surfaceFormat : VkSurfaceFormatKHR) oldVkSwapchainOpt physicalDevice =
         match Hl.tryGetSurfaceCapabilities physicalDevice.VkPhysicalDevice with
         | Some capabilities ->
 
             // get swap extent
             let swapExtent =
-                Hl.getSwapExtent capabilities window
+                Hl.getSwapExtent capabilities
 
             // decide the minimum number of images in the swapchain. Sellers, Vulkan Programming Guide p. 144, recommends
             // at least 3 for performance, but to keep latency low let's start with the more conservative recommendation of
@@ -292,10 +292,10 @@ type SwapchainWrapper =
         semaphores
     
     /// Try create a SwapchainWrapper.
-    static member tryCreate surfaceFormat oldVkSwapchainOpt physicalDevice window =
+    static member tryCreate surfaceFormat oldVkSwapchainOpt physicalDevice =
         
         // try create vkSwapchain and its assets
-        match SwapchainWrapper.tryCreateVkSwapchain surfaceFormat oldVkSwapchainOpt physicalDevice window with
+        match SwapchainWrapper.tryCreateVkSwapchain surfaceFormat oldVkSwapchainOpt physicalDevice with
         | Some (vkSwapchain, swapExtent) ->
 
             // create images / views
@@ -360,6 +360,16 @@ type Swapchain =
     /// The swap extent of the current vkSwapchain.
     member this.SwapExtent = (Option.get this.SwapchainWrapperOpts_[this.SwapchainIndex_]).SwapExtent
 
+    /// Check if window is minimized.
+    static member getWindowMinimized () =
+        Hl.WindowProperties.WindowFlags &&& SDL_WindowFlags.SDL_WINDOW_MINIMIZED <> LanguagePrimitives.EnumOfValue 0UL
+    
+    /// Check if window has been resized or surface lost.
+    static member isWindowResizedOrSurfaceLost vkPhysicalDevice (swapchain : Swapchain) =
+        match Hl.tryGetSurfaceCapabilities vkPhysicalDevice with
+        | Some capabilities -> swapchain.SwapExtent <> Hl.getSwapExtent capabilities
+        | None -> true
+
     static member private clear renderQueue presentQueue swapchain =
         for i in 0 .. dec swapchain.SwapchainWrapperOpts_.Length do
             match swapchain.SwapchainWrapperOpts_[i] with
@@ -384,10 +394,10 @@ type Swapchain =
                 if not (Hl.getBackgroundingRequested ()) then
                 
                     // check window not minimized
-                    if not (Swapchain.isWindowMinimized swapchain.Window_) then
+                    if not (Swapchain.getWindowMinimized ()) then
 
                         // try create SwapchainWrapper
-                        let swapchainWrapperOpt = SwapchainWrapper.tryCreate swapchain.SurfaceFormat_ VkSwapchainKHR.Null physicalDevice swapchain.Window_
+                        let swapchainWrapperOpt = SwapchainWrapper.tryCreate swapchain.SurfaceFormat_ VkSwapchainKHR.Null physicalDevice
                         swapchain.SwapchainWrapperOpts_[swapchain.SwapchainIndex_] <- swapchainWrapperOpt
                         
                         // destroy surface if lost again or if pause triggered during swapchain creation
@@ -397,16 +407,6 @@ type Swapchain =
 
                 // abort
                 else Swapchain.destroySurface renderQueue presentQueue swapchain
-
-    /// Check if window is minimized.
-    static member isWindowMinimized window =
-        SDL3.SDL_GetWindowFlags window &&& SDL_WindowFlags.SDL_WINDOW_MINIMIZED <> LanguagePrimitives.EnumOfValue 0UL
-    
-    /// Check if window has been resized or surface lost.
-    static member isWindowResizedOrSurfaceLost vkPhysicalDevice (swapchain : Swapchain) =
-        match Hl.tryGetSurfaceCapabilities vkPhysicalDevice with
-        | Some capabilities -> swapchain.SwapExtent <> Hl.getSwapExtent capabilities swapchain.Window_
-        | None -> true
 
     /// Update the swapchain.
     /// NOTE: by design, this method should know exactly what to do based on the current and changing state of the
@@ -445,10 +445,10 @@ type Swapchain =
                 if not (Hl.getBackgroundingRequested ()) then
                 
                     // check window not minimized
-                    if not (Swapchain.isWindowMinimized swapchain.Window_) then
+                    if not (Swapchain.getWindowMinimized ()) then
                     
                         // try create new swapchain internal
-                        let swapchainWrapperOpt = SwapchainWrapper.tryCreate swapchain.SurfaceFormat_ oldVkSwapchainOpt physicalDevice swapchain.Window_
+                        let swapchainWrapperOpt = SwapchainWrapper.tryCreate swapchain.SurfaceFormat_ oldVkSwapchainOpt physicalDevice
                         swapchain.SwapchainWrapperOpts_[swapchain.SwapchainIndex_] <- swapchainWrapperOpt
 
                         // if surface is lost here (or pause triggered during pipeline creation!), destroy and attempt to recover on the spot
@@ -488,11 +488,11 @@ type Swapchain =
         let swapchainWrapperOpts = Array.create (Constants.Vulkan.FramesInFlight + 1) None
 
         // check if window is minimized at startup
-        let windowMinimized = Swapchain.isWindowMinimized window
+        let windowMinimized = Swapchain.getWindowMinimized ()
 
         // try create first SwapchainWrapper if window is not minimized or app paused
         if not (windowMinimized || Hl.getBackgroundingRequested ()) then
-            let swapchainWrapperOpt = SwapchainWrapper.tryCreate surfaceFormat VkSwapchainKHR.Null physicalDevice window
+            let swapchainWrapperOpt = SwapchainWrapper.tryCreate surfaceFormat VkSwapchainKHR.Null physicalDevice
             swapchainWrapperOpts[swapchainIndex] <- swapchainWrapperOpt
 
         // make Swapchain
@@ -510,8 +510,7 @@ type Swapchain =
         Swapchain.clear swapchain device
 
 /// Exposes the vulkan handles that must be globally accessible within the renderer.
-/// TODO: P0: cease publicly exposing unnecessary fields.
-/// TODO: P0: group these by role rather than arbitrary field type.
+/// TODO: P1: group fields / properties by role rather than type.
 type [<ReferenceEquality>] VulkanContext =
     private
         { mutable WaitingForWindowRestore_ : bool
@@ -539,9 +538,6 @@ type [<ReferenceEquality>] VulkanContext =
 
     /// Whether rendering is permitted in the engine's current state.
     member this.RenderAllowed = this.RenderAllowed_
-
-    /// The SDL window used by the swapchain.
-    member this.Window = this.Swapchain_.Window_
     
     /// The physical device.
     member this.PhysicalDevice = this.PhysicalDevice_
@@ -552,14 +548,8 @@ type [<ReferenceEquality>] VulkanContext =
     /// Maximum anisotropy.
     member this.MaxAnisotropy = this.PhysicalDevice_.Properties.limits.maxSamplerAnisotropy
 
-    /// The vulkan instance.
-    member this.Instance = this.Instance_
-
     /// The vulkan instance API. Provided for use from user lambda callbacks.
     member this.InstanceApi = InstanceApi
-
-    /// The logical device.
-    member this.Device = this.Device_
 
     /// The vulkan device API. Provided for use from user lambda callbacks.
     member this.DeviceApi = DeviceApi
@@ -581,9 +571,6 @@ type [<ReferenceEquality>] VulkanContext =
 
     /// The texture command queue.
     member this.TextureQueue = this.TextureQueue_
-
-    /// The render fence.
-    member this.RenderFence = this.RenderFence_
     
     /// The transient fence.
     member this.TransientFence = this.TransientFence_
@@ -681,11 +668,11 @@ type [<ReferenceEquality>] VulkanContext =
         Hl.ValidationLayersActivated <- Constants.Render.RenderDebug && validationLayerExists
         use layerWrap = new StringArrayWrap ([|validationLayerName|]) // must remain in scope until vkCreateInstance
 
-        // get sdl extensions
-        let mutable sdlExtensionCount = 0u
-        let sdlExtensions = SDL3.SDL_Vulkan_GetInstanceExtensions &&sdlExtensionCount
-        let sdlExtensionCountInt = int sdlExtensionCount
-        if NativePtr.isNullPtr sdlExtensions then Log.fail (SDL3.SDL_GetError ())
+        // get vulkan extensions
+        let mutable vkExtensionCount = 0u
+        let vkExtensions = SDL3.SDL_Vulkan_GetInstanceExtensions &&vkExtensionCount
+        let vkExtensionCountInt = int vkExtensionCount
+        if NativePtr.isNullPtr vkExtensions then Log.fail (SDL3.SDL_GetError ())
 
         // get available instance extensions
         let mutable availableExtensionCount = 0u
@@ -699,8 +686,8 @@ type [<ReferenceEquality>] VulkanContext =
         use debugUtilsWrap = new StringWrap (Vulkan.VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
         let extensions =
             Array.init
-                (sdlExtensionCountInt + if Hl.ValidationLayersActivated then 1 else 0)
-                (fun i -> if i < sdlExtensionCountInt then NativePtr.get sdlExtensions i else debugUtilsWrap.Pointer)
+                (vkExtensionCountInt + if Hl.ValidationLayersActivated then 1 else 0)
+                (fun i -> if i < vkExtensionCountInt then NativePtr.get vkExtensions i else debugUtilsWrap.Pointer)
 
         // check for portability enumeration extension - using MoltenVK in place of Vulkan loader won't support it (on iOS Simulator),
         // while using MoltenVK from Vulkan loader (on iOS device / macOS) requires it
@@ -911,7 +898,7 @@ type [<ReferenceEquality>] VulkanContext =
     static member private handleWindowSize context =
         
         // query minimization status. This both detects the beginning of minimization and checks for the end.
-        context.WaitingForWindowRestore_ <- Swapchain.isWindowMinimized context.Swapchain_.Window_
+        context.WaitingForWindowRestore_ <- Swapchain.getWindowMinimized ()
 
         // update the swapchain if window is not minimized, which happens a) when the window size simply changes
         // and b) when minimization ends as detected above; must also check for backgrounding in case minimization
@@ -921,7 +908,7 @@ type [<ReferenceEquality>] VulkanContext =
 
     /// Wait for app to return to foreground.
     static member private handleBackgrounding context =
-        context.WaitingForWindowRestore_ <- Swapchain.isWindowMinimized context.Swapchain_.Window_
+        context.WaitingForWindowRestore_ <- Swapchain.getWindowMinimized ()
         if  not (Hl.getBackgrounded ()) &&
             not context.WaitingForWindowRestore_ then
             Swapchain.update context.PhysicalDevice_ context.RenderQueue_ context.PresentQueue_ context.Swapchain_ context.Instance_
@@ -999,7 +986,7 @@ type [<ReferenceEquality>] VulkanContext =
                 if Hl.getBackgroundingRequested () then Swapchain.update context.PhysicalDevice_ context.RenderQueue_ context.PresentQueue_ context.Swapchain_ context.Instance_
                 else
                     // check if screen *has become* minimized, if so then set WaitingForWindowRestore_ and don't render
-                    if Swapchain.isWindowMinimized context.Swapchain_.Window_ then VulkanContext.handleWindowSize context
+                    if Swapchain.getWindowMinimized () then VulkanContext.handleWindowSize context
                     else
                         // check if screen size changed (or surface lost), if so then refresh swapchain
                         if Swapchain.isWindowResizedOrSurfaceLost context.PhysicalDevice.VkPhysicalDevice context.Swapchain_ then VulkanContext.handleWindowSize context
@@ -1036,7 +1023,7 @@ type [<ReferenceEquality>] VulkanContext =
             VulkanContext.beginRenderCommandBuffer context
 
             // make swapchain image is ready to be rendered to
-            let pixelDensity = Hl.getWindowPixelDensity context.Window
+            let pixelDensity = Hl.getWindowPixelDensity ()
             let renderArea =
                 VkRect2D (0, 0, uint windowViewport.Bounds.Size.X, uint windowViewport.Bounds.Size.Y)
                 |> Hl.scaleRectForPixelDensity pixelDensity

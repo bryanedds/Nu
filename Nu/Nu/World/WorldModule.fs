@@ -496,15 +496,19 @@ module WorldModule =
         static member tryGetWindowSize (world : World) =
             AmbientState.tryGetWindowSize world.AmbientState
 
-        /// Get the window size, using resolution as default in case there is no window.
-        static member getWindowSize world =
-            match World.tryGetWindowSize world with
-            | Some windowsSize -> windowsSize
-            | None -> world.WindowViewport.Outer.Size
-
         /// Attempt to set the window size.
         static member trySetWindowSize size (world : World) =
             AmbientState.trySetWindowSize size world.AmbientState
+
+        /// Attempt to get the window properties.
+        static member tryGetWindowProperties (world : World) =
+            AmbientState.tryGetWindowProperties world.AmbientState
+
+        /// Get the window size, using viewport outer size when there is no window.
+        static member getWindowSizeOtherwiseViewportSize world =
+            match World.tryGetWindowSize world with
+            | Some windowsSize -> windowsSize
+            | None -> world.WindowViewport.Outer.Size
 
         /// Get the geometry viewport.
         static member getGeometryViewport (world : World) =

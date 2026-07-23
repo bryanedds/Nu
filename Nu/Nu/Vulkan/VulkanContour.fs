@@ -122,7 +122,7 @@ module Contour =
                     // Expand the quad by one physical pixel in each local axis so rasterization
                     // cannot clip analytic edge coverage when the shape is minified.
                     let bbox = geometry.LocalBounds
-                    let pixelDensity = Hl.getWindowPixelDensity vkc.Window
+                    let pixelDensity = Hl.getWindowPixelDensity ()
                     let physicalViewportSize =
                         Vector2
                             (single viewport.Inner.Size.X * pixelDensity,
