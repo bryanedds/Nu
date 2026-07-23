@@ -1299,6 +1299,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           mutable RendererConfig : Renderer3dConfig
           mutable RendererConfigChanged : bool
           mutable InstanceFields : single array
+          mutable UserDefinedStaticModelFields : single array
+          UserDefinedStaticModelsToDestroy : StaticModel AssetTag SList
           ForwardSurfacesComparer : IComparer<struct (single * single * Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * PhysicallyBasedSurface * DepthTest * single * int)>
           ForwardSurfacesSortBuffer : struct (single * single * Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * PhysicallyBasedSurface * DepthTest * single * int) List
           RenderPackages : Packages<RenderAsset, AssetClient>
@@ -1306,8 +1308,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           mutable RenderPasses2 : Dictionary<RenderPass, RenderTasks>
           mutable RenderPackageCachedOpt : RenderPackageCached
           mutable RenderAssetCached : RenderAssetCached
-          mutable ReloadAssetsRequested : bool
-          UserDefinedStaticModelsToDestroy : StaticModel AssetTag SList }
+          mutable ReloadAssetsRequested : bool }
 
     static member private logRenderAssetUnavailableOnce (assetTag : AssetTag) =
         let message =
@@ -1677,6 +1678,150 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 | _ -> None
             | ValueNone -> None
         | RawHeightMap map -> Some (map.Resolution.X, map.Resolution.Y)
+
+    static member private tryCreateUserDefinedStaticModel surfaceDescriptors bounds (assetTag : StaticModel AssetTag) renderer =
+
+        // ensure target package is loaded if possible
+        if not (renderer.RenderPackages.ContainsKey assetTag.PackageName) then
+            VulkanRenderer3d.tryLoadRenderPackage assetTag.PackageName renderer
+
+        // determine if target asset can be created
+        let canCreateUserDefinedStaticModel =
+            match renderer.RenderPackages.TryGetValue assetTag.PackageName with
+            | (true, package) -> not (package.Assets.ContainsKey assetTag.AssetName)
+            | (false, _) -> true
+
+        // ensure the user can create the static model
+        if canCreateUserDefinedStaticModel then
+
+            // create surfaces
+            let surfaces = List ()
+            for (surfaceDescriptor : StaticModelSurfaceDescriptor) in surfaceDescriptors do
+
+                // get albedo metadata and texture
+                let albedoTexture =
+                    match VulkanRenderer3d.tryGetRenderAsset surfaceDescriptor.AlbedoImage renderer with
+                    | ValueSome (TextureAsset texture) -> texture
+                    | _ -> renderer.PhysicallyBasedMaterial.AlbedoTexture
+
+                // make material properties
+                let properties =
+                    { Albedo = surfaceDescriptor.MaterialProperties.Albedo
+                      Roughness = surfaceDescriptor.MaterialProperties.Roughness
+                      Metallic = surfaceDescriptor.MaterialProperties.Metallic
+                      AmbientOcclusion = surfaceDescriptor.MaterialProperties.AmbientOcclusion
+                      Emission = surfaceDescriptor.MaterialProperties.Emission
+                      Height = surfaceDescriptor.MaterialProperties.Height
+                      IgnoreLightMaps = surfaceDescriptor.MaterialProperties.IgnoreLightMaps
+                      OpaqueDistance = surfaceDescriptor.MaterialProperties.OpaqueDistance
+                      FinenessOffset = surfaceDescriptor.MaterialProperties.FinenessOffset
+                      ScatterType = surfaceDescriptor.MaterialProperties.ScatterType
+                      SpecularScalar = surfaceDescriptor.MaterialProperties.SpecularScalar
+                      SubsurfaceCutoff = surfaceDescriptor.MaterialProperties.SubsurfaceCutoff
+                      SubsurfaceCutoffMargin = surfaceDescriptor.MaterialProperties.SubsurfaceCutoffMargin
+                      RefractiveIndex = surfaceDescriptor.MaterialProperties.RefractiveIndex
+                      ClearCoat = surfaceDescriptor.MaterialProperties.ClearCoat
+                      ClearCoatRoughness = surfaceDescriptor.MaterialProperties.ClearCoatRoughness }
+
+                // make material
+                let material =
+                    { AlbedoTexture = albedoTexture
+                      RoughnessTexture = match VulkanRenderer3d.tryGetRenderAsset surfaceDescriptor.RoughnessImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.RoughnessTexture
+                      MetallicTexture = match VulkanRenderer3d.tryGetRenderAsset surfaceDescriptor.MetallicImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.MetallicTexture
+                      AmbientOcclusionTexture = match VulkanRenderer3d.tryGetRenderAsset surfaceDescriptor.AmbientOcclusionImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.AmbientOcclusionTexture
+                      EmissionTexture = match VulkanRenderer3d.tryGetRenderAsset surfaceDescriptor.EmissionImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.EmissionTexture
+                      NormalTexture = match VulkanRenderer3d.tryGetRenderAsset surfaceDescriptor.NormalImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.NormalTexture
+                      HeightTexture = match VulkanRenderer3d.tryGetRenderAsset surfaceDescriptor.HeightImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.HeightTexture
+                      SubdermalTexture = match VulkanRenderer3d.tryGetRenderAsset surfaceDescriptor.SubdermalImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.SubdermalTexture
+                      FinenessTexture = match VulkanRenderer3d.tryGetRenderAsset surfaceDescriptor.FinenessImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.FinenessTexture
+                      ScatterTexture = match VulkanRenderer3d.tryGetRenderAsset surfaceDescriptor.ScatterImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.ScatterTexture
+                      ClearCoatTexture = match VulkanRenderer3d.tryGetRenderAsset surfaceDescriptor.ClearCoatImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.ClearCoatTexture
+                      ClearCoatRoughnessTexture = match VulkanRenderer3d.tryGetRenderAsset surfaceDescriptor.ClearCoatRoughnessImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.ClearCoatRoughnessTexture
+                      ClearCoatNormalTexture = match VulkanRenderer3d.tryGetRenderAsset surfaceDescriptor.ClearCoatNormalImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.ClearCoatNormalTexture
+                      TwoSided = surfaceDescriptor.TwoSided
+                      Clipped = surfaceDescriptor.Clipped
+                      Names = "" }
+
+                // create vertex data, truncating it when required
+                let vertexCount = surfaceDescriptor.Positions.Length
+                let elementCount = vertexCount * 8
+                if  renderer.UserDefinedStaticModelFields.Length < elementCount then
+                    renderer.UserDefinedStaticModelFields <- Array.zeroCreate elementCount // TODO: grow this by power of two.
+                let vertexData = renderer.UserDefinedStaticModelFields.AsMemory (0, elementCount)
+                let mutable i = 0
+                try
+                    let vertexData = vertexData.Span
+                    while i < vertexCount do
+                        let u = i * 8
+                        vertexData[u] <- surfaceDescriptor.Positions[i].X
+                        vertexData[u+1] <- surfaceDescriptor.Positions[i].Y
+                        vertexData[u+2] <- surfaceDescriptor.Positions[i].Z
+                        vertexData[u+3] <- surfaceDescriptor.TexCoordses[i].X
+                        vertexData[u+4] <- surfaceDescriptor.TexCoordses[i].Y
+                        vertexData[u+5] <- surfaceDescriptor.Normals[i].X
+                        vertexData[u+6] <- surfaceDescriptor.Normals[i].Y
+                        vertexData[u+7] <- surfaceDescriptor.Normals[i].Z
+                        i <- inc i
+                with :? IndexOutOfRangeException ->
+                    Log.info "Vertex data truncated due to an unequal count among surface descriptor Positions, TexCoordses, and Normals."
+
+                // create index data
+                let indexData = surfaceDescriptor.Indices.AsMemory ()
+
+                // create geometry
+                // TODO: consider letting user specify primitive drawing type.
+                let geometry = PhysicallyBased.createPhysicallyBasedStaticGeometry VkPrimitiveTopology.TriangleList vertexData indexData surfaceDescriptor.Bounds (Some renderer.VulkanContext)
+
+                // create surface
+                let surface = PhysicallyBasedSurface.make Array.empty surfaceDescriptor.ModelMatrix surfaceDescriptor.Bounds properties material -1 Assimp.Node.Empty geometry
+                surfaces.Add surface
+
+            // create user-defined static model
+            let surfaces = Seq.toArray surfaces
+            let hierarchy = TreeNode (Array.map PhysicallyBasedSurface surfaces)
+            let model =
+                { Animated = false
+                  Bounds = bounds
+                  LightProbes = [||]
+                  Lights = [||]
+                  Surfaces = surfaces
+                  SceneOpt = None
+                  PhysicallyBasedHierarchy = hierarchy }
+
+            // assign model as appropriate render package asset
+            match renderer.RenderPackages.TryGetValue assetTag.PackageName with
+            | (true, package) ->
+                let asset = Asset.make assetTag "" [] (Set.singleton Constants.Associations.Render3d)
+                package.Assets[assetTag.AssetName] <- (DateTimeOffset.MinValue.DateTime, asset, StaticModelAsset (true, model))
+            | (false, _) ->
+                let assetClient =
+                    AssetClient
+                        (TextureClient (Some renderer.LazyTextureQueues),
+                         CubeMapClient (),
+                         PhysicallyBasedSceneClient ())
+                let asset = Asset.make assetTag "" [] (Set.singleton Constants.Associations.Render3d)
+                let package = { Assets = Dictionary.singleton StringComparer.Ordinal assetTag.AssetName (DateTimeOffset.MinValue.DateTime, asset, StaticModelAsset (true, model)); PackageState = assetClient }
+                renderer.RenderPackages[assetTag.PackageName] <- package
+
+        // attempted to replace a loaded asset
+        else Log.info ("Cannot replace a loaded asset '" + scstring assetTag + "' with a user-created static model.")
+
+    static member private tryDestroyUserDefinedStaticModel assetTag renderer =
+
+        // ensure target package is loaded if possible
+        if not (renderer.RenderPackages.ContainsKey assetTag.PackageName) then
+            VulkanRenderer3d.tryLoadRenderPackage assetTag.PackageName renderer
+
+        // free any existing user-created static model, also determining if target asset can be user-created
+        match renderer.RenderPackages.TryGetValue assetTag.PackageName with
+        | (true, package) ->
+            match package.Assets.TryGetValue assetTag.AssetName with
+            | (true, (_, _, asset)) ->
+                match asset with
+                | StaticModelAsset (userDefined, _) when userDefined -> VulkanRenderer3d.freeRenderAsset asset renderer
+                | _ -> ()
+            | (false, _) -> ()
+        | (false, _) -> ()
 
     static member private getRenderTasks renderPass renderer =
         let mutable renderTasks = Unchecked.defaultof<RenderTasks> // OPTIMIZATION: seems like TryGetValue allocates here if we use the tupling idiom (this may only be the case in Debug builds tho).
@@ -2752,12 +2897,10 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         renderer =
         for message in renderMessages do
             match message with
-            //| CreateUserDefinedStaticModel cudsm ->
-            //    NOTE: this will be done with tranient commands!
-            //    VulkanRenderer3d.tryCreateUserDefinedStaticModel cudsm.StaticModelSurfaceDescriptors cudsm.Bounds cudsm.StaticModel renderer
-            //| DestroyUserDefinedStaticModel dudsm ->
-            //    NOTE: this will be done with tranient commands!
-            //    renderer.UserDefinedStaticModelsToDestroy.Add dudsm.StaticModel 
+            | CreateUserDefinedStaticModel cudsm ->
+                VulkanRenderer3d.tryCreateUserDefinedStaticModel cudsm.StaticModelSurfaceDescriptors cudsm.Bounds cudsm.StaticModel renderer
+            | DestroyUserDefinedStaticModel dudsm ->
+                renderer.UserDefinedStaticModelsToDestroy.Add dudsm.StaticModel 
             | RenderSkyBox rsb ->
                 let renderTasks = VulkanRenderer3d.getRenderTasks rsb.RenderPass renderer
                 renderTasks.SkyBoxes.Add (rsb.AmbientColor, rsb.AmbientBrightness, rsb.CubeMapColor, rsb.CubeMapBrightness, rsb.CubeMap)
@@ -2843,13 +2986,13 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             | RenderCachedStaticModel csmm ->
                 let renderTasks = VulkanRenderer3d.getRenderTasks csmm.CachedStaticModelRenderPass renderer
                 VulkanRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, &csmm.CachedStaticModelMatrix, csmm.CachedStaticModelCastShadow, csmm.CachedStaticModelPresence, &csmm.CachedStaticModelInsetOpt, &csmm.CachedStaticModelMaterialProperties, csmm.CachedStaticModel, csmm.CachedStaticModelClipped, csmm.CachedStaticModelDepthTest, csmm.CachedStaticModelRenderType, csmm.CachedStaticModelRenderPass, renderTasks, renderer)
-            //| RenderUserDefinedStaticModel rudsm ->
-            //    let insetOpt = Option.toValueOption rudsm.InsetOpt
-            //    let assetTag = asset Assets.Default.PackageName Gen.name // TODO: see if we should instead use a specialized package for temporary assets like these.
-            //    VulkanRenderer3d.tryCreateUserDefinedStaticModel rudsm.StaticModelSurfaceDescriptors rudsm.Bounds assetTag renderer
-            //    let renderTasks = VulkanRenderer3d.getRenderTasks rudsm.RenderPass renderer
-            //    VulkanRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, &rudsm.ModelMatrix, rudsm.CastShadow, rudsm.Presence, &insetOpt, &rudsm.MaterialProperties, assetTag, rudsm.Clipped, rudsm.DepthTest, rudsm.RenderType, rudsm.RenderPass, renderTasks, renderer)
-            //    renderer.UserDefinedStaticModelsToDestroy.Add assetTag
+            | RenderUserDefinedStaticModel rudsm ->
+                let insetOpt = Option.toValueOption rudsm.InsetOpt
+                let assetTag = asset Assets.Default.PackageName Gen.name // TODO: see if we should instead use a specialized package for temporary assets like these.
+                VulkanRenderer3d.tryCreateUserDefinedStaticModel rudsm.StaticModelSurfaceDescriptors rudsm.Bounds assetTag renderer
+                let renderTasks = VulkanRenderer3d.getRenderTasks rudsm.RenderPass renderer
+                VulkanRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, &rudsm.ModelMatrix, rudsm.CastShadow, rudsm.Presence, &insetOpt, &rudsm.MaterialProperties, assetTag, rudsm.Clipped, rudsm.DepthTest, rudsm.RenderType, rudsm.RenderPass, renderTasks, renderer)
+                renderer.UserDefinedStaticModelsToDestroy.Add assetTag
             | RenderAnimatedModel rsm ->
                 let insetOpt = Option.toValueOption rsm.InsetOpt
                 let renderTasks = VulkanRenderer3d.getRenderTasks rsm.RenderPass renderer
@@ -4443,20 +4586,18 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // clear lights desiring shadows
         renderer.LightsDesiringShadows.Clear ()
 
-        // destroy user-defined static models
-        //for staticModel in renderer.UserDefinedStaticModelsToDestroy do
-        //    VulkanRenderer3d.tryDestroyUserDefinedStaticModel staticModel renderer
-        renderer.UserDefinedStaticModelsToDestroy.Clear ()
-
         // destroy cached terrain geometries that weren't rendered this frame
         for geometry in renderer.TerrainGeometries do
             if not (renderer.TerrainGeometriesUtilized.Contains geometry.Key) then
                 for patchGeometry in geometry.Value do
                     PhysicallyBased.destroyPhysicallyBasedGeometry patchGeometry.Value renderer.VulkanContext
                     renderer.TerrainGeometries.Remove geometry.Key |> ignore<bool>
-
-        // reset terrain geometry book-keeping
         renderer.TerrainGeometriesUtilized.Clear ()
+
+        // destroy user-defined static models
+        for staticModel in renderer.UserDefinedStaticModelsToDestroy do
+            VulkanRenderer3d.tryDestroyUserDefinedStaticModel staticModel renderer
+        renderer.UserDefinedStaticModelsToDestroy.Clear ()
 
         // swap render passes
         for renderTasks in renderer.RenderPasses.Values do RenderTasks.sweep renderTasks
@@ -4726,6 +4867,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               RendererConfig = Renderer3dConfig.defaultConfig
               RendererConfigChanged = false
               InstanceFields = Array.zeroCreate<single> (Constants.Render.InstanceFieldCount * Constants.Render.InstanceBatchPrealloc)
+              UserDefinedStaticModelFields = [||]
+              UserDefinedStaticModelsToDestroy = SList.make ()
               ForwardSurfacesComparer = forwardSurfacesComparer
               ForwardSurfacesSortBuffer = List ()
               RenderPackages = dictPlus StringComparer.Ordinal []
@@ -4733,8 +4876,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               RenderPasses2 = dictPlus HashIdentity.Structural [(NormalPass, RenderTasks.make ())]
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCached = { CachedAssetTagOpt = Unchecked.defaultof<_>; CachedRenderAsset = Unchecked.defaultof<_> }
-              ReloadAssetsRequested = false
-              UserDefinedStaticModelsToDestroy = SList.make () }
+              ReloadAssetsRequested = false }
 
         // fin
         renderer

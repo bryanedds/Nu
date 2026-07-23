@@ -11,10 +11,8 @@ open System.Diagnostics
 open System.IO
 open System.Numerics
 open System.Reflection
-open System.Reflection.Metadata
 open System.Text
 open FSharp.Compiler.Interactive
-open FSharp.NativeInterop
 open FSharp.Reflection
 open Microsoft.FSharp.Core
 open ImGuiNET
