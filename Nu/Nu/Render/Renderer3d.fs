@@ -1199,7 +1199,7 @@ type [<ReferenceEquality>] private RenderTasks =
                 ||> Seq.forall2 (fun struct (_, _, m, cs, _, _, _, bo, s, _) struct (_, _, mCached, csCached, _, _, _, boCached, sCached, _) ->
                     m = mCached &&
                     cs = csCached &&
-                    bo = boCached && // TODO: P0: optimize?
+                    bo = boCached && // TODO: P1: optimize?
                     PhysicallyBasedSurfaceFns.equals s sCached)
             deferredStaticCached &&
             deferredStaticPreBatchesCached &&
@@ -3250,7 +3250,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                                 lightProbeAmbientColor
                                 lightProbeAmbientBrightness
                                 (fun () -> renderer.VulkanContext.RenderCommandBuffer)
-                                (fun () -> VulkanContext.advanceRenderCommandBuffer renderer.VulkanContext)
                                 renderer.VulkanContext
 
                         // create irradiance map

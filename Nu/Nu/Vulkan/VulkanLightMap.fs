@@ -37,7 +37,7 @@ type [<Struct>] LightMap =
 module LightMap =
 
     /// Create a reflection map.
-    let createReflectionMap render resolution origin ambientColor ambientBrightness getCommandBuffer advanceCommandBufferWhenNeeded context =
+    let createReflectionMap render resolution origin ambientColor ambientBrightness getCommandBuffer context =
 
         // create reflection cube map
         let metadata = TextureMetadata.make resolution resolution

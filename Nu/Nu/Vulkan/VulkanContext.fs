@@ -510,8 +510,7 @@ type Swapchain =
         Swapchain.clear swapchain device
 
 /// Exposes the vulkan handles that must be globally accessible within the renderer.
-/// TODO: P0: cease publicly exposing unnecessary fields.
-/// TODO: P0: group these by role rather than arbitrary field type.
+/// TODO: P1: group fields / properties by role rather than type.
 type [<ReferenceEquality>] VulkanContext =
     private
         { mutable WaitingForWindowRestore_ : bool
@@ -539,9 +538,6 @@ type [<ReferenceEquality>] VulkanContext =
 
     /// Whether rendering is permitted in the engine's current state.
     member this.RenderAllowed = this.RenderAllowed_
-
-    /// The SDL window used by the swapchain.
-    member this.Window = this.Swapchain_.Window_
     
     /// The physical device.
     member this.PhysicalDevice = this.PhysicalDevice_
@@ -552,14 +548,8 @@ type [<ReferenceEquality>] VulkanContext =
     /// Maximum anisotropy.
     member this.MaxAnisotropy = this.PhysicalDevice_.Properties.limits.maxSamplerAnisotropy
 
-    /// The vulkan instance.
-    member this.Instance = this.Instance_
-
     /// The vulkan instance API. Provided for use from user lambda callbacks.
     member this.InstanceApi = InstanceApi
-
-    /// The logical device.
-    member this.Device = this.Device_
 
     /// The vulkan device API. Provided for use from user lambda callbacks.
     member this.DeviceApi = DeviceApi
@@ -581,9 +571,6 @@ type [<ReferenceEquality>] VulkanContext =
 
     /// The texture command queue.
     member this.TextureQueue = this.TextureQueue_
-
-    /// The render fence.
-    member this.RenderFence = this.RenderFence_
     
     /// The transient fence.
     member this.TransientFence = this.TransientFence_

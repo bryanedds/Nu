@@ -117,7 +117,6 @@ module CubeMap =
         // attempt to finalize cube map
         match errorOpt with
         | None ->
-            // TODO: P0: review error handling.
             let cubeMap = EagerTexture textureInternalOpt.Value
             Right cubeMap
         | Some error ->

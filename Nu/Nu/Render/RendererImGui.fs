@@ -111,7 +111,6 @@ type VulkanRendererImGui
             fontTexture <- EagerTexture textureInternal
             
             // create samplers
-            // TODO: P0: see if we really need different samplers here.
             fontSampler <- Sampler.create VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false context
             assetSampler <- Sampler.create VkSamplerAddressMode.Repeat VkFilter.Nearest VkFilter.Nearest false context
 

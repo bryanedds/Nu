@@ -47,7 +47,7 @@ type Sampler =
         info.addressModeV <- addressMode
         info.addressModeW <- addressMode
         if anisoFilter then
-            info.anisotropyEnable <- true
+            info.anisotropyEnable <- context.AnisotropySupported
             info.maxAnisotropy <- min context.MaxAnisotropy Constants.Render.TextureAnisotropyMax
         info.maxLod <- Vulkan.VK_LOD_CLAMP_NONE
         let mutable vkSampler = Unchecked.defaultof<VkSampler>

@@ -708,13 +708,14 @@ module Hl =
         match SurfaceState with
         | SurfaceReady
         | SurfaceLost ->
+
+            // destroy surface and then inform the backgrounding callback that the required teardown of presentation is
+            // complete so no action is required if another backgrounding event is triggered prior to recreation; this
+            // must correspond exactly with SurfaceDestroyed, which is used by Swapchain
             InstanceApi.vkDestroySurfaceKHR (Surface, nullPtr)
             SurfaceState <- SurfaceDestroyed
-
-            // inform the backgrounding callback that the required teardown of presentation is complete
-            // so no action is required if another backgrounding event is triggered prior to recreation;
-            // this must correspond exactly with SurfaceDestroyed, which is used by Swapchain
             setPresentationTeardownComplete ()
+
         | SurfaceDestroyed ->
             Log.error "Attempted destruction of Vulkan surface that has already been destroyed!"
 
@@ -799,8 +800,6 @@ module Hl =
         else
 
             // get pixel resolution from sdl
-            // NOTE: unlike the GLFW counterpart, this is NOT 0 when minimized.
-            // TODO: P0: find out if that's still true for SDL3.
             let mutable width = WindowProperties.WindowWidth
             let mutable height = WindowProperties.WindowHeight
 
