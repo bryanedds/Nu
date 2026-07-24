@@ -268,7 +268,9 @@ type TextureCompression =
 
     /// The Vulkan pixel format corresponding to this block compression.
     member this.PixelFormat =
-        Rgba
+        match this with
+        | Uncompressed -> Bgra
+        | ColorCompression | NormalCompression -> Rgba
 
 /// The state of the program's OS-provided rendering surface.
 type SurfaceState =
@@ -1068,13 +1070,13 @@ module Hl =
         writer.Write 0u                         // key-value data size
 
     /// Attempt to generate uncompressed astc bytes an MagickImage to astc bytes.
-    let tryGenerateUncompressedImage (image : MagickImage) =
-        let pixelBytes = image.GetPixels().ToByteArray(PixelMapping.RGBA)
+    let tryGenerateUncompressedImage (pixelMapping : PixelMapping) (image : MagickImage) =
+        let pixelBytes = image.GetPixels().ToByteArray(pixelMapping)
         let resolution = v2i (int image.Width) (int image.Height)
         Some (resolution, pixelBytes)
 
     /// Attempt to generate uncompressed astc mipmap bytes from a MagickImage.
-    let tryGenerateUncompressedMipmaps (image : MagickImage) =
+    let tryGenerateUncompressedMipmaps pixelMapping (image : MagickImage) =
         let mutable (width, height) = (image.Width, image.Height)
         let mipmapOpts =
             [while width >= 1u && height >= 1u do
@@ -1082,7 +1084,7 @@ module Hl =
                 height <- height / 2u
                 let mip = image.Clone () :?> MagickImage
                 mip.Resize (width, height)
-                tryGenerateUncompressedImage mip]
+                tryGenerateUncompressedImage pixelMapping mip]
         match List.definitizePlus mipmapOpts with
         | (true, mipmaps) -> Some mipmaps
         | (false, _) -> None
