@@ -13,7 +13,6 @@ open Prime
 type [<Struct>] WindowProperties =
     { WindowFlags : SDL_WindowFlags
       WindowProperties : SDL_PropertiesID
-      WindowPixelDensity : single
       WindowWidth : int
       WindowHeight : int }
 
@@ -26,9 +25,8 @@ type [<Struct>] WindowProperties =
         SDL3.SDL_GetWindowSizeInPixels (window, &&windowWidth, &&windowHeight) |> ignore<SDLBool>
         { WindowFlags = windowFlags
           WindowProperties = windowProperties
-          WindowPixelDensity = windowPixelDensity
-          WindowWidth = windowWidth
-          WindowHeight = windowHeight }
+          WindowWidth = int (single windowWidth * windowPixelDensity)
+          WindowHeight = int (single windowHeight * windowPixelDensity) }
 
     /// The empty window properties.
     static member val empty =
