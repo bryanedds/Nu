@@ -268,9 +268,7 @@ type TextureCompression =
 
     /// The Vulkan pixel format corresponding to this block compression.
     member this.PixelFormat =
-        match this with
-        | Uncompressed -> Bgra
-        | ColorCompression | NormalCompression -> Rgba
+        Rgba
 
 /// The state of the program's OS-provided rendering surface.
 type SurfaceState =
