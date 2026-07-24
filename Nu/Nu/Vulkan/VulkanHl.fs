@@ -372,13 +372,17 @@ module Hl =
     /// Get the current pixel density of the SDL window.
     let getWindowPixelDensity () =
         let pixelDensity = WindowProperties.WindowPixelDensity
-        if pixelDensity > 0.0f then pixelDensity
+        if pixelDensity > 0.0f
+        then pixelDensity
         else Log.error "Invalid window pixel density."; 1.0f
 
     /// Scale a rectangle from window coordinate space to pixel coordinate space.
-    let scaleRectForPixelDensity pixelDensity (rect : VkRect2D) =
-        let inline scale v = single v * pixelDensity
-        VkRect2D (int (scale rect.offset.x), int (scale rect.offset.y), uint (scale rect.extent.width), uint (scale rect.extent.height))
+    let scaleRectForPixelDensity (pixelDensity : single) (rect : VkRect2D) =
+        VkRect2D
+            (int (single rect.offset.x * pixelDensity),
+             int (single rect.offset.y * pixelDensity),
+             uint (single rect.extent.width * pixelDensity),
+             uint (single rect.extent.height * pixelDensity))
 
     /// Scale a rectangle from SDL window coordinates to SDL pixel coordinates.
     let scaleRectToWindowPixels rect =
