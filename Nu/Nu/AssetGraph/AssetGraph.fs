@@ -162,11 +162,10 @@ module AssetGraph =
                     defines.Compression <- DdsCompression.None
                     image.Write (stream, defines)
                 | AstcCompression ->
-                    let pixelMapping = PixelMapping.BGRA
                     use image = new MagickImage (intermediateFilePath)
-                    match Hl.tryGenerateUncompressedImage pixelMapping image with
+                    match Hl.tryGenerateUncompressedImage image with
                     | Some (resolution, mipmapHead) ->
-                        match Hl.tryGenerateUncompressedMipmaps pixelMapping image with
+                        match Hl.tryGenerateUncompressedMipmaps image with
                         | Some mipmapTail ->
                             let mipmapLevels = inc mipmapTail.Length
                             use stream = File.OpenWrite refinementFilePath

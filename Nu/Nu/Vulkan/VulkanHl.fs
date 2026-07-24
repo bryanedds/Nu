@@ -1069,14 +1069,14 @@ module Hl =
         writer.Write (uint32 mipmapLevels)      // mip levels
         writer.Write 0u                         // key-value data size
 
-    /// Attempt to generate uncompressed astc bytes an MagickImage to astc bytes.
-    let tryGenerateUncompressedImage (pixelMapping : PixelMapping) (image : MagickImage) =
-        let pixelBytes = image.GetPixels().ToByteArray(pixelMapping)
+    /// Attempt to generate uncompressed astc bytes from a MagickImage.
+    let tryGenerateUncompressedImage (image : MagickImage) =
+        let pixelBytes = image.GetPixels().ToByteArray(PixelMapping.BGRA) // uncompressed images are BGRA
         let resolution = v2i (int image.Width) (int image.Height)
         Some (resolution, pixelBytes)
 
     /// Attempt to generate uncompressed astc mipmap bytes from a MagickImage.
-    let tryGenerateUncompressedMipmaps pixelMapping (image : MagickImage) =
+    let tryGenerateUncompressedMipmaps (image : MagickImage) =
         let mutable (width, height) = (image.Width, image.Height)
         let mipmapOpts =
             [while width >= 1u && height >= 1u do
@@ -1084,7 +1084,7 @@ module Hl =
                 height <- height / 2u
                 let mip = image.Clone () :?> MagickImage
                 mip.Resize (width, height)
-                tryGenerateUncompressedImage pixelMapping mip]
+                tryGenerateUncompressedImage mip]
         match List.definitizePlus mipmapOpts with
         | (true, mipmaps) -> Some mipmaps
         | (false, _) -> None
