@@ -72,7 +72,7 @@ type [<ReferenceEquality>] ConcurrentCommandQueue =
         DeviceApi.vkGetDeviceQueue (queueFamilyIndex, queueIndex, &vkQueue)
         { VkQueue_ = vkQueue; Lock_ = obj () }
 
-/// A physical device and associated data.
+/// A representation of a physical device and associated information.
 type PhysicalDevice =
     { VkPhysicalDevice : VkPhysicalDevice
       Properties : VkPhysicalDeviceProperties
@@ -174,8 +174,8 @@ type PhysicalDevice =
         // fin
         (graphicsQueueFamilyOpt, presentQueueFamilyOpt)
 
-    /// Attempt to construct PhysicalDevice.
-    static member tryCreate vkPhysicalDevice window instance =
+    /// Attempt to construct a PhysicalDevice representation.
+    static member tryMake vkPhysicalDevice window instance =
         let properties = PhysicalDevice.getProperties vkPhysicalDevice
         let features = PhysicalDevice.getFeatures vkPhysicalDevice
         let extensions = PhysicalDevice.getExtensions vkPhysicalDevice
@@ -734,22 +734,8 @@ type [<ReferenceEquality>] VulkanContext =
             Some debugMessenger
         else None
     
-    /// Select compatible physical device if available.
+    /// Select compatible physical device when available.
     static member private trySelectPhysicalDevice window instance =
-
-        // get available physical devices
-        let mutable deviceCount = 0u
-        InstanceApi.vkEnumeratePhysicalDevices &deviceCount |> Hl.check
-        let devices = Array.zeroCreate<VkPhysicalDevice> (int deviceCount)
-        use devicesPin = new ArrayPin<_> (devices)
-        InstanceApi.vkEnumeratePhysicalDevices (&&deviceCount, devicesPin.Pointer) |> Hl.check
-
-        // gather devices together with relevant data for selection
-        let candidates =
-            [for i in 0 .. dec devices.Length do
-                match PhysicalDevice.tryCreate devices[i] window instance with
-                | Some physicalDevice -> physicalDevice
-                | None -> ()]
 
         // compatibility criteria: device must support essential rendering components, texture compression and at least Vulkan 1.3
         let isCompatible physicalDevice =
@@ -766,26 +752,46 @@ type [<ReferenceEquality>] VulkanContext =
         let isPreferable physicalDevice =
             physicalDevice.Properties.deviceType = VkPhysicalDeviceType.DiscreteGpu
 
+        // get available physical devices
+        let mutable deviceCount = 0u
+        InstanceApi.vkEnumeratePhysicalDevices &deviceCount |> Hl.check
+        let devices = Array.zeroCreate<VkPhysicalDevice> (int deviceCount)
+        use devicesPin = new ArrayPin<_> (devices)
+        InstanceApi.vkEnumeratePhysicalDevices (&&deviceCount, devicesPin.Pointer) |> Hl.check
+
+        // gather devices together with relevant data for selection
+        let candidates =
+            [for i in 0 .. dec devices.Length do
+                match PhysicalDevice.tryMake devices[i] window instance with
+                | Some physicalDevice -> physicalDevice
+                | None -> ()]
+
         // filter and order candidates according to criteria
         let candidatesFiltered = List.filter isCompatible candidates
         let (fstChoice, sndChoice) = List.partition isPreferable candidatesFiltered
         let candidatesFilteredAndOrdered = List.append fstChoice sndChoice
             
-        // if compatible devices exist then return the first along with its data
+        // attempt to selected a preferable compatible device
+        Log.info "Selecting Vulkan Device..."
         let physicalDeviceOpt =
+
+            // return the first along with its data
             if candidatesFilteredAndOrdered.Length > 0 then
                 
                 // select physical device
                 let physicalDevice = List.head candidatesFilteredAndOrdered
                 
-                // log any important data about physical device
-                if not physicalDevice.SupportsAnisotropy then Log.info "Graphics device does not support anisotropy."
+                // log device information
+                let properties = physicalDevice.Properties
+                let deviceName = NativePtr.unmanagedToString &&properties.deviceName.FixedElementField
+                Log.info (sprintf "Selected Vulkan Device %s, v%u.%u.%u.%u." deviceName properties.apiVersion.Major properties.apiVersion.Minor properties.apiVersion.Patch properties.apiVersion.Variant)
+                if not physicalDevice.SupportsAnisotropy then Log.warn "Graphics device does not support anisotropy."
                 
                 // return physical device
                 Some physicalDevice
             
-            // no physical device
-            else Log.info "Could not find a suitable graphics device for VulkanDevice."; None
+            // otherwise error
+            else Log.error "Could not find a suitable Vulkan Device."; None
 
         // fin
         physicalDeviceOpt
