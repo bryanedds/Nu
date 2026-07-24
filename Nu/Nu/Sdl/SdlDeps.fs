@@ -164,10 +164,9 @@ module SdlDeps =
         | Some window ->
 
             // get a snapshot of whether screen was full
-            let mutable (windowWidth, windowHeight) = (0, 0)
-            SDL3.SDL_GetWindowSizeInPixels (window, &&windowWidth, &&windowHeight) |> ignore<SDLBool>
-            let displayMode = getDisplayModeInternal window
-            let wasFullScreen = windowWidth = displayMode.w || windowHeight = displayMode.h
+            let flags = SDL3.SDL_GetWindowFlags window
+            let wasFullScreen =
+                flags &&& SDL_WindowFlags.SDL_WINDOW_FULLSCREEN <> LanguagePrimitives.EnumOfValue 0UL
 
             // change full screen status via flags
             SDL3.SDL_SetWindowFullscreen (window, fullScreen) |> ignore<SDLBool>
@@ -284,6 +283,14 @@ module SdlDeps =
 
                         // set window position
                         let window = windowOpt
+                        let pixelDensity = SDL3.SDL_GetWindowPixelDensity window
+                        let pixelDensity = if pixelDensity = 0.0f then 1.0f else pixelDensity
+                        SDL3.SDL_SetWindowSize
+                            (window,
+                             int (single windowSize.X / pixelDensity),
+                             int (single windowSize.Y / pixelDensity))
+                        |> ignore<SDLBool>
+                        SDL3.SDL_SyncWindow window |> ignore<SDLBool>
                         SDL3.SDL_SetWindowPosition (window, windowConfig.WindowX, windowConfig.WindowY) |> ignore<SDLBool>
 
                         // start text input except on platforms that would obscure the game with a virtual keyboard
@@ -291,8 +298,10 @@ module SdlDeps =
                             SDL3.SDL_StartTextInput window |> ignore<SDLBool>
 
                         // set to full screen when window taking up entire screen and unaccompanied
-                        let mutable displayMode = getDisplayModeInternal window
-                        if (windowSize.X = displayMode.w || windowSize.Y = displayMode.h) && not accompanied then
+                        let displayMode = getDisplayModeInternal window
+                        if (windowSize.X = int (single displayMode.w * pixelDensity) ||
+                            windowSize.Y = int (single displayMode.h * pixelDensity)) &&
+                           not accompanied then
                             SDL3.SDL_SetWindowFullscreen (window, true) |> ignore<SDLBool>
 
                         // attempt to show splash screen (software surface; will be overwritten by Vulkan)

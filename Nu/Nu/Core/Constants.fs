@@ -96,7 +96,8 @@ module Engine =
     let [<Uniform>] Entity3dSizeDefault = Vector3 (1.0f, 1.0f, 1.0f)
     let [<Uniform>] EntityVuiSizeDefault = Vector3 (4.0f, 1.0f, 1.0f)
     /// The 2d eye can extend up to (EyeMarginMaxScalar * Eye2dSize) on each side, so that the world can be rendered up to the edges of the window without being clipped.
-    let [<Uniform>] mutable EyeMarginMaxScalar = match ConfigurationManager.AppSettings["EyeMarginMaxScalar"] with null -> v2Zero | value -> scvalue value
+    let [<Uniform>] mutable EyeMarginMaxScalar =
+        Vector2.Max (v2Zero, match ConfigurationManager.AppSettings["EyeMarginMaxScalar"] with null -> v2Zero | value -> scvalue value)
     let [<Uniform>] Particle2dSizeDefault = Vector3 (4.0f, 4.0f, 0.0f)
     let [<Uniform>] Particle3dSizeDefault = Vector3 (0.25f, 0.25f, 0.25f)
     let [<Uniform>] BodyJoint2dSizeDefault = Vector3 (16.0f, 16.0f, 0.0f)
@@ -122,6 +123,7 @@ module Engine =
               "Protection"
               "Id"
               (* Game Properties *)
+              "Eye2dViewed"
               "Eye3dFrustumInterior"
               "Eye3dFrustumExterior"
               "Eye3dFrustumImposter"

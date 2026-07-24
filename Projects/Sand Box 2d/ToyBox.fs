@@ -1064,7 +1064,7 @@ type ToyBoxDispatcher () =
 
                 // declare info background - block button interactions behind info panel while opened
                 World.doPanel "Info Background"
-                    [Entity.Size .= Globals.Render.DisplayVirtualResolution.V3
+                    [Entity.Size .= world.Eye2dViewable.V3
                      Entity.Elevation .= 10f
                      Entity.BackdropImageOpt .= Some Assets.Default.Black
                      Entity.Color .= color 0f 0f 0f 0.5f] world
