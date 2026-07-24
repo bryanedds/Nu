@@ -11,10 +11,8 @@ open System.Diagnostics
 open System.IO
 open System.Numerics
 open System.Reflection
-open System.Reflection.Metadata
 open System.Text
 open FSharp.Compiler.Interactive
-open FSharp.NativeInterop
 open FSharp.Reflection
 open Microsoft.FSharp.Core
 open ImGuiNET
@@ -1264,10 +1262,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                           """<PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.1" />"""
                           """<PackageReference Include="System.Drawing.Common" Version="10.0.1" />"""
                           """<PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" />"""
-                          """<PackageReference Include="ppy.SDL3-CS" Version="2026.512.0" />"""
-                          """<PackageReference Include="ppy.SDL3_ttf-CS" Version="2026.512.0" />"""
-                          """<PackageReference Include="ppy.SDL3_image-CS" Version="2026.512.0" />"""
-                          """<PackageReference Include="ppy.SDL3_mixer-CS" Version="2026.512.0" />"""
+                          """<PackageReference Include="ppy.SDL3-CS" Version="2026.722.0" />"""
+                          """<PackageReference Include="ppy.SDL3_ttf-CS" Version="2026.722.0" />"""
+                          """<PackageReference Include="ppy.SDL3_image-CS" Version="2026.722.0" />"""
+                          """<PackageReference Include="ppy.SDL3_mixer-CS" Version="2026.722.0" />"""
                           """<PackageReference Include="Vortice.ShaderCompiler" Version="1.8.0" />"""
                           """<PackageReference Include="Vortice.Vulkan" Version="3.2.3" />"""
                           """<PackageReference Include="Vortice.VulkanMemoryAllocator" Version="1.7.0" />"""|]
@@ -3180,11 +3178,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             let time = double (world.UpdateTime - FpsStartUpdateTime)
             let frames = time / elapsedDateTime.TotalSeconds
             ImGui.Text (if not (Double.IsNaN frames) then String.Format ("{0:f2}", frames) else "0.00")
-
-            // draw scope count
-            ImGui.Text "Draw Scope Count:"
-            ImGui.SameLine ()
-            ImGui.Text (string (Vulkan.Hl.getDrawScopeCount ()))
 
             // draw call count
             ImGui.Text "Draw Call Count:"

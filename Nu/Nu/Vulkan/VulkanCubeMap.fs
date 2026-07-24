@@ -34,12 +34,14 @@ type CubeMapGeometry =
 
 /// Describes a renderable cube map surface.
 type [<Struct>] CubeMapSurface =
-    { CubeMap : Texture
-      CubeMapGeometry : CubeMapGeometry }
+    { Flipped : bool
+      CubeMap : Texture
+      Geometry : CubeMapGeometry }
 
-    static member make cubeMap geometry =
-        { CubeMap = cubeMap;
-          CubeMapGeometry = geometry }
+    static member make flipped cubeMap geometry =
+        { Flipped = flipped
+          CubeMap = cubeMap
+          Geometry = geometry }
 
 /// Describes a cube map pipeline that's loaded into GPU.
 type CubeMapPipeline =
@@ -62,7 +64,6 @@ module CubeMap =
     let tryCreateCubeMap faceRightFilePath faceLeftFilePath faceTopFilePath faceBottomFilePath faceBackFilePath faceFrontFilePath thread context =
 
         // load faces into cube map
-        // TODO: DJL: maybe check that size and compression match?
         let mutable textureInternalOpt = None
         let mutable errorOpt = None
         let faceFilePaths = [|faceRightFilePath; faceLeftFilePath; faceTopFilePath; faceBottomFilePath; faceBackFilePath; faceFrontFilePath|]
@@ -116,7 +117,6 @@ module CubeMap =
         // attempt to finalize cube map
         match errorOpt with
         | None ->
-            // TODO: P0: review error handling.
             let cubeMap = EagerTexture textureInternalOpt.Value
             Right cubeMap
         | Some error ->
@@ -261,8 +261,7 @@ module CubeMap =
                     [|Pipeline.descriptor 0 SampledImage FragmentStage 1|]
                   Pipeline.descriptorSet<Sampler>
                     [|Pipeline.descriptor 0 Sampler FragmentStage 1|]|]
-                [||] [|colorAttachmentFormat|]
-                None // NOTE: DJL: not porting currently meaningless depth test as it imposes complexity cost in vulkan.
+                [||] [|colorAttachmentFormat|] None
                 [|eyeUniform|]
 
         // fin
@@ -276,7 +275,8 @@ module CubeMap =
     let drawCubeMap
         (eyeCenter : Vector3)
         (view : Matrix4x4)
-        (projection : Matrix4x4)
+        (projectionUnflipped : Matrix4x4)
+        (flipped : bool)
         (cubeMap : Texture)
         (sampler : Sampler)
         (geometry : CubeMapGeometry)
@@ -288,7 +288,7 @@ module CubeMap =
         (context : VulkanContext) =
 
         // compute vulkan-appropriate matrices
-        // NOTE: we do NOT flip when rendering to a cube map face!
+        let projection = if flipped then projectionUnflipped.Flipped else projectionUnflipped
         let viewInverse = view.Inverted
         let projectionInverse = projection.Inverted
         let viewProjection = view * projection
@@ -350,7 +350,7 @@ module CubeMap =
             advanceCommandBufferWhenNeeded ()
 
         // abort
-        | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
+        | None -> Log.warnOnce ("Cannot draw " + getTypeName pipeline + " because VkPipeline does not exist.")
 
 /// Memoizes cube map loads (and may at some point potentially thread them).
 type CubeMapClient () =

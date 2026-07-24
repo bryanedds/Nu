@@ -74,7 +74,7 @@ module Contour =
                 [|Pipeline.vertex 0 vertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Single2 0|]|]
                 [|Pipeline.descriptorSet<int>
-                    [|Pipeline.descriptor 0 UniformBuffer VertexFragmentStage 1
+                    [|Pipeline.descriptor 0 UniformBuffer VertexAndFragmentStage 1
                       Pipeline.descriptor 1 StorageBuffer FragmentStage 1
                       Pipeline.descriptor 2 StorageBuffer FragmentStage 1|]|]
                 [||] [|vkc.SwapFormat|] None
@@ -122,11 +122,10 @@ module Contour =
                     // Expand the quad by one physical pixel in each local axis so rasterization
                     // cannot clip analytic edge coverage when the shape is minified.
                     let bbox = geometry.LocalBounds
-                    let pixelDensity = Hl.getWindowPixelDensity vkc.Window
                     let physicalViewportSize =
                         Vector2
-                            (single viewport.Inner.Size.X * pixelDensity,
-                             single viewport.Inner.Size.Y * pixelDensity)
+                            (single viewport.Inner.Size.X,
+                             single viewport.Inner.Size.Y)
                     let center = bbox.Min + bbox.Size * 0.5f
                     let centerPixels =
                         let clip = Vector4.Transform (Vector4 (center.X, center.Y, 0.0f, 1.0f), modelViewProjection)
@@ -186,8 +185,7 @@ module Contour =
                         Pipeline.writeDescriptorStorageBuffer 2 0 bandDataBuffer vkSet
 
                     // set up render area
-                    let renderAreaLogical = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)
-                    let mutable renderArea = Hl.scaleRectForPixelDensity pixelDensity renderAreaLogical
+                    let mutable renderArea = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)
                     let mutable vkViewport = Hl.makeViewport true renderArea
                     let mutable scissor = renderArea
 
@@ -202,13 +200,12 @@ module Contour =
                         let sizeNdc = sizeClip * single viewport.DisplayScalar
                         let sizeScissor = sizeNdc * 0.5f * viewport.Inner.Size.V2
                         let offset = v2i viewport.Inner.Min.X (viewport.Outer.Max.Y - viewport.Inner.Max.Y)
-                        let scissorLogical =
+                        scissor <-
                             VkRect2D
                                 ((minScissor.X |> round |> int) + offset.X,
-                                    (single renderAreaLogical.extent.height - minScissor.Y |> round |> int) + offset.Y,
-                                    uint sizeScissor.X,
-                                    uint sizeScissor.Y)
-                        scissor <- Hl.scaleRectForPixelDensity pixelDensity scissorLogical
+                                 (single renderArea.extent.height - minScissor.Y |> round |> int) + offset.Y,
+                                 uint sizeScissor.X,
+                                 uint sizeScissor.Y)
                         scissor <- Hl.clipRect renderArea scissor
                     | ValueNone -> ()
 
@@ -243,11 +240,11 @@ module Contour =
                         // advance pipeline
                         Pipeline.advance pipeline
 
-                        // intermittently advance rendering command buffer
+                        // advance rendering command buffer
                         VulkanContext.advanceRenderCommandBuffer vkc
 
                 // abort
-                | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
+                | None -> Log.warnOnce ("Cannot draw " + getTypeName pipeline + " because VkPipeline does not exist.")
 
     /// Draw a Contour as up to two separate Slug passes (fill then stroke).
     let drawContour

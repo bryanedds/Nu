@@ -51,10 +51,7 @@ module Configure =
                 | nameof Constants.Render.SpineSkeletonScalar -> Constants.Render.SpineSkeletonScalar <- scvalue value
                 | nameof Constants.Render.ShadowVirtualResolution -> Constants.Render.ShadowVirtualResolution <- scvalue value
                 | nameof Constants.Render.ShadowDisplayScalarMax -> Constants.Render.ShadowDisplayScalarMax <- scvalue value
-                | nameof Constants.Render.ShadowDirectionalMarginRatioCull -> Constants.Render.ShadowDirectionalMarginRatioCull <- scvalue value
                 | nameof Constants.Render.ShadowCascadeLimits -> Constants.Render.ShadowCascadeLimits <- scvalue value
-                | nameof Constants.Render.ShadowCascadeMarginRatio -> Constants.Render.ShadowCascadeMarginRatio <- scvalue value
-                | nameof Constants.Render.ShadowCascadeMarginRatioCull -> Constants.Render.ShadowCascadeMarginRatioCull <- scvalue value
                 | nameof Constants.Render.SkipRendering3d -> Constants.Render.SkipRendering3d <- scvalue value
                 | nameof Constants.Physics.Collision2dSteps -> Constants.Physics.Collision2dSteps <- scvalue value
                 | nameof Constants.Physics.Collision2dFrameCompensation -> Constants.Physics.Collision2dFrameCompensation <- scvalue value

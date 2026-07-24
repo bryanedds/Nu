@@ -165,9 +165,9 @@ type ImageLayout =
     /// The pipeline stage.
     member this.PipelineStage =
             
-        // NOTE: DJL: for Undefined as image layout transition source, texture upload and mipmap generation previously used VK_PIPELINE_STAGE_HOST_BIT.
-        // I can't remember why but it's not in the tutorial and apparently may lead to failure on Android devices. I suspect it was inherited
-        // from ImGui backend.
+        // NOTE: for Undefined as image layout transition source, texture upload and mipmap generation previously used
+        // VK_PIPELINE_STAGE_HOST_BIT. DJL can't remember why, but it's not in the tutorial and apparently may lead to
+        // failure on Android devices. DJL suspects it was inherited from ImGui backend.
         match this with
         | Undefined -> VkPipelineStageFlags.TopOfPipe
         | TransferSrc -> VkPipelineStageFlags.Transfer
@@ -219,14 +219,14 @@ type VertexAttribFormat =
 type ShaderStage =
     | VertexStage
     | FragmentStage
-    | VertexFragmentStage
+    | VertexAndFragmentStage
 
     /// The VkShaderStageFlags.
     member this.VkShaderStageFlags =
         match this with
         | VertexStage -> VkShaderStageFlags.Vertex
         | FragmentStage -> VkShaderStageFlags.Fragment
-        | VertexFragmentStage -> VkShaderStageFlags.Vertex ||| VkShaderStageFlags.Fragment
+        | VertexAndFragmentStage -> VkShaderStageFlags.Vertex ||| VkShaderStageFlags.Fragment
     
 /// The type of a resource descriptor.
 type DescriptorType =
@@ -280,7 +280,8 @@ type SurfaceState =
 
 /// Represents a strict cycle ensuring that any presentation resources (surface and swapchains) that exist or are being created during the onset
 /// of app backgrounding on a mobile device are torn down/cancelled.
-/// TODO: DJL: encapsulate most of this stuff into a Surface abstraction as it should not be visible to Swapchain and VulkanContext.
+/// TODO: consider encapsulating most of this stuff into a Surface abstraction as it should not be visible to Swapchain
+/// and VulkanContext.
 type internal BackgroundingResponseState =
     | PresentationSetupInitiated // setup of presentation resources has begun and may be complete
     | PresentationTeardownPending // presentation resources can no longer be trusted as app has commenced backgrounding
@@ -307,12 +308,11 @@ module Vulkan =
 [<RequireQualifiedAccess>]
 module Hl =
 
-    // TODO: DJL: all these free-floating variables, types and functions have become a
-    // bit of a mess and need to be reordered, not to mention the inconsistent casing.
-
+    // TODO: P0: these free-floating bindings have become a bit of a mess and need to be reordered or moved into vulkan
+    // context.
     let mutable internal ValidationLayersActivated = false
 
-    let mutable internal DrawReportLock = obj ()
+    let mutable internal DrawCountersLock = obj ()
     let mutable internal DrawInstanceCount = 0
     let mutable internal DrawCallCount = 0
     let mutable internal DrawScopeCount = 0
@@ -340,6 +340,10 @@ module Hl =
     let mutable private BackgroundingResponseState = PresentationTeardownComplete
     let mutable private Backgrounded = false
 
+    // cached window properties that have to come in from the main thread.
+    let mutable WindowProperties_ = WindowProperties.empty
+    let inline WindowProperties<'a> = WindowProperties_
+
     // callback to inform render loop about app backgrounding
     // official documentation for android case: https://github.com/libsdl-org/SDL/blob/main/docs/README-android.md#activity-lifecycle
 #nowarn 202
@@ -362,20 +366,8 @@ module Hl =
         let handle = Assembly.GetExecutingAssembly().GetType("Nu.Vulkan.Hl").GetMethod(nameof handleBackgrounding, BindingFlags.NonPublic ||| BindingFlags.Static).MethodHandle
         handle.GetFunctionPointer ()
 
-    /// Get the current pixel density of an SDL window.
-    let getWindowPixelDensity window =
-        let pixelDensity = SDL3.SDL_GetWindowPixelDensity window
-        if pixelDensity > 0.0f then pixelDensity
-        else Log.error ("Failed to get window pixel density due to: " + SDL3.SDL_GetError ()); 1.0f
-
-    /// Scale a rectangle from window coordinate space to pixel coordinate space.
-    let scaleRectForPixelDensity pixelDensity (rect : VkRect2D) =
-        let inline scale v = single v * pixelDensity
-        VkRect2D (int (scale rect.offset.x), int (scale rect.offset.y), uint (scale rect.extent.width), uint (scale rect.extent.height))
-
-    /// Scale a rectangle from SDL window coordinates to SDL pixel coordinates.
-    let scaleRectToWindowPixels window rect =
-        scaleRectForPixelDensity (getWindowPixelDensity window) rect
+    let setWindowProperties windowProperties =
+        WindowProperties_ <- windowProperties
 
     let internal setPresentationSetupInitiated () =
         lock BackgroundingResponseStateLock (fun () -> BackgroundingResponseState <- PresentationSetupInitiated)
@@ -433,8 +425,8 @@ module Hl =
     let rec checkAttachmentFormat vkPhysicalDevice (format : ImageFormat) =
         if not (supportsAttachment vkPhysicalDevice format) then
             
-            // NOTE: DJL: formats required by spec - https://docs.vulkan.org/spec/latest/chapters/formats.html#features-required-format-support
-            // NOTE: DJL: format fallbacks must not be ints for blit conversion.
+            // NOTE: formats required by spec - https://docs.vulkan.org/spec/latest/chapters/formats.html#features-required-format-support
+            // NOTE: format fallbacks must not be ints for blit conversion.
             let (formatFallback : ImageFormat) =
                 match format with
                 | Bc3 | Bc5 | Astc ->
@@ -459,7 +451,7 @@ module Hl =
                     checkAttachmentFormat vkPhysicalDevice D16s8ui
                 | D16s8ui ->
                     Log.fail "Could not find a suitable format for depth attachment textures."
-            Log.warn ("Falling back to " + scstring formatFallback.VkFormat + " attachment format due to unavailability of " + scstring format.VkFormat + " attachment format.")
+            Log.info ("Falling back to " + scstring formatFallback.VkFormat + " attachment format due to unavailability of " + scstring format.VkFormat + " attachment format.")
             formatFallback
 
         else format
@@ -581,7 +573,7 @@ module Hl =
         blit
 
     /// Make a VkRenderingInfo.
-    /// NOTE: DJL: MUST be inline to keep pointers valid!
+    /// NOTE: this function MUST be declared inline to keep its pointers valid!
     let inline makeRenderingInfo (colorAttachments : VkImageView array) depthAttachmentOpt renderArea clearValueOpt =
 
         // color attachment infos
@@ -646,28 +638,42 @@ module Hl =
         result.extent.width <- uint extentWidth
         result.extent.height <- uint extentHeight
         result
+        
+    // Check whether window resource is availabile for utilization.
+    let private isWindowResourceAvailable () =
+        if OperatingSystem.IsAndroid () then
+            let windowProperties = WindowProperties.WindowProperties
+            let windowPointer = SDL3.SDL_GetPointerProperty (windowProperties, SDL3.SDL_PROP_WINDOW_ANDROID_WINDOW_POINTER, 0n)
+            windowPointer <> 0n
+        else true // will presumably never be blocked on other platforms
 
     let tryCreateVulkanSurface window instance =
 
         // attempt to recreate surface if destroyed
         match SurfaceState with
         | SurfaceDestroyed ->
-        
-            // inform the backgrounding callback that we begin the process of creating the surface and swapchain
-            // that may need to be aborted/destroyed at any point before *or* after completion due to a
-            // backgrounding event, hence setup *initiated*
-            setPresentationSetupInitiated ()
-            let mutable surfacePtr = Unchecked.defaultof<VkSurfaceKHR_T nativeptr>
-            let instance = NativePtr.ofNativeInt (VkInstance.op_Implicit instance)
-            if not (SDL3.SDL_Vulkan_CreateSurface (window, instance, NativePtr.nullPtr, &&surfacePtr)) then
-                Log.error (SDL3.SDL_GetError ())
-                setPresentationTeardownComplete () // inform callback to scratch that
-            else
-                Surface <- NativePtr.toNativeInt surfacePtr |> uint64 |> VkSurfaceKHR.op_Implicit
-                SurfaceState <- SurfaceReady
 
+            // ensure window resource is available for utilization
+            if isWindowResourceAvailable () then
+
+                // inform the backgrounding callback that we begin the process of creating the surface and swapchain
+                // that may need to be aborted/destroyed at any point before *or* after completion due to a
+                // backgrounding event, hence setup *initiated*
+                setPresentationSetupInitiated ()
+                let mutable surfacePtr = Unchecked.defaultof<VkSurfaceKHR_T nativeptr>
+                let instance = NativePtr.ofNativeInt (VkInstance.op_Implicit instance)
+                if not (SDL3.SDL_Vulkan_CreateSurface (window, instance, NativePtr.nullPtr, &&surfacePtr)) then
+                    Log.error (SDL3.SDL_GetError ())
+                    setPresentationTeardownComplete () // inform callback to scratch that
+                else
+                    Surface <- NativePtr.toNativeInt surfacePtr |> uint64 |> VkSurfaceKHR.op_Implicit
+                    SurfaceState <- SurfaceReady
+
+        // handle error cases
         | SurfaceReady -> Log.error "Attempted creation of Vulkan surface when existing surface has not been destroyed!"
         | SurfaceLost -> Log.error "Attempted creation of Vulkan surface when existing surface has been lost but not destroyed!"
+
+        // fin
         SurfaceState
 
     let createVulkanSurface window instance =
@@ -686,13 +692,14 @@ module Hl =
         match SurfaceState with
         | SurfaceReady
         | SurfaceLost ->
+
+            // destroy surface and then inform the backgrounding callback that the required teardown of presentation is
+            // complete so no action is required if another backgrounding event is triggered prior to recreation; this
+            // must correspond exactly with SurfaceDestroyed, which is used by Swapchain
             InstanceApi.vkDestroySurfaceKHR (Surface, nullPtr)
             SurfaceState <- SurfaceDestroyed
-
-            // inform the backgrounding callback that the required teardown of presentation is complete
-            // so no action is required if another backgrounding event is triggered prior to recreation;
-            // this must correspond exactly with SurfaceDestroyed, which is used by Swapchain
             setPresentationTeardownComplete ()
+
         | SurfaceDestroyed ->
             Log.error "Attempted destruction of Vulkan surface that has already been destroyed!"
 
@@ -714,8 +721,9 @@ module Hl =
         match tryCompileShader shaderPath shaderKind with
         | Right shader ->
 
-            // NOTE: DJL: using a high level overload here to avoid questions about reinterpret casting and memory alignment,
-            // see https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Shader_modules#page_Creating-shader-modules.
+            // NOTE: using a high level overload here to avoid questions about reinterpret casting and memory
+            // alignment; see -
+            // https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Shader_modules#page_Creating-shader-modules
             let mutable shaderModule = Unchecked.defaultof<VkShaderModule>
             DeviceApi.vkCreateShaderModule (shader.AsSpan (), nullPtr, &shaderModule) |> check
             Right shaderModule
@@ -768,7 +776,7 @@ module Hl =
             None
 
     /// Get swap extent.
-    let getSwapExtent (capabilities : VkSurfaceCapabilitiesKHR) window =
+    let getSwapExtent (capabilities : VkSurfaceCapabilitiesKHR) =
 
         // check if window size is fixed or variable
         if capabilities.currentExtent.width <> UInt32.MaxValue
@@ -776,12 +784,8 @@ module Hl =
         else
 
             // get pixel resolution from sdl
-            // NOTE: DJL: unlike the GLFW counterpart, this does NOT return 0 when minimized.
-            // TODO: DJL: find out if that's still true for SDL3.
-            let mutable width = Unchecked.defaultof<int>
-            let mutable height = Unchecked.defaultof<int>
-            if not (SDL3.SDL_GetWindowSizeInPixels (window, &&width, &&height)) then
-                Log.fail (SDL3.SDL_GetError ())
+            let mutable width = WindowProperties.WindowWidth
+            let mutable height = WindowProperties.WindowHeight
 
             // clamp resolution to size limits
             width <- max width (int capabilities.minImageExtent.width)
@@ -978,29 +982,37 @@ module Hl =
                 1u, &&barrier)
 
     /// Infer that an asset with the given file path should be filtered in a 2D rendering context.
-    let inferTextureFiltered2d (filePath : string) =
+    let inferTextureFiltered2d filePath =
         let name = PathF.GetFileNameWithoutExtension filePath
         name.EndsWith "_f" ||
         name.EndsWith "Filtered"
         
+    /// Infer whether the texture at the given file path may be compressed.
+    let inferTextureCompressible filePath =
+        match PathF.GetExtensionLower filePath with
+        | ".dds" | ".ktx" -> true
+        | _ -> false
+        
     /// Infer the type of block compression that an asset with the given file path should utilize.
-    let inferTextureCompression (filePath : string) =
-        let name = PathF.GetFileNameWithoutExtension filePath
-        if  name.EndsWith "_f" ||
-            name.EndsWith "_hm" ||
-            name.EndsWith "_b" ||
-            name.EndsWith "_t" ||
-            name.EndsWith "_u" ||
-            name.EndsWith "Face" ||
-            name.EndsWith "HeightMap" ||
-            name.EndsWith "Blend" ||
-            name.EndsWith "Tint" ||
-            name.EndsWith "Uncompressed" then Uncompressed
-        elif
-            name.EndsWith "_n" ||
-            name.EndsWith "_normal" ||
-            name.EndsWith "Normal" then NormalCompression
-        else ColorCompression
+    let inferTextureCompression filePath =
+        if inferTextureCompressible filePath then
+            let name = PathF.GetFileNameWithoutExtension filePath
+            if  name.EndsWith "_f" ||
+                name.EndsWith "_hm" ||
+                name.EndsWith "_b" ||
+                name.EndsWith "_t" ||
+                name.EndsWith "_u" ||
+                name.EndsWith "Face" ||
+                name.EndsWith "HeightMap" ||
+                name.EndsWith "Blend" ||
+                name.EndsWith "Tint" ||
+                name.EndsWith "Uncompressed" then Uncompressed
+            elif
+                name.EndsWith "_n" ||
+                name.EndsWith "_normal" ||
+                name.EndsWith "Normal" then NormalCompression
+            else ColorCompression
+        else Uncompressed
 
     /// Detect that a dds file uses a compressed representation.
     let detectTextureCompressionDds (dds : DdsFile) =
@@ -1018,33 +1030,33 @@ module Hl =
     /// Write the binary header of a ktx file.
     /// Implementation based on https://registry.khronos.org/KTX/specs/1.0/ktxspec.v1.html
     let writeKtxHeader (resolution : Vector2i) mipmapLevels compressed (writer : BinaryWriter) =
-        writer.Write                                                        // ktx identifier
-            [|0xABuy; 0x4Buy; 0x54uy; 0x58uy                                //
-              0x20uy; 0x31uy; 0x31uy; 0xBBuy                                //
-              0x0Duy; 0x0Auy; 0x1Auy; 0x0Auy|]                              //
-        writer.Write 0x04030201u                                            // endianness
-        if compressed                                                       // glType
-        then writer.Write 0x0000u                                           // (zero when compressed)
-        else writer.Write 0x1401u                                           // OpenGL.Gl.UNSIGNED_BYTE
-        writer.Write 1u                                                     // glTypeSize
-        if compressed                                                       // glFormat
-        then writer.Write 0x0000u                                           // (zero when compressed)
-        else writer.Write 0x80E1u                                           // OpenGL.PixelFormat.Bgra
-        if compressed                                                       // glInternalFormat
-        then writer.Write 0x93B0u                                           // OpenGL.InternalFormat.CompressedRgbaAstc4x4
-        else writer.Write 0x8058u                                           // OpenGL.InternalFormat.Rgba8
-        writer.Write 0x80E1                                                 // glBaseInternalFormat = OpenGL.PixelFormat.Bgra
-        writer.Write (uint32 resolution.X)                                  // width
-        writer.Write (uint32 resolution.Y)                                  // height
-        writer.Write 1u                                                     // depth
-        writer.Write 0u                                                     // array elements
-        writer.Write 1u                                                     // faces
-        writer.Write (uint32 mipmapLevels)                                  // mip levels
-        writer.Write 0u                                                     // key-value data size
+        writer.Write                            // ktx identifier
+            [|0xABuy; 0x4Buy; 0x54uy; 0x58uy    //
+              0x20uy; 0x31uy; 0x31uy; 0xBBuy    //
+              0x0Duy; 0x0Auy; 0x1Auy; 0x0Auy|]  //
+        writer.Write 0x04030201u                // endianness
+        if compressed                           // glType
+        then writer.Write 0x0000u               // (zero when compressed)
+        else writer.Write 0x1401u               // OpenGL.Gl.UNSIGNED_BYTE
+        writer.Write 1u                         // glTypeSize
+        if compressed                           // glFormat
+        then writer.Write 0x0000u               // (zero when compressed)
+        else writer.Write 0x80E1u               // OpenGL.PixelFormat.Bgra
+        if compressed                           // glInternalFormat
+        then writer.Write 0x93B0u               // OpenGL.InternalFormat.CompressedRgbaAstc4x4
+        else writer.Write 0x8058u               // OpenGL.InternalFormat.Rgba8
+        writer.Write 0x80E1                     // glBaseInternalFormat = OpenGL.PixelFormat.Bgra
+        writer.Write (uint32 resolution.X)      // width
+        writer.Write (uint32 resolution.Y)      // height
+        writer.Write 1u                         // depth
+        writer.Write 0u                         // array elements
+        writer.Write 1u                         // faces
+        writer.Write (uint32 mipmapLevels)      // mip levels
+        writer.Write 0u                         // key-value data size
 
-    /// Attempt to generate uncompressed astc bytes an MagickImage to astc bytes.
+    /// Attempt to generate uncompressed astc bytes from a MagickImage.
     let tryGenerateUncompressedImage (image : MagickImage) =
-        let pixelBytes = image.GetPixels().ToByteArray(PixelMapping.RGBA)
+        let pixelBytes = image.GetPixels().ToByteArray(PixelMapping.BGRA) // uncompressed images are BGRA
         let resolution = v2i (int image.Width) (int image.Height)
         Some (resolution, pixelBytes)
 
@@ -1223,31 +1235,31 @@ module Hl =
 
     /// Report the fact that a draw call has just been made with the given number of instances.
     let reportDrawScope () =
-        lock DrawReportLock (fun () ->
+        lock DrawCountersLock (fun () ->
             DrawScopeCount <- inc DrawScopeCount )
 
     /// Report the fact that a draw call has just been made with the given number of instances.
     let reportDrawCall drawInstances drawScope =
-        lock DrawReportLock (fun () ->
+        lock DrawCountersLock (fun () ->
             DrawInstanceCount <- DrawInstanceCount + drawInstances
             DrawCallCount <- inc DrawCallCount
             if drawScope then DrawScopeCount <- inc DrawScopeCount )
 
     /// Reset the running counts of draw events.
     let resetDrawCounters () =
-        lock DrawReportLock (fun () ->
+        lock DrawCountersLock (fun () ->
             DrawInstanceCount <- 0
             DrawCallCount <- 0
             DrawScopeCount <- 0)
 
     /// Get the running number of draw scopes.
     let getDrawScopeCount () =
-        lock DrawReportLock (fun () -> DrawScopeCount)
+        lock DrawCountersLock (fun () -> DrawScopeCount)
 
     /// Get the running number of draw calls.
     let getDrawCallCount () =
-        lock DrawReportLock (fun () -> DrawCallCount)
+        lock DrawCountersLock (fun () -> DrawCallCount)
 
     /// Get the running number of draw calls.
     let getDrawInstanceCount () =
-        lock DrawReportLock (fun () -> DrawInstanceCount)
+        lock DrawCountersLock (fun () -> DrawInstanceCount)

@@ -111,14 +111,13 @@ type VulkanRendererImGui
             fontTexture <- EagerTexture textureInternal
             
             // create samplers
-            // TODO: P0: see if we really need different samplers here.
             fontSampler <- Sampler.create VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false context
             assetSampler <- Sampler.create VkSamplerAddressMode.Repeat VkFilter.Nearest VkFilter.Nearest false context
 
             // set font atlas TexId
             fonts.SetTexID (nativeint fontTexture.Id)
             
-            // NOTE: DJL: this is not used in the dear imgui vulkan backend.
+            // NOTE: this is not used in the dear imgui vulkan backend.
             fonts.ClearTexData ()
 
             // create vertex and index buffers
@@ -163,7 +162,8 @@ type VulkanRendererImGui
                 if not (assetTextureOpts.ContainsKey assetTag) then
                     match Metadata.tryGetFilePath assetTag with
                     | Some filePath ->
-                        match TextureInternal.tryCreate true false (Hl.inferTextureCompression filePath) filePath RenderThread context with
+                        let compression = Hl.inferTextureCompression filePath
+                        match TextureInternal.tryCreate true false compression filePath RenderThread context with
                         | Right textureInternal ->
                             let texture = EagerTexture textureInternal
                             assetTextureStorage.Add (texture.Id, texture)
@@ -175,20 +175,16 @@ type VulkanRendererImGui
 
         member renderer.Render viewport_ (drawData : ImDrawDataPtr) =
 
-            // update imgui's display frame buffer scale
-            let pixelDensity = Hl.getWindowPixelDensity context.Window
-            let io = ImGui.GetIO ()
-            io.DisplayFramebufferScale <- v2Dup pixelDensity
-
             // update viewport, updating the imgui display size as needed
+            let io = ImGui.GetIO ()
             if viewport <> viewport_ then
-                io.DisplaySize <- viewport_.Bounds.Size.V2 // NOTE: DJL: this is not set in the dear imgui vulkan backend but IS necessary!
+                io.DisplaySize <- viewport_.Bounds.Size.V2 // NOTE: this is not set in the dear imgui vulkan backend but IS necessary!
                 viewport <- viewport_
 
-            // check that viewport bounds assumed by drawData match the actual viewport, as they sometimes lag behind upon resize, triggering validation errors when viewport bounds are exceeded.
-            let pixelDensity = Hl.getWindowPixelDensity context.Window
-            let viewportPixelWidth = int (round (single viewport.Bounds.Width * pixelDensity))
-            let viewportPixelHeight = int (round (single viewport.Bounds.Height * pixelDensity))
+            // check that viewport bounds assumed by drawData match the actual viewport, as they sometimes lag behind
+            // upon resize, triggering validation errors when viewport bounds are exceeded.
+            let viewportPixelWidth = viewport.Bounds.Width
+            let viewportPixelHeight = viewport.Bounds.Height
             let drawDataMatchesViewport =
                 int (round (drawData.DisplaySize.X * drawData.FramebufferScale.X)) = viewportPixelWidth &&
                 int (round (drawData.DisplaySize.Y * drawData.FramebufferScale.Y)) = viewportPixelHeight
@@ -196,16 +192,11 @@ type VulkanRendererImGui
             // render when allowed and drawData matches viewport
             if context.RenderAllowed && drawDataMatchesViewport then
 
-                // images added as needed for current frame, associated with descriptor sets by index
-                let usedImages = List ()
-
                 // grab pipeline, asserting non-None since shader reload for ImGui isn't supported
                 let vkPipeline = Pipeline.tryGetVkPipeline VulkanImGui false pipeline |> Option.get
 
                 // set up render
-                let mutable renderArea =
-                    VkRect2D (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
-                    |> Hl.scaleRectForPixelDensity pixelDensity
+                let mutable renderArea = VkRect2D (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
                 let mutable renderingInfo = Hl.makeRenderingInfo [|context.SwapchainImageView|] None renderArea None
                 let mutable viewport = Hl.makeViewport false renderArea
                 DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
@@ -295,14 +286,10 @@ type VulkanRendererImGui
                                     // set scissor
                                     DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&scissor)
 
-                                    // identify requested texture and assign to it a descriptor set index
-                                    let textureId = uint32 pcmd.TextureId
-                                    if not (usedImages.Contains textureId) then usedImages.Add textureId
-                                    let descriptorSetIndex = usedImages.IndexOf textureId
-
                                     // specify material
+                                    let textureId = uint32 pcmd.TextureId
                                     let (texture, sampler) as combined = (renderer.GetTexture textureId, renderer.GetSampler textureId)
-                                    let mutable materialDescriptorSet = Pipeline.specifyDescriptorSet descriptorSetIndex combined pipeline $ fun vkSet ->
+                                    let mutable materialDescriptorSet = Pipeline.specifyDescriptorSet 0 combined pipeline $ fun vkSet ->
                                         Pipeline.writeDescriptorCombinedTextureSampler 0 0 texture sampler vkSet
 
                                     // bind descriptor set

@@ -645,7 +645,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
          eyeCenter : Vector2,
          eyeSize : Vector2,
          renderer) =
-        (* TODO: DJL: get spine animation rendering working again.
+        (* TODO: get spine animation rendering working again.
         let mutable transform = transform
         flip3 SpriteBatch.InterruptSpriteBatchFrame renderer.Viewport renderer.SpriteBatchEnv $ fun () ->
             let getTextureId (imageObj : obj) =
@@ -831,9 +831,9 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                         TextureInternal.create
                                             MipmapNone AttachmentNone Texture2d VkImageUsageFlags.None
                                             Uncompressed.ImageFormat Uncompressed.PixelFormat metadata renderer.VulkanContext
-                                    
-                                    // TODO: DJL: investigate safety of asynchronous upload with regard to memoized access in subsequent frames
-                                    // which does not explicitly wait for upload.
+
+                                    // TODO: investigate safety of asynchronous upload with regard to memoized access
+                                    // in subsequent frames which does not explicitly wait for upload.
                                     TextureInternal.uploadAsync renderer.VulkanContext.RenderCommandBuffer metadata 0 0 textSurface.pixels textTextureInternal renderer.VulkanContext
                                     let textTexture = EagerTexture textTextureInternal
 
@@ -1004,7 +1004,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             used.Value <- false
 
         // sweep up any skeleton renderers that went unused this frame
-        (* TODO: DJL: enable when spine rendering is working again.
+        (* TODO: enable when spine rendering is working again.
         let entriesUnused = renderer.SpineSkeletonRenderers |> Seq.filter (fun entry -> not (fst entry.Value).Value)
         for entry in entriesUnused do
             let spineSkeletonId = entry.Key
@@ -1069,7 +1069,6 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             let (_, _, _, _, _, contourPipeline) = renderer.ContourPipeline
             for (_, _, _, textTexture) in Seq.map snd renderer.TextTextures.Values do Texture.destroy textTexture renderer.VulkanContext
             renderer.TextTextures.Clear ()
-            TextureDumpster.destroy renderer.TextureDumpster renderer.VulkanContext
             Sampler.destroy renderer.UnfilteredSampler
             Sampler.destroy renderer.FilteredSampler
             Pipeline.destroy spritePipeline renderer.VulkanContext
@@ -1080,13 +1079,16 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             // destroy sprite batch environment
             SpriteBatch.destroySpriteBatchEnv renderer.SpriteBatchEnv
 
-            (* TODO: DJL: free spine skeleton resources.
+            (* TODO: free spine skeleton resources.
             // free sprite skeleton renderers
             for spineSkeletonRenderer in Seq.map snd renderer.SpineSkeletonRenderers.Values do spineSkeletonRenderer.Destroy ()
             renderer.SpineSkeletonRenderers.Clear ()*)
 
-            // free assets
+            // destroy loaded assets
             let renderPackages = renderer.RenderPackages |> Seq.map (fun entry -> entry.Value)
             let renderAssets = renderPackages |> Seq.map (fun package -> package.Assets.Values) |> Seq.concat
             for (_, _, renderAsset) in renderAssets do VulkanRenderer2d.freeRenderAsset renderAsset renderer
             renderer.RenderPackages.Clear ()
+
+            // destroy texture dumpster
+            TextureDumpster.destroy renderer.TextureDumpster renderer.VulkanContext

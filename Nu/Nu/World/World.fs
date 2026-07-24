@@ -512,7 +512,7 @@ module WorldModule4 =
             let imGui = ImGui (true, windowViewport.Bounds.Size)
             let physicsEngine2d = StubPhysicsEngine.make ()
             let physicsEngine3d = StubPhysicsEngine.make ()
-            let rendererProcess = RendererInline () :> RendererProcess
+            let rendererProcess = RendererInline (WindowProperties.empty) :> RendererProcess
             rendererProcess.Start imGui.Fonts None geometryViewport windowViewport // params implicate stub renderers
             let audioPlayer = StubAudioPlayer.make ()
             let cursorClient = StubCursorClient.make ()
@@ -533,14 +533,22 @@ module WorldModule4 =
             // fin
             world
 
-        /// Make the world with the given dependencies.
+        /// Make the world with the given SDL dependencies.
         static member make tryMakeEditContext sdlDeps config geometryViewport (windowViewport : Viewport) (plugin : NuPlugin) =
 
+            // compute window properties
+            let windowProperties =
+                match SdlDeps.getWindowOpt sdlDeps with
+                | Some window -> WindowProperties.make window
+                | None -> WindowProperties.empty
+
             // create asset graph
-            let assetGraph = AssetGraph.makeFromFileOpt Assets.Global.AssetGraphFilePath
+            let assetGraph =
+                AssetGraph.makeFromFileOpt Assets.Global.AssetGraphFilePath
 
             // compute initial packages
-            let initialPackages = Assets.Default.PackageName :: plugin.InitialPackages
+            let initialPackages =
+                Assets.Default.PackageName :: plugin.InitialPackages
 
             // initialize metadata and load initial package
             Metadata.init assetGraph
@@ -580,7 +588,8 @@ module WorldModule4 =
             let pluginGameDispatchers = plugin.Birth<GameDispatcher> pluginAssemblies
 
             // make the default game dispatcher
-            let defaultGameDispatcher = World.makeDefaultGameDispatcher ()
+            let defaultGameDispatcher =
+                World.makeDefaultGameDispatcher ()
 
             // make the job graph
             let jobGraph =
@@ -609,8 +618,8 @@ module WorldModule4 =
             let joltDebugRendererImGuiOpt = new JoltDebugRendererImGui ()
             let rendererProcess =
                 if Constants.Engine.RunSynchronously
-                then RendererInline () :> RendererProcess
-                else RendererThread () :> RendererProcess
+                then RendererInline windowProperties :> RendererProcess
+                else RendererThread windowProperties :> RendererProcess
             rendererProcess.Start imGui.Fonts (SdlDeps.getWindowOpt sdlDeps) geometryViewport windowViewport
             for package in initialPackages do
                 rendererProcess.EnqueueMessage2d (LoadRenderPackage2d package)
@@ -651,7 +660,7 @@ module WorldModule4 =
             | Right sdlDeps ->
                 use sdlDeps = sdlDeps // bind explicitly to dispose automatically
                 let world = World.make tryMakeEditContext sdlDeps worldConfig geometryViewport windowViewport plugin
-                if World.getWindowSize world <> windowSize then
+                if World.getWindowSizeOtherwiseViewportSize world <> windowSize then
                     World.processWindowResized world // synchronize window size with actual size, e.g. fullscreen for mobile or a display with size smaller than the configured DisplayScalar
                 World.runWithCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess (Some firstFrameCallback) world
             | Left error -> Log.error error; Constants.Engine.ExitCodeFailure

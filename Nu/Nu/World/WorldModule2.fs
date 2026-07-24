@@ -904,8 +904,8 @@ module WorldModule2 =
                 World.unregisterEntityPhysics entity world
 
         static member private synchronizeViewports world =
-            let windowSize = World.getWindowSize world
-            let windowViewport = Viewport.makeWindowViewed world.Eye2dViewed windowSize
+            let windowSize = World.getWindowSizeOtherwiseViewportSize world
+            let windowViewport = Viewport.makeWindow1 windowSize
             World.setWindowViewport windowViewport world
             World.setGeometryViewport (Viewport.makeGeometry windowViewport.Bounds.Size) world
 
@@ -1131,7 +1131,7 @@ module WorldModule2 =
 
             // snap window to nearest valid render size
             let oldWindowSize = world.WindowViewport.Outer.Size
-            let windowSize = World.getWindowSize world
+            let windowSize = World.getWindowSizeOtherwiseViewportSize world
             let virtualSize = Globals.Render.DisplayVirtualResolution
             let virtualSizeWithMargin = virtualSize.V2 * (v2Dup 1.0f + 2.0f * Constants.Engine.EyeMarginMaxScalar)
             let virtualSizeWithMargin = (v2 (ceil virtualSizeWithMargin.X) (ceil virtualSizeWithMargin.Y)).V2i
@@ -1155,12 +1155,12 @@ module WorldModule2 =
                 World.trySetWindowSize windowSize' world
 
                 // if the size we specified wasn't used (limited by full screen size), go to full screen
-                let windowSize = World.getWindowSize world
+                let windowSize = World.getWindowSizeOtherwiseViewportSize world
                 if windowSize <> windowSize' then
                     World.trySetWindowFullScreen true world
 
             // synchronize display virtual scalar
-            let windowSize'' = World.getWindowSize world
+            let windowSize'' = World.getWindowSizeOtherwiseViewportSize world
             let xScalar = windowSize''.X / Globals.Render.DisplayVirtualResolution.X
             let yScalar = windowSize''.Y / Globals.Render.DisplayVirtualResolution.Y
             Globals.Render.DisplayScalar <- min xScalar yScalar
@@ -1816,12 +1816,7 @@ module WorldModule2 =
                             let shadowNearDistance = Constants.Render.NearPlaneDistanceInterior
                             let shadowFarDistance = max shadowCutoff (shadowNearDistance * 2.0f)
                             let cullView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + shadowForward, shadowUp)
-                            let cullProjection =
-                                Matrix4x4.CreateOrthographic
-                                    (shadowFarDistance * +2.0f * inc Constants.Render.ShadowDirectionalMarginRatioCull,
-                                     shadowFarDistance * +2.0f * inc Constants.Render.ShadowDirectionalMarginRatioCull,
-                                     shadowFarDistance * -1.0f * inc Constants.Render.ShadowDirectionalMarginRatioCull,
-                                     shadowFarDistance * +1.0f * inc Constants.Render.ShadowDirectionalMarginRatioCull)
+                            let cullProjection = Matrix4x4.CreateOrthographic (shadowFarDistance * +2.0f, shadowFarDistance * +2.0f, shadowFarDistance * -1.0f, shadowFarDistance * +1.0f)
                             let cullFrustum = Frustum (cullView * cullProjection)
 
                             // render
@@ -1854,14 +1849,9 @@ module WorldModule2 =
 
                             // compute cull frustum
                             let cullView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + shadowForward, shadowUp)
-                            let cullProjection =
-                                Matrix4x4.CreateOrthographic
-                                    (shadowFarDistance * +2.0f * inc Constants.Render.ShadowCascadeMarginRatioCull,
-                                     shadowFarDistance * +2.0f * inc Constants.Render.ShadowCascadeMarginRatioCull,
-                                     shadowFarDistance * -1.0f * inc Constants.Render.ShadowCascadeMarginRatioCull,
-                                     shadowFarDistance * +1.0f * inc Constants.Render.ShadowCascadeMarginRatioCull)
+                            let cullProjection = Matrix4x4.CreateOrthographic (shadowFarDistance * +2.0f, shadowFarDistance * +2.0f,shadowFarDistance * -1.0f, shadowFarDistance * +1.0f)
                             let cullFrustum = Frustum (cullView * cullProjection)
-                            
+
                             // use a finally block to free cached values
                             try
 
@@ -1915,15 +1905,8 @@ module WorldModule2 =
                                         minZ <- min minZ cornerView.Z
                                         maxZ <- max maxZ cornerView.Z
 
-                                    // add margins to section along Z's
-                                    let depth = maxZ - minZ
-                                    let margin = depth * Constants.Render.ShadowCascadeMarginRatio
-                                    let margin = max margin Constants.Render.ShadowCascadeMarginSizeMin
-                                    let minZ' = minZ - margin
-                                    let maxZ' = maxZ + margin
-
                                     // compute ortho projection
-                                    let sectionProjectionOrtho = Matrix4x4.CreateOrthographicOffCenter (minX, maxX, minY, maxY, minZ', maxZ')
+                                    let sectionProjectionOrtho = Matrix4x4.CreateOrthographicOffCenter (minX, maxX, minY, maxY, minZ, maxZ)
 
                                     // render
                                     World.renderSimulantsInternal8
@@ -2143,6 +2126,12 @@ module WorldModule2 =
                                                                     World.clearEditDeferrals world
                                                                     world.Timers.ImGuiTimer.Stop ()
 
+                                                                    // compute window properties
+                                                                    let windowProperties =
+                                                                        match World.tryGetWindowProperties world with
+                                                                        | Some windowProperties -> windowProperties
+                                                                        | None -> WindowProperties.empty
+
                                                                     // process rendering (2/2)
                                                                     rendererProcess.SubmitMessages
                                                                         world.Eye3dFrustumInterior
@@ -2153,10 +2142,10 @@ module WorldModule2 =
                                                                         world.Eye3dFieldOfView
                                                                         world.Eye2dCenter
                                                                         world.Eye2dViewed
-                                                                        (World.getWindowSize world)
                                                                         world.GeometryViewport
                                                                         world.WindowViewport
                                                                         drawData
+                                                                        windowProperties
 
                                                                     // post-process imgui frame
                                                                     World.imGuiPostProcess world

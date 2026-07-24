@@ -292,6 +292,7 @@ type CharacterDispatcher () =
         | WoundState _ -> ()
 
         // declare animated model
+        let materialProperties = { MaterialProperties.empty with ScatterTypeOpt = ValueSome SkinScatter }
         let animations = computeTraversalAnimations entity world
         let (visible, animations) = tryComputeActionAnimation animations entity world
         World.doEntity<AnimatedModelDispatcher> Constants.Gameplay.CharacterAnimatedModelName
@@ -302,6 +303,7 @@ type CharacterDispatcher () =
              Entity.MountOpt .= None
              Entity.Visible @= visible
              Entity.Pickable .= false
+             Entity.MaterialProperties .= materialProperties
              Entity.Animations @= animations
              Entity.AnimatedModel .= Assets.Gameplay.JoanModel] world
         let animatedModel = world.DeclaredEntity

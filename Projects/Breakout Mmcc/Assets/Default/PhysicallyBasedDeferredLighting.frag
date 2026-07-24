@@ -77,7 +77,7 @@ layout(location = 0) out vec3 frag;
 
 float saturate(float v)
 {
-    return clamp(v, 0.0f, 1.0);
+    return clamp(v, 0.0, 1.0);
 }
 
 float linstep(float low, float high, float v)
@@ -262,7 +262,7 @@ float computeShadowScalarCascaded(vec4 position, float shadowCutoff, int shadowI
             float shadowZExp = exp(-lighting.lightShadowExponent * shadowZ);
             float shadowDepthExp = texture(sampler2DArray(shadowCascades[shadowIndex - SHADOW_TEXTURES_MAX], shadowSampler), vec3(shadowTexCoords, float(i))).y;
             float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
-            float densityScalar = 1.0f + float(i) * SHADOW_CASCADE_DENSITY_BONUS;
+            float densityScalar = 1.0 + float(i) * SHADOW_CASCADE_DENSITY_BONUS;
             shadowScalar = pow(shadowScalar, lighting.lightShadowDensity * densityScalar);
             return shadowScalar;
         }
@@ -540,7 +540,7 @@ void main()
             {
                 // shadow scalar
                 int shadowIndex = light.lightShadowIndices;
-                float shadowScalar = 1.0f;
+                float shadowScalar = 1.0;
                 if (shadowIndex >= 0)
                 {
                     switch (lightType)

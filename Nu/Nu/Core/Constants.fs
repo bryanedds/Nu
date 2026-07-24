@@ -44,7 +44,7 @@ module Assimp =
 module Vulkan =
 
     let [<Uniform>] FramesInFlight = 1 // NOTE: no use of multiple FiF - https://vsynchronicity.wordpress.com/2026/06/25/saying-no-to-multiple-frames-in-flight-in-nu-game-engine/
-    let [<Uniform>] MoltenVk = OperatingSystem.IsIOS () || match ConfigurationManager.AppSettings.["MoltenVk"] with null -> true | value -> scvalue value // NOTE: setting this to false uses KosmicKrisp on macOS, but FPS of Metrics project drops from 50 to 2
+    let [<Uniform>] MoltenVk = OperatingSystem.IsIOS () || match ConfigurationManager.AppSettings.["MoltenVk"] with null -> true | value -> scvalue value // NOTE: setting this to false uses KosmicKrisp on macOS, but FPS of Metrics project drops from 50 to 2.
     let [<Literal>] RenderCommandBufferCountDefault = 32
     let [<Literal>] DescriptorSetCountDefault = 32
     let [<Literal>] ShadowSurfaceInstanceThreshold = 1024
@@ -235,13 +235,9 @@ module Render =
     let [<Uniform>] mutable ShadowDisplayScalarMax = match ConfigurationManager.AppSettings["ShadowDisplayScalarMax"] with null -> 3 | value -> scvalue value
     let [<Literal>] ShadowTexturesMax = 12 // NOTE: remember to update SHADOW_TEXTURES_MAX in shaders when changing this!
     let [<Literal>] ShadowMapsMax = 12 // NOTE: remember to update SHADOW_MAPS_MAX in shaders when changing this!
-    let [<Uniform>] mutable ShadowDirectionalMarginRatioCull = match ConfigurationManager.AppSettings["ShadowDirectionalMarginRatioCull"] with null -> 0.5f | value -> scvalue value
     let [<Literal>] ShadowCascadesMax = 2 // NOTE: remember to update SHADOW_CASCADES_MAX in shaders when changing this!
     let [<Literal>] ShadowCascadeLevels = 3 // NOTE: remember to update SHADOW_CASCADE_LEVELS_SIZE in shaders when changing this!
     let [<Uniform>] mutable ShadowCascadeLimits = match ConfigurationManager.AppSettings["ShadowCascadeLimits"] with null -> [|0.2f; 0.6f; 1.0f|] | value -> scvalue value
-    let [<Uniform>] mutable ShadowCascadeMarginRatio = match ConfigurationManager.AppSettings["ShadowCascadeMarginRatio"] with null -> 0.1f | value -> scvalue value
-    let [<Uniform>] mutable ShadowCascadeMarginRatioCull = match ConfigurationManager.AppSettings["ShadowCascadeMarginRatioCull"] with null -> 0.5f | value -> scvalue value
-    let [<Uniform>] ShadowCascadeMarginSizeMin = 3.0f // NOTE: current CSM implementation seems to require this, perhaps due to it being currently hacky.
     let [<Literal>] ShadowFovMax = 2.1f // NOTE: remember to update SHADOW_FOV_MAX in shaders when changing this!
     let [<Literal>] ReflectionMapResolution = 1024
     let [<Literal>] IrradianceMapResolution = 32
@@ -254,10 +250,10 @@ module Render =
     let [<Literal>] LightAmbientBoostScalarDefault = 0.5f
     let [<Literal>] LightShadowingEnabledDefault = true
     let [<Literal>] LightShadowSamplesDefault = 3
-    let [<Literal>] LightShadowBiasDefault = 0.02f
+    let [<Literal>] LightShadowBiasDefault = 0.05f
     let [<Literal>] LightShadowSampleScalarDefault = 0.02f
     let [<Literal>] LightShadowExponentDefault = 40.0f
-    let [<Literal>] LightShadowRadiusDefault = 1.0f
+    let [<Literal>] LightShadowRadiusDefault = 1.25f
     let [<Literal>] LightShadowDensityDefault = 12.0f
     let [<Literal>] LightMapSingletonBlendMarginDefault = 0.1f // meters
     let [<Literal>] LightExposureDefault = 1.0f
@@ -478,7 +474,7 @@ module Effects =
 module Paths =
 
     let [<Literal>] LogFilePath = "Log.txt"
-    // TODO: DJL: review nomenclature for extensionless file paths.
+    // TODO: review nomenclature for extensionless file paths.
     let [<Literal>] ImGuiShaderFilePath = "Assets/Default/ImGui"
     let [<Literal>] SpriteShaderFilePath = "Assets/Default/Sprite"
     let [<Literal>] SpriteBatchShaderFilePath = "Assets/Default/SpriteBatch"

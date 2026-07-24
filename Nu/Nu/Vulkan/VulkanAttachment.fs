@@ -12,10 +12,7 @@ open Nu
 [<RequireQualifiedAccess>]
 module Attachment =
     
-    // NOTE: DJL: in the context of individual attachment textures, depth component attachments used for depth testing are named "z" to easily distinguish them
-    // from color component attachments using the name "depth". Otherwise color and depth component textures are just called "color" and "depth" attachments,
-    // as they are called when passed to Vulkan structures.
-
+    /// Create a color attachment.
     let createColorAttachment textureType optionalUsages internalFormat pixelFormat resolutionX resolutionY (context : VulkanContext) =
         let metadata = TextureMetadata.make resolutionX resolutionY
         let textureInternal =
@@ -237,7 +234,7 @@ module Attachment =
 
     /// Create composition attachments.
     let createCompositionAttachments resolutionX resolutionY context =
-        createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgb16f Rgb resolutionX resolutionY context
+        createColorAttachment Texture2d (VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferDst) Rgb16f Rgb resolutionX resolutionY context
 
     /// Update size of composition attachments.
     let updateCompositionAttachmentSize resolutionX resolutionY color context =
@@ -250,7 +247,7 @@ module Attachment =
 
     /// Create tone-mapping attachments.
     let createToneMappingAttachments resolutionX resolutionY context =
-        createColorAttachment Texture2d (VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferDst) Rgba16f Rgba resolutionX resolutionY context
+        createColorAttachment Texture2d (VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferSrc ||| VkImageUsageFlags.TransferDst) Rgba16f Rgba resolutionX resolutionY context
 
     /// Update size of tone-mapping attachments.
     let updateToneMappingAttachmentSize resolutionX resolutionY toneMapping context =

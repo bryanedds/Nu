@@ -102,9 +102,7 @@ module SpriteSingleton =
          context : VulkanContext) =
 
         // only draw if scissor (and therefore also viewport) is valid
-        let pixelDensity = Hl.getWindowPixelDensity context.Window
-        let renderAreaLogical = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)
-        let mutable renderArea = Hl.scaleRectForPixelDensity pixelDensity renderAreaLogical
+        let mutable renderArea = VkRect2D (viewport.Inner.Min.X, viewport.Outer.Max.Y - viewport.Inner.Max.Y, uint viewport.Inner.Size.X, uint viewport.Inner.Size.Y)
         let mutable vkViewport = Hl.makeViewport true renderArea
         let mutable scissor = renderArea
         match clipOpt with
@@ -117,13 +115,12 @@ module SpriteSingleton =
             let sizeNdc = sizeClip * single viewport.DisplayScalar
             let sizeScissor = sizeNdc * 0.5f * viewport.Inner.Size.V2
             let offset = v2i viewport.Inner.Min.X (viewport.Outer.Max.Y - viewport.Inner.Max.Y)
-            let scissorLogical =
+            scissor <-
                 VkRect2D
                     ((minScissor.X |> round |> int) + offset.X,
-                        (single renderAreaLogical.extent.height - minScissor.Y |> round |> int) + offset.Y,
+                        (single renderArea.extent.height - minScissor.Y |> round |> int) + offset.Y,
                         uint sizeScissor.X,
                         uint sizeScissor.Y)
-            scissor <- Hl.scaleRectForPixelDensity pixelDensity scissorLogical
             scissor <- Hl.clipRect renderArea scissor
         | ValueNone -> ()
         if Hl.validateRect scissor then
@@ -220,8 +217,8 @@ module SpriteSingleton =
                 // advance pipeline
                 Pipeline.advance pipeline
 
-                // intermittently intermittently advance rendering command buffer
+                // advance rendering command buffer
                 VulkanContext.advanceRenderCommandBuffer context
 
             // abort
-            | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
+            | None -> Log.warnOnce ("Cannot draw " + getTypeName pipeline + " because VkPipeline does not exist.")

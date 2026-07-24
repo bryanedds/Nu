@@ -73,9 +73,9 @@ module SkyBox =
         (cubeMap : Texture)
         (geometry : CubeMapGeometry)
         (sampler : Sampler)
-        (viewport : Viewport)
         (colorAttachment : Texture)
         (depthAttachment : Texture)
+        (resolution : Vector2i)
         (pipeline : SkyBoxPipeline)
         (context : VulkanContext) =
 
@@ -111,7 +111,7 @@ module SkyBox =
                 Pipeline.writeDescriptorSampler 0 0 sampler vkSet
 
             // set up render
-            let mutable renderArea = VkRect2D (0, 0, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
+            let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
             let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] (Some depthAttachment.ImageView) renderArea None
             DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
@@ -150,4 +150,4 @@ module SkyBox =
             VulkanContext.advanceRenderCommandBuffer context
 
         // abort
-        | None -> Log.warnOnce "Cannot draw because VkPipeline does not exist."
+        | None -> Log.warnOnce ("Cannot draw " + getTypeName pipeline + " because VkPipeline does not exist.")

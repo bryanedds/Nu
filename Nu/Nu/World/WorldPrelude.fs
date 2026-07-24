@@ -654,6 +654,13 @@ module internal AmbientState =
         | Some window -> Some (SDL3.SDL_GetWindowFlags window)
         | _ -> None
 
+    let internal tryGetWindowPixelDensity state =
+        match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
+        | Some window ->
+            let pixelDensity = SDL3.SDL_GetWindowPixelDensity window
+            if pixelDensity = 0.0f then Some 1.0f else Some pixelDensity
+        | _ -> None
+
     let internal tryGetWindowMinimized state =
         Option.map (fun flags -> flags &&& SDL_WindowFlags.SDL_WINDOW_MINIMIZED <> LanguagePrimitives.EnumOfValue 0UL) (tryGetWindowFlags state)
 
@@ -664,7 +671,7 @@ module internal AmbientState =
         match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
         | Some window ->            
             let mutable width, height = 0, 0
-            SDL3.SDL_GetWindowSize (window, &&width, &&height) |> ignore
+            SDL3.SDL_GetWindowSizeInPixels (window, &&width, &&height) |> ignore
             let displayMode = SdlDeps.getDisplayModeInternal window
             Some (width = displayMode.w || height = displayMode.h)
         | _ -> None
@@ -682,28 +689,37 @@ module internal AmbientState =
     let internal tryGetWindowPosition state =
         match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
         | Some window ->
-            let mutable x, y = 0, 0
-            SDL3.SDL_GetWindowPosition (window, &&x, &&y) |> ignore<SDLBool>
-            Some (v2i x y)
+            let pixelDensity = SDL3.SDL_GetWindowPixelDensity window
+            let mutable (x, y) = (0, 0) in SDL3.SDL_GetWindowPosition (window, &&x, &&y) |> ignore<SDLBool>
+            Some (v2i (int (single x * pixelDensity)) (int (single y * pixelDensity)))
         | _ -> None
 
     let internal trySetWindowPosition (position : Vector2i) state =
         match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
-        | Some window -> SDL3.SDL_SetWindowPosition (window, position.X, position.Y) |> ignore<SDLBool>
+        | Some window ->
+            let pixelDensity = SDL3.SDL_GetWindowPixelDensity window
+            SDL3.SDL_SetWindowPosition (window, int (single position.X * pixelDensity), int (single position.Y * pixelDensity)) |> ignore<SDLBool>
         | None -> ()
 
     let internal tryGetWindowSize state =
         match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
         | Some window ->
             let mutable width, height = 0, 0
-            SDL3.SDL_GetWindowSize (window, &&width, &&height) |> ignore<SDLBool>
+            SDL3.SDL_GetWindowSizeInPixels (window, &&width, &&height) |> ignore<SDLBool>
             Some (v2i width height)
         | _ -> None
 
     let internal trySetWindowSize (size : Vector2i) state =
         match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
-        | Some window -> SDL3.SDL_SetWindowSize (window, size.X, size.Y) |> ignore
+        | Some window ->
+            let pixelDensity = SDL3.SDL_GetWindowPixelDensity window
+            SDL3.SDL_SetWindowSize (window, int (single size.X / pixelDensity), int (single size.Y / pixelDensity)) |> ignore
         | None -> ()
+
+    let internal tryGetWindowProperties state =
+        match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
+        | Some window -> Some (WindowProperties.make window)
+        | _ -> None
 
     let internal getSymbolicsBy by state =
         by state.Symbolics
