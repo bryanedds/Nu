@@ -15,7 +15,7 @@ open Vortice.Vulkan
 open Nu
 
 /// A blend setting for a Vulkan pipeline.
-/// TODO: P1: review naming.
+/// NOTE: this type's name is prefixed with "Vulkan" in order to reliably disambiguate it from Nu.Blend.
 type VulkanBlend =
     | VulkanUnblended
     | VulkanTransparent

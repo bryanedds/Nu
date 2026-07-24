@@ -1186,7 +1186,7 @@ type [<ReferenceEquality>] VulkanContext =
                   TransientFence_ = transientFence
                   TextureFence_ = textureFence }
 
-            // fin
+            // success
             Some vulkanContext
 
         // failure

@@ -162,6 +162,7 @@ type BufferWrapper =
 /// buffer with advance. Automatically resizes when usage exceeds its capacity and creates additional buffers when
 /// the cursor moves beyond current capacity. This type is intended for transient or frequently updated GPU data
 /// such as storage data, uniform data, and streaming data.
+/// NOTE: this type's name is prefixed with "Vulkan" in order to reliably disambiguate it from System.Buffer.
 type VulkanBuffer =
     private
         { mutable BufferWrappersCursor_ : int
