@@ -164,10 +164,10 @@ module SdlDeps =
         | Some window ->
 
             // get a snapshot of whether screen was full
-            let mutable width, height = 0, 0
-            SDL3.SDL_GetWindowSizeInPixels (window, &&width, &&height) |> ignore<SDLBool>
+            let mutable (windowWidth, windowHeight) = (0, 0)
+            SDL3.SDL_GetWindowSizeInPixels (window, &&windowWidth, &&windowHeight) |> ignore<SDLBool>
             let displayMode = getDisplayModeInternal window
-            let wasFullScreen = width = displayMode.w || height = displayMode.h
+            let wasFullScreen = windowWidth = displayMode.w || windowHeight = displayMode.h
 
             // change full screen status via flags
             SDL3.SDL_SetWindowFullscreen (window, fullScreen) |> ignore<SDLBool>
