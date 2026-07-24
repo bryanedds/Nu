@@ -1023,10 +1023,7 @@ type [<ReferenceEquality>] VulkanContext =
             VulkanContext.beginRenderCommandBuffer context
 
             // make swapchain image is ready to be rendered to
-            let pixelDensity = Hl.getWindowPixelDensity ()
-            let renderArea =
-                VkRect2D (0, 0, uint windowViewport.Bounds.Size.X, uint windowViewport.Bounds.Size.Y)
-                |> Hl.scaleRectForPixelDensity pixelDensity
+            let renderArea = VkRect2D (0, 0, uint windowViewport.Bounds.Size.X, uint windowViewport.Bounds.Size.Y)
             let clearColor = VkClearValue (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
             let mutable renderingInfo = Hl.makeRenderingInfo [|context.SwapchainImageView|] None renderArea (Some clearColor)
             Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color Undefined ColorAttachmentWrite context.SwapchainImage context.RenderCommandBuffer

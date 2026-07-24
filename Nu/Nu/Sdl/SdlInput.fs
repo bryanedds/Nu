@@ -140,8 +140,8 @@ module internal MouseState =
         // update scroll state
         MouseScrollStatePrevious <- MouseScrollStateCurrent
 
-    /// Get the position of the mouse.
-    let internal getPosition () =
+    /// Get the position of the mouse in SDL terms (IE, not accounting for pixel density).
+    let internal getPositionSdl () =
         let mutable x, y = 0.0f, 0.0f
         SDL3.SDL_GetMouseState (&&x, &&y) |> ignore<SDL_MouseButtonFlags>
         v2 x y

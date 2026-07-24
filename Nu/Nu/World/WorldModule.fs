@@ -464,6 +464,10 @@ module WorldModule =
         static member tryGetWindowFlags (world : World) =
             AmbientState.tryGetWindowFlags world.AmbientState
 
+        /// Attempt to get the window pixel density.
+        static member tryGetWindowPixelDensity (world : World) =
+            AmbientState.tryGetWindowPixelDensity world.AmbientState
+
         /// Attempt to check that the window is minimized.
         static member tryGetWindowMinimized (world : World) =
             AmbientState.tryGetWindowMinimized world.AmbientState

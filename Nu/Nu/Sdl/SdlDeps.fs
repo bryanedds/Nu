@@ -165,7 +165,7 @@ module SdlDeps =
 
             // get a snapshot of whether screen was full
             let mutable width, height = 0, 0
-            SDL3.SDL_GetWindowSize (window, &&width, &&height) |> ignore<SDLBool>
+            SDL3.SDL_GetWindowSizeInPixels (window, &&width, &&height) |> ignore<SDLBool>
             let displayMode = getDisplayModeInternal window
             let wasFullScreen = width = displayMode.w || height = displayMode.h
 
@@ -174,10 +174,11 @@ module SdlDeps =
 
             // when changing from full screen, set window to windowed size and make sure its title bar is visible
             if wasFullScreen && not fullScreen then
-                let windowSizeWindowed = Constants.Render.DisplayVirtualResolution * 2
+                let pixelDensity = SDL3.SDL_GetWindowPixelDensity window
+                let sizeWindowed = Constants.Render.DisplayVirtualResolution * 2
                 SDL3.SDL_RestoreWindow window |> ignore<SDLBool>
-                SDL3.SDL_SetWindowSize (window, windowSizeWindowed.X, windowSizeWindowed.Y) |> ignore<SDLBool>
-                SDL3.SDL_SetWindowPosition (window, 100, 100) |> ignore<SDLBool>
+                SDL3.SDL_SetWindowSize (window, int (single sizeWindowed.X / pixelDensity), int (single sizeWindowed.Y / pixelDensity)) |> ignore
+                SDL3.SDL_SetWindowPosition (window, 100, 100) |> ignore<SDLBool> // NOTE: pretty arbitrary numbers here...
 
         | None -> ()
         sdlDeps
