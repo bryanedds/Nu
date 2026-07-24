@@ -13,20 +13,19 @@ open Prime
 type [<Struct>] WindowProperties =
     { WindowFlags : SDL_WindowFlags
       WindowProperties : SDL_PropertiesID
-      WindowWidth : int
-      WindowHeight : int }
+      WindowWidthInPixels : int
+      WindowHeightInPixels : int }
 
     /// Make a cacheable window properties record.
     static member make window =
         let mutable windowFlags = SDL3.SDL_GetWindowFlags window
         let mutable windowProperties = SDL3.SDL_GetWindowProperties window
-        let mutable windowPixelDensity = SDL3.SDL_GetWindowPixelDensity window
         let mutable (windowWidth, windowHeight) = (0, 0)
         SDL3.SDL_GetWindowSizeInPixels (window, &&windowWidth, &&windowHeight) |> ignore<SDLBool>
         { WindowFlags = windowFlags
           WindowProperties = windowProperties
-          WindowWidth = int (single windowWidth * windowPixelDensity)
-          WindowHeight = int (single windowHeight * windowPixelDensity) }
+          WindowWidthInPixels = windowWidth
+          WindowHeightInPixels = windowHeight }
 
     /// The empty window properties.
     static member val empty =

@@ -784,8 +784,8 @@ module Hl =
         else
 
             // get pixel resolution from sdl
-            let mutable width = WindowProperties.WindowWidth
-            let mutable height = WindowProperties.WindowHeight
+            let mutable width = WindowProperties.WindowWidthInPixels
+            let mutable height = WindowProperties.WindowHeightInPixels
 
             // clamp resolution to size limits
             width <- max width (int capabilities.minImageExtent.width)
