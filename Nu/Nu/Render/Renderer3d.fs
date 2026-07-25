@@ -4539,7 +4539,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             geometryViewport renderer.PhysicallyBasedAttachments renderer.VulkanContext
 
         // delete textures as requested on previous frame
-        TextureDumpster.sweep renderer.TextureDumpster renderer.VulkanContext
+        TextureDumpster.dump renderer.TextureDumpster renderer.VulkanContext
 
         // reload render assets when requested on previous frame
         if renderer.ReloadAssetsRequested then

@@ -39,7 +39,8 @@ type [<ReferenceEquality>] ConcurrentCommandQueue =
 
     /// Wait for Queue to finish execution.
     static member waitIdle queue =
-        ConcurrentCommandQueue.withLock queue (fun vkQueue -> DeviceApi.vkQueueWaitIdle vkQueue |> Hl.check)
+        ConcurrentCommandQueue.withLock queue (fun vkQueue ->
+            DeviceApi.vkQueueWaitIdle vkQueue |> Hl.check)
 
     /// Transiently run and then free the given command buffer. Command pool and finish fence must NOT be shared
     /// between threads!
@@ -323,7 +324,7 @@ type SwapchainWrapper =
     /// Destroy a SwapchainWrapper.
     static member destroy renderQueue presentQueue swapchainWrapper =
         
-        // NOTE: this is not sufficient to ensure resources not still in use, that requires an extension!!!
+        // NOTE: this is not sufficient to ensure resources are not still in use; that requires a Vulkan extension!!!
         // https://docs.vulkan.org/guide/latest/swapchain_semaphore_reuse.html#_vk_ext_swapchain_maintenance1_extension
         ConcurrentCommandQueue.waitIdle renderQueue
         ConcurrentCommandQueue.waitIdle presentQueue
@@ -370,7 +371,7 @@ type Swapchain =
         | Some capabilities -> swapchain.SwapExtent <> Hl.getSwapExtent capabilities
         | None -> true
 
-    static member private clear renderQueue presentQueue swapchain =
+    static member private destroySwapchainWrappers renderQueue presentQueue swapchain =
         for i in 0 .. dec swapchain.SwapchainWrapperOpts_.Length do
             match swapchain.SwapchainWrapperOpts_[i] with
             | Some swapchainWrapper ->
@@ -379,7 +380,8 @@ type Swapchain =
             | None -> ()
     
     static member private destroySurface renderQueue presentQueue swapchain =
-        Swapchain.clear renderQueue presentQueue swapchain // must do this first
+        Log.info "Destroying Vulkan swapchains..."
+        Swapchain.destroySwapchainWrappers renderQueue presentQueue swapchain
         Hl.destroyVulkanSurface ()
     
     static member private tryCreateSurfaceAndSwapchainWrapper physicalDevice renderQueue presentQueue swapchain instance =
@@ -507,7 +509,7 @@ type Swapchain =
     
     /// Destroy a Swapchain.
     static member destroy swapchain device =
-        Swapchain.clear swapchain device
+        Swapchain.destroySwapchainWrappers swapchain device
 
 /// Exposes the vulkan handles that must be globally accessible within the renderer.
 /// TODO: P1: group fields / properties by role rather than type.

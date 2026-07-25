@@ -696,6 +696,7 @@ module Hl =
             // destroy surface and then inform the backgrounding callback that the required teardown of presentation is
             // complete so no action is required if another backgrounding event is triggered prior to recreation; this
             // must correspond exactly with SurfaceDestroyed, which is used by Swapchain
+            Log.info "Destroying Vulkan surface..."
             InstanceApi.vkDestroySurfaceKHR (Surface, nullPtr)
             SurfaceState <- SurfaceDestroyed
             setPresentationTeardownComplete ()
@@ -872,15 +873,15 @@ module Hl =
         | None -> Log.fail "Failed to find suitable memory type!"
 
     /// Record command to copy buffer to image.
-    let recordBufferToImageCopy commandBuffer width height mipLevel layer vkBuffer vkImage =
+    let recordCopyBufferToImage commandBuffer width height mipLevel layer vkBuffer vkImage =
         recordTransitionLayout false mipLevel layer 1 VkImageAspectFlags.Color Undefined TransferDst vkImage commandBuffer
         let mutable region = VkBufferImageCopy ()
         region.imageSubresource <- makeSubresourceLayers mipLevel layer VkImageAspectFlags.Color
         region.imageExtent <- VkExtent3D (width, height, 1)
         DeviceApi.vkCmdCopyBufferToImage
             (commandBuffer, vkBuffer, vkImage,
-                TransferDst.VkImageLayout,
-                1u, &&region)
+             TransferDst.VkImageLayout,
+             1u, &&region)
         recordTransitionLayout false mipLevel layer 1 VkImageAspectFlags.Color TransferDst ColorAttachmentRead vkImage commandBuffer
 
     /// Record commands to generate mipmaps.

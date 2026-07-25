@@ -163,7 +163,8 @@ and DescriptorSet<'k when 'k : equality> =
             | (true, vkDescriptorSet) -> vkDescriptorSet
 
         member this.Destroy () =
-            for pool in this.VkDescriptorPools_ do DeviceApi.vkDestroyDescriptorPool (pool, nullPtr)
+            for pool in this.VkDescriptorPools_ do
+                DeviceApi.vkDestroyDescriptorPool (pool, nullPtr)
 
 and DescriptorSetDefinition =
     interface
@@ -187,8 +188,7 @@ type PushConstant =
 /// An abstraction of a rendering pipeline.
 type Pipeline =
     private
-        { mutable VkPipelines_ : Map<VulkanBlend * bool, VkPipeline> // TODO: P0: make sure no allocation happens on look-up.
-          Buffers_ : VulkanBuffer array
+        { Buffers_ : VulkanBuffer array
           DescriptorSets_ : DescriptorSet array
           VkPipelineLayout_ : VkPipelineLayout
           VkDescriptorSetLayouts_ : VkDescriptorSetLayout array
@@ -198,6 +198,7 @@ type Pipeline =
           VkVertexAttributes_ : VkVertexInputAttributeDescription array
           VkColorAttachmentFormats_ : VkFormat array
           VkDepthTestFormatOpt_ : VkFormat option
+          mutable VkPipelines_ : Dictionary<VulkanBlend * bool, VkPipeline> // TODO: P0: make sure no allocation happens on look-up.
           mutable DrawIndex_ : int }
 
     /// The pipeline layout.
@@ -375,8 +376,7 @@ type Pipeline =
             DeviceApi.vkDestroyShaderModule (fragModule, nullPtr)
             
             // pack vulkan pipelines with settings
-            let vkPipelinesPacked = Array.zip pipelineSettings vkPipelines |> Map.ofArray
-            vkPipelinesPacked
+            Array.zip pipelineSettings vkPipelines
         
         // abort
         | (vertModuleResult, fragModuleResult) ->
@@ -387,15 +387,32 @@ type Pipeline =
             | Right fragModule -> DeviceApi.vkDestroyShaderModule (fragModule, nullPtr)
             | Left msg -> Log.warn msg
             Log.warn "VkPipeline creation aborted."
-            Map.empty
+            [||]
 
-    /// Destroy the given VkPipelines.
+    /// Create the VkPipelines for use by the given pipelin.
+    static member private createVkPipelines pipeline =
+        let vkPipelines =
+            Pipeline.tryCreateVkPipelines
+                pipeline.ShaderPath_
+                pipeline.PipelineSettings_
+                pipeline.VkVertexBindings_
+                pipeline.VkVertexAttributes_
+                pipeline.VkPipelineLayout_
+                pipeline.VkColorAttachmentFormats_
+                pipeline.VkDepthTestFormatOpt_
+        for (config, vkPipeline) in vkPipelines do
+            pipeline.VkPipelines_.Add (config, vkPipeline)
+
+    /// Destroy the VkPipelines used by the given pipelin.
     static member private destroyVkPipelines pipeline =
-        Map.iter (fun _ vkPipeline -> DeviceApi.vkDestroyPipeline (vkPipeline, nullPtr)) pipeline.VkPipelines_
+        for vkPipeline in pipeline.VkPipelines_.Values do
+            DeviceApi.vkDestroyPipeline (vkPipeline, nullPtr)
+        pipeline.VkPipelines_.Clear ()
+            
 
     /// Try to get the VkPipeline built for the given settings.
     static member tryGetVkPipeline blend cullFace pipeline =
-        Map.tryFind (blend, cullFace) pipeline.VkPipelines_
+        Dictionary.tryFind (blend, cullFace) pipeline.VkPipelines_
 
     ///
     static member writeDescriptorUniformBuffer (binding : int) (descriptorIndex : int) (buffer : VulkanBuffer) vkDescriptorSet =
@@ -587,15 +604,7 @@ type Pipeline =
     static member reloadShaders pipeline (context : VulkanContext) =
         ConcurrentCommandQueue.waitIdle context.RenderQueue // VkPipeline may still be in use by previous frame
         Pipeline.destroyVkPipelines pipeline
-        pipeline.VkPipelines_ <-
-            Pipeline.tryCreateVkPipelines
-                pipeline.ShaderPath_
-                pipeline.PipelineSettings_
-                pipeline.VkVertexBindings_
-                pipeline.VkVertexAttributes_
-                pipeline.VkPipelineLayout_
-                pipeline.VkColorAttachmentFormats_
-                pipeline.VkDepthTestFormatOpt_
+        Pipeline.createVkPipelines pipeline
 
     /// Create a Pipeline.
     static member create<'k when 'k : equality>
@@ -641,8 +650,7 @@ type Pipeline =
 
         // make Pipeline
         let pipeline =
-            { VkPipelines_ = vkPipelines
-              Buffers_ = buffers
+            { Buffers_ = buffers
               DescriptorSets_ = descriptorSets
               VkPipelineLayout_ = vkPipelineLayout
               VkDescriptorSetLayouts_ = descriptorSetLayouts
@@ -652,6 +660,7 @@ type Pipeline =
               VkVertexAttributes_ = vertexAttributes
               VkColorAttachmentFormats_ = colorAttachmentFormats
               VkDepthTestFormatOpt_ = depthTestFormatOpt
+              VkPipelines_ = dictPlus HashIdentity.Structural vkPipelines
               DrawIndex_ = 0 }
 
         // fin
