@@ -3217,7 +3217,9 @@ module GamePropertyDescriptor =
     /// Get whether the described property is editable.
     let getEditable propertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
-        not (Reflection.isPropertyNonPersistentByName propertyName)
+        not (Reflection.isPropertyNonPersistentByName propertyName) &&
+        not (propertyName.StartsWith "Eye2d") &&
+        not (propertyName.StartsWith "Eye3d")
 
     /// Get the value of the described property for the game.
     let getValue propertyDescriptor (game : Game) world : obj =
