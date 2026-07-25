@@ -752,6 +752,9 @@ type [<ReferenceEquality>] VulkanContext =
         let isPreferable physicalDevice =
             physicalDevice.Properties.deviceType = VkPhysicalDeviceType.DiscreteGpu
 
+        // log device selection process
+        Log.info "Selecting Vulkan Device..."
+
         // get available physical devices
         let mutable deviceCount = 0u
         InstanceApi.vkEnumeratePhysicalDevices &deviceCount |> Hl.check
@@ -770,9 +773,8 @@ type [<ReferenceEquality>] VulkanContext =
         let candidatesFiltered = List.filter isCompatible candidates
         let (fstChoice, sndChoice) = List.partition isPreferable candidatesFiltered
         let candidatesFilteredAndOrdered = List.append fstChoice sndChoice
-            
-        // attempt to selected a preferable compatible device
-        Log.info "Selecting Vulkan Device..."
+
+        // attempt to select the most preferable compatible device
         let physicalDeviceOpt =
 
             // return the first along with its data
