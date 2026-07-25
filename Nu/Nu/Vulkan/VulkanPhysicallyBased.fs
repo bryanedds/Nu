@@ -99,11 +99,11 @@ type Lighting3 =
 
 [<Struct; StructLayout (LayoutKind.Explicit)>]
 type LightMap' =
-    [<FieldOffset(0)>] val mutable lightMapOrigins : Vector3
-    [<FieldOffset(16)>] val mutable lightMapMins : Vector3
-    [<FieldOffset(32)>] val mutable lightMapSizes : Vector3
-    [<FieldOffset(48)>] val mutable lightMapAmbientColors : Vector3
-    [<FieldOffset(60)>] val mutable lightMapAmbientBrightnesses : single
+    [<FieldOffset(0)>] val mutable origin : Vector3
+    [<FieldOffset(16)>] val mutable min : Vector3
+    [<FieldOffset(32)>] val mutable size : Vector3
+    [<FieldOffset(48)>] val mutable ambientColor : Vector3
+    [<FieldOffset(60)>] val mutable ambientBrightness : single
 
 [<Struct; StructLayout (LayoutKind.Explicit)>]
 type LightsGeneral =
@@ -113,18 +113,18 @@ type LightsGeneral =
 
 [<Struct; StructLayout (LayoutKind.Explicit)>]
 type Light =
-    [<FieldOffset(0)>] val mutable lightOrigins : Vector3
-    [<FieldOffset(16)>] val mutable lightDirections : Vector3
-    [<FieldOffset(32)>] val mutable lightColors : Vector3
-    [<FieldOffset(44)>] val mutable lightBrightnesses : single
-    [<FieldOffset(48)>] val mutable lightAttenuationLinears : single
-    [<FieldOffset(52)>] val mutable lightAttenuationQuadratics : single
-    [<FieldOffset(56)>] val mutable lightCutoffs : single
-    [<FieldOffset(60)>] val mutable lightTypes : int
-    [<FieldOffset(64)>] val mutable lightConeInners : single
-    [<FieldOffset(68)>] val mutable lightConeOuters : single
-    [<FieldOffset(72)>] val mutable lightDesireFogs : int
-    [<FieldOffset(76)>] val mutable lightShadowIndices : int
+    [<FieldOffset(0)>] val mutable origin : Vector3
+    [<FieldOffset(16)>] val mutable direction : Vector3
+    [<FieldOffset(32)>] val mutable color : Vector3
+    [<FieldOffset(44)>] val mutable brightness : single
+    [<FieldOffset(48)>] val mutable attenuationLinear : single
+    [<FieldOffset(52)>] val mutable attenuationQuadratic : single
+    [<FieldOffset(56)>] val mutable cutoff : single
+    [<FieldOffset(60)>] val mutable lightType : int
+    [<FieldOffset(64)>] val mutable coneInner : single
+    [<FieldOffset(68)>] val mutable coneOuter : single
+    [<FieldOffset(72)>] val mutable desireFog : int
+    [<FieldOffset(76)>] val mutable shadowIndex : int
 
 [<Struct; StructLayout (LayoutKind.Explicit)>]
 type Ssao =
@@ -2487,18 +2487,18 @@ module PhysicallyBased =
                 use lightPtr = fixed &light
                 for i in 0 .. dec Constants.Render.LightsMaxDeferred do
                     if i < lightOrigins.Length then
-                        light.lightOrigins <- lightOrigins[i]
-                        light.lightDirections <- lightDirections[i]
-                        light.lightColors <- lightColors[i].V3
-                        light.lightBrightnesses <- lightBrightnesses[i]
-                        light.lightAttenuationLinears <- lightAttenuationLinears[i]
-                        light.lightAttenuationQuadratics <- lightAttenuationQuadratics[i]
-                        light.lightCutoffs <- lightCutoffs[i]
-                        light.lightTypes <- lightTypes[i]
-                        light.lightConeInners <- lightConeInners[i]
-                        light.lightConeOuters <- lightConeOuters[i]
-                        light.lightDesireFogs <- lightDesireFogs[i]
-                        light.lightShadowIndices <- lightShadowIndices[i]
+                        light.origin <- lightOrigins[i]
+                        light.direction <- lightDirections[i]
+                        light.color <- lightColors[i].V3
+                        light.brightness <- lightBrightnesses[i]
+                        light.attenuationLinear <- lightAttenuationLinears[i]
+                        light.attenuationQuadratic <- lightAttenuationQuadratics[i]
+                        light.cutoff <- lightCutoffs[i]
+                        light.lightType <- lightTypes[i]
+                        light.coneInner <- lightConeInners[i]
+                        light.coneOuter <- lightConeOuters[i]
+                        light.desireFog <- lightDesireFogs[i]
+                        light.shadowIndex <- lightShadowIndices[i]
                     else light <- Unchecked.defaultof<_>
                     VulkanBuffer.writeSubdata (i * sizeof<Light>) 0 sizeof<Light> 1 (NativePtr.toNativeInt lightPtr) pipeline.LightUniform context
                 VulkanBuffer.flushSubdata 0 0 sizeof<Light> Constants.Render.LightsMaxDeferred pipeline.LightUniform context
@@ -2698,18 +2698,18 @@ module PhysicallyBased =
                 use lightPtr = fixed &light
                 for i in 0 .. dec Constants.Render.LightsMaxDeferred do
                     if i < lightOrigins.Length then
-                        light.lightOrigins <- lightOrigins[i]
-                        light.lightDirections <- lightDirections[i]
-                        light.lightColors <- lightColors[i].V3
-                        light.lightBrightnesses <- lightBrightnesses[i]
-                        light.lightAttenuationLinears <- lightAttenuationLinears[i]
-                        light.lightAttenuationQuadratics <- lightAttenuationQuadratics[i]
-                        light.lightCutoffs <- lightCutoffs[i]
-                        light.lightTypes <- lightTypes[i]
-                        light.lightConeInners <- lightConeInners[i]
-                        light.lightConeOuters <- lightConeOuters[i]
-                        light.lightDesireFogs <- lightDesireFogs[i]
-                        light.lightShadowIndices <- lightShadowIndices[i]
+                        light.origin <- lightOrigins[i]
+                        light.direction <- lightDirections[i]
+                        light.color <- lightColors[i].V3
+                        light.brightness <- lightBrightnesses[i]
+                        light.attenuationLinear <- lightAttenuationLinears[i]
+                        light.attenuationQuadratic <- lightAttenuationQuadratics[i]
+                        light.cutoff <- lightCutoffs[i]
+                        light.lightType <- lightTypes[i]
+                        light.coneInner <- lightConeInners[i]
+                        light.coneOuter <- lightConeOuters[i]
+                        light.desireFog <- lightDesireFogs[i]
+                        light.shadowIndex <- lightShadowIndices[i]
                     else light <- Unchecked.defaultof<_>
                     VulkanBuffer.writeSubdata (i * sizeof<Light>) 0 sizeof<Light> 1 (NativePtr.toNativeInt lightPtr) pipeline.LightsUniform context
                 VulkanBuffer.flushSubdata 0 0 sizeof<Light> Constants.Render.LightsMaxDeferred pipeline.LightsUniform context
@@ -2859,11 +2859,11 @@ module PhysicallyBased =
                 use lightMapPtr = fixed &lightMap
                 for i in 0 .. dec Constants.Render.LightMapsMaxDeferred do
                     if i < lightMapOrigins.Length then
-                        lightMap.lightMapOrigins <- lightMapOrigins[i]
-                        lightMap.lightMapMins <- lightMapMins[i]
-                        lightMap.lightMapSizes <- lightMapSizes[i]
-                        lightMap.lightMapAmbientColors <- lightMapAmbientColors[i].V3
-                        lightMap.lightMapAmbientBrightnesses <- lightMapAmbientBrightnesses[i]
+                        lightMap.origin <- lightMapOrigins[i]
+                        lightMap.min <- lightMapMins[i]
+                        lightMap.size <- lightMapSizes[i]
+                        lightMap.ambientColor <- lightMapAmbientColors[i].V3
+                        lightMap.ambientBrightness <- lightMapAmbientBrightnesses[i]
                     else lightMap <- Unchecked.defaultof<_>
                     VulkanBuffer.writeSubdata (i * sizeof<LightMap'>) 0 sizeof<LightMap'> 1 (NativePtr.toNativeInt lightMapPtr) pipeline.LightMapsUniform context
                 VulkanBuffer.flushSubdata 0 0 sizeof<LightMap'> Constants.Render.LightMapsMaxDeferred pipeline.LightMapsUniform context
@@ -3004,8 +3004,8 @@ module PhysicallyBased =
 
                 // specify light map
                 let mutable lightMap = LightMap' ()
-                lightMap.lightMapAmbientColors <- lightMapAmbientColor.V3
-                lightMap.lightMapAmbientBrightnesses <- lightMapAmbientBrightness
+                lightMap.ambientColor <- lightMapAmbientColor.V3
+                lightMap.ambientBrightness <- lightMapAmbientBrightness
                 VulkanBuffer.uploadValue lightMap pipeline.LightMapUniform context
                 Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.LightMapUniform vkSet
 
@@ -3013,8 +3013,8 @@ module PhysicallyBased =
                 use lightMapPtr = fixed &lightMap
                 for i in 0 .. dec Constants.Render.LightMapsMaxDeferred do
                     if i < lightMapAmbientColors.Length then
-                        lightMap.lightMapAmbientColors <- lightMapAmbientColors[i].V3
-                        lightMap.lightMapAmbientBrightnesses <- lightMapAmbientBrightnesses[i]
+                        lightMap.ambientColor <- lightMapAmbientColors[i].V3
+                        lightMap.ambientBrightness <- lightMapAmbientBrightnesses[i]
                     else lightMap <- Unchecked.defaultof<_>
                     VulkanBuffer.writeSubdata (i * sizeof<LightMap'>) 0 sizeof<LightMap'> 1 (NativePtr.toNativeInt lightMapPtr) pipeline.LightMapsUniform context
                 VulkanBuffer.flushSubdata 0 0 sizeof<LightMap'> Constants.Render.LightMapsMaxDeferred pipeline.LightMapsUniform context
@@ -3287,11 +3287,11 @@ module PhysicallyBased =
                 use lightMapPtr = fixed &lightMap
                 for i in 0 .. dec Constants.Render.LightMapsMaxDeferred do
                     if i < lightMapOrigins.Length then
-                        lightMap.lightMapOrigins <- lightMapOrigins[i]
-                        lightMap.lightMapMins <- lightMapMins[i]
-                        lightMap.lightMapSizes <- lightMapSizes[i]
-                        lightMap.lightMapAmbientColors <- lightMapAmbientColors[i].V3
-                        lightMap.lightMapAmbientBrightnesses <- lightMapAmbientBrightnesses[i]
+                        lightMap.origin <- lightMapOrigins[i]
+                        lightMap.min <- lightMapMins[i]
+                        lightMap.size <- lightMapSizes[i]
+                        lightMap.ambientColor <- lightMapAmbientColors[i].V3
+                        lightMap.ambientBrightness <- lightMapAmbientBrightnesses[i]
                     else lightMap <- Unchecked.defaultof<_>
                     VulkanBuffer.writeSubdata (i * sizeof<LightMap'>) 0 sizeof<LightMap'> 1 (NativePtr.toNativeInt lightMapPtr) pipeline.LightMapsUniform context
                 VulkanBuffer.flushSubdata 0 0 sizeof<LightMap'> Constants.Render.LightMapsMaxDeferred pipeline.LightMapsUniform context
@@ -4018,11 +4018,11 @@ module PhysicallyBased =
                 use lightMapPtr = fixed &lightMap
                 for i in 0 .. dec Constants.Render.LightMapsMaxForward do
                     if i < lightMapOrigins.Length then
-                        lightMap.lightMapOrigins <- lightMapOrigins[i]
-                        lightMap.lightMapMins <- lightMapMins[i]
-                        lightMap.lightMapSizes <- lightMapSizes[i]
-                        lightMap.lightMapAmbientColors <- lightMapAmbientColors[i].V3
-                        lightMap.lightMapAmbientBrightnesses <- lightMapAmbientBrightnesses[i]
+                        lightMap.origin <- lightMapOrigins[i]
+                        lightMap.min <- lightMapMins[i]
+                        lightMap.size <- lightMapSizes[i]
+                        lightMap.ambientColor <- lightMapAmbientColors[i].V3
+                        lightMap.ambientBrightness <- lightMapAmbientBrightnesses[i]
                     else lightMap <- Unchecked.defaultof<_>
                     VulkanBuffer.writeSubdata (i * sizeof<LightMap'>) 0 sizeof<LightMap'> 1 (NativePtr.toNativeInt lightMapPtr) pipeline.LightMapUniform context
                 VulkanBuffer.flushSubdata 0 0 sizeof<LightMap'> Constants.Render.LightMapsMaxForward pipeline.LightMapUniform context
@@ -4041,18 +4041,18 @@ module PhysicallyBased =
                 use lightPtr = fixed &light
                 for i in 0 .. dec Constants.Render.LightsMaxForward do
                     if i < lightOrigins.Length then
-                        light.lightOrigins <- lightOrigins[i]
-                        light.lightDirections <- lightDirections[i]
-                        light.lightColors <- lightColors[i].V3
-                        light.lightBrightnesses <- lightBrightnesses[i]
-                        light.lightAttenuationLinears <- lightAttenuationLinears[i]
-                        light.lightAttenuationQuadratics <- lightAttenuationQuadratics[i]
-                        light.lightCutoffs <- lightCutoffs[i]
-                        light.lightTypes <- lightTypes[i]
-                        light.lightConeInners <- lightConeInners[i]
-                        light.lightConeOuters <- lightConeOuters[i]
-                        light.lightDesireFogs <- lightDesireFogs[i]
-                        light.lightShadowIndices <- lightShadowIndices[i]
+                        light.origin <- lightOrigins[i]
+                        light.direction <- lightDirections[i]
+                        light.color <- lightColors[i].V3
+                        light.brightness <- lightBrightnesses[i]
+                        light.attenuationLinear <- lightAttenuationLinears[i]
+                        light.attenuationQuadratic <- lightAttenuationQuadratics[i]
+                        light.cutoff <- lightCutoffs[i]
+                        light.lightType <- lightTypes[i]
+                        light.coneInner <- lightConeInners[i]
+                        light.coneOuter <- lightConeOuters[i]
+                        light.desireFog <- lightDesireFogs[i]
+                        light.shadowIndex <- lightShadowIndices[i]
                     else light <- Unchecked.defaultof<_>
                     VulkanBuffer.writeSubdata (i * sizeof<Light>) 0 sizeof<Light> 1 (NativePtr.toNativeInt lightPtr) pipeline.LightUniform context
                 VulkanBuffer.flushSubdata 0 0 sizeof<Light> Constants.Render.LightsMaxForward pipeline.LightUniform context

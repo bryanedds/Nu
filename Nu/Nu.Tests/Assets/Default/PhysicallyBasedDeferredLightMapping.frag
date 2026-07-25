@@ -16,11 +16,11 @@ struct Eye
 
 struct LightMap
 {
-    vec3 lightMapOrigins;
-    vec3 lightMapMins;
-    vec3 lightMapSizes;
-    vec3 lightMapAmbientColors;
-    float lightMapAmbientBrightnesses;
+    vec3 lightMapOrigin;
+    vec3 lightMapMin;
+    vec3 lightMapSize;
+    vec3 lightMapAmbientColor;
+    float lightMapAmbientBrightness;
 };
 
 struct LightsGeneral
@@ -122,9 +122,10 @@ void main()
     {
         for (int i = 0; i < lightsGeneral.lightMapsCount; ++i)
         {
-            if (inBounds(position.xyz, lightMaps[i].lightMapMins, lightMaps[i].lightMapSizes))
+            LightMap lightMap = lightMaps[i];
+            if (inBounds(position.xyz, lightMap.lightMapMin, lightMap.lightMapSize))
             {
-                vec3 delta = lightMaps[i].lightMapOrigins - position.xyz;
+                vec3 delta = lightMap.lightMapOrigin - position.xyz;
                 float distanceSquared = dot(delta, delta);
                 if (distanceSquared < lm1DistanceSquared)
                 {
@@ -146,17 +147,17 @@ void main()
     float ratio = 0.0;
     if (lm1 != -1 && lm2 == -1)
     {
-        vec3 min1 = lightMaps[lm1].lightMapMins;
-        vec3 size1 = lightMaps[lm1].lightMapSizes;
+        vec3 min1 = lightMaps[lm1].lightMapMin;
+        vec3 size1 = lightMaps[lm1].lightMapSize;
         float distance = distanceToOutside(position.xyz, min1, size1);
         ratio = 1.0 - smoothstep(0.0, lightsGeneral.lightMapSingletonBlendMargin, distance);
     }
     else if (lm1 != -1 && lm2 != -1)
     {
-        vec3 min1 = lightMaps[lm1].lightMapMins;
-        vec3 size1 = lightMaps[lm1].lightMapSizes;
-        vec3 min2 = lightMaps[lm2].lightMapMins;
-        vec3 size2 = lightMaps[lm2].lightMapSizes;
+        vec3 min1 = lightMaps[lm1].lightMapMin;
+        vec3 size1 = lightMaps[lm1].lightMapSize;
+        vec3 min2 = lightMaps[lm2].lightMapMin;
+        vec3 size2 = lightMaps[lm2].lightMapSize;
         if (contains(min1, size1, min2, size2))
         {
             lm2 = -1;
