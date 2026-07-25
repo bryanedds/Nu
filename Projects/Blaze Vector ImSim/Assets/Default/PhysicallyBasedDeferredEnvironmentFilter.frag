@@ -16,11 +16,11 @@ struct Eye
 
 struct LightMap
 {
-    vec3 lightMapOrigins;
-    vec3 lightMapMins;
-    vec3 lightMapSizes;
-    vec3 lightMapAmbientColors;
-    float lightMapAmbientBrightnesses;
+    vec3 origin;
+    vec3 min;
+    vec3 size;
+    vec3 ambientColor;
+    float ambientBrightness;
 };
 
 layout(set = 0, binding = 0) uniform EyeBlock { Eye eye; };
@@ -65,16 +65,16 @@ vec4 depthToPosition(float depth, vec2 texCoords)
     return eye.viewInverse * positionView;
 }
 
-vec3 parallaxCorrection(vec3 lightMapOrigin, vec3 lightMapMin, vec3 lightMapSize, vec3 positionWorld, vec3 normalWorld)
+vec3 parallaxCorrection(LightMap lightMap, vec3 positionWorld, vec3 normalWorld)
 {
     vec3 directionWorld = positionWorld - eye.center;
     vec3 reflectionWorld = reflect(directionWorld, normalWorld);
-    vec3 firstPlaneIntersect = (lightMapMin + lightMapSize - positionWorld) / reflectionWorld;
-    vec3 secondPlaneIntersect = (lightMapMin - positionWorld) / reflectionWorld;
+    vec3 firstPlaneIntersect = (lightMap.min + lightMap.size - positionWorld) / reflectionWorld;
+    vec3 secondPlaneIntersect = (lightMap.min - positionWorld) / reflectionWorld;
     vec3 furthestPlane = max(firstPlaneIntersect, secondPlaneIntersect);
     float distance = min(min(furthestPlane.x, furthestPlane.y), furthestPlane.z);
     vec3 intersectPositionWorld = positionWorld + reflectionWorld * distance;
-    return intersectPositionWorld - lightMapOrigin;
+    return intersectPositionWorld - lightMap.origin;
 }
 
 vec3 computeEnvironmentFilter(vec4 position, vec3 normal, float roughness, vec4 lmData)
@@ -95,7 +95,7 @@ vec3 computeEnvironmentFilter(vec4 position, vec3 normal, float roughness, vec4 
     else if (lm2 == -1)
     {
         // compute blended environment filter
-        vec3 r1 = parallaxCorrection(lightMaps[lm1].lightMapOrigins, lightMaps[lm1].lightMapMins, lightMaps[lm1].lightMapSizes, position.xyz, normal);
+        vec3 r1 = parallaxCorrection(lightMaps[lm1], position.xyz, normal);
         vec3 r2 = reflect(-v, normal);
         vec3 environmentFilter1 = textureLod(samplerCube(environmentFilterMaps[lm1], environmentFilterSampler), r1, roughness * REFLECTION_LOD_MAX).rgb;
         vec3 environmentFilter2 = textureLod(samplerCube(environmentFilterMap, environmentFilterSampler), r2, roughness * REFLECTION_LOD_MAX).rgb;
@@ -104,8 +104,8 @@ vec3 computeEnvironmentFilter(vec4 position, vec3 normal, float roughness, vec4 
     else
     {
         // compute blended environment filter
-        vec3 r1 = parallaxCorrection(lightMaps[lm1].lightMapOrigins, lightMaps[lm1].lightMapMins, lightMaps[lm1].lightMapSizes, position.xyz, normal);
-        vec3 r2 = parallaxCorrection(lightMaps[lm2].lightMapOrigins, lightMaps[lm2].lightMapMins, lightMaps[lm2].lightMapSizes, position.xyz, normal);
+        vec3 r1 = parallaxCorrection(lightMaps[lm1], position.xyz, normal);
+        vec3 r2 = parallaxCorrection(lightMaps[lm2], position.xyz, normal);
         vec3 environmentFilter1 = textureLod(samplerCube(environmentFilterMaps[lm1], environmentFilterSampler), r1, roughness * REFLECTION_LOD_MAX).rgb;
         vec3 environmentFilter2 = textureLod(samplerCube(environmentFilterMaps[lm2], environmentFilterSampler), r2, roughness * REFLECTION_LOD_MAX).rgb;
         environmentFilter = mix(environmentFilter1, environmentFilter2, lmRatio);

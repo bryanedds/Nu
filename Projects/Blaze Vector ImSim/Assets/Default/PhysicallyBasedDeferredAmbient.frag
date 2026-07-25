@@ -14,15 +14,15 @@ struct Eye
 
 struct LightMap
 {
-    vec3 lightMapOrigins;
-    vec3 lightMapMins;
-    vec3 lightMapSizes;
-    vec3 lightMapAmbientColors;
-    float lightMapAmbientBrightnesses;
+    vec3 origin;
+    vec3 min;
+    vec3 size;
+    vec3 ambientColor;
+    float ambientBrightness;
 };
 
 layout(set = 0, binding = 0) uniform EyeBlock { Eye eye; };
-layout(set = 0, binding = 1) uniform LightMapBlock { LightMap lightMap; };
+layout(set = 0, binding = 1) uniform LightMapBlock { LightMap lightMapFallback; };
 layout(set = 0, binding = 2) uniform LightMapsBlock { LightMap lightMaps[LIGHT_MAPS_MAX]; };
 layout(set = 0, binding = 3) uniform texture2D depthTexture;
 layout(set = 0, binding = 4) uniform texture2D lightMappingTexture;
@@ -61,26 +61,26 @@ void main()
     float ambientBrightness = 0.0;
     if (lm1 == -1 && lm2 == -1)
     {
-        ambientColor = lightMap.lightMapAmbientColors;
-        ambientBrightness = lightMap.lightMapAmbientBrightnesses;
+        ambientColor = lightMapFallback.ambientColor;
+        ambientBrightness = lightMapFallback.ambientBrightness;
     }
     else if (lm2 == -1)
     {
         // compute blended irradiance
-        vec3 ambientColor1 = lightMaps[lm1].lightMapAmbientColors;
-        vec3 ambientColor2 = lightMap.lightMapAmbientColors;
-        float ambientBrightness1 = lightMaps[lm1].lightMapAmbientBrightnesses;
-        float ambientBrightness2 = lightMap.lightMapAmbientBrightnesses;
+        vec3 ambientColor1 = lightMaps[lm1].ambientColor;
+        vec3 ambientColor2 = lightMapFallback.ambientColor;
+        float ambientBrightness1 = lightMaps[lm1].ambientBrightness;
+        float ambientBrightness2 = lightMapFallback.ambientBrightness;
         ambientColor = mix(ambientColor1, ambientColor2, lmRatio);
         ambientBrightness = mix(ambientBrightness1, ambientBrightness2, lmRatio);
     }
     else
     {
         // compute blended irradiance
-        vec3 ambientColor1 = lightMaps[lm1].lightMapAmbientColors;
-        vec3 ambientColor2 = lightMaps[lm2].lightMapAmbientColors;
-        float ambientBrightness1 = lightMaps[lm1].lightMapAmbientBrightnesses;
-        float ambientBrightness2 = lightMaps[lm2].lightMapAmbientBrightnesses;
+        vec3 ambientColor1 = lightMaps[lm1].ambientColor;
+        vec3 ambientColor2 = lightMaps[lm2].ambientColor;
+        float ambientBrightness1 = lightMaps[lm1].ambientBrightness;
+        float ambientBrightness2 = lightMaps[lm2].ambientBrightness;
         ambientColor = mix(ambientColor1, ambientColor2, lmRatio);
         ambientBrightness = mix(ambientBrightness1, ambientBrightness2, lmRatio);
     }

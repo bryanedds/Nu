@@ -39,18 +39,18 @@ struct Lighting2
 
 struct Light
 {
-    vec3 lightOrigins;
-    vec3 lightDirections;
-    vec3 lightColors;
-    float lightBrightnesses;
-    float lightAttenuationLinears;
-    float lightAttenuationQuadratics;
-    float lightCutoffs;
-    int lightTypes;
-    float lightConeInners;
-    float lightConeOuters;
-    int lightDesireFogs;
-    int lightShadowIndices;
+    vec3 origin;
+    vec3 direction;
+    vec3 color;
+    float brightness;
+    float attenuationLinear;
+    float attenuationQuadratic;
+    float cutoff;
+    int lightType;
+    float coneInner;
+    float coneOuter;
+    int desireFog;
+    int shadowIndex;
 };
 
 layout(set = 0, binding = 0) uniform EyeBlock { Eye eye; };
@@ -270,11 +270,10 @@ float computeShadowScalarCascaded(vec4 position, float shadowCutoff, int shadowI
     return 1.0;
 }
 
-float geometryTravelPoint(vec4 position, int lightIndex, int shadowIndex)
+float geometryTravelPoint(vec4 position, Light light, int shadowIndex)
 {
     // compute travel average in world space
-    vec3 lightOrigin = lights[lightIndex].lightOrigins;
-    vec3 positionShadow = position.xyz - lightOrigin;
+    vec3 positionShadow = position.xyz - light.origin;
     float shadowZ = length(positionShadow);
     float travel = 0.0;
     for (int i = -1; i <= 1; i += 2)
@@ -293,7 +292,7 @@ float geometryTravelPoint(vec4 position, int lightIndex, int shadowIndex)
     return travel / 8.0;
 }
 
-float geometryTravelSpot(vec4 position, int lightIndex, int shadowIndex)
+float geometryTravelSpot(vec4 position, Light light, int shadowIndex)
 {
     // attempt to compute travel average in view space
     mat4 shadowMatrix = shadowMatrices[shadowIndex];
@@ -304,7 +303,7 @@ float geometryTravelSpot(vec4 position, int lightIndex, int shadowIndex)
         shadowTexCoordsProj.z >= 0.0 && shadowTexCoordsProj.z < 1.0)
     {
         // compute z position in view space
-        float shadowFar = lights[lightIndex].lightCutoffs;
+        float shadowFar = light.cutoff;
         float shadowZ = worldToDepthView(lighting.shadowNear, shadowFar, shadowMatrix, position);
 
         // compute light distance travel through surface (not accounting for incidental surface concavity)
@@ -329,7 +328,7 @@ float geometryTravelSpot(vec4 position, int lightIndex, int shadowIndex)
     return 1.0;
 }
 
-float geometryTravelDirectional(vec4 position, int lightIndex, int shadowIndex)
+float geometryTravelDirectional(vec4 position, Light light, int shadowIndex)
 {
     // attempt to compute travel average in view space
     mat4 shadowMatrix = shadowMatrices[shadowIndex];
@@ -346,7 +345,7 @@ float geometryTravelDirectional(vec4 position, int lightIndex, int shadowIndex)
         vec2 shadowTexelSize = 1.0 / shadowTextureSize;
         float shadowDepthScreen = texture(sampler2DArray(shadowTextures, shadowSampler), vec3(shadowTexCoords, float(shadowIndex))).x; // linear, screen space
         float delta = shadowZScreen - shadowDepthScreen;
-        float shadowFar = lights[lightIndex].lightCutoffs;
+        float shadowFar = light.cutoff;
         return max(0.0, delta * shadowFar);
     }
 
@@ -354,7 +353,7 @@ float geometryTravelDirectional(vec4 position, int lightIndex, int shadowIndex)
     return 1.0;
 }
 
-float geometryTravelCascaded(vec4 position, int lightIndex, int shadowIndex)
+float geometryTravelCascaded(vec4 position, Light light, int shadowIndex)
 {
     for (int i = 0; i < SHADOW_CASCADE_LEVELS; ++i)
     {
@@ -373,7 +372,7 @@ float geometryTravelCascaded(vec4 position, int lightIndex, int shadowIndex)
             vec2 shadowTexelSize = 1.0 / shadowTextureSize;
             float shadowDepthScreen = texture(sampler2DArray(shadowCascades[shadowIndex - SHADOW_TEXTURES_MAX], shadowSampler), vec3(shadowTexCoords, float(i))).x; // linear, screen space
             float delta = shadowZScreen - shadowDepthScreen;
-            float shadowFar = lights[lightIndex].lightCutoffs;
+            float shadowFar = light.cutoff;
             return max(0.0, delta * shadowFar);
         }
     }
@@ -382,30 +381,26 @@ float geometryTravelCascaded(vec4 position, int lightIndex, int shadowIndex)
     return 1.0;
 }
 
-vec3 computeSubsurfaceScatter(vec4 position, vec3 albedo, vec4 subdermalPlus, vec4 scatterPlus, float nDotL, vec2 texCoords, int lightIndex)
+vec3 computeSubsurfaceScatter(vec4 position, vec3 albedo, vec4 subdermalPlus, vec4 scatterPlus, float nDotL, vec2 texCoords, Light light)
 {
-    // retrieve light and shadow values
-    Light light = lights[lightIndex];
-    int lightType = light.lightTypes;
-    int shadowIndex = light.lightShadowIndices;
-
     // compute geometry travel distance through material, defaulting to 1.0 when no shadow present for this light index
+    int shadowIndex = light.shadowIndex;
     float travel = 1.0;
     if (shadowIndex >= 0)
     {
-        switch (lightType)
+        switch (light.lightType)
         {
         case 0: // point light
-            travel = geometryTravelPoint(position, lightIndex, shadowIndex);
+            travel = geometryTravelPoint(position, light, shadowIndex);
             break;
         case 1: // spot light
-            travel = geometryTravelSpot(position, lightIndex, shadowIndex);
+            travel = geometryTravelSpot(position, light, shadowIndex);
             break;
         case 2: // directional light
-            travel = geometryTravelDirectional(position, lightIndex, shadowIndex);
+            travel = geometryTravelDirectional(position, light, shadowIndex);
             break;
         default: // cascaded light
-            travel = geometryTravelCascaded(position, lightIndex, shadowIndex);
+            travel = geometryTravelCascaded(position, light, shadowIndex);
             break;
         }
     }
@@ -500,55 +495,52 @@ void main()
         {
             // compute per-light radiance
             Light light = lights[i];
-            vec3 lightOrigin = light.lightOrigins;
-            float lightCutoff = light.lightCutoffs;
-            int lightType = light.lightTypes;
-            bool lightPoint = lightType == 0;
-            bool lightSpot = lightType == 1;
+            bool lightPoint = light.lightType == 0;
+            bool lightSpot = light.lightType == 1;
             float hDotV, intensity;
             vec3 l, h, radiance;
             if (lightPoint || lightSpot)
             {
-                vec3 d = lightOrigin - position.xyz;
+                vec3 d = light.origin - position.xyz;
                 l = normalize(d);
                 h = normalize(v + l);
                 hDotV = saturate(dot(h,  v));
                 float distanceSquared = dot(d, d);
                 float distance = sqrt(distanceSquared);
-                float cutoffScalar = 1.0 - smoothstep(lightCutoff * (1.0 - lighting.lightCutoffMargin), lightCutoff, distance);
-                float attenuation = 1.0 / (ATTENUATION_CONSTANT + light.lightAttenuationLinears * distance + light.lightAttenuationQuadratics * distanceSquared);
-                float angle = acos(dot(l, -light.lightDirections));
-                float halfConeInner = light.lightConeInners * 0.5;
-                float halfConeOuter = light.lightConeOuters * 0.5;
+                float cutoffScalar = 1.0 - smoothstep(light.cutoff * (1.0 - lighting.lightCutoffMargin), light.cutoff, distance);
+                float attenuation = 1.0 / (ATTENUATION_CONSTANT + light.attenuationLinear * distance + light.attenuationQuadratic * distanceSquared);
+                float angle = acos(dot(l, -light.direction));
+                float halfConeInner = light.coneInner * 0.5;
+                float halfConeOuter = light.coneOuter * 0.5;
                 float halfConeDelta = halfConeOuter - halfConeInner;
                 float halfConeBetween = angle - halfConeInner;
                 float halfConeScalar = clamp(1.0 - halfConeBetween / halfConeDelta, 0.0, 1.0);
                 intensity = attenuation * halfConeScalar * cutoffScalar;
-                radiance = light.lightColors * light.lightBrightnesses * intensity;
+                radiance = light.color * light.brightness * intensity;
             }
             else
             {
-                l = -light.lightDirections;
+                l = -light.direction;
                 h = normalize(v + l);
                 hDotV = saturate(dot(h, v));
                 intensity = 1.0;
-                radiance = light.lightColors * light.lightBrightnesses;
+                radiance = light.color * light.brightness;
             }
 
             // accumulate light
             if (intensity > 0.0)
             {
                 // shadow scalar
-                int shadowIndex = light.lightShadowIndices;
+                int shadowIndex = light.shadowIndex;
                 float shadowScalar = 1.0;
                 if (shadowIndex >= 0)
                 {
-                    switch (lightType)
+                    switch (light.lightType)
                     {
-                        case 0: { shadowScalar = computeShadowScalarPoint(position, lightOrigin, shadowIndex); break; } // point
-                        case 1: { shadowScalar = computeShadowScalarSpot(position, light.lightConeOuters, shadowIndex); break; } // spot
+                        case 0: { shadowScalar = computeShadowScalarPoint(position, light.origin, shadowIndex); break; } // point
+                        case 1: { shadowScalar = computeShadowScalarSpot(position, light.coneOuter, shadowIndex); break; } // spot
                         case 2: { shadowScalar = computeShadowScalarDirectional(position, shadowIndex); break; } // directional
-                        default: { shadowScalar = computeShadowScalarCascaded(position, lightCutoff, shadowIndex); break; } // cascaded
+                        default: { shadowScalar = computeShadowScalarCascaded(position, light.cutoff, shadowIndex); break; } // cascaded
                     }
                 }
 
@@ -604,7 +596,7 @@ void main()
                 float scatterType = scatterPlus.a;
                 if (lighting.sssEnabled == 1 && scatterType != 0.0)
                 {
-                    vec3 scatter = computeSubsurfaceScatter(position, albedo, subdermalPlus, scatterPlus, nDotL, texCoordsOut, i);
+                    vec3 scatter = computeSubsurfaceScatter(position, albedo, subdermalPlus, scatterPlus, nDotL, texCoordsOut, light);
                     lightAccum += kD * scatter * radiance;
                 }
             }
