@@ -69,6 +69,18 @@ module SdlEvents =
         while (SDL3.SDL_PollEvent &&polledEvent : bool) do
             PolledEvents.Enqueue polledEvent
 
+    /// Check whether the pending batch contains a window resize-related event.
+    let containsWindowResize () =
+        PolledEvents
+        |> Seq.exists (fun evt ->
+            match evt.Type with
+            | SDL_EventType.SDL_EVENT_WINDOW_RESIZED
+            | SDL_EventType.SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED
+            | SDL_EventType.SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED
+            | SDL_EventType.SDL_EVENT_WINDOW_ENTER_FULLSCREEN
+            | SDL_EventType.SDL_EVENT_WINDOW_LEAVE_FULLSCREEN -> true
+            | _ -> false)
+
     /// Attempt to consume an SDL event. Usually only the engine should call this, but there might be cases where the
     /// user needs to utilize it to cancel a long-running process or something.
     let tryConsume (event : SDL_Event outref) =
