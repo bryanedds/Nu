@@ -2970,8 +2970,8 @@ module PhysicallyBased =
         (eyeCenter : Vector3)
         (view : Matrix4x4)
         (projectionUnflipped : Matrix4x4)
-        (lightMapAmbientColor : Color)
-        (lightMapAmbientBrightness : single)
+        (lightMapFallbackAmbientColor : Color)
+        (lightMapFallbackAmbientBrightness : single)
         (lightMapAmbientColors : Color array)
         (lightMapAmbientBrightnesses : single array)
         (depthTexture : Texture)
@@ -3002,10 +3002,10 @@ module PhysicallyBased =
                 VulkanBuffer.uploadValue eye pipeline.EyeUniform context
                 Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.EyeUniform vkSet
 
-                // specify light map
+                // specify fallback light map
                 let mutable lightMap = LightMap' ()
-                lightMap.ambientColor <- lightMapAmbientColor.V3
-                lightMap.ambientBrightness <- lightMapAmbientBrightness
+                lightMap.ambientColor <- lightMapFallbackAmbientColor.V3
+                lightMap.ambientBrightness <- lightMapFallbackAmbientBrightness
                 VulkanBuffer.uploadValue lightMap pipeline.LightMapUniform context
                 Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.LightMapUniform vkSet
 
