@@ -17,6 +17,27 @@ open Prime
 open Nu
 
 [<Struct; StructLayout (LayoutKind.Explicit)>]
+type GaussianEsmStruct =
+    [<FieldOffset(0)>] val mutable scale : Vector2
+    [<FieldOffset(8)>] val mutable radius : single
+
+[<Struct; StructLayout (LayoutKind.Explicit)>]
+type ToneMappingStruct =
+    [<FieldOffset(0)>] val mutable lightExposure : single
+    [<FieldOffset(4)>] val mutable toneMapType : int
+    [<FieldOffset(16)>] val mutable toneMapSlope : Vector3
+    [<FieldOffset(32)>] val mutable toneMapOffset : Vector3
+    [<FieldOffset(48)>] val mutable toneMapPower : Vector3
+    [<FieldOffset(60)>] val mutable toneMapSaturation : single
+    [<FieldOffset(64)>] val mutable toneMapWhitePoint : single
+
+[<Struct; StructLayout (LayoutKind.Explicit)>]
+type FxaaStruct =
+    [<FieldOffset(0)>] val mutable spanMax : single
+    [<FieldOffset(4)>] val mutable reduceMinDivisor : single
+    [<FieldOffset(8)>] val mutable reduceMulDivisor : single
+
+[<Struct; StructLayout (LayoutKind.Explicit)>]
 type ShadowVertStruct =
     [<FieldOffset(0)>] val mutable viewProjection : Matrix4x4
 
@@ -24,6 +45,15 @@ type ShadowVertStruct =
 type ShadowFragStruct =
     [<FieldOffset(0)>] val mutable eyeCenter : Vector3
     [<FieldOffset(12)>] val mutable lightShadowExponent : single
+
+[<Struct; StructLayout (LayoutKind.Explicit)>]
+type TerrainFragStruct =
+    [<FieldOffset(0)>] val mutable layersCount : int
+    [<FieldOffset(4)>] val mutable lightShadowSamples : int
+    [<FieldOffset(8)>] val mutable lightShadowBias : single
+    [<FieldOffset(12)>] val mutable lightShadowSampleScalar : single
+    [<FieldOffset(16)>] val mutable lightShadowExponent : single
+    [<FieldOffset(20)>] val mutable lightShadowDensity : single
 
 [<Struct; StructLayout (LayoutKind.Explicit)>]
 type LightingStruct =
@@ -88,15 +118,6 @@ type Lighting2Struct =
     [<FieldOffset(32)>] val mutable shadowNear : single
 
 [<Struct; StructLayout (LayoutKind.Explicit)>]
-type TerrainFragStruct =
-    [<FieldOffset(0)>] val mutable layersCount : int
-    [<FieldOffset(4)>] val mutable lightShadowSamples : int
-    [<FieldOffset(8)>] val mutable lightShadowBias : single
-    [<FieldOffset(12)>] val mutable lightShadowSampleScalar : single
-    [<FieldOffset(16)>] val mutable lightShadowExponent : single
-    [<FieldOffset(20)>] val mutable lightShadowDensity : single
-
-[<Struct; StructLayout (LayoutKind.Explicit)>]
 type LightMapStruct =
     [<FieldOffset(0)>] val mutable origin : Vector3
     [<FieldOffset(16)>] val mutable min : Vector3
@@ -134,30 +155,17 @@ type SsaoStruct =
     [<FieldOffset(20)>] val mutable distanceMax : single
     [<FieldOffset(24)>] val mutable sampleCount : int
 
-[<Struct; StructLayout (LayoutKind.Explicit)>]
-type GaussianEsmStruct =
-    [<FieldOffset(0)>] val mutable scale : Vector2
-    [<FieldOffset(8)>] val mutable radius : single
-
-[<Struct; StructLayout (LayoutKind.Explicit)>]
-type ToneMappingStruct =
-    [<FieldOffset(0)>] val mutable lightExposure : single
-    [<FieldOffset(4)>] val mutable toneMapType : int
-    [<FieldOffset(16)>] val mutable toneMapSlope : Vector3
-    [<FieldOffset(32)>] val mutable toneMapOffset : Vector3
-    [<FieldOffset(48)>] val mutable toneMapPower : Vector3
-    [<FieldOffset(60)>] val mutable toneMapSaturation : single
-    [<FieldOffset(64)>] val mutable toneMapWhitePoint : single
-
-[<Struct; StructLayout (LayoutKind.Explicit)>]
-type FxaaStruct =
-    [<FieldOffset(0)>] val mutable spanMax : single
-    [<FieldOffset(4)>] val mutable reduceMinDivisor : single
-    [<FieldOffset(8)>] val mutable reduceMulDivisor : single
-
 /// A set of physically-based attachments that support a given viewport.
 type PhysicallyBasedAttachments =
-    { ShadowTextureArrayAttachments : Texture * Texture
+    { GaussianEsmAttachment : Texture
+      GaussianEsmArrayAttachment : Texture
+      ColorFull0Attachment : Texture
+      ColorFull1Attachment : Texture
+      ColorHalf0Attachment : Texture
+      ColorHalf1Attachment : Texture
+      ToneMappingAttachment : Texture
+      GammaCorrectionAttachment : Texture
+      ShadowTextureArrayAttachments : Texture * Texture
       ShadowMapAttachmentsArray : (Texture * Texture) array
       ShadowCascadeArrayAttachmentsArray : (Texture * Texture) array
       GeometryAttachments : Texture * Texture * Texture * Texture * Texture * Texture * Texture * Texture
@@ -170,15 +178,7 @@ type PhysicallyBasedAttachments =
       SsaoUnfilteredAttachment : Texture
       SsaoFilteredAttachment : Texture
       ColoringAttachments : Texture * Texture
-      CompositionAttachment : Texture
-      GaussianEsmAttachment : Texture
-      GaussianEsmArrayAttachment : Texture
-      ColorFull0Attachment : Texture
-      ColorFull1Attachment : Texture
-      ColorHalf0Attachment : Texture
-      ColorHalf1Attachment : Texture
-      ToneMappingAttachment : Texture
-      GammaCorrectionAttachment : Texture }
+      CompositionAttachment : Texture }
 
 /// Describes the configurable properties of a physically-based material.
 type PhysicallyBasedMaterialProperties =
