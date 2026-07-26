@@ -12,20 +12,23 @@ open Prime
 /// The window properties that can only be queried from SDL via the main thread.
 type [<Struct>] WindowProperties =
     { WindowFlags : SDL_WindowFlags
-      WindowProperties : SDL_PropertiesID
-      WindowWidthInPixels : int
-      WindowHeightInPixels : int }
+      PropertiesHandle : SDL_PropertiesID
+      WidthPixels : int
+      HeightPixels : int
+      PixelDensity : single }
 
     /// Make a cacheable window properties record.
     static member make window =
-        let mutable windowFlags = SDL3.SDL_GetWindowFlags window
-        let mutable windowProperties = SDL3.SDL_GetWindowProperties window
-        let mutable (windowWidth, windowHeight) = (0, 0)
-        SDL3.SDL_GetWindowSizeInPixels (window, &&windowWidth, &&windowHeight) |> ignore<SDLBool>
+        let windowFlags = SDL3.SDL_GetWindowFlags window
+        let propertiesHandle = SDL3.SDL_GetWindowProperties window
+        let mutable (widthPixels, heightPixels) = (0, 0)
+        SDL3.SDL_GetWindowSizeInPixels (window, &&widthPixels, &&heightPixels) |> ignore<SDLBool>
+        let pixelDensity = SDL3.SDL_GetWindowPixelDensity window
         { WindowFlags = windowFlags
-          WindowProperties = windowProperties
-          WindowWidthInPixels = windowWidth
-          WindowHeightInPixels = windowHeight }
+          PropertiesHandle = propertiesHandle
+          WidthPixels = widthPixels
+          HeightPixels = heightPixels
+          PixelDensity = pixelDensity }
 
     /// The empty window properties.
     static member val empty =
