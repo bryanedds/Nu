@@ -724,9 +724,9 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
             physicsEngine.Bodies.Add (bodyId, innerBodyID)
 
             // validate contact with group, category, and mask
-            character.add_OnCharacterContactValidate (fun character character2 _ ->
+            character.add_OnCharacterContactValidate (fun character characterContact ->
                 let characterID = character.ID
-                let character2ID = character2.ID
+                let character2ID = characterContact.CharacterIDB
                 lock physicsEngine.CharacterContactLock $ fun () ->
                     // TODO: P1: optimize collision group, mask, and categories check with in-place body user data.
                     match physicsEngine.CharacterUserData.TryGetValue characterID with
@@ -745,9 +745,11 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
                     | (false, _) -> Bool8.True)
 
             // create character contact add events
-            character.add_OnCharacterContactAdded (fun character character2 subShape2ID contactPosition contactNormal _ ->
-                let contactPosition = contactPosition
-                let contactNormal = contactNormal
+            character.add_OnCharacterContactAdded (fun character characterContact _ ->
+                let character2ID = characterContact.CharacterIDB
+                let contactPosition = characterContact.Position
+                let contactNormal = characterContact.ContactNormal
+                let subShape2ID = characterContact.SubShapeIDB
                 lock physicsEngine.CharacterContactLock $ fun () ->
 
                     // track character collision normals
@@ -756,7 +758,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
                     | (false, _) -> physicsEngine.CharacterCollisions[character] <- dictPlus HashIdentity.Structural [(subShape2ID, contactNormal)]
                             
                     // create character contact add event
-                    let character2Identifier = ValueLeft character2.ID
+                    let character2Identifier = ValueLeft character2ID
                     let contactPosition = v3 (single contactPosition.X) (single contactPosition.Y) (single contactPosition.Z)
                     physicsEngine.CharacterContactEvents.Add (CharacterContactAdded (character, character2Identifier, subShape2ID, contactPosition, contactNormal)) |> ignore<bool>)
 
