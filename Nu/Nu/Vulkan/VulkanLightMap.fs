@@ -13,7 +13,7 @@ open Prime
 open Nu
 
 [<Struct; StructLayout (LayoutKind.Explicit)>]
-type EnvironmentFilter =
+type EnvironmentFilterStruct =
     [<FieldOffset(0)>] val mutable roughness : single
     [<FieldOffset(4)>] val mutable resolution : single
 
@@ -147,8 +147,8 @@ module LightMap =
     let createEnvironmentFilterPipeline shaderPath colorAttachmentFormat (context : VulkanContext) =
 
         // create uniform buffers
-        let eyeUniform = VulkanBuffer.create Uniform sizeof<Eye> context
-        let environmentFilterUniform = VulkanBuffer.create Uniform sizeof<EnvironmentFilter> context
+        let eyeUniform = VulkanBuffer.create Uniform sizeof<EyeStruct> context
+        let environmentFilterUniform = VulkanBuffer.create Uniform sizeof<EnvironmentFilterStruct> context
 
         // create pipeline
         let pipeline =
@@ -204,12 +204,12 @@ module LightMap =
             let mutable uniformDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.Pipeline.DrawIndex pipeline.Pipeline $ fun vkSet ->
 
                 // specify eye
-                let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
+                let eye = EyeStruct (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
                 VulkanBuffer.uploadValue eye pipeline.EyeUniform context
                 Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.EyeUniform vkSet
 
                 // specify environment filter
-                let environmentFilter = EnvironmentFilter (roughness = roughness, resolution = resolution)
+                let environmentFilter = EnvironmentFilterStruct (roughness = roughness, resolution = resolution)
                 VulkanBuffer.uploadValue environmentFilter pipeline.EnvironmentFilterUniform context
                 Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.EnvironmentFilterUniform vkSet
 

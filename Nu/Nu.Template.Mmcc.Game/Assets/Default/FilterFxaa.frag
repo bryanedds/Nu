@@ -1,13 +1,13 @@
 #version 450 core
 
-struct Fxaa
+struct FxaaStruct
 {
     float spanMax;
     float reduceMinDivisor;
     float reduceMulDivisor;
 };
 
-layout(set = 0, binding = 0) uniform FxaaBlock { Fxaa fxaa; };
+layout(set = 0, binding = 0) uniform FxaaUniform { FxaaStruct fxaa; };
 layout(set = 0, binding = 1) uniform texture2D inputTexture;
 
 layout(set = 1, binding = 0) uniform sampler inputSampler;

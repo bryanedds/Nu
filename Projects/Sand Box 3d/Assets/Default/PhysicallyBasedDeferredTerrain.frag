@@ -2,10 +2,10 @@
 
 const float GAMMA = 2.2;
 const int TERRAIN_LAYERS_MAX = 6;
-const float SAA_VARIANCE = 0.1; // TODO: consider exposing as lighting config property.
-const float SAA_THRESHOLD = 0.1; // TODO: consider exposing as lighting config property.
+const float SAA_VARIANCE = 0.1; // TODO: consider exposing as terrainFrag config property.
+const float SAA_THRESHOLD = 0.1; // TODO: consider exposing as terrainFrag config property.
 
-struct Eye
+struct EyeStruct
 {
     vec3 center;
     mat4 view;
@@ -15,18 +15,18 @@ struct Eye
     mat4 viewProjection;
 };
 
-struct Lighting3
+struct TerrainFragStruct
 {
+    int layersCount;
     int lightShadowSamples;
     float lightShadowBias;
     float lightShadowSampleScalar;
     float lightShadowExponent;
     float lightShadowDensity;
-    int layersCount;
 };
 
-layout(set = 0, binding = 0) uniform EyeBlock { Eye eye; };
-layout(set = 0, binding = 1) uniform Lighting3Block { Lighting3 lighting; };
+layout(set = 0, binding = 0) uniform EyeUniform { EyeStruct eye; };
+layout(set = 0, binding = 1) uniform TerrainFragUniform { TerrainFragStruct terrainFrag; };
 
 layout(set = 1, binding = 0) uniform texture2D albedoTextures[TERRAIN_LAYERS_MAX];
 layout(set = 1, binding = 1) uniform texture2D roughnessTextures[TERRAIN_LAYERS_MAX];
@@ -61,9 +61,6 @@ vec3 decodeNormal(vec2 normalEncoded)
 
 void main()
 {
-    // ensure layers count is in range
-    float layersCountCeil = max(min(lighting.layersCount, TERRAIN_LAYERS_MAX), 0);
-
     // compute spatial converters
     vec3 q1 = dFdx(positionOut.xyz);
     vec3 q2 = dFdy(positionOut.xyz);
@@ -79,7 +76,7 @@ void main()
 
     // compute height blend, height, and ignore local light maps
     float heightBlend = 0.0;
-    for (int i = 0; i < layersCountCeil; ++i)
+    for (int i = 0; i < min(terrainFrag.layersCount, TERRAIN_LAYERS_MAX); ++i)
         heightBlend += texture(sampler2D(heightTextures[i], filteredSampler), texCoordsOut).r * blendsOut[i/4][i%4];
     float height = heightBlend * heightPlusOut.x;
 
@@ -95,7 +92,7 @@ void main()
     float roughnessBlend = 0.0;
     float ambientOcclusionBlend = 0.0;
     vec3 normalBlend = vec3(0.0);
-    for (int i = 0; i < layersCountCeil; ++i)
+    for (int i = 0; i < min(terrainFrag.layersCount, TERRAIN_LAYERS_MAX); ++i)
     {
         float blend = blendsOut[i/4][i%4];
         albedoBlend += texture(sampler2D(albedoTextures[i], filteredSampler), texCoords) * blend;

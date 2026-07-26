@@ -11,7 +11,7 @@
 // Stroke is rendered as a separate Slug contour pass; no per-pixel
 // distance approximation is used here.
 
-layout(binding = 0, std140) uniform ShapeDataBlock
+layout(binding = 0, std140) uniform ShapeDataUniform
 {
     mat4 modelViewProjection;
     vec4 color;             // single draw color (r, g, b, a)
@@ -24,7 +24,7 @@ layout(binding = 0, std140) uniform ShapeDataBlock
     vec4 bandTransform;     // (scaleX, scaleY, offsetX, offsetY) -> band index
 } shapeData;
 
-layout(binding = 1, std430) readonly buffer CurveDataBlock
+layout(binding = 1, std430) readonly buffer CurveDataUniform
 {
     vec4 curves[];
 };
@@ -34,7 +34,7 @@ layout(binding = 1, std430) readonly buffer CurveDataBlock
 //   For band b in [0, hBands):   entry[2*b]     = curveCount, entry[2*b+1]     = curveOffset
 //   For band b in [0, vBands):   entry[2*(hBands+b)]   = curveCount, entry[2*(hBands+b)+1] = curveOffset
 //   After all entries: flat uint[] of curve indices.
-layout(binding = 2, std430) readonly buffer BandDataBlock
+layout(binding = 2, std430) readonly buffer BandDataBuffer
 {
     uint bandData[];
 };

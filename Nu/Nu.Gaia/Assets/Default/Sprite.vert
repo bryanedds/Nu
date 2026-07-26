@@ -9,13 +9,13 @@ const vec4 FILTERS[VERTS] =
         vec4(1.0, 1.0, 1.0, 1.0),
         vec4(1.0, 1.0, 0.0, 1.0));
 
-struct SpriteVert
+struct SpriteVertStruct
 {
     mat4 modelViewProjection;
     vec4 texCoords4;
 };
 
-layout(set = 0, binding = 0) uniform SpriteVertBlock { SpriteVert sprite; };
+layout(set = 0, binding = 0) uniform SpriteVertUniform { SpriteVertStruct sprite; };
 
 layout(location = 0) in vec2 position;
 

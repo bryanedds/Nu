@@ -13,12 +13,12 @@ open Prime
 open Nu
 
 [<Struct; StructLayout (LayoutKind.Explicit)>]
-type SpriteVert =
+type SpriteVertStruct =
     [<FieldOffset(0)>] val mutable modelViewProjection : Matrix4x4
     [<FieldOffset(64)>] val mutable texCoords4 : Vector4
     
 [<Struct; StructLayout (LayoutKind.Explicit)>]
-type SpriteFrag =
+type SpriteFragStruct =
     [<FieldOffset(0)>] val mutable color : Vector4
 
 [<RequireQualifiedAccess>]
@@ -30,8 +30,8 @@ module SpriteSingleton =
     let createSpriteSingletonPipeline (context : VulkanContext) =
 
         // create sprite uniform buffers
-        let spriteVertUniform = VulkanBuffer.create Uniform sizeof<SpriteVert> context
-        let spriteFragUniform = VulkanBuffer.create Uniform sizeof<SpriteFrag> context
+        let spriteVertUniform = VulkanBuffer.create Uniform sizeof<SpriteVertStruct> context
+        let spriteFragUniform = VulkanBuffer.create Uniform sizeof<SpriteFragStruct> context
         
         // create sprite pipeline
         let pipeline =
@@ -170,8 +170,8 @@ module SpriteSingleton =
                 // specify uniforms
                 let color = color
                 let mutable uniformDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.DrawIndex pipeline $ fun vkSet ->
-                    let spriteVert = SpriteVert (modelViewProjection = modelViewProjection, texCoords4 = v4 texCoords.Min.X texCoords.Min.Y texCoords.Size.X texCoords.Size.Y)
-                    let spriteFrag = SpriteFrag (color = color.V4)
+                    let spriteVert = SpriteVertStruct (modelViewProjection = modelViewProjection, texCoords4 = v4 texCoords.Min.X texCoords.Min.Y texCoords.Size.X texCoords.Size.Y)
+                    let spriteFrag = SpriteFragStruct (color = color.V4)
                     VulkanBuffer.uploadValue spriteVert spriteVertUniform context
                     VulkanBuffer.uploadValue spriteFrag spriteFragUniform context
                     Pipeline.writeDescriptorUniformBuffer 0 0 spriteVertUniform vkSet

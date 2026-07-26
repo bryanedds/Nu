@@ -6,17 +6,17 @@
 // The resulting local-space position is passed as em-space
 // texcoord to the fragment shader for coverage computation.
 
-layout(binding = 0, std140) uniform ShapeDataBlock
+layout(binding = 0, std140) uniform ShapeDataUniform
 {
-    mat4 modelViewProjection;
-    vec4 color;             // single draw color (r, g, b, a)
-    uint curveCount;        // number of quadratic bezier curves
-    uint flags;             // bit 0: fillMode (0=nonzero, 1=evenOdd)
-    uint hBands;            // number of horizontal bands
-    uint vBands;            // number of vertical bands
-    vec2 bboxMin;           // bounding box minimum in local space
-    vec2 bboxSize;          // bounding box size in local space
-    vec4 bandTransform;     // (scaleX, scaleY, offsetX, offsetY) to map renderCoord -> band index
+    mat4 modelViewProjection;   // mvp
+    vec4 color;                 // single draw color (r, g, b, a)
+    uint curveCount;            // number of quadratic bezier curves
+    uint flags;                 // bit 0: fillMode (0=nonzero, 1=evenOdd)
+    uint hBands;                // number of horizontal bands
+    uint vBands;                // number of vertical bands
+    vec2 bboxMin;               // bounding box minimum in local space
+    vec2 bboxSize;              // bounding box size in local space
+    vec4 bandTransform;         // (scaleX, scaleY, offsetX, offsetY) to map renderCoord -> band index
 } shapeData;
 
 layout(location = 0) in vec2 position; // unit quad: (0,0) to (1,1)

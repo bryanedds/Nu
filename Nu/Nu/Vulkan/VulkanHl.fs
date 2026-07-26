@@ -642,7 +642,7 @@ module Hl =
     // Check whether window resource is availabile for utilization.
     let private isWindowResourceAvailable () =
         if OperatingSystem.IsAndroid () then
-            let windowProperties = WindowProperties.WindowProperties
+            let windowProperties = WindowProperties.PropertiesHandle
             let windowPointer = SDL3.SDL_GetPointerProperty (windowProperties, SDL3.SDL_PROP_WINDOW_ANDROID_WINDOW_POINTER, 0n)
             windowPointer <> 0n
         else true // will presumably never be blocked on other platforms
@@ -785,8 +785,8 @@ module Hl =
         else
 
             // get pixel resolution from sdl
-            let mutable width = WindowProperties.WindowWidthInPixels
-            let mutable height = WindowProperties.WindowHeightInPixels
+            let mutable width = WindowProperties.WidthPixels
+            let mutable height = WindowProperties.HeightPixels
 
             // clamp resolution to size limits
             width <- max width (int capabilities.minImageExtent.width)

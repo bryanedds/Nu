@@ -15,7 +15,7 @@ open Prime
 open Nu
 
 [<Struct; StructLayout (LayoutKind.Explicit)>]
-type Eye =
+type EyeStruct =
     [<FieldOffset(0)>] val mutable center : Vector3
     [<FieldOffset(16)>] val mutable view : Matrix4x4
     [<FieldOffset(80)>] val mutable viewInverse : Matrix4x4
@@ -247,7 +247,7 @@ module CubeMap =
     let createCubeMapPipeline shaderPath colorAttachmentFormat (context : VulkanContext) =
 
         // create eye buffer
-        let eyeUniform = VulkanBuffer.create Uniform sizeof<Eye> context
+        let eyeUniform = VulkanBuffer.create Uniform sizeof<EyeStruct> context
 
         // create pipeline
         let pipeline =
@@ -299,7 +299,7 @@ module CubeMap =
 
             // specify eye
             let mutable eyeDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.Pipeline.DrawIndex pipeline.Pipeline $ fun vkSet ->
-                let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
+                let eye = EyeStruct (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
                 VulkanBuffer.uploadValue eye pipeline.EyeUniform context
                 Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.EyeUniform vkSet
 

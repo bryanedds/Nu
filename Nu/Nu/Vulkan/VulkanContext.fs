@@ -783,19 +783,19 @@ type [<ReferenceEquality>] VulkanContext =
 
             // return the first along with its data
             if candidatesFilteredAndOrdered.Length > 0 then
-                
+
                 // select physical device
                 let physicalDevice = List.head candidatesFilteredAndOrdered
-                
+
                 // log device information
                 let properties = physicalDevice.Properties
                 let deviceName = NativePtr.unmanagedToString &&properties.deviceName.FixedElementField
-                Log.info (sprintf "Selected Vulkan Device %s, v%u.%u.%u.%u." deviceName properties.apiVersion.Major properties.apiVersion.Minor properties.apiVersion.Patch properties.apiVersion.Variant)
+                Log.info (sprintf "Selected Vulkan Device %s, Driver v%u.%u.%u(%u)" deviceName properties.apiVersion.Major properties.apiVersion.Minor properties.apiVersion.Patch properties.apiVersion.Variant)
                 if not physicalDevice.SupportsAnisotropy then Log.warn "Graphics device does not support anisotropy."
-                
+
                 // return physical device
                 Some physicalDevice
-            
+
             // otherwise error
             else Log.error "Could not find a suitable Vulkan Device."; None
 

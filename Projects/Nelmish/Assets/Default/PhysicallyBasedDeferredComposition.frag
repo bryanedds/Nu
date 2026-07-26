@@ -1,6 +1,6 @@
 #version 450 core
 
-struct Eye
+struct EyeStruct
 {
     vec3 center;
     mat4 view;
@@ -10,7 +10,7 @@ struct Eye
     mat4 viewProjection;
 };
 
-struct Lighting
+struct LightingStruct
 {
     float lightCutoffMargin;
     vec3 lightAmbientColor;
@@ -60,8 +60,8 @@ struct Lighting
     float shadowNear;
 };
 
-layout(set = 0, binding = 0) uniform EyeBlock { Eye eye; };
-layout(set = 0, binding = 1) uniform LightingBlock { Lighting lighting; };
+layout(set = 0, binding = 0) uniform EyeUniform { EyeStruct eye; };
+layout(set = 0, binding = 1) uniform LightingUniform { LightingStruct lighting; };
 layout(set = 0, binding = 2) uniform texture2D depthTexture;
 layout(set = 0, binding = 3) uniform texture2D colorTexture;
 layout(set = 0, binding = 4) uniform texture2D fogAccumTexture;

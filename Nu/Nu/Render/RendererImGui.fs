@@ -175,8 +175,11 @@ type VulkanRendererImGui
 
         member renderer.Render viewport_ (drawData : ImDrawDataPtr) =
 
-            // update viewport, updating the imgui display size as needed
+            // update imgui's display frame buffer scale
             let io = ImGui.GetIO ()
+            io.DisplayFramebufferScale <- v2Dup Hl.WindowProperties.PixelDensity
+
+            // update viewport, updating the imgui display size as needed
             if viewport <> viewport_ then
                 io.DisplaySize <- viewport_.Bounds.Size.V2 // NOTE: this is not set in the dear imgui vulkan backend but IS necessary!
                 viewport <- viewport_
