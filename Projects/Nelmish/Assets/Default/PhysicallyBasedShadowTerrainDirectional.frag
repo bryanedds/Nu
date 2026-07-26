@@ -1,6 +1,6 @@
 #version 450 core
 
-struct TerrainFrag
+struct TerrainFragStruct
 {
     int layersCount;
     int lightShadowSamples;
@@ -10,7 +10,7 @@ struct TerrainFrag
     float lightShadowDensity;
 };
 
-layout(set = 0, binding = 1) uniform TerrainFragBlock { TerrainFrag terrainFrag; };
+layout(set = 0, binding = 1) uniform TerrainFragUniform { TerrainFragStruct terrainFrag; };
 
 layout(location = 0) out vec2 depths;
 

@@ -20,7 +20,7 @@ const vec2 TEX_COORDS_OFFSET_FILTERS_2[TEX_COORDS_OFFSET_VERTS] =
         vec2(1,1),
         vec2(0,1));
 
-struct Eye
+struct EyeStruct
 {
     vec3 center;
     mat4 view;
@@ -30,7 +30,7 @@ struct Eye
     mat4 viewProjection;
 };
 
-layout(set = 0, binding = 0) uniform EyeBlock { Eye eye; };
+layout(set = 0, binding = 0) uniform EyeUniform { EyeStruct eye; };
 
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec2 texCoords;

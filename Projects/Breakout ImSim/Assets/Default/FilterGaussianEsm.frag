@@ -1,12 +1,12 @@
 #version 450 core
 
-struct GaussianEsm
+struct GaussianEsmStruct
 {
     vec2 scale;
     float radius;
 };
 
-layout(set = 0, binding = 0) uniform GaussianEsmBlock { GaussianEsm gaussianEsm; };
+layout(set = 0, binding = 0) uniform GaussianEsmUniform { GaussianEsmStruct gaussianEsm; };
 
 layout(set = 1, binding = 0) uniform texture2D esmTexture;
 

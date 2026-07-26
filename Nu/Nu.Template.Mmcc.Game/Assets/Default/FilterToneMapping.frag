@@ -1,6 +1,6 @@
 #version 450 core
 
-struct ToneMapping
+struct ToneMappingStruct
 {
     float lightExposure;
     int toneMapType;
@@ -11,7 +11,7 @@ struct ToneMapping
     float toneMapWhitePoint;
 };
 
-layout(set = 0, binding = 0) uniform ToneMappingBlock { ToneMapping toneMapping; };
+layout(set = 0, binding = 0) uniform ToneMappingUniform { ToneMappingStruct toneMapping; };
 layout(set = 0, binding = 1) uniform texture2D inputTexture;
 
 layout(set = 1, binding = 0) uniform sampler inputSampler;

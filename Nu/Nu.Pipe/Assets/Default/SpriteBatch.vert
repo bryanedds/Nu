@@ -12,7 +12,7 @@ const vec4 FILTERS[VERTS] =
         vec4(1.0, 1.0, 0.0, 1.0),
         vec4(1.0, 1.0, 0.0, 0.0));
 
-struct Sprite
+struct SpriteStruct
 {
     vec4 perimeter;
     vec2 pivot;
@@ -21,13 +21,13 @@ struct Sprite
     vec4 color;
 };
 
-struct ViewProjection
+struct ViewProjectionStruct
 {
     mat4 viewProjection;
 };
 
-layout(set = 0, binding = 0) uniform SpriteBlock { Sprite sprites[SPRITE_BATCH_SIZE]; };
-layout(set = 0, binding = 1) uniform ViewProjectionBlock { ViewProjection viewProjection; };
+layout(set = 0, binding = 0) uniform SpriteUniform { SpriteStruct sprites[SPRITE_BATCH_SIZE]; };
+layout(set = 0, binding = 1) uniform ViewProjectionUniform { ViewProjectionStruct viewProjection; };
 
 layout(location = 0) out vec2 texCoords;
 layout(location = 1) out vec4 color;
@@ -48,7 +48,7 @@ void main()
 
     // compute position
     vec4 filt = FILTERS[vertexId];
-    Sprite sprite = sprites[spriteId];
+    SpriteStruct sprite = sprites[spriteId];
     vec4 perimeter = sprite.perimeter * filt;
     vec2 position = vec2(perimeter.x + perimeter.z, perimeter.y + perimeter.w);
     vec2 pivot = sprite.pivot;

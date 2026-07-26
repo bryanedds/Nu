@@ -14,7 +14,7 @@ const float SHADOW_CASCADE_DENSITY_BONUS = 0.5;
 const float SHADOW_FOV_MAX = 2.1;
 const float CLEAR_COAT_REFRACTIVE_INDEX = 1.5; // typical for automotive clear coat
 
-struct Eye
+struct EyeStruct
 {
     vec3 center;
     mat4 view;
@@ -24,7 +24,7 @@ struct Eye
     mat4 viewProjection;
 };
 
-struct Lighting2
+struct Lightning2Struct
 {
     float lightCutoffMargin;
     int lightShadowSamples;
@@ -37,7 +37,7 @@ struct Lighting2
     float shadowNear;
 };
 
-struct Light
+struct LightStruct
 {
     vec3 origin;
     vec3 direction;
@@ -53,10 +53,10 @@ struct Light
     int shadowIndex;
 };
 
-layout(set = 0, binding = 0) uniform EyeBlock { Eye eye; };
-layout(set = 0, binding = 1) uniform Lighting2Block { Lighting2 lighting; };
-layout(set = 0, binding = 2) uniform LightBlock { Light lights[LIGHTS_MAX]; };
-layout(set = 0, binding = 3) uniform ShadowMatrixBlock { mat4 shadowMatrices[SHADOW_TEXTURES_MAX + SHADOW_CASCADES_MAX * SHADOW_CASCADE_LEVELS]; };
+layout(set = 0, binding = 0) uniform EyeUniform { EyeStruct eye; };
+layout(set = 0, binding = 1) uniform Lighting2Uniform { Lightning2Struct lighting; };
+layout(set = 0, binding = 2) uniform LightUniform { LightStruct lights[LIGHTS_MAX]; };
+layout(set = 0, binding = 3) uniform ShadowMatricesUniform { mat4 shadowMatrices[SHADOW_TEXTURES_MAX + SHADOW_CASCADES_MAX * SHADOW_CASCADE_LEVELS]; };
 layout(set = 0, binding = 4) uniform texture2D depthTexture;
 layout(set = 0, binding = 5) uniform texture2D albedoTexture;
 layout(set = 0, binding = 6) uniform texture2D materialTexture;
@@ -270,7 +270,7 @@ float computeShadowScalarCascaded(vec4 position, float shadowCutoff, int shadowI
     return 1.0;
 }
 
-float geometryTravelPoint(vec4 position, Light light, int shadowIndex)
+float geometryTravelPoint(vec4 position, LightStruct light, int shadowIndex)
 {
     // compute travel average in world space
     vec3 positionShadow = position.xyz - light.origin;
@@ -292,7 +292,7 @@ float geometryTravelPoint(vec4 position, Light light, int shadowIndex)
     return travel / 8.0;
 }
 
-float geometryTravelSpot(vec4 position, Light light, int shadowIndex)
+float geometryTravelSpot(vec4 position, LightStruct light, int shadowIndex)
 {
     // attempt to compute travel average in view space
     mat4 shadowMatrix = shadowMatrices[shadowIndex];
@@ -328,7 +328,7 @@ float geometryTravelSpot(vec4 position, Light light, int shadowIndex)
     return 1.0;
 }
 
-float geometryTravelDirectional(vec4 position, Light light, int shadowIndex)
+float geometryTravelDirectional(vec4 position, LightStruct light, int shadowIndex)
 {
     // attempt to compute travel average in view space
     mat4 shadowMatrix = shadowMatrices[shadowIndex];
@@ -353,7 +353,7 @@ float geometryTravelDirectional(vec4 position, Light light, int shadowIndex)
     return 1.0;
 }
 
-float geometryTravelCascaded(vec4 position, Light light, int shadowIndex)
+float geometryTravelCascaded(vec4 position, LightStruct light, int shadowIndex)
 {
     for (int i = 0; i < SHADOW_CASCADE_LEVELS; ++i)
     {
@@ -381,7 +381,7 @@ float geometryTravelCascaded(vec4 position, Light light, int shadowIndex)
     return 1.0;
 }
 
-vec3 computeSubsurfaceScatter(vec4 position, vec3 albedo, vec4 subdermalPlus, vec4 scatterPlus, float nDotL, vec2 texCoords, Light light)
+vec3 computeSubsurfaceScatter(vec4 position, vec3 albedo, vec4 subdermalPlus, vec4 scatterPlus, float nDotL, vec2 texCoords, LightStruct light)
 {
     // compute geometry travel distance through material, defaulting to 1.0 when no shadow present for this light index
     int shadowIndex = light.shadowIndex;
@@ -494,7 +494,7 @@ void main()
         for (int i = 0; i < lighting.lightsCount; ++i)
         {
             // compute per-light radiance
-            Light light = lights[i];
+            LightStruct light = lights[i];
             bool lightPoint = light.lightType == 0;
             bool lightSpot = light.lightType == 1;
             float hDotV, intensity;

@@ -1,12 +1,12 @@
 #version 450 core
 
-struct ShadowFrag
+struct ShadowFragStruct
 {
     vec3 eyeCenter;
     float lightShadowExponent;
 };
 
-layout(set = 0, binding = 1) uniform ShadowFragBlock { ShadowFrag shadowFrag; };
+layout(set = 0, binding = 1) uniform ShadowFragUniform { ShadowFragStruct shadowFrag; };
 
 layout(location = 0) out vec2 depths;
 

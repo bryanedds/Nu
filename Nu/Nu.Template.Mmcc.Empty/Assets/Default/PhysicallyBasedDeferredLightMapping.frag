@@ -4,7 +4,7 @@ const float PI = 3.141592654;
 const float FLOAT_MAX = 3.402823466e+38;
 const int LIGHT_MAPS_MAX = 26;
 
-struct Eye
+struct EyeStruct
 {
     vec3 center;
     mat4 view;
@@ -14,7 +14,7 @@ struct Eye
     mat4 viewProjection;
 };
 
-struct LightMap
+struct LightMapStruct
 {
     vec3 origin;
     vec3 min;
@@ -23,16 +23,16 @@ struct LightMap
     float ambientBrightness;
 };
 
-struct LightsGeneral
+struct LightsGeneralStruct
 {
     int lightMapsCount;
     float lightMapSingletonBlendMargin;
     int lightsCount;
 };
 
-layout(set = 0, binding = 0) uniform EyeBlock { Eye eye; };
-layout(set = 0, binding = 1) uniform LightMapsBlock { LightMap lightMaps[LIGHT_MAPS_MAX]; };
-layout(set = 0, binding = 2) uniform LightsGeneralBlock { LightsGeneral lightsGeneral; };
+layout(set = 0, binding = 0) uniform EyeUniform { EyeStruct eye; };
+layout(set = 0, binding = 1) uniform LightMapsUniform { LightMapStruct lightMaps[LIGHT_MAPS_MAX]; };
+layout(set = 0, binding = 2) uniform LightsGeneralUniform { LightsGeneralStruct lightsGeneral; };
 layout(set = 0, binding = 3) uniform texture2D depthTexture;
 layout(set = 0, binding = 4) uniform texture2D normalPlusTexture;
 
@@ -122,7 +122,7 @@ void main()
     {
         for (int i = 0; i < lightsGeneral.lightMapsCount; ++i)
         {
-            LightMap lightMap = lightMaps[i];
+            LightMapStruct lightMap = lightMaps[i];
             if (inBounds(position.xyz, lightMap.min, lightMap.size))
             {
                 vec3 delta = lightMap.origin - position.xyz;
