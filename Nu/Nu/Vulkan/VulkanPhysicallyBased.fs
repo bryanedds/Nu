@@ -87,15 +87,14 @@ type Lighting2 =
     [<FieldOffset(28)>] val mutable lightsCount : int
     [<FieldOffset(32)>] val mutable shadowNear : single
 
-// TODO: P1: see if we can come up with a better alternative name than Lighting3?
 [<Struct; StructLayout (LayoutKind.Explicit)>]
-type Lighting3 =
-    [<FieldOffset(0)>] val mutable lightShadowSamples : int
-    [<FieldOffset(4)>] val mutable lightShadowBias : single
-    [<FieldOffset(8)>] val mutable lightShadowSampleScalar : single
-    [<FieldOffset(12)>] val mutable lightShadowExponent : single
-    [<FieldOffset(16)>] val mutable lightShadowDensity : single
-    [<FieldOffset(20)>] val mutable layersCount : int
+type TerrainFrag =
+    [<FieldOffset(0)>] val mutable layersCount : int
+    [<FieldOffset(4)>] val mutable lightShadowSamples : int
+    [<FieldOffset(8)>] val mutable lightShadowBias : single
+    [<FieldOffset(12)>] val mutable lightShadowSampleScalar : single
+    [<FieldOffset(16)>] val mutable lightShadowExponent : single
+    [<FieldOffset(20)>] val mutable lightShadowDensity : single
 
 [<Struct; StructLayout (LayoutKind.Explicit)>]
 type LightMap' =
@@ -2197,14 +2196,14 @@ module PhysicallyBased =
 
         // create uniform buffers
         let eyeUniform = VulkanBuffer.create Uniform sizeof<Eye> context
-        let lightingUniform = VulkanBuffer.create Uniform sizeof<Lighting3> context
+        let terrainFragUniform = VulkanBuffer.create Uniform sizeof<TerrainFrag> context
 
         // create pipeline
         let pipeline =
             Pipeline.create
                 shaderFilePath
                 [|VulkanUnblended|] [|true|] TerrainVertices
-                [|Pipeline.descriptorSet<int>
+                [|Pipeline.descriptorSet<int * int>
                     [|Pipeline.descriptor 0 UniformBuffer VertexAndFragmentStage 1 // eye
                       Pipeline.descriptor 1 UniformBuffer FragmentStage 1|] // lighting3
                   Pipeline.descriptorSet<PhysicallyBasedMaterial array>
@@ -2216,12 +2215,12 @@ module PhysicallyBased =
                   Pipeline.descriptorSet<Unit>
                     [|Pipeline.descriptor 0 Sampler FragmentStage 1|]|]
                 [||] colorAttachmentFormats (Some depthTest)
-                [|eyeUniform; lightingUniform|]
+                [|eyeUniform; terrainFragUniform|]
 
         // make PhysicallyBasedDeferredLightingPipeline
         let physicallyBasedDeferredTerrainPipeline =
             { EyeUniform = eyeUniform
-              Lighting3Uniform = lightingUniform
+              Lighting3Uniform = terrainFragUniform
               Pipeline = pipeline }
         
         // fin
@@ -2275,22 +2274,22 @@ module PhysicallyBased =
         | Some vkPipeline ->
 
             // specify uniforms
-            let mutable uniformsDescriptorSet = Pipeline.specifyDescriptorSet 0 renderPassIndex pipeline.Pipeline $ fun vkSet ->
+            let mutable uniformsDescriptorSet = Pipeline.specifyDescriptorSet 0 (layersCount, renderPassIndex) pipeline.Pipeline $ fun vkSet ->
 
                 // specify eye
                 let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
                 VulkanBuffer.uploadValue eye pipeline.EyeUniform context
                 Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.EyeUniform vkSet
 
-                // specify lighting
-                let mutable lighting = Lighting3 ()
-                lighting.lightShadowSamples <- lightShadowSamples
-                lighting.lightShadowBias <- lightShadowBias
-                lighting.lightShadowSampleScalar <- lightShadowSampleScalar
-                lighting.lightShadowExponent <- lightShadowExponent
-                lighting.lightShadowDensity <- lightShadowDensity
-                lighting.layersCount <- layersCount
-                VulkanBuffer.uploadValue lighting pipeline.Lighting3Uniform context
+                // specify terrain frag
+                let mutable terrainFrag = TerrainFrag ()
+                terrainFrag.layersCount <- layersCount
+                terrainFrag.lightShadowSamples <- lightShadowSamples
+                terrainFrag.lightShadowBias <- lightShadowBias
+                terrainFrag.lightShadowSampleScalar <- lightShadowSampleScalar
+                terrainFrag.lightShadowExponent <- lightShadowExponent
+                terrainFrag.lightShadowDensity <- lightShadowDensity
+                VulkanBuffer.uploadValue terrainFrag pipeline.Lighting3Uniform context
                 Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.Lighting3Uniform vkSet
 
             // specify materials
