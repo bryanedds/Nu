@@ -92,7 +92,7 @@ void main()
     float roughnessBlend = 0.0;
     float ambientOcclusionBlend = 0.0;
     vec3 normalBlend = vec3(0.0);
-    for (int i = 0; i < layersCountCeil; ++i)
+    for (int i = 0; i < min(terrainFrag.layersCount, TERRAIN_LAYERS_MAX); ++i)
     {
         float blend = blendsOut[i/4][i%4];
         albedoBlend += texture(sampler2D(albedoTextures[i], filteredSampler), texCoords) * blend;
