@@ -2294,7 +2294,7 @@ module PhysicallyBased =
                 Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.Lighting3Uniform vkSet
 
             // specify materials
-            // TODO: maybe receive these arrays pre-formed?
+            // TODO: P1: maybe receive these arrays pre-formed?
             let mutable materialsDescriptorSet = Pipeline.specifyDescriptorSet 1 materials pipeline.Pipeline $ fun vkSet ->
                 Pipeline.writeDescriptorSampledTextures 0 0 (materials |> Array.map _.AlbedoTexture) vkSet
                 Pipeline.writeDescriptorSampledTextures 1 0 (materials |> Array.map _.RoughnessTexture) vkSet
