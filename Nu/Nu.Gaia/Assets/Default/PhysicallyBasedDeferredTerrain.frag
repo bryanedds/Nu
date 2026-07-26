@@ -5,7 +5,7 @@ const int TERRAIN_LAYERS_MAX = 6;
 const float SAA_VARIANCE = 0.1; // TODO: consider exposing as terrainFrag config property.
 const float SAA_THRESHOLD = 0.1; // TODO: consider exposing as terrainFrag config property.
 
-struct Eye
+struct EyeStruct
 {
     vec3 center;
     mat4 view;
@@ -15,7 +15,7 @@ struct Eye
     mat4 viewProjection;
 };
 
-struct TerrainFrag
+struct TerrainFragStruct
 {
     int layersCount;
     int lightShadowSamples;
@@ -25,8 +25,8 @@ struct TerrainFrag
     float lightShadowDensity;
 };
 
-layout(set = 0, binding = 0) uniform EyeBlock { Eye eye; };
-layout(set = 0, binding = 1) uniform TerrainFragBlock { TerrainFrag terrainFrag; };
+layout(set = 0, binding = 0) uniform EyeUniform { EyeStruct eye; };
+layout(set = 0, binding = 1) uniform TerrainFragUniform { TerrainFragStruct terrainFrag; };
 
 layout(set = 1, binding = 0) uniform texture2D albedoTextures[TERRAIN_LAYERS_MAX];
 layout(set = 1, binding = 1) uniform texture2D roughnessTextures[TERRAIN_LAYERS_MAX];
