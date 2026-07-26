@@ -61,9 +61,6 @@ vec3 decodeNormal(vec2 normalEncoded)
 
 void main()
 {
-    // ensure layers count is in range
-    float layersCountCeil = max(min(terrainFrag.layersCount, TERRAIN_LAYERS_MAX), 0);
-
     // compute spatial converters
     vec3 q1 = dFdx(positionOut.xyz);
     vec3 q2 = dFdy(positionOut.xyz);
@@ -79,7 +76,7 @@ void main()
 
     // compute height blend, height, and ignore local light maps
     float heightBlend = 0.0;
-    for (int i = 0; i < layersCountCeil; ++i)
+    for (int i = 0; i < min(terrainFrag.layersCount, TERRAIN_LAYERS_MAX); ++i)
         heightBlend += texture(sampler2D(heightTextures[i], filteredSampler), texCoordsOut).r * blendsOut[i/4][i%4];
     float height = heightBlend * heightPlusOut.x;
 
