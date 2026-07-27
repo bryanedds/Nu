@@ -178,7 +178,7 @@ type VulkanRendererImGui
             // update viewport
             viewport <- viewport_
 
-            // update imgui's display properties
+            // update imgui's display size
             let io = ImGui.GetIO ()
             io.DisplaySize <- viewport.Bounds.Size.V2
 
