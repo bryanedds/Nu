@@ -175,22 +175,16 @@ type VulkanRendererImGui
 
         member renderer.Render viewport_ (drawData : ImDrawDataPtr) =
 
-            // update viewport, updating the imgui display size as needed
+            // update viewport
+            viewport <- viewport_
+
+            // update imgui's display properties
             let io = ImGui.GetIO ()
-            if viewport <> viewport_ then
-                io.DisplaySize <- viewport_.Bounds.Size.V2
-                viewport <- viewport_
+            io.DisplaySize <- viewport.Bounds.Size.V2
 
-            // check that viewport bounds assumed by drawData match the actual viewport, as they sometimes lag behind
-            // upon resize, triggering validation errors when viewport bounds are exceeded.
-            let viewportPixelWidth = viewport.Bounds.Width
-            let viewportPixelHeight = viewport.Bounds.Height
-            let drawDataMatchesViewport =
-                int (round (drawData.DisplaySize.X * drawData.FramebufferScale.X)) = viewportPixelWidth &&
-                int (round (drawData.DisplaySize.Y * drawData.FramebufferScale.Y)) = viewportPixelHeight
-
-            // render when allowed and drawData matches viewport
-            if context.RenderAllowed && drawDataMatchesViewport then
+            // render when allowed and drawData matches viewport, as it may lag behind due to -
+            // https://github.com/bryanedds/Nu/issues/1248
+            if context.RenderAllowed && drawData.DisplaySize = viewport.Bounds.Size.V2 then
 
                 // grab pipeline, asserting non-None since shader reload for ImGui isn't supported
                 let vkPipeline = Pipeline.tryGetVkPipeline VulkanImGui false pipeline |> Option.get
@@ -269,12 +263,12 @@ type VulkanRendererImGui
                                 // project scissor/clipping rectangles into framebuffer space
                                 let mutable clipMin =
                                     v2
-                                        ((pcmd.ClipRect.X - drawData.DisplayPos.X) * drawData.FramebufferScale.X + viewport.x)
-                                        ((pcmd.ClipRect.Y - drawData.DisplayPos.Y) * drawData.FramebufferScale.Y + viewport.y)
+                                        (pcmd.ClipRect.X - drawData.DisplayPos.X + viewport.x)
+                                        (pcmd.ClipRect.Y - drawData.DisplayPos.Y + viewport.y)
                                 let mutable clipMax =
                                     v2
-                                        ((pcmd.ClipRect.Z - drawData.DisplayPos.X) * drawData.FramebufferScale.X + viewport.x)
-                                        ((pcmd.ClipRect.W - drawData.DisplayPos.Y) * drawData.FramebufferScale.Y + viewport.y)
+                                        (pcmd.ClipRect.Z - drawData.DisplayPos.X + viewport.x)
+                                        (pcmd.ClipRect.W - drawData.DisplayPos.Y + viewport.y)
 
                                 // only draw if scissor is valid
                                 let width = uint (clipMax.X - clipMin.X)
