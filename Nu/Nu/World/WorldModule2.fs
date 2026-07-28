@@ -1150,6 +1150,7 @@ module WorldModule2 =
             // TODO: P0: replace this with equivalent functionality elsewhere!
             let io = ImGui.GetIO ()
             io.DisplaySize <- windowSize''.V2
+            io.DisplayFramebufferScale <- v2One
 
             // synchronize view ports
             World.synchronizeViewports world
