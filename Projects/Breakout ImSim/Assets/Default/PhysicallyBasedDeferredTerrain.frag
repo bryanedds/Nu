@@ -36,21 +36,21 @@ layout(set = 1, binding = 4) uniform texture2D heightTextures[TERRAIN_LAYERS_MAX
 
 layout(set = 2, binding = 0) uniform sampler filteredSampler;
 
-layout(location = 0) in vec4 positionOut;
-layout(location = 1) in vec2 texCoordsOut;
-layout(location = 2) in vec3 normalOut;
-layout(location = 3) in vec4 blendsOut[2];
-layout(location = 5) in vec3 tintOut;
-flat layout(location = 6) in vec4 albedoOut;
-flat layout(location = 7) in vec4 materialOut;
-flat layout(location = 8) in vec4 heightPlusOut;
+layout(location = 0) in vec4 position;
+layout(location = 1) in vec2 texCoords;
+layout(location = 2) in vec3 normal;
+layout(location = 3) in vec4 blends[2];
+layout(location = 5) in vec3 tint;
+flat layout(location = 6) in vec4 albedo;
+flat layout(location = 7) in vec4 material;
+flat layout(location = 8) in vec4 heightPlus;
 
-layout(location = 0) out float depth;
-layout(location = 1) out vec3 albedo;
-layout(location = 2) out vec4 material;
-layout(location = 3) out vec4 normalPlus;
-layout(location = 4) out vec4 subdermalPlus;
-layout(location = 5) out vec4 scatterPlus;
+layout(location = 0) out float depthOut;
+layout(location = 1) out vec3 albedoOut;
+layout(location = 2) out vec4 materialOut;
+layout(location = 3) out vec4 normalPlusOut;
+layout(location = 4) out vec4 subdermalPlusOut;
+layout(location = 5) out vec4 scatterPlusOut;
 
 vec3 decodeNormal(vec2 normalEncoded)
 {
@@ -62,11 +62,11 @@ vec3 decodeNormal(vec2 normalEncoded)
 void main()
 {
     // compute spatial converters
-    vec3 q1 = dFdx(positionOut.xyz);
-    vec3 q2 = dFdy(positionOut.xyz);
-    vec2 st1 = dFdx(texCoordsOut);
-    vec2 st2 = dFdy(texCoordsOut);
-    vec3 normal = normalize(normalOut);
+    vec3 q1 = dFdx(position.xyz);
+    vec3 q2 = dFdy(position.xyz);
+    vec2 st1 = dFdx(texCoords);
+    vec2 st2 = dFdy(texCoords);
+    vec3 normal = normalize(normal);
     vec3 tangent = normalize(q1 * st2.t - q2 * st1.t);
     vec3 binormal = -normalize(cross(normal, tangent));
     tangent = normalize(tangent - normal * dot(normal, tangent));
@@ -77,24 +77,24 @@ void main()
     // compute height blend, height, and ignore local light maps
     float heightBlend = 0.0;
     for (int i = 0; i < min(terrainFrag.layersCount, TERRAIN_LAYERS_MAX); ++i)
-        heightBlend += texture(sampler2D(heightTextures[i], filteredSampler), texCoordsOut).r * blendsOut[i/4][i%4];
-    float height = heightBlend * heightPlusOut.x;
+        heightBlend += texture(sampler2D(heightTextures[i], filteredSampler), texCoords).r * blends[i/4][i%4];
+    float height = heightBlend * heightPlus.x;
 
     // compute tex coords in parallax space
     vec3 eyeCenterTangent = toTangent * eye.center;
-    vec3 positionTangent = toTangent * positionOut.xyz;
+    vec3 positionTangent = toTangent * position.xyz;
     vec3 toEyeTangent = normalize(eyeCenterTangent - positionTangent);
     vec2 parallax = toEyeTangent.xy * height;
-    vec2 texCoords = texCoordsOut - parallax;
+    vec2 texCoords = texCoords - parallax;
 
-    // compute albedo and material blends
+    // compute albedoOut and materialOut blends
     vec4 albedoBlend = vec4(0.0);
     float roughnessBlend = 0.0;
     float ambientOcclusionBlend = 0.0;
     vec3 normalBlend = vec3(0.0);
     for (int i = 0; i < min(terrainFrag.layersCount, TERRAIN_LAYERS_MAX); ++i)
     {
-        float blend = blendsOut[i/4][i%4];
+        float blend = blends[i/4][i%4];
         albedoBlend += texture(sampler2D(albedoTextures[i], filteredSampler), texCoords) * blend;
         vec4 roughness = texture(sampler2D(roughnessTextures[i], filteredSampler), texCoords);
         roughnessBlend += (roughness.a == 1.0f ? roughness.r : roughness.a) * blend;
@@ -103,15 +103,15 @@ void main()
     }
 
     // compute normal and ignore local height maps
-    normalPlus.xyz = normalize(toWorld * normalize(normalBlend));
-    normalPlus.w = heightPlusOut.y;
+    normalPlusOut.xyz = normalize(toWorld * normalize(normalBlend));
+    normalPlusOut.w = heightPlus.y;
 
     // compute roughness with specular anti-aliasing (Tokuyoshi & Kaplanyan 2019)
     // NOTE: the SAA algo also includes derivative scalars that are currently not utilized here due to lack of need -
     // https://github.com/google/filament/blob/d7b44a2585a7ce19615dbe226501acc3fe3f0c16/shaders/src/surface_shading_lit.fs#L41-L42
     float roughness = roughnessBlend;
-    vec3 du = dFdx(normalPlus.xyz);
-    vec3 dv = dFdy(normalPlus.xyz);
+    vec3 du = dFdx(normalPlusOut.xyz);
+    vec3 dv = dFdy(normalPlusOut.xyz);
     float variance = SAA_VARIANCE * (dot(du, du) + dot(dv, dv));
     float roughnessKernal = min(2.0 * variance, SAA_THRESHOLD);
     float roughnessPerceptual = roughness * roughness;
@@ -119,9 +119,9 @@ void main()
     roughness = sqrt(sqrt(roughnessPerceptualSquared));
 
     // populate remaining outputs
-    depth = gl_FragCoord.z;
-    albedo = pow(albedoBlend.rgb, vec3(GAMMA)) * tintOut * albedoOut.rgb;
-    material = vec4(roughness * materialOut.g, 0.0, ambientOcclusionBlend * materialOut.b, 0.0);
-    subdermalPlus = vec4(0.0);
-    scatterPlus = vec4(0.0);
+    depthOut = gl_FragCoord.z;
+    albedoOut = pow(albedoBlend.rgb, vec3(GAMMA)) * tint * albedo.rgb;
+    materialOut = vec4(roughness * material.g, 0.0, ambientOcclusionBlend * material.b, 0.0);
+    subdermalPlusOut = vec4(0.0);
+    scatterPlusOut = vec4(0.0);
 }

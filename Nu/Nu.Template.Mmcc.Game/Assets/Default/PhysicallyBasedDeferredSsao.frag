@@ -71,7 +71,7 @@ layout(set = 0, binding = 3) uniform texture2D normalPlusTexture;
 
 layout(set = 1, binding = 0) uniform sampler colorSampler;
 
-layout(location = 0) in vec2 texCoordsOut;
+layout(location = 0) in vec2 texCoords;
 
 layout(location = 0) out float frag;
 
@@ -102,14 +102,14 @@ vec4 depthToPosition(float depth, vec2 texCoords)
 void main()
 {
     // ensure fragment was written
-    float depth = texture(sampler2D(depthTexture, colorSampler), texCoordsOut).r;
+    float depth = texture(sampler2D(depthTexture, colorSampler), texCoords).r;
     if (depth == 0.0) discard;
 
     // recover position from depth
-    vec4 position = depthToPosition(depth, texCoordsOut);
+    vec4 position = depthToPosition(depth, texCoords);
 
     // retrieve remaining data from geometry buffers
-    vec3 normal = normalize(texture(sampler2D(normalPlusTexture, colorSampler), texCoordsOut).xyz);
+    vec3 normal = normalize(texture(sampler2D(normalPlusTexture, colorSampler), texCoords).xyz);
 
     // pre-compute resolution inverse
     vec2 ssaoResolutionInverse = vec2(1.0) / vec2(ssao.resolution);

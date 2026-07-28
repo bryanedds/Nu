@@ -29,7 +29,7 @@ layout(set = 0, binding = 4) uniform texture2D lightMappingTexture;
 
 layout(set = 1, binding = 0) uniform sampler colorSampler;
 
-layout(location = 0) in vec2 texCoordsOut;
+layout(location = 0) in vec2 texCoords;
 
 layout(location = 0) out vec4 frag;
 
@@ -44,14 +44,14 @@ vec4 depthToPosition(float depth, vec2 texCoords)
 void main()
 {
     // ensure fragment was written
-    float depth = texture(sampler2D(depthTexture, colorSampler), texCoordsOut).r;
+    float depth = texture(sampler2D(depthTexture, colorSampler), texCoords).r;
     if (depth == 0.0) discard;
 
     // recover position from depth
-    vec4 position = depthToPosition(depth, texCoordsOut);
+    vec4 position = depthToPosition(depth, texCoords);
 
     // retrieve light mapping data
-    vec4 lmData = texture(sampler2D(lightMappingTexture, colorSampler), texCoordsOut);
+    vec4 lmData = texture(sampler2D(lightMappingTexture, colorSampler), texCoords);
     int lm1 = int(lmData.r) - 1;
     int lm2 = int(lmData.g) - 1;
     float lmRatio = lmData.b;

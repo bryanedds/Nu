@@ -38,7 +38,7 @@ layout(set = 0, binding = 4) uniform texture2D normalPlusTexture;
 
 layout(set = 1, binding = 0) uniform sampler colorSampler;
 
-layout(location = 0) in vec2 texCoordsOut;
+layout(location = 0) in vec2 texCoords;
 
 layout(location = 0) out vec4 frag;
 
@@ -102,14 +102,14 @@ float computeDepthRatio(vec3 minA, vec3 sizeA, vec3 minB, vec3 sizeB, vec3 posit
 void main()
 {
     // ensure fragment was written
-    float depth = texture(sampler2D(depthTexture, colorSampler), texCoordsOut).r;
+    float depth = texture(sampler2D(depthTexture, colorSampler), texCoords).r;
     if (depth == 0.0) discard;
 
     // recover position from depth
-    vec4 position = depthToPosition(depth, texCoordsOut);
+    vec4 position = depthToPosition(depth, texCoords);
 
     // retrieve remaining data from geometry buffers
-    vec4 normalPlus = texture(sampler2D(normalPlusTexture, colorSampler), texCoordsOut);
+    vec4 normalPlus = texture(sampler2D(normalPlusTexture, colorSampler), texCoords);
     vec3 normal = normalize(normalPlus.xyz);
     bool ignoreLightMaps = normalPlus.w == 1.0;
 

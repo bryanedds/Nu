@@ -15,7 +15,7 @@ layout(set = 1, binding = 0) uniform textureCube cubeMap;
 
 layout(set = 2, binding = 0) uniform sampler samp;
 
-layout(location = 0) in vec3 positionOut;
+layout(location = 0) in vec3 position;
 
 layout(location = 0) out vec4 frag;
 
@@ -79,7 +79,7 @@ void main()
     // compute normal
     float roughness = environmentFilter.roughness;
     float resolution = environmentFilter.resolution;
-    vec3 normal = normalize(positionOut);
+    vec3 normal = normalize(position);
 
     // make the simplifying assumption that v equals r equals the normal
     vec3 r = normal;

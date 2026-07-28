@@ -150,13 +150,13 @@ layout(set = 3, binding = 3) uniform sampler colorSampler;
 layout(set = 3, binding = 4) uniform sampler depthSampler;
 layout(set = 3, binding = 5) uniform sampler brdfSampler;
 
-layout(location = 0) in vec4 positionOut;
-layout(location = 1) in vec2 texCoordsOut;
-layout(location = 2) in vec3 normalOut;
-flat layout(location = 3) in vec4 albedoOut;
-flat layout(location = 4) in vec4 materialOut;
-flat layout(location = 5) in vec4 heightPlusOut;
-flat layout(location = 6) in vec4 subsurfacePlusOut;
+layout(location = 0) in vec4 position;
+layout(location = 1) in vec2 texCoords;
+layout(location = 2) in vec3 normal;
+flat layout(location = 3) in vec4 albedo;
+flat layout(location = 4) in vec4 material;
+flat layout(location = 5) in vec4 heightPlus;
+flat layout(location = 6) in vec4 subsurfacePlus;
 
 layout(location = 0) out vec4 frag;
 
@@ -844,21 +844,20 @@ void computeSsrr(float depth, vec4 position, vec3 normal, float refractiveIndex,
 void main()
 {
     // discard when depth out of range
-    float depthCutoff = heightPlusOut.z;
+    float depthCutoff = heightPlus.z;
     float depth = gl_FragCoord.z / gl_FragCoord.w;
     if (depthCutoff >= 0.0) { if (depth > depthCutoff) discard; }
     else if (depth <= -depthCutoff) discard;
 
     // compute basic fragment data
-    vec4 position = positionOut;
-    vec3 normal = normalize(normalOut);
+    vec3 normal = normalize(normal);
     float distance = length(position.xyz - eye.center);
 
     // compute spatial converters
-    vec3 q1 = dFdx(positionOut.xyz);
-    vec3 q2 = dFdy(positionOut.xyz);
-    vec2 st1 = dFdx(texCoordsOut);
-    vec2 st2 = dFdy(texCoordsOut);
+    vec3 q1 = dFdx(position.xyz);
+    vec3 q2 = dFdy(position.xyz);
+    vec2 st1 = dFdx(texCoords);
+    vec2 st2 = dFdy(texCoords);
     vec3 tangent = normalize(q1 * st2.t - q2 * st1.t);
     vec3 binormal = -normalize(cross(normal, tangent));
     tangent = normalize(tangent - normal * dot(normal, tangent));
@@ -870,16 +869,16 @@ void main()
     vec3 eyeCenterTangent = toTangent * eye.center;
     vec3 positionTangent = toTangent * position.xyz;
     vec3 toEyeTangent = normalize(eyeCenterTangent - positionTangent);
-    float height = texture(sampler2D(heightTexture, filteredSampler), texCoordsOut).x * heightPlusOut.x;
+    float height = texture(sampler2D(heightTexture, filteredSampler), texCoords).x * heightPlus.x;
     vec2 parallax = toEyeTangent.xy * height;
-    vec2 texCoords = texCoordsOut - parallax;
+    vec2 texCoords = texCoords - parallax;
 
     // compute albedo with alpha sample
-    float opaqueDistance = heightPlusOut.w;
+    float opaqueDistance = heightPlus.w;
     vec4 albedoSample = texture(sampler2D(albedoTexture, filteredSampler), texCoords);
-    vec4 albedo =
+    vec4 albedoPlus =
         vec4(
-            pow(albedoSample.rgb, vec3(GAMMA)) * albedoOut.rgb,
+            pow(albedoSample.rgb, vec3(GAMMA)) * albedo.rgb,
             mix(albedoSample.a, 1.0, smoothstep(opaqueDistance * 0.667, opaqueDistance, distance)));
 
     // compute normal
@@ -888,7 +887,7 @@ void main()
     // compute roughness with specular anti-aliasing (Tokuyoshi & Kaplanyan 2019)
     // NOTE: the SAA algo also includes derivative scalars that are currently not utilized here due to lack of need -
     // https://github.com/google/filament/blob/d7b44a2585a7ce19615dbe226501acc3fe3f0c16/shaders/src/surface_shading_lit.fs#L41-L42
-    float roughness = texture(sampler2D(roughnessTexture, filteredSampler), texCoords).r * materialOut.r;
+    float roughness = texture(sampler2D(roughnessTexture, filteredSampler), texCoords).r * material.r;
     vec3 du = dFdx(n);
     vec3 dv = dFdy(n);
     float variance = SAA_VARIANCE * (dot(du, du) + dot(dv, dv));
@@ -898,23 +897,23 @@ void main()
     roughness = sqrt(sqrt(roughnessPerceptualSquared));
 
     // compute remaining material properties
-    float metallic = texture(sampler2D(metallicTexture, filteredSampler), texCoords).g * materialOut.g;
-    float ambientOcclusion = texture(sampler2D(ambientOcclusionTexture, filteredSampler), texCoords).b * materialOut.b;
-    vec3 emission = vec3(texture(sampler2D(emissionTexture, filteredSampler), texCoords).r * materialOut.a);
+    float metallic = texture(sampler2D(metallicTexture, filteredSampler), texCoords).g * material.g;
+    float ambientOcclusion = texture(sampler2D(ambientOcclusionTexture, filteredSampler), texCoords).b * material.b;
+    vec3 emission = vec3(texture(sampler2D(emissionTexture, filteredSampler), texCoords).r * material.a);
 
     // compute ignore light maps
-    bool ignoreLightMaps = heightPlusOut.y != 0.0;
+    bool ignoreLightMaps = heightPlus.y != 0.0;
 
     // compute subsurface properties
-    float subsurfaceCutoff = subsurfacePlusOut.x;
-    float subsurfaceCutoffMargin = subsurfacePlusOut.y;
-    float specularScalar = subsurfacePlusOut.z;
-    float refractiveIndex = subsurfacePlusOut.w;
+    float subsurfaceCutoff = subsurfacePlus.x;
+    float subsurfaceCutoffMargin = subsurfacePlus.y;
+    float specularScalar = subsurfacePlus.z;
+    float refractiveIndex = subsurfacePlus.w;
 
     // accumulate light and fog
     vec3 v = normalize(eye.center - position.xyz);
     float nDotV = saturate(dot(n, v));
-    vec3 f0 = mix(vec3(0.04), albedo.rgb, metallic); // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
+    vec3 f0 = mix(vec3(0.04), albedoPlus.rgb, metallic); // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedoPlus color as f0.
     vec3 lightAccumDiffuse = vec3(0.0);
     vec3 lightAccumSpecular = vec3(0.0);
     vec3 fogAccum = vec3(0.0);
@@ -996,7 +995,7 @@ void main()
 
             // add to outgoing lightAccums
             vec3 lightScalar = radiance * nDotL * shadowScalar;
-            lightAccumDiffuse += (kD * albedo.rgb / PI * burley) * lightScalar;
+            lightAccumDiffuse += (kD * albedoPlus.rgb / PI * burley) * lightScalar;
             lightAccumSpecular += specular * lightScalar;
         }
 
@@ -1128,7 +1127,7 @@ void main()
     vec3 kS = f;
     vec3 kD = 1.0 - kS;
     kD *= 1.0 - metallic;
-    vec3 diffuse = kD * irradiance * albedo.rgb * ambientDiffuse;
+    vec3 diffuse = kD * irradiance * albedoPlus.rgb * ambientDiffuse;
     if (ssrrDesired)
     {
         vec3 diffuseScreen = vec3(0.0);
@@ -1144,14 +1143,14 @@ void main()
     vec3 specular = environmentFilter * (f * environmentBrdf.x + environmentBrdf.y) * ambientSpecular;
 
     // compute alpha term
-    float alpha = albedo.a * albedoOut.a;
+    float alpha = albedoPlus.a * albedo.a;
 
     // since alpha only affects diffuse, increase accumulated specular light in proportion to alpha's color reduction.
     // after, apply specular scalar.
     lightAccumSpecular *= 1.0 / max(alpha, 0.0001) * specularScalar;
 
     // compute color composition
-    vec3 color = lightAccumDiffuse + diffuse + emission * albedo.rgb + lightAccumSpecular + specular + fogAccum;
+    vec3 color = lightAccumDiffuse + diffuse + emission * albedoPlus.rgb + lightAccumSpecular + specular + fogAccum;
 
     // compute and apply distance fog when enabled
     if (lighting.fogEnabled == 1)

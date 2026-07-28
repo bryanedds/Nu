@@ -71,7 +71,7 @@ layout(set = 0, binding = 13) uniform texture2DArray shadowCascades[SHADOW_CASCA
 layout(set = 1, binding = 0) uniform sampler geometrySampler;
 layout(set = 1, binding = 1) uniform sampler shadowSampler;
 
-layout(location = 0) in vec2 texCoordsOut;
+layout(location = 0) in vec2 texCoords;
 
 layout(location = 0) out vec3 frag;
 
@@ -459,22 +459,22 @@ void main()
     vec3 lightAccum = vec3(0.0);
 
     // ensure fragment was written
-    float depth = texture(sampler2D(depthTexture, geometrySampler), texCoordsOut).r;
+    float depth = texture(sampler2D(depthTexture, geometrySampler), texCoords).r;
     if (depth != 0.0)
     {
         // recover position from depth
-        vec4 position = depthToPosition(depth, texCoordsOut);
+        vec4 position = depthToPosition(depth, texCoords);
 
         // retrieve remaining data from geometry buffers
-        vec3 albedo = texture(sampler2D(albedoTexture, geometrySampler), texCoordsOut).rgb;
-        vec4 material = texture(sampler2D(materialTexture, geometrySampler), texCoordsOut);
-        vec3 normal = normalize(texture(sampler2D(normalPlusTexture, geometrySampler), texCoordsOut).xyz);
+        vec3 albedo = texture(sampler2D(albedoTexture, geometrySampler), texCoords).rgb;
+        vec4 material = texture(sampler2D(materialTexture, geometrySampler), texCoords);
+        vec3 normal = normalize(texture(sampler2D(normalPlusTexture, geometrySampler), texCoords).xyz);
         vec4 subdermalPlus = vec4(0.0);
         vec4 scatterPlus = vec4(0.0);
         if (lighting.sssEnabled == 1)
         {
-            subdermalPlus = texture(sampler2D(subdermalPlusTexture, geometrySampler), texCoordsOut);
-            scatterPlus = texture(sampler2D(scatterPlusTexture, geometrySampler), texCoordsOut);
+            subdermalPlus = texture(sampler2D(subdermalPlusTexture, geometrySampler), texCoords);
+            scatterPlus = texture(sampler2D(scatterPlusTexture, geometrySampler), texCoords);
         }
 
         // compute materials
@@ -482,7 +482,7 @@ void main()
         float metallic = material.g;
 
         // compute clear coat values
-        vec4 clearCoatPlus = texture(sampler2D(clearCoatPlusTexture, geometrySampler), texCoordsOut);
+        vec4 clearCoatPlus = texture(sampler2D(clearCoatPlusTexture, geometrySampler), texCoords);
         float clearCoat = clearCoatPlus.r;
         float clearCoatRoughness = clearCoatPlus.g;
         vec3 clearCoatNormal = decodeOctahedral(clearCoatPlus.ba);
@@ -596,7 +596,7 @@ void main()
                 float scatterType = scatterPlus.a;
                 if (lighting.sssEnabled == 1 && scatterType != 0.0)
                 {
-                    vec3 scatter = computeSubsurfaceScatter(position, albedo, subdermalPlus, scatterPlus, nDotL, texCoordsOut, light);
+                    vec3 scatter = computeSubsurfaceScatter(position, albedo, subdermalPlus, scatterPlus, nDotL, texCoords, light);
                     lightAccum += kD * scatter * radiance;
                 }
             }

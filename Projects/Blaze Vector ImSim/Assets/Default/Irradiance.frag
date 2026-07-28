@@ -7,14 +7,14 @@ layout(set = 1, binding = 0) uniform textureCube cubeMap;
 
 layout(set = 2, binding = 0) uniform sampler samp;
 
-layout(location = 0) in vec3 positionOut;
+layout(location = 0) in vec3 position;
 
 layout(location = 0) out vec4 frag;
 
 void main()
 {
     // compute normal
-    vec3 normal = normalize(positionOut);
+    vec3 normal = normalize(position);
 
     // calculate tangent space
     vec3 up = vec3(0.0, 1.0, 0.0);

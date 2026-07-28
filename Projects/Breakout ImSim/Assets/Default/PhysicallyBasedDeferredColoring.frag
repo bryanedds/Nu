@@ -81,7 +81,7 @@ layout(set = 0, binding = 12) uniform texture2D ssaoTexture;
 layout(set = 1, binding = 0) uniform sampler colorSampler;
 layout(set = 1, binding = 1) uniform sampler brdfSampler;
 
-layout(location = 0) in vec2 texCoordsOut;
+layout(location = 0) in vec2 texCoords;
 
 layout(location = 0) out vec3 color;
 layout(location = 1) out float depth;
@@ -240,26 +240,26 @@ void computeSsrl(float depth, vec4 position, vec3 albedo, float roughness, float
 void main()
 {
     // ensure fragment was written
-    float depthInput = texture(sampler2D(depthTexture, colorSampler), texCoordsOut).r;
+    float depthInput = texture(sampler2D(depthTexture, colorSampler), texCoords).r;
     if (depthInput == 0.0) discard;
 
     // recover position from depth
-    vec4 position = depthToPosition(depthInput, texCoordsOut);
+    vec4 position = depthToPosition(depthInput, texCoords);
 
     // retrieve remaining data from geometry buffers
-    vec3 albedo = texture(sampler2D(albedoTexture, colorSampler), texCoordsOut).rgb;
-    vec4 material = texture(sampler2D(materialTexture, colorSampler), texCoordsOut);
-    vec3 normal = normalize(texture(sampler2D(normalPlusTexture, colorSampler), texCoordsOut).xyz);
-    vec2 clearCoatPlus = texture(sampler2D(clearCoatPlusTexture, colorSampler), texCoordsOut).rg;
+    vec3 albedo = texture(sampler2D(albedoTexture, colorSampler), texCoords).rgb;
+    vec4 material = texture(sampler2D(materialTexture, colorSampler), texCoords);
+    vec3 normal = normalize(texture(sampler2D(normalPlusTexture, colorSampler), texCoords).xyz);
+    vec2 clearCoatPlus = texture(sampler2D(clearCoatPlusTexture, colorSampler), texCoords).rg;
     float clearCoat = clearCoatPlus.r;
     float clearCoatRoughness = clearCoatPlus.g;
-    vec3 lightAccum = texture(sampler2D(lightAccumTexture, colorSampler), texCoordsOut).rgb;
+    vec3 lightAccum = texture(sampler2D(lightAccumTexture, colorSampler), texCoords).rgb;
 
     // retrieve data from intermediate buffers
-    vec4 ambientColorAndBrightness = texture(sampler2D(ambientTexture, colorSampler), texCoordsOut);
-    vec3 irradiance = texture(sampler2D(irradianceTexture, colorSampler), texCoordsOut).rgb;
-    vec3 environmentFilter = texture(sampler2D(environmentFilterTexture, colorSampler), texCoordsOut).rgb;
-    float ssao = texture(sampler2D(ssaoTexture, colorSampler), texCoordsOut).r;
+    vec4 ambientColorAndBrightness = texture(sampler2D(ambientTexture, colorSampler), texCoords);
+    vec3 irradiance = texture(sampler2D(irradianceTexture, colorSampler), texCoords).rgb;
+    vec3 environmentFilter = texture(sampler2D(environmentFilterTexture, colorSampler), texCoords).rgb;
+    float ssao = texture(sampler2D(ssaoTexture, colorSampler), texCoords).r;
 
     // compute materials
     float roughness = material.r;
@@ -300,7 +300,7 @@ void main()
     {
         vec2 texSize = textureSize(sampler2D(depthTexture, colorSampler), 0).xy;
         float texelHeight = 1.0 / texSize.y;
-        vec2 texCoordsBelow = texCoordsOut + vec2(0.0, texelHeight); // using tex coord below current pixel reduces 'cracks' on floor reflections
+        vec2 texCoordsBelow = texCoords + vec2(0.0, texelHeight); // using tex coord below current pixel reduces 'cracks' on floor reflections
         texCoordsBelow.y = max(0.0, texCoordsBelow.y);
         float depthBelow = texture(sampler2D(depthTexture, colorSampler), texCoordsBelow).r;
         vec4 positionBelow = depthToPosition(depthBelow, texCoordsBelow);

@@ -111,7 +111,7 @@ layout(set = 0, binding = 8) uniform texture2DArray shadowCascades[SHADOW_CASCAD
 layout(set = 1, binding = 0) uniform sampler colorSampler;
 layout(set = 1, binding = 1) uniform sampler shadowSampler;
 
-layout(location = 0) in vec2 texCoordsOut;
+layout(location = 0) in vec2 texCoords;
 
 layout(location = 0) out vec3 frag;
 
@@ -480,11 +480,11 @@ void main()
     vec3 fogAccum = vec3(0.0);
 
     // ensure fragment was written and ssvf is enabled
-    float depth = texture(sampler2D(depthTexture, colorSampler), texCoordsOut).r;
+    float depth = texture(sampler2D(depthTexture, colorSampler), texCoords).r;
     if (depth != 0.0 && lighting.ssvfEnabled == 1)
     {
         // recover position from depth
-        vec4 position = depthToPosition(depth, texCoordsOut);
+        vec4 position = depthToPosition(depth, texCoords);
 
         // accumulate fog
         for (int i = 0; i < lightsGeneral.lightsCount; ++i)

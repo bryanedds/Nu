@@ -36,7 +36,7 @@ layout(set = 0, binding = 8) uniform textureCube environmentFilterMaps[LIGHT_MAP
 layout(set = 1, binding = 0) uniform sampler colorSampler;
 layout(set = 1, binding = 1) uniform sampler environmentFilterSampler;
 
-layout(location = 0) in vec2 texCoordsOut;
+layout(location = 0) in vec2 texCoords;
 
 layout(location = 0) out vec4 frag;
 
@@ -118,22 +118,22 @@ vec3 computeEnvironmentFilter(vec4 position, vec3 normal, float roughness, vec4 
 void main()
 {
     // ensure fragment was written
-    float depth = texture(sampler2D(depthTexture, colorSampler), texCoordsOut).r;
+    float depth = texture(sampler2D(depthTexture, colorSampler), texCoords).r;
     if (depth == 0.0) discard;
 
     // recover position from depth
-    vec4 position = depthToPosition(depth, texCoordsOut);
+    vec4 position = depthToPosition(depth, texCoords);
 
     // retrieve remaining data from geometry buffers
-    float roughness = texture(sampler2D(materialTexture, colorSampler), texCoordsOut).r;
-    vec3 normal = normalize(texture(sampler2D(normalPlusTexture, colorSampler), texCoordsOut).xyz);
-    vec4 clearCoatPlus = texture(sampler2D(clearCoatPlusTexture, colorSampler), texCoordsOut);
+    float roughness = texture(sampler2D(materialTexture, colorSampler), texCoords).r;
+    vec3 normal = normalize(texture(sampler2D(normalPlusTexture, colorSampler), texCoords).xyz);
+    vec4 clearCoatPlus = texture(sampler2D(clearCoatPlusTexture, colorSampler), texCoords);
     float clearCoat = clearCoatPlus.r;
     float clearCoatRoughness = clearCoatPlus.g;
     vec3 clearCoatNormal = decodeOctahedral(clearCoatPlus.ba);
 
     // compute environment filters
-    vec4 lmData = texture(sampler2D(lightMappingTexture, colorSampler), texCoordsOut);
+    vec4 lmData = texture(sampler2D(lightMappingTexture, colorSampler), texCoords);
     vec3 environmentFilter = computeEnvironmentFilter(position, normal, roughness, lmData);
     vec3 clearCoatEnvironmentFilter = computeEnvironmentFilter(position, clearCoatNormal, clearCoatRoughness, lmData);
     environmentFilter = mix(environmentFilter, clearCoatEnvironmentFilter, clearCoat);
