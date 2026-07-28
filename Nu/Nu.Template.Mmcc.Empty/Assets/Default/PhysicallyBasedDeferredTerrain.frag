@@ -34,7 +34,7 @@ layout(set = 1, binding = 2) uniform texture2D ambientOcclusionTextures[TERRAIN_
 layout(set = 1, binding = 3) uniform texture2D normalTextures[TERRAIN_LAYERS_MAX];
 layout(set = 1, binding = 4) uniform texture2D heightTextures[TERRAIN_LAYERS_MAX];
 
-layout(set = 2, binding = 0) uniform sampler filteredSampler;
+layout(set = 2, binding = 0) uniform sampler materialSampler;
 
 layout(location = 0) in vec4 position;
 layout(location = 1) in vec2 texCoords;
@@ -77,7 +77,7 @@ void main()
     // compute height blend, height, and ignore local light maps
     float heightBlend = 0.0;
     for (int i = 0; i < min(terrainFrag.layersCount, TERRAIN_LAYERS_MAX); ++i)
-        heightBlend += texture(sampler2D(heightTextures[i], filteredSampler), texCoords).r * blends[i/4][i%4];
+        heightBlend += texture(sampler2D(heightTextures[i], materialSampler), texCoords).r * blends[i/4][i%4];
     float height = heightBlend * heightPlus.x;
 
     // compute tex coords in parallax space
@@ -95,11 +95,11 @@ void main()
     for (int i = 0; i < min(terrainFrag.layersCount, TERRAIN_LAYERS_MAX); ++i)
     {
         float blend = blends[i/4][i%4];
-        albedoBlend += texture(sampler2D(albedoTextures[i], filteredSampler), texCoords) * blend;
-        vec4 roughness = texture(sampler2D(roughnessTextures[i], filteredSampler), texCoords);
+        albedoBlend += texture(sampler2D(albedoTextures[i], materialSampler), texCoords) * blend;
+        vec4 roughness = texture(sampler2D(roughnessTextures[i], materialSampler), texCoords);
         roughnessBlend += (roughness.a == 1.0f ? roughness.r : roughness.a) * blend;
-        ambientOcclusionBlend += texture(sampler2D(ambientOcclusionTextures[i], filteredSampler), texCoords).b * blend;
-        normalBlend += decodeNormal(texture(sampler2D(normalTextures[i], filteredSampler), texCoords).xy) * blend;
+        ambientOcclusionBlend += texture(sampler2D(ambientOcclusionTextures[i], materialSampler), texCoords).b * blend;
+        normalBlend += decodeNormal(texture(sampler2D(normalTextures[i], materialSampler), texCoords).xy) * blend;
     }
 
     // compute normal and ignore local height maps

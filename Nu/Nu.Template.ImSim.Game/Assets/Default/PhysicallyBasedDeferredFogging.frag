@@ -108,8 +108,8 @@ layout(set = 0, binding = 6) uniform texture2DArray shadowTextures;
 layout(set = 0, binding = 7) uniform textureCube shadowMaps[SHADOW_MAPS_MAX];
 layout(set = 0, binding = 8) uniform texture2DArray shadowCascades[SHADOW_CASCADES_MAX];
 
-layout(set = 1, binding = 0) uniform sampler colorSampler;
-layout(set = 1, binding = 1) uniform sampler shadowSampler;
+layout(set = 1, binding = 0) uniform sampler unfilteredSampler;
+layout(set = 1, binding = 1) uniform sampler filteredSampler;
 
 layout(location = 0) in vec2 texCoords;
 
@@ -187,7 +187,7 @@ vec3 computeFogAccumPoint(vec4 position, LightStruct light)
             // compute depths
             vec3 positionShadow = currentPosition - light.origin;
             float shadowZ = length(positionShadow);
-            float shadowDepth = texture(samplerCube(shadowMaps[shadowIndex - SHADOW_TEXTURES_MAX], shadowSampler), positionShadow).x;
+            float shadowDepth = texture(samplerCube(shadowMaps[shadowIndex - SHADOW_TEXTURES_MAX], filteredSampler), positionShadow).x;
 
             // compute intensity inside light volume
             vec3 v = normalize(eye.center - currentPosition);
@@ -292,7 +292,7 @@ vec3 computeFogAccumSpot(vec4 position, LightStruct light)
             vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5;
             bool shadowTexCoordsInRange = shadowTexCoords.x >= 0.0 && shadowTexCoords.x < 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y < 1.0;
             float shadowZ = shadowTexCoordsProj.z;
-            float shadowDepth = shadowTexCoordsInRange ? texture(sampler2DArray(shadowTextures, shadowSampler), vec3(shadowTexCoords, float(shadowIndex))).x : 1.0;
+            float shadowDepth = shadowTexCoordsInRange ? texture(sampler2DArray(shadowTextures, filteredSampler), vec3(shadowTexCoords, float(shadowIndex))).x : 1.0;
 
             // compute intensity inside light volume
             vec3 v = normalize(eye.center - currentPosition);
@@ -378,7 +378,7 @@ vec3 computeFogAccumDirectional(vec4 position, LightStruct light)
             vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5;
             bool shadowTexCoordsInRange = shadowTexCoords.x >= 0.0 && shadowTexCoords.x < 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y < 1.0;
             float shadowZ = shadowTexCoordsProj.z;
-            float shadowDepth = shadowTexCoordsInRange ? texture(sampler2DArray(shadowTextures, shadowSampler), vec3(shadowTexCoords, float(shadowIndex))).x : 1.0;
+            float shadowDepth = shadowTexCoordsInRange ? texture(sampler2DArray(shadowTextures, filteredSampler), vec3(shadowTexCoords, float(shadowIndex))).x : 1.0;
 
             // step through ray, accumulating fog light moment
             if (shadowZ <= shadowDepth || shadowZ >= 1.0f)
@@ -453,7 +453,7 @@ vec3 computeFogAccumCascaded(vec4 position, LightStruct light)
                 vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5;
                 bool shadowTexCoordsInRange = shadowTexCoords.x >= 0.0 && shadowTexCoords.x < 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y < 1.0;
                 float shadowZ = shadowTexCoordsProj.z;
-                float shadowDepth = shadowTexCoordsInRange ? texture(sampler2DArray(shadowCascades[shadowIndex - SHADOW_TEXTURES_MAX], shadowSampler), vec3(shadowTexCoords, float(i))).x : 1.0;
+                float shadowDepth = shadowTexCoordsInRange ? texture(sampler2DArray(shadowCascades[shadowIndex - SHADOW_TEXTURES_MAX], filteredSampler), vec3(shadowTexCoords, float(i))).x : 1.0;
 
                 // step through ray, accumulating fog light moment
                 if (shadowZ <= shadowDepth || shadowZ >= 1.0f)
@@ -480,7 +480,7 @@ void main()
     vec3 fogAccum = vec3(0.0);
 
     // ensure fragment was written and ssvf is enabled
-    float depth = texture(sampler2D(depthTexture, colorSampler), texCoords).r;
+    float depth = texture(sampler2D(depthTexture, unfilteredSampler), texCoords).r;
     if (depth != 0.0 && lighting.ssvfEnabled == 1)
     {
         // recover position from depth

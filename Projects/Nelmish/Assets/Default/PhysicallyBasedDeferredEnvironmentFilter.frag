@@ -33,8 +33,8 @@ layout(set = 0, binding = 6) uniform texture2D lightMappingTexture;
 layout(set = 0, binding = 7) uniform textureCube environmentFilterMap;
 layout(set = 0, binding = 8) uniform textureCube environmentFilterMaps[LIGHT_MAPS_MAX];
 
-layout(set = 1, binding = 0) uniform sampler colorSampler;
-layout(set = 1, binding = 1) uniform sampler environmentFilterSampler;
+layout(set = 1, binding = 0) uniform sampler unfilteredSampler;
+layout(set = 1, binding = 1) uniform sampler filteredSampler;
 
 layout(location = 0) in vec2 texCoords;
 
@@ -90,15 +90,15 @@ vec3 computeEnvironmentFilter(vec4 position, vec3 normal, float roughness, vec4 
     if (lm1 == -1 && lm2 == -1)
     {
         vec3 r = reflect(-v, normal);
-        environmentFilter = textureLod(samplerCube(environmentFilterMap, environmentFilterSampler), r, roughness * REFLECTION_LOD_MAX).rgb;
+        environmentFilter = textureLod(samplerCube(environmentFilterMap, filteredSampler), r, roughness * REFLECTION_LOD_MAX).rgb;
     }
     else if (lm2 == -1)
     {
         // compute blended environment filter
         vec3 r1 = parallaxCorrection(lightMaps[lm1], position.xyz, normal);
         vec3 r2 = reflect(-v, normal);
-        vec3 environmentFilter1 = textureLod(samplerCube(environmentFilterMaps[lm1], environmentFilterSampler), r1, roughness * REFLECTION_LOD_MAX).rgb;
-        vec3 environmentFilter2 = textureLod(samplerCube(environmentFilterMap, environmentFilterSampler), r2, roughness * REFLECTION_LOD_MAX).rgb;
+        vec3 environmentFilter1 = textureLod(samplerCube(environmentFilterMaps[lm1], filteredSampler), r1, roughness * REFLECTION_LOD_MAX).rgb;
+        vec3 environmentFilter2 = textureLod(samplerCube(environmentFilterMap, filteredSampler), r2, roughness * REFLECTION_LOD_MAX).rgb;
         environmentFilter = mix(environmentFilter1, environmentFilter2, lmRatio);
     }
     else
@@ -106,8 +106,8 @@ vec3 computeEnvironmentFilter(vec4 position, vec3 normal, float roughness, vec4 
         // compute blended environment filter
         vec3 r1 = parallaxCorrection(lightMaps[lm1], position.xyz, normal);
         vec3 r2 = parallaxCorrection(lightMaps[lm2], position.xyz, normal);
-        vec3 environmentFilter1 = textureLod(samplerCube(environmentFilterMaps[lm1], environmentFilterSampler), r1, roughness * REFLECTION_LOD_MAX).rgb;
-        vec3 environmentFilter2 = textureLod(samplerCube(environmentFilterMaps[lm2], environmentFilterSampler), r2, roughness * REFLECTION_LOD_MAX).rgb;
+        vec3 environmentFilter1 = textureLod(samplerCube(environmentFilterMaps[lm1], filteredSampler), r1, roughness * REFLECTION_LOD_MAX).rgb;
+        vec3 environmentFilter2 = textureLod(samplerCube(environmentFilterMaps[lm2], filteredSampler), r2, roughness * REFLECTION_LOD_MAX).rgb;
         environmentFilter = mix(environmentFilter1, environmentFilter2, lmRatio);
     }
 
@@ -118,22 +118,22 @@ vec3 computeEnvironmentFilter(vec4 position, vec3 normal, float roughness, vec4 
 void main()
 {
     // ensure fragment was written
-    float depth = texture(sampler2D(depthTexture, colorSampler), texCoords).r;
+    float depth = texture(sampler2D(depthTexture, unfilteredSampler), texCoords).r;
     if (depth == 0.0) discard;
 
     // recover position from depth
     vec4 position = depthToPosition(depth, texCoords);
 
     // retrieve remaining data from geometry buffers
-    float roughness = texture(sampler2D(materialTexture, colorSampler), texCoords).r;
-    vec3 normal = normalize(texture(sampler2D(normalPlusTexture, colorSampler), texCoords).xyz);
-    vec4 clearCoatPlus = texture(sampler2D(clearCoatPlusTexture, colorSampler), texCoords);
+    float roughness = texture(sampler2D(materialTexture, unfilteredSampler), texCoords).r;
+    vec3 normal = normalize(texture(sampler2D(normalPlusTexture, unfilteredSampler), texCoords).xyz);
+    vec4 clearCoatPlus = texture(sampler2D(clearCoatPlusTexture, unfilteredSampler), texCoords);
     float clearCoat = clearCoatPlus.r;
     float clearCoatRoughness = clearCoatPlus.g;
     vec3 clearCoatNormal = decodeOctahedral(clearCoatPlus.ba);
 
     // compute environment filters
-    vec4 lmData = texture(sampler2D(lightMappingTexture, colorSampler), texCoords);
+    vec4 lmData = texture(sampler2D(lightMappingTexture, unfilteredSampler), texCoords);
     vec3 environmentFilter = computeEnvironmentFilter(position, normal, roughness, lmData);
     vec3 clearCoatEnvironmentFilter = computeEnvironmentFilter(position, clearCoatNormal, clearCoatRoughness, lmData);
     environmentFilter = mix(environmentFilter, clearCoatEnvironmentFilter, clearCoat);

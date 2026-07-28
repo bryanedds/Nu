@@ -66,7 +66,7 @@ layout(set = 0, binding = 2) uniform texture2D depthTexture;
 layout(set = 0, binding = 3) uniform texture2D colorTexture;
 layout(set = 0, binding = 4) uniform texture2D fogAccumTexture;
 
-layout(set = 1, binding = 0) uniform sampler colorSampler;
+layout(set = 1, binding = 0) uniform sampler unfilteredSampler;
 
 layout(location = 0) in vec2 texCoords;
 
@@ -83,12 +83,12 @@ vec4 depthToPosition(float depth, vec2 texCoords)
 void main()
 {
     // ensure fragment written
-    float depth = texture(sampler2D(depthTexture, colorSampler), texCoords, 0).r;
+    float depth = texture(sampler2D(depthTexture, unfilteredSampler), texCoords, 0).r;
     if (depth == 0.0) discard;
 
     // apply volumetric fog
-    vec3 fogAccum = texture(sampler2D(fogAccumTexture, colorSampler), texCoords, 0).xyz;
-    vec3 color = texture(sampler2D(colorTexture, colorSampler), texCoords, 0).xyz + fogAccum;
+    vec3 fogAccum = texture(sampler2D(fogAccumTexture, unfilteredSampler), texCoords, 0).xyz;
+    vec3 color = texture(sampler2D(colorTexture, unfilteredSampler), texCoords, 0).xyz + fogAccum;
 
     // compute and apply distance fog when enabled
     vec4 position = depthToPosition(depth, texCoords);

@@ -69,7 +69,7 @@ layout(set = 0, binding = 1) uniform SsaoUniform { SsaoStruct ssao; };
 layout(set = 0, binding = 2) uniform texture2D depthTexture;
 layout(set = 0, binding = 3) uniform texture2D normalPlusTexture;
 
-layout(set = 1, binding = 0) uniform sampler colorSampler;
+layout(set = 1, binding = 0) uniform sampler unfilteredSampler;
 
 layout(location = 0) in vec2 texCoords;
 
@@ -102,14 +102,14 @@ vec4 depthToPosition(float depth, vec2 texCoords)
 void main()
 {
     // ensure fragment was written
-    float depth = texture(sampler2D(depthTexture, colorSampler), texCoords).r;
+    float depth = texture(sampler2D(depthTexture, unfilteredSampler), texCoords).r;
     if (depth == 0.0) discard;
 
     // recover position from depth
     vec4 position = depthToPosition(depth, texCoords);
 
     // retrieve remaining data from geometry buffers
-    vec3 normal = normalize(texture(sampler2D(normalPlusTexture, colorSampler), texCoords).xyz);
+    vec3 normal = normalize(texture(sampler2D(normalPlusTexture, unfilteredSampler), texCoords).xyz);
 
     // pre-compute resolution inverse
     vec2 ssaoResolutionInverse = vec2(1.0) / vec2(ssao.resolution);
@@ -149,7 +149,7 @@ void main()
         if (distanceScreen < ssao.distanceMax)
         {
             // ensure sample is actually written
-            float sampleDepth = texture(sampler2D(depthTexture, colorSampler), samplingPositionScreen).r;
+            float sampleDepth = texture(sampler2D(depthTexture, unfilteredSampler), samplingPositionScreen).r;
             if (sampleDepth != 0.0)
             {
                 // compute sample position in view space

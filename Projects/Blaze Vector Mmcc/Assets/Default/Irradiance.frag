@@ -3,9 +3,9 @@
 const float PI = 3.14159265359;
 const float SAMPLE_DELTA = 0.025;
 
-layout(set = 1, binding = 0) uniform textureCube cubeMap;
+layout(set = 1, binding = 0) uniform textureCube inputCubeMap;
 
-layout(set = 2, binding = 0) uniform sampler samp;
+layout(set = 2, binding = 0) uniform sampler inputSampler;
 
 layout(location = 0) in vec3 position;
 
@@ -30,7 +30,7 @@ void main()
         {
             vec3 sampleTangent = vec3(sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta));
             vec3 sampleVector = sampleTangent.x * right + sampleTangent.y * up + sampleTangent.z * normal;
-            vec3 sampleColor = texture(samplerCube(cubeMap, samp), sampleVector).rgb;
+            vec3 sampleColor = texture(samplerCube(inputCubeMap, inputSampler), sampleVector).rgb;
             if (!any(isnan(sampleColor))) // TODO: understand why NaN can come from this sample and try to apply a more appropriate fix.
             {
                 irradiance += sampleColor * cos(theta) * sin(theta);

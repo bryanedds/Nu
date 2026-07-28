@@ -2567,7 +2567,7 @@ module PhysicallyBased =
         (eyeCenter : Vector3)
         (view : Matrix4x4)
         (projectionUnflipped : Matrix4x4)
-        (filteredSampler : Sampler)
+        (materialSampler : Sampler)
         (colorAttachments : VkImageView array)
         (depthAttachment : Texture)
         (resolution : Vector2i)
@@ -2589,7 +2589,7 @@ module PhysicallyBased =
 
         // specify samplers
         let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 3 Unit pipeline.Pipeline $ fun vkSet ->
-            Pipeline.writeDescriptorSampler 0 0 filteredSampler vkSet
+            Pipeline.writeDescriptorSampler 0 0 materialSampler vkSet
             
         // set up render
         let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
@@ -2748,7 +2748,7 @@ module PhysicallyBased =
         (lightShadowExponent : single)
         (lightShadowDensity : single)
         (materials : PhysicallyBasedMaterial array)
-        (filteredSampler : Sampler)
+        (materialSampler : Sampler)
         (geometry : PhysicallyBasedGeometry)
         (colorAttachments : VkImageView array)
         (depthAttachment : Texture)
@@ -2809,7 +2809,7 @@ module PhysicallyBased =
 
             // specify samplers
             let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 2 Unit pipeline.Pipeline $ fun vkSet ->
-                Pipeline.writeDescriptorSampler 0 0 filteredSampler vkSet
+                Pipeline.writeDescriptorSampler 0 0 materialSampler vkSet
 
             // specify instancing
             use instanceFieldsPin = new ArrayPin<_> (instanceFields)
@@ -2945,8 +2945,8 @@ module PhysicallyBased =
         (lightsCount : int)
         (shadowNear : single)
         (shadowMatrices : Matrix4x4 array)
-        (geometrySampler : Sampler)
-        (shadowSampler : Sampler)
+        (unfilteredSampler : Sampler)
+        (filteredSampler : Sampler)
         (resolution : Vector2i)
         (renderPassIndex : int)
         (geometry : PhysicallyBasedGeometry)
@@ -3029,8 +3029,8 @@ module PhysicallyBased =
 
             // specify samplers
             let mutable samplersDescriptorSet = Pipeline.specifyDescriptorSet 1 Unit pipeline.Pipeline $ fun vkSet ->
-                Pipeline.writeDescriptorSampler 0 0 geometrySampler vkSet
-                Pipeline.writeDescriptorSampler 1 0 shadowSampler vkSet
+                Pipeline.writeDescriptorSampler 0 0 unfilteredSampler vkSet
+                Pipeline.writeDescriptorSampler 1 0 filteredSampler vkSet
 
             // set up render
             let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
@@ -3153,8 +3153,8 @@ module PhysicallyBased =
         (lightShadowIndices : int array)
         (lightsCount : int)
         (shadowMatrices : Matrix4x4 array)
-        (colorSampler : Sampler)
-        (shadowSampler : Sampler)
+        (unfilteredSampler : Sampler)
+        (filteredSampler : Sampler)
         (foggingAttachment : Texture)
         (resolution : Vector2i)
         (renderPassIndex : int)
@@ -3234,8 +3234,8 @@ module PhysicallyBased =
 
             // specify samplers
             let mutable samplersDescriptorSet = Pipeline.specifyDescriptorSet 1 Unit pipeline.Pipeline $ fun vkSet ->
-                Pipeline.writeDescriptorSampler 0 0 colorSampler vkSet
-                Pipeline.writeDescriptorSampler 1 0 shadowSampler vkSet
+                Pipeline.writeDescriptorSampler 0 0 unfilteredSampler vkSet
+                Pipeline.writeDescriptorSampler 1 0 filteredSampler vkSet
 
             // set up render
             let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
@@ -3333,7 +3333,7 @@ module PhysicallyBased =
         (lightsCount : int)
         (depthTexture : Texture)
         (normalPlusTexture : Texture)
-        (colorSampler : Sampler)
+        (unfilteredSampler : Sampler)
         (colorAttachment : Texture)
         (resolution : Vector2i)
         (renderPassIndex : int)
@@ -3388,7 +3388,7 @@ module PhysicallyBased =
 
             // specify samplers
             let mutable samplersDescriptorSet = Pipeline.specifyDescriptorSet 1 Unit pipeline.Pipeline $ fun vkSet ->
-                Pipeline.writeDescriptorSampler 0 0 colorSampler vkSet
+                Pipeline.writeDescriptorSampler 0 0 unfilteredSampler vkSet
 
             // set up render
             let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
@@ -3481,7 +3481,7 @@ module PhysicallyBased =
         (lightMapAmbientBrightnesses : single array)
         (depthTexture : Texture)
         (lightMappingTexture : Texture)
-        (colorSampler : Sampler)
+        (unfilteredSampler : Sampler)
         (colorAttachment : Texture)
         (resolution : Vector2i)
         (renderPassIndex : int)
@@ -3531,7 +3531,7 @@ module PhysicallyBased =
 
             // specify samplers
             let mutable samplersDescriptorSet = Pipeline.specifyDescriptorSet 1 Unit pipeline.Pipeline $ fun vkSet ->
-                Pipeline.writeDescriptorSampler 0 0 colorSampler vkSet
+                Pipeline.writeDescriptorSampler 0 0 unfilteredSampler vkSet
 
             // set up render
             let clearValue = VkClearValue (r = Constants.Render.AmbientClearColor.R, g = Constants.Render.AmbientClearColor.G, b = Constants.Render.AmbientClearColor.B, a = Constants.Render.AmbientClearColor.A)
@@ -3621,8 +3621,8 @@ module PhysicallyBased =
         (lightMappingTexture : Texture)
         (irradianceMap : Texture)
         (irradianceMaps : Texture array)
-        (colorSampler : Sampler)
-        (irradianceSampler : Sampler)
+        (unfilteredSampler : Sampler)
+        (filteredSampler : Sampler)
         (colorAttachment : Texture)
         (resolution : Vector2i)
         (renderPassIndex : int)
@@ -3657,8 +3657,8 @@ module PhysicallyBased =
 
             // specify samplers
             let mutable samplersDescriptorSet = Pipeline.specifyDescriptorSet 1 Unit pipeline.Pipeline $ fun vkSet ->
-                Pipeline.writeDescriptorSampler 0 0 colorSampler vkSet
-                Pipeline.writeDescriptorSampler 1 0 irradianceSampler vkSet
+                Pipeline.writeDescriptorSampler 0 0 unfilteredSampler vkSet
+                Pipeline.writeDescriptorSampler 1 0 filteredSampler vkSet
 
             // set up render
             let clearValue = VkClearValue (r = Constants.Render.IrradianceClearColor.R, g = Constants.Render.IrradianceClearColor.G, b = Constants.Render.IrradianceClearColor.B, a = Constants.Render.IrradianceClearColor.A)
@@ -3760,8 +3760,8 @@ module PhysicallyBased =
         (lightMappingTexture : Texture)
         (environmentFilterMap : Texture)
         (environmentFilterMaps : Texture array)
-        (colorSampler : Sampler)
-        (environmentFilterSampler : Sampler)
+        (unfilteredSampler : Sampler)
+        (filteredSampler : Sampler)
         (colorAttachment : Texture)
         (resolution : Vector2i)
         (renderPassIndex : int)
@@ -3813,8 +3813,8 @@ module PhysicallyBased =
 
             // specify samplers
             let mutable samplersDescriptorSet = Pipeline.specifyDescriptorSet 1 Unit pipeline.Pipeline $ fun vkSet ->
-                Pipeline.writeDescriptorSampler 0 0 colorSampler vkSet
-                Pipeline.writeDescriptorSampler 1 0 environmentFilterSampler vkSet
+                Pipeline.writeDescriptorSampler 0 0 unfilteredSampler vkSet
+                Pipeline.writeDescriptorSampler 1 0 filteredSampler vkSet
 
             // set up render
             let clearValue = VkClearValue (r = Constants.Render.EnvironmentClearColor.R, g = Constants.Render.EnvironmentClearColor.G, b = Constants.Render.EnvironmentClearColor.B, a = Constants.Render.EnvironmentClearColor.A)
@@ -3905,7 +3905,7 @@ module PhysicallyBased =
         (sampleCount : int)
         (depthTexture : Texture)
         (normalPlusTexture : Texture)
-        (colorSampler : Sampler)
+        (unfilteredSampler : Sampler)
         (colorAttachment : Texture)
         (resolution : Vector2i)
         (renderPassIndex : int)
@@ -3942,7 +3942,7 @@ module PhysicallyBased =
 
             // specify sampler
             let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 1 Unit pipeline.Pipeline $ fun vkSet ->
-                Pipeline.writeDescriptorSampler 0 0 colorSampler vkSet
+                Pipeline.writeDescriptorSampler 0 0 unfilteredSampler vkSet
 
             // set up render
             let clearValue = VkClearValue (r = Constants.Render.SsaoClearColor.R, g = Constants.Render.SsaoClearColor.G, b = Constants.Render.SsaoClearColor.B, a = Constants.Render.SsaoClearColor.A)
@@ -4065,8 +4065,8 @@ module PhysicallyBased =
         (irradianceTexture : Texture)
         (environmentFilterTexture : Texture)
         (ssaoTexture : Texture)
-        (colorSampler : Sampler)
-        (brdfSampler : Sampler)
+        (unfilteredSampler : Sampler)
+        (filteredSampler : Sampler)
         (coloringAttachment : Texture)
         (depthAttachment : Texture)
         (resolution : Vector2i)
@@ -4131,8 +4131,8 @@ module PhysicallyBased =
 
             // specify samplers
             let mutable samplersDescriptorSet = Pipeline.specifyDescriptorSet 1 Unit pipeline.Pipeline $ fun vkSet ->
-                Pipeline.writeDescriptorSampler 0 0 colorSampler vkSet
-                Pipeline.writeDescriptorSampler 1 0 brdfSampler vkSet
+                Pipeline.writeDescriptorSampler 0 0 unfilteredSampler vkSet
+                Pipeline.writeDescriptorSampler 1 0 filteredSampler vkSet
 
             // set up render
             let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
@@ -4227,7 +4227,7 @@ module PhysicallyBased =
         (depthTexture : Texture)
         (colorTexture : Texture)
         (fogAccumTexture : Texture)
-        (colorSampler : Sampler)
+        (unfilteredSampler : Sampler)
         (compositionAttachment : Texture)
         (resolution : Vector2i)
         (renderPassIndex : int)
@@ -4271,7 +4271,7 @@ module PhysicallyBased =
 
             // specify samplers
             let mutable samplersDescriptorSet = Pipeline.specifyDescriptorSet 1 Unit pipeline.Pipeline $ fun vkSet ->
-                Pipeline.writeDescriptorSampler 0 0 colorSampler vkSet
+                Pipeline.writeDescriptorSampler 0 0 unfilteredSampler vkSet
 
             // set up render
             let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
@@ -4356,12 +4356,9 @@ module PhysicallyBased =
         (brdfTexture : Texture)
         (irradianceMap : Texture)
         (environmentFilterMap : Texture)
+        (unfilteredSampler : Sampler)
         (filteredSampler : Sampler)
-        (cubeMapSampler : Sampler)
-        (shadowSampler : Sampler)
-        (colorSampler : Sampler)
-        (depthSampler : Sampler)
-        (brdfSampler : Sampler)
+        (materialSampler : Sampler)
         (colorAttachment : Texture)
         (depthAttachment : Texture)
         (resolution : Vector2i)
@@ -4427,12 +4424,9 @@ module PhysicallyBased =
 
         // specify samplers
         let mutable samplersDescriptorSet = Pipeline.specifyDescriptorSet 3 Unit pipeline.Pipeline $ fun vkSet ->
-            Pipeline.writeDescriptorSampler 0 0 filteredSampler vkSet
-            Pipeline.writeDescriptorSampler 1 0 cubeMapSampler vkSet
-            Pipeline.writeDescriptorSampler 2 0 shadowSampler vkSet
-            Pipeline.writeDescriptorSampler 3 0 colorSampler vkSet
-            Pipeline.writeDescriptorSampler 4 0 depthSampler vkSet
-            Pipeline.writeDescriptorSampler 5 0 brdfSampler vkSet
+            Pipeline.writeDescriptorSampler 0 0 unfilteredSampler vkSet
+            Pipeline.writeDescriptorSampler 1 0 filteredSampler vkSet
+            Pipeline.writeDescriptorSampler 2 0 materialSampler vkSet
 
         // set up render
         let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)

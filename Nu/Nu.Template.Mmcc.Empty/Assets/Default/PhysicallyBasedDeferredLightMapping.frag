@@ -36,7 +36,7 @@ layout(set = 0, binding = 2) uniform LightsGeneralUniform { LightsGeneralStruct 
 layout(set = 0, binding = 3) uniform texture2D depthTexture;
 layout(set = 0, binding = 4) uniform texture2D normalPlusTexture;
 
-layout(set = 1, binding = 0) uniform sampler colorSampler;
+layout(set = 1, binding = 0) uniform sampler unfilteredSampler;
 
 layout(location = 0) in vec2 texCoords;
 
@@ -102,14 +102,14 @@ float computeDepthRatio(vec3 minA, vec3 sizeA, vec3 minB, vec3 sizeB, vec3 posit
 void main()
 {
     // ensure fragment was written
-    float depth = texture(sampler2D(depthTexture, colorSampler), texCoords).r;
+    float depth = texture(sampler2D(depthTexture, unfilteredSampler), texCoords).r;
     if (depth == 0.0) discard;
 
     // recover position from depth
     vec4 position = depthToPosition(depth, texCoords);
 
     // retrieve remaining data from geometry buffers
-    vec4 normalPlus = texture(sampler2D(normalPlusTexture, colorSampler), texCoords);
+    vec4 normalPlus = texture(sampler2D(normalPlusTexture, unfilteredSampler), texCoords);
     vec3 normal = normalize(normalPlus.xyz);
     bool ignoreLightMaps = normalPlus.w == 1.0;
 

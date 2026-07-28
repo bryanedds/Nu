@@ -20,8 +20,8 @@ layout(set = 0, binding = 3) uniform texture2D lightMappingTexture;
 layout(set = 0, binding = 4) uniform textureCube irradianceMap;
 layout(set = 0, binding = 5) uniform textureCube irradianceMaps[LIGHT_MAPS_MAX];
 
-layout(set = 1, binding = 0) uniform sampler colorSampler;
-layout(set = 1, binding = 1) uniform sampler irradianceMapSampler;
+layout(set = 1, binding = 0) uniform sampler unfilteredSampler;
+layout(set = 1, binding = 1) uniform sampler filteredSampler;
 
 layout(location = 0) in vec2 texCoords;
 
@@ -38,17 +38,17 @@ vec4 depthToPosition(float depth, vec2 texCoords)
 void main()
 {
     // ensure fragment was written
-    float depth = texture(sampler2D(depthTexture, colorSampler), texCoords).r;
+    float depth = texture(sampler2D(depthTexture, unfilteredSampler), texCoords).r;
     if (depth == 0.0) discard;
 
     // recover position from depth
     vec4 position = depthToPosition(depth, texCoords);
 
     // retrieve remaining data from geometry buffers
-    vec3 normal = normalize(texture(sampler2D(normalPlusTexture, colorSampler), texCoords).xyz);
+    vec3 normal = normalize(texture(sampler2D(normalPlusTexture, unfilteredSampler), texCoords).xyz);
 
     // retrieve light mapping data
-    vec4 lmData = texture(sampler2D(lightMappingTexture, colorSampler), texCoords);
+    vec4 lmData = texture(sampler2D(lightMappingTexture, unfilteredSampler), texCoords);
     int lm1 = int(lmData.r) - 1;
     int lm2 = int(lmData.g) - 1;
     float lmRatio = lmData.b;
@@ -57,20 +57,20 @@ void main()
     vec3 irradiance = vec3(0.0);
     if (lm1 == -1 && lm2 == -1)
     {
-        irradiance = texture(samplerCube(irradianceMap, irradianceMapSampler), normal).rgb;
+        irradiance = texture(samplerCube(irradianceMap, filteredSampler), normal).rgb;
     }
     else if (lm2 == -1)
     {
         // compute blended irradiance
-        vec3 irradiance1 = texture(samplerCube(irradianceMaps[lm1], irradianceMapSampler), normal).rgb;
-        vec3 irradiance2 = texture(samplerCube(irradianceMap, irradianceMapSampler), normal).rgb;
+        vec3 irradiance1 = texture(samplerCube(irradianceMaps[lm1], filteredSampler), normal).rgb;
+        vec3 irradiance2 = texture(samplerCube(irradianceMap, filteredSampler), normal).rgb;
         irradiance = mix(irradiance1, irradiance2, lmRatio);
     }
     else
     {
         // compute blended irradiance
-        vec3 irradiance1 = texture(samplerCube(irradianceMaps[lm1], irradianceMapSampler), normal).rgb;
-        vec3 irradiance2 = texture(samplerCube(irradianceMaps[lm2], irradianceMapSampler), normal).rgb;
+        vec3 irradiance1 = texture(samplerCube(irradianceMaps[lm1], filteredSampler), normal).rgb;
+        vec3 irradiance2 = texture(samplerCube(irradianceMaps[lm2], filteredSampler), normal).rgb;
         irradiance = mix(irradiance1, irradiance2, lmRatio);
     }
 

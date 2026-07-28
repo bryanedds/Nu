@@ -27,7 +27,7 @@ layout(set = 0, binding = 2) uniform LightMapsUniform { LightMapStruct lightMaps
 layout(set = 0, binding = 3) uniform texture2D depthTexture;
 layout(set = 0, binding = 4) uniform texture2D lightMappingTexture;
 
-layout(set = 1, binding = 0) uniform sampler colorSampler;
+layout(set = 1, binding = 0) uniform sampler unfilteredSampler;
 
 layout(location = 0) in vec2 texCoords;
 
@@ -44,14 +44,14 @@ vec4 depthToPosition(float depth, vec2 texCoords)
 void main()
 {
     // ensure fragment was written
-    float depth = texture(sampler2D(depthTexture, colorSampler), texCoords).r;
+    float depth = texture(sampler2D(depthTexture, unfilteredSampler), texCoords).r;
     if (depth == 0.0) discard;
 
     // recover position from depth
     vec4 position = depthToPosition(depth, texCoords);
 
     // retrieve light mapping data
-    vec4 lmData = texture(sampler2D(lightMappingTexture, colorSampler), texCoords);
+    vec4 lmData = texture(sampler2D(lightMappingTexture, unfilteredSampler), texCoords);
     int lm1 = int(lmData.r) - 1;
     int lm2 = int(lmData.g) - 1;
     float lmRatio = lmData.b;
