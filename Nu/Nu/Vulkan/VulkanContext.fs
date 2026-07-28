@@ -222,11 +222,6 @@ type SwapchainWrapper =
                 then capabilities.minImageCount + 1u
                 else min (capabilities.minImageCount + 1u) capabilities.maxImageCount
 
-            // check that we can use a more efficient mailbox-based present mode
-            let canUseMailbox =
-                let presentModes = Hl.getPresentModes physicalDevice.VkPhysicalDevice
-                Array.contains VkPresentModeKHR.Mailbox presentModes
-
             // create swapchain
             let indicesArray = [|physicalDevice.GraphicsQueueFamily; physicalDevice.PresentQueueFamily|]
             use indicesArrayPin = new ArrayPin<_> (indicesArray)
