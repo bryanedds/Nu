@@ -251,10 +251,8 @@ type SwapchainWrapper =
                 elif capabilities.supportedCompositeAlpha &&& VkCompositeAlphaFlagsKHR.PostMultiplied <> VkCompositeAlphaFlagsKHR.None then VkCompositeAlphaFlagsKHR.PostMultiplied
                 else VkCompositeAlphaFlagsKHR.Inherit
             info.presentMode <-
-                if Constants.Render.RenderVsync then
-                    if canUseMailbox
-                    then VkPresentModeKHR.Mailbox
-                    else VkPresentModeKHR.Fifo
+                if Constants.Render.RenderVsync
+                then VkPresentModeKHR.Fifo
                 else VkPresentModeKHR.Immediate
             info.clipped <- true
             info.oldSwapchain <- oldVkSwapchainOpt
