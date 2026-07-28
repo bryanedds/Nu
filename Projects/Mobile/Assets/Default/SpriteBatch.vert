@@ -29,8 +29,8 @@ struct ViewProjectionStruct
 layout(set = 0, binding = 0) uniform SpriteUniform { SpriteStruct sprites[SPRITE_BATCH_SIZE]; };
 layout(set = 0, binding = 1) uniform ViewProjectionUniform { ViewProjectionStruct viewProjection; };
 
-layout(location = 0) out vec2 texCoords;
-layout(location = 1) out vec4 color;
+layout(location = 0) out vec2 texCoordsOut;
+layout(location = 1) out vec4 colorOut;
 
 vec2 rotate(vec2 v, float a)
 {
@@ -57,8 +57,8 @@ void main()
 
     // compute tex coords
     vec4 texCoords4 = sprite.texCoords * filt;
-    texCoords = vec2(texCoords4.x + texCoords4.z, texCoords4.y + texCoords4.w);
+    texCoordsOut = vec2(texCoords4.x + texCoords4.z, texCoords4.y + texCoords4.w);
 
     // compute color
-    color = sprite.color;
+    colorOut = sprite.color;
 }

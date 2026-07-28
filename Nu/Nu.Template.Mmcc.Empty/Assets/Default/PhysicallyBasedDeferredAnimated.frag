@@ -88,7 +88,7 @@ vec2 encodeOctahedral(vec3 v)
 
 void main()
 {
-    // write depthOut
+    // write depth
     depthOut = gl_FragCoord.z;
 
     // compute spatial converters
@@ -112,7 +112,7 @@ void main()
     vec2 parallax = toEyeTangent.xy * height;
     vec2 texCoords = texCoords - parallax;
 
-    // compute albedoOut
+    // compute albedo
     vec4 albedoSample = texture(sampler2D(albedoTexture, filteredSampler), texCoords);
     if (albedoSample.a < ALBEDO_ALPHA_MIN) discard;
     albedoOut = pow(albedoSample.rgb, vec3(GAMMA)) * albedo.rgb;

@@ -87,7 +87,7 @@ vec2 encodeOctahedral(vec3 v)
 
 void main()
 {
-    // write depthOut
+    // write depth
     depthOut = gl_FragCoord.z;
 
     // compute spatial converters
@@ -111,7 +111,7 @@ void main()
     vec2 parallax = toEyeTangent.xy * height;
     vec2 texCoords = texCoords - parallax;
 
-    // compute albedoOut
+    // compute albedo
     vec4 albedoSample = texture(sampler2D(albedoTexture, filteredSampler), texCoords);
     albedoOut = pow(albedoSample.rgb, vec3(GAMMA)) * albedo.rgb;
 
@@ -131,7 +131,7 @@ void main()
     float roughnessPerceptualSquared = clamp(roughnessPerceptual * roughnessPerceptual + roughnessKernal, 0.0, 1.0);
     roughness = sqrt(sqrt(roughnessPerceptualSquared));
 
-    // compute remaining materialOut properties
+    // compute remaining material properties
     float metallic = texture(sampler2D(metallicTexture, filteredSampler), texCoords).g * material.g;
     float ambientOcclusion = texture(sampler2D(ambientOcclusionTexture, filteredSampler), texCoords).b * material.b;
     float emission = texture(sampler2D(emissionTexture, filteredSampler), texCoords).r * material.a;

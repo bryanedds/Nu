@@ -87,7 +87,7 @@ void main()
     vec2 parallax = toEyeTangent.xy * height;
     vec2 texCoords = texCoords - parallax;
 
-    // compute albedoOut and materialOut blends
+    // compute albedo and material blends
     vec4 albedoBlend = vec4(0.0);
     float roughnessBlend = 0.0;
     float ambientOcclusionBlend = 0.0;
