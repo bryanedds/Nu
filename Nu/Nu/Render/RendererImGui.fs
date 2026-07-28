@@ -178,24 +178,34 @@ type VulkanRendererImGui
             // update viewport
             viewport <- viewport_
 
-            // update imgui's display properties
+            // updating the imgui display size as needed
             let io = ImGui.GetIO ()
-            io.DisplaySize <- viewport.Bounds.Size.V2
-            io.DisplayFramebufferScale <- v2One
+            let renderMin =
+                v2i
+                    (int (round (single viewport.Bounds.Min.X * Hl.WindowProperties.PixelDensity)))
+                    (int (round (single viewport.Bounds.Min.Y * Hl.WindowProperties.PixelDensity)))
+            let renderSize =
+                v2i
+                    (int (round (single viewport.Bounds.Size.X * Hl.WindowProperties.PixelDensity)))
+                    (int (round (single viewport.Bounds.Size.Y * Hl.WindowProperties.PixelDensity)))
+            io.DisplaySize <- renderSize.V2
 
-            // render when allowed and drawData matches viewport, as it may lag behind due to -
-            // https://github.com/bryanedds/Nu/issues/1248
-            if context.RenderAllowed && drawData.DisplaySize = viewport.Bounds.Size.V2 then
+            // check that viewport bounds assumed by drawData match the actual viewport, as they sometimes lag behind
+            // upon resize due to https://github.com/bryanedds/Nu/issues/1248.
+            let drawDataMatchesViewport = drawData.DisplaySize = io.DisplaySize
+
+            // render when allowed and drawData matches viewport
+            if context.RenderAllowed && drawDataMatchesViewport then
 
                 // grab pipeline, asserting non-None since shader reload for ImGui isn't supported
                 let vkPipeline = Pipeline.tryGetVkPipeline VulkanImGui false pipeline |> Option.get
 
                 // set up render
-                let mutable renderArea = VkRect2D (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
-                let mutable renderingInfo = Hl.makeRenderingInfo [|context.SwapchainImageView|] None renderArea None
-                let mutable viewport = Hl.makeViewport false renderArea
-                DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
-                DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&viewport)
+                let mutable vkRenderArea = VkRect2D (int renderMin.X, int renderMin.Y, uint renderSize.X, uint renderSize.Y)
+                let mutable vkRenderingInfo = Hl.makeRenderingInfo [|context.SwapchainImageView|] None vkRenderArea None
+                let mutable vkViewport = Hl.makeViewport false vkRenderArea
+                DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&vkRenderingInfo)
+                DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
                 DeviceApi.vkCmdBindPipeline (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
                 
                 // compute offsets
@@ -264,22 +274,22 @@ type VulkanRendererImGui
                                 // project scissor/clipping rectangles into framebuffer space
                                 let mutable clipMin =
                                     v2
-                                        (pcmd.ClipRect.X - drawData.DisplayPos.X + viewport.x)
-                                        (pcmd.ClipRect.Y - drawData.DisplayPos.Y + viewport.y)
+                                        (pcmd.ClipRect.X - drawData.DisplayPos.X + vkViewport.x)
+                                        (pcmd.ClipRect.Y - drawData.DisplayPos.Y + vkViewport.y)
                                 let mutable clipMax =
                                     v2
-                                        (pcmd.ClipRect.Z - drawData.DisplayPos.X + viewport.x)
-                                        (pcmd.ClipRect.W - drawData.DisplayPos.Y + viewport.y)
+                                        (pcmd.ClipRect.Z - drawData.DisplayPos.X + vkViewport.x)
+                                        (pcmd.ClipRect.W - drawData.DisplayPos.Y + vkViewport.y)
 
                                 // only draw if scissor is valid
                                 let width = uint (clipMax.X - clipMin.X)
                                 let height = uint (clipMax.Y - clipMin.Y)
-                                let mutable scissor = VkRect2D (int clipMin.X, int clipMin.Y, width, height)
-                                scissor <- Hl.clipRect renderArea scissor
-                                if Hl.validateRect scissor then
+                                let mutable vkScissor = VkRect2D (int clipMin.X, int clipMin.Y, width, height)
+                                vkScissor <- Hl.clipRect vkRenderArea vkScissor
+                                if Hl.validateRect vkScissor then
 
                                     // set scissor
-                                    DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&scissor)
+                                    DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&vkScissor)
 
                                     // specify material
                                     let textureId = uint32 pcmd.TextureId
