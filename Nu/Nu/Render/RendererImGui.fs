@@ -181,7 +181,6 @@ type VulkanRendererImGui
             // update imgui's display properties
             let io = ImGui.GetIO ()
             io.DisplaySize <- viewport.Bounds.Size.V2
-            io.DisplayFramebufferScale <- v2Dup Hl.WindowProperties.PixelDensity
 
             // render when allowed and drawData matches viewport, as it may lag behind due to -
             // https://github.com/bryanedds/Nu/issues/1248
