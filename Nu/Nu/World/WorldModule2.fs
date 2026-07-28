@@ -1154,12 +1154,12 @@ module WorldModule2 =
             | SDL_EventType.SDL_EVENT_QUIT ->
                 let eventTrace = EventTrace.debug "World" "processInput2" "ExitRequest" EventTrace.empty
                 World.publishPlus () Nu.Game.Handle.ExitRequestEvent eventTrace Nu.Game.Handle true true world
-            | SDL_EventType.SDL_EVENT_WINDOW_RESIZED ->
+            | SDL_EventType.SDL_EVENT_WINDOW_RESIZED | SDL_EventType.SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED ->
                 World.processWindowResized world
             | SDL_EventType.SDL_EVENT_MOUSE_MOTION ->
                 let io = ImGui.GetIO ()
-                let boundsMin = world.WindowViewport.Bounds.Min
-                io.AddMousePosEvent (evt.button.x - single boundsMin.X, evt.button.y - single boundsMin.Y)
+                let pixelDensity = World.tryGetWindowPixelDensity world |> Option.defaultValue 1.0f
+                io.AddMousePosEvent (evt.button.x * pixelDensity, evt.button.y * pixelDensity) // scale by pixel density because SDL IO comes in from unscale window coords
                 let mousePosition = v2 (single evt.button.x) (single evt.button.y)
                 if World.isMouseButtonDown MouseLeft world then
                     let eventTrace = EventTrace.debug "World" "processInput2" "MouseDrag" EventTrace.empty

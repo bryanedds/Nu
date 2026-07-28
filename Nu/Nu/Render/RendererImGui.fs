@@ -178,30 +178,20 @@ type VulkanRendererImGui
             // update viewport
             viewport <- viewport_
 
-            // updating the imgui display size as needed
+            // update imgui's display properties from the viewport's physical window extent
             let io = ImGui.GetIO ()
-            let renderMin =
-                v2i
-                    (int (round (single viewport.Bounds.Min.X * Hl.WindowProperties.PixelDensity)))
-                    (int (round (single viewport.Bounds.Min.Y * Hl.WindowProperties.PixelDensity)))
-            let renderSize =
-                v2i
-                    (int (round (single viewport.Bounds.Size.X * Hl.WindowProperties.PixelDensity)))
-                    (int (round (single viewport.Bounds.Size.Y * Hl.WindowProperties.PixelDensity)))
-            io.DisplaySize <- renderSize.V2
+            io.DisplaySize <- viewport.Outer.Size.V2
+            io.DisplayFramebufferScale <- v2One
 
-            // check that viewport bounds assumed by drawData match the actual viewport, as they sometimes lag behind
+            // render when allowed and drawData matches viewport as they sometimes lag behind
             // upon resize due to https://github.com/bryanedds/Nu/issues/1248.
-            let drawDataMatchesViewport = drawData.DisplaySize = io.DisplaySize
-
-            // render when allowed and drawData matches viewport
-            if context.RenderAllowed && drawDataMatchesViewport then
+            if context.RenderAllowed && drawData.DisplaySize = viewport.Outer.Size.V2 then
 
                 // grab pipeline, asserting non-None since shader reload for ImGui isn't supported
                 let vkPipeline = Pipeline.tryGetVkPipeline VulkanImGui false pipeline |> Option.get
 
                 // set up render
-                let mutable vkRenderArea = VkRect2D (int renderMin.X, int renderMin.Y, uint renderSize.X, uint renderSize.Y)
+                let mutable vkRenderArea = VkRect2D (viewport.Outer.Min.X, viewport.Outer.Min.Y, uint viewport.Outer.Size.X, uint viewport.Outer.Size.Y)
                 let mutable vkRenderingInfo = Hl.makeRenderingInfo [|context.SwapchainImageView|] None vkRenderArea None
                 let mutable vkViewport = Hl.makeViewport false vkRenderArea
                 DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&vkRenderingInfo)
