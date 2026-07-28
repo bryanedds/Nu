@@ -180,18 +180,18 @@ type VulkanRendererImGui
 
             // update imgui's display properties from the viewport's physical window extent
             let io = ImGui.GetIO ()
-            io.DisplaySize <- viewport.Bounds.Size.V2
+            io.DisplaySize <- viewport.Outer.Size.V2
             io.DisplayFramebufferScale <- v2One
 
             // render when allowed and drawData matches viewport as they sometimes lag behind
             // upon resize due to https://github.com/bryanedds/Nu/issues/1248.
-            if context.RenderAllowed && drawData.DisplaySize = viewport.Bounds.Size.V2 then
+            if context.RenderAllowed && drawData.DisplaySize = viewport.Outer.Size.V2 then
 
                 // grab pipeline, asserting non-None since shader reload for ImGui isn't supported
                 let vkPipeline = Pipeline.tryGetVkPipeline VulkanImGui false pipeline |> Option.get
 
                 // set up render
-                let mutable vkRenderArea = VkRect2D (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
+                let mutable vkRenderArea = VkRect2D (viewport.Outer.Min.X, viewport.Outer.Min.Y, uint viewport.Outer.Size.X, uint viewport.Outer.Size.Y)
                 let mutable vkRenderingInfo = Hl.makeRenderingInfo [|context.SwapchainImageView|] None vkRenderArea None
                 let mutable vkViewport = Hl.makeViewport false vkRenderArea
                 DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&vkRenderingInfo)
