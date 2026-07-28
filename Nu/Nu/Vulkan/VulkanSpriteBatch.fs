@@ -61,7 +61,6 @@ type [<ReferenceEquality>] SpriteBatchEnv =
           mutable ViewProjection2dRelative : Matrix4x4
           mutable ViewProjectionClipAbsolute : Matrix4x4
           mutable ViewProjectionClipRelative : Matrix4x4
-          VulkanContext : VulkanContext
           Pipeline : Pipeline
           UnfilteredSampler : Sampler
           FilteredSampler : Sampler
@@ -72,7 +71,8 @@ type [<ReferenceEquality>] SpriteBatchEnv =
           Rotations : single array
           TexCoordses : Vector4 array
           Colors : Vector4 array
-          mutable State : SpriteBatchState }
+          mutable State : SpriteBatchState
+          VulkanContext : VulkanContext }
 
 [<RequireQualifiedAccess>]
 module SpriteBatch =
@@ -278,7 +278,7 @@ module SpriteBatch =
         { SpriteIndex = 0;
           ViewProjection2dAbsolute = m4Identity; ViewProjection2dRelative = m4Identity
           ViewProjectionClipAbsolute = m4Identity; ViewProjectionClipRelative = m4Identity
-          VulkanContext = context; Pipeline = pipeline
+          Pipeline = pipeline
           UnfilteredSampler = unfilteredSampler; FilteredSampler = filteredSampler
           SpritesUniform = spritesUniform; ViewProjectionUniform = viewProjectionUniform
           Perimeters = Array.zeroCreate Constants.Render.SpriteBatchSize
@@ -286,7 +286,8 @@ module SpriteBatch =
           Rotations = Array.zeroCreate Constants.Render.SpriteBatchSize
           TexCoordses = Array.zeroCreate Constants.Render.SpriteBatchSize
           Colors = Array.zeroCreate Constants.Render.SpriteBatchSize
-          State = SpriteBatchState.defaultState }
+          State = SpriteBatchState.defaultState
+          VulkanContext = context }
 
     /// Destroy the given sprite batch environment.
     let destroySpriteBatchEnv env =

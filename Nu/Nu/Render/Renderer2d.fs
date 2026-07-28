@@ -192,7 +192,6 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         { VulkanContext : VulkanContext
           mutable Viewport : Viewport
           TextQuad : VulkanBuffer * VulkanBuffer
-          TextureDumpster : TextureDumpster
           UnfilteredSampler : Sampler
           FilteredSampler : Sampler
           TextTextures : Dictionary<obj, bool ref * (int * int * Matrix4x4 * Texture)>
@@ -204,7 +203,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
           mutable RenderPackageCachedOpt : RenderPackageCached
           mutable RenderAssetCached : RenderAssetCached
           mutable ReloadAssetsRequested : bool
-          LayeredOperations : LayeredOperation2d List }
+          LayeredOperations : LayeredOperation2d List
+          TextureDumpster : TextureDumpster }
 
     static member private logRenderAssetUnavailableOnce (assetTag : AssetTag) =
         let message =
@@ -1029,10 +1029,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         
         // make renderer
         let renderer =
-            { VulkanContext = context
-              Viewport = viewport
+            { Viewport = viewport
               TextQuad = textQuad
-              TextureDumpster = textureDumpster
               UnfilteredSampler = unfilteredSampler
               FilteredSampler = filteredSampler
               TextTextures = dictPlus HashIdentity.Structural []
@@ -1044,7 +1042,9 @@ type [<ReferenceEquality>] VulkanRenderer2d =
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCached = { CachedAssetTagOpt = Unchecked.defaultof<_>; CachedRenderAsset = Unchecked.defaultof<_> }
               ReloadAssetsRequested = false
-              LayeredOperations = List () }
+              LayeredOperations = List ()
+              TextureDumpster = textureDumpster
+              VulkanContext = context }
         
         // fin
         renderer
