@@ -183,9 +183,8 @@ type VulkanRendererImGui
             io.DisplaySize <- viewport.Outer.Size.V2
             io.DisplayFramebufferScale <- v2One
 
-            // render when allowed and drawData matches viewport as they sometimes lag behind
-            // upon resize due to https://github.com/bryanedds/Nu/issues/1248.
-            if context.RenderAllowed && drawData.DisplaySize = viewport.Outer.Size.V2 then
+            // render when allowed
+            if context.RenderAllowed then
 
                 // grab pipeline, asserting non-None since shader reload for ImGui isn't supported
                 let vkPipeline = Pipeline.tryGetVkPipeline VulkanImGui false pipeline |> Option.get
