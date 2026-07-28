@@ -996,27 +996,21 @@ type [<ReferenceEquality>] VulkanContext =
                         // check if screen size changed (or surface lost), if so then refresh swapchain
                         if Swapchain.isWindowResizedOrSurfaceLost context.PhysicalDevice.VkPhysicalDevice context.Swapchain_ then VulkanContext.handleWindowSize context
                         else
-                            // check that swap extent >= viewport.Bounds >= viewport.Inner; done *after* screen change check to avoid outdated swap extent
-                            let extent = context.Swapchain_.SwapExtent
-                            let swapchainBounds = box2i v2iZero (v2i (int extent.width) (int extent.height))
-                            if  swapchainBounds.ContainsInclusive windowViewport.Bounds = ContainmentType.Contains &&
-                                windowViewport.Bounds.ContainsInclusive windowViewport.Inner = ContainmentType.Contains then
-
-                                // try to acquire image from swapchain to draw onto
-                                // NOTE: due to semaphore flow, when this is successful, the render *must* proceed!
-                                //let sw = System.Diagnostics.Stopwatch.StartNew ()
-                                let result = DeviceApi.vkAcquireNextImageKHR (context.Swapchain_.VkSwapchain, UInt64.MaxValue, context.ImageAvailableSemaphore_, VkFence.Null, &Hl.ImageIndex)
-                                //sw.Stop ()
-                                //Log.info ("VulkanDevice.vkAcquireNextImageKHR: " + string sw.ElapsedTicks)
-                                match result with
-                                | VkResult.ErrorOutOfDateKHR ->
-                                    VulkanContext.handleWindowSize context // refresh swapchain if out of date
-                                | VkResult.ErrorSurfaceLostKHR ->
-                                    Hl.SurfaceState <- SurfaceLost
-                                    Swapchain.update context.PhysicalDevice_ context.RenderQueue_ context.PresentQueue_ context.Swapchain_ context.Instance_
-                                | _ ->
-                                    context.RenderAllowed_ <- true // permit rendering
-                                    Hl.check result // NOTE: this will report a suboptimal swapchain image.
+                            // try to acquire image from swapchain to draw onto
+                            // NOTE: due to semaphore flow, when this is successful, the render *must* proceed!
+                            //let sw = System.Diagnostics.Stopwatch.StartNew ()
+                            let result = DeviceApi.vkAcquireNextImageKHR (context.Swapchain_.VkSwapchain, UInt64.MaxValue, context.ImageAvailableSemaphore_, VkFence.Null, &Hl.ImageIndex)
+                            //sw.Stop ()
+                            //Log.info ("VulkanDevice.vkAcquireNextImageKHR: " + string sw.ElapsedTicks)
+                            match result with
+                            | VkResult.ErrorOutOfDateKHR ->
+                                VulkanContext.handleWindowSize context // refresh swapchain if out of date
+                            | VkResult.ErrorSurfaceLostKHR ->
+                                Hl.SurfaceState <- SurfaceLost
+                                Swapchain.update context.PhysicalDevice_ context.RenderQueue_ context.PresentQueue_ context.Swapchain_ context.Instance_
+                            | _ ->
+                                context.RenderAllowed_ <- true // permit rendering
+                                Hl.check result // NOTE: this will report a suboptimal swapchain image.
 
         //
         if context.RenderAllowed_ then
