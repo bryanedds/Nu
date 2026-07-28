@@ -1159,7 +1159,10 @@ module WorldModule2 =
             | SDL_EventType.SDL_EVENT_MOUSE_MOTION ->
                 let io = ImGui.GetIO ()
                 let pixelDensity = World.tryGetWindowPixelDensity world |> Option.defaultValue 1.0f
-                io.AddMousePosEvent (evt.button.x * pixelDensity, evt.button.y * pixelDensity) // scale by pixel density because SDL IO comes in from unscale window coords
+                let viewport = World.getWindowViewport world
+                io.AddMousePosEvent // scale by pixel density because SDL IO comes in from unscale window coords and offset by bounds min
+                    (evt.button.x * pixelDensity + single viewport.Bounds.Min.X,
+                     evt.button.y * pixelDensity - single viewport.Bounds.Min.Y)
                 let mousePosition = v2 (single evt.button.x) (single evt.button.y)
                 if World.isMouseButtonDown MouseLeft world then
                     let eventTrace = EventTrace.debug "World" "processInput2" "MouseDrag" EventTrace.empty
