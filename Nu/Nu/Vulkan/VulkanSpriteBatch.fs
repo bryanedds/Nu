@@ -276,8 +276,10 @@ module SpriteBatch =
 
         // create env
         { SpriteIndex = 0;
-          ViewProjection2dAbsolute = m4Identity; ViewProjection2dRelative = m4Identity
-          ViewProjectionClipAbsolute = m4Identity; ViewProjectionClipRelative = m4Identity
+          ViewProjection2dAbsolute = m4Identity
+          ViewProjection2dRelative = m4Identity
+          ViewProjectionClipAbsolute = m4Identity
+          ViewProjectionClipRelative = m4Identity
           Pipeline = pipeline
           UnfilteredSampler = unfilteredSampler; FilteredSampler = filteredSampler
           SpritesUniform = spritesUniform; ViewProjectionUniform = viewProjectionUniform
