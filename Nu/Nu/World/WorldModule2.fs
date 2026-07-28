@@ -1146,12 +1146,6 @@ module WorldModule2 =
             let yScalar = windowSize''.Y / Constants.Render.DisplayVirtualResolution.Y
             Globals.Render.DisplayScalar <- min xScalar yScalar
 
-            // HACK: update imgui's display properties in place.
-            // TODO: P0: replace this with equivalent functionality elsewhere!
-            let io = ImGui.GetIO ()
-            io.DisplaySize <- windowSize''.V2
-            io.DisplayFramebufferScale <- v2One
-
             // synchronize view ports
             World.synchronizeViewports world
 
