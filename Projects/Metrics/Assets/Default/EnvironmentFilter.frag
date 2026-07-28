@@ -3,13 +3,13 @@
 const float PI = 3.141592654;
 const uint SAMPLE_COUNT = 1024u;
 
-struct EnvironmentFilter
+struct EnvironmentFilterStruct
 {
     float roughness;
     float resolution; // resolution of cube map face
 };
 
-layout(set = 0, binding = 1) uniform EnvironmentFilterBlock { EnvironmentFilter environmentFilter; };
+layout(set = 0, binding = 1) uniform EnvironmentFilterUniform { EnvironmentFilterStruct environmentFilter; };
 
 layout(set = 1, binding = 0) uniform textureCube cubeMap;
 

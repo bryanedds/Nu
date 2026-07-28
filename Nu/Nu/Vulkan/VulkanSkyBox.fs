@@ -13,7 +13,7 @@ open Prime
 open Nu
 
 [<Struct; StructLayout (LayoutKind.Explicit)>]
-type SkyBox =
+type SkyBoxStruct =
     [<FieldOffset(0)>] val mutable color : Vector3
     [<FieldOffset(12)>] val mutable brightness : single
 
@@ -30,8 +30,8 @@ module SkyBox =
     let createSkyBoxPipeline colorAttachmentFormat depthAttachmentFormat (context : VulkanContext) =
 
         // create uniform buffers
-        let eyeUniform = VulkanBuffer.create Uniform sizeof<Eye> context
-        let skyBoxPropertiesUniform = VulkanBuffer.create Uniform sizeof<SkyBox> context
+        let eyeUniform = VulkanBuffer.create Uniform sizeof<EyeStruct> context
+        let skyBoxPropertiesUniform = VulkanBuffer.create Uniform sizeof<SkyBoxStruct> context
 
         // create pipeline
         let pipeline =
@@ -93,12 +93,12 @@ module SkyBox =
             let mutable uniformDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.Pipeline.DrawIndex pipeline.Pipeline $ fun vkSet ->
                     
                 // specify eye
-                let eye = Eye (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
+                let eye = EyeStruct (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
                 VulkanBuffer.uploadValue eye pipeline.EyeUniform context
                 Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.EyeUniform vkSet
 
                 // specify sky box
-                let skyBox = SkyBox (color = color.V3, brightness = brightness)
+                let skyBox = SkyBoxStruct (color = color.V3, brightness = brightness)
                 VulkanBuffer.uploadValue skyBox pipeline.SkyBoxPropertiesUniform context
                 Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.SkyBoxPropertiesUniform vkSet
 

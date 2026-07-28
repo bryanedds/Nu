@@ -3,14 +3,14 @@
 const int BONES_MAX = 128;
 const int BONES_INFLUENCE_MAX = 4;
 
-struct ShadowVert
+struct ShadowVertStruct
 {
     mat4 viewProjection;
 };
 
-layout(set = 0, binding = 0) uniform ShadowVertBlock { ShadowVert shadowVert; };
+layout(set = 0, binding = 0) uniform ShadowVertUniform { ShadowVertStruct shadowVert; };
 
-layout(set = 1, binding = 0) uniform BonesBlock { mat4 bones[BONES_MAX]; };
+layout(set = 1, binding = 0) uniform BonesUniform { mat4 bones[BONES_MAX]; };
 
 layout(location = 0) in vec3 position;
 layout(location = 3) in vec4 boneIds;

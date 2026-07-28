@@ -3,7 +3,7 @@
 const float PI = 3.141592654;
 const int LIGHT_MAPS_MAX = 26;
 
-struct Eye
+struct EyeStruct
 {
     vec3 center;
     mat4 view;
@@ -13,7 +13,7 @@ struct Eye
     mat4 viewProjection;
 };
 
-layout(set = 0, binding = 0) uniform EyeBlock { Eye eye; };
+layout(set = 0, binding = 0) uniform EyeUniform { EyeStruct eye; };
 layout(set = 0, binding = 1) uniform texture2D depthTexture;
 layout(set = 0, binding = 2) uniform texture2D normalPlusTexture;
 layout(set = 0, binding = 3) uniform texture2D lightMappingTexture;

@@ -4,7 +4,7 @@ const float PI = 3.141592654;
 const float PI_OVER_2 = PI / 2.0;
 const float SSRL_STEP_COUNT_MAX = 256; // TODO: P1: promote this to uniform?
 
-struct Eye
+struct EyeStruct
 {
     vec3 center;
     mat4 view;
@@ -14,7 +14,7 @@ struct Eye
     mat4 viewProjection;
 };
 
-struct Lighting
+struct LightingStruct
 {
     float lightCutoffMargin;
     vec3 lightAmbientColor;
@@ -64,8 +64,8 @@ struct Lighting
     float shadowNear;
 };
 
-layout(set = 0, binding = 0) uniform EyeBlock { Eye eye; };
-layout(set = 0, binding = 1) uniform LightingBlock { Lighting lighting; };
+layout(set = 0, binding = 0) uniform EyeUniform { EyeStruct eye; };
+layout(set = 0, binding = 1) uniform LightingUniform { LightingStruct lighting; };
 layout(set = 0, binding = 2) uniform texture2D depthTexture;
 layout(set = 0, binding = 3) uniform texture2D albedoTexture;
 layout(set = 0, binding = 4) uniform texture2D materialTexture;

@@ -1,11 +1,11 @@
 #version 450 core
 
-struct SpriteFrag
+struct SpriteFragStruct
 {
     vec4 color;
 };
 
-layout(set = 0, binding = 1) uniform SpriteFragBlock { SpriteFrag sprite; };
+layout(set = 0, binding = 1) uniform SpriteFragUniform { SpriteFragStruct sprite; };
 
 layout(set = 1, binding = 0) uniform texture2D tex;
 

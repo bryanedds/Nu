@@ -1261,9 +1261,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         { VulkanContext : VulkanContext
           mutable GeometryViewport : Viewport
           mutable WindowViewport : Viewport
-          LazyTextureQueues : ConcurrentDictionary<LazyTexture ConcurrentQueue, LazyTexture ConcurrentQueue>
-          TextureServer : TextureServer
-          TextureDumpster : TextureDumpster
           FilteredSampler : Sampler
           CubeMapSampler : Sampler
           GeometrySampler : Sampler
@@ -1308,7 +1305,10 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           mutable RenderPasses2 : Dictionary<RenderPass, RenderTasks>
           mutable RenderPackageCachedOpt : RenderPackageCached
           mutable RenderAssetCached : RenderAssetCached
-          mutable ReloadAssetsRequested : bool }
+          mutable ReloadAssetsRequested : bool
+          LazyTextureQueues : ConcurrentDictionary<LazyTexture ConcurrentQueue, LazyTexture ConcurrentQueue>
+          TextureServer : TextureServer
+          TextureDumpster : TextureDumpster }
 
     static member private logRenderAssetUnavailableOnce (assetTag : AssetTag) =
         let message =
@@ -4539,7 +4539,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             geometryViewport renderer.PhysicallyBasedAttachments renderer.VulkanContext
 
         // delete textures as requested on previous frame
-        TextureDumpster.sweep renderer.TextureDumpster renderer.VulkanContext
+        TextureDumpster.dump renderer.TextureDumpster renderer.VulkanContext
 
         // reload render assets when requested on previous frame
         if renderer.ReloadAssetsRequested then
@@ -4825,12 +4825,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
         // make renderer
         let renderer =
-            { VulkanContext = context
-              GeometryViewport = geometryViewport
+            { GeometryViewport = geometryViewport
               WindowViewport = windowViewport
-              LazyTextureQueues = lazyTextureQueues
-              TextureServer = textureServer
-              TextureDumpster = textureDumpster
               FilteredSampler = filteredSampler
               CubeMapSampler = cubeMapSampler
               GeometrySampler = geometrySampler
@@ -4875,7 +4871,11 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               RenderPasses2 = dictPlus HashIdentity.Structural [(NormalPass, RenderTasks.make ())]
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCached = { CachedAssetTagOpt = Unchecked.defaultof<_>; CachedRenderAsset = Unchecked.defaultof<_> }
-              ReloadAssetsRequested = false }
+              ReloadAssetsRequested = false
+              LazyTextureQueues = lazyTextureQueues
+              TextureServer = textureServer
+              TextureDumpster = textureDumpster
+              VulkanContext = context }
 
         // fin
         renderer

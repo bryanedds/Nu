@@ -543,18 +543,21 @@ type [<CustomEquality; NoComparison>] TextureInternal =
             let uploadSize = ImageFormat.getImageSize metadata.TextureWidth metadata.TextureHeight textureInternal.InternalFormat_
             let stagingBuffer = VulkanBuffer.stageData uploadSize pixels context
             textureInternal.TextureWrapper_.StagingBuffers.Add stagingBuffer // TODO: P0: make sure this isn't a source of leaks and deal with it if it is!
-            Hl.recordBufferToImageCopy commandBuffer metadata.TextureWidth metadata.TextureHeight mipLevel layer stagingBuffer.VkBuffer textureInternal.Image
+            Hl.recordCopyBufferToImage commandBuffer metadata.TextureWidth metadata.TextureHeight mipLevel layer stagingBuffer.VkBuffer textureInternal.Image
         | AttachmentColor _
         | AttachmentDepth _ -> Log.warn "Upload not supported for attachment texture."
 
     /// Upload pixel data to TextureInternal. Can only be done once.
     static member upload metadata mipLevel layer pixels thread (textureInternal : TextureInternal) (context : VulkanContext) =
+
+        // upload pixel data
         let (queue, pool, fence) = TextureLoadThread.getResources thread context
         let commandBuffer = Hl.createTransientCommandBuffer pool
         TextureInternal.uploadAsync commandBuffer metadata mipLevel layer pixels textureInternal context
         ConcurrentCommandQueue.runTransient commandBuffer pool fence queue
-        
-        // destroy staging buffer (only) if it was created by async function in synchronous context to prevent massive waste of vram
+
+        // destroy staging buffer (only) when it was created by async function in synchronous context to prevent
+        // massive waste of vram
         if textureInternal.AttachmentMode_.IsAttachmentNone then
             let lastIndex = dec textureInternal.TextureWrapper_.StagingBuffers.Count
             VulkanBuffer.destroy textureInternal.TextureWrapper_.StagingBuffers[lastIndex] context
@@ -730,7 +733,7 @@ type TextureDumpster =
         { Textures_ : Texture List }
 
     /// Destroy all textures from latest finished frame.
-    static member sweep dumpster context =
+    static member dump dumpster context =
         for texture in dumpster.Textures_ do
             Texture.destroy texture context
         dumpster.Textures_.Clear ()
@@ -745,7 +748,7 @@ type TextureDumpster =
 
     /// Destroy a TextureDumpster.
     static member destroy dumpster context =
-        TextureDumpster.sweep dumpster context
+        TextureDumpster.dump dumpster context
 
 /// Memoizes and optionally threads texture loads.
 type TextureClient (lazyTextureQueuesOpt : ConcurrentDictionary<_, _> option) =

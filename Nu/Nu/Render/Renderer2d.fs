@@ -192,7 +192,6 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         { VulkanContext : VulkanContext
           mutable Viewport : Viewport
           TextQuad : VulkanBuffer * VulkanBuffer
-          TextureDumpster : TextureDumpster
           UnfilteredSampler : Sampler
           FilteredSampler : Sampler
           TextTextures : Dictionary<obj, bool ref * (int * int * Vector2 * Texture)>
@@ -204,7 +203,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
           mutable RenderPackageCachedOpt : RenderPackageCached
           mutable RenderAssetCached : RenderAssetCached
           mutable ReloadAssetsRequested : bool
-          LayeredOperations : LayeredOperation2d List }
+          LayeredOperations : LayeredOperation2d List
+          TextureDumpster : TextureDumpster }
 
     static member private logRenderAssetUnavailableOnce (assetTag : AssetTag) =
         let message =
@@ -831,9 +831,6 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                         TextureInternal.create
                                             MipmapNone AttachmentNone Texture2d VkImageUsageFlags.None
                                             Uncompressed.ImageFormat Uncompressed.PixelFormat metadata renderer.VulkanContext
-
-                                    // TODO: investigate safety of asynchronous upload with regard to memoized access
-                                    // in subsequent frames which does not explicitly wait for upload.
                                     TextureInternal.uploadAsync renderer.VulkanContext.RenderCommandBuffer metadata 0 0 textSurface.pixels textTextureInternal renderer.VulkanContext
                                     let textTexture = EagerTexture textTextureInternal
 
@@ -933,7 +930,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
     static member private preRender eyeCenter eyeSize viewport renderMessages renderer =
 
         // delete textures as requested on previous frame
-        TextureDumpster.sweep renderer.TextureDumpster renderer.VulkanContext
+        TextureDumpster.dump renderer.TextureDumpster renderer.VulkanContext
 
         // begin sprite batch frame
         let viewProjectionAbsolute = Viewport.getViewProjection2d true eyeCenter eyeSize viewport
@@ -1033,10 +1030,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         
         // make renderer
         let renderer =
-            { VulkanContext = context
-              Viewport = viewport
+            { Viewport = viewport
               TextQuad = textQuad
-              TextureDumpster = textureDumpster
               UnfilteredSampler = unfilteredSampler
               FilteredSampler = filteredSampler
               TextTextures = dictPlus HashIdentity.Structural []
@@ -1048,7 +1043,9 @@ type [<ReferenceEquality>] VulkanRenderer2d =
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCached = { CachedAssetTagOpt = Unchecked.defaultof<_>; CachedRenderAsset = Unchecked.defaultof<_> }
               ReloadAssetsRequested = false
-              LayeredOperations = List () }
+              LayeredOperations = List ()
+              TextureDumpster = textureDumpster
+              VulkanContext = context }
         
         // fin
         renderer

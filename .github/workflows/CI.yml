@@ -44,10 +44,10 @@ jobs:
           # an exact patch match, which could fail if the runner only has "26.6.0" (or vice versa).
           # This property is more reliable than trying to derive the Xcode version from the workload version number, since the mapping is
           # not always 1:1 (e.g. iOS 26.5 → Xcode 26.6), see https://github.com/dotnet/macios/issues/25818
-          XCODE_VERSION=$(dotnet build "Projects/Mobile" -f net10.0-ios -getProperty:_RecommendedXcodeVersion 2>/dev/null) # Note the project used should have OutputType=Exe, because OutputType=Library has a different version returned
+          XCODE_VERSION=$(dotnet build "Projects/Mobile" -f net10.0-ios -getProperty:_RecommendedXcodeVersion 2>/dev/null | tail -n 1) # Note the project used should have OutputType=Exe, because OutputType=Library has a different version returned
           echo "Recommended Xcode version is $XCODE_VERSION"
           XCODE_VERSION=$(echo "$XCODE_VERSION" | cut -d. -f1-2) # Keep only major.minor
-          echo "xcode-version=${XCODE_VERSION:-latest-stable}" >> "$GITHUB_OUTPUT"
+          echo "xcode-version=${XCODE_VERSION}" >> "$GITHUB_OUTPUT"
       - uses: maxim-lobanov/setup-xcode@v1
         if: contains(matrix.os, 'macos')
         with:

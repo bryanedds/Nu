@@ -1172,19 +1172,13 @@ module WorldModule2 =
             | SDL_EventType.SDL_EVENT_QUIT ->
                 let eventTrace = EventTrace.debug "World" "processInput2" "ExitRequest" EventTrace.empty
                 World.publishPlus () Nu.Game.Handle.ExitRequestEvent eventTrace Nu.Game.Handle true true world
-            | SDL_EventType.SDL_EVENT_WINDOW_RESIZED
-            | SDL_EventType.SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED
-            | SDL_EventType.SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED
-            | SDL_EventType.SDL_EVENT_WINDOW_ENTER_FULLSCREEN
-            | SDL_EventType.SDL_EVENT_WINDOW_LEAVE_FULLSCREEN ->
+            | SDL_EventType.SDL_EVENT_WINDOW_RESIZED | SDL_EventType.SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED ->
                 World.processWindowResized world
             | SDL_EventType.SDL_EVENT_MOUSE_MOTION ->
                 let io = ImGui.GetIO ()
                 let pixelDensity = World.tryGetWindowPixelDensity world |> Option.defaultValue 1.0f
-                let mousePosition =
-                    v2 evt.motion.x evt.motion.y * pixelDensity -
-                    world.WindowViewport.Bounds.Min.V2
-                io.AddMousePosEvent (mousePosition.X, mousePosition.Y)
+                io.AddMousePosEvent (evt.button.x * pixelDensity, evt.button.y * pixelDensity) // scale by pixel density because SDL IO comes in from unscale window coords
+                let mousePosition = v2 (single evt.button.x) (single evt.button.y)
                 if not (MouseState.isSuppressed ()) && World.isMouseButtonDown MouseLeft world then
                     let eventTrace = EventTrace.debug "World" "processInput2" "MouseDrag" EventTrace.empty
                     World.publishPlus { MouseMoveData.Position = mousePosition } Nu.Game.Handle.MouseDragEvent eventTrace Nu.Game.Handle true true world
@@ -3251,7 +3245,9 @@ module GamePropertyDescriptor =
     /// Get whether the described property is editable.
     let getEditable propertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
-        not (Reflection.isPropertyNonPersistentByName propertyName)
+        not (Reflection.isPropertyNonPersistentByName propertyName) &&
+        not (propertyName.StartsWith "Eye2d") &&
+        not (propertyName.StartsWith "Eye3d")
 
     /// Get the value of the described property for the game.
     let getValue propertyDescriptor (game : Game) world : obj =

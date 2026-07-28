@@ -14,7 +14,7 @@ open Prime
 open Nu
 
 [<Struct; StructLayout (LayoutKind.Explicit)>]
-type Sprite =
+type SpriteStruct =
     [<FieldOffset(0)>] val mutable perimeter : Vector4
     [<FieldOffset(16)>] val mutable pivot : Vector2
     [<FieldOffset(24)>] val mutable rotation : single
@@ -22,7 +22,7 @@ type Sprite =
     [<FieldOffset(48)>] val mutable color : Vector4
     
 [<Struct; StructLayout (LayoutKind.Explicit)>]
-type ViewProjection =
+type ViewProjectionStruct =
     [<FieldOffset(0)>] val mutable viewProjection : Matrix4x4
     
 type [<Struct>] SpriteBatchState =
@@ -61,7 +61,6 @@ type [<ReferenceEquality>] SpriteBatchEnv =
           mutable ViewProjection2dRelative : Matrix4x4
           mutable ViewProjectionClipAbsolute : Matrix4x4
           mutable ViewProjectionClipRelative : Matrix4x4
-          VulkanContext : VulkanContext
           Pipeline : Pipeline
           UnfilteredSampler : Sampler
           FilteredSampler : Sampler
@@ -72,7 +71,8 @@ type [<ReferenceEquality>] SpriteBatchEnv =
           Rotations : single array
           TexCoordses : Vector4 array
           Colors : Vector4 array
-          mutable State : SpriteBatchState }
+          mutable State : SpriteBatchState
+          VulkanContext : VulkanContext }
 
 [<RequireQualifiedAccess>]
 module SpriteBatch =
@@ -81,8 +81,8 @@ module SpriteBatch =
     let private createSpriteBatchPipeline (context : VulkanContext) =
 
         // create uniforms
-        let spritesUniform = VulkanBuffer.create Uniform (Constants.Render.SpriteBatchSize * sizeof<Sprite>) context
-        let viewProjectionUniform = VulkanBuffer.create Uniform sizeof<ViewProjection> context
+        let spritesUniform = VulkanBuffer.create Uniform (Constants.Render.SpriteBatchSize * sizeof<SpriteStruct>) context
+        let viewProjectionUniform = VulkanBuffer.create Uniform sizeof<ViewProjectionStruct> context
         
         // create sprite batch pipeline
         let pipeline =
@@ -145,9 +145,9 @@ module SpriteBatch =
                     let mutable uniformDescriptorSet = Pipeline.specifyDescriptorSet 0 env.Pipeline.DrawIndex env.Pipeline $ fun vkSet ->
 
                         // specify sprites
-                        let mutable sprite = Sprite ()
+                        let mutable sprite = SpriteStruct ()
                         use spritePtr = fixed &sprite
-                        let spriteSize = sizeof<Sprite>
+                        let spriteSize = sizeof<SpriteStruct>
                         for i in 0 .. dec env.SpriteIndex do
                             sprite.perimeter <- env.Perimeters[i]
                             sprite.pivot <- env.Pivots[i]
@@ -159,7 +159,7 @@ module SpriteBatch =
                         Pipeline.writeDescriptorUniformBuffer 0 0 env.SpritesUniform vkSet
 
                         // specify viewProjection
-                        let mutable viewProjection = ViewProjection (viewProjection = if env.State.Absolute then env.ViewProjection2dAbsolute else env.ViewProjection2dRelative)
+                        let mutable viewProjection = ViewProjectionStruct (viewProjection = if env.State.Absolute then env.ViewProjection2dAbsolute else env.ViewProjection2dRelative)
                         VulkanBuffer.uploadValue viewProjection env.ViewProjectionUniform env.VulkanContext
                         Pipeline.writeDescriptorUniformBuffer 1 0 env.ViewProjectionUniform vkSet
 
@@ -274,9 +274,11 @@ module SpriteBatch =
 
         // create env
         { SpriteIndex = 0;
-          ViewProjection2dAbsolute = m4Identity; ViewProjection2dRelative = m4Identity
-          ViewProjectionClipAbsolute = m4Identity; ViewProjectionClipRelative = m4Identity
-          VulkanContext = context; Pipeline = pipeline
+          ViewProjection2dAbsolute = m4Identity
+          ViewProjection2dRelative = m4Identity
+          ViewProjectionClipAbsolute = m4Identity
+          ViewProjectionClipRelative = m4Identity
+          Pipeline = pipeline
           UnfilteredSampler = unfilteredSampler; FilteredSampler = filteredSampler
           SpritesUniform = spritesUniform; ViewProjectionUniform = viewProjectionUniform
           Perimeters = Array.zeroCreate Constants.Render.SpriteBatchSize
@@ -284,7 +286,8 @@ module SpriteBatch =
           Rotations = Array.zeroCreate Constants.Render.SpriteBatchSize
           TexCoordses = Array.zeroCreate Constants.Render.SpriteBatchSize
           Colors = Array.zeroCreate Constants.Render.SpriteBatchSize
-          State = SpriteBatchState.defaultState }
+          State = SpriteBatchState.defaultState
+          VulkanContext = context }
 
     /// Destroy the given sprite batch environment.
     let destroySpriteBatchEnv env =
