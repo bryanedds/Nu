@@ -698,7 +698,7 @@ module internal AmbientState =
         match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
         | Some window ->
             let pixelDensity = SDL3.SDL_GetWindowPixelDensity window
-            SDL3.SDL_SetWindowPosition (window, int (single position.X * pixelDensity), int (single position.Y * pixelDensity)) |> ignore<SDLBool>
+            SDL3.SDL_SetWindowPosition (window, int (single position.X / pixelDensity), int (single position.Y / pixelDensity)) |> ignore<SDLBool>
         | None -> ()
 
     let internal tryGetWindowSize state =
