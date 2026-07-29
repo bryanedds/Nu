@@ -98,6 +98,7 @@ module internal MouseState =
 
     let mutable private MouseButtonStatePrevious : SDL_MouseButtonFlags = LanguagePrimitives.EnumOfValue 0u
     let mutable private MouseButtonStateCurrent : SDL_MouseButtonFlags = LanguagePrimitives.EnumOfValue 0u
+    let mutable private Suppressed = false
     let mutable internal MouseScrollStatePrevious = 0.0f
     let mutable internal MouseScrollStateCurrent = 0.0f
 
@@ -140,6 +141,15 @@ module internal MouseState =
         // update scroll state
         MouseScrollStatePrevious <- MouseScrollStateCurrent
 
+    /// Suppress mouse edge input for the current resize cancellation window.
+    let internal setSuppressed suppressed = Suppressed <- suppressed
+
+    let internal isSuppressed () = Suppressed
+
+    let internal anyButtonDown () = MouseButtonStateCurrent <> LanguagePrimitives.EnumOfValue 0u
+
+    let internal anyButtonWasDown () = MouseButtonStatePrevious <> LanguagePrimitives.EnumOfValue 0u
+
     /// Get the position of the mouse in SDL terms (IE, not accounting for pixel density).
     let internal getPositionSdl () =
         let mutable x, y = 0.0f, 0.0f
@@ -152,24 +162,30 @@ module internal MouseState =
 
     /// Check that the given mouse button is down.
     let internal isButtonDown mouseButton =
-        let sdlMouseButton = toSdlButtonFlags mouseButton
-        MouseButtonStateCurrent &&& sdlMouseButton <> LanguagePrimitives.EnumOfValue 0u
+        if Suppressed then false
+        else
+            let sdlMouseButton = toSdlButtonFlags mouseButton
+            MouseButtonStateCurrent &&& sdlMouseButton <> LanguagePrimitives.EnumOfValue 0u
 
     /// Check that the given mouse button is up.
     let internal isButtonUp mouseButton =
-        not (isButtonDown mouseButton)
+        if Suppressed then false else not (isButtonDown mouseButton)
 
     /// Check that the given mouse button was just pressed.
     let internal isButtonPressed mouseButton =
-        let sdlMouseButton = toSdlButtonFlags mouseButton
-        (MouseButtonStatePrevious &&& sdlMouseButton = LanguagePrimitives.EnumOfValue 0u) &&
-        (MouseButtonStateCurrent &&& sdlMouseButton <> LanguagePrimitives.EnumOfValue 0u)
+        if Suppressed then false
+        else
+            let sdlMouseButton = toSdlButtonFlags mouseButton
+            (MouseButtonStatePrevious &&& sdlMouseButton = LanguagePrimitives.EnumOfValue 0u) &&
+            (MouseButtonStateCurrent &&& sdlMouseButton <> LanguagePrimitives.EnumOfValue 0u)
 
     /// Check that the given mouse button was just released.
     let internal isButtonReleased mouseButton =
-        let sdlMouseButton = toSdlButtonFlags mouseButton
-        (MouseButtonStatePrevious &&& sdlMouseButton <> LanguagePrimitives.EnumOfValue 0u) &&
-        (MouseButtonStateCurrent &&& sdlMouseButton = LanguagePrimitives.EnumOfValue 0u)
+        if Suppressed then false
+        else
+            let sdlMouseButton = toSdlButtonFlags mouseButton
+            (MouseButtonStatePrevious &&& sdlMouseButton <> LanguagePrimitives.EnumOfValue 0u) &&
+            (MouseButtonStateCurrent &&& sdlMouseButton = LanguagePrimitives.EnumOfValue 0u)
 
     /// Get how much the mouse has just scrolled.
     let internal getScrolled () =

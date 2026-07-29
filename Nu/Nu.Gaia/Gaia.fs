@@ -902,7 +902,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         if entity.GetIs2d world then
             let absolute = entity.GetAbsolute world
             let entityPosition =
-                if atMouse then Viewport.mouseToWorld2d absolute world.Eye2dCenter world.Eye2dSize RightClickPosition world.WindowViewport
+                if atMouse then Viewport.mouseToWorld2d absolute world.Eye2dCenter world.Eye2dViewed RightClickPosition world.WindowViewport
                 elif not absolute then world.Eye2dCenter
                 else v2Zero
             entityTransform.Position <- entityPosition.V3
@@ -1611,7 +1611,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     if entity.GetIs2d world then
                         if World.isKeyboardAltDown world then
                             let absolute = entity.GetAbsolute world
-                            let mousePositionWorld = Viewport.mouseToWorld2d absolute world.Eye2dCenter world.Eye2dSize mousePosition world.WindowViewport
+                            let mousePositionWorld = Viewport.mouseToWorld2d absolute world.Eye2dCenter world.Eye2dViewed mousePosition world.WindowViewport
                             let entityDegrees = if entity.MountExists world then entity.GetDegreesLocal world else entity.GetDegrees world
                             DragEntityState <- DragEntityRotation2d (world.DateTime, ref false, mousePositionWorld, entityDegrees.Z + mousePositionWorld.Y, entity)
                         else
@@ -1642,7 +1642,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                     duplicate
                                 else entity
                             let absolute = entity.GetAbsolute world
-                            let mousePositionWorld = Viewport.mouseToWorld2d absolute world.Eye2dCenter world.Eye2dSize mousePosition world.WindowViewport
+                            let mousePositionWorld = Viewport.mouseToWorld2d absolute world.Eye2dCenter world.Eye2dViewed mousePosition world.WindowViewport
                             let entityPosition = entity.GetPosition world
                             DragEntityState <- DragEntityPosition2d (world.DateTime, ref false, mousePositionWorld, entityPosition.V2 + mousePositionWorld, entity)
                 | None -> ()
@@ -4569,7 +4569,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             File.WriteAllText (imguiIniFilePath, ImGuiIniFileStr)
 
         // attempt to create SDL dependencies
-        let windowSize = Constants.Render.DisplayVirtualResolution * Globals.Render.DisplayScalar
+        let windowSize = Globals.Render.DisplayVirtualResolution * Globals.Render.DisplayScalar
         let windowViewport = Viewport.makeWindow1 windowSize
         let geometryViewport = Viewport.makeGeometry windowViewport.Bounds.Size
         match tryMakeSdlDeps true windowSize with

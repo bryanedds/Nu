@@ -507,7 +507,7 @@ module WorldModule2 =
             World.createEntity<StaticSpriteDispatcher> None DefaultOverlay (Some slideSprite.Surnames) slideGroup world |> ignore<Entity>
             World.setEntityProtection ManualProtection slideSprite world |> ignore<bool>
             slideSprite.SetPersistent false world
-            slideSprite.SetSize world.Eye2dSize.V3 world
+            slideSprite.SetSize world.Eye2dViewable.V3 world
             slideSprite.SetAbsolute true world
             match slideDescriptor.SlideImageOpt with
             | Some slideImage ->
@@ -903,12 +903,6 @@ module WorldModule2 =
             for entity in entities do
                 World.unregisterEntityPhysics entity world
 
-        static member private synchronizeViewports world =
-            let windowSize = World.getWindowSizeOtherwiseViewportSize world
-            let windowViewport = Viewport.makeWindow1 windowSize
-            World.setWindowViewport windowViewport world
-            World.setGeometryViewport (Viewport.makeGeometry windowViewport.Bounds.Size) world
-
         /// Try to reload the overlayer currently in use by the world.
         static member tryReloadOverlayer inputDirectory outputDirectory world =
             
@@ -1002,7 +996,8 @@ module WorldModule2 =
             World.switchAmbientState world
 
             // synchronize viewports in case they get out of sync, such as during an undo operation
-            World.synchronizeViewports world
+            let windowSize = World.getWindowSizeOtherwiseViewportSize world
+            World.synchronizeViewports windowSize world.WindowViewport.DisplayScalar world
 
             // rebuild spatial trees
             Octree.clear world.Octree
@@ -1129,25 +1124,48 @@ module WorldModule2 =
 
         static member internal processWindowResized (world : World) =
 
-            // ensure window size is a factor of display virtual resolution, going to full screen otherwise
+            // validate and normalize display configuration
             let windowSize = World.getWindowSizeOtherwiseViewportSize world
-            let windowScalar =
-                max (single windowSize.X / single Constants.Render.DisplayVirtualResolution.X |> ceil |> int |> max 1)
-                    (single windowSize.Y / single Constants.Render.DisplayVirtualResolution.Y |> ceil |> int |> max 1)
-            let windowSize' = windowScalar * Constants.Render.DisplayVirtualResolution
-            World.trySetWindowSize windowSize' world
-            let windowSize'' = World.getWindowSizeOtherwiseViewportSize world
-            if windowSize''.X < windowSize'.X || windowSize''.Y < windowSize'.Y then
-                World.trySetWindowFullScreen true world
-
-            // synchronize display virtual scalar
-            let windowSize'' = World.getWindowSizeOtherwiseViewportSize world
-            let xScalar = windowSize''.X / Constants.Render.DisplayVirtualResolution.X
-            let yScalar = windowSize''.Y / Constants.Render.DisplayVirtualResolution.Y
-            Globals.Render.DisplayScalar <- min xScalar yScalar
-
-            // synchronize view ports
-            World.synchronizeViewports world
+            let virtualSize = Globals.Render.DisplayVirtualResolution
+            let eyeMarginMaxScalar = Vector2.Max (v2Zero, Constants.Engine.EyeMarginMaxScalar)
+            let virtualSizeWithMargin =
+                virtualSize.V2 * (v2Dup 1.0f + 2.0f * eyeMarginMaxScalar)
+            let oldDisplayScalar = max 1 world.WindowViewport.DisplayScalar
+            let minSize scalar = virtualSize * scalar
+            let maxSize scalar =
+                v2i
+                    (int (ceil (virtualSizeWithMargin.X * single scalar)))
+                    (int (ceil (virtualSizeWithMargin.Y * single scalar)))
+            let clampSize (minimum : Vector2i) (maximum : Vector2i) (size : Vector2i) =
+                v2i
+                    (max minimum.X (min maximum.X size.X))
+                    (max minimum.Y (min maximum.Y size.Y))
+            let selectDisplayScalarAndSize (windowSize : Vector2i) =
+                let oldMinimum = minSize oldDisplayScalar
+                let oldMaximum = maxSize oldDisplayScalar
+                let maximumRatio =
+                    max
+                        (int (ceil (single windowSize.X / single virtualSize.X)))
+                        (int (ceil (single windowSize.Y / single virtualSize.Y)))
+                let maximumScalar = max (oldDisplayScalar + 1) (maximumRatio + 1)
+                seq {
+                    for scalar in 1 .. maximumScalar do
+                        let candidateSize = clampSize (minSize scalar) (maxSize scalar) windowSize
+                        let dx = int64 candidateSize.X - int64 windowSize.X
+                        let dy = int64 candidateSize.Y - int64 windowSize.Y
+                        let distanceSquared = dx * dx + dy * dy
+                        let directionTie =
+                            if windowSize.X < oldMinimum.X || windowSize.Y < oldMinimum.Y then scalar
+                            elif windowSize.X > oldMaximum.X || windowSize.Y > oldMaximum.Y then -scalar
+                            else scalar
+                        yield struct (distanceSquared, abs (scalar - oldDisplayScalar), directionTie, scalar, candidateSize) }
+                |> Seq.min
+                |> fun struct (_, _, _, scalar, size) -> scalar, size
+            let _, snappedSize = selectDisplayScalarAndSize windowSize
+            if snappedSize <> windowSize then World.trySetWindowSize snappedSize world
+            let windowSize = World.getWindowSizeOtherwiseViewportSize world
+            let displayScalar, _ = selectDisplayScalarAndSize windowSize
+            World.synchronizeViewports windowSize displayScalar world
 
         static member internal processInput2 (evt : SDL_Event) (world : World) =
             match evt.Type with
@@ -1164,7 +1182,7 @@ module WorldModule2 =
                     (evt.button.x * pixelDensity + single viewport.Bounds.Min.X,
                      evt.button.y * pixelDensity - single viewport.Bounds.Min.Y)
                 let mousePosition = v2 (single evt.button.x) (single evt.button.y)
-                if World.isMouseButtonDown MouseLeft world then
+                if not (MouseState.isSuppressed ()) && World.isMouseButtonDown MouseLeft world then
                     let eventTrace = EventTrace.debug "World" "processInput2" "MouseDrag" EventTrace.empty
                     World.publishPlus { MouseMoveData.Position = mousePosition } Nu.Game.Handle.MouseDragEvent eventTrace Nu.Game.Handle true true world
                 let eventTrace = EventTrace.debug "World" "processInput2" "MouseMove" EventTrace.empty
@@ -1172,8 +1190,8 @@ module WorldModule2 =
             | SDL_EventType.SDL_EVENT_MOUSE_BUTTON_DOWN ->
                 let io = ImGui.GetIO ()
                 let mouseButton = World.toNuMouseButton evt.button.Button
-                io.AddMouseButtonEvent (World.toImGuiMouseButton mouseButton, true)
-                if not io.WantCaptureMouseGlobal then
+                if not (MouseState.isSuppressed ()) then io.AddMouseButtonEvent (World.toImGuiMouseButton mouseButton, true)
+                if not (MouseState.isSuppressed ()) && not io.WantCaptureMouseGlobal then
                     let mousePosition = World.getMousePosition world
                     let mouseButtonDownEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Down/Event/" + Constants.Engine.GameName)
                     let mouseButtonChangeEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Change/Event/" + Constants.Engine.GameName)
@@ -1185,8 +1203,8 @@ module WorldModule2 =
             | SDL_EventType.SDL_EVENT_MOUSE_BUTTON_UP ->
                 let io = ImGui.GetIO ()
                 let mouseButton = World.toNuMouseButton evt.button.Button
-                io.AddMouseButtonEvent (World.toImGuiMouseButton mouseButton, false)
-                if not io.WantCaptureMouseGlobal then
+                if not (MouseState.isSuppressed ()) then io.AddMouseButtonEvent (World.toImGuiMouseButton mouseButton, false)
+                if not (MouseState.isSuppressed ()) && not io.WantCaptureMouseGlobal then
                     let mousePosition = World.getMousePosition world
                     let mouseButtonUpEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Up/Event/" + Constants.Engine.GameName)
                     let mouseButtonChangeEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Change/Event/" + Constants.Engine.GameName)
@@ -1592,8 +1610,8 @@ module WorldModule2 =
 
         static member private renderScreenTransition renderPass (screen : Screen) world =
             match screen.GetTransitionState world with
-            | IncomingState transitionTime -> World.renderScreenTransition5 transitionTime world.Eye2dSize renderPass (screen.GetIncoming world) world
-            | OutgoingState transitionTime -> World.renderScreenTransition5 transitionTime world.Eye2dSize renderPass (screen.GetOutgoing world) world
+            | IncomingState transitionTime -> World.renderScreenTransition5 transitionTime world.Eye2dViewed renderPass (screen.GetIncoming world) world
+            | OutgoingState transitionTime -> World.renderScreenTransition5 transitionTime world.Eye2dViewed renderPass (screen.GetOutgoing world) world
             | IdlingState _ -> ()
 
         static member private renderSimulantsInternal8
@@ -1911,6 +1929,14 @@ module WorldModule2 =
                 SdlEvents.poll ()
                 MouseState.update ()
                 KeyboardState.update ()
+                let resizeInBatch = SdlEvents.containsWindowResize ()
+                let suppressFrame = resizeInBatch || (MouseState.isSuppressed () && (MouseState.anyButtonDown () || MouseState.anyButtonWasDown ()))
+                if suppressFrame then
+                    MouseState.setSuppressed true
+                    if resizeInBatch then
+                        let io = ImGui.GetIO ()
+                        for button in [MouseLeft; MouseMiddle; MouseRight; MouseX1; MouseX2] do
+                            io.AddMouseButtonEvent (World.toImGuiMouseButton button, false)
                 let mutable alive = world.Alive
                 let mutable polledEvent = SDL.SDL_Event ()
                 while
@@ -1918,6 +1944,8 @@ module WorldModule2 =
                     SdlEvents.tryConsume &polledEvent do
                     World.processInput2 polledEvent world
                     alive <- world.Alive
+                let keepSuppressed = suppressFrame && (MouseState.anyButtonDown () || MouseState.anyButtonWasDown ())
+                MouseState.setSuppressed keepSuppressed
                 if not alive then
                     World.exit world
 
@@ -2118,7 +2146,7 @@ module WorldModule2 =
                                                                         world.Eye3dRotation
                                                                         world.Eye3dFieldOfView
                                                                         world.Eye2dCenter
-                                                                        world.Eye2dSize
+                                                                        world.Eye2dViewed
                                                                         world.GeometryViewport
                                                                         world.WindowViewport
                                                                         drawData

@@ -38,6 +38,13 @@ module WorldModuleGame =
             ignore<Game> game
             world.WorldState <- { world.WorldState with GameState = gameState }
 
+        static member internal synchronizeViewports windowSize displayScalar (world : World) =
+            let eyeViewedPrevious = world.GameState.Eye2dViewed
+            World.synchronizeViewportState windowSize displayScalar world
+            let eyeViewed = world.GameState.Eye2dViewed
+            if eyeViewedPrevious <> eyeViewed then
+                World.publishGameChange (nameof world.GameState.Eye2dViewed) eyeViewedPrevious eyeViewed Game.Handle world
+
         static member internal getGameXtension game world =
             let gameState = World.getGameState game world
             gameState.Xtension
@@ -242,6 +249,8 @@ module WorldModuleGame =
             let previous = gameState.Eye2dSize
             if previous <> value then
                 World.setGameState { gameState with Eye2dSize = value } game world
+                let windowSize = World.getWindowSizeOtherwiseViewportSize world
+                World.synchronizeViewports windowSize world.WindowViewport.DisplayScalar world
                 World.publishGameChange (nameof gameState.Eye2dSize) previous value game world
                 true
             else false
@@ -253,6 +262,13 @@ module WorldModuleGame =
         /// Set the current 2d eye size.
         static member setEye2dSize value world =
             World.setGameEye2dSize value Game.Handle world |> ignore<bool>
+
+        static member internal getGameEye2dViewed game world =
+            (World.getGameState game world).Eye2dViewed
+
+        /// Get the current 2d eye viewed size.
+        static member getEye2dViewed world =
+            World.getGameEye2dViewed Game.Handle world
 
         /// Get the current 2d eye bounds.
         static member getEye2dBounds world =
@@ -277,23 +293,25 @@ module WorldModuleGame =
         /// Get the bounds of the 2d eye's sight irrespective of its position.
         static member getViewBounds2dAbsolute world =
             let gameState = World.getGameState Game.Handle world
-            box2
-                (v2 (gameState.Eye2dSize.X * -0.5f) (gameState.Eye2dSize.Y * -0.5f))
-                (v2 gameState.Eye2dSize.X gameState.Eye2dSize.Y)
+            box2 (gameState.Eye2dViewed * -0.5f) gameState.Eye2dViewed
 
         /// Get the bounds of the 2d eye's sight relative to its position.
         static member getViewBounds2dRelative world =
             let gameState = World.getGameState Game.Handle world
-            let min = v2 (gameState.Eye2dCenter.X - gameState.Eye2dSize.X * 0.5f) (gameState.Eye2dCenter.Y - gameState.Eye2dSize.Y * 0.5f)
-            box2 min gameState.Eye2dSize
+            let eyeViewed = gameState.Eye2dViewed
+            box2 (gameState.Eye2dCenter - eyeViewed * 0.5f) eyeViewed
 
         /// Get the bounds of the 2d play zone irrespective of eye center.
         static member getPlayBounds2dAbsolute world =
-            World.getViewBounds2dAbsolute world
+            let gameState = World.getGameState Game.Handle world
+            let eyeViewable = gameState.Eye2dSize + gameState.Eye2dSize * 2.0f * Constants.Engine.EyeMarginMaxScalar
+            box2 (eyeViewable * -0.5f) eyeViewable
 
         /// Get the bounds of the 2d play zone relative to eye center.
         static member getPlayBounds2dRelative world =
-            World.getViewBounds2dRelative world
+            let gameState = World.getGameState Game.Handle world
+            let eyeViewable = gameState.Eye2dSize + gameState.Eye2dSize * 2.0f * Constants.Engine.EyeMarginMaxScalar
+            box2 (gameState.Eye2dCenter - eyeViewable * 0.5f) eyeViewable
 
         /// Check that the given bounds is within the 2d eye's sight irrespective of eye center.
         static member boundsInView2dAbsolute (bounds : Box2) world =
@@ -322,9 +340,10 @@ module WorldModuleGame =
             let gameState = World.getGameState game world
             let previous = gameState.Eye3dCenter
             if previous <> value then
-                let viewportInterior = Viewport.makeInterior ()
-                let viewportExterior = Viewport.makeExterior ()
-                let viewportImposter = Viewport.makeImposter ()
+                let resolution = world.GeometryViewport.Bounds.Size
+                let viewportInterior = Viewport.makeInteriorViewed resolution
+                let viewportExterior = Viewport.makeExteriorViewed resolution
+                let viewportImposter = Viewport.makeImposterViewed resolution
                 let gameState =
                     { gameState with
                         Eye3dCenter = value
@@ -351,9 +370,10 @@ module WorldModuleGame =
             let gameState = World.getGameState game world
             let previous = gameState.Eye3dRotation
             if previous <> value then
-                let viewportInterior = Viewport.makeInterior ()
-                let viewportExterior = Viewport.makeExterior ()
-                let viewportImposter = Viewport.makeImposter ()
+                let resolution = world.GeometryViewport.Bounds.Size
+                let viewportInterior = Viewport.makeInteriorViewed resolution
+                let viewportExterior = Viewport.makeExteriorViewed resolution
+                let viewportImposter = Viewport.makeImposterViewed resolution
                 let gameState =
                     { gameState with
                         Eye3dRotation = value
@@ -381,9 +401,10 @@ module WorldModuleGame =
             let gameState = World.getGameState game world
             let previous = gameState.Eye3dFieldOfView
             if previous <> value then
-                let viewportInterior = Viewport.makeInterior ()
-                let viewportExterior = Viewport.makeExterior ()
-                let viewportImposter = Viewport.makeImposter ()
+                let resolution = world.GeometryViewport.Bounds.Size
+                let viewportInterior = Viewport.makeInteriorViewed resolution
+                let viewportExterior = Viewport.makeExteriorViewed resolution
+                let viewportImposter = Viewport.makeImposterViewed resolution
                 let gameState =
                     { gameState with
                         Eye3dFieldOfView = value
@@ -395,11 +416,9 @@ module WorldModuleGame =
                 true
             else false
 
-        static member internal getGameEye3dAspectRatio game world =
+        static member internal getGameEye3dAspectRatio game (world : World) =
             ignore<Game> game
-            ignore<World> world
-            single Constants.Render.DisplayVirtualResolution.X /
-            single Constants.Render.DisplayVirtualResolution.Y
+            world.GeometryViewport.AspectRatio
 
         /// Get the current 3d eye field of view.
         static member getEye3dFieldOfView world =
