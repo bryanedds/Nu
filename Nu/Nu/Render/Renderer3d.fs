@@ -4588,52 +4588,35 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 renderer.RendererConfig.FxaaSpanMax renderer.RendererConfig.FxaaReduceMinDivisor renderer.RendererConfig.FxaaReduceMulDivisor
                 toneMappingTexture renderer.UnfilteredSampler colorFull0Texture geometryResolution
                 renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterFxaaPipeline renderer.VulkanContext
+
+            // blit from color full 0 back to tone-mapping texture
             Texture.recordTransitionLayout ColorAttachmentWrite TransferSrc colorFull0Texture renderer.VulkanContext.RenderCommandBuffer
             Texture.recordTransitionLayout ColorAttachmentRead TransferDst toneMappingTexture renderer.VulkanContext.RenderCommandBuffer
-
-            // blit from color full 0 back to intermediate texture
             let bounds = VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)
             let mutable region = Hl.makeBlit 0 0 0 0 bounds bounds
             DeviceApi.vkCmdBlitImage (renderer.VulkanContext.RenderCommandBuffer, colorFull0Texture.Image, TransferSrc.VkImageLayout, toneMappingTexture.Image, TransferDst.VkImageLayout, 1u, &&region, VkFilter.Nearest)
             Texture.recordTransitionLayout TransferSrc ColorAttachmentRead colorFull0Texture renderer.VulkanContext.RenderCommandBuffer
             Texture.recordTransitionLayout TransferDst ColorAttachmentRead toneMappingTexture renderer.VulkanContext.RenderCommandBuffer
 
-        (*// apply chromatic aberration texture when desired
+        // apply chromatic aberration texture when desired
         if topLevelRender && renderer.RendererConfig.ChromaticAberrationEnabled && renderer.LightingConfig.ChromaticAberrationEnabled then
 
-            // blit tone mapping buffer to full filter 0 buffer
-            let (full0Texture, _, full0Framebuffer) = renderer.PhysicallyBasedBuffers.FilterFull0Buffers
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, toneMappingFramebuffer)
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, full0Framebuffer)
-            OpenGL.Gl.BlitFramebuffer
-                (0, 0, geometryResolution.X, geometryResolution.Y,
-                 0, 0, geometryResolution.X, geometryResolution.Y,
-                 OpenGL.ClearBufferMask.ColorBufferBit,
-                 OpenGL.BlitFramebufferFilter.Nearest)
-            OpenGL.Hl.Assert ()
+            // run fxaa pass from tone-mapping texture to color full 0
+            let colorFull0Texture = renderer.PhysicallyBasedAttachments.ColorFull0Attachment
+            Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite colorFull0Texture renderer.VulkanContext.RenderCommandBuffer
+            PhysicallyBased.drawFilterChromaticAberrationSurface
+                renderer.LightingConfig.ChromaticAberrationChannelOffsets renderer.LightingConfig.ChromaticAberrationFocalPoint
+                toneMappingTexture renderer.UnfilteredSampler colorFull0Texture geometryResolution
+                renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterChromaticAberrationPipeline renderer.VulkanContext
 
-            // setup full filter 1 buffer and viewport
-            let (_, full1Renderbuffer, full1Framebuffer) = renderer.PhysicallyBasedBuffers.FilterFull1Buffers
-            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, full1Renderbuffer)
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, full1Framebuffer)
-            OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
-            OpenGL.Hl.Assert ()
-
-            // render chromatic aberration quad to full filter 1 buffers
-            OpenGL.PhysicallyBased.DrawFilterChromaticAberrationSurface
-                (renderer.LightingConfig.ChromaticAberrationChannelOffsets, renderer.LightingConfig.ChromaticAberrationFocalPoint, full0Texture,
-                 renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterChromaticAberrationShader, renderer.PhysicallyBasedStaticVao)
-            OpenGL.Hl.Assert ()
-
-            // blit full filter 1 buffer to tone mapping buffer
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, full1Framebuffer)
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, toneMappingFramebuffer)
-            OpenGL.Gl.BlitFramebuffer
-                (0, 0, geometryResolution.X, geometryResolution.Y,
-                 0, 0, geometryResolution.X, geometryResolution.Y,
-                 OpenGL.ClearBufferMask.ColorBufferBit,
-                 OpenGL.BlitFramebufferFilter.Nearest)
-            OpenGL.Hl.Assert ()*)
+            // blit from color full 0 back to tone-mapping texture
+            Texture.recordTransitionLayout ColorAttachmentWrite TransferSrc colorFull0Texture renderer.VulkanContext.RenderCommandBuffer
+            Texture.recordTransitionLayout ColorAttachmentRead TransferDst toneMappingTexture renderer.VulkanContext.RenderCommandBuffer
+            let bounds = VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)
+            let mutable region = Hl.makeBlit 0 0 0 0 bounds bounds
+            DeviceApi.vkCmdBlitImage (renderer.VulkanContext.RenderCommandBuffer, colorFull0Texture.Image, TransferSrc.VkImageLayout, toneMappingTexture.Image, TransferDst.VkImageLayout, 1u, &&region, VkFilter.Nearest)
+            Texture.recordTransitionLayout TransferSrc ColorAttachmentRead colorFull0Texture renderer.VulkanContext.RenderCommandBuffer
+            Texture.recordTransitionLayout TransferDst ColorAttachmentRead toneMappingTexture renderer.VulkanContext.RenderCommandBuffer
 
         // run gamma-correction pass when needed
         let intermediateTexture =

@@ -45,6 +45,11 @@ type ToneMappingStruct =
     [<FieldOffset(64)>] val mutable toneMapWhitePoint : single
 
 [<Struct; StructLayout (LayoutKind.Explicit)>]
+type ChromaticAberrationStruct =
+    [<FieldOffset(0)>] val mutable channelOffsets : Vector3
+    [<FieldOffset(16)>] val mutable focalPoint : Vector2
+
+[<Struct; StructLayout (LayoutKind.Explicit)>]
 type FxaaStruct =
     [<FieldOffset(0)>] val mutable spanMax : single
     [<FieldOffset(4)>] val mutable reduceMinDivisor : single
@@ -685,6 +690,11 @@ type FilterToneMappingPipeline =
     { ToneMappingUniform : VulkanBuffer
       Pipeline : Pipeline }
 
+/// Describes a chromatic aberration filter pipeline that's loaded into GPU.
+type FilterChromaticAberrationPipeline =
+    { ChromaticAberrationUniform : VulkanBuffer
+      Pipeline : Pipeline }
+
 /// Describes an fxaa filter pipeline that's loaded into GPU.
 type FilterFxaaPipeline =
     { FxaaUniform : VulkanBuffer
@@ -701,6 +711,7 @@ type PhysicallyBasedPipelines =
       FilterGaussianDofPipeline : FilterGaussianDofPipeline
       FilterDepthOfFieldPipeline : FilterDepthOfFieldPipeline
       FilterToneMappingPipeline : FilterToneMappingPipeline
+      FilterChromaticAberrationPipeline : FilterChromaticAberrationPipeline
       FilterFxaaPipeline : FilterFxaaPipeline
       FilterGammaCorrectionPipeline : FilterGammaCorrectionPipeline
       ShadowStaticPointPipeline : PhysicallyBasedShadowPipeline
@@ -2331,6 +2342,110 @@ module PhysicallyBased =
                          toneMapWhitePoint = toneMapWhitePoint)
                 VulkanBuffer.uploadValue toneMapping pipeline.ToneMappingUniform context
                 Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.ToneMappingUniform vkSet
+
+                // specify input texture
+                Pipeline.writeDescriptorSampledTexture 1 0 inputTexture vkSet
+
+            // specify sampler
+            let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 1 Unit pipeline.Pipeline $ fun vkSet ->
+                Pipeline.writeDescriptorSampler 0 0 inputSampler vkSet
+
+            // set up render
+            let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
+            let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
+            let mutable vkViewport = Hl.makeViewport false renderArea
+            let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue)
+            DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
+            DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
+            DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&renderArea)
+
+            // set up pipeline
+            DeviceApi.vkCmdBindPipeline (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
+
+            // bind vertex and index buffers
+            let vertexBuffers = [|geometry.VertexBuffer.VkBuffer; geometry.InstanceBuffer.VkBuffer|]
+            let vertexOffsets = [|0UL; 0UL|]
+            use vertexBuffersPin = new ArrayPin<_> (vertexBuffers)
+            use vertexOffsetsPin = new ArrayPin<_> (vertexOffsets)
+            DeviceApi.vkCmdBindVertexBuffers (context.RenderCommandBuffer, 0u, 2u, vertexBuffersPin.Pointer, vertexOffsetsPin.Pointer)
+            DeviceApi.vkCmdBindIndexBuffer (context.RenderCommandBuffer, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
+
+            // bind descriptor sets
+            DeviceApi.vkCmdBindDescriptorSets (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, &&uniformsDescriptorSet, 0u, nullPtr)
+            DeviceApi.vkCmdBindDescriptorSets (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, &&samplerDescriptorSet, 0u, nullPtr)
+
+            // draw
+            DeviceApi.vkCmdDrawIndexed (context.RenderCommandBuffer, uint geometry.ElementCount, 1u, 0u, 0, 0u)
+
+            // tear down render
+            DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
+
+            // report drawing
+            Hl.reportDrawCall 1 true
+
+            // advance pipeline
+            Pipeline.advance pipeline.Pipeline
+
+            // advance rendering command buffer
+            VulkanContext.advanceRenderCommandBuffer context
+
+        // abort
+        | None -> Log.warnOnce ("Cannot draw " + getTypeName pipeline + " because VkPipeline does not exist.")
+
+    /// Create a chromatic aberration filter pipeline.
+    let createFilterChromaticAberrationPipeline colorAttachmentFormat context =
+
+        // create set 0 uniform buffers
+        let chromaticAberrationUniform = VulkanBuffer.create Uniform sizeof<ChromaticAberrationStruct> context
+
+        // create pipeline
+        let pipeline =
+            Pipeline.create
+                Constants.Paths.FilterChromaticAberrationShaderFilePath
+                [|VulkanUnblended|] [|false|] StaticVertices
+                [|Pipeline.descriptorSet<int>
+                    [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // chromaticAberration
+                      Pipeline.descriptor 1 SampledImage FragmentStage 1|] // inputTexture
+                  Pipeline.descriptorSet<Unit>
+                    [|Pipeline.descriptor 0 Sampler FragmentStage 1|]|] // inputSampler
+                [||] [|colorAttachmentFormat|] None
+                [|chromaticAberrationUniform|]
+
+        // make pipeline
+        let filterChromaticAberrationPipeline =
+            { ChromaticAberrationUniform = chromaticAberrationUniform
+              Pipeline = pipeline }
+
+        // fin
+        filterChromaticAberrationPipeline
+
+    /// Destroy a tone-mapping filter pipeline.
+    let destroyFilterChromaticAberrationPipeline (chromaticAberrationPipeline : FilterChromaticAberrationPipeline) context =
+        Pipeline.destroy chromaticAberrationPipeline.Pipeline context
+
+    /// Draw the tone-mapping filter pass of a physically-based surface.
+    let drawFilterChromaticAberrationSurface
+        (channelOffsets : Vector3)
+        (focalPoint : Vector2)
+        (inputTexture : Texture)
+        (inputSampler : Sampler)
+        (colorAttachment : Texture)
+        (resolution : Vector2i)
+        (geometry : PhysicallyBasedGeometry)
+        (pipeline : FilterChromaticAberrationPipeline)
+        (context : VulkanContext) =
+
+        // only draw if required vkPipeline exists
+        match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
+        | Some vkPipeline ->
+
+            // specify uniforms
+            let mutable uniformsDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.Pipeline.DrawIndex pipeline.Pipeline $ fun vkSet ->
+                
+                // specify tone-mapping
+                let chromaticAberration = ChromaticAberrationStruct (channelOffsets = channelOffsets, focalPoint = focalPoint)
+                VulkanBuffer.uploadValue chromaticAberration pipeline.ChromaticAberrationUniform context
+                Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.ChromaticAberrationUniform vkSet
 
                 // specify input texture
                 Pipeline.writeDescriptorSampledTexture 1 0 inputTexture vkSet
@@ -4902,6 +5017,9 @@ module PhysicallyBased =
         // create tone-mapping filter pipeline
         let filterToneMappingPipeline = createFilterToneMappingPipeline attachments.ToneMappingAttachment.VkFormat context
 
+        // create chromatic aberration filter pipeline
+        let filterChromaticAberrationPipeline = createFilterChromaticAberrationPipeline Rgba16f.VkFormat context
+
         // create tone-mapping filter pipeline
         let filterFxaaPipeline = createFilterFxaaPipeline attachments.ColorFull0Attachment.VkFormat context
 
@@ -5086,6 +5204,7 @@ module PhysicallyBased =
               FilterGaussianDofPipeline = filterGaussianDofPipeline
               FilterDepthOfFieldPipeline = filterDepthOfFieldPipeline
               FilterToneMappingPipeline = filterToneMappingPipeline
+              FilterChromaticAberrationPipeline = filterChromaticAberrationPipeline
               FilterFxaaPipeline = filterFxaaPipeline
               FilterGammaCorrectionPipeline = filterGammaCorrectionPipeline
               ShadowStaticPointPipeline = shadowStaticPointPipeline
@@ -5146,6 +5265,7 @@ module PhysicallyBased =
         Pipeline.beginFrame physicallyBasedPipelines.FilterGaussianDofPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.FilterDepthOfFieldPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.FilterToneMappingPipeline.Pipeline
+        Pipeline.beginFrame physicallyBasedPipelines.FilterChromaticAberrationPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.FilterFxaaPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.FilterGammaCorrectionPipeline.Pipeline
 
@@ -5179,6 +5299,7 @@ module PhysicallyBased =
         destroyFilterGaussianDofPipeline physicallyBasedPipelines.FilterGaussianDofPipeline context
         destroyFilterDepthOfFieldPipeline physicallyBasedPipelines.FilterDepthOfFieldPipeline context
         destroyFilterToneMappingPipeline physicallyBasedPipelines.FilterToneMappingPipeline context
+        destroyFilterChromaticAberrationPipeline physicallyBasedPipelines.FilterChromaticAberrationPipeline context
         destroyFilterFxaaPipeline physicallyBasedPipelines.FilterFxaaPipeline context
         destroyFilterGammaCorrectionPipeline physicallyBasedPipelines.FilterGammaCorrectionPipeline context
 
@@ -5211,6 +5332,7 @@ module PhysicallyBased =
         Pipeline.reloadShaders physicallyBasedPipelines.FilterGaussianDofPipeline.Pipeline context
         Pipeline.reloadShaders physicallyBasedPipelines.FilterDepthOfFieldPipeline.Pipeline context
         Pipeline.reloadShaders physicallyBasedPipelines.FilterToneMappingPipeline.Pipeline context
+        Pipeline.reloadShaders physicallyBasedPipelines.FilterChromaticAberrationPipeline.Pipeline context
         Pipeline.reloadShaders physicallyBasedPipelines.FilterFxaaPipeline.Pipeline context
         Pipeline.reloadShaders physicallyBasedPipelines.FilterGammaCorrectionPipeline.Pipeline context
 
