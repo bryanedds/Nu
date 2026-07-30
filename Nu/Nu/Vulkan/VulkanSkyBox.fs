@@ -85,7 +85,7 @@ module SkyBox =
         let projectionInverse = projection.Inverted
         let viewProjection = view * projection
 
-        // only draw if required vkPipeline exists
+        // only draw when required vkPipeline exists
         match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
         | Some vkPipeline ->
 

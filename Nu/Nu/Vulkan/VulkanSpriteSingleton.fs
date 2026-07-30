@@ -125,7 +125,7 @@ module SpriteSingleton =
         | ValueNone -> ()
         if Hl.validateRect scissor then
 
-            // only draw if required vkPipeline exists
+            // only draw when required vkPipeline exists
             match Pipeline.tryGetVkPipeline VulkanTransparent true pipeline with
             | Some vkPipeline ->
 

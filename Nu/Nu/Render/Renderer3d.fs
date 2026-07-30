@@ -3708,7 +3708,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                             Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite gaussianEsmTexture renderer.VulkanContext.RenderCommandBuffer
                             PhysicallyBased.drawFilterGaussianEsmSurface
                                 (v2 (1.0f / single shadowResolution.X) 0.0f) renderer.LightingConfig.LightShadowRadius
-                                shadowColorTexture.LayerViews[shadowTextureIndex] renderer.FilteredSampler shadowResolution gaussianEsmTexture.ImageView
+                                shadowColorTexture.LayerViews[shadowTextureIndex] renderer.FilteredSampler gaussianEsmTexture.ImageView shadowResolution
                                 renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterGaussianEsmPipeline renderer.VulkanContext
                             Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead gaussianEsmTexture renderer.VulkanContext.RenderCommandBuffer
 
@@ -3716,7 +3716,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                             Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite shadowColorTexture renderer.VulkanContext.RenderCommandBuffer
                             PhysicallyBased.drawFilterGaussianEsmSurface
                                 (v2 0.0f (1.0f / single shadowResolution.Y)) renderer.LightingConfig.LightShadowRadius
-                                gaussianEsmTexture.ImageView renderer.FilteredSampler shadowResolution shadowColorTexture.LayerViews[shadowTextureIndex]
+                                gaussianEsmTexture.ImageView renderer.FilteredSampler shadowColorTexture.LayerViews[shadowTextureIndex] shadowResolution
                                 renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterGaussianEsmPipeline renderer.VulkanContext
                             Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead shadowColorTexture renderer.VulkanContext.RenderCommandBuffer
 
@@ -3839,7 +3839,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                                 Hl.recordTransitionLayout true 1 shadowCascadeLevel 1 VkImageAspectFlags.Color ColorAttachmentRead ColorAttachmentWrite gaussianEsmArrayTexture.Image renderer.VulkanContext.RenderCommandBuffer
                                 PhysicallyBased.drawFilterGaussianEsmSurface
                                     (v2 (1.0f / single shadowResolution.X) 0.0f) renderer.LightingConfig.LightShadowRadius
-                                    shadowCascadeArray.LayerViews[shadowCascadeLevel] renderer.FilteredSampler shadowResolution gaussianEsmArrayTexture.LayerViews[shadowCascadeLevel]
+                                    shadowCascadeArray.LayerViews[shadowCascadeLevel] renderer.FilteredSampler gaussianEsmArrayTexture.LayerViews[shadowCascadeLevel] shadowResolution
                                     renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterGaussianEsmPipeline renderer.VulkanContext
                                 Hl.recordTransitionLayout true 1 shadowCascadeLevel 1 VkImageAspectFlags.Color ColorAttachmentWrite ColorAttachmentRead gaussianEsmArrayTexture.Image renderer.VulkanContext.RenderCommandBuffer
 
@@ -3847,7 +3847,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                                 Hl.recordTransitionLayout true 1 shadowCascadeLevel 1 VkImageAspectFlags.Color ColorAttachmentRead ColorAttachmentWrite shadowCascadeArray.Image renderer.VulkanContext.RenderCommandBuffer
                                 PhysicallyBased.drawFilterGaussianEsmSurface
                                     (v2 0.0f (1.0f / single shadowResolution.Y)) renderer.LightingConfig.LightShadowRadius
-                                    gaussianEsmArrayTexture.LayerViews[shadowCascadeLevel] renderer.FilteredSampler shadowResolution shadowCascadeArray.LayerViews[shadowCascadeLevel]
+                                    gaussianEsmArrayTexture.LayerViews[shadowCascadeLevel] renderer.FilteredSampler shadowCascadeArray.LayerViews[shadowCascadeLevel] shadowResolution
                                     renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterGaussianEsmPipeline renderer.VulkanContext
                                 Hl.recordTransitionLayout true 1 shadowCascadeLevel 1 VkImageAspectFlags.Color ColorAttachmentWrite ColorAttachmentRead shadowCascadeArray.Image renderer.VulkanContext.RenderCommandBuffer
 
@@ -4261,14 +4261,14 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             geometryResolution renderer.RenderPassIndex renderer.QuadGeometry lightAccumTexture renderer.PhysicallyBasedPipelines.DeferredLightingPipeline renderer.VulkanContext
         Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead lightAccumTexture renderer.VulkanContext.RenderCommandBuffer
 
-        // setup fogging buffers and viewport
+        // setup fogging textures and viewport
         let ssvfEnabled = if renderer.RendererConfig.SsvfEnabled && renderer.LightingConfig.SsvfEnabled then 1 else 0
         let fogAccumTexture =
 
             // but only when desired
             if topLevelRender && ssvfEnabled = 1 then
 
-                // deferred render quad to fogging buffers
+                // deferred render quad to fogging textures
                 let fogAccumTexture = renderer.PhysicallyBasedAttachments.FoggingAttachment
                 Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite fogAccumTexture renderer.VulkanContext.RenderCommandBuffer
                 PhysicallyBased.drawPhysicallyBasedDeferredFoggingSurface
@@ -4278,6 +4278,36 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     renderer.ShadowMatricesFlipped renderer.UnfilteredSampler renderer.FilteredSampler fogAccumTexture
                     geometryResolution renderer.RenderPassIndex renderer.QuadGeometry renderer.PhysicallyBasedPipelines.DeferredFoggingPipeline renderer.VulkanContext
                 Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead fogAccumTexture renderer.VulkanContext.RenderCommandBuffer
+
+                // deferred render down-sample filter quad to down-sample texture
+                // TODO: P0: verify that down-sampling the depth texture is actually beneficial and the shader is
+                // correctly utilizing depth comparison.
+                let downSampleColorTexture = renderer.PhysicallyBasedAttachments.DownSampleColorAttachment
+                let downSampleDepthTexture = renderer.PhysicallyBasedAttachments.DownSampleDepthAttachment
+                Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite downSampleColorTexture renderer.VulkanContext.RenderCommandBuffer
+                Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite downSampleDepthTexture renderer.VulkanContext.RenderCommandBuffer
+                PhysicallyBased.drawFilterDownSampleSurface
+                    fogAccumTexture depthTexture renderer.FilteredSampler downSampleColorTexture.ImageView downSampleDepthTexture.ImageView
+                    (geometryResolution / 2) renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterBilateralDownSamplePipeline renderer.VulkanContext
+                Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead downSampleColorTexture renderer.VulkanContext.RenderCommandBuffer
+                Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead downSampleDepthTexture renderer.VulkanContext.RenderCommandBuffer
+
+                // deferred render up-sample filter quad to up-sample texture
+                let upSampleColorTexture = renderer.PhysicallyBasedAttachments.UpSampleColorAttachment
+                Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite upSampleColorTexture renderer.VulkanContext.RenderCommandBuffer
+                PhysicallyBased.drawFilterUpSampleSurface
+                    downSampleColorTexture downSampleDepthTexture depthTexture renderer.FilteredSampler upSampleColorTexture.ImageView
+                    geometryResolution renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterBilateralUpSamplePipeline renderer.VulkanContext
+                Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead upSampleColorTexture renderer.VulkanContext.RenderCommandBuffer
+                
+                // blit up-sample texture to fog accum texture
+                Texture.recordTransitionLayout ColorAttachmentRead TransferSrc upSampleColorTexture renderer.VulkanContext.RenderCommandBuffer
+                Texture.recordTransitionLayout ColorAttachmentRead TransferDst fogAccumTexture renderer.VulkanContext.RenderCommandBuffer
+                let bounds = VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)
+                let mutable region = Hl.makeBlit 0 0 0 0 bounds bounds
+                DeviceApi.vkCmdBlitImage (renderer.VulkanContext.RenderCommandBuffer, upSampleColorTexture.Image, TransferSrc.VkImageLayout, fogAccumTexture.Image, TransferDst.VkImageLayout, 1u, &&region, VkFilter.Nearest)
+                Texture.recordTransitionLayout TransferSrc ColorAttachmentRead upSampleColorTexture renderer.VulkanContext.RenderCommandBuffer
+                Texture.recordTransitionLayout TransferDst ColorAttachmentRead fogAccumTexture renderer.VulkanContext.RenderCommandBuffer
                 fogAccumTexture
 
             // just use black texture
@@ -4462,8 +4492,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         (*// apply bloom filter when desired
         if topLevelRender && renderer.RendererConfig.BloomEnabled && renderer.LightingConfig.BloomEnabled then
 
-            // setup bloom extract buffers and viewport
-            let (bloomExtractTexture, bloomExtractRenderbuffer, bloomExtractFramebuffer) = renderer.PhysicallyBasedBuffers.BloomExtractBuffers
+            // setup bloom extract textures and viewport
+            let (bloomExtractTexture, bloomExtractRenderbuffer, bloomExtractFramebuffer) = renderer.PhysicallyBasedTextures.BloomExtractBuffers
             OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, bloomExtractRenderbuffer)
             OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, bloomExtractFramebuffer)
             OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
@@ -4471,23 +4501,23 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
             OpenGL.Hl.Assert ()
 
-            // render bloom extract buffers
+            // render bloom extract textures
             OpenGL.PhysicallyBased.DrawFilterBloomExtractSurface (renderer.LightingConfig.BloomThreshold, compositionTexture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterBloomExtractShader, renderer.PhysicallyBasedStaticVao)
             OpenGL.Hl.Assert ()
 
-            // setup bloom sample buffers and viewport (no clearing or viewport config needed)
+            // setup bloom sample textures and viewport (no clearing or viewport config needed)
             let (bloomSampleTextures, bloomSampleRenderbuffer, bloomSampleFramebuffer) = renderer.PhysicallyBasedBuffers.BloomSampleBuffers
             OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, bloomSampleRenderbuffer)
             OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, bloomSampleFramebuffer)
             OpenGL.Hl.Assert ()
 
-            // down-sample bloom buffers
+            // down-sample bloom textures
             OpenGL.PhysicallyBased.DrawBloomDownSamplesSurface
                 (geometryResolution.X, geometryResolution.Y, Constants.Render.BloomSampleLevels, renderer.LightingConfig.BloomKarisAverageEnabled, bloomExtractTexture, bloomSampleTextures,
                  renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterBloomDownSampleShader, renderer.PhysicallyBasedStaticVao)
             OpenGL.Hl.Assert ()
 
-            // up-sample bloom buffers
+            // up-sample bloom textures
             OpenGL.PhysicallyBased.DrawBloomUpSamplesSurface
                 (geometryResolution.X, geometryResolution.Y, Constants.Render.BloomSampleLevels, renderer.LightingConfig.BloomFilterRadius, bloomSampleTextures,
                  renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterBloomUpSampleShader, renderer.PhysicallyBasedStaticVao)
@@ -4537,7 +4567,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite colorHalf1Texture renderer.VulkanContext.RenderCommandBuffer
             PhysicallyBased.drawFilterGaussianDofSurface
                 (v2 (1.0f / single geometryResolution.X / 2.0f) 0.0f) renderer.LightingConfig.DepthOfFieldRadius
-                colorHalf0Texture.ImageView renderer.FilteredSampler (geometryResolution / 2) colorHalf1Texture.ImageView
+                colorHalf0Texture.ImageView renderer.FilteredSampler colorHalf1Texture.ImageView (geometryResolution / 2)
                 renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterGaussianDofPipeline renderer.VulkanContext
             Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead colorHalf1Texture renderer.VulkanContext.RenderCommandBuffer
 
@@ -4545,7 +4575,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite colorHalf0Texture renderer.VulkanContext.RenderCommandBuffer
             PhysicallyBased.drawFilterGaussianDofSurface
                 (v2 0.0f (1.0f / single geometryResolution.Y / 2.0f)) renderer.LightingConfig.DepthOfFieldRadius
-                colorHalf1Texture.ImageView renderer.FilteredSampler (geometryResolution / 2) colorHalf0Texture.ImageView
+                colorHalf1Texture.ImageView renderer.FilteredSampler colorHalf0Texture.ImageView (geometryResolution / 2)
                 renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterGaussianDofPipeline renderer.VulkanContext
             Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead colorHalf0Texture renderer.VulkanContext.RenderCommandBuffer
 

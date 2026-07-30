@@ -8,7 +8,6 @@ namespace Nu.Vulkan
 open System
 open System.Runtime.InteropServices
 open System.Collections.Generic
-open System.Numerics
 open System.Reflection
 open System.Runtime.CompilerServices
 open FSharp.NativeInterop
@@ -618,7 +617,8 @@ type [<ReferenceEquality>] VulkanContext =
             if messageType = VkDebugUtilsMessageTypeFlagsEXT.Performance
             then messageSeverity > VkDebugUtilsMessageSeverityFlagsEXT.Warning
             else messageSeverity > VkDebugUtilsMessageSeverityFlagsEXT.Info
-        if shouldLog then Log.custom header message
+        if shouldLog then
+            Log.custom header message
 
         // finish passively
         ignore pUserData

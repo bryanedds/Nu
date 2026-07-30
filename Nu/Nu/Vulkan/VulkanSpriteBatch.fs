@@ -139,7 +139,7 @@ module SpriteBatch =
             | ValueNone -> ()
             if Hl.validateRect scissor then
 
-                // only draw if required vkPipeline exists
+                // only draw when required vkPipeline exists
                 match Pipeline.tryGetVkPipeline env.State.Blend true env.Pipeline with
                 | Some vkPipeline ->
                     

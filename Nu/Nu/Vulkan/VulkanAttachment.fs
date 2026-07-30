@@ -31,7 +31,7 @@ module Attachment =
         Texture.destroy color context
 
     /// Create depth attachment.
-    let private createDepthAttachment optionalUsages resolutionX resolutionY (context : VulkanContext) =
+    let createDepthAttachment optionalUsages resolutionX resolutionY (context : VulkanContext) =
         let metadata = TextureMetadata.make resolutionX resolutionY
         let textureInternal =
             TextureInternal.create
@@ -230,7 +230,7 @@ module Attachment =
 
     /// Create fogging attachment.
     let createFoggingAttachment resolutionX resolutionY context =
-        createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgb16f Rgb resolutionX resolutionY context
+        createColorAttachment Texture2d (VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferDst) Rgb16f Rgb resolutionX resolutionY context
 
     /// Update size of fogging attachment.
     let updateFoggingAttachmentSize resolutionX resolutionY fogging context =
