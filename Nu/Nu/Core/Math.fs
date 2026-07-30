@@ -1811,6 +1811,14 @@ type LightType =
     | DirectionalLight of OffsetForwardScalar : single
     | CascadedLight
 
+    member this.IsLocalLight =
+        match this with
+        | PointLight | SpotLight _ -> true
+        | DirectionalLight _ | CascadedLight -> false
+
+    member this.IsGlobalLight =
+        not this.IsLocalLight
+
     /// Convert to an int tag that can be utilized by a shader.
     member this.Enumerate =
         match this with

@@ -2847,6 +2847,9 @@ type SkyBoxFacet () =
 module LightProbe3dFacetExtensions =
     type Entity with
 
+        member this.GetExcludeGlobalLights world : bool = this.Get (nameof this.ExcludeGlobalLights) world
+        member this.SetExcludeGlobalLights (value : bool) world = this.Set (nameof this.ExcludeGlobalLights) value world
+        member this.ExcludeGlobalLights = lens (nameof this.ExcludeGlobalLights) this this.GetExcludeGlobalLights this.SetExcludeGlobalLights
         member this.GetProbeBounds world : Box3 = this.Get (nameof this.ProbeBounds) world
         member this.SetProbeBounds (value : Box3) world = this.Set (nameof this.ProbeBounds) value world
         member this.ProbeBounds = lens (nameof this.ProbeBounds) this this.GetProbeBounds this.SetProbeBounds
@@ -2889,6 +2892,7 @@ type LightProbe3dFacet () =
          define Entity.Static true
          define Entity.AmbientColor Color.White
          define Entity.AmbientBrightness 0.5f
+         define Entity.ExcludeGlobalLights false
          define Entity.ProbeBounds (box3 (v3Dup Constants.Render.LightProbeSizeDefault * -0.5f) (v3Dup Constants.Render.LightProbeSizeDefault))
          nonPersistent Entity.ProbeStale false]
 
