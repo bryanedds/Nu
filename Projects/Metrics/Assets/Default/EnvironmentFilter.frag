@@ -1,7 +1,7 @@
 #version 450 core
 
 const float PI = 3.141592654;
-const uint SAMPLE_COUNT = 1024u;
+const uint SAMPLE_COUNT = 256u;
 
 struct EnvironmentFilterStruct
 {

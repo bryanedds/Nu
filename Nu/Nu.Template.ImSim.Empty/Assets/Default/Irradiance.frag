@@ -1,7 +1,7 @@
 #version 450 core
 
 const float PI = 3.14159265359;
-const float SAMPLE_DELTA = 0.025;
+const float SAMPLE_DELTA = 0.1;
 
 layout(set = 1, binding = 0) uniform textureCube inputCubeMap;
 
