@@ -1,7 +1,7 @@
 #version 450 core
 
 const float PI = 3.14159265359;
-const float SAMPLE_DELTA = 0.1;
+const float SAMPLE_DELTA = 0.1; // NOTE: this was increased from 0.025 to prevent GPU timeouts on modern iOS devices.
 
 layout(set = 1, binding = 0) uniform textureCube inputCubeMap;
 

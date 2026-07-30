@@ -1,7 +1,7 @@
 #version 450 core
 
 const float PI = 3.141592654;
-const uint SAMPLE_COUNT = 256u;
+const uint SAMPLE_COUNT = 512u; // NOTE: this was decreased from 1024u to prevent GPU timeouts on modern iOS devices.
 
 struct EnvironmentFilterStruct
 {
