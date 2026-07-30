@@ -27,7 +27,7 @@ layout(set = 0, binding = 4) uniform texture2D unblurredTexture;
 
 layout(set = 1, binding = 0) uniform sampler unfilteredSampler;
 
-layout(location = 0) in vec2 texCoordsOut;
+layout(location = 0) in vec2 texCoords;
 
 layout(location = 0) out vec4 frag;
 
@@ -52,16 +52,16 @@ vec4 depthToPosition(float depth, vec2 texCoords)
 void main()
 {
     // retrieve unblurred color
-    vec4 unblurredColor = texture(sampler2D(unblurredTexture, unfilteredSampler), texCoordsOut);
+    vec4 unblurredColor = texture(sampler2D(unblurredTexture, unfilteredSampler), texCoords);
 
     // sample depth values that may be invalid when 0.0
     vec2 texelSize = vec2(1.0) / textureSize(sampler2D(depthTexture, unfilteredSampler), 0);
     float depths[] =
         float[](
-            texture(sampler2D(depthTexture, unfilteredSampler), texCoordsOut + texelSize * vec2(-1.0, -1.0)).r,
-            texture(sampler2D(depthTexture, unfilteredSampler), texCoordsOut + texelSize * vec2(1.0, -1.0)).r,
-            texture(sampler2D(depthTexture, unfilteredSampler), texCoordsOut + texelSize * vec2(-1.0, 1.0)).r,
-            texture(sampler2D(depthTexture, unfilteredSampler), texCoordsOut + texelSize * vec2(1.0, 1.0)).r);
+            texture(sampler2D(depthTexture, unfilteredSampler), texCoords + texelSize * vec2(-1.0, -1.0)).r,
+            texture(sampler2D(depthTexture, unfilteredSampler), texCoords + texelSize * vec2(1.0, -1.0)).r,
+            texture(sampler2D(depthTexture, unfilteredSampler), texCoords + texelSize * vec2(-1.0, 1.0)).r,
+            texture(sampler2D(depthTexture, unfilteredSampler), texCoords + texelSize * vec2(1.0, 1.0)).r);
 
     // compute average of valid depth values
     int depthCount = 0;
@@ -80,7 +80,7 @@ void main()
     // compute frag
     if (depthCount > 0)
     {
-        vec4 blurredColor = texture(sampler2D(blurredTexture, unfilteredSampler), texCoordsOut);
+        vec4 blurredColor = texture(sampler2D(blurredTexture, unfilteredSampler), texCoords);
         if (depthOfField.focalType == 0)
         {
             float distance = depthToDistance(depth);
@@ -96,7 +96,7 @@ void main()
             if (focalDistance != 0.0)
             {
                 vec2 focalTexCoords = depthOfField.focalPoint + vec2(0.5);
-                float distance = length(depthToPosition(depth, texCoordsOut).xyz - depthToPosition(focalDistance, focalTexCoords).xyz);
+                float distance = length(depthToPosition(depth, texCoords).xyz - depthToPosition(focalDistance, focalTexCoords).xyz);
                 float blur = smoothstep(depthOfField.nearDistance, depthOfField.farDistance, distance);
                 frag = mix(unblurredColor, blurredColor, blur);
             }
