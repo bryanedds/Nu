@@ -700,6 +700,7 @@ type [<SymbolicExpansion>] Lighting3dConfig =
       DepthOfFieldEnabled : bool
       DepthOfFieldNearDistance : single
       DepthOfFieldFarDistance : single
+      DepthOfFieldRadius : single
       DepthOfFieldFocalType : FocalType
       DepthOfFieldFocalDistance : single
       DepthOfFieldFocalPoint : Vector2
@@ -774,6 +775,7 @@ type [<SymbolicExpansion>] Lighting3dConfig =
           DepthOfFieldEnabled = Constants.Render.DepthOfFieldEnabledLocalDefault
           DepthOfFieldNearDistance = Constants.Render.DepthOfFieldNearDistanceDefault
           DepthOfFieldFarDistance = Constants.Render.DepthOfFieldFarDistanceDefault
+          DepthOfFieldRadius = Constants.Render.DepthOfFieldRadiusDefault
           DepthOfFieldFocalType = Constants.Render.DepthOfFieldFocalTypeDefault
           DepthOfFieldFocalDistance = Constants.Render.DepthOfFieldFocalDistanceDefault
           DepthOfFieldFocalPoint = Constants.Render.DepthOfFieldFocalPointDefault
@@ -4457,6 +4459,115 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead compositionTexture renderer.VulkanContext.RenderCommandBuffer
         Texture.recordTransitionLayout DepthAttachmentWrite DepthAttachmentRead zTexture renderer.VulkanContext.RenderCommandBuffer
 
+        (*// apply bloom filter when desired
+        if topLevelRender && renderer.RendererConfig.BloomEnabled && renderer.LightingConfig.BloomEnabled then
+
+            // setup bloom extract buffers and viewport
+            let (bloomExtractTexture, bloomExtractRenderbuffer, bloomExtractFramebuffer) = renderer.PhysicallyBasedBuffers.BloomExtractBuffers
+            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, bloomExtractRenderbuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, bloomExtractFramebuffer)
+            OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
+            OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
+            OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
+            OpenGL.Hl.Assert ()
+
+            // render bloom extract buffers
+            OpenGL.PhysicallyBased.DrawFilterBloomExtractSurface (renderer.LightingConfig.BloomThreshold, compositionTexture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterBloomExtractShader, renderer.PhysicallyBasedStaticVao)
+            OpenGL.Hl.Assert ()
+
+            // setup bloom sample buffers and viewport (no clearing or viewport config needed)
+            let (bloomSampleTextures, bloomSampleRenderbuffer, bloomSampleFramebuffer) = renderer.PhysicallyBasedBuffers.BloomSampleBuffers
+            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, bloomSampleRenderbuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, bloomSampleFramebuffer)
+            OpenGL.Hl.Assert ()
+
+            // down-sample bloom buffers
+            OpenGL.PhysicallyBased.DrawBloomDownSamplesSurface
+                (geometryResolution.X, geometryResolution.Y, Constants.Render.BloomSampleLevels, renderer.LightingConfig.BloomKarisAverageEnabled, bloomExtractTexture, bloomSampleTextures,
+                 renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterBloomDownSampleShader, renderer.PhysicallyBasedStaticVao)
+            OpenGL.Hl.Assert ()
+
+            // up-sample bloom buffers
+            OpenGL.PhysicallyBased.DrawBloomUpSamplesSurface
+                (geometryResolution.X, geometryResolution.Y, Constants.Render.BloomSampleLevels, renderer.LightingConfig.BloomFilterRadius, bloomSampleTextures,
+                 renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterBloomUpSampleShader, renderer.PhysicallyBasedStaticVao)
+            OpenGL.Hl.Assert ()
+
+            // setup bloom apply buffer and viewport
+            let (_, bloomApplyRenderbuffer, bloomApplyFramebuffer) = renderer.PhysicallyBasedBuffers.BloomApplyBuffers
+            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, bloomApplyRenderbuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, bloomApplyFramebuffer)
+            OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
+            OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
+            OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
+            OpenGL.Hl.Assert ()
+
+            // render bloom apply pass
+            OpenGL.PhysicallyBased.DrawBloomApplySurface
+                (renderer.LightingConfig.BloomStrength, bloomSampleTextures[0], compositionTexture,
+                 renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterBloomApplyShader, renderer.PhysicallyBasedStaticVao)
+            OpenGL.Hl.Assert ()
+
+            // blit bloom apply buffer to composition buffer
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, bloomApplyFramebuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, compositionFramebuffer)
+            OpenGL.Gl.BlitFramebuffer
+                (0, 0, geometryResolution.X, geometryResolution.Y,
+                 0, 0, geometryResolution.X, geometryResolution.Y,
+                 OpenGL.ClearBufferMask.ColorBufferBit,
+                 OpenGL.BlitFramebufferFilter.Nearest)
+            OpenGL.Hl.Assert ()*)
+
+        // apply depth of field when desired
+        if topLevelRender && renderer.RendererConfig.DepthOfFieldEnabled && renderer.LightingConfig.DepthOfFieldEnabled then
+
+            // blit composition texture to color half filter 0 texture
+            let colorHalf0Texture = renderer.PhysicallyBasedAttachments.ColorHalf0Attachment
+            Texture.recordTransitionLayout ColorAttachmentRead TransferSrc compositionTexture renderer.VulkanContext.RenderCommandBuffer
+            Texture.recordTransitionLayout ColorAttachmentRead TransferDst colorHalf0Texture renderer.VulkanContext.RenderCommandBuffer
+            let boundsSrc = VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)
+            let boundsDst = VkRect2D (0, 0, uint geometryResolution.X / 2u, uint geometryResolution.Y / 2u)
+            let mutable region = Hl.makeBlit 0 0 0 0 boundsSrc boundsDst
+            DeviceApi.vkCmdBlitImage (renderer.VulkanContext.RenderCommandBuffer, compositionTexture.Image, TransferSrc.VkImageLayout, colorHalf0Texture.Image, TransferDst.VkImageLayout, 1u, &&region, VkFilter.Linear)
+            Texture.recordTransitionLayout TransferSrc ColorAttachmentRead compositionTexture renderer.VulkanContext.RenderCommandBuffer
+            Texture.recordTransitionLayout TransferDst ColorAttachmentRead colorHalf0Texture renderer.VulkanContext.RenderCommandBuffer
+
+            // render color half filter 1 on the x
+            let colorHalf1Texture = renderer.PhysicallyBasedAttachments.ColorHalf1Attachment
+            Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite colorHalf1Texture renderer.VulkanContext.RenderCommandBuffer
+            PhysicallyBased.drawFilterGaussianDofSurface
+                (v2 (1.0f / single geometryResolution.X / 2.0f) 0.0f) renderer.LightingConfig.DepthOfFieldRadius
+                colorHalf0Texture.ImageView renderer.FilteredSampler (geometryResolution / 2) colorHalf1Texture.ImageView
+                renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterGaussianDofPipeline renderer.VulkanContext
+            Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead colorHalf1Texture renderer.VulkanContext.RenderCommandBuffer
+
+            // render color half filter 1 on the y
+            Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite colorHalf0Texture renderer.VulkanContext.RenderCommandBuffer
+            PhysicallyBased.drawFilterGaussianDofSurface
+                (v2 0.0f (1.0f / single geometryResolution.Y / 2.0f)) renderer.LightingConfig.DepthOfFieldRadius
+                colorHalf1Texture.ImageView renderer.FilteredSampler (geometryResolution / 2) colorHalf0Texture.ImageView
+                renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterGaussianDofPipeline renderer.VulkanContext
+            Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead colorHalf0Texture renderer.VulkanContext.RenderCommandBuffer
+
+            // render color half filter 0 texture to color full filter 0 texture
+            let colorFull0Texture = renderer.PhysicallyBasedAttachments.ColorFull0Attachment
+            Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite colorFull0Texture renderer.VulkanContext.RenderCommandBuffer
+            PhysicallyBased.drawFilterDepthOfFieldSurface
+                eyeCenter view geometryProjection
+                renderer.LightingConfig.DepthOfFieldNearDistance renderer.LightingConfig.DepthOfFieldFarDistance renderer.LightingConfig.DepthOfFieldFocalType.Enumerate renderer.LightingConfig.DepthOfFieldFocalDistance renderer.LightingConfig.DepthOfFieldFocalPoint
+                depthTexture colorHalf0Texture compositionTexture renderer.UnfilteredSampler colorFull0Texture geometryResolution
+                renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterDepthOfFieldPipeline renderer.VulkanContext
+            Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead colorFull0Texture renderer.VulkanContext.RenderCommandBuffer
+
+            // blit color full filter 0 texture to composition texture
+            Texture.recordTransitionLayout ColorAttachmentRead TransferSrc colorFull0Texture renderer.VulkanContext.RenderCommandBuffer
+            Texture.recordTransitionLayout ColorAttachmentRead TransferDst compositionTexture renderer.VulkanContext.RenderCommandBuffer
+            let bounds = VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)
+            let mutable region = Hl.makeBlit 0 0 0 0 bounds bounds
+            DeviceApi.vkCmdBlitImage (renderer.VulkanContext.RenderCommandBuffer, colorFull0Texture.Image, TransferSrc.VkImageLayout, compositionTexture.Image, TransferDst.VkImageLayout, 1u, &&region, VkFilter.Nearest)
+            Texture.recordTransitionLayout TransferSrc ColorAttachmentRead colorFull0Texture renderer.VulkanContext.RenderCommandBuffer
+            Texture.recordTransitionLayout TransferDst ColorAttachmentRead compositionTexture renderer.VulkanContext.RenderCommandBuffer
+
         // run tone-mapping pass when appropriate
         let toneMappingTexture = renderer.PhysicallyBasedAttachments.ToneMappingAttachment
         Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite toneMappingTexture renderer.VulkanContext.RenderCommandBuffer
@@ -4486,6 +4597,43 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             DeviceApi.vkCmdBlitImage (renderer.VulkanContext.RenderCommandBuffer, colorFull0Texture.Image, TransferSrc.VkImageLayout, toneMappingTexture.Image, TransferDst.VkImageLayout, 1u, &&region, VkFilter.Nearest)
             Texture.recordTransitionLayout TransferSrc ColorAttachmentRead colorFull0Texture renderer.VulkanContext.RenderCommandBuffer
             Texture.recordTransitionLayout TransferDst ColorAttachmentRead toneMappingTexture renderer.VulkanContext.RenderCommandBuffer
+
+        (*// apply chromatic aberration texture when desired
+        if topLevelRender && renderer.RendererConfig.ChromaticAberrationEnabled && renderer.LightingConfig.ChromaticAberrationEnabled then
+
+            // blit tone mapping buffer to full filter 0 buffer
+            let (full0Texture, _, full0Framebuffer) = renderer.PhysicallyBasedBuffers.FilterFull0Buffers
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, toneMappingFramebuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, full0Framebuffer)
+            OpenGL.Gl.BlitFramebuffer
+                (0, 0, geometryResolution.X, geometryResolution.Y,
+                 0, 0, geometryResolution.X, geometryResolution.Y,
+                 OpenGL.ClearBufferMask.ColorBufferBit,
+                 OpenGL.BlitFramebufferFilter.Nearest)
+            OpenGL.Hl.Assert ()
+
+            // setup full filter 1 buffer and viewport
+            let (_, full1Renderbuffer, full1Framebuffer) = renderer.PhysicallyBasedBuffers.FilterFull1Buffers
+            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, full1Renderbuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, full1Framebuffer)
+            OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
+            OpenGL.Hl.Assert ()
+
+            // render chromatic aberration quad to full filter 1 buffers
+            OpenGL.PhysicallyBased.DrawFilterChromaticAberrationSurface
+                (renderer.LightingConfig.ChromaticAberrationChannelOffsets, renderer.LightingConfig.ChromaticAberrationFocalPoint, full0Texture,
+                 renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterChromaticAberrationShader, renderer.PhysicallyBasedStaticVao)
+            OpenGL.Hl.Assert ()
+
+            // blit full filter 1 buffer to tone mapping buffer
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, full1Framebuffer)
+            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, toneMappingFramebuffer)
+            OpenGL.Gl.BlitFramebuffer
+                (0, 0, geometryResolution.X, geometryResolution.Y,
+                 0, 0, geometryResolution.X, geometryResolution.Y,
+                 OpenGL.ClearBufferMask.ColorBufferBit,
+                 OpenGL.BlitFramebufferFilter.Nearest)
+            OpenGL.Hl.Assert ()*)
 
         // run gamma-correction pass when needed
         let intermediateTexture =

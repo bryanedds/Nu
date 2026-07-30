@@ -126,6 +126,7 @@
         [DepthOfFieldEnabled True]
         [DepthOfFieldNearDistance 0]
         [DepthOfFieldFarDistance 96]
+        [DepthOfFieldRadius 3.5]
         [DepthOfFieldFocalType StaticFocalDistance]
         [DepthOfFieldFocalDistance 3]
         [DepthOfFieldFocalPoint [0 0]]
