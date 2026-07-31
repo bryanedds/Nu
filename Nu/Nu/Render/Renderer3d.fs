@@ -915,10 +915,11 @@ type private SortableLight =
       SortableLightDesireFog : int
       mutable SortableLightDistance : single }
 
+    // TODO: P0: put the result in a struct with a comparison definition that doesn't allocate.
     static member private project light =
         let directionalWeight = match light.SortableLightType with 2 -> -1 | _ -> 0
         let desiredShadowsWeight = -light.SortableLightDesireShadows
-        (directionalWeight, light.SortableLightDistance, desiredShadowsWeight)
+        (directionalWeight :> IComparable, light.SortableLightDistance :> IComparable, desiredShadowsWeight :> IComparable) // OPTIMIZATION: boxing here to avoid it downstream.
 
     /// Sort shadowing point lights.
     /// TODO: see if we can get rid of allocation here.
