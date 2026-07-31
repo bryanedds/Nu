@@ -2721,7 +2721,7 @@ type LayoutFacet () =
                         then child.GetLayoutOrder world
                         else 0
                     let order = child.GetOrder world
-                    (layoutOrder, order, child))
+                    (layoutOrder :> IComparable, order :> IComparable, child)) // OPTIMIZATION: boxing here to avoid it downstream.
                 |> Array.sortBy ab_
                 |> Array.map __c
             let perimeter = (entity.GetPerimeter world).Box2 // gui currently ignores rotation

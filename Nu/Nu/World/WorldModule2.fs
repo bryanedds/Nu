@@ -1730,19 +1730,19 @@ module WorldModule2 =
                                 | Omnipresent -> true
                             if shadowInView then
                                 let distanceSquared = eyeCenter.DistanceSquared (light.GetPosition world)
-                                struct (distanceSquared, struct (shadowFrustum, light))|]
+                                (distanceSquared :> IComparable, (shadowFrustum, light))|] // OPTIMIZATION: boxing here to avoid it downstream.
 
                 // sort shadow pass descriptors
                 let shadowPassDescriptors =
                     shadowPassDescriptorsSortable
-                    |> Array.sortBy fst'
-                    |> Array.map snd'
+                    |> Array.sortBy fst
+                    |> Array.map snd
 
                 // render simulant shadows
                 let mutable shadowTexturesCount = 0
                 let mutable shadowMapsCount = 0
                 let mutable shadowCascadesCount = 0
-                for struct (shadowFrustum, light : Entity) in shadowPassDescriptors do
+                for (shadowFrustum, light : Entity) in shadowPassDescriptors do
                     let lightType = light.GetLightType world
                     let dynamicShadows = light.GetDynamicShadows world
                     match lightType with

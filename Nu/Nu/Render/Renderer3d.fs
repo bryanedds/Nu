@@ -883,7 +883,8 @@ type private SortableLightMap =
         for lightMap in lightMapsFiltered do
             lightMap.SortableLightMapDistanceSquared <- SortableLightMap.distanceFromBounds position lightMap.SortableLightMapBounds
         let lightMapsSorted =
-            lightMapsFiltered |> Array.sortBy (fun lightMap -> lightMap.SortableLightMapDistanceSquared)
+            lightMapsFiltered
+            |> Array.sortBy (fun lightMap -> lightMap.SortableLightMapDistanceSquared :> IComparable) // OPTIMIZATION: boxing here to avoid it downstream.
         for i in 0 .. dec lightMapsMax do
             if i < lightMapsSorted.Length then
                 let lightMap = lightMapsSorted[i]
@@ -3648,7 +3649,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             Array.sortBy (fun struct (id, _, _, _, _) ->
                 renderer.RenderPasses2.Pairs
                 |> Seq.choose (fun (renderPass, renderTasks) -> match renderPass with ShadowPass (id2, indexInfoOpt, _, _, _, _) when id2 = id && indexInfoOpt.IsNone -> renderTasks.ShadowBufferIndexOpt | _ -> None)
-                |> Seq.headOrDefault Int32.MaxValue)
+                |> Seq.headOrDefault Int32.MaxValue
+                :> IComparable) // OPTIMIZATION: boxing here to avoid it downstream.
                 spotAndDirectionalLightsArray
 
         // shadow texture pre-passes
@@ -3742,7 +3744,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             Array.sortBy (fun struct (id, _, _, _, _) ->
                 renderer.RenderPasses2.Pairs
                 |> Seq.choose (fun (renderPass, renderTasks) -> match renderPass with ShadowPass (id2, indexInfoOpt, _, _, _, _) when id2 = id && indexInfoOpt.IsSome -> renderTasks.ShadowBufferIndexOpt | _ -> None)
-                |> Seq.headOrDefault Int32.MaxValue)
+                |> Seq.headOrDefault Int32.MaxValue
+                :> IComparable) // OPTIMIZATION: boxing here to avoid it downstream.
                 pointLightsArray
 
         // shadow map pre-passes
@@ -3802,7 +3805,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             Array.sortBy (fun struct (id, _, _, _, _) ->
                 renderer.RenderPasses2.Pairs
                 |> Seq.choose (fun (renderPass, renderTasks) -> match renderPass with ShadowPass (id2, indexInfoOpt, _, _, _, _) when id2 = id && indexInfoOpt.IsSome -> renderTasks.ShadowBufferIndexOpt | _ -> None)
-                |> Seq.headOrDefault Int32.MaxValue)
+                |> Seq.headOrDefault Int32.MaxValue
+                :> IComparable) // OPTIMIZATION: boxing here to avoid it downstream.
                 cascadedLightsArray
 
         // shadow cascade pre-passes
