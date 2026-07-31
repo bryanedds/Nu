@@ -41,9 +41,9 @@ layout(location = 1) in vec2 texCoords;
 layout(location = 2) in vec3 normal;
 layout(location = 3) in vec4 blends[2];
 layout(location = 5) in vec3 tint;
-flat layout(location = 6) in vec4 albedo;
-flat layout(location = 7) in vec4 material;
-flat layout(location = 8) in vec4 heightPlus;
+layout(location = 6) flat in vec4 albedo;
+layout(location = 7) flat in vec4 material;
+layout(location = 8) flat in vec4 heightPlus;
 
 layout(location = 0) out float depthOut;
 layout(location = 1) out vec3 albedoOut;

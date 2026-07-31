@@ -50,9 +50,9 @@ layout(location = 1) out vec2 texCoordsOut;
 layout(location = 2) out vec3 normalOut;
 layout(location = 3) out vec4 blendsOut[2];
 layout(location = 5) out vec3 tintOut;
-flat layout(location = 6) out vec4 albedoOut;
-flat layout(location = 7) out vec4 materialOut;
-flat layout(location = 8) out vec4 heightPlusOut;
+layout(location = 6) flat out vec4 albedoOut;
+layout(location = 7) flat out vec4 materialOut;
+layout(location = 8) flat out vec4 heightPlusOut;
 
 void main()
 {

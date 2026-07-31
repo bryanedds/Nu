@@ -46,11 +46,11 @@ layout(location = 12) in vec4 clearCoatPlus; // NOTE: z and w are free for addit
 layout(location = 0) out vec4 positionOut;
 layout(location = 1) out vec2 texCoordsOut;
 layout(location = 2) out vec3 normalOut;
-flat layout(location = 3) out vec4 albedoOut;
-flat layout(location = 4) out vec4 materialOut;
-flat layout(location = 5) out vec4 heightPlusOut;
-flat layout(location = 6) out vec4 subsurfacePlusOut;
-flat layout(location = 7) out vec4 clearCoatPlusOut;
+layout(location = 3) flat out vec4 albedoOut;
+layout(location = 4) flat out vec4 materialOut;
+layout(location = 5) flat out vec4 heightPlusOut;
+layout(location = 6) flat out vec4 subsurfacePlusOut;
+layout(location = 7) flat out vec4 clearCoatPlusOut;
 
 void main()
 {

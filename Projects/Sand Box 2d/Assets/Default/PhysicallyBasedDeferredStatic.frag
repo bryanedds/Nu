@@ -35,11 +35,11 @@ layout(set = 3, binding = 0) uniform sampler materialSampler;
 layout(location = 0) in vec4 position;
 layout(location = 1) in vec2 texCoords;
 layout(location = 2) in vec3 normal;
-flat layout(location = 3) in vec4 albedo;
-flat layout(location = 4) in vec4 material;
-flat layout(location = 5) in vec4 heightPlus;
-flat layout(location = 6) in vec4 subsurfacePlus;
-flat layout(location = 7) in vec4 clearCoatPlus;
+layout(location = 3) flat in vec4 albedo;
+layout(location = 4) flat in vec4 material;
+layout(location = 5) flat in vec4 heightPlus;
+layout(location = 6) flat in vec4 subsurfacePlus;
+layout(location = 7) flat in vec4 clearCoatPlus;
 
 layout(location = 0) out float depthOut;
 layout(location = 1) out vec3 albedoOut;
