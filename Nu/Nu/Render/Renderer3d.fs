@@ -918,7 +918,7 @@ type private SortableLight =
     static member private project light =
         let directionalWeight = match light.SortableLightType with 2 -> -1 | _ -> 0
         let desiredShadowsWeight = -light.SortableLightDesireShadows
-        struct (directionalWeight, light.SortableLightDistance, desiredShadowsWeight)
+        (directionalWeight, light.SortableLightDistance, desiredShadowsWeight)
 
     /// Sort shadowing point lights.
     /// TODO: see if we can get rid of allocation here.
