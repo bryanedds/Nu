@@ -56,6 +56,24 @@ type FxaaStruct =
     [<FieldOffset(8)>] val mutable reduceMulDivisor : single
 
 [<Struct; StructLayout (LayoutKind.Explicit)>]
+type BloomApplyStruct =
+    [<FieldOffset(0)>] val mutable strength : single
+
+[<Struct; StructLayout (LayoutKind.Explicit)>]
+type BloomDownSampleStruct =
+    [<FieldOffset(0)>] val mutable karisAverageEnabled : int
+    [<FieldOffset(4)>] val mutable sampleLevel : int
+    [<FieldOffset(8)>] val mutable sourceResolution : Vector2
+
+[<Struct; StructLayout (LayoutKind.Explicit)>]
+type BloomExtractStruct =
+    [<FieldOffset(0)>] val mutable threshold : single
+
+[<Struct; StructLayout (LayoutKind.Explicit)>]
+type BloomUpSampleStruct =
+    [<FieldOffset(0)>] val mutable radius : single
+
+[<Struct; StructLayout (LayoutKind.Explicit)>]
 type ShadowVertStruct =
     [<FieldOffset(0)>] val mutable viewProjection : Matrix4x4
 

@@ -1,28 +1,20 @@
-#shader vertex
-#version 450 core
-
-layout(location = 0) in vec3 position;
-layout(location = 1) in vec2 texCoords;
-
-out vec2 texCoordsOut;
-
-void main()
-{
-    texCoordsOut = texCoords;
-    gl_Position = vec4(position, 1.0);
-}
-
-#shader fragment
 #version 450 core
 
 const float GAMMA = 2.2;
 
-uniform int sampleLevel;
-uniform int karisAverageEnabled;
-uniform vec2 sourceResolution;
-uniform sampler2D sourceTexture;
+struct BloomDownSampleStruct
+{
+    int karisAverageEnabled;
+    int sampleLevel;
+    vec2 sourceResolution;
+}
 
-in vec2 texCoordsOut;
+layout(set = 0, binding = 0) uniform BloomDownSampleUniform { BloomDownSampleStruct bloomDownSample; };
+layout(set = 0, binding = 1) uniform texture2D sourceTexture;
+
+layout(set = 1, binding = 0) uniform sampler filteredSampler;
+
+layout(location = 0) in vec2 texCoordsOut;
 
 layout(location = 0) out vec3 frag;
 
@@ -50,7 +42,7 @@ float karisAverage(vec3 col)
 // NOTE: This is the readable version of this shader. It will be optimized!
 void main()
 {
-    vec2 srcTexelSize = 1.0 / sourceResolution;
+    vec2 srcTexelSize = 1.0 / bloomDownSample.sourceResolution;
     float x = srcTexelSize.x;
     float y = srcTexelSize.y;
 
@@ -60,22 +52,22 @@ void main()
     // d - e - f
     // - l - m -
     // g - h - i
-    vec3 a = texture(sourceTexture, vec2(texCoordsOut.x - 2*x, texCoordsOut.y + 2*y)).rgb;
-    vec3 b = texture(sourceTexture, vec2(texCoordsOut.x,       texCoordsOut.y + 2*y)).rgb;
-    vec3 c = texture(sourceTexture, vec2(texCoordsOut.x + 2*x, texCoordsOut.y + 2*y)).rgb;
+    vec3 a = texture(sampler2D(sourceTexture, filteredSampler), vec2(texCoordsOut.x - 2*x, texCoordsOut.y + 2*y)).rgb;
+    vec3 b = texture(sampler2D(sourceTexture, filteredSampler), vec2(texCoordsOut.x,       texCoordsOut.y + 2*y)).rgb;
+    vec3 c = texture(sampler2D(sourceTexture, filteredSampler), vec2(texCoordsOut.x + 2*x, texCoordsOut.y + 2*y)).rgb;
 
-    vec3 d = texture(sourceTexture, vec2(texCoordsOut.x - 2*x, texCoordsOut.y)).rgb;
-    vec3 e = texture(sourceTexture, vec2(texCoordsOut.x,       texCoordsOut.y)).rgb;
-    vec3 f = texture(sourceTexture, vec2(texCoordsOut.x + 2*x, texCoordsOut.y)).rgb;
+    vec3 d = texture(sampler2D(sourceTexture, filteredSampler), vec2(texCoordsOut.x - 2*x, texCoordsOut.y)).rgb;
+    vec3 e = texture(sampler2D(sourceTexture, filteredSampler), vec2(texCoordsOut.x,       texCoordsOut.y)).rgb;
+    vec3 f = texture(sampler2D(sourceTexture, filteredSampler), vec2(texCoordsOut.x + 2*x, texCoordsOut.y)).rgb;
 
-    vec3 g = texture(sourceTexture, vec2(texCoordsOut.x - 2*x, texCoordsOut.y - 2*y)).rgb;
-    vec3 h = texture(sourceTexture, vec2(texCoordsOut.x,       texCoordsOut.y - 2*y)).rgb;
-    vec3 i = texture(sourceTexture, vec2(texCoordsOut.x + 2*x, texCoordsOut.y - 2*y)).rgb;
+    vec3 g = texture(sampler2D(sourceTexture, filteredSampler), vec2(texCoordsOut.x - 2*x, texCoordsOut.y - 2*y)).rgb;
+    vec3 h = texture(sampler2D(sourceTexture, filteredSampler), vec2(texCoordsOut.x,       texCoordsOut.y - 2*y)).rgb;
+    vec3 i = texture(sampler2D(sourceTexture, filteredSampler), vec2(texCoordsOut.x + 2*x, texCoordsOut.y - 2*y)).rgb;
 
-    vec3 j = texture(sourceTexture, vec2(texCoordsOut.x - x,   texCoordsOut.y + y)).rgb;
-    vec3 k = texture(sourceTexture, vec2(texCoordsOut.x + x,   texCoordsOut.y + y)).rgb;
-    vec3 l = texture(sourceTexture, vec2(texCoordsOut.x - x,   texCoordsOut.y - y)).rgb;
-    vec3 m = texture(sourceTexture, vec2(texCoordsOut.x + x,   texCoordsOut.y - y)).rgb;
+    vec3 j = texture(sampler2D(sourceTexture, filteredSampler), vec2(texCoordsOut.x - x,   texCoordsOut.y + y)).rgb;
+    vec3 k = texture(sampler2D(sourceTexture, filteredSampler), vec2(texCoordsOut.x + x,   texCoordsOut.y + y)).rgb;
+    vec3 l = texture(sampler2D(sourceTexture, filteredSampler), vec2(texCoordsOut.x - x,   texCoordsOut.y - y)).rgb;
+    vec3 m = texture(sampler2D(sourceTexture, filteredSampler), vec2(texCoordsOut.x + x,   texCoordsOut.y - y)).rgb;
 
     // Apply weighted distribution:
     // 0.5 + 0.125 + 0.125 + 0.125 + 0.125 = 1
@@ -94,7 +86,7 @@ void main()
     // Check if we need to perform Karis average on each block of 4 samples.
     // For additional efficacy, karis average is applied at all sample levels.
     vec3 groups[5];
-    if (karisAverageEnabled == 1 && sampleLevel == 0)
+    if (bloomDownSample.karisAverageEnabled == 1 && bloomDownSample.sampleLevel == 0)
     {
         // We are writing to level 0, so we need to apply Karis average to each block
         // of 4 samples to prevent fireflies (very bright subpixels, leads to pulsating
