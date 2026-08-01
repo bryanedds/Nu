@@ -167,7 +167,8 @@ type VulkanBuffer =
     private
         { mutable BufferWrappersCursor_ : int
           BufferWrappers_ : BufferWrapper List
-          BufferType_ : BufferType }
+          BufferType_ : BufferType
+          BufferSize_ : int }
 
     member private this.BufferWrapper =
         this.BufferWrappers_[this.BufferWrappersCursor_]
@@ -178,7 +179,7 @@ type VulkanBuffer =
 
     static member private ensureHeight (buffer : VulkanBuffer) context =
         while buffer.BufferWrappersCursor_ >= buffer.BufferWrappers_.Count do
-            let bufferWrappers = Array.init buffer.BufferWrappers_.Count (fun _ -> BufferWrapper.create buffer.BufferType_ buffer.BufferWrappers_[0].Size context)
+            let bufferWrappers = Array.init buffer.BufferWrappers_.Count (fun _ -> BufferWrapper.create buffer.BufferType_ buffer.BufferSize_ context)
             buffer.BufferWrappers_.AddRange bufferWrappers
 
     /// Expand current buffer width as necessary.
@@ -249,7 +250,8 @@ type VulkanBuffer =
     static member create (bufferType : BufferType) bufferSize context =
         { BufferWrappersCursor_ = 0
           BufferWrappers_ = List [BufferWrapper.create bufferType bufferSize context]
-          BufferType_ = bufferType }
+          BufferType_ = bufferType
+          BufferSize_ = bufferSize }
 
     /// Write subdata to Buffer. Caller is reponsible for ensuring buffer width and height.
     static member writeSubdata offset alignment size count data (buffer : VulkanBuffer) context =
