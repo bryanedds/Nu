@@ -30,11 +30,7 @@ type [<ReferenceEquality>] ConcurrentCommandQueue =
 
     /// Perform an arbitrary operation on the internal vulkan queue.
     static member withLock<'a> queue (op : VkQueue -> 'a) : 'a =
-        //let sw = System.Diagnostics.Stopwatch.StartNew ()
-        lock queue.Lock_ (fun () ->
-            //sw.Stop ()
-            //Log.info ("ConcurrentCommandQueue.withLock: " + string sw.ElapsedTicks)
-            op queue.VkQueue_)
+        lock queue.Lock_ (fun () -> op queue.VkQueue_)
 
     /// Wait for Queue to finish execution.
     static member waitIdle queue =
@@ -900,7 +896,7 @@ type [<ReferenceEquality>] VulkanContext =
         commandPool
 
     /// Handle changes in window size, and check for minimization.
-    static member private handleWindowSize context =
+    static member private handleWindowSizing context =
         
         // query minimization status. This both detects the beginning of minimization and checks for the end.
         context.WaitingForWindowRestore_ <- Swapchain.getWindowMinimized ()
@@ -908,8 +904,9 @@ type [<ReferenceEquality>] VulkanContext =
         // update the swapchain if window is not minimized, which happens a) when the window size simply changes
         // and b) when minimization ends as detected above; must also check for backgrounding in case minimization
         // occurs first so backgrounding can still be handled straight away
-        if not context.WaitingForWindowRestore_ || Hl.getBackgroundingRequested ()
-        then Swapchain.update context.PhysicalDevice_ context.RenderQueue_ context.PresentQueue_ context.Swapchain_ context.Instance_
+        if  not context.WaitingForWindowRestore_ ||
+            Hl.getBackgroundingRequested () then
+            Swapchain.update context.PhysicalDevice_ context.RenderQueue_ context.PresentQueue_ context.Swapchain_ context.Instance_
 
     /// Wait for app to return to foreground.
     static member private handleBackgrounding context =
@@ -970,12 +967,8 @@ type [<ReferenceEquality>] VulkanContext =
     static member beginFrame (windowViewport : Viewport) context =
 
         // wait for current frame to be ready
-        //let sw = System.Diagnostics.Stopwatch.StartNew ()
         let mutable renderFence = context.RenderFence_
         DeviceApi.vkWaitForFences (1u, &&renderFence, true, UInt64.MaxValue) |> Hl.check
-
-        //sw.Stop ()
-        //Log.info ("Hl.awaitFence: " + string sw.ElapsedTicks)
 
         // reset render command buffers cursor
         context.RenderCommandBuffersCursor_ <- 0
@@ -985,34 +978,32 @@ type [<ReferenceEquality>] VulkanContext =
         if Option.isNone context.Swapchain_.SwapchainWrapperOpt then VulkanContext.handleBackgrounding context
         else
             // check for handling of minimized window from previous frame(s); if *still* minimized then do nothing; if restored then refresh swapchain
-            if context.WaitingForWindowRestore_ then VulkanContext.handleWindowSize context
+            if context.WaitingForWindowRestore_ then VulkanContext.handleWindowSizing context
             else
                 // check if app backgrounding has been triggered, if so then teardown the surface and swapchain
                 if Hl.getBackgroundingRequested () then Swapchain.update context.PhysicalDevice_ context.RenderQueue_ context.PresentQueue_ context.Swapchain_ context.Instance_
                 else
                     // check if screen *has become* minimized, if so then set WaitingForWindowRestore_ and don't render
-                    if Swapchain.getWindowMinimized () then VulkanContext.handleWindowSize context
+                    if Swapchain.getWindowMinimized () then VulkanContext.handleWindowSizing context
                     else
                         // check if screen size changed (or surface lost), if so then refresh swapchain
-                        if Swapchain.isWindowResizedOrSurfaceLost context.PhysicalDevice.VkPhysicalDevice context.Swapchain_ then VulkanContext.handleWindowSize context
+                        if Swapchain.isWindowResizedOrSurfaceLost context.PhysicalDevice.VkPhysicalDevice context.Swapchain_ then VulkanContext.handleWindowSizing context
                         else
                             // try to acquire image from swapchain to draw onto
                             // NOTE: due to semaphore flow, when this is successful, the render *must* proceed!
-                            //let sw = System.Diagnostics.Stopwatch.StartNew ()
-                            let result = DeviceApi.vkAcquireNextImageKHR (context.Swapchain_.VkSwapchain, UInt64.MaxValue, context.ImageAvailableSemaphore_, VkFence.Null, &Hl.ImageIndex)
-                            //sw.Stop ()
-                            //Log.info ("VulkanDevice.vkAcquireNextImageKHR: " + string sw.ElapsedTicks)
-                            match result with
+                            match DeviceApi.vkAcquireNextImageKHR (context.Swapchain_.VkSwapchain, UInt64.MaxValue, context.ImageAvailableSemaphore_, VkFence.Null, &Hl.ImageIndex) with
                             | VkResult.ErrorOutOfDateKHR ->
-                                VulkanContext.handleWindowSize context // refresh swapchain if out of date
+                                Log.info "Swapchain out of date; handling window sizing."
+                                VulkanContext.handleWindowSizing context // refresh swapchain if out of date
                             | VkResult.ErrorSurfaceLostKHR ->
+                                Log.info "Swapchain surface lost; updating swapchain."
                                 Hl.SurfaceState <- SurfaceLost
                                 Swapchain.update context.PhysicalDevice_ context.RenderQueue_ context.PresentQueue_ context.Swapchain_ context.Instance_
-                            | _ ->
+                            | result ->
                                 context.RenderAllowed_ <- true // permit rendering
                                 Hl.check result // NOTE: this will report a suboptimal swapchain image.
 
-        //
+        // set up rendering when permitted
         if context.RenderAllowed_ then
 
             // reset draw counters
@@ -1067,17 +1058,18 @@ type [<ReferenceEquality>] VulkanContext =
                     info.swapchainCount <- 1u
                     info.pSwapchains <- &&vkSwapchain
                     info.pImageIndices <- &&Hl.ImageIndex
-                    //let sw = System.Diagnostics.Stopwatch.StartNew ()
-                    //sw.Stop ()
-                    let result = DeviceApi.vkQueuePresentKHR (vkQueue, &&info)
-                    //Log.info ("VulkanDevice.vkQueuePresentKHR: " + string sw.ElapsedTicks)
-                    match result with
-                    | VkResult.ErrorOutOfDateKHR | VkResult.SuboptimalKHR ->
-                        VulkanContext.handleWindowSize context
+                    match DeviceApi.vkQueuePresentKHR (vkQueue, &&info) with
+                    | VkResult.ErrorOutOfDateKHR ->
+                        Log.info "Swapchain out of date; handling window sizing."
+                        VulkanContext.handleWindowSizing context
                     | VkResult.ErrorSurfaceLostKHR ->
+                        Log.info "Swapchain surface lost; updating swapchain."
                         Hl.SurfaceState <- SurfaceLost
                         Swapchain.update context.PhysicalDevice_ context.RenderQueue_ context.PresentQueue_ context.Swapchain_ context.Instance_
-                    | _ -> Hl.check result
+                    | VkResult.SuboptimalKHR ->
+                        Log.info "Swapchain suboptimal; handling window sizing."
+                        VulkanContext.handleWindowSizing context
+                    | result -> Hl.check result
 
                 // still need to update the swapchain even if we haven't rendered
                 else Swapchain.update context.PhysicalDevice_ context.RenderQueue_ context.PresentQueue_ context.Swapchain_ context.Instance_)
