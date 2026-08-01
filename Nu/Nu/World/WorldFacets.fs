@@ -2238,10 +2238,7 @@ type CircleContour2dFacet () =
     override this.Render (_, entity, world) =
         let fill = ContourFill.ofColorWinding (entity.GetFillColor world) (entity.GetFillWinding world)
         let stroke = ContourStroke.ofColorThickness (entity.GetStrokeColor world) (entity.GetStrokeThickness world)
-        let prepared =
-            Contour.make
-                fill stroke commands
-                (entity.GetSize world * entity.GetScale world).V2
+        let prepared = Contour.make fill stroke commands (entity.GetSize world * entity.GetScale world).V2
         World.renderContour
             { Transform = entity.GetTransform world
               ClipOpt = entity.GetClipOpt world |> Option.toValueOption
@@ -2279,10 +2276,7 @@ type RectangleContour2dFacet () =
     override this.Render (_, entity, world) =
         let fill = ContourFill.ofColorWinding (entity.GetFillColor world) (entity.GetFillWinding world)
         let stroke = ContourStroke.ofColorThickness (entity.GetStrokeColor world) (entity.GetStrokeThickness world)
-        let prepared =
-            Contour.make
-                fill stroke recCommands
-                (entity.GetSize world * entity.GetScale world).V2
+        let prepared = Contour.make fill stroke recCommands (entity.GetSize world * entity.GetScale world).V2
         World.renderContour
             { Transform = entity.GetTransform world
               ClipOpt = entity.GetClipOpt world |> Option.toValueOption
@@ -2366,7 +2360,9 @@ type SpiralContour2dFacet () =
         let stroke = ContourStroke.ofColorThickness (entity.GetStrokeColor world) (entity.GetStrokeThickness world)
         let prepared =
             Contour.make
-                fill stroke (computeSpiralCommands (entity.GetTurns world) (entity.GetSpacing world) (entity.GetPointsPerTurn world))
+                fill
+                stroke
+                (computeSpiralCommands (entity.GetTurns world) (entity.GetSpacing world) (entity.GetPointsPerTurn world))
                 (entity.GetSize world * entity.GetScale world).V2
         World.renderContour
             { Transform = entity.GetTransform world
@@ -2471,7 +2467,9 @@ type WedgeContour2dFacet () =
         let stroke = ContourStroke.ofColorThickness (entity.GetStrokeColor world) (entity.GetStrokeThickness world)
         let prepared =
             Contour.make
-                fill stroke (computeWedgeCommands (entity.GetAngleBegin world) (entity.GetAngleEnd world) 0.5f)
+                fill
+                stroke
+                (computeWedgeCommands (entity.GetAngleBegin world) (entity.GetAngleEnd world) 0.5f)
                 (entity.GetSize world * entity.GetScale world).V2
         World.renderContour
             { Transform = entity.GetTransform world
@@ -2543,10 +2541,7 @@ type RectangleRoundedContour2dFacet () =
         let size = (entity.GetSize world * entity.GetScale world).V2
         let fill = ContourFill.ofColorWinding (entity.GetFillColor world) (entity.GetFillWinding world)
         let stroke = ContourStroke.ofColorThickness (entity.GetStrokeColor world) (entity.GetStrokeThickness world)
-        let prepared =
-            Contour.make
-                fill stroke (computeRoundedRectCommands (entity.GetCornerRadius world) size)
-                size
+        let prepared = Contour.make fill stroke (computeRoundedRectCommands (entity.GetCornerRadius world) size) size
         World.renderContour
             { Transform = entity.GetTransform world
               ClipOpt = entity.GetClipOpt world |> Option.toValueOption

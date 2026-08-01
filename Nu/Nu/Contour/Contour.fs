@@ -10,6 +10,7 @@ open System.Collections.Generic
 open System.Numerics
 open Prime
 
+// TODO: P0: get rid of excess frame-based allocation here, such as potentially by using memoization.
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Contour =
 
@@ -219,7 +220,7 @@ module Contour =
                     let indices = items |> Seq.map snd |> Seq.toArray
                     let sorted = indices |> Array.sortByDescending (fun ci -> curveMaxX curves.[ci])
                     (band, sorted))
-                |> Seq.sortBy fst
+                |> Seq.sortWith (fun (band, _) (band2, _) -> band.CompareTo band2)
                 |> Seq.toArray
 
             // Build flat arrays.
@@ -233,6 +234,7 @@ module Contour =
                 for ci in indices do
                     hIndices.Add (uint32 ci)
                 hEntries.Add { CurveCount = uint32 indices.Length; CurveOffset = offset }
+
             // Pad remaining bands.
             while hEntries.Count < nHBands do
                 hEntries.Add { CurveCount = 0u; CurveOffset = uint32 hIndices.Count }

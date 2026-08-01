@@ -1092,14 +1092,14 @@ module WorldModule =
 
     type World with // Debugging
 
-        /// View the member properties of some SimulantState.
+        /// Provide the member properties of some SimulantState.
         static member internal getSimulantStateMemberProperties (state : SimulantState) =
             getType state
             |> (fun ty -> ty.GetProperties true)
             |> Array.map (fun (property : PropertyInfo) -> (property.Name, property.PropertyType, property.GetValue state))
             |> Array.toList
 
-        /// View the xtension properties of some SimulantState.
+        /// Provide the xtension properties of some SimulantState.
         static member internal getSimulantStateXtensionProperties (state : SimulantState) =
             state.GetXtension().Properties
             |> List.ofSeq

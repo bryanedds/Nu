@@ -884,7 +884,7 @@ type private SortableLightMap =
             lightMap.SortableLightMapDistanceSquared <- SortableLightMap.distanceFromBounds position lightMap.SortableLightMapBounds
         let lightMapsSorted =
             lightMapsFiltered
-            |> Array.sortBy (fun lightMap -> lightMap.SortableLightMapDistanceSquared :> IComparable) // OPTIMIZATION: boxing here to avoid it downstream.
+            |> Array.sortWith (fun lightMap lightMap2 -> lightMap.SortableLightMapDistanceSquared.CompareTo lightMap2.SortableLightMapDistanceSquared)
         for i in 0 .. dec lightMapsMax do
             if i < lightMapsSorted.Length then
                 let lightMap = lightMapsSorted[i]
@@ -896,6 +896,47 @@ type private SortableLightMap =
                 lightMapIrradianceMaps[i] <- lightMap.SortableLightMapIrradianceMap
                 lightMapEnvironmentFilterMaps[i] <- lightMap.SortableLightMapEnvironmentFilterMap
         (lightMapOrigins, lightMapMins, lightMapSizes, lightMapAmbientColors, lightMapAmbientBrightnesses, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps)
+
+[<CustomComparison; CustomEquality>]
+type private SortableLightProjection =
+    { DirectionalWeight : int
+      LightDistance : single
+      DesiredShadowsWeight : int }
+
+    static member equals left right =
+        left.DirectionalWeight = right.DirectionalWeight &&
+        left.LightDistance = right.LightDistance &&
+        left.DesiredShadowsWeight = right.DesiredShadowsWeight
+
+    static member compare left right =
+        if left.DirectionalWeight < right.DirectionalWeight then 1
+        elif left.DirectionalWeight > right.DirectionalWeight then -1
+        elif left.LightDistance < right.LightDistance then -1
+        elif left.LightDistance > right.LightDistance then 1
+        elif left.DesiredShadowsWeight < right.DesiredShadowsWeight then -1
+        elif left.DesiredShadowsWeight > right.DesiredShadowsWeight then 1
+        else 0
+
+    static member make directionalWeight lightDistance desiredShadowsWeight =
+        { DirectionalWeight = directionalWeight; LightDistance = lightDistance; DesiredShadowsWeight = desiredShadowsWeight }
+
+    override this.Equals that =
+        match that with
+        | :? SortableLightProjection as that -> SortableLightProjection.equals this that
+        | _ -> false
+
+    override x.GetHashCode () =
+        HashCode.Combine(x.DirectionalWeight, x.LightDistance, x.DesiredShadowsWeight)
+
+    interface IComparable<SortableLightProjection> with
+        member this.CompareTo that =
+            compare this.DesiredShadowsWeight that.DesiredShadowsWeight
+
+    interface IComparable with
+        member this.CompareTo that =
+            match that with
+            | :? SortableLightProjection as that -> SortableLightProjection.compare this that
+            | _ -> failwithumf ()
 
 /// A sortable light.
 /// OPTIMIZATION: mutable field for caching distance squared.
@@ -920,7 +961,7 @@ type private SortableLight =
     static member private project light =
         let directionalWeight = match light.SortableLightType with 2 -> -1 | _ -> 0
         let desiredShadowsWeight = -light.SortableLightDesireShadows
-        (directionalWeight :> IComparable, light.SortableLightDistance :> IComparable, desiredShadowsWeight :> IComparable) // OPTIMIZATION: boxing here to avoid it downstream.
+        SortableLightProjection.make directionalWeight light.SortableLightDistance desiredShadowsWeight
 
     /// Sort shadowing point lights.
     /// TODO: see if we can get rid of allocation here.

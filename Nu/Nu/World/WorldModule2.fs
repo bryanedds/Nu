@@ -1735,7 +1735,7 @@ module WorldModule2 =
                 // sort shadow pass descriptors
                 let shadowPassDescriptors =
                     shadowPassDescriptorsSortable
-                    |> Array.sortBy fst
+                    |> Array.sortWith (fun (frustum, _) (frustum2, _) -> frustum.CompareTo frustum2)
                     |> Array.map snd
 
                 // render simulant shadows
