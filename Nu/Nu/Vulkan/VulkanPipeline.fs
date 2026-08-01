@@ -184,7 +184,7 @@ type PushConstant =
     { Offset : int
       Size : int
       ShaderStage : ShaderStage }
-    
+
 /// An abstraction of a rendering pipeline.
 type Pipeline =
     private

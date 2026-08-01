@@ -181,15 +181,54 @@ type VulkanBuffer =
             let bufferWrappers = Array.init buffer.BufferWrappers_.Count (fun _ -> BufferWrapper.create buffer.BufferType_ buffer.BufferWrappers_[0].Size context)
             buffer.BufferWrappers_.AddRange bufferWrappers
 
-    /// Expand buffer width as necessary, disregarding all existing content.
+    /// Expand current buffer width as necessary.
+    /// OPTIMIZATION: this may swap unutilized buffers around to best utilize existing buffers.
     static member ensureWidth size (buffer : VulkanBuffer) context =
+
+        // ensure height before attempt to ensure width
         VulkanBuffer.ensureHeight buffer context
-        let bufferWrapperOld = buffer.BufferWrappers_[buffer.BufferWrappersCursor_]
-        if bufferWrapperOld.Size < size then
-            let bufferWrapperNew = BufferWrapper.create buffer.BufferType_ size context
-            VulkanBuffer.copyData bufferWrapperOld.Size bufferWrapperOld.VkBuffer_ bufferWrapperNew.VkBuffer_ context
-            buffer.BufferWrappers_[buffer.BufferWrappersCursor_] <- bufferWrapperNew
-            BufferWrapper.destroy bufferWrapperOld context
+
+        // ensure current buffer is wide enough
+        let cursor = buffer.BufferWrappersCursor_
+        if buffer.BufferWrappers_[cursor].Size < size then
+
+            // when too narrow, find the best fit buffer as well as largest buffer and...
+            let mutable bestFitIndex = -1
+            let mutable bestFitSize = Int32.MaxValue
+            let mutable largestIndex = cursor
+            let mutable largestSize = buffer.BufferWrappers_[cursor].Size
+            for i in inc cursor .. dec buffer.BufferWrappers_.Count do
+                let candidate = buffer.BufferWrappers_[i]
+                if candidate.Size >= size && candidate.Size < bestFitSize then
+                    bestFitIndex <- i
+                    bestFitSize <- candidate.Size
+                if candidate.Size > largestSize then
+                    largestIndex <- i
+                    largestSize <- candidate.Size
+
+            // when a fit is found...
+            if bestFitIndex > -1 then
+
+                // swap buffer into current buffer
+                let tmp = buffer.BufferWrappers_[cursor]
+                buffer.BufferWrappers_[cursor] <- buffer.BufferWrappers_[bestFitIndex]
+                buffer.BufferWrappers_[bestFitIndex] <- tmp
+
+            // otherwise when no fit is found...
+            else
+
+                // increase the width of the largest buffer found
+                let bufferWrapperOld = buffer.BufferWrappers_[largestIndex]
+                let bufferWrapperNew = BufferWrapper.create buffer.BufferType_ size context
+                VulkanBuffer.copyData bufferWrapperOld.Size bufferWrapperOld.VkBuffer_ bufferWrapperNew.VkBuffer_ context
+                buffer.BufferWrappers_[largestIndex] <- bufferWrapperNew
+                BufferWrapper.destroy bufferWrapperOld context
+
+                // ...and swap it if it's not already the current buffer
+                if largestIndex <> cursor then
+                    let tmp = buffer.BufferWrappers_[cursor]
+                    buffer.BufferWrappers_[cursor] <- buffer.BufferWrappers_[largestIndex]
+                    buffer.BufferWrappers_[largestIndex] <- tmp
 
     /// Copy data from the source buffer to the destination buffer.
     static member private copyData size source destination (context : VulkanContext) =
