@@ -1012,7 +1012,7 @@ type [<ReferenceEquality>] VulkanContext =
             // begin render command recording
             VulkanContext.beginRenderCommandBuffer context
 
-            // make swapchain image is ready to be rendered to
+            // make swapchain image ready for rendering
             let renderArea = VkRect2D (0, 0, uint windowViewport.Bounds.Size.X, uint windowViewport.Bounds.Size.Y)
             let clearColor = VkClearValue (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
             let mutable renderingInfo = Hl.makeRenderingInfo [|context.SwapchainImageView|] None renderArea (Some clearColor)
@@ -1024,7 +1024,7 @@ type [<ReferenceEquality>] VulkanContext =
     /// End the frame.
     static member endFrame context =
 
-        //
+        // tear down rendering when rendering pemitted
         if context.RenderAllowed_ then
 
             // transition swapchain image layout to presentation
@@ -1040,7 +1040,7 @@ type [<ReferenceEquality>] VulkanContext =
     /// Present the image back to the swapchain to appear on screen.
     static member present (context : VulkanContext) =
 
-        //
+        // present the swapchain image when rendering permitted
         if context.RenderAllowed_ then
 
             // lock to get access to vulkan queue
