@@ -181,8 +181,8 @@ module SdlDeps =
                     if  SDL3.SDL_RestoreWindow window |> SDLBool.op_Implicit &&
                         SDL3.SDL_SyncWindow window |> SDLBool.op_Implicit then
                         let pixelDensity = SDL3.SDL_GetWindowPixelDensity window // restoration can change the window's display, and therefore its pixel density
-                        SDL3.SDL_SetWindowSize (window, int (single windowSizeWindowed.X / pixelDensity), int (single windowSizeWindowed.Y / pixelDensity)) |> ignore<SDLBool>
-                        if SDL3.SDL_SyncWindow window |> SDLBool.op_Implicit then
+                        if  SDL3.SDL_SetWindowSize (window, int (single windowSizeWindowed.X / pixelDensity), int (single windowSizeWindowed.Y / pixelDensity)) |> SDLBool.op_Implicit &&
+                            SDL3.SDL_SyncWindow window |> SDLBool.op_Implicit then
                             SDL3.SDL_SetWindowPosition (window, 100, 100) |> ignore<SDLBool> // NOTE: pretty arbitrary numbers here...
 
         | None -> ()
