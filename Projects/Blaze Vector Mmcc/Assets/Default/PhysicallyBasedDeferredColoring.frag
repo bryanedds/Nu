@@ -219,8 +219,7 @@ void computeSsrl(float depth, vec4 position, vec3 albedo, float roughness, float
                     vec3 diffuse = irradiance * albedo * ambientLight;
 
                     // compute color
-                    specularScreen = lightAccum + diffuse + specular;
-                    specularScreen *= lighting.ssrlIntensity;
+                    specularScreen = (lightAccum + diffuse) * lighting.ssrlIntensity;
 
                     // compute weight
                     specularScreenWeight =
