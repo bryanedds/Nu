@@ -54,7 +54,7 @@ module Attachment =
         [|for i in 0 .. dec Constants.Render.BloomSampleLevels do
             let (resolutionX', resolutionY') = (resolutionX >>> i, resolutionY >>> i)
             if resolutionX' = 0 || resolutionY' = 0 then failwith ("Invalid resolution [" + string resolutionX' + " " + string resolutionY' + "] for bloom filter level.")
-            createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba16f Rgba resolutionX' resolutionY' context|]
+            createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgb16f Rgb resolutionX' resolutionY' context|]
 
     /// Update size of bloom sample attachments.
     let updateBloomSampleAttachmentsSize resolutionX resolutionY (bloomSamples : Texture array) context =
