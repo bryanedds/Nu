@@ -228,10 +228,10 @@ void computeSsrl(float depth, vec4 position, vec3 albedo, float roughness, float
                     vec3 specularEnvironmentSubterm = f * environmentBrdf.x + environmentBrdf.y;
                     vec3 specularEnvironment = environmentFilter * specularEnvironmentSubterm * ambientLight;
                     vec3 specularIntensity = f * (1.0 - roughness);
-                    vec3 specular = environmentFilter * specularIntensity * lightAccum * lighting.ssrlIntensity;
+                    vec3 specular = specularEnvironment * specularIntensity * lighting.ssrlIntensity;
 
                     // compute color
-                    specularScreen = diffuse + specular;
+                    specularScreen = lightAccum + diffuse + specular;
 
                     // compute weight
                     specularScreenWeight =
