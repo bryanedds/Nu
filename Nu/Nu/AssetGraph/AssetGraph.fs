@@ -99,13 +99,13 @@ module AssetGraph =
 
     let private AssetGraphStr = """
 [[Default
- [[Assets Assets/Default [bmp png psd ttf skel json] [PsdToPng] [Render2d]]
+ [[Assets Assets/Default [bmp png psd ttf] [PsdToPng] [Render2d]]
   [Assets Assets/Default [jpg jpeg tga tif tiff dds ktx] [BlockCompress] [Render3d]]
   [Assets Assets/Default [cbm fbx gltf glb dae obj mtl raw] [] [Render3d]]
   [Assets Assets/Default [wav ogg mp3] [] [Audio]]
   [Assets Assets/Default [cur] [] [Cursor]]
   [Assets Assets/Default [nueffect nuscript csv] [] [Symbol]]
-  [Assets Assets/Default [nuentity nugroup tsx tmx atlas nav nbrd frag vert bin] [] []]]]]"""
+  [Assets Assets/Default [nuentity nugroup tsx tmx nav nbrd frag vert bin] [] []]]]]"""
 
     let private getAssetExtension2 blockCompression rawAssetExtension refinement =
         match refinement with

@@ -69,17 +69,6 @@ type TileMapDescriptor =
       TileMapSizeF : Vector2
       TileMapPosition : Vector2 }
 
-/// Describes a Spine animation for a given track.
-type [<DefaultValue "[idle Loop]">] SpineAnimation =
-    { SpineAnimationName : string
-      SpineAnimationPlayback : Playback }
-
-/// Represents the mutable backing state of an animating Spine skeleton.
-/// NOTE: this is inherently imperative and therefore currently unsupported by undo / redo.
-type SpineSkeletonState =
-    { SpineSkeleton : Spine.Skeleton
-      SpineAnimationState : Spine.AnimationState }
-
 /// The timing with which an effect should be evaluated in a frame.
 type RunMode =
     | RunEarly

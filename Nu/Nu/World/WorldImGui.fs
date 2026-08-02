@@ -1202,19 +1202,6 @@ module WorldImGui =
                     |> (fun s -> if underline then Set.add Underline s else s)
                     |> (fun s -> if strikethrough then Set.add Strikethrough s else s)
                 (promoted, edited, fontStyling)
-            | :? (SpineAnimation array) as animations -> // TODO: P1: implement bespoke individual SpineAnimation editing.
-                ImGui.Text name
-                ImGui.SameLine ()
-                ImGui.PushID name
-                let (promoted, edited, animations) =
-                    World.imGuiEditPropertyArray
-                        (fun name animation ->
-                            let (promoted, edited, animation) = World.imGuiEditProperty name (typeof<SpineAnimation>) animation context world
-                            (promoted, edited, animation :?> SpineAnimation))
-                        { SpineAnimationName = ""; SpineAnimationPlayback = Loop }
-                        name animations context
-                ImGui.PopID ()
-                (promoted, edited, animations)
             | :? (Animation array) as animations ->
                 ImGui.Text name
                 ImGui.SameLine ()

@@ -501,12 +501,6 @@ module Content =
     let tmxMap entityName definitions = entity<TmxMapDispatcher> entityName definitions
 
     /// <summary>
-    /// Describe a Spine skeleton with the given definitions.
-    /// See <see cref="SpineSkeletonDispatcher"/>.
-    /// </summary>
-    let spineSkeleton entityName definitions = entity<SpineSkeletonDispatcher> entityName definitions
-
-    /// <summary>
     /// Describe a 2d circle contour with the given definitions.
     /// See <see cref="CircleContour2dDispatcher"/>.
     /// </summary>

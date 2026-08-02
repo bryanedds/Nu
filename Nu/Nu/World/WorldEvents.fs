@@ -129,14 +129,6 @@ type MountData =
     { Mount : Entity
       Mounter : Entity }
 
-/// The data for describing an animation trigger event.
-type SpineSkeletonAnimationTriggerData =
-    | SpineSkeletonAnimationStartData of Spine.TrackEntry
-    | SpineSkeletonAnimationInterruptData of Spine.TrackEntry
-    | SpineSkeletonAnimationCompleteData of Spine.TrackEntry
-    | SpineSkeletonAnimationEndData of Spine.TrackEntry
-    | SpineSkeletonAnimationEventData of Spine.TrackEntry * Spine.Event
-
 /// Engine and simulation events that come with Nu.
 [<RequireQualifiedAccess>]
 module Events =
@@ -227,9 +219,6 @@ module Events =
 
     /// Raised when a fluid emitter updates.
     let FluidEmitterUpdateEvent = stoa<FluidEmitterMessage> "FluidEmitterUpdate/Event"
-
-    /// Raised when a Spine skeleton animation event is triggered.
-    let SpineSkeletonAnimationTriggerEvent = stoa<SpineSkeletonAnimationTriggerData> "SpineSkeletonAnimationTrigger/Event"
 
     /// Raised when a button is clicked.
     let ClickEvent = stoa<unit> "Click/Event"

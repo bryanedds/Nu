@@ -1728,11 +1728,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         let entity = createEntity true false (Some (nameof TileMapDispatcher)) None world
                         entity.SetTileMap (AssetTag.specialize assetTag) world
                         entity.AutoBounds world
-                    | SpineSkeletonMetadata _ ->
-                        RightClickPosition <- World.getMousePosition world
-                        let entity = createEntity true false (Some (nameof SpineSkeletonDispatcher)) None world
-                        entity.SetSpineSkeleton (AssetTag.specialize assetTag) world
-                        entity.AutoBounds world
                     | StaticModelMetadata _ ->
                         RightClickPosition <- World.getMousePosition world
                         let entity = createEntity true false (Some (nameof StaticModelDispatcher)) None world
@@ -3584,7 +3579,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                 | RawMetadata -> Assets.Default.RawIconIcon
                                 | TextureMetadata _ -> asset<Image> packageName assetName
                                 | TileMapMetadata _ -> Assets.Default.TileMapIcon
-                                | SpineSkeletonMetadata _ -> Assets.Default.SpineSkeletonIcon
                                 | StaticModelMetadata _ -> Assets.Default.StaticModelIcon
                                 | AnimatedModelMetadata _ -> Assets.Default.AnimatedModelIcon
                                 | SoundMetadata -> Assets.Default.SoundIcon
@@ -3625,12 +3619,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                     (fun parentOpt world ->
                                         let entity = createEntity false false (Some (nameof TileMapDispatcher)) parentOpt world
                                         entity.SetTileMap (asset packageName assetName) world
-                                        entity.AutoBounds world
-                                        entity) |> Some
-                                | SpineSkeletonMetadata _ ->
-                                    (fun parentOpt world ->
-                                        let entity = createEntity false false (Some (nameof SpineSkeletonDispatcher)) parentOpt world
-                                        entity.SetSpineSkeleton (asset packageName assetName) world
                                         entity.AutoBounds world
                                         entity) |> Some
                                 | StaticModelMetadata _ ->

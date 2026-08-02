@@ -17,9 +17,6 @@
     <Project Path="Nu/Nu.Pipe/Nu.Pipe.fsproj">
       <BuildType Solution="Mixed|*" Project="Release" />
     </Project>
-    <Project Path="Nu/Nu.Spine/Nu.Spine.csproj">
-      <BuildType Solution="Mixed|*" Project="Release" />
-    </Project>
     <Project Path="Nu/Nu.Template.ImSim.Empty/Nu.Template.ImSim.Empty.fsproj">
       <BuildType Solution="Mixed|*" Project="Debug" />
     </Project>
