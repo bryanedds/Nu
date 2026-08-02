@@ -285,6 +285,7 @@ module Render =
     let [<Literal>] SsvfAsymmetryDefault = 0.1f
     let [<Literal>] SsrlEnabledGlobalDefault = true
     let [<Literal>] SsrlEnabledLocalDefault = true
+    let [<Literal>] SsrlIntensityDefault = 4.0f
     let [<Literal>] SsrlDetailDefault = 0.21f
     let [<Literal>] SsrlRefinementsMaxDefault = 24
     let [<Literal>] SsrlRayThicknessDefault = 0.025f

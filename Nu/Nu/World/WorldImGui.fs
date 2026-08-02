@@ -908,6 +908,7 @@ module WorldImGui =
                 let mutable ssvfSteps = lighting3dConfig.SsvfSteps
                 let mutable ssvfAsymmetry = lighting3dConfig.SsvfAsymmetry
                 let mutable ssrlEnabled = lighting3dConfig.SsrlEnabled
+                let mutable ssrlIntensity = lighting3dConfig.SsrlIntensity
                 let mutable ssrlDetail = lighting3dConfig.SsrlDetail
                 let mutable ssrlRefinementsMax = lighting3dConfig.SsrlRefinementsMax
                 let mutable ssrlRayThickness = lighting3dConfig.SsrlRayThickness
@@ -991,6 +992,7 @@ module WorldImGui =
                 lighting3dEdited <- ImGui.SliderFloat ("Ssvf Asymmetry", &ssvfAsymmetry, -1.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 ImGui.Text "Screen-Space Reflection"
                 lighting3dEdited <- ImGui.Checkbox ("Ssrl Enabled", &ssrlEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssrl Intensity", &ssrlIntensity, 0.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssrl Detail", &ssrlDetail, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderInt ("Ssrl Refinements Max", &ssrlRefinementsMax, 0, 32) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssrl Ray Thickness", &ssrlRayThickness, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
@@ -1071,6 +1073,7 @@ module WorldImGui =
                           SsvfIntensity = ssvfIntensity
                           SsvfAsymmetry = ssvfAsymmetry
                           SsrlEnabled = ssrlEnabled
+                          SsrlIntensity = ssrlIntensity
                           SsrlDetail = ssrlDetail
                           SsrlRefinementsMax = ssrlRefinementsMax
                           SsrlRayThickness = ssrlRayThickness

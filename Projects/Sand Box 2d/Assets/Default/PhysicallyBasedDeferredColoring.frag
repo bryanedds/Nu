@@ -46,6 +46,7 @@ struct LightingStruct
     float ssrrEdgeHorizontalMargin;
     float ssrrEdgeVerticalMargin;
     int ssrlEnabled;
+    float ssrlIntensity;
     float ssrlDetail;
     int ssrlRefinementsMax;
     float ssrlRayThickness;
@@ -217,8 +218,20 @@ void computeSsrl(float depth, vec4 position, vec3 albedo, float roughness, float
                     vec3 ambientLight = ambientColor * ambientBrightness * ambientBoost;
                     vec3 diffuse = irradiance * albedo * ambientLight;
 
+                    // compute specular
+                    vec3 f0 = mix(vec3(0.04), albedo, metallic);
+                    vec3 v = normalize(-positionView.xyz);
+                    vec3 h = normalize(v + normal);
+                    vec3 f = fresnelSchlick(saturate(dot(h, v)), f0);
+                    float nDotV = saturate(dot(normal, v));
+                    vec2 environmentBrdf = texture(sampler2D(brdfTexture, filteredSampler), vec2(nDotV, roughness)).rg;
+                    vec3 specularEnvironmentSubterm = f * environmentBrdf.x + environmentBrdf.y;
+                    vec3 specularEnvironment = environmentFilter * specularEnvironmentSubterm * ambientLight;
+                    vec3 specularIntensity = f * (1.0 - roughness);
+                    vec3 specular = specularEnvironment * specularIntensity * lighting.ssrlIntensity;
+
                     // compute color
-                    specularScreen = lightAccum + diffuse;
+                    specularScreen = lightAccum + diffuse + specular;
 
                     // compute weight
                     specularScreenWeight =

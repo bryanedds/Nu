@@ -668,6 +668,7 @@ type [<SymbolicExpansion>] Lighting3dConfig =
       SsvfSteps : int
       SsvfAsymmetry : single
       SsrlEnabled : bool
+      SsrlIntensity : single
       SsrlDetail : single
       SsrlRefinementsMax : int
       SsrlRayThickness : single
@@ -742,6 +743,7 @@ type [<SymbolicExpansion>] Lighting3dConfig =
           SsvfSteps = Constants.Render.SsvfStepsDefault
           SsvfAsymmetry = Constants.Render.SsvfAsymmetryDefault
           SsrlEnabled = Constants.Render.SsrlEnabledLocalDefault
+          SsrlIntensity = Constants.Render.SsrlIntensityDefault
           SsrlDetail = Constants.Render.SsrlDetailDefault
           SsrlRefinementsMax = Constants.Render.SsrlRefinementsMaxDefault
           SsrlRayThickness = Constants.Render.SsrlRayThicknessDefault
@@ -4436,7 +4438,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite depthTexture2 renderer.VulkanContext.RenderCommandBuffer
         PhysicallyBased.drawPhysicallyBasedDeferredColoringSurface
             eyeCenter view geometryProjection renderer.LightingConfig.LightAmbientBoostCutoff renderer.LightingConfig.LightAmbientBoostScalar
-            ssrlEnabled renderer.LightingConfig.SsrlDetail renderer.LightingConfig.SsrlRefinementsMax renderer.LightingConfig.SsrlRayThickness renderer.LightingConfig.SsrlTowardEyeCutoff
+            ssrlEnabled renderer.LightingConfig.SsrlIntensity renderer.LightingConfig.SsrlDetail renderer.LightingConfig.SsrlRefinementsMax renderer.LightingConfig.SsrlRayThickness renderer.LightingConfig.SsrlTowardEyeCutoff
             renderer.LightingConfig.SsrlDepthCutoff renderer.LightingConfig.SsrlDepthCutoffMargin renderer.LightingConfig.SsrlDistanceCutoff renderer.LightingConfig.SsrlDistanceCutoffMargin
             renderer.LightingConfig.SsrlRoughnessCutoff renderer.LightingConfig.SsrlRoughnessCutoffMargin renderer.LightingConfig.SsrlSlopeCutoff renderer.LightingConfig.SsrlSlopeCutoffMargin
             renderer.LightingConfig.SsrlEdgeHorizontalMargin renderer.LightingConfig.SsrlEdgeVerticalMargin
