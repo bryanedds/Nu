@@ -658,11 +658,10 @@ module internal AmbientState =
 
     let internal tryGetWindowFullScreen state =
         match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
-        | Some window ->            
-            let mutable width, height = 0, 0
-            SDL3.SDL_GetWindowSizeInPixels (window, &&width, &&height) |> ignore
-            let displayMode = SdlDeps.getDisplayModeInternal window
-            Some (width = displayMode.w || height = displayMode.h)
+        | Some window ->
+            let flags = SDL3.SDL_GetWindowFlags window
+            let fullScreen = flags &&& SDL_WindowFlags.SDL_WINDOW_FULLSCREEN <> LanguagePrimitives.EnumOfValue 0UL
+            Some fullScreen
         | _ -> None
 
     let internal trySetWindowFullScreen fullScreen state =
@@ -702,7 +701,8 @@ module internal AmbientState =
         match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
         | Some window ->
             let pixelDensity = SDL3.SDL_GetWindowPixelDensity window
-            SDL3.SDL_SetWindowSize (window, int (single size.X / pixelDensity), int (single size.Y / pixelDensity)) |> ignore
+            SDL3.SDL_SetWindowSize (window, int (single size.X / pixelDensity), int (single size.Y / pixelDensity)) |> ignore<SDLBool>
+            SDL3.SDL_SyncWindow window |> ignore<SDLBool>
         | None -> ()
 
     let internal tryGetWindowProperties state =
