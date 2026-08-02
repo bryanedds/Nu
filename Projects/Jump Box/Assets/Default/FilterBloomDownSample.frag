@@ -7,12 +7,12 @@ struct BloomDownSampleStruct
     int karisAverageEnabled;
     int sampleLevel;
     vec2 sourceResolution;
-}
+};
 
 layout(set = 0, binding = 0) uniform BloomDownSampleUniform { BloomDownSampleStruct bloomDownSample; };
-layout(set = 0, binding = 1) uniform texture2D sourceTexture;
+layout(set = 0, binding = 1) uniform texture2D inputTexture;
 
-layout(set = 1, binding = 0) uniform sampler filteredSampler;
+layout(set = 1, binding = 0) uniform sampler inputSampler;
 
 layout(location = 0) in vec2 texCoordsOut;
 
@@ -52,22 +52,22 @@ void main()
     // d - e - f
     // - l - m -
     // g - h - i
-    vec3 a = texture(sampler2D(sourceTexture, filteredSampler), vec2(texCoordsOut.x - 2*x, texCoordsOut.y + 2*y)).rgb;
-    vec3 b = texture(sampler2D(sourceTexture, filteredSampler), vec2(texCoordsOut.x,       texCoordsOut.y + 2*y)).rgb;
-    vec3 c = texture(sampler2D(sourceTexture, filteredSampler), vec2(texCoordsOut.x + 2*x, texCoordsOut.y + 2*y)).rgb;
+    vec3 a = texture(sampler2D(inputTexture, inputSampler), vec2(texCoordsOut.x - 2*x, texCoordsOut.y + 2*y)).rgb;
+    vec3 b = texture(sampler2D(inputTexture, inputSampler), vec2(texCoordsOut.x,       texCoordsOut.y + 2*y)).rgb;
+    vec3 c = texture(sampler2D(inputTexture, inputSampler), vec2(texCoordsOut.x + 2*x, texCoordsOut.y + 2*y)).rgb;
 
-    vec3 d = texture(sampler2D(sourceTexture, filteredSampler), vec2(texCoordsOut.x - 2*x, texCoordsOut.y)).rgb;
-    vec3 e = texture(sampler2D(sourceTexture, filteredSampler), vec2(texCoordsOut.x,       texCoordsOut.y)).rgb;
-    vec3 f = texture(sampler2D(sourceTexture, filteredSampler), vec2(texCoordsOut.x + 2*x, texCoordsOut.y)).rgb;
+    vec3 d = texture(sampler2D(inputTexture, inputSampler), vec2(texCoordsOut.x - 2*x, texCoordsOut.y)).rgb;
+    vec3 e = texture(sampler2D(inputTexture, inputSampler), vec2(texCoordsOut.x,       texCoordsOut.y)).rgb;
+    vec3 f = texture(sampler2D(inputTexture, inputSampler), vec2(texCoordsOut.x + 2*x, texCoordsOut.y)).rgb;
 
-    vec3 g = texture(sampler2D(sourceTexture, filteredSampler), vec2(texCoordsOut.x - 2*x, texCoordsOut.y - 2*y)).rgb;
-    vec3 h = texture(sampler2D(sourceTexture, filteredSampler), vec2(texCoordsOut.x,       texCoordsOut.y - 2*y)).rgb;
-    vec3 i = texture(sampler2D(sourceTexture, filteredSampler), vec2(texCoordsOut.x + 2*x, texCoordsOut.y - 2*y)).rgb;
+    vec3 g = texture(sampler2D(inputTexture, inputSampler), vec2(texCoordsOut.x - 2*x, texCoordsOut.y - 2*y)).rgb;
+    vec3 h = texture(sampler2D(inputTexture, inputSampler), vec2(texCoordsOut.x,       texCoordsOut.y - 2*y)).rgb;
+    vec3 i = texture(sampler2D(inputTexture, inputSampler), vec2(texCoordsOut.x + 2*x, texCoordsOut.y - 2*y)).rgb;
 
-    vec3 j = texture(sampler2D(sourceTexture, filteredSampler), vec2(texCoordsOut.x - x,   texCoordsOut.y + y)).rgb;
-    vec3 k = texture(sampler2D(sourceTexture, filteredSampler), vec2(texCoordsOut.x + x,   texCoordsOut.y + y)).rgb;
-    vec3 l = texture(sampler2D(sourceTexture, filteredSampler), vec2(texCoordsOut.x - x,   texCoordsOut.y - y)).rgb;
-    vec3 m = texture(sampler2D(sourceTexture, filteredSampler), vec2(texCoordsOut.x + x,   texCoordsOut.y - y)).rgb;
+    vec3 j = texture(sampler2D(inputTexture, inputSampler), vec2(texCoordsOut.x - x,   texCoordsOut.y + y)).rgb;
+    vec3 k = texture(sampler2D(inputTexture, inputSampler), vec2(texCoordsOut.x + x,   texCoordsOut.y + y)).rgb;
+    vec3 l = texture(sampler2D(inputTexture, inputSampler), vec2(texCoordsOut.x - x,   texCoordsOut.y - y)).rgb;
+    vec3 m = texture(sampler2D(inputTexture, inputSampler), vec2(texCoordsOut.x + x,   texCoordsOut.y - y)).rgb;
 
     // Apply weighted distribution:
     // 0.5 + 0.125 + 0.125 + 0.125 + 0.125 = 1
