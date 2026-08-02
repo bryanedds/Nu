@@ -5989,6 +5989,20 @@ module PhysicallyBased =
         physicallyBasedPipelines
 
     let beginPhysicallyBasedPipelines physicallyBasedPipelines =
+        Pipeline.beginFrame physicallyBasedPipelines.FilterBox1dPipeline.Pipeline
+        Pipeline.beginFrame physicallyBasedPipelines.FilterBilateralDownSamplePipeline.Pipeline
+        Pipeline.beginFrame physicallyBasedPipelines.FilterBilateralUpSamplePipeline.Pipeline
+        Pipeline.beginFrame physicallyBasedPipelines.FilterGaussianEsmPipeline.Pipeline
+        Pipeline.beginFrame physicallyBasedPipelines.FilterGaussianDofPipeline.Pipeline
+        Pipeline.beginFrame physicallyBasedPipelines.FilterDepthOfFieldPipeline.Pipeline
+        Pipeline.beginFrame physicallyBasedPipelines.FilterBloomExtractPipeline.Pipeline
+        Pipeline.beginFrame physicallyBasedPipelines.FilterBloomDownSamplePipeline.Pipeline
+        Pipeline.beginFrame physicallyBasedPipelines.FilterBloomUpSamplePipeline.Pipeline
+        Pipeline.beginFrame physicallyBasedPipelines.FilterBloomApplyPipeline.Pipeline
+        Pipeline.beginFrame physicallyBasedPipelines.FilterToneMappingPipeline.Pipeline
+        Pipeline.beginFrame physicallyBasedPipelines.FilterChromaticAberrationPipeline.Pipeline
+        Pipeline.beginFrame physicallyBasedPipelines.FilterFxaaPipeline.Pipeline
+        Pipeline.beginFrame physicallyBasedPipelines.FilterGammaCorrectionPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.ShadowStaticPointPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.ShadowStaticSpotPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.ShadowStaticDirectionalPipeline.Pipeline
@@ -6013,16 +6027,22 @@ module PhysicallyBased =
         Pipeline.beginFrame physicallyBasedPipelines.DeferredCompositionPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.ForwardStaticPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.ForwardAnimatedPipeline.Pipeline
-        Pipeline.beginFrame physicallyBasedPipelines.FilterBox1dPipeline.Pipeline
-        Pipeline.beginFrame physicallyBasedPipelines.FilterGaussianEsmPipeline.Pipeline
-        Pipeline.beginFrame physicallyBasedPipelines.FilterGaussianDofPipeline.Pipeline
-        Pipeline.beginFrame physicallyBasedPipelines.FilterDepthOfFieldPipeline.Pipeline
-        Pipeline.beginFrame physicallyBasedPipelines.FilterToneMappingPipeline.Pipeline
-        Pipeline.beginFrame physicallyBasedPipelines.FilterChromaticAberrationPipeline.Pipeline
-        Pipeline.beginFrame physicallyBasedPipelines.FilterFxaaPipeline.Pipeline
-        Pipeline.beginFrame physicallyBasedPipelines.FilterGammaCorrectionPipeline.Pipeline
 
     let destroyPhysicallyBasedPipelines physicallyBasedPipelines context =
+        destroyFilterBoxPipeline physicallyBasedPipelines.FilterBox1dPipeline context
+        destroyFilterDownSamplePipeline physicallyBasedPipelines.FilterBilateralDownSamplePipeline context
+        destroyFilterUpSamplePipeline physicallyBasedPipelines.FilterBilateralUpSamplePipeline context
+        destroyFilterGaussianEsmPipeline physicallyBasedPipelines.FilterGaussianEsmPipeline context
+        destroyFilterGaussianDofPipeline physicallyBasedPipelines.FilterGaussianDofPipeline context
+        destroyFilterDepthOfFieldPipeline physicallyBasedPipelines.FilterDepthOfFieldPipeline context
+        destroyFilterBloomExtractPipeline physicallyBasedPipelines.FilterBloomExtractPipeline context
+        destroyFilterBloomDownSamplePipeline physicallyBasedPipelines.FilterBloomDownSamplePipeline context
+        destroyFilterBloomUpSamplePipeline physicallyBasedPipelines.FilterBloomUpSamplePipeline context
+        destroyFilterBloomApplyPipeline physicallyBasedPipelines.FilterBloomApplyPipeline context
+        destroyFilterToneMappingPipeline physicallyBasedPipelines.FilterToneMappingPipeline context
+        destroyFilterChromaticAberrationPipeline physicallyBasedPipelines.FilterChromaticAberrationPipeline context
+        destroyFilterFxaaPipeline physicallyBasedPipelines.FilterFxaaPipeline context
+        destroyFilterGammaCorrectionPipeline physicallyBasedPipelines.FilterGammaCorrectionPipeline context
         destroyPhysicallyBasedShadowPipeline physicallyBasedPipelines.ShadowStaticPointPipeline context
         destroyPhysicallyBasedShadowPipeline physicallyBasedPipelines.ShadowStaticSpotPipeline context
         destroyPhysicallyBasedShadowPipeline physicallyBasedPipelines.ShadowStaticDirectionalPipeline context
@@ -6047,16 +6067,23 @@ module PhysicallyBased =
         destroyPhysicallyBasedDeferredCompositionPipeline physicallyBasedPipelines.DeferredCompositionPipeline context
         destroyPhysicallyBasedPipeline physicallyBasedPipelines.ForwardStaticPipeline context
         destroyPhysicallyBasedPipeline physicallyBasedPipelines.ForwardAnimatedPipeline context
-        destroyFilterBoxPipeline physicallyBasedPipelines.FilterBox1dPipeline context
-        destroyFilterGaussianEsmPipeline physicallyBasedPipelines.FilterGaussianEsmPipeline context
-        destroyFilterGaussianDofPipeline physicallyBasedPipelines.FilterGaussianDofPipeline context
-        destroyFilterDepthOfFieldPipeline physicallyBasedPipelines.FilterDepthOfFieldPipeline context
-        destroyFilterToneMappingPipeline physicallyBasedPipelines.FilterToneMappingPipeline context
-        destroyFilterChromaticAberrationPipeline physicallyBasedPipelines.FilterChromaticAberrationPipeline context
-        destroyFilterFxaaPipeline physicallyBasedPipelines.FilterFxaaPipeline context
-        destroyFilterGammaCorrectionPipeline physicallyBasedPipelines.FilterGammaCorrectionPipeline context
 
     let reloadPhysicallyBasedShaders physicallyBasedPipelines context =
+        Pipeline.reloadShaders physicallyBasedPipelines.FilterBox1dPipeline.Pipeline context
+        Pipeline.reloadShaders physicallyBasedPipelines.FilterBilateralDownSamplePipeline.Pipeline context
+        Pipeline.reloadShaders physicallyBasedPipelines.FilterBilateralUpSamplePipeline.Pipeline context
+        Pipeline.reloadShaders physicallyBasedPipelines.FilterGaussianEsmPipeline.Pipeline context
+        Pipeline.reloadShaders physicallyBasedPipelines.FilterGaussianDofPipeline.Pipeline context
+        Pipeline.reloadShaders physicallyBasedPipelines.FilterDepthOfFieldPipeline.Pipeline context
+        Pipeline.reloadShaders physicallyBasedPipelines.FilterBloomExtractPipeline.Pipeline context
+        Pipeline.reloadShaders physicallyBasedPipelines.FilterBloomDownSamplePipeline.Pipeline context
+        Pipeline.reloadShaders physicallyBasedPipelines.FilterBloomUpSamplePipeline.Pipeline context
+        Pipeline.reloadShaders physicallyBasedPipelines.FilterBloomApplyPipeline.Pipeline context
+        Pipeline.reloadShaders physicallyBasedPipelines.FilterToneMappingPipeline.Pipeline context
+        Pipeline.reloadShaders physicallyBasedPipelines.FilterChromaticAberrationPipeline.Pipeline context
+        Pipeline.reloadShaders physicallyBasedPipelines.FilterFxaaPipeline.Pipeline context
+        Pipeline.reloadShaders physicallyBasedPipelines.FilterGammaCorrectionPipeline.Pipeline context
+        Pipeline.reloadShaders physicallyBasedPipelines.FilterFxaaPipeline.Pipeline context
         Pipeline.reloadShaders physicallyBasedPipelines.ShadowStaticPointPipeline.Pipeline context
         Pipeline.reloadShaders physicallyBasedPipelines.ShadowStaticSpotPipeline.Pipeline context
         Pipeline.reloadShaders physicallyBasedPipelines.ShadowStaticDirectionalPipeline.Pipeline context
@@ -6080,14 +6107,6 @@ module PhysicallyBased =
         Pipeline.reloadShaders physicallyBasedPipelines.DeferredCompositionPipeline.Pipeline context
         Pipeline.reloadShaders physicallyBasedPipelines.ForwardStaticPipeline.Pipeline context
         Pipeline.reloadShaders physicallyBasedPipelines.ForwardAnimatedPipeline.Pipeline context
-        Pipeline.reloadShaders physicallyBasedPipelines.FilterBox1dPipeline.Pipeline context
-        Pipeline.reloadShaders physicallyBasedPipelines.FilterGaussianEsmPipeline.Pipeline context
-        Pipeline.reloadShaders physicallyBasedPipelines.FilterGaussianDofPipeline.Pipeline context
-        Pipeline.reloadShaders physicallyBasedPipelines.FilterDepthOfFieldPipeline.Pipeline context
-        Pipeline.reloadShaders physicallyBasedPipelines.FilterToneMappingPipeline.Pipeline context
-        Pipeline.reloadShaders physicallyBasedPipelines.FilterChromaticAberrationPipeline.Pipeline context
-        Pipeline.reloadShaders physicallyBasedPipelines.FilterFxaaPipeline.Pipeline context
-        Pipeline.reloadShaders physicallyBasedPipelines.FilterGammaCorrectionPipeline.Pipeline context
 
 /// Memoizes physically-based scene loads.
 type PhysicallyBasedSceneClient () =
