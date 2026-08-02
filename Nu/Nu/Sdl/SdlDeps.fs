@@ -175,15 +175,15 @@ module SdlDeps =
             let fullScreenChanged = SDL3.SDL_SetWindowFullscreen (window, fullScreen) |> SDLBool.op_Implicit
 
             // when changing from full screen, set window to windowed size and make sure its title bar is visible
-            if fullScreenChanged && wasFullScreen && not fullScreen then
-                if SDL3.SDL_SyncWindow window |> SDLBool.op_Implicit then
-                    let windowSizeWindowed = Constants.Render.DisplayVirtualResolution * 2 // NOTE: hard-coded 2 means display scalar of size 2 is the default restore window size.
-                    if  SDL3.SDL_RestoreWindow window |> SDLBool.op_Implicit &&
+            if  fullScreenChanged && wasFullScreen && not fullScreen &&
+                SDL3.SDL_SyncWindow window |> SDLBool.op_Implicit then
+                let windowSizeWindowed = Constants.Render.DisplayVirtualResolution * 2 // NOTE: hard-coded 2 means display scalar of size 2 is the default restore window size.
+                if  SDL3.SDL_RestoreWindow window |> SDLBool.op_Implicit &&
+                    SDL3.SDL_SyncWindow window |> SDLBool.op_Implicit then
+                    let pixelDensity = SDL3.SDL_GetWindowPixelDensity window // restoration can change the window's display, and therefore its pixel density
+                    if  SDL3.SDL_SetWindowSize (window, int (single windowSizeWindowed.X / pixelDensity), int (single windowSizeWindowed.Y / pixelDensity)) |> SDLBool.op_Implicit &&
                         SDL3.SDL_SyncWindow window |> SDLBool.op_Implicit then
-                        let pixelDensity = SDL3.SDL_GetWindowPixelDensity window // restoration can change the window's display, and therefore its pixel density
-                        if  SDL3.SDL_SetWindowSize (window, int (single windowSizeWindowed.X / pixelDensity), int (single windowSizeWindowed.Y / pixelDensity)) |> SDLBool.op_Implicit &&
-                            SDL3.SDL_SyncWindow window |> SDLBool.op_Implicit then
-                            SDL3.SDL_SetWindowPosition (window, 100, 100) |> ignore<SDLBool> // NOTE: pretty arbitrary numbers here...
+                        SDL3.SDL_SetWindowPosition (window, 100, 100) |> ignore<SDLBool> // NOTE: pretty arbitrary numbers here...
 
         | None -> ()
         sdlDeps
