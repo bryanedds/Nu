@@ -246,24 +246,24 @@ type VulkanBuffer =
     static member advance buffer =
         buffer.BufferWrappersCursor_ <- inc buffer.BufferWrappersCursor_
 
-    /// Create a new Buffer.
+    /// Create a new buffer.
     static member create (bufferType : BufferType) bufferSize context =
         { BufferWrappersCursor_ = 0
           BufferWrappers_ = List [BufferWrapper.create bufferType bufferSize context]
           BufferType_ = bufferType
           BufferSize_ = bufferSize }
 
-    /// Write subdata to Buffer. Caller is reponsible for ensuring buffer width and height.
+    /// Write subdata to buffer. Caller is reponsible for ensuring buffer width and height.
     static member writeSubdata offset alignment size count data (buffer : VulkanBuffer) context =
         VulkanBuffer.ensureHeight buffer context
         BufferWrapper.write offset alignment size count data buffer.BufferWrapper context
 
-    /// Flush subdata from Buffer. Caller is reponsible for ensuring buffer width and height.
+    /// Flush subdata from buffer. Caller is reponsible for ensuring buffer width and height.
     static member flushSubdata offset alignment size count (buffer : VulkanBuffer) context =
         VulkanBuffer.ensureHeight buffer context
         BufferWrapper.flush offset alignment size count buffer.BufferWrapper context
 
-    /// Upload data to Buffer.
+    /// Upload data to buffer.
     static member uploadData size count data (buffer : VulkanBuffer) context =
         let bufferSize = size * count
         VulkanBuffer.ensureHeight buffer context
@@ -271,12 +271,12 @@ type VulkanBuffer =
         BufferWrapper.write 0 0 size count data buffer.BufferWrapper context
         BufferWrapper.flush 0 0 size count buffer.BufferWrapper context
 
-    /// Upload a value to Buffer.
+    /// Upload a value to buffer.
     static member uploadValue (value : 'a) buffer context =
         let mutable value = value
         VulkanBuffer.uploadData sizeof<'a> 1 (asNativeInt &value) buffer context
 
-    /// Upload an array to Buffer.
+    /// Upload an array to buffer.
     static member uploadArray (array : 'a array) buffer context =
         use arrayPin = new ArrayPin<_> (array)
         VulkanBuffer.uploadData sizeof<'a> array.Length arrayPin.NativeInt buffer context
@@ -327,7 +327,7 @@ type VulkanBuffer =
         use arrayPin = new ArrayPin<_> (memory)
         VulkanBuffer.createIndexStaged size arrayPin.NativeInt context
     
-    /// Destroy Buffer.
+    /// Destroy buffer.
     static member destroy (buffer : VulkanBuffer) context =
         for i in 0 .. dec buffer.BufferWrappers_.Count do
             BufferWrapper.destroy buffer.BufferWrappers_[i] context
