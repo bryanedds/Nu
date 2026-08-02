@@ -210,7 +210,7 @@ void computeSsrl(float depth, vec4 position, vec3 albedo, float roughness, float
                     vec3 environmentFilter = texture(sampler2D(environmentFilterTexture, unfilteredSampler), currentTexCoords).rgb;
 
                     // compute diffuse
-                    vec4 ambientColorAndBrightness = texture(sampler2D(ambientTexture, unfilteredSampler), texCoords);
+                    vec4 ambientColorAndBrightness = texture(sampler2D(ambientTexture, unfilteredSampler), currentTexCoords);
                     vec3 ambientColor = ambientColorAndBrightness.rgb;
                     float ambientBrightness = ambientColorAndBrightness.a;
                     float ambientBoostFactor = smoothstep(1.0 - lighting.lightAmbientBoostCutoff, 1.0, 1.0 - roughness);
