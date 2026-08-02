@@ -4535,64 +4535,44 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead compositionTexture renderer.VulkanContext.RenderCommandBuffer
         Texture.recordTransitionLayout DepthAttachmentWrite DepthAttachmentRead zTexture renderer.VulkanContext.RenderCommandBuffer
 
-        (*// apply bloom filter when desired
+        // apply bloom filter when desired
         if topLevelRender && renderer.RendererConfig.BloomEnabled && renderer.LightingConfig.BloomEnabled then
 
-            // setup bloom extract textures and viewport
-            let (bloomExtractTexture, bloomExtractRenderbuffer, bloomExtractFramebuffer) = renderer.PhysicallyBasedTextures.BloomExtractBuffers
-            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, bloomExtractRenderbuffer)
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, bloomExtractFramebuffer)
-            OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
-            OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
-            OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
-            OpenGL.Hl.Assert ()
-
-            // render bloom extract textures
-            OpenGL.PhysicallyBased.DrawFilterBloomExtractSurface (renderer.LightingConfig.BloomThreshold, compositionTexture, renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterBloomExtractShader, renderer.PhysicallyBasedStaticVao)
-            OpenGL.Hl.Assert ()
-
-            // setup bloom sample textures and viewport (no clearing or viewport config needed)
-            let (bloomSampleTextures, bloomSampleRenderbuffer, bloomSampleFramebuffer) = renderer.PhysicallyBasedBuffers.BloomSampleBuffers
-            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, bloomSampleRenderbuffer)
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, bloomSampleFramebuffer)
-            OpenGL.Hl.Assert ()
+            // render bloom extract texture
+            let bloomExtractTexture = renderer.PhysicallyBasedAttachments.BloomExtractAttachment
+            Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite bloomExtractTexture renderer.VulkanContext.RenderCommandBuffer
+            PhysicallyBased.drawFilterBloomExtractSurface
+                renderer.LightingConfig.BloomThreshold compositionTexture renderer.FilteredSampler bloomExtractTexture geometryResolution
+                renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterBloomExtractPipeline renderer.VulkanContext
+            Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead bloomExtractTexture renderer.VulkanContext.RenderCommandBuffer
 
             // down-sample bloom textures
-            OpenGL.PhysicallyBased.DrawBloomDownSamplesSurface
-                (geometryResolution.X, geometryResolution.Y, Constants.Render.BloomSampleLevels, renderer.LightingConfig.BloomKarisAverageEnabled, bloomExtractTexture, bloomSampleTextures,
-                 renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterBloomDownSampleShader, renderer.PhysicallyBasedStaticVao)
-            OpenGL.Hl.Assert ()
+            let bloomSampleTextures = renderer.PhysicallyBasedAttachments.BloomSampleAttachments
+            PhysicallyBased.drawFilterBloomDownSampleSurfaces
+                renderer.LightingConfig.BloomKarisAverageEnabled geometryResolution bloomExtractTexture renderer.FilteredSampler bloomSampleTextures (geometryResolution / 2)
+                renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterBloomDownSamplePipeline renderer.VulkanContext
 
             // up-sample bloom textures
-            OpenGL.PhysicallyBased.DrawBloomUpSamplesSurface
-                (geometryResolution.X, geometryResolution.Y, Constants.Render.BloomSampleLevels, renderer.LightingConfig.BloomFilterRadius, bloomSampleTextures,
-                 renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterBloomUpSampleShader, renderer.PhysicallyBasedStaticVao)
-            OpenGL.Hl.Assert ()
+            PhysicallyBased.drawFilterBloomUpSampleSurfaces
+                renderer.LightingConfig.BloomFilterRadius bloomSampleTextures renderer.FilteredSampler geometryResolution
+                renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterBloomUpSamplePipeline renderer.VulkanContext
 
-            // setup bloom apply buffer and viewport
-            let (_, bloomApplyRenderbuffer, bloomApplyFramebuffer) = renderer.PhysicallyBasedBuffers.BloomApplyBuffers
-            OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, bloomApplyRenderbuffer)
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, bloomApplyFramebuffer)
-            OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
-            OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
-            OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
-            OpenGL.Hl.Assert ()
+            // render bloom apply texture
+            let bloomApplyTexture = renderer.PhysicallyBasedAttachments.BloomApplyAttachment
+            Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite bloomApplyTexture renderer.VulkanContext.RenderCommandBuffer
+            PhysicallyBased.drawFilterBloomApplySurface
+                renderer.LightingConfig.BloomStrength bloomSampleTextures[0] compositionTexture renderer.FilteredSampler bloomApplyTexture geometryResolution
+                renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterBloomApplyPipeline renderer.VulkanContext
+            Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead compositionTexture renderer.VulkanContext.RenderCommandBuffer
 
-            // render bloom apply pass
-            OpenGL.PhysicallyBased.DrawBloomApplySurface
-                (renderer.LightingConfig.BloomStrength, bloomSampleTextures[0], compositionTexture,
-                 renderer.PhysicallyBasedQuad, renderer.FilterShaders.FilterBloomApplyShader, renderer.PhysicallyBasedStaticVao)
-            OpenGL.Hl.Assert ()
-
-            // blit bloom apply buffer to composition buffer
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, bloomApplyFramebuffer)
-            OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, compositionFramebuffer)
-            OpenGL.Gl.BlitFramebuffer
-                (0, 0, geometryResolution.X, geometryResolution.Y,
-                 0, 0, geometryResolution.X, geometryResolution.Y,
-                 OpenGL.ClearBufferMask.ColorBufferBit,
-                 OpenGL.BlitFramebufferFilter.Nearest)
-            OpenGL.Hl.Assert ()*)
+            // blit bloom apply texture to composition texture
+            Texture.recordTransitionLayout ColorAttachmentRead TransferSrc bloomApplyTexture renderer.VulkanContext.RenderCommandBuffer
+            Texture.recordTransitionLayout ColorAttachmentRead TransferDst compositionTexture renderer.VulkanContext.RenderCommandBuffer
+            let bounds = VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)
+            let mutable region = Hl.makeBlit 0 0 0 0 bounds bounds
+            DeviceApi.vkCmdBlitImage (renderer.VulkanContext.RenderCommandBuffer, bloomApplyTexture.Image, TransferSrc.VkImageLayout, compositionTexture.Image, TransferDst.VkImageLayout, 1u, &&region, VkFilter.Nearest)
+            Texture.recordTransitionLayout TransferSrc ColorAttachmentRead bloomApplyTexture renderer.VulkanContext.RenderCommandBuffer
+            Texture.recordTransitionLayout TransferDst ColorAttachmentRead compositionTexture renderer.VulkanContext.RenderCommandBuffer
 
         // apply depth of field when desired
         if topLevelRender && renderer.RendererConfig.DepthOfFieldEnabled && renderer.LightingConfig.DepthOfFieldEnabled then

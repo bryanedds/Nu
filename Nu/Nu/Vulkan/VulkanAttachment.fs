@@ -7,6 +7,7 @@
 namespace Nu.Vulkan
 open System
 open Vortice.Vulkan
+open Prime
 open Nu
 
 [<RequireQualifiedAccess>]
@@ -48,17 +49,36 @@ module Attachment =
     let destroyDepthAttachment (depth : Texture) context =
         Texture.destroy depth context
 
+    /// Create bloom sample attachments.
+    let createBloomSampleAttachments resolutionX resolutionY context =
+        [|for i in 0 .. dec Constants.Render.BloomSampleLevels do
+            let (resolutionX', resolutionY') = (resolutionX >>> i, resolutionY >>> i)
+            if resolutionX' = 0 || resolutionY' = 0 then failwith ("Invalid resolution [" + string resolutionX' + " " + string resolutionY' + "] for bloom filter level.")
+            createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba16f Rgba resolutionX' resolutionY' context|]
+
+    /// Update size of bloom sample attachments.
+    let updateBloomSampleAttachmentsSize resolutionX resolutionY (bloomSamples : Texture array) context =
+        for i in 0 .. dec Constants.Render.BloomSampleLevels do
+            let (resolutionX', resolutionY') = (resolutionX >>> i, resolutionY >>> i)
+            let metadata = TextureMetadata.make resolutionX' resolutionY'
+            Texture.updateSize metadata bloomSamples[i] context
+
+    /// Destroy bloom sample attachments.
+    let destroyBloomSampleAttachments (bloomSamples : Texture array) context =
+        for i in 0 .. dec Constants.Render.BloomSampleLevels do
+            Texture.destroy bloomSamples[i] context
+
     /// Create tone-mapping attachments.
     let createToneMappingAttachments resolutionX resolutionY context =
         createColorAttachment Texture2d (VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferSrc ||| VkImageUsageFlags.TransferDst) Rgb16f Rgb resolutionX resolutionY context
 
     /// Update size of tone-mapping attachments.
-    let updateToneMappingAttachmentSize resolutionX resolutionY toneMapping context =
+    let updateToneMappingAttachmentsSize resolutionX resolutionY toneMapping context =
         let metadata = TextureMetadata.make resolutionX resolutionY
         Texture.updateSize metadata toneMapping context
 
     /// Destroy tone-mapping attachments.
-    let destroyToneMappingAttachment (toneMapping : Texture) context =
+    let destroyToneMappingAttachments (toneMapping : Texture) context =
         Texture.destroy toneMapping context
 
     /// Create gamma correction attachments.
@@ -66,7 +86,7 @@ module Attachment =
         createColorAttachment Texture2d (VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferSrc) Rgba16f Rgba resolutionX resolutionY context
 
     /// Update size of gamma-correction attachments.
-    let updateGammaCorrectionAttachmentSize resolutionX resolutionY gammaCorrection context =
+    let updateGammaCorrectionAttachmentsSize resolutionX resolutionY gammaCorrection context =
         let metadata = TextureMetadata.make resolutionX resolutionY
         Texture.updateSize metadata gammaCorrection context
 

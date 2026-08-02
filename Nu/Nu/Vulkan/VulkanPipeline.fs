@@ -20,6 +20,7 @@ type VulkanBlend =
     | VulkanUnblended
     | VulkanTransparent
     | VulkanAdditive
+    | VulkanSummation
     | VulkanOverwrite
     | VulkanImGui
 
@@ -38,6 +39,11 @@ type VulkanBlend =
                 (Some
                     (VkBlendFactor.SrcAlpha, VkBlendFactor.One,
                      VkBlendFactor.One, VkBlendFactor.Zero))
+        | VulkanSummation ->
+            Hl.makeBlendAttachment
+                (Some
+                    (VkBlendFactor.One, VkBlendFactor.One,
+                     VkBlendFactor.One, VkBlendFactor.One))
         | VulkanOverwrite ->
             Hl.makeBlendAttachment
                 (Some

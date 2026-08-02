@@ -56,8 +56,8 @@ type FxaaStruct =
     [<FieldOffset(8)>] val mutable reduceMulDivisor : single
 
 [<Struct; StructLayout (LayoutKind.Explicit)>]
-type BloomApplyStruct =
-    [<FieldOffset(0)>] val mutable strength : single
+type BloomExtractStruct =
+    [<FieldOffset(0)>] val mutable threshold : single
 
 [<Struct; StructLayout (LayoutKind.Explicit)>]
 type BloomDownSampleStruct =
@@ -66,12 +66,12 @@ type BloomDownSampleStruct =
     [<FieldOffset(8)>] val mutable sourceResolution : Vector2
 
 [<Struct; StructLayout (LayoutKind.Explicit)>]
-type BloomExtractStruct =
-    [<FieldOffset(0)>] val mutable threshold : single
-
-[<Struct; StructLayout (LayoutKind.Explicit)>]
 type BloomUpSampleStruct =
     [<FieldOffset(0)>] val mutable radius : single
+
+[<Struct; StructLayout (LayoutKind.Explicit)>]
+type BloomApplyStruct =
+    [<FieldOffset(0)>] val mutable strength : single
 
 [<Struct; StructLayout (LayoutKind.Explicit)>]
 type ShadowVertStruct =
@@ -202,6 +202,9 @@ type PhysicallyBasedAttachments =
       ColorFull1Attachment : Texture
       ColorHalf0Attachment : Texture
       ColorHalf1Attachment : Texture
+      BloomExtractAttachment : Texture
+      BloomSampleAttachments : Texture array
+      BloomApplyAttachment : Texture
       ToneMappingAttachment : Texture
       GammaCorrectionAttachment : Texture
       ShadowTextureArrayAttachments : Texture * Texture
@@ -714,6 +717,26 @@ type FilterDepthOfFieldPipeline =
       DepthOfFieldUniform : VulkanBuffer
       Pipeline : Pipeline }
 
+/// Describes a bloom extract filter pipeline that's loaded into GPU.
+type FilterBloomExtractPipeline =
+    { BloomExtractUniform : VulkanBuffer
+      Pipeline : Pipeline }
+
+/// Describes a bloom down-sample filter pipeline that's loaded into GPU.
+type FilterBloomDownSamplePipeline =
+    { BloomDownSampleUniform : VulkanBuffer
+      Pipeline : Pipeline }
+
+/// Describes a bloom up-sample filter pipeline that's loaded into GPU.
+type FilterBloomUpSamplePipeline =
+    { BloomUpSampleUniform : VulkanBuffer
+      Pipeline : Pipeline }
+
+/// Describes a bloom apply filter pipeline that's loaded into GPU.
+type FilterBloomApplyPipeline =
+    { BloomApplyUniform : VulkanBuffer
+      Pipeline : Pipeline }
+
 /// Describes a tone-mapping filter pipeline that's loaded into GPU.
 type FilterToneMappingPipeline =
     { ToneMappingUniform : VulkanBuffer
@@ -741,6 +764,10 @@ type PhysicallyBasedPipelines =
       FilterGaussianEsmPipeline : FilterGaussianEsmPipeline
       FilterGaussianDofPipeline : FilterGaussianDofPipeline
       FilterDepthOfFieldPipeline : FilterDepthOfFieldPipeline
+      FilterBloomExtractPipeline : FilterBloomExtractPipeline
+      FilterBloomDownSamplePipeline : FilterBloomDownSamplePipeline
+      FilterBloomUpSamplePipeline : FilterBloomUpSamplePipeline
+      FilterBloomApplyPipeline : FilterBloomApplyPipeline
       FilterToneMappingPipeline : FilterToneMappingPipeline
       FilterChromaticAberrationPipeline : FilterChromaticAberrationPipeline
       FilterFxaaPipeline : FilterFxaaPipeline
@@ -870,6 +897,11 @@ module PhysicallyBased =
         let colorHalf0Attachment = Attachment.createColorAttachment Texture2d allUsageFlags Rgba16f Rgba (geometryViewport.Bounds.Size.X / 2) (geometryViewport.Bounds.Size.Y / 2) context
         let colorHalf1Attachment = Attachment.createColorAttachment Texture2d allUsageFlags Rgba16f Rgba (geometryViewport.Bounds.Size.X / 2) (geometryViewport.Bounds.Size.Y / 2) context
 
+        // bloom attachments
+        let bloomExtractAttachment = Attachment.createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba16f Rgba geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y context
+        let bloomSampleAttachments = Attachment.createBloomSampleAttachments (geometryViewport.Bounds.Size.X / 2) (geometryViewport.Bounds.Size.Y / 2) context
+        let bloomApplyAttachment = Attachment.createColorAttachment Texture2d (VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferSrc) Rgba16f Rgba geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y context
+
         // create tone-mapping attachments
         let toneMappingAttachment = Attachment.createToneMappingAttachments geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y context
 
@@ -935,6 +967,9 @@ module PhysicallyBased =
           ColorFull1Attachment = colorFull1Attachment
           ColorHalf0Attachment = colorHalf0Attachment
           ColorHalf1Attachment = colorHalf1Attachment
+          BloomExtractAttachment = bloomExtractAttachment
+          BloomSampleAttachments = bloomSampleAttachments
+          BloomApplyAttachment = bloomApplyAttachment
           ToneMappingAttachment = toneMappingAttachment
           GammaCorrectionAttachment = gammaCorrectionAttachment
           ShadowTextureArrayAttachments = shadowTextureArrayAttachments
@@ -954,6 +989,19 @@ module PhysicallyBased =
 
     /// Update the size of the attachments. Must be used every frame.
     let updatePhysicallyBasedAttachmentsSize (geometryViewport : Viewport) (attachments : PhysicallyBasedAttachments) context =
+        Attachment.updateColorAttachmentSize geometryViewport.ShadowTextureResolution.X geometryViewport.ShadowTextureResolution.Y attachments.GaussianEsmAttachment context
+        Attachment.updateColorAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.ColorFull0Attachment context
+        Attachment.updateColorAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.ColorFull1Attachment context
+        Attachment.updateColorAttachmentSize (geometryViewport.Bounds.Size.X / 2) (geometryViewport.Bounds.Size.Y / 2) attachments.ColorHalf0Attachment context
+        Attachment.updateColorAttachmentSize (geometryViewport.Bounds.Size.X / 2) (geometryViewport.Bounds.Size.Y / 2) attachments.ColorHalf1Attachment context
+        Attachment.updateColorAttachmentSize (geometryViewport.Bounds.Size.X / 2) (geometryViewport.Bounds.Size.Y / 2) attachments.DownSampleColorAttachment context
+        Attachment.updateColorAttachmentSize (geometryViewport.Bounds.Size.X / 2) (geometryViewport.Bounds.Size.Y / 2) attachments.DownSampleDepthAttachment context
+        Attachment.updateColorAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.UpSampleColorAttachment context
+        Attachment.updateColorAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.BloomExtractAttachment context
+        Attachment.updateBloomSampleAttachmentsSize (geometryViewport.Bounds.Size.X / 2) (geometryViewport.Bounds.Size.Y / 2) attachments.BloomSampleAttachments context
+        Attachment.updateColorAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.BloomApplyAttachment context
+        Attachment.updateToneMappingAttachmentsSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.ToneMappingAttachment context
+        Attachment.updateGammaCorrectionAttachmentsSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.GammaCorrectionAttachment context
         Attachment.updateShadowTextureArrayAttachmentsSize geometryViewport.ShadowTextureResolution.X geometryViewport.ShadowTextureResolution.Y attachments.ShadowTextureArrayAttachments context
         for i in 0 .. dec attachments.ShadowMapAttachmentsArray.Length do
             Attachment.updateShadowMapAttachmentsSize geometryViewport.ShadowMapResolution.X geometryViewport.ShadowMapResolution.Y attachments.ShadowMapAttachmentsArray[i] context
@@ -970,19 +1018,22 @@ module PhysicallyBased =
         Attachment.updateColorAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.SsaoFilteredAttachment context
         Attachment.updateColoringAttachmentsSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.ColoringAttachments context
         Attachment.updateCompositionAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.CompositionAttachment context
-        Attachment.updateColorAttachmentSize geometryViewport.ShadowTextureResolution.X geometryViewport.ShadowTextureResolution.Y attachments.GaussianEsmAttachment context
-        Attachment.updateColorAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.ColorFull0Attachment context
-        Attachment.updateColorAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.ColorFull1Attachment context
-        Attachment.updateColorAttachmentSize (geometryViewport.Bounds.Size.X / 2) (geometryViewport.Bounds.Size.Y / 2) attachments.ColorHalf0Attachment context
-        Attachment.updateColorAttachmentSize (geometryViewport.Bounds.Size.X / 2) (geometryViewport.Bounds.Size.Y / 2) attachments.ColorHalf1Attachment context
-        Attachment.updateColorAttachmentSize (geometryViewport.Bounds.Size.X / 2) (geometryViewport.Bounds.Size.Y / 2) attachments.DownSampleColorAttachment context
-        Attachment.updateColorAttachmentSize (geometryViewport.Bounds.Size.X / 2) (geometryViewport.Bounds.Size.Y / 2) attachments.DownSampleDepthAttachment context
-        Attachment.updateColorAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.UpSampleColorAttachment context
-        Attachment.updateToneMappingAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.ToneMappingAttachment context
-        Attachment.updateGammaCorrectionAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.GammaCorrectionAttachment context
 
     /// Destroy the physically-based attachments.
     let destroyPhysicallyBasedAttachments (attachments : PhysicallyBasedAttachments) context =
+        Attachment.destroyColorAttachment attachments.GaussianEsmAttachment context
+        Attachment.destroyColorAttachment attachments.ColorFull0Attachment context
+        Attachment.destroyColorAttachment attachments.ColorFull1Attachment context
+        Attachment.destroyColorAttachment attachments.ColorHalf0Attachment context
+        Attachment.destroyColorAttachment attachments.ColorHalf1Attachment context
+        Attachment.destroyColorAttachment attachments.DownSampleColorAttachment context
+        Attachment.destroyColorAttachment attachments.DownSampleDepthAttachment context
+        Attachment.destroyColorAttachment attachments.UpSampleColorAttachment context
+        Attachment.destroyColorAttachment attachments.BloomExtractAttachment context
+        Attachment.destroyBloomSampleAttachments attachments.BloomSampleAttachments context
+        Attachment.destroyColorAttachment attachments.BloomApplyAttachment context
+        Attachment.destroyToneMappingAttachments attachments.ToneMappingAttachment context
+        Attachment.destroyGammaCorrectionAttachment attachments.GammaCorrectionAttachment context
         Attachment.destroyShadowTextureArrayAttachments attachments.ShadowTextureArrayAttachments context
         for i in 0 .. dec attachments.ShadowMapAttachmentsArray.Length do
             Attachment.destroyShadowMapAttachments attachments.ShadowMapAttachmentsArray[i] context
@@ -999,16 +1050,6 @@ module PhysicallyBased =
         Attachment.destroyColorAttachment attachments.SsaoFilteredAttachment context
         Attachment.destroyColoringAttachments attachments.ColoringAttachments context
         Attachment.destroyCompositionAttachment attachments.CompositionAttachment context
-        Attachment.destroyColorAttachment attachments.GaussianEsmAttachment context
-        Attachment.destroyColorAttachment attachments.ColorFull0Attachment context
-        Attachment.destroyColorAttachment attachments.ColorFull1Attachment context
-        Attachment.destroyColorAttachment attachments.ColorHalf0Attachment context
-        Attachment.destroyColorAttachment attachments.ColorHalf1Attachment context
-        Attachment.destroyColorAttachment attachments.DownSampleColorAttachment context
-        Attachment.destroyColorAttachment attachments.DownSampleDepthAttachment context
-        Attachment.destroyColorAttachment attachments.UpSampleColorAttachment context
-        Attachment.destroyToneMappingAttachment attachments.ToneMappingAttachment context
-        Attachment.destroyGammaCorrectionAttachment attachments.GammaCorrectionAttachment context
 
     /// Create a mesh for a physically-based quad.
     let createPhysicallyBasedQuadMesh () =
@@ -2466,6 +2507,453 @@ module PhysicallyBased =
             // specify sampler
             let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 1 Unit pipeline.Pipeline $ fun vkSet ->
                 Pipeline.writeDescriptorSampler 0 0 unfilteredSampler vkSet
+
+            // set up render
+            let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
+            let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
+            let mutable vkViewport = Hl.makeViewport false renderArea
+            let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue)
+            DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
+            DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
+            DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&renderArea)
+
+            // set up pipeline
+            DeviceApi.vkCmdBindPipeline (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
+
+            // bind vertex and index buffers
+            let vertexBuffers = [|geometry.VertexBuffer.VkBuffer; geometry.InstanceBuffer.VkBuffer|]
+            let vertexOffsets = [|0UL; 0UL|]
+            use vertexBuffersPin = new ArrayPin<_> (vertexBuffers)
+            use vertexOffsetsPin = new ArrayPin<_> (vertexOffsets)
+            DeviceApi.vkCmdBindVertexBuffers (context.RenderCommandBuffer, 0u, 2u, vertexBuffersPin.Pointer, vertexOffsetsPin.Pointer)
+            DeviceApi.vkCmdBindIndexBuffer (context.RenderCommandBuffer, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
+
+            // bind descriptor sets
+            DeviceApi.vkCmdBindDescriptorSets (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, &&uniformsDescriptorSet, 0u, nullPtr)
+            DeviceApi.vkCmdBindDescriptorSets (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, &&samplerDescriptorSet, 0u, nullPtr)
+
+            // draw
+            DeviceApi.vkCmdDrawIndexed (context.RenderCommandBuffer, uint geometry.ElementCount, 1u, 0u, 0, 0u)
+
+            // tear down render
+            DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
+
+            // report drawing
+            Hl.reportDrawCall 1 true
+
+            // advance pipeline
+            Pipeline.advance pipeline.Pipeline
+
+            // advance rendering command buffer
+            VulkanContext.advanceRenderCommandBuffer context
+
+        // abort
+        | None -> Log.warnOnce ("Cannot draw " + getTypeName pipeline + " because VkPipeline does not exist.")
+
+    /// Create a bloom down-sample filter pipeline.
+    let createFilterBloomDownSamplePipeline colorAttachmentFormat context =
+
+        // create set 0 uniform buffers
+        let bloomDownSampleUniform = VulkanBuffer.create Uniform sizeof<BloomDownSampleStruct> context
+
+        // create pipeline
+        let pipeline =
+            Pipeline.create
+                Constants.Paths.FilterBloomDownSampleShaderFilePath
+                [|VulkanUnblended|] [|false|] StaticVertices
+                [|Pipeline.descriptorSet<int>
+                    [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // bloomDownSample
+                      Pipeline.descriptor 1 SampledImage FragmentStage 1|] // inputTexture
+                  Pipeline.descriptorSet<Unit>
+                    [|Pipeline.descriptor 0 Sampler FragmentStage 1|]|] // inputSampler
+                [||] [|colorAttachmentFormat|] None
+                [|bloomDownSampleUniform|]
+
+        // make pipeline
+        let filterBloomDownSamplePipeline =
+            { BloomDownSampleUniform = bloomDownSampleUniform
+              Pipeline = pipeline }
+
+        // fin
+        filterBloomDownSamplePipeline
+
+    /// Destroy a bloom down-sample filter pipeline.
+    let destroyFilterBloomDownSamplePipeline (bloomDownSamplePipeline : FilterBloomDownSamplePipeline) context =
+        Pipeline.destroy bloomDownSamplePipeline.Pipeline context
+
+    /// Draw the bloom down-sample filter passes of a physically-based surface.
+    let drawFilterBloomDownSampleSurfaces
+        (karisAverageEnabled : bool)
+        (inputResolution : Vector2i)
+        (inputTexture : Texture)
+        (inputSampler : Sampler)
+        (colorAttachments : Texture array)
+        (resolution : Vector2i)
+        (geometry : PhysicallyBasedGeometry)
+        (pipeline : FilterBloomDownSamplePipeline)
+        (context : VulkanContext) =
+
+        // only draw when required vkPipeline exists
+        match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
+        | Some vkPipeline ->
+
+            // draw down-sample levels
+            for i in 0 .. dec Constants.Render.BloomSampleLevels do
+
+                // compute source resolution and texture
+                let sourceResolution = v2i (inputResolution.X >>> i) (inputResolution.Y >>> i)
+                let sourceTexture = if i = 0 then inputTexture else colorAttachments[dec i]
+
+                // compute target resolution and texture
+                let targetResolution = v2i (resolution.X >>> i) (resolution.Y >>> i)
+                let targetTexture = colorAttachments[i]
+
+                // transition target to write
+                Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite targetTexture context.RenderCommandBuffer
+
+                // specify uniforms
+                let mutable uniformsDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.Pipeline.DrawIndex pipeline.Pipeline $ fun vkSet ->
+
+                    // specify bloom down-sample
+                    let karisAverageEnabledInt = if karisAverageEnabled then 1 else 0
+                    let bloomDownSample = BloomDownSampleStruct (karisAverageEnabled = karisAverageEnabledInt, sampleLevel = i, sourceResolution = sourceResolution.V2)
+                    VulkanBuffer.uploadValue bloomDownSample pipeline.BloomDownSampleUniform context
+                    Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.BloomDownSampleUniform vkSet
+
+                    // specify input texture
+                    Pipeline.writeDescriptorSampledTexture 1 0 sourceTexture vkSet
+
+                // specify sampler
+                let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 1 Unit pipeline.Pipeline $ fun vkSet ->
+                    Pipeline.writeDescriptorSampler 0 0 inputSampler vkSet
+
+                // set up render
+                let mutable renderArea = VkRect2D (0, 0, uint targetResolution.X, uint targetResolution.Y)
+                let mutable vkViewport = Hl.makeViewport false renderArea
+                let mutable renderingInfo = Hl.makeRenderingInfo [|targetTexture.ImageView|] None renderArea None
+                DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
+                DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
+                DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&renderArea)
+
+                // set up pipeline
+                DeviceApi.vkCmdBindPipeline (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
+
+                // bind vertex and index buffers
+                let vertexBuffers = [|geometry.VertexBuffer.VkBuffer; geometry.InstanceBuffer.VkBuffer|]
+                let vertexOffsets = [|0UL; 0UL|]
+                use vertexBuffersPin = new ArrayPin<_> (vertexBuffers)
+                use vertexOffsetsPin = new ArrayPin<_> (vertexOffsets)
+                DeviceApi.vkCmdBindVertexBuffers (context.RenderCommandBuffer, 0u, 2u, vertexBuffersPin.Pointer, vertexOffsetsPin.Pointer)
+                DeviceApi.vkCmdBindIndexBuffer (context.RenderCommandBuffer, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
+
+                // bind descriptor sets
+                DeviceApi.vkCmdBindDescriptorSets (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, &&uniformsDescriptorSet, 0u, nullPtr)
+                DeviceApi.vkCmdBindDescriptorSets (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, &&samplerDescriptorSet, 0u, nullPtr)
+
+                // draw
+                DeviceApi.vkCmdDrawIndexed (context.RenderCommandBuffer, uint geometry.ElementCount, 1u, 0u, 0, 0u)
+
+                // tear down render
+                DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
+
+                // report drawing
+                Hl.reportDrawCall 1 true
+
+                // advance pipeline
+                Pipeline.advance pipeline.Pipeline
+
+                // advance rendering command buffer
+                VulkanContext.advanceRenderCommandBuffer context
+                
+                // transition target to read
+                Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead targetTexture context.RenderCommandBuffer
+
+        // abort
+        | None -> Log.warnOnce ("Cannot draw " + getTypeName pipeline + " because VkPipeline does not exist.")
+
+    /// Create a bloom up-sample filter pipeline.
+    let createFilterBloomUpSamplePipeline colorAttachmentFormat context =
+
+        // create set 0 uniform buffers
+        let bloomUpSampleUniform = VulkanBuffer.create Uniform sizeof<BloomUpSampleStruct> context
+
+        // create pipeline
+        let pipeline =
+            Pipeline.create
+                Constants.Paths.FilterBloomUpSampleShaderFilePath
+                [|VulkanSummation|] [|false|] StaticVertices
+                [|Pipeline.descriptorSet<int>
+                    [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // bloomUpSample
+                      Pipeline.descriptor 1 SampledImage FragmentStage 1|] // inputTexture
+                  Pipeline.descriptorSet<Unit>
+                    [|Pipeline.descriptor 0 Sampler FragmentStage 1|]|] // inputSampler
+                [||] [|colorAttachmentFormat|] None
+                [|bloomUpSampleUniform|]
+
+        // make pipeline
+        let filterBloomUpSamplePipeline =
+            { BloomUpSampleUniform = bloomUpSampleUniform
+              Pipeline = pipeline }
+
+        // fin
+        filterBloomUpSamplePipeline
+
+    /// Destroy a bloom up-sample filter pipeline.
+    let destroyFilterBloomUpSamplePipeline (bloomUpSamplePipeline : FilterBloomUpSamplePipeline) context =
+        Pipeline.destroy bloomUpSamplePipeline.Pipeline context
+
+    /// Draw the bloom up-sample filter passes of a physically-based surface.
+    let drawFilterBloomUpSampleSurfaces
+        (radius : single)
+        (inputTextures : Texture array)
+        (inputSampler : Sampler)
+        (resolution : Vector2i)
+        (geometry : PhysicallyBasedGeometry)
+        (pipeline : FilterBloomUpSamplePipeline)
+        (context : VulkanContext) =
+
+        // only draw when required vkPipeline exists
+        match Pipeline.tryGetVkPipeline VulkanSummation false pipeline.Pipeline with
+        | Some vkPipeline ->
+
+            // draw up-sample levels
+            for i in dec Constants.Render.BloomSampleLevels .. -1 .. 1 do
+
+                // compute source texture
+                let sourceTexture = inputTextures[i]
+
+                // compute target resolution and texture
+                let targetResolution = v2i (resolution.X >>> i) (resolution.Y >>> i)
+                let targetTexture = inputTextures[dec i]
+
+                // transition target to write
+                Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite targetTexture context.RenderCommandBuffer
+
+                // specify uniforms
+                let mutable uniformsDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.Pipeline.DrawIndex pipeline.Pipeline $ fun vkSet ->
+
+                    // specify bloom up-sample
+                    let bloomUpSample = BloomUpSampleStruct (radius = radius)
+                    VulkanBuffer.uploadValue bloomUpSample pipeline.BloomUpSampleUniform context
+                    Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.BloomUpSampleUniform vkSet
+
+                    // specify input texture
+                    Pipeline.writeDescriptorSampledTexture 1 0 sourceTexture vkSet
+
+                // specify sampler
+                let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 1 Unit pipeline.Pipeline $ fun vkSet ->
+                    Pipeline.writeDescriptorSampler 0 0 inputSampler vkSet
+
+                // set up render
+                let mutable renderArea = VkRect2D (0, 0, uint targetResolution.X, uint targetResolution.Y)
+                let mutable vkViewport = Hl.makeViewport false renderArea
+                let mutable renderingInfo = Hl.makeRenderingInfo [|targetTexture.ImageView|] None renderArea None
+                DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
+                DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
+                DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&renderArea)
+
+                // set up pipeline
+                DeviceApi.vkCmdBindPipeline (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
+
+                // bind vertex and index buffers
+                let vertexBuffers = [|geometry.VertexBuffer.VkBuffer; geometry.InstanceBuffer.VkBuffer|]
+                let vertexOffsets = [|0UL; 0UL|]
+                use vertexBuffersPin = new ArrayPin<_> (vertexBuffers)
+                use vertexOffsetsPin = new ArrayPin<_> (vertexOffsets)
+                DeviceApi.vkCmdBindVertexBuffers (context.RenderCommandBuffer, 0u, 2u, vertexBuffersPin.Pointer, vertexOffsetsPin.Pointer)
+                DeviceApi.vkCmdBindIndexBuffer (context.RenderCommandBuffer, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
+
+                // bind descriptor sets
+                DeviceApi.vkCmdBindDescriptorSets (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, &&uniformsDescriptorSet, 0u, nullPtr)
+                DeviceApi.vkCmdBindDescriptorSets (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, &&samplerDescriptorSet, 0u, nullPtr)
+
+                // draw
+                DeviceApi.vkCmdDrawIndexed (context.RenderCommandBuffer, uint geometry.ElementCount, 1u, 0u, 0, 0u)
+
+                // tear down render
+                DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
+
+                // report drawing
+                Hl.reportDrawCall 1 true
+
+                // advance pipeline
+                Pipeline.advance pipeline.Pipeline
+
+                // advance rendering command buffer
+                VulkanContext.advanceRenderCommandBuffer context
+                
+                // transition target to read
+                Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead targetTexture context.RenderCommandBuffer
+
+        // abort
+        | None -> Log.warnOnce ("Cannot draw " + getTypeName pipeline + " because VkPipeline does not exist.")
+
+    /// Create a bloom extract filter pipeline.
+    let createFilterBloomExtractPipeline colorAttachmentFormat context =
+
+        // create set 0 uniform buffers
+        let bloomExtractUniform = VulkanBuffer.create Uniform sizeof<BloomExtractStruct> context
+
+        // create pipeline
+        let pipeline =
+            Pipeline.create
+                Constants.Paths.FilterBloomExtractShaderFilePath
+                [|VulkanUnblended|] [|false|] StaticVertices
+                [|Pipeline.descriptorSet<int>
+                    [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // bloomExtract
+                      Pipeline.descriptor 1 SampledImage FragmentStage 1|] // inputTexture
+                  Pipeline.descriptorSet<Unit>
+                    [|Pipeline.descriptor 0 Sampler FragmentStage 1|]|] // inputSampler
+                [||] [|colorAttachmentFormat|] None
+                [|bloomExtractUniform|]
+
+        // make pipeline
+        let filterBloomExtractPipeline =
+            { BloomExtractUniform = bloomExtractUniform
+              Pipeline = pipeline }
+
+        // fin
+        filterBloomExtractPipeline
+
+    /// Destroy a bloom extract filter pipeline.
+    let destroyFilterBloomExtractPipeline (bloomExtractPipeline : FilterBloomExtractPipeline) context =
+        Pipeline.destroy bloomExtractPipeline.Pipeline context
+
+    /// Draw the bloom extract filter pass of a physically-based surface.
+    let drawFilterBloomExtractSurface
+        (threshold : single)
+        (inputTexture : Texture)
+        (inputSampler : Sampler)
+        (colorAttachment : Texture)
+        (resolution : Vector2i)
+        (geometry : PhysicallyBasedGeometry)
+        (pipeline : FilterBloomExtractPipeline)
+        (context : VulkanContext) =
+
+        // only draw when required vkPipeline exists
+        match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
+        | Some vkPipeline ->
+
+            // specify uniforms
+            let mutable uniformsDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.Pipeline.DrawIndex pipeline.Pipeline $ fun vkSet ->
+                
+                // specify bloom extract
+                let bloomExtract = BloomExtractStruct (threshold = threshold)
+                VulkanBuffer.uploadValue bloomExtract pipeline.BloomExtractUniform context
+                Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.BloomExtractUniform vkSet
+
+                // specify input texture
+                Pipeline.writeDescriptorSampledTexture 1 0 inputTexture vkSet
+
+            // specify sampler
+            let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 1 Unit pipeline.Pipeline $ fun vkSet ->
+                Pipeline.writeDescriptorSampler 0 0 inputSampler vkSet
+
+            // set up render
+            let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
+            let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
+            let mutable vkViewport = Hl.makeViewport false renderArea
+            let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue)
+            DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
+            DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
+            DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&renderArea)
+
+            // set up pipeline
+            DeviceApi.vkCmdBindPipeline (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
+
+            // bind vertex and index buffers
+            let vertexBuffers = [|geometry.VertexBuffer.VkBuffer; geometry.InstanceBuffer.VkBuffer|]
+            let vertexOffsets = [|0UL; 0UL|]
+            use vertexBuffersPin = new ArrayPin<_> (vertexBuffers)
+            use vertexOffsetsPin = new ArrayPin<_> (vertexOffsets)
+            DeviceApi.vkCmdBindVertexBuffers (context.RenderCommandBuffer, 0u, 2u, vertexBuffersPin.Pointer, vertexOffsetsPin.Pointer)
+            DeviceApi.vkCmdBindIndexBuffer (context.RenderCommandBuffer, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
+
+            // bind descriptor sets
+            DeviceApi.vkCmdBindDescriptorSets (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, &&uniformsDescriptorSet, 0u, nullPtr)
+            DeviceApi.vkCmdBindDescriptorSets (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, &&samplerDescriptorSet, 0u, nullPtr)
+
+            // draw
+            DeviceApi.vkCmdDrawIndexed (context.RenderCommandBuffer, uint geometry.ElementCount, 1u, 0u, 0, 0u)
+
+            // tear down render
+            DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
+
+            // report drawing
+            Hl.reportDrawCall 1 true
+
+            // advance pipeline
+            Pipeline.advance pipeline.Pipeline
+
+            // advance rendering command buffer
+            VulkanContext.advanceRenderCommandBuffer context
+
+        // abort
+        | None -> Log.warnOnce ("Cannot draw " + getTypeName pipeline + " because VkPipeline does not exist.")
+
+    /// Create a bloom apply filter pipeline.
+    let createFilterBloomApplyPipeline colorAttachmentFormat context =
+
+        // create set 0 uniform buffers
+        let bloomApplyUniform = VulkanBuffer.create Uniform sizeof<BloomApplyStruct> context
+
+        // create pipeline
+        let pipeline =
+            Pipeline.create
+                Constants.Paths.FilterBloomApplyShaderFilePath
+                [|VulkanUnblended|] [|false|] StaticVertices
+                [|Pipeline.descriptorSet<int>
+                    [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // bloomApply
+                      Pipeline.descriptor 1 SampledImage FragmentStage 1 // bloomFilterTexture
+                      Pipeline.descriptor 2 SampledImage FragmentStage 1|] // compositionTexture
+                  Pipeline.descriptorSet<Unit>
+                    [|Pipeline.descriptor 0 Sampler FragmentStage 1|]|] // inputSampler
+                [||] [|colorAttachmentFormat|] None
+                [|bloomApplyUniform|]
+
+        // make pipeline
+        let filterBloomApplyPipeline =
+            { BloomApplyUniform = bloomApplyUniform
+              Pipeline = pipeline }
+
+        // fin
+        filterBloomApplyPipeline
+
+    /// Destroy a bloom apply filter pipeline.
+    let destroyFilterBloomApplyPipeline (bloomApplyPipeline : FilterBloomApplyPipeline) context =
+        Pipeline.destroy bloomApplyPipeline.Pipeline context
+
+    /// Draw the bloom apply filter pass of a physically-based surface.
+    let drawFilterBloomApplySurface
+        (strength : single)
+        (bloomApplyTexture : Texture)
+        (compositionTexture : Texture)
+        (inputSampler : Sampler)
+        (colorAttachment : Texture)
+        (resolution : Vector2i)
+        (geometry : PhysicallyBasedGeometry)
+        (pipeline : FilterBloomApplyPipeline)
+        (context : VulkanContext) =
+
+        // only draw when required vkPipeline exists
+        match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
+        | Some vkPipeline ->
+
+            // specify uniforms
+            let mutable uniformsDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.Pipeline.DrawIndex pipeline.Pipeline $ fun vkSet ->
+                
+                // specify bloom apply
+                let bloomApply = BloomApplyStruct (strength = strength)
+                VulkanBuffer.uploadValue bloomApply pipeline.BloomApplyUniform context
+                Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.BloomApplyUniform vkSet
+
+                // specify textures
+                Pipeline.writeDescriptorSampledTexture 1 0 bloomApplyTexture vkSet
+                Pipeline.writeDescriptorSampledTexture 2 0 compositionTexture vkSet
+
+            // specify sampler
+            let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 1 Unit pipeline.Pipeline $ fun vkSet ->
+                Pipeline.writeDescriptorSampler 0 0 inputSampler vkSet
 
             // set up render
             let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
@@ -5261,6 +5749,18 @@ module PhysicallyBased =
         // create depth-of-field filter pipeline
         let filterDepthOfFieldPipeline = createFilterDepthOfFieldPipeline Rgba16f.VkFormat context
 
+        // create bloom extract filter pipeline
+        let filterBloomExtractPipeline = createFilterBloomExtractPipeline attachments.BloomExtractAttachment.VkFormat context
+
+        // create bloom down-sample filter pipeline
+        let filterBloomDownSamplePipeline = createFilterBloomDownSamplePipeline attachments.BloomSampleAttachments[0].VkFormat context
+
+        // create bloom up-sample filter pipeline
+        let filterBloomUpSamplePipeline = createFilterBloomUpSamplePipeline attachments.BloomSampleAttachments[0].VkFormat context
+
+        // create bloom apply filter pipeline
+        let filterBloomApplyPipeline = createFilterBloomApplyPipeline attachments.BloomApplyAttachment.VkFormat context
+
         // create tone-mapping filter pipeline
         let filterToneMappingPipeline = createFilterToneMappingPipeline attachments.ToneMappingAttachment.VkFormat context
 
@@ -5452,6 +5952,10 @@ module PhysicallyBased =
               FilterGaussianEsmPipeline = filterGaussianEsmPipeline
               FilterGaussianDofPipeline = filterGaussianDofPipeline
               FilterDepthOfFieldPipeline = filterDepthOfFieldPipeline
+              FilterBloomExtractPipeline = filterBloomExtractPipeline
+              FilterBloomDownSamplePipeline = filterBloomDownSamplePipeline
+              FilterBloomUpSamplePipeline = filterBloomUpSamplePipeline
+              FilterBloomApplyPipeline = filterBloomApplyPipeline
               FilterToneMappingPipeline = filterToneMappingPipeline
               FilterChromaticAberrationPipeline = filterChromaticAberrationPipeline
               FilterFxaaPipeline = filterFxaaPipeline
