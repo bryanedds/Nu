@@ -592,29 +592,20 @@ type [<ReferenceEquality>] VulkanContext =
         let callbackData = NativePtr.toByRef (NativePtr.ofNativeInt<VkDebugUtilsMessengerCallbackDataEXT> pCallbackData)
         let message = NativePtr.unmanagedToString callbackData.pMessage
 
-        // construct log header
-        let typeLabel =
-            match messageType with
-            | VkDebugUtilsMessageTypeFlagsEXT.General -> "General"
-            | VkDebugUtilsMessageTypeFlagsEXT.Validation -> "Validation"
-            | VkDebugUtilsMessageTypeFlagsEXT.Performance -> "Performance"
-            | _ -> ""
-        let severityLabel =
-            match messageSeverity with
-            | VkDebugUtilsMessageSeverityFlagsEXT.Verbose -> "Verbose"
-            | VkDebugUtilsMessageSeverityFlagsEXT.Info -> "Info"
-            | VkDebugUtilsMessageSeverityFlagsEXT.Warning -> "Warning"
-            | VkDebugUtilsMessageSeverityFlagsEXT.Error -> "Error"
-            | _ -> ""
-        let header = "Vulkan" + typeLabel + severityLabel
-
-        // log when appropriate
+        // determine when to log
         let shouldLog =
             if messageType = VkDebugUtilsMessageTypeFlagsEXT.Performance
             then messageSeverity > VkDebugUtilsMessageSeverityFlagsEXT.Warning
             else messageSeverity > VkDebugUtilsMessageSeverityFlagsEXT.Info
+
+        // construct log header
         if shouldLog then
-            Log.custom header message
+            match messageSeverity with
+            | VkDebugUtilsMessageSeverityFlagsEXT.Verbose -> Log.info message
+            | VkDebugUtilsMessageSeverityFlagsEXT.Info -> Log.info message
+            | VkDebugUtilsMessageSeverityFlagsEXT.Warning -> Log.warn message
+            | VkDebugUtilsMessageSeverityFlagsEXT.Error -> Log.error message
+            | _ -> Log.info message
 
         // finish passively
         ignore pUserData
