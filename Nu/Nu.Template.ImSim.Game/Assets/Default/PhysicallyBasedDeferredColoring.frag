@@ -203,13 +203,37 @@ void computeSsrl(float depth, vec4 position, vec3 albedo, float roughness, float
                 // determine whether we hit geometry within acceptable thickness
                 if (currentDepth != 0.0 && depthDelta >= 0.0 && depthDelta <= thickness)
                 {
-                    // compute screen-space specular color and weight
+                    // sample inputs
+                    vec3 albedo = texture(sampler2D(albedoTexture, unfilteredSampler), currentTexCoords).rgb;
+                    vec3 lightAccum = texture(sampler2D(lightAccumTexture, unfilteredSampler), currentTexCoords).rgb;
+                    vec3 irradiance = texture(sampler2D(irradianceTexture, unfilteredSampler), currentTexCoords).rgb;
+                    vec3 environmentFilter = texture(sampler2D(environmentFilterTexture, unfilteredSampler), currentTexCoords).rgb;
+
+                    // compute diffuse
+                    vec4 ambientColorAndBrightness = texture(sampler2D(ambientTexture, unfilteredSampler), texCoords);
+                    vec3 ambientColor = ambientColorAndBrightness.rgb;
+                    float ambientBrightness = ambientColorAndBrightness.a;
+                    float ambientBoostFactor = smoothstep(1.0 - lighting.lightAmbientBoostCutoff, 1.0, 1.0 - roughness);
+                    float ambientBoost = 1.0 + ambientBoostFactor * lighting.lightAmbientBoostScalar;
+                    vec3 ambientLight = ambientColor * ambientBrightness * ambientBoost;
+                    vec3 diffuse = irradiance * albedo * ambientLight;
+
+                    // compute specular
                     vec3 f0 = mix(vec3(0.04), albedo, metallic);
                     vec3 v = normalize(-positionView.xyz);
                     vec3 h = normalize(v + normal);
                     vec3 f = fresnelSchlick(saturate(dot(h, v)), f0);
+                    float nDotV = saturate(dot(normal, v));
+                    vec2 environmentBrdf = texture(sampler2D(brdfTexture, filteredSampler), vec2(nDotV, roughness)).rg;
+                    vec3 specularEnvironmentSubterm = f * environmentBrdf.x + environmentBrdf.y;
+                    vec3 specularEnvironment = environmentFilter * specularEnvironmentSubterm * ambientLight;
                     vec3 specularIntensity = f * (1.0 - roughness);
-                    specularScreen = texture(sampler2D(lightAccumTexture, unfilteredSampler), currentTexCoords).rgb * specularIntensity * lighting.ssrlIntensity;
+                    vec3 specular = environmentFilter * specularIntensity * lightAccum * lighting.ssrlIntensity;
+
+                    // compute color
+                    specularScreen = diffuse + specular;
+
+                    // compute weight
                     specularScreenWeight =
                         (1.0 - smoothstep(1.0 - lighting.ssrlRoughnessCutoffMargin, 1.0, roughness / lighting.ssrlRoughnessCutoff)) * // filter out as fragment reaches max roughness
                         (1.0 - smoothstep(1.0 - lighting.ssrlDepthCutoffMargin, 1.0, positionView.z / -lighting.ssrlDepthCutoff)) * // filter out as fragment reaches max depth
