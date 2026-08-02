@@ -67,7 +67,6 @@ struct LightingStruct
     float ssrrEdgeHorizontalMargin;
     float ssrrEdgeVerticalMargin;
     int ssrlEnabled;
-    float ssrlIntensity;
     float ssrlDetail;
     int ssrlRefinementsMax;
     float ssrlRayThickness;

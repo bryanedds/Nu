@@ -123,22 +123,21 @@ type LightingStruct =
     [<FieldOffset(140)>] val mutable ssrrEdgeHorizontalMargin : single
     [<FieldOffset(144)>] val mutable ssrrEdgeVerticalMargin : single
     [<FieldOffset(148)>] val mutable ssrlEnabled : int
-    [<FieldOffset(152)>] val mutable ssrlIntensity : single
-    [<FieldOffset(156)>] val mutable ssrlDetail : single
-    [<FieldOffset(160)>] val mutable ssrlRefinementsMax : int
-    [<FieldOffset(164)>] val mutable ssrlRayThickness : single
-    [<FieldOffset(168)>] val mutable ssrlTowardEyeCutoff : single
-    [<FieldOffset(172)>] val mutable ssrlDepthCutoff : single
-    [<FieldOffset(176)>] val mutable ssrlDepthCutoffMargin : single
-    [<FieldOffset(180)>] val mutable ssrlDistanceCutoff : single
-    [<FieldOffset(184)>] val mutable ssrlDistanceCutoffMargin : single
-    [<FieldOffset(188)>] val mutable ssrlRoughnessCutoff : single
-    [<FieldOffset(192)>] val mutable ssrlRoughnessCutoffMargin : single
-    [<FieldOffset(196)>] val mutable ssrlSlopeCutoff : single
-    [<FieldOffset(200)>] val mutable ssrlSlopeCutoffMargin : single
-    [<FieldOffset(204)>] val mutable ssrlEdgeHorizontalMargin : single
-    [<FieldOffset(208)>] val mutable ssrlEdgeVerticalMargin : single
-    [<FieldOffset(212)>] val mutable shadowNear : single
+    [<FieldOffset(152)>] val mutable ssrlDetail : single
+    [<FieldOffset(156)>] val mutable ssrlRefinementsMax : int
+    [<FieldOffset(160)>] val mutable ssrlRayThickness : single
+    [<FieldOffset(164)>] val mutable ssrlTowardEyeCutoff : single
+    [<FieldOffset(168)>] val mutable ssrlDepthCutoff : single
+    [<FieldOffset(172)>] val mutable ssrlDepthCutoffMargin : single
+    [<FieldOffset(176)>] val mutable ssrlDistanceCutoff : single
+    [<FieldOffset(180)>] val mutable ssrlDistanceCutoffMargin : single
+    [<FieldOffset(184)>] val mutable ssrlRoughnessCutoff : single
+    [<FieldOffset(188)>] val mutable ssrlRoughnessCutoffMargin : single
+    [<FieldOffset(192)>] val mutable ssrlSlopeCutoff : single
+    [<FieldOffset(196)>] val mutable ssrlSlopeCutoffMargin : single
+    [<FieldOffset(200)>] val mutable ssrlEdgeHorizontalMargin : single
+    [<FieldOffset(204)>] val mutable ssrlEdgeVerticalMargin : single
+    [<FieldOffset(208)>] val mutable shadowNear : single
 
 // TODO: P1: see if we can come up with a better alternative name than Lighting2?
 [<Struct; StructLayout (LayoutKind.Explicit)>]
@@ -5143,7 +5142,6 @@ module PhysicallyBased =
         (lightAmbientBoostCutoff : single)
         (lightAmbientBoostScalar : single)
         (ssrlEnabled : int)
-        (ssrlIntensity : single)
         (ssrlDetail : single)
         (ssrlRefinementsMax : int)
         (ssrlRayThickness : single)
@@ -5202,7 +5200,6 @@ module PhysicallyBased =
                 lighting.lightAmbientBoostCutoff <- lightAmbientBoostCutoff
                 lighting.lightAmbientBoostScalar <- lightAmbientBoostScalar
                 lighting.ssrlEnabled <- ssrlEnabled
-                lighting.ssrlIntensity <- ssrlIntensity
                 lighting.ssrlDetail <- ssrlDetail
                 lighting.ssrlRefinementsMax <- ssrlRefinementsMax
                 lighting.ssrlRayThickness <- ssrlRayThickness
