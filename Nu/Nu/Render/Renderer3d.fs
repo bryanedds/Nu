@@ -4563,7 +4563,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             PhysicallyBased.drawFilterBloomApplySurface
                 renderer.LightingConfig.BloomStrength bloomSampleTextures[0] compositionTexture renderer.FilteredSampler bloomApplyTexture geometryResolution
                 renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterBloomApplyPipeline renderer.VulkanContext
-            Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead compositionTexture renderer.VulkanContext.RenderCommandBuffer
+            Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead bloomApplyTexture renderer.VulkanContext.RenderCommandBuffer
 
             // blit bloom apply texture to composition texture
             Texture.recordTransitionLayout ColorAttachmentRead TransferSrc bloomApplyTexture renderer.VulkanContext.RenderCommandBuffer
