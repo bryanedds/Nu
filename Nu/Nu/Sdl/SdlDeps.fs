@@ -311,7 +311,7 @@ module SdlDeps =
                     // fin
                     windowOpt)
 
-                (fun window -> SDL3.SDL_DestroyWindow window)
+                SDL3.SDL_DestroyWindow
                 destroy with
             | Left error -> Left error
             | Right (window, destroy) ->
