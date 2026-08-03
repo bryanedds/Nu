@@ -589,7 +589,7 @@ module Hl =
             | None ->
                 colorInfo.loadOp <- VkAttachmentLoadOp.Load
             colorInfos[i] <- colorInfo
-        use colorInfosPinned = new ArrayPin<_> (colorInfos)
+        use colorInfosPin = new ArrayPin<_> (colorInfos)
 
         // depth attachment info
         let mutable depthInfo = VkRenderingAttachmentInfo ()
@@ -611,7 +611,7 @@ module Hl =
         renderingInfo.renderArea <- renderArea
         renderingInfo.layerCount <- 1u
         renderingInfo.colorAttachmentCount <- uint colorInfos.Length
-        renderingInfo.pColorAttachments <- colorInfosPinned.Pointer
+        renderingInfo.pColorAttachments <- colorInfosPin.Pointer
         if depthAttachmentOpt.IsSome then renderingInfo.pDepthAttachment <- &&depthInfo
 
         // invoke action
