@@ -1976,8 +1976,9 @@ module PhysicallyBased =
             let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
             let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
-            let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue)
-            DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
+            Hl.withRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue) $ fun renderingInfo ->
+                let mutable renderingInfo = renderingInfo
+                DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
             DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
             DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&renderArea)
 
@@ -2070,8 +2071,9 @@ module PhysicallyBased =
             let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
             let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
-            let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment; depthAttachment|] None renderArea (Some clearValue)
-            DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
+            Hl.withRenderingInfo [|colorAttachment; depthAttachment|] None renderArea (Some clearValue) $ fun renderingInfo ->
+                let mutable renderingInfo = renderingInfo
+                DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
             DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
             DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&renderArea)
 
@@ -2166,8 +2168,9 @@ module PhysicallyBased =
             let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
             let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
-            let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment|] None renderArea (Some clearValue)
-            DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
+            Hl.withRenderingInfo [|colorAttachment|] None renderArea (Some clearValue) $ fun renderingInfo ->
+                let mutable renderingInfo = renderingInfo
+                DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
             DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
             DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&renderArea)
 
@@ -2270,8 +2273,9 @@ module PhysicallyBased =
             let clearValue = VkClearValue (1.0f, Single.MaxValue, 0.0f, 0.0f) // TODO: P1: make derived from constant.
             let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
-            let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment|] None renderArea (Some clearValue)
-            DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
+            Hl.withRenderingInfo [|colorAttachment|] None renderArea (Some clearValue) $ fun renderingInfo ->
+                let mutable renderingInfo = renderingInfo
+                DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
             DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
             DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&renderArea)
 
@@ -2375,8 +2379,9 @@ module PhysicallyBased =
             let clearValue = VkClearValue (1.0f, Single.MaxValue, 0.0f, 0.0f) // TODO: P1: make derived from constant.
             let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
-            let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment|] None renderArea (Some clearValue)
-            DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
+            Hl.withRenderingInfo [|colorAttachment|] None renderArea (Some clearValue) $ fun renderingInfo ->
+                let mutable renderingInfo = renderingInfo
+                DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
             DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
             DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&renderArea)
 
@@ -2512,8 +2517,9 @@ module PhysicallyBased =
             let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
             let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
-            let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue)
-            DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
+            Hl.withRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue) $ fun renderingInfo ->
+                let mutable renderingInfo = renderingInfo
+                DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
             DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
             DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&renderArea)
 
@@ -2630,8 +2636,9 @@ module PhysicallyBased =
                 // set up render
                 let mutable renderArea = VkRect2D (0, 0, uint targetResolution.X, uint targetResolution.Y)
                 let mutable vkViewport = Hl.makeViewport false renderArea
-                let mutable renderingInfo = Hl.makeRenderingInfo [|targetTexture.ImageView|] None renderArea None
-                DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
+                Hl.withRenderingInfo [|targetTexture.ImageView|] None renderArea None $ fun renderingInfo ->
+                    let mutable renderingInfo = renderingInfo
+                    DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
                 DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
                 DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&renderArea)
 
@@ -2747,8 +2754,9 @@ module PhysicallyBased =
                 // set up render
                 let mutable renderArea = VkRect2D (0, 0, uint targetResolution.X, uint targetResolution.Y)
                 let mutable vkViewport = Hl.makeViewport false renderArea
-                let mutable renderingInfo = Hl.makeRenderingInfo [|targetTexture.ImageView|] None renderArea None
-                DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
+                Hl.withRenderingInfo [|targetTexture.ImageView|] None renderArea None $ fun renderingInfo ->
+                    let mutable renderingInfo = renderingInfo
+                    DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
                 DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
                 DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&renderArea)
 
@@ -2853,8 +2861,9 @@ module PhysicallyBased =
             let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
             let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
-            let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue)
-            DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
+            Hl.withRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue) $ fun renderingInfo ->
+                let mutable renderingInfo = renderingInfo
+                DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
             DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
             DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&renderArea)
 
@@ -2959,8 +2968,9 @@ module PhysicallyBased =
             let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
             let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
-            let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue)
-            DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
+            Hl.withRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue) $ fun renderingInfo ->
+                let mutable renderingInfo = renderingInfo
+                DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
             DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
             DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&renderArea)
 
@@ -3076,8 +3086,9 @@ module PhysicallyBased =
             let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
             let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
-            let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue)
-            DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
+            Hl.withRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue) $ fun renderingInfo ->
+                let mutable renderingInfo = renderingInfo
+                DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
             DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
             DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&renderArea)
 
@@ -3180,8 +3191,9 @@ module PhysicallyBased =
             let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
             let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
-            let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue)
-            DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
+            Hl.withRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue) $ fun renderingInfo ->
+                let mutable renderingInfo = renderingInfo
+                DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
             DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
             DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&renderArea)
 
@@ -3285,8 +3297,9 @@ module PhysicallyBased =
             let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
             let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
-            let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue)
-            DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
+            Hl.withRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue) $ fun renderingInfo ->
+                let mutable renderingInfo = renderingInfo
+                DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
             DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
             DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&renderArea)
 
@@ -3374,8 +3387,9 @@ module PhysicallyBased =
             let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
             let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
-            let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue)
-            DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
+            Hl.withRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue) $ fun renderingInfo ->
+                let mutable renderingInfo = renderingInfo
+                DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
             DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
             DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&renderArea)
 
@@ -3472,8 +3486,9 @@ module PhysicallyBased =
         // set up render
         let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
         let mutable vkViewport = Hl.makeViewport false renderArea
-        let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment|] (Some depthAttachment.ImageView) renderArea colorClearValueOpt
-        DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
+        Hl.withRenderingInfo [|colorAttachment|] (Some depthAttachment.ImageView) renderArea colorClearValueOpt $ fun renderingInfo ->
+            let mutable renderingInfo = renderingInfo
+            DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
         DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
         DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&renderArea)
 
@@ -3698,8 +3713,9 @@ module PhysicallyBased =
         // set up render
         let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
         let mutable vkViewport = Hl.makeViewport false renderArea
-        let mutable renderingInfo = Hl.makeRenderingInfo colorAttachments (Some depthAttachment.ImageView) renderArea None
-        DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
+        Hl.withRenderingInfo colorAttachments (Some depthAttachment.ImageView) renderArea None $ fun renderingInfo ->
+            let mutable renderingInfo = renderingInfo
+            DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
         DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
         DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&renderArea)
 
@@ -3874,8 +3890,9 @@ module PhysicallyBased =
         // set up render
         let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
         let mutable vkViewport = Hl.makeViewport false renderArea
-        let mutable renderingInfo = Hl.makeRenderingInfo colorAttachments (Some depthAttachment.ImageView) renderArea None
-        DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
+        Hl.withRenderingInfo colorAttachments (Some depthAttachment.ImageView) renderArea None $ fun renderingInfo ->
+            let mutable renderingInfo = renderingInfo
+            DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
         DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
         DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&renderArea)
 
@@ -4140,8 +4157,9 @@ module PhysicallyBased =
             let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
             let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
-            let mutable renderingInfo = Hl.makeRenderingInfo [|lightAccumAttachment.ImageView|] None renderArea (Some clearValue)
-            DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
+            Hl.withRenderingInfo [|lightAccumAttachment.ImageView|] None renderArea (Some clearValue) $ fun renderingInfo ->
+                let mutable renderingInfo = renderingInfo
+                DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
             DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
             DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&renderArea)
 
@@ -4345,8 +4363,9 @@ module PhysicallyBased =
             let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
             let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
-            let mutable renderingInfo = Hl.makeRenderingInfo [|foggingAttachment.ImageView|] None renderArea (Some clearValue)
-            DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
+            Hl.withRenderingInfo [|foggingAttachment.ImageView|] None renderArea (Some clearValue) $ fun renderingInfo ->
+                let mutable renderingInfo = renderingInfo
+                DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
             DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
             DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&renderArea)
 
@@ -4498,8 +4517,9 @@ module PhysicallyBased =
             let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
             let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
-            let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue)
-            DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
+            Hl.withRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue) $ fun renderingInfo ->
+                let mutable renderingInfo = renderingInfo
+                DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
             DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
             DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&renderArea)
 
@@ -4641,8 +4661,9 @@ module PhysicallyBased =
             let clearValue = VkClearValue (r = Constants.Render.AmbientClearColor.R, g = Constants.Render.AmbientClearColor.G, b = Constants.Render.AmbientClearColor.B, a = Constants.Render.AmbientClearColor.A)
             let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
-            let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue)
-            DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
+            Hl.withRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue) $ fun renderingInfo ->
+                let mutable renderingInfo = renderingInfo
+                DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
             DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
             DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&renderArea)
 
@@ -4768,8 +4789,9 @@ module PhysicallyBased =
             let clearValue = VkClearValue (r = Constants.Render.IrradianceClearColor.R, g = Constants.Render.IrradianceClearColor.G, b = Constants.Render.IrradianceClearColor.B, a = Constants.Render.IrradianceClearColor.A)
             let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
-            let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue)
-            DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
+            Hl.withRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue) $ fun renderingInfo ->
+                let mutable renderingInfo = renderingInfo
+                DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
             DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
             DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&renderArea)
 
@@ -4924,8 +4946,9 @@ module PhysicallyBased =
             let clearValue = VkClearValue (r = Constants.Render.EnvironmentClearColor.R, g = Constants.Render.EnvironmentClearColor.G, b = Constants.Render.EnvironmentClearColor.B, a = Constants.Render.EnvironmentClearColor.A)
             let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
-            let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue)
-            DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
+            Hl.withRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue) $ fun renderingInfo ->
+                let mutable renderingInfo = renderingInfo
+                DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
             DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
             DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&renderArea)
 
@@ -5052,8 +5075,9 @@ module PhysicallyBased =
             let clearValue = VkClearValue (r = Constants.Render.SsaoClearColor.R, g = Constants.Render.SsaoClearColor.G, b = Constants.Render.SsaoClearColor.B, a = Constants.Render.SsaoClearColor.A)
             let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
-            let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue)
-            DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
+            Hl.withRenderingInfo [|colorAttachment.ImageView|] None renderArea (Some clearValue) $ fun renderingInfo ->
+                let mutable renderingInfo = renderingInfo
+                DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
             DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
             DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&renderArea)
 
@@ -5242,8 +5266,9 @@ module PhysicallyBased =
             let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
             let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
-            let mutable renderingInfo = Hl.makeRenderingInfo [|coloringAttachment.ImageView; depthAttachment.ImageView|] None renderArea (Some clearValue)
-            DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
+            Hl.withRenderingInfo [|coloringAttachment.ImageView; depthAttachment.ImageView|] None renderArea (Some clearValue) $ fun renderingInfo ->
+                let mutable renderingInfo = renderingInfo
+                DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
             DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
             DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&renderArea)
 
@@ -5381,8 +5406,9 @@ module PhysicallyBased =
             let clearValue = VkClearValue (r = Constants.Render.ViewportClearColor.R, g = Constants.Render.ViewportClearColor.G, b = Constants.Render.ViewportClearColor.B, a = Constants.Render.ViewportClearColor.A)
             let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
-            let mutable renderingInfo = Hl.makeRenderingInfo [|compositionAttachment.ImageView|] None renderArea (Some clearValue)
-            DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
+            Hl.withRenderingInfo [|compositionAttachment.ImageView|] None renderArea (Some clearValue) $ fun renderingInfo ->
+                let mutable renderingInfo = renderingInfo
+                DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
             DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
             DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&renderArea)
 
@@ -5535,8 +5561,9 @@ module PhysicallyBased =
         // set up render
         let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
         let mutable vkViewport = Hl.makeViewport false renderArea
-        let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment.ImageView|] (Some depthAttachment.ImageView) renderArea None
-        DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
+        Hl.withRenderingInfo [|colorAttachment.ImageView|] (Some depthAttachment.ImageView) renderArea None $ fun renderingInfo ->
+            let mutable renderingInfo = renderingInfo
+            DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
         DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
         DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&renderArea)
 

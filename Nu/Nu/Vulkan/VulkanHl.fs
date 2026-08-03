@@ -571,11 +571,10 @@ module Hl =
         blit.dstSubresource <- makeSubresourceLayers dstMipLevel dstLayer VkImageAspectFlags.Color
         blit.dstOffsets <- NativePtr.writeArrayToFixedBuffer [|dstOffsetMin; dstOffsetMax|] blit.dstOffsets
         blit
-
-    /// Make a VkRenderingInfo.
-    /// NOTE: this function MUST be declared inline to keep its pointers valid!
-    let inline makeRenderingInfo (colorAttachments : VkImageView array) depthAttachmentOpt renderArea clearValueOpt =
-
+        
+    /// Make a VkRenderingInfo and utilize within the given scope for memory safety.
+    let withRenderingInfo (colorAttachments : VkImageView array) depthAttachmentOpt renderArea clearValueOpt action =
+        
         // color attachment infos
         let colorInfos = Array.zeroCreate colorAttachments.Length
         for i in 0 .. dec colorInfos.Length do
@@ -590,7 +589,7 @@ module Hl =
             | None ->
                 colorInfo.loadOp <- VkAttachmentLoadOp.Load
             colorInfos[i] <- colorInfo
-        use cInfosPin = new ArrayPin<_> (colorInfos)
+        use colorInfosPinned = new ArrayPin<_> (colorInfos)
 
         // depth attachment info
         let mutable depthInfo = VkRenderingAttachmentInfo ()
@@ -612,9 +611,11 @@ module Hl =
         renderingInfo.renderArea <- renderArea
         renderingInfo.layerCount <- 1u
         renderingInfo.colorAttachmentCount <- uint colorInfos.Length
-        renderingInfo.pColorAttachments <- cInfosPin.Pointer
+        renderingInfo.pColorAttachments <- colorInfosPinned.Pointer
         if depthAttachmentOpt.IsSome then renderingInfo.pDepthAttachment <- &&depthInfo
-        renderingInfo
+
+        // invoke action
+        action renderingInfo
 
     /// Check that VkRect2D has non-zero area.
     let validateRect (rect : VkRect2D) =

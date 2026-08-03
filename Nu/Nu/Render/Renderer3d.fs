@@ -4179,8 +4179,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite clearCoatPlusTexture renderer.VulkanContext.RenderCommandBuffer
         Texture.recordTransitionLayout DepthAttachmentRead DepthAttachmentWrite zTexture renderer.VulkanContext.RenderCommandBuffer
         let geometryTextureViews = [|depthTexture.ImageView; albedoTexture.ImageView; materialTexture.ImageView; normalPlusTexture.ImageView; subdermalPlusTexture.ImageView; scatterPlusTexture.ImageView; clearCoatPlusTexture.ImageView|]
-        let mutable renderingInfo = Hl.makeRenderingInfo geometryTextureViews (Some zTexture.ImageView) renderArea (Some clearColor)
-        DeviceApi.vkCmdBeginRendering (renderer.VulkanContext.RenderCommandBuffer, &&renderingInfo)
+        Hl.withRenderingInfo geometryTextureViews (Some zTexture.ImageView) renderArea (Some clearColor) $ fun renderingInfo ->
+            let mutable renderingInfo = renderingInfo
+            DeviceApi.vkCmdBeginRendering (renderer.VulkanContext.RenderCommandBuffer, &&renderingInfo)
         DeviceApi.vkCmdEndRendering renderer.VulkanContext.RenderCommandBuffer
         Hl.reportDrawScope ()
 

@@ -1006,9 +1006,10 @@ type [<ReferenceEquality>] VulkanContext =
             // make swapchain image ready for rendering
             let renderArea = VkRect2D (0, 0, uint windowViewport.Bounds.Size.X, uint windowViewport.Bounds.Size.Y)
             let clearColor = VkClearValue (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
-            let mutable renderingInfo = Hl.makeRenderingInfo [|context.SwapchainImageView|] None renderArea (Some clearColor)
             Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color Undefined ColorAttachmentWrite context.SwapchainImage context.RenderCommandBuffer
-            DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
+            Hl.withRenderingInfo [|context.SwapchainImageView|] None renderArea (Some clearColor) $ fun renderingInfo ->
+                let mutable renderingInfo = renderingInfo
+                DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
             DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
             Hl.reportDrawScope ()
 

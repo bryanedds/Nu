@@ -315,8 +315,9 @@ module CubeMap =
             let commandBuffer = getCommandBuffer ()
             let mutable renderArea = VkRect2D (0, 0, uint resolution, uint resolution)
             let mutable vkViewport = Hl.makeViewport false renderArea
-            let mutable renderingInfo = Hl.makeRenderingInfo [|colorAttachment|] None renderArea None
-            DeviceApi.vkCmdBeginRendering (commandBuffer, &&renderingInfo)
+            Hl.withRenderingInfo [|colorAttachment|] None renderArea None $ fun renderingInfo ->
+                let mutable renderingInfo = renderingInfo
+                DeviceApi.vkCmdBeginRendering (commandBuffer, &&renderingInfo)
             DeviceApi.vkCmdSetViewport (commandBuffer, 0u, 1u, &&vkViewport)
             DeviceApi.vkCmdSetScissor (commandBuffer, 0u, 1u, &&renderArea)
 

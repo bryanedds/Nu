@@ -211,8 +211,9 @@ module Contour =
 
                     // only draw if scissor is valid
                     if Hl.validateRect scissor then
-                        let mutable renderingInfo = Hl.makeRenderingInfo [|vkc.SwapchainImageView|] None renderArea None
-                        DeviceApi.vkCmdBeginRendering (vkc.RenderCommandBuffer, &&renderingInfo)
+                        Hl.withRenderingInfo [|vkc.SwapchainImageView|] None renderArea None $ fun renderingInfo ->
+                            let mutable renderingInfo = renderingInfo
+                            DeviceApi.vkCmdBeginRendering (vkc.RenderCommandBuffer, &&renderingInfo)
                         DeviceApi.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, &&vkViewport)
                         DeviceApi.vkCmdSetScissor (vkc.RenderCommandBuffer, 0u, 1u, &&scissor)
 

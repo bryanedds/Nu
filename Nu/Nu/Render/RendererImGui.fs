@@ -190,13 +190,14 @@ type VulkanRendererImGui
                 let vkPipeline = Pipeline.tryGetVkPipeline VulkanImGui false pipeline |> Option.get
 
                 // set up render
-                let mutable vkRenderArea = VkRect2D (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
-                let mutable vkRenderingInfo = Hl.makeRenderingInfo [|context.SwapchainImageView|] None vkRenderArea None
-                let mutable vkViewport = Hl.makeViewport false vkRenderArea
-                DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&vkRenderingInfo)
+                let mutable renderArea = VkRect2D (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
+                let mutable vkViewport = Hl.makeViewport false renderArea
+                Hl.withRenderingInfo [|context.SwapchainImageView|] None renderArea None $ fun renderingInfo ->
+                    let mutable renderingInfo = renderingInfo
+                    DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
                 DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
                 DeviceApi.vkCmdBindPipeline (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
-                
+
                 // compute offsets
                 if drawData.TotalVtxCount > 0 then
                     
@@ -274,7 +275,7 @@ type VulkanRendererImGui
                                 let width = uint (clipMax.X - clipMin.X)
                                 let height = uint (clipMax.Y - clipMin.Y)
                                 let mutable vkScissor = VkRect2D (int clipMin.X, int clipMin.Y, width, height)
-                                vkScissor <- Hl.clipRect vkRenderArea vkScissor
+                                vkScissor <- Hl.clipRect renderArea vkScissor
                                 if Hl.validateRect vkScissor then
 
                                     // set scissor
