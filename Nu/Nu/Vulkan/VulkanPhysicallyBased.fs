@@ -3637,8 +3637,8 @@ module PhysicallyBased =
                     [|Pipeline.descriptor 0 UniformBuffer VertexStage 1 // bone
                       Pipeline.descriptor 1 UniformBuffer FragmentStage 1 // lightMap
                       Pipeline.descriptor 2 UniformBuffer FragmentStage 1 // lightsGeneral
-                      Pipeline.descriptor 3 UniformBuffer FragmentStage 1 // light
-                      Pipeline.descriptor 4 UniformBuffer FragmentStage 1 // shadowMatrix
+                      Pipeline.descriptor 3 UniformBuffer FragmentStage 1 // lights
+                      Pipeline.descriptor 4 UniformBuffer FragmentStage 1 // shadowMatrices
                       Pipeline.descriptor 5 SampledImage FragmentStage lightMapsMax // irradianceMaps
                       Pipeline.descriptor 6 SampledImage FragmentStage lightMapsMax // environmentFilterMaps
                       Pipeline.descriptor 7 SampledImage FragmentStage 1 // shadowTextures
@@ -3831,7 +3831,7 @@ module PhysicallyBased =
                 [|VulkanUnblended|] [|true|] TerrainVertices
                 [|Pipeline.descriptorSet<int * int>
                     [|Pipeline.descriptor 0 UniformBuffer VertexAndFragmentStage 1 // eye
-                      Pipeline.descriptor 1 UniformBuffer FragmentStage 1|] // lighting3
+                      Pipeline.descriptor 1 UniformBuffer FragmentStage 1|] // terrainFrag
                   Pipeline.descriptorSet<PhysicallyBasedMaterial array>
                     [|Pipeline.descriptor 0 SampledImage FragmentStage Constants.Render.TerrainLayersMax // albedoTextures
                       Pipeline.descriptor 1 SampledImage FragmentStage Constants.Render.TerrainLayersMax // roughnessTextures
@@ -3996,8 +3996,8 @@ module PhysicallyBased =
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // eye
                       Pipeline.descriptor 1 UniformBuffer FragmentStage 1 // lighting
-                      Pipeline.descriptor 2 UniformBuffer FragmentStage 1 // light
-                      Pipeline.descriptor 3 UniformBuffer FragmentStage 1 // shadowMatrix
+                      Pipeline.descriptor 2 UniformBuffer FragmentStage 1 // lights
+                      Pipeline.descriptor 3 UniformBuffer FragmentStage 1 // shadowMatrices
                       Pipeline.descriptor 4 SampledImage FragmentStage 1 // depth
                       Pipeline.descriptor 5 SampledImage FragmentStage 1 // albedo
                       Pipeline.descriptor 6 SampledImage FragmentStage 1 // material
