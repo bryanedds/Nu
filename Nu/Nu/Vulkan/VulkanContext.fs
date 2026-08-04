@@ -646,7 +646,7 @@ type [<ReferenceEquality>] VulkanContext =
         let validationLayerName = "VK_LAYER_KHRONOS_validation"
         let validationLayerExists = Array.exists (fun x -> Hl.getLayerName x = validationLayerName) layers
         if Constants.Render.RenderDebug && not validationLayerExists then
-            Log.info (validationLayerName + " is not available. Vulkan programmers must install the Vulkan SDK to enable validation.")
+            Log.info (validationLayerName + " is not available. The Vulkan SDK must be installed to enable validation.")
 
         // attempt to use validation layer when desired
         Hl.ValidationLayersActivated <- Constants.Render.RenderDebug && validationLayerExists
