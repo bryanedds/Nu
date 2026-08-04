@@ -3,7 +3,7 @@ Nu Game Engine [![Build status](https://github.com/bryanedds/Nu/actions/workflow
 BIG NU NEWS - Vulkan, Mac, iOS, and Android available for Preview!
 ==
 
-We have marked our upcoming Vulkan conversion of Nu as `Preview Ready` and make it available here -
+We have marked our upcoming Vulkan conversion of Nu as `Preview` and make it available here -
 
 https://github.com/bryanedds/Nu/tree/vulkan
 
