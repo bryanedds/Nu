@@ -1059,8 +1059,11 @@ type [<ReferenceEquality>] VulkanContext =
                         Hl.SurfaceState <- SurfaceLost
                         Swapchain.update context.PhysicalDevice_ context.RenderQueue_ context.PresentQueue_ context.Swapchain_ context.Instance_
                     | VkResult.SuboptimalKHR ->
-                        Log.info "Swapchain suboptimal; handling window sizing."
-                        VulkanContext.handleWindowSizing context
+                        // NOTE: commented this code out because it always happens on Android because we haven't yet
+                        // implemented support for pre-transform as described in - https://github.com/bryanedds/Nu/issues/1380
+                        //Log.info "Swapchain suboptimal; handling window sizing."
+                        //VulkanContext.handleWindowSizing context
+                        ()
                     | result -> Hl.check result
 
                 // still need to update the swapchain even if we haven't rendered

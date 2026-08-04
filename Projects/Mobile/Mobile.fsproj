@@ -25,7 +25,7 @@
 	</PropertyGroup>
 
 	<!-- ============================================================
-	     Common Project Settings 
+	     Common Project Settings
 		 ============================================================
 		 Sets $(TargetPlatformIdentifier) (empty for desktop, 'android' for Android, 'ios' for iOS) for usage. -->
 	<Import Project="../../Nu/Nu.targets" />
