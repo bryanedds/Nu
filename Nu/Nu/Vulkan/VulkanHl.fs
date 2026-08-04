@@ -308,8 +308,8 @@ module Vulkan =
 [<RequireQualifiedAccess>]
 module Hl =
 
-    // TODO: P0: these free-floating bindings have become a bit of a mess and need to be reordered or moved into vulkan
-    // context.
+    // TODO: P0: these free-floating bindings have become a bit of a mess and need to be reordered or moved into
+    // VulkanContext.
     let mutable internal ValidationLayersActivated = false
 
     let mutable internal DrawCountersLock = obj ()

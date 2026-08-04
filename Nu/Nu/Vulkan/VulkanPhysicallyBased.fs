@@ -5751,7 +5751,6 @@ module PhysicallyBased =
     let createPhysicallyBasedPipelines lightMapsMax lightsMax attachments context =
 
         // create 1d box filter pipeline
-        // TODO: P0: make this pipeline specialized to SSAO since it's 16f!
         let filterBox1dPipeline = createFilterBoxPipeline Constants.Paths.FilterBox1dShaderFilePath R16f.VkFormat
 
         // create bilateral down-sample pipeline

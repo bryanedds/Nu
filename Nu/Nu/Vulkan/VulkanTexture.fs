@@ -542,7 +542,7 @@ type [<CustomEquality; NoComparison>] TextureInternal =
         | AttachmentNone ->
             let uploadSize = ImageFormat.getImageSize metadata.TextureWidth metadata.TextureHeight textureInternal.InternalFormat_
             let stagingBuffer = VulkanBuffer.stageData uploadSize pixels context
-            textureInternal.TextureWrapper_.StagingBuffers.Add stagingBuffer // TODO: P0: make sure this isn't a source of leaks and deal with it if it is!
+            textureInternal.TextureWrapper_.StagingBuffers.Add stagingBuffer
             Hl.recordCopyBufferToImage commandBuffer metadata.TextureWidth metadata.TextureHeight mipLevel layer stagingBuffer.VkBuffer textureInternal.Image
         | AttachmentColor _
         | AttachmentDepth _ -> Log.warn "Upload not supported for attachment texture."

@@ -957,7 +957,6 @@ type private SortableLight =
       SortableLightDesireFog : int
       mutable SortableLightDistance : single }
 
-    // TODO: P0: put the result in a struct with a comparison definition that doesn't allocate.
     static member private project light =
         let directionalWeight = match light.SortableLightType with 2 -> -1 | _ -> 0
         let desiredShadowsWeight = -light.SortableLightDesireShadows
@@ -4327,8 +4326,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead fogAccumTexture renderer.VulkanContext.RenderCommandBuffer
 
                 // deferred render down-sample filter quad to down-sample texture
-                // TODO: P0: verify that down-sampling the depth texture is actually beneficial and the shader is
-                // correctly utilizing depth comparison.
                 let downSampleColorTexture = renderer.PhysicallyBasedAttachments.DownSampleColorAttachment
                 let downSampleDepthTexture = renderer.PhysicallyBasedAttachments.DownSampleDepthAttachment
                 Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite downSampleColorTexture renderer.VulkanContext.RenderCommandBuffer
