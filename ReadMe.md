@@ -32,8 +32,8 @@ Look here to get started with your own project in Nu -
 Some Media on the Nu Game Engine
 ================================
 
-![image](https://github.com/user-attachments/assets/c687c1ed-b9e5-4758-8429-17c23c248195)
-**Screenshot of the Week!**
+![image](https://github.com/user-attachments/assets/f30688e6-777b-4455-9aa4-2287a00a6771)
+**Screenshot of the week featuring of our upcoming Vulkan renderer!**
 
 ![image](https://github.com/user-attachments/assets/e6d56c42-1eb1-41d4-889c-42b03abd4110)
 Our new soft-shadow, volumetric fog systems, depth of field rendering!
