@@ -17,7 +17,7 @@
 
     <Target Name="Run Nu Pipe">
 
-        <!-- Manual inclusions of / are required for " to not get escaped by \ on Windows -->
+        <!-- Manual inclusions of '/' are required for " to not get escaped by '\' on Windows -->
         <Exec Command="dotnet &quot;$([System.IO.Directory]::GetDirectories('$(MSBuildThisFileDirectory)bin/$(Configuration)')[0])/Nu.Pipe.dll&quot; &quot;$(ProjectDirectory)/&quot; &quot;$(NuPipeOut)/&quot; &quot;$(ProjectDirectory)/refinement/$(BlockCompression)/&quot; &quot;$(BlockCompression)&quot; &quot;False&quot;"
               WorkingDirectory="$(ProjectDirectory)" />
 
