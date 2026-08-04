@@ -105,7 +105,7 @@ module AssetGraph =
   [Assets Assets/Default [wav ogg mp3] [] [Audio]]
   [Assets Assets/Default [cur] [] [Cursor]]
   [Assets Assets/Default [nueffect nuscript csv] [] [Symbol]]
-  [Assets Assets/Default [nuentity nugroup tsx tmx nav nbrd frag vert bin] [] []]]]]"""
+  [Assets Assets/Default [nuentity nugroup tsx tmx nav nbrd vert frag bin] [] []]]]]"""
 
     let private getAssetExtension2 blockCompression rawAssetExtension refinement =
         match refinement with
