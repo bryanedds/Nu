@@ -646,7 +646,7 @@ type [<ReferenceEquality>] VulkanContext =
         let validationLayerName = "VK_LAYER_KHRONOS_validation"
         let validationLayerExists = Array.exists (fun layer -> Hl.getLayerName layer = validationLayerName) layers
         if Constants.Render.RenderDebug && not validationLayerExists then
-            Log.info (validationLayerName + " is not available. Vulkan programmers must install the Vulkan SDK to enable validation.")
+            Log.info (validationLayerName + " is not available. The Vulkan SDK must be installed to enable validation.")
 
         // attempt to use validation layer when desired
         Hl.ValidationLayersActivated <- Constants.Render.RenderDebug && validationLayerExists
@@ -1004,7 +1004,7 @@ type [<ReferenceEquality>] VulkanContext =
             VulkanContext.beginRenderCommandBuffer context
 
             // make swapchain image ready for rendering
-            let renderArea = VkRect2D (0, 0, uint windowViewport.Bounds.Size.X, uint windowViewport.Bounds.Size.Y)
+            let renderArea = VkRect2D (windowViewport.Bounds.Min.X, windowViewport.Bounds.Min.Y, uint windowViewport.Bounds.Size.X, uint windowViewport.Bounds.Size.Y)
             let clearColor = VkClearValue (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
             Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color Undefined ColorAttachmentWrite context.SwapchainImage context.RenderCommandBuffer
             Hl.withRenderingInfo [|context.SwapchainImageView|] None renderArea (Some clearColor) $ fun renderingInfo ->
@@ -1059,8 +1059,11 @@ type [<ReferenceEquality>] VulkanContext =
                         Hl.SurfaceState <- SurfaceLost
                         Swapchain.update context.PhysicalDevice_ context.RenderQueue_ context.PresentQueue_ context.Swapchain_ context.Instance_
                     | VkResult.SuboptimalKHR ->
-                        Log.info "Swapchain suboptimal; handling window sizing."
-                        VulkanContext.handleWindowSizing context
+                        // NOTE: commented this code out because it always happens on Android because we haven't yet
+                        // implemented support for pre-transform as described in - https://github.com/bryanedds/Nu/issues/1380
+                        //Log.info "Swapchain suboptimal; handling window sizing."
+                        //VulkanContext.handleWindowSizing context
+                        ()
                     | result -> Hl.check result
 
                 // still need to update the swapchain even if we haven't rendered

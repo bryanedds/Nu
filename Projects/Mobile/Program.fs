@@ -210,7 +210,7 @@ let [<EntryPoint>] entryPoint _ =
         // Avoid hitting MoltenVK iOS Simulator limitations like:
         // - only 31 buffers are supported in the simulator
         // - no rendering to array (layered) attachments
-        Constants.Render.SkipRendering3d <- true
+        Constants.Render.StubRenderer3d <- true
 
     Platform.Apple.iOS.preInitSdl () // Required before we initialize SDL on iOS!
 

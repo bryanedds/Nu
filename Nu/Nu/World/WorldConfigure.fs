@@ -46,11 +46,10 @@ module Configure =
                 | nameof Constants.Render.SsaoResolutionDivisor -> Constants.Render.SsaoResolutionDivisor <- scvalue value
                 | nameof Constants.Render.TextureAnisotropyMax -> Constants.Render.TextureAnisotropyMax <- scvalue value
                 | nameof Constants.Render.TextureMinimalMipmapIndex -> Constants.Render.TextureMinimalMipmapIndex <- scvalue value
-                | nameof Constants.Render.TextureBlockCompression -> Constants.Render.TextureBlockCompression <- scvalue value
                 | nameof Constants.Render.ShadowVirtualResolution -> Constants.Render.ShadowVirtualResolution <- scvalue value
                 | nameof Constants.Render.ShadowDisplayScalarMax -> Constants.Render.ShadowDisplayScalarMax <- scvalue value
                 | nameof Constants.Render.ShadowCascadeLimits -> Constants.Render.ShadowCascadeLimits <- scvalue value
-                | nameof Constants.Render.SkipRendering3d -> Constants.Render.SkipRendering3d <- scvalue value
+                | nameof Constants.Render.StubRenderer3d -> Constants.Render.StubRenderer3d <- scvalue value
                 | nameof Constants.Physics.Collision2dSteps -> Constants.Physics.Collision2dSteps <- scvalue value
                 | nameof Constants.Physics.Collision2dFrameCompensation -> Constants.Physics.Collision2dFrameCompensation <- scvalue value
                 | nameof Constants.Physics.Collision3dBodiesMax -> Constants.Physics.Collision3dBodiesMax <- scvalue value

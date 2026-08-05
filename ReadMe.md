@@ -4,7 +4,7 @@ Nu Game Engine [![Build status](https://github.com/bryanedds/Nu/actions/workflow
 
 So... just what is the **Nu Game Engine**?
 
-*"The Nu Game Engine is the world's first practical functional 2D and 3D cross-platform game engine. Built in F#, it offers an immediate-mode API based on ImGui called ImSim as well as a model-driven API called MMCC (Model-Message-Command-Content). Nu offers a path to a future where game developers are liberated from the snowballing complexity of overly-imperative game programming approaches. Nu's implementation has matured enough to prove both the efficacy and viability of declarative programming in games. Nu currently utilizes SDL3, Vulkan, Aether 2D Physics, and Jolt 3D Physics."*
+*"The Nu Game Engine is the world's first practical functional 2D and 3D cross-platform game engine. Built in F#, it offers an immediate-mode API based on ImGui called ImSim as well as a model-driven API called MMCC (Model-Message-Command-Content). Nu offers a path to a future where game developers are liberated from the snowballing complexity of overly-imperative game programming approaches. Nu's implementation has matured enough to prove both the efficacy and viability of declarative programming in games. Nu currently utilizes SDL3, Vulkan, Box 2D Physics, and Jolt 3D Physics."*
 
 ***"...everything that I can think of that makes games programming so awful seems to have a solution in your engine!"* - @Sigmoid**
 
@@ -32,8 +32,8 @@ Look here to get started with your own project in Nu -
 Some Media on the Nu Game Engine
 ================================
 
-![image](https://github.com/user-attachments/assets/c687c1ed-b9e5-4758-8429-17c23c248195)
-**Screenshot of the Week!**
+![image](https://github.com/user-attachments/assets/f30688e6-777b-4455-9aa4-2287a00a6771)
+**Screenshot of the week featuring of our upcoming Vulkan renderer!**
 
 ![image](https://github.com/user-attachments/assets/e6d56c42-1eb1-41d4-889c-42b03abd4110)
 Our new soft-shadow, volumetric fog systems, depth of field rendering!
@@ -122,4 +122,3 @@ Please Become a Sponsor for Nu Today!
 =====================================
 
 Sponsor here - https://github.com/sponsors/bryanedds
-

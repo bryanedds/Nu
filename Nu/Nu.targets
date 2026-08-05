@@ -81,9 +81,6 @@
         <Reference Include="BulletSharpPInvoke">
             <HintPath>$(MSBuildThisFileDirectory)Nu.Dependencies/BulletSharpPInvoke/netstandard2.1/BulletSharp.dll</HintPath>
         </Reference>
-        <Reference Include="OpenGL.Net">
-            <HintPath>$(MSBuildThisFileDirectory)Nu.Dependencies/OpenGL.NET/lib/netcoreapp2.2/OpenGL.Net.dll</HintPath>
-        </Reference>
         <Reference Include="TiledSharp">
             <HintPath>$(MSBuildThisFileDirectory)Nu.Dependencies/TiledSharp/lib/netstandard2.0/TiledSharp.dll</HintPath>
         </Reference>
