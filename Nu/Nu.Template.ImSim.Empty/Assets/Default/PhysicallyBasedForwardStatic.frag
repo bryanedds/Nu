@@ -1025,7 +1025,7 @@ void main()
     vec3 irradiance = vec3(0.0);
     vec3 environmentFilter = vec3(0.0);
     bool ssrrDesired = lighting.ssrrEnabled == 1 && refractiveIndex != 1.0;
-    vec3 environmentFilterRefracted = vec3(0.0);
+    vec3 irradianceRefracted = vec3(0.0);
     if (lm1 == -1 && lm2 == -1)
     {
         ambientColor = lighting.lightAmbientColor;
@@ -1036,7 +1036,7 @@ void main()
         float cosNvn = dot(-v, n);
         float k = 1.0 - refractiveIndex * refractiveIndex * (1.0 - cosNvn * cosNvn);
         vec3 rfr = k >= 0.0 ? refract(-v, n, refractiveIndex) : r;
-        environmentFilterRefracted = ssrrDesired ? textureLod(samplerCube(environmentFilterMap, filteredSampler), rfr, 0).rgb : vec3(1.0);
+        irradianceRefracted = ssrrDesired ? textureLod(samplerCube(irradianceMap, filteredSampler), rfr, 0).rgb : vec3(1.0);
     }
     else if (lm2 == -1)
     {
@@ -1072,9 +1072,9 @@ void main()
         float k = 1.0 - refractiveIndex * refractiveIndex * (1.0 - cosNvn * cosNvn);
         vec3 rfr1 = k >= 0.0 ? refract(-v, n, refractiveIndex) : r1;
         vec3 rfr2 = k >= 0.0 ? refract(-v, n, refractiveIndex) : r2;
-        vec3 environmentFilterRefracted1 = ssrrDesired ? textureLod(samplerCube(environmentFilterMaps[lm1], filteredSampler), rfr1, 0).rgb : vec3(1.0);
-        vec3 environmentFilterRefracted2 = ssrrDesired ? textureLod(samplerCube(environmentFilterMap, filteredSampler), rfr2, 0).rgb : vec3(1.0);
-        environmentFilterRefracted = mix(environmentFilterRefracted1, environmentFilterRefracted2, ratio);
+        vec3 irradianceRefracted1 = ssrrDesired ? textureLod(samplerCube(irradianceMaps[lm1], filteredSampler), rfr1, 0).rgb : vec3(1.0);
+        vec3 irradianceRefracted2 = ssrrDesired ? textureLod(samplerCube(irradianceMap, filteredSampler), rfr2, 0).rgb : vec3(1.0);
+        irradianceRefracted = mix(irradianceRefracted1, irradianceRefracted2, ratio);
     }
     else
     {
@@ -1106,9 +1106,9 @@ void main()
         float k = 1.0 - refractiveIndex * refractiveIndex * (1.0 - cosNvn * cosNvn);
         vec3 rfr1 = k >= 0.0 ? refract(-v, n, refractiveIndex) : r1;
         vec3 rfr2 = k >= 0.0 ? refract(-v, n, refractiveIndex) : r2;
-        vec3 environmentFilterRefracted1 = ssrrDesired ? textureLod(samplerCube(environmentFilterMaps[lm1], filteredSampler), rfr1, 0).rgb : vec3(1.0);
-        vec3 environmentFilterRefracted2 = ssrrDesired ? textureLod(samplerCube(environmentFilterMaps[lm2], filteredSampler), rfr2, 0).rgb : vec3(1.0);
-        environmentFilterRefracted = mix(environmentFilterRefracted1, environmentFilterRefracted2, ratio);
+        vec3 irradianceRefracted1 = ssrrDesired ? textureLod(samplerCube(irradianceMaps[lm1], filteredSampler), rfr1, 0).rgb : vec3(1.0);
+        vec3 irradianceRefracted2 = ssrrDesired ? textureLod(samplerCube(irradianceMaps[lm2], filteredSampler), rfr2, 0).rgb : vec3(1.0);
+        irradianceRefracted = mix(irradianceRefracted1, irradianceRefracted2, ratio);
     }
 
     // compute ambient terms
@@ -1116,8 +1116,8 @@ void main()
     float ambientBoost = 1.0 + ambientBoostFactor * lighting.lightAmbientBoostScalar;
     vec3 ambientDiffuse = ambientColor * ambientBrightness * ambientBoost * ambientOcclusion;
     vec3 ambientSpecular = ambientDiffuse * ambientOcclusion;
-    vec3 environmentFilterRefractedSaturated = saturate(environmentFilterRefracted, ENVIRONMENT_FILTER_REFRACTED_SATURATION);
-    vec3 ambientColorRefracted = environmentFilterRefractedSaturated * ambientBrightness * lighting.ssrrIntensity;
+    vec3 irradianceRefractedSaturated = saturate(irradianceRefracted, ENVIRONMENT_FILTER_REFRACTED_SATURATION);
+    vec3 ambientColorRefracted = irradianceRefractedSaturated * ambientBrightness * lighting.ssrrIntensity;
 
     // compute diffuse term
     vec3 f = fresnelSchlickRoughness(nDotV, f0, roughness);
