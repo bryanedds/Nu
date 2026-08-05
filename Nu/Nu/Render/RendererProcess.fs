@@ -112,7 +112,7 @@ type RendererInline (windowProperties) =
 
                     // create 3d renderer
                     let renderer3d =
-                        if Constants.Render.SkipRendering3d
+                        if Constants.Render.StubRenderer3d
                         then StubRenderer3d.make () :> Renderer3d
                         else VulkanRenderer3d.make geometryViewport windowViewport context :> Renderer3d
 
@@ -398,7 +398,7 @@ type RendererThread (windowProperties) =
 
         // create 3d renderer
         let renderer3d =
-            if Constants.Render.SkipRendering3d
+            if Constants.Render.StubRenderer3d
             then StubRenderer3d.make () :> Renderer3d
             else VulkanRenderer3d.make geometryViewport windowViewport context :> Renderer3d
 

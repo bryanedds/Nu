@@ -187,6 +187,7 @@ module Render =
     let [<Literal>] NavShapeName = "NavShape"
     let [<Uniform>] mutable RenderDebug = match ConfigurationManager.AppSettings["RenderDebug"] with null -> false | value -> scvalue value
     let [<Uniform>] mutable RenderVsync = match ConfigurationManager.AppSettings["RenderVsync"] with null -> true | value -> scvalue value
+    let [<Uniform>] mutable StubRenderer3d = match ConfigurationManager.AppSettings["StubRenderer3d"] with null -> false | value -> scvalue value
     let [<Uniform>] mutable NearPlaneDistanceInterior = match ConfigurationManager.AppSettings["NearPlaneDistanceInterior"] with null -> 0.125f | value -> scvalue value
     let [<Uniform>] mutable FarPlaneDistanceInterior = match ConfigurationManager.AppSettings["FarPlaneDistanceInterior"] with null -> 20.0f | value -> scvalue value
     let [<Uniform>] mutable NearPlaneDistanceExterior = match ConfigurationManager.AppSettings["NearPlaneDistanceExterior"] with null -> 20.0f | value -> scvalue value
@@ -353,7 +354,6 @@ module Render =
     let [<Literal>] Body3dSegmentRenderMagnitudeMax = 48.0f
     let [<Literal>] Body3dSegmentRenderDistanceMax = 40.0f
     let [<Literal>] Body3dRenderDistanceMax = 32.0f
-    let [<Uniform>] mutable SkipRendering3d = match ConfigurationManager.AppSettings["SkipRendering3d"] with null -> false | value -> scvalue value
 
 [<RequireQualifiedAccess>]
 module Audio =
