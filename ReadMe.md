@@ -15,7 +15,7 @@ This branch not only replaces our OpenGL renderers completely with Vulkan render
 
 Go ahead and get your projects ready to use the new `vulkan` branch as it will soon be merged into `master`! If you have any issues, please report them so we can fix them before doing said merge to `master`!
 
-This upgrade to Nu is all thanks to incredible work from [@deanjl], [@Happypig375], [@yvileapsis], [@bryanedds], as well as the patient support of our [donors](https://github.com/sponsors/bryanedds)!
+This upgrade to Nu is all thanks to incredible work from [@deanjl](https://github.com/deanjl), [@Happypig375](https://github.com/Happypig375), [@yvileapsis](https://github.com/yvileapsis), [@bryanedds](https://github.com/bryanedds), as well as the patient support of our [donors](https://github.com/sponsors/bryanedds)!
 
 **Live Nu Game Engine Support on [Discord](https://discord.gg/BN79RxYAjD) [![Discord](https://img.shields.io/discord/700010129994809667)](https://discord.gg/BN79RxYAjD)**
 
