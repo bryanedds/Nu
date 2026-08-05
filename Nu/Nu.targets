@@ -94,15 +94,15 @@
 
     <!-- Windows x64: copy native .dll files to output -->
     <ItemGroup Condition="'$(TargetPlatformIdentifier)' == '' And (('$(RuntimeIdentifier)'=='' And $([System.OperatingSystem]::IsWindows()) And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'X64') Or '$(RuntimeIdentifier)' == 'win-x64')">
-        <None Include="$(MSBuildThisFileDirectory)Nu/zlib1.dll">
+        <None Include="$(MSBuildThisFileDirectory)Nu.Dependencies/AssimpNet/win-x64/zlib1.dll">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Visible>False</Visible>
         </None>
-        <None Include="$(MSBuildThisFileDirectory)Nu/assimp.dll">
+        <None Include="$(MSBuildThisFileDirectory)Nu.Dependencies/AssimpNet/win-x64/assimp.dll">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Visible>False</Visible>
         </None>
-        <None Include="$(MSBuildThisFileDirectory)Nu/libbulletc.dll">
+        <None Include="$(MSBuildThisFileDirectory)Nu.Dependencies/BulletSharpPInvoke/win-x64/libbulletc.dll">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Visible>False</Visible>
         </None>
@@ -110,11 +110,11 @@
 
     <!-- Linux x64: copy native .so files to output -->
     <ItemGroup Condition="'$(TargetPlatformIdentifier)' == '' And (('$(RuntimeIdentifier)'=='' And $([System.OperatingSystem]::IsLinux()) And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'X64') Or '$(RuntimeIdentifier)' == 'linux-x64')">
-        <None Include="$(MSBuildThisFileDirectory)Nu/libassimp.so">
+        <None Include="$(MSBuildThisFileDirectory)Nu.Dependencies/AssimpNet/linux-x64/libassimp.so">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Visible>False</Visible>
         </None>
-        <None Include="$(MSBuildThisFileDirectory)Nu/libbulletc.so">
+        <None Include="$(MSBuildThisFileDirectory)Nu.Dependencies/BulletSharpPInvoke/linux-x64/libbulletc.so">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Visible>False</Visible>
         </None>

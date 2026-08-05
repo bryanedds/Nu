@@ -1,0 +1,148 @@
+# ============================================================================
+# build-native.yml
+#
+# Rebuilds all of Nu's native dependencies on request and writes the binaries
+# back into Nu/Nu.Dependencies (the layout Nu.targets expects).
+#
+# Triggered manually from the Actions tab ("Run workflow"). No PR required:
+#   * The branch selected in the "Run workflow" dropdown is the target. The
+#     build job checks that branch out, and (optionally) the commit job pushes
+#     the rebuilt binaries back to that same branch.
+#   * If you want it to run for pull requests instead/as well, add
+#     `pull_request:` to the `on:` block and set `ref` accordingly.
+#
+# Matrix (one runner per platform):
+#   win-x64   (windows-latest)  -> AssimpNet/win-x64, BulletSharpPInvoke/win-x64
+#   linux-x64 (ubuntu-latest)   -> AssimpNet/linux-x64, BulletSharpPInvoke/linux-x64
+#   ios       (macos-26)        -> all six *.xcframework (iOS device + simulator + macOS slices)
+#   android   (ubuntu-latest)   -> AssimpNet/android, ImGui/android, ShaderC/android
+# ============================================================================
+name: Build Native Dependencies
+
+on:
+  workflow_dispatch:
+    inputs:
+      platforms:
+        description: 'Comma-separated platforms to build: win-x64, linux-x64, ios, android'
+        required: false
+        default: 'win-x64,linux-x64,ios,android'
+      commit:
+        description: 'Commit the rebuilt binaries back to the dispatched branch'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.platform.name }}
+    runs-on: ${{ matrix.platform.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - { name: win-x64,   os: windows-latest }
+          - { name: linux-x64, os: ubuntu-latest }
+          - { name: ios,       os: macos-26 }
+          - { name: android,   os: ubuntu-latest }
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Vulkan SDK (macOS, for vma)
+        if: contains(matrix.platform.os, 'macos')
+        uses: jakoch/install-vulkan-sdk-action@v1
+        with:
+          optional_components: com.lunarg.vulkan.ios
+
+      - name: Build native dependencies
+        if: contains(github.event.inputs.platforms, matrix.platform.name)
+        shell: bash
+        env:
+          NAME: ${{ matrix.platform.name }}
+          RUNNER_OS: ${{ runner.os }}
+          # VULKAN_SDK is exported by the Vulkan SDK action above and read
+          # directly by Build.Native.Dependencies.sh (vma header).
+        run: bash Nu/Nu.Build/Build.Native.Dependencies.sh
+
+      - name: Package outputs
+        if: contains(github.event.inputs.platforms, matrix.platform.name)
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "${{ matrix.platform.name }}" in
+            win-x64)
+              tar -czf native-win-x64.tar.gz \
+                Nu/Nu.Dependencies/AssimpNet/win-x64 \
+                Nu/Nu.Dependencies/BulletSharpPInvoke/win-x64
+              ;;
+            linux-x64)
+              tar -czf native-linux-x64.tar.gz \
+                Nu/Nu.Dependencies/AssimpNet/linux-x64 \
+                Nu/Nu.Dependencies/BulletSharpPInvoke/linux-x64
+              ;;
+            ios)
+              tar -czf native-ios.tar.gz \
+                Nu/Nu.Dependencies/AssimpNet/iOS \
+                Nu/Nu.Dependencies/BulletSharpPInvoke/iOS \
+                Nu/Nu.Dependencies/ImGui/iOS \
+                Nu/Nu.Dependencies/JoltPhysics/iOS \
+                Nu/Nu.Dependencies/Vortice.VulkanMemoryAllocator/iOS \
+                Nu/Nu.Dependencies/ShaderC/iOS
+              ;;
+            android)
+              tar -czf native-android.tar.gz \
+                Nu/Nu.Dependencies/AssimpNet/android \
+                Nu/Nu.Dependencies/ImGui/android \
+                Nu/Nu.Dependencies/ShaderC/android
+              ;;
+          esac
+
+      - name: Upload native artifact
+        if: contains(github.event.inputs.platforms, matrix.platform.name)
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-${{ matrix.platform.name }}
+          path: native-${{ matrix.platform.name }}.tar.gz
+          if-no-files-found: error
+
+  # Optionally commit the rebuilt binaries back to the dispatched branch.
+  commit:
+    name: Commit rebuilt binaries
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event.inputs.commit == 'true'
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Download native artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Extract into Nu.Dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in artifacts/native-*.tar.gz; do
+            [ -f "$f" ] || continue
+            tar -xzf "$f"
+          done
+          rm -rf artifacts
+
+      - name: Commit and push
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Nu/Nu.Dependencies
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Rebuild native dependencies"
+            git push
+          fi
