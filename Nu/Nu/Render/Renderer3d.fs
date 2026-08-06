@@ -909,8 +909,8 @@ type private SortableLightProjection =
         left.DesiredShadowsWeight = right.DesiredShadowsWeight
 
     static member compare left right =
-        if left.DirectionalWeight < right.DirectionalWeight then 1
-        elif left.DirectionalWeight > right.DirectionalWeight then -1
+        if left.DirectionalWeight < right.DirectionalWeight then -1
+        elif left.DirectionalWeight > right.DirectionalWeight then 1
         elif left.LightDistance < right.LightDistance then -1
         elif left.LightDistance > right.LightDistance then 1
         elif left.DesiredShadowsWeight < right.DesiredShadowsWeight then -1
@@ -918,19 +918,21 @@ type private SortableLightProjection =
         else 0
 
     static member make directionalWeight lightDistance desiredShadowsWeight =
-        { DirectionalWeight = directionalWeight; LightDistance = lightDistance; DesiredShadowsWeight = desiredShadowsWeight }
+        { DirectionalWeight = directionalWeight
+          LightDistance = lightDistance
+          DesiredShadowsWeight = desiredShadowsWeight }
 
     override this.Equals that =
         match that with
         | :? SortableLightProjection as that -> SortableLightProjection.equals this that
         | _ -> false
 
-    override x.GetHashCode () =
-        HashCode.Combine(x.DirectionalWeight, x.LightDistance, x.DesiredShadowsWeight)
+    override this.GetHashCode () =
+        HashCode.Combine (this.DirectionalWeight, this.LightDistance, this.DesiredShadowsWeight)
 
     interface IComparable<SortableLightProjection> with
         member this.CompareTo that =
-            compare this.DesiredShadowsWeight that.DesiredShadowsWeight
+            SortableLightProjection.compare this that
 
     interface IComparable with
         member this.CompareTo that =
