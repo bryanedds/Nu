@@ -4624,7 +4624,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             Texture.recordTransitionLayout TransferSrc ColorAttachmentRead colorFull0Texture renderer.VulkanContext.RenderCommandBuffer
             Texture.recordTransitionLayout TransferDst ColorAttachmentRead compositionTexture renderer.VulkanContext.RenderCommandBuffer
 
-        // run tone-mapping pass when appropriate
+        // run tone-mapping pass
         let toneMappingTexture = renderer.PhysicallyBasedAttachments.ToneMappingAttachment
         Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite toneMappingTexture renderer.VulkanContext.RenderCommandBuffer
         PhysicallyBased.drawFilterToneMappingSurface
