@@ -11,20 +11,24 @@ open Prime
 open Nu
 open Nu.Gaia
 
+/// The visualization mode of the Gaia editor.
 type ViewMode =
     | NormalMode
     | FreeMode
     | CaptureMode
 
+/// The state of an entity drag operation in the Gaia editor.
 type DragEntityState =
     | DragEntityPosition2d of DateTime : DateTimeOffset * Snapshotted : bool ref * MousePositionWorldOrig : Vector2 * EntityDragOffset : Vector2 * Entity : Entity
     | DragEntityRotation2d of DateTime : DateTimeOffset * Snapshotted : bool ref * MousePositionWorldOrig : Vector2 * EntityDragOffset : single * Entity : Entity
     | DragEntityInactive
 
+/// The state of an eye drag operation in the Gaia editor.
 type DragEyeState =
     | DragEye2dCenter of Offset : Vector2 * Origin : Vector2
     | DragEyeInactive
 
+/// The persistent state of the Gaia editor.
 type [<SymbolicExpansion>] GaiaState =
     { ProjectDllPath : string
       ProjectEditModeOpt : string option
@@ -43,6 +47,7 @@ type [<SymbolicExpansion>] GaiaState =
       AlternativeEyeTravelInput : bool
       OverlayMode : bool }
 
+    /// Make a Gaia state.
     static member make
         dllPath editModeOpt freshlyLoaded imperativeExecution
         desiredEye2dCenter desiredEye3dCenter desiredEye3dRotation masterSoundVolume masterSongVolume
@@ -65,6 +70,7 @@ type [<SymbolicExpansion>] GaiaState =
           AlternativeEyeTravelInput = alternativeEyeTravelInput
           OverlayMode = overlayMode }
 
+    /// The default Gaia state.
     static member val defaultState =
         GaiaState.make
             "" None false false

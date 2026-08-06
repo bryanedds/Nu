@@ -23,21 +23,21 @@ open Prime
 open Nu
 open Nu.Gaia
 
-//////////////////////////////////////////////////////////////////////////////////////
-// TODO:                                                                            //
-// Custom properties in order of priority:                                          //
-//  Enums                                                                           //
-//  Flag Enums                                                                      //
-//  CollisionMask                                                                   //
-//  CollisionCategories                                                             //
-//  CollisionDetection                                                              //
-//  BodyShape                                                                       //
-//  BodyJoint                                                                       //
-//  BlendMaterial                                                                   //
-//  TerrainMaterial                                                                 //
-//  DateTimeOffset?                                                                 //
-//  SymbolicCompression                                                             //
-//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////
+// TODO:                                    //
+// Custom properties in order of priority:  //
+//  Enums                                   //
+//  Flag Enums                              //
+//  CollisionMask                           //
+//  CollisionCategories                     //
+//  CollisionDetection                      //
+//  BodyShape                               //
+//  BodyJoint                               //
+//  BlendMaterial                           //
+//  TerrainMaterial                         //
+//  DateTimeOffset?                         //
+//  SymbolicCompression                     //
+//////////////////////////////////////////////
 
 [<RequireQualifiedAccess>]
 module Gaia =
