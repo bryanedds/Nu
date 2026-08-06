@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Buffers
 open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
 open System.Text
@@ -130,7 +131,7 @@ module NativePtrOperators =
         NativePtr.asNativeInt &managedPtr
 
 /// Abstraction for native pointer pinning for arrays.
-type ArrayPin<'a when 'a : unmanaged> private (handle : Buffers.MemoryHandle, ptr : nativeptr<'a>) =
+type ArrayPin<'a when 'a : unmanaged> private (handle : MemoryHandle, ptr : nativeptr<'a>) =
 
     /// Create an ArrayPin for a given array.
     new (array : 'a array) =
