@@ -93,7 +93,8 @@ type [<Struct; StructLayout (LayoutKind.Sequential)>] ContourBandEntry =
 /// Contains only curve and band data — no paint/color fields.
 /// The fill-rule flag distinguishes EvenOdd from NonZero winding.
 type [<Struct>] ContourSlugGeometry =
-    { Curves : ContourCurve array
+    { /// Geometric curvature.
+      Curves : ContourCurve array
       /// Per-band curve indices, packed as a flat uint array.
       /// First H-band entries, then V-band entries.
       BandEntries : ContourBandEntry array
