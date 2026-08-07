@@ -21,6 +21,7 @@
              4) all the above setup and their updates are unnecessary for desktop users. Therefore, mobile builds are
 			 disabled by default, and the desktop target framework is used instead.
 			 5) our custom property $(BuildMobile) is used by CI to build for mobile. -->
+        <TargetFrameworks Condition="'$(BuildMobile)' != 'true'">net10.0</TargetFrameworks>
 	</PropertyGroup>
 
 	<!-- ============================================================
