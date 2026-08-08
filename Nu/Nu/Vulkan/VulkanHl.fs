@@ -9,6 +9,8 @@ open System
 open System.Numerics
 open System.Reflection
 open System.Runtime.InteropServices
+open System.Security.Cryptography
+open System.Text
 open System.Threading
 open System.IO
 open FSharp.NativeInterop
@@ -707,18 +709,24 @@ module Hl =
 
     /// Try to compile GLSL file to SPIR-V code.
     let tryCompileShader shaderPath shaderKind =
-        use shaderStream = new StreamReader (File.OpenRead shaderPath)
-        let shaderStr = shaderStream.ReadToEnd ()
-        use compiler = new Compiler ()
-        let options =
-            CompilerOptions
-                (ShaderStage = shaderKind,
-                 OptimizationLevel = (if Constants.Render.RenderDebug then OptimizationLevel.Zero else OptimizationLevel.Performance),
-                 GeneratedDebug = Constants.Engine.EngineDebug)
-        let result = compiler.Compile (shaderStr, shaderPath, options)
-        if result.Status = CompilationStatus.Success
-        then Right result.Bytecode
-        else Left ("Vulkan shader compilation failed due to:\n" + result.ErrorMessage)
+        let shaderStr = File.ReadAllText shaderPath
+        let optimizationLevel = if Constants.Render.RenderDebug then OptimizationLevel.Zero else OptimizationLevel.Performance
+        let generatedDebug = Constants.Engine.EngineDebug
+        let cacheKey = shaderStr + scstring shaderKind + "|" + scstring optimizationLevel + "|" + scstring generatedDebug
+        let cacheHash = Convert.ToHexString (SHA256.HashData (Encoding.UTF8.GetBytes cacheKey))
+        try Directory.CreateDirectory "ShaderCache" |> ignore<DirectoryInfo>
+        with exn -> Log.warn ("Failed to create ./ShaderCache directory due to: " + scstring exn)
+        let cachePath = PathF.Combine ("ShaderCache", cacheHash + ".spv")
+        if not (File.Exists cachePath) then
+            use compiler = new Compiler ()
+            let options = CompilerOptions (ShaderStage = shaderKind, OptimizationLevel = optimizationLevel, GeneratedDebug = generatedDebug)
+            let result = compiler.Compile (shaderStr, shaderPath, options)
+            if result.Status = CompilationStatus.Success then
+                try File.WriteAllBytes (cachePath, result.Bytecode)
+                with exn -> Log.warn ("Failed to save SPIR-V bytecode for shader '" + shaderPath + "' due to: " + scstring exn)
+                Right result.Bytecode
+            else Left ("Vulkan shader compilation failed due to:\n" + result.ErrorMessage)
+        else Right (File.ReadAllBytes cachePath)
 
     /// Try to create a shader module from a GLSL file.
     /// TODO: create matching destroy fn and use that?
