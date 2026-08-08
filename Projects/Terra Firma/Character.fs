@@ -322,17 +322,16 @@ type CharacterDispatcher () =
                  Entity.NavShape .= EmptyNavShape] world
 
         // update weapon transform in a deferred manner (after model animation has been applied)
-        World.defer
-            (fun world ->
-                let weaponTransform =
-                    match animatedModel.TryGetBoneTransformByName Constants.Gameplay.CharacterWeaponHandBoneName world with
-                    | Some weaponHandBoneTransform ->
-                        Matrix4x4.CreateTranslation (v3 -0.1f 0.0f 0.02f) *
-                        Matrix4x4.CreateFromAxisAngle (v3Forward, MathF.PI_OVER_2) *
-                        weaponHandBoneTransform
-                    | None -> m4Identity
-                world.DeclaredEntity.SetPosition weaponTransform.Translation world
-                world.DeclaredEntity.SetRotation weaponTransform.Rotation world)
+        World.defer (fun world ->
+            let weaponTransform =
+                match animatedModel.TryGetBoneTransformByName Constants.Gameplay.CharacterWeaponHandBoneName world with
+                | Some weaponHandBoneTransform ->
+                    Matrix4x4.CreateTranslation (v3 -0.1f 0.0f 0.02f) *
+                    Matrix4x4.CreateFromAxisAngle (v3Forward, MathF.PI_OVER_2) *
+                    weaponHandBoneTransform
+                | None -> m4Identity
+            world.DeclaredEntity.SetPosition weaponTransform.Translation world
+            world.DeclaredEntity.SetRotation weaponTransform.Rotation world)
             entity
             world
 
