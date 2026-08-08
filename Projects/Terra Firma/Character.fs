@@ -320,6 +320,7 @@ type CharacterDispatcher () =
                  Entity.BodyShape .= BoxShape { Size = v3 0.3f 1.2f 0.3f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.6f 0.0f)); PropertiesOpt = None }
                  Entity.Sensor .= true
                  Entity.NavShape .= EmptyNavShape] world
+        let weapon = world.DeclaredEntity
 
         // update weapon transform in a deferred manner (after model animation has been applied)
         World.defer (fun world ->
@@ -330,8 +331,8 @@ type CharacterDispatcher () =
                     Matrix4x4.CreateFromAxisAngle (v3Forward, MathF.PI_OVER_2) *
                     weaponHandBoneTransform
                 | None -> m4Identity
-            world.DeclaredEntity.SetPosition weaponTransform.Translation world
-            world.DeclaredEntity.SetRotation weaponTransform.Rotation world)
+            weapon.SetPosition weaponTransform.Translation world
+            weapon.SetRotation weaponTransform.Rotation world)
             entity
             world
 
