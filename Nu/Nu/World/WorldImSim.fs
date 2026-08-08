@@ -151,10 +151,6 @@ module WorldImSim =
             World.monitor (fun event world -> updateResult (FQueue.conj $ BodySeparationImplicitData event.Data) world; Cascade) entity.BodySeparationImplicitEvent entity world
             World.monitor (fun event world -> updateResult (FQueue.conj $ BodyTransformData event.Data) world; Cascade) entity.BodyTransformEvent entity world
 
-        /// TODO: document this!
-        static member initSpineSkeletonAnimationResult updateResult (entity : Entity) world =
-            World.monitor (fun event world -> updateResult (FQueue.conj $ event.Data) world; Cascade) entity.SpineSkeletonAnimationTriggerEvent entity world
-
         /// Clear the current ImSim context.
         static member scopeWorld world =
             World.setContext Address.empty world
@@ -685,11 +681,28 @@ module WorldImSim =
             (world.DeclaredEntity.GetBodyId world, results)
 
         /// <summary>
-        /// ImSim declare a tile map with the given arguments.
-        /// See <see cref="SpineSkeletonDispatcher" />.
+        /// ImSim declare a 2d circle contour with the given arguments.
+        /// See <see cref="CircleContour2dDispatcher" />.
         /// </summary>
-        static member doSpineSkeleton name args world =
-            World.doEntityPlus<SpineSkeletonDispatcher, _> FQueue.empty World.initSpineSkeletonAnimationResult name args world
+        static member doCircleContour2d name args world = World.doEntity<CircleContour2dDispatcher> name args world
+
+                /// <summary>
+        /// ImSim declare a 2d rectangle contour with the given arguments.
+        /// See <see cref="RectangleContour2dDispatcher" />.
+        /// </summary>
+        static member doRectangleContour2d name args world = World.doEntity<RectangleContour2dDispatcher> name args world
+
+        /// <summary>
+        /// ImSim declare a 2d spiral contour with the given arguments.
+        /// See <see cref="SpiralContour2dDispatcher" />.
+        /// </summary>
+        static member doSpiralContour2d name args world = World.doEntity<SpiralContour2dDispatcher> name args world
+
+        /// <summary>
+        /// ImSim declare a 2d wedge (pie slice) contour with the given arguments.
+        /// See <see cref="WedgeContour2dDispatcher" />.
+        /// </summary>
+        static member doWedgeContour2d name args world = World.doEntity<WedgeContour2dDispatcher> name args world
 
         /// <summary>
         /// ImSim declare a 3d light probe with the given arguments.

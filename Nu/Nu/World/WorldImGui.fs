@@ -530,7 +530,7 @@ module WorldImGui =
                     let (edited3, value) =
                         if ImGui.BeginDragDropTarget () then
                             let (edited4, value) =
-                                if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
+                                if NativePtr.notNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr then
                                     match context.DragDropPayloadOpt with
                                     | Some (DragDropAsset (assetTagStr, _)) ->
                                         try let valueStrEscaped = assetTagStr
@@ -881,6 +881,7 @@ module WorldImGui =
                 let mutable lightShadowBias = lighting3dConfig.LightShadowBias
                 let mutable lightShadowSampleScalar = lighting3dConfig.LightShadowSampleScalar
                 let mutable lightShadowExponent = lighting3dConfig.LightShadowExponent
+                let mutable lightShadowRadius = lighting3dConfig.LightShadowRadius
                 let mutable lightShadowDensity = lighting3dConfig.LightShadowDensity
                 let mutable lightMapSingletonBlendMargin = lighting3dConfig.LightMapSingletonBlendMargin
                 let mutable lightExposure = lighting3dConfig.LightExposure
@@ -939,6 +940,7 @@ module WorldImGui =
                 let mutable depthOfFieldEnabled = lighting3dConfig.DepthOfFieldEnabled
                 let mutable depthOfFieldNearDistance = lighting3dConfig.DepthOfFieldNearDistance
                 let mutable depthOfFieldFarDistance = lighting3dConfig.DepthOfFieldFarDistance
+                let mutable depthOfFieldRadius = lighting3dConfig.DepthOfFieldRadius
                 let mutable depthOfFieldFocalType = lighting3dConfig.DepthOfFieldFocalType.Enumerate
                 let mutable depthOfFieldFocalDistance = lighting3dConfig.DepthOfFieldFocalDistance
                 let mutable depthOfFieldFocalPoint = lighting3dConfig.DepthOfFieldFocalPoint
@@ -953,6 +955,7 @@ module WorldImGui =
                 lighting3dEdited <- ImGui.SliderFloat ("Light Shadow Bias", &lightShadowBias, 0.0f, 0.05f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Light Shadow Sample Scalar", &lightShadowSampleScalar, 0.0f, 0.05f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Light Shadow Exponent", &lightShadowExponent, 0.0f, 90.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Light Shadow Radius", &lightShadowRadius, 0.0f, 5.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Light Shadow Density", &lightShadowDensity, 0.0f, 32.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Light Map Singleton Blend Margin", &lightMapSingletonBlendMargin, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 ImGui.Text "Exposure / Tone Mapping"
@@ -1024,6 +1027,7 @@ module WorldImGui =
                 lighting3dEdited <- ImGui.Checkbox ("Depth of Field Enabled", &depthOfFieldEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Depth of Field Near Distance", &depthOfFieldNearDistance, 0.0f, 256.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Depth of Field Far Distance", &depthOfFieldFarDistance, 0.0f, 256.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Depth of Field Radius", &depthOfFieldRadius, 0.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.Combo ("Depth of Field Focal Depth Type", &depthOfFieldFocalType, FocalType.Names, FocalType.Names.Length) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 if depthOfFieldFocalType = StaticFocalDistance.Enumerate then
                     lighting3dEdited <- ImGui.SliderFloat ("Depth of Field Focal Depth", &depthOfFieldFocalDistance, 0.0f, 256.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
@@ -1042,6 +1046,7 @@ module WorldImGui =
                           LightShadowBias = lightShadowBias
                           LightShadowSampleScalar = lightShadowSampleScalar
                           LightShadowExponent = lightShadowExponent
+                          LightShadowRadius = lightShadowRadius
                           LightShadowDensity = lightShadowDensity
                           LightMapSingletonBlendMargin = lightMapSingletonBlendMargin
                           LightExposure = lightExposure
@@ -1100,6 +1105,7 @@ module WorldImGui =
                           DepthOfFieldEnabled = depthOfFieldEnabled
                           DepthOfFieldNearDistance = depthOfFieldNearDistance
                           DepthOfFieldFarDistance = depthOfFieldFarDistance
+                          DepthOfFieldRadius = depthOfFieldRadius
                           DepthOfFieldFocalType = FocalType.makeFromEnumeration depthOfFieldFocalType
                           DepthOfFieldFocalDistance = depthOfFieldFocalDistance
                           DepthOfFieldFocalPoint = depthOfFieldFocalPoint
@@ -1196,19 +1202,6 @@ module WorldImGui =
                     |> (fun s -> if underline then Set.add Underline s else s)
                     |> (fun s -> if strikethrough then Set.add Strikethrough s else s)
                 (promoted, edited, fontStyling)
-            | :? (SpineAnimation array) as animations -> // TODO: P1: implement bespoke individual SpineAnimation editing.
-                ImGui.Text name
-                ImGui.SameLine ()
-                ImGui.PushID name
-                let (promoted, edited, animations) =
-                    World.imGuiEditPropertyArray
-                        (fun name animation ->
-                            let (promoted, edited, animation) = World.imGuiEditProperty name (typeof<SpineAnimation>) animation context world
-                            (promoted, edited, animation :?> SpineAnimation))
-                        { SpineAnimationName = ""; SpineAnimationPlayback = Loop }
-                        name animations context
-                ImGui.PopID ()
-                (promoted, edited, animations)
             | :? (Animation array) as animations ->
                 ImGui.Text name
                 ImGui.SameLine ()

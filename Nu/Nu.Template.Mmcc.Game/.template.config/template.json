@@ -5,6 +5,7 @@
   "identity": "Nu Template MMCC Game",
   "name": "Nu Template MMCC Game",
   "shortName": "nu-template-mmcc-game",
+  "sourceName": "Nu.Template.Mmcc.Game",
   "tags": {
     "language": "F#",
     "type": "project"

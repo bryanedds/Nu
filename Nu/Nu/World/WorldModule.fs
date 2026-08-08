@@ -410,6 +410,10 @@ module WorldModule =
         static member tryGetWindowFlags world =
             World.getAmbientStateBy AmbientState.tryGetWindowFlags world
 
+        /// Attempt to get the window pixel density.
+        static member tryGetWindowPixelDensity (world : World) =
+            AmbientState.tryGetWindowPixelDensity world.AmbientState
+
         /// Attempt to check that the window is minimized.
         static member tryGetWindowMinimized world =
             World.getAmbientStateBy AmbientState.tryGetWindowMinimized world
@@ -442,15 +446,19 @@ module WorldModule =
         static member tryGetWindowSize world =
             World.getAmbientStateBy (AmbientState.tryGetWindowSize) world
 
-        /// Get the window size, using resolution as default in case there is no window.
-        static member getWindowSize world =
-            match World.tryGetWindowSize world with
-            | Some windowsSize -> windowsSize
-            | None -> world.WindowViewport.Outer.Size
-
         /// Attempt to set the window size.
         static member trySetWindowSize size world =
             World.getAmbientStateBy (AmbientState.trySetWindowSize size) world
+
+        /// Attempt to get the window properties.
+        static member tryGetWindowProperties (world : World) =
+            AmbientState.tryGetWindowProperties world.AmbientState
+
+        /// Get the window size, using viewport outer size when there is no window.
+        static member getWindowSizeOtherwiseViewportSize world =
+            match World.tryGetWindowSize world with
+            | Some windowsSize -> windowsSize
+            | None -> world.WindowViewport.Outer.Size
 
         /// Get the geometry viewport.
         static member getGeometryViewport (world : World) =
@@ -986,14 +994,14 @@ module WorldModule =
 
     type World with // Debugging
 
-        /// View the member properties of some SimulantState.
+        /// Provide the member properties of some SimulantState.
         static member internal getSimulantStateMemberProperties (state : SimulantState) =
             getType state
             |> (fun ty -> ty.GetProperties true)
             |> Array.map (fun (property : PropertyInfo) -> (property.Name, property.PropertyType, property.GetValue state))
             |> Array.toList
 
-        /// View the xtension properties of some SimulantState.
+        /// Provide the xtension properties of some SimulantState.
         static member internal getSimulantStateXtensionProperties (state : SimulantState) =
             state.GetXtension().Properties.Pairs
             |> List.ofSeq

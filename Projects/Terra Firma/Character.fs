@@ -292,6 +292,7 @@ type CharacterDispatcher () =
         | WoundState _ -> ()
 
         // declare animated model
+        let materialProperties = { MaterialProperties.empty with ScatterTypeOpt = ValueSome SkinScatter }
         let animations = computeTraversalAnimations entity world
         let (visible, animations) = tryComputeActionAnimation animations entity world
         World.doEntity<AnimatedModelDispatcher> Constants.Gameplay.CharacterAnimatedModelName
@@ -302,23 +303,15 @@ type CharacterDispatcher () =
              Entity.MountOpt .= None
              Entity.Visible @= visible
              Entity.Pickable .= false
+             Entity.MaterialProperties .= materialProperties
              Entity.Animations @= animations
              Entity.AnimatedModel .= Assets.Gameplay.JoanModel] world
         let animatedModel = world.DeclaredEntity
 
         // declare weapon
-        let weaponTransform =
-            match animatedModel.TryGetBoneTransformByName Constants.Gameplay.CharacterWeaponHandBoneName world with
-            | Some weaponHandBoneTransform ->
-                Matrix4x4.CreateTranslation (v3 -0.1f 0.0f 0.02f) *
-                Matrix4x4.CreateFromAxisAngle (v3Forward, MathF.PI_OVER_2) *
-                weaponHandBoneTransform
-            | None -> m4Identity
         let (_, results) =
             World.doRigidModel Constants.Gameplay.CharacterWeaponName
-                [Entity.Position @= weaponTransform.Translation
-                 Entity.Rotation @= weaponTransform.Rotation
-                 Entity.Offset .= v3 0.0f 0.5f 0.0f
+                [Entity.Offset .= v3 0.0f 0.5f 0.0f
                  Entity.MountOpt .= None
                  Entity.Visible @= visible
                  Entity.Pickable .= false
@@ -327,6 +320,21 @@ type CharacterDispatcher () =
                  Entity.BodyShape .= BoxShape { Size = v3 0.3f 1.2f 0.3f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.6f 0.0f)); PropertiesOpt = None }
                  Entity.Sensor .= true
                  Entity.NavShape .= EmptyNavShape] world
+        let weapon = world.DeclaredEntity
+
+        // update weapon transform in a deferred manner (after model animation has been applied)
+        World.defer (fun world ->
+            let weaponTransform =
+                match animatedModel.TryGetBoneTransformByName Constants.Gameplay.CharacterWeaponHandBoneName world with
+                | Some weaponHandBoneTransform ->
+                    Matrix4x4.CreateTranslation (v3 -0.1f 0.0f 0.02f) *
+                    Matrix4x4.CreateFromAxisAngle (v3Forward, MathF.PI_OVER_2) *
+                    weaponHandBoneTransform
+                | None -> m4Identity
+            weapon.SetPosition weaponTransform.Translation world
+            weapon.SetRotation weaponTransform.Rotation world)
+            entity
+            world
 
         // process weapon collisions
         for result in results do

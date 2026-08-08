@@ -2020,172 +2020,364 @@ type TmxMapFacet () =
         TmxMap.getAttributesInferred (entity.GetTileSizeDivisor world) tmxMap
 
 [<AutoOpen>]
-module SpineSkeletonExtensions =
+module CircleContour2dExtensions =
     type Entity with
-        member this.GetSpineSkeleton world : SpineSkeleton AssetTag = this.Get (nameof this.SpineSkeleton) world
-        member this.SetSpineSkeleton (value : SpineSkeleton AssetTag) world = this.Set (nameof this.SpineSkeleton) value world
-        member this.SpineSkeleton = lens (nameof this.SpineSkeleton) this this.GetSpineSkeleton this.SetSpineSkeleton
-        member this.GetSpineSkeletonStateOpt world : SpineSkeletonState option = this.Get (nameof this.SpineSkeletonStateOpt) world
-        member this.SetSpineSkeletonStateOpt (value : SpineSkeletonState option) world = this.Set (nameof this.SpineSkeletonStateOpt) value world
-        member this.SpineSkeletonStateOpt = lens (nameof this.SpineSkeletonStateOpt) this this.GetSpineSkeletonStateOpt this.SetSpineSkeletonStateOpt
-        member this.GetSpineAnimations world : SpineAnimation array = this.Get (nameof this.SpineAnimations) world
-        member this.SetSpineAnimations (value : SpineAnimation array) world = this.Set (nameof this.SpineAnimations) value world
-        member this.SpineAnimations = lens (nameof this.SpineAnimations) this this.GetSpineAnimations this.SetSpineAnimations
-        member this.GetSpineAnimationSpeed world : single = this.Get (nameof this.SpineAnimationSpeed) world
-        member this.SetSpineAnimationSpeed (value : single) world = this.Set (nameof this.SpineAnimationSpeed) value world
-        member this.SpineAnimationSpeed = lens (nameof this.SpineAnimationSpeed) this this.GetSpineAnimationSpeed this.SetSpineAnimationSpeed
-        member this.GetSpineAnimationMix world : single = this.Get (nameof this.SpineAnimationMix) world
-        member this.SetSpineAnimationMix (value : single) world = this.Set (nameof this.SpineAnimationMix) value world
-        member this.SpineAnimationMix = lens (nameof this.SpineAnimationMix) this this.GetSpineAnimationMix this.SetSpineAnimationMix
-        member this.SpineSkeletonAnimationTriggerEvent = Events.SpineSkeletonAnimationTriggerEvent --> this
+        member this.GetFillWinding world : ContourWinding = this.Get (nameof Entity.FillWinding) world
+        member this.SetFillWinding (value : ContourWinding) world = this.Set (nameof Entity.FillWinding) value world
+        member this.FillWinding = lens (nameof Entity.FillWinding) this this.GetFillWinding this.SetFillWinding
+        member this.GetStrokeColor world : Color = this.Get (nameof Entity.StrokeColor) world
+        member this.SetStrokeColor (value : Color) world = this.Set (nameof Entity.StrokeColor) value world
+        member this.StrokeColor = lens (nameof Entity.StrokeColor) this this.GetStrokeColor this.SetStrokeColor
+        member this.GetStrokeThickness world : single = this.Get (nameof Entity.StrokeThickness) world
+        member this.SetStrokeThickness (value : single) world = this.Set (nameof Entity.StrokeThickness) value world
+        member this.StrokeThickness = lens (nameof Entity.StrokeThickness) this this.GetStrokeThickness this.SetStrokeThickness
 
-/// Augments an entity with Spine skeleton content.
-/// NOTE: SpineSkeleteState fields are inherently imperative and therefore currently unsupported by undo / redo.
-type SpineSkeletonFacet () =
+/// Augments an entity with the behavior of a 2d circle contour.
+type CircleContour2dFacet () =
     inherit Facet (false, false, false)
 
-    static let getOrTryCreateSpineSkeletonState (entity : Entity) world =
-        let spineSkeleton = entity.GetSpineSkeleton world
-        match entity.GetSpineSkeletonStateOpt world with
-        | None ->
-            match Metadata.tryGetSpineSkeletonMetadata spineSkeleton with
-            | ValueSome metadata ->
-                let startTime = entity.GetStartTime world
-                let localTime = world.GameTime - startTime
-                let spineSkeletonInstance = Spine.Skeleton metadata.SpineSkeletonData
-                spineSkeletonInstance.Time <- localTime.Seconds
-                let spineAnimationStateData = Spine.AnimationStateData spineSkeletonInstance.Data
-                spineAnimationStateData.DefaultMix <- entity.GetSpineAnimationMix world
-                let spineAnimationState = Spine.AnimationState spineAnimationStateData
-                let spineAnimations = entity.GetSpineAnimations world
-                spineAnimationState.ClearTracks ()
-                let mutable i = 0
-                for spineAnimation in spineAnimations do
-                    if notNull (spineAnimationState.Data.SkeletonData.FindAnimation spineAnimation.SpineAnimationName) then
-                        spineAnimationState.SetAnimation (i, spineAnimation.SpineAnimationName, spineAnimation.SpineAnimationPlayback = Loop) |> ignore<Spine.TrackEntry>
-                        i <- inc i
-                let color = entity.GetColor world
-                spineSkeletonInstance.R <- color.R
-                spineSkeletonInstance.G <- color.G
-                spineSkeletonInstance.B <- color.B
-                spineSkeletonInstance.A <- color.A
-                let spineSkeletonState = { SpineSkeleton = spineSkeletonInstance; SpineAnimationState = spineAnimationState }
-                entity.SetSpineSkeletonStateOpt (Some spineSkeletonState) world
-                Some spineSkeletonState
-            | ValueNone -> None
-        | Some spineSkeletonState -> Some spineSkeletonState
+    // create a circle using cubic bezier curves. Uses a magic number for circle approximation with bezier curves in
+    // [-1,1] space: 4/3 * (sqrt(2) - 1) = 0.5522847498, divided by 2 to account for radius of 0.5 in normalized space.
+    static let k = 0.5522847498f / 2.0f
+        
+    // define circle in normalized space from -0.5 to 0.5
+    static let commands =
+        [|MoveTo (v2 0.5f 0.0f)                                     // begin at right
+          CubicCurveTo (v2 0.5f k, v2 k 0.5f, v2 0.0f 0.5f)         // top arc
+          CubicCurveTo (v2 -k 0.5f, v2 -0.5f k, v2 -0.5f 0.0f)      // left arc
+          CubicCurveTo (v2 -0.5f -k, v2 -k -0.5f, v2 0.0f -0.5f)    // bottom arc
+          CubicCurveTo (v2 k -0.5f, v2 0.5f -k, v2 0.5f 0.0f)       // right arc
+          CloseContour|]                                            // closing the contour is optional, but can test our implementation
 
-    static let handleAnimationChange evt world =
-        let entity = evt.Subscriber : Entity
-        entity.SetSpineSkeletonStateOpt None world
-        getOrTryCreateSpineSkeletonState entity world |> ignore<SpineSkeletonState option>
+    static let updateOverflow (entity : Entity) world =
+        entity.SetOverflow (entity.GetStrokeThickness world) world
         Cascade
 
     static member Properties =
-        [define Entity.AlwaysUpdate true
-         define Entity.StartTime GameTime.zero
-         define Entity.Color Color.White
-         define Entity.Flip Unflipped
-         define Entity.SpineSkeleton Assets.Default.SpineSkeleton
-         nonPersistent Entity.SpineSkeletonStateOpt None
-         define Entity.SpineAnimations [|{ SpineAnimationName = "idle"; SpineAnimationPlayback = Loop }|]
-         define Entity.SpineAnimationSpeed 1.0f
-         define Entity.SpineAnimationMix 0.2f]
+        [define Entity.OverflowAbsolute true
+         define Entity.ClipOpt None
+         define Entity.FillColor Color.Black
+         define Entity.FillWinding ContourWinding.NonZero
+         define Entity.StrokeColor Color.White
+         define Entity.StrokeThickness 1.0f
+         ]
 
     override this.Register (entity, world) =
-        World.sense handleAnimationChange entity.StartTime.ChangeEvent entity (nameof SpineSkeletonFacet) world
-        World.sense handleAnimationChange entity.SpineSkeleton.ChangeEvent entity (nameof SpineSkeletonFacet) world
-        World.sense handleAnimationChange entity.SpineAnimations.ChangeEvent entity (nameof SpineSkeletonFacet) world
-        World.sense handleAnimationChange entity.SpineAnimationMix.ChangeEvent entity (nameof SpineSkeletonFacet) world
-        entity.SetStartTime world.GameTime world
-
-    override this.Update (entity, world) =
-        if entity.GetEnabled world then
-            let gameDelta = world.GameDelta
-            match getOrTryCreateSpineSkeletonState entity world with
-            | Some spineSkeletonState ->
-                let startTrackArgs = List ()
-                let interruptTrackArgs = List ()
-                let completeTrackArgs = List ()
-                let endTrackArgs = List ()
-                let eventTrackArgs = List ()
-                let startDelegate = Spine.AnimationState.TrackEntryDelegate startTrackArgs.Add
-                let interruptDelegate = Spine.AnimationState.TrackEntryDelegate interruptTrackArgs.Add
-                let completeDelegate = Spine.AnimationState.TrackEntryDelegate completeTrackArgs.Add
-                let endDelegate = Spine.AnimationState.TrackEntryDelegate endTrackArgs.Add
-                let eventDelegate = Spine.AnimationState.TrackEntryEventDelegate (fun entry event -> eventTrackArgs.Add (entry, event))
-                spineSkeletonState.SpineAnimationState.add_Start startDelegate
-                spineSkeletonState.SpineAnimationState.add_Interrupt interruptDelegate
-                spineSkeletonState.SpineAnimationState.add_Complete completeDelegate
-                spineSkeletonState.SpineAnimationState.add_End endDelegate
-                spineSkeletonState.SpineAnimationState.add_Event eventDelegate
-                let color = entity.GetColor world
-                spineSkeletonState.SpineSkeleton.R <- color.R
-                spineSkeletonState.SpineSkeleton.G <- color.G
-                spineSkeletonState.SpineSkeleton.B <- color.B
-                spineSkeletonState.SpineSkeleton.A <- color.A
-                let struct (scaleX, scaleY) =
-                    match entity.GetFlip world with
-                    | Unflipped -> struct (1.0f, 1.0f)
-                    | Horizontal -> struct (-1.0f, 1.0f)
-                    | Vertical -> struct (1.0f, -1.0f)
-                    | Diagonal -> struct (-1.0f, -1.0f)
-                spineSkeletonState.SpineSkeleton.ScaleX <- scaleX
-                spineSkeletonState.SpineSkeleton.ScaleY <- scaleY
-                spineSkeletonState.SpineAnimationState.TimeScale <- entity.GetSpineAnimationSpeed world
-                spineSkeletonState.SpineSkeleton.Update gameDelta.SecondsF
-                spineSkeletonState.SpineAnimationState.Update gameDelta.SecondsF
-                spineSkeletonState.SpineAnimationState.Apply spineSkeletonState.SpineSkeleton |> ignore<bool>
-                spineSkeletonState.SpineSkeleton.UpdateWorldTransform Spine.Skeleton.Physics.Update
-                spineSkeletonState.SpineAnimationState.remove_Start startDelegate
-                spineSkeletonState.SpineAnimationState.remove_Interrupt interruptDelegate
-                spineSkeletonState.SpineAnimationState.remove_Complete completeDelegate
-                spineSkeletonState.SpineAnimationState.remove_End endDelegate
-                spineSkeletonState.SpineAnimationState.remove_Event eventDelegate
-                for arg in startTrackArgs do World.publishUnsorted (SpineSkeletonAnimationStartData arg) entity.SpineSkeletonAnimationTriggerEvent entity world
-                for arg in interruptTrackArgs do World.publishUnsorted (SpineSkeletonAnimationInterruptData arg) entity.SpineSkeletonAnimationTriggerEvent entity world
-                for arg in completeTrackArgs do World.publishUnsorted (SpineSkeletonAnimationCompleteData arg) entity.SpineSkeletonAnimationTriggerEvent entity world
-                for arg in endTrackArgs do World.publishUnsorted (SpineSkeletonAnimationEndData arg) entity.SpineSkeletonAnimationTriggerEvent entity world
-                for arg in eventTrackArgs do World.publishUnsorted (SpineSkeletonAnimationEventData arg) entity.SpineSkeletonAnimationTriggerEvent entity world
-            | None -> ()
-        else entity.StartTime.Map ((+) world.GameDelta) world
+        for propertyName in [nameof Entity.Size; nameof Entity.Scale; nameof Entity.StrokeThickness] do
+            World.sense (constant $ updateOverflow entity) (entity.ChangeEvent propertyName) entity (nameof CircleContour2dFacet) world
+        updateOverflow entity world |> ignore<Handling>
 
     override this.Render (_, entity, world) =
-        let spineSkeleton = entity.GetSpineSkeleton world
-        match entity.GetSpineSkeletonStateOpt world with
-        | Some spineSkeletonState ->
-            let mutable transform = entity.GetTransform world
-            let spineSkeletonId = entity.GetId world
-            let spineSkeletonClone = Spine.Skeleton spineSkeletonState.SpineSkeleton // NOTE: this is where the bulk of this entity's allocations are coming from.
-            let renderSpineSkeleton = RenderSpineSkeleton { Transform = transform; SpineSkeletonId = spineSkeletonId; SpineSkeletonClone = spineSkeletonClone }
-            let renderOperation = LayeredOperation2d { Elevation = transform.Elevation; Horizon = transform.Horizon; AssetTag = spineSkeleton; RenderOperation2d = renderSpineSkeleton }
-            World.enqueueRenderMessage2d renderOperation world
-        | None -> ()
+        let fill = ContourFill.ofColorWinding (entity.GetFillColor world) (entity.GetFillWinding world)
+        let stroke = ContourStroke.ofColorThickness (entity.GetStrokeColor world) (entity.GetStrokeThickness world)
+        let prepared = Contour.make fill stroke commands (entity.GetSize world * entity.GetScale world).V2
+        World.renderContour
+            { Transform = entity.GetTransform world
+              ClipOpt = entity.GetClipOpt world |> Option.toValueOption
+              Contour = prepared } world
+   
+/// Augments an entity with the behavior of a 2d rectangle contour.
+type RectangleContour2dFacet () =
+    inherit Facet (false, false, false)
 
-    override this.GetAttributesInferred (entity, world) =
-        match getOrTryCreateSpineSkeletonState entity world with
-        | Some spineSkeletonState ->
+    static let recCommands =
+        [|MoveTo (v2 0.5f 0.5f)
+          LineTo (v2 -0.5f 0.5f)
+          LineTo (v2 -0.5f -0.5f)
+          LineTo (v2 0.5f -0.5f)
+          CloseContour|]
 
-            // update skeleton so we can take some actual metrics
-            spineSkeletonState.SpineAnimationState.Apply spineSkeletonState.SpineSkeleton |> ignore<bool>
-            spineSkeletonState.SpineSkeleton.UpdateWorldTransform Spine.Skeleton.Physics.Update
-            let mutable (minX, minY, maxX, maxY) = (Single.MaxValue, Single.MaxValue, Single.MinValue, Single.MinValue)
+    static let updateOverflow (entity : Entity) world =
+        entity.SetOverflow (entity.GetStrokeThickness world) world
+        Cascade
 
-            // compute bounds
-            // NOTE: this uses a simplistic algorithm that merely makes a very loose approximation of the bounds since
-            // SkeletonBounds doesn't work in our test case.
-            // TODO: P1: improve the accuracy of this algorithm.
-            for slot in spineSkeletonState.SpineSkeleton.Slots do
-                if slot.Bone.Active then
-                    minX <- min minX slot.Bone.AX
-                    minY <- min minY slot.Bone.AY
-                    maxX <- max maxX slot.Bone.AX
-                    maxY <- max maxY slot.Bone.AY
-            let skeletonSize = v3 (maxX - minX) (maxY - minY) 0.0f
-            let skeletonOffset = v3 ((skeletonSize.X * 0.5f - maxX) / skeletonSize.X * 0.5f) ((skeletonSize.Y * 0.5f - maxY) / skeletonSize.Y * 0.5f) 0.0f
-            AttributesInferred.important skeletonSize skeletonOffset
+    static member Properties =
+        [define Entity.OverflowAbsolute true
+         define Entity.ClipOpt None
+         define Entity.FillColor Color.Black
+         define Entity.FillWinding ContourWinding.NonZero
+         define Entity.StrokeColor Color.White
+         define Entity.StrokeThickness 1.0f
+         ]
 
-        | None -> base.GetAttributesInferred (entity, world)
+    override this.Register (entity, world) =
+        for propertyName in [nameof Entity.Size; nameof Entity.Scale; nameof Entity.StrokeThickness] do
+            World.sense (constant $ updateOverflow entity) (entity.ChangeEvent propertyName) entity (nameof RectangleContour2dFacet) world
+        updateOverflow entity world |> ignore<Handling>
+
+    override this.Render (_, entity, world) =
+        let fill = ContourFill.ofColorWinding (entity.GetFillColor world) (entity.GetFillWinding world)
+        let stroke = ContourStroke.ofColorThickness (entity.GetStrokeColor world) (entity.GetStrokeThickness world)
+        let prepared = Contour.make fill stroke recCommands (entity.GetSize world * entity.GetScale world).V2
+        World.renderContour
+            { Transform = entity.GetTransform world
+              ClipOpt = entity.GetClipOpt world |> Option.toValueOption
+              Contour = prepared } world
+
+module [<AutoOpen>] SpiralContour2dExtensions =
+    type Entity with
+        member this.GetTurns world : single = this.Get (nameof Entity.Turns) world
+        member this.SetTurns (value : single) world = this.Set (nameof Entity.Turns) value world
+        member this.Turns = lens (nameof Entity.Turns) this this.GetTurns this.SetTurns
+        member this.GetSpacing world : single = this.Get (nameof Entity.Spacing) world
+        member this.SetSpacing (value : single) world = this.Set (nameof Entity.Spacing) value world
+        member this.Spacing = lens (nameof Entity.Spacing) this this.GetSpacing this.SetSpacing
+        member this.GetPointsPerTurn world : single = this.Get (nameof Entity.PointsPerTurn) world
+        member this.SetPointsPerTurn (value : single) world = this.Set (nameof Entity.PointsPerTurn) value world
+        member this.PointsPerTurn = lens (nameof Entity.PointsPerTurn) this this.GetPointsPerTurn this.SetPointsPerTurn
+
+/// Augments an entity with the behavior of a 2d polygon spiral contour.
+
+/// Augments an entity with the behavior of a 2d polygon spiral contour.
+type SpiralContour2dFacet () =
+    inherit Facet (false, false, false)
+
+    // compute a polygonal spiral
+    static let computeSpiralCommands (turns : single) (spacing : single) (pointsPerTurn : single) =
+
+        // handle whole steps
+        let angleIncrement = MathF.TWO_PI / pointsPerTurn
+        let totalSteps = turns * pointsPerTurn
+        let wholeSteps = MathF.Floor totalSteps
+        let commands = List ()
+        for i in 0 .. int wholeSteps do
+            let angle = single i * angleIncrement
+            let struct (sin, cos) = MathF.SinCos angle
+            let radius = spacing * angle / MathF.TWO_PI
+            let point = radius * v2 cos sin
+            if i = 0 then commands.Add (MoveTo point)
+            else commands.Add (LineTo point)
+
+        // handle final partial step
+        if totalSteps > wholeSteps then
+            let angle = (wholeSteps + 1.0f) * angleIncrement // next angle
+            let struct (sin, cos) = MathF.SinCos angle
+            let radius = spacing * angle / MathF.TWO_PI
+            let point = radius * v2 cos sin
+            let weightedPoint = 
+                let t = totalSteps - wholeSteps
+                let struct (sinW, cosW) = MathF.SinCos (angle - angleIncrement) // previous angle
+                let radiusW = spacing * (angle - angleIncrement) / MathF.TWO_PI
+                let pointW = radiusW * v2 cosW sinW
+                (1.0f - t) * pointW + t * point // weighted average
+            commands.Add (LineTo weightedPoint)
+        commands
+
+    static let updateOverflow (entity : Entity) world =
+        entity.SetOverflow (entity.GetStrokeThickness world) world
+        Cascade
+
+    static member Properties =
+        [define Entity.OverflowAbsolute true
+         define Entity.ClipOpt None
+         define Entity.FillColor Color.Black
+         define Entity.FillWinding ContourWinding.NonZero
+         define Entity.StrokeColor Color.White
+         define Entity.StrokeThickness 1.0f
+         define Entity.Turns 5.0f
+         define Entity.Spacing 0.1f
+         define Entity.PointsPerTurn 50.0f
+         ]
+
+    override this.Register (entity, world) =
+        for propertyName in
+            [nameof Entity.Size; nameof Entity.Scale
+             nameof Entity.StrokeThickness
+             nameof Entity.Turns; nameof Entity.Spacing; nameof Entity.PointsPerTurn] do
+            World.sense (constant $ updateOverflow entity) (entity.ChangeEvent propertyName) entity (nameof SpiralContour2dFacet) world
+        updateOverflow entity world |> ignore<Handling>
+
+    override this.Render (_, entity, world) =
+        let fill = ContourFill.ofColorWinding (entity.GetFillColor world) (entity.GetFillWinding world)
+        let stroke = ContourStroke.ofColorThickness (entity.GetStrokeColor world) (entity.GetStrokeThickness world)
+        let prepared =
+            Contour.make
+                fill
+                stroke
+                (computeSpiralCommands (entity.GetTurns world) (entity.GetSpacing world) (entity.GetPointsPerTurn world))
+                (entity.GetSize world * entity.GetScale world).V2
+        World.renderContour
+            { Transform = entity.GetTransform world
+              ClipOpt = entity.GetClipOpt world |> Option.toValueOption
+              Contour = prepared } world
+
+[<AutoOpen>]
+module WedgeContour2dExtensions =
+    type Entity with
+        member this.GetAngleBegin world : single = this.Get (nameof Entity.AngleBegin) world
+        member this.SetAngleBegin (value : single) world = this.Set (nameof Entity.AngleBegin) value world
+        member this.AngleBegin = lens (nameof Entity.AngleBegin) this this.GetAngleBegin this.SetAngleBegin
+        member this.GetAngleEnd world : single = this.Get (nameof Entity.AngleEnd) world
+        member this.SetAngleEnd (value : single) world = this.Set (nameof Entity.AngleEnd) value world
+        member this.AngleEnd = lens (nameof Entity.AngleEnd) this this.GetAngleEnd this.SetAngleEnd
+
+/// Augments an entity with the behavior of a 2d wedge (pie slice) contour.
+type WedgeContour2dFacet () =
+    inherit Facet (false, false, false)
+
+    static let computeWedgeCommands (angleBegin : single) (angleEnd : single) (radius : single) =
+
+        // normalize angles to [0, 2π)
+        let normalizeAngle angle = 
+            let angle = angle % MathF.TWO_PI
+            if angle < 0.0f then angle + MathF.TWO_PI else angle
+
+        // compute wedge commands
+        let commands = List<ContourCommand> ()
+        let angleBegin = normalizeAngle angleBegin
+        let angleEnd = normalizeAngle angleEnd
+        let angleSpan = if angleEnd >= angleBegin then angleEnd - angleBegin else MathF.TWO_PI - angleBegin + angleEnd
+        if angleSpan >= 0.001f then
+
+            // begin at center
+            commands.Add (MoveTo v2Zero)
+
+            // move to arc begin
+            let struct (sinBegin, cosBegin) = MathF.SinCos angleBegin
+            let arcBegin = v2 (cosBegin * radius) (sinBegin * radius)
+            commands.Add (LineTo arcBegin)
+            
+            // compute number of ≤90° segments needed
+            let segmentCount = int (MathF.Ceiling (angleSpan / (MathF.PI / 2.0f)))
+            let anglePerSegment = angleSpan / single segmentCount
+                
+            // control point distance formula
+            let controlPointDistance = radius * (4.0f / 3.0f) * MathF.Tan (anglePerSegment / 4.0f)
+            
+            // generate Bézier curves for each segment
+            for i in 0 .. segmentCount - 1 do
+                let angle1 = angleBegin + single i * anglePerSegment
+                let angle2 = angleBegin + single (i + 1) * anglePerSegment
+                let struct (sin1, cos1) = MathF.SinCos angle1
+                let struct (sin2, cos2) = MathF.SinCos angle2
+
+                // begin point (on circle)
+                let p0 = v2 (cos1 * radius) (sin1 * radius)
+
+                // end point (on circle)
+                let p3 = v2 (cos2 * radius) (sin2 * radius)
+
+                // control point 1: from p0 in tangent direction (perpendicular to radius)
+                // tangent direction at angle θ is (-sin θ, cos θ)
+                let p1 = p0 + controlPointDistance * v2 (-sin1) cos1
+
+                // control point 2: from p3 in reverse tangent direction
+                // reverse tangent at angle θ is (sin θ, -cos θ)
+                let p2 = p3 + controlPointDistance * v2 sin2 (-cos2)
+
+                // fin
+                commands.Add (CubicCurveTo (p1, p2, p3))
+
+            // fin
+            commands.Add CloseContour
+
+        // fin
+        commands
+
+    static let updateOverflow (entity : Entity) world =
+        entity.SetOverflow (entity.GetStrokeThickness world) world
+        Cascade
+
+    static member Properties =
+        [define Entity.OverflowAbsolute true
+         define Entity.ClipOpt None
+         define Entity.FillColor Color.Black
+         define Entity.FillWinding ContourWinding.NonZero
+         define Entity.StrokeColor Color.White
+         define Entity.StrokeThickness 1.0f
+         define Entity.AngleBegin 0.0f
+         define Entity.AngleEnd MathF.PI
+         ]
+
+    override this.Register (entity, world) =
+        for propertyName in [nameof Entity.Size; nameof Entity.Scale; nameof Entity.StrokeThickness] do
+            World.sense (constant $ updateOverflow entity) (entity.ChangeEvent propertyName) entity (nameof WedgeContour2dFacet) world
+        updateOverflow entity world |> ignore<Handling>
+
+    override this.Render (_, entity, world) =
+        let fill = ContourFill.ofColorWinding (entity.GetFillColor world) (entity.GetFillWinding world)
+        let stroke = ContourStroke.ofColorThickness (entity.GetStrokeColor world) (entity.GetStrokeThickness world)
+        let prepared =
+            Contour.make
+                fill
+                stroke
+                (computeWedgeCommands (entity.GetAngleBegin world) (entity.GetAngleEnd world) 0.5f)
+                (entity.GetSize world * entity.GetScale world).V2
+        World.renderContour
+            { Transform = entity.GetTransform world
+              ClipOpt = entity.GetClipOpt world |> Option.toValueOption
+              Contour = prepared } world
+
+[<AutoOpen>]
+module RectangleRoundedContour2dExtensions =
+    type Entity with
+        member this.GetCornerRadius world : single = this.Get (nameof Entity.CornerRadius) world
+        member this.SetCornerRadius (value : single) world = this.Set (nameof Entity.CornerRadius) value world
+        member this.CornerRadius = lens (nameof Entity.CornerRadius) this this.GetCornerRadius this.SetCornerRadius
+
+/// Augments an entity with the behavior of a 2d rounded rectangle contour.
+type RectangleRoundedContour2dFacet () =
+    inherit Facet (false, false, false)
+
+    // magic constant for circle approximation with cubic Bézier: 4/3 * tan(π/8) ≈ 0.5522847498
+    static let Kappa = 0.5522847498f
+
+    static let computeRoundedRectCommands (radius : single) (size : Vector2) =
+
+        // compute radius in normalized space relative to each dimension
+        // this ensures circular corners regardless of aspect ratio
+        let radiusX = radius / size.X |> min 0.49999f // HACK: if this is 0.5, the stroke will be missing a small section at the top/bottom/left/right points for a large corner radius approximating an ellipse.
+        let radiusY = radius / size.Y |> min 0.49999f
+        let kx = radiusX * Kappa // control point offset for X
+        let ky = radiusY * Kappa // control point offset for Y
+    
+        [|// top-left corner
+          MoveTo (v2 (-0.5f + radiusX) 0.5f)
+          CubicCurveTo (v2 (-0.5f + radiusX - kx) 0.5f, v2 -0.5f (0.5f - radiusY + ky), v2 -0.5f (0.5f - radiusY))
+    
+          // bottom-left corner
+          LineTo (v2 -0.5f (-0.5f + radiusY))
+          CubicCurveTo (v2 -0.5f (-0.5f + radiusY - ky), v2 (-0.5f + radiusX - kx) -0.5f, v2 (-0.5f + radiusX) -0.5f)
+
+          // bottom-right corner
+          LineTo (v2 (0.5f - radiusX) -0.5f)
+          CubicCurveTo (v2 (0.5f - radiusX + kx) -0.5f, v2 0.5f (-0.5f + radiusY - ky), v2 0.5f (-0.5f + radiusY))
+    
+          // top-right corner
+          LineTo (v2 0.5f (0.5f - radiusY))
+          CubicCurveTo (v2 0.5f (0.5f - radiusY + ky), v2 (0.5f - radiusX + kx) 0.5f, v2 (0.5f - radiusX) 0.5f)
+    
+          // fin
+          CloseContour|]
+
+    static let updateOverflow (entity : Entity) world =
+        entity.SetOverflow (entity.GetStrokeThickness world) world
+        Cascade
+
+    static member Properties =
+        [define Entity.OverflowAbsolute true
+         define Entity.ClipOpt None
+         define Entity.FillColor Color.Black
+         define Entity.FillWinding ContourWinding.NonZero
+         define Entity.StrokeColor Color.White
+         define Entity.StrokeThickness 1.0f
+         define Entity.CornerRadius 4.0f
+         ]
+
+    override this.Register (entity, world) =
+        for propertyName in [nameof Entity.Size; nameof Entity.Scale; nameof Entity.CornerRadius; nameof Entity.StrokeThickness] do
+            World.sense (constant $ updateOverflow entity) (entity.ChangeEvent propertyName) entity (nameof RectangleRoundedContour2dFacet) world
+        updateOverflow entity world |> ignore<Handling>
+
+    override this.Render (_, entity, world) =
+        let size = (entity.GetSize world * entity.GetScale world).V2
+        let fill = ContourFill.ofColorWinding (entity.GetFillColor world) (entity.GetFillWinding world)
+        let stroke = ContourStroke.ofColorThickness (entity.GetStrokeColor world) (entity.GetStrokeThickness world)
+        let prepared = Contour.make fill stroke (computeRoundedRectCommands (entity.GetCornerRadius world) size) size
+        World.renderContour
+            { Transform = entity.GetTransform world
+              ClipOpt = entity.GetClipOpt world |> Option.toValueOption
+              Contour = prepared } world
 
 [<AutoOpen>]
 module LayoutFacetExtensions =
@@ -2356,7 +2548,7 @@ type LayoutFacet () =
                         then child.GetLayoutOrder world
                         else 0
                     let order = child.GetOrder world
-                    (layoutOrder, order, child))
+                    (layoutOrder :> IComparable, order :> IComparable, child)) // OPTIMIZATION: boxing here to avoid it downstream.
                 |> Array.sortBy ab_
                 |> Array.map __c
             let perimeter = (entity.GetPerimeter world).Box2 // gui currently ignores rotation
@@ -2482,6 +2674,9 @@ type SkyBoxFacet () =
 module LightProbe3dFacetExtensions =
     type Entity with
 
+        member this.GetExcludeGlobalLights world : bool = this.Get (nameof this.ExcludeGlobalLights) world
+        member this.SetExcludeGlobalLights (value : bool) world = this.Set (nameof this.ExcludeGlobalLights) value world
+        member this.ExcludeGlobalLights = lens (nameof this.ExcludeGlobalLights) this this.GetExcludeGlobalLights this.SetExcludeGlobalLights
         member this.GetProbeBounds world : Box3 = this.Get (nameof this.ProbeBounds) world
         member this.SetProbeBounds (value : Box3) world = this.Set (nameof this.ProbeBounds) value world
         member this.ProbeBounds = lens (nameof this.ProbeBounds) this this.GetProbeBounds this.SetProbeBounds
@@ -2524,6 +2719,7 @@ type LightProbe3dFacet () =
          define Entity.Static true
          define Entity.AmbientColor Color.White
          define Entity.AmbientBrightness 0.5f
+         define Entity.ExcludeGlobalLights false
          define Entity.ProbeBounds (box3 (v3Dup Constants.Render.LightProbeSizeDefault * -0.5f) (v3Dup Constants.Render.LightProbeSizeDefault))
          nonPersistent Entity.ProbeStale false]
 
@@ -3247,7 +3443,7 @@ type StaticModelFacet () =
         match Metadata.tryGetStaticModelMetadata (entity.GetStaticModel world) with
         | ValueSome staticModelMetadata ->
             let intersectionses =
-                Array.map (fun (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) ->
+                Array.map (fun (surface : Vulkan.PhysicallyBasedSurface) ->
                     let geometry = surface.PhysicallyBasedGeometry
                     let (_, inverse) = Matrix4x4.Invert surface.SurfaceMatrix
                     let raySurface = rayEntity.Transform inverse
@@ -3541,7 +3737,7 @@ type AnimatedModelFacet () =
         match Metadata.tryGetAnimatedModelMetadata (entity.GetAnimatedModel world) with
         | ValueSome animatedModelMetadata ->
             let intersectionses =
-                Array.map (fun (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) ->
+                Array.map (fun (surface : Vulkan.PhysicallyBasedSurface) ->
                     let geometry = surface.PhysicallyBasedGeometry
                     let (_, inverse) = Matrix4x4.Invert surface.SurfaceMatrix
                     let raySurface = rayEntity.Transform inverse

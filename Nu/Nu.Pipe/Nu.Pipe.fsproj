@@ -8,26 +8,12 @@
 		<ServerGarbageCollection>True</ServerGarbageCollection>
 		<TieredPGO>True</TieredPGO>
         <DisableFastUpToDateCheck>True</DisableFastUpToDateCheck>
-        <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
-        <StartArguments>../../.. . ../../../refinement BcCompression True</StartArguments>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCpu'">
 		<WarnOn>FS1182</WarnOn>
 		<NoWarn>FS0009;FS1178;FS3391;FS3536;FS3560</NoWarn>
 		<Tailcalls>False</Tailcalls>
 		<WarningLevel>5</WarningLevel>
-		<DefineConstants>TRACE</DefineConstants>
 		<WarningsAsErrors>FS0026;FS0049;FS3239;$(WarningsAsErrors)</WarningsAsErrors>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCpu'">
-		<WarnOn>FS1182</WarnOn>
-		<NoWarn>FS0009;FS1178;FS3391;FS3536;FS3560</NoWarn>
-		<Tailcalls>False</Tailcalls>
-		<WarningLevel>5</WarningLevel>
-		<DefineConstants>TRACE</DefineConstants>
-		<WarningsAsErrors>FS0026;FS0049;FS3239;$(WarningsAsErrors)</WarningsAsErrors>
+		<DisableImplicitFSharpCoreReference>True</DisableImplicitFSharpCoreReference> <!-- avoids conflict with Nu.fsproj -->
 	</PropertyGroup>
 
 	<Target Name="OverridePublishDir" AfterTargets="AssignTargetPaths">
@@ -50,9 +36,6 @@
         <Reference Include="BulletSharpPInvoke">
             <HintPath>..\Nu.Dependencies\BulletSharpPInvoke\netstandard2.1\BulletSharp.dll</HintPath>
         </Reference>
-		<Reference Include="OpenGL.Net">
-			<HintPath>..\Nu.Dependencies\OpenGL.NET\lib\netcoreapp2.2\OpenGL.Net.dll</HintPath>
-		</Reference>
 		<Reference Include="TiledSharp">
 			<HintPath>..\Nu.Dependencies\TiledSharp\lib\netstandard2.0\TiledSharp.dll</HintPath>
 		</Reference>
@@ -61,7 +44,6 @@
 	<ItemGroup>
 		<ProjectReference Include="..\Nu\Nu.fsproj" />
 		<ProjectReference Include="..\Nu.Math\Nu.Math.csproj" />
-		<ProjectReference Include="..\Nu.Spine\Nu.Spine.csproj" />
 	</ItemGroup>
 
 </Project>

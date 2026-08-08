@@ -15,7 +15,6 @@ module AssetPatterns =
     let (|ImageExtension|_|) extension = match extension with ".bmp" | ".png" | ".jpg" | ".jpeg" | ".tga" | ".tif" | ".tiff" | ".dds" | ".ktx" -> Some extension | _ -> None
     let (|FontExtension|_|) extension = match extension with ".ttf" -> Some extension | _ -> None
     let (|TileMapExtension|_|) extension = match extension with ".tmx" -> Some extension | _ -> None
-    let (|SpineSkeletonExtension|_|) extension = match extension with ".skel" | ".json" -> Some extension | _ -> None
     let (|CubeMapExtension|_|) extension = match extension with ".cbm" -> Some extension | _ -> None
     let (|SoundExtension|_|) extension = match extension with ".wav" -> Some extension | _ -> None
     let (|SongExtension|_|) extension = match extension with ".ogg" | ".mp3" -> Some extension | _ -> None
@@ -44,7 +43,6 @@ module Default =
     let [<Literal>] WhiteName = "White"
     let [<Literal>] StaticSpriteName = "StaticSprite"
     let [<Literal>] AnimatedSpriteName = "AnimatedSprite"
-    let [<Literal>] SpineSkeletonName = "SpineSkeleton-pro"
     let [<Literal>] CursorName = "Cursor"
     let [<Literal>] BlockName = "Block"
     let [<Literal>] BallName = "Ball"
@@ -103,7 +101,6 @@ module Default =
     let [<Literal>] SongName = "Song"
     let [<Literal>] RawIconName = "RawIcon"
     let [<Literal>] TileMapIconName = "TileMapIcon"
-    let [<Literal>] SpineSkeletonIconName = "SpineSkeletonIcon"
     let [<Literal>] StaticModelIconName = "StaticModelIcon"
     let [<Literal>] AnimatedModelIconName = "AnimatedModelIcon"
     let [<Literal>] SoundIconName = "SoundIcon"
@@ -112,7 +109,6 @@ module Default =
         Set.ofList
             [RawIconName
              TileMapIconName
-             SpineSkeletonIconName
              StaticModelIconName
              AnimatedModelIconName
              SoundIconName
