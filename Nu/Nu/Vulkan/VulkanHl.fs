@@ -710,8 +710,11 @@ module Hl =
         use shaderStream = new StreamReader (File.OpenRead shaderPath)
         let shaderStr = shaderStream.ReadToEnd ()
         use compiler = new Compiler ()
-        let options = CompilerOptions ()
-        options.ShaderStage <- shaderKind
+        let options =
+            CompilerOptions
+                (ShaderStage = shaderKind,
+                 OptimizationLevel = (if Constants.Render.RenderDebug then OptimizationLevel.Zero else OptimizationLevel.Performance),
+                 GeneratedDebug = Constants.Engine.EngineDebug)
         let result = compiler.Compile (shaderStr, shaderPath, options)
         if result.Status = CompilationStatus.Success
         then Right result.Bytecode

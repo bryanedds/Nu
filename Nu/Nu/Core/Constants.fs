@@ -162,12 +162,13 @@ module Engine =
               "Light"
               "Optimized"],
              StringComparer.Ordinal)
-    let [<Literal>] BuildName =
+    let [<Literal>] EngineDebug =
 #if DEBUG
-        "Debug"
+        true
 #else
-        "Release"
+        false
 #endif
+    let [<Literal>] BuildName = if EngineDebug then "Debug" else "Release"
 
 [<RequireQualifiedAccess>]
 module Render =
