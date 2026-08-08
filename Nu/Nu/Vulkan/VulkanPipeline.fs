@@ -198,7 +198,8 @@ type Pipeline =
           DescriptorSets_ : DescriptorSet array
           VkPipelineLayout_ : VkPipelineLayout
           VkDescriptorSetLayouts_ : VkDescriptorSetLayout array
-          ShaderPath_ : string
+          ShaderPathVert_ : string
+          ShaderPathFrag_ : string
           PipelineSettings_ : (VulkanBlend * bool) array
           VkVertexBindings_ : VkVertexInputBindingDescription array
           VkVertexAttributes_ : VkVertexInputAttributeDescription array
@@ -249,10 +250,11 @@ type Pipeline =
         let mutable vkPipelineLayout = Unchecked.defaultof<VkPipelineLayout>
         DeviceApi.vkCreatePipelineLayout (&info, nullPtr, &vkPipelineLayout) |> Hl.check
         vkPipelineLayout
-    
-    /// Try to create the VkPipelines.
-    static member private tryCreateVkPipelines
-        shaderPath
+
+    /// Try to create vert and frag VkPipelines.
+    static member private tryCreateVertAndFragPipelines
+        shaderPathVert
+        shaderPathFrag
         (pipelineSettings : (VulkanBlend * bool) array)
         (vertexBindings : VkVertexInputBindingDescription array)
         (vertexAttributes : VkVertexInputAttributeDescription array)
@@ -262,23 +264,23 @@ type Pipeline =
         
         // try to create shader modules
         let moduleResults =
-            (Hl.tryCreateShaderModuleFromGlsl (shaderPath + ".vert") ShaderKind.VertexShader,
-             Hl.tryCreateShaderModuleFromGlsl (shaderPath + ".frag") ShaderKind.FragmentShader)
+            (Hl.tryCreateShaderModuleFromGlsl shaderPathVert ShaderKind.VertexShader,
+             Hl.tryCreateShaderModuleFromGlsl shaderPathFrag ShaderKind.FragmentShader)
 
         // only proceed if shader module creation successful
         match moduleResults with
-        | (Right vertModule, Right fragModule) ->
+        | (Right moduleVert, Right moduleFrag) ->
 
             // shader stage infos
             use entryPoint = new StringWrap ("main")
             let ssInfos = Array.zeroCreate<VkPipelineShaderStageCreateInfo> 2
             ssInfos[0] <- VkPipelineShaderStageCreateInfo ()
             ssInfos[0].stage <- VkShaderStageFlags.Vertex
-            ssInfos[0].``module`` <- vertModule
+            ssInfos[0].``module`` <- moduleVert
             ssInfos[0].pName <- entryPoint.Pointer
             ssInfos[1] <- VkPipelineShaderStageCreateInfo ()
             ssInfos[1].stage <- VkShaderStageFlags.Fragment
-            ssInfos[1].``module`` <- fragModule
+            ssInfos[1].``module`` <- moduleFrag
             ssInfos[1].pName <- entryPoint.Pointer
             use ssInfosPin = new ArrayPin<_> (ssInfos)
 
@@ -378,28 +380,29 @@ type Pipeline =
             DeviceApi.vkCreateGraphicsPipelines (VkPipelineCache.Null, uint vkPipelines.Length, infos, nullPtr, vkPipelinesPin.Pointer) |> Hl.check
             
             // destroy shader modules
-            DeviceApi.vkDestroyShaderModule (vertModule, nullPtr)
-            DeviceApi.vkDestroyShaderModule (fragModule, nullPtr)
+            DeviceApi.vkDestroyShaderModule (moduleVert, nullPtr)
+            DeviceApi.vkDestroyShaderModule (moduleFrag, nullPtr)
             
             // pack vulkan pipelines with settings
             Array.zip pipelineSettings vkPipelines
         
         // abort
-        | (vertModuleResult, fragModuleResult) ->
-            match vertModuleResult with
-            | Right vertModule -> DeviceApi.vkDestroyShaderModule (vertModule, nullPtr)
+        | (moduleVertResult, moduleFragResult) ->
+            match moduleVertResult with
+            | Right moduleVert -> DeviceApi.vkDestroyShaderModule (moduleVert, nullPtr)
             | Left msg -> Log.warn msg
-            match fragModuleResult with
-            | Right fragModule -> DeviceApi.vkDestroyShaderModule (fragModule, nullPtr)
+            match moduleFragResult with
+            | Right moduleFrag -> DeviceApi.vkDestroyShaderModule (moduleFrag, nullPtr)
             | Left msg -> Log.warn msg
             Log.warn "VkPipeline creation aborted."
             [||]
 
-    /// Create the VkPipelines for use by the given pipelin.
+    /// Create the VkPipelines for use by the given pipeline.
     static member private createVkPipelines pipeline =
         let vkPipelines =
-            Pipeline.tryCreateVkPipelines
-                pipeline.ShaderPath_
+            Pipeline.tryCreateVertAndFragPipelines
+                pipeline.ShaderPathVert_
+                pipeline.ShaderPathFrag_
                 pipeline.PipelineSettings_
                 pipeline.VkVertexBindings_
                 pipeline.VkVertexAttributes_
@@ -612,7 +615,7 @@ type Pipeline =
         Pipeline.destroyVkPipelines pipeline
         Pipeline.createVkPipelines pipeline
 
-    /// Create a Pipeline.
+    /// Create a vertex + fragment shader pipeline.
     static member create<'k when 'k : equality>
         shaderPath
         (blends : VulkanBlend array)
@@ -650,9 +653,20 @@ type Pipeline =
 
         // create pipeline layout and vkPipelines
         if blends.Length < 1 then Log.fail "No pipeline blend was specified."
+        let shaderPathVert = shaderPath + ".vert"
+        let shaderPathFrag = shaderPath + ".frag"
         let pipelineSettings = Array.allPairs blends cullModes
         let vkPipelineLayout = Pipeline.createVkPipelineLayout descriptorSetLayouts pushConstantRanges
-        let vkPipelines = Pipeline.tryCreateVkPipelines shaderPath pipelineSettings vertexBindingDescriptions vertexAttributes vkPipelineLayout colorAttachmentFormats depthTestFormatOpt
+        let vkPipelines =
+            Pipeline.tryCreateVertAndFragPipelines
+                shaderPathVert
+                shaderPathFrag
+                pipelineSettings
+                vertexBindingDescriptions
+                vertexAttributes
+                vkPipelineLayout
+                colorAttachmentFormats
+                depthTestFormatOpt
 
         // make Pipeline
         let pipeline =
@@ -660,7 +674,8 @@ type Pipeline =
               DescriptorSets_ = descriptorSets
               VkPipelineLayout_ = vkPipelineLayout
               VkDescriptorSetLayouts_ = descriptorSetLayouts
-              ShaderPath_ = shaderPath
+              ShaderPathVert_ = shaderPathVert
+              ShaderPathFrag_ = shaderPathFrag
               PipelineSettings_ = pipelineSettings
               VkVertexBindings_ = vertexBindingDescriptions
               VkVertexAttributes_ = vertexAttributes
@@ -671,8 +686,8 @@ type Pipeline =
 
         // fin
         pipeline
-    
-    /// Destroy a Pipeline.
+
+    /// Destroy a pipeline.
     static member destroy pipeline context =
         Pipeline.destroyVkPipelines pipeline
         DeviceApi.vkDestroyPipelineLayout (pipeline.PipelineLayout, nullPtr)
