@@ -277,7 +277,7 @@ type SwapchainWrapper =
     /// Create render finished semaphores.
     static member private createRenderFinishedSemaphores imageCount =
         let semaphores = Array.zeroCreate<VkSemaphore> imageCount
-        for i in 0 .. dec semaphores.Length do semaphores.[i] <- Hl.createSemaphore ()
+        for i in 0 .. dec semaphores.Length do semaphores[i] <- Hl.createSemaphore ()
         semaphores
     
     /// Try create a SwapchainWrapper.
@@ -320,7 +320,7 @@ type SwapchainWrapper =
         // destroy vulkan resources
         for i in 0 .. dec swapchainWrapper.ImageViews.Length do DeviceApi.vkDestroyImageView (swapchainWrapper.ImageViews[i], nullPtr)
         DeviceApi.vkDestroySwapchainKHR (swapchainWrapper.VkSwapchain, nullPtr)
-        for i in 0 .. dec swapchainWrapper.RenderFinishedSemaphores.Length do DeviceApi.vkDestroySemaphore (swapchainWrapper.RenderFinishedSemaphores.[i], nullPtr)
+        for i in 0 .. dec swapchainWrapper.RenderFinishedSemaphores.Length do DeviceApi.vkDestroySemaphore (swapchainWrapper.RenderFinishedSemaphores[i], nullPtr)
 
 /// A swapchain and its assets that may be refreshed for a different screen size.
 type Swapchain =
@@ -346,7 +346,7 @@ type Swapchain =
     member this.ImageView = (Option.get this.SwapchainWrapperOpts_[this.SwapchainIndex_]).ImageViews[int Hl.ImageIndex]
 
     /// The render finished semaphore for the current swapchain image.
-    member this.RenderFinishedSemaphore = (Option.get this.SwapchainWrapperOpts_.[this.SwapchainIndex_]).RenderFinishedSemaphores.[int Hl.ImageIndex]
+    member this.RenderFinishedSemaphore = (Option.get this.SwapchainWrapperOpts_[this.SwapchainIndex_]).RenderFinishedSemaphores[int Hl.ImageIndex]
 
     /// The swap extent of the current vkSwapchain.
     member this.SwapExtent = (Option.get this.SwapchainWrapperOpts_[this.SwapchainIndex_]).SwapExtent
