@@ -450,11 +450,13 @@ type Timers =
 [<AutoOpen>]
 module internal AmbientState =
 
-    let [<Literal>] private ImperativeMask =            0b00001u
-    let [<Literal>] private AccompaniedMask =           0b00010u
-    let [<Literal>] private AdvancingMask =             0b00100u
-    let [<Literal>] private FramePacingMask =           0b01000u
-    let [<Literal>] private AdvancementClearedMask =    0b10000u
+    let [<Literal>] private ImperativeMask =            0b0000001u
+    let [<Literal>] private AccompaniedMask =           0b0000010u
+    let [<Literal>] private AdvanceRequestedMask =      0b0000100u
+    let [<Literal>] private HaltRequestedMask =         0b0001000u
+    let [<Literal>] private AdvancingMask =             0b0010000u
+    let [<Literal>] private FramePacingMask =           0b0100000u
+    let [<Literal>] private AdvancementClearedMask =    0b1000000u
 
     /// The 'ambient' state of the world (miscellaneous world state such as time).
     type [<ReferenceEquality>] internal 'w AmbientState =
@@ -490,6 +492,8 @@ module internal AmbientState =
         member this.Imperative = this.Flags &&& ImperativeMask <> 0u
         member this.Accompanied = this.Flags &&& AccompaniedMask <> 0u
         member this.Advancing = this.Flags &&& AdvancingMask <> 0u
+        member this.AdvanceRequested = this.Flags &&& AdvanceRequestedMask <> 0u
+        member this.HaltRequested = this.Flags &&& HaltRequestedMask <> 0u
         member this.FramePacing = this.Flags &&& FramePacingMask <> 0u
         member this.AdvancementCleared = this.Flags &&& AdvancementClearedMask <> 0u
 
@@ -498,8 +502,9 @@ module internal AmbientState =
 
     let internal setAdvancing advancing (state : _ AmbientState) =
         if advancing <> state.Advancing then
-            if advancing then state.TickWatch.Start () else state.TickWatch.Stop ()
-            { state with Flags = if advancing then state.Flags ||| AdvancingMask else state.Flags &&& ~~~AdvancingMask }
+            let state = { state with Flags = if advancing then state.Flags ||| AdvanceRequestedMask else state.Flags ||| HaltRequestedMask }
+            if state.AdvanceRequested && state.HaltRequested then Log.warn "Advance and Halt both requested in the same frame, but these will resolve in a statically-defined order."
+            state
         else state
 
     let internal setFramePacing framePacing (state : _ AmbientState) =
@@ -563,6 +568,16 @@ module internal AmbientState =
         state.Timers
 
     let internal updateTime (state : 'w AmbientState) =
+        let state =
+            if state.AdvanceRequested then
+                state.TickWatch.Start ()
+                { state with Flags = state.Flags ||| AdvancingMask &&& ~~~AdvanceRequestedMask }
+            else state
+        let state =
+            if state.HaltRequested then
+                state.TickWatch.Stop ()
+                { state with Flags = state.Flags &&& ~~~AdvancingMask &&& ~~~HaltRequestedMask }
+            else state
         let tickDeltaCurrent =
             if state.Advancing
             then min state.TickWatch.ElapsedTicks Constants.Engine.TickDeltaMax
