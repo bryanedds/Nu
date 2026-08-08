@@ -1,19 +1,15 @@
 Nu Game Engine [![Build status](https://github.com/bryanedds/Nu/actions/workflows/CI.yml/badge.svg)](https://github.com/bryanedds/Nu/actions/workflows/CI.yml)
 
-BIG NU NEWS - Vulkan, Mac, iOS, and Android available for Preview!
+BIG NU NEWS - Vulkan, Mac, iOS, and Android now available!
 ==
 
-We have marked our upcoming Vulkan conversion of Nu as `Preview` and make it available here -
-
-https://github.com/bryanedds/Nu/tree/vulkan
-
-To upgrade your projects, you may pull from the above `vulkan` branch instead of `master` and follow the steps at this wiki page -
+To upgrade your existing projects, you may pull latest and follow the steps at this wiki page -
 
 https://github.com/bryanedds/Nu/wiki/Converting-from-Nu-with-OpenGL-to-Nu-with-Vulkan
 
 This branch not only replaces our OpenGL renderers completely with Vulkan renderers, it also features important rendering and performance enhancements as well as makes Nu deployable on `Mac`, `iOS`, and `Android`!
 
-Go ahead and get your projects ready to use the new `vulkan` branch as it will soon be merged into `master`! If you have any issues, please report them so we can fix them before doing said merge to `master`!
+If you have any issues, please report them so we can fix them ASAP!
 
 This upgrade to Nu is all thanks to tremendous work from [@deanjl](https://github.com/deanjl), [@Happypig375](https://github.com/Happypig375), [@yvileapsis](https://github.com/yvileapsis), [@bryanedds](https://github.com/bryanedds), as well as the sustained support of our [donors](https://github.com/sponsors/bryanedds)!
 
@@ -50,7 +46,7 @@ Some Media on the Nu Game Engine
 ================================
 
 ![image](https://github.com/user-attachments/assets/f30688e6-777b-4455-9aa4-2287a00a6771)
-**Screenshot of the week featuring of our upcoming Vulkan renderer!**
+**Screenshot of the week featuring of our new Vulkan renderer!**
 
 ![image](https://github.com/user-attachments/assets/e6d56c42-1eb1-41d4-889c-42b03abd4110)
 Our new soft-shadow, volumetric fog systems, depth of field rendering!
