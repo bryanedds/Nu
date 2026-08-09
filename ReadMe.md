@@ -46,7 +46,7 @@ Some Media on the Nu Game Engine
 ================================
 
 ![image](https://github.com/user-attachments/assets/f30688e6-777b-4455-9aa4-2287a00a6771)
-**Screenshot of the week featuring of our upcoming Vulkan renderer!**
+**Screenshot of the week featuring of our new Vulkan renderer!**
 
 ![image](https://github.com/user-attachments/assets/e6d56c42-1eb1-41d4-889c-42b03abd4110)
 Our new soft-shadow, volumetric fog systems, depth of field rendering!
