@@ -360,9 +360,9 @@ module Render =
 module Audio =
 
     let [<Literal>] TrackPoolSize = 64
-    let [<Literal>] MasterAudioVolumeDefault = 1.0f
-    let [<Literal>] MasterSoundVolumeDefault = 1.0f
-    let [<Literal>] MasterSongVolumeDefault = 1.0f
+    let [<Uniform>] mutable MasterAudioVolumeDefault = match ConfigurationManager.AppSettings["MasterAudioVolumeDefault"] with null -> 1.0f | value -> scvalue value
+    let [<Uniform>] mutable MasterSoundVolumeDefault = match ConfigurationManager.AppSettings["MasterSoundVolumeDefault"] with null -> 1.0f | value -> scvalue value
+    let [<Uniform>] mutable MasterSongVolumeDefault = match ConfigurationManager.AppSettings["MasterSongVolumeDefault"] with null -> 1.0f | value -> scvalue value
     let [<Literal>] SoundVolumeDefault = 1.0f
     let [<Literal>] SongVolumeDefault = 1.0f
     let [<Uniform>] FadeOutTimeDefault = GameTime.ofSeconds 0.5
