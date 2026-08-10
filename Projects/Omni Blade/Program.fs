@@ -13,4 +13,4 @@ module Program =
         let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "Omni Blade" }
         let sdlConfig = { SdlConfig.defaultConfig with WindowConfig = sdlWindowConfig }
         let worldConfig = { WorldConfig.defaultConfig with SdlConfig = sdlConfig }
-        World.run worldConfig (OmniBladePlugin ())
+        World.run id worldConfig (OmniBladePlugin ())
