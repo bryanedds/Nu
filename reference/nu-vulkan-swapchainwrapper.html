@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en" data-root="/Nu/">
+<head>
+    <meta charset="UTF-8">
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="Nu" name="author">
+    <!-- Opengraph properties (https://ogp.me/) -->
+    <meta property="og:site_name" content="Nu">
+    <meta property="og:title" content="SwapchainWrapper (Nu)" />
+    <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
+    <meta property="og:type" content="website" />
+    <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="/Nu/">
+    <meta name="twitter:title" content="SwapchainWrapper (Nu)">
+    
+    <title>SwapchainWrapper (Nu) | Nu</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link href="/Nu/img/favicon.ico" rel="icon" sizes="32x32" type="image/png"/>
+    <script type="application/javascript" src="/Nu/content/fsdocs-theme-set-dark.js"></script>
+    <link href="/Nu/content/fsdocs-default.css" rel="stylesheet" type="text/css"/>
+    <link href="/Nu/content/fsdocs-theme.css" rel="stylesheet" type="text/css"/>
+    
+    
+</head>
+<body class="api-docs">
+<header>
+    <div class="start">
+        <div id="menu-toggle">
+            <iconify-icon class="icon closed" height="22" icon="eva:menu-fill" width="22"></iconify-icon>
+            <iconify-icon class="icon open" height="22" icon="mi:close" width="22"></iconify-icon>
+            <input type="checkbox" name="mobile-menu" />
+            <ul class="menu">
+                <li class="nav-header">Links</li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/License.md">License</a>
+                </li>
+                <li class="nav-item"><a class="nav-link"
+                                        href="https://github.com/bryanedds/Nu">Release
+                    Notes</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
+                    Repository</a></li>
+                
+                <li class="nav-header">
+  API Reference
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="/Nu/reference/index.html">
+    All Namespaces
+  </a>
+</li>
+            </ul>
+        </div>
+        <a href="/Nu/">
+            <img alt="Header menu logo" src="/Nu/img/logo.png">
+            <strong>Nu</strong>
+        </a>
+    </div>
+    <div class="end">
+        <a href="https://github.com/bryanedds/Nu/" target="_blank">
+            <iconify-icon icon="uil:github" width="26" height="26"></iconify-icon>
+        </a>
+        <iconify-icon id="search-btn" icon="carbon:search" class="search" width="24" height="24"></iconify-icon>
+        <fsdocs-theme-toggle></fsdocs-theme-toggle>
+    </div>
+</header>
+<aside id="fsdocs-main-menu">
+    <ul class="menu">
+        <li class="nav-header">Links</li>
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/blob/master/License.md">License</a>
+        </li>
+        <li class="nav-item"><a class="nav-link"
+                                href="https://github.com/bryanedds/Nu">Release
+            Notes</a></li>
+        <li class="nav-item"><a class="nav-link" href="https://github.com/bryanedds/Nu/">Source
+            Repository</a></li>
+        
+        <li class="nav-header">
+  API Reference
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="/Nu/reference/index.html">
+    All Namespaces
+  </a>
+</li>
+    </ul>
+</aside>
+<main>
+    <div id="content">
+        <div>
+  <h2>
+    SwapchainWrapper Type
+  </h2>
+  <dl class="fsdocs-metadata">
+    <dt>
+      Namespace: 
+      <a href="/Nu/reference/nu-vulkan.html">
+        Nu.Vulkan
+      </a>
+    </dt>
+    <dt>
+      Assembly: Nu.dll
+    </dt>
+    <dt>
+      Base Type: 
+      <code>obj</code>
+    </dt>
+    <dt>
+      All Interfaces: 
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/nu-vulkan-swapchainwrapper.html">SwapchainWrapper</a>&gt;</span></code>
+      , 
+      <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralequatable">IStructuralEquatable</a></code>
+    </dt>
+  </dl>
+  <div class="fsdocs-xmldoc">
+    <div>
+      <p class="fsdocs-summary">
+         A wrapper for a vulkan swapchain and its assets.
+      </p>
+    </div>
+  </div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div>
+    <h3>
+      Record fields
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Record Field
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9544', 9544)" onmouseover="showTip(event, '9544', 9544)">
+                <p>
+                  <a id="ImageViews">
+                    <a href="#ImageViews">
+                      <code>ImageViews</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9544">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>ImageViews</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/vortice.vulkan.vkimageview">VkImageView</a>&#32;array</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><span><a href="https://learn.microsoft.com/dotnet/api/vortice.vulkan.vkimageview">VkImageView</a>&#32;array</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9545', 9545)" onmouseover="showTip(event, '9545', 9545)">
+                <p>
+                  <a id="Images">
+                    <a href="#Images">
+                      <code>Images</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9545">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>Images</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/vortice.vulkan.vkimage">VkImage</a>&#32;array</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><span><a href="https://learn.microsoft.com/dotnet/api/vortice.vulkan.vkimage">VkImage</a>&#32;array</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9546', 9546)" onmouseover="showTip(event, '9546', 9546)">
+                <p>
+                  <a id="RenderFinishedSemaphores">
+                    <a href="#RenderFinishedSemaphores">
+                      <code>RenderFinishedSemaphores</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9546">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>RenderFinishedSemaphores</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><span><a href="https://learn.microsoft.com/dotnet/api/vortice.vulkan.vksemaphore">VkSemaphore</a>&#32;array</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><span><a href="https://learn.microsoft.com/dotnet/api/vortice.vulkan.vksemaphore">VkSemaphore</a>&#32;array</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9547', 9547)" onmouseover="showTip(event, '9547', 9547)">
+                <p>
+                  <a id="SwapExtent">
+                    <a href="#SwapExtent">
+                      <code>SwapExtent</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9547">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>SwapExtent</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="https://learn.microsoft.com/dotnet/api/vortice.vulkan.vkextent2d">VkExtent2D</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="https://learn.microsoft.com/dotnet/api/vortice.vulkan.vkextent2d">VkExtent2D</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9548', 9548)" onmouseover="showTip(event, '9548', 9548)">
+                <p>
+                  <a id="VkSwapchain">
+                    <a href="#VkSwapchain">
+                      <code>VkSwapchain</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9548">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>VkSwapchain</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="https://learn.microsoft.com/dotnet/api/vortice.vulkan.vkswapchainkhr">VkSwapchainKHR</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="https://learn.microsoft.com/dotnet/api/vortice.vulkan.vkswapchainkhr">VkSwapchainKHR</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div>
+    <h3>
+      Static members
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Static member
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9549', 9549)" onmouseover="showTip(event, '9549', 9549)">
+                <p>
+                  <a id="destroy">
+                    <a href="#destroy">
+                      <code><span>SwapchainWrapper.destroy&#32;<span>renderQueue&#32;presentQueue&#32;swapchainWrapper</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9549">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>SwapchainWrapper.destroy&#32;<span>renderQueue&#32;presentQueue&#32;swapchainWrapper</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        renderQueue
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/nu-vulkan-concurrentcommandqueue.html">ConcurrentCommandQueue</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        presentQueue
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/nu-vulkan-concurrentcommandqueue.html">ConcurrentCommandQueue</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        swapchainWrapper
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/nu-vulkan-swapchainwrapper.html">SwapchainWrapper</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:Nu.Vulkan.SwapchainWrapper.destroy`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Vulkan.SwapchainWrapper.destroy\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanContext.fs#L313-313" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
+                  <p class="fsdocs-summary">
+                     Destroy a SwapchainWrapper.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    renderQueue
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/nu-vulkan-concurrentcommandqueue.html">ConcurrentCommandQueue</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    presentQueue
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/nu-vulkan-concurrentcommandqueue.html">ConcurrentCommandQueue</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    swapchainWrapper
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/nu-vulkan-swapchainwrapper.html">SwapchainWrapper</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '9550', 9550)" onmouseover="showTip(event, '9550', 9550)">
+                <p>
+                  <a id="tryCreate">
+                    <a href="#tryCreate">
+                      <code><span>SwapchainWrapper.tryCreate&#32;<span>surfaceFormat&#32;oldVkSwapchainOpt&#32;physicalDevice</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="9550">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>SwapchainWrapper.tryCreate&#32;<span>surfaceFormat&#32;oldVkSwapchainOpt&#32;physicalDevice</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        surfaceFormat
+                      </b>
+                      :
+                      <code><a href="https://learn.microsoft.com/dotnet/api/vortice.vulkan.vksurfaceformatkhr">VkSurfaceFormatKHR</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        oldVkSwapchainOpt
+                      </b>
+                      :
+                      <code><a href="https://learn.microsoft.com/dotnet/api/vortice.vulkan.vkswapchainkhr">VkSwapchainKHR</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        physicalDevice
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/nu-vulkan-physicaldevice.html">PhysicalDevice</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="/Nu/reference/nu-vulkan-swapchainwrapper.html">SwapchainWrapper</a>&#32;option</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:Nu.Vulkan.SwapchainWrapper.tryCreate`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Vulkan.SwapchainWrapper.tryCreate\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanContext.fs#L284-284" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
+                  <p class="fsdocs-summary">
+                     Try create a SwapchainWrapper.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    surfaceFormat
+                  </span>
+                  :
+                  <code><a href="https://learn.microsoft.com/dotnet/api/vortice.vulkan.vksurfaceformatkhr">VkSurfaceFormatKHR</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    oldVkSwapchainOpt
+                  </span>
+                  :
+                  <code><a href="https://learn.microsoft.com/dotnet/api/vortice.vulkan.vkswapchainkhr">VkSwapchainKHR</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    physicalDevice
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/nu-vulkan-physicaldevice.html">PhysicalDevice</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span><a href="/Nu/reference/nu-vulkan-swapchainwrapper.html">SwapchainWrapper</a>&#32;option</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+        
+    </div>
+</main>
+<aside id="fsdocs-page-menu">
+    <p id="on-this-page">On this page</p>
+    <div class="empty"></div>
+</aside>
+<dialog>
+    <input type="search" placeholder="Search docs" />
+    <div class="results">
+        <ul></ul>
+        <p class="empty">Type something to start searching.</p>
+    </div>
+</dialog>
+<script type="module" src="/Nu/content/fsdocs-tips.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme-toggle.js"></script>
+<script type="module" src="/Nu/content/fsdocs-theme.js"></script>
+<script type="module" src="/Nu/content/fsdocs-search.js"></script>
+
+</body>
+</html>

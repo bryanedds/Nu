@@ -92,7 +92,7 @@
     <div id="content">
         <div>
   <h2>
-    PathF Module
+    PathF Type
   </h2>
   <dl class="fsdocs-metadata">
     <dt>
@@ -104,6 +104,10 @@
     <dt>
       Assembly: Nu.dll
     </dt>
+    <dt>
+      Base Type: 
+      <code>obj</code>
+    </dt>
   </dl>
   <div class="fsdocs-xmldoc">
     <div>
@@ -113,15 +117,23 @@
       </p>
     </div>
   </div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
   <div>
     <h3>
-      Functions and values
+      Static members
     </h3>
     <table class="table outer-list fsdocs-member-list">
       <thead>
         <tr>
           <td class="fsdocs-member-list-header">
-            Function or value
+            Static member
           </td>
           <td class="fsdocs-member-list-header">
             Description
@@ -132,19 +144,19 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1059', 1059)" onmouseover="showTip(event, '1059', 1059)">
+              <code onmouseout="hideTip(event, '6868', 6868)" onmouseover="showTip(event, '6868', 6868)">
                 <p>
                   <a id="ChangeExtension">
                     <a href="#ChangeExtension">
-                      <code><span>PathF.ChangeExtension&#32;<span><span>(<span>path,&#32;extension</span>)</span></span></span></code>
+                      <code><span>PathF.ChangeExtension<span><span>(<span>path,&#32;extension</span>)</span></span></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1059">
+              <div class="fsdocs-tip" id="6868">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>PathF.ChangeExtension&#32;<span><span>(<span>path,&#32;extension</span>)</span></span></span></code>
+                  <code><span>PathF.ChangeExtension<span><span>(<span>path,&#32;extension</span>)</span></span></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -186,7 +198,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.PathF.ChangeExtension\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/PathF.fs#L75-75" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/PathF.fs#L78-78" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -227,37 +239,29 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1060', 1060)" onmouseover="showTip(event, '1060', 1060)">
+              <code onmouseout="hideTip(event, '6869', 6869)" onmouseover="showTip(event, '6869', 6869)">
                 <p>
                   <a id="Combine">
                     <a href="#Combine">
-                      <code><span>PathF.Combine&#32;<span><span>(<span>left,&#32;right</span>)</span></span></span></code>
+                      <code><span>PathF.Combine<span><span>(<span>paths</span>)</span></span></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1060">
+              <div class="fsdocs-tip" id="6869">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>PathF.Combine&#32;<span><span>(<span>left,&#32;right</span>)</span></span></span></code>
+                  <code><span>PathF.Combine<span><span>(<span>paths</span>)</span></span></span></code>
                   <br/>
                   <br/>
                   Parameters: 
                   <ul>
                     <span>
                       <b>
-                        left
+                        paths
                       </b>
                       :
-                      <code>string</code>
-                    </span>
-                    <br/>
-                    <span>
-                      <b>
-                        right
-                      </b>
-                      :
-                      <code>string</code>
+                      <code><span>string[]</span></code>
                     </span>
                     <br/>
                   </ul>
@@ -281,7 +285,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.PathF.Combine\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/PathF.fs#L25-25" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/PathF.fs#L24-24" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -292,18 +296,10 @@
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
                   <span class="fsdocs-param-name">
-                    left
+                    paths
                   </span>
                   :
-                  <code>string</code>
-                </dt>
-                <dd class="fsdocs-param-docs"></dd>
-                <dt class="fsdocs-param">
-                  <span class="fsdocs-param-name">
-                    right
-                  </span>
-                  :
-                  <code>string</code>
+                  <code><span>string[]</span></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -322,19 +318,19 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1061', 1061)" onmouseover="showTip(event, '1061', 1061)">
+              <code onmouseout="hideTip(event, '6870', 6870)" onmouseover="showTip(event, '6870', 6870)">
                 <p>
                   <a id="Denormalize">
                     <a href="#Denormalize">
-                      <code><span>PathF.Denormalize&#32;<span>path</span></span></code>
+                      <code><span>PathF.Denormalize<span><span>(<span>path</span>)</span></span></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1061">
+              <div class="fsdocs-tip" id="6870">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>PathF.Denormalize&#32;<span>path</span></span></code>
+                  <code><span>PathF.Denormalize<span><span>(<span>path</span>)</span></span></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -368,7 +364,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.PathF.Denormalize\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/PathF.fs#L21-21" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/PathF.fs#L20-20" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -401,19 +397,19 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1062', 1062)" onmouseover="showTip(event, '1062', 1062)">
+              <code onmouseout="hideTip(event, '6871', 6871)" onmouseover="showTip(event, '6871', 6871)">
                 <p>
                   <a id="GetDirectoryName">
                     <a href="#GetDirectoryName">
-                      <code><span>PathF.GetDirectoryName&#32;<span>path</span></span></code>
+                      <code><span>PathF.GetDirectoryName<span><span>(<span>path</span>)</span></span></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1062">
+              <div class="fsdocs-tip" id="6871">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>PathF.GetDirectoryName&#32;<span>path</span></span></code>
+                  <code><span>PathF.GetDirectoryName<span><span>(<span>path</span>)</span></span></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -447,7 +443,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.PathF.GetDirectoryName\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/PathF.fs#L41-41" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/PathF.fs#L44-44" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -480,19 +476,19 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1063', 1063)" onmouseover="showTip(event, '1063', 1063)">
+              <code onmouseout="hideTip(event, '6872', 6872)" onmouseover="showTip(event, '6872', 6872)">
                 <p>
                   <a id="GetExtensionLower">
                     <a href="#GetExtensionLower">
-                      <code><span>PathF.GetExtensionLower&#32;<span>path</span></span></code>
+                      <code><span>PathF.GetExtensionLower<span><span>(<span>path</span>)</span></span></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1063">
+              <div class="fsdocs-tip" id="6872">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>PathF.GetExtensionLower&#32;<span>path</span></span></code>
+                  <code><span>PathF.GetExtensionLower<span><span>(<span>path</span>)</span></span></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -526,7 +522,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.PathF.GetExtensionLower\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/PathF.fs#L59-59" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/PathF.fs#L62-62" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -559,19 +555,19 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1064', 1064)" onmouseover="showTip(event, '1064', 1064)">
+              <code onmouseout="hideTip(event, '6873', 6873)" onmouseover="showTip(event, '6873', 6873)">
                 <p>
                   <a id="GetExtensionMixed">
                     <a href="#GetExtensionMixed">
-                      <code><span>PathF.GetExtensionMixed&#32;<span>path</span></span></code>
+                      <code><span>PathF.GetExtensionMixed<span><span>(<span>path</span>)</span></span></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1064">
+              <div class="fsdocs-tip" id="6873">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>PathF.GetExtensionMixed&#32;<span>path</span></span></code>
+                  <code><span>PathF.GetExtensionMixed<span><span>(<span>path</span>)</span></span></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -605,7 +601,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.PathF.GetExtensionMixed\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/PathF.fs#L71-71" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/PathF.fs#L74-74" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -638,19 +634,19 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1065', 1065)" onmouseover="showTip(event, '1065', 1065)">
+              <code onmouseout="hideTip(event, '6874', 6874)" onmouseover="showTip(event, '6874', 6874)">
                 <p>
                   <a id="GetExtensionUpper">
                     <a href="#GetExtensionUpper">
-                      <code><span>PathF.GetExtensionUpper&#32;<span>path</span></span></code>
+                      <code><span>PathF.GetExtensionUpper<span><span>(<span>path</span>)</span></span></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1065">
+              <div class="fsdocs-tip" id="6874">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>PathF.GetExtensionUpper&#32;<span>path</span></span></code>
+                  <code><span>PathF.GetExtensionUpper<span><span>(<span>path</span>)</span></span></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -684,7 +680,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.PathF.GetExtensionUpper\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/PathF.fs#L65-65" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/PathF.fs#L68-68" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -717,19 +713,19 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1066', 1066)" onmouseover="showTip(event, '1066', 1066)">
+              <code onmouseout="hideTip(event, '6875', 6875)" onmouseover="showTip(event, '6875', 6875)">
                 <p>
                   <a id="GetFileName">
                     <a href="#GetFileName">
-                      <code><span>PathF.GetFileName&#32;<span>path</span></span></code>
+                      <code><span>PathF.GetFileName<span><span>(<span>path</span>)</span></span></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1066">
+              <div class="fsdocs-tip" id="6875">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>PathF.GetFileName&#32;<span>path</span></span></code>
+                  <code><span>PathF.GetFileName<span><span>(<span>path</span>)</span></span></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -763,7 +759,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.PathF.GetFileName\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/PathF.fs#L33-33" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/PathF.fs#L36-36" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -796,19 +792,19 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1067', 1067)" onmouseover="showTip(event, '1067', 1067)">
+              <code onmouseout="hideTip(event, '6876', 6876)" onmouseover="showTip(event, '6876', 6876)">
                 <p>
                   <a id="GetFileNameWithoutExtension">
                     <a href="#GetFileNameWithoutExtension">
-                      <code><span>PathF.GetFileNameWithoutExtension&#32;<span>path</span></span></code>
+                      <code><span>PathF.GetFileNameWithoutExtension<span><span>(<span>path</span>)</span></span></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1067">
+              <div class="fsdocs-tip" id="6876">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>PathF.GetFileNameWithoutExtension&#32;<span>path</span></span></code>
+                  <code><span>PathF.GetFileNameWithoutExtension<span><span>(<span>path</span>)</span></span></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -842,7 +838,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.PathF.GetFileNameWithoutExtension\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/PathF.fs#L37-37" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/PathF.fs#L40-40" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -875,19 +871,19 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1068', 1068)" onmouseover="showTip(event, '1068', 1068)">
+              <code onmouseout="hideTip(event, '6877', 6877)" onmouseover="showTip(event, '6877', 6877)">
                 <p>
                   <a id="GetFullPath">
                     <a href="#GetFullPath">
-                      <code><span>PathF.GetFullPath&#32;<span>path</span></span></code>
+                      <code><span>PathF.GetFullPath<span><span>(<span>path</span>)</span></span></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1068">
+              <div class="fsdocs-tip" id="6877">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>PathF.GetFullPath&#32;<span>path</span></span></code>
+                  <code><span>PathF.GetFullPath<span><span>(<span>path</span>)</span></span></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -921,7 +917,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.PathF.GetFullPath\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/PathF.fs#L47-47" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/PathF.fs#L50-50" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -954,32 +950,77 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1069', 1069)" onmouseover="showTip(event, '1069', 1069)">
+              <code onmouseout="hideTip(event, '6878', 6878)" onmouseover="showTip(event, '6878', 6878)">
                 <p>
-                  <a id="GetInvalidPathChars">
-                    <a href="#GetInvalidPathChars">
-                      <code><span>PathF.GetInvalidPathChars&#32;<span>()</span></span></code>
+                  <a id="GetInvalidFileNameChars">
+                    <a href="#GetInvalidFileNameChars">
+                      <code><span>PathF.GetInvalidFileNameChars<span>()</span></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1069">
+              <div class="fsdocs-tip" id="6878">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>PathF.GetInvalidPathChars&#32;<span>()</span></span></code>
+                  <code><span>PathF.GetInvalidFileNameChars<span>()</span></span></code>
                   <br/>
                   <br/>
-                  Parameters: 
-                  <ul>
-                    <span>
-                      <b>
-                        ()
-                      </b>
-                      :
-                      <code>unit</code>
-                    </span>
-                    <br/>
-                  </ul>
+                  <span>
+                    Returns: 
+                    <code><span>char[]</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:Nu.PathF.GetInvalidFileNameChars`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.PathF.GetInvalidFileNameChars\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/PathF.fs#L32-32" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
+                  <p class="fsdocs-summary">
+                     Gets an array containing the characters that are not allowed in file names.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><span>char[]</span></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '6879', 6879)" onmouseover="showTip(event, '6879', 6879)">
+                <p>
+                  <a id="GetInvalidPathChars">
+                    <a href="#GetInvalidPathChars">
+                      <code><span>PathF.GetInvalidPathChars<span>()</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="6879">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>PathF.GetInvalidPathChars<span>()</span></span></code>
+                  <br/>
                   <br/>
                   <span>
                     Returns: 
@@ -1000,7 +1041,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.PathF.GetInvalidPathChars\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/PathF.fs#L29-29" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/PathF.fs#L28-28" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -1008,16 +1049,6 @@
                   </p>
                 </div>
               </summary>
-              <dl class="fsdocs-params">
-                <dt class="fsdocs-param">
-                  <span class="fsdocs-param-name">
-                    ()
-                  </span>
-                  :
-                  <code>unit</code>
-                </dt>
-                <dd class="fsdocs-param-docs"></dd>
-              </dl>
               <dl class="fsdocs-returns">
                 <dt>
                   <span class="fsdocs-return-name">
@@ -1033,19 +1064,19 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1070', 1070)" onmouseover="showTip(event, '1070', 1070)">
+              <code onmouseout="hideTip(event, '6880', 6880)" onmouseover="showTip(event, '6880', 6880)">
                 <p>
                   <a id="GetRelativePath">
                     <a href="#GetRelativePath">
-                      <code><span>PathF.GetRelativePath&#32;<span><span>(<span>relativeTo,&#32;path</span>)</span></span></span></code>
+                      <code><span>PathF.GetRelativePath<span><span>(<span>relativeTo,&#32;path</span>)</span></span></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1070">
+              <div class="fsdocs-tip" id="6880">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>PathF.GetRelativePath&#32;<span><span>(<span>relativeTo,&#32;path</span>)</span></span></span></code>
+                  <code><span>PathF.GetRelativePath<span><span>(<span>relativeTo,&#32;path</span>)</span></span></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -1087,7 +1118,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.PathF.GetRelativePath\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/PathF.fs#L51-51" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/PathF.fs#L54-54" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -1128,19 +1159,19 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1071', 1071)" onmouseover="showTip(event, '1071', 1071)">
+              <code onmouseout="hideTip(event, '6881', 6881)" onmouseover="showTip(event, '6881', 6881)">
                 <p>
                   <a id="HasExtension">
                     <a href="#HasExtension">
-                      <code><span>PathF.HasExtension&#32;<span>path</span></span></code>
+                      <code><span>PathF.HasExtension<span><span>(<span>path</span>)</span></span></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1071">
+              <div class="fsdocs-tip" id="6881">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>PathF.HasExtension&#32;<span>path</span></span></code>
+                  <code><span>PathF.HasExtension<span><span>(<span>path</span>)</span></span></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -1174,7 +1205,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.PathF.HasExtension\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/PathF.fs#L55-55" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/PathF.fs#L58-58" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -1207,19 +1238,19 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1072', 1072)" onmouseover="showTip(event, '1072', 1072)">
+              <code onmouseout="hideTip(event, '6882', 6882)" onmouseover="showTip(event, '6882', 6882)">
                 <p>
                   <a id="Normalize">
                     <a href="#Normalize">
-                      <code><span>PathF.Normalize&#32;<span>path</span></span></code>
+                      <code><span>PathF.Normalize<span><span>(<span>path</span>)</span></span></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1072">
+              <div class="fsdocs-tip" id="6882">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>PathF.Normalize&#32;<span>path</span></span></code>
+                  <code><span>PathF.Normalize<span><span>(<span>path</span>)</span></span></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -1253,7 +1284,7 @@
                   <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.PathF.Normalize\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/PathF.fs#L17-17" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/PathF.fs#L16-16" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
@@ -1286,14 +1317,6 @@
       </tbody>
     </table>
   </div>
-  <div></div>
-  <div></div>
-  <div></div>
-  <div></div>
-  <div></div>
-  <div></div>
-  <div></div>
-  <div></div>
 </div>
         
     </div>
