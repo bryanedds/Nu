@@ -1,10 +1,23 @@
 Nu Game Engine [![Build status](https://github.com/bryanedds/Nu/actions/workflows/CI.yml/badge.svg)](https://github.com/bryanedds/Nu/actions/workflows/CI.yml)
 
+BIG NU NEWS - Vulkan, Mac, iOS, and Android now available!
+==
+
+To upgrade your existing projects, you may pull latest and follow the steps at this wiki page -
+
+https://github.com/bryanedds/Nu/wiki/Converting-from-Nu-with-OpenGL-to-Nu-with-Vulkan
+
+This branch not only replaces our OpenGL renderers completely with Vulkan renderers, it also features important rendering and performance enhancements as well as makes Nu deployable on `Mac`, `iOS`, and `Android`!
+
+If you have any issues, please report them so we can fix them ASAP!
+
+This upgrade to Nu is all thanks to tremendous work from [@deanjl](https://github.com/deanjl), [@Happypig375](https://github.com/Happypig375), [@yvileapsis](https://github.com/yvileapsis), [@bryanedds](https://github.com/bryanedds), as well as the sustained support of our [donors](https://github.com/sponsors/bryanedds)!
+
 **Live Nu Game Engine Support on [Discord](https://discord.gg/BN79RxYAjD) [![Discord](https://img.shields.io/discord/700010129994809667)](https://discord.gg/BN79RxYAjD)**
 
 So... just what is the **Nu Game Engine**?
 
-*"The Nu Game Engine is the world's first practical functional 2D and 3D cross-platform game engine. Built in F#, it offers an immediate-mode API based on ImGui called ImSim as well as a model-driven API called MMCC (Model-Message-Command-Content). Nu offers a path to a future where game developers are liberated from the snowballing complexity of overly-imperative game programming approaches. Nu's implementation has matured enough to prove both the efficacy and viability of declarative programming in games. Nu currently utilizes SDL3, OpenGL, Aether 2D Physics, and Jolt 3D Physics."*
+*"The Nu Game Engine is the world's first practical functional 2D and 3D cross-platform game engine. Built in F#, it offers an immediate-mode API based on ImGui called ImSim as well as a model-driven API called MMCC (Model-Message-Command-Content). Nu offers a path to a future where game developers are liberated from the snowballing complexity of overly-imperative game programming approaches. Nu's implementation has matured enough to prove both the efficacy and viability of declarative programming in games. Nu currently utilizes SDL3, Vulkan, Box 2D Physics, and Jolt 3D Physics."*
 
 ***"...everything that I can think of that makes games programming so awful seems to have a solution in your engine!"* - @Sigmoid**
 
@@ -14,7 +27,7 @@ This repository hosts several projects, including -
 - Breakout tutorial using the MMCC API, ['Breakout MMCC'](https://github.com/bryanedds/Nu/tree/master/Projects/Breakout%20Mmcc).
 - the 3D third-person game sample, ['Terra Firma'](https://github.com/bryanedds/Nu/tree/master/Projects/Terra%20Firma).
 - the 2D puzzle game tutorial, ['Twenty 48'](https://github.com/bryanedds/Nu/tree/master/Projects/Twenty%2048).
-- the WIP prototype game sample for ['Project 5 (Tentative Title)'](https://github.com/bryanedds/Project-5/tree/master/Projects/Project%205) - [Demo Here!](https://github.com/bryanedds/Project-5/releases/tag/v0.1.16)
+- the WIP prototype game sample for ['Project 5 (Tentative Title)'](https://github.com/bryanedds/Project-5/tree/master/Projects/Project%205) - [Demo Here!](https://github.com/bryanedds/Project-5/releases/tag/v0.1.16-vulkan)
 - the WIP prototype game sample for ['Project Race (Tentative Title)'](https://github.com/bryanedds/Project-Race/tree/master/Projects/Project%20Race) - [Demo Here!](https://github.com/bryanedds/Project-Race/releases/tag/v0.1.7)
 - the commercial game demo for ['Omni Blade'](https://github.com/bryanedds/Nu/tree/omni-blade/Projects/Omni%20Blade) - [Full game available here!](https://bryanedds.itch.io/omni-blade)
 
@@ -32,8 +45,8 @@ Look here to get started with your own project in Nu -
 Some Media on the Nu Game Engine
 ================================
 
-![image](https://github.com/user-attachments/assets/c687c1ed-b9e5-4758-8429-17c23c248195)
-**Screenshot of the Week!**
+![image](https://github.com/user-attachments/assets/f30688e6-777b-4455-9aa4-2287a00a6771)
+**Screenshot of the week featuring of our new Vulkan renderer!**
 
 ![image](https://github.com/user-attachments/assets/e6d56c42-1eb1-41d4-889c-42b03abd4110)
 Our new soft-shadow, volumetric fog systems, depth of field rendering!
@@ -76,9 +89,6 @@ Wandering the lake in Omni Blade.
 
 ![image](https://github.com/bryanedds/Nu/assets/1625560/c9f0a9a1-d071-48f7-9175-c0b08f5768f0)
 Directly editing the entire game state in the new editor.
-
-![image](https://github.com/user-attachments/assets/a1c3d8a0-79c2-4e9a-b466-5901ea601c7e)
-Spine 2D skeletal animation available now!
 
 ![image](https://github.com/user-attachments/assets/79dd5d26-97e8-40bf-8d48-1057a017a030)
 A racing game we're prototyping with Nu and Jolt Physics.
@@ -125,4 +135,3 @@ Please Become a Sponsor for Nu Today!
 =====================================
 
 Sponsor here - https://github.com/sponsors/bryanedds
-

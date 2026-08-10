@@ -24,8 +24,7 @@ module Configure =
                 match key with
                 | nameof Constants.Runtime.GcDebug -> Constants.Runtime.GcDebug <- scvalue value
                 | nameof Constants.GameTime.DesiredFrameRate -> Constants.GameTime.DesiredFrameRate <- scvalue value
-                | nameof Constants.OpenGL.HlDebug -> Constants.OpenGL.HlDebug <- scvalue value
-                | nameof Constants.ImGui.FontSize -> Constants.ImGui.FontSize <- scvalue value
+                | nameof Constants.ImGui.ImGuiFontSize -> Constants.ImGui.ImGuiFontSize <- scvalue value
                 | nameof Constants.Engine.Meter2d -> Constants.Engine.Meter2d <- scvalue value
                 | nameof Constants.Engine.RunSynchronously -> Constants.Engine.RunSynchronously <- scvalue value
                 | nameof Constants.Engine.TickDeltaAveraging -> Constants.Engine.TickDeltaAveraging <- scvalue value
@@ -37,7 +36,8 @@ module Configure =
                 | nameof Constants.Engine.OctreeDepth -> Constants.Engine.OctreeDepth <- scvalue value
                 | nameof Constants.Engine.EventTracing -> Constants.Engine.EventTracing <- scvalue value
                 | nameof Constants.Engine.EventFilter -> Constants.Engine.EventFilter <- scvalue value
-                | nameof Constants.Render.Vsync -> Constants.Render.Vsync <- scvalue value
+                | nameof Constants.Render.RenderDebug -> Constants.Render.RenderDebug <- scvalue value
+                | nameof Constants.Render.RenderVsync -> Constants.Render.RenderVsync <- scvalue value
                 | nameof Constants.Render.NearPlaneDistanceInterior -> Constants.Render.NearPlaneDistanceInterior <- scvalue value
                 | nameof Constants.Render.FarPlaneDistanceInterior -> Constants.Render.FarPlaneDistanceInterior <- scvalue value
                 | nameof Constants.Render.NearPlaneDistanceExterior -> Constants.Render.NearPlaneDistanceExterior <- scvalue value
@@ -48,14 +48,13 @@ module Configure =
                 | nameof Constants.Render.SsaoResolutionDivisor -> Constants.Render.SsaoResolutionDivisor <- scvalue value
                 | nameof Constants.Render.TextureAnisotropyMax -> Constants.Render.TextureAnisotropyMax <- scvalue value
                 | nameof Constants.Render.TextureMinimalMipmapIndex -> Constants.Render.TextureMinimalMipmapIndex <- scvalue value
-                | nameof Constants.Render.TextureBlockCompression -> Constants.Render.TextureBlockCompression <- scvalue value
-                | nameof Constants.Render.SpineSkeletonScalar -> Constants.Render.SpineSkeletonScalar <- scvalue value
                 | nameof Constants.Render.ShadowVirtualResolution -> Constants.Render.ShadowVirtualResolution <- scvalue value
                 | nameof Constants.Render.ShadowDisplayScalarMax -> Constants.Render.ShadowDisplayScalarMax <- scvalue value
-                | nameof Constants.Render.ShadowDirectionalMarginRatioCull -> Constants.Render.ShadowDirectionalMarginRatioCull <- scvalue value
                 | nameof Constants.Render.ShadowCascadeLimits -> Constants.Render.ShadowCascadeLimits <- scvalue value
-                | nameof Constants.Render.ShadowCascadeMarginRatio -> Constants.Render.ShadowCascadeMarginRatio <- scvalue value
-                | nameof Constants.Render.ShadowCascadeMarginRatioCull -> Constants.Render.ShadowCascadeMarginRatioCull <- scvalue value
+                | nameof Constants.Render.StubRenderer3d -> Constants.Render.StubRenderer3d <- scvalue value
+                | nameof Constants.Audio.MasterAudioVolumeDefault -> Constants.Audio.MasterAudioVolumeDefault <- scvalue value
+                | nameof Constants.Audio.MasterSoundVolumeDefault -> Constants.Audio.MasterSoundVolumeDefault <- scvalue value
+                | nameof Constants.Audio.MasterSongVolumeDefault -> Constants.Audio.MasterSongVolumeDefault <- scvalue value
                 | nameof Constants.Physics.Collision2dSteps -> Constants.Physics.Collision2dSteps <- scvalue value
                 | nameof Constants.Physics.Collision2dFrameCompensation -> Constants.Physics.Collision2dFrameCompensation <- scvalue value
                 | nameof Constants.Physics.Collision3dBodiesMax -> Constants.Physics.Collision3dBodiesMax <- scvalue value

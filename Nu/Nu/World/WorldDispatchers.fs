@@ -21,6 +21,15 @@ type Entity2dDispatcher (perimeterCentered, physical, lightProbe, light) =
         [define Entity.Size Constants.Engine.Entity2dSizeDefault
          define Entity.PerimeterCentered Constants.Engine.Entity2dPerimeterCenteredDefault]
 
+/// A 2d contour dispatcher.
+type Contour2dDispatcher (physical, lightProbe, light) =
+    inherit EntityDispatcher (true, Constants.Engine.Entity2dPerimeterCenteredDefault, physical, lightProbe, light)
+
+    static member Properties =
+        [define Entity.OverflowAbsolute true
+         define Entity.Size Constants.Engine.Entity2dSizeDefault
+         define Entity.ClipOpt None]
+
 /// A gui entity dispatcher.
 type GuiDispatcher () =
     inherit EntityDispatcher (true, Constants.Engine.EntityGuiPerimeterCenteredDefault, false, false, false)
@@ -67,6 +76,41 @@ type AnimatedSpriteDispatcher () =
 
     static member Facets =
         [typeof<AnimatedSpriteFacet>]
+
+/// Gives an entity the base behavior of a 2d circle contour.
+type CircleContour2dDispatcher () =
+    inherit Contour2dDispatcher (false, false, false)
+
+    static member Facets =
+        [typeof<CircleContour2dFacet>]
+
+/// Gives an entity the base behavior of a 2d rectangle contour.
+type RectangleContour2dDispatcher () =
+    inherit Contour2dDispatcher (false, false, false)
+
+    static member Facets =
+        [typeof<RectangleContour2dFacet>]
+
+/// Gives an entity the base behavior of a 2d rounded rectangle contour.
+type RectangleRoundedContour2dDispatcher () =
+    inherit Contour2dDispatcher (false, false, false)
+
+    static member Facets =
+        [typeof<RectangleRoundedContour2dFacet>]
+
+/// Gives an entity the base behavior of a 2d spiral contour.
+type SpiralContour2dDispatcher () =
+    inherit Contour2dDispatcher (false, false, false)
+
+    static member Facets =
+        [typeof<SpiralContour2dFacet>]
+
+/// Gives an entity the base behavior of a 2d wedge (pie slice) contour.
+type WedgeContour2dDispatcher () =
+    inherit Contour2dDispatcher (false, false, false)
+
+    static member Facets =
+        [typeof<WedgeContour2dFacet>]
 
 /// Gives an entity the base behavior of a gui text control.
 type TextDispatcher () =
@@ -448,14 +492,6 @@ type TmxMapDispatcher () =
 
     static member Facets =
         [typeof<TmxMapFacet>]
-
-/// Gives an entity the base behavior of a Spine skeleton.
-/// NOTE: Spine skeletons are inherently imperative and therefore currently not fully supported by undo / redo.
-type SpineSkeletonDispatcher () =
-    inherit Entity2dDispatcher (false, false, false)
-
-    static member Facets =
-        [typeof<SpineSkeletonFacet>]
 
 /// Gives an entity the base behavior of sky box.
 type SkyBoxDispatcher () =

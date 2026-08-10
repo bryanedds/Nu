@@ -51,7 +51,8 @@ type BreakoutDispatcher () =
          Simulants.TitlePlay.ClickEvent => ShowGameplay
          Simulants.TitleExit.ClickEvent => Exit
          Simulants.CreditsBack.ClickEvent => ShowTitle
-         Simulants.Gameplay.QuitEvent => ShowTitle]
+         Simulants.Gameplay.QuitEvent => ShowTitle
+         Game.ExitRequestEvent => Exit]
 
     // here we handle the above messages
     override this.Message (_, message, _, _) =
@@ -71,3 +72,12 @@ type BreakoutDispatcher () =
          Content.screenWithGroupFromFile Simulants.Title.Name (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Title.nugroup" [] []
          Content.screenWithGroupFromFile Simulants.Credits.Name (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Credits.nugroup" [] []
          Content.screen<GameplayDispatcher> Simulants.Gameplay.Name (Dissolve (Constants.Dissolve.Default, None)) [] []]
+
+    // this is just a quick hack to exit the game upon hitting Alt+F4. generally, you'd want to define an MMCC mapping
+    // from a Game.UpdateEvent to a command to handle it, but that's not the point of this little code demo.
+    override this.Update (_, world) =
+
+        // when not in editor, handle Alt+F4
+        if world.Unaccompanied then
+            if  World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world then
+                World.exit world

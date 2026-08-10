@@ -48,14 +48,7 @@ module WorldModule2 =
 
         /// Set whether the world state is advancing.
         static member setAdvancing advancing (world : World) =
-            if world.ContextImSim.Names.Length = 0 then
-                World.defer (World.mapAmbientState (AmbientState.setAdvancing advancing)) Nu.Game.Handle world
-            else
-
-                // HACK: in order to avoid unintentional interaction with the ImSim hack that clears and restores
-                // advancement state ImSim contexts, we schedule the advancement change outside of the normal workflow.
-                let time = if WorldModuleInternal.EndFrameProcessingStarted && world.Advancing then GameTime.epsilon else GameTime.zero
-                World.addTasklet Nu.Game.Handle { ScheduledTime = time; ScheduledOp = World.mapAmbientState (AmbientState.setAdvancing advancing) } world
+            World.mapAmbientState (AmbientState.setAdvancing advancing) world
 
         /// Select the given screen without transitioning, even if another transition is taking place.
         static member internal selectScreenOpt transitionStateAndScreenOpt world =
@@ -81,10 +74,14 @@ module WorldModule2 =
                         World.setSelectedScreen screen world
                         let eventTrace = EventTrace.debug "World" "selectScreen" "Select" EventTrace.empty
                         World.publishPlus () screen.SelectEvent eventTrace screen false false world
+                        let eventTrace = EventTrace.debug "World" "selectScreen" "PostSelect" EventTrace.empty
+                        World.publishPlus (Some screen) Nu.Game.Handle.PostSelectEvent eventTrace screen false false world
                 | None ->
                     World.setSelectedScreen screen world
                     let eventTrace = EventTrace.debug "World" "selectScreen" "Select" EventTrace.empty
                     World.publishPlus () screen.SelectEvent eventTrace screen false false world
+                    let eventTrace = EventTrace.debug "World" "selectScreen" "PostSelect" EventTrace.empty
+                    World.publishPlus (Some screen) Nu.Game.Handle.PostSelectEvent eventTrace screen false false world
                 World.setScreenTransitionStatePlus transitionState screen world
             | None -> World.setSelectedScreenOpt None world
 
@@ -180,7 +177,7 @@ module WorldModule2 =
 
         static member private updateScreenIdling transitionTime (selectedScreen : Screen) (world : World) =
             if world.Alive then
-                if world.Accompanied && world.Halted then // special case to play song when halted in editor
+                if world.Accompanied && world.Halted && not world.AdvancementCleared then // special case to play song when halted in editor
                     match (selectedScreen.GetIncoming world).SongOpt with
                     | Some playSong ->
                         match World.getSongOpt world with
@@ -351,6 +348,8 @@ module WorldModule2 =
                 World.setSelectedScreen destination world
                 let eventTrace = EventTrace.debug "World" "selectScreen" "Select" EventTrace.empty
                 World.publishPlus () destination.SelectEvent eventTrace destination false false world
+                let eventTrace = EventTrace.debug "World" "selectScreen" "PostSelect" EventTrace.empty
+                World.publishPlus (Some destination) Nu.Game.Handle.PostSelectEvent eventTrace destination false false world
                 World.updateScreenIncoming transitionTime destination world
                 true
 
@@ -400,14 +399,16 @@ module WorldModule2 =
 
                     // fin
                     true
-
+                    
+            let initializing = initializing || Initializing
+            let reinitializing = initializing || Reinitializing
             for arg in args do
                 if (match arg.ArgType with
                     | InitializingArg -> initializing
-                    | ReinitializingArg -> initializing || Reinitializing
+                    | ReinitializingArg -> reinitializing
                     | DynamicArg -> true) && screen.GetExists world then
                     screen.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> ignore
-            if (initializing || Reinitializing) && screen.GetExists world then
+            if reinitializing && screen.GetExists world then
                 World.applyScreenBehavior setScreenSlide behavior screen world
             if screenCreation && screen.GetExists world then
                 WorldModuleInternal.tryProcessScreen true screen world
@@ -899,7 +900,7 @@ module WorldModule2 =
                 World.unregisterEntityPhysics entity world
 
         static member private synchronizeViewports world =
-            let windowSize = World.getWindowSize world
+            let windowSize = World.getWindowSizeOtherwiseViewportSize world
             let windowViewport = Viewport.makeWindow1 windowSize
             World.setWindowViewport windowViewport world
             World.setGeometryViewport (Viewport.makeGeometry windowViewport.Bounds.Size) world
@@ -1122,38 +1123,42 @@ module WorldModule2 =
                 elif keyboardKey >= KeyboardKey.F1 && keyboardKey <= KeyboardKey.F12 then ImGuiKey.F1 + (keyboardKey - KeyboardKey.F1 |> LanguagePrimitives.EnumToValue |> LanguagePrimitives.EnumOfValue) |> List.singleton
                 else []
 
-        static member private processInput2 (evt : SDL_Event) (world : World) =
+        static member internal processWindowResized (world : World) =
+
+            // ensure window size is a factor of display virtual resolution, going to full screen otherwise
+            let windowSize = World.getWindowSizeOtherwiseViewportSize world
+            let windowScalar =
+                max (single windowSize.X / single Constants.Render.DisplayVirtualResolution.X |> ceil |> int |> max 1)
+                    (single windowSize.Y / single Constants.Render.DisplayVirtualResolution.Y |> ceil |> int |> max 1)
+            let windowSize' = windowScalar * Constants.Render.DisplayVirtualResolution
+            World.trySetWindowSize windowSize' world
+            let windowSize'' = World.getWindowSizeOtherwiseViewportSize world
+            if windowSize''.X < windowSize'.X || windowSize''.Y < windowSize'.Y then
+                World.trySetWindowFullScreen true world
+
+            // synchronize display virtual scalar
+            let windowSize'' = World.getWindowSizeOtherwiseViewportSize world
+            let xScalar = windowSize''.X / Constants.Render.DisplayVirtualResolution.X
+            let yScalar = windowSize''.Y / Constants.Render.DisplayVirtualResolution.Y
+            Globals.Render.DisplayScalar <- min xScalar yScalar
+
+            // synchronize view ports
+            World.synchronizeViewports world
+
+        static member internal processInput2 (evt : SDL_Event) (world : World) =
             match evt.Type with
             | SDL_EventType.SDL_EVENT_QUIT ->
-                if world.Accompanied then
-                    let eventTrace = EventTrace.debug "World" "processInput2" "ExitRequest" EventTrace.empty
-                    World.publishPlus () Nu.Game.Handle.ExitRequestEvent eventTrace Nu.Game.Handle true true world
-            | SDL_EventType.SDL_EVENT_WINDOW_RESIZED ->
-
-                // ensure window size is a factor of display virtual resolution, going to full screen otherwise
-                let windowSize = World.getWindowSize world
-                let windowScalar =
-                    max (single windowSize.X / single Constants.Render.DisplayVirtualResolution.X |> ceil |> int |> max 1)
-                        (single windowSize.Y / single Constants.Render.DisplayVirtualResolution.Y |> ceil |> int |> max 1)
-                let windowSize' = windowScalar * Constants.Render.DisplayVirtualResolution
-                World.trySetWindowSize windowSize' world
-                let windowSize'' = World.getWindowSize world
-                if windowSize''.X < windowSize'.X || windowSize''.Y < windowSize'.Y then
-                    World.trySetWindowFullScreen true world
-
-                // synchronize display virtual scalar
-                let windowSize'' = World.getWindowSize world
-                let xScalar = windowSize''.X / Constants.Render.DisplayVirtualResolution.X
-                let yScalar = windowSize''.Y / Constants.Render.DisplayVirtualResolution.Y
-                Globals.Render.DisplayScalar <- min xScalar yScalar
-
-                // synchronize view ports
-                World.synchronizeViewports world
-
+                let eventTrace = EventTrace.debug "World" "processInput2" "ExitRequest" EventTrace.empty
+                World.publishPlus () Nu.Game.Handle.ExitRequestEvent eventTrace Nu.Game.Handle true true world
+            | SDL_EventType.SDL_EVENT_WINDOW_RESIZED | SDL_EventType.SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED ->
+                World.processWindowResized world
             | SDL_EventType.SDL_EVENT_MOUSE_MOTION ->
                 let io = ImGui.GetIO ()
-                let boundsMin = world.WindowViewport.Bounds.Min
-                io.AddMousePosEvent (evt.button.x - single boundsMin.X, evt.button.y - single boundsMin.Y)
+                let pixelDensity = World.tryGetWindowPixelDensity world |> Option.defaultValue 1.0f
+                let viewport = World.getWindowViewport world
+                io.AddMousePosEvent // scale by pixel density because SDL IO comes in from unscale window coords and offset by bounds min
+                    (evt.button.x * pixelDensity + single viewport.Bounds.Min.X,
+                     evt.button.y * pixelDensity - single viewport.Bounds.Min.Y)
                 let mousePosition = v2 (single evt.button.x) (single evt.button.y)
                 if World.isMouseButtonDown MouseLeft world then
                     let eventTrace = EventTrace.debug "World" "processInput2" "MouseDrag" EventTrace.empty
@@ -1642,7 +1647,7 @@ module WorldModule2 =
                         World.renderEntity renderPass element.Entry world
             world.Timers.RenderEntityMessagesTimer.Stop ()
 
-        static member private renderSimulantsInternal renderPass (world : World) =
+        static member private renderSimulantsInternal excludeGlobalLights renderPass (world : World) =
 
             // use a finally block to free cached values
             try
@@ -1661,6 +1666,8 @@ module WorldModule2 =
                     World.getElements3dInViewBox lightMapBounds WorldModuleInternal2.HashSet3dNormalCached world
                     for element in WorldModuleInternal2.HashSet3dNormalCached do
                         if not element.StaticInPlay then
+                            WorldModuleInternal2.HashSet3dNormalCached.Remove element |> ignore<bool>
+                        elif excludeGlobalLights && element.Light && (element.Entry.GetLightType world).IsGlobalLight then
                             WorldModuleInternal2.HashSet3dNormalCached.Remove element |> ignore<bool>
                 | ShadowPass (_, _, lightType, dynamicShadows, _, shadowFrustum) ->
                     let shadowInterior = LightType.shouldShadowInterior lightType
@@ -1699,10 +1706,11 @@ module WorldModule2 =
                     let lightProbesStale = Seq.filter (fun (lightProbe : Entity) -> lightProbe.GetProbeStale world) lightProbes
                     for lightProbe in lightProbesStale do
                         let id = lightProbe.GetId world
+                        let excludeGlobalLights = lightProbe.GetExcludeGlobalLights world
                         let bounds = lightProbe.GetProbeBounds world
                         let boundsPlus = bounds.ScaleUniform 4.0f // TODO: allow user to specify bounds scalar?
                         let renderPass = LightMapPass (id, boundsPlus)
-                        World.renderSimulantsInternal renderPass world
+                        World.renderSimulantsInternal excludeGlobalLights renderPass world
                         World.enqueueRenderMessage3d (RenderLightMap3d { LightProbeId = id; RenderPass = renderPass }) world
                         lightProbe.SetProbeStale false world
 
@@ -1725,19 +1733,19 @@ module WorldModule2 =
                                 | Omnipresent -> true
                             if shadowInView then
                                 let distanceSquared = eyeCenter.DistanceSquared (light.GetPosition world)
-                                struct (distanceSquared, struct (shadowFrustum, light))|]
+                                (distanceSquared :> IComparable, (shadowFrustum, light))|] // OPTIMIZATION: boxing here to avoid it downstream.
 
                 // sort shadow pass descriptors
                 let shadowPassDescriptors =
                     shadowPassDescriptorsSortable
-                    |> Array.sortBy fst'
-                    |> Array.map snd'
+                    |> Array.sortWith (fun (frustum, _) (frustum2, _) -> frustum.CompareTo frustum2)
+                    |> Array.map snd
 
                 // render simulant shadows
                 let mutable shadowTexturesCount = 0
                 let mutable shadowMapsCount = 0
                 let mutable shadowCascadesCount = 0
-                for struct (shadowFrustum, light : Entity) in shadowPassDescriptors do
+                for (shadowFrustum, light : Entity) in shadowPassDescriptors do
                     let lightType = light.GetLightType world
                     let dynamicShadows = light.GetDynamicShadows world
                     match lightType with
@@ -1769,14 +1777,14 @@ module WorldModule2 =
                                 let shadowView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + eyeForward, eyeUp)
                                 let shadowViewProjection = shadowView * shadowProjection
                                 let shadowFrustum = Frustum shadowViewProjection
-                                World.renderSimulantsInternal (ShadowPass (lightId, Some (i, shadowView, shadowProjection), lightType, dynamicShadows, shadowRotation, shadowFrustum)) world
+                                World.renderSimulantsInternal false (ShadowPass (lightId, Some (i, shadowView, shadowProjection), lightType, dynamicShadows, shadowRotation, shadowFrustum)) world
 
                             // fin
                             shadowMapsCount <- inc shadowMapsCount
 
                     | SpotLight (_, _) ->
                         if shadowTexturesCount < Constants.Render.ShadowTexturesMax then
-                            World.renderSimulantsInternal (ShadowPass (light.GetId world, None, lightType, dynamicShadows, light.GetRotation world, shadowFrustum)) world
+                            World.renderSimulantsInternal false (ShadowPass (light.GetId world, None, lightType, dynamicShadows, light.GetRotation world, shadowFrustum)) world
                             shadowTexturesCount <- inc shadowTexturesCount
 
                     | DirectionalLight offsetForwardScalar ->
@@ -1791,16 +1799,11 @@ module WorldModule2 =
                             let shadowNearDistance = Constants.Render.NearPlaneDistanceInterior
                             let shadowFarDistance = max shadowCutoff (shadowNearDistance * 2.0f)
                             let cullView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + shadowForward, shadowUp)
-                            let cullProjection =
-                                Matrix4x4.CreateOrthographic
-                                    (shadowFarDistance * +2.0f * inc Constants.Render.ShadowDirectionalMarginRatioCull,
-                                     shadowFarDistance * +2.0f * inc Constants.Render.ShadowDirectionalMarginRatioCull,
-                                     shadowFarDistance * -1.0f * inc Constants.Render.ShadowDirectionalMarginRatioCull,
-                                     shadowFarDistance * +1.0f * inc Constants.Render.ShadowDirectionalMarginRatioCull)
+                            let cullProjection = Matrix4x4.CreateOrthographic (shadowFarDistance * +2.0f, shadowFarDistance * +2.0f, shadowFarDistance * -1.0f, shadowFarDistance * +1.0f)
                             let cullFrustum = Frustum (cullView * cullProjection)
 
                             // render
-                            World.renderSimulantsInternal (ShadowPass (light.GetId world, None, lightType, dynamicShadows, light.GetRotation world, cullFrustum)) world
+                            World.renderSimulantsInternal false (ShadowPass (light.GetId world, None, lightType, dynamicShadows, light.GetRotation world, cullFrustum)) world
 
                             // fin
                             shadowTexturesCount <- inc shadowTexturesCount
@@ -1829,14 +1832,9 @@ module WorldModule2 =
 
                             // compute cull frustum
                             let cullView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + shadowForward, shadowUp)
-                            let cullProjection =
-                                Matrix4x4.CreateOrthographic
-                                    (shadowFarDistance * +2.0f * inc Constants.Render.ShadowCascadeMarginRatioCull,
-                                     shadowFarDistance * +2.0f * inc Constants.Render.ShadowCascadeMarginRatioCull,
-                                     shadowFarDistance * -1.0f * inc Constants.Render.ShadowCascadeMarginRatioCull,
-                                     shadowFarDistance * +1.0f * inc Constants.Render.ShadowCascadeMarginRatioCull)
+                            let cullProjection = Matrix4x4.CreateOrthographic (shadowFarDistance * +2.0f, shadowFarDistance * +2.0f,shadowFarDistance * -1.0f, shadowFarDistance * +1.0f)
                             let cullFrustum = Frustum (cullView * cullProjection)
-                            
+
                             // use a finally block to free cached values
                             try
 
@@ -1890,15 +1888,8 @@ module WorldModule2 =
                                         minZ <- min minZ cornerView.Z
                                         maxZ <- max maxZ cornerView.Z
 
-                                    // add margins to section along Z's
-                                    let depth = maxZ - minZ
-                                    let margin = depth * Constants.Render.ShadowCascadeMarginRatio
-                                    let margin = max margin Constants.Render.ShadowCascadeMarginSizeMin
-                                    let minZ' = minZ - margin
-                                    let maxZ' = maxZ + margin
-
                                     // compute ortho projection
-                                    let sectionProjectionOrtho = Matrix4x4.CreateOrthographicOffCenter (minX, maxX, minY, maxY, minZ', maxZ')
+                                    let sectionProjectionOrtho = Matrix4x4.CreateOrthographicOffCenter (minX, maxX, minY, maxY, minZ, maxZ)
 
                                     // render
                                     World.renderSimulantsInternal8
@@ -1915,7 +1906,7 @@ module WorldModule2 =
                             shadowCascadesCount <- inc shadowCascadesCount
 
                 // render simulants normally
-                World.renderSimulantsInternal NormalPass world
+                World.renderSimulantsInternal false NormalPass world
 
             // free cached values
             finally
@@ -1968,7 +1959,7 @@ module WorldModule2 =
             world.WorldExtension.Plugin.CleanUp ()
 
         /// Run the game engine with the given handlers, but don't clean up at the end.
-        static member runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess firstFrame (world : World) =
+        static member runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess firstFrameCallbackOpt (world : World) =
 
             // run loop if user-defined run-while predicate passes
             world.Timers.FrameTimer.Restart ()
@@ -2073,7 +2064,7 @@ module WorldModule2 =
 
                                                                     // process rendering (1/2)
                                                                     let rendererProcess = World.getRendererProcess world
-                                                                    if not firstFrame then rendererProcess.RequestSwap ()
+                                                                    if Option.isNone firstFrameCallbackOpt then rendererProcess.RequestSwap ()
 
                                                                     // process frame pacing mechanics
                                                                     if world.Timers.MainThreadTimer.IsRunning then
@@ -2118,6 +2109,12 @@ module WorldModule2 =
                                                                     World.clearEditDeferrals world
                                                                     world.Timers.ImGuiTimer.Stop ()
 
+                                                                    // compute window properties
+                                                                    let windowProperties =
+                                                                        match World.tryGetWindowProperties world with
+                                                                        | Some windowProperties -> windowProperties
+                                                                        | None -> WindowProperties.empty
+
                                                                     // process rendering (2/2)
                                                                     rendererProcess.SubmitMessages
                                                                         world.Eye3dFrustumInterior
@@ -2128,14 +2125,19 @@ module WorldModule2 =
                                                                         world.Eye3dFieldOfView
                                                                         world.Eye2dCenter
                                                                         world.Eye2dSize
-                                                                        (World.getWindowSize world)
                                                                         world.GeometryViewport
                                                                         world.WindowViewport
                                                                         drawData
+                                                                        windowProperties
 
                                                                     // post-process imgui frame
                                                                     World.imGuiPostProcess world
                                                                     imGuiPostProcess world
+
+                                                                    // signal that rendering is ready when appropriate
+                                                                    match firstFrameCallbackOpt with
+                                                                    | Some firstFrameCallback -> firstFrameCallback ()
+                                                                    | None -> ()
 
                                                                     // update time and recur
                                                                     world.Timers.FrameTimer.Stop ()
@@ -2150,13 +2152,11 @@ module WorldModule2 =
                                                                                 if group.GetExists world then
                                                                                     World.publish () (Events.TimeUpdateEvent --> group) group world
                                                                         | None -> ()
-
-                                                                    // recur
-                                                                    World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess false world
+                                                                    World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess None world
 
         /// Run the game engine using the given world and returning exit code upon termination.
-        static member runWithCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess firstFrame world =
-            try World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess firstFrame world
+        static member runWithCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess firstFrameCallbackOpt world =
+            try World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess firstFrameCallbackOpt world
                 World.cleanUp world
                 Constants.Engine.ExitCodeSuccess
             with exn ->
@@ -2206,6 +2206,15 @@ module EntityDispatcherModule =
 
         static member Properties =
             [define Entity.Size Constants.Engine.Entity2dSizeDefault]
+
+    /// An ImSim 2d contour dispatcher.
+    type [<AbstractClass>] Contour2dDispatcherImSim (physical, lightProbe, light) =
+        inherit EntityDispatcherImSim (true, Constants.Engine.Entity2dPerimeterCenteredDefault, physical, lightProbe, light)
+
+        static member Properties =
+            [define Entity.OverflowAbsolute true
+             define Entity.Size Constants.Engine.Entity2dSizeDefault
+             define Entity.ClipOpt None]
 
     /// An ImSim gui entity dispatcher.
     type [<AbstractClass>] GuiDispatcherImSim () =
@@ -2404,6 +2413,18 @@ module EntityDispatcherModule =
         static member Properties =
             [define Entity.Size Constants.Engine.Entity2dSizeDefault
              define Entity.PerimeterCentered Constants.Engine.Entity2dPerimeterCenteredDefault]
+
+    /// A 2d contour dispatcher.
+    type [<AbstractClass>] Contour2dDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (physical, lightProbe, light, makeInitial : World -> 'model) =
+        inherit EntityDispatcher<'model, 'message, 'command> (true, Constants.Engine.Entity2dPerimeterCenteredDefault, physical, lightProbe, light, makeInitial)
+
+        new (physical, lightProbe, light, initial : 'model) =
+            Contour2dDispatcher<'model, 'message, 'command> (physical, lightProbe, light, fun _ -> initial)
+
+        static member Properties =
+            [define Entity.OverflowAbsolute true
+             define Entity.Size Constants.Engine.Entity2dSizeDefault
+             define Entity.ClipOpt None]
 
     /// A gui entity dispatcher.
     type [<AbstractClass>] GuiDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (makeInitial : World -> 'model) =
@@ -2906,8 +2927,8 @@ module ScreenDispatcherModule =
             let contentOld = World.getScreenContent screen world
             let model = this.GetModel screen world
             let definitions = this.Definitions (model, screen)
-            let group = this.Content (model, screen)
-            let content = Content.screen screen.Name Vanilla definitions group
+            let groups = this.Content (model, screen)
+            let content = Content.screen screen.Name Vanilla definitions groups
             Content.synchronizeScreen initializing reinitializing contentOld content screen screen world
             World.setScreenContent content screen world
 
@@ -3213,7 +3234,9 @@ module GamePropertyDescriptor =
     /// Get whether the described property is editable.
     let getEditable propertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
-        not (Reflection.isPropertyNonPersistentByName propertyName)
+        not (Reflection.isPropertyNonPersistentByName propertyName) &&
+        not (propertyName.StartsWith "Eye2d") &&
+        not (propertyName.StartsWith "Eye3d")
 
     /// Get the value of the described property for the game.
     let getValue propertyDescriptor (game : Game) world : obj =

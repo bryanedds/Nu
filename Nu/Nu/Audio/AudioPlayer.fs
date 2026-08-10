@@ -9,6 +9,7 @@ open System
 open System.Collections.Generic
 open System.Collections.Concurrent
 open System.IO
+open System.Reflection
 open System.Runtime.InteropServices
 open FSharp.NativeInterop
 open SDL
@@ -123,16 +124,12 @@ type [<ReferenceEquality>] StubAudioPlayer =
         member audioPlayer.Play _ = ()
         member audioPlayer.CleanUp () = ()
 
-/// Callback for when audio has been stopped in an SDL context.
-type private SdlAudioStoppedCallback =
-    delegate of userdata : voidptr * track : MIX_Track nativeptr -> unit
-
 /// The SDL implementation of AudioPlayer.
 type [<ReferenceEquality>] SdlAudioPlayer =
     private
         { MixerOpt : MIX_Mixer nativeptr option
+          mutable AudioPlayerHandle : GCHandle // we need to keep a GCHandle to prevent the audio player from being garbage collected and to pass userdata to native callbacks.
           mutable FreeTracks : MIX_Track nativeptr ConcurrentStack // needs to be concurrent because tracks are returned from audio callbacks on SDL threads.
-          mutable ReturnTrack : SdlAudioStoppedCallback // we need to keep a reference to the audio callback delegate to prevent it from being garbage collected.
           AudioPackages : Packages<MIX_Audio nativeptr, unit>
           mutable AudioMessages : AudioMessage List
           mutable MasterAudioVolume : single
@@ -140,6 +137,17 @@ type [<ReferenceEquality>] SdlAudioPlayer =
           mutable MasterSongVolume : single
           SongTrackPropertiesId : SDL_PropertiesID // reused instance across PlayTrack calls.
           mutable SongOpt : (SongDescriptor * MIX_Track nativeptr) option }
+
+#nowarn 202
+    [<UnmanagedCallersOnly (CallConvs = [|typeof<System.Runtime.CompilerServices.CallConvCdecl>|])>]
+#warnon 202
+    static member private StoppedCallback (userdata : nativeint, track : MIX_Track nativeptr) =
+        let handle = GCHandle.FromIntPtr userdata
+        let audioPlayer = handle.Target :?> SdlAudioPlayer
+        match audioPlayer.SongOpt with
+        | Some (_, songTrack) when songTrack = track -> audioPlayer.SongOpt <- None
+        | _ -> ()
+        audioPlayer.FreeTracks.Push track
 
     static member private tryLoadAudioAsset (asset : Asset) audioPlayer =
         match audioPlayer.MixerOpt with
@@ -376,8 +384,8 @@ type [<ReferenceEquality>] SdlAudioPlayer =
         // create audio player
         let audioPlayer =
             { MixerOpt = mixerOpt
+              AudioPlayerHandle = Unchecked.defaultof<_>
               FreeTracks = Unchecked.defaultof<_>  
-              ReturnTrack = Unchecked.defaultof<_>
               AudioPackages = dictPlus StringComparer.Ordinal []
               AudioMessages = List ()
               MasterAudioVolume = Constants.Audio.MasterAudioVolumeDefault
@@ -386,12 +394,14 @@ type [<ReferenceEquality>] SdlAudioPlayer =
               SongTrackPropertiesId = properties
               SongOpt = None }
 
-        // initialize return track handler
-        audioPlayer.ReturnTrack <- SdlAudioStoppedCallback (fun (_ : voidptr) track ->
-            match audioPlayer.SongOpt with
-            | Some (_, songTrack) when songTrack = track -> audioPlayer.SongOpt <- None
-            | _ -> ()
-            audioPlayer.FreeTracks.Push track)
+        // allocate GCHandle to keep audioPlayer alive for native callbacks and pass as userdata
+        let playerHandle = GCHandle.Alloc (audioPlayer, GCHandleType.Normal)
+        audioPlayer.AudioPlayerHandle <- playerHandle
+
+        // get function pointer for the UnmanagedCallersOnly callback
+        let stoppedCallbackMethod = typeof<SdlAudioPlayer>.GetMethod("StoppedCallback", BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic).MethodHandle
+        let stoppedCallbackPtr = stoppedCallbackMethod.GetFunctionPointer () // requires UnmanagedCallersOnly on the function! See https://learn.microsoft.com/en-us/dotnet/api/system.runtimemethodhandle.getfunctionpointer#remarks
+        let userdataPtr = GCHandle.ToIntPtr playerHandle
 
         // initialize free tracks
         audioPlayer.FreeTracks <-
@@ -401,7 +411,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
                     let track = SDL3_mixer.MIX_CreateTrack mixer
                     if NativePtr.isNullPtr track then
                         Log.info ("Track " + scstring i + " could not be created due to '" + SDL3.SDL_GetError () + "'.")
-                    elif not (SDL3_mixer.MIX_SetTrackStoppedCallback (track, Marshal.GetFunctionPointerForDelegate<SdlAudioStoppedCallback> audioPlayer.ReturnTrack, 0n)) then
+                    elif not (SDL3_mixer.MIX_SetTrackStoppedCallback (track, stoppedCallbackPtr, userdataPtr)) then
                         Log.info ("Track " + scstring i + " could not have its stopped callback set due to '" + SDL3.SDL_GetError () + "'.")
                     track
                 | None -> NativePtr.nullPtr)
@@ -469,11 +479,20 @@ type [<ReferenceEquality>] SdlAudioPlayer =
             SdlAudioPlayer.handleAudioMessages audioMessages audioPlayer
 
         member audioPlayer.CleanUp () =
+
+            // destroy mixer, which also destroys groups and tracks, but _not_ audio resources -
+            // https://wiki.libsdl.org/SDL3_mixer/MIX_DestroyMixer
             match audioPlayer.MixerOpt with
-            | Some mixer -> SDL3_mixer.MIX_DestroyMixer mixer // also destroys tracks
+            | Some mixer -> SDL3_mixer.MIX_DestroyMixer mixer
             | None -> ()
+
+            // destroy audio resources
             let audioPackages = audioPlayer.AudioPackages |> Seq.map (fun entry -> entry.Value)
             let audioAssets = audioPackages |> Seq.map (fun package -> package.Assets.Values) |> Seq.concat
             for (_, _, audioAsset) in audioAssets do SDL3_mixer.MIX_DestroyAudio audioAsset
             audioPlayer.AudioPackages.Clear ()
+
+            // free GC handle
             SDL3.SDL_DestroyProperties audioPlayer.SongTrackPropertiesId
+            if audioPlayer.AudioPlayerHandle.IsAllocated then
+                audioPlayer.AudioPlayerHandle.Free ()

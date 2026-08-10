@@ -130,7 +130,7 @@ module AssetTag =
 /// AssetTag operators.
 [<AutoOpen>]
 module AssetTagOperators =
-
+    
     /// Make an asset tag.
     let asset<'a> packageName assetName : 'a AssetTag =
         AssetTag.make packageName assetName

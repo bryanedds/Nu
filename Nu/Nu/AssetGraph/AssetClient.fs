@@ -9,10 +9,10 @@ open System
 open System.Collections.Generic
 open System.IO
 open Prime
-open Nu
+open Nu.Vulkan
 
 /// Provides asset clients for direct usage.
-type AssetClient (textureClient : OpenGL.Texture.TextureClient, cubeMapClient : OpenGL.CubeMap.CubeMapClient, sceneClient : OpenGL.PhysicallyBased.PhysicallyBasedSceneClient) =
+type AssetClient (textureClient : TextureClient, cubeMapClient : CubeMapClient, sceneClient : PhysicallyBasedSceneClient) =
 
     /// The texture client.
     member this.TextureClient = textureClient
@@ -24,7 +24,7 @@ type AssetClient (textureClient : OpenGL.Texture.TextureClient, cubeMapClient : 
     member this.SceneClient = sceneClient
 
     /// Preload assets.
-    member this.PreloadAssets (is2d, assets : Asset seq) =
+    member this.PreloadAssets (is2d, assets : Asset seq, context) =
 
         // collect loadable assets
         let textureAssets = List ()
@@ -41,7 +41,7 @@ type AssetClient (textureClient : OpenGL.Texture.TextureClient, cubeMapClient : 
         let textureDataLoadOps =
             [for textureAsset in textureAssets do
                 vsync {
-                    match OpenGL.Texture.TryCreateTextureData (not is2d, textureAsset.FilePath) with
+                    match TextureData.tryCreate (not is2d) textureAsset.FilePath with
                     | Some textureData -> return Right (textureAsset.FilePath, textureData)
                     | None -> return Left ("Error creating texture data from '" + textureAsset.FilePath + "'") }]
 
@@ -60,23 +60,21 @@ type AssetClient (textureClient : OpenGL.Texture.TextureClient, cubeMapClient : 
         for textureData in textureDataArray do
             match textureData with
             | Right (filePath, textureData) ->
-                let texture =
+                let textureInternal =
                     if is2d then
-                        let (metadata, textureId) =
-                            if OpenGL.Texture.InferFiltered2d filePath
-                            then OpenGL.Texture.CreateTextureGlFromData (OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, OpenGL.Texture.Uncompressed, textureData)
-                            else OpenGL.Texture.CreateTextureGlFromData (OpenGL.TextureMinFilter.Nearest, OpenGL.TextureMagFilter.Nearest, false, false, OpenGL.Texture.Uncompressed, textureData)
-                        OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId }
+                        let filtered = Hl.inferTextureFiltered2d filePath
+                        let textureInternal = TextureInternal.createFromData filtered Uncompressed textureData RenderThread context
+                        EagerTexture textureInternal
                     elif textureData.LazyLoadable then
-                        let (metadata, textureId) = OpenGL.Texture.CreateTextureGlFromData (OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, OpenGL.Texture.InferCompression filePath, textureData)
-                        let lazyTexture = new OpenGL.Texture.LazyTexture (filePath, metadata, textureId, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true)
+                        let textureInternal = TextureInternal.createFromData true (Hl.inferTextureCompression filePath) textureData RenderThread context
+                        let lazyTexture = new LazyTexture (filePath, textureInternal)
                         textureClient.LazyTextureQueue.Enqueue lazyTexture
-                        OpenGL.Texture.LazyTexture lazyTexture
+                        LazyTexture lazyTexture
                     else
                         Log.infoOnce "One or more textures for non-2D usage are not streamable; consider using the BlockCompress refinement with them for more efficient loading."
-                        let (metadata, textureId) = OpenGL.Texture.CreateTextureGlFromData (OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, OpenGL.Texture.InferCompression filePath, textureData)
-                        OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId }
-                textureClient.Textures[filePath] <- texture
+                        let textureInternal = TextureInternal.createFromData true (Hl.inferTextureCompression filePath) textureData RenderThread context
+                        EagerTexture textureInternal
+                textureClient.Textures[filePath] <- textureInternal
             | Left error -> Log.info error
 
         // run assimp scene loading ops
@@ -97,7 +95,7 @@ type AssetClient (textureClient : OpenGL.Texture.TextureClient, cubeMapClient : 
                 let faceBackFilePath = dirPath + "/" + faceBackFilePath.Trim ()
                 let faceFrontFilePath = dirPath + "/" + faceFrontFilePath.Trim ()
                 let cubeMapKey = (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath)
-                match OpenGL.CubeMap.TryCreateCubeMap (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath) with
+                match CubeMap.tryCreateCubeMap faceRightFilePath faceLeftFilePath faceTopFilePath faceBottomFilePath faceBackFilePath faceFrontFilePath RenderThread context with
                 | Right cubeMap -> cubeMapClient.CubeMaps[cubeMapKey] <- cubeMap
                 | Left error -> Log.info ("Could not load cube map '" + cubeMap.FilePath + "' due to: " + error)
             | _ -> Log.info ("Could not load cube map '" + cubeMap.FilePath + "' due to requiring exactly 6 file paths with each file path on its own line.")

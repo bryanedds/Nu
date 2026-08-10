@@ -17,7 +17,7 @@ namespace System.Numerics
     public static class Math
     {
         /// <summary>
-        /// Defines the value of Pi minus a small epsilon to keep it from blowing up operations like Matrix4x4.CreatePerspectiveFieldOfView.
+        /// Defines the value of Pi minus a small epsilon to keep it from blowing up operations like Matrix4x4.CreatePerspectiveFieldOfView and the like.
         /// </summary>
         public const double PI_MINUS_EPSILON = 3.14159;
 

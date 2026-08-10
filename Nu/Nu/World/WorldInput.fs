@@ -26,10 +26,13 @@ module WorldInputModule =
 
         /// Get the position of the mouse.
         static member getMousePosition (world : World) =
-            let viewport = world.WindowViewport
-            let offset = viewport.Bounds.Min
-            let margin = v2 (single offset.X) (single offset.Y)
-            MouseState.getPosition () - margin
+            match World.tryGetWindowPixelDensity world with
+            | Some pixelDensity ->
+                let viewport = world.WindowViewport
+                let offset = viewport.Bounds.Min
+                let margin = v2 (single offset.X) (single offset.Y)
+                MouseState.getPositionSdl () * pixelDensity - margin
+            | None -> v2Zero
 
         /// Get the 2d inset position of the mouse.
         static member getMousePosition2dInset (world : World) =

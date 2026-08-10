@@ -8,9 +8,13 @@ namespace Nu
 open System
 open System.Collections.Generic
 open System.Diagnostics
+open System.Diagnostics.CodeAnalysis
 open System.Diagnostics.Tracing
+open System.IO
 open System.Numerics
 open System.Reflection
+open System.Runtime.CompilerServices
+open System.Runtime.InteropServices
 open System.Threading
 open SDL
 open Prime
@@ -42,6 +46,164 @@ type private GcEventListener () =
         if gcDebug && isNull InstanceOpt then
             InstanceOpt <- new GcEventListener ()
 
+// TODO: apply doc comments to the public part of this API.
+[<RequireQualifiedAccess>]
+module Platform =
+
+    let tryLoadNativeLibrary libraryPath =
+        let mutable handle = 0n
+        if File.Exists libraryPath && NativeLibrary.TryLoad (libraryPath, &handle)
+        then Some handle
+        else None
+
+    let tryLoadNativeLibraryByName libraryName =
+        let mutable handle = 0n
+        if NativeLibrary.TryLoad (libraryName, &handle)
+        then Some handle
+        else None
+
+    [<RequireQualifiedAccess>]
+    module Apple =
+
+        let internal computeFrameworkFilePath frameworkName =
+            PathF.Combine (AppContext.BaseDirectory, "Frameworks", frameworkName + ".framework", frameworkName)
+
+        let internal trySetDllImportResolver (assembly : Assembly) mappedLibraries =
+            let resolver =
+                DllImportResolver (fun libraryName _ _ ->
+                    mappedLibraries
+                    |> List.tryPick (fun (candidateName, frameworkName) ->
+                        if String.Equals (libraryName, candidateName, StringComparison.Ordinal) then
+                            if frameworkName = "__Internal" then
+                                tryLoadNativeLibraryByName frameworkName
+                            else tryLoadNativeLibrary (computeFrameworkFilePath frameworkName)
+                        else None)
+                    |> Option.defaultValue 0n)
+            try NativeLibrary.SetDllImportResolver (assembly, resolver)
+            with :? InvalidOperationException -> ()
+
+        let internal loadAssimpFramework () =
+            let assimpLibrary = global.Assimp.Unmanaged.AssimpLibrary.Instance
+            if not assimpLibrary.IsLibraryLoaded then
+                let libraryPath = computeFrameworkFilePath "assimp"
+                let libraryType = typeof<global.Assimp.Unmanaged.UnmanagedLibrary>
+                let getField name =
+                    let field = libraryType.GetField (name, BindingFlags.Instance ||| BindingFlags.NonPublic)
+                    if isNull field then failwith ("Could not find AssimpNet field '" + name + "'.")
+                    field
+                let impl = (getField "m_impl").GetValue assimpLibrary
+                let loadLibraryMethod = impl.GetType().GetMethod ("LoadLibrary", BindingFlags.Instance ||| BindingFlags.Public)
+                if isNull loadLibraryMethod then failwith "Could not find AssimpNet implementation LoadLibrary method."
+                let loaded = loadLibraryMethod.Invoke (impl, [| box libraryPath |]) :?> bool
+                if not loaded then failwith ("Could not load Assimp framework from '" + libraryPath + "'.")
+                (getField "m_libraryPath").SetValue (assimpLibrary, libraryPath)
+                (getField "m_checkNeedsLoading").SetValue (assimpLibrary, false)
+                // NOTE: AssimpNet's public LoadLibrary appends ".dylib" to extensionless paths, but framework executables
+                // are intentionally extensionless.
+                let onLibraryLoadedMethod = libraryType.GetMethod ("OnLibraryLoaded", BindingFlags.Instance ||| BindingFlags.NonPublic)
+                if isNull onLibraryLoadedMethod then failwith "Could not find AssimpNet OnLibraryLoaded method."
+                onLibraryLoadedMethod.Invoke (assimpLibrary, [||]) |> ignore
+
+        [<DynamicDependency ("JoltDllImporterResolver", "JoltPhysicsSharp.JoltApi", "JoltPhysicsSharp")>] // iOS release mode linker will drop the event without this attribute
+        let private configureJoltFramework () =
+            let joltApiType = typeof<JoltPhysicsSharp.Jolt>.Assembly.GetType ("JoltPhysicsSharp.JoltApi", true)
+            RuntimeHelpers.RunClassConstructor joltApiType.TypeHandle
+            let joltResolverEvent = joltApiType.GetEvent ("JoltDllImporterResolver", BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic)
+            if isNull joltResolverEvent then failwith "Could not find JoltPhysicsSharp JoltDllImporterResolver event."
+            let resolver =
+                DllImportResolver (fun libraryName _ _ ->
+                    assert (libraryName = "joltc")
+                    tryLoadNativeLibrary (computeFrameworkFilePath "joltc") |> Option.defaultValue 0n)
+            joltResolverEvent.AddEventHandler (null, resolver)
+
+        let private configureVmaFramework () =
+            let vmaType = typeof<Vortice.Vulkan.Vma>
+            RuntimeHelpers.RunClassConstructor vmaType.TypeHandle
+            let vmaResolverEvent = vmaType.GetEvent ("VmaDllImporterResolver", BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic)
+            if isNull vmaResolverEvent then failwith "Could not find Vortice Vulkan VmaDllImporterResolver event."
+            let resolver =
+                DllImportResolver (fun libraryName _ _ ->
+                    assert (libraryName = "vma")
+                    tryLoadNativeLibrary (computeFrameworkFilePath "vma") |> Option.defaultValue 0n)
+            vmaResolverEvent.AddEventHandler (null, resolver)
+
+        let configureFrameworkNativeLibraries () =
+            trySetDllImportResolver typeof<World>.Assembly ["cimgui", "cimgui"]
+            trySetDllImportResolver typeof<ImGuiNET.ImGui>.Assembly ["cimgui", "cimgui"]
+            trySetDllImportResolver typeof<BulletSharp.BulletObject>.Assembly ["libbulletc", "bulletc"]
+            loadAssimpFramework ()
+            configureJoltFramework ()
+            configureVmaFramework ()
+
+        [<RequireQualifiedAccess>]
+        module iOS =
+
+            [<DynamicDependency ("ResolveLibrary", "Vortice.ShaderCompiler.Native", "Vortice.ShaderCompiler")>] // iOS release mode linker will drop the setter without this attribute
+            let private configureShaderCompilerLibrary () =
+                let shaderCompilerAssembly = typeof<Vortice.ShaderCompiler.ShaderMacro>.Assembly
+                let nativeType = shaderCompilerAssembly.GetType ("Vortice.ShaderCompiler.Native", true)
+                RuntimeHelpers.RunClassConstructor nativeType.TypeHandle
+                let resolveLibraryProperty = nativeType.GetProperty ("ResolveLibrary", BindingFlags.Static ||| BindingFlags.Public)
+                if isNull resolveLibraryProperty then failwith "Could not find Vortice.ShaderCompiler.Native.ResolveLibrary property."
+                let resolver =
+                    DllImportResolver (fun libraryName _ _ ->
+                        assert (libraryName = "shaderc_shared")
+                        let hasShadercInitSymbol handle =
+                            let mutable symbol = 0n
+                            NativeLibrary.TryGetExport (handle, "shaderc_compiler_initialize", &symbol)
+                        [computeFrameworkFilePath "shaderc_shared"; "shaderc_shared"; "@rpath/shaderc_shared.framework/shaderc_shared"]
+                        |> List.tryPick (fun candidate ->
+                            tryLoadNativeLibrary candidate
+                            |> Option.filter hasShadercInitSymbol)
+                        |> Option.defaultValue 0n)
+                resolveLibraryProperty.SetValue (null, resolver)
+
+            let configureIosNativeLibraries () =
+                configureShaderCompilerLibrary ()
+                configureFrameworkNativeLibraries ()
+                let moltenVkPath = computeFrameworkFilePath "MoltenVK"
+                let result = Vortice.Vulkan.Vulkan.vkInitialize moltenVkPath
+                if result <> Vortice.Vulkan.VkResult.Success then
+                    failwith ("Could not initialize Vulkan from '" + moltenVkPath + "' due to: " + string result)
+                SDL.SDL3.SDL_SetHint (SDL.SDL3.SDL_HINT_VULKAN_LIBRARY, moltenVkPath) |> ignore<SDL.SDLBool>
+
+            // NOTE: unfortunately we need to expose this to user code before iOS SDL is initialized.
+            let preInitSdl () =
+                trySetDllImportResolver typeof<SDL.SDL3>.Assembly ["SDL3", "SDL3"]
+                trySetDllImportResolver typeof<SDL.SDL3_image>.Assembly ["SDL3_image", "SDL3_image"]
+                trySetDllImportResolver typeof<SDL.SDL3_ttf>.Assembly ["SDL3_ttf", "SDL3_ttf"]
+                trySetDllImportResolver typeof<SDL.SDL3_mixer>.Assembly ["SDL3_mixer", "SDL3_mixer"]
+
+    module Android =
+
+        // We need this for Release mode with full AOT, but not necessary for Debug mode.
+        let configureAndroidNativeLibraries () =
+            let trySetAndroidDllImportResolver (assembly : Assembly) mappedLibraries =
+                let resolver =
+                    DllImportResolver (fun libraryName _ _ ->
+                        mappedLibraries
+                        |> List.tryPick (fun (requestedName, candidateName) ->
+                            if String.Equals (libraryName, requestedName, StringComparison.Ordinal)
+                            then tryLoadNativeLibraryByName candidateName
+                            else None)
+                        |> Option.orElseWith (fun () -> tryLoadNativeLibraryByName libraryName)
+                        |> Option.defaultValue 0n)
+                try NativeLibrary.SetDllImportResolver (assembly, resolver)
+                with :? InvalidOperationException -> ()
+
+            // Normalize desktop-oriented sonames requested by some native bindings.
+            let androidAliases =
+                ["libc.so.6", "libc"
+                 "libc.so", "libc"
+                 "libdl.so", "libdl"
+                 "libvulkan.so.1", "libvulkan"
+                 "libvulkan.so", "libvulkan"
+                 "liblog", "liblog"
+                 "liblog.so", "liblog"]
+            trySetAndroidDllImportResolver typeof<global.Assimp.Unmanaged.AssimpLibrary>.Assembly androidAliases
+            trySetAndroidDllImportResolver typeof<Vortice.Vulkan.Vulkan>.Assembly androidAliases
+            trySetAndroidDllImportResolver typeof<World>.Assembly androidAliases
+
 /// Nu initialization functions.
 /// NOTE: this is a type in order to avoid creating a module name that may clash with the namespace name in an
 /// interactive environment.
@@ -61,6 +223,17 @@ type Nu () =
 
         // init only if needed
         if not Initialized then
+
+            if OperatingSystem.IsIOS () then
+                Platform.Apple.iOS.configureIosNativeLibraries ()
+                Log.init None // disable Nu's default file log because the iOS app bundle is read-only.
+            elif OperatingSystem.IsAndroid () then
+                Platform.Android.configureAndroidNativeLibraries ()
+                 // disable Nu's default file log because the Android asset pack directory should be treated as read-only for incremental updates to work:
+                 // https://developer.android.com/reference/com/google/android/play/core/assetpacks/AssetPackManager#getpacklocation
+                Log.init None
+            elif OperatingSystem.IsMacOS () then
+                Platform.Apple.configureFrameworkNativeLibraries ()
 
             // ensure the current culture is invariate
             Thread.CurrentThread.CurrentCulture <- Globalization.CultureInfo.InvariantCulture
@@ -129,9 +302,6 @@ type Nu () =
             // init vsync
             Vsync.Init Constants.Engine.RunSynchronously
 
-            // init OpenGL assert mechanism
-            OpenGL.Hl.InitAssert Constants.OpenGL.HlDebug
-
             // mark init flag
             Initialized <- true
 
@@ -185,10 +355,11 @@ module WorldModule4 =
             |> Map.ofArrayBy World.pairWithName
 
         /// Update late bindings internally stored by the engine from types found in the given assemblies.
-        static member updateLateBindings reinitializing (assemblies : Assembly array) world =
+        static member updateLateBindings initializing (assemblies : Assembly array) world =
 
             // prepare for late-bound type updating
-            WorldImSim.Reinitializing <- reinitializing
+            WorldImSim.Initializing <- initializing
+            WorldImSim.Reinitializing <- true
             Content.UpdateLateBindingsCount <- inc Content.UpdateLateBindingsCount
             World.clearEntityFromClipboard world // HACK: clear what's on the clipboard rather than changing its dispatcher instance.
             world.WorldExtension.Plugin.CleanUp ()
@@ -244,7 +415,7 @@ module WorldModule4 =
                 for lateBindings in lateBindingsInstances do
                     World.updateLateBindings3 lateBindings simulant world
             for (simulant, _) in world.Simulants do
-                World.trySynchronize false true simulant world
+                World.trySynchronize initializing true simulant world
 
         /// Make the world.
         static member makePlus
@@ -341,7 +512,7 @@ module WorldModule4 =
             let imGui = ImGui (true, windowViewport.Bounds.Size)
             let physicsEngine2d = StubPhysicsEngine.make ()
             let physicsEngine3d = StubPhysicsEngine.make ()
-            let rendererProcess = RendererInline () :> RendererProcess
+            let rendererProcess = RendererInline (WindowProperties.empty) :> RendererProcess
             rendererProcess.Start imGui.Fonts None geometryViewport windowViewport // params implicate stub renderers
             let audioPlayer = StubAudioPlayer.make ()
             let cursorClient = StubCursorClient.make ()
@@ -362,14 +533,22 @@ module WorldModule4 =
             // fin
             world
 
-        /// Make the world with the given dependencies.
+        /// Make the world with the given SDL dependencies.
         static member make tryMakeEditContext sdlDeps config geometryViewport (windowViewport : Viewport) (plugin : NuPlugin) =
 
+            // compute window properties
+            let windowProperties =
+                match SdlDeps.getWindowOpt sdlDeps with
+                | Some window -> WindowProperties.make window
+                | None -> WindowProperties.empty
+
             // create asset graph
-            let assetGraph = AssetGraph.makeFromFileOpt Assets.Global.AssetGraphFilePath
+            let assetGraph =
+                AssetGraph.makeFromFileOpt Assets.Global.AssetGraphFilePath
 
             // compute initial packages
-            let initialPackages = Assets.Default.PackageName :: plugin.InitialPackages
+            let initialPackages =
+                Assets.Default.PackageName :: plugin.InitialPackages
 
             // initialize metadata and load initial package
             Metadata.init assetGraph
@@ -409,7 +588,8 @@ module WorldModule4 =
             let pluginGameDispatchers = plugin.Birth<GameDispatcher> pluginAssemblies
 
             // make the default game dispatcher
-            let defaultGameDispatcher = World.makeDefaultGameDispatcher ()
+            let defaultGameDispatcher =
+                World.makeDefaultGameDispatcher ()
 
             // make the job graph
             let jobGraph =
@@ -438,8 +618,8 @@ module WorldModule4 =
             let joltDebugRendererImGuiOpt = new JoltDebugRendererImGui ()
             let rendererProcess =
                 if Constants.Engine.RunSynchronously
-                then RendererInline () :> RendererProcess
-                else RendererThread () :> RendererProcess
+                then RendererInline windowProperties :> RendererProcess
+                else RendererThread windowProperties :> RendererProcess
             rendererProcess.Start imGui.Fonts (SdlDeps.getWindowOpt sdlDeps) geometryViewport windowViewport
             for package in initialPackages do
                 rendererProcess.EnqueueMessage2d (LoadRenderPackage2d package)
@@ -475,18 +655,20 @@ module WorldModule4 =
 
         /// Run the game engine, initializing dependencies as indicated by WorldConfig, and returning exit code upon
         /// termination.
-        static member runPlus tryMakeEditContext runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess worldConfig windowSize geometryViewport windowViewport plugin =
+        static member runPlus tryMakeEditContext runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess firstFrameCallback worldConfig windowSize geometryViewport windowViewport plugin =
             match SdlDeps.tryMake worldConfig.SdlConfig worldConfig.Accompanied windowSize with
             | Right sdlDeps ->
                 use sdlDeps = sdlDeps // bind explicitly to dispose automatically
                 let world = World.make tryMakeEditContext sdlDeps worldConfig geometryViewport windowViewport plugin
-                World.runWithCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess true world
+                if World.getWindowSizeOtherwiseViewportSize world <> windowSize then
+                    World.processWindowResized world // synchronize window size with actual size, e.g. fullscreen for mobile or a display with size smaller than the configured DisplayScalar
+                World.runWithCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess (Some firstFrameCallback) world
             | Left error -> Log.error error; Constants.Engine.ExitCodeFailure
 
         /// Run the game engine, initializing dependencies as indicated by WorldConfig, and returning exit code upon
         /// termination.
-        static member run worldConfig plugin =
+        static member run firstFrameCallback worldConfig plugin =
             let windowSize = Constants.Render.DisplayVirtualResolution * Globals.Render.DisplayScalar
             let windowViewport = Viewport.makeWindow1 windowSize
             let geometryViewport = Viewport.makeGeometry windowViewport.Bounds.Size
-            World.runPlus (constant None) tautology ignore ignore ignore ignore ignore worldConfig windowViewport.Outer.Size geometryViewport windowViewport plugin
+            World.runPlus (constant None) tautology ignore ignore ignore ignore ignore firstFrameCallback worldConfig windowViewport.Outer.Size geometryViewport windowViewport plugin
