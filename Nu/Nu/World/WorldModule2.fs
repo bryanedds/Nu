@@ -2198,7 +2198,7 @@ module EntityDispatcherModule =
             [define Entity.Size Constants.Engine.Entity2dSizeDefault]
 
     /// An ImSim 2d contour dispatcher.
-    type [<AbstractClass>] Contour2dDispatcher (physical, lightProbe, light) =
+    type [<AbstractClass>] Contour2dDispatcherImSim (physical, lightProbe, light) =
         inherit EntityDispatcherImSim (true, physical, lightProbe, light)
 
         static member Properties =
