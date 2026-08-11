@@ -43,7 +43,7 @@ module Assimp =
 [<RequireQualifiedAccess>]
 module Vulkan =
 
-    let [<Uniform>] FramesInFlight = 1 // NOTE: no use of multiple FiF - https://vsynchronicity.wordpress.com/2026/06/25/saying-no-to-multiple-frames-in-flight-in-nu-game-engine/
+    let [<Uniform>] FramesInFlight = 1 // NOTE: we avoid the use of multiple FiF in order to keep the renderer simple and low-latency.
     let [<Uniform>] MoltenVk = OperatingSystem.IsIOS () || match ConfigurationManager.AppSettings["MoltenVk"] with null -> true | value -> scvalue value // NOTE: setting this to false uses KosmicKrisp on macOS, but FPS of Metrics project drops from 50 to 2.
     let [<Literal>] RenderCommandBufferCountDefault = 32
     let [<Literal>] DescriptorSetCountDefault = 32
