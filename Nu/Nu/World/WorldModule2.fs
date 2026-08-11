@@ -2250,7 +2250,7 @@ module EntityDispatcherModule =
 
     type World with
 
-        static member inline internal signalEntity<'model, 'message, 'command when 'message :> Message and 'command :> Command> (signal : Signal) (entity : Entity) world =
+        static member inline signalEntity<'model, 'message, 'command when 'message :> Message and 'command :> Command> (signal : Signal) (entity : Entity) world =
             match entity.GetDispatcher world with
             | :? EntityDispatcher<'model, 'message, 'command> as dispatcher ->
                 Signal.processSignal dispatcher.Message dispatcher.Command (entity.ModelGeneric<'model> ()) signal entity world
@@ -2618,7 +2618,7 @@ module GroupDispatcherModule =
 
     type World with
 
-        static member inline internal signalGroup<'model, 'message, 'command when 'message :> Message and 'command :> Command> signal (group : Group) world =
+        static member inline signalGroup<'model, 'message, 'command when 'message :> Message and 'command :> Command> signal (group : Group) world =
             match group.GetDispatcher world with
             | :? GroupDispatcher<'model, 'message, 'command> as dispatcher ->
                 Signal.processSignal dispatcher.Message dispatcher.Command (group.ModelGeneric<'model> ()) signal group world
@@ -2845,7 +2845,7 @@ module ScreenDispatcherModule =
 
     type World with
 
-        static member inline internal signalScreen<'model, 'message, 'command when 'message :> Message and 'command :> Command> signal (screen : Screen) world =
+        static member inline signalScreen<'model, 'message, 'command when 'message :> Message and 'command :> Command> signal (screen : Screen) world =
             match screen.GetDispatcher world with
             | :? ScreenDispatcher<'model, 'message, 'command> as dispatcher ->
                 Signal.processSignal dispatcher.Message dispatcher.Command (screen.ModelGeneric<'model> ()) signal screen world
@@ -3069,7 +3069,7 @@ module GameDispatcherModule =
 
     type World with
 
-        static member inline internal signalGame<'model, 'message, 'command when 'message :> Message and 'command :> Command> signal (game : Game) world =
+        static member inline signalGame<'model, 'message, 'command when 'message :> Message and 'command :> Command> signal (game : Game) world =
             match game.GetDispatcher world with
             | :? GameDispatcher<'model, 'message, 'command> as dispatcher ->
                 Signal.processSignal dispatcher.Message dispatcher.Command (game.ModelGeneric<'model> ()) signal game world

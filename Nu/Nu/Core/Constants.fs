@@ -43,7 +43,7 @@ module Assimp =
 [<RequireQualifiedAccess>]
 module Vulkan =
 
-    let [<Uniform>] FramesInFlight = 1 // NOTE: no use of multiple FiF - https://vsynchronicity.wordpress.com/2026/06/25/saying-no-to-multiple-frames-in-flight-in-nu-game-engine/
+    let [<Uniform>] FramesInFlight = 1 // NOTE: we avoid the use of multiple FiF in order to keep the renderer simple and low-latency.
     let [<Uniform>] MoltenVk = OperatingSystem.IsIOS () || match ConfigurationManager.AppSettings["MoltenVk"] with null -> true | value -> scvalue value // NOTE: setting this to false uses KosmicKrisp on macOS, but FPS of Metrics project drops from 50 to 2.
     let [<Literal>] RenderCommandBufferCountDefault = 32
     let [<Literal>] DescriptorSetCountDefault = 32
@@ -113,7 +113,7 @@ module Engine =
     let [<Uniform>] OctreeSize = Vector3 (OctnodeSize * single (pown 2 OctreeDepth))
     let [<Uniform>] mutable EventTracing = match ConfigurationManager.AppSettings["EventTracing"] with null -> false | value -> scvalue value
     let [<Uniform>] mutable EventFilter = match ConfigurationManager.AppSettings["EventFilter"] with null -> Pass | value -> scvalue value
-    let [<Uniform>] EnvironmentMagnitudeThreshold = 48.0f // sqrt (32^2 + 32^2 + 16^2) = more likely an environment that a static prop
+    let [<Uniform>] EnvironmentMagnitudeThreshold = 48.0f // sqrt (32^2 + 32^2 + 16^2) = more likely an environment than a static prop
     let [<Uniform>] NonPersistentPropertyNames =
         FrozenSet.ToFrozenSet
             ([(* Simulant Properties *)
