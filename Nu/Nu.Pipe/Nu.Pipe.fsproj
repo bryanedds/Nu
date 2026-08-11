@@ -16,12 +16,6 @@
 		<DisableImplicitFSharpCoreReference>True</DisableImplicitFSharpCoreReference> <!-- avoids conflict with Nu.fsproj -->
 	</PropertyGroup>
 
-	<Target Name="OverridePublishDir" AfterTargets="AssignTargetPaths">
-		<PropertyGroup>
-			<PublishDir>$(OutputPath)</PublishDir>
-		</PropertyGroup>
-	</Target>
-
     <ItemGroup>
         <None Include="Assets\*" />
         <None Include="Assets\*\*" />

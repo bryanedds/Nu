@@ -292,8 +292,8 @@ type internal BackgroundingResponseState =
 [<AutoOpen>]
 module Vulkan =
 
-    let mutable private VkInstanceApi = Unchecked.defaultof<VkInstanceApi>
-    let mutable private VkDeviceApi = Unchecked.defaultof<VkDeviceApi>
+    let mutable internal VkInstanceApi = Unchecked.defaultof<VkInstanceApi>
+    let mutable internal VkDeviceApi = Unchecked.defaultof<VkDeviceApi>
 
     /// Set a VkInstanceApi value. Under normal operation, this can never be null.
     let internal SetInstanceApi vkInstanceApi = VkInstanceApi <- vkInstanceApi
