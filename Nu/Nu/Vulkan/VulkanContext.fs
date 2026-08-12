@@ -204,59 +204,58 @@ type SwapchainWrapper =
     static member private tryCreateVkSwapchain (surfaceFormat : VkSurfaceFormatKHR) oldVkSwapchainOpt physicalDevice =
         match Hl.tryGetSurfaceCapabilities physicalDevice.VkPhysicalDevice with
         | Some capabilities ->
+            match Hl.tryGetSwapExtent capabilities with
+            | Some swapExtent ->
 
-            // get swap extent
-            let swapExtent =
-                Hl.getSwapExtent capabilities
+                // decide the minimum number of images in the swapchain. Sellers, Vulkan Programming Guide p. 144, recommends
+                // at least 3 for performance, but to keep latency low let's start with the more conservative recommendation of
+                // https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Swap_chain#page_Creating-the-swap-chain.
+                let minImageCount =
+                    if capabilities.maxImageCount = 0u
+                    then capabilities.minImageCount + 1u
+                    else min (capabilities.minImageCount + 1u) capabilities.maxImageCount
 
-            // decide the minimum number of images in the swapchain. Sellers, Vulkan Programming Guide p. 144, recommends
-            // at least 3 for performance, but to keep latency low let's start with the more conservative recommendation of
-            // https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Swap_chain#page_Creating-the-swap-chain.
-            let minImageCount =
-                if capabilities.maxImageCount = 0u
-                then capabilities.minImageCount + 1u
-                else min (capabilities.minImageCount + 1u) capabilities.maxImageCount
+                // attempt to create swapchain, indicating that the surface is lost when such is indicated on creation failure
+                let indicesArray = [|physicalDevice.GraphicsQueueFamily; physicalDevice.PresentQueueFamily|]
+                use indicesArrayPin = new ArrayPin<_> (indicesArray)
+                let mutable info = VkSwapchainCreateInfoKHR ()
+                info.surface <- Hl.Surface
+                info.minImageCount <- minImageCount
+                info.imageFormat <- surfaceFormat.format
+                info.imageColorSpace <- surfaceFormat.colorSpace
+                info.imageExtent <- swapExtent
+                info.imageArrayLayers <- 1u
+                info.imageUsage <- VkImageUsageFlags.ColorAttachment ||| VkImageUsageFlags.TransferDst
+                if physicalDevice.GraphicsQueueFamily = physicalDevice.PresentQueueFamily then
+                    info.imageSharingMode <- VkSharingMode.Exclusive
+                else
+                    info.imageSharingMode <- VkSharingMode.Concurrent
+                    info.queueFamilyIndexCount <- 2u
+                    info.pQueueFamilyIndices <- indicesArrayPin.Pointer
+                info.preTransform <- VkSurfaceTransformFlagsKHR.Identity
+                info.compositeAlpha <-
+                    if capabilities.supportedCompositeAlpha &&& VkCompositeAlphaFlagsKHR.Opaque <> VkCompositeAlphaFlagsKHR.None then VkCompositeAlphaFlagsKHR.Opaque
+                    elif capabilities.supportedCompositeAlpha &&& VkCompositeAlphaFlagsKHR.PreMultiplied <> VkCompositeAlphaFlagsKHR.None then VkCompositeAlphaFlagsKHR.PreMultiplied
+                    elif capabilities.supportedCompositeAlpha &&& VkCompositeAlphaFlagsKHR.PostMultiplied <> VkCompositeAlphaFlagsKHR.None then VkCompositeAlphaFlagsKHR.PostMultiplied
+                    else VkCompositeAlphaFlagsKHR.Inherit
+                info.presentMode <-
+                    if Constants.Render.RenderVsync
+                    then VkPresentModeKHR.Fifo
+                    else VkPresentModeKHR.Immediate
+                info.clipped <- true
+                info.oldSwapchain <- oldVkSwapchainOpt
+                let mutable vkSwapchain = Unchecked.defaultof<VkSwapchainKHR>
+                match DeviceApi.vkCreateSwapchainKHR (&info, nullPtr, &vkSwapchain) with
+                | VkResult.Success ->
+                    Some (vkSwapchain, swapExtent)
+                | VkResult.ErrorSurfaceLostKHR ->
+                    Hl.SurfaceState <- SurfaceLost
+                    None
+                | result ->
+                    Hl.check result
+                    None
 
-            // create swapchain
-            let indicesArray = [|physicalDevice.GraphicsQueueFamily; physicalDevice.PresentQueueFamily|]
-            use indicesArrayPin = new ArrayPin<_> (indicesArray)
-            let mutable info = VkSwapchainCreateInfoKHR ()
-            info.surface <- Hl.Surface
-            info.minImageCount <- minImageCount
-            info.imageFormat <- surfaceFormat.format
-            info.imageColorSpace <- surfaceFormat.colorSpace
-            info.imageExtent <- swapExtent
-            info.imageArrayLayers <- 1u
-            info.imageUsage <- VkImageUsageFlags.ColorAttachment ||| VkImageUsageFlags.TransferDst
-            if physicalDevice.GraphicsQueueFamily = physicalDevice.PresentQueueFamily then
-                info.imageSharingMode <- VkSharingMode.Exclusive
-            else
-                info.imageSharingMode <- VkSharingMode.Concurrent
-                info.queueFamilyIndexCount <- 2u
-                info.pQueueFamilyIndices <- indicesArrayPin.Pointer
-            info.preTransform <- VkSurfaceTransformFlagsKHR.Identity
-            info.compositeAlpha <-
-                if capabilities.supportedCompositeAlpha &&& VkCompositeAlphaFlagsKHR.Opaque <> VkCompositeAlphaFlagsKHR.None then VkCompositeAlphaFlagsKHR.Opaque
-                elif capabilities.supportedCompositeAlpha &&& VkCompositeAlphaFlagsKHR.PreMultiplied <> VkCompositeAlphaFlagsKHR.None then VkCompositeAlphaFlagsKHR.PreMultiplied
-                elif capabilities.supportedCompositeAlpha &&& VkCompositeAlphaFlagsKHR.PostMultiplied <> VkCompositeAlphaFlagsKHR.None then VkCompositeAlphaFlagsKHR.PostMultiplied
-                else VkCompositeAlphaFlagsKHR.Inherit
-            info.presentMode <-
-                if Constants.Render.RenderVsync
-                then VkPresentModeKHR.Fifo
-                else VkPresentModeKHR.Immediate
-            info.clipped <- true
-            info.oldSwapchain <- oldVkSwapchainOpt
-            let mutable vkSwapchain = Unchecked.defaultof<VkSwapchainKHR>
-            let result = DeviceApi.vkCreateSwapchainKHR (&info, nullPtr, &vkSwapchain)
-            
-            // fail if surface is lost
-            if result <> VkResult.ErrorSurfaceLostKHR then
-                Hl.check result
-                Some (vkSwapchain, swapExtent)
-            else
-                Hl.SurfaceState <- SurfaceLost
-                None
-
+            | None -> None
         | None -> None
 
     /// Get swapchain images.
@@ -358,7 +357,10 @@ type Swapchain =
     /// Check if window has been resized or surface lost.
     static member isWindowResizedOrSurfaceLost vkPhysicalDevice (swapchain : Swapchain) =
         match Hl.tryGetSurfaceCapabilities vkPhysicalDevice with
-        | Some capabilities -> swapchain.SwapExtent <> Hl.getSwapExtent capabilities
+        | Some capabilities ->
+            match Hl.tryGetSwapExtent capabilities with
+            | Some swapExtent -> swapchain.SwapExtent <> swapExtent
+            | None -> true
         | None -> true
 
     static member private destroySwapchainWrappers renderQueue presentQueue swapchain =

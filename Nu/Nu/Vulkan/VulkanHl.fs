@@ -777,7 +777,7 @@ module Hl =
              0u, nullPtr, 0u, nullPtr,
              1u, &&barrier)
 
-    /// Try get surface capabilities.
+    /// Attempt to get surface capabilities.
     let tryGetSurfaceCapabilities vkPhysicalDevice =
         let mutable capabilities = Unchecked.defaultof<VkSurfaceCapabilitiesKHR>
         let result = InstanceApi.vkGetPhysicalDeviceSurfaceCapabilitiesKHR (vkPhysicalDevice, Surface, &capabilities)
@@ -788,26 +788,37 @@ module Hl =
             SurfaceState <- SurfaceLost
             None
 
-    /// Get swap extent.
-    let getSwapExtent (capabilities : VkSurfaceCapabilitiesKHR) =
+    /// Attempt to get a valid swap extent.
+    let tryGetSwapExtent (capabilities : VkSurfaceCapabilitiesKHR) =
 
-        // check if window size is fixed or variable
-        if capabilities.currentExtent.width <> UInt32.MaxValue
-        then capabilities.currentExtent
-        else
+        // ensure that extent is valid
+        if capabilities.currentExtent.width <> 0u then
 
-            // get pixel resolution from sdl
-            let mutable width = WindowProperties.WidthPixels
-            let mutable height = WindowProperties.HeightPixels
+            // ensure that extent is variable
+            if capabilities.currentExtent.width = UInt32.MaxValue then
 
-            // clamp resolution to size limits
-            width <- max width (int capabilities.minImageExtent.width)
-            width <- min width (int capabilities.maxImageExtent.width)
-            height <- max height (int capabilities.minImageExtent.height)
-            height <- min height (int capabilities.maxImageExtent.height)
+                // get pixel resolution from sdl
+                let mutable width = WindowProperties.WidthPixels
+                let mutable height = WindowProperties.HeightPixels
 
-            // fin
-            VkExtent2D (width, height)
+                // ensure pixel resolution is valid for use as swap extent
+                if width <> 0 && height <> 0 then
+
+                    // clamp resolution to size limits
+                    width <- max width (int capabilities.minImageExtent.width)
+                    width <- min width (int capabilities.maxImageExtent.width)
+                    height <- max height (int capabilities.minImageExtent.height)
+                    height <- min height (int capabilities.maxImageExtent.height)
+                    Some (VkExtent2D (width, height))
+
+                // invalid
+                else None
+
+            // otherwise it's fixed
+            else Some capabilities.currentExtent
+
+        // otherwise it's invalid
+        else None
 
     /// Create an image view.
     let createImageView pixelFormat vkFormat mipLevel mipCount (layer : int) (layerCount : int) viewType imageAspect image =
