@@ -215,7 +215,7 @@ type SwapchainWrapper =
                     then capabilities.minImageCount + 1u
                     else min (capabilities.minImageCount + 1u) capabilities.maxImageCount
 
-                // attempt to create swapchain, indicating that the surface is lost upon failure
+                // attempt to create swapchain, indicating that the surface is lost when such is indicated on creation failure
                 let indicesArray = [|physicalDevice.GraphicsQueueFamily; physicalDevice.PresentQueueFamily|]
                 use indicesArrayPin = new ArrayPin<_> (indicesArray)
                 let mutable info = VkSwapchainCreateInfoKHR ()
@@ -245,11 +245,13 @@ type SwapchainWrapper =
                 info.clipped <- true
                 info.oldSwapchain <- oldVkSwapchainOpt
                 let mutable vkSwapchain = Unchecked.defaultof<VkSwapchainKHR>
-                if DeviceApi.vkCreateSwapchainKHR (&info, nullPtr, &vkSwapchain) = VkResult.Success then
-                    Some (vkSwapchain, swapExtent)
-                else
+                match DeviceApi.vkCreateSwapchainKHR (&info, nullPtr, &vkSwapchain) with
+                | VkResult.ErrorSurfaceLostKHR ->
                     Hl.SurfaceState <- SurfaceLost
                     None
+                | result ->
+                    Hl.check result
+                    Some (vkSwapchain, swapExtent)
 
             | None -> None
         | None -> None
