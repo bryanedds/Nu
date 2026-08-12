@@ -215,7 +215,7 @@ type SwapchainWrapper =
                     then capabilities.minImageCount + 1u
                     else min (capabilities.minImageCount + 1u) capabilities.maxImageCount
 
-                // create swapchain
+                // attempt to create swapchain
                 let indicesArray = [|physicalDevice.GraphicsQueueFamily; physicalDevice.PresentQueueFamily|]
                 use indicesArrayPin = new ArrayPin<_> (indicesArray)
                 let mutable info = VkSwapchainCreateInfoKHR ()
@@ -245,8 +245,7 @@ type SwapchainWrapper =
                 info.clipped <- true
                 info.oldSwapchain <- oldVkSwapchainOpt
                 let mutable vkSwapchain = Unchecked.defaultof<VkSwapchainKHR>
-                let result = DeviceApi.vkCreateSwapchainKHR (&info, nullPtr, &vkSwapchain)
-                if result = VkResult.Success then
+                if DeviceApi.vkCreateSwapchainKHR (&info, nullPtr, &vkSwapchain) = VkResult.Success then
                     Some (vkSwapchain, swapExtent)
                 else
                     Hl.SurfaceState <- SurfaceLost
