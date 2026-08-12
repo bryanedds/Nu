@@ -254,12 +254,6 @@ and RequestedSong =
     | RequestNone
     | RequestIgnore
 
-/// Specifies the desired screen, if any, or whether to ignore screen desire functionality altogether.
-and DesiredScreen =
-    | Desire of Screen
-    | DesireNone
-    | DesireIgnore
-
 /// Describes the behavior of a screen.
 and ScreenBehavior =
     | Vanilla
@@ -897,7 +891,8 @@ and [<ReferenceEquality>] GameContent =
 and [<ReferenceEquality>] ScreenContent =
     { ScreenDispatcherName : string
       ScreenName : string
-      ScreenBehavior : ScreenBehavior
+      Select : bool
+      Behavior : ScreenBehavior
       GroupFilePathOpt : string option
       mutable SimulantCachedOpt : Simulant
       mutable EventSignalContentsOpt : OrderedDictionary<obj Address * obj, uint64> // OPTIMIZATION: lazily created.
@@ -909,7 +904,8 @@ and [<ReferenceEquality>] ScreenContent =
     static member empty =
         { ScreenDispatcherName = nameof ScreenDispatcher
           ScreenName = nameof Screen
-          ScreenBehavior = Vanilla
+          Select = false
+          Behavior = Vanilla
           GroupFilePathOpt = None
           SimulantCachedOpt = Unchecked.defaultof<_>
           EventSignalContentsOpt = null
@@ -1012,7 +1008,6 @@ and [<ReferenceEquality; CLIMutable>] GameState =
       mutable Model : DesignerProperty // mutable to allow inserting fallback model on code reload
       Content : GameContent
       SelectedScreenOpt : Screen option
-      DesiredScreen : DesiredScreen
       ScreenTransitionDestinationOpt : Screen option
       Eye2dCenter : Vector2
       Eye2dSize : Vector2
@@ -1066,7 +1061,6 @@ and [<ReferenceEquality; CLIMutable>] GameState =
           Model = { DesignerType = typeof<unit>; DesignerValue = () }
           Content = WorldTypes.EmptyGameContent :?> GameContent
           SelectedScreenOpt = None
-          DesiredScreen = DesireIgnore
           ScreenTransitionDestinationOpt = None
           Eye2dCenter = v2Zero
           Eye2dSize = Constants.Render.DisplayVirtualResolution.V2
@@ -2197,10 +2191,6 @@ and [<NoEquality; NoComparison>] World =
     /// Get the currently selected screen, if any.
     member this.SelectedScreenOpt =
         this.GameState.SelectedScreenOpt
-
-    /// Get the desired selected screen, if any.
-    member this.DesiredScreen =
-        this.GameState.DesiredScreen
 
     /// The viewport of the geometry buffer.
     member this.GeometryViewport =
