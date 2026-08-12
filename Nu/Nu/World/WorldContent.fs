@@ -293,7 +293,7 @@ module Content =
             | None -> ()
 
     /// Synchronize a screen and its contained simulants to the given content.
-    let internal synchronizeGame setScreenSlide initializing reinitializing (contentOld : GameContent) (content : GameContent) (origin : Simulant) (game : Game) world =
+    let internal synchronizeGame selectScreen updateScreenIdling transitionScreen setScreenSlide initializing reinitializing (contentOld : GameContent) (content : GameContent) (origin : Simulant) (game : Game) world =
         if contentOld =/= content then
             synchronizeEventSignals contentOld content origin game world
             synchronizeEventHandlers contentOld content origin game world
@@ -307,12 +307,26 @@ module Content =
                     let screenContent = entry.Value
                     let screenContentOld = contentOld.ScreenContents[screen.Name]
                     synchronizeScreen initializing reinitializing screenContentOld screenContent origin screen world
-                for (screen : Screen, screenContent : ScreenContent) in screensAdded do
+                for (screen, screenContent) in screensAdded do
                     if not (screen.GetExists world) || screen.GetDestroying world then
                         World.createScreen4 screenContent.ScreenDispatcherName (Some screen.Name) world |> ignore<Screen>
                         World.setScreenProtection DeclarativeProtection screen world |> ignore<bool>
-                    World.applyScreenBehavior setScreenSlide screenContent.ScreenBehavior screen world
+                    World.applyScreenBehavior setScreenSlide screenContent.Behavior screen world
                     synchronizeScreen true reinitializing ScreenContent.empty screenContent origin screen world
+                let screensLive =
+                    screensPotentiallyAltered
+                    |> Seq.map (fun entry -> (entry.Key, entry.Value))
+                    |> Seq.append screensAdded
+                for (screen, screenContent) in screensLive do
+                    if screenContent.Select then
+                        if world.Accompanied && world.Halted && not world.AdvancementCleared then // special case to quick cut when halted in the editor
+                            World.defer (fun world ->
+                                let transitionTime = world.GameTime
+                                selectScreen (IdlingState transitionTime) screen world
+                                updateScreenIdling transitionTime screen world)
+                                screen
+                                world
+                        else transitionScreen screen world
                 content.InitialScreenNameOpt |> Option.map (fun name -> Nu.Game.Handle / name)
             | None -> content.InitialScreenNameOpt |> Option.map (fun name -> Nu.Game.Handle / name)
         else content.InitialScreenNameOpt |> Option.map (fun name -> Nu.Game.Handle / name)
@@ -712,7 +726,7 @@ module Content =
         group4<'groupDispatcher> groupName (Some filePath) definitions entities
 
     /// Describe a screen with the given dispatcher type and definitions as well as its contained simulants.
-    let private screen5<'screenDispatcher when 'screenDispatcher :> ScreenDispatcher> screenName screenBehavior groupFilePathOpt (definitions : Screen DefinitionContent seq) groups =
+    let private screen5<'screenDispatcher when 'screenDispatcher :> ScreenDispatcher> screenName select behavior groupFilePathOpt (definitions : Screen DefinitionContent seq) groups =
         Address.assertIdentifierName screenName
         let mutable eventSignalContentsOpt = null
         let mutable eventHandlerContentsOpt = null
@@ -729,17 +743,17 @@ module Content =
         if groupContents.Count > 2048 then // probably indicates a 4096 24-bit Dictionary.Entry array on the LOH
             Log.warnOnce "High MMCC group content count: having a large number of MMCC groups (> 2048) in a single screen may thrash the LOH."
 #endif
-        { ScreenDispatcherName = typeof<'screenDispatcher>.Name; ScreenName = screenName; ScreenBehavior = screenBehavior; GroupFilePathOpt = groupFilePathOpt; SimulantCachedOpt = Unchecked.defaultof<_>
+        { ScreenDispatcherName = typeof<'screenDispatcher>.Name; ScreenName = screenName; Select = select; Behavior = behavior; GroupFilePathOpt = groupFilePathOpt; SimulantCachedOpt = Unchecked.defaultof<_>
           EventSignalContentsOpt = eventSignalContentsOpt; EventHandlerContentsOpt = eventHandlerContentsOpt; PropertyContentsOpt = propertyContentsOpt
           GroupContents = groupContents }
 
     /// Describe a screen with the given dispatcher type and definitions as well as its contained simulants.
-    let screen<'screenDispatcher when 'screenDispatcher :> ScreenDispatcher> screenName screenBehavior definitions groups =
-        screen5<'screenDispatcher> screenName screenBehavior None definitions groups
+    let screen<'screenDispatcher when 'screenDispatcher :> ScreenDispatcher> screenName select behavior definitions groups =
+        screen5<'screenDispatcher> screenName select behavior None definitions groups
 
     /// Describe a screen with the given type and definitions with a group loaded from the given file.
-    let screenWithGroupFromFile<'screenDispatcher when 'screenDispatcher :> ScreenDispatcher> screenName screenBehavior groupFilePath definitions groups =
-        screen5<'screenDispatcher> screenName screenBehavior (Some groupFilePath) definitions groups
+    let screenWithGroupFromFile<'screenDispatcher when 'screenDispatcher :> ScreenDispatcher> screenName select behavior groupFilePath definitions groups =
+        screen5<'screenDispatcher> screenName select behavior (Some groupFilePath) definitions groups
 
     /// Describe a game with the given definitions as well as its contained simulants.
     let game definitions screens =

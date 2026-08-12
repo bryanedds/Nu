@@ -1481,32 +1481,19 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
         // figure out which screen to use
         let screen =
-            match Game.GetDesiredScreen world with
-            | Desire screen -> screen
-            | DesireNone ->
-                match Game.GetSelectedScreenOpt world with
-                | None ->
-                    let screen = Game / "Screen"
-                    if not (screen.GetExists world) then
-                        let screen = World.createScreen (Some "Screen") world
-                        Game.SetDesiredScreen (Desire screen) world
-                        screen
-                    else screen
-                | Some screen -> screen
-            | DesireIgnore ->
-                match Game.GetSelectedScreenOpt world with
-                | None ->
-                    let screen = Game / "Screen"
-                    if not (screen.GetExists world) then
-                        let screen = World.createScreen (Some "Screen") world
-                        World.setSelectedScreen screen world
-                        let eventTrace = EventTrace.debug "World" "selectScreen" "Select" EventTrace.empty
-                        World.publishPlus () screen.SelectEvent eventTrace screen false false world
-                        let eventTrace = EventTrace.debug "World" "selectScreen" "PostSelect" EventTrace.empty
-                        World.publishPlus (Some screen) Game.PostSelectEvent eventTrace screen false false world
-                        screen
-                    else screen
-                | Some screen -> screen
+            match Game.GetSelectedScreenOpt world with
+            | None ->
+                let screen = Game / "Screen"
+                if not (screen.GetExists world) then
+                    let screen = World.createScreen (Some "Screen") world
+                    World.setSelectedScreen screen world
+                    let eventTrace = EventTrace.debug "World" "selectScreen" "Select" EventTrace.empty
+                    World.publishPlus () screen.SelectEvent eventTrace screen false false world
+                    let eventTrace = EventTrace.debug "World" "selectScreen" "PostSelect" EventTrace.empty
+                    World.publishPlus (Some screen) Game.PostSelectEvent eventTrace screen false false world
+                    screen
+                else screen
+            | Some screen -> screen
 
         // proceed directly to idle state
         World.selectScreen (IdlingState world.GameTime) screen world

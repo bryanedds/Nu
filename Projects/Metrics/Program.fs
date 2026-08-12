@@ -57,7 +57,7 @@ type MmccGameDispatcher () =
         | Inc -> just (Intss.inc intss)
 
     override this.Content (intss, _) =
-        [Content.screen "Screen" Vanilla []
+        [Content.screen "Screen" true Vanilla []
             [for (i, ints) in intss.Intss.Pairs' do
                 Content.group (string i) []
                     [for (j, int) in ints.Ints.Pairs' do
