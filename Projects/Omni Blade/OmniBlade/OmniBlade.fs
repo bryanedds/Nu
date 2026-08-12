@@ -56,17 +56,8 @@ type OmniBladeDispatcher () =
         World.setMasterSongVolume Constants.Gameplay.SongVolumeDefault world
 
     override this.Definitions (omniBlade, _) =
-        [Game.DesiredScreen :=
-            match omniBlade with
-            | Splash -> Desire Simulants.Splash
-            | Title -> Desire Simulants.Title
-            | Credits -> Desire Simulants.Credits
-            | Pick -> Desire Simulants.Pick
-            | Intro _ -> Desire Simulants.Intro
-            | Field -> Desire Simulants.Field
-            | Battle -> Desire Simulants.Battle
-         Game.KeyboardKeyDownEvent =|> fun evt -> UpdateFullScreen evt.Data
-         if omniBlade = Splash then Simulants.Splash.DeselectingEvent => ShowTitle
+        [Game.KeyboardKeyDownEvent =|> fun evt -> UpdateFullScreen evt.Data
+         if omniBlade.IsSplash then Simulants.Splash.DeselectingEvent => ShowTitle
          Simulants.Pick.UpdateEvent => UpdatePicks
          Simulants.TitlePlay.ClickEvent => ShowPick
          Simulants.TitleCredits.ClickEvent => ShowCredits
@@ -186,15 +177,15 @@ type OmniBladeDispatcher () =
             if world.Unaccompanied then
                 World.exit world
 
-    override this.Content (_, _) =
-        [Content.screen<ScreenDispatcher> Simulants.Splash.Name (Slide (Constants.Gui.Dissolve, Constants.Gui.Splash, None, Simulants.Title)) [] []
-         Content.screenWithGroupFromFile<TitleDispatcher> Simulants.Title.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Gui.TitleSong)) Assets.Gui.TitleGroupFilePath [] []
-         Content.screen<CreditsDispatcher> Simulants.Credits.Name (Dissolve (Constants.Gui.Dissolve, None)) [] []
-         Content.screenWithGroupFromFile Simulants.Pick.Name (Dissolve ({ Constants.Gui.Dissolve with OutgoingTime = 90L }, Some Assets.Gui.TitleSong)) Assets.Gui.PickGroupFilePath [] []
-         Content.screenWithGroupFromFile Simulants.Intro.Name (Slide (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro2)) Assets.Gui.IntroGroupFilePath [] []
-         Content.screenWithGroupFromFile Simulants.Intro2.Name (Slide (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro3)) Assets.Gui.Intro2GroupFilePath [] []
-         Content.screenWithGroupFromFile Simulants.Intro3.Name (Slide (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro4)) Assets.Gui.Intro3GroupFilePath [] []
-         Content.screenWithGroupFromFile Simulants.Intro4.Name (Slide (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro5)) Assets.Gui.Intro4GroupFilePath [] []
-         Content.screenWithGroupFromFile Simulants.Intro5.Name (Slide (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Field)) Assets.Gui.Intro5GroupFilePath [] []
-         Content.screen<FieldDispatcher> Simulants.Field.Name (Dissolve (Constants.Gui.Dissolve, None)) [] []
-         Content.screen<BattleDispatcher> Simulants.Battle.Name (Dissolve (Constants.Gui.Dissolve, None)) [] []]
+    override this.Content (omniBlade, _) =
+        [Content.screen<ScreenDispatcher> Simulants.Splash.Name omniBlade.IsSplash (Slide (Constants.Gui.Dissolve, Constants.Gui.Splash, None, Simulants.Title)) [] []
+         Content.screenWithGroupFromFile<TitleDispatcher> Simulants.Title.Name omniBlade.IsTitle (Dissolve (Constants.Gui.Dissolve, Some Assets.Gui.TitleSong)) Assets.Gui.TitleGroupFilePath [] []
+         Content.screen<CreditsDispatcher> Simulants.Credits.Name omniBlade.IsCredits (Dissolve (Constants.Gui.Dissolve, None)) [] []
+         Content.screenWithGroupFromFile Simulants.Pick.Name omniBlade.IsPick (Dissolve ({ Constants.Gui.Dissolve with OutgoingTime = 90L }, Some Assets.Gui.TitleSong)) Assets.Gui.PickGroupFilePath [] []
+         Content.screenWithGroupFromFile Simulants.Intro.Name omniBlade.IsIntro (Slide (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro2)) Assets.Gui.IntroGroupFilePath [] []
+         Content.screenWithGroupFromFile Simulants.Intro2.Name false (Slide (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro3)) Assets.Gui.Intro2GroupFilePath [] []
+         Content.screenWithGroupFromFile Simulants.Intro3.Name false (Slide (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro4)) Assets.Gui.Intro3GroupFilePath [] []
+         Content.screenWithGroupFromFile Simulants.Intro4.Name false (Slide (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro5)) Assets.Gui.Intro4GroupFilePath [] []
+         Content.screenWithGroupFromFile Simulants.Intro5.Name false (Slide (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Field)) Assets.Gui.Intro5GroupFilePath [] []
+         Content.screen<FieldDispatcher> Simulants.Field.Name omniBlade.IsField (Dissolve (Constants.Gui.Dissolve, None)) [] []
+         Content.screen<BattleDispatcher> Simulants.Battle.Name omniBlade.IsBattle (Dissolve (Constants.Gui.Dissolve, None)) [] []]
