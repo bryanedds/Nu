@@ -55,13 +55,6 @@ module WorldModuleGame =
             if value.DesignerValue =/= previous.DesignerValue || initializing then
                 gameState.Model <- { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }
                 gameState.Dispatcher.TrySynchronize (initializing, reinitializing, game, world)
-                if initializing then
-                    let content = World.getGameContent game world
-                    let desiredScreen =
-                        match Seq.tryHead content.ScreenContents with
-                        | Some screen -> Desire (game / screen.Key)
-                        | None -> DesireNone
-                    World.setGameDesiredScreen desiredScreen game world |> ignore<bool>
                 World.publishGameChange Constants.Engine.ModelPropertyName previous.DesignerValue value.DesignerValue game world
                 true
             else false
@@ -91,13 +84,6 @@ module WorldModuleGame =
             if valueObj =/= previous.DesignerValue || initializing then
                 gameState.Model <- { DesignerType = typeof<'a>; DesignerValue = valueObj }
                 gameState.Dispatcher.TrySynchronize (initializing, reinitializing, game, world)
-                if initializing then
-                    let content = World.getGameContent game world
-                    let desiredScreen =
-                        match Seq.tryHead content.ScreenContents with
-                        | Some screen -> Desire (game / screen.Key)
-                        | None -> DesireNone
-                    World.setGameDesiredScreen desiredScreen game world |> ignore<bool>
                 World.publishGameChange Constants.Engine.ModelPropertyName previous.DesignerValue value game world
                 true
             else false
@@ -169,26 +155,6 @@ module WorldModuleGame =
         /// Set the currently selected screen.
         static member setSelectedScreen value world =
             World.setGameSelectedScreen value Game.Handle world |> ignore<bool>
-
-        static member internal getGameDesiredScreen game world =
-            (World.getGameState game world).DesiredScreen
-
-        static member internal setGameDesiredScreen value game world : bool =
-            let gameState = World.getGameState game world
-            let previous = gameState.DesiredScreen
-            if value <> previous then
-                gameState.DesiredScreen <- value
-                World.publishGameChange (nameof gameState.DesiredScreen) previous value game world
-                true
-            else false
-
-        /// Get the desired screen, if applicable.
-        static member getDesiredScreen world =
-            World.getGameDesiredScreen Game.Handle world
-
-        /// Set the desired screen, if applicable.
-        static member setDesiredScreen value world =
-            World.setGameDesiredScreen value Game.Handle world |> ignore<bool>
 
         static member internal getGameScreenTransitionDestinationOpt game world =
             (World.getGameState game world).ScreenTransitionDestinationOpt
@@ -809,7 +775,6 @@ module WorldModuleGame =
                 [("Dispatcher", fun game world -> { PropertyType = typeof<GameDispatcher>; PropertyValue = World.getGameDispatcher game world })
                  ("Model", fun game world -> let designerProperty = World.getGameModelProperty game world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue })
                  ("SelectedScreenOpt", fun game world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getGameSelectedScreenOpt game world })
-                 ("DesiredScreen", fun game world -> { PropertyType = typeof<DesiredScreen>; PropertyValue = World.getGameDesiredScreen game world })
                  ("ScreenTransitionDestinationOpt", fun game world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getGameScreenTransitionDestinationOpt game world })
                  ("Eye2dCenter", fun game world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getGameEye2dCenter game world })
                  ("Eye2dSize", fun game world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getGameEye2dSize game world })
@@ -826,7 +791,6 @@ module WorldModuleGame =
         let gameSetters =
             dictPlus StringComparer.Ordinal
                 [("Model", fun property game world -> World.setGameModelProperty false false { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } game world)
-                 ("DesiredScreen", fun property game world -> World.setGameDesiredScreen (property.PropertyValue :?> DesiredScreen) game world)
                  ("ScreenTransitionDestinationOpt", fun property game world -> World.setGameScreenTransitionDestinationOpt (property.PropertyValue :?> Screen option) game world)
                  ("Eye2dCenter", fun property game world -> World.setGameEye2dCenter (property.PropertyValue :?> Vector2) game world)
                  ("Eye2dSize", fun property game world -> World.setGameEye2dSize (property.PropertyValue :?> Vector2) game world)
