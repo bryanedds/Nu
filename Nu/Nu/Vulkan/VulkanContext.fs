@@ -250,12 +250,14 @@ type SwapchainWrapper =
             let result = DeviceApi.vkCreateSwapchainKHR (&info, nullPtr, &vkSwapchain)
             
             // fail if surface is lost
-            if result <> VkResult.ErrorSurfaceLostKHR then
-                Hl.check result
-                Some (vkSwapchain, swapExtent)
-            else
+            match result with
+            | VkResult.ErrorOutOfHostMemory // indicates failure to allocate VkSwapchainKHR
+            | VkResult.ErrorSurfaceLostKHR ->
                 Hl.SurfaceState <- SurfaceLost
                 None
+            | _ ->
+                Hl.check result
+                Some (vkSwapchain, swapExtent)
 
         | None -> None
 
