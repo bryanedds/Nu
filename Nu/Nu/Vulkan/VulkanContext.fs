@@ -246,12 +246,14 @@ type SwapchainWrapper =
                 info.oldSwapchain <- oldVkSwapchainOpt
                 let mutable vkSwapchain = Unchecked.defaultof<VkSwapchainKHR>
                 match DeviceApi.vkCreateSwapchainKHR (&info, nullPtr, &vkSwapchain) with
+                | VkResult.Success ->
+                    Some (vkSwapchain, swapExtent)
                 | VkResult.ErrorSurfaceLostKHR ->
                     Hl.SurfaceState <- SurfaceLost
                     None
                 | result ->
                     Hl.check result
-                    Some (vkSwapchain, swapExtent)
+                    None
 
             | None -> None
         | None -> None
