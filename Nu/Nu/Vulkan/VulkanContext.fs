@@ -215,7 +215,7 @@ type SwapchainWrapper =
                     then capabilities.minImageCount + 1u
                     else min (capabilities.minImageCount + 1u) capabilities.maxImageCount
 
-                // attempt to create swapchain
+                // attempt to create swapchain, indicating that the surface is lost upon failure
                 let indicesArray = [|physicalDevice.GraphicsQueueFamily; physicalDevice.PresentQueueFamily|]
                 use indicesArrayPin = new ArrayPin<_> (indicesArray)
                 let mutable info = VkSwapchainCreateInfoKHR ()
