@@ -1,4 +1,4 @@
-Nu Game Engine [![Build status](https://github.com/bryanedds/Nu/actions/workflows/CI.yml/badge.svg)](https://github.com/bryanedds/Nu/actions/workflows/CI.yml) NOTE: Build is occasionally failing because we temporarily run out of Github Actions :/
+Nu Game Engine [![Build status](https://github.com/bryanedds/Nu/actions/workflows/CI.yml/badge.svg)](https://github.com/bryanedds/Nu/actions/workflows/CI.yml) NOTE: build is occasionally failing because we temporarily run out of Github Actions :/
 
 BIG NU NEWS - Vulkan, Mac, iOS, and Android now available!
 ==
