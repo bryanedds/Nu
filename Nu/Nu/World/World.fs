@@ -644,14 +644,14 @@ module WorldModule4 =
                     tryMakeEditContext plugin eventGraph jobGraph geometryViewport windowViewport lateBindingsInstances quadtree octree config (Some sdlDeps)
                     imGui physicsEngine2d physicsEngine3d (Some joltDebugRendererImGuiOpt) rendererProcess audioPlayer cursorClient activeGameDispatcher
 
-            // add the keyed values
-            for (key, value) in plugin.MakeKeyedValues world do
-                World.addKeyedValue key value world
-
             // synchronize window size with actual size, e.g. fullscreen for mobile or a display with size smaller than
             // the configured DisplayScalar
             if World.getWindowSizeOtherwiseViewportSize world <> windowSize then
                 World.processWindowResize world
+
+            // add the keyed values
+            for (key, value) in plugin.MakeKeyedValues world do
+                World.addKeyedValue key value world
 
             // register the game
             World.registerGame Game world
