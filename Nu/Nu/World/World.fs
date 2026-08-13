@@ -224,14 +224,13 @@ type Nu () =
         // init only if needed
         if not Initialized then
 
+            // platform-specific log initialization
             if OperatingSystem.IsIOS () then
                 Platform.Apple.iOS.configureIosNativeLibraries ()
-                Log.init None // disable Nu's default file log because the iOS app bundle is read-only.
+                Log.init None // disable Nu's default file log because the iOS app bundle is read-only
             elif OperatingSystem.IsAndroid () then
                 Platform.Android.configureAndroidNativeLibraries ()
-                 // disable Nu's default file log because the Android asset pack directory should be treated as read-only for incremental updates to work:
-                 // https://developer.android.com/reference/com/google/android/play/core/assetpacks/AssetPackManager#getpacklocation
-                Log.init None
+                Log.init None // disable Nu's default file log because the Android asset pack directory should be treated as read-only for incremental updates to work - https://developer.android.com/reference/com/google/android/play/core/assetpacks/AssetPackManager#getpacklocation
             elif OperatingSystem.IsMacOS () then
                 Platform.Apple.configureFrameworkNativeLibraries ()
 
