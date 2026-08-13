@@ -1389,13 +1389,13 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 Log.error ("Invalid Nu Assembly: " + gaiaState.ProjectDllPath)
             (GaiaState.defaultState, ".", gaiaPlugin)
 
-    let private makeWorld sdlDeps worldConfig geometryViewport windowViewport (plugin : NuPlugin) =
+    let private makeWorld sdlDeps worldConfig windowSize geometryViewport windowViewport (plugin : NuPlugin) =
 
         // make the edit context maker
         let tryMakeEditContext = fun () -> Some (makeEditContext None None)
 
         // make the world
-        let world = World.make tryMakeEditContext sdlDeps worldConfig geometryViewport windowViewport plugin
+        let world = World.make tryMakeEditContext sdlDeps worldConfig windowSize geometryViewport windowViewport plugin
 
         // initialize event filter as not to flood the log
         World.setEventFilter Constants.Gaia.EventFilter world
@@ -4458,7 +4458,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
             // attempt to create the world
             let screenAndWorldOpt =
-                try let screenAndworld = makeWorld sdlDeps worldConfig geometryViewport windowViewport plugin
+                try let screenAndworld = makeWorld sdlDeps worldConfig windowSize geometryViewport windowViewport plugin
                     Right screenAndworld
                 with exn ->
                     let gaiaDirPath = PathF.GetDirectoryName (Assembly.GetExecutingAssembly ()).Location

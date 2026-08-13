@@ -1049,7 +1049,7 @@ module WorldModule2 =
                 elif keyboardKey >= KeyboardKey.F1 && keyboardKey <= KeyboardKey.F12 then ImGuiKey.F1 + (keyboardKey - KeyboardKey.F1 |> LanguagePrimitives.EnumToValue |> LanguagePrimitives.EnumOfValue) |> List.singleton
                 else []
 
-        static member internal processWindowResized (world : World) =
+        static member internal processWindowResize (world : World) =
 
             // ensure window size is a factor of display virtual resolution, going to full screen otherwise
             let windowSize = World.getWindowSizeOtherwiseViewportSize world
@@ -1077,7 +1077,7 @@ module WorldModule2 =
                 let eventTrace = EventTrace.debug "World" "processInput2" "ExitRequest" EventTrace.empty
                 World.publishPlus () Nu.Game.Handle.ExitRequestEvent eventTrace Nu.Game.Handle true true world
             | SDL_EventType.SDL_EVENT_WINDOW_RESIZED | SDL_EventType.SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED ->
-                World.processWindowResized world
+                World.processWindowResize world
             | SDL_EventType.SDL_EVENT_MOUSE_MOTION ->
                 let io = ImGui.GetIO ()
                 let pixelDensity = World.tryGetWindowPixelDensity world |> Option.defaultValue 1.0f
