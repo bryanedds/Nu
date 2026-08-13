@@ -248,8 +248,7 @@ type SwapchainWrapper =
                 match DeviceApi.vkCreateSwapchainKHR (&info, nullPtr, &vkSwapchain) with
                 | VkResult.Success ->
                     Some (vkSwapchain, swapExtent)
-                | VkResult.ErrorSurfaceLostKHR 
-                | VkResult.ErrorNativeWindowInUseKHR ->
+                | result when int result < 0 ->
                     Hl.SurfaceState <- SurfaceLost
                     None
                 | result ->
