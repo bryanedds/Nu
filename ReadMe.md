@@ -7,7 +7,7 @@ To upgrade your existing projects, you may pull latest and follow the steps at t
 
 https://github.com/bryanedds/Nu/wiki/Converting-from-Nu-with-OpenGL-to-Nu-with-Vulkan
 
-This branch not only replaces our OpenGL renderers completely with Vulkan renderers, it also features important rendering and performance enhancements as well as makes Nu deployable on `Mac`, `iOS`, and `Android`!
+This not only replaces our OpenGL renderers completely with Vulkan renderers, it also features important rendering and performance enhancements as well as makes Nu deployable on `Mac`, `iOS`, and `Android`!
 
 If you have any issues, please report them so we can fix them ASAP!
 
