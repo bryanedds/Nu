@@ -44,7 +44,7 @@ type [<ReferenceEquality>] ConcurrentCommandQueue =
         // lock to get access to vulkan queue
         let mutable commandBuffer = commandBuffer
         ConcurrentCommandQueue.withLock commandQueue (fun vkQueue ->
-        
+
             // end command buffer
             DeviceApi.vkEndCommandBuffer commandBuffer |> Hl.check
 
@@ -88,7 +88,7 @@ type PhysicalDevice =
         if  Hl.getBackgroundingRequested () then
             Hl.destroyVulkanSurface ()
             Hl.createVulkanSurface window instance
-    
+
     /// Get properties.
     static member private getProperties vkPhysicalDevice =
         let mutable properties = Unchecked.defaultof<VkPhysicalDeviceProperties>
@@ -100,7 +100,7 @@ type PhysicalDevice =
         let mutable features = Unchecked.defaultof<VkPhysicalDeviceFeatures>
         InstanceApi.vkGetPhysicalDeviceFeatures (vkPhysicalDevice, &features)
         features
-    
+
     /// Get available extensions.
     static member private getExtensions vkPhysicalDevice =
         let mutable extensionCount = 0u
@@ -278,7 +278,7 @@ type SwapchainWrapper =
         let semaphores = Array.zeroCreate<VkSemaphore> imageCount
         for i in 0 .. dec semaphores.Length do semaphores[i] <- Hl.createSemaphore ()
         semaphores
-    
+
     /// Try create a SwapchainWrapper.
     static member tryCreate surfaceFormat oldVkSwapchainOpt physicalDevice =
         
@@ -307,7 +307,7 @@ type SwapchainWrapper =
             // fin
             Some swapchainWrapper
         | None -> None
-    
+
     /// Destroy a SwapchainWrapper.
     static member destroy renderQueue presentQueue swapchainWrapper =
         
@@ -331,13 +331,13 @@ type Swapchain =
 
     /// The current SwapchainWrapperOpt.
     member this.SwapchainWrapperOpt = this.SwapchainWrapperOpts_[this.SwapchainIndex_]
-    
+
     /// The Vulkan swapchain itself.
     member this.VkSwapchain = (Option.get this.SwapchainWrapperOpts_[this.SwapchainIndex_]).VkSwapchain
 
     /// The number of swapchain images.
     member this.ImageCount = (Option.get this.SwapchainWrapperOpts_[this.SwapchainIndex_]).Images.Length
-    
+
     /// The current swapchain image.
     member this.Image = (Option.get this.SwapchainWrapperOpts_[this.SwapchainIndex_]).Images[int Hl.ImageIndex]
 
@@ -353,7 +353,7 @@ type Swapchain =
     /// Check if window is minimized.
     static member getWindowMinimized () =
         Hl.WindowProperties.WindowFlags &&& SDL_WindowFlags.SDL_WINDOW_MINIMIZED <> LanguagePrimitives.EnumOfValue 0UL
-    
+
     /// Check if window has been resized or surface lost.
     static member isWindowResizedOrSurfaceLost vkPhysicalDevice (swapchain : Swapchain) =
         match Hl.tryGetSurfaceCapabilities vkPhysicalDevice with
@@ -370,15 +370,15 @@ type Swapchain =
                 SwapchainWrapper.destroy renderQueue presentQueue swapchainWrapper
                 swapchain.SwapchainWrapperOpts_[i] <- None
             | None -> ()
-    
+
     static member private destroySurface renderQueue presentQueue swapchain =
         Log.info "Destroying Vulkan swapchains..."
         Swapchain.destroySwapchainWrappers renderQueue presentQueue swapchain
         Hl.destroyVulkanSurface ()
-    
+
     static member private tryCreateSurfaceAndSwapchainWrapper physicalDevice renderQueue presentQueue swapchain instance =
-        
-        // check if app is not in background
+
+        // ensure app is in foreground
         if not (Hl.getBackgrounded ()) then
             
             // ensure surface creation was successful
