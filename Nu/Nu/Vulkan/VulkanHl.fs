@@ -392,11 +392,7 @@ module Hl =
         if int result > 0 then Log.info ("Vulkan info: " + string result)
         elif int result < 0 then
             let message = "Vulkan assertion failed due to: " + string result
-#if DEBUG
-            Log.fail message
-#else
             Log.error message
-#endif
 
     /// Determine whether format is supported for use as an attachment.
     let supportsAttachment vkPhysicalDevice format =
