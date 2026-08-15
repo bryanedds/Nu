@@ -31,14 +31,19 @@ type SdlWindowConfig =
 
     /// A default SdlWindowConfig.
     static member val defaultConfig =
-        
-        // NOTE: our use of SDL_WINDOW_HIGH_PIXEL_DENSITY only changes behavior on Apple iOS/macOS or Linux Wayland.
-        // See https://wiki.libsdl.org/SDL3/README-highdpi
-        let noNotificationBar = if OperatingSystem.IsIOS () || OperatingSystem.IsAndroid () then SDL_WindowFlags.SDL_WINDOW_FULLSCREEN else Unchecked.defaultof<_>
+        let windowFullscreenOpt =
+            if OperatingSystem.IsIOS () || OperatingSystem.IsAndroid ()
+            then SDL_WindowFlags.SDL_WINDOW_FULLSCREEN
+            else Unchecked.defaultof<_>
+        let windowFlags =
+            SDL_WindowFlags.SDL_WINDOW_RESIZABLE |||
+            SDL_WindowFlags.SDL_WINDOW_VULKAN |||
+            SDL_WindowFlags.SDL_WINDOW_HIGH_PIXEL_DENSITY ||| // NOTE: this only changes behavior on Apple iOS/macOS or Linux Wayland (https://wiki.libsdl.org/SDL3/README-highdpi)
+            windowFullscreenOpt
         { WindowTitle = "Nu Game"
           WindowX = int SDL3.SDL_WINDOWPOS_UNDEFINED
           WindowY = int SDL3.SDL_WINDOWPOS_UNDEFINED
-          WindowFlags = SDL_WindowFlags.SDL_WINDOW_RESIZABLE ||| SDL_WindowFlags.SDL_WINDOW_VULKAN ||| SDL_WindowFlags.SDL_WINDOW_HIGH_PIXEL_DENSITY ||| noNotificationBar }
+          WindowFlags = windowFlags }
 
 /// Describes the general configuration of SDL.
 type [<ReferenceEquality>] SdlConfig =
