@@ -673,4 +673,6 @@ module WorldModule4 =
             let windowSize = Constants.Render.DisplayVirtualResolution * Globals.Render.DisplayScalar
             let windowViewport = Viewport.makeWindow1 windowSize
             let geometryViewport = Viewport.makeGeometry windowViewport.Bounds.Size
-            World.runPlus (constant None) tautology ignore ignore ignore ignore ignore firstFrameCallback worldConfig windowViewport.Outer.Size geometryViewport windowViewport plugin
+            World.runPlus
+                (constant None) tautology ignore ignore ignore ignore ignore firstFrameCallback
+                worldConfig windowViewport.Outer.Size geometryViewport windowViewport plugin

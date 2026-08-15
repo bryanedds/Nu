@@ -2312,23 +2312,23 @@ and [<AbstractClass>] NuPlugin () =
                 | (false, _) -> circles.Add (struct (color, radius), List [center])
             override _.EyeBounds = eyeBounds }
 
-    /// A call-back at the beginning of each frame.
+    /// A callback at the beginning of each frame.
     abstract PreProcess : world : World -> unit
     default this.PreProcess _ = ()
 
-    /// A call-back during each frame.
+    /// A callback during each frame.
     abstract PerProcess : world : World -> unit
     default this.PerProcess _ = ()
 
-    /// A call-back at the end of each frame.
+    /// A callback at the end of each frame.
     abstract PostProcess : world : World -> unit
     default this.PostProcess _ = ()
 
-    /// A call-back for imgui processing.
+    /// A callback for imgui processing.
     abstract ImGuiProcess : world : World -> unit
     default this.ImGuiProcess _ = ()
 
-    /// A call-back for imgui post-processing.
+    /// A callback for imgui post-processing.
     abstract ImGuiPostProcess : world : World -> unit
     default this.ImGuiPostProcess _ = ()
 
