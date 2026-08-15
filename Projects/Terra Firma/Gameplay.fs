@@ -42,15 +42,18 @@ type GameplayDispatcher () =
                 Simulants.Gameplay.SetGameplayState Playing world
                 Simulants.Gameplay.SetScore 0 world
 
-            // begin scene declaration, processing nav sync at end of frame since optimized representations like
-            // frozen entities won't have their nav info registered until then
+            // begin scene declaration
             let sceneGroupFilePath = "Assets/Gameplay/Scene.nugroup"
-            let sceneNavFilePath = PathF.ChangeExtension (sceneGroupFilePath, ".nav")
             World.beginGroupFromFile Simulants.GameplayScene.Name sceneGroupFilePath [] world
-            if selecting then World.defer (World.synchronizeNav3d false (Some sceneNavFilePath) screen) screen world
+
+            // process nav sync at end of selection frame since optimized scene entities (like frozen entities) won't
+            // have their nav info registered until then
+            if selecting then
+                let sceneNavFilePath = PathF.ChangeExtension (sceneGroupFilePath, ".nav")
+                World.defer (World.synchronizeNav3d false (Some sceneNavFilePath) screen) screen world
 
             // set player to protected to prevent accidental deletion in Gaia
-            World.doEntity<PlayerDispatcher> Simulants.GameplayPlayer.Name [Entity.Protection .= ManualProtection] world
+            Simulants.GameplayPlayer.SetProtection ManualProtection world
 
             // collect characters for processing
             let characters = World.getEntitiesAs<CharacterDispatcher> Simulants.GameplayScene world
