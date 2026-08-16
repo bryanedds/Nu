@@ -24,6 +24,12 @@ open Vortice.Vulkan
 open Prime
 open Nu
 
+/// The load operation for render pass attachments.
+type LoadOperation =
+    | LoadAttachments
+    | DontCareAttachments
+    | ClearAttachments of Color
+
 /// The format of an image.
 type ImageFormat =
     | Rgba8
@@ -566,7 +572,7 @@ module Hl =
         blit
         
     /// Make a VkRenderingInfo and utilize within the given scope for memory safety.
-    let withRenderingInfo (colorAttachments : VkImageView array) depthAttachmentOpt renderArea clearValueOpt action =
+    let withRenderingInfo (colorAttachments : VkImageView array) depthAttachmentOpt renderArea loadOp action =
         
         // color attachment infos
         let colorInfos = Array.zeroCreate colorAttachments.Length
@@ -575,12 +581,14 @@ module Hl =
             colorInfo.imageView <- colorAttachments[i]
             colorInfo.imageLayout <- ColorAttachmentWrite.VkImageLayout
             colorInfo.storeOp <- VkAttachmentStoreOp.Store
-            match clearValueOpt with
-            | Some clearValue ->
-                colorInfo.loadOp <- VkAttachmentLoadOp.Clear
-                colorInfo.clearValue <- clearValue
-            | None ->
+            match loadOp with
+            | LoadAttachments ->
                 colorInfo.loadOp <- VkAttachmentLoadOp.Load
+            | DontCareAttachments ->
+                colorInfo.loadOp <- VkAttachmentLoadOp.DontCare
+            | ClearAttachments color ->
+                colorInfo.loadOp <- VkAttachmentLoadOp.Clear
+                colorInfo.clearValue <- VkClearValue (r = color.R, g = color.G, b = color.B, a = color.A)
             colorInfos[i] <- colorInfo
         use colorInfosPin = new ArrayPin<_> (colorInfos)
 
@@ -591,12 +599,14 @@ module Hl =
             depthInfo.imageView <- depthAttachment
             depthInfo.imageLayout <- DepthAttachmentWrite.VkImageLayout
             depthInfo.storeOp <- VkAttachmentStoreOp.Store
-            match clearValueOpt with
-            | Some _ ->
+            match loadOp with
+            | LoadAttachments ->
+                depthInfo.loadOp <- VkAttachmentLoadOp.Load
+            | DontCareAttachments ->
+                depthInfo.loadOp <- VkAttachmentLoadOp.DontCare
+            | ClearAttachments _ ->
                 depthInfo.loadOp <- VkAttachmentLoadOp.Clear
                 depthInfo.clearValue <- VkClearValue (1.0f, 0u)
-            | None ->
-                depthInfo.loadOp <- VkAttachmentLoadOp.Load
         | None -> ()
 
         // rendering info

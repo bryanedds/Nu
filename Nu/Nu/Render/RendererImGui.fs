@@ -192,7 +192,7 @@ type VulkanRendererImGui
                 // set up render
                 let mutable renderArea = VkRect2D (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
                 let mutable vkViewport = Hl.makeViewport false renderArea
-                Hl.withRenderingInfo [|context.SwapchainImageView|] None renderArea None $ fun renderingInfo ->
+                Hl.withRenderingInfo [|context.SwapchainImageView|] None renderArea LoadAttachments $ fun renderingInfo ->
                     let mutable renderingInfo = renderingInfo
                     DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
                 DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)

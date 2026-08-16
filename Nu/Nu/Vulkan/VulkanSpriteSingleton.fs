@@ -186,7 +186,7 @@ module SpriteSingleton =
                     Pipeline.writeDescriptorSampler 0 0 sampler vkSet
                     
                 // set up render
-                Hl.withRenderingInfo [|context.SwapchainImageView|] None renderArea None $ fun renderingInfo ->
+                Hl.withRenderingInfo [|context.SwapchainImageView|] None renderArea LoadAttachments $ fun renderingInfo ->
                     let mutable renderingInfo = renderingInfo
                     DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
                 DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
