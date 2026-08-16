@@ -43,13 +43,15 @@ module Assimp =
 [<RequireQualifiedAccess>]
 module Vulkan =
 
-    let [<Uniform>] FramesInFlight = 1 // NOTE: we avoid the use of multiple FiF in order to keep the renderer simple and low-latency.
+    let [<Uniform>] TileBasedRendering = OperatingSystem.IsAndroid () || OperatingSystem.IsIOS () // TODO: update this as we can determine more platforms where tile-based rendering is used.
+    let [<Uniform>] ImmediateModeRendering = not TileBasedRendering
     let [<Uniform>] MoltenVk = OperatingSystem.IsIOS () || match ConfigurationManager.AppSettings["MoltenVk"] with null -> true | value -> scvalue value // NOTE: setting this to false uses KosmicKrisp on macOS, but FPS of Metrics project drops from 50 to 2.
+    let [<Uniform>] FramesInFlight = 1 // NOTE: we avoid the use of multiple FiF in order to keep the renderer simple and low-latency.
     let [<Literal>] RenderCommandBufferCountDefault = 32
     let [<Literal>] DescriptorSetCountDefault = 32
-    let [<Literal>] ShadowSurfaceInstanceThreshold = 1024
-    let [<Literal>] DeferredSurfaceInstanceThreshold = 1024
-    let [<Literal>] ForwardSurfaceInstanceThreshold = 128
+    let [<Uniform>] ShadowSurfaceInstanceThreshold = if ImmediateModeRendering then 1024 else 2048 // NOTE: splitting render passes is more costly on tile-based renderers.
+    let [<Uniform>] DeferredSurfaceInstanceThreshold = if ImmediateModeRendering then 1024 else 2048 // NOTE: see above.
+    let [<Uniform>] ForwardSurfaceInstanceThreshold = if ImmediateModeRendering then 128 else 256 // NOTE: see above.
 
 [<RequireQualifiedAccess>]
 module ImGui =

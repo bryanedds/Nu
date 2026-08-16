@@ -166,10 +166,6 @@ type ImageLayout =
 
     /// The pipeline stage.
     member this.PipelineStage =
-            
-        // NOTE: for Undefined as image layout transition source, texture upload and mipmap generation previously used
-        // VK_PIPELINE_STAGE_HOST_BIT. DJL can't remember why, but it's not in the tutorial and apparently may lead to
-        // failure on Android devices. DJL suspects it was inherited from ImGui backend.
         match this with
         | Undefined -> VkPipelineStageFlags.TopOfPipe
         | TransferSrc -> VkPipelineStageFlags.Transfer
