@@ -284,20 +284,23 @@ type internal BackgroundingResponseState =
 [<AutoOpen>]
 module Vulkan =
 
-    let mutable internal VkInstanceApi = Unchecked.defaultof<VkInstanceApi>
-    let mutable internal VkDeviceApi = Unchecked.defaultof<VkDeviceApi>
+    /// Internal vulkan instance API reference; for internal use only.
+    let mutable internal InstanceApi_ = Unchecked.defaultof<VkInstanceApi>
+
+    /// Internal vulkan device API reference; for internal use only.
+    let mutable internal DeviceApi_ = Unchecked.defaultof<VkDeviceApi>
 
     /// Set a VkInstanceApi value. Under normal operation, this can never be null.
-    let internal SetInstanceApi vkInstanceApi = VkInstanceApi <- vkInstanceApi
+    let internal SetInstanceApi vkInstanceApi = InstanceApi_ <- vkInstanceApi
 
     /// Set a VkDeviceApi value. Under normal operation, this can never be null.
-    let internal SetDeviceApi vkDeviceApi = VkDeviceApi <- vkDeviceApi
+    let internal SetDeviceApi vkDeviceApi = DeviceApi_ <- vkDeviceApi
 
     /// The Vulkan instance API. Ignore the type parameter as it's only use to expose InstanceApi in a convenient way.
-    let inline internal InstanceApi<'a> = VkInstanceApi
+    let inline internal InstanceApi<'a> = InstanceApi_
 
     /// The Vulkan device API. Ignore the type parameter as it's only use to expose InstanceApi in a convenient way.
-    let inline internal DeviceApi<'a> = VkDeviceApi
+    let inline internal DeviceApi<'a> = DeviceApi_
 
 [<RequireQualifiedAccess>]
 module Hl =
