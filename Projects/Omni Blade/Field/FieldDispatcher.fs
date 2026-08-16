@@ -68,7 +68,7 @@ type FieldDispatcher () =
          Screen.PostUpdateEvent => UpdateFieldTransition
          Screen.PostUpdateEvent => UpdateEye
          Screen.PostUpdateEvent => UpdateAvatarBodyTracking
-         Screen.TimeUpdateEvent => TimeUpdate
+         Screen.TimeAdvanceEvent => AdvanceTime
          Screen.SelectEvent => StartPlaying
          Screen.IncomingStartEvent => ScreenTransitioning true
          Screen.IncomingFinishEvent => ScreenTransitioning false
@@ -94,10 +94,10 @@ type FieldDispatcher () =
             // update field
             Field.update field world
 
-        | TimeUpdate ->
+        | AdvanceTime ->
 
             // update field time
-            Field.updateFieldTime field
+            Field.advanceTime field
 
         | UpdateFieldTransition ->
 
@@ -771,7 +771,7 @@ type FieldDispatcher () =
                     screen.SetField field world
 
         | UpdateEye ->
-            if world.Advancing then
+            if world.TimeAdvancing then
                 World.setEye2dCenter field.Avatar.Perimeter.LowerCenter.V2 world
                 let tileMapPerimeter2d = (Simulants.FieldTileMap.GetPerimeter world).Box2
                 let eyeBounds = tileMapPerimeter2d.WithMin (tileMapPerimeter2d.Min + v2 48.0f 48.0f)

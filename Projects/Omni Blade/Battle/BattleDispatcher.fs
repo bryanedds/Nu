@@ -38,7 +38,7 @@ type BattleDispatcher () =
         [Screen.UpdateEvent => Update
          Screen.DeselectingEvent => Conclude
          Screen.PostUpdateEvent => UpdateEye
-         Screen.TimeUpdateEvent => TimeUpdate
+         Screen.TimeAdvanceEvent => AdvanceTime
          Simulants.BattleRide.EffectTagTokens.ChangeEvent =|> fun evt -> UpdateRideTokens (evt.Data.Value :?> Map<string, Effects.Slice>)]
 
     override this.Message (battle, message, _, world) =
@@ -58,8 +58,8 @@ type BattleDispatcher () =
                 | None -> just battle
             | None -> just battle
 
-        | TimeUpdate ->
-            Battle.updateBattleTime battle
+        | AdvanceTime ->
+            Battle.advanceTime battle
 
         | InteractDialog ->
             match battle.DialogOpt with

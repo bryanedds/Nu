@@ -11,7 +11,7 @@ open BattleInteractionSystem
 type BattleMessage =
     | Update
     | UpdateRideTokens of Map<string, Effects.Slice>
-    | TimeUpdate
+    | AdvanceTime
     | InteractDialog
     | Retry
     | RegularItemSelect of CharacterIndex * string
@@ -2154,7 +2154,7 @@ module Battle =
         // fin
         (signals, battle)
 
-    let updateBattleTime field =
+    let advanceTime field =
         let field = { field with BattleTime_ = inc field.BattleTime_ }
         just field
 

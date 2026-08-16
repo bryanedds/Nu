@@ -12,7 +12,7 @@ open CueSystem
 type FieldMessage =
     | Update
     | UpdateFieldTransition
-    | TimeUpdate
+    | AdvanceTime
     | UpdateAvatarBodyTracking
     | AvatarBodyTransform of BodyTransformData
     | AvatarBodyPenetration of BodyPenetrationData
@@ -1316,7 +1316,7 @@ module Field =
         // fin
         | _ -> just field
 
-    let updateFieldTime field =
+    let advanceTime field =
         let field = { field with FieldTime_ = inc field.FieldTime_ }
         just field
 
