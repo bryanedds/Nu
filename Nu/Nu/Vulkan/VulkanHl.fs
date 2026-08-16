@@ -113,21 +113,17 @@ type ImageFormat =
 /// The pixel format of an image.
 type PixelFormat =
     | Rgba
-    | Bgra
     | Rgb
     | Rg
     | Red
+    | Bgra
     | Depth
 
     /// The VkComponentSwizzles of a PixelFormat.
     member this.VkComponentSwizzles =
         match this with
-        | Rgba -> (VkComponentSwizzle.R, VkComponentSwizzle.G, VkComponentSwizzle.B, VkComponentSwizzle.A)
-        | Bgra -> (VkComponentSwizzle.B, VkComponentSwizzle.G, VkComponentSwizzle.R, VkComponentSwizzle.A)
-        | Rgb -> (VkComponentSwizzle.R, VkComponentSwizzle.G, VkComponentSwizzle.B, VkComponentSwizzle.A)
-        | Rg -> (VkComponentSwizzle.R, VkComponentSwizzle.G, VkComponentSwizzle.B, VkComponentSwizzle.A)
-        | Red -> (VkComponentSwizzle.R, VkComponentSwizzle.G, VkComponentSwizzle.B, VkComponentSwizzle.A)
-        | Depth -> (VkComponentSwizzle.R, VkComponentSwizzle.G, VkComponentSwizzle.B, VkComponentSwizzle.A) // doesn't matter
+        | Rgba | Rgb | Rg | Red | Depth -> struct (VkComponentSwizzle.R, VkComponentSwizzle.G, VkComponentSwizzle.B, VkComponentSwizzle.A)
+        | Bgra -> struct (VkComponentSwizzle.B, VkComponentSwizzle.G, VkComponentSwizzle.R, VkComponentSwizzle.A)
 
 /// An image layout in its access and pipeline stage context.
 type ImageLayout =
@@ -461,7 +457,7 @@ module Hl =
 
     /// Make a VkComponentMapping.
     let makeComponentMapping (pixelFormat : PixelFormat) =
-        let (r, g, b, a) = pixelFormat.VkComponentSwizzles
+        let struct (r, g, b, a) = pixelFormat.VkComponentSwizzles
         let mutable componentMapping = VkComponentMapping ()
         componentMapping.r <- r
         componentMapping.g <- g
