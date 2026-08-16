@@ -641,6 +641,7 @@ module Hl =
             windowPointer <> 0n
         else true // will presumably never be blocked on other platforms
 
+    /// Attempt to create a Vulkan surface, returning the resulting SurfaceState.
     let tryCreateVulkanSurface window instance =
 
         // attempt to recreate surface if destroyed
@@ -670,6 +671,7 @@ module Hl =
         // fin
         SurfaceState
 
+    /// Create a Vulkan surface, waiting for app to enter foreground when necessary.
     let createVulkanSurface window instance =
     
         // wait for app to enter foreground if not already
@@ -677,11 +679,13 @@ module Hl =
             Thread.Yield () |> ignore<bool>
 
         // attempt to recreate vulkan surface
-        // cannot tolerate failure as this function is intended to guarantee surface creation, otherwise must set up
-        // a retry mechanism
+        // NOTE: failure cannot be tolerated as this function is intended to guarantee surface creation, otherwise must
+        // set up a retry mechanism
         if (tryCreateVulkanSurface window instance).IsSurfaceDestroyed then
             Log.fail "Vulkan surface creation failed."
 
+    /// Destroy any existing Vulkan surface, and upon success, inform the backgrounding callback that the required
+    /// teardown of presentation is complete.
     let destroyVulkanSurface () =
         match SurfaceState with
         | SurfaceReady
@@ -865,7 +869,7 @@ module Hl =
         DeviceApi.vkBeginCommandBuffer (commandBuffer, &&cbInfo) |> check
         commandBuffer
 
-    ///
+    /// Find a suitable memory type for a buffer or image.
     let findMemoryType typeFilter properties physicalDevice =
 
         // get memory types
