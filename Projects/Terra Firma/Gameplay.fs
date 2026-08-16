@@ -42,15 +42,18 @@ type GameplayDispatcher () =
                 Simulants.Gameplay.SetGameplayState Playing world
                 Simulants.Gameplay.SetScore 0 world
 
-            // begin scene declaration, processing nav sync at end of frame since optimized representations like
-            // frozen entities won't have their nav info registered until then
+            // begin scene declaration
             let sceneGroupFilePath = "Assets/Gameplay/Scene.nugroup"
-            let sceneNavFilePath = PathF.ChangeExtension (sceneGroupFilePath, ".nav")
             World.beginGroupFromFile Simulants.GameplayScene.Name sceneGroupFilePath [] world
-            if selecting then World.defer (World.synchronizeNav3d false (Some sceneNavFilePath) screen) screen world
 
-            // set player to protected to prevent accidental deletion in Gaia
-            World.doEntity<PlayerDispatcher> Simulants.GameplayPlayer.Name [Entity.Protection .= ManualProtection] world
+            // process nav sync at end of selection frame since optimized scene entities (like frozen entities) won't
+            // have their nav info registered until then
+            if selecting then
+                let sceneNavFilePath = PathF.ChangeExtension (sceneGroupFilePath, ".nav")
+                World.defer (World.synchronizeNav3d false (Some sceneNavFilePath) screen) screen world
+
+            // protect player from accidental deletion in Gaia
+            Simulants.GameplayPlayer.SetProtection ManualProtection world
 
             // collect characters for processing
             let characters = World.getEntitiesAs<CharacterDispatcher> Simulants.GameplayScene world
@@ -85,8 +88,8 @@ type GameplayDispatcher () =
                     | Player ->
                         screen.SetGameplayState Quit world
 
-            // update eye to look at player while game is advancing
-            if world.Advancing then
+            // update eye to look at player while game time is advancing
+            if world.TimeAdvancing then
                 let position = Simulants.GameplayPlayer.GetPositionInterpolated world
                 let rotation = Simulants.GameplayPlayer.GetRotationInterpolated world * Quaternion.CreateFromAxisAngle (v3Right, -0.1f)
                 World.setEye3dCenter (position + v3Up * 1.75f - rotation.Forward * 3.0f) world
@@ -98,7 +101,7 @@ type GameplayDispatcher () =
 
             // declare pause button
             if World.doButton "Pause" [Entity.Position .= v3 232.0f -104.0f 0.0f; Entity.Elevation .= 10.0f; Entity.Text .= "Pause"] world then
-                World.setAdvancing (not world.Advancing) world
+                World.setTimeAdvancing (not world.TimeAdvancing) world
 
             // declare quit button
             if World.doButton "Quit" [Entity.Position .= v3 232.0f -144.0f 0.0f; Entity.Elevation .= 10.0f; Entity.Text .= "Quit"] world then
@@ -106,7 +109,7 @@ type GameplayDispatcher () =
 
             // ensure game is unpaused when quitting
             if screen.GetGameplayState world = Quit then
-                World.setAdvancing true world
+                World.setTimeAdvancing true world
 
             // end scene declaration
             World.endGroup world

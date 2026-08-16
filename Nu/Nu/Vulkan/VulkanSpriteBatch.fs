@@ -175,7 +175,7 @@ module SpriteBatch =
                         Pipeline.writeDescriptorSampler 0 0 sampler vkSet
 
                     // set up render
-                    Hl.withRenderingInfo [|env.VulkanContext.SwapchainImageView|] None renderArea None $ fun renderingInfo ->
+                    Hl.withRenderingInfo [|env.VulkanContext.SwapchainImageView|] None renderArea LoadAttachments $ fun renderingInfo ->
                         let mutable renderingInfo = renderingInfo
                         DeviceApi.vkCmdBeginRendering (env.VulkanContext.RenderCommandBuffer, &&renderingInfo)
                     DeviceApi.vkCmdSetViewport (env.VulkanContext.RenderCommandBuffer, 0u, 1u, &&vkViewport)

@@ -154,14 +154,14 @@ module WorldModule =
 
         static member internal mapAmbientState mapper (world : World) =
             world.WorldState <- { world.WorldState with AmbientState = mapper world.AmbientState }
+            
+        /// Check that world time is advancing (not halted).
+        static member getTimeAdvancing (world : World) =
+            world.TimeAdvancing
 
-        /// Check that the update rate is non-zero.
-        static member getAdvancing (world : World) =
-            world.Advancing
-
-        /// Check that the update rate is zero.
-        static member getHalted (world : World) =
-            world.Halted
+        /// Check that world time is halted (not advancing).
+        static member getTimeHalted (world : World) =
+            world.TimeHalted
 
         /// Set whether the world's frame rate is being explicitly paced based on clock progression.
         static member setFramePacing clockPacing (world : World) =
@@ -191,8 +191,8 @@ module WorldModule =
         static member getAlive (world : World) =
             AmbientState.getAlive world.AmbientState
 
-        static member internal updateTime world =
-            World.mapAmbientState AmbientState.updateTime world
+        static member internal processTime world =
+            World.mapAmbientState AmbientState.processTime world
 
         /// Get the number of updates that have transpired between this and the previous frame.
         static member getUpdateDelta world =
@@ -433,19 +433,19 @@ module WorldModule =
                 let context = world.ContextImSim
                 if context.Names.Length > 0 then
                     let declared = world.DeclaredImSim
-                    let advancing = world.Advancing
-                    let advancementCleared = world.AdvancementCleared
+                    let timeAdvancing = world.TimeAdvancing
+                    let timeAdvancementCleared = world.TimeAdvancementCleared
                     let updateDelta = world.UpdateDelta
                     let clockDelta = world.ClockDelta
                     let tickDelta = world.TickDelta
                     fun (world : World) ->
                         let context' = world.ContextImSim
                         let declared' = world.DeclaredImSim
-                        World.mapAmbientState AmbientState.clearAdvancement world
+                        World.mapAmbientState AmbientState.clearTimeAdvancement world
                         World.setContextAndDeclared context declared world
                         operation world
                         World.setContextAndDeclared context' declared' world
-                        World.mapAmbientState (AmbientState.restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta) world
+                        World.mapAmbientState (AmbientState.restoreTimeAdvancement timeAdvancing timeAdvancementCleared updateDelta clockDelta tickDelta) world
                 else operation
 
             // add tasklet
@@ -457,7 +457,7 @@ module WorldModule =
         /// When called in an ImSim Process context, will provide the ImSim simulant context and declared values from
         /// World that were active in that Process context as well as time and advancement state.
         static member defer operation (simulant : Simulant) (world : World) =
-            let time = if WorldModuleInternal.EndFrameProcessingStarted && world.Advancing then GameTime.epsilon else GameTime.zero
+            let time = if WorldModuleInternal.EndFrameProcessingStarted && world.TimeAdvancing then GameTime.epsilon else GameTime.zero
             World.schedule time operation simulant world
 
         /// Attempt to get the window flags.

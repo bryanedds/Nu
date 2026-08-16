@@ -559,11 +559,11 @@ module Stream =
     /// Identity for streams.
     let [<DebuggerHidden; DebuggerStepThrough>] id (stream : _ Stream) = stream
 
-    /// Take events from a stream only when World.getAdvancing evaluates to true.
-    let [<DebuggerHidden; DebuggerStepThrough>] whenAdvancing stream = filterPlus (fun _ -> World.getAdvancing) stream
+    /// Take events from a stream only when World.getTimeAdvancing evaluates to true.
+    let [<DebuggerHidden; DebuggerStepThrough>] whenTimeAdvancing stream = filterPlus (fun _ -> World.getTimeAdvancing) stream
 
-    /// Take events from a stream only when World.getHalted evaluates to true.
-    let [<DebuggerHidden; DebuggerStepThrough>] whenHalted stream = filterPlus (fun _ -> World.getHalted) stream
+    /// Take events from a stream only when World.getTimeHalted evaluates to true.
+    let [<DebuggerHidden; DebuggerStepThrough>] whenTimeHalted stream = filterPlus (fun _ -> World.getTimeHalted) stream
 
     /// Take events from a stream only when the simulant is contained by, or is the same as,
     /// the currently selected screen. Game is always considered 'selected' as well.

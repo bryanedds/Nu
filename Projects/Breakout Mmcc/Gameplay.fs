@@ -172,7 +172,7 @@ type GameplayMessage =
     | StartPlaying
     | FinishQuitting
     | Update
-    | TimeUpdate
+    | AdvanceTime
     interface Message
 
 // this is our gameplay MMCC command type.
@@ -204,7 +204,7 @@ type GameplayDispatcher () =
         [Screen.SelectEvent => StartPlaying
          Screen.DeselectingEvent => FinishQuitting
          Screen.UpdateEvent => Update
-         Screen.TimeUpdateEvent => TimeUpdate]
+         Screen.TimeAdvanceEvent => AdvanceTime]
 
     // here we handle the above messages
     override this.Message (gameplay, message, _, world) =
@@ -222,7 +222,7 @@ type GameplayDispatcher () =
             let gameplay = Gameplay.update gameplay world
             just gameplay
 
-        | TimeUpdate ->
+        | AdvanceTime ->
             let gameDelta = world.GameDelta
             let gameplay = { gameplay with GameplayTime = gameplay.GameplayTime + gameDelta.Updates }
             just gameplay

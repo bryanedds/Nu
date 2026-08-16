@@ -24,6 +24,12 @@ open Vortice.Vulkan
 open Prime
 open Nu
 
+/// The load operation for render pass attachments.
+type LoadOperation =
+    | LoadAttachments
+    | DontCareAttachments
+    | ClearAttachments of Color
+
 /// The format of an image.
 type ImageFormat =
     | Rgba8
@@ -113,21 +119,17 @@ type ImageFormat =
 /// The pixel format of an image.
 type PixelFormat =
     | Rgba
-    | Bgra
     | Rgb
     | Rg
     | Red
+    | Bgra
     | Depth
 
     /// The VkComponentSwizzles of a PixelFormat.
     member this.VkComponentSwizzles =
         match this with
-        | Rgba -> (VkComponentSwizzle.R, VkComponentSwizzle.G, VkComponentSwizzle.B, VkComponentSwizzle.A)
-        | Bgra -> (VkComponentSwizzle.B, VkComponentSwizzle.G, VkComponentSwizzle.R, VkComponentSwizzle.A)
-        | Rgb -> (VkComponentSwizzle.R, VkComponentSwizzle.G, VkComponentSwizzle.B, VkComponentSwizzle.A)
-        | Rg -> (VkComponentSwizzle.R, VkComponentSwizzle.G, VkComponentSwizzle.B, VkComponentSwizzle.A)
-        | Red -> (VkComponentSwizzle.R, VkComponentSwizzle.G, VkComponentSwizzle.B, VkComponentSwizzle.A)
-        | Depth -> (VkComponentSwizzle.R, VkComponentSwizzle.G, VkComponentSwizzle.B, VkComponentSwizzle.A) // doesn't matter
+        | Rgba | Rgb | Rg | Red | Depth -> struct (VkComponentSwizzle.R, VkComponentSwizzle.G, VkComponentSwizzle.B, VkComponentSwizzle.A)
+        | Bgra -> struct (VkComponentSwizzle.B, VkComponentSwizzle.G, VkComponentSwizzle.R, VkComponentSwizzle.A)
 
 /// An image layout in its access and pipeline stage context.
 type ImageLayout =
@@ -166,10 +168,6 @@ type ImageLayout =
 
     /// The pipeline stage.
     member this.PipelineStage =
-            
-        // NOTE: for Undefined as image layout transition source, texture upload and mipmap generation previously used
-        // VK_PIPELINE_STAGE_HOST_BIT. DJL can't remember why, but it's not in the tutorial and apparently may lead to
-        // failure on Android devices. DJL suspects it was inherited from ImGui backend.
         match this with
         | Undefined -> VkPipelineStageFlags.TopOfPipe
         | TransferSrc -> VkPipelineStageFlags.Transfer
@@ -292,20 +290,23 @@ type internal BackgroundingResponseState =
 [<AutoOpen>]
 module Vulkan =
 
-    let mutable internal VkInstanceApi = Unchecked.defaultof<VkInstanceApi>
-    let mutable internal VkDeviceApi = Unchecked.defaultof<VkDeviceApi>
+    /// Internal vulkan instance API reference; for internal use only.
+    let mutable internal InstanceApi_ = Unchecked.defaultof<VkInstanceApi>
+
+    /// Internal vulkan device API reference; for internal use only.
+    let mutable internal DeviceApi_ = Unchecked.defaultof<VkDeviceApi>
 
     /// Set a VkInstanceApi value. Under normal operation, this can never be null.
-    let internal SetInstanceApi vkInstanceApi = VkInstanceApi <- vkInstanceApi
+    let internal SetInstanceApi vkInstanceApi = InstanceApi_ <- vkInstanceApi
 
     /// Set a VkDeviceApi value. Under normal operation, this can never be null.
-    let internal SetDeviceApi vkDeviceApi = VkDeviceApi <- vkDeviceApi
+    let internal SetDeviceApi vkDeviceApi = DeviceApi_ <- vkDeviceApi
 
     /// The Vulkan instance API. Ignore the type parameter as it's only use to expose InstanceApi in a convenient way.
-    let inline internal InstanceApi<'a> = VkInstanceApi
+    let inline internal InstanceApi<'a> = InstanceApi_
 
     /// The Vulkan device API. Ignore the type parameter as it's only use to expose InstanceApi in a convenient way.
-    let inline internal DeviceApi<'a> = VkDeviceApi
+    let inline internal DeviceApi<'a> = DeviceApi_
 
 [<RequireQualifiedAccess>]
 module Hl =
@@ -465,7 +466,7 @@ module Hl =
 
     /// Make a VkComponentMapping.
     let makeComponentMapping (pixelFormat : PixelFormat) =
-        let (r, g, b, a) = pixelFormat.VkComponentSwizzles
+        let struct (r, g, b, a) = pixelFormat.VkComponentSwizzles
         let mutable componentMapping = VkComponentMapping ()
         componentMapping.r <- r
         componentMapping.g <- g
@@ -571,7 +572,7 @@ module Hl =
         blit
         
     /// Make a VkRenderingInfo and utilize within the given scope for memory safety.
-    let withRenderingInfo (colorAttachments : VkImageView array) depthAttachmentOpt renderArea clearValueOpt action =
+    let withRenderingInfo (colorAttachments : VkImageView array) depthAttachmentOpt renderArea loadOperation action =
         
         // color attachment infos
         let colorInfos = Array.zeroCreate colorAttachments.Length
@@ -580,12 +581,14 @@ module Hl =
             colorInfo.imageView <- colorAttachments[i]
             colorInfo.imageLayout <- ColorAttachmentWrite.VkImageLayout
             colorInfo.storeOp <- VkAttachmentStoreOp.Store
-            match clearValueOpt with
-            | Some clearValue ->
-                colorInfo.loadOp <- VkAttachmentLoadOp.Clear
-                colorInfo.clearValue <- clearValue
-            | None ->
+            match loadOperation with
+            | LoadAttachments ->
                 colorInfo.loadOp <- VkAttachmentLoadOp.Load
+            | DontCareAttachments ->
+                colorInfo.loadOp <- VkAttachmentLoadOp.DontCare
+            | ClearAttachments color ->
+                colorInfo.loadOp <- VkAttachmentLoadOp.Clear
+                colorInfo.clearValue <- VkClearValue (r = color.R, g = color.G, b = color.B, a = color.A)
             colorInfos[i] <- colorInfo
         use colorInfosPin = new ArrayPin<_> (colorInfos)
 
@@ -596,12 +599,14 @@ module Hl =
             depthInfo.imageView <- depthAttachment
             depthInfo.imageLayout <- DepthAttachmentWrite.VkImageLayout
             depthInfo.storeOp <- VkAttachmentStoreOp.Store
-            match clearValueOpt with
-            | Some _ ->
+            match loadOperation with
+            | LoadAttachments ->
+                depthInfo.loadOp <- VkAttachmentLoadOp.Load
+            | DontCareAttachments ->
+                depthInfo.loadOp <- VkAttachmentLoadOp.DontCare
+            | ClearAttachments _ ->
                 depthInfo.loadOp <- VkAttachmentLoadOp.Clear
                 depthInfo.clearValue <- VkClearValue (1.0f, 0u)
-            | None ->
-                depthInfo.loadOp <- VkAttachmentLoadOp.Load
         | None -> ()
 
         // rendering info
@@ -646,6 +651,7 @@ module Hl =
             windowPointer <> 0n
         else true // will presumably never be blocked on other platforms
 
+    /// Attempt to create a Vulkan surface, returning the resulting SurfaceState.
     let tryCreateVulkanSurface window instance =
 
         // attempt to recreate surface if destroyed
@@ -675,6 +681,7 @@ module Hl =
         // fin
         SurfaceState
 
+    /// Create a Vulkan surface, waiting for app to enter foreground when necessary.
     let createVulkanSurface window instance =
     
         // wait for app to enter foreground if not already
@@ -682,11 +689,13 @@ module Hl =
             Thread.Yield () |> ignore<bool>
 
         // attempt to recreate vulkan surface
-        // cannot tolerate failure as this function is intended to guarantee surface creation, otherwise must set up
-        // a retry mechanism
+        // NOTE: failure cannot be tolerated as this function is intended to guarantee surface creation, otherwise must
+        // set up a retry mechanism
         if (tryCreateVulkanSurface window instance).IsSurfaceDestroyed then
             Log.fail "Vulkan surface creation failed."
 
+    /// Destroy any existing Vulkan surface, and upon success, inform the backgrounding callback that the required
+    /// teardown of presentation is complete.
     let destroyVulkanSurface () =
         match SurfaceState with
         | SurfaceReady
@@ -870,7 +879,7 @@ module Hl =
         DeviceApi.vkBeginCommandBuffer (commandBuffer, &&cbInfo) |> check
         commandBuffer
 
-    ///
+    /// Find a suitable memory type for a buffer or image.
     let findMemoryType typeFilter properties physicalDevice =
 
         // get memory types

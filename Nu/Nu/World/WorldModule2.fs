@@ -45,10 +45,14 @@ module internal WorldModuleInternal2 =
 module WorldModule2 =
 
     type World with
-
-        /// Set whether the world state is advancing.
-        static member setAdvancing advancing (world : World) =
-            World.mapAmbientState (AmbientState.setAdvancing advancing) world
+    
+        /// Set whether world time is advancing (not halted).
+        static member setTimeAdvancing advancing (world : World) =
+            World.mapAmbientState (AmbientState.setTimeAdvancing advancing) world
+    
+        /// Set whether world time is halted (not advancing).
+        static member setTimeHalted halted (world : World) =
+            World.mapAmbientState (AmbientState.setTimeAdvancing (not halted)) world
 
         /// Select the given screen without transitioning, even if another transition is taking place.
         static member internal selectScreenOpt transitionStateAndScreenOpt world =
@@ -177,7 +181,7 @@ module WorldModule2 =
 
         static member internal updateScreenIdling transitionTime (selectedScreen : Screen) (world : World) =
             if world.Alive then
-                if world.Accompanied && world.Halted && not world.AdvancementCleared then // special case to play song when halted in editor
+                if world.Accompanied && world.TimeHalted && not world.TimeAdvancementCleared then // special case to play song when time halted in editor
                     match (selectedScreen.GetIncoming world).SongOpt with
                     | Some playSong ->
                         match World.getSongOpt world with
@@ -363,7 +367,7 @@ module WorldModule2 =
             if screenCreation && screen.GetExists world then
                 WorldModuleInternal.tryProcessScreen true screen world
             if screen.GetExists world && select && not (Option.contains screen (World.getSelectedScreenOpt world)) then
-                if world.Accompanied && world.Halted && not world.AdvancementCleared then // special case to quick cut when halted in the editor
+                if world.Accompanied && world.TimeHalted && not world.TimeAdvancementCleared then // special case to quick cut when time halted in the editor
                     World.defer (fun world ->
                         let transitionTime = world.GameTime
                         World.selectScreen (IdlingState transitionTime) screen world
@@ -965,7 +969,7 @@ module WorldModule2 =
             | None -> ()
 
         static member private processCoroutines (world : World) =
-            if world.Advancing then
+            if world.TimeAdvancing then
                 let coroutines = World.getCoroutines world
                 let coroutinesRemaining =
                     OMap.fold (fun coroutines id (scheduledTime, pred, coroutine) ->
@@ -1388,21 +1392,21 @@ module WorldModule2 =
             // gather simulants
             world.Timers.PreUpdateGatherTimer.Restart ()
             let game = Nu.Game.Handle
-            let advancing = world.Advancing
+            let timeAdvancing = world.TimeAdvancing
             let screenOpt = World.getSelectedScreenOpt world
             let groups = match screenOpt with Some screen -> World.getGroups screen world | None -> Seq.empty
             world.Timers.PreUpdateGatherTimer.Stop ()
 
             // pre-update game
             world.Timers.PreUpdateGameTimer.Restart ()
-            if advancing then World.preUpdateGame game world
+            if timeAdvancing then World.preUpdateGame game world
             world.Timers.PreUpdateGameTimer.Stop ()
 
             // pre-update screen if any
             world.Timers.PreUpdateScreensTimer.Restart ()
             match screenOpt with
             | Some screen ->
-                if advancing && screen.GetExists world then
+                if timeAdvancing && screen.GetExists world then
                     World.preUpdateScreen screen world
             | None -> ()
             world.Timers.PreUpdateScreensTimer.Stop ()
@@ -1410,7 +1414,7 @@ module WorldModule2 =
             // pre-update groups
             world.Timers.PreUpdateGroupsTimer.Restart ()
             for group in groups do
-                if advancing && group.GetExists world then
+                if timeAdvancing && group.GetExists world then
                     World.preUpdateGroup group world
             world.Timers.PreUpdateGroupsTimer.Stop ()
 
@@ -1422,7 +1426,7 @@ module WorldModule2 =
                 // gather simulants
                 world.Timers.UpdateGatherTimer.Restart ()
                 let game = Nu.Game.Handle
-                let advancing = world.Advancing
+                let timeAdvancing = world.TimeAdvancing
                 let screens = World.getScreens world
                 let selectedScreenOpt = World.getSelectedScreenOpt world
                 let groups = World.getGroups1 world
@@ -1433,21 +1437,21 @@ module WorldModule2 =
                 // update game
                 world.Timers.UpdateGameTimer.Restart ()
                 World.tryProcessGame false game world
-                if advancing then World.updateGame game world
+                if timeAdvancing then World.updateGame game world
                 world.Timers.UpdateGameTimer.Stop ()
 
                 // process screens
                 world.Timers.UpdateScreensTimer.Restart ()
                 for screen in screens do
                     if screen.GetExists world then World.tryProcessScreen false screen world
-                    if advancing && screen.GetExists world && Option.contains screen selectedScreenOpt then World.updateScreen screen world
+                    if timeAdvancing && screen.GetExists world && Option.contains screen selectedScreenOpt then World.updateScreen screen world
                 world.Timers.UpdateScreensTimer.Stop ()
 
                 // update groups
                 world.Timers.UpdateGroupsTimer.Restart ()
                 for group in groups do
                     if group.GetExists world then World.tryProcessGroup false group world
-                    if advancing && Option.contains group.Screen selectedScreenOpt && group.GetExists world then World.updateGroup group world
+                    if timeAdvancing && Option.contains group.Screen selectedScreenOpt && group.GetExists world then World.updateGroup group world
                 world.Timers.UpdateGroupsTimer.Stop ()
 
                 // update entities
@@ -1455,12 +1459,12 @@ module WorldModule2 =
                 for element in WorldModuleInternal2.HashSet3dNormalCached do
                     if element.Entry.GetExists world then
                         World.tryProcessEntity false element.Entry world
-                    if element.Entry.GetExists world && (advancing && not (element.Entry.GetStatic world) || element.Entry.GetAlwaysUpdate world) then
+                    if element.Entry.GetExists world && (timeAdvancing && not (element.Entry.GetStatic world) || element.Entry.GetAlwaysUpdate world) then
                         World.updateEntity element.Entry world
                 for element in WorldModuleInternal2.HashSet2dNormalCached do
                     if element.Entry.GetExists world then
                         World.tryProcessEntity false element.Entry world
-                    if element.Entry.GetExists world && (advancing && not (element.Entry.GetStatic world) || element.Entry.GetAlwaysUpdate world) then
+                    if element.Entry.GetExists world && (timeAdvancing && not (element.Entry.GetStatic world) || element.Entry.GetAlwaysUpdate world) then
                         World.updateEntity element.Entry world
                 world.Timers.UpdateEntitiesTimer.Stop ()
 
@@ -1474,27 +1478,27 @@ module WorldModule2 =
             // gather simulants
             world.Timers.PostUpdateGatherTimer.Restart ()
             let game = Nu.Game.Handle
-            let advancing = world.Advancing
+            let timeAdvancing = world.TimeAdvancing
             let screenOpt = World.getSelectedScreenOpt world
             let groups = match screenOpt with Some screen -> World.getGroups screen world | None -> []
             world.Timers.PostUpdateGatherTimer.Stop ()
 
             // post-update game
             world.Timers.PostUpdateGameTimer.Restart ()
-            if advancing then World.postUpdateGame game world
+            if timeAdvancing then World.postUpdateGame game world
             world.Timers.PostUpdateGameTimer.Stop ()
 
             // post-update screen if any
             world.Timers.PostUpdateScreensTimer.Restart ()
             match screenOpt with
-            | Some screen -> if advancing && screen.GetExists world then World.postUpdateScreen screen world
+            | Some screen -> if timeAdvancing && screen.GetExists world then World.postUpdateScreen screen world
             | None -> ()
             world.Timers.PostUpdateScreensTimer.Stop ()
 
             // post-update groups
             world.Timers.PostUpdateGroupsTimer.Restart ()
             for group in groups do
-                if advancing && group.GetExists world then World.postUpdateGroup group world
+                if timeAdvancing && group.GetExists world then World.postUpdateGroup group world
             world.Timers.PostUpdateGroupsTimer.Stop ()
 
         static member private renderScreenTransition5 transitionTime (eyeSize : Vector2) renderPass transition (world : World) =
@@ -2089,18 +2093,18 @@ module WorldModule2 =
                                                                     | Some firstFrameCallback -> firstFrameCallback ()
                                                                     | None -> ()
 
-                                                                    // update time and recur
+                                                                    // process time and recur
                                                                     world.Timers.FrameTimer.Stop ()
                                                                     WorldModuleInternal.EndFrameProcessingStarted <- false
-                                                                    World.updateTime world
-                                                                    if world.Advancing then
-                                                                        World.publish () (Events.TimeUpdateEvent --> Game) Game world
+                                                                    World.processTime world
+                                                                    if world.TimeAdvancing then
+                                                                        World.publish () (Events.TimeAdvanceEvent --> Game) Game world
                                                                         match World.getSelectedScreenOpt world with
                                                                         | Some selectedScreen ->
-                                                                            World.publish () (Events.TimeUpdateEvent --> selectedScreen) selectedScreen world
+                                                                            World.publish () (Events.TimeAdvanceEvent --> selectedScreen) selectedScreen world
                                                                             for group in World.getGroups selectedScreen world do
                                                                                 if group.GetExists world then
-                                                                                    World.publish () (Events.TimeUpdateEvent --> group) group world
+                                                                                    World.publish () (Events.TimeAdvanceEvent --> group) group world
                                                                         | None -> ()
                                                                     World.runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess None world
 
@@ -2128,14 +2132,14 @@ module EntityDispatcherModule =
             let context = world.ContextImSim
             World.scopeEntity entity [] world
             if zeroDelta then
-                let advancing = world.Advancing
-                let advancementCleared = world.AdvancementCleared
+                let timeAdvancing = world.TimeAdvancing
+                let timeAdvancementCleared = world.TimeAdvancementCleared
                 let updateDelta = world.UpdateDelta
                 let clockDelta = world.ClockDelta
                 let tickDelta = world.TickDelta
-                World.mapAmbientState AmbientState.clearAdvancement world
+                World.mapAmbientState AmbientState.clearTimeAdvancement world
                 this.Process (entity, world)
-                World.mapAmbientState (AmbientState.restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta) world
+                World.mapAmbientState (AmbientState.restoreTimeAdvancement timeAdvancing timeAdvancementCleared updateDelta clockDelta tickDelta) world
             else this.Process (entity, world)
 #if DEBUG
             if world.ContextImSim <> entity.EntityAddress then
@@ -2544,14 +2548,14 @@ module GroupDispatcherModule =
             let context = world.ContextImSim
             World.scopeGroup group [] world
             if zeroDelta then
-                let advancing = world.Advancing
-                let advancementCleared = world.AdvancementCleared
+                let timeAdvancing = world.TimeAdvancing
+                let timeAdvancementCleared = world.TimeAdvancementCleared
                 let updateDelta = world.UpdateDelta
                 let clockDelta = world.ClockDelta
                 let tickDelta = world.TickDelta
-                World.mapAmbientState AmbientState.clearAdvancement world
+                World.mapAmbientState AmbientState.clearTimeAdvancement world
                 this.Process (group, world)
-                World.mapAmbientState (AmbientState.restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta) world
+                World.mapAmbientState (AmbientState.restoreTimeAdvancement timeAdvancing timeAdvancementCleared updateDelta clockDelta tickDelta) world
             else this.Process (group, world)
 #if DEBUG
             if world.ContextImSim <> group.GroupAddress then
@@ -2771,14 +2775,14 @@ module ScreenDispatcherModule =
             World.scopeScreen screen [] world
             let results = World.doSubscriptionToSelectionEvents ScreenDispatcherImSimTryProcessSubscriptionName screen world
             if zeroDelta then
-                let advancing = world.Advancing
-                let advancementCleared = world.AdvancementCleared
+                let timeAdvancing = world.TimeAdvancing
+                let timeAdvancementCleared = world.TimeAdvancementCleared
                 let updateDelta = world.UpdateDelta
                 let clockDelta = world.ClockDelta
                 let tickDelta = world.TickDelta
-                World.mapAmbientState AmbientState.clearAdvancement world
+                World.mapAmbientState AmbientState.clearTimeAdvancement world
                 this.Process (FQueue.ofSeq results, screen, world)
-                World.mapAmbientState (AmbientState.restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta) world
+                World.mapAmbientState (AmbientState.restoreTimeAdvancement timeAdvancing timeAdvancementCleared updateDelta clockDelta tickDelta) world
             else this.Process (FQueue.ofSeq results, screen, world)
 #if DEBUG
             if world.ContextImSim <> screen.ScreenAddress then
@@ -2995,14 +2999,14 @@ module GameDispatcherModule =
             let context = world.ContextImSim
             World.scopeGame [] world
             if zeroDelta then
-                let advancing = world.Advancing
-                let advancementCleared = world.AdvancementCleared
+                let timeAdvancing = world.TimeAdvancing
+                let timeAdvancementCleared = world.TimeAdvancementCleared
                 let updateDelta = world.UpdateDelta
                 let clockDelta = world.ClockDelta
                 let tickDelta = world.TickDelta
-                World.mapAmbientState AmbientState.clearAdvancement world
+                World.mapAmbientState AmbientState.clearTimeAdvancement world
                 this.Process (game, world)
-                World.mapAmbientState (AmbientState.restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta) world
+                World.mapAmbientState (AmbientState.restoreTimeAdvancement timeAdvancing timeAdvancementCleared updateDelta clockDelta tickDelta) world
             else this.Process (game, world)
 #if DEBUG
             if world.ContextImSim <> game.GameAddress then

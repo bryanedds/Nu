@@ -3511,18 +3511,18 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let mutable committed = 0
         let mutable uniformsDescriptorSet = Unchecked.defaultof<_>
         let beginBatch = fun clear ->
-            let clearColorValueOpt =
+            let loadOperation =
                 if clear then
                     match lightType with
                     | PointLight | CascadedLight ->
-                        Some (VkClearValue (lightCutoff, 0.0f, 0.0f, 0.0f)) // TODO: make derived from constant.
+                        ClearAttachments (Color (lightCutoff, 0.0f, 0.0f, 0.0f)) // TODO: make derived from constant.
                     | SpotLight _ | DirectionalLight _ ->
-                        Some (VkClearValue (1.0f, Single.MaxValue, 0.0f, 0.0f)) // TODO: make derived from constant.
-                else None
+                        ClearAttachments (Color (1.0f, Single.MaxValue, 0.0f, 0.0f)) // TODO: make derived from constant.
+                else LoadAttachments
             uniformsDescriptorSet <-
                 VulkanRenderer3d.beginPhysicallyBasedShadowSurfaces
                     lightType.ShadowsUseCubeMap lightOrigin lightView lightProjection renderer.LightingConfig.LightShadowExponent
-                    clearColorValueOpt colorAttachment depthAttachment resolution renderer.RenderPassIndex shadowStaticPipeline renderer
+                    loadOperation colorAttachment depthAttachment resolution renderer.RenderPassIndex shadowStaticPipeline renderer
         let endBatch = fun () -> VulkanRenderer3d.endPhysicallyBasedShadowSurfaces shadowStaticPipeline renderer.VulkanContext
         let advanceBatch = fun instances ->
             counted <- counted + instances
@@ -3560,7 +3560,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let uniformsDescriptorSet =
             VulkanRenderer3d.beginPhysicallyBasedShadowSurfaces
                 lightType.ShadowsUseCubeMap lightOrigin lightView lightProjection renderer.LightingConfig.LightShadowExponent
-                None colorAttachment depthAttachment resolution renderer.RenderPassIndex shadowAnimatedPipeline renderer
+                LoadAttachments colorAttachment depthAttachment resolution renderer.RenderPassIndex shadowAnimatedPipeline renderer
 
         // deferred render animated surface shadows
         for entry in renderTasks.DeferredAnimated do
@@ -3589,7 +3589,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             uniformsDescriptorSet <-
                 VulkanRenderer3d.beginPhysicallyBasedShadowSurfaces
                     lightType.ShadowsUseCubeMap lightOrigin lightView lightProjection renderer.LightingConfig.LightShadowExponent
-                    None colorAttachment depthAttachment resolution renderer.RenderPassIndex forwardPipeline renderer
+                    LoadAttachments colorAttachment depthAttachment resolution renderer.RenderPassIndex forwardPipeline renderer
         let endBatch = fun () -> VulkanRenderer3d.endPhysicallyBasedShadowSurfaces forwardPipeline renderer.VulkanContext
         let checkBatch = fun forwardPipeline' ->
             if refNeq forwardPipeline forwardPipeline' then
@@ -4173,7 +4173,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // clear geometry textures
         let geometryResolution = renderer.GeometryViewport.Bounds.Size
         let renderArea = VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)
-        let clearColor = VkClearValue (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
         let (depthTexture, albedoTexture, materialTexture, normalPlusTexture, subdermalPlusTexture, scatterPlusTexture, clearCoatPlusTexture, zTexture) = renderer.PhysicallyBasedAttachments.GeometryAttachments
         Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite depthTexture renderer.VulkanContext.RenderCommandBuffer
         Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite albedoTexture renderer.VulkanContext.RenderCommandBuffer
@@ -4184,7 +4183,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite clearCoatPlusTexture renderer.VulkanContext.RenderCommandBuffer
         Texture.recordTransitionLayout DepthAttachmentRead DepthAttachmentWrite zTexture renderer.VulkanContext.RenderCommandBuffer
         let geometryTextureViews = [|depthTexture.ImageView; albedoTexture.ImageView; materialTexture.ImageView; normalPlusTexture.ImageView; subdermalPlusTexture.ImageView; scatterPlusTexture.ImageView; clearCoatPlusTexture.ImageView|]
-        Hl.withRenderingInfo geometryTextureViews (Some zTexture.ImageView) renderArea (Some clearColor) $ fun renderingInfo ->
+        Hl.withRenderingInfo geometryTextureViews (Some zTexture.ImageView) renderArea (ClearAttachments Constants.Render.ViewportClearColor) $ fun renderingInfo ->
             let mutable renderingInfo = renderingInfo
             DeviceApi.vkCmdBeginRendering (renderer.VulkanContext.RenderCommandBuffer, &&renderingInfo)
         DeviceApi.vkCmdEndRendering renderer.VulkanContext.RenderCommandBuffer
