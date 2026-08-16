@@ -352,7 +352,7 @@ type [<ReferenceEquality>] 'w Tasklet =
 type [<ReferenceEquality>] WorldConfig =
     { Imperative : bool
       Accompanied : bool
-      Advancing : bool
+      TimeAdvancing : bool
       FramePacing : bool
       ModeOpt : string option
       SdlConfig : SdlConfig }
@@ -365,7 +365,7 @@ type [<ReferenceEquality>] WorldConfig =
     static member val defaultConfig =
         { Imperative = true
           Accompanied = false
-          Advancing = true
+          TimeAdvancing = true
           FramePacing = false
           ModeOpt = None
           SdlConfig = SdlConfig.defaultConfig }
@@ -500,9 +500,9 @@ module internal AmbientState =
     let internal getAlive state =
         state.Alive
 
-    let internal setTimeAdvancing advancing (state : _ AmbientState) =
-        if advancing <> state.TimeAdvancing then
-            let state = { state with Flags = if advancing then state.Flags ||| TimeResumptionRequestedMask else state.Flags ||| TimeHaltRequestedMask }
+    let internal setTimeAdvancing timeAdvancing (state : _ AmbientState) =
+        if timeAdvancing <> state.TimeAdvancing then
+            let state = { state with Flags = if timeAdvancing then state.Flags ||| TimeResumptionRequestedMask else state.Flags ||| TimeHaltRequestedMask }
             if state.TimeResumptionRequested && state.TimeHaltedRequested then Log.warn "TimeResumption and TimeHalt both requested in the same frame, but these will resolve in a predefined order."
             state
         else state
@@ -520,10 +520,10 @@ module internal AmbientState =
             ClockDelta = 0.0f
             TickDelta = 0L }
 
-    let internal restoreTimeAdvancement advancing advancementCleared updateDelta clockDelta tickDelta (state : _ AmbientState) =
+    let internal restoreTimeAdvancement timeAdvancing timeAdvancementCleared updateDelta clockDelta tickDelta (state : _ AmbientState) =
         let flags = state.Flags
-        let flags = if advancing then flags ||| TimeAdvancingMask else flags &&& ~~~TimeAdvancingMask
-        let flags = if advancementCleared then flags ||| TimeAdvancementClearedMask else flags &&& ~~~TimeAdvancementClearedMask
+        let flags = if timeAdvancing then flags ||| TimeAdvancingMask else flags &&& ~~~TimeAdvancingMask
+        let flags = if timeAdvancementCleared then flags ||| TimeAdvancementClearedMask else flags &&& ~~~TimeAdvancementClearedMask
         { state with
             Flags = flags
             UpdateDelta = updateDelta

@@ -1390,7 +1390,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         DesiredEye3dCenter <- Constants.Engine.Eye3dCenterDefault
         DesiredEye3dRotation <- quatIdentity
 
-    let private toggleAdvancing (world : World) =
+    let private toggleTimeAdvancing (world : World) =
         let wasTimeAdvancing = world.TimeAdvancing
         snapshot (if wasTimeAdvancing then Halt else Advance) world
         World.setTimeAdvancing (not world.TimeAdvancing) world
@@ -1730,7 +1730,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             if ImGui.IsKeyPressed ImGuiKey.F2 && SelectedEntityOpt.IsSome && SelectedEntityOpt.Value.GetProtection world = Unprotected then ShowRenameEntityDialog <- true
             elif ImGui.IsKeyPressed ImGuiKey.F3 then Snaps2dSelected <- not Snaps2dSelected
             elif ImGui.IsKeyPressed ImGuiKey.F4 && ImGui.IsAltDown () then ShowConfirmExitDialog <- true
-            elif ImGui.IsKeyPressed ImGuiKey.F5 then toggleAdvancing world
+            elif ImGui.IsKeyPressed ImGuiKey.F5 then toggleTimeAdvancing world
             elif ImGui.IsKeyPressed ImGuiKey.F6 then EditWhileAdvancing <- not EditWhileAdvancing
             elif ImGui.IsKeyPressed ImGuiKey.F7 then createRestorePoint world
             elif ImGui.IsKeyPressed ImGuiKey.F8 then ReloadAssetsRequested <- 1
@@ -2540,10 +2540,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     if ImGui.MenuItem ("Redo", "Ctrl+Y") then tryRedo world |> ignore<bool>
                     ImGui.Separator ()
                     if not world.TimeAdvancing then
-                        if ImGui.MenuItem ("Advance", "F5") then toggleAdvancing world
+                        if ImGui.MenuItem ("Advance", "F5") then toggleTimeAdvancing world
                         if ImGui.MenuItem ("Step", "Alt+S") then step world
                     else
-                        if ImGui.MenuItem ("Halt", "F5") then toggleAdvancing world
+                        if ImGui.MenuItem ("Halt", "F5") then toggleTimeAdvancing world
                     if EditWhileAdvancing
                     then if ImGui.MenuItem ("Disable Edit while Advancing", "F6") then EditWhileAdvancing <- false
                     else if ImGui.MenuItem ("Enable Edit while Advancing", "F6") then EditWhileAdvancing <- true
@@ -2660,11 +2660,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             ImGui.Text "|"
             ImGui.SameLine ()
             if world.TimeHalted then
-                if ImGui.Button "Advance (F5)" then toggleAdvancing world
+                if ImGui.Button "Advance (F5)" then toggleTimeAdvancing world
                 ImGui.SameLine ()
                 if ImGui.Button "Step" then step world
             else
-                if ImGui.Button "Halt (F5)" then toggleAdvancing world
+                if ImGui.Button "Halt (F5)" then toggleTimeAdvancing world
                 ImGui.SameLine ()
                 ImGui.Checkbox ("Edit", &EditWhileAdvancing) |> ignore<bool>
             ImGui.SameLine ()
@@ -4547,7 +4547,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             let worldConfig =
                 { Imperative = gaiaState.ProjectImperativeExecution
                   Accompanied = true
-                  Advancing = false
+                  TimeAdvancing = false
                   FramePacing = false
                   ModeOpt = gaiaState.ProjectEditModeOpt
                   SdlConfig = sdlConfig }
