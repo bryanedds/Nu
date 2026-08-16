@@ -119,8 +119,8 @@ type GameplayDispatcher () =
 
         | UpdateEye ->
 
-            // update eye to look at player while game is advancing
-            if world.Advancing then
+            // update eye to look at player while game time is advancing
+            if world.TimeAdvancing then
                 let playerPosition = Simulants.GameplayPlayer.GetPosition world
                 let playerSize = Simulants.GameplayPlayer.GetSize world
                 let eyeCenter = world.Eye2dCenter

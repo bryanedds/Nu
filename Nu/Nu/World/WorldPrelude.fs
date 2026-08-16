@@ -448,12 +448,12 @@ type Timers =
 [<AutoOpen>]
 module internal AmbientState =
 
-    let [<Literal>] private AccompaniedMask =           0b000001u
-    let [<Literal>] private AdvanceRequestedMask =      0b000010u
-    let [<Literal>] private HaltRequestedMask =         0b000100u
-    let [<Literal>] private AdvancingMask =             0b001000u
-    let [<Literal>] private FramePacingMask =           0b010000u
-    let [<Literal>] private AdvancementClearedMask =    0b100000u
+    let [<Literal>] private AccompaniedMask =               0b000001u
+    let [<Literal>] private TimeAdvancingMask =             0b000010u
+    let [<Literal>] private TimeResumptionRequestedMask =   0b000100u
+    let [<Literal>] private TimeHaltRequestedMask =         0b001000u
+    let [<Literal>] private TimeAdvancementClearedMask =    0b010000u
+    let [<Literal>] private FramePacingMask =               0b100000u
 
     /// The 'ambient' state of the world (miscellaneous world state such as time).
     type [<ReferenceEquality>] internal 'w AmbientState =
@@ -487,34 +487,34 @@ module internal AmbientState =
               mutable LightMapRenderRequested : bool }
 
         member this.Accompanied = this.Flags &&& AccompaniedMask <> 0u
-        member this.Advancing = this.Flags &&& AdvancingMask <> 0u
-        member this.AdvanceRequested = this.Flags &&& AdvanceRequestedMask <> 0u
-        member this.HaltRequested = this.Flags &&& HaltRequestedMask <> 0u
+        member this.TimeAdvancing = this.Flags &&& TimeAdvancingMask <> 0u
+        member this.TimeResumptionRequested = this.Flags &&& TimeResumptionRequestedMask <> 0u
+        member this.TimeHaltedRequested = this.Flags &&& TimeHaltRequestedMask <> 0u
+        member this.TimeAdvancementCleared = this.Flags &&& TimeAdvancementClearedMask <> 0u
         member this.FramePacing = this.Flags &&& FramePacingMask <> 0u
-        member this.AdvancementCleared = this.Flags &&& AdvancementClearedMask <> 0u
 
     let internal getAlive state =
         state.Alive
 
-    let internal setAdvancing advancing (state : _ AmbientState) =
-        if advancing <> state.Advancing then
-            state.Flags <- if advancing then state.Flags ||| AdvanceRequestedMask else state.Flags ||| HaltRequestedMask
-            if state.AdvanceRequested && state.HaltRequested then
-                Log.warn "Advance and Halt both requested in the same frame, but these will resolve in a statically-defined order."
+    let internal setTimeAdvancing advancing (state : _ AmbientState) =
+        if advancing <> state.TimeAdvancing then
+            state.Flags <- if advancing then state.Flags ||| TimeAdvancingMask else state.Flags ||| TimeHaltRequestedMask
+            if state.TimeResumptionRequested && state.TimeHaltedRequested then
+                Log.warn "Time resumption and halt both requested in the same frame, but these will resolve in a statically-defined order."
 
     let internal setFramePacing framePacing (state : _ AmbientState) =
         state.Flags <- if framePacing then state.Flags ||| FramePacingMask else state.Flags &&& ~~~FramePacingMask
 
-    let internal clearAdvancement (state : _ AmbientState) =
-        state.Flags <- state.Flags &&& ~~~AdvancingMask ||| AdvancementClearedMask
+    let internal clearTimeAdvancement (state : _ AmbientState) =
+        state.Flags <- state.Flags &&& ~~~TimeAdvancingMask ||| TimeAdvancementClearedMask
         state.UpdateDelta <- 0L
         state.ClockDelta <- 0.0f
         state.TickDelta <- 0L
 
-    let internal restoreAdvancement advancing advancementCleared updateDelta clockDelta tickDelta (state : _ AmbientState) =
+    let internal restoreTimeAdvancement advancing advancementCleared updateDelta clockDelta tickDelta (state : _ AmbientState) =
         let flags = state.Flags
-        let flags = if advancing then flags ||| AdvancingMask else flags &&& ~~~AdvancingMask
-        let flags = if advancementCleared then flags ||| AdvancementClearedMask else flags &&& ~~~AdvancementClearedMask
+        let flags = if advancing then flags ||| TimeAdvancingMask else flags &&& ~~~TimeAdvancingMask
+        let flags = if advancementCleared then flags ||| TimeAdvancementClearedMask else flags &&& ~~~TimeAdvancementClearedMask
         state.Flags <- flags
         state.UpdateDelta <- updateDelta
         state.ClockDelta <- clockDelta
@@ -540,7 +540,7 @@ module internal AmbientState =
 
     let internal getGameDelta (state : 'w AmbientState) =
         match Constants.GameTime.DesiredFrameRate with
-        | StaticFrameRate _ -> UpdateTime (if state.Advancing then 1L else 0L)
+        | StaticFrameRate _ -> UpdateTime (if state.TimeAdvancing then 1L else 0L)
         | DynamicFrameRate _ -> TickTime (getTickDelta state)
 
     let internal getGameTime state =
@@ -557,19 +557,19 @@ module internal AmbientState =
     let internal getTimers state =
         state.Timers
 
-    let internal updateTime (state : 'w AmbientState) =
-        if state.AdvanceRequested then
+    let internal processTime (state : 'w AmbientState) =
+        if state.TimeResumptionRequested then
             state.TickWatch.Start ()
-            state.Flags <- state.Flags ||| AdvancingMask &&& ~~~AdvanceRequestedMask
-        if state.HaltRequested then
+            state.Flags <- state.Flags ||| TimeAdvancingMask &&& ~~~TimeResumptionRequestedMask
+        if state.TimeHaltedRequested then
             state.TickWatch.Stop ()
-            state.Flags <- state.Flags &&& ~~~AdvancingMask &&& ~~~HaltRequestedMask
+            state.Flags <- state.Flags &&& ~~~TimeAdvancingMask &&& ~~~TimeHaltRequestedMask
         let tickDeltaCurrent =
-            if state.Advancing
+            if state.TimeAdvancing
             then min state.TickWatch.ElapsedTicks Constants.Engine.TickDeltaMax
             else 0L
         state.TickWatch.Restart ()
-        let updateDelta = if state.Advancing then 1L else 0L
+        let updateDelta = if state.TimeAdvancing then 1L else 0L
         let tickDelta =
             if Constants.Engine.TickDeltaAveraging
             then (tickDeltaCurrent + state.TickDeltaPrevious) / 2L
@@ -588,7 +588,7 @@ module internal AmbientState =
         state.DateDelta <- dateTime - dateTimeOld
 
     let internal switch (state : 'w AmbientState) =
-        if state.Advancing
+        if state.TimeAdvancing
         then state.TickWatch.Start ()
         else state.TickWatch.Stop ()
         state
@@ -717,10 +717,10 @@ module internal AmbientState =
     let internal requestLightMapRender state =
         state.LightMapRenderRequested <- true
 
-    let internal make accompanied advancing framePacing symbolics overlayer timers sdlDepsOpt =
+    let internal make accompanied timeAdvancing framePacing symbolics overlayer timers sdlDepsOpt =
         let flags =
             (if accompanied then AccompaniedMask else 0u) |||
-            (if advancing then AdvancingMask else 0u) |||
+            (if timeAdvancing then TimeAdvancingMask else 0u) |||
             (if framePacing then FramePacingMask else 0u)
         { Flags = flags
           Alive = true
@@ -731,7 +731,7 @@ module internal AmbientState =
           TickDelta = 0L
           KeyValueStore = SDictionary.make StringComparer.Ordinal
           TickTime = 0L
-          TickWatch = if advancing then Stopwatch.StartNew () else Stopwatch ()
+          TickWatch = if timeAdvancing then Stopwatch.StartNew () else Stopwatch ()
           DateDelta = TimeSpan.Zero
           TickDeltaPrevious = 0L
           DateTime = DateTime.Now

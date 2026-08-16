@@ -269,7 +269,7 @@ type CharacterDispatcher () =
 
         // process input
         let characterType = entity.GetCharacterType world
-        if world.Advancing then
+        if world.TimeAdvancing then
             match characterType with
             | Enemy -> processEnemyInput (Simulants.GameplayPlayer.GetPosition world) entity world
             | Player -> processPlayerInput entity world

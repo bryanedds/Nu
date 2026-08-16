@@ -319,7 +319,7 @@ module Content =
                     |> Seq.append screensAdded
                 for (screen, screenContent) in screensLive do
                     if screenContent.Select then
-                        if world.Accompanied && world.Halted && not world.AdvancementCleared then // special case to quick cut when halted in the editor
+                        if world.Accompanied && world.TimeHalted && not world.TimeAdvancementCleared then // special case to quick cut when time halted in the editor
                             World.defer (fun world ->
                                 let transitionTime = world.GameTime
                                 selectScreen (IdlingState transitionTime) screen world

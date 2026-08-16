@@ -368,7 +368,7 @@ type FluidSimDispatcher () =
                      Entity.Color |= color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f] world |> ignore
 
             // mouse interactions with fluid system
-            if fluidSim.GetSelected world && world.Advancing then
+            if fluidSim.GetSelected world && world.TimeAdvancing then
                 let tool = fluidSim.GetSelectedTool world
                 match (tool, World.doFeeler "Feeler" [Entity.Position @= mousePosition.V3] world) with // a feeler is a touch and mouse left button detector respecting elevation such that buttons with higher elevation prevent this interaction.
                 | ((Water | Sand | Oil | Smoke), (true, _)) -> // doFeeler returns (isDown, justPressed) detecting touch and mouse left button.

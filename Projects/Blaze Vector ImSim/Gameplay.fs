@@ -87,7 +87,7 @@ type GameplayDispatcher () =
                 screen.SetGameplayState Quit world
 
             // process eye look
-            if world.Advancing then
+            if world.TimeAdvancing then
                 let playerPosition = player.GetPosition world
                 let playerSize = player.GetSize world
                 let eyeCenter = world.Eye2dCenter
@@ -105,7 +105,7 @@ type GameplayDispatcher () =
 
             // ensure game is unpaused when quitting
             if screen.GetGameplayState world = Quit then
-                World.setAdvancing true world
+                World.setTimeAdvancing true world
 
             // end scene declaration
             World.endGroup world

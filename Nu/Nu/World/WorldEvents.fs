@@ -158,7 +158,7 @@ module Events =
     let PostSelectEvent = stoa<Screen option> "PostSelect/Event"
 
     /// Raised when the engine's representation of current time changes.
-    let TimeUpdateEvent = stoa<unit> "TimeUpdate/Event"
+    let TimeAdvanceEvent = stoa<unit> "TimeAdvance/Event"
 
     /// Raised when a key-value pair is changed in the world.
     let KeyedValueChangeEvent key = rtoa<KeyedValueChangeData> [|"KeyedValue"; key; "Change"; "Event"|]

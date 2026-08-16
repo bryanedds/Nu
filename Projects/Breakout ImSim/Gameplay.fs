@@ -112,7 +112,7 @@ type GameplayDispatcher () =
             let paddle = world.DeclaredEntity
 
             // process paddle movement
-            if  world.Advancing &&
+            if  world.TimeAdvancing &&
                 screen.GetGameplayState world = Playing &&
                 screen.GetLives world > 0 &&
                 (screen.GetBricks world).Count > 0 then
@@ -212,7 +212,7 @@ type GameplayDispatcher () =
 
             // ensure game is unpaused when quitting
             if screen.GetGameplayState world = Quit then
-                World.setAdvancing true world
+                World.setTimeAdvancing true world
 
             // end scene declaration
             World.endGroup world

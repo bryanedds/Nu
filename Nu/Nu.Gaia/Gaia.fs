@@ -483,20 +483,20 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
     let private shouldSwallowMouseButton (world : World) =
         let io = ImGui.GetIO ()
         not io.WantCaptureMouseGlobal &&
-        (world.Halted || EditWhileAdvancing)
+        (world.TimeHalted || EditWhileAdvancing)
 
     let private canEditWithMouse (world : World) =
         let io = ImGui.GetIO ()
         match ViewMode with
         | NormalMode | FreeMode ->
             not io.WantCaptureMouseGlobal &&
-            (world.Halted || EditWhileAdvancing)
+            (world.TimeHalted || EditWhileAdvancing)
         | CaptureMode -> false
 
     let private canEditWithKeyboard (world : World) =
         let io = ImGui.GetIO ()
         not io.WantCaptureKeyboardGlobal &&
-        (world.Halted || EditWhileAdvancing)
+        (world.TimeHalted || EditWhileAdvancing)
 
     let private snapshot snapshotType world =
         Pasts <- (snapshotType, world) :: Pasts
@@ -834,10 +834,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private createRestorePoint world =
         World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Default.Sound world
-        if world.Advancing then
-            World.setAdvancing false world
+        if world.TimeAdvancing then
+            World.setTimeAdvancing false world
             snapshot RestorePoint world
-            World.setAdvancing true world
+            World.setTimeAdvancing true world
         else snapshot RestorePoint world
 
     let private inductEntity atMouse (entity : Entity) (world : World)=
@@ -1326,14 +1326,14 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         DesiredEye3dRotation <- quatIdentity
 
     let private toggleAdvancing (world : World) =
-        let wasAdvancing = world.Advancing
-        snapshot (if wasAdvancing then Halt else Advance) world
-        World.setAdvancing (not world.Advancing) world
+        let wasTimeAdvancing = world.TimeAdvancing
+        snapshot (if wasTimeAdvancing then Halt else Advance) world
+        World.setTimeAdvancing (not world.TimeAdvancing) world
 
     let private step (world : World) =
-        if world.Halted then
+        if world.TimeHalted then
             snapshot Step world
-            World.setAdvancing true world
+            World.setTimeAdvancing true world
             Stepping <- true
 
     let private trySelectTargetDirAndMakeNuPluginFromFilePathOpt filePathOpt =
@@ -2376,7 +2376,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                 | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z -> entity.SetDegrees degrees world
                                 | OPERATION.SCALE -> entity.SetScale scale world
                                 | _ -> () // nothing to do
-                            if world.Advancing then
+                            if world.TimeAdvancing then
                                 match entity.TryGetProperty (nameof entity.LinearVelocity) world with
                                 | Some property when property.PropertyType = typeof<Vector3> -> entity.SetLinearVelocity v3Zero world
                                 | Some _ | None -> ()
@@ -2469,7 +2469,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     if ImGui.MenuItem ("Open Project", "Ctrl+Shift+O") then ShowOpenProjectDialog <- true
                     if ImGui.MenuItem "Close Project" then ShowCloseProjectDialog <- true
                     ImGui.Separator ()
-                    if not world.Advancing then
+                    if not world.TimeAdvancing then
                         if ImGui.MenuItem ("Advance", "F5") then toggleAdvancing world
                         if ImGui.MenuItem ("Step", "Alt+S") then step world
                     else
@@ -2589,7 +2589,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             ImGui.SameLine ()
             ImGui.Text "|"
             ImGui.SameLine ()
-            if world.Halted then
+            if world.TimeHalted then
                 if ImGui.Button "Advance (F5)" then toggleAdvancing world
                 ImGui.SameLine ()
                 if ImGui.Button "Step" then step world
@@ -4154,7 +4154,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
             // update stepping state
             if Stepping then
-                World.setAdvancing false world
+                World.setTimeAdvancing false world
                 Stepping <- false
 
             // use a generalized exception process

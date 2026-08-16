@@ -1004,7 +1004,7 @@ type TextBoxFacet () =
 
     static let handleMouseLeftDown evt (world : World) =
         let entity = evt.Subscriber : Entity
-        if world.Advancing && entity.GetVisible world then
+        if world.TimeAdvancing && entity.GetVisible world then
             let mutable transform = entity.GetTransform world
             let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
             let mousePositionWorld = World.getMousePosition2dWorld transform.Absolute world
@@ -1022,7 +1022,7 @@ type TextBoxFacet () =
         let data = evt.Data : KeyboardKeyData
         let caret = entity.GetCaret world
         let text = entity.GetText world
-        if  world.Advancing &&
+        if  world.TimeAdvancing &&
             entity.GetVisible world &&
             entity.GetEnabled world &&
             entity.GetFocused world &&
@@ -1071,7 +1071,7 @@ type TextBoxFacet () =
         let entity = evt.Subscriber : Entity
         let caret = entity.GetCaret world
         let text = entity.GetText world
-        if  world.Advancing &&
+        if  world.TimeAdvancing &&
             entity.GetVisible world &&
             entity.GetEnabled world &&
             entity.GetFocused world &&
@@ -3669,7 +3669,7 @@ type AnimatedModelFacet () =
                 let playBox = fst' (World.getPlayBounds3d world)
                 let outsidePlayBounds = entity.GetPresence world <> Omnipresent && not (entity.GetAlwaysUpdate world) && not (playBox.Intersects (evt.Subscriber.GetBounds world))
                 let disabled = not (entity.GetEnabled world)
-                let notUpdating = world.Halted || outsidePlayBounds || disabled
+                let notUpdating = world.TimeHalted || outsidePlayBounds || disabled
                 if notUpdating then evt.Subscriber.AnimateBones world
                 Cascade)
             (entity.ChangeEvent (nameof entity.Animations)) entity (nameof AnimatedModelFacet) world
@@ -4151,7 +4151,7 @@ type TraversalInterpolatedFacet () =
 
         // ensure position history isn't stale when editing
         match op with
-        | ViewportOverlay _ when world.Halted ->
+        | ViewportOverlay _ when world.TimeHalted ->
             let position = entity.GetPosition world
             let positionHistory = FQueue.singleton (world.GameTime, position)
             entity.SetPositionHistory positionHistory world
