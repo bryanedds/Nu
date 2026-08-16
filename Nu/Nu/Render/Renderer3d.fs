@@ -3511,7 +3511,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let mutable committed = 0
         let mutable uniformsDescriptorSet = Unchecked.defaultof<_>
         let beginBatch = fun clear ->
-            let clearColorValueOpt =
+            let loadOperation =
                 if clear then
                     match lightType with
                     | PointLight | CascadedLight ->
@@ -3522,7 +3522,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             uniformsDescriptorSet <-
                 VulkanRenderer3d.beginPhysicallyBasedShadowSurfaces
                     lightType.ShadowsUseCubeMap lightOrigin lightView lightProjection renderer.LightingConfig.LightShadowExponent
-                    clearColorValueOpt colorAttachment depthAttachment resolution renderer.RenderPassIndex shadowStaticPipeline renderer
+                    loadOperation colorAttachment depthAttachment resolution renderer.RenderPassIndex shadowStaticPipeline renderer
         let endBatch = fun () -> VulkanRenderer3d.endPhysicallyBasedShadowSurfaces shadowStaticPipeline renderer.VulkanContext
         let advanceBatch = fun instances ->
             counted <- counted + instances
