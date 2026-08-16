@@ -2034,20 +2034,20 @@ and [<NoEquality; NoComparison>] World =
     member this.Unaccompanied =
         not this.AmbientState.Accompanied
 
-    /// Check that the world is advancing (not halted).
-    member this.Advancing =
-        this.AmbientState.Advancing
+    /// Check that world time is advancing (not halted).
+    member this.TimeAdvancing =
+        this.AmbientState.TimeAdvancing
 
-    /// Check that the world is halted (not advancing).
-    member this.Halted =
-        not this.AmbientState.Advancing
+    /// Check that world time is halted (not advancing).
+    member this.TimeHalted =
+        not this.AmbientState.TimeAdvancing
+
+    member internal this.TimeAdvancementCleared =
+        this.AmbientState.TimeAdvancementCleared
 
     /// Check that the world's frame rate is being explicitly paced based on clock progression.
     member this.FramePacing =
         this.AmbientState.FramePacing
-
-    member internal this.AdvancementCleared =
-        this.AmbientState.AdvancementCleared
 
     /// Get the number of updates that have transpired between this and the previous frame.
     member this.UpdateDelta =

@@ -68,7 +68,7 @@ type ToyBoxDispatcher () =
 
         // attempt to select a drag an entity
         let mousePosition = (World.getMousePosition2dWorld false world).V3
-        if world.Advancing && World.isMouseButtonPressed MouseLeft world then
+        if world.TimeAdvancing && World.isMouseButtonPressed MouseLeft world then
 
             // attempt to establish a dragged entity via direct point test
             let entityRedirects = toyBox.GetEntityRedirects world
