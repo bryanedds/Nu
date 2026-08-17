@@ -3677,6 +3677,7 @@ module PhysicallyBased =
         (view : Matrix4x4)
         (projectionUnflipped : Matrix4x4)
         (materialSampler : Sampler)
+        (loadOperation : LoadOperation)
         (colorAttachments : VkImageView array)
         (depthAttachment : Texture)
         (resolution : Vector2i)
@@ -3703,7 +3704,7 @@ module PhysicallyBased =
         // set up render
         let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
         let mutable vkViewport = Hl.makeViewport false renderArea
-        Hl.withRenderingInfo colorAttachments (Some depthAttachment.ImageView) renderArea LoadAttachments $ fun renderingInfo ->
+        Hl.withRenderingInfo colorAttachments (Some depthAttachment.ImageView) renderArea loadOperation $ fun renderingInfo ->
             let mutable renderingInfo = renderingInfo
             DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
         DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
