@@ -683,7 +683,7 @@ type [<ReferenceEquality>] VulkanContext =
         let mutable vulkan13 = VkPhysicalDeviceVulkan13Features ()
         vulkan13.dynamicRendering <- true
         if Constants.Vulkan.MoltenVk && portabilitySubsetAvailable then vulkan13.pNext <- asVoidPtr &portabilityFeatures
-        
+
         // queue create infos
         let mutable queuePriority = 1.0f
         let queueCreateInfosList = List ()
@@ -921,8 +921,6 @@ type [<ReferenceEquality>] VulkanContext =
                         | Some capabilities ->
                             match Hl.tryGetSwapExtent capabilities with
                             | Some swapExtent when swapExtent = swapchainWrapper.SwapExtent ->
-
-                                // present image
                                 let mutable renderFinishedSemaphore = swapchainWrapper.RenderFinishedSemaphore
                                 let mutable vkSwapchain = swapchainWrapper.VkSwapchain
                                 let mutable imageIndex = Hl.ImageIndex
@@ -933,11 +931,9 @@ type [<ReferenceEquality>] VulkanContext =
                                 info.pSwapchains <- &&vkSwapchain
                                 info.pImageIndices <- &&imageIndex
                                 match DeviceApi.vkQueuePresentKHR (vkQueue, &&info) with
-                                | VkResult.ErrorOutOfDateKHR -> true
-                                | VkResult.ErrorSurfaceLostKHR -> Hl.notifySurfaceLost (); true
+                                | VkResult.ErrorOutOfDateKHR -> true // recreate when swapchain is out of data
+                                | VkResult.ErrorSurfaceLostKHR -> Hl.notifySurfaceLost (); true // recreate when surface is lost
                                 | result -> Hl.check result; false // don't recreate when swap extent is the same
-
-                            // can't present               
                             | Some _ | None -> true // recreate when swap extent is invalid
                         | None -> true // recreate when surface is absent
                      | None -> true // recreate when swapchain is absent
