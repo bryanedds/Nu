@@ -272,20 +272,18 @@ type TextureCompression =
         | Uncompressed -> Bgra
         | ColorCompression | NormalCompression -> Rgba
 
+/// Represents a strict cycle ensuring that any presentation resources (surface and swapchains) that exist or are being
+/// created during the onset of app backgrounding on a mobile device are torn down/cancelled.
+type BackgroundingResponseState =
+    | PresentationSetupInitiated // setup of presentation resources has begun and may be complete
+    | PresentationTeardownPending // presentation resources can no longer be trusted as app has commenced backgrounding
+    | PresentationTeardownComplete // presentation resources have been destroyed and restoration will commence when app is back in foreground
+
 /// The state of the program's OS-provided rendering surface.
 type SurfaceState =
     | SurfaceReady
     | SurfaceLost
     | SurfaceDestroyed
-
-/// Represents a strict cycle ensuring that any presentation resources (surface and swapchains) that exist or are being created during the onset
-/// of app backgrounding on a mobile device are torn down/cancelled.
-/// TODO: consider encapsulating most of this stuff into a Surface abstraction as it should not be visible to Swapchain
-/// and VulkanContext.
-type internal BackgroundingResponseState =
-    | PresentationSetupInitiated // setup of presentation resources has begun and may be complete
-    | PresentationTeardownPending // presentation resources can no longer be trusted as app has commenced backgrounding
-    | PresentationTeardownComplete // presentation resources have been destroyed and restoration will commence when app is back in foreground
 
 [<AutoOpen>]
 module Vulkan =
@@ -316,17 +314,6 @@ module Hl =
     let mutable private TextureIdGenerationLock = obj ()
     let mutable private TextureIdCounter = 0u
 
-    // draw counters
-    let mutable private DrawCountersLock = obj ()
-    let mutable private DrawInstanceCount = 0
-    let mutable private DrawCallCount = 0
-    let mutable private DrawScopeCount = 0
-
-    // presentation teardown in response to backgrounding follows BackgroundingResponseState cycle,
-    // whereas presentation setup need only care whether app is *currently* in foreground
-    let mutable private BackgroundingResponseStateLock = obj ()
-    let mutable private BackgroundingResponseState = PresentationTeardownComplete
-
     // the forward-declared empty texture value; initialized in RendererProcesses.
     // NOTE: if performance issues arise from checking / casting this, maybe use ValueOption or null directly.
     // TODO: see if instead of exposing mutability of this directly, we should define Init and CleanUp fns.
@@ -349,9 +336,48 @@ module Hl =
     let mutable internal SurfaceState_ = SurfaceDestroyed
     let inline internal SurfaceState<'a> = SurfaceState_
 
+    // presentation teardown in response to backgrounding follows BackgroundingResponseState cycle,
+    // whereas presentation setup need only care whether app is *currently* in foreground
+    let mutable private BackgroundingResponseStateLock = obj ()
+    let mutable private BackgroundingResponseState = PresentationTeardownComplete
+
     // whether app is currently backgrounded (i.e. not in foreground)
     let mutable internal Backgrounded_ = false
     let inline internal Backgrounded<'a> = Backgrounded_
+
+    // draw counters
+    let mutable private DrawCountersLock = obj ()
+    let mutable private DrawInstanceCount = 0
+    let mutable private DrawCallCount = 0
+    let mutable private DrawScopeCount = 0
+
+    /// Check the given Vulkan operation result, logging on non-Success.
+    let check (result : VkResult) =
+        if int result > 0 then Log.info ("Vulkan info: " + string result)
+        elif int result < 0 then
+            let message = "Vulkan assertion failed due to: " + string result
+            Log.error message
+
+    /// Generate a globally unique texture id for use in descriptor writes.
+    let internal genTextureId () =
+        lock TextureIdGenerationLock (fun () -> TextureIdCounter <- inc TextureIdCounter; TextureIdCounter)
+
+    /// Initialize the empty texture value.
+    let initEmptyTexture emptyTexture =
+        if EmptyTextureOpt_.IsNone then
+            EmptyTextureOpt_ <- Some emptyTexture
+
+    /// Set the window properties coming in from SDL.
+    let setWindowProperties windowProperties =
+        WindowProperties_ <- windowProperties
+
+    /// Set the index of the current swapchain image.
+    let setImageIndex imageIndex =
+        ImageIndex_ <- imageIndex
+
+    /// Make the surface state reflect the loss of the surface.
+    let notifySurfaceLost () =
+        SurfaceState_ <- SurfaceLost
 
     // callback to inform render loop about app backgrounding
     // official documentation for android case: https://github.com/libsdl-org/SDL/blob/main/docs/README-android.md#activity-lifecycle
@@ -371,43 +397,58 @@ module Hl =
             Backgrounded_ <- false
             true
         | _ -> true
+
+    /// Get the callback function for handling backgrounding events.
     let internal backgroundingCallback () =
         let handle = Assembly.GetExecutingAssembly().GetType("Nu.Vulkan.Hl").GetMethod(nameof handleBackgrounding, BindingFlags.NonPublic ||| BindingFlags.Static).MethodHandle
         handle.GetFunctionPointer ()
 
+    /// Set the presentation setup initiated flag.
     let internal setPresentationSetupInitiated () =
         lock BackgroundingResponseStateLock (fun () -> BackgroundingResponseState <- PresentationSetupInitiated)
 
+    /// Set the presentation teardown complete flag.
     let internal setPresentationTeardownComplete () =
         lock BackgroundingResponseStateLock (fun () -> BackgroundingResponseState <- PresentationTeardownComplete)
 
+    /// Get whether the presentation teardown is pending due to backgrounding.
     let internal getBackgroundingRequested () =
         lock BackgroundingResponseStateLock (fun () -> BackgroundingResponseState = PresentationTeardownPending)
 
-    let internal genTextureId () =
-        lock TextureIdGenerationLock (fun () -> TextureIdCounter <- inc TextureIdCounter; TextureIdCounter)
-
-    let setEmptyTextureOpt emptyTextureOpt =
-        EmptyTextureOpt_ <- emptyTextureOpt
-
-    let setWindowProperties windowProperties =
-        WindowProperties_ <- windowProperties
-
-    let setImageIndex imageIndex =
-        ImageIndex_ <- imageIndex
-
-    let notifySurfaceLost () =
-        SurfaceState_ <- SurfaceLost
-
+    /// Get whether the window is minimized.
     let getWindowMinimized () =
         WindowProperties_.WindowFlags &&& SDL_WindowFlags.SDL_WINDOW_MINIMIZED <> LanguagePrimitives.EnumOfValue 0UL
 
-    /// Check the given Vulkan operation result, logging on non-Success.
-    let check (result : VkResult) =
-        if int result > 0 then Log.info ("Vulkan info: " + string result)
-        elif int result < 0 then
-            let message = "Vulkan assertion failed due to: " + string result
-            Log.error message
+    /// Report the fact that a draw call has just been made with the given number of instances.
+    let reportDrawScope () =
+        lock DrawCountersLock (fun () ->
+            DrawScopeCount <- inc DrawScopeCount )
+
+    /// Report the fact that a draw call has just been made with the given number of instances.
+    let reportDrawCall drawInstances drawScope =
+        lock DrawCountersLock (fun () ->
+            DrawInstanceCount <- DrawInstanceCount + drawInstances
+            DrawCallCount <- inc DrawCallCount
+            if drawScope then DrawScopeCount <- inc DrawScopeCount )
+
+    /// Reset the running counts of draw events.
+    let resetDrawCounters () =
+        lock DrawCountersLock (fun () ->
+            DrawInstanceCount <- 0
+            DrawCallCount <- 0
+            DrawScopeCount <- 0)
+
+    /// Get the running number of draw scopes.
+    let getDrawScopeCount () =
+        lock DrawCountersLock (fun () -> DrawScopeCount)
+
+    /// Get the running number of draw calls.
+    let getDrawCallCount () =
+        lock DrawCountersLock (fun () -> DrawCallCount)
+
+    /// Get the running number of draw calls.
+    let getDrawInstanceCount () =
+        lock DrawCountersLock (fun () -> DrawInstanceCount)
 
     /// Determine whether format is supported for use as an attachment.
     let supportsAttachment vkPhysicalDevice format =
@@ -1333,34 +1374,3 @@ module Hl =
             let remainingMipmapBytes = if minimalMipmapBytes.Length > 1 then Array.tail mipmapBytesArray else [||]
             (minimalMipmapResolution, minimalMipmapBytes, remainingMipmapBytes)
         else (v2i dds.Width dds.Height, bytes, mipmapBytesArray)
-
-    /// Report the fact that a draw call has just been made with the given number of instances.
-    let reportDrawScope () =
-        lock DrawCountersLock (fun () ->
-            DrawScopeCount <- inc DrawScopeCount )
-
-    /// Report the fact that a draw call has just been made with the given number of instances.
-    let reportDrawCall drawInstances drawScope =
-        lock DrawCountersLock (fun () ->
-            DrawInstanceCount <- DrawInstanceCount + drawInstances
-            DrawCallCount <- inc DrawCallCount
-            if drawScope then DrawScopeCount <- inc DrawScopeCount )
-
-    /// Reset the running counts of draw events.
-    let resetDrawCounters () =
-        lock DrawCountersLock (fun () ->
-            DrawInstanceCount <- 0
-            DrawCallCount <- 0
-            DrawScopeCount <- 0)
-
-    /// Get the running number of draw scopes.
-    let getDrawScopeCount () =
-        lock DrawCountersLock (fun () -> DrawScopeCount)
-
-    /// Get the running number of draw calls.
-    let getDrawCallCount () =
-        lock DrawCountersLock (fun () -> DrawCallCount)
-
-    /// Get the running number of draw calls.
-    let getDrawInstanceCount () =
-        lock DrawCountersLock (fun () -> DrawInstanceCount)
