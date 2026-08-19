@@ -54,17 +54,17 @@ module Contour =
     let private initialShapeDataSize = 256
     let private initialBandDataSize = 65536 // uint32 entries (256KB)
 
-    let createPipeline vkc =
+    let createPipeline resolveTextureFormat context =
 
-        let quadVertexBuffer = VulkanBuffer.create (Vertex true) (sizeof<Vector2> * ContourQuad.vertices.Length) vkc
-        let quadIndexBuffer = VulkanBuffer.create (BufferType.Index true) (sizeof<uint32> * ContourQuad.indices.Length) vkc
+        let quadVertexBuffer = VulkanBuffer.create (Vertex true) (sizeof<Vector2> * ContourQuad.vertices.Length) context
+        let quadIndexBuffer = VulkanBuffer.create (BufferType.Index true) (sizeof<uint32> * ContourQuad.indices.Length) context
 
-        VulkanBuffer.uploadArray ContourQuad.vertices quadVertexBuffer vkc
-        VulkanBuffer.uploadArray ContourQuad.indices quadIndexBuffer vkc
+        VulkanBuffer.uploadArray ContourQuad.vertices quadVertexBuffer context
+        VulkanBuffer.uploadArray ContourQuad.indices quadIndexBuffer context
 
-        let shapeDataBuffer = VulkanBuffer.create Uniform (sizeof<ShapeGPU> * initialShapeDataSize) vkc
-        let curveDataBuffer = VulkanBuffer.create Storage (sizeof<Vector4> * 2 * maxCurves) vkc
-        let bandDataBuffer = VulkanBuffer.create Storage (sizeof<uint32> * initialBandDataSize) vkc
+        let shapeDataBuffer = VulkanBuffer.create Uniform (sizeof<ShapeGPU> * initialShapeDataSize) context
+        let curveDataBuffer = VulkanBuffer.create Storage (sizeof<Vector4> * 2 * maxCurves) context
+        let bandDataBuffer = VulkanBuffer.create Storage (sizeof<uint32> * initialBandDataSize) context
 
         let vertexSize = sizeof<Vector2>
         let pipeline =
@@ -77,7 +77,7 @@ module Contour =
                     [|Pipeline.descriptor 0 UniformBuffer VertexAndFragmentStage 1
                       Pipeline.descriptor 1 StorageBuffer FragmentStage 1
                       Pipeline.descriptor 2 StorageBuffer FragmentStage 1|]|]
-                [||] [|vkc.SwapFormat|] None
+                [||] [|resolveTextureFormat|] None
                 [|quadVertexBuffer; quadIndexBuffer; shapeDataBuffer; curveDataBuffer; bandDataBuffer|]
 
         (quadVertexBuffer, quadIndexBuffer, shapeDataBuffer, curveDataBuffer, bandDataBuffer, pipeline)
@@ -92,8 +92,9 @@ module Contour =
         (modelViewProjection : Matrix4x4 inref)
         (clipOpt : Box2 voption inref)
         (viewport : Viewport)
+        (resolveTexture : Texture)
         ((quadVertexBuffer, quadIndexBuffer, shapeDataBuffer, curveDataBuffer, bandDataBuffer, pipeline) : VulkanBuffer * VulkanBuffer * VulkanBuffer * VulkanBuffer * VulkanBuffer * Pipeline)
-        (vkc : VulkanContext) =
+        (context : VulkanContext) =
 
         if geometry.Curves.Length > 0 then
 
@@ -105,7 +106,7 @@ module Contour =
 
                     // upload curve data
                     let packedCurves = Contour.packCurvesGPU geometry.Curves
-                    VulkanBuffer.uploadArray packedCurves curveDataBuffer vkc
+                    VulkanBuffer.uploadArray packedCurves curveDataBuffer context
 
                     // Upload band data: header (curveCount + curveOffset per band entry)
                     // followed by flat curve index array (H then V, with absolute offsets).
@@ -116,7 +117,7 @@ module Contour =
                         bandDataPacked[i * 2] <- geometry.BandEntries[i].CurveCount
                         bandDataPacked[i * 2 + 1] <- geometry.BandEntries[i].CurveOffset
                     Array.Copy (geometry.BandCurveIndices, 0, bandDataPacked, headerSize, geometry.BandCurveIndices.Length)
-                    VulkanBuffer.uploadArray bandDataPacked bandDataBuffer vkc
+                    VulkanBuffer.uploadArray bandDataPacked bandDataBuffer context
 
                     // Upload shape uniforms: MVP, color, bounding box, band layout.
                     // Expand the quad by one physical pixel in each local axis so rasterization
@@ -176,7 +177,7 @@ module Contour =
                           BboxSizeX = bbox.Size.X + paddingX * 2.0f
                           BboxSizeY = bbox.Size.Y + paddingY * 2.0f
                           BandTransform = geometry.BandTransform }
-                    VulkanBuffer.uploadValue shapeGPU shapeDataBuffer vkc
+                    VulkanBuffer.uploadValue shapeGPU shapeDataBuffer context
 
                     // specify descriptor set
                     let mutable uniformDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.DrawIndex pipeline $ fun vkSet ->
@@ -211,29 +212,29 @@ module Contour =
 
                     // only draw if scissor is valid
                     if Hl.validateRect scissor then
-                        Hl.withRenderingInfo [|vkc.SwapchainImageView|] None renderArea LoadAttachments $ fun renderingInfo ->
+                        Hl.withRenderingInfo [|resolveTexture.ImageView|] None renderArea LoadAttachments $ fun renderingInfo ->
                             let mutable renderingInfo = renderingInfo
-                            DeviceApi.vkCmdBeginRendering (vkc.RenderCommandBuffer, &&renderingInfo)
-                        DeviceApi.vkCmdSetViewport (vkc.RenderCommandBuffer, 0u, 1u, &&vkViewport)
-                        DeviceApi.vkCmdSetScissor (vkc.RenderCommandBuffer, 0u, 1u, &&scissor)
+                            DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
+                        DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
+                        DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&scissor)
 
                         // bind pipeline
-                        DeviceApi.vkCmdBindPipeline (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
+                        DeviceApi.vkCmdBindPipeline (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
 
                         // bind quad vertex and index buffers
                         let mutable vkVertexBuffer = quadVertexBuffer.VkBuffer
                         let mutable vkVertexOffset = 0UL
-                        DeviceApi.vkCmdBindVertexBuffers (vkc.RenderCommandBuffer, 0u, 1u, &&vkVertexBuffer, &&vkVertexOffset)
-                        DeviceApi.vkCmdBindIndexBuffer (vkc.RenderCommandBuffer, quadIndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
+                        DeviceApi.vkCmdBindVertexBuffers (context.RenderCommandBuffer, 0u, 1u, &&vkVertexBuffer, &&vkVertexOffset)
+                        DeviceApi.vkCmdBindIndexBuffer (context.RenderCommandBuffer, quadIndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
 
                         // bind descriptor set
-                        DeviceApi.vkCmdBindDescriptorSets (vkc.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.PipelineLayout, 0u, 1u, &&uniformDescriptorSet, 0u, nullPtr)
+                        DeviceApi.vkCmdBindDescriptorSets (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.PipelineLayout, 0u, 1u, &&uniformDescriptorSet, 0u, nullPtr)
 
                         // draw the quad
-                        DeviceApi.vkCmdDrawIndexed (vkc.RenderCommandBuffer, 6u, 1u, 0u, 0, 0u)
+                        DeviceApi.vkCmdDrawIndexed (context.RenderCommandBuffer, 6u, 1u, 0u, 0, 0u)
 
                         // tear down render
-                        DeviceApi.vkCmdEndRendering vkc.RenderCommandBuffer
+                        DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
 
                         // report drawing
                         Hl.reportDrawCall 1 true
@@ -242,7 +243,7 @@ module Contour =
                         Pipeline.advance pipeline
 
                         // advance rendering command buffer
-                        VulkanContext.advanceRenderCommandBuffer vkc
+                        VulkanContext.advanceRenderCommandBuffer context
 
                 // abort
                 | None -> Log.warnOnce ("Cannot draw " + getTypeName pipeline + " because VkPipeline does not exist.")
@@ -256,15 +257,16 @@ module Contour =
         (modelViewProjection : Matrix4x4 inref)
         (clipOpt : Box2 voption inref)
         (viewport : Viewport)
+        (resolveTexture : Texture)
         (buffers : VulkanBuffer * VulkanBuffer * VulkanBuffer * VulkanBuffer * VulkanBuffer * Pipeline)
-        (vkc : VulkanContext) =
+        (context : VulkanContext) =
 
         // Fill pass (if geometry present)
         match contour.FillGeometryOpt with
         | ValueSome geom ->
             drawContourSlugGeometry geom contour.FillColor absolute
                 &viewProjectionClipAbsolute &viewProjectionClipRelative
-                &modelViewProjection &clipOpt viewport buffers vkc
+                &modelViewProjection &clipOpt viewport resolveTexture buffers context
         | ValueNone -> ()
 
         // Stroke pass (if geometry present)
@@ -272,5 +274,5 @@ module Contour =
         | ValueSome geom ->
             drawContourSlugGeometry geom contour.StrokeColor absolute
                 &viewProjectionClipAbsolute &viewProjectionClipRelative
-                &modelViewProjection &clipOpt viewport buffers vkc
+                &modelViewProjection &clipOpt viewport resolveTexture buffers context
         | ValueNone -> ()

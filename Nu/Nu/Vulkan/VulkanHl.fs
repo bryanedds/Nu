@@ -328,8 +328,7 @@ module Hl =
     /// Index of the current Swapchain image.
     let mutable internal ImageIndex = 0u
 
-    /// The forward-declared empty texture value.
-    /// Initialized in RendererProcesses.
+    /// The forward-declared empty texture value; initialized in RendererProcesses.
     /// NOTE: if performance issues arise from checking / casting this, maybe use ValueOption or null directly.
     /// TODO: see if instead of exposing mutability of this directly, we should define Init and CleanUp fns.
     let mutable internal EmptyTextureOpt : obj option = None

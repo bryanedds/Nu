@@ -78,7 +78,7 @@ type [<ReferenceEquality>] SpriteBatchEnv =
 module SpriteBatch =
 
     /// Create a sprite batch pipeline.
-    let private createSpriteBatchPipeline (context : VulkanContext) =
+    let private createSpriteBatchPipeline resolveTextureFormat (context : VulkanContext) =
 
         // create uniforms
         let spritesUniform = VulkanBuffer.create Uniform (Constants.Render.SpriteBatchSize * sizeof<SpriteStruct>) context
@@ -96,7 +96,7 @@ module SpriteBatch =
                     [|Pipeline.descriptor 0 SampledImage FragmentStage 1|]
                   Pipeline.descriptorSet<Sampler>
                     [|Pipeline.descriptor 0 Sampler FragmentStage 1|]|]
-                [||] [|context.SwapFormat|] None
+                [||] [|resolveTextureFormat|] None
                 [|spritesUniform; viewProjectionUniform|]
 
         // fin
@@ -109,7 +109,7 @@ module SpriteBatch =
     let private beginSpriteBatch state env =
         env.State <- state
 
-    let private endSpriteBatch (viewport : Viewport) env =
+    let private endSpriteBatch (viewport : Viewport) (resolveTexture : Texture) env =
 
         // ensure something to draw
         match env.State.TextureOpt with
@@ -175,7 +175,7 @@ module SpriteBatch =
                         Pipeline.writeDescriptorSampler 0 0 sampler vkSet
 
                     // set up render
-                    Hl.withRenderingInfo [|env.VulkanContext.SwapchainImageView|] None renderArea LoadAttachments $ fun renderingInfo ->
+                    Hl.withRenderingInfo [|resolveTexture.ImageView|] None renderArea LoadAttachments $ fun renderingInfo ->
                         let mutable renderingInfo = renderingInfo
                         DeviceApi.vkCmdBeginRendering (env.VulkanContext.RenderCommandBuffer, &&renderingInfo)
                     DeviceApi.vkCmdSetViewport (env.VulkanContext.RenderCommandBuffer, 0u, 1u, &&vkViewport)
@@ -213,8 +213,8 @@ module SpriteBatch =
         // not ready
         | ValueSome _ | ValueNone -> ()
 
-    let private restartSpriteBatch state viewport env =
-        endSpriteBatch viewport env
+    let private restartSpriteBatch state viewport resolveTexture env =
+        endSpriteBatch viewport resolveTexture env
         beginSpriteBatch state env
 
     /// Begin a new sprite batch frame.
@@ -236,9 +236,9 @@ module SpriteBatch =
         endSpriteBatch viewport env
 
     /// Forcibly end the current sprite batch frame, if any, run the given fn, then restart the sprite batch frame.
-    let InterruptSpriteBatchFrame fn viewport env =
+    let InterruptSpriteBatchFrame fn viewport resolveTexture env =
         let state = env.State
-        endSpriteBatch viewport env
+        endSpriteBatch viewport resolveTexture env
         fn ()
         beginSpriteBatch state env
 
@@ -254,13 +254,26 @@ module SpriteBatch =
         env.Colors[env.SpriteIndex] <- color.V4
 
     /// Submit a sprite to the appropriate sprite batch.
-    let submitSpriteBatchSprite (absolute, min : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2 inref, clipOpt : Box2 voption inref, color : Color inref, blend, texture : Texture, viewport, env) =
+    let submitSpriteBatchSprite
+        (absolute,
+         min : Vector2,
+         size : Vector2,
+         pivot : Vector2,
+         rotation,
+         texCoords : Box2 inref,
+         clipOpt : Box2 voption inref,
+         color : Color inref,
+         blend,
+         texture : Texture,
+         viewport,
+         resolveTexture,
+         env) =
 
         // adjust to potential sprite batch state changes
         let state = SpriteBatchState.make absolute clipOpt blend texture
         if  SpriteBatchState.changed state env.State ||
             env.SpriteIndex = Constants.Render.SpriteBatchSize then
-            restartSpriteBatch state viewport env
+            restartSpriteBatch state viewport resolveTexture env
 
         // populate vertices
         let perimeter = box2 min size
@@ -270,10 +283,10 @@ module SpriteBatch =
         env.SpriteIndex <- inc env.SpriteIndex
 
     /// Destroy the given sprite batch environment.
-    let createSpriteBatchEnv unfilteredSampler filteredSampler context =
+    let createSpriteBatchEnv unfilteredSampler filteredSampler resolveTexture context =
         
         // create pipeline
-        let (spritesUniform, viewProjectionUniform, pipeline) = createSpriteBatchPipeline context
+        let (spritesUniform, viewProjectionUniform, pipeline) = createSpriteBatchPipeline resolveTexture context
 
         // create env
         { SpriteIndex = 0;

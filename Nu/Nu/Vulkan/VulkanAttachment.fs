@@ -14,11 +14,11 @@ open Nu
 module Attachment =
     
     /// Create a color attachment.
-    let createColorAttachment textureType optionalUsages internalFormat pixelFormat resolutionX resolutionY (context : VulkanContext) =
+    let createColorAttachment textureType optionalUsageFlags internalFormat pixelFormat resolutionX resolutionY (context : VulkanContext) =
         let metadata = TextureMetadata.make resolutionX resolutionY
         let textureInternal =
             TextureInternal.create
-                MipmapNone (AttachmentColor true) textureType optionalUsages
+                MipmapNone (AttachmentColor true) textureType optionalUsageFlags
                 (Hl.checkAttachmentFormat context.PhysicalDevice.VkPhysicalDevice internalFormat) pixelFormat metadata context
         EagerTexture textureInternal
 

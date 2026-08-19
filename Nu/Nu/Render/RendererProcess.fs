@@ -13,6 +13,7 @@ open System.Threading
 open SDL
 open ImGuiNET
 open Prime
+open Vortice.Vulkan
 open Nu.Vulkan
 
 /// A renderer process that may or may not be threaded.
@@ -54,7 +55,7 @@ type RendererProcess =
         abstract ClearMessages : unit -> unit
         
         /// Submit enqueued render messages for processing.
-        abstract SubmitMessages : Frustum -> Frustum -> Frustum -> Vector3 -> Quaternion -> single -> Vector2 -> Vector2 -> Viewport -> Viewport -> ImDrawDataPtr -> WindowProperties -> unit
+        abstract SubmitMessages : Frustum -> Frustum -> Frustum -> Vector3 -> Quaternion -> single -> Vector2 -> Vector2 -> Viewport -> Viewport -> WindowProperties -> ImDrawDataPtr -> unit
         
         /// Request to swap the underlying render buffer.
         abstract RequestSwap : unit -> unit
@@ -72,6 +73,7 @@ type RendererInline (windowProperties) =
     let mutable messages3d = List ()
     let mutable messages2d = List ()
     let mutable messagesImGui = List ()
+    let mutable resolveTexture = Unchecked.defaultof<Texture>
     let mutable dependenciesOpt = Option<Renderer3d * Renderer2d * RendererImGui * VulkanContext>.None
     let assetTextureRequests = ConcurrentDictionary<AssetTag, unit> HashIdentity.Structural
     let assetTextureOpts = ConcurrentDictionary<AssetTag, uint32 voption> HashIdentity.Structural
@@ -110,6 +112,16 @@ type RendererInline (windowProperties) =
                         | None -> TextureInternal.createEmpty context
                     Hl.EmptyTextureOpt <- Some emptyTexture
 
+                    // create the resolve texture
+                    match Hl.tryGetSurfaceCapabilities context.PhysicalDevice.VkPhysicalDevice with
+                    | Some capabilities ->
+                        match Hl.tryGetSwapExtent capabilities with
+                        | Some swapExtent ->
+                            let usageFlags = VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferSrc ||| VkImageUsageFlags.TransferDst
+                            resolveTexture <- Attachment.createColorAttachment Texture2d usageFlags Rgba8 Rgba (int swapExtent.width) (int swapExtent.height) context
+                        | None -> Log.fail "Could not create resolve texture."
+                    | None -> Log.fail "Could not create resolve texture."
+
                     // create 3d renderer
                     let renderer3d =
                         if Constants.Render.StubRenderer3d
@@ -117,10 +129,10 @@ type RendererInline (windowProperties) =
                         else VulkanRenderer3d.make geometryViewport windowViewport context :> Renderer3d
 
                     // create 2d renderer
-                    let renderer2d = VulkanRenderer2d.make windowViewport context :> Renderer2d
+                    let renderer2d = VulkanRenderer2d.make windowViewport resolveTexture.VkFormat context :> Renderer2d
 
                     // create imgui renderer
-                    let rendererImGui = VulkanRendererImGui.make assetTextureRequests assetTextureOpts fonts windowViewport context :> RendererImGui
+                    let rendererImGui = VulkanRendererImGui.make assetTextureRequests assetTextureOpts fonts windowViewport resolveTexture.VkFormat context :> RendererImGui
 
                     // fin
                     dependenciesOpt <- Some (renderer3d, renderer2d, rendererImGui, context)
@@ -185,7 +197,7 @@ type RendererInline (windowProperties) =
             messages2d.Clear ()
             messagesImGui.Clear ()
 
-        member ri.SubmitMessages frustumInterior frustumExterior frustumImposter eye3dCenter eye3dRotation eye3dFieldOfView eye2dCenter eye2dSize geometryViewport windowViewport drawData windowProperties =
+        member ri.SubmitMessages frustumInterior frustumExterior frustumImposter eye3dCenter eye3dRotation eye3dFieldOfView eye2dCenter eye2dSize geometryViewport windowViewport windowProperties drawData =
 
             // update cached window properties
             Hl.setWindowProperties windowProperties
@@ -193,6 +205,14 @@ type RendererInline (windowProperties) =
             // attempt to render with dependencies
             match dependenciesOpt with
             | Some (renderer3d, renderer2d, rendererImGui, context) ->
+
+                // attempt to size resolve texture
+                match Hl.tryGetSurfaceCapabilities context.PhysicalDevice.VkPhysicalDevice with
+                | Some capabilities ->
+                    match Hl.tryGetSwapExtent capabilities with
+                    | Some swapExtent -> Attachment.updateColorAttachmentSize (int swapExtent.width) (int swapExtent.height) resolveTexture context
+                    | None -> ()
+                | None -> ()
 
                 // pre-render 3d. OPTIMIZATION: don't render geometry when no 3D messages are encountered.
                 let renderGeometry = messages3d.Count > 0
@@ -208,19 +228,19 @@ type RendererInline (windowProperties) =
                 messagesImGui.Clear ()
 
                 // begin frame
-                VulkanContext.beginFrame windowViewport context
+                VulkanContext.beginFrame resolveTexture.Image context
 
                 // render 3d
-                renderer3d.Render frustumInterior frustumExterior frustumImposter eye3dCenter eye3dRotation eye3dFieldOfView geometryViewport windowViewport renderGeometry
+                renderer3d.Render frustumInterior frustumExterior frustumImposter eye3dCenter eye3dRotation eye3dFieldOfView geometryViewport windowViewport resolveTexture renderGeometry
 
                 // render 2d
-                renderer2d.Render eye2dCenter eye2dSize windowViewport
+                renderer2d.Render eye2dCenter eye2dSize windowViewport resolveTexture
 
                 // render imgui
-                rendererImGui.Render windowViewport drawData
+                rendererImGui.Render windowViewport drawData resolveTexture
 
                 // end frame
-                VulkanContext.endFrame context
+                VulkanContext.endFrame windowViewport resolveTexture.Image context
 
             | None -> ()
 
@@ -237,6 +257,7 @@ type RendererInline (windowProperties) =
                 renderer2d.CleanUp ()
                 rendererImGui.CleanUp ()
                 TextureInternal.destroy TextureInternal.empty context
+                Texture.destroy resolveTexture context
                 VulkanContext.cleanup context
                 dependenciesOpt <- None
                 terminated <- true
@@ -249,7 +270,7 @@ type RendererThread (windowProperties) =
     let [<VolatileField>] mutable threadOpt = None
     let [<VolatileField>] mutable started = false
     let [<VolatileField>] mutable terminated = false
-    let [<VolatileField>] mutable submissionOpt = Option<Frustum * Frustum * Frustum * RenderMessage3d List * RenderMessage2d List * RenderMessageImGui List * Vector3 * Quaternion * single * Vector2 * Vector2 * Viewport * Viewport * ImDrawDataPtr * WindowProperties>.None
+    let [<VolatileField>] mutable submissionOpt = Option<Frustum * Frustum * Frustum * RenderMessage3d List * RenderMessage2d List * RenderMessageImGui List * Vector3 * Quaternion * single * Vector2 * Vector2 * Viewport * Viewport * WindowProperties * ImDrawDataPtr>.None
     let [<VolatileField>] mutable swapRequested = false
     let [<VolatileField>] mutable swapRequestAcknowledged = false
     let [<VolatileField>] mutable renderer3dConfig = Renderer3dConfig.defaultConfig
@@ -272,7 +293,8 @@ type RendererThread (windowProperties) =
     let cachedSpriteMessages = System.Collections.Generic.Queue ()
     let [<VolatileField>] mutable cachedSpriteMessagesCapacity = Constants.Render.SpriteMessagesPrealloc
     let mutable contextOpt = None
-
+    let mutable resolveTexture = Unchecked.defaultof<Texture>
+    
     do Hl.setWindowProperties windowProperties
 
     let allocStaticModelMessage () =
@@ -396,6 +418,16 @@ type RendererThread (windowProperties) =
             | None -> TextureInternal.createEmpty context
         Hl.EmptyTextureOpt <- Some emptyTexture
 
+        // create the resolve texture
+        match Hl.tryGetSurfaceCapabilities context.PhysicalDevice.VkPhysicalDevice with
+        | Some capabilities ->
+            match Hl.tryGetSwapExtent capabilities with
+            | Some swapExtent ->
+                let usageFlags = VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferSrc ||| VkImageUsageFlags.TransferDst
+                resolveTexture <- Attachment.createColorAttachment Texture2d usageFlags Rgba8 Rgba (int swapExtent.width) (int swapExtent.height) context
+            | None -> Log.fail "Could not create resolve texture."
+        | None -> Log.fail "Could not create resolve texture."
+
         // create 3d renderer
         let renderer3d =
             if Constants.Render.StubRenderer3d
@@ -403,10 +435,10 @@ type RendererThread (windowProperties) =
             else VulkanRenderer3d.make geometryViewport windowViewport context :> Renderer3d
 
         // create 2d renderer
-        let renderer2d = VulkanRenderer2d.make windowViewport context :> Renderer2d
+        let renderer2d = VulkanRenderer2d.make windowViewport resolveTexture.VkFormat context :> Renderer2d
 
         // create imgui renderer
-        let rendererImGui = VulkanRendererImGui.make assetTextureRequests assetTextureOpts fonts windowViewport context :> RendererImGui
+        let rendererImGui = VulkanRendererImGui.make assetTextureRequests assetTextureOpts fonts windowViewport resolveTexture.VkFormat context :> RendererImGui
 
         // mark as started
         started <- true
@@ -416,7 +448,7 @@ type RendererThread (windowProperties) =
 
             // wait until submission is provided
             while Option.isNone submissionOpt && not terminated do Thread.Yield () |> ignore<bool>
-            let (frustumInterior, frustumExterior, frustumImposter, messages3d, messages2d, messagesImGui, eye3dCenter, eye3dRotation, eye3dFieldOfView, eye2dCenter, eye2dSize, geometryViewport, windowViewport, drawData, windowProperties) = Option.get submissionOpt
+            let (frustumInterior, frustumExterior, frustumImposter, messages3d, messages2d, messagesImGui, eye3dCenter, eye3dRotation, eye3dFieldOfView, eye2dCenter, eye2dSize, geometryViewport, windowViewport, windowProperties, drawData) = Option.get submissionOpt
             submissionOpt <- None
 
             // update cached window properties
@@ -424,7 +456,15 @@ type RendererThread (windowProperties) =
 
             // guard against early termination
             if not terminated then
-            
+
+                // attempt to size resolve texture
+                match Hl.tryGetSurfaceCapabilities context.PhysicalDevice.VkPhysicalDevice with
+                | Some capabilities ->
+                    match Hl.tryGetSwapExtent capabilities with
+                    | Some swapExtent -> Attachment.updateColorAttachmentSize (int swapExtent.width) (int swapExtent.height) resolveTexture context
+                    | None -> ()
+                | None -> ()
+
                 // pre-render 3d. OPTIMIZATION: don't render geometry when no 3D messages are encountered.
                 let renderGeometry = messages3d.Count > 0
                 renderer3d.PreRender frustumInterior frustumExterior frustumImposter eye3dCenter eye3dRotation messages3d
@@ -437,24 +477,24 @@ type RendererThread (windowProperties) =
                 rendererImGui.PreRender messagesImGui
 
                 // begin frame
-                VulkanContext.beginFrame windowViewport context
+                VulkanContext.beginFrame resolveTexture.Image context
 
                 // render 3d, freeing allocated messaages after use
-                renderer3d.Render frustumInterior frustumExterior frustumImposter eye3dCenter eye3dRotation eye3dFieldOfView geometryViewport windowViewport renderGeometry
+                renderer3d.Render frustumInterior frustumExterior frustumImposter eye3dCenter eye3dRotation eye3dFieldOfView geometryViewport windowViewport resolveTexture renderGeometry
                 freeStaticModelMessages messages3d
                 freeStaticModelSurfaceMessages messages3d
                 freeAnimatedModelMessages messages3d
 
                 // render 2d, freeing allocated messaages after use
-                renderer2d.Render eye2dCenter eye2dSize windowViewport
+                renderer2d.Render eye2dCenter eye2dSize windowViewport resolveTexture
                 freeSpriteMessages messages2d
 
                 // render imgui, freeing allocated messaages after use
-                rendererImGui.Render windowViewport drawData
+                rendererImGui.Render windowViewport drawData resolveTexture
                 messagesImGui.Clear ()
 
                 // end frame
-                VulkanContext.endFrame context
+                VulkanContext.endFrame windowViewport resolveTexture.Image context
 
                 // guard against early termination
                 if not terminated then
@@ -478,6 +518,7 @@ type RendererThread (windowProperties) =
         renderer2d.CleanUp ()
         rendererImGui.CleanUp ()
         TextureInternal.destroy TextureInternal.empty context
+        Texture.destroy resolveTexture context
 
     interface RendererProcess with
 
@@ -703,7 +744,7 @@ type RendererThread (windowProperties) =
             messageBuffers2d[messageBufferIndex].Clear ()
             messageBuffersImGui[messageBufferIndex].Clear ()
 
-        member rt.SubmitMessages frustumInterior frustumExterior frustumImposter eye3dCenter eye3dRotation eye3dFieldOfView eye2dCenter eye2dSize geometryViewport windowViewport drawData windowProperties =
+        member rt.SubmitMessages frustumInterior frustumExterior frustumImposter eye3dCenter eye3dRotation eye3dFieldOfView eye2dCenter eye2dSize geometryViewport windowViewport windowProperties drawData =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             let messages3d = messageBuffers3d[messageBufferIndex]
             let messages2d = messageBuffers2d[messageBufferIndex]
@@ -712,7 +753,7 @@ type RendererThread (windowProperties) =
             messageBuffers3d[messageBufferIndex].Clear ()
             messageBuffers2d[messageBufferIndex].Clear ()
             messageBuffersImGui[messageBufferIndex].Clear ()
-            submissionOpt <- Some (frustumInterior, frustumExterior, frustumImposter, messages3d, messages2d, messagesImGui, eye3dCenter, eye3dRotation, eye3dFieldOfView, eye2dCenter, eye2dSize, geometryViewport, windowViewport, drawData, windowProperties)
+            submissionOpt <- Some (frustumInterior, frustumExterior, frustumImposter, messages3d, messages2d, messagesImGui, eye3dCenter, eye3dRotation, eye3dFieldOfView, eye2dCenter, eye2dSize, geometryViewport, windowViewport, windowProperties, drawData)
 
         member rt.RequestSwap () =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
