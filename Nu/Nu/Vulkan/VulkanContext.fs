@@ -285,27 +285,30 @@ type Swapchain =
 
     static member private tryCreateSurfaceAndSwapchainWrapper physicalDevice renderQueue presentQueue swapchain instance =
 
-        // ensure app is in foreground and surface creation was successful
-        if  not Hl.Backgrounded &&
-            Hl.tryCreateVulkanSurface swapchain.Window_ instance = SurfaceReady then
+        // ensure app is in foreground
+        if not Hl.Backgrounded then
 
-            // check if pause triggered during surface creation
-            if not (Hl.getBackgroundingRequested ()) then
+            // attempt to create surface
+            let surfaceState = Hl.tryCreateVulkanSurface swapchain.Window_ instance
+            if surfaceState.IsSurfaceReady then
 
-                // check window not minimized
-                if not (Hl.getWindowMinimized ()) then
+                // check if backgrounding requested during surface creation
+                if not (Hl.getBackgroundingRequested ()) then
 
-                    // try create swapchain wrapper
-                    let swapchainWrapperOpt = SwapchainWrapper.tryCreate swapchain.SurfaceFormat_ VkSwapchainKHR.Null physicalDevice
-                    swapchain.SwapchainWrapperOpts_[swapchain.SwapchainIndex_] <- swapchainWrapperOpt
+                    // check that window is not minimized
+                    if not (Hl.getWindowMinimized ()) then
 
-                    // destroy surface if lost again or when pause triggered during swapchain creation
-                    if  Hl.SurfaceState.IsSurfaceLost ||
-                        Hl.getBackgroundingRequested () then
-                        Swapchain.destroySurface renderQueue presentQueue swapchain
+                        // try create swapchain wrapper
+                        let swapchainWrapperOpt = SwapchainWrapper.tryCreate swapchain.SurfaceFormat_ VkSwapchainKHR.Null physicalDevice
+                        swapchain.SwapchainWrapperOpts_[swapchain.SwapchainIndex_] <- swapchainWrapperOpt
 
-            // abort
-            else Swapchain.destroySurface renderQueue presentQueue swapchain
+                        // destroy surface if lost again or when backgrounding triggered during swapchain creation
+                        if  Hl.SurfaceState.IsSurfaceLost ||
+                            Hl.getBackgroundingRequested () then
+                            Swapchain.destroySurface renderQueue presentQueue swapchain
+
+                // abort
+                else Swapchain.destroySurface renderQueue presentQueue swapchain
 
     /// Attempt to recreate the current vulkan swapchain.
     static member tryRecreate physicalDevice renderQueue presentQueue swapchain instance =
@@ -324,7 +327,7 @@ type Swapchain =
 
             // advance swapchain index
             if swapchain.SwapchainWrapperOpts_[swapchain.SwapchainIndex_].IsSome then
-                swapchain.SwapchainIndex_ <- (inc swapchain.SwapchainIndex_) % swapchain.SwapchainWrapperOpts_.Length
+                swapchain.SwapchainIndex_ <- inc swapchain.SwapchainIndex_ % swapchain.SwapchainWrapperOpts_.Length
 
             // destroy SwapchainWrapper at new index if present
             match swapchain.SwapchainWrapperOpts_[swapchain.SwapchainIndex_] with
@@ -344,8 +347,7 @@ type Swapchain =
                     swapchain.SwapchainWrapperOpts_[swapchain.SwapchainIndex_] <- swapchainWrapperOpt
 
                     // if surface is lost here (or pause triggered during pipeline creation!), destroy and attempt to recover on the spot
-                    if  Hl.SurfaceState.IsSurfaceLost ||
-                        Hl.getBackgroundingRequested () then
+                    if Hl.SurfaceState.IsSurfaceLost || Hl.getBackgroundingRequested () then
                         Swapchain.destroySurface renderQueue presentQueue swapchain
                         Swapchain.tryCreateSurfaceAndSwapchainWrapper physicalDevice renderQueue presentQueue swapchain instance
 
@@ -800,10 +802,8 @@ type [<ReferenceEquality>] VulkanContext =
                     submitInfo.pWaitSemaphores <- &&imageAvailableSemaphore
                     submitInfo.pWaitDstStageMask <- &&stageFlag
                     let mutable renderFinishedSemaphore = swapchainWrapper.RenderFinishedSemaphore
-                    let mutable stageFlag = VkPipelineStageFlags.ColorAttachmentOutput
                     submitInfo.signalSemaphoreCount <- 1u
                     submitInfo.pSignalSemaphores <- &&renderFinishedSemaphore
-                    submitInfo.pWaitDstStageMask <- &&stageFlag
                 | None -> ()
                 DeviceApi.vkQueueSubmit (vkQueue, 1u, &&submitInfo, context.RenderFence_) |> Hl.check
 
