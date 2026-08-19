@@ -110,7 +110,7 @@ type RendererInline (windowProperties) =
                             | Right textureInternal -> textureInternal
                             | Left _ -> TextureInternal.createEmpty context
                         | None -> TextureInternal.createEmpty context
-                    Hl.EmptyTextureOpt <- Some emptyTexture
+                    Hl.setEmptyTextureOpt (Some emptyTexture)
 
                     // create the resolve texture
                     match Hl.tryGetSurfaceCapabilities context.PhysicalDevice.VkPhysicalDevice with
@@ -416,7 +416,7 @@ type RendererThread (windowProperties) =
                 | Right textureInternal -> textureInternal
                 | Left _ -> TextureInternal.createEmpty context
             | None -> TextureInternal.createEmpty context
-        Hl.EmptyTextureOpt <- Some emptyTexture
+        Hl.setEmptyTextureOpt (Some emptyTexture)
 
         // create the resolve texture
         match Hl.tryGetSurfaceCapabilities context.PhysicalDevice.VkPhysicalDevice with

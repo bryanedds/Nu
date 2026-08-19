@@ -194,64 +194,6 @@ type SwapchainWrapper =
     member this.RenderFinishedSemaphore =
         this.RenderFinishedSemaphores[int Hl.ImageIndex]
 
-    /// Try create the VkSwapchain.
-    static member private tryCreateVkSwapchain (surfaceFormat : VkSurfaceFormatKHR) oldVkSwapchainOpt physicalDevice =
-        match Hl.tryGetSurfaceCapabilities physicalDevice.VkPhysicalDevice with
-        | Some capabilities ->
-            match Hl.tryGetSwapExtent capabilities with
-            | Some swapExtent ->
-
-                // decide the minimum number of images in the swapchain. Sellers, Vulkan Programming Guide p. 144, recommends
-                // at least 3 for performance, but to keep latency low let's start with the more conservative recommendation of
-                // https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Swap_chain#page_Creating-the-swap-chain.
-                let minImageCount =
-                    if capabilities.maxImageCount = 0u
-                    then capabilities.minImageCount + 1u
-                    else min (capabilities.minImageCount + 1u) capabilities.maxImageCount
-
-                // attempt to create swapchain, indicating that the surface is lost when such is indicated on creation failure
-                let indicesArray = [|physicalDevice.GraphicsQueueFamily; physicalDevice.PresentQueueFamily|]
-                use indicesArrayPin = new ArrayPin<_> (indicesArray)
-                let mutable info = VkSwapchainCreateInfoKHR ()
-                info.surface <- Hl.Surface
-                info.minImageCount <- minImageCount
-                info.imageFormat <- surfaceFormat.format
-                info.imageColorSpace <- surfaceFormat.colorSpace
-                info.imageExtent <- swapExtent
-                info.imageArrayLayers <- 1u
-                info.imageUsage <- VkImageUsageFlags.ColorAttachment ||| VkImageUsageFlags.TransferDst
-                if physicalDevice.GraphicsQueueFamily = physicalDevice.PresentQueueFamily then
-                    info.imageSharingMode <- VkSharingMode.Exclusive
-                else
-                    info.imageSharingMode <- VkSharingMode.Concurrent
-                    info.queueFamilyIndexCount <- 2u
-                    info.pQueueFamilyIndices <- indicesArrayPin.Pointer
-                info.preTransform <- VkSurfaceTransformFlagsKHR.Identity
-                info.compositeAlpha <-
-                    if capabilities.supportedCompositeAlpha &&& VkCompositeAlphaFlagsKHR.Opaque <> VkCompositeAlphaFlagsKHR.None then VkCompositeAlphaFlagsKHR.Opaque
-                    elif capabilities.supportedCompositeAlpha &&& VkCompositeAlphaFlagsKHR.PreMultiplied <> VkCompositeAlphaFlagsKHR.None then VkCompositeAlphaFlagsKHR.PreMultiplied
-                    elif capabilities.supportedCompositeAlpha &&& VkCompositeAlphaFlagsKHR.PostMultiplied <> VkCompositeAlphaFlagsKHR.None then VkCompositeAlphaFlagsKHR.PostMultiplied
-                    else VkCompositeAlphaFlagsKHR.Inherit
-                info.presentMode <-
-                    if Constants.Render.RenderVsync
-                    then VkPresentModeKHR.Fifo
-                    else VkPresentModeKHR.Immediate
-                info.clipped <- true
-                info.oldSwapchain <- oldVkSwapchainOpt
-                let mutable vkSwapchain = Unchecked.defaultof<VkSwapchainKHR>
-                match DeviceApi.vkCreateSwapchainKHR (&info, nullPtr, &vkSwapchain) with
-                | VkResult.Success ->
-                    Some (vkSwapchain, swapExtent)
-                | result when int result < 0 ->
-                    Hl.SurfaceState <- SurfaceLost
-                    None
-                | result ->
-                    Hl.check result
-                    None
-
-            | None -> None
-        | None -> None
-
     /// Get swapchain images.
     static member private getSwapchainImages vkSwapchain =
         let mutable imageCount = 0u
@@ -277,7 +219,7 @@ type SwapchainWrapper =
     static member tryCreate surfaceFormat oldVkSwapchainOpt physicalDevice =
         
         // try create vkSwapchain and its assets
-        match SwapchainWrapper.tryCreateVkSwapchain surfaceFormat oldVkSwapchainOpt physicalDevice with
+        match Hl.tryCreateVkSwapchain surfaceFormat oldVkSwapchainOpt physicalDevice.GraphicsQueueFamily physicalDevice.PresentQueueFamily physicalDevice.VkPhysicalDevice with
         | Some (vkSwapchain, swapExtent) ->
 
             // create images / views
@@ -348,7 +290,7 @@ type Swapchain =
     static member private tryCreateSurfaceAndSwapchainWrapper physicalDevice renderQueue presentQueue swapchain instance =
 
         // ensure app is in foreground and surface creation was successful
-        if  not (Hl.getBackgrounded ()) &&
+        if  not Hl.Backgrounded &&
             Hl.tryCreateVulkanSurface swapchain.Window_ instance = SurfaceReady then
 
             // check if pause triggered during surface creation
@@ -594,7 +536,7 @@ type [<ReferenceEquality>] VulkanContext =
             Log.info (validationLayerName + " is not available. The Vulkan SDK must be installed to enable validation.")
 
         // attempt to use validation layer when desired
-        Hl.ValidationLayersActivated <- Constants.Render.RenderDebug && validationLayerExists
+        let validationLayersActivated = Constants.Render.RenderDebug && validationLayerExists
         use layerWrap = new StringArrayWrap ([|validationLayerName|]) // must remain in scope until vkCreateInstance
 
         // get vulkan extensions
@@ -615,7 +557,7 @@ type [<ReferenceEquality>] VulkanContext =
         use debugUtilsWrap = new StringWrap (Vulkan.VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
         let extensions =
             Array.init
-                (vkExtensionCountInt + if Hl.ValidationLayersActivated then 1 else 0)
+                (vkExtensionCountInt + if validationLayersActivated then 1 else 0)
                 (fun i -> if i < vkExtensionCountInt then NativePtr.get vkExtensions i else debugUtilsWrap.Pointer)
 
         // check for portability enumeration extension - using MoltenVK in place of Vulkan loader won't support it (on iOS Simulator),
@@ -645,7 +587,7 @@ type [<ReferenceEquality>] VulkanContext =
         instanceInfo.ppEnabledExtensionNames <- extensionsPin.Pointer
         if Constants.Vulkan.MoltenVk && portabilityEnumerationAvailable then
             instanceInfo.flags <- VkInstanceCreateFlags.EnumeratePortabilityKHR
-        if Hl.ValidationLayersActivated then
+        if validationLayersActivated then
             let mutable debugInfo = debugInfo
             instanceInfo.pNext <- asVoidPtr &debugInfo
             instanceInfo.enabledLayerCount <- 1u
@@ -653,11 +595,11 @@ type [<ReferenceEquality>] VulkanContext =
         let mutable instance = Unchecked.defaultof<VkInstance>
         Vulkan.vkCreateInstance (&instanceInfo, nullPtr, &instance) |> Hl.check
         SetInstanceApi (Vulkan.GetApi instance)
-        instance
+        (validationLayersActivated, instance)
 
     // TODO: try separate this from validation status, same for create instance debug.
-    static member private tryCreateDebugMessenger info =
-        if Hl.ValidationLayersActivated then
+    static member private tryCreateDebugMessenger validationLayersActivated info =
+        if validationLayersActivated then
             let mutable debugMessenger = Unchecked.defaultof<VkDebugUtilsMessengerEXT>
             InstanceApi.vkCreateDebugUtilsMessengerEXT (&info, nullPtr, &debugMessenger) |> Hl.check
             Some debugMessenger
@@ -930,10 +872,13 @@ type [<ReferenceEquality>] VulkanContext =
                     | Some capabilities ->
                         match Hl.tryGetSwapExtent capabilities with
                         | Some swapExtent when swapExtent = swapchainWrapper.SwapExtent ->
-                            match DeviceApi.vkAcquireNextImageKHR (swapchainWrapper.VkSwapchain, UInt64.MaxValue, VkSemaphore.Null, VkFence.Null, &Hl.ImageIndex) with
+                            let mutable imageIndex = Hl.ImageIndex
+                            let result = DeviceApi.vkAcquireNextImageKHR (swapchainWrapper.VkSwapchain, UInt64.MaxValue, VkSemaphore.Null, VkFence.Null, &imageIndex)
+                            Hl.setImageIndex imageIndex
+                            match result with
                             | VkResult.ErrorOutOfDateKHR -> true // recreate when swapchain is out of data
-                            | VkResult.ErrorSurfaceLostKHR -> Hl.SurfaceState <- SurfaceLost; true // recreate when surface is lost
-                            | result ->
+                            | VkResult.ErrorSurfaceLostKHR -> Hl.notifySurfaceLost (); true // recreate when surface is lost
+                            | _ ->
                                 Hl.check result
                                 let swapchainImage = swapchainWrapper.Images[int Hl.ImageIndex]
                                 Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color ColorAttachmentWrite TransferSrc resolveImage context.RenderCommandBuffer
@@ -980,15 +925,16 @@ type [<ReferenceEquality>] VulkanContext =
                                 // present image
                                 let mutable renderFinishedSemaphore = swapchainWrapper.RenderFinishedSemaphore
                                 let mutable vkSwapchain = swapchainWrapper.VkSwapchain
+                                let mutable imageIndex = Hl.ImageIndex
                                 let mutable info = VkPresentInfoKHR ()
                                 info.waitSemaphoreCount <- 1u
                                 info.pWaitSemaphores <- &&renderFinishedSemaphore
                                 info.swapchainCount <- 1u
                                 info.pSwapchains <- &&vkSwapchain
-                                info.pImageIndices <- &&Hl.ImageIndex
+                                info.pImageIndices <- &&imageIndex
                                 match DeviceApi.vkQueuePresentKHR (vkQueue, &&info) with
                                 | VkResult.ErrorOutOfDateKHR -> true
-                                | VkResult.ErrorSurfaceLostKHR -> Hl.SurfaceState <- SurfaceLost; true
+                                | VkResult.ErrorSurfaceLostKHR -> Hl.notifySurfaceLost (); true
                                 | result -> Hl.check result; false // don't recreate when swap extent is the same
 
                             // can't present               
@@ -1018,10 +964,10 @@ type [<ReferenceEquality>] VulkanContext =
         let debugInfo = VulkanContext.makeDebugMessengerInfo ()
 
         // create instance
-        let instance = VulkanContext.createVulkanInstance debugInfo
+        let (validationLayersActivated, instance) = VulkanContext.createVulkanInstance debugInfo
 
         // create debug messenger if validation activated
-        let debugMessengerOpt = VulkanContext.tryCreateDebugMessenger debugInfo
+        let debugMessengerOpt = VulkanContext.tryCreateDebugMessenger validationLayersActivated debugInfo
 
         // create surface
         Hl.createVulkanSurface window instance
