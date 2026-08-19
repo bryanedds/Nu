@@ -258,7 +258,7 @@ type RendererInline (windowProperties) =
                 rendererImGui.CleanUp ()
                 TextureInternal.destroy TextureInternal.empty context
                 Texture.destroy resolveTexture context
-                VulkanContext.cleanup context
+                VulkanContext.cleanUp context
                 dependenciesOpt <- None
                 terminated <- true
 
@@ -769,7 +769,7 @@ type RendererThread (windowProperties) =
             thread.Join ()
             match contextOpt with
             | Some context ->
-                VulkanContext.cleanup context
+                VulkanContext.cleanUp context
                 contextOpt <- None
             | None -> ()
             threadOpt <- None

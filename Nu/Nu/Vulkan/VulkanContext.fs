@@ -565,15 +565,10 @@ type [<ReferenceEquality>] VulkanContext =
             then Array.append extensions [|portabilityWrap.Pointer|]
             else extensions
         use extensionsPin = new ArrayPin<_> (extensions)
-            
-        // TODO: P0: complete VkApplicationInfo before merging to master
-        // and check for available vulkan version (for the instance, NOT the physical device) as described in 
-        // https://registry.khronos.org/vulkan/specs/1.3-extensions/html/chap4.html#VkApplicationInfo.
-        // does the wrapper even cover NULL vkGetInstanceProcAddr for vkEnumerateInstanceVersion?
-        let mutable appInfo = VkApplicationInfo ()
 
-        // this is the *maximum* Vulkan version
-        appInfo.apiVersion <- VkVersion.Version_1_3
+        // configure app info
+        let mutable appInfo = VkApplicationInfo ()
+        appInfo.apiVersion <- VkVersion.Version_1_3 // NOTE: this is the _max_ Vulkan version, not the _required_ version.
 
         // create instance
         let mutable instanceInfo = VkInstanceCreateInfo ()
@@ -667,14 +662,14 @@ type [<ReferenceEquality>] VulkanContext =
     /// Create the logical device.
     static member private createLogicalDevice instance (physicalDevice : PhysicalDevice) =
 
-        // MoltenVK features
+        // configure MoltenVK features
         let portabilitySubsetExtensionName = NativePtr.spanToString Vulkan.VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME
         let portabilitySubsetAvailable =
             Array.exists (fun ext -> Hl.getExtensionName ext = portabilitySubsetExtensionName) physicalDevice.Extensions
         let mutable portabilityFeatures = VkPhysicalDevicePortabilitySubsetFeaturesKHR ()
         portabilityFeatures.imageViewFormatSwizzle <- true
 
-        // Vulkan 1.3 features
+        // configure Vulkan 1.3 features
         let mutable vulkan13 = VkPhysicalDeviceVulkan13Features ()
         vulkan13.dynamicRendering <- true
         if Constants.Vulkan.MoltenVk && portabilitySubsetAvailable then vulkan13.pNext <- asVoidPtr &portabilityFeatures
@@ -703,9 +698,6 @@ type [<ReferenceEquality>] VulkanContext =
             then [|swapchainExtensionName; portabilitySubsetExtensionName|]
             else [|swapchainExtensionName|]
         use extensionArrayWrap = new StringArrayWrap (extensionArray)
-
-        // NOTE: for particularly dated implementations of Vulkan, validation depends on device layers which are
-        // deprecated. These must be enabled if validation support for said implementations is desired.
 
         // specify device features to be enabled
         let mutable features = VkPhysicalDeviceFeatures ()
@@ -769,10 +761,14 @@ type [<ReferenceEquality>] VulkanContext =
         commandPool
 
     static member private beginRenderCommandBuffer context =
+        
+        // allocate command buffer if needed
         if context.RenderCommandBuffersCursor_ >= context.RenderCommandBuffers_.Count then
             let buffers = Hl.allocateCommandBuffers context.RenderCommandBuffers_.Count VkCommandBufferLevel.Primary context.RenderCommandPool_
             context.RenderCommandBuffers_.AddRange buffers
         let commandBuffer = context.RenderCommandBuffers_[context.RenderCommandBuffersCursor_]
+
+        // prepare command buffer for immediate use
         DeviceApi.vkResetCommandBuffer (commandBuffer, VkCommandBufferResetFlags.None) |> Hl.check
         let mutable beginInfo = VkCommandBufferBeginInfo ()
         DeviceApi.vkBeginCommandBuffer (commandBuffer, &&beginInfo) |> Hl.check
@@ -1039,9 +1035,9 @@ type [<ReferenceEquality>] VulkanContext =
         // failure
         | None -> None
 
-    /// Clean-up a VulkanContext.
+    /// Clean-up a vulkan context.
     /// NOTE: intended to be invoked from the main thread.
-    static member cleanup context =
+    static member cleanUp context =
         Swapchain.destroy context.RenderQueue_ context.PresentQueue_ context.Swapchain_
         DeviceApi.vkDestroySemaphore (context.ImageAvailableSemaphore_, nullPtr)
         DeviceApi.vkDestroyFence (context.RenderFence_, nullPtr)
