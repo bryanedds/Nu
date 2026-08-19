@@ -311,7 +311,7 @@ module Hl =
 
     // provides id for a texture on the gpu that is globally unique i.e. cannot be reused after texture is destroyed,
     // which is essential for tracking descriptor writes
-    let mutable private TextureIdGenerationLock = obj ()
+    let mutable private TextureIdCounterLock = obj ()
     let mutable private TextureIdCounter = 0u
 
     // the forward-declared empty texture value; initialized in RendererProcesses.
@@ -337,7 +337,7 @@ module Hl =
     let inline internal SurfaceState<'a> = SurfaceState_
 
     // presentation teardown in response to backgrounding follows BackgroundingResponseState cycle,
-    // whereas presentation setup need only care whether app is *currently* in foreground
+    // whereas presentation setup need only care whether app is _currently_ in foreground
     let mutable private BackgroundingResponseStateLock = obj ()
     let mutable private BackgroundingResponseState = PresentationTeardownComplete
 
@@ -360,7 +360,7 @@ module Hl =
 
     /// Generate a globally unique texture id for use in descriptor writes.
     let internal genTextureId () =
-        lock TextureIdGenerationLock (fun () -> TextureIdCounter <- inc TextureIdCounter; TextureIdCounter)
+        lock TextureIdCounterLock (fun () -> TextureIdCounter <- inc TextureIdCounter; TextureIdCounter)
 
     /// Initialize the empty texture value.
     let initEmptyTexture emptyTexture =
