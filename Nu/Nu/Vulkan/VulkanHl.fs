@@ -399,6 +399,9 @@ module Hl =
     let notifySurfaceLost () =
         SurfaceState_ <- SurfaceLost
 
+    let getWindowMinimized () =
+        WindowProperties_.WindowFlags &&& SDL_WindowFlags.SDL_WINDOW_MINIMIZED <> LanguagePrimitives.EnumOfValue 0UL
+
     /// Check the given Vulkan operation result, logging on non-Success.
     let check (result : VkResult) =
         if int result > 0 then Log.info ("Vulkan info: " + string result)

@@ -271,10 +271,6 @@ type Swapchain =
         | Some wrapper -> Some wrapper
         | None -> None
 
-    /// Check if window is minimized.
-    static member getWindowMinimized () =
-        Hl.WindowProperties.WindowFlags &&& SDL_WindowFlags.SDL_WINDOW_MINIMIZED <> LanguagePrimitives.EnumOfValue 0UL
-
     static member private destroySwapchainWrappers renderQueue presentQueue swapchain =
         for i in 0 .. dec swapchain.SwapchainWrapperOpts_.Length do
             match swapchain.SwapchainWrapperOpts_[i] with
@@ -297,7 +293,7 @@ type Swapchain =
             if not (Hl.getBackgroundingRequested ()) then
 
                 // check window not minimized
-                if not (Swapchain.getWindowMinimized ()) then
+                if not (Hl.getWindowMinimized ()) then
 
                     // try create swapchain wrapper
                     let swapchainWrapperOpt = SwapchainWrapper.tryCreate swapchain.SurfaceFormat_ VkSwapchainKHR.Null physicalDevice
@@ -341,7 +337,7 @@ type Swapchain =
             if not (Hl.getBackgroundingRequested ()) then
                 
                 // check window not minimized
-                if not (Swapchain.getWindowMinimized ()) then
+                if not (Hl.getWindowMinimized ()) then
                     
                     // try create new swapchain internal
                     let swapchainWrapperOpt = SwapchainWrapper.tryCreate swapchain.SurfaceFormat_ oldVkSwapchainOpt physicalDevice
@@ -380,8 +376,7 @@ type Swapchain =
         let swapchainWrapperOpts = Array.create (Constants.Vulkan.FramesInFlight + 1) None
 
         // try create first SwapchainWrapper if window is not minimized or app paused
-        if  not (Swapchain.getWindowMinimized ()) &&
-            not (Hl.getBackgroundingRequested ()) then
+        if not (Hl.getBackgroundingRequested ()) && not (Hl.getWindowMinimized ()) then
             let swapchainWrapperOpt = SwapchainWrapper.tryCreate surfaceFormat VkSwapchainKHR.Null physicalDevice
             swapchainWrapperOpts[swapchainIndex] <- swapchainWrapperOpt
 
@@ -848,8 +843,8 @@ type [<ReferenceEquality>] VulkanContext =
 
         // attempt to recreate the swapchain when needed
         let shouldRecreate =
-            if Swapchain.getWindowMinimized () then false // don't recreate when minimized
-            elif Hl.getBackgroundingRequested () then false // don't recreate when going into background
+            if Hl.getBackgroundingRequested () then false // don't recreate when going into background
+            elif Hl.getWindowMinimized () then false // don't recreate when minimized
             else match context.SwapchainWrapperOpt with
                  | Some swapchainWrapper ->
                     match Hl.tryGetSurfaceCapabilities context.PhysicalDevice_.VkPhysicalDevice with
@@ -864,8 +859,8 @@ type [<ReferenceEquality>] VulkanContext =
 
         // attempt to blit to swapchain image
         let shouldRecreate =
-            if Swapchain.getWindowMinimized () then false // don't recreate when minimized
-            elif Hl.getBackgroundingRequested () then false // don't recreate when going into background
+            if Hl.getBackgroundingRequested () then false // don't recreate when going into background
+            elif Hl.getWindowMinimized () then false // don't recreate when minimized
             else match context.SwapchainWrapperOpt with
                  | Some swapchainWrapper ->
                     match Hl.tryGetSurfaceCapabilities context.PhysicalDevice_.VkPhysicalDevice with
@@ -913,8 +908,8 @@ type [<ReferenceEquality>] VulkanContext =
 
             // attempt to present image
             let shouldRecreate =
-                if Swapchain.getWindowMinimized () then true
-                elif Hl.getBackgroundingRequested () then true
+                if Hl.getBackgroundingRequested () then false // don't recreate when going into background
+                elif Hl.getWindowMinimized () then false // don't recreate when minimized
                 else match context.SwapchainWrapperOpt with
                      | Some swapchainWrapper ->
                         match Hl.tryGetSurfaceCapabilities context.PhysicalDevice_.VkPhysicalDevice with
