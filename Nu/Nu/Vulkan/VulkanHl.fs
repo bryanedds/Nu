@@ -379,8 +379,8 @@ module Hl =
     let notifySurfaceLost () =
         SurfaceState_ <- SurfaceLost
 
-    // callback to inform render loop about app backgrounding
-    // official documentation for android case: https://github.com/libsdl-org/SDL/blob/main/docs/README-android.md#activity-lifecycle
+    /// Callback to inform render loop about app backgrounding. Official documentation for android case -
+    /// https://github.com/libsdl-org/SDL/blob/main/docs/README-android.md#activity-lifecycle
 #nowarn 202
     [<UnmanagedCallersOnly (CallConvs = [|typeof<System.Runtime.CompilerServices.CallConvCdecl>|])>]
 #warnon 202
@@ -760,8 +760,8 @@ module Hl =
             if isWindowResourceAvailable () then
 
                 // inform the backgrounding callback that we begin the process of creating the surface and swapchain
-                // that may need to be aborted/destroyed at any point before *or* after completion due to a
-                // backgrounding event, hence setup *initiated*
+                // that may need to be aborted/destroyed at any point before _or_ after completion due to a
+                // backgrounding event, hence setup _initiated_
                 setPresentationSetupInitiated ()
                 let mutable surfacePtr = Unchecked.defaultof<VkSurfaceKHR_T nativeptr>
                 let instance = NativePtr.ofNativeInt (VkInstance.op_Implicit instance)
@@ -781,7 +781,7 @@ module Hl =
 
     /// Create a Vulkan surface, waiting for app to enter foreground when necessary.
     let createVulkanSurface window instance =
-    
+
         // wait for app to enter foreground if not already
         while Backgrounded do
             Thread.Yield () |> ignore<bool>
@@ -896,8 +896,7 @@ module Hl =
         | Right shader ->
 
             // NOTE: using a high level overload here to avoid questions about reinterpret casting and memory
-            // alignment; see -
-            // https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Shader_modules#page_Creating-shader-modules
+            // alignment; see - https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Shader_modules#page_Creating-shader-modules
             let mutable shaderModule = Unchecked.defaultof<VkShaderModule>
             DeviceApi.vkCreateShaderModule (shader.AsSpan (), nullPtr, &shaderModule) |> check
             Right shaderModule
@@ -1042,11 +1041,11 @@ module Hl =
         barrier.subresourceRange <- makeSubresourceRange 1 (mipLevels - 1) layer 1 VkImageAspectFlags.Color
         DeviceApi.vkCmdPipelineBarrier
             (commandBuffer,
-                Undefined.PipelineStage,
-                TransferDst.PipelineStage,
-                VkDependencyFlags.None,
-                0u, nullPtr, 0u, nullPtr,
-                1u, &&barrier)
+             Undefined.PipelineStage,
+             TransferDst.PipelineStage,
+             VkDependencyFlags.None,
+             0u, nullPtr, 0u, nullPtr,
+             1u, &&barrier)
 
         // transition original image separately as it's already set to shader read
         barrier.srcAccessMask <- ColorAttachmentRead.Access
@@ -1057,11 +1056,11 @@ module Hl =
         barrier.subresourceRange.levelCount <- 1u // only one level at a time from here on
         DeviceApi.vkCmdPipelineBarrier
             (commandBuffer,
-                ColorAttachmentRead.PipelineStage,
-                TransferDst.PipelineStage,
-                VkDependencyFlags.None,
-                0u, nullPtr, 0u, nullPtr,
-                1u, &&barrier)
+             ColorAttachmentRead.PipelineStage,
+             TransferDst.PipelineStage,
+             VkDependencyFlags.None,
+             0u, nullPtr, 0u, nullPtr,
+             1u, &&barrier)
 
         // compute mipmap dimensions
         let mutable mipWidth = width
@@ -1076,11 +1075,11 @@ module Hl =
             barrier.subresourceRange.baseMipLevel <- uint (i - 1)
             DeviceApi.vkCmdPipelineBarrier
                 (commandBuffer,
-                    TransferDst.PipelineStage,
-                    TransferSrc.PipelineStage,
-                    VkDependencyFlags.None,
-                    0u, nullPtr, 0u, nullPtr,
-                    1u, &&barrier)
+                 TransferDst.PipelineStage,
+                 TransferSrc.PipelineStage,
+                 VkDependencyFlags.None,
+                 0u, nullPtr, 0u, nullPtr,
+                 1u, &&barrier)
 
             // generate the next mipmap image from the previous one
             let nextWidth = if mipWidth > 1 then mipWidth / 2 else 1
@@ -1099,11 +1098,11 @@ module Hl =
             barrier.newLayout <- ColorAttachmentRead.VkImageLayout
             DeviceApi.vkCmdPipelineBarrier
                 (commandBuffer,
-                    TransferSrc.PipelineStage,
-                    ColorAttachmentRead.PipelineStage,
-                    VkDependencyFlags.None,
-                    0u, nullPtr, 0u, nullPtr,
-                    1u, &&barrier)
+                 TransferSrc.PipelineStage,
+                 ColorAttachmentRead.PipelineStage,
+                 VkDependencyFlags.None,
+                 0u, nullPtr, 0u, nullPtr,
+                 1u, &&barrier)
 
             // update mipmap dimensions
             mipWidth <- nextWidth
@@ -1117,11 +1116,11 @@ module Hl =
         barrier.subresourceRange.baseMipLevel <- uint (mipLevels - 1)
         DeviceApi.vkCmdPipelineBarrier
             (commandBuffer,
-                TransferDst.PipelineStage,
-                ColorAttachmentRead.PipelineStage,
-                VkDependencyFlags.None,
-                0u, nullPtr, 0u, nullPtr,
-                1u, &&barrier)
+             TransferDst.PipelineStage,
+             ColorAttachmentRead.PipelineStage,
+             VkDependencyFlags.None,
+             0u, nullPtr, 0u, nullPtr,
+             1u, &&barrier)
 
     /// Infer that an asset with the given file path should be filtered in a 2D rendering context.
     let inferTextureFiltered2d filePath =

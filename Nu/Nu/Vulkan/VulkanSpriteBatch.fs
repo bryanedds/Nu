@@ -25,6 +25,7 @@ type SpriteStruct =
 type ViewProjectionStruct =
     [<FieldOffset(0)>] val mutable viewProjection : Matrix4x4
     
+/// The state of a sprite batch.
 type [<Struct>] SpriteBatchState =
     { Absolute : bool
       ClipOpt : Box2 voption

@@ -13,15 +13,12 @@ open Prime
 open Nu
 
 /// A unit quad used for contour rendering.
-/// Vertices are in [0,1] range so the vertex shader can map them
-/// directly to the bounding box via  bboxMin + position * bboxSize.
-module private ContourQuad =
-
-    let vertices : Vector2 array =
-        [| v2 0.0f 0.0f; v2 0.0f 1.0f; v2 1.0f 0.0f; v2 1.0f 1.0f |]
-
-    let indices : uint32 array =
-        [| 0u; 2u; 1u; 1u; 2u; 3u |]
+/// Vertices are in [0,1] range so the vertex shader can map them directly to the bounding box via
+/// bboxMin + position * bboxSize.
+[<RequireQualifiedAccess>]
+module ContourQuad =
+    let Vertices = [|v2 0.0f 0.0f; v2 0.0f 1.0f; v2 1.0f 0.0f; v2 1.0f 1.0f|]
+    let Indices = [|0u; 2u; 1u; 1u; 2u; 3u|]
 
 /// Per-shape data uploaded to the GPU uniform buffer.
 /// Layout matches the GLSL std430 layout in Contour.vert/frag:
@@ -33,7 +30,7 @@ module private ContourQuad =
 // Flags bit layout (must match Contour.frag):
 //   bit 0: fillMode (0=NonZero, 1=EvenOdd)
 [<Struct; StructLayout (LayoutKind.Sequential)>]
-type private ShapeGPU =
+type ShapeGPU =
     { MVP : Matrix4x4
       Color : Color
       CurveCount : uint32
@@ -50,22 +47,19 @@ type private ShapeGPU =
 [<RequireQualifiedAccess>]
 module Contour =
 
-    let private maxCurves = 4096
-    let private initialShapeDataSize = 256
-    let private initialBandDataSize = 65536 // uint32 entries (256KB)
+    let CurvesMax = 4096
+    let ShapeDataSizeInitial = 256
+    let BandDataSizeInitial = 65536 // uint32 entries (256KB)
 
+    /// Create a Vulkan pipeline for drawing contours.
     let createPipeline resolveTextureFormat context =
-
-        let quadVertexBuffer = VulkanBuffer.create (Vertex true) (sizeof<Vector2> * ContourQuad.vertices.Length) context
-        let quadIndexBuffer = VulkanBuffer.create (BufferType.Index true) (sizeof<uint32> * ContourQuad.indices.Length) context
-
-        VulkanBuffer.uploadArray ContourQuad.vertices quadVertexBuffer context
-        VulkanBuffer.uploadArray ContourQuad.indices quadIndexBuffer context
-
-        let shapeDataBuffer = VulkanBuffer.create Uniform (sizeof<ShapeGPU> * initialShapeDataSize) context
-        let curveDataBuffer = VulkanBuffer.create Storage (sizeof<Vector4> * 2 * maxCurves) context
-        let bandDataBuffer = VulkanBuffer.create Storage (sizeof<uint32> * initialBandDataSize) context
-
+        let quadVertexBuffer = VulkanBuffer.create (Vertex true) (sizeof<Vector2> * ContourQuad.Vertices.Length) context
+        let quadIndexBuffer = VulkanBuffer.create (BufferType.Index true) (sizeof<uint32> * ContourQuad.Indices.Length) context
+        VulkanBuffer.uploadArray ContourQuad.Vertices quadVertexBuffer context
+        VulkanBuffer.uploadArray ContourQuad.Indices quadIndexBuffer context
+        let shapeDataBuffer = VulkanBuffer.create Uniform (sizeof<ShapeGPU> * ShapeDataSizeInitial) context
+        let curveDataBuffer = VulkanBuffer.create Storage (sizeof<Vector4> * 2 * CurvesMax) context
+        let bandDataBuffer = VulkanBuffer.create Storage (sizeof<uint32> * BandDataSizeInitial) context
         let vertexSize = sizeof<Vector2>
         let pipeline =
             Pipeline.create
@@ -79,11 +73,10 @@ module Contour =
                       Pipeline.descriptor 2 StorageBuffer FragmentStage 1|]|]
                 [||] [|resolveTextureFormat|] None
                 [|quadVertexBuffer; quadIndexBuffer; shapeDataBuffer; curveDataBuffer; bandDataBuffer|]
-
         (quadVertexBuffer, quadIndexBuffer, shapeDataBuffer, curveDataBuffer, bandDataBuffer, pipeline)
 
     /// Low-level draw helper: uploads a ContourSlugGeometry + color to the GPU and issues one draw call.
-    let private drawContourSlugGeometry
+    let drawContourSlugGeometry
         (geometry : ContourSlugGeometry)
         (color : Color)
         (absolute : bool)
@@ -96,11 +89,13 @@ module Contour =
         ((quadVertexBuffer, quadIndexBuffer, shapeDataBuffer, curveDataBuffer, bandDataBuffer, pipeline) : VulkanBuffer * VulkanBuffer * VulkanBuffer * VulkanBuffer * VulkanBuffer * Pipeline)
         (context : VulkanContext) =
 
+        // only draw if geometry is present
         if geometry.Curves.Length > 0 then
 
-            if geometry.BandEntries.Length <> geometry.HBands + geometry.VBands then
-                Log.warnOnce "Slug geometry band entry count mismatch - skipping draw"
-            else
+            // ensure band entry count matches band layout
+            if geometry.BandEntries.Length = geometry.HBands + geometry.VBands then
+
+                // ensure band curve index count matches band layout
                 match Pipeline.tryGetVkPipeline VulkanTransparent true pipeline with
                 | Some vkPipeline ->
 
@@ -108,7 +103,7 @@ module Contour =
                     let packedCurves = Contour.packCurvesGPU geometry.Curves
                     VulkanBuffer.uploadArray packedCurves curveDataBuffer context
 
-                    // Upload band data: header (curveCount + curveOffset per band entry)
+                    // upload band data: header (curveCount + curveOffset per band entry)
                     // followed by flat curve index array (H then V, with absolute offsets).
                     let headerSize = geometry.BandEntries.Length * 2
                     let totalBandDataSize = headerSize + geometry.BandCurveIndices.Length
@@ -119,8 +114,8 @@ module Contour =
                     Array.Copy (geometry.BandCurveIndices, 0, bandDataPacked, headerSize, geometry.BandCurveIndices.Length)
                     VulkanBuffer.uploadArray bandDataPacked bandDataBuffer context
 
-                    // Upload shape uniforms: MVP, color, bounding box, band layout.
-                    // Expand the quad by one physical pixel in each local axis so rasterization
+                    // upload shape uniforms: MVP, color, bounding box, band layout.
+                    // expand the quad by one physical pixel in each local axis so rasterization
                     // cannot clip analytic edge coverage when the shape is minified.
                     let bbox = geometry.LocalBounds
                     let physicalViewportSize =
@@ -247,6 +242,9 @@ module Contour =
 
                 // abort
                 | None -> Log.warnOnce ("Cannot draw " + getTypeName pipeline + " because VkPipeline does not exist.")
+                
+            // abort
+            else Log.warnOnce "Slug geometry band entry count mismatch - skipping draw"
 
     /// Draw a Contour as up to two separate Slug passes (fill then stroke).
     let drawContour
@@ -261,7 +259,7 @@ module Contour =
         (buffers : VulkanBuffer * VulkanBuffer * VulkanBuffer * VulkanBuffer * VulkanBuffer * Pipeline)
         (context : VulkanContext) =
 
-        // Fill pass (if geometry present)
+        // fill pass (if geometry present)
         match contour.FillGeometryOpt with
         | ValueSome geom ->
             drawContourSlugGeometry geom contour.FillColor absolute
@@ -269,7 +267,7 @@ module Contour =
                 &modelViewProjection &clipOpt viewport resolveTexture buffers context
         | ValueNone -> ()
 
-        // Stroke pass (if geometry present)
+        // stroke pass (if geometry present)
         match contour.StrokeGeometryOpt with
         | ValueSome geom ->
             drawContourSlugGeometry geom contour.StrokeColor absolute

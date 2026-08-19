@@ -24,6 +24,7 @@ type SpriteFragStruct =
 [<RequireQualifiedAccess>]
 module SpriteSingleton =
 
+    /// The size of a vertex in the sprite singleton pipeline.
     let VertexSize = sizeof<single> * 2
     
     /// Create a sprite singleton pipeline.

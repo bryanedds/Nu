@@ -423,7 +423,7 @@ type Pipeline =
     static member tryGetVkPipeline blend cullFace pipeline =
         Dictionary.tryFind (blend, cullFace) pipeline.VkPipelines_
 
-    ///
+    /// Write a uniform buffer to the given descriptor set.
     static member writeDescriptorUniformBuffer (binding : int) (descriptorIndex : int) (buffer : VulkanBuffer) vkDescriptorSet =
 
         // buffer info
@@ -444,6 +444,7 @@ type Pipeline =
         // advance buffer
         VulkanBuffer.advance buffer
 
+    /// Write a storage buffer to the given descriptor set.
     static member writeDescriptorStorageBuffer (binding : int) (descriptorIndex : int) (buffer : VulkanBuffer) vkDescriptorSet =
 
         // buffer info
@@ -464,6 +465,7 @@ type Pipeline =
         // advance buffer
         VulkanBuffer.advance buffer
 
+    /// Write a sampled image view to the given descriptor set.
     static member writeDescriptorSampledImageView (binding : int) (descriptorIndex : int) (imageView : VkImageView) vkDescriptorSet =
 
         // image info
@@ -481,7 +483,7 @@ type Pipeline =
         write.pImageInfo <- &&info
         DeviceApi.vkUpdateDescriptorSets (1u, &&write, 0u, nullPtr)
 
-    ///
+    /// Write sampled image views to the given descriptor set.
     static member writeDescriptorSampledImageViews (binding : int) (descriptorIndex : int) (imageViews : VkImageView array) vkDescriptorSet =
 
         // image infos
@@ -502,7 +504,7 @@ type Pipeline =
         write.pImageInfo <- infosPtr
         DeviceApi.vkUpdateDescriptorSets (1u, &&write, 0u, nullPtr)
 
-    ///
+    /// Write a combined image view and sampler to the given descriptor set.
     static member writeDescriptorCombinedImageViewSampler (binding : int) (descriptorIndex : int) (imageView : VkImageView) (sampler : Sampler) vkDescriptorSet =
 
         // image info
@@ -521,20 +523,20 @@ type Pipeline =
         write.pImageInfo <- &&info
         DeviceApi.vkUpdateDescriptorSets (1u, &&write, 0u, nullPtr)
 
-    ///
+    /// Write a sampled texture to the given descriptor set.
     static member writeDescriptorSampledTexture binding descriptorIndex (texture : Texture) vkDescriptorSet =
         Pipeline.writeDescriptorSampledImageView binding descriptorIndex texture.ImageView vkDescriptorSet
 
-    ///
+    /// Write sampled textures to the given descriptor set.
     static member writeDescriptorSampledTextures binding descriptorIndex (textures : Texture array) vkDescriptorSet =
         let imageViews = Array.map (fun (texture : Texture) -> texture.ImageView) textures
         Pipeline.writeDescriptorSampledImageViews binding descriptorIndex imageViews vkDescriptorSet
 
-    ///
+    /// Write a combined sampled texture and sampler to the given descriptor set.
     static member writeDescriptorCombinedTextureSampler binding descriptorIndex (texture : Texture) sampler vkDescriptorSet =
         Pipeline.writeDescriptorCombinedImageViewSampler binding descriptorIndex texture.ImageView sampler vkDescriptorSet
 
-    ///
+    /// Write a sampler to the given descriptor set.
     static member writeDescriptorSampler (binding : int) (descriptorIndex : int) (sampler : Sampler) vkDescriptorSet =
         
         // image info

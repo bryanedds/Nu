@@ -275,8 +275,7 @@ type TextureWrapper =
 
     static member private createImage vkFormat extent mipLevels (textureType : TextureType) usageFlags (context : VulkanContext) =
         let mutable info = VkImageCreateInfo ()
-        if textureType.IsTextureCubeMap then
-            info.flags <- VkImageCreateFlags.CubeCompatible
+        if textureType.IsTextureCubeMap then info.flags <- VkImageCreateFlags.CubeCompatible
         info.imageType <- VkImageType.Image2D
         info.format <- vkFormat
         info.extent <- extent

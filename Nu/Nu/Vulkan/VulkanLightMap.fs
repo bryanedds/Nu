@@ -12,6 +12,7 @@ open Vortice.Vulkan
 open Prime
 open Nu
 
+/// Represents the environment filter data for a shader.
 [<Struct; StructLayout (LayoutKind.Explicit)>]
 type EnvironmentFilterStruct =
     [<FieldOffset(0)>] val mutable roughness : single
