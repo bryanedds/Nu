@@ -114,9 +114,7 @@ module SpriteSingleton =
             let minClip = Vector4.Transform(Vector4 (clip.Min.X, clip.Max.Y, 0.0f, 1.0f), viewProjection).V2
             let minNdc = minClip * single viewport.DisplayScalar
             let minScissor = (minNdc + v2One) * 0.5f * viewport.Inner.Size.V2
-            let sizeClip = Vector4.Transform(Vector4 (clip.Size, 0.0f, 1.0f), viewProjection).V2
-            let sizeNdc = sizeClip * single viewport.DisplayScalar
-            let sizeScissor = sizeNdc * 0.5f * viewport.Inner.Size.V2
+            let sizeScissor = clip.Size * single viewport.DisplayScalar
             let offset = v2i viewport.Inner.Min.X (viewport.Outer.Max.Y - viewport.Inner.Max.Y)
             scissor <-
                 VkRect2D

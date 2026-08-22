@@ -274,6 +274,8 @@ module WorldGameModule =
             // set the game's state in the world
             let game = Game name
             World.setGameState gameState game world
+            let windowSize = World.getWindowSizeOtherwiseViewportSize world
+            World.synchronizeViewports windowSize world.WindowViewport.DisplayScalar world
 
             // read the game's screens
             World.readScreens gameDescriptor.ScreenDescriptors world |> ignore<Screen list>

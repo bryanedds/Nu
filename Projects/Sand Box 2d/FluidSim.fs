@@ -161,13 +161,13 @@ type FluidSimDispatcher () =
 
             // particle count button
             World.doText $"Particle Count"
-                [Entity.Position .= v3 255f 170f 0f
+                [Entity.Position @= v3 (255f + world.Eye2dMargin.X) 170f 0f
                  Entity.Text @= $"{(fluidEmitter.GetFluidParticles world).Length} Particles"
                  Entity.Elevation .= 1f] world
 
             // clear button
             if World.doButton $"Clear"
-                [Entity.Position .= v3 255f 140f 0f
+                [Entity.Position @= v3 (255f + world.Eye2dMargin.X) 140f 0f
                  Entity.Text .= "Clear"
                  Entity.Elevation .= 1f] world then
                 World.clearFluidParticles fluidEmitterId world
@@ -185,7 +185,7 @@ type FluidSimDispatcher () =
             for i in 0 .. dec gravities.Length do
                 if World.getGravity2d world = snd gravities[i] then
                     if World.doButton $"Gravity"
-                        [Entity.Position .= v3 255f 110f 0f
+                        [Entity.Position @= v3 (255f + world.Eye2dMargin.X) 110f 0f
                          Entity.Text @= $"Gravity: {fst gravities[i]}"
                          Entity.Elevation .= 1f] world then
                         World.setGravity2d (snd gravities[(i + 1) % gravities.Length]) world
@@ -194,7 +194,7 @@ type FluidSimDispatcher () =
             let particleRenders = fluidEmitter.GetFluidParticleRenders world
             let particleImage = particleRenders["Water"].Image
             if World.doButton $"Particle Sprite"
-                [Entity.Position .= v3 255f 80f 0f
+                [Entity.Position @= v3 (255f + world.Eye2dMargin.X) 80f 0f
                  Entity.Text @= $"Particle Sprite: {particleImage.AssetName}"
                  Entity.Elevation .= 1f
                  Entity.FontSizing .= Some 8.f] world then
@@ -230,7 +230,7 @@ type FluidSimDispatcher () =
 
             // tool palette panel
             World.beginPanel "Tool Panel"
-                [Entity.Position .= v3 255f -10f 0f
+                [Entity.Position @= v3 (255f + world.Eye2dMargin.X) -10f 0f
                  Entity.Size .= v3 128f 153f 0f
                  Entity.Elevation .= 1f] world |> ignore
 
@@ -278,7 +278,7 @@ type FluidSimDispatcher () =
 
             // squish button
             if World.doButton $"Squish"
-                [Entity.Position .= v3 255f -100f 0f
+                [Entity.Position @= v3 (255f + world.Eye2dMargin.X) -100f 0f
                  Entity.Text .= "Squish"
                  Entity.Elevation .= 1f] world then
                 let paddle = World.createEntity<BlockBody2dDispatcher> None DefaultOverlay None world.ContextGroup world
@@ -293,13 +293,13 @@ type FluidSimDispatcher () =
 
             // switch screen button
             World.doButton Simulants.ToyBoxSwitchScreen.Name
-                [Entity.Position .= v3 255f -130f 0f
+                [Entity.Position @= v3 (255f + world.Eye2dMargin.X) -130f 0f
                  Entity.Text .= "Switch Screen"
                  Entity.Elevation .= 1f] world |> ignore
 
             // info button
             if World.doButton "Info"
-                [Entity.Position .= v3 255f -160f 0f
+                [Entity.Position @= v3 (255f + world.Eye2dMargin.X) -160f 0f
                  Entity.Text .= "Info"
                  Entity.Elevation .= 1f] world then
                 fluidSim.SetInfoOpened true world
@@ -309,7 +309,7 @@ type FluidSimDispatcher () =
 
                 // declare info background - block button interactions behind info panel while opened
                 World.doPanel "Info Background"
-                    [Entity.Size .= Constants.Render.DisplayVirtualResolution.V3
+                    [Entity.Size .= world.Eye2dViewable.V3
                      Entity.Elevation .= 10f
                      Entity.BackdropImageOpt .= Some Assets.Default.Black
                      Entity.Color .= color 0f 0f 0f 0.5f] world
