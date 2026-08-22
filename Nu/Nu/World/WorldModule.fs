@@ -548,7 +548,7 @@ module WorldModule =
             world.WorldState <- { world.WorldState with WorldExtension = worldExtension }
 
         /// Synchronize all viewport-derived state from the physical window size.
-        static member internal synchronizeViewportState (windowSize : Vector2i) displayScalar (world : World) =
+        static member private synchronizeViewportStatePositive (windowSize : Vector2i) displayScalar (world : World) =
             let displayScalar = max 1 displayScalar
             Globals.Render.DisplayScalar <- displayScalar
             let gameState = world.WorldState.GameState
@@ -580,6 +580,11 @@ module WorldModule =
                 { world.WorldState with
                     GameState = gameState
                     WorldExtension = worldExtension }
+
+        /// Synchronize all viewport-derived state when the window has a drawable extent.
+        static member internal synchronizeViewportState (windowSize : Vector2i) displayScalar (world : World) =
+            if windowSize.X > 0 && windowSize.Y > 0 then
+                World.synchronizeViewportStatePositive windowSize displayScalar world
 
         static member internal getSymbolics (world : World) =
             AmbientState.getSymbolics world.WorldState.AmbientState
