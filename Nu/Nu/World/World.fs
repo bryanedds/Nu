@@ -458,6 +458,7 @@ module WorldModule4 =
                   JobGraph = jobGraph
                   GeometryViewport = geometryViewport
                   WindowViewport = windowViewport
+                  DisplayVirtualResolution = Constants.Render.DisplayVirtualResolution
                   DestructionListRev = []
                   LateBindingsInstances = lateBindingsInstances
                   TryMakeEditContext = tryMakeEditContext

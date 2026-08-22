@@ -679,6 +679,11 @@ module internal AmbientState =
             Some fullScreen
         | _ -> None
 
+    let internal tryGetDisplaySize state =
+        state.SdlDepsOpt
+        |> Option.bind SdlDeps.tryGetDisplayMode
+        |> Option.map (fun displayMode -> v2i displayMode.w displayMode.h)
+
     let internal trySetWindowFullScreen fullScreen state =
         match state.SdlDepsOpt with
         | Some deps -> { state with SdlDepsOpt = Some (SdlDeps.trySetWindowFullScreen fullScreen deps) }
