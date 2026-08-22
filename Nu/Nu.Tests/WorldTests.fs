@@ -82,6 +82,21 @@ module WorldTests =
                  Is.LessThanOrEqualTo (bounds.Min.X + bounds.Size.X))
         finally
             Constants.Engine.EyeMarginMaxScalar <- eyeMarginPrevious
+    let [<Test; NonParallelizable>] ``Zero-sized viewport synchronization preserves drawable state.`` () =
+        let previousScalar = Globals.Render.DisplayScalar
+        try
+            let world = makeStubWorld ()
+            let emptyBounds = System.Numerics.Box2i (System.Numerics.Vector2i.Zero, System.Numerics.Vector2i.Zero)
+            World.setWindowViewport (Viewport.makeWindow emptyBounds emptyBounds System.Numerics.Vector2i.Zero) world
+            let viewportPrevious = world.WindowViewport
+            let geometryViewportPrevious = world.GeometryViewport
+            let frustumPrevious = world.Eye3dFrustumInterior
+            World.setEye2dSize (world.Eye2dSize + System.Numerics.Vector2.One) world
+            Assert.Equal (viewportPrevious, world.WindowViewport)
+            Assert.Equal (geometryViewportPrevious, world.GeometryViewport)
+            Assert.Equal (frustumPrevious, world.Eye3dFrustumInterior)
+        finally
+            Globals.Render.DisplayScalar <- previousScalar
 
     let [<Test>] ``Run empty frame then clean up.`` () =
         Nu.init ()
