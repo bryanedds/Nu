@@ -852,9 +852,38 @@ module WorldModule2 =
 
         static member private synchronizeViewports world =
             let windowSize = World.getWindowSizeOtherwiseViewportSize world
-            let windowViewport = Viewport.makeWindow1 windowSize
+            let windowViewport = Viewport.makeWindowResolution (World.getDisplayVirtualResolution world) windowSize
+
             World.setWindowViewport windowViewport world
             World.setGeometryViewport (Viewport.makeGeometry windowViewport.Bounds.Size) world
+
+            // Rebuild cached 3d frusta because their aspect ratio depends on the virtual resolution.
+            let gameState = World.getGameState Nu.Game.Handle world
+            let resolution = World.getDisplayVirtualResolution world * Globals.Render.DisplayScalar
+            let viewportInterior = Viewport.makeInteriorViewed resolution
+            let viewportExterior = Viewport.makeExteriorViewed resolution
+            let viewportImposter = Viewport.makeImposterViewed resolution
+            World.setGameState
+                { gameState with
+                    Eye3dFrustumInterior = Viewport.getFrustum gameState.Eye3dCenter gameState.Eye3dRotation gameState.Eye3dFieldOfView viewportInterior
+                    Eye3dFrustumExterior = Viewport.getFrustum gameState.Eye3dCenter gameState.Eye3dRotation gameState.Eye3dFieldOfView viewportExterior
+                    Eye3dFrustumImposter = Viewport.getFrustum gameState.Eye3dCenter gameState.Eye3dRotation gameState.Eye3dFieldOfView viewportImposter }
+                Nu.Game.Handle
+                world
+
+        /// Set the display's virtual resolution and synchronously resynchronize window state and viewports.
+        static member setDisplayVirtualResolution (resolution : Vector2i) (world : World) =
+            if resolution.X <= 0 || resolution.Y <= 0 then
+                Log.error ("Display virtual resolution dimensions must be positive, but were " + string resolution.X + "x" + string resolution.Y + ".")
+            else
+                match World.tryGetDisplaySize world with
+                | Some displaySize when resolution.X > displaySize.X || resolution.Y > displaySize.Y ->
+                    Log.error ("Display virtual resolution must fit within the current desktop resolution of " +
+                               string displaySize.X + "x" + string displaySize.Y + ".")
+                | _ ->
+                    let worldExtension = world.WorldExtension
+                    world.WorldState <- { world.WorldState with WorldExtension = { worldExtension with DisplayVirtualResolution = resolution } }
+                    World.processWindowResize world
 
         /// Try to reload the overlayer currently in use by the world.
         static member tryReloadOverlayer inputDirectory outputDirectory world =
@@ -1077,24 +1106,28 @@ module WorldModule2 =
         static member internal processWindowResize (world : World) =
 
             // ensure window size is a factor of display virtual resolution, going to full screen otherwise
+            let virtualResolution = World.getDisplayVirtualResolution world
             let windowSize = World.getWindowSizeOtherwiseViewportSize world
-            let windowScalar =
-                max (single windowSize.X / single Constants.Render.DisplayVirtualResolution.X |> ceil |> int |> max 1)
-                    (single windowSize.Y / single Constants.Render.DisplayVirtualResolution.Y |> ceil |> int |> max 1)
-            let windowSize' = windowScalar * Constants.Render.DisplayVirtualResolution
-            World.trySetWindowSize windowSize' world
-            let windowSize'' = World.getWindowSizeOtherwiseViewportSize world
-            if windowSize''.X < windowSize'.X || windowSize''.Y < windowSize'.Y then
-                World.trySetWindowFullScreen true world
+            if virtualResolution.X <= 0 || virtualResolution.Y <= 0 then
+                Log.error ("Display virtual resolution must be positive, but was " + string virtualResolution.X + "x" + string virtualResolution.Y + ".")
+            else
+                let windowScalar =
+                    max (single windowSize.X / single virtualResolution.X |> ceil |> int |> max 1)
+                        (single windowSize.Y / single virtualResolution.Y |> ceil |> int |> max 1)
+                let windowSize' = windowScalar * virtualResolution
+                World.trySetWindowSize windowSize' world
+                let windowSize'' = World.getWindowSizeOtherwiseViewportSize world
+                if windowSize''.X < windowSize'.X || windowSize''.Y < windowSize'.Y then
+                    World.trySetWindowFullScreen true world
 
-            // synchronize display virtual scalar
-            let windowSize'' = World.getWindowSizeOtherwiseViewportSize world
-            let xScalar = windowSize''.X / Constants.Render.DisplayVirtualResolution.X
-            let yScalar = windowSize''.Y / Constants.Render.DisplayVirtualResolution.Y
-            Globals.Render.DisplayScalar <- min xScalar yScalar
+                // synchronize display virtual scalar
+                let windowSize'' = World.getWindowSizeOtherwiseViewportSize world
+                let xScalar = windowSize''.X / virtualResolution.X
+                let yScalar = windowSize''.Y / virtualResolution.Y
+                Globals.Render.DisplayScalar <- max 1 (min xScalar yScalar)
 
-            // synchronize view ports
-            World.synchronizeViewports world
+                // synchronize view ports
+                World.synchronizeViewports world
 
         static member internal processInput2 (evt : SDL_Event) (world : World) =
             match evt.Type with

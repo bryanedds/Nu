@@ -1923,6 +1923,7 @@ and [<ReferenceEquality>] internal WorldExtension =
 
       // cache line 2
       WindowViewport : Viewport
+      DisplayVirtualResolution : Vector2i
       DestructionListRev : Simulant list
       LateBindingsInstances : LateBindingsInstances
       TryMakeEditContext : unit -> EditContext option

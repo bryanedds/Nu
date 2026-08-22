@@ -1,4 +1,4 @@
-﻿// Nu Game Engine.
+// Nu Game Engine.
 // Required Notice:
 // Copyright (C) Bryan Edds.
 // Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
@@ -288,9 +288,10 @@ module WorldModuleGame =
             let gameState = World.getGameState game world
             let previous = gameState.Eye3dCenter
             if previous <> value then
-                let viewportInterior = Viewport.makeInterior ()
-                let viewportExterior = Viewport.makeExterior ()
-                let viewportImposter = Viewport.makeImposter ()
+                let resolution = World.getDisplayVirtualResolution world * Globals.Render.DisplayScalar
+                let viewportInterior = Viewport.makeInteriorViewed resolution
+                let viewportExterior = Viewport.makeExteriorViewed resolution
+                let viewportImposter = Viewport.makeImposterViewed resolution
                 let gameState =
                     { gameState with
                         Eye3dCenter = value
@@ -317,9 +318,10 @@ module WorldModuleGame =
             let gameState = World.getGameState game world
             let previous = gameState.Eye3dRotation
             if previous <> value then
-                let viewportInterior = Viewport.makeInterior ()
-                let viewportExterior = Viewport.makeExterior ()
-                let viewportImposter = Viewport.makeImposter ()
+                let resolution = World.getDisplayVirtualResolution world * Globals.Render.DisplayScalar
+                let viewportInterior = Viewport.makeInteriorViewed resolution
+                let viewportExterior = Viewport.makeExteriorViewed resolution
+                let viewportImposter = Viewport.makeImposterViewed resolution
                 let gameState =
                     { gameState with
                         Eye3dRotation = value
@@ -347,9 +349,10 @@ module WorldModuleGame =
             let gameState = World.getGameState game world
             let previous = gameState.Eye3dFieldOfView
             if previous <> value then
-                let viewportInterior = Viewport.makeInterior ()
-                let viewportExterior = Viewport.makeExterior ()
-                let viewportImposter = Viewport.makeImposter ()
+                let resolution = World.getDisplayVirtualResolution world * Globals.Render.DisplayScalar
+                let viewportInterior = Viewport.makeInteriorViewed resolution
+                let viewportExterior = Viewport.makeExteriorViewed resolution
+                let viewportImposter = Viewport.makeImposterViewed resolution
                 let gameState =
                     { gameState with
                         Eye3dFieldOfView = value
@@ -363,9 +366,8 @@ module WorldModuleGame =
 
         static member internal getGameEye3dAspectRatio game world =
             ignore<Game> game
-            ignore<World> world
-            single Constants.Render.DisplayVirtualResolution.X /
-            single Constants.Render.DisplayVirtualResolution.Y
+            let resolution = World.getDisplayVirtualResolution world
+            single resolution.X / single resolution.Y
 
         /// Get the current 3d eye field of view.
         static member getEye3dFieldOfView world =
