@@ -136,7 +136,7 @@ module WorldModule2 =
                 World.unsubscribe WorldModuleInternal2.ScreenTransitionMouseX2Id world
                 World.unsubscribe WorldModuleInternal2.ScreenTransitionKeyboardKeyId world
             | IncomingState _ | OutgoingState _ -> ()
-                
+
         static member private updateScreenTransition3 transitionType (selectedScreen : Screen) world =
             let transition =
                 match transitionType with
@@ -2100,13 +2100,12 @@ module EntityDispatcherModule =
             World.scopeEntity entity [] world
             if zeroDelta then
                 let timeAdvancing = world.TimeAdvancing
-                let timeAdvancementCleared = world.TimeAdvancementCleared
                 let updateDelta = world.UpdateDelta
                 let clockDelta = world.ClockDelta
                 let tickDelta = world.TickDelta
-                AmbientState.clearTimeAdvancement world.AmbientState
+                if timeAdvancing then World.clearTimeAdvancement world
                 this.Process (entity, world)
-                AmbientState.restoreTimeAdvancement timeAdvancing timeAdvancementCleared updateDelta clockDelta tickDelta world.AmbientState
+                if timeAdvancing then World.restoreTimeAdvancement timeAdvancing updateDelta clockDelta tickDelta world
             else this.Process (entity, world)
 #if DEBUG
             if world.ContextImSim <> entity.EntityAddress then
@@ -2508,13 +2507,12 @@ module GroupDispatcherModule =
             World.scopeGroup group [] world
             if zeroDelta then
                 let timeAdvancing = world.TimeAdvancing
-                let timeAdvancementCleared = world.TimeAdvancementCleared
                 let updateDelta = world.UpdateDelta
                 let clockDelta = world.ClockDelta
                 let tickDelta = world.TickDelta
-                AmbientState.clearTimeAdvancement world.AmbientState
+                if timeAdvancing then World.clearTimeAdvancement world
                 this.Process (group, world)
-                AmbientState.restoreTimeAdvancement timeAdvancing timeAdvancementCleared updateDelta clockDelta tickDelta world.AmbientState
+                if timeAdvancing then World.restoreTimeAdvancement timeAdvancing updateDelta clockDelta tickDelta world
             else this.Process (group, world)
 #if DEBUG
             if world.ContextImSim <> group.GroupAddress then
@@ -2735,13 +2733,12 @@ module ScreenDispatcherModule =
             let results = World.doSubscriptionToSelectionEvents ScreenDispatcherImSimTryProcessSubscriptionName screen world
             if zeroDelta then
                 let timeAdvancing = world.TimeAdvancing
-                let timeAdvancementCleared = world.TimeAdvancementCleared
                 let updateDelta = world.UpdateDelta
                 let clockDelta = world.ClockDelta
                 let tickDelta = world.TickDelta
-                AmbientState.clearTimeAdvancement world.AmbientState
+                if timeAdvancing then World.clearTimeAdvancement world
                 this.Process (FQueue.ofSeq results, screen, world)
-                AmbientState.restoreTimeAdvancement timeAdvancing timeAdvancementCleared updateDelta clockDelta tickDelta world.AmbientState
+                if timeAdvancing then World.restoreTimeAdvancement timeAdvancing updateDelta clockDelta tickDelta world
             else this.Process (FQueue.ofSeq results, screen, world)
 #if DEBUG
             if world.ContextImSim <> screen.ScreenAddress then
@@ -2959,13 +2956,12 @@ module GameDispatcherModule =
             World.scopeGame [] world
             if zeroDelta then
                 let timeAdvancing = world.TimeAdvancing
-                let timeAdvancementCleared = world.TimeAdvancementCleared
                 let updateDelta = world.UpdateDelta
                 let clockDelta = world.ClockDelta
                 let tickDelta = world.TickDelta
-                AmbientState.clearTimeAdvancement world.AmbientState
+                if timeAdvancing then World.clearTimeAdvancement world
                 this.Process (game, world)
-                AmbientState.restoreTimeAdvancement timeAdvancing timeAdvancementCleared updateDelta clockDelta tickDelta world.AmbientState
+                if timeAdvancing then World.restoreTimeAdvancement timeAdvancing updateDelta clockDelta tickDelta world
             else this.Process (game, world)
 #if DEBUG
             if world.ContextImSim <> game.GameAddress then

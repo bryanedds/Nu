@@ -987,7 +987,7 @@ module PhysicallyBased =
           ColoringAttachments = coloringAttachments
           CompositionAttachment = compositionAttachment }
 
-    /// Update the size of the attachments. Must be used every frame.
+    /// Update the size of the attachments.
     let updatePhysicallyBasedAttachmentsSize (geometryViewport : Viewport) (attachments : PhysicallyBasedAttachments) context =
         Attachment.updateColorAttachmentSize geometryViewport.ShadowTextureResolution.X geometryViewport.ShadowTextureResolution.Y attachments.GaussianEsmAttachment context
         Attachment.updateColorAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.ColorFull0Attachment context
@@ -1002,11 +1002,14 @@ module PhysicallyBased =
         Attachment.updateColorAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.BloomApplyAttachment context
         Attachment.updateToneMappingAttachmentsSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.ToneMappingAttachment context
         Attachment.updateGammaCorrectionAttachmentsSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.GammaCorrectionAttachment context
-        Attachment.updateShadowTextureArrayAttachmentsSize geometryViewport.ShadowTextureResolution.X geometryViewport.ShadowTextureResolution.Y attachments.ShadowTextureArrayAttachments context
+        let (colorTexture, zTexture) = attachments.ShadowTextureArrayAttachments
+        Attachment.updateShadowTextureArrayAttachmentsSize geometryViewport.ShadowTextureResolution.X geometryViewport.ShadowTextureResolution.Y colorTexture zTexture context
         for i in 0 .. dec attachments.ShadowMapAttachmentsArray.Length do
-            Attachment.updateShadowMapAttachmentsSize geometryViewport.ShadowMapResolution.X geometryViewport.ShadowMapResolution.Y attachments.ShadowMapAttachmentsArray[i] context
+            let (colorTexture, zTexture) = attachments.ShadowMapAttachmentsArray[i]
+            Attachment.updateShadowMapAttachmentsSize geometryViewport.ShadowMapResolution.X geometryViewport.ShadowMapResolution.Y colorTexture zTexture context
         for i in 0 .. dec attachments.ShadowCascadeArrayAttachmentsArray.Length do
-            Attachment.updateShadowCascadeArrayAttachmentsSize geometryViewport.ShadowCascadeResolution.X geometryViewport.ShadowCascadeResolution.Y attachments.ShadowCascadeArrayAttachmentsArray[i] context
+            let (colorTexture, zTexture) = attachments.ShadowCascadeArrayAttachmentsArray[i]
+            Attachment.updateShadowCascadeArrayAttachmentsSize geometryViewport.ShadowCascadeResolution.X geometryViewport.ShadowCascadeResolution.Y colorTexture zTexture context
         Attachment.updateGeometryAttachmentsSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.GeometryAttachments context
         Attachment.updateLightingAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.LightingAttachment context
         Attachment.updateFoggingAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.FoggingAttachment context
@@ -1034,11 +1037,14 @@ module PhysicallyBased =
         Attachment.destroyColorAttachment attachments.BloomApplyAttachment context
         Attachment.destroyToneMappingAttachments attachments.ToneMappingAttachment context
         Attachment.destroyGammaCorrectionAttachment attachments.GammaCorrectionAttachment context
-        Attachment.destroyShadowTextureArrayAttachments attachments.ShadowTextureArrayAttachments context
+        let (colorTexture, zTexture) = attachments.ShadowTextureArrayAttachments
+        Attachment.destroyShadowTextureArrayAttachments colorTexture zTexture context
         for i in 0 .. dec attachments.ShadowMapAttachmentsArray.Length do
-            Attachment.destroyShadowMapAttachments attachments.ShadowMapAttachmentsArray[i] context
+            let (colorTexture, zTexture) = attachments.ShadowMapAttachmentsArray[i]
+            Attachment.destroyShadowMapAttachments colorTexture zTexture context
         for i in 0 .. dec attachments.ShadowCascadeArrayAttachmentsArray.Length do
-            Attachment.destroyShadowCascadeArrayAttachments attachments.ShadowCascadeArrayAttachmentsArray[i] context
+            let (colorTexture, zTexture) = attachments.ShadowCascadeArrayAttachmentsArray[i]
+            Attachment.destroyShadowCascadeArrayAttachments colorTexture zTexture context
         Attachment.destroyGeometryAttachments attachments.GeometryAttachments context
         Attachment.destroyLightingAttachment attachments.LightingAttachment context
         Attachment.destroyFoggingAttachment attachments.FoggingAttachment context
@@ -3677,6 +3683,7 @@ module PhysicallyBased =
         (view : Matrix4x4)
         (projectionUnflipped : Matrix4x4)
         (materialSampler : Sampler)
+        (loadOperation : LoadOperation)
         (colorAttachments : VkImageView array)
         (depthAttachment : Texture)
         (resolution : Vector2i)
@@ -3703,7 +3710,7 @@ module PhysicallyBased =
         // set up render
         let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
         let mutable vkViewport = Hl.makeViewport false renderArea
-        Hl.withRenderingInfo colorAttachments (Some depthAttachment.ImageView) renderArea LoadAttachments $ fun renderingInfo ->
+        Hl.withRenderingInfo colorAttachments (Some depthAttachment.ImageView) renderArea loadOperation $ fun renderingInfo ->
             let mutable renderingInfo = renderingInfo
             DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
         DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)

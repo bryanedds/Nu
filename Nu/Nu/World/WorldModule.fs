@@ -165,6 +165,12 @@ module WorldModule =
 
         static member internal getAmbientStateBy by world =
             by world.AmbientState
+
+        static member internal clearTimeAdvancement (world : World) =
+            AmbientState.clearTimeAdvancement world.AmbientState
+
+        static member internal restoreTimeAdvancement timeAdvancing updateDelta clockDelta tickDelta (world : World) =
+            AmbientState.restoreTimeAdvancement timeAdvancing updateDelta clockDelta tickDelta  world.AmbientState
             
         /// Check that world time is advancing (not halted).
         static member getTimeAdvancing (world : World) =
@@ -380,18 +386,17 @@ module WorldModule =
                 if context.Names.Length > 0 then
                     let declared = world.DeclaredImSim
                     let timeAdvancing = world.TimeAdvancing
-                    let timeAdvancementCleared = world.TimeAdvancementCleared
                     let updateDelta = world.UpdateDelta
                     let clockDelta = world.ClockDelta
                     let tickDelta = world.TickDelta
                     fun (world : World) ->
                         let context' = world.ContextImSim
                         let declared' = world.DeclaredImSim
-                        AmbientState.clearTimeAdvancement world.AmbientState
+                        if timeAdvancing then World.clearTimeAdvancement world
                         World.setContextAndDeclared context declared world
                         operation world
                         World.setContextAndDeclared context' declared' world
-                        AmbientState.restoreTimeAdvancement timeAdvancing timeAdvancementCleared updateDelta clockDelta tickDelta world.AmbientState
+                        if timeAdvancing then World.restoreTimeAdvancement timeAdvancing updateDelta clockDelta tickDelta world
                 else operation
 
             // add tasklet
