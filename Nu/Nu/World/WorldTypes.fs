@@ -1007,6 +1007,7 @@ and [<ReferenceEquality; CLIMutable>] GameState =
       ScreenTransitionDestinationOpt : Screen option
       Eye2dCenter : Vector2
       Eye2dSize : Vector2
+      Eye2dViewed : Vector2
       Eye3dCenter : Vector3
       Eye3dRotation : Quaternion
       Eye3dFieldOfView : single
@@ -1059,7 +1060,8 @@ and [<ReferenceEquality; CLIMutable>] GameState =
           SelectedScreenOpt = None
           ScreenTransitionDestinationOpt = None
           Eye2dCenter = v2Zero
-          Eye2dSize = Constants.Render.DisplayVirtualResolution.V2
+          Eye2dSize = Globals.Render.DisplayVirtualResolution.V2
+          Eye2dViewed = Globals.Render.DisplayVirtualResolution.V2
           Eye3dCenter = eye3dCenter
           Eye3dRotation = eye3dRotation
           Eye3dFieldOfView = eye3dFieldOfView
@@ -2199,15 +2201,42 @@ and [<NoEquality; NoComparison>] World =
     member this.Eye2dCenter =
         this.GameState.Eye2dCenter
 
-    /// Get the size of the 2D eye.
+    /// Get the size of the 2D eye, viewable for all window dimensions.
     member this.Eye2dSize =
         this.GameState.Eye2dSize
 
-    /// Get the bounds of the 2D eye.
+    /// Get the viewed size of the 2D eye, for the current window.
+    member this.Eye2dViewed =
+        this.GameState.Eye2dViewed
+
+    /// Get the viewable size of the 2D eye, for any potential window dimension.
+    member this.Eye2dViewable =
+        let eyeSize = this.Eye2dSize
+        eyeSize + eyeSize * 2.0f * Constants.Engine.EyeMarginMaxScalar
+
+    /// Get the bounds of the 2D eye, viewable for all window dimensions.
     member this.Eye2dBounds =
         let eyeCenter = this.Eye2dCenter
         let eyeSize = this.Eye2dSize
         box2 (eyeCenter - eyeSize * 0.5f) eyeSize
+
+    /// Get the viewed bounds of the 2D eye, for the current window.
+    member this.Eye2dBoundsViewed =
+        let eyeCenter = this.Eye2dCenter
+        let eyeViewed = this.GameState.Eye2dViewed
+        box2 (eyeCenter - eyeViewed * 0.5f) eyeViewed
+
+    /// Get the viewable bounds of the 2D eye, for any potential window dimension.
+    member this.Eye2dBoundsViewable =
+        let eyeCenter = this.Eye2dCenter
+        let eyeViewable = this.Eye2dViewable
+        box2 (eyeCenter - eyeViewable * 0.5f) eyeViewable
+
+    /// Get the margin of the 2D eye, viewed beyond Eye2dSize on each side, for the current window.
+    /// Add or subtract X to anchor an entity to the right or left edge of the window.
+    /// Add or subtract Y to anchor an entity to the top or bottom edge of the window.
+    member this.Eye2dMargin =
+        (this.Eye2dViewed - this.Eye2dSize) * 0.5f
 
     /// Get the center of the 3D eye.
     member this.Eye3dCenter =
