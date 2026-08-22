@@ -11,6 +11,8 @@ let main firstFrameCallback =
 
     // NOTE: keep Orientations in sync with the ones specified for ScreenOrientation below and in "App/iOS Info.plist" file.
     // the platform-specific orientations are applied to the splash screen before SDL sets orientations, so they must match to avoid a brief orientation change when the splash screen is removed.
+    // HINT: Change EyeMarginMaxScalar in App.config to allow the window area to accommodate for different mobile screen sizes.
+    // The 2d eye can extend up to (EyeMarginMaxScalar * Eye2dSize) on each side, so that the world can be rendered up to the edges of the window without being clipped.
     let sdlOrientations = Set.ofList [LandscapeLeft; LandscapeRight]
 
     // this specifies the window configuration used to display the game
