@@ -910,6 +910,16 @@ type ToyBoxDispatcher () =
             // all entities must be in a group - groups are the unit of entity loading
             World.beginGroup Simulants.ToyBoxScene.Name [] world
 
+            World.doStaticSprite "Background"
+                // With EyeMarginMaxScalar in App.config, we allow the window size to extend beyond DisplayVirtualResolution
+                // by a margin up to the specified multiple of DisplayVirtualResolution. This can accommodate for
+                // closely matching screen sizes especially on mobile devices. The eye 2d viewable size ensures this image
+                // fills for all window sizes, even if smaller window sizes only see a crop of this image.
+                [Entity.Size .= world.Eye2dViewable.V3
+                 Entity.Absolute .= true
+                 Entity.StaticImage .= Assets.Default.AnimatedSprite
+                 Entity.Elevation .= -2f] world |> ignore
+
             // declare border
             World.doBlockBody2d Simulants.ToyBoxBorder.Name // uses static physics by default - it does not react to forces or collisions
                 [Entity.Size .= v3 500f 350f 0f
@@ -975,14 +985,16 @@ type ToyBoxDispatcher () =
                 // first page of add toy buttons
                 for (i, entityType) in List.indexed [Box; Ball; TinyBalls; Spring; Block; Bridge; Fan] do
                     if World.doButton $"Add {scstringMemo entityType}"
-                        [Entity.Position .= v3 255f (160f - 30f * single i) 0f
+                        // With EyeMarginMaxScalar in App.config, we also need to ensure
+                        // right alignment on any window size by adding the margin width.
+                        [Entity.Position @= v3 (255f + world.Eye2dMargin.X) (160f - 30f * single i) 0f
                          Entity.Text .= $"Add {scstringMemo entityType}"
                          Entity.Elevation .= 1f] world then
                         toyBox.Toys.Map (FMap.add Gen.name entityType) world
                 
                 // next page
                 if World.doButton "Down"
-                    [Entity.Position .= v3 255f -50f 0f
+                    [Entity.Position @= v3 (255f + world.Eye2dMargin.X) -50f 0f
                      Entity.Text .= "v"
                      Entity.Elevation .= 1f] world then
                     toyBox.SetMenuPage MenuPage2 world
@@ -991,7 +1003,7 @@ type ToyBoxDispatcher () =
 
                 // previous page
                 if World.doButton "Up"
-                    [Entity.Position .= v3 255f 160f 0f
+                    [Entity.Position @= v3 (255f + world.Eye2dMargin.X) 160f 0f
                      Entity.Text .= "^"
                      Entity.Elevation .= 1f] world then
                     toyBox.SetMenuPage MenuPage1 world
@@ -999,7 +1011,7 @@ type ToyBoxDispatcher () =
                 // second page of add toy buttons
                 for (i, entityType) in List.indexed [Clamp; Ragdoll; SoftBody; Web; Strandbeest] do
                     if World.doButton $"Add {scstringMemo entityType}"
-                        [Entity.Position .= v3 255f (130f - 30f * single i) 0f
+                        [Entity.Position @= v3 (255f + world.Eye2dMargin.X) (130f - 30f * single i) 0f
                          Entity.Text .= $"Add {scstringMemo entityType}"
                          Entity.Elevation .= 1f] world then
                         toyBox.Toys.Map (FMap.add Gen.name entityType) world
@@ -1009,7 +1021,7 @@ type ToyBoxDispatcher () =
                 let gravity = List.head (toyBox.GetGravities world)
                 World.setGravity2d (snd gravity) world
                 if World.doButton $"Gravity"
-                    [Entity.Position .= v3 255f -20f 0f
+                    [Entity.Position @= v3 (255f + world.Eye2dMargin.X) -20f 0f
                      Entity.Text @= $"Gravity: {fst gravity}"
                      Entity.Elevation .= 1f] world then
                     toyBox.Gravities.Map List.tail world
@@ -1019,7 +1031,7 @@ type ToyBoxDispatcher () =
                 let gravity = List.head (toyBox.GetAvatarGravities world)
                 avatar.SetGravity (snd gravity) world
                 if World.doButton $"Avatar Gravity"
-                    [Entity.Position .= v3 255f -50f 0f
+                    [Entity.Position @= v3 (255f + world.Eye2dMargin.X) -50f 0f
                      Entity.Text @= $"Avatar Gravity: {fst gravity}"
                      Entity.Elevation .= 1f
                      Entity.FontSizing .= Some 10.f] world then
@@ -1027,7 +1039,7 @@ type ToyBoxDispatcher () =
 
             // clear toys button
             if World.doButton "Clear Toys"
-                [Entity.Position .= v3 255f -100f 0f
+                [Entity.Position @= v3 (255f + world.Eye2dMargin.X) -100f 0f
                  Entity.Text .= "Clear Toys"
                  Entity.Elevation .= 1f] world then
                 toyBox.SetToys FMap.empty world
@@ -1036,13 +1048,13 @@ type ToyBoxDispatcher () =
 
             // switch screen button
             World.doButton Simulants.ToyBoxSwitchScreen.Name
-                [Entity.Position .= v3 255f -130f 0f
+                [Entity.Position @= v3 (255f + world.Eye2dMargin.X) -130f 0f
                  Entity.Text .= "Switch Screen"
                  Entity.Elevation .= 1f] world |> ignore
 
             // info button
             if World.doButton "Info"
-                [Entity.Position .= v3 255f -160f 0f
+                [Entity.Position @= v3 (255f + world.Eye2dMargin.X) -160f 0f
                  Entity.Text .= "Info"
                  Entity.Elevation .= 1f] world then
                 toyBox.SetInfoOpened true world
@@ -1052,14 +1064,14 @@ type ToyBoxDispatcher () =
 
                 // declare info background - block button interactions behind info panel while opened
                 World.doPanel "Info Background"
-                    [Entity.Size .= Constants.Render.DisplayVirtualResolution.V3
+                    [Entity.Size .= world.Eye2dViewable.V3
                      Entity.Elevation .= 10f
                      Entity.BackdropImageOpt .= Some Assets.Default.Black
                      Entity.Color .= color 0f 0f 0f 0.5f] world
 
                 // being info panel declaration
                 World.beginPanel "Info Panel"
-                    [Entity.Size .= Constants.Render.DisplayVirtualResolution.V3 * 0.8f
+                    [Entity.Size .= Globals.Render.DisplayVirtualResolution.V3 * 0.8f
                      // we can use a grid to nicely organize Gui elements.
                      // flow direction first orders by Entity.LayoutOrder which is
                      // defined for all Gui elements (via LayoutFacet), then it orders by Entity.Order.
