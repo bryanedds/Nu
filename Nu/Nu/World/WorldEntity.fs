@@ -733,7 +733,7 @@ module WorldEntityModule =
             Array.tryFind (fun (entity : Entity) ->
                 if entity.GetPickable world then
                     let absolute = entity.GetAbsolute world
-                    let positionWorld = Viewport.mouseToWorld2d absolute world.Eye2dCenter world.Eye2dSize position world.WindowViewport
+                    let positionWorld = Viewport.mouseToWorld2d absolute world.Eye2dCenter world.Eye2dViewed position world.WindowViewport
                     let bounds = (entity.GetBounds world).Box2
                     bounds.Intersects positionWorld
                 else false)
@@ -871,7 +871,7 @@ module WorldEntityModule =
                 if entity.GetIs2d world then
                     let position =
                         match pasteType with
-                        | PasteAtMouse -> (Viewport.mouseToWorld2d absolute world.Eye2dCenter world.Eye2dSize rightClickPosition world.WindowViewport).V3
+                        | PasteAtMouse -> (Viewport.mouseToWorld2d absolute world.Eye2dCenter world.Eye2dViewed rightClickPosition world.WindowViewport).V3
                         | PasteAtLook -> world.Eye2dCenter.V3
                         | PasteAt position -> position
                     match positionSnapEir with
