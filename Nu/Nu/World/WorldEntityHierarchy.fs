@@ -186,7 +186,7 @@ module WorldEntityHierarchyExtensions =
                         if getType (entity.GetDispatcher world) = typeof<Entity3dDispatcher> then
                             frozenEntities.Add entity
                         elif entity.Has<StaticModelSurfaceFacet> world then
-                            let mutable transform = entity.GetTransform world
+                            let transform = entity.GetTransform world
                             let castShadow = transform.CastShadow
                             let affineMatrix = transform.AffineMatrix
                             let entityBounds = transform.Bounds3d
@@ -217,7 +217,7 @@ module WorldEntityHierarchyExtensions =
                             (match Metadata.tryGetStaticModelMetadata (entity.GetStaticModel world) with
                              | ValueSome metadata -> metadata.LightProbes.Length = 0 && metadata.Lights.Length = 0
                              | ValueNone -> false) then
-                            let mutable transform = entity.GetTransform world
+                            let transform = entity.GetTransform world
                             let castShadow = transform.CastShadow
                             let affineMatrix = transform.AffineMatrix
                             let insetOpt = match entity.GetInsetOpt world with Some inset -> Some inset | None -> None // OPTIMIZATION: localize boxed value in memory.

@@ -15,7 +15,7 @@ type MetricsEntityDispatcher () =
 
     override this.Render (renderPass, entity, world) =
         let staticModel = entity.GetModelGeneric world
-        let mutable transform = entity.GetTransform world
+        let transform = entity.GetTransform world
         let affineMatrix = transform.AffineMatrix
         let castShadow = transform.CastShadow
         let presence = transform.Presence

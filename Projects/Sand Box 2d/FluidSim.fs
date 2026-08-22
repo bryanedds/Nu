@@ -62,14 +62,14 @@ type LineSegmentsDispatcher () =
         let flip = Unflipped
         let segments = lineSegments.GetLineSegments world
         let lineWidth = lineSegments.GetLineWidth world
-        let mutable transform = Transform.makeIntuitive false v3Zero v3One v3Zero v3Zero v3Zero (lineSegments.GetElevation world)
+        let transform = Transform.makeIntuitive false v3Zero v3One v3Zero v3Zero v3Zero (lineSegments.GetElevation world)
         for i in 0 .. segments.Length - 2 do
             let p1 = segments[i]
             let p2 = segments[inc i]
             transform.Position <- ((p1 + p2) * 0.5f).V3
             transform.Rotation <- Quaternion.CreateLookAt2d (p2 - p1)
             transform.Size <- v3 (p2 - p1).Magnitude lineWidth 0f
-            World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, staticImage, &transform, &insetOpt, &clipOpt, staticImage, &color, blend, &emission, flip, world)
+            World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, staticImage, transform, &insetOpt, &clipOpt, staticImage, &color, blend, &emission, flip, world)
 
 type SelectedTool = Water | Sand | Smoke | Oil | Bubble | Line | Box | Explosion
 
@@ -199,8 +199,8 @@ type FluidSimDispatcher () =
                  Entity.Elevation .= 1f
                  Entity.FontSizing .= Some 8.f] world then
                 if particleImage = Assets.Default.Ball then
-                    fluidEmitter.FluidParticleRenders.Map (Map.map (fun key render -> 
-                        let mutable transform = render.Transform
+                    fluidEmitter.FluidParticleRenders.Map (Map.map (fun key render ->
+                        let transform = render.Transform.Clone
                         if key = "Smoke" then // smoke uses its own sprite.
                             transform.Size <- (Metadata.getTextureSizeF Assets.Default.Gas).V3
                             // image credit: https://github.com/a-piece-of-snake/sfml-box2d-fluid/blob/master/sfmlSetup/Assets/Textures/smoke.png
@@ -212,19 +212,19 @@ type FluidSimDispatcher () =
                             { render with Image = Assets.Default.Fluid; Transform = transform })) world
                 elif particleImage = Assets.Default.Fluid then
                     fluidEmitter.FluidParticleRenders.Map (Map.map (fun _ render ->
-                        let mutable transform = render.Transform
+                        let transform = render.Transform.Clone
                         transform.Size <- v3 16f 16f 0f
                         // image credit: https://www.pngitem.com/middle/hbhTw_transparent-bubble-hd-png-download
                         { render with Image = Assets.Gameplay.BubbleImage; Transform = transform })) world
                 elif particleImage = Assets.Gameplay.BubbleImage then
                     fluidEmitter.FluidParticleRenders.Map (Map.map (fun _ render ->
-                        let mutable transform = render.Transform
+                        let transform = render.Transform.Clone
                         transform.Size <- v3 8f 8f 0f
                         // image credit: https://github.com/nkast/Aether.Physics2D/blob/main/Samples/SamplesContent/Samples/goo.png
                         { render with Image = Assets.Gameplay.GooImage; Transform = transform })) world
                 else
                     fluidEmitter.FluidParticleRenders.Map (Map.map (fun _ render ->
-                        let mutable transform = render.Transform
+                        let transform = render.Transform.Clone
                         transform.Size <- v3 2f 2f 0f
                         { render with Image = Assets.Default.Ball; Transform = transform })) world
 

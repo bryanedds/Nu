@@ -1250,8 +1250,6 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member this.PerimeterMinLocal = this.PositionLocal + (this.Transform.PerimeterMin - this.Transform.Position)
     member this.PerimeterMaxLocal = this.PositionLocal + (this.Transform.PerimeterMax - this.Transform.Position)
     member this.Bounds = if this.Is2d then this.Transform.Bounds2d else this.Transform.Bounds3d
-    member internal this.Active with get () = this.Transform.Active and set value = this.Transform.Active <- value
-    member internal this.Dirty with get () = this.Transform.Dirty and set value = this.Transform.Dirty <- value
     member internal this.Invalidated with get () = this.Transform.Invalidated and set value = this.Transform.Invalidated <- value
     member this.Absolute with get () = this.Transform.Absolute and set value = this.Transform.Absolute <- value
     member this.PublishChangeEvents with get () = this.Transform.PublishChangeEvents and set value = this.Transform.PublishChangeEvents <- value
@@ -1298,7 +1296,7 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     /// This is used when we want to retain an old version of an entity state in face of mutation.
     static member inline copy (entityState : EntityState) =
         let entityState' = { entityState with EntityState.Dispatcher = entityState.Dispatcher }
-        Transform.invalidateFastInternal &entityState.Transform // OPTIMIZATION: invalidate fast.
+        Transform.invalidateFastInternal entityState.Transform // OPTIMIZATION: invalidate fast.
         entityState'
 
     /// Check that there exists an xtenstion property that is a runtime property.
@@ -1341,7 +1339,7 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
 
     /// Make an entity state value.
     static member make imperative mountOpt surnamesOpt overlayNameOpt (dispatcher : EntityDispatcher) =
-        let mutable transform = Transform.makeDefault ()
+        let transform = Transform.makeDefault ()
         let (id, surnames) = Gen.id64AndSurnamesIf surnamesOpt
         { Transform = transform
           Dispatcher = dispatcher

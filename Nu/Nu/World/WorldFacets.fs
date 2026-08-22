@@ -69,7 +69,7 @@ type StaticSpriteFacet () =
          define Entity.Flip Unflipped]
 
     override this.Render (_, entity, world) =
-        let mutable transform = entity.GetTransform world
+        let transform = entity.GetTransform world
         let staticImage = entity.GetStaticImage world
         let insetOpt = entity.GetInsetOpt world |> Option.toValueOption
         let clipOpt = entity.GetClipOpt world |> Option.toValueOption
@@ -77,7 +77,7 @@ type StaticSpriteFacet () =
         let blend = entity.GetBlend world
         let emission = entity.GetEmission world
         let flip = entity.GetFlip world
-        World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, staticImage, &transform, &insetOpt, &clipOpt, staticImage, &color, blend, &emission, flip, world)
+        World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, staticImage, transform, &insetOpt, &clipOpt, staticImage, &color, blend, &emission, flip, world)
 
     override this.GetAttributesInferred (entity, world) =
         match Metadata.tryGetTextureSizeF (entity.GetStaticImage world) with
@@ -150,7 +150,7 @@ type AnimatedSpriteFacet () =
             entity.StartTime.Map ((+) world.GameDelta) world
 
     override this.Render (_, entity, world) =
-        let mutable transform = entity.GetTransform world
+        let transform = entity.GetTransform world
         let animationSheet = entity.GetAnimationSheet world
         let insetOpt = getSpriteInsetOpt entity world |> Option.toValueOption
         let clipOpt = entity.GetClipOpt world |> Option.toValueOption
@@ -158,7 +158,7 @@ type AnimatedSpriteFacet () =
         let blend = entity.GetBlend world
         let emission = entity.GetEmission world
         let flip = entity.GetFlip world
-        World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, animationSheet, &transform, &insetOpt, &clipOpt, animationSheet, &color, blend, &emission, flip, world)
+        World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, animationSheet, transform, &insetOpt, &clipOpt, animationSheet, &color, blend, &emission, flip, world)
 
     override this.GetAttributesInferred (entity, world) =
         AttributesInferred.important (entity.GetCelSize world).V3 v3Zero
@@ -224,7 +224,7 @@ type BasicStaticSpriteEmitterFacet () =
     static let makeEmitter entity world =
         match tryMakeEmitter entity world with
         | Some emitter ->
-            let mutable transform = entity.GetTransform world
+            let transform = entity.GetTransform world
             { emitter with
                 Body =
                     { Position = transform.Position
@@ -465,7 +465,7 @@ type TextFacet () =
          define Entity.TextShift Constants.Gui.TextShiftDefault]
 
     override this.Render (_, entity, world) =
-        let mutable transform = entity.GetTransform world
+        let transform = entity.GetTransform world
         let absolute = transform.Absolute
         let perimeter = transform.Perimeter
         let offset = (entity.GetTextOffset world).V3
@@ -510,7 +510,7 @@ type BackdroppableFacet () =
     override this.Render (_, entity, world) =
         match entity.GetBackdropImageOpt world with
         | Some spriteImage ->
-            let mutable transform = entity.GetTransform world
+            let transform = entity.GetTransform world
             let sliceMargin = entity.GetSliceMargin world
             let color = if transform.Enabled then entity.GetColor world else entity.GetColorDisabled world
             World.renderGuiSpriteSliced transform.Absolute transform.Perimeter sliceMargin spriteImage transform.Offset transform.Elevation color world
@@ -556,7 +556,7 @@ type ButtonFacet () =
     static let handleMouseLeftDown evt world =
         let entity = evt.Subscriber : Entity
         if entity.GetVisible world then
-            let mutable transform = entity.GetTransform world
+            let transform = entity.GetTransform world
             let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
             let mousePositionWorld = World.getMousePosition2dWorld transform.Absolute world
             if perimeter.Intersects mousePositionWorld then
@@ -576,7 +576,7 @@ type ButtonFacet () =
         entity.SetDown false world
         entity.TrySet (nameof Entity.TextOffset) v2Zero world |> ignore
         if entity.GetVisible world then
-            let mutable transform = entity.GetTransform world
+            let transform = entity.GetTransform world
             let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
             let mousePositionWorld = World.getMousePosition2dWorld transform.Absolute world
             if perimeter.Intersects mousePositionWorld then
@@ -608,7 +608,7 @@ type ButtonFacet () =
         World.sense handleMouseLeftUp Nu.Game.Handle.MouseLeftUpEvent entity (nameof ButtonFacet) world
 
     override this.Render (_, entity, world) =
-        let mutable transform = entity.GetTransform world
+        let transform = entity.GetTransform world
         let sliceMargin = entity.GetSliceMargin world
         let spriteImage = if entity.GetDown world then entity.GetDownImage world else entity.GetUpImage world
         let color = if transform.Enabled then Color.One else entity.GetColorDisabled world
@@ -657,7 +657,7 @@ type ToggleButtonFacet () =
     static let handleMouseLeftDown evt world =
         let entity = evt.Subscriber : Entity
         if entity.GetVisible world then
-            let mutable transform = entity.GetTransform world
+            let transform = entity.GetTransform world
             let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
             let mousePositionWorld = World.getMousePosition2dWorld transform.Absolute world
             if perimeter.Intersects mousePositionWorld then
@@ -673,7 +673,7 @@ type ToggleButtonFacet () =
         let wasPushed = entity.GetPushed world
         if wasPushed then entity.SetPushed false world
         if entity.GetVisible world then
-            let mutable transform = entity.GetTransform world
+            let transform = entity.GetTransform world
             let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
             let mousePositionWorld = World.getMousePosition2dWorld transform.Absolute world
             if perimeter.Intersects mousePositionWorld then
@@ -717,7 +717,7 @@ type ToggleButtonFacet () =
         entity.TrySet (nameof Entity.TextOffset) textOffset world |> ignore
 
     override this.Render (_, entity, world) =
-        let mutable transform = entity.GetTransform world
+        let transform = entity.GetTransform world
         let sliceMargin = entity.GetSliceMargin world
         let spriteImage =
             if entity.GetToggled world || entity.GetPushed world
@@ -763,7 +763,7 @@ type RadioButtonFacet () =
     static let handleMouseLeftDown evt world =
         let entity = evt.Subscriber : Entity
         if entity.GetVisible world then
-            let mutable transform = entity.GetTransform world
+            let transform = entity.GetTransform world
             let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
             let mousePositionWorld = World.getMousePosition2dWorld transform.Absolute world
             if perimeter.Intersects mousePositionWorld then
@@ -780,7 +780,7 @@ type RadioButtonFacet () =
         if wasPushed then entity.SetPushed false world
         let wasDialed = entity.GetDialed world
         if entity.GetVisible world then
-            let mutable transform = entity.GetTransform world
+            let transform = entity.GetTransform world
             let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
             let mousePositionWorld = World.getMousePosition2dWorld transform.Absolute world
             if perimeter.Intersects mousePositionWorld then
@@ -824,7 +824,7 @@ type RadioButtonFacet () =
         entity.TrySet (nameof Entity.TextOffset) textOffset world |> ignore
 
     override this.Render (_, entity, world) =
-        let mutable transform = entity.GetTransform world
+        let transform = entity.GetTransform world
         let sliceMargin = entity.GetSliceMargin world
         let spriteImage =
             if entity.GetDialed world || entity.GetPushed world
@@ -877,7 +877,7 @@ type FillBarFacet () =
     override this.Render (_, entity, world) =
 
         // border sprite
-        let mutable transform = entity.GetTransform world
+        let transform = entity.GetTransform world
         let sliceMargin = entity.GetSliceMargin world
         let elevation = transform.Elevation + 0.5f
         let color = if transform.Enabled then Color.White else entity.GetColorDisabled world
@@ -921,7 +921,7 @@ type FeelerFacet () =
         let entity = evt.Subscriber : Entity
         let data = evt.Data : MouseButtonData
         if entity.GetVisible world then
-            let mutable transform = entity.GetTransform world
+            let transform = entity.GetTransform world
             let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
             let mousePositionWorld = World.getMousePosition2dWorld transform.Absolute world
             if perimeter.Intersects mousePositionWorld then
@@ -1005,7 +1005,7 @@ type TextBoxFacet () =
     static let handleMouseLeftDown evt (world : World) =
         let entity = evt.Subscriber : Entity
         if world.TimeAdvancing && entity.GetVisible world then
-            let mutable transform = entity.GetTransform world
+            let transform = entity.GetTransform world
             let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
             let mousePositionWorld = World.getMousePosition2dWorld transform.Absolute world
             if perimeter.Intersects mousePositionWorld then
@@ -1109,7 +1109,7 @@ type TextBoxFacet () =
         entity.SetCaret (entity.GetText world).Length world
 
     override this.Render (_, entity, world) =
-        let mutable transform = entity.GetTransform world
+        let transform = entity.GetTransform world
         let absolute = transform.Absolute
         let enabled = transform.Enabled
         let perimeter = transform.Perimeter
@@ -1558,7 +1558,7 @@ type RigidBodyFacet () =
         if not frozen then
             let is2d = entity.GetIs2d world
             let bodyId = entity.GetBodyId world
-            let mutable transform = entity.GetTransform world
+            let transform = entity.GetTransform world
             let vehicleProperties =
                 match entity.GetBodyType world with
                 | Vehicle ->
@@ -1839,7 +1839,7 @@ type TileMapFacet () =
         World.sense (fun _ world ->
             let attributes = entity.GetAttributesInferred world
             if not attributes.Unimportant then
-                let mutable transform = entity.GetTransform world
+                let transform = entity.GetTransform world
                 transform.Size <- attributes.SizeInferred
                 transform.Offset <- attributes.OffsetInferred
                 entity.SetTransformWithoutEvent transform world
@@ -1853,7 +1853,7 @@ type TileMapFacet () =
     override this.RegisterPhysics (entity, world) =
         match TmxMap.tryGetTileMap (entity.GetTileMap world) with
         | Some tileMap ->
-            let mutable transform = entity.GetTransform world
+            let transform = entity.GetTransform world
             let perimeterUnscaled = transform.PerimeterUnscaled // tile map currently ignores rotation and scale
             let tileMapPosition = perimeterUnscaled.Min.V2
             let tileSizeDivisor = entity.GetTileSizeDivisor world
@@ -1882,7 +1882,7 @@ type TileMapFacet () =
         let tileMapAsset = entity.GetTileMap world
         match TmxMap.tryGetTileMap tileMapAsset with
         | Some tileMap ->
-            let mutable transform = entity.GetTransform world
+            let transform = entity.GetTransform world
             let perimeterUnscaled = transform.PerimeterUnscaled // tile map currently ignores rotation and scale
             let viewBounds = World.getViewBounds2dRelative world
             let tileMapMessages =
@@ -1954,7 +1954,7 @@ type TmxMapFacet () =
         World.sense (fun _ world ->
             let attributes = entity.GetAttributesInferred world
             if not attributes.Unimportant then
-                let mutable transform = entity.GetTransform world
+                let transform = entity.GetTransform world
                 transform.Size <- attributes.SizeInferred
                 transform.Offset <- attributes.OffsetInferred
                 entity.SetTransformWithoutEvent transform world
@@ -1966,7 +1966,7 @@ type TmxMapFacet () =
             world
 
     override this.RegisterPhysics (entity, world) =
-        let mutable transform = entity.GetTransform world
+        let transform = entity.GetTransform world
         let perimeterUnscaled = transform.PerimeterUnscaled // tmx map currently ignores rotation and scale
         let tileSizeDivisor = entity.GetTileSizeDivisor world
         let tmxMap = entity.GetTmxMap world
@@ -1992,7 +1992,7 @@ type TmxMapFacet () =
         else World.destroyBody3d (entity.GetBodyId world) world
 
     override this.Render (_, entity, world) =
-        let mutable transform = entity.GetTransform world
+        let transform = entity.GetTransform world
         let perimeterUnscaled = transform.PerimeterUnscaled // tile map currently ignores rotation and scale
         let viewBounds = World.getViewBounds2dRelative world
         let tmxMap = entity.GetTmxMap world
@@ -3008,7 +3008,7 @@ type StaticBillboardFacet () =
          define Entity.Planar true]
 
     override this.Render (renderPass, entity, world) =
-        let mutable transform = entity.GetTransform world
+        let transform = entity.GetTransform world
         let castShadow = (World.getRenderer3dConfig world).LightShadowingEnabled && transform.CastShadow
         if not renderPass.IsShadowPass || castShadow then
             let affineMatrix = transform.AffineMatrix
@@ -3078,7 +3078,7 @@ type AnimatedBillboardFacet () =
             entity.StartTime.Map ((+) world.GameDelta) world
 
     override this.Render (renderPass, entity, world) =
-        let mutable transform = entity.GetTransform world
+        let transform = entity.GetTransform world
         let castShadow = (World.getRenderer3dConfig world).LightShadowingEnabled && transform.CastShadow
         if not renderPass.IsShadowPass || castShadow then
             let affineMatrix = transform.AffineMatrix
@@ -3143,7 +3143,7 @@ type BasicStaticBillboardEmitterFacet () =
     static let makeEmitter entity world =
         match tryMakeEmitter entity world with
         | Some emitter ->
-            let mutable transform = entity.GetTransform world
+            let transform = entity.GetTransform world
             let renderType = match entity.GetEmitterRenderStyle world with Deferred -> DeferredRenderType | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
             { emitter with
                 Body =
@@ -3412,7 +3412,7 @@ type StaticModelFacet () =
          define Entity.StaticModel Assets.Default.StaticModel]
 
     override this.Render (renderPass, entity, world) =
-        let mutable transform = entity.GetTransform world
+        let transform = entity.GetTransform world
         let castShadow = (World.getRenderer3dConfig world).LightShadowingEnabled && transform.CastShadow
         if not renderPass.IsShadowPass || castShadow then
             let affineMatrix = transform.AffineMatrix
@@ -3484,7 +3484,7 @@ type StaticModelSurfaceFacet () =
          define Entity.SurfaceIndex 0]
 
     override this.Render (renderPass, entity, world) =
-        let mutable transform = entity.GetTransform world
+        let transform = entity.GetTransform world
         let castShadow = (World.getRenderer3dConfig world).LightShadowingEnabled && transform.CastShadow
         if not renderPass.IsShadowPass || castShadow then
             let affineMatrix = transform.AffineMatrix
@@ -3704,7 +3704,7 @@ type AnimatedModelFacet () =
             entity.SetAnimations animations world
 
     override this.Render (renderPass, entity, world) =
-        let mutable transform = entity.GetTransform world
+        let transform = entity.GetTransform world
         let castShadow = (World.getRenderer3dConfig world).LightShadowingEnabled && transform.CastShadow
         if not renderPass.IsShadowPass || castShadow then
             let affineMatrix = transform.AffineMatrix
@@ -3871,7 +3871,7 @@ type TerrainFacet () =
         match entity.TryGetTerrainResolution world with
         | Some resolution ->
             let bodyId = entity.GetBodyId world
-            let mutable transform = entity.GetTransform world
+            let transform = entity.GetTransform world
             let terrainShape =
                 { Resolution = resolution
                   Bounds = transform.Bounds3d
@@ -3911,7 +3911,7 @@ type TerrainFacet () =
         World.destroyBody3d (entity.GetBodyId world) world
 
     override this.Render (renderPass, entity, world) =
-        let mutable transform = entity.GetTransform world
+        let transform = entity.GetTransform world
         let castShadow = (World.getRenderer3dConfig world).LightShadowingEnabled && transform.CastShadow
         if not renderPass.IsShadowPass || castShadow then
             let terrainDescriptor =

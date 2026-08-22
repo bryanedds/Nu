@@ -92,8 +92,8 @@ module WorldRender =
             for operation in operations do rendererProcess.EnqueueMessage2d (LayeredOperation2d operation)
 
         /// Send a message to the render system to render a static model using a fast path.
-        static member renderLayeredSpriteFast (elevation, horizon, assetTag, transform : Transform inref, insetOpt : Box2 ValueOption inref, clipOpt : Box2 ValueOption inref, image, color : Color inref, blend, emission : Color inref, flip, world) =
-            (World.getRendererProcess world).RenderLayeredSpriteFast (elevation, horizon, assetTag, &transform, &insetOpt, &clipOpt, image, &color, blend, &emission, flip)
+        static member renderLayeredSpriteFast (elevation, horizon, assetTag, transform : Transform, insetOpt : Box2 ValueOption inref, clipOpt : Box2 ValueOption inref, image, color : Color inref, blend, emission : Color inref, flip, world) =
+            (World.getRendererProcess world).RenderLayeredSpriteFast (elevation, horizon, assetTag, transform, &insetOpt, &clipOpt, image, &color, blend, &emission, flip)
 
         /// Load a 2d render asset package. Should be used to avoid loading assets at inconvenient times (such as in the
         /// middle of game play!)
@@ -122,11 +122,11 @@ module WorldRender =
 
         /// Render a gui sprite.
         static member renderGuiSprite absolute perimeter spriteImage offset elevation color world =
-            let mutable spriteTransform = Transform.makePerimeter absolute perimeter offset elevation // out-of-box gui ignores rotation
+            let spriteTransform = Transform.makePerimeter absolute perimeter offset elevation // out-of-box gui ignores rotation
             let insetOpt = ValueOption<Box2>.None
             let perimeter = ValueSome perimeter.Box2
             let blend = Color.Zero
-            World.renderLayeredSpriteFast (spriteTransform.Elevation, spriteTransform.Horizon, spriteImage, &spriteTransform, &insetOpt, &perimeter, spriteImage, &color, Transparent, &blend, Unflipped, world)
+            World.renderLayeredSpriteFast (spriteTransform.Elevation, spriteTransform.Horizon, spriteImage, spriteTransform, &insetOpt, &perimeter, spriteImage, &color, Transparent, &blend, Unflipped, world)
 
         /// Render a gui sprite with 9-way slicing.
         static member renderGuiSpriteSliced absolute perimeter margin spriteImage offset elevation color world =
@@ -137,15 +137,15 @@ module WorldRender =
                         match Metadata.tryGetTextureSizeF spriteImage with
                         | ValueSome imageSize -> ValueSome (box2SliceInverted i margin (box2 v2Zero imageSize))
                         | ValueNone -> ValueNone
-                    let mutable spriteTransform = Transform.makePerimeter absolute slice offset elevation // out-of-box gui ignores rotation
+                    let spriteTransform = Transform.makePerimeter absolute slice offset elevation // out-of-box gui ignores rotation
                     let perimeter = ValueSome perimeter.Box2
                     let blend = Color.Zero
-                    World.renderLayeredSpriteFast (spriteTransform.Elevation, spriteTransform.Horizon, spriteImage, &spriteTransform, &insetOpt, &perimeter, spriteImage, &color, Transparent, &blend, Unflipped, world)
+                    World.renderLayeredSpriteFast (spriteTransform.Elevation, spriteTransform.Horizon, spriteImage, spriteTransform, &insetOpt, &perimeter, spriteImage, &color, Transparent, &blend, Unflipped, world)
             else World.renderGuiSprite absolute perimeter spriteImage offset elevation color world
 
         static member renderGuiText absolute (perimeter : Box3) offset elevation shift clipOpt justification caretOpt textMargin color font fontSizing fontStyling text world =
             if not (String.IsNullOrWhiteSpace text) || Option.isSome caretOpt then
-                let mutable textTransform = Transform.makeDefault ()
+                let textTransform = Transform.makeDefault ()
                 textTransform.Position <- perimeter.Center + textMargin + offset // out-of-box gui ignores rotation and scale
                 textTransform.Size <- perimeter.Size - textMargin * 2.0f
                 textTransform.Elevation <- elevation + shift

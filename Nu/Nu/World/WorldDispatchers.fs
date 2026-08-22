@@ -221,7 +221,7 @@ type PanelDispatcher () =
     static let handlePanelLeftDown evt world =
         let entity = evt.Subscriber : Entity
         if entity.GetVisible world then
-            let mutable transform = entity.GetTransform world
+            let transform = entity.GetTransform world
             let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
             let mousePositionWorld = World.getMousePosition2dWorld transform.Absolute world
             if perimeter.Intersects mousePositionWorld then Resolve
@@ -396,7 +396,7 @@ type Character2dDispatcher () =
         let celSize = entity.GetCelSize world
         let celRun = entity.GetCelRun world
         let animationDelay = entity.GetAnimationDelay world
-        let mutable transform = entity.GetTransform world
+        let transform = entity.GetTransform world
         let struct (insetOpt, image) =
             if not (World.getBodyGrounded bodyId world) then
                 let image = entity.GetCharacter2dJumpImage world
@@ -458,12 +458,12 @@ type FluidEmitter2dDispatcher () =
                  ("Oil", { Transform = Transform.makeIntuitive false v3Zero v3One v3Zero fluidSize v3Zero -0.02f; InsetOpt = ValueNone; ClipOpt = ValueNone; Image = Assets.Default.Fluid; Color = Color.color 0.36862746f 0.22352941f 0.039215688f 1.0f; Blend = Transparent; Emission = colorZero; Flip = Unflipped })])]
 
     override this.Render (_, emitter, world) =
-        let mutable transform = emitter.GetTransform world
+        let transform = emitter.GetTransform world
         let renders = emitter.GetFluidParticleRenders world
         for particle in emitter.GetFluidParticles world do
             let mutable render = Unchecked.defaultof<_>
             if not (Map.tryGetValue (particle.FluidParticleConfig, renders, &render)) then render <- renders["Water"]
-            let mutable transform = Transform.makeIntuitive false (render.Transform.Position + particle.FluidParticlePosition) (render.Transform.Scale * transform.Scale) (render.Transform.Offset + transform.Offset) render.Transform.Size (render.Transform.Angles + transform.Angles) (render.Transform.Elevation + transform.Elevation)
+            let transform = Transform.makeIntuitive false (render.Transform.Position + particle.FluidParticlePosition) (render.Transform.Scale * transform.Scale) (render.Transform.Offset + transform.Offset) render.Transform.Size (render.Transform.Angles + transform.Angles) (render.Transform.Elevation + transform.Elevation)
             World.enqueueRenderMessage2d (LayeredOperation2d { Elevation = transform.Elevation; Horizon = transform.Horizon; AssetTag = render.Image; RenderOperation2d = RenderSprite { render with Transform = transform } }) world
 
     override this.GetAttributesInferred (_, _) =

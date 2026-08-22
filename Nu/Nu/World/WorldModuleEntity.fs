@@ -199,7 +199,7 @@ module WorldModuleEntity =
                     let publishChangeEvents = entityState.PublishChangeEvents
                     World.publishEntityChange propertyName propertyValue propertyValue publishChangeEvents entity world
 
-        static member internal publishTransformEvents (transformOld : Transform byref, transformNew : Transform byref, is2d, publishChangeEvents, entity : Entity, world) =
+        static member internal publishTransformEvents (transformOld : Transform) (transformNew : Transform) is2d publishChangeEvents (entity : Entity) world =
             if publishChangeEvents then
                 let overflowAbsoluteChanged = transformNew.OverflowAbsolute <> transformOld.OverflowAbsolute
                 let positionChanged = transformNew.Position <> transformOld.Position
@@ -484,14 +484,10 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             Matrix4x4.CreateAffine (entityState.PositionLocal, entityState.RotationLocal, entityState.ScaleLocal)
 
-        static member
-#if !DEBUG
-            inline
-#endif
-            internal getEntityTransform entity world =
+        static member internal getEntityTransform entity world =
             let entityState = World.getEntityState entity world
-            Transform.cleanRotationMatrixInternal &entityState.Transform // OPTIMIZATION: ensure rotation matrix is clean so that redundant cleans don't happen when transform is handed out.
-            entityState.Transform
+            Transform.cleanRotationMatrixInternal entityState.Transform // OPTIMIZATION: ensure rotation matrix is clean so that redundant cleans don't happen in transform clones.
+            entityState.Transform.Clone
 
         /// Check that an entity has any children.
         static member getEntityHasChildren (entity : Entity) (world : World) =
@@ -603,11 +599,11 @@ module WorldModuleEntity =
             if  not mounterState.Physical || // OPTIMIZATION: skip call to getEntityAllowedToMount when non-physical.
                 World.getEntityAllowedToMount mounter world then
                 let mountState = World.getEntityState mount world
-                let mutable transform = mounterState.Transform
+                let transform = mounterState.Transform.Clone
                 transform.Position <- Vector3.Transform (mounterState.PositionLocal, mountState.AffineMatrix)
                 transform.Rotation <- mountState.Rotation * mounterState.RotationLocal
                 transform.Scale <- mounterState.ScaleLocal * mountState.Scale
-                World.setEntityTransformByRef (&transform, mounterState, mounter, world) |> ignore<bool>
+                World.setEntityTransformDirectly transform mounterState mounter world |> ignore<bool>
 
         static member internal propagateEntityProperties3 mountOpt entity world =
             match Option.bind (flip tryResolve entity) mountOpt with
@@ -755,17 +751,17 @@ module WorldModuleEntity =
         static member internal setEntityPropagationSourceOpt value entity world =
             let entityState = World.getEntityState entity world
             let previous = entityState.PropagationSourceOpt
-            if value <> previous then
-                if world.Imperative then
-                    entityState.PropagationSourceOpt <- value
-                else
-                    let entityState = EntityState.copy entityState
-                    entityState.PropagationSourceOpt <- value
-                    World.setEntityState entityState entity world
-                World.updateEntityInPropagationTargets previous value entity world
-                World.publishEntityChange (nameof entityState.PropagationSourceOpt) previous value entityState.PublishChangeEvents entity world
-                true
-            else false
+            //if value <> previous then
+            if world.Imperative then
+                entityState.PropagationSourceOpt <- value
+            else
+                let entityState = EntityState.copy entityState
+                entityState.PropagationSourceOpt <- value
+                World.setEntityState entityState entity world
+            World.updateEntityInPropagationTargets previous value entity world
+            World.publishEntityChange (nameof entityState.PropagationSourceOpt) previous value entityState.PublishChangeEvents entity world
+            true
+            //else false
 
         static member internal setEntityAbsolute value (entity : Entity) world =
             let entityState = World.getEntityState entity world
@@ -877,11 +873,11 @@ module WorldModuleEntity =
         static member internal setEntityOverflow value entity world =
             let entityState = World.getEntityState entity world
             if value <> entityState.Transform.Overflow then
-                let mutable transform = entityState.Transform
+                let transform = entityState.Transform.Clone
                 transform.Overflow <- value
                 if entityState.Optimized world.Imperative
-                then World.setEntityTransformByRefWithoutEvent (&transform, entityState, entity, world)
-                else World.setEntityTransformByRef (&transform, entityState, entity, world) |> ignore<bool>
+                then World.setEntityTransformDirectlyWithoutEvent transform entityState entity world
+                else World.setEntityTransformDirectly transform entityState entity world |> ignore<bool>
                 true
             else false
 
@@ -908,8 +904,8 @@ module WorldModuleEntity =
                 true
             else false
 
-        static member internal setEntityTransformByRefWithoutEvent (value : Transform inref, entityState : EntityState, entity : Entity, world : World) =
-            if not (Transform.equalsByRef (&value, &entityState.Transform)) then
+        static member internal setEntityTransformDirectlyWithoutEvent (value : Transform) (entityState : EntityState) (entity : Entity) (world : World) =
+            if not (Transform.equals value entityState.Transform) then
                 let visibleInViewOld = entityState.VisibleInView
                 let staticInPlayOld = entityState.StaticInPlay
                 let lightProbeOld = entityState.LightProbe
@@ -925,9 +921,9 @@ module WorldModuleEntity =
                 World.updateEntityInEntityTree visibleInViewOld staticInPlayOld lightProbeOld lightOld presenceOld presenceInPlayOld boundsOld entity world
                 if World.getEntityMounted entity world then World.propagateEntityAffineMatrix entity world
 
-        static member internal setEntityTransformByRef (value : Transform byref, entityState : EntityState, entity : Entity, world) =
-            let mutable previous = entityState.Transform
-            if not (Transform.equalsByRef (&value, &previous)) then
+        static member internal setEntityTransformDirectly (value : Transform) (entityState : EntityState) (entity : Entity) (world : World) =
+            let previous = entityState.Transform
+            if not (Transform.equals value previous) then
                 let visibleInViewOld = entityState.VisibleInView
                 let staticInPlayOld = entityState.StaticInPlay
                 let lightProbeOld = entityState.LightProbe
@@ -942,9 +938,15 @@ module WorldModuleEntity =
                     World.setEntityState entityState entity world
                 World.updateEntityInEntityTree visibleInViewOld staticInPlayOld lightProbeOld lightOld presenceOld presenceInPlayOld boundsOld entity world
                 if World.getEntityMounted entity world then World.propagateEntityAffineMatrix entity world
-                World.publishTransformEvents (&previous, &value, entityState.Is2d, entityState.PublishChangeEvents, entity, world)
+                World.publishTransformEvents previous value entityState.Is2d entityState.PublishChangeEvents entity world
                 true
             else false
+
+        static member internal setEntityTransformWithoutEvent (value : Transform) (entityState : EntityState) (entity : Entity) (world : World) =
+            World.setEntityTransformDirectlyWithoutEvent value.Clone entityState entity world
+
+        static member internal setEntityTransform (value : Transform) (entityState : EntityState) (entity : Entity) (world : World) =
+            World.setEntityTransform value.Clone entityState entity world
 
         static member internal setEntityPerimeterCenter value entity world =
             let entityState = World.getEntityState entity world
@@ -999,11 +1001,11 @@ module WorldModuleEntity =
         static member internal setEntityPosition value entity world =
             let entityState = World.getEntityState entity world
             if value <> entityState.Position then
-                let mutable transform = entityState.Transform
+                let transform = entityState.Transform.Clone
                 transform.Position <- value
                 if entityState.Optimized world.Imperative
-                then World.setEntityTransformByRefWithoutEvent (&transform, entityState, entity, world)
-                else World.setEntityTransformByRef (&transform, entityState, entity, world) |> ignore<bool>
+                then World.setEntityTransformDirectlyWithoutEvent transform entityState entity world
+                else World.setEntityTransformDirectly transform entityState entity world |> ignore<bool>
                 true
             else false
 
@@ -1070,11 +1072,11 @@ module WorldModuleEntity =
         static member internal setEntityRotation value entity world =
             let entityState = World.getEntityState entity world
             if value <> entityState.Rotation then
-                let mutable transform = entityState.Transform
+                let transform = entityState.Transform.Clone
                 transform.Rotation <- value
                 if entityState.Optimized world.Imperative
-                then World.setEntityTransformByRefWithoutEvent (&transform, entityState, entity, world)
-                else World.setEntityTransformByRef (&transform, entityState, entity, world) |> ignore<bool>
+                then World.setEntityTransformDirectlyWithoutEvent transform entityState entity world
+                else World.setEntityTransformDirectly transform entityState entity world |> ignore<bool>
                 true
             else false
 
@@ -1142,11 +1144,11 @@ module WorldModuleEntity =
         static member internal setEntityScale value entity world =
             let entityState = World.getEntityState entity world
             if value <> entityState.Scale then
-                let mutable transform = entityState.Transform
+                let transform = entityState.Transform.Clone
                 transform.Scale <- value
                 if entityState.Optimized world.Imperative
-                then World.setEntityTransformByRefWithoutEvent (&transform, entityState, entity, world)
-                else World.setEntityTransformByRef (&transform, entityState, entity, world) |> ignore<bool>
+                then World.setEntityTransformDirectlyWithoutEvent transform entityState entity world
+                else World.setEntityTransformDirectly transform entityState entity world |> ignore<bool>
                 true
             else false
 
@@ -1206,11 +1208,11 @@ module WorldModuleEntity =
         static member internal setEntityOffset value entity world =
             let entityState = World.getEntityState entity world
             if value <> entityState.Offset then
-                let mutable transform = entityState.Transform
+                let transform = entityState.Transform.Clone
                 transform.Offset <- value
                 if entityState.Optimized world.Imperative
-                then World.setEntityTransformByRefWithoutEvent (&transform, entityState, entity, world)
-                else World.setEntityTransformByRef (&transform, entityState, entity, world) |> ignore<bool>
+                then World.setEntityTransformDirectlyWithoutEvent transform entityState entity world
+                else World.setEntityTransformDirectly transform entityState entity world |> ignore<bool>
                 true
             else false
 
@@ -1222,12 +1224,12 @@ module WorldModuleEntity =
                 let bottomLeftPrevious = entityState.PerimeterBottomLeftLocal
                 let minPrevious = entityState.PerimeterMinLocal
                 let maxPrevious = entityState.PerimeterMaxLocal
-                let mutable transform = entityState.Transform
+                let transform = entityState.Transform.Clone
                 transform.Size <- value
                 if entityState.Optimized world.Imperative then
-                    World.setEntityTransformByRefWithoutEvent (&transform, entityState, entity, world)
+                    World.setEntityTransformDirectlyWithoutEvent transform entityState entity world
                 else
-                    World.setEntityTransformByRef (&transform, entityState, entity, world) |> ignore<bool>
+                    World.setEntityTransformDirectly transform entityState entity world |> ignore<bool>
                     if entityState.PublishChangeEvents then
                         World.publishEntityChange (nameof entityState.PerimeterCenterLocal) centerPrevious entityState.PerimeterCenterLocal true entity world
                         World.publishEntityChange (nameof entityState.PerimeterBottomLocal) bottomPrevious entityState.PerimeterBottomLocal true entity world
@@ -1240,11 +1242,11 @@ module WorldModuleEntity =
         static member internal setEntityAngles value entity world =
             let entityState = World.getEntityState entity world
             if value <> entityState.Angles then
-                let mutable transform = entityState.Transform
+                let transform = entityState.Transform.Clone
                 transform.Angles <- value
                 if entityState.Optimized world.Imperative
-                then World.setEntityTransformByRefWithoutEvent (&transform, entityState, entity, world)
-                else World.setEntityTransformByRef (&transform, entityState, entity, world) |> ignore<bool>
+                then World.setEntityTransformDirectlyWithoutEvent transform entityState entity world
+                else World.setEntityTransformDirectly transform entityState entity world |> ignore<bool>
                 true
             else false
 
@@ -1335,11 +1337,11 @@ module WorldModuleEntity =
         static member internal setEntityElevation value entity world =
             let entityState = World.getEntityState entity world
             if value <> entityState.Transform.Elevation then
-                let mutable transform = entityState.Transform
+                let transform = entityState.Transform.Clone
                 transform.Elevation <- value
                 if entityState.Optimized world.Imperative
-                then World.setEntityTransformByRefWithoutEvent (&transform, entityState, entity, world)
-                else World.setEntityTransformByRef (&transform, entityState, entity, world) |> ignore<bool>
+                then World.setEntityTransformDirectlyWithoutEvent transform entityState entity world
+                else World.setEntityTransformDirectly transform entityState entity world |> ignore<bool>
                 if World.getEntityMounted entity world then World.propagateEntityElevation entity world
                 true
             else false
@@ -1532,11 +1534,11 @@ module WorldModuleEntity =
         static member internal setEntityOverflowAbsolute value entity world =
             let entityState = World.getEntityState entity world
             if value <> entityState.Transform.OverflowAbsolute then
-                let mutable transform = entityState.Transform
+                let transform = entityState.Transform.Clone
                 transform.OverflowAbsolute <- value
                 if entityState.Optimized world.Imperative
-                then World.setEntityTransformByRefWithoutEvent (&transform, entityState, entity, world)
-                else World.setEntityTransformByRef (&transform, entityState, entity, world) |> ignore<bool>
+                then World.setEntityTransformDirectlyWithoutEvent transform entityState entity world
+                else World.setEntityTransformDirectly transform entityState entity world |> ignore<bool>
                 true
             else false
 
@@ -1546,11 +1548,11 @@ module WorldModuleEntity =
         static member internal setEntityPerimeterUnscaled value entity world =
             let entityState = World.getEntityState entity world
             if value <> entityState.PerimeterUnscaled then
-                let mutable transform = entityState.Transform
+                let transform = entityState.Transform.Clone
                 transform.PerimeterUnscaled <- value
                 if entityState.Optimized world.Imperative
-                then World.setEntityTransformByRefWithoutEvent (&transform, entityState, entity, world)
-                else World.setEntityTransformByRef (&transform, entityState, entity, world) |> ignore<bool>
+                then World.setEntityTransformDirectlyWithoutEvent transform entityState entity world
+                else World.setEntityTransformDirectly transform entityState entity world |> ignore<bool>
                 true
             else false
 
@@ -1560,11 +1562,11 @@ module WorldModuleEntity =
         static member internal setEntityPerimeter value entity world =
             let entityState = World.getEntityState entity world
             if value <> entityState.Perimeter then
-                let mutable transform = entityState.Transform
+                let transform = entityState.Transform.Clone
                 transform.Perimeter <- value
                 if entityState.Optimized world.Imperative
-                then World.setEntityTransformByRefWithoutEvent (&transform, entityState, entity, world)
-                else World.setEntityTransformByRef (&transform, entityState, entity, world) |> ignore<bool>
+                then World.setEntityTransformDirectlyWithoutEvent transform entityState entity world
+                else World.setEntityTransformDirectly transform entityState entity world |> ignore<bool>
                 true
             else false
 
@@ -2026,7 +2028,7 @@ module WorldModuleEntity =
 
         static member internal getEntityInView2dAbsolute entity world =
             let entityState = World.getEntityState entity world
-            let mutable transform = &entityState.Transform
+            let transform = entityState.Transform
             let presence = transform.Presence
             presence.IsOmnipresent || World.boundsInView2dAbsolute transform.Bounds2d.Box2 world
 
@@ -2051,7 +2053,7 @@ module WorldModuleEntity =
         static member internal getEntityInView3d entity world =
             let entityState = World.getEntityState entity world
             let lightProbe = entityState.Dispatcher.LightProbe
-            let mutable transform = &entityState.Transform
+            let transform = entityState.Transform
             let presence = transform.Presence
             presence.IsOmnipresent || World.boundsInView3d lightProbe presence transform.Bounds3d world
 
@@ -2802,7 +2804,7 @@ module WorldModuleEntity =
     let private initSetters () =
         let entitySetters =
             dictPlus StringComparer.Ordinal
-                [("Transform", fun property entity world -> let mutable transform = property.PropertyValue :?> Transform in World.setEntityTransformByRef (&transform, World.getEntityState entity world, entity, world))
+                [("Transform", fun property entity world -> let transform = property.PropertyValue :?> Transform in World.setEntityTransform transform (World.getEntityState entity world) entity world)
                  ("Position", fun property entity world -> World.setEntityPosition (property.PropertyValue :?> Vector3) entity world)
                  ("PositionLocal", fun property entity world -> World.setEntityPositionLocal (property.PropertyValue :?> Vector3) entity world)
                  ("Rotation", fun property entity world -> World.setEntityRotation (property.PropertyValue :?> Quaternion) entity world)

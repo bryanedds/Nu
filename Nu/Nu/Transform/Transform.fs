@@ -13,30 +13,28 @@ open Prime
 /// Masks for Transform flags.
 module TransformMasks =
 
-    let [<Literal>] ActiveMask =                    0b00000000000000000000001u // for use as a component in an ECS or other data-oriented context
-    let [<Literal>] DirtyMask =                     0b00000000000000000000010u // for use as a component in an ECS or other data-oriented context
-    let [<Literal>] InvalidatedMask =               0b00000000000000000000100u
-    let [<Literal>] AbsoluteMask =                  0b00000000000000000001000u
-    let [<Literal>] EnabledMask =                   0b00000000000000000010000u
-    let [<Literal>] VisibleMask =                   0b00000000000000000100000u
-    let [<Literal>] CastShadowMask =                0b00000000000000001000000u
-    let [<Literal>] PickableMask =                  0b00000000000000010000000u
-    let [<Literal>] AlwaysUpdateMask =              0b00000000000000100000000u
-    let [<Literal>] AlwaysRenderMask =              0b00000000000001000000000u
-    let [<Literal>] PublishChangeEventsMask =       0b00000000000010000000000u
-    let [<Literal>] PublishUpdatesMask =            0b00000000000100000000000u
-    let [<Literal>] PersistentMask =                0b00000000001000000000000u
-    let [<Literal>] OverflowAbsoluteMask =          0b00000000010000000000000u
-    let [<Literal>] MountedMask =                   0b00000000100000000000000u
-    let [<Literal>] EnabledLocalMask =              0b00000001000000000000000u
-    let [<Literal>] VisibleLocalMask =              0b00000010000000000000000u
-    let [<Literal>] StaticMask =                    0b00000100000000000000000u
-    let [<Literal>] AnglesDirtyMask =               0b00001000000000000000000u
-    let [<Literal>] RotationMatrixDirtyMask =       0b00010000000000000000000u
-    let [<Literal>] Bounds3dDirtyMask =             0b00100000000000000000000u
-    let [<Literal>] ManualProtectionMask =          0b01000000000000000000000u
-    let [<Literal>] DeclarativeProtectionMask =     0b10000000000000000000000u
-    let [<Literal>] FlagsDefault =                  0b00110011001000011110001u
+    let [<Literal>] InvalidatedMask =               0b000000000000000000001u
+    let [<Literal>] AbsoluteMask =                  0b000000000000000000010u
+    let [<Literal>] EnabledMask =                   0b000000000000000000100u
+    let [<Literal>] VisibleMask =                   0b000000000000000001000u
+    let [<Literal>] CastShadowMask =                0b000000000000000010000u
+    let [<Literal>] PickableMask =                  0b000000000000000100000u
+    let [<Literal>] AlwaysUpdateMask =              0b000000000000001000000u
+    let [<Literal>] AlwaysRenderMask =              0b000000000000010000000u
+    let [<Literal>] PublishChangeEventsMask =       0b000000000000100000000u
+    let [<Literal>] PublishUpdatesMask =            0b000000000001000000000u
+    let [<Literal>] PersistentMask =                0b000000000010000000000u
+    let [<Literal>] OverflowAbsoluteMask =          0b000000000100000000000u
+    let [<Literal>] MountedMask =                   0b000000001000000000000u
+    let [<Literal>] EnabledLocalMask =              0b000000010000000000000u
+    let [<Literal>] VisibleLocalMask =              0b000000100000000000000u
+    let [<Literal>] StaticMask =                    0b000001000000000000000u
+    let [<Literal>] AnglesDirtyMask =               0b000010000000000000000u
+    let [<Literal>] RotationMatrixDirtyMask =       0b000100000000000000000u
+    let [<Literal>] Bounds3dDirtyMask =             0b001000000000000000000u
+    let [<Literal>] ManualProtectionMask =          0b010000000000000000000u
+    let [<Literal>] DeclarativeProtectionMask =     0b100000000000000000000u
+    let [<Literal>] FlagsDefault =                  0b001100110010000111100u
 
 // opening masks for succinctness
 open TransformMasks
@@ -45,24 +43,36 @@ open TransformMasks
 /// NOTE: this type currently doesn't support serialization and as such is not intended for direct use in a user-
 /// defined property lens.
 type [<NoEquality; NoComparison>] Transform =
-    struct
-        val mutable private Flags_ : uint
-        val mutable private Position_ : Vector3
-        val mutable private Rotation_ : Quaternion
-        val mutable private Scale_ : Vector3
-        val mutable private Offset_ : Vector3
-        val mutable private RotationMatrixOpt_ : Matrix4x4
-        val mutable private Angles_ : Vector3
-        val mutable private Size_ : Vector3
-        val mutable private Elevation_ : single
-        val mutable private Overflow_ : single
-        val mutable private Bounds3d_ : Box3
-        val mutable private Presence_ : Presence
-        val mutable private PresenceOverride_ : Presence voption
-        end
+    private
+        { mutable Flags_ : uint
+          mutable Position_ : Vector3
+          mutable Rotation_ : Quaternion
+          mutable Scale_ : Vector3
+          mutable Offset_ : Vector3
+          mutable RotationMatrixOpt_ : Matrix4x4
+          mutable Angles_ : Vector3
+          mutable Size_ : Vector3
+          mutable Elevation_ : single
+          mutable Overflow_ : single
+          mutable Bounds3d_ : Box3
+          mutable Presence_ : Presence
+          mutable PresenceOverride_ : Presence voption }
 
-    member this.Active                  with get () = this.Flags_ &&& ActiveMask <> 0u                  and set value = this.Flags_ <- if value then this.Flags_ ||| ActiveMask else this.Flags_ &&& ~~~ActiveMask
-    member this.Dirty                   with get () = this.Flags_ &&& DirtyMask <> 0u                   and set value = this.Flags_ <- if value then this.Flags_ ||| DirtyMask else this.Flags_ &&& ~~~DirtyMask
+    member this.Clone =
+        { Flags_ = this.Flags_
+          Position_ = this.Position_
+          Rotation_ = this.Rotation_
+          Scale_ = this.Scale_
+          Offset_ = this.Offset_
+          RotationMatrixOpt_ = this.RotationMatrixOpt_
+          Angles_ = this.Angles_
+          Size_ = this.Size_
+          Elevation_ = this.Elevation_
+          Overflow_ = this.Overflow_
+          Bounds3d_ = this.Bounds3d_
+          Presence_ = this.Presence_
+          PresenceOverride_ = this.PresenceOverride_ }
+
     member this.Invalidated             with get () = this.Flags_ &&& InvalidatedMask <> 0u             and set value = this.Flags_ <- if value then this.Flags_ ||| InvalidatedMask else this.Flags_ &&& ~~~InvalidatedMask
     member this.Absolute                with get () = this.Flags_ &&& AbsoluteMask <> 0u                and set value = this.Flags_ <- if value then this.Flags_ ||| AbsoluteMask else this.Flags_ &&& ~~~AbsoluteMask
     member this.PublishChangeEvents     with get () = this.Flags_ &&& PublishChangeEventsMask <> 0u     and set value = this.Flags_ <- if value then this.Flags_ ||| PublishChangeEventsMask else this.Flags_ &&& ~~~PublishChangeEventsMask
@@ -152,7 +162,7 @@ type [<NoEquality; NoComparison>] Transform =
 
     member this.Angles
         with get () =
-            Transform.cleanAngles &this
+            Transform.cleanAngles this
             this.Angles_
         and set (value : Vector3) =
             this.Angles_ <- value
@@ -168,7 +178,7 @@ type [<NoEquality; NoComparison>] Transform =
             this.Angles <- Math.DegreesToRadians3d value
 
     member this.RotationMatrix =
-        Transform.cleanRotationMatrixInternal &this
+        Transform.cleanRotationMatrixInternal this
         this.RotationMatrixOpt_
 
     member this.AffineMatrix =
@@ -337,7 +347,7 @@ type [<NoEquality; NoComparison>] Transform =
     member this.Horizon =
         this.Perimeter.Center.Y
 
-    static member private cleanAngles (this : Transform byref) =
+    static member private cleanAngles (this : Transform) =
         if this.AnglesDirty then
             let rollPitchYaw = this.Rotation_.RollPitchYaw
             this.Angles_.X <- rollPitchYaw.X
@@ -345,19 +355,20 @@ type [<NoEquality; NoComparison>] Transform =
             this.Angles_.Z <- rollPitchYaw.Z
             this.AnglesDirty <- false
 
-    static member cleanRotationMatrixInternal (this : Transform byref) =
+    static member cleanRotationMatrixInternal (this : Transform) =
         if this.RotationMatrixDirty || this.RotationMatrixOpt_.IsZero then
             this.RotationMatrixOpt_ <- Matrix4x4.CreateFromQuaternion this.Rotation_
             this.RotationMatrixDirty <- false
 
-    static member invalidateFastInternal (this : Transform byref) =
+    static member invalidateFastInternal (this : Transform) =
         this.Flags_ <- this.Flags_ ||| TransformMasks.InvalidatedMask
 
-    static member snapPosition (positionSnap, transform : Transform byref) =
+    static member snapPosition positionSnap (transform : Transform) =
         transform.Position <- Math.Snap3d (positionSnap, transform.Position)
 
     /// Test transforms for equality.
-    static member equalsByRef (left : Transform inref, right : Transform inref) =
+    static member equals (left : Transform) (right : Transform) =
+        refEq left right ||
         left.Flags_ = right.Flags_ &&
         left.Position_ = right.Position_ &&
         left.Rotation_ = right.Rotation_ &&
@@ -365,14 +376,12 @@ type [<NoEquality; NoComparison>] Transform =
         left.Offset_.Equals right.Offset_ &&
         left.Size_.Equals right.Size_ &&
         left.Elevation_ = right.Elevation_ &&
-        left.Overflow_ = right.Overflow_
+        left.Overflow_ = right.Overflow_ &&
+        left.Presence_ = right.Presence_ &&
+        left.PresenceOverride_ = right.PresenceOverride_
 
-    /// Test transforms for equality.
-    static member inline equals (left : Transform) (right : Transform) =
-        Transform.equalsByRef (&left, &right)
-
-    /// Assign the value of the left transform to the right.
-    static member assignByRef (source : Transform inref, target : Transform byref) =
+    /// Assign the value of the source transform to the target.
+    static member assign (source : Transform) (target : Transform) =
         target.Flags_ <- source.Flags_
         target.Position_ <- source.Position_
         target.Rotation_ <- source.Rotation_
@@ -383,28 +392,45 @@ type [<NoEquality; NoComparison>] Transform =
         target.Size_ <- source.Size_
         target.Elevation_ <- source.Elevation_
         target.Overflow_ <- source.Overflow_
-
-    /// Assign the value of the left transform to the right.
-    static member inline assign (source : Transform byref, target : Transform byref) =
-        Transform.assignByRef (&source, &target)
+        if source.Flags_ &&& Bounds3dDirtyMask = 0u then target.Bounds3d_ <- source.Bounds3d_; target.Bounds3dDirty <- false
+        target.Presence_ <- source.Presence_
+        target.PresenceOverride_ <- source.PresenceOverride_
 
     /// Make an empty transform.
-    static member inline makeEmpty () =
-        Unchecked.defaultof<Transform>
+    static member makeEmpty () =
+        { Flags_ = 0u
+          Position_ = Vector3 ()
+          Rotation_ = Quaternion ()
+          Scale_ = Vector3 ()
+          Offset_ = Vector3 ()
+          RotationMatrixOpt_ = Matrix4x4 ()
+          Angles_ = Vector3 ()
+          Size_ = Vector3 ()
+          Elevation_ = 0.0f
+          Overflow_ = 0.0f
+          Bounds3d_ = Box3 ()
+          Presence_ = Interior
+          PresenceOverride_ = ValueNone }
 
     /// Make a transform with default values.
     static member makeDefault () =
-        let mutable transform = Unchecked.defaultof<Transform>
-        transform.Flags_ <- FlagsDefault
-        transform.Rotation_ <- Quaternion.Identity
-        transform.Scale_ <- Vector3.One
-        transform.Size_ <- Vector3.One
-        transform.Overflow_ <- 1.0f
-        transform
+        { Flags_ = FlagsDefault
+          Position_ = Vector3 ()
+          Rotation_ = Quaternion.Identity
+          Scale_ = Vector3.One
+          Offset_ = Vector3 ()
+          RotationMatrixOpt_ = Matrix4x4 ()
+          Angles_ = Vector3 ()
+          Size_ = Vector3.One
+          Elevation_ = 0.0f
+          Overflow_ = 1.0f
+          Bounds3d_ = Box3 ()
+          Presence_ = Exterior
+          PresenceOverride_ = ValueNone }
 
     /// Make a transform based on a perimeter.
     static member makePerimeter absolute (perimeter : Box3) offset elevation =
-        let mutable transform = Unchecked.defaultof<Transform>
+        let transform = Transform.makeEmpty ()
         transform.Flags_ <- FlagsDefault ||| if absolute then AbsoluteMask else 0u
         transform.Position_ <- perimeter.Center
         transform.Rotation_ <- Quaternion.Identity
@@ -414,11 +440,12 @@ type [<NoEquality; NoComparison>] Transform =
         transform.Angles_ <- v3Zero
         transform.Elevation_ <- elevation
         transform.Overflow_ <- 1.0f
+        transform.Presence_ <- Exterior
         transform
 
     /// Make a transform based on human-intuitive values.
     static member makeIntuitive absolute position scale offset size angles elevation =
-        let mutable transform = Transform.makeDefault ()
+        let transform = Transform.makeDefault ()
         transform.Flags_ <- FlagsDefault ||| if absolute then AbsoluteMask else 0u
         transform.Position_ <- position
         transform.Scale_ <- scale

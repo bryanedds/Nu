@@ -90,7 +90,7 @@ module WorldEntityModule =
         member this.GetFacets world = World.getEntityFacets this world
         member this.Facets = if notNull (this :> obj) then lensReadOnly (nameof this.Facets) this this.GetFacets else Cached.Facets
         member this.GetTransform world = World.getEntityTransform this world
-        member this.SetTransform value world = let mutable value = value in World.setEntityTransformByRef (&value, World.getEntityState this world, this, world) |> ignore<bool>
+        member this.SetTransform value world = World.setEntityTransform value (World.getEntityState this world) this world |> ignore<bool>
         member this.Transform = if notNull (this :> obj) then lens (nameof this.Transform) this this.GetTransform this.SetTransform else Cached.Transform
         member this.GetPosition world = World.getEntityPosition this world
         member this.SetPosition value world = World.setEntityPosition value this world |> ignore<bool>
@@ -330,23 +330,15 @@ module WorldEntityModule =
         member this.GetPresenceOverride world =
             World.getEntityPresenceOverride this world
 
-        /// Set the transform of an entity.
-        member this.SetTransformByRef (value : Transform byref, world) =
-            World.setEntityTransformByRef (&value, World.getEntityState this world, this, world)
-
-        /// Set the transform of an entity without generating any change events.
-        member this.SetTransformByRefWithoutEvent (value : Transform inref, world) =
-            World.setEntityTransformByRefWithoutEvent (&value, World.getEntityState this world, this, world)
-
         /// Set the transform of an entity without generating any change events.
         member this.SetTransformWithoutEvent value world =
-            World.setEntityTransformByRefWithoutEvent (&value, World.getEntityState this world, this, world)
+            World.setEntityTransformWithoutEvent value (World.getEntityState this world) this world
 
         /// Set the transform of an entity snapped to the give position and rotation snaps.
         member this.SetTransformPositionSnapped positionSnap (value : Transform) world =
-            let mutable transform = value
-            Transform.snapPosition (positionSnap, &transform)
-            this.SetTransform transform world
+            let value = value.Clone
+            Transform.snapPosition positionSnap value
+            this.SetTransform value world
 
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world =
@@ -520,20 +512,20 @@ module WorldEntityModule =
 
         /// Apply physics changes to an entity.
         member this.Physics (center : Vector3) rotation linearVelocity angularVelocity world =
-            let mutable transformOld = this.GetTransform world
-            let mutable transformNew = transformOld
+            let transformOld = this.GetTransform world
+            let transformNew = transformOld
             if this.GetIs2d world then
                 if  transformOld.PerimeterCenter <> center ||
                     transformOld.Rotation <> rotation then
                     transformNew.PerimeterCenter <- center
                     transformNew.Rotation <- rotation
-                    this.SetTransformByRefWithoutEvent (&transformNew, world)
+                    this.SetTransformWithoutEvent transformNew world
             else
                 if  transformOld.Position <> center ||
                     transformOld.Rotation <> rotation then
                     transformNew.Position <- center
                     transformNew.Rotation <- rotation
-                    this.SetTransformByRefWithoutEvent (&transformNew, world)
+                    this.SetTransformWithoutEvent transformNew world
             this.SetXtensionPropertyWithoutEvent "LinearVelocity" linearVelocity world
             this.SetXtensionPropertyWithoutEvent "AngularVelocity" angularVelocity world
             let dispatcher = this.GetDispatcher world
@@ -891,9 +883,9 @@ module WorldEntityModule =
                     match positionSnapEir with
                     | Right positionSnap -> (position, Some positionSnap)
                     | Left _ -> (position, None)
-            let mutable transform = entity.GetTransform world
+            let transform = entity.GetTransform world
             transform.Position <- position
-            match positionSnapOpt with Some positionSnap -> Transform.snapPosition (positionSnap, &transform) | None -> ()
+            match positionSnapOpt with Some positionSnap -> Transform.snapPosition positionSnap transform | None -> ()
             entity.SetTransform transform world
             if not cut then
                 match entity.GetPropagationSourceOpt world with

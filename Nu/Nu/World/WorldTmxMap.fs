@@ -394,7 +394,7 @@ module TmxMap =
                                         makeLayerTile tileGid tile.HorizontalFlip tile.VerticalFlip tile.DiagonalFlip
                                 tileStrip.Add tile
                             let offsetY = tileStripY + tileSize.Y * 0.5f
-                            let mutable transform = Transform.makeDefault ()
+                            let transform = Transform.makeDefault ()
                             transform.Position <- parallaxPosition.V3 + v3Up * offsetY + v3Right * offsetX
                             transform.Size <- v3 (single tileMap.Width * tileSize.X) tileSize.Y 0.0f
                             transform.Elevation <- elevation

@@ -18,7 +18,7 @@ module WorldDataToken =
 
             match dataToken with
             | SpriteToken (elevation, horizon, assetTag, sprite) ->
-                World.renderLayeredSpriteFast (elevation, horizon, assetTag, &sprite.Transform, &sprite.InsetOpt, &sprite.ClipOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Emission, sprite.Flip, world)
+                World.renderLayeredSpriteFast (elevation, horizon, assetTag, sprite.Transform, &sprite.InsetOpt, &sprite.ClipOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Emission, sprite.Flip, world)
 
             | TextToken (elevation, horizon, assetTag, text) ->
                 let renderText =

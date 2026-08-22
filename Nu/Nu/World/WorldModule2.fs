@@ -1515,7 +1515,7 @@ module WorldModule2 =
                     let alpha = match transition.TransitionType with Incoming -> 1.0f - progress | Outgoing -> progress
                     let color = Color.One.WithA alpha
                     let size = eyeSize.V3
-                    let mutable transform = Transform.makeDefault ()
+                    let transform = Transform.makeDefault ()
                     transform.Size <- size
                     transform.Elevation <- Single.MaxValue
                     transform.Absolute <- true

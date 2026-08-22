@@ -267,7 +267,7 @@ module BlockMap =
 
     (* Low-Level API *)
 
-    let setScale scale blockMap =
+    let setScale scale (blockMap : BlockMap) =
         { blockMap with Scale_ = scale }
 
     let mapScale mapper blockMap =

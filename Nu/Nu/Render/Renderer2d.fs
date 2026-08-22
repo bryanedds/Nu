@@ -41,7 +41,7 @@ type [<Struct>] TextValue =
 
 /// Describes how to render a sprite to a rendering subsystem.
 type SpriteDescriptor =
-    { mutable Transform : Transform
+    { Transform : Transform
       InsetOpt : Box2 voption
       ClipOpt : Box2 voption
       Image : Image AssetTag
@@ -64,7 +64,7 @@ type CachedSpriteDescriptor =
 
 /// Describes how to render tile map tiles to the rendering system.
 type [<NoEquality; NoComparison>] TilesDescriptor =
-    { mutable Transform : Transform
+    { Transform : Transform
       ClipOpt : Box2 voption
       Color : Color
       Emission : Color
@@ -86,7 +86,7 @@ type [<NoEquality; NoComparison>] SpriteParticlesDescriptor =
 
 /// Describes how to render text to a rendering subsystem.
 type TextDescriptor =
-    { mutable Transform : Transform
+    { Transform : Transform
       ClipOpt : Box2 voption
       Text : string
       Font : Font AssetTag
@@ -98,7 +98,7 @@ type TextDescriptor =
 
 /// Describes how to render a vector graphics contour to a rendering subsystem.
 type [<NoEquality; NoComparison>] ContourDescriptor =
-    { mutable Transform : Transform
+    { Transform : Transform
       ClipOpt : Box2 voption
       Contour : Contour }
 
@@ -479,7 +479,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
 
     /// Render sprite.
     static member renderSprite
-        (transform : Transform byref,
+        (transform : Transform,
          insetOpt : Box2 voption inref,
          clipOpt : Box2 voption inref,
          image : Image AssetTag,
@@ -531,7 +531,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
 
     /// Render tiles.
     static member renderTiles
-        (transform : Transform byref,
+        (transform : Transform,
          clipOpt : Box2 voption inref,
          color : Color inref,
          emission : Color inref,
@@ -662,7 +662,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
 
     /// Render text.
     static member renderText
-        (transform : Transform byref,
+        (transform : Transform,
          clipOpt : Box2 voption inref,
          text : string,
          font : Font AssetTag,
@@ -688,12 +688,10 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         let color = color // copy to local for property access
         if  not (String.IsNullOrWhiteSpace text) && // render only when non-whitespace
             color.A8 <> 0uy then // render only when color isn't fully transparent because SDL_TTF doesn't handle zero alpha text as expected.
-            let transform = transform // copy to local to make visible from lambda
             let clipOpt = clipOpt // same
             flip3 SpriteBatch.InterruptSpriteBatchFrame renderer.Viewport renderer.SpriteBatchEnv $ fun () ->
 
                 // gather context for rendering text
-                let mutable transform = transform
                 let absolute = transform.Absolute
                 let perimeter = transform.Perimeter
                 let virtualScalar = v2Dup (single renderer.Viewport.DisplayScalar)
@@ -853,26 +851,26 @@ type [<ReferenceEquality>] VulkanRenderer2d =
     static member private renderDescriptor descriptor eyeCenter eyeSize renderer =
         match descriptor with
         | RenderSprite descriptor ->
-            VulkanRenderer2d.renderSprite (&descriptor.Transform, &descriptor.InsetOpt, &descriptor.ClipOpt, descriptor.Image, &descriptor.Color, descriptor.Blend, &descriptor.Emission, descriptor.Flip, renderer)
+            VulkanRenderer2d.renderSprite (descriptor.Transform, &descriptor.InsetOpt, &descriptor.ClipOpt, descriptor.Image, &descriptor.Color, descriptor.Blend, &descriptor.Emission, descriptor.Flip, renderer)
         | RenderSprites descriptor ->
             let sprites = descriptor.Sprites
             for index in 0 .. sprites.Length - 1 do
                 let sprite = &sprites[index]
-                VulkanRenderer2d.renderSprite (&sprite.Transform, &sprite.InsetOpt, &sprite.ClipOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Emission, sprite.Flip, renderer)
+                VulkanRenderer2d.renderSprite (sprite.Transform, &sprite.InsetOpt, &sprite.ClipOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Emission, sprite.Flip, renderer)
         | RenderSpriteDescriptors descriptor ->
             let sprites = descriptor.SpriteDescriptors
             for index in 0 .. sprites.Length - 1 do
                 let sprite = sprites[index]
-                VulkanRenderer2d.renderSprite (&sprite.Transform, &sprite.InsetOpt, &sprite.ClipOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Emission, sprite.Flip, renderer)
+                VulkanRenderer2d.renderSprite (sprite.Transform, &sprite.InsetOpt, &sprite.ClipOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Emission, sprite.Flip, renderer)
         | RenderSpriteParticles descriptor ->
             VulkanRenderer2d.renderSpriteParticles (&descriptor.ClipOpt, descriptor.Blend, descriptor.Image, descriptor.Particles, renderer)
         | RenderCachedSprite descriptor ->
-            VulkanRenderer2d.renderSprite (&descriptor.CachedSprite.Transform, &descriptor.CachedSprite.InsetOpt, &descriptor.CachedSprite.ClipOpt, descriptor.CachedSprite.Image, &descriptor.CachedSprite.Color, descriptor.CachedSprite.Blend, &descriptor.CachedSprite.Emission, descriptor.CachedSprite.Flip, renderer)
+            VulkanRenderer2d.renderSprite (descriptor.CachedSprite.Transform, &descriptor.CachedSprite.InsetOpt, &descriptor.CachedSprite.ClipOpt, descriptor.CachedSprite.Image, &descriptor.CachedSprite.Color, descriptor.CachedSprite.Blend, &descriptor.CachedSprite.Emission, descriptor.CachedSprite.Flip, renderer)
         | RenderText descriptor ->
-            VulkanRenderer2d.renderText (&descriptor.Transform, &descriptor.ClipOpt, descriptor.Text, descriptor.Font, descriptor.FontSizing, descriptor.FontStyling, &descriptor.Color, descriptor.Justification, descriptor.CaretOpt, eyeCenter, eyeSize, renderer)
+            VulkanRenderer2d.renderText (descriptor.Transform, &descriptor.ClipOpt, descriptor.Text, descriptor.Font, descriptor.FontSizing, descriptor.FontStyling, &descriptor.Color, descriptor.Justification, descriptor.CaretOpt, eyeCenter, eyeSize, renderer)
         | RenderTiles descriptor ->
             VulkanRenderer2d.renderTiles
-                (&descriptor.Transform, &descriptor.ClipOpt, &descriptor.Color, &descriptor.Emission,
+                (descriptor.Transform, &descriptor.ClipOpt, &descriptor.Color, &descriptor.Emission,
                  descriptor.MapSize, descriptor.Tiles, descriptor.TileSourceSize, descriptor.TileSize, descriptor.TileAssets,
                  eyeCenter, eyeSize, renderer)
         | RenderContour descriptor ->
