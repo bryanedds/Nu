@@ -7,11 +7,15 @@
 namespace Nu.Globals
 open System
 open System.Configuration
+open System.Numerics
 open Prime
 
 /// Global mutable rendering values. Change tracking must be done manually by dependant code.
 [<RequireQualifiedAccess>]
 module Render =
+
+    /// The mutable display virtual resolution. Change it at runtime through World.setDisplayVirtualResolution.
+    let mutable DisplayVirtualResolution : Vector2i = match ConfigurationManager.AppSettings["DisplayVirtualResolution"] with null -> Vector2i (640, 360) | value -> scvalue value
 
     /// The global mutable display scalar. This may be changed by the engine at run-time.
     let mutable DisplayScalar = match ConfigurationManager.AppSettings["DisplayScalar"] with null -> 2 | value -> scvalue value

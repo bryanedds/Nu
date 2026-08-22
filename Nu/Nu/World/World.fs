@@ -496,7 +496,7 @@ module WorldModule4 =
             let jobGraph = JobGraphInline ()
 
             // make the default viewports
-            let windowViewport = Viewport.makeWindow1 Constants.Render.DisplayVirtualResolution
+            let windowViewport = Viewport.makeWindow1 Globals.Render.DisplayVirtualResolution
             let geometryViewport = Viewport.makeGeometry windowViewport.Bounds.Size
 
             // make the world's late-bindings instances
@@ -670,7 +670,7 @@ module WorldModule4 =
         /// Run the game engine, initializing dependencies as indicated by WorldConfig, and returning exit code upon
         /// termination.
         static member run firstFrameCallback worldConfig plugin =
-            let windowSize = Constants.Render.DisplayVirtualResolution * Globals.Render.DisplayScalar
+            let windowSize = Globals.Render.DisplayVirtualResolution * Globals.Render.DisplayScalar
             let windowViewport = Viewport.makeWindow1 windowSize
             let geometryViewport = Viewport.makeGeometry windowViewport.Bounds.Size
             World.runPlus

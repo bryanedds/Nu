@@ -12,6 +12,75 @@ open Nu
 open Nu.Tests
 module WorldTests =
 
+    let private makeStubWorld () =
+        Nu.init ()
+        World.makeStub (constant None) { WorldConfig.defaultConfig with Accompanied = true } (TestPlugin ())
+
+    let [<Test; NonParallelizable>] ``Display virtual resolution synchronizes world state immediately.`` () =
+        let previousResolution = Globals.Render.DisplayVirtualResolution
+        let previousScalar = Globals.Render.DisplayScalar
+        try
+            let world = makeStubWorld ()
+            let oldWindowViewport = world.WindowViewport
+            let eyeSizePrevious = world.Eye2dSize
+            let resolution = System.Numerics.Vector2i (800, 600)
+            World.setDisplayVirtualResolution resolution world
+            Assert.Equal (resolution, World.getDisplayVirtualResolution ())
+            Assert.Equal (eyeSizePrevious, world.Eye2dSize)
+            Assert.Equal (Globals.Render.DisplayScalar, world.WindowViewport.DisplayScalar)
+            Assert.That (world.WindowViewport, Is.Not.EqualTo oldWindowViewport)
+            let geometryBounds = System.Numerics.Box2i (System.Numerics.Vector2i.Zero, world.GeometryViewport.Bounds.Size)
+            let expectedViewport =
+                Viewport.make
+                    Constants.Render.NearPlaneDistanceInterior
+                    Constants.Render.FarPlaneDistanceInterior
+                    geometryBounds
+                    geometryBounds
+                    geometryBounds
+            let expectedFrustum =
+                Viewport.getFrustum world.Eye3dCenter world.Eye3dRotation world.Eye3dFieldOfView expectedViewport
+            Assert.Equal (expectedFrustum, world.Eye3dFrustumInterior)
+        finally
+            Globals.Render.DisplayVirtualResolution <- previousResolution
+            Globals.Render.DisplayScalar <- previousScalar
+
+    let [<Test; NonParallelizable>] ``Display virtual resolution preserves custom eye size.`` () =
+        let previousResolution = Globals.Render.DisplayVirtualResolution
+        let previousScalar = Globals.Render.DisplayScalar
+        try
+            let world = makeStubWorld ()
+            let customEyeSize = System.Numerics.Vector2 (123.0f, 77.0f)
+            World.setEye2dSize customEyeSize world
+            World.setDisplayVirtualResolution (System.Numerics.Vector2i (800, 600)) world
+            Assert.Equal (customEyeSize, world.Eye2dSize)
+        finally
+            Globals.Render.DisplayVirtualResolution <- previousResolution
+            Globals.Render.DisplayScalar <- previousScalar
+
+    let [<Test; NonParallelizable>] ``Invalid display virtual resolution leaves state unchanged.`` () =
+        let previousResolution = Globals.Render.DisplayVirtualResolution
+        let previousScalar = Globals.Render.DisplayScalar
+        try
+            let world = makeStubWorld ()
+            let eyeSize = world.Eye2dSize
+            Assert.Throws<ArgumentException> (fun () -> World.setDisplayVirtualResolution (System.Numerics.Vector2i (0, 450)) world |> ignore) |> ignore
+            Assert.Equal (previousResolution, Globals.Render.DisplayVirtualResolution)
+            Assert.Equal (eyeSize, world.Eye2dSize)
+        finally
+            Globals.Render.DisplayVirtualResolution <- previousResolution
+            Globals.Render.DisplayScalar <- previousScalar
+
+    let [<Test; NonParallelizable>] ``Display virtual resolution remains supported without an SDL display.`` () =
+        let previousResolution = Globals.Render.DisplayVirtualResolution
+        let previousScalar = Globals.Render.DisplayScalar
+        try
+            let world = makeStubWorld ()
+            World.setDisplayVirtualResolution (System.Numerics.Vector2i (2000, 1200)) world
+            Assert.Equal (System.Numerics.Vector2i (2000, 1200), World.getDisplayVirtualResolution ())
+        finally
+            Globals.Render.DisplayVirtualResolution <- previousResolution
+            Globals.Render.DisplayScalar <- previousScalar
+
     let [<Test>] ``Run empty frame then clean up.`` () =
         Nu.init ()
         let world = World.makeStub (constant None) { WorldConfig.defaultConfig with Accompanied = true } (TestPlugin ())
@@ -21,7 +90,7 @@ module WorldTests =
     let [<Test; Category "Integration">] ``Run integration frame then clean up.`` () =
         Nu.init ()
         let worldConfig = { WorldConfig.defaultConfig with Accompanied = true }
-        let windowSize = Constants.Render.DisplayVirtualResolution * Globals.Render.DisplayScalar
+        let windowSize = Globals.Render.DisplayVirtualResolution * Globals.Render.DisplayScalar
         match SdlDeps.tryMake worldConfig.SdlConfig false windowSize with
         | Right sdlDeps ->
             use _ = sdlDeps // bind explicitly to dispose automatically

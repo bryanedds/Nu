@@ -308,14 +308,14 @@ type FluidSimDispatcher () =
 
                 // declare info background - block button interactions behind info panel while opened
                 World.doPanel "Info Background"
-                    [Entity.Size .= Constants.Render.DisplayVirtualResolution.V3
+                    [Entity.Size .= Globals.Render.DisplayVirtualResolution.V3
                      Entity.Elevation .= 10f
                      Entity.BackdropImageOpt .= Some Assets.Default.Black
                      Entity.Color .= color 0f 0f 0f 0.5f] world
 
                 // being info panel declaration
                 World.beginPanel "Info Panel"
-                    [Entity.Size .= Constants.Render.DisplayVirtualResolution.V3 * 0.8f
+                    [Entity.Size .= Globals.Render.DisplayVirtualResolution.V3 * 0.8f
                      Entity.Layout .= Grid (v2i 1 5, Some FlowDownward, true)
                      Entity.Elevation .= 10f] world
 

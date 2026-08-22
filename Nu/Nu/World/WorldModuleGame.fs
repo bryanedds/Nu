@@ -364,8 +364,8 @@ module WorldModuleGame =
         static member internal getGameEye3dAspectRatio game world =
             ignore<Game> game
             ignore<World> world
-            single Constants.Render.DisplayVirtualResolution.X /
-            single Constants.Render.DisplayVirtualResolution.Y
+            single Globals.Render.DisplayVirtualResolution.X /
+            single Globals.Render.DisplayVirtualResolution.Y
 
         /// Get the current 3d eye field of view.
         static member getEye3dFieldOfView world =

@@ -1052,14 +1052,14 @@ type ToyBoxDispatcher () =
 
                 // declare info background - block button interactions behind info panel while opened
                 World.doPanel "Info Background"
-                    [Entity.Size .= Constants.Render.DisplayVirtualResolution.V3
+                    [Entity.Size .= Globals.Render.DisplayVirtualResolution.V3
                      Entity.Elevation .= 10f
                      Entity.BackdropImageOpt .= Some Assets.Default.Black
                      Entity.Color .= color 0f 0f 0f 0.5f] world
 
                 // being info panel declaration
                 World.beginPanel "Info Panel"
-                    [Entity.Size .= Constants.Render.DisplayVirtualResolution.V3 * 0.8f
+                    [Entity.Size .= Globals.Render.DisplayVirtualResolution.V3 * 0.8f
                      // we can use a grid to nicely organize Gui elements.
                      // flow direction first orders by Entity.LayoutOrder which is
                      // defined for all Gui elements (via LayoutFacet), then it orders by Entity.Order.

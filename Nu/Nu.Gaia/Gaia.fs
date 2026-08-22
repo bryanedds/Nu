@@ -4537,7 +4537,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             File.WriteAllText (imguiIniFilePath, ImGuiIniFileStr)
 
         // attempt to create SDL dependencies
-        let windowSize = Constants.Render.DisplayVirtualResolution * Globals.Render.DisplayScalar
+        let windowSize = Globals.Render.DisplayVirtualResolution * Globals.Render.DisplayScalar
         let windowViewport = Viewport.makeWindow1 windowSize
         let geometryViewport = Viewport.makeGeometry windowViewport.Bounds.Size
         match tryMakeSdlDeps true windowSize with

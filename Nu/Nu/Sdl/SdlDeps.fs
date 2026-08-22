@@ -182,7 +182,7 @@ module SdlDeps =
             // when changing from full screen, set window to windowed size and make sure its title bar is visible
             if  fullScreenChanged && wasFullScreen && not fullScreen &&
                 SDL3.SDL_SyncWindow window |> SDLBool.op_Implicit then
-                let windowSizeWindowed = Constants.Render.DisplayVirtualResolution * 2 // NOTE: hard-coded 2 means display scalar of size 2 is the default restore window size.
+                let windowSizeWindowed = Globals.Render.DisplayVirtualResolution * 2 // NOTE: hard-coded 2 means display scalar of size 2 is the default restore window size.
                 if  SDL3.SDL_RestoreWindow window |> SDLBool.op_Implicit &&
                     SDL3.SDL_SyncWindow window |> SDLBool.op_Implicit then
                     let pixelDensity = SDL3.SDL_GetWindowPixelDensity window // restoration can change the window's display, and therefore its pixel density

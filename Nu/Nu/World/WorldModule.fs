@@ -480,6 +480,10 @@ module WorldModule =
         static member tryGetWindowFullScreen (world : World) =
             AmbientState.tryGetWindowFullScreen world.AmbientState
 
+        /// Attempt to get the pixel size of the desktop occupied by the window.
+        static member internal tryGetDisplaySize (world : World) =
+            AmbientState.tryGetDisplaySize world.AmbientState
+
         /// Attempt to set the window's full screen state.
         static member trySetWindowFullScreen fullScreen world =
             World.mapAmbientState (AmbientState.trySetWindowFullScreen fullScreen) world
