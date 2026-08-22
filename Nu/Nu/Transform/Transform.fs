@@ -34,7 +34,7 @@ module TransformMasks =
     let [<Literal>] Bounds3dDirtyMask =             0b001000000000000000000u
     let [<Literal>] ManualProtectionMask =          0b010000000000000000000u
     let [<Literal>] DeclarativeProtectionMask =     0b100000000000000000000u
-    let [<Literal>] FlagsDefault =                  0b001100110010000111100u
+    let [<Literal>] FlagsDefault =                  0b000000110010000111100u
 
 // opening masks for succinctness
 open TransformMasks
@@ -419,12 +419,12 @@ type [<NoEquality; NoComparison>] Transform =
           Rotation_ = Quaternion.Identity
           Scale_ = Vector3.One
           Offset_ = Vector3 ()
-          RotationMatrixOpt_ = Matrix4x4 ()
+          RotationMatrixOpt_ = Matrix4x4.Identity
           Angles_ = Vector3 ()
           Size_ = Vector3.One
           Elevation_ = 0.0f
           Overflow_ = 1.0f
-          Bounds3d_ = Box3 ()
+          Bounds3d_ = Box3 (Vector3 -0.5f, Vector3.One)
           Presence_ = Exterior
           PresenceOverride_ = ValueNone }
 
@@ -432,7 +432,7 @@ type [<NoEquality; NoComparison>] Transform =
     static member makePerimeter absolute (perimeter : Box3) offset elevation =
         let transform = Transform.makeEmpty ()
         transform.Flags_ <- FlagsDefault ||| if absolute then AbsoluteMask else 0u
-        transform.Position_ <- perimeter.Center
+        transform.Position <- perimeter.Center
         transform.Rotation_ <- Quaternion.Identity
         transform.Scale_ <- v3One
         transform.Offset_ <- offset
@@ -447,7 +447,7 @@ type [<NoEquality; NoComparison>] Transform =
     static member makeIntuitive absolute position scale offset size angles elevation =
         let transform = Transform.makeDefault ()
         transform.Flags_ <- FlagsDefault ||| if absolute then AbsoluteMask else 0u
-        transform.Position_ <- position
+        transform.Position <- position
         transform.Scale_ <- scale
         transform.Offset_ <- offset
         transform.Size_ <- size
