@@ -377,8 +377,13 @@ type [<NoEquality; NoComparison>] Transform =
         left.Size_.Equals right.Size_ &&
         left.Elevation_ = right.Elevation_ &&
         left.Overflow_ = right.Overflow_ &&
-        left.Presence_ = right.Presence_ &&
-        left.PresenceOverride_ = right.PresenceOverride_
+        Presence.equals left.Presence_ right.Presence_ &&
+        match left.PresenceOverride_ with
+        | ValueSome leftPresence ->
+            match right.PresenceOverride_ with
+            | ValueSome rightPresence -> Presence.equals leftPresence rightPresence
+            | ValueNone -> false
+        | ValueNone -> match right.PresenceOverride_ with ValueSome _ -> false | ValueNone -> true
 
     /// Assign the value of the source transform to the target.
     static member assign (source : Transform) (target : Transform) =
