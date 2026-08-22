@@ -751,17 +751,17 @@ module WorldModuleEntity =
         static member internal setEntityPropagationSourceOpt value entity world =
             let entityState = World.getEntityState entity world
             let previous = entityState.PropagationSourceOpt
-            //if value <> previous then
-            if world.Imperative then
-                entityState.PropagationSourceOpt <- value
-            else
-                let entityState = EntityState.copy entityState
-                entityState.PropagationSourceOpt <- value
-                World.setEntityState entityState entity world
-            World.updateEntityInPropagationTargets previous value entity world
-            World.publishEntityChange (nameof entityState.PropagationSourceOpt) previous value entityState.PublishChangeEvents entity world
-            true
-            //else false
+            if value <> previous then
+                if world.Imperative then
+                    entityState.PropagationSourceOpt <- value
+                else
+                    let entityState = EntityState.copy entityState
+                    entityState.PropagationSourceOpt <- value
+                    World.setEntityState entityState entity world
+                World.updateEntityInPropagationTargets previous value entity world
+                World.publishEntityChange (nameof entityState.PropagationSourceOpt) previous value entityState.PublishChangeEvents entity world
+                true
+            else false
 
         static member internal setEntityAbsolute value (entity : Entity) world =
             let entityState = World.getEntityState entity world
