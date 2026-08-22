@@ -253,22 +253,37 @@ type [<StructuralEquality; NoComparison>] Viewport =
         Viewport.make Constants.Render.NearPlaneDistanceOmnipresent Constants.Render.FarPlaneDistanceOmnipresent inner bounds outer
 
     static member makeWindow1 (windowSize : Vector2i) =
-        let boundsSize = Constants.Render.DisplayVirtualResolution * Globals.Render.DisplayScalar
-        let boundsMin = Vector2i ((windowSize.X - boundsSize.X) / 2, (windowSize.Y - boundsSize.Y) / 2)
+        Viewport.makeWindowViewed Globals.Render.DisplayVirtualResolution.V2 windowSize
+
+    static member makeWindowViewed (eyeViewed : Vector2) (windowSize : Vector2i) =
+        let displayScalar = Globals.Render.DisplayScalar
+        let boundsSizeX = min (int (ceil (eyeViewed.X * single displayScalar))) windowSize.X
+        let boundsSizeY = min (int (ceil (eyeViewed.Y * single displayScalar))) windowSize.Y
+        let boundsSize = v2i boundsSizeX boundsSizeY
+        let boundsMin = (windowSize - boundsSize) / 2
         let bounds = box2i boundsMin boundsSize
         Viewport.makeWindow bounds bounds windowSize // presume inner = bounds
 
-    static member makeInterior () =
-        let outerResolution = Constants.Render.DisplayVirtualResolution * Globals.Render.DisplayScalar
-        let bounds = box2i v2iZero outerResolution
+    static member makeInteriorViewed (resolution : Vector2i) =
+        let bounds = box2i v2iZero resolution
         Viewport.make Constants.Render.NearPlaneDistanceInterior Constants.Render.FarPlaneDistanceInterior bounds bounds bounds
 
-    static member makeExterior () =
-        let outerResolution = Constants.Render.DisplayVirtualResolution * Globals.Render.DisplayScalar
-        let bounds = box2i v2iZero outerResolution
+    static member makeInterior () =
+        let outerResolution = Globals.Render.DisplayVirtualResolution * max 1 Globals.Render.DisplayScalar
+        Viewport.makeInteriorViewed outerResolution
+
+    static member makeExteriorViewed (resolution : Vector2i) =
+        let bounds = box2i v2iZero resolution
         Viewport.make Constants.Render.NearPlaneDistanceExterior Constants.Render.FarPlaneDistanceExterior bounds bounds bounds
 
-    static member makeImposter () =
-        let outerResolution = Constants.Render.DisplayVirtualResolution * Globals.Render.DisplayScalar
-        let bounds = box2i v2iZero outerResolution
+    static member makeExterior () =
+        let outerResolution = Globals.Render.DisplayVirtualResolution * max 1 Globals.Render.DisplayScalar
+        Viewport.makeExteriorViewed outerResolution
+
+    static member makeImposterViewed (resolution : Vector2i) =
+        let bounds = box2i v2iZero resolution
         Viewport.make Constants.Render.NearPlaneDistanceImposter Constants.Render.FarPlaneDistanceImposter bounds bounds bounds
+
+    static member makeImposter () =
+        let outerResolution = Globals.Render.DisplayVirtualResolution * max 1 Globals.Render.DisplayScalar
+        Viewport.makeImposterViewed outerResolution

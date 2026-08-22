@@ -36,7 +36,7 @@ module WorldImGui =
             let radiusInner = ImGui.Size2dToInner (world.WindowViewport, v2Dup radius)
             for position in positions do
                 let color = computeColor position
-                let positionInner = ImGui.Position2dToInner (absolute, world.Eye2dCenter, world.Eye2dSize, world.WindowViewport, position)
+                let positionInner = ImGui.Position2dToInner (absolute, world.Eye2dCenter, world.Eye2dViewed, world.WindowViewport, position)
                 if filled
                 then drawList.AddEllipseFilled (positionInner, radiusInner, color.Abgr)
                 else drawList.AddEllipse (positionInner, radiusInner, color.Abgr)
@@ -54,8 +54,8 @@ module WorldImGui =
             let drawList = ImGui.GetBackgroundDrawList ()
             for struct (start, stop) in segments do
                 let color = computeColor struct (start, stop)
-                let startInner = ImGui.Position2dToInner (absolute, world.Eye2dCenter, world.Eye2dSize, world.WindowViewport, start)
-                let stopInner = ImGui.Position2dToInner (absolute, world.Eye2dCenter, world.Eye2dSize, world.WindowViewport, stop)
+                let startInner = ImGui.Position2dToInner (absolute, world.Eye2dCenter, world.Eye2dViewed, world.WindowViewport, start)
+                let stopInner = ImGui.Position2dToInner (absolute, world.Eye2dCenter, world.Eye2dViewed, world.WindowViewport, stop)
                 drawList.AddLine (startInner, stopInner, color.Abgr, thickness)
 
         /// Render segments via ImGui in the current eye 2d space.
