@@ -1024,14 +1024,15 @@ module PhysicallyBased =
 
     /// Destroy the physically-based attachments.
     let destroyPhysicallyBasedAttachments (attachments : PhysicallyBasedAttachments) context =
+        Attachment.destroyColorAttachment attachments.DownSampleColorAttachment context
+        Attachment.destroyColorAttachment attachments.DownSampleDepthAttachment context
+        Attachment.destroyColorAttachment attachments.UpSampleColorAttachment context
         Attachment.destroyColorAttachment attachments.GaussianEsmAttachment context
+        Attachment.destroyColorAttachment attachments.GaussianEsmArrayAttachment context
         Attachment.destroyColorAttachment attachments.ColorFull0Attachment context
         Attachment.destroyColorAttachment attachments.ColorFull1Attachment context
         Attachment.destroyColorAttachment attachments.ColorHalf0Attachment context
         Attachment.destroyColorAttachment attachments.ColorHalf1Attachment context
-        Attachment.destroyColorAttachment attachments.DownSampleColorAttachment context
-        Attachment.destroyColorAttachment attachments.DownSampleDepthAttachment context
-        Attachment.destroyColorAttachment attachments.UpSampleColorAttachment context
         Attachment.destroyColorAttachment attachments.BloomExtractAttachment context
         Attachment.destroyBloomSampleAttachments attachments.BloomSampleAttachments context
         Attachment.destroyColorAttachment attachments.BloomApplyAttachment context

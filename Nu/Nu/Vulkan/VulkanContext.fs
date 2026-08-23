@@ -516,12 +516,10 @@ type [<ReferenceEquality>] VulkanContext =
           VmaAllocator_ : VmaAllocator
           Swapchain_ : Swapchain
           RenderCommandPool_ : VkCommandPool
-          PresentCommandPool_ : VkCommandPool
           TransientCommandPool_ : VkCommandPool
           TextureCommandPool_ : VkCommandPool
           RenderCommandBuffers_ : VkCommandBuffer List
           mutable RenderCommandBuffersCursor_ : int
-          PresentCommandBuffer_ : VkCommandBuffer
           RenderQueue_ : ConcurrentCommandQueue
           PresentQueue_ : ConcurrentCommandQueue
           TextureQueue_ : ConcurrentCommandQueue
@@ -886,6 +884,7 @@ type [<ReferenceEquality>] VulkanContext =
         info.queueFamilyIndex <- queueFamilyIndex
         let mutable commandPool = Unchecked.defaultof<VkCommandPool>
         DeviceApi.vkCreateCommandPool (&info, nullPtr, &commandPool) |> Hl.check
+        if commandPool.Handle = 0xe7f79a0000000005UL then Log.info "SDF"
         commandPool
 
     /// Handle changes in window size, and check for minimization.
@@ -1129,8 +1128,6 @@ type [<ReferenceEquality>] VulkanContext =
             let renderCommandBuffers = Hl.allocateCommandBuffers Constants.Vulkan.RenderCommandBufferCountDefault VkCommandBufferLevel.Primary renderCommandPool
 
             // setup execution for presentation on render thread
-            let presentCommandPool = VulkanContext.createCommandPool false physicalDevice.PresentQueueFamily
-            let presentCommandBuffer = (Hl.allocateCommandBuffers 1 VkCommandBufferLevel.Primary renderCommandPool)[0]
             let imageAvailableSemaphore = Hl.createSemaphore ()
 
             // setup transient (one time) execution on render thread
@@ -1156,12 +1153,10 @@ type [<ReferenceEquality>] VulkanContext =
                   VmaAllocator_ = allocator
                   Swapchain_ = swapchain
                   RenderCommandPool_ = renderCommandPool
-                  PresentCommandPool_ = presentCommandPool
                   TransientCommandPool_ = transientCommandPool
                   TextureCommandPool_ = textureCommandPool
                   RenderCommandBuffers_ = List renderCommandBuffers
                   RenderCommandBuffersCursor_ = 0
-                  PresentCommandBuffer_ = presentCommandBuffer
                   RenderQueue_ = renderQueue
                   PresentQueue_ = presentQueue
                   TextureQueue_ = textureQueue

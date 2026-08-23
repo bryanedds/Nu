@@ -2059,8 +2059,7 @@ type CircleContour2dFacet () =
          define Entity.FillColor Color.Black
          define Entity.FillWinding ContourWinding.NonZero
          define Entity.StrokeColor Color.White
-         define Entity.StrokeThickness 1.0f
-         ]
+         define Entity.StrokeThickness 1.0f]
 
     override this.Register (entity, world) =
         for propertyName in [nameof Entity.Size; nameof Entity.Scale; nameof Entity.StrokeThickness] do
@@ -2097,8 +2096,7 @@ type RectangleContour2dFacet () =
          define Entity.FillColor Color.Black
          define Entity.FillWinding ContourWinding.NonZero
          define Entity.StrokeColor Color.White
-         define Entity.StrokeThickness 1.0f
-         ]
+         define Entity.StrokeThickness 1.0f]
 
     override this.Register (entity, world) =
         for propertyName in [nameof Entity.Size; nameof Entity.Scale; nameof Entity.StrokeThickness] do
@@ -2176,8 +2174,7 @@ type SpiralContour2dFacet () =
          define Entity.StrokeThickness 1.0f
          define Entity.Turns 5.0f
          define Entity.Spacing 0.1f
-         define Entity.PointsPerTurn 50.0f
-         ]
+         define Entity.PointsPerTurn 50.0f]
 
     override this.Register (entity, world) =
         for propertyName in
@@ -2286,8 +2283,7 @@ type WedgeContour2dFacet () =
          define Entity.StrokeColor Color.White
          define Entity.StrokeThickness 1.0f
          define Entity.AngleBegin 0.0f
-         define Entity.AngleEnd MathF.PI
-         ]
+         define Entity.AngleEnd MathF.PI]
 
     override this.Register (entity, world) =
         for propertyName in [nameof Entity.Size; nameof Entity.Scale; nameof Entity.StrokeThickness] do
@@ -2361,8 +2357,7 @@ type RectangleRoundedContour2dFacet () =
          define Entity.FillWinding ContourWinding.NonZero
          define Entity.StrokeColor Color.White
          define Entity.StrokeThickness 1.0f
-         define Entity.CornerRadius 4.0f
-         ]
+         define Entity.CornerRadius 4.0f]
 
     override this.Register (entity, world) =
         for propertyName in [nameof Entity.Size; nameof Entity.Scale; nameof Entity.CornerRadius; nameof Entity.StrokeThickness] do

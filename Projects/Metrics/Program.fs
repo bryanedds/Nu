@@ -84,10 +84,10 @@ type MyGameDispatcher () =
 #if IMSIM
     inherit GameDispatcherImSim ()
 
-    static let Positions = // 12,500 entities
+    static let Positions = // 10,000 entities
         [|for i in 0 .. dec 50 do
             for j in 0 .. dec 50 do
-                for k in 0 .. dec 5 do
+                for k in 0 .. dec 4 do
                     yield v3 (single i * 0.5f) (single j * 0.5f) (single k * 0.5f)|]
 
     override this.Process (_, world) =
@@ -106,10 +106,10 @@ type MyGameDispatcher () =
 #else
     inherit GameDispatcher ()
 
-    static let Positions = // 25,000 entities
+    static let Positions = // 20,000 entities
         [|for i in 0 .. dec 50 do
             for j in 0 .. dec 50 do
-                for k in 0 .. dec 10 do
+                for k in 0 .. dec 8 do
                     yield v3 (single i * 0.5f) (single j * 0.5f) (single k * 0.5f)|]
 
     override this.Register (_, world) =
