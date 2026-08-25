@@ -2,7 +2,18 @@
 
 const float PI = 3.141592654;
 const float PI_OVER_2 = PI / 2.0;
-const float SSRL_STEP_COUNT_MAX = 256; // TODO: P1: promote this to uniform?
+const float SSRL_STEP_COUNT_MAX = 256;
+const float SSRL_BLUR_SCALAR = 32.0;
+const vec2 SSRL_BLUR_KERNEL[] = vec2[9](
+    vec2(0.0, 0.0),     // center
+    vec2(-1.0, 1.0),    // adj
+    vec2(1.0, 1.0),     // adj
+    vec2(-1.0, -1.0),   // adj
+    vec2(1.0, -1.0),    // adj
+    vec2(-1.0, -1.0),   // diag
+    vec2(1.0, -1.0),    // diag
+    vec2(-1.0, 1.0),    // diag
+    vec2(1.0, 1.0));    // diag
 
 struct EyeStruct
 {
@@ -203,14 +214,36 @@ void computeSsrl(float depth, vec4 position, vec3 albedo, float roughness, float
                 // determine whether we hit geometry within acceptable thickness
                 if (currentDepth != 0.0 && depthDelta >= 0.0 && depthDelta <= thickness)
                 {
-                    // sample inputs
-                    vec3 albedo = texture(sampler2D(albedoTexture, unfilteredSampler), currentTexCoords).rgb;
-                    vec3 lightAccum = texture(sampler2D(lightAccumTexture, unfilteredSampler), currentTexCoords).rgb;
-                    vec3 irradiance = texture(sampler2D(irradianceTexture, unfilteredSampler), currentTexCoords).rgb;
-                    vec3 environmentFilter = texture(sampler2D(environmentFilterTexture, unfilteredSampler), currentTexCoords).rgb;
+                    // multi-sample inputs
+                    vec3 albedo = vec3(0.0);
+                    vec3 lightAccum = vec3(0.0);
+                    vec3 irradiance = vec3(0.0);
+                    vec3 environmentFilter = vec3(0.0);
+                    vec4 ambientColorAndBrightness = vec4(0.0);
+                    vec2 texelSize = 1.0 / texSize;
+                    float weight = 0.0;
+                    for (i = 0; i < 9; ++i)
+                    {
+                        float importance = i < 1 ? 12.0 : i < 5 ? 2.0 : 1.0;
+                        vec2 offset = roughness * texelSize * SSRL_BLUR_SCALAR * SSRL_BLUR_KERNEL[i];
+                        if (i == 0 || texture(sampler2D(depthTexture, unfilteredSampler), currentTexCoords + offset).r > 0.0)
+                        {
+                            albedo += texture(sampler2D(albedoTexture, unfilteredSampler), currentTexCoords + offset).rgb * importance;
+                            lightAccum += texture(sampler2D(lightAccumTexture, unfilteredSampler), currentTexCoords + offset).rgb * importance;
+                            irradiance += texture(sampler2D(irradianceTexture, unfilteredSampler), currentTexCoords + offset).rgb * importance;
+                            environmentFilter += texture(sampler2D(environmentFilterTexture, unfilteredSampler), currentTexCoords + offset).rgb * importance;
+                            ambientColorAndBrightness += texture(sampler2D(ambientTexture, unfilteredSampler), currentTexCoords + offset) * importance;
+                            weight += importance;
+                        }
+                    }
+                    float weightInverse = 1.0 / weight;
+                    albedo *= weightInverse;
+                    lightAccum *= weightInverse;
+                    irradiance *= weightInverse;
+                    environmentFilter *= weightInverse;
+                    ambientColorAndBrightness *= weightInverse;
 
                     // compute diffuse
-                    vec4 ambientColorAndBrightness = texture(sampler2D(ambientTexture, unfilteredSampler), currentTexCoords);
                     vec3 ambientColor = ambientColorAndBrightness.rgb;
                     float ambientBrightness = ambientColorAndBrightness.a;
                     float ambientBoostFactor = smoothstep(1.0 - lighting.lightAmbientBoostCutoff, 1.0, 1.0 - roughness);

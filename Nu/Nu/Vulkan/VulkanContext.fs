@@ -884,7 +884,6 @@ type [<ReferenceEquality>] VulkanContext =
         info.queueFamilyIndex <- queueFamilyIndex
         let mutable commandPool = Unchecked.defaultof<VkCommandPool>
         DeviceApi.vkCreateCommandPool (&info, nullPtr, &commandPool) |> Hl.check
-        if commandPool.Handle = 0xe7f79a0000000005UL then Log.info "SDF"
         commandPool
 
     /// Handle changes in window size, and check for minimization.
