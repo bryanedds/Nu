@@ -55,10 +55,6 @@ type GamepadAxisData =
     { GamepadAxis : single }
 
 /// The data for a gamepad button event.
-type GamepadDirectionData =
-    { GamepadDirection : GamepadDirection }
-
-/// The data for a gamepad button event.
 type GamepadButtonData =
     { GamepadButton : GamepadButton
       Down : bool }
@@ -336,9 +332,6 @@ module Events =
 
     /// Raised when a gamepad axis is changed.
     let GamepadAxisChangeEvent axis (index : uint) = rtoa<GamepadAxisData> [|"Gamepad"; GamepadAxis.toEventName axis + string index + "Change"; "Event"|]
-
-    /// Raised when a gamepad direction is changed.
-    let GamepadDirectionChangeEvent (index : uint) = rtoa<GamepadDirectionData> [|"Gamepad"; "Direction" + string index + "Change"; "Event"|]
 
     /// Raised when a gamepad button is pressed or released.
     let GamepadButtonChangeEvent (index : uint) = rtoa<GamepadButtonData> [|"Gamepad"; "Button" + string index + "Change"; "Event"|]

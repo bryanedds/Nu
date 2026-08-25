@@ -81,7 +81,6 @@ module WorldGameModule =
         member this.KeyboardKeyDownEvent = Events.KeyboardKeyDownEvent --> Game.Handle
         member this.KeyboardKeyUpEvent = Events.KeyboardKeyUpEvent --> Game.Handle
         member this.GamepadAxisChangeEvent axis index = Events.GamepadAxisChangeEvent axis index --> Game.Handle
-        member this.GamepadDirectionChangeEvent index = Events.GamepadDirectionChangeEvent index --> Game.Handle
         member this.GamepadButtonChangeEvent index = Events.GamepadButtonChangeEvent index --> Game.Handle
         member this.GamepadButtonDownEvent index = Events.GamepadButtonDownEvent index --> Game.Handle
         member this.GamepadButtonUpEvent index = Events.GamepadButtonUpEvent index --> Game.Handle

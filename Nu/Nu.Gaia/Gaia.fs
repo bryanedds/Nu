@@ -87,6 +87,7 @@ module Gaia =
     let mutable private DesiredEye3dCenter = v3Zero
     let mutable private DesiredEye3dRotation = quatIdentity
     let mutable private EyeChangedElsewhere = false
+    let mutable private ResetEyeRequested = false
     let mutable private FpsStartDateTime = DateTimeOffset.Now
     let mutable private FpsStartUpdateTime = 0L
     let mutable private InteractiveNeedsInitialization = true
@@ -1320,11 +1321,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         tryReloadAssets world
         tryReloadCode initializing world
 
-    let private resetEye () =
-        DesiredEye2dCenter <- v2Zero
-        DesiredEye3dCenter <- Constants.Engine.Eye3dCenterDefault
-        DesiredEye3dRotation <- quatIdentity
-
     let private toggleTimeAdvancing (world : World) =
         let wasTimeAdvancing = world.TimeAdvancing
         snapshot (if wasTimeAdvancing then Halt else Advance) world
@@ -1714,6 +1710,13 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         DragDropPayloadOpt <- None // TODO: P1: remove this line when AcceptDragDropPayload is exposed.
                         focusPropertyOpt None world
                         selectEntityOpt None world
+
+    let private updateResetEye () =
+        if ResetEyeRequested then
+            DesiredEye2dCenter <- v2Zero
+            DesiredEye3dCenter <- Constants.Engine.Eye3dCenterDefault
+            DesiredEye3dRotation <- quatIdentity
+            ResetEyeRequested <- false
 
     (* Top-Level Functions *)
 
@@ -2607,7 +2610,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             ImGui.SameLine ()
             ImGui.Text "Eye:"
             ImGui.SameLine ()
-            if ImGui.Button "Reset" then resetEye ()
+            if ImGui.Button "Reset" then ResetEyeRequested <- true
             if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                 let mutable eye2dCenter = world.Eye2dCenter
                 let mutable eye3dCenter = world.Eye3dCenter
@@ -4219,6 +4222,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 updateEntityDrag world
                 updateAssetDrag world
                 updateHotkeys entityHierarchyFocused world
+
+                // deferred imgui input
+                updateResetEye ()
 
                 // HACK: because ImGui.BeginDragDropViewport isn't available yet -
                 // https://github.com/ocornut/imgui/issues/5204
