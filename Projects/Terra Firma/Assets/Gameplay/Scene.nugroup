@@ -131,7 +131,7 @@
         [DepthOfFieldFocalDistance 0.5]
         [DepthOfFieldFocalPoint [0 0]]
         [ChromaticAberrationEnabled True]
-        [ChromaticAberrationChannelOffsets [0.006 0.004 -0.004]]
+        [ChromaticAberrationChannelOffsets [0.003 0.002 -0.002]]
         [ChromaticAberrationFocalPoint [0 0]]]]
       [MountOpt [Some ^]]
       [Name Lighting3dConfig]]

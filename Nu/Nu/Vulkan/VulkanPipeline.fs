@@ -10,8 +10,8 @@ open System.Collections.Generic
 open System.Diagnostics
 open FSharp.NativeInterop
 open Vortice.ShaderCompiler
-open Prime
 open Vortice.Vulkan
+open Prime
 open Nu
 
 /// A blend setting for a Vulkan pipeline.

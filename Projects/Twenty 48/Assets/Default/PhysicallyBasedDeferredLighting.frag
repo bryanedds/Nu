@@ -7,6 +7,7 @@ const int LIGHTS_MAX = 64;
 const int SHADOW_TEXTURES_MAX = 12;
 const int SHADOW_MAPS_MAX = 12;
 const float SHADOW_DIRECTIONAL_SEAM_INSET = 0.05; // TODO: see if this should be proportionate to shadow texel size.
+const float SHADOW_DIRECTIONAL_CUTOFF = 0.75;
 const int SHADOW_CASCADES_MAX = 2;
 const int SHADOW_CASCADE_LEVELS = 3;
 const float SHADOW_CASCADE_SEAM_INSET = 0.005;
@@ -233,7 +234,7 @@ float computeShadowScalarDirectional(vec4 position, int shadowIndex)
     vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
     if (shadowTexCoordsProj.x >= -1.0 + SHADOW_DIRECTIONAL_SEAM_INSET && shadowTexCoordsProj.x < 1.0 - SHADOW_DIRECTIONAL_SEAM_INSET &&
         shadowTexCoordsProj.y >= -1.0 + SHADOW_DIRECTIONAL_SEAM_INSET && shadowTexCoordsProj.y < 1.0 - SHADOW_DIRECTIONAL_SEAM_INSET &&
-        shadowTexCoordsProj.z >= SHADOW_DIRECTIONAL_SEAM_INSET && shadowTexCoordsProj.z < 1.0 - SHADOW_DIRECTIONAL_SEAM_INSET)
+        shadowTexCoordsProj.z >= SHADOW_DIRECTIONAL_SEAM_INSET * 0.5f && shadowTexCoordsProj.z < 1.0 - SHADOW_DIRECTIONAL_SEAM_INSET * 0.5f)
     {
         vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5;
         float shadowZ = shadowTexCoordsProj.z;
@@ -241,7 +242,11 @@ float computeShadowScalarDirectional(vec4 position, int shadowIndex)
         float shadowDepthExp = texture(sampler2DArray(shadowTextures, filteredSampler), vec3(shadowTexCoords, float(shadowIndex))).y;
         float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
         shadowScalar = pow(shadowScalar, lighting.lightShadowDensity);
-        return shadowScalar;
+        float shadowFadeX = 1.0 - smoothstep(SHADOW_DIRECTIONAL_CUTOFF, 1.0 - SHADOW_DIRECTIONAL_SEAM_INSET, abs(shadowTexCoordsProj.x));
+        float shadowFadeY = 1.0 - smoothstep(SHADOW_DIRECTIONAL_CUTOFF, 1.0 - SHADOW_DIRECTIONAL_SEAM_INSET, abs(shadowTexCoordsProj.y));
+        float shadowFadeZ = 1.0 - smoothstep(SHADOW_DIRECTIONAL_CUTOFF, 1.0 - SHADOW_DIRECTIONAL_SEAM_INSET, abs(shadowTexCoordsProj.z * 2.0 - 1.0));
+        float shadowFadeScalar = min(shadowFadeX, min(shadowFadeY, shadowFadeZ));
+        return mix(1.0, shadowScalar, shadowFadeScalar);
     }
     return 1.0;
 }

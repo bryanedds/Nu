@@ -11,6 +11,7 @@ open System.Numerics
 open Prime
 
 // TODO: P0: get rid of excess frame-based allocation here, such as potentially by using memoization.
+// TODO: see if it won't be too disruptive to make this code conform to our code standard.
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Contour =
 

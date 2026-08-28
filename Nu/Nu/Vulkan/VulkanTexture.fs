@@ -428,7 +428,8 @@ type [<CustomEquality; NoComparison>] TextureInternal =
                     let mipGenSupport = formatProperties.optimalTilingFeatures &&& VkFormatFeatureFlags.SampledImageFilterLinear <> VkFormatFeatureFlags.None
                     
                     // calculate mip levels
-                    if mipGenSupport then max metadata.TextureWidth metadata.TextureHeight |> Math.Log2 |> floor |> inc |> int
+                    if mipGenSupport
+                    then max metadata.TextureWidth metadata.TextureHeight |> Math.Log2 |> floor |> inc |> int
                     else Log.errorOnce "Graphics device does not support mipmap generation for some used image format(s)."; 1
                 
                 | _ -> Log.infoOnce "Automatic mipmap generation not supported for attachment texture."; 1
