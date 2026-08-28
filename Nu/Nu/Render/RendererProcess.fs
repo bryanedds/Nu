@@ -228,7 +228,7 @@ type RendererInline (windowProperties) =
                 messagesImGui.Clear ()
 
                 // begin frame
-                VulkanContext.beginFrame windowViewport resolveTexture.Image context
+                VulkanContext.beginFrame resolveTexture.Image context
 
                 // render 3d
                 renderer3d.Render frustumInterior frustumExterior frustumImposter eye3dCenter eye3dRotation eye3dFieldOfView geometryViewport windowViewport resolveTexture renderGeometry
@@ -477,7 +477,7 @@ type RendererThread (windowProperties) =
                 rendererImGui.PreRender messagesImGui
 
                 // begin frame
-                VulkanContext.beginFrame windowViewport resolveTexture.Image context
+                VulkanContext.beginFrame resolveTexture.Image context
 
                 // render 3d, freeing allocated messaages after use
                 renderer3d.Render frustumInterior frustumExterior frustumImposter eye3dCenter eye3dRotation eye3dFieldOfView geometryViewport windowViewport resolveTexture renderGeometry

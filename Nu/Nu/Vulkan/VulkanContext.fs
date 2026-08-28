@@ -832,7 +832,7 @@ type [<ReferenceEquality>] VulkanContext =
             Swapchain.tryRecreate context.PhysicalDevice_ context.RenderQueue_ context.PresentQueue_ context.Swapchain_ context.Instance_
 
     /// Begin the frame.
-    static member beginFrame (windowViewport : Viewport) resolveImage context =
+    static member beginFrame resolveImage context =
 
         // wait for current frame to be ready
         let mutable renderFence = context.RenderFence_
