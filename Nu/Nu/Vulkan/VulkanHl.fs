@@ -643,7 +643,7 @@ module Hl =
                 colorInfo.loadOp <- VkAttachmentLoadOp.DontCare
             | ClearAttachments color ->
                 colorInfo.loadOp <- VkAttachmentLoadOp.Clear
-                colorInfo.clearValue <- VkClearValue (r = color.R, g = color.G, b = color.B, a = color.A)
+                colorInfo.clearValue <- VkClearValue (color.R, color.G, color.B, color.A)
             colorInfos[i] <- colorInfo
         use colorInfosPin = new ArrayPin<_> (colorInfos)
 

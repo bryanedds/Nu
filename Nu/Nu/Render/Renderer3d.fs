@@ -4688,9 +4688,13 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 gammaCorrectionTexture
             else toneMappingTexture
 
-        // blit from intermediate texture to target image with filtering when extents don't match
+        // clear then blit from intermediate texture to target image with filtering when extents don't match
         Texture.recordTransitionLayout ColorAttachmentRead TransferSrc intermediateTexture renderer.VulkanContext.RenderCommandBuffer
         Hl.recordTransitionLayout true 1 targetLayer 1 VkImageAspectFlags.Color ColorAttachmentWrite TransferDst targetImage renderer.VulkanContext.RenderCommandBuffer
+        let clearColor = Constants.Render.WindowClearColor
+        let mutable clearColorValue = VkClearColorValue (clearColor.R, clearColor.G, clearColor.B, clearColor.A)
+        let mutable subresourceRange = Hl.makeSubresourceRange 0 1 targetLayer 1 VkImageAspectFlags.Color
+        DeviceApi.vkCmdClearColorImage (renderer.VulkanContext.RenderCommandBuffer, targetImage, VkImageLayout.TransferDstOptimal, &&clearColorValue, 1u, &&subresourceRange)
         let mutable region = Hl.makeBlit 0 0 0 targetLayer (VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)) targetBounds
         let filter = if uint geometryResolution.X = targetBounds.extent.width && uint geometryResolution.Y = targetBounds.extent.height then VkFilter.Nearest else VkFilter.Linear
         DeviceApi.vkCmdBlitImage (renderer.VulkanContext.RenderCommandBuffer, intermediateTexture.Image, TransferSrc.VkImageLayout, targetImage, TransferDst.VkImageLayout, 1u, &&region, filter)
