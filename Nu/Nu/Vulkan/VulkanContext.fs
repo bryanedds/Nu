@@ -34,8 +34,8 @@ type [<ReferenceEquality>] ConcurrentCommandQueue =
 
     /// Wait for Queue to finish execution.
     static member waitIdle queue =
-        ConcurrentCommandQueue.withLock queue (fun vkQueue ->
-            DeviceApi.vkQueueWaitIdle vkQueue |> Hl.check)
+        ConcurrentCommandQueue.withLock queue $ fun vkQueue ->
+            DeviceApi.vkQueueWaitIdle vkQueue |> Hl.check
 
     /// Transiently run and then free the given command buffer. Command pool and finish fence must NOT be shared
     /// between threads!
@@ -43,7 +43,7 @@ type [<ReferenceEquality>] ConcurrentCommandQueue =
 
         // lock to get access to vulkan queue
         let mutable commandBuffer = commandBuffer
-        ConcurrentCommandQueue.withLock commandQueue (fun vkQueue ->
+        ConcurrentCommandQueue.withLock commandQueue $ fun vkQueue ->
 
             // end command buffer
             DeviceApi.vkEndCommandBuffer commandBuffer |> Hl.check
@@ -60,7 +60,7 @@ type [<ReferenceEquality>] ConcurrentCommandQueue =
             DeviceApi.vkResetFences (1u, &&finishFence) |> Hl.check
 
             // free command buffer
-            DeviceApi.vkFreeCommandBuffers (commandPool, 1u, &&commandBuffer))
+            DeviceApi.vkFreeCommandBuffers (commandPool, 1u, &&commandBuffer)
 
     /// Create a ConcurrentCommandQueue.
     static member create queueFamilyIndex queueIndex =
@@ -778,7 +778,7 @@ type [<ReferenceEquality>] VulkanContext =
     static member private endRenderCommandBuffer submissionType context =
 
         // lock to get access to vulkan queue
-        ConcurrentCommandQueue.withLock context.RenderQueue_ (fun vkQueue ->
+        ConcurrentCommandQueue.withLock context.RenderQueue_ $ fun vkQueue ->
 
             // end command buffer
             let mutable commandBuffer = context.RenderCommandBuffers_[context.RenderCommandBuffersCursor_]
@@ -808,12 +808,29 @@ type [<ReferenceEquality>] VulkanContext =
                 DeviceApi.vkQueueSubmit (vkQueue, 1u, &&submitInfo, context.RenderFence_) |> Hl.check
 
             // advance cursor
-            context.RenderCommandBuffersCursor_ <- inc context.RenderCommandBuffersCursor_)
+            context.RenderCommandBuffersCursor_ <- inc context.RenderCommandBuffersCursor_
 
+    /// Indicate that the current render command buffer is ready for submission and a new one shall be started.
     static member advanceRenderCommandBuffer context =
         let submissionType = if context.RenderCommandBuffersCursor_ = 0 then FirstSubmission else MiddleSubmission
         VulkanContext.endRenderCommandBuffer submissionType context
         VulkanContext.beginRenderCommandBuffer context
+
+    static member private withSwapchainWrapper (context : VulkanContext) op =
+        let shouldRecreate =
+            if Hl.getBackgroundingRequested () then false // don't recreate when going into background
+            elif Hl.getWindowMinimized () then false // don't recreate when minimized
+            else match context.SwapchainWrapperOpt with
+                 | Some swapchainWrapper ->
+                    match Hl.tryGetSurfaceCapabilities context.PhysicalDevice_.VkPhysicalDevice with
+                    | Some capabilities ->
+                        match Hl.tryGetSwapExtent capabilities with
+                        | Some swapExtent when swapExtent = swapchainWrapper.SwapExtent -> op swapchainWrapper // perform operation
+                        | Some _ | None -> true // recreate when swap extent is invalid
+                    | None -> true // recreate when surface is absent
+                 | None -> true // recreate when swapchain is absent
+        if shouldRecreate then
+            Swapchain.tryRecreate context.PhysicalDevice_ context.RenderQueue_ context.PresentQueue_ context.Swapchain_ context.Instance_
 
     /// Begin the frame.
     static member beginFrame resolveImage context =
@@ -828,6 +845,9 @@ type [<ReferenceEquality>] VulkanContext =
         // reset draw counters
         Hl.resetDrawCounters ()
 
+        // attempt to recreate the swapchain when needed
+        VulkanContext.withSwapchainWrapper context absurdity
+
         // begin render command recording
         VulkanContext.beginRenderCommandBuffer context
 
@@ -837,54 +857,25 @@ type [<ReferenceEquality>] VulkanContext =
     /// End the frame.
     static member endFrame windowViewport resolveImage (context : VulkanContext) =
 
-        // attempt to recreate the swapchain when needed
-        let shouldRecreate =
-            if Hl.getBackgroundingRequested () then false // don't recreate when going into background
-            elif Hl.getWindowMinimized () then false // don't recreate when minimized
-            else match context.SwapchainWrapperOpt with
-                 | Some swapchainWrapper ->
-                    match Hl.tryGetSurfaceCapabilities context.PhysicalDevice_.VkPhysicalDevice with
-                    | Some capabilities ->
-                        match Hl.tryGetSwapExtent capabilities with
-                        | Some swapExtent when swapExtent = swapchainWrapper.SwapExtent -> false // don't recreate when swap extent the same
-                        | Some _ | None -> true // recreate when swap extent is invalid
-                    | None -> true // recreate when surface is absent
-                 | None -> true // recreate when swapchain is absent
-        if shouldRecreate then
-            Swapchain.tryRecreate context.PhysicalDevice_ context.RenderQueue_ context.PresentQueue_ context.Swapchain_ context.Instance_
-
-        // attempt to blit to swapchain image
-        let shouldRecreate =
-            if Hl.getBackgroundingRequested () then false // don't recreate when going into background
-            elif Hl.getWindowMinimized () then false // don't recreate when minimized
-            else match context.SwapchainWrapperOpt with
-                 | Some swapchainWrapper ->
-                    match Hl.tryGetSurfaceCapabilities context.PhysicalDevice_.VkPhysicalDevice with
-                    | Some capabilities ->
-                        match Hl.tryGetSwapExtent capabilities with
-                        | Some swapExtent when swapExtent = swapchainWrapper.SwapExtent ->
-                            let mutable imageIndex = Hl.ImageIndex
-                            let result = DeviceApi.vkAcquireNextImageKHR (swapchainWrapper.VkSwapchain, UInt64.MaxValue, VkSemaphore.Null, VkFence.Null, &imageIndex)
-                            Hl.setImageIndex imageIndex
-                            match result with
-                            | VkResult.ErrorOutOfDateKHR -> true // recreate when swapchain is out of data
-                            | VkResult.ErrorSurfaceLostKHR -> Hl.notifySurfaceLost (); true // recreate when surface is lost
-                            | _ ->
-                                Hl.check result
-                                let swapchainImage = swapchainWrapper.Images[int Hl.ImageIndex]
-                                Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color ColorAttachmentWrite TransferSrc resolveImage context.RenderCommandBuffer
-                                Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color Undefined TransferDst swapchainImage context.RenderCommandBuffer
-                                let bounds = VkRect2D (0, 0, uint windowViewport.Bounds.Size.X, uint windowViewport.Bounds.Size.Y)
-                                let mutable region = Hl.makeBlit 0 0 0 0 bounds bounds
-                                DeviceApi.vkCmdBlitImage (context.RenderCommandBuffer, resolveImage, TransferSrc.VkImageLayout, swapchainImage, TransferDst.VkImageLayout, 1u, &&region, VkFilter.Nearest)
-                                Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color TransferDst Present swapchainImage context.RenderCommandBuffer
-                                Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color TransferSrc ColorAttachmentWrite resolveImage context.RenderCommandBuffer
-                                false // don't recreate when swap extent is the same
-                        | Some _ | None -> true // recreate when swap extent is invalid
-                    | None -> true // recreate when surface is absent
-                 | None -> true // recreate when swapchain is absent
-        if shouldRecreate then
-            Swapchain.tryRecreate context.PhysicalDevice_ context.RenderQueue_ context.PresentQueue_ context.Swapchain_ context.Instance_
+        // attempt to blit to swapchain image, recreating swapchain as needed
+        VulkanContext.withSwapchainWrapper context $ fun swapchainWrapper ->
+            let mutable imageIndex = Hl.ImageIndex
+            let result = DeviceApi.vkAcquireNextImageKHR (swapchainWrapper.VkSwapchain, UInt64.MaxValue, VkSemaphore.Null, VkFence.Null, &imageIndex)
+            Hl.setImageIndex imageIndex
+            match result with
+            | VkResult.ErrorOutOfDateKHR -> true // recreate when swapchain is out of date
+            | VkResult.ErrorSurfaceLostKHR -> Hl.notifySurfaceLost (); true // recreate when surface is lost
+            | _ ->
+                Hl.check result
+                let swapchainImage = swapchainWrapper.Images[int Hl.ImageIndex]
+                Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color ColorAttachmentWrite TransferSrc resolveImage context.RenderCommandBuffer
+                Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color Undefined TransferDst swapchainImage context.RenderCommandBuffer
+                let bounds = VkRect2D (0, 0, uint windowViewport.Bounds.Size.X, uint windowViewport.Bounds.Size.Y)
+                let mutable region = Hl.makeBlit 0 0 0 0 bounds bounds
+                DeviceApi.vkCmdBlitImage (context.RenderCommandBuffer, resolveImage, TransferSrc.VkImageLayout, swapchainImage, TransferDst.VkImageLayout, 1u, &&region, VkFilter.Nearest)
+                Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color TransferDst Present swapchainImage context.RenderCommandBuffer
+                Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color TransferSrc ColorAttachmentWrite resolveImage context.RenderCommandBuffer
+                false // no swapchain recreation
 
         // transition resolve image back to read
         Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color ColorAttachmentWrite ColorAttachmentRead resolveImage context.RenderCommandBuffer
@@ -900,36 +891,23 @@ type [<ReferenceEquality>] VulkanContext =
     static member present (context : VulkanContext) =
 
         // lock to get access to vulkan queue
-        ConcurrentCommandQueue.withLock context.PresentQueue_ (fun vkQueue ->
+        ConcurrentCommandQueue.withLock context.PresentQueue_ $ fun vkQueue ->
 
-            // attempt to present image
-            let shouldRecreate =
-                if Hl.getBackgroundingRequested () then false // don't recreate when going into background
-                elif Hl.getWindowMinimized () then false // don't recreate when minimized
-                else match context.SwapchainWrapperOpt with
-                     | Some swapchainWrapper ->
-                        match Hl.tryGetSurfaceCapabilities context.PhysicalDevice_.VkPhysicalDevice with
-                        | Some capabilities ->
-                            match Hl.tryGetSwapExtent capabilities with
-                            | Some swapExtent when swapExtent = swapchainWrapper.SwapExtent ->
-                                let mutable renderFinishedSemaphore = swapchainWrapper.RenderFinishedSemaphore
-                                let mutable vkSwapchain = swapchainWrapper.VkSwapchain
-                                let mutable imageIndex = Hl.ImageIndex
-                                let mutable info = VkPresentInfoKHR ()
-                                info.waitSemaphoreCount <- 1u
-                                info.pWaitSemaphores <- &&renderFinishedSemaphore
-                                info.swapchainCount <- 1u
-                                info.pSwapchains <- &&vkSwapchain
-                                info.pImageIndices <- &&imageIndex
-                                match DeviceApi.vkQueuePresentKHR (vkQueue, &&info) with
-                                | VkResult.ErrorOutOfDateKHR -> true // recreate when swapchain is out of data
-                                | VkResult.ErrorSurfaceLostKHR -> Hl.notifySurfaceLost (); true // recreate when surface is lost
-                                | result -> Hl.check result; false // don't recreate when swap extent is the same
-                            | Some _ | None -> true // recreate when swap extent is invalid
-                        | None -> true // recreate when surface is absent
-                     | None -> true // recreate when swapchain is absent
-            if shouldRecreate then
-                Swapchain.tryRecreate context.PhysicalDevice_ context.RenderQueue_ context.PresentQueue_ context.Swapchain_ context.Instance_)
+            // attempt to present image, recreating swapchain as needed
+            VulkanContext.withSwapchainWrapper context $ fun swapchainWrapper ->
+                let mutable renderFinishedSemaphore = swapchainWrapper.RenderFinishedSemaphore
+                let mutable vkSwapchain = swapchainWrapper.VkSwapchain
+                let mutable imageIndex = Hl.ImageIndex
+                let mutable info = VkPresentInfoKHR ()
+                info.waitSemaphoreCount <- 1u
+                info.pWaitSemaphores <- &&renderFinishedSemaphore
+                info.swapchainCount <- 1u
+                info.pSwapchains <- &&vkSwapchain
+                info.pImageIndices <- &&imageIndex
+                match DeviceApi.vkQueuePresentKHR (vkQueue, &&info) with
+                | VkResult.ErrorOutOfDateKHR -> true // recreate when swapchain is out of data
+                | VkResult.ErrorSurfaceLostKHR -> Hl.notifySurfaceLost (); true // recreate when surface is lost
+                | result -> Hl.check result; false // no swapchain recreation
 
     /// Wait for all device operations to complete before cleaning up resources.
     static member waitIdle context =
