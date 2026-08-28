@@ -850,15 +850,12 @@ type [<ReferenceEquality>] VulkanContext =
         // begin render command recording
         VulkanContext.beginRenderCommandBuffer context
 
-        // make resolve texture ready for rendering
+        // make resolve texture ready for rendering and clear
         Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color ColorAttachmentRead ColorAttachmentWrite resolveImage context.RenderCommandBuffer
-
-        // clear resolve texture when a bounds blit won't cover the entire texture
-        if windowViewport.Bounds <> windowViewport.Outer then
-            let clearColor = Constants.Render.WindowClearColor
-            let mutable clearColorValue = VkClearColorValue (clearColor.R, clearColor.G, clearColor.B, clearColor.A)
-            let mutable subresourceRange = Hl.makeSubresourceRange 0 1 0 1 VkImageAspectFlags.Color
-            DeviceApi.vkCmdClearColorImage (context.RenderCommandBuffer, resolveImage, ColorAttachmentWrite.VkImageLayout, &&clearColorValue, 1u, &&subresourceRange)
+        let clearColor = Constants.Render.WindowClearColor
+        let mutable clearColorValue = VkClearColorValue (clearColor.R, clearColor.G, clearColor.B, clearColor.A)
+        let mutable subresourceRange = Hl.makeSubresourceRange 0 1 0 1 VkImageAspectFlags.Color
+        DeviceApi.vkCmdClearColorImage (context.RenderCommandBuffer, resolveImage, ColorAttachmentWrite.VkImageLayout, &&clearColorValue, 1u, &&subresourceRange)
 
     /// End the frame.
     static member endFrame windowViewport resolveImage (context : VulkanContext) =
