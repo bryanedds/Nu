@@ -4688,7 +4688,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 gammaCorrectionTexture
             else toneMappingTexture
 
-        // blit from intermediate texture to target image without filtering
+        // blit from intermediate texture to target image with filtering when extents don't match
         Texture.recordTransitionLayout ColorAttachmentRead TransferSrc intermediateTexture renderer.VulkanContext.RenderCommandBuffer
         Hl.recordTransitionLayout true 1 targetLayer 1 VkImageAspectFlags.Color ColorAttachmentWrite TransferDst targetImage renderer.VulkanContext.RenderCommandBuffer
         let mutable region = Hl.makeBlit 0 0 0 targetLayer (VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)) targetBounds
