@@ -10,6 +10,7 @@ open System.Runtime.InteropServices
 open System.Collections.Generic
 open System.Reflection
 open System.Runtime.CompilerServices
+open System.Numerics
 open FSharp.NativeInterop
 open SDL
 open Vortice.Vulkan
@@ -831,7 +832,7 @@ type [<ReferenceEquality>] VulkanContext =
             Swapchain.tryRecreate context.PhysicalDevice_ context.RenderQueue_ context.PresentQueue_ context.Swapchain_ context.Instance_
 
     /// Begin the frame.
-    static member beginFrame resolveImage context =
+    static member beginFrame (windowViewport : Viewport) resolveImage context =
 
         // wait for current frame to be ready
         let mutable renderFence = context.RenderFence_
@@ -851,6 +852,13 @@ type [<ReferenceEquality>] VulkanContext =
 
         // make resolve texture ready for rendering
         Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color ColorAttachmentRead ColorAttachmentWrite resolveImage context.RenderCommandBuffer
+
+        // clear resolve texture when a bounds blit won't cover the entire texture
+        if windowViewport.Bounds <> windowViewport.Outer then
+            let clearColor = Constants.Render.WindowClearColor
+            let mutable clearColorValue = VkClearColorValue (clearColor.R, clearColor.G, clearColor.B, clearColor.A)
+            let mutable subresourceRange = Hl.makeSubresourceRange 0 1 0 1 VkImageAspectFlags.Color
+            DeviceApi.vkCmdClearColorImage (context.RenderCommandBuffer, resolveImage, ColorAttachmentWrite.VkImageLayout, &&clearColorValue, 1u, &&subresourceRange)
 
     /// End the frame.
     static member endFrame windowViewport resolveImage (context : VulkanContext) =
