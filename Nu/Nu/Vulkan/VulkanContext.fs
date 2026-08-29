@@ -838,12 +838,12 @@ type [<ReferenceEquality>] VulkanContext =
         // wait for current frame to be ready
         // NOTE: on Android on my A17, we have to put vkWaitForFences in a loop because it will return before the given
         // timeout with a VkResult.Timeout result (which I'm not sure is standard-conformant).
-        let mutable waitForFenceResult = Unchecked.defaultof<_>
-        let mutable going = true
-        while going do
-            waitForFenceResult <- DeviceApi.vkWaitForFences (1u, &&context.RenderFence_, true, UInt64.MaxValue)
-            if waitForFenceResult <> VkResult.Timeout then going <- false
-        Hl.check waitForFenceResult
+        let mutable waiting = true
+        while waiting do
+            let result = DeviceApi.vkWaitForFences (1u, &&context.RenderFence_, true, UInt64.MaxValue)
+            if result <> VkResult.Timeout then
+                waiting <- false
+                Hl.check result
         DeviceApi.vkResetFences (1u, &&context.RenderFence_) |> Hl.check
 
         // reset render command buffers cursor
