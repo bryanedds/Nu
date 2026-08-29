@@ -377,6 +377,7 @@ module Hl =
 
     /// Make the surface state reflect the loss of the surface.
     let notifySurfaceLost () =
+        Log.info "Vulkan surface lost."
         SurfaceState_ <- SurfaceLost
 
     /// Callback to inform render loop about app backgrounding. Official documentation for android case -
