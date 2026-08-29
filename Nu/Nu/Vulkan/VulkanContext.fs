@@ -416,7 +416,7 @@ type [<ReferenceEquality>] VulkanContext =
           PresentQueue_ : ConcurrentCommandQueue
           TextureQueue_ : ConcurrentCommandQueue
           ImageAvailableSemaphore_ : VkSemaphore
-          RenderFence_ : VkFence
+          mutable RenderFence_ : VkFence
           TransientFence_ : VkFence
           TextureFence_ : VkFence }
 
@@ -793,17 +793,17 @@ type [<ReferenceEquality>] VulkanContext =
             | MiddleSubmission ->
                 DeviceApi.vkQueueSubmit (vkQueue, 1u, &&submitInfo, VkFence.Null) |> Hl.check
             | LastSubmission ->
+                let mutable imageAvailableSemaphore = context.ImageAvailableSemaphore_
+                let mutable stageFlag = VkPipelineStageFlags.ColorAttachmentOutput
+                submitInfo.waitSemaphoreCount <- 1u
+                submitInfo.pWaitSemaphores <- &&imageAvailableSemaphore
+                submitInfo.pWaitDstStageMask <- &&stageFlag
                 match context.SwapchainWrapperOpt with
                 | Some swapchainWrapper ->
-                    let mutable imageAvailableSemaphore = context.ImageAvailableSemaphore_
-                    let mutable stageFlag = VkPipelineStageFlags.ColorAttachmentOutput
-                    submitInfo.waitSemaphoreCount <- 1u
-                    submitInfo.pWaitSemaphores <- &&imageAvailableSemaphore
-                    submitInfo.pWaitDstStageMask <- &&stageFlag
                     let mutable renderFinishedSemaphore = swapchainWrapper.RenderFinishedSemaphore
                     submitInfo.signalSemaphoreCount <- 1u
                     submitInfo.pSignalSemaphores <- &&renderFinishedSemaphore
-                | None -> ()
+                | None -> Log.warn "Swapchain wrapper absent."
                 DeviceApi.vkQueueSubmit (vkQueue, 1u, &&submitInfo, context.RenderFence_) |> Hl.check
 
             // advance cursor
@@ -827,16 +827,24 @@ type [<ReferenceEquality>] VulkanContext =
                         | Some swapExtent when swapExtent = swapchainWrapper.SwapExtent -> op swapchainWrapper // perform operation
                         | Some _ | None -> true // recreate when swap extent is invalid
                     | None -> true // recreate when surface is absent
-                 | None -> true // recreate when swapchain is absent
+                 | None -> Log.warn "Swapchain wrapper absent."; true // recreate when swapchain is absent
         if shouldRecreate then
+            Log.warn "Recreating swapchain..."
             Swapchain.tryRecreate context.PhysicalDevice_ context.RenderQueue_ context.PresentQueue_ context.Swapchain_ context.Instance_
 
     /// Begin the frame.
     static member beginFrame resolveImage context =
 
         // wait for current frame to be ready
-        let mutable renderFence = context.RenderFence_
-        DeviceApi.vkWaitForFences (1u, &&renderFence, true, UInt64.MaxValue) |> Hl.check
+        // NOTE: on Android on my A17, we have to put vkWaitForFences in a loop because it will return before the given
+        // timeout with a VkResult.Timeout result (which I'm not sure is standard-conformant).
+        let mutable waitForFenceResult = Unchecked.defaultof<_>
+        let mutable going = true
+        while going do
+            waitForFenceResult <- DeviceApi.vkWaitForFences (1u, &&context.RenderFence_, true, UInt64.MaxValue)
+            if waitForFenceResult <> VkResult.Timeout then going <- false
+        Hl.check waitForFenceResult
+        DeviceApi.vkResetFences (1u, &&context.RenderFence_) |> Hl.check
 
         // reset render command buffers cursor
         context.RenderCommandBuffersCursor_ <- 0
@@ -869,7 +877,6 @@ type [<ReferenceEquality>] VulkanContext =
             | VkResult.ErrorOutOfDateKHR -> true // recreate when swapchain is out of date
             | VkResult.ErrorSurfaceLostKHR -> Hl.notifySurfaceLost (); true // recreate when surface is lost
             | _ ->
-                Hl.check result
                 let swapchainImage = swapchainWrapper.Images[int Hl.ImageIndex]
                 Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color ColorAttachmentWrite TransferSrc resolveImage context.RenderCommandBuffer
                 Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color Undefined TransferDst swapchainImage context.RenderCommandBuffer
@@ -882,10 +889,6 @@ type [<ReferenceEquality>] VulkanContext =
 
         // transition resolve image back to read
         Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color ColorAttachmentWrite ColorAttachmentRead resolveImage context.RenderCommandBuffer
-
-        // reset render fence as late as possible
-        let mutable renderFence = context.RenderFence_
-        DeviceApi.vkResetFences (1u, &&renderFence) |> Hl.check
 
         // end rendering
         VulkanContext.endRenderCommandBuffer LastSubmission context
@@ -910,7 +913,7 @@ type [<ReferenceEquality>] VulkanContext =
                 match DeviceApi.vkQueuePresentKHR (vkQueue, &&info) with
                 | VkResult.ErrorOutOfDateKHR -> true // recreate when swapchain is out of data
                 | VkResult.ErrorSurfaceLostKHR -> Hl.notifySurfaceLost (); true // recreate when surface is lost
-                | result -> Hl.check result; false // no swapchain recreation
+                | _ -> false // no swapchain recreation
 
     /// Wait for all device operations to complete before cleaning up resources.
     static member waitIdle context =
