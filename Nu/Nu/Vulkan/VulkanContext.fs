@@ -44,6 +44,7 @@ type [<ReferenceEquality>] ConcurrentCommandQueue =
 
         // lock to get access to vulkan queue
         let mutable commandBuffer = commandBuffer
+        let mutable finishFence = finishFence
         ConcurrentCommandQueue.withLock commandQueue $ fun vkQueue ->
 
             // end command buffer
@@ -56,8 +57,14 @@ type [<ReferenceEquality>] ConcurrentCommandQueue =
             DeviceApi.vkQueueSubmit (vkQueue, 1u, &&info, finishFence) |> Hl.check
 
             // wait for run to finish
-            let mutable finishFence = finishFence
-            DeviceApi.vkWaitForFences (1u, &&finishFence, true, UInt64.MaxValue) |> Hl.check
+            // NOTE: on Android on my A17, we have to put vkWaitForFences in a loop because it will return before the given
+            // timeout with a VkResult.Timeout result (which I'm not sure is standard-conformant).
+            let mutable waiting = true
+            while waiting do
+                let result = DeviceApi.vkWaitForFences (1u, &&finishFence, true, UInt64.MaxValue)
+                if result <> VkResult.Timeout then
+                    waiting <- false
+                    Hl.check result
             DeviceApi.vkResetFences (1u, &&finishFence) |> Hl.check
 
             // free command buffer
