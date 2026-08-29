@@ -801,7 +801,7 @@ type [<ReferenceEquality>] VulkanContext =
                 DeviceApi.vkQueueSubmit (vkQueue, 1u, &&submitInfo, VkFence.Null) |> Hl.check
             | LastSubmission ->
                 let mutable imageAvailableSemaphore = context.ImageAvailableSemaphore_
-                let mutable stageFlag = VkPipelineStageFlags.ColorAttachmentOutput
+                let mutable stageFlag = VkPipelineStageFlags.Transfer
                 submitInfo.waitSemaphoreCount <- 1u
                 submitInfo.pWaitSemaphores <- &&imageAvailableSemaphore
                 submitInfo.pWaitDstStageMask <- &&stageFlag
