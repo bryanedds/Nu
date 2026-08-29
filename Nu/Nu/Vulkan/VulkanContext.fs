@@ -878,7 +878,7 @@ type [<ReferenceEquality>] VulkanContext =
         // attempt to blit to swapchain image, recreating swapchain as needed
         VulkanContext.withSwapchainWrapper context $ fun swapchainWrapper ->
             let mutable imageIndex = Hl.ImageIndex
-            let result = DeviceApi.vkAcquireNextImageKHR (swapchainWrapper.VkSwapchain, UInt64.MaxValue, VkSemaphore.Null, VkFence.Null, &imageIndex)
+            let result = DeviceApi.vkAcquireNextImageKHR (swapchainWrapper.VkSwapchain, UInt64.MaxValue, context.ImageAvailableSemaphore_, VkFence.Null, &imageIndex)
             Hl.setImageIndex imageIndex
             match result with
             | VkResult.ErrorOutOfDateKHR -> true // recreate when swapchain is out of date
