@@ -1086,7 +1086,6 @@ module WorldModule2 =
         static member private processWindowResizePositive (windowSize : Vector2i) (world : World) =
 
             // validate and normalize display configuration
-            let windowSize = World.getWindowSizeOtherwiseViewportSize world
             let virtualSize = World.getDisplayVirtualResolution world
             if virtualSize.X <= 0 || virtualSize.Y <= 0 then
                 Log.error ("Display virtual resolution must be positive, but was " + string virtualSize.X + "x" + string virtualSize.Y + ".")
