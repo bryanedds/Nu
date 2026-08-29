@@ -810,7 +810,7 @@ type [<ReferenceEquality>] VulkanContext =
                     let mutable renderFinishedSemaphore = swapchainWrapper.RenderFinishedSemaphore
                     submitInfo.signalSemaphoreCount <- 1u
                     submitInfo.pSignalSemaphores <- &&renderFinishedSemaphore
-                | None -> Log.warn "Swapchain wrapper absent."
+                | None -> Log.info "Swapchain wrapper absent."
                 DeviceApi.vkQueueSubmit (vkQueue, 1u, &&submitInfo, context.RenderFence_) |> Hl.check
 
             // advance cursor
@@ -834,9 +834,9 @@ type [<ReferenceEquality>] VulkanContext =
                         | Some swapExtent when swapExtent = swapchainWrapper.SwapExtent -> op swapchainWrapper // perform operation
                         | Some _ | None -> true // recreate when swap extent is invalid
                     | None -> true // recreate when surface is absent
-                 | None -> Log.warn "Swapchain wrapper absent."; true // recreate when swapchain is absent
+                 | None -> Log.info "Swapchain wrapper absent."; true // recreate when swapchain is absent
         if shouldRecreate then
-            Log.warn "Recreating swapchain..."
+            Log.info "Recreating swapchain..."
             Swapchain.tryRecreate context.PhysicalDevice_ context.RenderQueue_ context.PresentQueue_ context.Swapchain_ context.Instance_
 
     /// Begin the frame.
