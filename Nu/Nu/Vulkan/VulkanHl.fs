@@ -356,7 +356,7 @@ module Hl =
         if int result > 0 then Log.info ("Vulkan info: " + string result)
         elif int result < 0 then
             let message = "Vulkan assertion failed due to: " + string result
-            Log.error message
+            Log.warn message
 
     /// Generate a globally unique texture id for use in descriptor writes.
     let internal genTextureId () =

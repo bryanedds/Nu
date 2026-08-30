@@ -488,7 +488,7 @@ type [<ReferenceEquality>] VulkanContext =
             | VkDebugUtilsMessageSeverityFlagsEXT.Verbose -> Log.info message
             | VkDebugUtilsMessageSeverityFlagsEXT.Info -> Log.info message
             | VkDebugUtilsMessageSeverityFlagsEXT.Warning -> Log.warn message
-            | VkDebugUtilsMessageSeverityFlagsEXT.Error -> Log.error message
+            | VkDebugUtilsMessageSeverityFlagsEXT.Error -> Log.warn message
             | _ -> Log.info message
 
         // finish passively
