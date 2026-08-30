@@ -5,14 +5,12 @@
 // See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace SandBox2d.Tests
-
 open System
 open System.Numerics
 open Box2D.NET
 open NUnit.Framework
 open Nu
 open SandBox2d
-
 module RagdollPhysicsTests =
 
     type private Metrics =
@@ -21,10 +19,10 @@ module RagdollPhysicsTests =
           FinalAnchorError : single
           PeakAnchorError : single }
 
-    let private meter = Constants.Engine.Meter2d
+    let private Meter = Constants.Engine.Meter2d
 
     let private toPhysics (position : Vector3) =
-        B2Vec2 (position.X / meter, position.Y / meter)
+        B2Vec2 (position.X / Meter, position.Y / Meter)
 
     let private step count world =
         for _ in 1 .. count do
@@ -39,8 +37,8 @@ module RagdollPhysicsTests =
     let private addCapsule body width height =
         let mutable shapeDefinition = B2Types.b2DefaultShapeDef ()
         shapeDefinition.density <- 1f
-        let radius = height / (2f * meter)
-        let halfSegment = (width - height) / (2f * meter)
+        let radius = height / (2f * Meter)
+        let halfSegment = (width - height) / (2f * Meter)
         let mutable capsule =
             B2Capsule (B2Vec2 (-halfSegment, 0f), B2Vec2 (halfSegment, 0f), radius)
         B2Shapes.b2CreateCapsuleShape (body, &shapeDefinition, &capsule) |> ignore
@@ -86,7 +84,7 @@ module RagdollPhysicsTests =
                 jointDefinition.``base``.localFrameA.p <- localA
                 jointDefinition.``base``.localFrameB.p <- localB
                 jointDefinition.``base``.collideConnected <- true
-                jointDefinition.length <- 4f / meter
+                jointDefinition.length <- 4f / Meter
                 jointDefinition.enableSpring <- true
                 jointDefinition.hertz <- 25f
                 jointDefinition.dampingRatio <- 1f

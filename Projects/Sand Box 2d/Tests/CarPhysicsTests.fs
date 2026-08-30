@@ -5,17 +5,15 @@
 // See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace SandBox2d.Tests
-
 open System
 open System.Numerics
 open Box2D.NET
 open NUnit.Framework
 open Nu
 open SandBox2d
-
 module CarPhysicsTests =
 
-    let private meter = Constants.Engine.Meter2d
+    let private Meter = Constants.Engine.Meter2d
 
     let private step count world =
         for _ in 1 .. count do
@@ -43,9 +41,9 @@ module CarPhysicsTests =
         let points =
             Sandbox2dGeometry.CarContour
             |> Array.map (fun point ->
-                (point - Sandbox2dGeometry.CarContourBounds.Center)
-                * Sandbox2dGeometry.RaceCourseScale
-                / meter)
+                (point - Sandbox2dGeometry.CarContourBounds.Center) *
+                Sandbox2dGeometry.RaceCourseScale /
+                Meter)
             |> Array.map (fun point -> B2Vec2 (point.X, point.Y))
         let mutable hull = B2Hulls.b2ComputeHull (points.AsSpan (), points.Length)
         let mutable polygon = B2Geometries.b2MakePolygon (&hull, 0f)
@@ -56,15 +54,13 @@ module CarPhysicsTests =
 
     let private createWheel (world : B2WorldId) (car : B2BodyId) (spawnPosition : B2Vec2)
         (position, density, frequency, friction, maxTorque, isMotor) =
-        let offset =
-            Sandbox2dGeometry.carWheelOffset position 0f
-            / meter
+        let offset = Sandbox2dGeometry.carWheelOffset position 0f / Meter
         let wheelPosition = B2Vec2 (spawnPosition.X + offset.X, spawnPosition.Y + offset.Y)
         let wheel = createBody world B2BodyType.b2_dynamicBody wheelPosition
         let mutable shapeDefinition = B2Types.b2DefaultShapeDef ()
         shapeDefinition.density <- density * 2f
         shapeDefinition.material.friction <- friction
-        let mutable circle = B2Circle (B2MathFunction.b2Vec2_zero, Sandbox2dGeometry.CarWheelRadius / meter)
+        let mutable circle = B2Circle (B2MathFunction.b2Vec2_zero, Sandbox2dGeometry.CarWheelRadius / Meter)
         B2Shapes.b2CreateCircleShape (wheel, &shapeDefinition, &circle) |> ignore
 
         let mutable jointDefinition = B2Joints.b2DefaultWheelJointDef ()
@@ -93,7 +89,7 @@ module CarPhysicsTests =
                 |> fun offset -> offset.Y
             let spawnHeight =
                 Sandbox2dGeometry.carSpawnHeight 0f rearOffsetY Sandbox2dGeometry.CarWheelRadius
-                / meter
+                / Meter
             let chassis = createBody world B2BodyType.b2_dynamicBody (B2Vec2 (0f, spawnHeight))
             addCarPolygon chassis
 
@@ -111,7 +107,7 @@ module CarPhysicsTests =
             let chassisVelocity = B2Bodies.b2Body_GetLinearVelocity chassis
             let rearWheelBottom =
                 B2Bodies.b2Body_GetPosition wheels[0]
-                |> fun position -> position.Y - Sandbox2dGeometry.CarWheelRadius / meter
+                |> fun position -> position.Y - Sandbox2dGeometry.CarWheelRadius / Meter
             let rotation = B2Bodies.b2Body_GetRotation chassis
             (abs (MathF.Atan2 (rotation.s, rotation.c)), rearWheelBottom, abs chassisVelocity.X)
         finally

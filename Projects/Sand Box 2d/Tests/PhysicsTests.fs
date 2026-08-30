@@ -5,13 +5,11 @@
 // See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace SandBox2d.Tests
-
 open System
 open Box2D.NET
 open NUnit.Framework
 open Nu
 open SandBox2d
-
 module PhysicsTests =
 
     let private step count world =

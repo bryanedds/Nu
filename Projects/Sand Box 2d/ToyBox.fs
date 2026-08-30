@@ -313,7 +313,7 @@ type ToyBoxDispatcher () =
             World.doBodyJoint2d $"{n2} Link"
                 [Entity.BodyJointTarget .= Address.makeFromString $"^/{n1}"
                  Entity.BodyJointTarget2 .= Address.makeFromString $"^/{n2}"
-                 // Adjacent links already meet at the hinge anchor; collision impulses would fight the constraint.
+                 // adjacent links already meet at the hinge anchor; collision impulses would fight the constraint.
                  Entity.CollideConnected .= Sandbox2dGeometry.BridgeCollideConnected
                  Entity.BodyJoint @= Box2dNetBodyJoint { CreateBodyJoint = fun _ _ a b world ->
                     // a revolute joint is like a hinge or pin, where two bodies rotate about a common point. in this
@@ -322,8 +322,7 @@ type ToyBoxDispatcher () =
                     let mutable jointDef = B2Joints.b2DefaultRevoluteJointDef ()
                     jointDef.``base``.bodyIdA <- a
                     jointDef.``base``.bodyIdB <- b
-                    let anchor =
-                        (B2Bodies.b2Body_GetPosition a + B2Bodies.b2Body_GetPosition b) * 0.5f
+                    let anchor = (B2Bodies.b2Body_GetPosition a + B2Bodies.b2Body_GetPosition b) * 0.5f
                     jointDef.``base``.localFrameA.p <- B2Bodies.b2Body_GetLocalPoint (a, anchor)
                     jointDef.``base``.localFrameB.p <- B2Bodies.b2Body_GetLocalPoint (b, anchor)
                     B2Joints.b2CreateRevoluteJoint (world, &jointDef) }] world |> ignore

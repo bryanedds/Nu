@@ -5,13 +5,12 @@
 // See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace SandBox2d.Tests
-
 open System
 open System.Numerics
 open NUnit.Framework
 open SandBox2d
-
 module GeometryTests =
+
     [<Test>]
     let ``Bridge endpoints are separated by the requested minimum span`` () =
         let (first, last) = Sandbox2dGeometry.bridgeEndpoints Vector3.Zero Vector2.Zero
