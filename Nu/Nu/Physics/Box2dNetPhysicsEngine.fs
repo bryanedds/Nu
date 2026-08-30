@@ -455,22 +455,26 @@ type private Box2dNetFluidEmitter =
             let pos = B2Bodies.b2Body_GetPosition state.Body
             if aabb.lowerBound.X > pos.X || aabb.upperBound.X < pos.X || aabb.lowerBound.Y > pos.Y || aabb.upperBound.Y < pos.Y then
                 fluidEmitter.RemovedIndexes.Add i
-        let removedParticles =
-            if fluidEmitter.RemovedIndexes.Count = 0
-            then SArray.empty
-            else SArray.zeroCreate fluidEmitter.RemovedIndexes.Count
-        for j in 0 .. dec removedParticles.Length do
-            let i = fluidEmitter.RemovedIndexes[j]
-            removedParticles[j] <- fromFluid fluidEmitter.States[i]
-        Box2dNetFluidEmitter.processRemovedIndexes fluidEmitter
+        if fluidEmitter.FluidEmitterDescriptor.MessagesEnabled then
+            let removedParticles =
+                if fluidEmitter.RemovedIndexes.Count = 0
+                then SArray.empty
+                else SArray.zeroCreate fluidEmitter.RemovedIndexes.Count
+            for j in 0 .. dec removedParticles.Length do
+                let i = fluidEmitter.RemovedIndexes[j]
+                removedParticles[j] <- fromFluid fluidEmitter.States[i]
+            Box2dNetFluidEmitter.processRemovedIndexes fluidEmitter
 
-        // collect current particles
-        let particles = SArray.zeroCreate fluidEmitter.StateCount
-        for i in 0 .. dec fluidEmitter.StateCount do
-            particles[i] <- fromFluid fluidEmitter.States[i]
+            // collect current particles
+            let particles = SArray.zeroCreate fluidEmitter.StateCount
+            for i in 0 .. dec fluidEmitter.StateCount do
+                particles[i] <- fromFluid fluidEmitter.States[i]
 
-        // fin
-        struct (particles, removedParticles)
+            Some (struct (particles, removedParticles))
+        else
+            // Keep simulation state current without allocating integration payloads.
+            Box2dNetFluidEmitter.processRemovedIndexes fluidEmitter
+            None
 
     static member make descriptor physicsContextId bodySource =
         { FluidEmitterDescriptor = descriptor
@@ -1912,12 +1916,14 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
 
                 // collect fluid emitter results
                 for KeyValue (emitterId, emitter) in physicsEngine.FluidEmitters do
-                    let struct (particles, removedParticles) = Box2dNetFluidEmitter.postStep emitter
-                    physicsEngine.IntegrationMessages.Add
-                        (FluidEmitterMessage
-                            { FluidEmitterId = emitterId
-                              FluidParticles = particles
-                              OutOfBoundsParticles = removedParticles })
+                    match Box2dNetFluidEmitter.postStep emitter with
+                    | Some (struct (particles, removedParticles)) ->
+                        physicsEngine.IntegrationMessages.Add
+                            (FluidEmitterMessage
+                                { FluidEmitterId = emitterId
+                                  FluidParticles = particles
+                                  OutOfBoundsParticles = removedParticles })
+                    | None -> ()
                 
                 // collect joint breaks
                 for KeyValue (jointId, breakableJoint) in physicsEngine.BreakableJoints do

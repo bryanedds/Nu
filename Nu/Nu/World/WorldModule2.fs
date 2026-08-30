@@ -1279,7 +1279,7 @@ module WorldModule2 =
                         if entity.GetExists world && entity.GetSelected world then
                             entity.SetXtensionPropertyWithoutEvent "FluidParticles" fluidEmitterMessage.FluidParticles world
                             let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
-                            World.publishPlus fluidEmitterMessage entity.FluidEmitterUpdateEvent eventTrace entity false false world
+                            World.publishPlus fluidEmitterMessage entity.FluidEmitterEvent eventTrace entity false false world
                     | _ -> ()
 
         /// Sweep the quadtree clean of all empty nodes.
