@@ -777,7 +777,7 @@ type [<ReferenceEquality>] VulkanContext =
 
     static member private endRenderCommandBuffer waitForSwapchainImage signalRender context =
 
-        // lock to get access to vulkan queue
+        // lock to get access to vulkan queue then submit it
         ConcurrentCommandQueue.withLock context.RenderQueue_ $ fun vkQueue ->
 
             // end command buffer
@@ -814,8 +814,8 @@ type [<ReferenceEquality>] VulkanContext =
             // submit commands
             DeviceApi.vkQueueSubmit (vkQueue, 1u, &&submitInfo, renderFenceOpt) |> Hl.check
 
-            // advance cursor
-            context.RenderCommandBuffersCursor_ <- inc context.RenderCommandBuffersCursor_
+        // advance cursor
+        context.RenderCommandBuffersCursor_ <- inc context.RenderCommandBuffersCursor_
 
     /// Indicate that the current render command buffer is ready for submission and a new one shall be started.
     static member advanceRenderCommandBuffer context =
