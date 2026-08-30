@@ -801,7 +801,7 @@ type [<ReferenceEquality>] VulkanContext =
                 submitInfo.pWaitSemaphores <- &&swapchainImageSemaphoreOpt
                 submitInfo.pWaitDstStageMask <- &&stageFlagOpt
                 
-            // optionally signal rendering finished
+            // optionally signal render semaphore and fence
             if signalRender then
                 match context.SwapchainWrapperOpt with
                 | Some swapchainWrapper ->
