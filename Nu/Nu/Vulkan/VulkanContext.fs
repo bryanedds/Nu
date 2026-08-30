@@ -808,7 +808,7 @@ type [<ReferenceEquality>] VulkanContext =
                     renderSemaphoreOpt <- swapchainWrapper.RenderSemaphore
                     submitInfo.signalSemaphoreCount <- 1u
                     submitInfo.pSignalSemaphores <- &&renderSemaphoreOpt
-                | None -> Log.info "Swapchain wrapper absent."
+                | None -> ()
                 renderFenceOpt <- context.RenderFence_
 
             // submit commands
@@ -834,7 +834,7 @@ type [<ReferenceEquality>] VulkanContext =
                         | Some swapExtent when swapExtent = swapchainWrapper.SwapExtent -> op swapchainWrapper // perform operation
                         | Some _ | None -> true // recreate when swap extent is invalid
                     | None -> true // recreate when surface is absent
-                 | None -> Log.info "Swapchain wrapper absent."; true // recreate when swapchain is absent
+                 | None -> true // recreate when swapchain is absent
         if shouldRecreate then
             Log.info "Recreating swapchain..."
             Swapchain.tryRecreate context.PhysicalDevice_ context.RenderQueue_ context.PresentQueue_ context.Swapchain_ context.Instance_
