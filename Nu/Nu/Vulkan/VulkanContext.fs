@@ -872,7 +872,7 @@ type [<ReferenceEquality>] VulkanContext =
         let mutable subresourceRange = Hl.makeSubresourceRange 0 1 0 1 VkImageAspectFlags.Color
         DeviceApi.vkCmdClearColorImage (context.RenderCommandBuffer, resolveImage, TransferDst.VkImageLayout, &&clearColorValue, 1u, &&subresourceRange)
 
-        // make resolve texture ready for rendering
+        // begin main rendering path by making resolve texture ready for rendering
         Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color TransferDst ColorAttachmentWrite resolveImage context.RenderCommandBuffer
 
     /// End the frame.
