@@ -1253,7 +1253,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     let fsprojFileLines = // TODO: P1: consider loading these references from Nu.fsproj.
                         [|"""<PackageReference Include="Aether.Physics2D" Version="2.2.0" />"""
                           """<PackageReference Include="AstcEncoderCSharp" Version="5.5.0" />"""
-                          """<PackageReference Include="Box2D.NET" Version="3.1.1.557" />"""
+                          """<PackageReference Include="Box2D.NET" Version="3.1.654" />"""
                           """<PackageReference Include="BCnEncoder.Net" Version="2.2.1" />"""
                           """<PackageReference Include="DotRecast.Recast.Toolset" Version="2026.1.1" />"""
                           """<PackageReference Include="JoltPhysicsSharp" Version="2.19.5" />"""

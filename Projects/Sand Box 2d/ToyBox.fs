@@ -267,7 +267,9 @@ type ToyBoxDispatcher () =
                 // the frame rotation provides the local x and y axes. it lets you define a joint where the angle is not initially zero.
                 // for a prismatic joint, the local x-axis defines the sliding axis.
                 // frames apply rotation first. in other words, the frame rotation does not affect the position.
-                jointDef.``base``.localFrameA.q <- toPhysicsV2 direction |> B2MathFunction.b2Normalize |> B2MathFunction.b2MakeRotFromUnitVector
+                let mutable axis = toPhysicsV2 direction
+                let mutable axisNormalized = B2MathFunction.b2Normalize &axis
+                jointDef.``base``.localFrameA.q <- B2MathFunction.b2MakeRotFromUnitVector &axisNormalized
                 jointDef.``base``.localFrameB.q <- jointDef.``base``.localFrameA.q // both bodies should slide along the same axis
                 B2Joints.b2CreatePrismaticJoint (world, &jointDef) }
              Entity.BodyJointTarget .= Address.makeFromString "^/Face 1"
@@ -656,7 +658,9 @@ type ToyBoxDispatcher () =
                         jointDef.``base``.bodyIdA <- a
                         jointDef.``base``.bodyIdB <- b
                         // set the length to be based on initial position, otherwise the default length will be used
-                        jointDef.length <- B2MathFunction.b2Distance (B2Bodies.b2Body_GetPosition a, B2Bodies.b2Body_GetPosition b)
+                        let mutable positionA = B2Bodies.b2Body_GetPosition a
+                        let mutable positionB = B2Bodies.b2Body_GetPosition b
+                        jointDef.length <- B2MathFunction.b2Distance (&positionA, &positionB)
                         jointDef.enableSpring <- true
                         jointDef.hertz <- (if layer = dec numLayers then 8f else 4f) / objectScale
                         jointDef.dampingRatio <- 0.5f
