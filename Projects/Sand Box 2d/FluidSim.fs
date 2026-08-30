@@ -381,11 +381,11 @@ type FluidSimDispatcher () =
                     // emit particles
                     World.emitFluidParticles particles fluidEmitterId world
                 | (Bubble, (true, _)) ->
-                    // summon a bubble
+                    // MouseBubbleSize is the radius in pixels; Entity.Size is a diameter.
                     fluidSim.MouseBubbleSize.Map inc world
                     World.doOrbBody2d "Bubble"
                         [Entity.Position @= mousePosition.V3
-                         Entity.Size @= v3Dup (fluidSim.GetMouseBubbleSize world)
+                         Entity.Size @= v3Dup (Sandbox2dGeometry.bubbleDiameter (fluidSim.GetMouseBubbleSize world))
                          Entity.StaticImage .= Assets.Gameplay.BubbleImage] world |> ignore
                 | (Bubble, (false, _)) when World.isMouseButtonReleased MouseLeft world -> // the feeler detects only presses, not releases.
                     // reset size when mouse left button is just released

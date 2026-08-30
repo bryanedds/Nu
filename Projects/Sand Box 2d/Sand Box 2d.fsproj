@@ -11,6 +11,7 @@
 		<None Include="Assets\*\*" />
 		<Compile Include="Assets.fs" />
 		<Compile Include="Simulants.fs" />
+		<Compile Include="Sandbox2dGeometry.fs" />
 		<Compile Include="ToyCharacter.fs" />
 		<Compile Include="ToyBox.fs" />
 		<Compile Include="RaceCourse.fs" />
