@@ -787,11 +787,12 @@ type [<ReferenceEquality>] VulkanRenderer2d =
 
                                 // render only when a valid surface was created
                                 if NativePtr.notNullPtr textSurfacePtr then
-                                    let textSurface = NativePtr.toByRef textSurfacePtr
 
                                     // construct mvp matrix
+                                    let textSurface = NativePtr.toByRef textSurfacePtr
                                     let textSurfaceWidth = textSurface.pitch / 4 // NOTE: textSurface.w may be an innacurate representation of texture width in SDL2_ttf versions beyond v2.0.15 because... I don't know why.
                                     let textSurfaceHeight = textSurface.h
+
                                     // create and load texture
                                     let metadata = TextureMetadata.make textSurfaceWidth textSurfaceHeight
                                     let textTextureInternal =
@@ -965,11 +966,11 @@ type [<ReferenceEquality>] VulkanRenderer2d =
 
     /// Make a VulkanRenderer2d.
     static member make viewport resolveTexture (context : VulkanContext) =
-        
+
         // create samplers
         let unfilteredSampler = Sampler.create VkSamplerAddressMode.Repeat VkFilter.Nearest VkFilter.Nearest false context
         let filteredSampler = Sampler.create VkSamplerAddressMode.Repeat VkFilter.Linear VkFilter.Linear true context
-        
+
         // create text resources
         let spriteSingletonPipeline = SpriteSingleton.createSpriteSingletonPipeline resolveTexture context
         let textQuad = SpriteSingleton.createSpriteQuad true context
@@ -980,7 +981,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
 
         // create contour pipeline (Slug analytic coverage)
         let contourPipeline = Contour.createPipeline resolveTexture context
-        
+
         // make renderer
         let renderer =
             { Viewport = viewport
@@ -998,20 +999,20 @@ type [<ReferenceEquality>] VulkanRenderer2d =
               LayeredOperations = List ()
               TextureDumpster = textureDumpster
               VulkanContext = context }
-        
+
         // fin
         renderer
     
     interface Renderer2d with
-        
+
         member renderer.PreRender eyeCenter eyeSize viewport renderMessages =
             VulkanRenderer2d.preRender eyeCenter eyeSize viewport renderMessages renderer
-        
+
         member renderer.Render eyeCenter eyeSize viewport resolveTexture =
             VulkanRenderer2d.render eyeCenter eyeSize viewport resolveTexture renderer
-        
+
         member renderer.CleanUp () =
-            
+
             // destroy vulkan resources
             let (_, _, spritePipeline) = renderer.SpritePipeline
             let (textVertexBuffer, textIndexBuffer) = renderer.TextQuad
