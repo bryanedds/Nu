@@ -859,9 +859,6 @@ type [<ReferenceEquality>] VulkanContext =
         // reset draw counters
         Hl.resetDrawCounters ()
 
-        // attempt to recreate the swapchain when needed
-        VulkanContext.withSwapchainWrapper context absurdity
-
         // begin render command recording
         VulkanContext.beginRenderCommandBuffer context
 
