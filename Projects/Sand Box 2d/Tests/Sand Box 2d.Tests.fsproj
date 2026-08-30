@@ -10,8 +10,8 @@
         <Compile Include="Sandbox2dPhysicsTests.fs" />
         <Compile Include="Sandbox2dRagdollPhysicsTests.fs" />
         <Compile Include="Sandbox2dCarPhysicsTests.fs" />
-        <ProjectReference Include="../../Nu/Nu/Nu.fsproj" />
-        <ProjectReference Include="../Sand Box 2d/Sand Box 2d.fsproj" />
+        <ProjectReference Include="../../../Nu/Nu/Nu.fsproj" />
+        <ProjectReference Include="../Sand Box 2d.fsproj" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
         <PackageReference Include="NUnit" Version="3.14.0" />
         <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />

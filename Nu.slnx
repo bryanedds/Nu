@@ -61,7 +61,7 @@
     <Project Path="Projects/Sand Box 2d/Sand Box 2d.fsproj">
       <BuildType Solution="Mixed|*" Project="Debug" />
     </Project>
-    <Project Path="Projects/Sand Box 2d.Tests/Sand Box 2d.Tests.fsproj">
+    <Project Path="Projects/Sand Box 2d/Tests/Sand Box 2d.Tests.fsproj">
       <BuildType Solution="Mixed|*" Project="Debug" />
     </Project>
     <Project Path="Projects/Sand Box 3d/Sand Box 3d.fsproj">
