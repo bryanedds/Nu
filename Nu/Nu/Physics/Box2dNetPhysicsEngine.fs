@@ -192,6 +192,7 @@ type private Box2dNetFluidEmitter =
         elif fluidEmitter.FluidEmitterDescriptor.ParticlesMax <> descriptor.ParticlesMax then // update state array size
             let newEmitter = Box2dNetFluidEmitter.make descriptor fluidEmitter.PhysicsContextId fluidEmitter.BodySource
             Box2dNetFluidEmitter.addParticles (Seq.init fluidEmitter.StateCount (fun i -> fromFluid fluidEmitter.States[i]) |> _.GetEnumerator()) newEmitter
+            Box2dNetFluidEmitter.clearParticles fluidEmitter
             newEmitter
         elif fluidEmitter.FluidEmitterDescriptor.Configs <> descriptor.Configs then
             let newEmitter = { fluidEmitter with FluidEmitterDescriptor = descriptor }
@@ -1249,7 +1250,11 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
         | _ -> () // unsupported. Log?
 
     static member private destroyFluidEmitter (destroyFluidEmitterMessage : DestroyFluidEmitterMessage) physicsEngine =
-        physicsEngine.FluidEmitters.Remove destroyFluidEmitterMessage.FluidEmitterId |> ignore<bool>
+        match physicsEngine.FluidEmitters.TryGetValue destroyFluidEmitterMessage.FluidEmitterId with
+        | (true, emitter) ->
+            Box2dNetFluidEmitter.clearParticles emitter
+            physicsEngine.FluidEmitters.Remove destroyFluidEmitterMessage.FluidEmitterId |> ignore<bool>
+        | (false, _) -> ()
 
     static member private setBodyEnabled (setBodyEnabledMessage : SetBodyEnabledMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyEnabledMessage.BodyId with
