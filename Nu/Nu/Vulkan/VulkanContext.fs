@@ -36,7 +36,7 @@ type [<ReferenceEquality>] ConcurrentCommandQueue =
     /// between threads!
     static member runTransient commandBuffer commandPool finishFence (commandQueue : ConcurrentCommandQueue) =
 
-        // lock to get access to vulkan queue
+        // lock to get access to vulkan queue then run commands
         let mutable commandBuffer = commandBuffer
         let mutable finishFence = finishFence
         ConcurrentCommandQueue.withLock commandQueue $ fun vkQueue ->
@@ -913,11 +913,11 @@ type [<ReferenceEquality>] VulkanContext =
     /// Present the image back to the swapchain to appear on screen.
     static member present (context : VulkanContext) =
 
-        // lock to get access to vulkan queue
-        ConcurrentCommandQueue.withLock context.PresentQueue_ $ fun vkQueue ->
+        // attempt to await render semaphore and then present image
+        VulkanContext.withSwapchainWrapper context $ fun swapchainWrapper ->
 
-            // attempt to await render semaphore and then present image
-            VulkanContext.withSwapchainWrapper context $ fun swapchainWrapper ->
+            // lock to get access to vulkan queue then present it
+            ConcurrentCommandQueue.withLock context.PresentQueue_ $ fun vkQueue ->
                 let mutable renderSemaphore = swapchainWrapper.RenderSemaphore
                 let mutable vkSwapchain = swapchainWrapper.VkSwapchain
                 let mutable imageIndex = Hl.ImageIndex
