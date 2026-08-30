@@ -12,7 +12,7 @@ open NUnit.Framework
 open Nu
 open SandBox2d
 
-module Sandbox2dPhysicsTests =
+module PhysicsTests =
 
     let private step count world =
         for _ in 1 .. count do
@@ -64,7 +64,7 @@ module Sandbox2dPhysicsTests =
                            (Sandbox2dGeometry.BridgeLinkThickness / Constants.Engine.Meter2d / 2f) 1f
                        B2Bodies.b2Body_SetAngularVelocity (link, if index % 2 = 0 then 1.5f else -1.5f)
                        link |]
-            let joints = ResizeArray<_>()
+            let joints = ResizeArray<_> ()
 
             let createRevoluteJoint bodyA bodyB anchorX =
                 let mutable definition = B2Joints.b2DefaultRevoluteJointDef ()
@@ -93,14 +93,14 @@ module Sandbox2dPhysicsTests =
                 joints
                 |> Seq.map (fun (bodyA, bodyB, localA, localB) -> jointError bodyA bodyB localA localB)
                 |> Seq.max
-            maximumSpeed, maximumError, transientSpeed
+            (maximumSpeed, maximumError, transientSpeed)
         finally
             B2Worlds.b2DestroyWorld world
 
     [<Test>]
-    let ``production bridge chain settles with collision disabled`` () =
-        let speed, error, transient = simulateBridge Sandbox2dGeometry.BridgeCollideConnected
-        let controlSpeed, controlError, controlTransient = simulateBridge true
+    let ``Production bridge chain settles with collision disabled`` () =
+        let (speed, error, transient) = simulateBridge Sandbox2dGeometry.BridgeCollideConnected
+        let (controlSpeed, controlError, controlTransient) = simulateBridge true
         let message =
             $"bridge production speed={speed} error={error} transient={transient}; " +
             $"control speed={controlSpeed} error={controlError} transient={controlTransient}"

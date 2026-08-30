@@ -3,13 +3,15 @@
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
         <IsTestProject>true</IsTestProject>
+        <WarnOn>FS1182</WarnOn>
+        <WarningLevel>5</WarningLevel>
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="Sandbox2dGeometryTests.fs" />
-        <Compile Include="Sandbox2dPhysicsTests.fs" />
-        <Compile Include="Sandbox2dRagdollPhysicsTests.fs" />
-        <Compile Include="Sandbox2dCarPhysicsTests.fs" />
+        <Compile Include="GeometryTests.fs" />
+        <Compile Include="PhysicsTests.fs" />
+        <Compile Include="RagdollPhysicsTests.fs" />
+        <Compile Include="CarPhysicsTests.fs" />
         <ProjectReference Include="../../../Nu/Nu/Nu.fsproj" />
         <ProjectReference Include="../Sand Box 2d.fsproj" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />

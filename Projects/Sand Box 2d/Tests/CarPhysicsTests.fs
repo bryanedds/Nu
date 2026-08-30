@@ -13,7 +13,7 @@ open NUnit.Framework
 open Nu
 open SandBox2d
 
-module Sandbox2dCarPhysicsTests =
+module CarPhysicsTests =
 
     let private meter = Constants.Engine.Meter2d
 
@@ -80,7 +80,7 @@ module Sandbox2dCarPhysicsTests =
         jointDefinition.motorSpeed <- 0f
         jointDefinition.maxMotorTorque <- maxTorque
         let jointId = B2Joints.b2CreateWheelJoint (world, &jointDefinition)
-        wheel, jointId
+        (wheel, jointId)
 
     let private runCar motorSpeed =
         let world = createWorld ()
@@ -113,14 +113,14 @@ module Sandbox2dCarPhysicsTests =
                 B2Bodies.b2Body_GetPosition wheels[0]
                 |> fun position -> position.Y - Sandbox2dGeometry.CarWheelRadius / meter
             let rotation = B2Bodies.b2Body_GetRotation chassis
-            abs (MathF.Atan2 (rotation.s, rotation.c)), rearWheelBottom, abs chassisVelocity.X
+            (abs (MathF.Atan2 (rotation.s, rotation.c)), rearWheelBottom, abs chassisVelocity.X)
         finally
             B2Worlds.b2DestroyWorld world
 
     [<Test>]
-    let ``production car motor avoids high speed instability`` () =
-        let pitch, rearClearance, velocity = runCar Sandbox2dGeometry.CarMotorSpeedMax
-        let oldPitch, oldRearClearance, oldVelocity = runCar 50f
+    let ``Production car motor avoids high speed instability`` () =
+        let (pitch, rearClearance, velocity) = runCar Sandbox2dGeometry.CarMotorSpeedMax
+        let (oldPitch, oldRearClearance, oldVelocity) = runCar 50f
         Console.WriteLine (
             $"car production pitch={pitch} rear clearance={rearClearance} velocity={velocity}; "
             + $"old pitch={oldPitch} rear clearance={oldRearClearance} velocity={oldVelocity}")

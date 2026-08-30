@@ -13,7 +13,7 @@ open NUnit.Framework
 open Nu
 open SandBox2d
 
-module Sandbox2dRagdollPhysicsTests =
+module RagdollPhysicsTests =
 
     type private Metrics =
         { InitialEnergy : single
@@ -128,7 +128,7 @@ module Sandbox2dRagdollPhysicsTests =
             B2Worlds.b2DestroyWorld world
 
     [<Test>]
-    let ``right upper arm anchor preserves authored increment`` () =
+    let ``Right upper arm anchor preserves authored increment`` () =
         let anchor =
             Sandbox2dGeometry.limbJointAnchor
                 (v3 120f 80f 0f)
@@ -137,7 +137,7 @@ module Sandbox2dRagdollPhysicsTests =
         Assert.That (anchor, Is.EqualTo (v3 142f 120f 0f))
 
     [<Test>]
-    let ``right upper arm revolute joint remains stable after perturbation`` () =
+    let ``Right upper arm revolute joint remains stable after perturbation`` () =
         let production = runFixture true
         let oldControl = runFixture false
         Console.WriteLine
