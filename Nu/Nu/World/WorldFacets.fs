@@ -1705,6 +1705,9 @@ module FluidEmitter2dFacetExtensions =
         member this.GetFluidEnabled world : bool = this.Get (nameof Entity.FluidEnabled) world
         member this.SetFluidEnabled (value : bool) world = this.Set (nameof Entity.FluidEnabled) value world
         member this.FluidEnabled = lens (nameof Entity.FluidEnabled) this this.GetFluidEnabled this.SetFluidEnabled
+        member this.GetFluidEmitterMessagesEnabled world : bool = this.Get (nameof Entity.FluidEmitterMessagesEnabled) world
+        member this.SetFluidEmitterMessagesEnabled (value : bool) world = this.Set (nameof Entity.FluidEmitterMessagesEnabled) value world
+        member this.FluidEmitterMessagesEnabled = lens (nameof Entity.FluidEmitterMessagesEnabled) this this.GetFluidEmitterMessagesEnabled this.SetFluidEmitterMessagesEnabled
         member this.GetFluidParticles world : FluidParticle SArray = this.Get (nameof Entity.FluidParticles) world
         member this.SetFluidParticles (value : FluidParticle SArray) world = this.Set (nameof Entity.FluidParticles) value world
         member this.FluidParticles = lens (nameof Entity.FluidParticles) this this.GetFluidParticles this.SetFluidParticles
@@ -1730,6 +1733,7 @@ type FluidEmitter2dFacet () =
                     ParticlesMax = entity.GetFluidParticlesMax world
                     CellSize = entity.GetFluidCellSize world
                     Enabled = entity.GetFluidEnabled world
+                    MessagesEnabled = entity.GetFluidEmitterMessagesEnabled world
                     SimulationBounds = (entity.GetBounds world).Box2
                     Gravity = entity.GetGravity world }
         | _ -> failwithumf ()
@@ -1744,6 +1748,7 @@ type FluidEmitter2dFacet () =
 
     static member Properties =
         [define Entity.FluidEnabled true
+         define Entity.FluidEmitterMessagesEnabled true
          define Entity.FluidParticles SArray.empty
          define Entity.FluidParticlesMax 20000
          define Entity.FluidCellSize 20.0f
@@ -1755,6 +1760,7 @@ type FluidEmitter2dFacet () =
         // update fluid emitter when any of the descriptor properties is set
         for event in
             [emitter.FluidEnabled.ChangeEvent
+             emitter.FluidEmitterMessagesEnabled.ChangeEvent
              emitter.FluidParticlesMax.ChangeEvent
              emitter.FluidCellSize.ChangeEvent
              emitter.Bounds.ChangeEvent
