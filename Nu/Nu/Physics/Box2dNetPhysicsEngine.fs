@@ -529,13 +529,11 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
 
     static member private toPhysicsPolygonDiameter value =
         let value = Box2dNetPhysicsEngine.toPhysics value
-        let linearSlop = 0.005f // Box2D default in meters; the package's scaled constant is now internal.
-        max (linearSlop * 2f) value
+        max (Constants.Physics.Collision2dLinearSlop * 2f) value
 
     static member private toPhysicsPolygonRadius value =
         let value = Box2dNetPhysicsEngine.toPhysics value
-        let linearSlop = 0.005f // Box2D default in meters; the package's scaled constant is now internal.
-        max linearSlop value
+        max Constants.Physics.Collision2dLinearSlop value
 
     static member private quatToRot (q : Quaternion) =
 

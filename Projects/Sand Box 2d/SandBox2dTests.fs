@@ -336,7 +336,7 @@ module Tests =
             ($"ragdoll production peak energy={production.PeakEnergy}; " +
              $"old control peak energy={oldControl.PeakEnergy}")
         Assert.That (production.PeakEnergy, Is.LessThanOrEqualTo (production.InitialEnergy * 1.001f))
-        Assert.That (production.PeakAnchorError, Is.LessThanOrEqualTo 0.005f) // Box2D's default linear slop in meters; the constant is now internal.
+        Assert.That (production.PeakAnchorError, Is.LessThanOrEqualTo Constants.Physics.Collision2dLinearSlop)
         Assert.That (oldControl.PeakEnergy, Is.GreaterThan (oldControl.InitialEnergy * 10f))
         Assert.That (production.PeakEnergy, Is.LessThan (oldControl.PeakEnergy * 0.1f))
 
