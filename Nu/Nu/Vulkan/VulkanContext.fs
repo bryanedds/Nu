@@ -51,7 +51,7 @@ type [<ReferenceEquality>] ConcurrentCommandQueue =
             DeviceApi.vkQueueSubmit (vkQueue, 1u, &&info, finishFence) |> Hl.check
 
             // wait for run to finish
-            // NOTE: on Android on my A17, we have to put vkWaitForFences in a loop because it will return before the given
+            // NOTE: on Android on my S17, we have to put vkWaitForFences in a loop because it will return before the given
             // timeout with a VkResult.Timeout result (which I'm not sure is standard-conformant).
             let mutable waiting = true
             while waiting do
@@ -843,7 +843,7 @@ type [<ReferenceEquality>] VulkanContext =
     static member beginFrame resolveImage context =
 
         // await render fence
-        // NOTE: on Android on my A17, we have to put vkWaitForFences in a loop because it will return before the given
+        // NOTE: on Android on my S17, we have to put vkWaitForFences in a loop because it will return before the given
         // timeout with a VkResult.Timeout result (which I'm not sure is standard-conformant).
         let mutable waiting = true
         while waiting do
