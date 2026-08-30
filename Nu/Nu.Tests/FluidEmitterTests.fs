@@ -10,19 +10,22 @@ open System.Numerics
 open NUnit.Framework
 open Prime
 open Nu
-
 module FluidEmitterTests =
+
+    // NOTE: we test Box2dNetPhysicsEngine directly instead of via the World API because only Box2DNet is going to
+    // support particles physics for the foreseeable future.
 
     let private makeParticles () =
         SArray.ofList
-            [ { FluidParticlePosition = Vector3 (0.0f, 0.0f, 0.0f)
-                FluidParticleVelocity = Vector3.Zero
-                FluidParticleConfig = "Water" }
-              { FluidParticlePosition = Vector3 (10.0f, 0.0f, 0.0f)
-                FluidParticleVelocity = Vector3.Zero
-                FluidParticleConfig = "Water" } ]
+            [{ FluidParticlePosition = v3Zero
+               FluidParticleVelocity = v3Zero
+               FluidParticleConfig = "Water" }
+             { FluidParticlePosition = v3 10.0f 0.0f 0.0f
+               FluidParticleVelocity = v3Zero
+               FluidParticleConfig = "Water" }]
 
     let [<Test>] ``Destroying a fluid emitter destroys its particle bodies.`` () =
+
         let physicsEngine = Box2dNetPhysicsEngine.make Vector3.Zero
         try
             let emitterSource = { GsgAddress = atoa (stoa "FluidEmitterTests/Emitter") } :> Simulant
@@ -50,10 +53,12 @@ module FluidEmitterTests =
 
             Assert.That (physicsEngine.GetFluidEmitterExists emitterId, Is.False)
             Assert.That (rayCast (), Is.Empty)
+
         finally
             physicsEngine.CleanUp ()
 
     let [<Test>] ``Resizing a fluid emitter destroys replaced particle bodies.`` () =
+
         let physicsEngine = Box2dNetPhysicsEngine.make Vector3.Zero
         try
             let emitterSource = { GsgAddress = atoa (stoa "FluidEmitterTests/ResizedEmitter") } :> Simulant
@@ -81,5 +86,6 @@ module FluidEmitterTests =
             Assert.That ((rayCast ()).Length, Is.EqualTo 2)
             physicsEngine.HandleMessage (DestroyFluidEmitterMessage { FluidEmitterId = emitterId })
             Assert.That (rayCast (), Is.Empty)
+
         finally
             physicsEngine.CleanUp ()

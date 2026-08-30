@@ -15,8 +15,8 @@
 		<Compile Include="CoroutineTests.fs" />
 		<Compile Include="QuadtreeTests.fs" />
 		<Compile Include="OctreeTests.fs" />
-		<Compile Include="WorldTests.fs" />
 		<Compile Include="FluidEmitterTests.fs" />
+		<Compile Include="WorldTests.fs" />
 		<Compile Include="TraversalInterpolatedFacetTests.fs" />
         <None Include="AssetGraph.nuag" />
         <None Include="Overlayer.nuol" />
