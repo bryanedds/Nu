@@ -883,7 +883,8 @@ type [<ReferenceEquality>] VulkanContext =
             match result with
             | VkResult.ErrorOutOfDateKHR -> true // recreate when swapchain is out of date
             | VkResult.ErrorSurfaceLostKHR -> Hl.notifySurfaceLost (); true // recreate when surface is lost
-            | _ -> false // no swapchain recreation
+            | VkResult.SuboptimalKHR -> false // no swapchain recreation
+            | result -> Hl.check result; false // no swapchain recreation
 
         // await swapchain image then end main rendering path
         VulkanContext.endRenderCommandBuffer true false context
@@ -929,7 +930,8 @@ type [<ReferenceEquality>] VulkanContext =
                 match DeviceApi.vkQueuePresentKHR (vkQueue, &&info) with
                 | VkResult.ErrorOutOfDateKHR -> true // recreate when swapchain is out of data
                 | VkResult.ErrorSurfaceLostKHR -> Hl.notifySurfaceLost (); true // recreate when surface is lost
-                | _ -> false // no swapchain recreation
+                | VkResult.SuboptimalKHR -> false // no swapchain recreation
+                | result -> Hl.check result; false // no swapchain recreation
 
     /// Wait for all device operations to complete before cleaning up resources.
     static member waitIdle context =
