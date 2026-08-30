@@ -2,6 +2,7 @@
 
 	<PropertyGroup>
 		<TargetFramework>net10.0</TargetFramework>
+        <GenerateProgramFile>False</GenerateProgramFile> <!-- TODO: move into Nu.Targets for everything? -->
 	</PropertyGroup>
 
 	<Import Project="../../Nu/Nu.targets" />
@@ -18,10 +19,17 @@
 		<Compile Include="FluidSim.fs" />
 		<Compile Include="SandBox2d.fs" />
 		<Compile Include="SandBox2dPlugin.fs" />
+		<Compile Include="SandBox2dTests.fs" />
 		<Compile Include="Program.fs" />
 		<None Include="AssetGraph.nuag" />
 		<None Include="Overlayer.nuol" />
 		<None Include="App.config" />
 	</ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
+        <PackageReference Include="NUnit" Version="3.14.0" />
+        <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
+    </ItemGroup>
 
 </Project>
