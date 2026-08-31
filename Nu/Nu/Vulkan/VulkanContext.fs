@@ -764,18 +764,18 @@ type [<ReferenceEquality>] VulkanContext =
 
     static member private beginRenderCommandBuffer context =
 
-        // allocate command buffer if needed
+        // allocate current command buffer if needed
         if context.RenderCommandBuffersCursor_ >= context.RenderCommandBuffers_.Count then
             let buffers = Hl.allocateCommandBuffers context.RenderCommandBuffers_.Count VkCommandBufferLevel.Primary context.RenderCommandPool_
             context.RenderCommandBuffers_.AddRange buffers
-        let commandBuffer = context.RenderCommandBuffers_[context.RenderCommandBuffersCursor_]
 
         // prepare command buffer for immediate use
+        let commandBuffer = context.RenderCommandBuffers_[context.RenderCommandBuffersCursor_]
         DeviceApi.vkResetCommandBuffer (commandBuffer, VkCommandBufferResetFlags.None) |> Hl.check
         let mutable beginInfo = VkCommandBufferBeginInfo ()
         DeviceApi.vkBeginCommandBuffer (commandBuffer, &&beginInfo) |> Hl.check
 
-    static member private endRenderCommandBuffer last context =
+    static member private endRenderCommandBuffer finalizeFrame context =
 
         // lock to get access to vulkan queue then submit it
         ConcurrentCommandQueue.withLock context.RenderQueue_ $ fun vkQueue ->
@@ -793,8 +793,8 @@ type [<ReferenceEquality>] VulkanContext =
             let mutable renderSemaphoreOpt = VkSemaphore.Null
             let mutable renderFenceOpt = VkFence.Null
 
-            // optionally wait for swapchain image and signal render semaphore and fence
-            if last then
+            // wait for swapchain image and signal render semaphore and fence when finalizing frame
+            if finalizeFrame then
                 swapchainImageSemaphoreOpt <- context.SwapchainImageSemaphore_
                 stageFlagOpt <- VkPipelineStageFlags.AllCommands
                 submitInfo.waitSemaphoreCount <- 1u
