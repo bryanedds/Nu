@@ -353,10 +353,10 @@ module Hl =
 
     /// Check the given Vulkan operation result, logging on non-Success.
     let check (result : VkResult) =
-        if int result > 0 then Log.info ("Vulkan info: " + string result)
+        if int result > 0 then
+            Log.info ("Vulkan info: " + string result)
         elif int result < 0 then
-            let message = "Vulkan assertion failed due to: " + string result
-            Log.warn message
+            Log.warn ("Vulkan error: " + string result)
 
     /// Generate a globally unique texture id for use in descriptor writes.
     let internal genTextureId () =
