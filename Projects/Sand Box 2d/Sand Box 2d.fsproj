@@ -2,6 +2,7 @@
 
 	<PropertyGroup>
 		<TargetFramework>net10.0</TargetFramework>
+		<IsTestProject>true</IsTestProject>
         <GenerateProgramFile>False</GenerateProgramFile> <!-- TODO: move into Nu.Targets for everything? -->
 	</PropertyGroup>
 
