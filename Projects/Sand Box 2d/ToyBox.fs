@@ -285,14 +285,12 @@ type ToyBoxDispatcher () =
         let (anchorPosition1, anchorPosition2) = Sandbox2dGeometry.bridgeEndpoints spawnCenter offset
         World.doOrbBody2d name
             [Entity.Position |= anchorPosition1
-             Entity.BodyType .= Static
              Entity.Sensor .= true] world |> ignore
         let anchor1 = world.DeclaredEntity
 
         // declare anchor 2
         World.doOrbBody2d $"{name} Opposite End"
             [Entity.Position |= anchorPosition2
-             Entity.BodyType .= Static
              Entity.Sensor .= true] world |> ignore
         let anchor2 = world.DeclaredEntity
 
@@ -329,6 +327,8 @@ type ToyBoxDispatcher () =
                 let mutable jointDef = B2Joints.b2DefaultRevoluteJointDef ()
                 jointDef.``base``.bodyIdA <- a
                 jointDef.``base``.bodyIdB <- b
+                // Links span local Y, with each joint connecting A's positive endpoint to B's negative endpoint.
+                // Anchor endpoints use the body centers.
                 jointDef.``base``.localFrameA.p <-
                     if jointIndex = 0 then B2MathFunction.b2Vec2_zero
                     else

@@ -94,7 +94,9 @@ module Sandbox2dGeometry =
         [| ("Back", CarRearWheelModelOffset, 0.8f, 4f, 0.9f, 20f, true)
            ("Front", v2 1.54f 0.8f, 1f, 4f, 0.2f, 10f, false) |]
 
-    /// The authored open contour used by the race-course ground.
+    // Open contours reserve their first and last points as ghost vertices for seamless joins.
+    // This standalone course duplicates its second and second-to-last points, then reverses the array
+    // because ContourShape collides on each link's right-hand side.
     let RaceTrackContour =
         [|v2 -20f 5f; v2 -20f 5f; v2 -20f 0f; v2 20f 0f; v2 25f 0.25f; v2 30f 1f; v2 35f 4f; v2 40f 0f; v2 45f 0f;
           v2 50f -1f; v2 55f -2f; v2 60f -2f; v2 65f -1.25f; v2 70f 0f; v2 75f 0.3f; v2 80f 1.5f; v2 85f 3.5f;
