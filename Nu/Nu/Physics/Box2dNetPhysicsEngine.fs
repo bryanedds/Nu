@@ -550,6 +550,14 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
         let struct (sin, cos) = MathF.SinCos halfAngle
         Quaternion (0.0f, 0.0f, sin, cos)
 
+    // NOTE: Box2D events can retain invalid shape ids after their shapes or bodies are destroyed.
+    static member private areEventShapesValid shapeA shapeB =
+        if B2Worlds.b2Shape_IsValid shapeA && B2Worlds.b2Shape_IsValid shapeB then
+            let bodyA = B2Shapes.b2Shape_GetBody shapeA
+            let bodyB = B2Shapes.b2Shape_GetBody shapeB
+            B2Worlds.b2Body_IsValid bodyA && B2Worlds.b2Body_IsValid bodyB
+        else false
+
     // NOTE: since sensor events don't report collision normals, we have to compute them ourselves.
     static member private computeCollisionNormalForSensors shapeA shapeB =
         let mutable transformA = B2Shapes.b2Shape_GetBody shapeA |> B2Bodies.b2Body_GetTransform
@@ -1984,45 +1992,49 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
                     // collect penetrations for non-sensors from begin contact events, which are performant but one time step late compared to the actual penetration
                     for i in 0 .. dec contacts.beginCount do
                         let penetration = &contacts.beginEvents[i]
-                        let bodyShapeA = (B2Shapes.b2Shape_GetUserData penetration.shapeIdA).GetRef<BodyShapeIndex> ()
-                        let bodyShapeB = (B2Shapes.b2Shape_GetUserData penetration.shapeIdB).GetRef<BodyShapeIndex> ()
-                        let normal =
-                            if B2Worlds.b2Contact_IsValid penetration.contactId then
-                                let contact = B2Contacts.b2Contact_GetData penetration.contactId
-                                v3 contact.manifold.normal.X contact.manifold.normal.Y 0.0f
-                            else
-                                let normal = Box2dNetPhysicsEngine.computeCollisionNormalForSensors penetration.shapeIdA penetration.shapeIdB
-                                v3 normal.X normal.Y 0.0f
-                        physicsEngine.IntegrationMessages.Add (BodyPenetrationMessage { BodyShapeSource = bodyShapeA; BodyShapeTarget = bodyShapeB; Normal = normal })
-                        physicsEngine.IntegrationMessages.Add (BodyPenetrationMessage { BodyShapeSource = bodyShapeB; BodyShapeTarget = bodyShapeA; Normal = -normal })
+                        if Box2dNetPhysicsEngine.areEventShapesValid penetration.shapeIdA penetration.shapeIdB then
+                            let bodyShapeA = (B2Shapes.b2Shape_GetUserData penetration.shapeIdA).GetRef<BodyShapeIndex> ()
+                            let bodyShapeB = (B2Shapes.b2Shape_GetUserData penetration.shapeIdB).GetRef<BodyShapeIndex> ()
+                            let normal =
+                                if B2Worlds.b2Contact_IsValid penetration.contactId then
+                                    let contact = B2Contacts.b2Contact_GetData penetration.contactId
+                                    v3 contact.manifold.normal.X contact.manifold.normal.Y 0.0f
+                                else
+                                    let normal = Box2dNetPhysicsEngine.computeCollisionNormalForSensors penetration.shapeIdA penetration.shapeIdB
+                                    v3 normal.X normal.Y 0.0f
+                            physicsEngine.IntegrationMessages.Add (BodyPenetrationMessage { BodyShapeSource = bodyShapeA; BodyShapeTarget = bodyShapeB; Normal = normal })
+                            physicsEngine.IntegrationMessages.Add (BodyPenetrationMessage { BodyShapeSource = bodyShapeB; BodyShapeTarget = bodyShapeA; Normal = -normal })
 
                 // collect separations for non-sensors that aren't ground separations by characters
                 for i in 0 .. dec contacts.endCount do
                     let separation = &contacts.endEvents[i]
                     physicsEngine.ContactsTracker.ExistingContacts.Remove (separation.shapeIdA, separation.shapeIdB) |> ignore
-                    let bodyShapeA = (B2Shapes.b2Shape_GetUserData separation.shapeIdA).GetRef<BodyShapeIndex> ()
-                    let bodyShapeB = (B2Shapes.b2Shape_GetUserData separation.shapeIdB).GetRef<BodyShapeIndex> ()
-                    physicsEngine.IntegrationMessages.Add (BodySeparationMessage { BodyShapeSource = bodyShapeA; BodyShapeTarget = bodyShapeB })
-                    physicsEngine.IntegrationMessages.Add (BodySeparationMessage { BodyShapeSource = bodyShapeB; BodyShapeTarget = bodyShapeA })
+                    if Box2dNetPhysicsEngine.areEventShapesValid separation.shapeIdA separation.shapeIdB then
+                        let bodyShapeA = (B2Shapes.b2Shape_GetUserData separation.shapeIdA).GetRef<BodyShapeIndex> ()
+                        let bodyShapeB = (B2Shapes.b2Shape_GetUserData separation.shapeIdB).GetRef<BodyShapeIndex> ()
+                        physicsEngine.IntegrationMessages.Add (BodySeparationMessage { BodyShapeSource = bodyShapeA; BodyShapeTarget = bodyShapeB })
+                        physicsEngine.IntegrationMessages.Add (BodySeparationMessage { BodyShapeSource = bodyShapeB; BodyShapeTarget = bodyShapeA })
 
                 // collect penetrations for sensors that aren't ground penetrations by characters
                 let sensorEvents = B2Worlds.b2World_GetSensorEvents physicsEngine.PhysicsContextId
                 for i in 0 .. dec sensorEvents.beginCount do
                     let sensorEvent = &sensorEvents.beginEvents[i]
-                    let bodyShapeA = (B2Shapes.b2Shape_GetUserData sensorEvent.sensorShapeId).GetRef<BodyShapeIndex> ()
-                    let bodyShapeB = (B2Shapes.b2Shape_GetUserData sensorEvent.visitorShapeId).GetRef<BodyShapeIndex> ()
-                    let normal = Box2dNetPhysicsEngine.computeCollisionNormalForSensors sensorEvent.sensorShapeId sensorEvent.visitorShapeId
-                    let normal = Vector3 (normal.X, normal.Y, 0.0f)
-                    physicsEngine.IntegrationMessages.Add (BodyPenetrationMessage { BodyShapeSource = bodyShapeA; BodyShapeTarget = bodyShapeB; Normal = normal })
-                    physicsEngine.IntegrationMessages.Add (BodyPenetrationMessage { BodyShapeSource = bodyShapeB; BodyShapeTarget = bodyShapeA; Normal = -normal })
+                    if Box2dNetPhysicsEngine.areEventShapesValid sensorEvent.sensorShapeId sensorEvent.visitorShapeId then
+                        let bodyShapeA = (B2Shapes.b2Shape_GetUserData sensorEvent.sensorShapeId).GetRef<BodyShapeIndex> ()
+                        let bodyShapeB = (B2Shapes.b2Shape_GetUserData sensorEvent.visitorShapeId).GetRef<BodyShapeIndex> ()
+                        let normal = Box2dNetPhysicsEngine.computeCollisionNormalForSensors sensorEvent.sensorShapeId sensorEvent.visitorShapeId
+                        let normal = v3 normal.X normal.Y 0.0f
+                        physicsEngine.IntegrationMessages.Add (BodyPenetrationMessage { BodyShapeSource = bodyShapeA; BodyShapeTarget = bodyShapeB; Normal = normal })
+                        physicsEngine.IntegrationMessages.Add (BodyPenetrationMessage { BodyShapeSource = bodyShapeB; BodyShapeTarget = bodyShapeA; Normal = -normal })
 
                 // collect separations for sensors that aren't ground separations by characters
                 for i in 0 .. dec sensorEvents.endCount do
                     let sensorEvent = &sensorEvents.endEvents[i]
-                    let bodyShapeA = (B2Shapes.b2Shape_GetUserData sensorEvent.sensorShapeId).GetRef<BodyShapeIndex> ()
-                    let bodyShapeB = (B2Shapes.b2Shape_GetUserData sensorEvent.visitorShapeId).GetRef<BodyShapeIndex> ()
-                    physicsEngine.IntegrationMessages.Add (BodySeparationMessage { BodyShapeSource = bodyShapeA; BodyShapeTarget = bodyShapeB })
-                    physicsEngine.IntegrationMessages.Add (BodySeparationMessage { BodyShapeSource = bodyShapeB; BodyShapeTarget = bodyShapeA })
+                    if Box2dNetPhysicsEngine.areEventShapesValid sensorEvent.sensorShapeId sensorEvent.visitorShapeId then
+                        let bodyShapeA = (B2Shapes.b2Shape_GetUserData sensorEvent.sensorShapeId).GetRef<BodyShapeIndex> ()
+                        let bodyShapeB = (B2Shapes.b2Shape_GetUserData sensorEvent.visitorShapeId).GetRef<BodyShapeIndex> ()
+                        physicsEngine.IntegrationMessages.Add (BodySeparationMessage { BodyShapeSource = bodyShapeA; BodyShapeTarget = bodyShapeB })
+                        physicsEngine.IntegrationMessages.Add (BodySeparationMessage { BodyShapeSource = bodyShapeB; BodyShapeTarget = bodyShapeA })
                     
                 // collect transforms that aren't by characters nor fluid particles
                 let bodyEvents = B2Worlds.b2World_GetBodyEvents physicsEngine.PhysicsContextId
