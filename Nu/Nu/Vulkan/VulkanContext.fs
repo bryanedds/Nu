@@ -417,7 +417,7 @@ type [<ReferenceEquality>] VulkanContext =
           PresentQueue_ : ConcurrentCommandQueue
           TextureQueue_ : ConcurrentCommandQueue
           SwapchainImageSemaphore_ : VkSemaphore
-          mutable RenderFence_ : VkFence
+          RenderFence_ : VkFence
           TransientFence_ : VkFence
           TextureFence_ : VkFence
           mutable ReadyToPresent_ : bool }
@@ -843,13 +843,14 @@ type [<ReferenceEquality>] VulkanContext =
         // await render fence
         // NOTE: on Android on my S17, we have to put vkWaitForFences in a loop because it will return before the given
         // timeout with a VkResult.Timeout result (which I'm not sure is standard-conformant).
+        let mutable renderFence = context.RenderFence_
         let mutable waiting = true
         while waiting do
-            let result = DeviceApi.vkWaitForFences (1u, &&context.RenderFence_, true, UInt64.MaxValue)
+            let result = DeviceApi.vkWaitForFences (1u, &&renderFence, true, UInt64.MaxValue)
             if result <> VkResult.Timeout then
                 waiting <- false
                 Hl.check result
-        DeviceApi.vkResetFences (1u, &&context.RenderFence_) |> Hl.check
+        DeviceApi.vkResetFences (1u, &&renderFence) |> Hl.check
 
         // reset render command buffers cursor
         context.RenderCommandBuffersCursor_ <- 0
@@ -873,7 +874,7 @@ type [<ReferenceEquality>] VulkanContext =
     /// End the frame.
     static member endFrame windowViewport resolveImage (context : VulkanContext) =
 
-        // clear frame end result flag
+        // clear present readiness flag
         context.ReadyToPresent_ <- false
 
         // attempt to request swapchain image then blit the resolve image to the swapchain image
@@ -881,7 +882,7 @@ type [<ReferenceEquality>] VulkanContext =
             let mutable imageIndex = Hl.ImageIndex
             let result = DeviceApi.vkAcquireNextImageKHR (swapchainWrapper.VkSwapchain, UInt64.MaxValue, context.SwapchainImageSemaphore_, VkFence.Null, &imageIndex)
             Hl.setImageIndex imageIndex
-            context.ReadyToPresent_ <-
+            let recreateSwapchain =
                 match result with
                 | VkResult.Success ->
                     let swapchainImage = swapchainWrapper.Images[int Hl.ImageIndex]
@@ -897,7 +898,8 @@ type [<ReferenceEquality>] VulkanContext =
                 | VkResult.ErrorSurfaceLostKHR -> Hl.notifySurfaceLost (); true // recreate when surface is lost
                 | VkResult.SuboptimalKHR -> false // no swapchain recreation
                 | result -> Hl.check result; false // no swapchain recreation
-            context.ReadyToPresent_
+            context.ReadyToPresent_ <- recreateSwapchain
+            recreateSwapchain
 
         // transition resolve image back to read
         Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color ColorAttachmentWrite ColorAttachmentRead resolveImage context.RenderCommandBuffer
