@@ -151,6 +151,14 @@ module Platform =
             configureJoltFramework ()
             configureVmaFramework ()
 
+        let configureMacNativeLibraries () =
+            configureFrameworkNativeLibraries ()
+            if Constants.Vulkan.MoltenVk then
+                // NOTE: SDL resolves a bare dylib name through the host loader's search paths rather than the managed
+                // executable directory, so anchor MoltenVK to the latter to avoid test-runner / IDE working directories.
+                let moltenVkPath = PathF.Combine (AppContext.BaseDirectory, "libMoltenVK.dylib")
+                SDL.SDL3.SDL_SetHint (SDL.SDL3.SDL_HINT_VULKAN_LIBRARY, moltenVkPath) |> ignore<SDL.SDLBool>
+
         [<RequireQualifiedAccess>]
         module iOS =
 
@@ -248,7 +256,7 @@ type Nu () =
                 Platform.Android.configureAndroidNativeLibraries ()
                 Log.init None // disable Nu's default file log because the Android asset pack directory should be treated as read-only for incremental updates to work - https://developer.android.com/reference/com/google/android/play/core/assetpacks/AssetPackManager#getpacklocation
             elif OperatingSystem.IsMacOS () then
-                Platform.Apple.configureFrameworkNativeLibraries ()
+                Platform.Apple.configureMacNativeLibraries ()
 
             // ensure the current culture is invariate
             Thread.CurrentThread.CurrentCulture <- Globalization.CultureInfo.InvariantCulture
