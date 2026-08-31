@@ -5,7 +5,7 @@ const float ATTENUATION_CONSTANT = 1.0;
 const int LIGHTS_MAX = 64;
 const int SHADOW_TEXTURES_MAX = 12;
 const int SHADOW_MAPS_MAX = 12;
-const int SHADOW_CASCADES_MAX = 2;
+const int SHADOW_CASCADES_MAX = 1;
 const int SHADOW_CASCADE_LEVELS = 3;
 
 const vec4 SSVF_DITHERING[4] =

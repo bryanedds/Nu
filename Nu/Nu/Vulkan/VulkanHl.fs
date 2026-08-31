@@ -272,20 +272,18 @@ type TextureCompression =
         | Uncompressed -> Bgra
         | ColorCompression | NormalCompression -> Rgba
 
+/// Represents a strict cycle ensuring that any presentation resources (surface and swapchains) that exist or are being
+/// created during the onset of app backgrounding on a mobile device are torn down/cancelled.
+type BackgroundingResponseState =
+    | PresentationSetupInitiated // setup of presentation resources has begun and may be complete
+    | PresentationTeardownPending // presentation resources can no longer be trusted as app has commenced backgrounding
+    | PresentationTeardownComplete // presentation resources have been destroyed and restoration will commence when app is back in foreground
+
 /// The state of the program's OS-provided rendering surface.
 type SurfaceState =
     | SurfaceReady
     | SurfaceLost
     | SurfaceDestroyed
-
-/// Represents a strict cycle ensuring that any presentation resources (surface and swapchains) that exist or are being created during the onset
-/// of app backgrounding on a mobile device are torn down/cancelled.
-/// TODO: consider encapsulating most of this stuff into a Surface abstraction as it should not be visible to Swapchain
-/// and VulkanContext.
-type internal BackgroundingResponseState =
-    | PresentationSetupInitiated // setup of presentation resources has begun and may be complete
-    | PresentationTeardownPending // presentation resources can no longer be trusted as app has commenced backgrounding
-    | PresentationTeardownComplete // presentation resources have been destroyed and restoration will commence when app is back in foreground
 
 [<AutoOpen>]
 module Vulkan =
@@ -311,44 +309,79 @@ module Vulkan =
 [<RequireQualifiedAccess>]
 module Hl =
 
-    // TODO: P0: these free-floating bindings have become a bit of a mess and need to be reordered or moved into
-    // VulkanContext.
-    let mutable internal ValidationLayersActivated = false
-
-    let mutable internal DrawCountersLock = obj ()
-    let mutable internal DrawInstanceCount = 0
-    let mutable internal DrawCallCount = 0
-    let mutable internal DrawScopeCount = 0
-
     // provides id for a texture on the gpu that is globally unique i.e. cannot be reused after texture is destroyed,
     // which is essential for tracking descriptor writes
-    let mutable private TextureIdGenerationLock = obj ()
+    let mutable private TextureIdCounterLock = obj ()
     let mutable private TextureIdCounter = 0u
 
-    /// Index of the current Swapchain image.
-    let mutable internal ImageIndex = 0u
-
-    /// The forward-declared empty texture value.
-    /// Initialized in RendererProcesses.
-    /// NOTE: if performance issues arise from checking / casting this, maybe use ValueOption or null directly.
-    /// TODO: see if instead of exposing mutability of this directly, we should define Init and CleanUp fns.
-    let mutable internal EmptyTextureOpt : obj option = None
-
-    let mutable internal SurfaceState = SurfaceDestroyed
-    let mutable internal Surface = Unchecked.defaultof<VkSurfaceKHR>
-
-    // presentation teardown in response to backgrounding follows BackgroundingResponseState cycle,
-    // whereas presentation setup need only care whether app is *currently* in foreground
-    let mutable private BackgroundingResponseStateLock = obj ()
-    let mutable private BackgroundingResponseState = PresentationTeardownComplete
-    let mutable private Backgrounded = false
+    // the forward-declared empty texture value; initialized in RendererProcesses.
+    // NOTE: if performance issues arise from checking / casting this, maybe use ValueOption or null directly.
+    // TODO: see if instead of exposing mutability of this directly, we should define Init and CleanUp fns.
+    let mutable internal EmptyTextureOpt_ : obj option = None
+    let inline internal EmptyTextureOpt<'a> = EmptyTextureOpt_
 
     // cached window properties that have to come in from the main thread.
-    let mutable WindowProperties_ = WindowProperties.empty
-    let inline WindowProperties<'a> = WindowProperties_
+    let mutable internal WindowProperties_ = WindowProperties.empty
+    let inline internal WindowProperties<'a> = WindowProperties_
 
-    // callback to inform render loop about app backgrounding
-    // official documentation for android case: https://github.com/libsdl-org/SDL/blob/main/docs/README-android.md#activity-lifecycle
+    // index of the current Swapchain image.
+    let mutable internal ImageIndex_ = 0u
+    let inline internal ImageIndex<'a> = ImageIndex_
+
+    // the currently utilized vulkan surface
+    let mutable internal Surface_ = Unchecked.defaultof<VkSurfaceKHR>
+    let inline internal Surface<'a> = Surface_
+
+    // the state of the currently utilized vulkan surface
+    let mutable internal SurfaceState_ = SurfaceDestroyed
+    let inline internal SurfaceState<'a> = SurfaceState_
+
+    // presentation teardown in response to backgrounding follows BackgroundingResponseState cycle,
+    // whereas presentation setup need only care whether app is _currently_ in foreground
+    let mutable private BackgroundingResponseStateLock = obj ()
+    let mutable private BackgroundingResponseState = PresentationTeardownComplete
+
+    // whether app is currently backgrounded (i.e. not in foreground)
+    let mutable internal Backgrounded_ = false
+    let inline internal Backgrounded<'a> = Backgrounded_
+
+    // draw counters
+    let mutable private DrawCountersLock = obj ()
+    let mutable private DrawInstanceCount = 0
+    let mutable private DrawCallCount = 0
+    let mutable private DrawScopeCount = 0
+
+    /// Check the given Vulkan operation result, logging on non-Success.
+    let check (result : VkResult) =
+        if int result > 0 then Log.info ("Vulkan info: " + string result)
+        elif int result < 0 then
+            let message = "Vulkan assertion failed due to: " + string result
+            Log.warn message
+
+    /// Generate a globally unique texture id for use in descriptor writes.
+    let internal genTextureId () =
+        lock TextureIdCounterLock (fun () -> TextureIdCounter <- inc TextureIdCounter; TextureIdCounter)
+
+    /// Initialize the empty texture value.
+    let initEmptyTexture emptyTexture =
+        if EmptyTextureOpt_.IsNone then
+            EmptyTextureOpt_ <- Some emptyTexture
+
+    /// Set the window properties coming in from SDL.
+    let setWindowProperties windowProperties =
+        WindowProperties_ <- windowProperties
+
+    /// Set the index of the current swapchain image.
+    let setImageIndex imageIndex =
+        ImageIndex_ <- imageIndex
+
+    /// Make the surface state reflect the loss of the surface.
+    let notifySurfaceLost () =
+        Log.info "Vulkan surface lost."
+        SurfaceState_ <- SurfaceLost
+
+    /// Callback to inform render loop about app backgrounding. Official documentation for android case -
+    /// https://github.com/libsdl-org/SDL/blob/main/docs/README-android.md#activity-lifecycle
 #nowarn 202
     [<UnmanagedCallersOnly (CallConvs = [|typeof<System.Runtime.CompilerServices.CallConvCdecl>|])>]
 #warnon 202
@@ -357,43 +390,66 @@ module Hl =
         let event = NativePtr.toByRef event
         match event.Type with
         | SDL_EventType.SDL_EVENT_WILL_ENTER_BACKGROUND ->
-            Backgrounded <- true
+            Backgrounded_ <- true
             lock BackgroundingResponseStateLock (fun () ->
                 if BackgroundingResponseState = PresentationSetupInitiated then BackgroundingResponseState <- PresentationTeardownPending)
             true
         | SDL_EventType.SDL_EVENT_DID_ENTER_FOREGROUND ->
-            Backgrounded <- false
+            Backgrounded_ <- false
             true
         | _ -> true
+
+    /// Get the callback function for handling backgrounding events.
     let internal backgroundingCallback () =
         let handle = Assembly.GetExecutingAssembly().GetType("Nu.Vulkan.Hl").GetMethod(nameof handleBackgrounding, BindingFlags.NonPublic ||| BindingFlags.Static).MethodHandle
         handle.GetFunctionPointer ()
 
-    let setWindowProperties windowProperties =
-        WindowProperties_ <- windowProperties
-
+    /// Set the presentation setup initiated flag.
     let internal setPresentationSetupInitiated () =
         lock BackgroundingResponseStateLock (fun () -> BackgroundingResponseState <- PresentationSetupInitiated)
 
+    /// Set the presentation teardown complete flag.
     let internal setPresentationTeardownComplete () =
         lock BackgroundingResponseStateLock (fun () -> BackgroundingResponseState <- PresentationTeardownComplete)
 
-    /// Has app been SET for backgrounding (i.e. not necessarily IN background yet/still), invalidating existing surface.
+    /// Get whether the presentation teardown is pending due to backgrounding.
     let internal getBackgroundingRequested () =
         lock BackgroundingResponseStateLock (fun () -> BackgroundingResponseState = PresentationTeardownPending)
 
-    let internal getBackgrounded () =
-        Backgrounded
+    /// Get whether the window is minimized.
+    let getWindowMinimized () =
+        WindowProperties_.WindowFlags &&& SDL_WindowFlags.SDL_WINDOW_MINIMIZED <> LanguagePrimitives.EnumOfValue 0UL
 
-    let internal genTextureId () =
-        lock TextureIdGenerationLock (fun () -> TextureIdCounter <- inc TextureIdCounter; TextureIdCounter)
+    /// Report the fact that a draw call has just been made with the given number of instances.
+    let reportDrawScope () =
+        lock DrawCountersLock (fun () ->
+            DrawScopeCount <- inc DrawScopeCount )
 
-    /// Check the given Vulkan operation result, logging on non-Success.
-    let check (result : VkResult) =
-        if int result > 0 then Log.info ("Vulkan info: " + string result)
-        elif int result < 0 then
-            let message = "Vulkan assertion failed due to: " + string result
-            Log.error message
+    /// Report the fact that a draw call has just been made with the given number of instances.
+    let reportDrawCall drawInstances drawScope =
+        lock DrawCountersLock (fun () ->
+            DrawInstanceCount <- DrawInstanceCount + drawInstances
+            DrawCallCount <- inc DrawCallCount
+            if drawScope then DrawScopeCount <- inc DrawScopeCount )
+
+    /// Reset the running counts of draw events.
+    let resetDrawCounters () =
+        lock DrawCountersLock (fun () ->
+            DrawInstanceCount <- 0
+            DrawCallCount <- 0
+            DrawScopeCount <- 0)
+
+    /// Get the running number of draw scopes.
+    let getDrawScopeCount () =
+        lock DrawCountersLock (fun () -> DrawScopeCount)
+
+    /// Get the running number of draw calls.
+    let getDrawCallCount () =
+        lock DrawCountersLock (fun () -> DrawCallCount)
+
+    /// Get the running number of draw calls.
+    let getDrawInstanceCount () =
+        lock DrawCountersLock (fun () -> DrawInstanceCount)
 
     /// Determine whether format is supported for use as an attachment.
     let supportsAttachment vkPhysicalDevice format =
@@ -588,7 +644,7 @@ module Hl =
                 colorInfo.loadOp <- VkAttachmentLoadOp.DontCare
             | ClearAttachments color ->
                 colorInfo.loadOp <- VkAttachmentLoadOp.Clear
-                colorInfo.clearValue <- VkClearValue (r = color.R, g = color.G, b = color.B, a = color.A)
+                colorInfo.clearValue <- VkClearValue (color.R, color.G, color.B, color.A)
             colorInfos[i] <- colorInfo
         use colorInfosPin = new ArrayPin<_> (colorInfos)
 
@@ -651,6 +707,49 @@ module Hl =
             windowPointer <> 0n
         else true // will presumably never be blocked on other platforms
 
+    /// Attempt to get surface capabilities.
+    let tryGetSurfaceCapabilities vkPhysicalDevice =
+        let mutable capabilities = Unchecked.defaultof<VkSurfaceCapabilitiesKHR>
+        let result = InstanceApi.vkGetPhysicalDeviceSurfaceCapabilitiesKHR (vkPhysicalDevice, Surface, &capabilities)
+        if result <> VkResult.ErrorSurfaceLostKHR then
+            check result
+            Some capabilities
+        else
+            SurfaceState_ <- SurfaceLost
+            None
+
+    /// Attempt to get a valid swap extent.
+    let tryGetSwapExtent (capabilities : VkSurfaceCapabilitiesKHR) =
+
+        // ensure that extent is valid
+        if capabilities.currentExtent.width <> 0u then
+
+            // ensure that extent is variable
+            if capabilities.currentExtent.width = UInt32.MaxValue then
+
+                // get pixel resolution from sdl
+                let mutable width = WindowProperties.WidthPixels
+                let mutable height = WindowProperties.HeightPixels
+
+                // ensure pixel resolution is valid for use as swap extent
+                if width <> 0 && height <> 0 then
+
+                    // clamp resolution to size limits
+                    width <- max width (int capabilities.minImageExtent.width)
+                    width <- min width (int capabilities.maxImageExtent.width)
+                    height <- max height (int capabilities.minImageExtent.height)
+                    height <- min height (int capabilities.maxImageExtent.height)
+                    Some (VkExtent2D (width, height))
+
+                // invalid
+                else None
+
+            // otherwise it's fixed
+            else Some capabilities.currentExtent
+
+        // otherwise it's invalid
+        else None
+
     /// Attempt to create a Vulkan surface, returning the resulting SurfaceState.
     let tryCreateVulkanSurface window instance =
 
@@ -662,8 +761,8 @@ module Hl =
             if isWindowResourceAvailable () then
 
                 // inform the backgrounding callback that we begin the process of creating the surface and swapchain
-                // that may need to be aborted/destroyed at any point before *or* after completion due to a
-                // backgrounding event, hence setup *initiated*
+                // that may need to be aborted/destroyed at any point before _or_ after completion due to a
+                // backgrounding event, hence setup _initiated_
                 setPresentationSetupInitiated ()
                 let mutable surfacePtr = Unchecked.defaultof<VkSurfaceKHR_T nativeptr>
                 let instance = NativePtr.ofNativeInt (VkInstance.op_Implicit instance)
@@ -671,8 +770,8 @@ module Hl =
                     Log.error (SDL3.SDL_GetError ())
                     setPresentationTeardownComplete () // inform callback to scratch that
                 else
-                    Surface <- NativePtr.toNativeInt surfacePtr |> uint64 |> VkSurfaceKHR.op_Implicit
-                    SurfaceState <- SurfaceReady
+                    Surface_ <- NativePtr.toNativeInt surfacePtr |> uint64 |> VkSurfaceKHR.op_Implicit
+                    SurfaceState_ <- SurfaceReady
 
         // handle error cases
         | SurfaceReady -> Log.error "Attempted creation of Vulkan surface when existing surface has not been destroyed!"
@@ -683,9 +782,9 @@ module Hl =
 
     /// Create a Vulkan surface, waiting for app to enter foreground when necessary.
     let createVulkanSurface window instance =
-    
+
         // wait for app to enter foreground if not already
-        while getBackgrounded () do
+        while Backgrounded do
             Thread.Yield () |> ignore<bool>
 
         // attempt to recreate vulkan surface
@@ -706,11 +805,69 @@ module Hl =
             // must correspond exactly with SurfaceDestroyed, which is used by Swapchain
             Log.info "Destroying Vulkan surface..."
             InstanceApi.vkDestroySurfaceKHR (Surface, nullPtr)
-            SurfaceState <- SurfaceDestroyed
+            SurfaceState_ <- SurfaceDestroyed
             setPresentationTeardownComplete ()
 
         | SurfaceDestroyed ->
             Log.error "Attempted destruction of Vulkan surface that has already been destroyed!"
+
+    /// Try create the VkSwapchain.
+    let tryCreateVkSwapchain (surfaceFormat : VkSurfaceFormatKHR) oldVkSwapchainOpt graphicsQueueFamily presentQueueFamily vkPhysicalDevice =
+        match tryGetSurfaceCapabilities vkPhysicalDevice with
+        | Some capabilities ->
+            match tryGetSwapExtent capabilities with
+            | Some swapExtent ->
+
+                // decide the minimum number of images in the swapchain. Sellers, Vulkan Programming Guide p. 144, recommends
+                // at least 3 for performance, but to keep latency low let's start with the more conservative recommendation of
+                // https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Swap_chain#page_Creating-the-swap-chain.
+                let minImageCount =
+                    if capabilities.maxImageCount = 0u
+                    then capabilities.minImageCount + 1u
+                    else min (capabilities.minImageCount + 1u) capabilities.maxImageCount
+
+                // attempt to create swapchain, indicating that the surface is lost when such is indicated on creation failure
+                let indicesArray = [|graphicsQueueFamily; presentQueueFamily|]
+                use indicesArrayPin = new ArrayPin<_> (indicesArray)
+                let mutable info = VkSwapchainCreateInfoKHR ()
+                info.surface <- Surface_
+                info.minImageCount <- minImageCount
+                info.imageFormat <- surfaceFormat.format
+                info.imageColorSpace <- surfaceFormat.colorSpace
+                info.imageExtent <- swapExtent
+                info.imageArrayLayers <- 1u
+                info.imageUsage <- VkImageUsageFlags.ColorAttachment ||| VkImageUsageFlags.TransferDst
+                if graphicsQueueFamily = presentQueueFamily then
+                    info.imageSharingMode <- VkSharingMode.Exclusive
+                else
+                    info.imageSharingMode <- VkSharingMode.Concurrent
+                    info.queueFamilyIndexCount <- 2u
+                    info.pQueueFamilyIndices <- indicesArrayPin.Pointer
+                info.preTransform <- VkSurfaceTransformFlagsKHR.Identity
+                info.compositeAlpha <-
+                    if capabilities.supportedCompositeAlpha &&& VkCompositeAlphaFlagsKHR.Opaque <> VkCompositeAlphaFlagsKHR.None then VkCompositeAlphaFlagsKHR.Opaque
+                    elif capabilities.supportedCompositeAlpha &&& VkCompositeAlphaFlagsKHR.PreMultiplied <> VkCompositeAlphaFlagsKHR.None then VkCompositeAlphaFlagsKHR.PreMultiplied
+                    elif capabilities.supportedCompositeAlpha &&& VkCompositeAlphaFlagsKHR.PostMultiplied <> VkCompositeAlphaFlagsKHR.None then VkCompositeAlphaFlagsKHR.PostMultiplied
+                    else VkCompositeAlphaFlagsKHR.Inherit
+                info.presentMode <-
+                    if Constants.Render.RenderVsync
+                    then VkPresentModeKHR.Fifo
+                    else VkPresentModeKHR.Immediate
+                info.clipped <- true
+                info.oldSwapchain <- oldVkSwapchainOpt
+                let mutable vkSwapchain = Unchecked.defaultof<VkSwapchainKHR>
+                match DeviceApi.vkCreateSwapchainKHR (&info, nullPtr, &vkSwapchain) with
+                | VkResult.Success ->
+                    Some (vkSwapchain, swapExtent)
+                | result when int result < 0 ->
+                    SurfaceState_ <- SurfaceLost
+                    None
+                | result ->
+                    check result
+                    None
+
+            | None -> None
+        | None -> None
 
     /// Try to compile GLSL file to SPIR-V code.
     let tryCompileShader shaderPath shaderKind =
@@ -740,8 +897,7 @@ module Hl =
         | Right shader ->
 
             // NOTE: using a high level overload here to avoid questions about reinterpret casting and memory
-            // alignment; see -
-            // https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Shader_modules#page_Creating-shader-modules
+            // alignment; see - https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Shader_modules#page_Creating-shader-modules
             let mutable shaderModule = Unchecked.defaultof<VkShaderModule>
             DeviceApi.vkCreateShaderModule (shader.AsSpan (), nullPtr, &shaderModule) |> check
             Right shaderModule
@@ -781,49 +937,6 @@ module Hl =
              VkDependencyFlags.None,
              0u, nullPtr, 0u, nullPtr,
              1u, &&barrier)
-
-    /// Attempt to get surface capabilities.
-    let tryGetSurfaceCapabilities vkPhysicalDevice =
-        let mutable capabilities = Unchecked.defaultof<VkSurfaceCapabilitiesKHR>
-        let result = InstanceApi.vkGetPhysicalDeviceSurfaceCapabilitiesKHR (vkPhysicalDevice, Surface, &capabilities)
-        if result <> VkResult.ErrorSurfaceLostKHR then
-            check result
-            Some capabilities
-        else
-            SurfaceState <- SurfaceLost
-            None
-
-    /// Attempt to get a valid swap extent.
-    let tryGetSwapExtent (capabilities : VkSurfaceCapabilitiesKHR) =
-
-        // ensure that extent is valid
-        if capabilities.currentExtent.width <> 0u then
-
-            // ensure that extent is variable
-            if capabilities.currentExtent.width = UInt32.MaxValue then
-
-                // get pixel resolution from sdl
-                let mutable width = WindowProperties.WidthPixels
-                let mutable height = WindowProperties.HeightPixels
-
-                // ensure pixel resolution is valid for use as swap extent
-                if width <> 0 && height <> 0 then
-
-                    // clamp resolution to size limits
-                    width <- max width (int capabilities.minImageExtent.width)
-                    width <- min width (int capabilities.maxImageExtent.width)
-                    height <- max height (int capabilities.minImageExtent.height)
-                    height <- min height (int capabilities.maxImageExtent.height)
-                    Some (VkExtent2D (width, height))
-
-                // invalid
-                else None
-
-            // otherwise it's fixed
-            else Some capabilities.currentExtent
-
-        // otherwise it's invalid
-        else None
 
     /// Create an image view.
     let createImageView pixelFormat vkFormat mipLevel mipCount (layer : int) (layerCount : int) viewType imageAspect image =
@@ -929,11 +1042,11 @@ module Hl =
         barrier.subresourceRange <- makeSubresourceRange 1 (mipLevels - 1) layer 1 VkImageAspectFlags.Color
         DeviceApi.vkCmdPipelineBarrier
             (commandBuffer,
-                Undefined.PipelineStage,
-                TransferDst.PipelineStage,
-                VkDependencyFlags.None,
-                0u, nullPtr, 0u, nullPtr,
-                1u, &&barrier)
+             Undefined.PipelineStage,
+             TransferDst.PipelineStage,
+             VkDependencyFlags.None,
+             0u, nullPtr, 0u, nullPtr,
+             1u, &&barrier)
 
         // transition original image separately as it's already set to shader read
         barrier.srcAccessMask <- ColorAttachmentRead.Access
@@ -944,11 +1057,11 @@ module Hl =
         barrier.subresourceRange.levelCount <- 1u // only one level at a time from here on
         DeviceApi.vkCmdPipelineBarrier
             (commandBuffer,
-                ColorAttachmentRead.PipelineStage,
-                TransferDst.PipelineStage,
-                VkDependencyFlags.None,
-                0u, nullPtr, 0u, nullPtr,
-                1u, &&barrier)
+             ColorAttachmentRead.PipelineStage,
+             TransferDst.PipelineStage,
+             VkDependencyFlags.None,
+             0u, nullPtr, 0u, nullPtr,
+             1u, &&barrier)
 
         // compute mipmap dimensions
         let mutable mipWidth = width
@@ -963,11 +1076,11 @@ module Hl =
             barrier.subresourceRange.baseMipLevel <- uint (i - 1)
             DeviceApi.vkCmdPipelineBarrier
                 (commandBuffer,
-                    TransferDst.PipelineStage,
-                    TransferSrc.PipelineStage,
-                    VkDependencyFlags.None,
-                    0u, nullPtr, 0u, nullPtr,
-                    1u, &&barrier)
+                 TransferDst.PipelineStage,
+                 TransferSrc.PipelineStage,
+                 VkDependencyFlags.None,
+                 0u, nullPtr, 0u, nullPtr,
+                 1u, &&barrier)
 
             // generate the next mipmap image from the previous one
             let nextWidth = if mipWidth > 1 then mipWidth / 2 else 1
@@ -986,11 +1099,11 @@ module Hl =
             barrier.newLayout <- ColorAttachmentRead.VkImageLayout
             DeviceApi.vkCmdPipelineBarrier
                 (commandBuffer,
-                    TransferSrc.PipelineStage,
-                    ColorAttachmentRead.PipelineStage,
-                    VkDependencyFlags.None,
-                    0u, nullPtr, 0u, nullPtr,
-                    1u, &&barrier)
+                 TransferSrc.PipelineStage,
+                 ColorAttachmentRead.PipelineStage,
+                 VkDependencyFlags.None,
+                 0u, nullPtr, 0u, nullPtr,
+                 1u, &&barrier)
 
             // update mipmap dimensions
             mipWidth <- nextWidth
@@ -1004,11 +1117,11 @@ module Hl =
         barrier.subresourceRange.baseMipLevel <- uint (mipLevels - 1)
         DeviceApi.vkCmdPipelineBarrier
             (commandBuffer,
-                TransferDst.PipelineStage,
-                ColorAttachmentRead.PipelineStage,
-                VkDependencyFlags.None,
-                0u, nullPtr, 0u, nullPtr,
-                1u, &&barrier)
+             TransferDst.PipelineStage,
+             ColorAttachmentRead.PipelineStage,
+             VkDependencyFlags.None,
+             0u, nullPtr, 0u, nullPtr,
+             1u, &&barrier)
 
     /// Infer that an asset with the given file path should be filtered in a 2D rendering context.
     let inferTextureFiltered2d filePath =
@@ -1261,34 +1374,3 @@ module Hl =
             let remainingMipmapBytes = if minimalMipmapBytes.Length > 1 then Array.tail mipmapBytesArray else [||]
             (minimalMipmapResolution, minimalMipmapBytes, remainingMipmapBytes)
         else (v2i dds.Width dds.Height, bytes, mipmapBytesArray)
-
-    /// Report the fact that a draw call has just been made with the given number of instances.
-    let reportDrawScope () =
-        lock DrawCountersLock (fun () ->
-            DrawScopeCount <- inc DrawScopeCount )
-
-    /// Report the fact that a draw call has just been made with the given number of instances.
-    let reportDrawCall drawInstances drawScope =
-        lock DrawCountersLock (fun () ->
-            DrawInstanceCount <- DrawInstanceCount + drawInstances
-            DrawCallCount <- inc DrawCallCount
-            if drawScope then DrawScopeCount <- inc DrawScopeCount )
-
-    /// Reset the running counts of draw events.
-    let resetDrawCounters () =
-        lock DrawCountersLock (fun () ->
-            DrawInstanceCount <- 0
-            DrawCallCount <- 0
-            DrawScopeCount <- 0)
-
-    /// Get the running number of draw scopes.
-    let getDrawScopeCount () =
-        lock DrawCountersLock (fun () -> DrawScopeCount)
-
-    /// Get the running number of draw calls.
-    let getDrawCallCount () =
-        lock DrawCountersLock (fun () -> DrawCallCount)
-
-    /// Get the running number of draw calls.
-    let getDrawInstanceCount () =
-        lock DrawCountersLock (fun () -> DrawInstanceCount)

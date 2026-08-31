@@ -1285,6 +1285,7 @@ type Renderer3d =
         eyeFieldOfView : single ->
         geometryViewport : Viewport ->
         windowViewport : Viewport ->
+        resolveTexture : Texture ->
         renderGeometry : bool -> unit
 
     /// Handle render clean up by freeing all loaded render assets.
@@ -1302,7 +1303,7 @@ type [<ReferenceEquality>] StubRenderer3d =
     interface Renderer3d with
         member renderer.RendererConfig = Renderer3dConfig.defaultConfig
         member renderer.PreRender _ _ _ _ _ _ = ()
-        member renderer.Render _ _ _ _ _ _ _ _ _ = ()
+        member renderer.Render _ _ _ _ _ _ _ _ _ _ = ()
         member renderer.CleanUp () = ()
 
 /// The Vulkan implementation of Renderer3d.
@@ -4687,7 +4688,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 gammaCorrectionTexture
             else toneMappingTexture
 
-        // blit from intermediate texture to target image without filtering
+        // blit from intermediate texture to target image with filtering when extents don't match
         Texture.recordTransitionLayout ColorAttachmentRead TransferSrc intermediateTexture renderer.VulkanContext.RenderCommandBuffer
         Hl.recordTransitionLayout true 1 targetLayer 1 VkImageAspectFlags.Color ColorAttachmentWrite TransferDst targetImage renderer.VulkanContext.RenderCommandBuffer
         let mutable region = Hl.makeBlit 0 0 0 targetLayer (VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)) targetBounds
@@ -4709,6 +4710,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         eyeFieldOfView
         geometryViewport
         windowViewport
+        (resolveTexture : Texture)
         renderGeometry
         (renderer : VulkanRenderer3d) =
 
@@ -4731,35 +4733,32 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             VulkanRenderer3d.handleReloadRenderAssets renderer
             renderer.ReloadAssetsRequested <- false
 
-        // render when allowed
-        if renderer.VulkanContext.RenderAllowed then
+        // render light maps
+        VulkanRenderer3d.renderLightMaps frustumInterior frustumExterior frustumImposter renderer
 
-            // render light maps
-            VulkanRenderer3d.renderLightMaps frustumInterior frustumExterior frustumImposter renderer
+        // render shadows
+        VulkanRenderer3d.renderShadows eyeCenter renderer
 
-            // render shadows
-            VulkanRenderer3d.renderShadows eyeCenter renderer
+        // render top-level geometry pass
+        if renderGeometry then
+            let view = Viewport.getView3d eyeCenter eyeRotation
+            let viewSkyBox = Matrix4x4.CreateFromQuaternion eyeRotation.Inverted
+            let geometryFrustum = Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView geometryViewport
+            let geometryProjection = Viewport.getProjection3d eyeFieldOfView geometryViewport
+            let windowProjection = Viewport.getProjection3d eyeFieldOfView windowViewport
+            let targetBounds =
+                VkRect2D
+                    (renderer.WindowViewport.Inner.Min.X,
+                     renderer.WindowViewport.Outer.Max.Y - renderer.WindowViewport.Inner.Max.Y,
+                     uint renderer.WindowViewport.Inner.Size.X,
+                     uint renderer.WindowViewport.Inner.Size.Y)
+            let normalPass = NormalPass
+            let normalTasks = VulkanRenderer3d.getRenderTasks normalPass renderer
+            VulkanRenderer3d.renderGeometry
+                frustumInterior frustumExterior frustumImposter normalPass normalTasks renderer true None
+                eyeCenter view viewSkyBox geometryFrustum geometryProjection windowProjection
+                targetBounds 0 resolveTexture.Image
 
-            // render top-level geometry pass
-            if renderGeometry then
-                let view = Viewport.getView3d eyeCenter eyeRotation
-                let viewSkyBox = Matrix4x4.CreateFromQuaternion eyeRotation.Inverted
-                let geometryFrustum = Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView geometryViewport
-                let geometryProjection = Viewport.getProjection3d eyeFieldOfView geometryViewport
-                let windowProjection = Viewport.getProjection3d eyeFieldOfView windowViewport
-                let targetBounds =
-                    VkRect2D
-                        (renderer.WindowViewport.Inner.Min.X,
-                         renderer.WindowViewport.Outer.Max.Y - renderer.WindowViewport.Inner.Max.Y,
-                         uint renderer.WindowViewport.Inner.Size.X,
-                         uint renderer.WindowViewport.Inner.Size.Y)
-                let normalPass = NormalPass
-                let normalTasks = VulkanRenderer3d.getRenderTasks normalPass renderer
-                VulkanRenderer3d.renderGeometry
-                    frustumInterior frustumExterior frustumImposter normalPass normalTasks renderer true None
-                    eyeCenter view viewSkyBox geometryFrustum geometryProjection windowProjection
-                    targetBounds 0 renderer.VulkanContext.SwapchainImage
-        
         // clear config dirty flags
         renderer.LightingConfigChanged <- false
         renderer.RendererConfigChanged <- false
@@ -5065,8 +5064,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         member renderer.PreRender frustumInterior frustumExterior frustumImposter eyeCenter eyeRotation renderMessages =
             VulkanRenderer3d.preRender frustumInterior frustumExterior frustumImposter eyeCenter eyeRotation renderMessages renderer
 
-        member renderer.Render frustumInterior frustumExterior frustumImposter eyeCenter eyeRotation eyeFieldOfView geometryViewport windowViewport renderMessages =
-            VulkanRenderer3d.render frustumInterior frustumExterior frustumImposter eyeCenter eyeRotation eyeFieldOfView geometryViewport windowViewport renderMessages renderer
+        member renderer.Render frustumInterior frustumExterior frustumImposter eyeCenter eyeRotation eyeFieldOfView geometryViewport windowViewport resolveTexture renderMessages =
+            VulkanRenderer3d.render frustumInterior frustumExterior frustumImposter eyeCenter eyeRotation eyeFieldOfView geometryViewport windowViewport resolveTexture renderMessages renderer
 
         member renderer.CleanUp () =
 

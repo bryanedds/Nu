@@ -1258,7 +1258,7 @@ module WorldModule2 =
                         if entity.GetExists world && entity.GetSelected world then
                             entity.SetXtensionPropertyWithoutEvent "FluidParticles" fluidEmitterMessage.FluidParticles world
                             let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
-                            World.publishPlus fluidEmitterMessage entity.FluidEmitterUpdateEvent eventTrace entity false false world
+                            World.publishPlus fluidEmitterMessage entity.FluidEmitterEvent eventTrace entity false false world
                     | _ -> ()
 
         /// Sweep the quadtree clean of all empty nodes.
@@ -2030,6 +2030,13 @@ module WorldModule2 =
                                                                         | Some windowProperties -> windowProperties
                                                                         | None -> WindowProperties.empty
 
+                                                                    // ensure window viewport is sensible before
+                                                                    // rendering since SDL's window resize callback can
+                                                                    // come in a frame late
+                                                                    if  windowProperties.WidthPixels < world.WindowViewport.Bounds.Width ||
+                                                                        windowProperties.HeightPixels < world.WindowViewport.Bounds.Height then
+                                                                        World.processWindowResize world
+
                                                                     // process rendering (2/2)
                                                                     rendererProcess.SubmitMessages
                                                                         world.Eye3dFrustumInterior
@@ -2042,8 +2049,8 @@ module WorldModule2 =
                                                                         world.Eye2dSize
                                                                         world.GeometryViewport
                                                                         world.WindowViewport
-                                                                        drawData
                                                                         windowProperties
+                                                                        drawData
 
                                                                     // post-process imgui frame
                                                                     World.imGuiPostProcess world

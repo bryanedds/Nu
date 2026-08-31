@@ -274,23 +274,22 @@ type TextureWrapper =
       StagingBuffers : VulkanBuffer List }
 
     static member private createImage vkFormat extent mipLevels (textureType : TextureType) usageFlags (context : VulkanContext) =
-        let mutable iInfo = VkImageCreateInfo ()
-        if textureType.IsTextureCubeMap then
-            iInfo.flags <- VkImageCreateFlags.CubeCompatible
-        iInfo.imageType <- VkImageType.Image2D
-        iInfo.format <- vkFormat
-        iInfo.extent <- extent
-        iInfo.mipLevels <- uint mipLevels
-        iInfo.arrayLayers <- uint textureType.Layers
-        iInfo.samples <- VkSampleCountFlags.Count1
-        iInfo.tiling <- VkImageTiling.Optimal
-        iInfo.usage <- usageFlags
-        iInfo.sharingMode <- VkSharingMode.Exclusive
-        iInfo.initialLayout <- Undefined.VkImageLayout
+        let mutable info = VkImageCreateInfo ()
+        if textureType.IsTextureCubeMap then info.flags <- VkImageCreateFlags.CubeCompatible
+        info.imageType <- VkImageType.Image2D
+        info.format <- vkFormat
+        info.extent <- extent
+        info.mipLevels <- uint mipLevels
+        info.arrayLayers <- uint textureType.Layers
+        info.samples <- VkSampleCountFlags.Count1
+        info.tiling <- VkImageTiling.Optimal
+        info.usage <- usageFlags
+        info.sharingMode <- VkSharingMode.Exclusive
+        info.initialLayout <- Undefined.VkImageLayout
         let aInfo = VmaAllocationCreateInfo (usage = VmaMemoryUsage.Auto)
         let mutable image = Unchecked.defaultof<VkImage>
         let mutable allocation = Unchecked.defaultof<VmaAllocation>
-        Vma.vmaCreateImage (context.VmaAllocator, &iInfo, &aInfo, &image, &allocation, nullPtr) |> Hl.check
+        Vma.vmaCreateImage (context.VmaAllocator, &info, &aInfo, &image, &allocation, nullPtr) |> Hl.check
         (image, allocation)
 
     static member create pixelFormat (internalFormat : Vulkan.ImageFormat) metadata mipLevels (attachmentMode : AttachmentMode) (textureType : TextureType) usageFlags (context : VulkanContext) =

@@ -208,13 +208,13 @@ module Events =
     let BodyJointBreakEvent = stoa<BodyJointBreakData> "BodyJointBreak/Event"
 
     /// Raised when 2d gravity is changed.
-    let Gravity2dChange = stoa<ChangeData> "Gravity2d/Change/Event"
+    let Gravity2dChangeEvent = stoa<ChangeData> "Gravity2d/Change/Event"
 
     /// Raised when 3d gravity is changed.
-    let Gravity3dChange = stoa<ChangeData> "Gravity3d/Change/Event"
+    let Gravity3dChangEvent = stoa<ChangeData> "Gravity3d/Change/Event"
 
     /// Raised when a fluid emitter updates.
-    let FluidEmitterUpdateEvent = stoa<FluidEmitterMessage> "FluidEmitterUpdate/Event"
+    let FluidEmitterEvent = stoa<FluidEmitterMessage> "FluidEmitter/Event"
 
     /// Raised when a button is clicked.
     let ClickEvent = stoa<unit> "Click/Event"

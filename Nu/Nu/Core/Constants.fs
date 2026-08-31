@@ -174,6 +174,7 @@ module Engine =
 [<RequireQualifiedAccess>]
 module Render =
 
+    let [<Uniform>] MemoryConstrained = OperatingSystem.IsAndroid () || OperatingSystem.IsIOS () // TODO: update this as we can determine more platforms that are memory-constrained.
     let [<Literal>] IgnoreLightMapsName = "IgnoreLightMaps"
     let [<Literal>] OpaqueDistanceName = "OpaqueDistance"
     let [<Literal>] FinenessOffsetName = "FinenessOffset"
@@ -230,10 +231,10 @@ module Render =
     let [<Literal>] LightsMaxDeferred = 64 // NOTE: remember to update LIGHTS_MAX in deferred shaders when changing this!
     let [<Literal>] LightsMaxForward = 9 // NOTE: remember to update LIGHTS_MAX in forward shaders when changing this!
     let [<Uniform>] mutable ShadowVirtualResolution = match ConfigurationManager.AppSettings["ShadowVirtualResolution"] with null -> 256 | value -> scvalue value
-    let [<Uniform>] mutable ShadowDisplayScalarMax = match ConfigurationManager.AppSettings["ShadowDisplayScalarMax"] with null -> 3 | value -> scvalue value
+    let [<Uniform>] mutable ShadowDisplayScalarMax = match ConfigurationManager.AppSettings["ShadowDisplayScalarMax"] with null -> (if MemoryConstrained then 2 else 3) | value -> scvalue value
     let [<Literal>] ShadowTexturesMax = 12 // NOTE: remember to update SHADOW_TEXTURES_MAX in shaders when changing this!
     let [<Literal>] ShadowMapsMax = 12 // NOTE: remember to update SHADOW_MAPS_MAX in shaders when changing this!
-    let [<Literal>] ShadowCascadesMax = 2 // NOTE: remember to update SHADOW_CASCADES_MAX in shaders when changing this!
+    let [<Literal>] ShadowCascadesMax = 1 // NOTE: remember to update SHADOW_CASCADES_MAX in shaders when changing this!
     let [<Literal>] ShadowCascadeLevels = 3 // NOTE: remember to update SHADOW_CASCADE_LEVELS_SIZE in shaders when changing this!
     let [<Uniform>] mutable ShadowCascadeLimits = match ConfigurationManager.AppSettings["ShadowCascadeLimits"] with null -> [|0.2f; 0.6f; 1.0f|] | value -> scvalue value
     let [<Literal>] ShadowFovMax = 2.1f // NOTE: remember to update SHADOW_FOV_MAX in shaders when changing this!

@@ -24,10 +24,11 @@ type SpriteFragStruct =
 [<RequireQualifiedAccess>]
 module SpriteSingleton =
 
+    /// The size of a vertex in the sprite singleton pipeline.
     let VertexSize = sizeof<single> * 2
     
     /// Create a sprite singleton pipeline.
-    let createSpriteSingletonPipeline (context : VulkanContext) =
+    let createSpriteSingletonPipeline resolveTextureFormat (context : VulkanContext) =
 
         // create sprite uniform buffers
         let spriteVertUniform = VulkanBuffer.create Uniform sizeof<SpriteVertStruct> context
@@ -47,7 +48,7 @@ module SpriteSingleton =
                     [|Pipeline.descriptor 0 SampledImage FragmentStage 1|]
                   Pipeline.descriptorSet<Sampler>
                     [|Pipeline.descriptor 0 Sampler FragmentStage 1|]|]
-                [||] [|context.SwapFormat|] None
+                [||] [|resolveTextureFormat|] None
                 [|spriteVertUniform; spriteFragUniform|]
 
         // fin
@@ -96,6 +97,7 @@ module SpriteSingleton =
          texture : Texture,
          sampler : Sampler,
          viewport : Viewport,
+         resolveTexture : Texture,
          spriteVertUniform : VulkanBuffer,
          spriteFragUniform : VulkanBuffer,
          pipeline : Pipeline,
@@ -186,7 +188,7 @@ module SpriteSingleton =
                     Pipeline.writeDescriptorSampler 0 0 sampler vkSet
                     
                 // set up render
-                Hl.withRenderingInfo [|context.SwapchainImageView|] None renderArea LoadAttachments $ fun renderingInfo ->
+                Hl.withRenderingInfo [|resolveTexture.ImageView|] None renderArea LoadAttachments $ fun renderingInfo ->
                     let mutable renderingInfo = renderingInfo
                     DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
                 DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)

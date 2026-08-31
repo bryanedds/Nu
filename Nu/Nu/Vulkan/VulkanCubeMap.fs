@@ -14,6 +14,7 @@ open Vortice.Vulkan
 open Prime
 open Nu
 
+/// Represents the eye data for a shader.
 [<Struct; StructLayout (LayoutKind.Explicit)>]
 type EyeStruct =
     [<FieldOffset(0)>] val mutable center : Vector3
