@@ -420,7 +420,7 @@ type [<ReferenceEquality>] VulkanContext =
           mutable RenderFence_ : VkFence
           TransientFence_ : VkFence
           TextureFence_ : VkFence
-          mutable FrameEndedSuccessfully_ : bool }
+          mutable ReadyToPresent_ : bool }
 
     /// The current swapchain image when available.
     member private this.SwapchainWrapperOpt = this.Swapchain_.SwapchainWrapperOpt
@@ -764,7 +764,7 @@ type [<ReferenceEquality>] VulkanContext =
         commandPool
 
     static member private beginRenderCommandBuffer context =
-        
+
         // allocate command buffer if needed
         if context.RenderCommandBuffersCursor_ >= context.RenderCommandBuffers_.Count then
             let buffers = Hl.allocateCommandBuffers context.RenderCommandBuffers_.Count VkCommandBufferLevel.Primary context.RenderCommandPool_
@@ -874,29 +874,30 @@ type [<ReferenceEquality>] VulkanContext =
     static member endFrame windowViewport resolveImage (context : VulkanContext) =
 
         // clear frame end result flag
-        context.FrameEndedSuccessfully_ <- false
+        context.ReadyToPresent_ <- false
 
         // attempt to request swapchain image then blit the resolve image to the swapchain image
         VulkanContext.withSwapchainWrapper context $ fun swapchainWrapper ->
             let mutable imageIndex = Hl.ImageIndex
             let result = DeviceApi.vkAcquireNextImageKHR (swapchainWrapper.VkSwapchain, UInt64.MaxValue, context.SwapchainImageSemaphore_, VkFence.Null, &imageIndex)
             Hl.setImageIndex imageIndex
-            match result with
-            | VkResult.Success ->
-                let swapchainImage = swapchainWrapper.Images[int Hl.ImageIndex]
-                Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color ColorAttachmentWrite TransferSrc resolveImage context.RenderCommandBuffer
-                Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color Undefined TransferDst swapchainImage context.RenderCommandBuffer
-                let bounds = VkRect2D (0, 0, uint windowViewport.Outer.Size.X, uint windowViewport.Outer.Size.Y)
-                let mutable region = Hl.makeBlit 0 0 0 0 bounds bounds
-                DeviceApi.vkCmdBlitImage (context.RenderCommandBuffer, resolveImage, TransferSrc.VkImageLayout, swapchainImage, TransferDst.VkImageLayout, 1u, &&region, VkFilter.Nearest)
-                Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color TransferDst Present swapchainImage context.RenderCommandBuffer
-                Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color TransferSrc ColorAttachmentWrite resolveImage context.RenderCommandBuffer
-                context.FrameEndedSuccessfully_ <- true
-                false // no swapchain recreation
-            | VkResult.ErrorOutOfDateKHR -> true // recreate when swapchain is out of date
-            | VkResult.ErrorSurfaceLostKHR -> Hl.notifySurfaceLost (); true // recreate when surface is lost
-            | VkResult.SuboptimalKHR -> false // no swapchain recreation
-            | result -> Hl.check result; false // no swapchain recreation
+            context.ReadyToPresent_ <-
+                match result with
+                | VkResult.Success ->
+                    let swapchainImage = swapchainWrapper.Images[int Hl.ImageIndex]
+                    Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color ColorAttachmentWrite TransferSrc resolveImage context.RenderCommandBuffer
+                    Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color Undefined TransferDst swapchainImage context.RenderCommandBuffer
+                    let bounds = VkRect2D (0, 0, uint windowViewport.Outer.Size.X, uint windowViewport.Outer.Size.Y)
+                    let mutable region = Hl.makeBlit 0 0 0 0 bounds bounds
+                    DeviceApi.vkCmdBlitImage (context.RenderCommandBuffer, resolveImage, TransferSrc.VkImageLayout, swapchainImage, TransferDst.VkImageLayout, 1u, &&region, VkFilter.Nearest)
+                    Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color TransferDst Present swapchainImage context.RenderCommandBuffer
+                    Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color TransferSrc ColorAttachmentWrite resolveImage context.RenderCommandBuffer
+                    false // no swapchain recreation
+                | VkResult.ErrorOutOfDateKHR -> true // recreate when swapchain is out of date
+                | VkResult.ErrorSurfaceLostKHR -> Hl.notifySurfaceLost (); true // recreate when surface is lost
+                | VkResult.SuboptimalKHR -> false // no swapchain recreation
+                | result -> Hl.check result; false // no swapchain recreation
+            context.ReadyToPresent_
 
         // transition resolve image back to read
         Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color ColorAttachmentWrite ColorAttachmentRead resolveImage context.RenderCommandBuffer
@@ -907,8 +908,8 @@ type [<ReferenceEquality>] VulkanContext =
     /// Present the image back to the swapchain to appear on screen.
     static member present (context : VulkanContext) =
 
-        // attempt to present when frame ended successfully
-        if context.FrameEndedSuccessfully_ then
+        // attempt to present when able
+        if context.ReadyToPresent_ then
 
             // attempt to await render semaphore and then present image
             VulkanContext.withSwapchainWrapper context $ fun swapchainWrapper ->
@@ -1023,7 +1024,7 @@ type [<ReferenceEquality>] VulkanContext =
                   RenderFence_ = renderFence
                   TransientFence_ = transientFence
                   TextureFence_ = textureFence
-                  FrameEndedSuccessfully_ = true }
+                  ReadyToPresent_ = false }
 
             // success
             Some vulkanContext
