@@ -996,7 +996,7 @@ type [<ReferenceEquality>] VulkanContext =
             let surfaceFormat = VulkanContext.getSurfaceFormat physicalDevice.SurfaceFormats
             let swapchain = Swapchain.create surfaceFormat physicalDevice window
 
-            // make VulkanContext
+            // make vulkan context
             let vulkanContext =
                 { Instance_ = instance
                   DebugMessengerOpt_ = debugMessengerOpt
