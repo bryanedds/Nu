@@ -551,7 +551,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
         Quaternion (0.0f, 0.0f, sin, cos)
 
     // NOTE: Box2D events can retain invalid shape ids after their shapes or bodies are destroyed.
-    static member private areEventShapesValid shapeA shapeB =
+    static member private validateEventShapes shapeA shapeB =
         if B2Worlds.b2Shape_IsValid shapeA && B2Worlds.b2Shape_IsValid shapeB then
             let bodyA = B2Shapes.b2Shape_GetBody shapeA
             let bodyB = B2Shapes.b2Shape_GetBody shapeB
@@ -1992,7 +1992,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
                     // collect penetrations for non-sensors from begin contact events, which are performant but one time step late compared to the actual penetration
                     for i in 0 .. dec contacts.beginCount do
                         let penetration = &contacts.beginEvents[i]
-                        if Box2dNetPhysicsEngine.areEventShapesValid penetration.shapeIdA penetration.shapeIdB then
+                        if Box2dNetPhysicsEngine.validateEventShapes penetration.shapeIdA penetration.shapeIdB then
                             let bodyShapeA = (B2Shapes.b2Shape_GetUserData penetration.shapeIdA).GetRef<BodyShapeIndex> ()
                             let bodyShapeB = (B2Shapes.b2Shape_GetUserData penetration.shapeIdB).GetRef<BodyShapeIndex> ()
                             let normal =
@@ -2009,7 +2009,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
                 for i in 0 .. dec contacts.endCount do
                     let separation = &contacts.endEvents[i]
                     physicsEngine.ContactsTracker.ExistingContacts.Remove (separation.shapeIdA, separation.shapeIdB) |> ignore
-                    if Box2dNetPhysicsEngine.areEventShapesValid separation.shapeIdA separation.shapeIdB then
+                    if Box2dNetPhysicsEngine.validateEventShapes separation.shapeIdA separation.shapeIdB then
                         let bodyShapeA = (B2Shapes.b2Shape_GetUserData separation.shapeIdA).GetRef<BodyShapeIndex> ()
                         let bodyShapeB = (B2Shapes.b2Shape_GetUserData separation.shapeIdB).GetRef<BodyShapeIndex> ()
                         physicsEngine.IntegrationMessages.Add (BodySeparationMessage { BodyShapeSource = bodyShapeA; BodyShapeTarget = bodyShapeB })
@@ -2019,7 +2019,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
                 let sensorEvents = B2Worlds.b2World_GetSensorEvents physicsEngine.PhysicsContextId
                 for i in 0 .. dec sensorEvents.beginCount do
                     let sensorEvent = &sensorEvents.beginEvents[i]
-                    if Box2dNetPhysicsEngine.areEventShapesValid sensorEvent.sensorShapeId sensorEvent.visitorShapeId then
+                    if Box2dNetPhysicsEngine.validateEventShapes sensorEvent.sensorShapeId sensorEvent.visitorShapeId then
                         let bodyShapeA = (B2Shapes.b2Shape_GetUserData sensorEvent.sensorShapeId).GetRef<BodyShapeIndex> ()
                         let bodyShapeB = (B2Shapes.b2Shape_GetUserData sensorEvent.visitorShapeId).GetRef<BodyShapeIndex> ()
                         let normal = Box2dNetPhysicsEngine.computeCollisionNormalForSensors sensorEvent.sensorShapeId sensorEvent.visitorShapeId
@@ -2030,7 +2030,7 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
                 // collect separations for sensors that aren't ground separations by characters
                 for i in 0 .. dec sensorEvents.endCount do
                     let sensorEvent = &sensorEvents.endEvents[i]
-                    if Box2dNetPhysicsEngine.areEventShapesValid sensorEvent.sensorShapeId sensorEvent.visitorShapeId then
+                    if Box2dNetPhysicsEngine.validateEventShapes sensorEvent.sensorShapeId sensorEvent.visitorShapeId then
                         let bodyShapeA = (B2Shapes.b2Shape_GetUserData sensorEvent.sensorShapeId).GetRef<BodyShapeIndex> ()
                         let bodyShapeB = (B2Shapes.b2Shape_GetUserData sensorEvent.visitorShapeId).GetRef<BodyShapeIndex> ()
                         physicsEngine.IntegrationMessages.Add (BodySeparationMessage { BodyShapeSource = bodyShapeA; BodyShapeTarget = bodyShapeB })

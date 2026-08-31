@@ -19,22 +19,6 @@ open System.Threading
 open SDL
 open Prime
 
-[<ReferenceEquality>]
-/// Explicit dependencies supplied to a world; the world starts and owns them except optional SDL dependencies.
-type WorldDependencies =
-    { SdlDepsOpt : SdlDeps option
-      ImGui : ImGui
-      PhysicsEngine2d : PhysicsEngine
-      PhysicsEngine3d : PhysicsEngine
-      RendererPhysics3dOpt : JoltPhysicsSharp.DebugRenderer option
-      RendererProcess : RendererProcess
-      AudioPlayer : AudioPlayer
-      CursorClient : CursorClient }
-
-type WorldDependencySource =
-    | SdlDependencies of SdlDeps
-    | SuppliedDependencies of WorldDependencies
-
 /// GC event listener. Currently just logs whenever an object larger than 85k is allocated to notify user of possible
 /// LOH churn.
 type private GcEventListener () =
@@ -156,7 +140,7 @@ module Platform =
             // NOTE: SDL needs the Vulkan loader, not an ICD such as MoltenVK; anchor the bundled loader to the
             // managed executable directory because bare dylib lookup depends on the host search paths.
             let vulkanLoaderPath = PathF.Combine (AppContext.BaseDirectory, "libvulkan.1.dylib")
-            SDL.SDL3.SDL_SetHint (SDL.SDL3.SDL_HINT_VULKAN_LIBRARY, vulkanLoaderPath) |> ignore<SDL.SDLBool>
+            SDL3.SDL_SetHint (SDL3.SDL_HINT_VULKAN_LIBRARY, vulkanLoaderPath) |> ignore<SDLBool>
 
         [<RequireQualifiedAccess>]
         module iOS =
@@ -555,62 +539,8 @@ module WorldModule4 =
             // fin
             world
 
-        /// Make a world from explicitly supplied dependencies. The renderer is started by this method; all supplied
-        /// subsystems become world-owned except optional SDL dependencies, which remain caller-owned.
-        static member private makeWithDependenciesCore tryMakeEditContext worldConfig windowSize geometryViewport (windowViewport : Viewport) (plugin : NuPlugin) (dependencies : WorldDependencies) =
-            let eventGraph =
-                let eventTracing = Constants.Engine.EventTracing
-                let eventTracerOpt = if eventTracing then Some (Log.custom "Event") else None
-                let globalSimulantGeneralized = { GsgAddress = atoa Game.GameAddress }
-                let eventConfig = if worldConfig.Imperative then Imperative else Functional
-                EventGraph.make eventTracerOpt Constants.Engine.EventFilter globalSimulantGeneralized eventConfig
-            let pluginAssemblyNamePredicate =
-                fun (assemblyName : AssemblyName) ->
-                    not (assemblyName.Name.StartsWith "System.") && not (assemblyName.Name.StartsWith "FSharp.") &&
-                    not (assemblyName.Name.StartsWith "Prime.") && not (assemblyName.Name.StartsWith "Nu.") &&
-                    assemblyName.Name <> "Prime" && assemblyName.Name <> "Nu" && assemblyName.Name <> "netstandard" &&
-                    not (assemblyName.Name.StartsWith "ppy.SDL3")
-            let pluginAssembly = plugin.GetType().Assembly
-            let pluginAssemblies =
-                Array.cons pluginAssembly (Reflection.loadReferencedAssembliesTransitively pluginAssemblyNamePredicate pluginAssembly)
-            let pluginFacets = plugin.Birth<Facet> pluginAssemblies
-            let pluginEntityDispatchers = plugin.Birth<EntityDispatcher> pluginAssemblies
-            let pluginGroupDispatchers = plugin.Birth<GroupDispatcher> pluginAssemblies
-            let pluginScreenDispatchers = plugin.Birth<ScreenDispatcher> pluginAssemblies
-            let pluginGameDispatchers = plugin.Birth<GameDispatcher> pluginAssemblies
-            let defaultGameDispatcher = World.makeDefaultGameDispatcher ()
-            let lateBindingsInstances =
-                { Facets = Map.addMany pluginFacets (World.makeDefaultFacets ())
-                  EntityDispatchers = Map.addMany pluginEntityDispatchers (World.makeDefaultEntityDispatchers ())
-                  GroupDispatchers = Map.addMany pluginGroupDispatchers (World.makeDefaultGroupDispatchers ())
-                  ScreenDispatchers = Map.addMany pluginScreenDispatchers (World.makeDefaultScreenDispatchers ())
-                  GameDispatchers = Map.addMany pluginGameDispatchers (Map.ofList [defaultGameDispatcher]) }
-            let activeGameDispatcher =
-                match Array.tryHead pluginGameDispatchers with
-                | Some (_, dispatcher) -> dispatcher
-                | None -> GameDispatcher ()
-            let imGui = dependencies.ImGui
-            let physicsEngine2d = dependencies.PhysicsEngine2d
-            let physicsEngine3d = dependencies.PhysicsEngine3d
-            let rendererProcess = dependencies.RendererProcess
-            rendererProcess.Start imGui.Fonts (dependencies.SdlDepsOpt |> Option.bind SdlDeps.getWindowOpt) geometryViewport windowViewport
-            let audioPlayer = dependencies.AudioPlayer
-            let cursorClient = dependencies.CursorClient
-            let quadtree = Quadtree.make Constants.Engine.QuadtreeDepth Constants.Engine.QuadtreeSize
-            let octree = Octree.make Constants.Engine.OctreeDepth Constants.Engine.OctreeSize
-            let jobGraph =
-                if Constants.Engine.RunSynchronously then JobGraphInline () :> JobGraph
-                else JobGraphParallel (TimeSpan.FromSeconds 0.5) :> JobGraph
-            let world =
-                World.makePlus tryMakeEditContext plugin eventGraph jobGraph geometryViewport windowViewport
-                    lateBindingsInstances quadtree octree worldConfig dependencies.SdlDepsOpt imGui physicsEngine2d physicsEngine3d dependencies.RendererPhysics3dOpt
-                    rendererProcess audioPlayer cursorClient activeGameDispatcher
-            if World.getWindowSizeOtherwiseViewportSize world <> windowSize then World.processWindowResize world
-            for (key, value) in plugin.MakeKeyedValues world do World.addKeyedValue key value world
-            World.registerGame Game world
-            world
-
-        static member private makeSdl tryMakeEditContext sdlDeps config windowSize geometryViewport (windowViewport : Viewport) (plugin : NuPlugin) =
+        /// Make a world with the given dependencies.
+        static member make tryMakeEditContext sdlDeps config windowSize geometryViewport (windowViewport : Viewport) (plugin : NuPlugin) =
 
             // compute window properties
             let windowProperties =
@@ -734,19 +664,13 @@ module WorldModule4 =
             World.registerGame Game world
             world
 
-        /// Make a world using either caller-owned SDL dependencies or explicitly supplied dependencies.
-        static member make tryMakeEditContext dependencySource worldConfig windowSize geometryViewport windowViewport plugin =
-            match dependencySource with
-            | SdlDependencies sdlDeps -> World.makeSdl tryMakeEditContext sdlDeps worldConfig windowSize geometryViewport windowViewport plugin
-            | SuppliedDependencies dependencies -> World.makeWithDependenciesCore tryMakeEditContext worldConfig windowSize geometryViewport windowViewport plugin dependencies
-
         /// Run the game engine, initializing dependencies as indicated by WorldConfig, and returning exit code upon
         /// termination.
         static member runPlus tryMakeEditContext runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess firstFrameCallback worldConfig windowSize geometryViewport windowViewport plugin =
             match SdlDeps.tryMake worldConfig.SdlConfig worldConfig.Accompanied windowSize with
             | Right sdlDeps ->
                 use _ = sdlDeps
-                let world = World.make tryMakeEditContext (SdlDependencies sdlDeps) worldConfig windowSize geometryViewport windowViewport plugin
+                let world = World.make tryMakeEditContext sdlDeps worldConfig windowSize geometryViewport windowViewport plugin
                 World.runWithCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess (Some firstFrameCallback) world
             | Left error -> Log.error error; Constants.Engine.ExitCodeFailure
 

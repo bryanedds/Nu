@@ -13,7 +13,6 @@ open Nu
 /// Pure geometry conventions used by the physics demonstrations.
 module Sandbox2dGeometry =
 
-    [<Literal>]
     let RaceCourseScale = 16f
 
     /// Conversion from authored source units to Nu physics meters.
@@ -28,52 +27,43 @@ module Sandbox2dGeometry =
     /// Aether's source gravity (-10 source units/s^2), expressed in Nu pixel units.
     let SourceGravity = -10f * RaceCourseScale
 
-    [<Literal>]
     let CarMotorSpeedMax = 50f
 
-    [<Literal>]
     let BridgeLinkCount = 20
 
-    [<Literal>]
     let BridgeSagRatio = 0.025f
 
-    [<Literal>]
     let BridgeLinkThickness = 4f
 
-    [<Literal>]
     let MinimumBridgeSpan = 32f
-
-    [<Literal>]
+    
     let BubbleDiameterPerRadius = 2f
 
-    [<Literal>]
+    /// The authored bubble artwork includes transparent padding around its visible pixels.
+    let BubbleImageInset = box2 (v2 133f 129f) (v2 748f 810f)
+
     let RagdollArmClearance = 2f
 
-    [<Literal>]
     let RagdollLimbSpacing = 20f
 
-    [<Literal>]
     let TeeterBoardHalfLength = 10f
 
-    [<Literal>]
     let TeeterBoardHalfThickness = 0.25f
 
     let TeeterAngleLimit = 8f * MathF.PI / 180f
+    
     let TeeterInitialAngle = 0f
+    
     let TeeterCenterY = 1f
 
     let TeeterAngularImpulse = 100f * SourceTorqueScale
 
-    [<Literal>]
     let RagdollTorsoJointHalfSpacing = 0.5f
 
-    [<Literal>]
     let BridgeCollideConnected = false
 
-    [<Literal>]
     let BridgeLinearDamping = 1f
 
-    [<Literal>]
     let BridgeAngularDamping = 1f
 
     let CarContour =
@@ -144,16 +134,12 @@ module Sandbox2dGeometry =
         if radius < 0f then invalidArg (nameof radius) "Bubble radius cannot be negative."
         radius * BubbleDiameterPerRadius
 
-    /// The authored bubble artwork includes transparent padding around its visible pixels.
-    let BubbleImageInset = box2 (v2 133f 129f) (v2 748f 810f)
-
     let ragdollArmCenterX torsoWidth armLength direction =
         direction * (torsoWidth / 2f + armLength / 2f + RagdollArmClearance)
 
     /// Gets the scene-space anchor between two adjacent ragdoll limbs.
     let limbJointAnchor (spawnCenter : Vector3) (pos : Vector3) (posIncrement : Vector3) =
         spawnCenter + pos - posIncrement / 2f
-
 
     let carMotorSpeed acceleration =
         single (sign acceleration) * Math.SmoothStep (0f, CarMotorSpeedMax, abs acceleration)

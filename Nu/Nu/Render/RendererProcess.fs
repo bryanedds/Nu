@@ -64,28 +64,6 @@ type RendererProcess =
         abstract Terminate : unit -> unit
         end
 
-/// A lifecycle-safe renderer for headless worlds. It accepts all render traffic without creating SDL or Vulkan resources.
-type StubRendererProcess () =
-    let mutable started = false
-    let mutable terminated = false
-    interface RendererProcess with
-        member _.Start _ _ _ _ =
-            if terminated then invalidOp "Cannot start a terminated stub renderer."
-            started <- true
-        member _.Renderer3dConfig = Renderer3dConfig.defaultConfig
-        member _.TryGetImGuiTextureId _ = ValueNone
-        member _.EnqueueMessage3d _ = if not started || terminated then invalidOp "Stub renderer is not started."
-        member _.RenderStaticModelFast (_, _, _, _, _, _, _, _, _, _) = ()
-        member _.RenderStaticModelSurfaceFast (_, _, _, _, _, _, _, _, _, _, _) = ()
-        member _.RenderAnimatedModelFast (_, _, _, _, _, _, _, _, _, _, _, _) = ()
-        member _.EnqueueMessage2d _ = if not started || terminated then invalidOp "Stub renderer is not started."
-        member _.RenderLayeredSpriteFast (_, _, _, _, _, _, _, _, _, _, _) = ()
-        member _.EnqueueMessageImGui _ = if not started || terminated then invalidOp "Stub renderer is not started."
-        member _.ClearMessages () = ()
-        member _.SubmitMessages _ _ _ _ _ _ _ _ _ _ _ _ = ()
-        member _.RequestSwap () = ()
-        member _.Terminate () = terminated <- true
-
 /// A non-threaded render process.
 type RendererInline (windowProperties) =
 

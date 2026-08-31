@@ -1456,7 +1456,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         let tryMakeEditContext = fun () -> Some (makeEditContext None None)
 
         // make the world
-        let world = World.make tryMakeEditContext (SdlDependencies sdlDeps) worldConfig windowSize geometryViewport windowViewport plugin
+        let world = World.make tryMakeEditContext sdlDeps worldConfig windowSize geometryViewport windowViewport plugin
 
         // initialize event filter as not to flood the log
         World.setEventFilter Constants.Gaia.EventFilter world
