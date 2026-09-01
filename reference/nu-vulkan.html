@@ -125,11 +125,11 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.Attachment\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanAttachment.fs#L14-14" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanAttachment.fs#L15-15" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-              
+               Attachment operations.
             </p>
           </div>
         </td>
@@ -157,6 +157,34 @@
             </a>
             <p class="fsdocs-summary">
                Determines whether a texture is intended as an attachment, what sort, and whether to parallelize for frames in flight.
+            </p>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td class="fsdocs-entity-name">
+          <p>
+            <a name="BackgroundingResponseState">
+              <a href="/Nu/reference/nu-vulkan-backgroundingresponsestate.html">
+                BackgroundingResponseState
+              </a>
+            </a>
+          </p>
+        </td>
+        <td class="fsdocs-entity-xmldoc">
+          <div>
+            <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:T:Nu.Vulkan.BackgroundingResponseState`')">
+              <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+            </div>
+            <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.BackgroundingResponseState\'/>')">
+              <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+            </div>
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanHl.fs#L277-277" class="fsdocs-source-link" title="Source on GitHub">
+              <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+            </a>
+            <p class="fsdocs-summary">
+               Represents a strict cycle ensuring that any presentation resources (surface and swapchains) that exist or are being
+ created during the onset of app backgrounding on a mobile device are torn down/cancelled.
             </p>
           </div>
         </td>
@@ -287,11 +315,11 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.BufferType\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanBuffer.fs#L17-17" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanBuffer.fs#L16-16" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-              
+               The type of vulkan buffer being utilized.
             </p>
           </div>
         </td>
@@ -319,6 +347,7 @@
             </a>
             <p class="fsdocs-summary">
                Wraps a vulkan buffer and its metadata.
+ OPTIMIZATION: this is a struct to avoid reduce GC presence.
             </p>
           </div>
         </td>
@@ -353,33 +382,6 @@
       <tr>
         <td class="fsdocs-entity-name">
           <p>
-            <a name="CommandBufferSubmissionType">
-              <a href="/Nu/reference/nu-vulkan-commandbuffersubmissiontype.html">
-                CommandBufferSubmissionType
-              </a>
-            </a>
-          </p>
-        </td>
-        <td class="fsdocs-entity-xmldoc">
-          <div>
-            <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:T:Nu.Vulkan.CommandBufferSubmissionType`')">
-              <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
-            </div>
-            <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.CommandBufferSubmissionType\'/>')">
-              <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
-            </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanContext.fs#L20-20" class="fsdocs-source-link" title="Source on GitHub">
-              <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-            </a>
-            <p class="fsdocs-summary">
-               Specifies the type of a submission in terms of a command buffer's lifetime.
-            </p>
-          </div>
-        </td>
-      </tr>
-      <tr>
-        <td class="fsdocs-entity-name">
-          <p>
             <a name="ConcurrentCommandQueue">
               <a href="/Nu/reference/nu-vulkan-concurrentcommandqueue.html">
                 ConcurrentCommandQueue
@@ -395,7 +397,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.ConcurrentCommandQueue\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanContext.fs#L26-26" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanContext.fs#L21-21" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -422,11 +424,40 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.Contour\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanContour.fs#L51-51" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanContour.fs#L48-48" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
                Slug GPU contour pipeline (analytic coverage via horizontal + vertical ray casting).
+            </p>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td class="fsdocs-entity-name">
+          <p>
+            <a name="ContourQuad">
+              <a href="/Nu/reference/nu-vulkan-contourquad.html">
+                ContourQuad
+              </a>
+            </a>
+          </p>
+        </td>
+        <td class="fsdocs-entity-xmldoc">
+          <div>
+            <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:T:Nu.Vulkan.ContourQuad`')">
+              <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+            </div>
+            <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.ContourQuad\'/>')">
+              <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+            </div>
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanContour.fs#L19-19" class="fsdocs-source-link" title="Source on GitHub">
+              <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+            </a>
+            <p class="fsdocs-summary">
+               A unit quad used for contour rendering.
+ Vertices are in [0,1] range so the vertex shader can map them directly to the bounding box via
+ bboxMin + position * bboxSize.
             </p>
           </div>
         </td>
@@ -449,11 +480,11 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.CubeMap\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanCubeMap.fs#L56-56" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanCubeMap.fs#L58-58" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-              
+               Cube map operations.
             </p>
           </div>
         </td>
@@ -476,7 +507,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.CubeMapClient\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanCubeMap.fs#L357-357" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanCubeMap.fs#L359-359" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -503,7 +534,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.CubeMapGeometry\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanCubeMap.fs#L27-27" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanCubeMap.fs#L28-28" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -530,7 +561,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.CubeMapKey\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanCubeMap.fs#L52-52" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanCubeMap.fs#L53-53" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -557,7 +588,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.CubeMapPipeline\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanCubeMap.fs#L47-47" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanCubeMap.fs#L48-48" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -584,7 +615,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.CubeMapSurface\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanCubeMap.fs#L36-36" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanCubeMap.fs#L37-37" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -665,11 +696,11 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.DescriptorSet\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPipeline.fs#L78-78" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPipeline.fs#L79-79" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-              
+               Represents a generalized descriptor set for the purposes of Nu's vulkan renderer.
             </p>
           </div>
         </td>
@@ -692,11 +723,11 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.DescriptorSet`1\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPipeline.fs#L85-85" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPipeline.fs#L87-87" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-              
+               Represents a well-typed descriptor set for the purposes of Nu's vulkan renderer.
             </p>
           </div>
         </td>
@@ -719,11 +750,11 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.DescriptorSetDefinition\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPipeline.fs#L175-175" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPipeline.fs#L178-178" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-              
+               Represent a description a descriptor set.
             </p>
           </div>
         </td>
@@ -746,7 +777,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.DescriptorSetDefinition`1\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPipeline.fs#L182-182" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPipeline.fs#L185-185" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -773,7 +804,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.DescriptorType\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanHl.fs#L234-234" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanHl.fs#L232-232" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -800,7 +831,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.EnvironmentFilterPipeline\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanLightMap.fs#L21-21" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanLightMap.fs#L22-22" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -827,11 +858,11 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.EnvironmentFilterStruct\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanLightMap.fs#L16-16" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanLightMap.fs#L17-17" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-              
+               Represents the environment filter data for a shader.
             </p>
           </div>
         </td>
@@ -854,11 +885,11 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.EyeStruct\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanCubeMap.fs#L18-18" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanCubeMap.fs#L19-19" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-              
+               Represents the eye data for a shader.
             </p>
           </div>
         </td>
@@ -881,7 +912,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.FilterBloomApplyPipeline\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L736-736" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L737-737" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -908,7 +939,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.FilterBloomDownSamplePipeline\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L726-726" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L727-727" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -935,7 +966,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.FilterBloomExtractPipeline\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L721-721" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L722-722" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -962,7 +993,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.FilterBloomUpSamplePipeline\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L731-731" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L732-732" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -989,7 +1020,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.FilterBoxPipeline\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L693-693" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L694-694" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -1016,7 +1047,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.FilterChromaticAberrationPipeline\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L746-746" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L747-747" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -1043,7 +1074,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.FilterDepthOfFieldPipeline\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L715-715" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L716-716" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -1070,7 +1101,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.FilterDownSamplePipeline\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L702-702" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L703-703" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -1097,7 +1128,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.FilterFxaaPipeline\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L751-751" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L752-752" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -1124,7 +1155,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.FilterGammaCorrectionPipeline\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L756-756" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L757-757" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -1151,7 +1182,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.FilterGaussianDofPipeline\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L710-710" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L711-711" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -1178,7 +1209,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.FilterGaussianEsmPipeline\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L697-697" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L698-698" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -1205,7 +1236,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.FilterToneMappingPipeline\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L741-741" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L742-742" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -1232,7 +1263,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.FilterUpSamplePipeline\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L706-706" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L707-707" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -1340,11 +1371,11 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.Hl\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanHl.fs#L311-311" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanHl.fs#L312-312" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-              
+               High-level vulkan operations.
             </p>
           </div>
         </td>
@@ -1367,7 +1398,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.ImageFormat\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanHl.fs#L28-28" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanHl.fs#L34-34" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -1394,7 +1425,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.ImageLayout\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanHl.fs#L133-133" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanHl.fs#L135-135" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -1502,11 +1533,11 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.LightMapModule\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanLightMap.fs#L37-37" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanLightMap.fs#L39-39" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-              
+               Light map operations.
             </p>
           </div>
         </td>
@@ -1529,7 +1560,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.LightMap\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanLightMap.fs#L27-27" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanLightMap.fs#L28-28" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -1622,6 +1653,33 @@
       <tr>
         <td class="fsdocs-entity-name">
           <p>
+            <a name="LoadOperation">
+              <a href="/Nu/reference/nu-vulkan-loadoperation.html">
+                LoadOperation
+              </a>
+            </a>
+          </p>
+        </td>
+        <td class="fsdocs-entity-xmldoc">
+          <div>
+            <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:T:Nu.Vulkan.LoadOperation`')">
+              <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+            </div>
+            <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.LoadOperation\'/>')">
+              <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+            </div>
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanHl.fs#L28-28" class="fsdocs-source-link" title="Source on GitHub">
+              <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+            </a>
+            <p class="fsdocs-summary">
+               The load operation for render pass attachments.
+            </p>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td class="fsdocs-entity-name">
+          <p>
             <a name="MipmapMode">
               <a href="/Nu/reference/nu-vulkan-mipmapmode.html">
                 MipmapMode
@@ -1664,7 +1722,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.PhysicalDevice\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanContext.fs#L72-72" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanContext.fs#L74-74" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -1691,11 +1749,11 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.PhysicallyBased\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L801-801" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L803-803" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-              
+               Physically-based rendering operations.
             </p>
           </div>
         </td>
@@ -1745,7 +1803,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.PhysicallyBasedDeferredAmbientPipeline\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L657-657" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L658-658" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -1772,7 +1830,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.PhysicallyBasedDeferredColoringPipeline\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L681-681" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L682-682" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -1799,7 +1857,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.PhysicallyBasedDeferredCompositionPipeline\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L687-687" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L688-688" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -1826,7 +1884,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.PhysicallyBasedDeferredEnvironmentFilterPipeline\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L669-669" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L670-670" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -1853,7 +1911,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.PhysicallyBasedDeferredFoggingPipeline\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L641-641" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L642-642" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -1880,7 +1938,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.PhysicallyBasedDeferredIrradiancePipeline\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L664-664" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L665-665" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -1907,7 +1965,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.PhysicallyBasedDeferredLightingPipeline\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L633-633" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L634-634" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -1934,7 +1992,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.PhysicallyBasedDeferredLightMappingPipeline\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L650-650" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L651-651" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -1961,7 +2019,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.PhysicallyBasedDeferredSsaoPipeline\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L675-675" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L676-676" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -1988,7 +2046,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.PhysicallyBasedDeferredTerrainPipeline\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L627-627" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L628-628" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -2042,7 +2100,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.PhysicallyBasedLight\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L579-579" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L580-580" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -2069,7 +2127,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.PhysicallyBasedLightProbe\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L572-572" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L573-573" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -2150,7 +2208,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.PhysicallyBasedModel\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L599-599" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L600-600" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -2177,7 +2235,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.PhysicallyBasedPart\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L592-592" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L593-593" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -2204,7 +2262,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.PhysicallyBasedPipeline\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L616-616" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L617-617" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -2231,7 +2289,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.PhysicallyBasedPipelines\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L760-760" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L761-761" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -2258,7 +2316,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.PhysicallyBasedSceneClient\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L6138-6138" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L6129-6129" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -2285,7 +2343,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.PhysicallyBasedShadowPipeline\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L609-609" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L610-610" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -2339,11 +2397,11 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.PhysicallyBasedSurfaceFns\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L552-552" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPhysicallyBased.fs#L553-553" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-              
+               Physically-based surface operations.
             </p>
           </div>
         </td>
@@ -2366,7 +2424,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.Pipeline\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPipeline.fs#L195-195" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPipeline.fs#L198-198" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -2393,7 +2451,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.PixelFormat\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanHl.fs#L114-114" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanHl.fs#L120-120" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -2420,7 +2478,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.PushConstant\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPipeline.fs#L189-189" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanPipeline.fs#L192-192" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -2474,7 +2532,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.ShaderStage\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanHl.fs#L221-221" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanHl.fs#L219-219" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -2540,6 +2598,39 @@
       <tr>
         <td class="fsdocs-entity-name">
           <p>
+            <a name="ShapeGPU">
+              <a href="/Nu/reference/nu-vulkan-shapegpu.html">
+                ShapeGPU
+              </a>
+            </a>
+          </p>
+        </td>
+        <td class="fsdocs-entity-xmldoc">
+          <div>
+            <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:T:Nu.Vulkan.ShapeGPU`')">
+              <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+            </div>
+            <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.ShapeGPU\'/>')">
+              <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+            </div>
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanContour.fs#L33-33" class="fsdocs-source-link" title="Source on GitHub">
+              <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+            </a>
+            <pre> Per-shape data uploaded to the GPU uniform buffer.
+ Layout matches the GLSL std430 layout in Contour.vert/frag:
+   mat4 MVP (64B), vec4 color (16B), uint curveCount (4B), uint flags (4B),
+   uint hBands (4B), uint vBands (4B), vec2 bboxMin (8B), vec2 bboxSize (8B),
+   vec4 bandTransform (16B) = 128B.
+ The vertex shader maps a [0,1] unit quad to [bboxMin, bboxMin+bboxSize].
+
+ Flags bit layout (must match Contour.frag):
+   bit 0: fillMode (0=NonZero, 1=EvenOdd)</pre>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td class="fsdocs-entity-name">
+          <p>
             <a name="SkyBox">
               <a href="/Nu/reference/nu-vulkan-skybox.html">
                 SkyBox
@@ -2555,11 +2646,11 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.SkyBox\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanSkyBox.fs#L27-27" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanSkyBox.fs#L28-28" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-              
+               Sky box operations.
             </p>
           </div>
         </td>
@@ -2636,11 +2727,11 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.SpriteBatch\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanSpriteBatch.fs#L78-78" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanSpriteBatch.fs#L80-80" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-              
+               Sprite batch operations.
             </p>
           </div>
         </td>
@@ -2663,7 +2754,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.SpriteBatchEnv\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanSpriteBatch.fs#L57-57" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanSpriteBatch.fs#L58-58" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -2692,11 +2783,11 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.SpriteBatchState\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanSpriteBatch.fs#L28-28" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanSpriteBatch.fs#L29-29" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-              
+               The state of a sprite batch.
             </p>
           </div>
         </td>
@@ -2746,11 +2837,11 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.SpriteSingleton\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanSpriteSingleton.fs#L25-25" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanSpriteSingleton.fs#L26-26" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-              
+               Single sprite operations.
             </p>
           </div>
         </td>
@@ -2854,7 +2945,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.SurfaceState\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanHl.fs#L278-278" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanHl.fs#L283-283" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -2881,7 +2972,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.Swapchain\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanContext.fs#L326-326" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanContext.fs#L263-263" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -2908,7 +2999,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.SwapchainWrapper\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanContext.fs#L196-196" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanContext.fs#L188-188" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -3016,7 +3107,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.TextureCompression\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanHl.fs#L251-251" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanHl.fs#L249-249" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -3097,7 +3188,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.TextureInternal\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanTexture.fs#L358-358" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanTexture.fs#L357-357" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -3287,7 +3378,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.VertexAttribFormat\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanHl.fs#L184-184" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanHl.fs#L182-182" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
@@ -3395,11 +3486,11 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.Vulkan\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanHl.fs#L293-293" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanHl.fs#L290-290" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
-              
+               Vulkan operations.
             </p>
           </div>
         </td>
@@ -3482,7 +3573,7 @@
             <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'T:Nu.Vulkan.VulkanContext\'/>')">
               <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
             </div>
-            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanContext.fs#L506-506" class="fsdocs-source-link" title="Source on GitHub">
+            <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Vulkan/VulkanContext.fs#L403-403" class="fsdocs-source-link" title="Source on GitHub">
               <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
             </a>
             <p class="fsdocs-summary">
