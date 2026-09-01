@@ -2826,8 +2826,9 @@ module Light3dFacetExtensions =
             let shadowProjection = this.ComputeShadowProjection world
             Frustum (shadowView * shadowProjection)
 
+/// 3D light operations.
 [<RequireQualifiedAccess>]
-module Light3dFacetModule =
+module Light3dModule =
 
     /// Compute the origin for a directional light's shadow map, snapping it to texel-sized increments and offsetting
     /// it by its forward offset scalar.
@@ -2915,8 +2916,8 @@ type Light3dFacet () =
         let origin =
             match lightType with
             | PointLight | SpotLight (_, _) -> entity.GetPosition world
-            | DirectionalLight offsetForwardScalar -> Light3dFacetModule.getDirectionalLightOrigin rotation lightCutoff offsetForwardScalar world
-            | CascadedLight -> Light3dFacetModule.getCascadedLightOrigin rotation lightCutoff world
+            | DirectionalLight offsetForwardScalar -> Light3dModule.getDirectionalLightOrigin rotation lightCutoff offsetForwardScalar world
+            | CascadedLight -> Light3dModule.getCascadedLightOrigin rotation lightCutoff world
         let direction = rotation.Down
         let color = entity.GetColor world
         let brightness = entity.GetBrightness world

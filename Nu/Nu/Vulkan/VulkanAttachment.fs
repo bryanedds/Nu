@@ -10,6 +10,7 @@ open Vortice.Vulkan
 open Prime
 open Nu
 
+/// Attachment operations.
 [<RequireQualifiedAccess>]
 module Attachment =
     

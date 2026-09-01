@@ -34,6 +34,7 @@ type [<Struct>] LightMap =
       IrradianceMap : Texture
       EnvironmentFilterMap : Texture }
 
+/// Light map operations.
 [<RequireQualifiedAccess>]
 module LightMap =
 

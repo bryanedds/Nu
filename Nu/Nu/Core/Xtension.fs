@@ -10,6 +10,7 @@ open System.Collections.Generic
 open Prime
 open Nu
 
+/// Xtension abstract data type module.
 [<RequireQualifiedAccess>]
 module Xtension =
 
