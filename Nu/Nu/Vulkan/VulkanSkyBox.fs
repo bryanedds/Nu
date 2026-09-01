@@ -23,6 +23,7 @@ type SkyBoxPipeline =
       SkyBoxPropertiesUniform : VulkanBuffer
       Pipeline : Pipeline }
 
+/// Sky box operations.
 [<RequireQualifiedAccess>]
 module SkyBox =
 

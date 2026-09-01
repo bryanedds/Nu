@@ -26,9 +26,9 @@ module ContourQuad =
 ///   uint hBands (4B), uint vBands (4B), vec2 bboxMin (8B), vec2 bboxSize (8B),
 ///   vec4 bandTransform (16B) = 128B.
 /// The vertex shader maps a [0,1] unit quad to [bboxMin, bboxMin+bboxSize].
-//
-// Flags bit layout (must match Contour.frag):
-//   bit 0: fillMode (0=NonZero, 1=EvenOdd)
+///
+/// Flags bit layout (must match Contour.frag):
+///   bit 0: fillMode (0=NonZero, 1=EvenOdd)
 [<Struct; StructLayout (LayoutKind.Sequential)>]
 type ShapeGPU =
     { MVP : Matrix4x4

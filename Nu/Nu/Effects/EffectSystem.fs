@@ -11,6 +11,7 @@ open Prime
 open Nu
 open Nu.Effects
 
+/// Effect system abstract data type.
 [<RequireQualifiedAccess>]
 module EffectSystem =
 

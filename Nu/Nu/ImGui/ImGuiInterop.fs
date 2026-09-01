@@ -10,11 +10,13 @@ open System.Numerics
 open System.Runtime.InteropServices
 open Microsoft.FSharp.NativeInterop
 
+/// ImGui Rect structure.
 [<Struct; StructLayout (LayoutKind.Sequential)>]
 type Rect =
     val mutable Min : Vector2
     val mutable Max : Vector2
 
+/// ImGui internal operations.
 [<RequireQualifiedAccess>]
 module ImGuiInternal =
 

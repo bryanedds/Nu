@@ -20,6 +20,7 @@ module ImGuiIOPtr =
         WantCaptureMouseLocal <- false
         WantCaptureKeyboardLocal <- false
 
+    /// ImGui IOPtr operations.
     type ImGuiIOPtr with
 
         member this.WantCaptureMouseLocal = WantCaptureMouseLocal

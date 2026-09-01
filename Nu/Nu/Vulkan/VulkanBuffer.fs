@@ -12,7 +12,7 @@ open Vortice.Vulkan
 open Prime
 open Nu
 
-// The type of vulkan buffer being utilized.
+/// The type of vulkan buffer being utilized.
 type BufferType =
     | Staging
     | Vertex of UploadEnabled : bool

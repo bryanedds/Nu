@@ -75,6 +75,7 @@ type DescriptorBinding =
       ShaderStage : ShaderStage
       DescriptorCount : int }
 
+/// Represents a generalized descriptor set for the purposes of Nu's vulkan renderer.
 type DescriptorSet =
     interface
         abstract BeginFrame : unit -> unit
@@ -82,6 +83,7 @@ type DescriptorSet =
         abstract Destroy : unit -> unit
         end
 
+/// Represents a well-typed descriptor set for the purposes of Nu's vulkan renderer.
 and DescriptorSet<'k when 'k : equality> =
     private
         { DescriptorSetDefinition_ : DescriptorSetDefinition
@@ -172,6 +174,7 @@ and DescriptorSet<'k when 'k : equality> =
             for pool in this.VkDescriptorPools_ do
                 DeviceApi.vkDestroyDescriptorPool (pool, nullPtr)
 
+/// Represent a description a descriptor set.
 and DescriptorSetDefinition =
     interface
         abstract DescriptorBindings : DescriptorBinding array

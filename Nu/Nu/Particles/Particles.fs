@@ -196,6 +196,7 @@ and Emitter =
 type 'a Transformer =
     GameTime -> GameTime -> Constraint -> 'a SArray -> Output
 
+/// Transformer operations.
 [<RequireQualifiedAccess>]
 module Transformer =
 
@@ -520,12 +521,15 @@ type [<ReferenceEquality>] Scope<'a, 'b when 'a : struct> =
     { In : 'a SArray -> 'b SArray
       Out : Output -> 'b SArray -> 'a SArray -> Output }
 
+/// Scope input operation.
 type In<'a, 'b when 'a : struct> =
     delegate of 'a byref * 'b byref -> unit
 
+/// Scope output operation.
 type Out<'a, 'b when 'a : struct> =
     delegate of 'b byref * 'a byref -> unit
 
+/// Scope operations.
 [<RequireQualifiedAccess>]
 module Scope =
 
@@ -648,6 +652,7 @@ type [<SymbolicExpansion; Struct>] BasicParticle =
       mutable Flip : Flip }
     interface Particle with member this.Life with get () = this.Life and set value = this.Life <- value
 
+/// Basic particle operations.
 [<RequireQualifiedAccess>]
 module BasicParticle =
     let body = Scope.make (new In<_, _> (fun p v -> v <- p.Body)) (new Out<_, _> (fun v p -> p.Body <- v))
@@ -850,6 +855,7 @@ type [<ReferenceEquality>] StaticSpriteEmitter<'a when 'a :> Particle and 'a : e
 type BasicStaticSpriteEmitter =
     StaticSpriteEmitter<BasicParticle>
 
+/// Basic static sprite emitter operations.
 [<RequireQualifiedAccess>]
 module BasicStaticSpriteEmitter =
 
@@ -1106,6 +1112,7 @@ type [<ReferenceEquality>] StaticBillboardEmitter<'a when 'a :> Particle and 'a 
 type BasicStaticBillboardEmitter =
     StaticBillboardEmitter<BasicParticle>
 
+/// Basic static billboard emitter operations.
 [<RequireQualifiedAccess>]
 module BasicStaticBillboardEmitter =
 
@@ -1246,6 +1253,7 @@ type BasicBillboardEmitterDescriptors =
 type MakeEmitter =
     GameTime -> GameTime -> GameTime -> single -> int -> Emitter
 
+/// Default emitter making operations.
 [<RequireQualifiedAccess>]
 module MakeEmitters =
 
