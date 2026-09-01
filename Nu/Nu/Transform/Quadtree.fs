@@ -20,6 +20,7 @@ module QuadelementMasks =
 // NOTE: opening this in order to make the Quadelement property implementations reasonably succinct.
 open QuadelementMasks
 
+/// Quadelement abstract data type.
 [<RequireQualifiedAccess>]
 module Quadelement =
 
@@ -289,6 +290,7 @@ module internal Quadnode =
 
 type internal Quadnode<'e when 'e : equality> = Quadnode.Quadnode<'e>
 
+/// Quadtree abstract data type.
 [<RequireQualifiedAccess>]
 module Quadtree =
 

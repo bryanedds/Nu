@@ -9,6 +9,7 @@ open System
 open Prime
 open Nu
 
+/// Xtension abstract data type.
 [<RequireQualifiedAccess>]
 module Xtension =
 

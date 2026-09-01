@@ -87,6 +87,7 @@ type Overlay =
         // fin
         overlays
 
+/// Overlay abstract data type.
 [<RequireQualifiedAccess>]
 module Overlayer =
 

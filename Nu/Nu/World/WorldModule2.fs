@@ -1731,7 +1731,7 @@ module WorldModule2 =
                             // compute cull frustum
                             let shadowRotation = light.GetRotation world
                             let shadowCutoff = light.GetLightCutoff world
-                            let shadowOrigin = Light3dFacetModule.getDirectionalLightOrigin shadowRotation shadowCutoff offsetForwardScalar world
+                            let shadowOrigin = Light3dModule.getDirectionalLightOrigin shadowRotation shadowCutoff offsetForwardScalar world
                             let shadowForward = shadowRotation.Down
                             let shadowUp = shadowForward.OrthonormalUp
                             let shadowNearDistance = Constants.Render.NearPlaneDistanceInterior
@@ -1753,7 +1753,7 @@ module WorldModule2 =
                             let lightId = light.GetId world
                             let shadowRotation = light.GetRotation world
                             let shadowCutoff = light.GetLightCutoff world
-                            let shadowOrigin = Light3dFacetModule.getCascadedLightOrigin shadowRotation shadowCutoff world
+                            let shadowOrigin = Light3dModule.getCascadedLightOrigin shadowRotation shadowCutoff world
                             let shadowRotation = light.GetRotation world
                             let shadowForward = shadowRotation.Down
                             let shadowUp = shadowForward.OrthonormalUp

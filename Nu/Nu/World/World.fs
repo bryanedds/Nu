@@ -46,9 +46,11 @@ type private GcEventListener () =
         if gcDebug && isNull InstanceOpt then
             InstanceOpt <- new GcEventListener ()
 
-// TODO: apply doc comments to the public part of this API.
+/// Platform-specific operations.
 [<RequireQualifiedAccess>]
 module Platform =
+
+    // TODO: apply doc comments to the public part of this API.
 
     let tryLoadNativeLibrary libraryPath =
         let mutable handle = 0n
