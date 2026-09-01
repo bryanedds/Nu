@@ -7,15 +7,15 @@
     <meta content="Nu" name="author">
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
-    <meta property="og:title" content="VulkanRendererImGui (Nu)" />
+    <meta property="og:title" content="Light3dModule (Nu)" />
     <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="/Nu/">
-    <meta name="twitter:title" content="VulkanRendererImGui (Nu)">
+    <meta name="twitter:title" content="Light3dModule (Nu)">
     
-    <title>VulkanRendererImGui (Nu) | Nu</title>
+    <title>Light3dModule (Nu) | Nu</title>
     <link href="https://fonts.googleapis.com" rel="preconnect">
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
@@ -92,7 +92,7 @@
     <div id="content">
         <div>
   <h2>
-    VulkanRendererImGui Module
+    Light3dModule Module
   </h2>
   <dl class="fsdocs-metadata">
     <dt>
@@ -108,7 +108,7 @@
   <div class="fsdocs-xmldoc">
     <div>
       <p class="fsdocs-summary">
-         VulkanRendererImGui functions.
+         3D light operations.
       </p>
     </div>
   </div>
@@ -131,76 +131,52 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '1714', 1714)" onmouseover="showTip(event, '1714', 1714)">
+              <code onmouseout="hideTip(event, '923', 923)" onmouseover="showTip(event, '923', 923)">
                 <p>
-                  <a id="make">
-                    <a href="#make">
-                      <code><span>VulkanRendererImGui.make&#32;<span>assetTextureRequests&#32;assetTextures&#32;fonts&#32;viewport&#32;resolveTexture&#32;context</span></span></code>
+                  <a id="getCascadedLightOrigin">
+                    <a href="#getCascadedLightOrigin">
+                      <code><span>Light3dModule.getCascadedLightOrigin&#32;<span>lightRotation&#32;lightCutoff&#32;world</span></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="1714">
+              <div class="fsdocs-tip" id="923">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>VulkanRendererImGui.make&#32;<span>assetTextureRequests&#32;assetTextures&#32;fonts&#32;viewport&#32;resolveTexture&#32;context</span></span></code>
+                  <code><span>Light3dModule.getCascadedLightOrigin&#32;<span>lightRotation&#32;lightCutoff&#32;world</span></span></code>
                   <br/>
                   <br/>
                   Parameters: 
                   <ul>
                     <span>
                       <b>
-                        assetTextureRequests
+                        lightRotation
                       </b>
                       :
-                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.concurrent.concurrentdictionary-2">ConcurrentDictionary</a>&lt;<span><a href="/Nu/reference/nu-assettag.html">AssetTag</a>,&#32;unit</span>&gt;</span></code>
+                      <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.quaternion">Quaternion</a></code>
                     </span>
                     <br/>
                     <span>
                       <b>
-                        assetTextures
+                        lightCutoff
                       </b>
                       :
-                      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.concurrent.concurrentdictionary-2">ConcurrentDictionary</a>&lt;<span><a href="/Nu/reference/nu-assettag.html">AssetTag</a>,&#32;<span>uint32&#32;voption</span></span>&gt;</span></code>
+                      <code>'a</code>
                     </span>
                     <br/>
                     <span>
                       <b>
-                        fonts
+                        world
                       </b>
                       :
-                      <code><a href="https://learn.microsoft.com/dotnet/api/imguinet.imfontatlasptr">ImFontAtlasPtr</a></code>
-                    </span>
-                    <br/>
-                    <span>
-                      <b>
-                        viewport
-                      </b>
-                      :
-                      <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
-                    </span>
-                    <br/>
-                    <span>
-                      <b>
-                        resolveTexture
-                      </b>
-                      :
-                      <code><a href="https://learn.microsoft.com/dotnet/api/vortice.vulkan.vkformat">VkFormat</a></code>
-                    </span>
-                    <br/>
-                    <span>
-                      <b>
-                        context
-                      </b>
-                      :
-                      <code><a href="/Nu/reference/nu-vulkan-vulkancontext.html">VulkanContext</a></code>
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
                     </span>
                     <br/>
                   </ul>
                   <br/>
                   <span>
                     Returns: 
-                    <code><a href="/Nu/reference/nu-vulkanrendererimgui.html">VulkanRendererImGui</a></code>
+                    <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a></code>
                   </span>
                   <br/>
                 </div>
@@ -211,67 +187,43 @@
             <details>
               <summary>
                 <div class="fsdocs-summary">
-                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:Nu.VulkanRendererImGuiModule.make`')">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('```cref:M:Nu.Light3dModule.getCascadedLightOrigin``1```')">
                     <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
                   </div>
-                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.VulkanRendererImGuiModule.make\'/>')">
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Light3dModule.getCascadedLightOrigin``1\'/>')">
                     <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
                   </div>
-                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/RendererImGui.fs#L327-327" class="fsdocs-source-link" title="Source on GitHub">
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldFacets.fs#L2854-2854" class="fsdocs-source-link" title="Source on GitHub">
                     <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
                   </a>
                   <p class="fsdocs-summary">
-                     Make a Vulkan imgui renderer.
+                     Compute the origin for a cascaded light's shadow map, snapping it to texel-sized increments.
                   </p>
                 </div>
               </summary>
               <dl class="fsdocs-params">
                 <dt class="fsdocs-param">
                   <span class="fsdocs-param-name">
-                    assetTextureRequests
+                    lightRotation
                   </span>
                   :
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.concurrent.concurrentdictionary-2">ConcurrentDictionary</a>&lt;<span><a href="/Nu/reference/nu-assettag.html">AssetTag</a>,&#32;unit</span>&gt;</span></code>
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.quaternion">Quaternion</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
                   <span class="fsdocs-param-name">
-                    assetTextures
+                    lightCutoff
                   </span>
                   :
-                  <code><span><a href="https://learn.microsoft.com/dotnet/api/system.collections.concurrent.concurrentdictionary-2">ConcurrentDictionary</a>&lt;<span><a href="/Nu/reference/nu-assettag.html">AssetTag</a>,&#32;<span>uint32&#32;voption</span></span>&gt;</span></code>
+                  <code>'a</code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
                 <dt class="fsdocs-param">
                   <span class="fsdocs-param-name">
-                    fonts
+                    world
                   </span>
                   :
-                  <code><a href="https://learn.microsoft.com/dotnet/api/imguinet.imfontatlasptr">ImFontAtlasPtr</a></code>
-                </dt>
-                <dd class="fsdocs-param-docs"></dd>
-                <dt class="fsdocs-param">
-                  <span class="fsdocs-param-name">
-                    viewport
-                  </span>
-                  :
-                  <code><a href="/Nu/reference/nu-viewport.html">Viewport</a></code>
-                </dt>
-                <dd class="fsdocs-param-docs"></dd>
-                <dt class="fsdocs-param">
-                  <span class="fsdocs-param-name">
-                    resolveTexture
-                  </span>
-                  :
-                  <code><a href="https://learn.microsoft.com/dotnet/api/vortice.vulkan.vkformat">VkFormat</a></code>
-                </dt>
-                <dd class="fsdocs-param-docs"></dd>
-                <dt class="fsdocs-param">
-                  <span class="fsdocs-param-name">
-                    context
-                  </span>
-                  :
-                  <code><a href="/Nu/reference/nu-vulkan-vulkancontext.html">VulkanContext</a></code>
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
                 </dt>
                 <dd class="fsdocs-param-docs"></dd>
               </dl>
@@ -280,7 +232,135 @@
                   <span class="fsdocs-return-name">
                     Returns: 
                   </span>
-                  <code><a href="/Nu/reference/nu-vulkanrendererimgui.html">VulkanRendererImGui</a></code>
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a></code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '924', 924)" onmouseover="showTip(event, '924', 924)">
+                <p>
+                  <a id="getDirectionalLightOrigin">
+                    <a href="#getDirectionalLightOrigin">
+                      <code><span>Light3dModule.getDirectionalLightOrigin&#32;<span>lightRotation&#32;lightCutoff&#32;offsetForwardScalar&#32;world</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="924">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>Light3dModule.getDirectionalLightOrigin&#32;<span>lightRotation&#32;lightCutoff&#32;offsetForwardScalar&#32;world</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        lightRotation
+                      </b>
+                      :
+                      <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.quaternion">Quaternion</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        lightCutoff
+                      </b>
+                      :
+                      <code>float32</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        offsetForwardScalar
+                      </b>
+                      :
+                      <code>single</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        world
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:M:Nu.Light3dModule.getDirectionalLightOrigin`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'M:Nu.Light3dModule.getDirectionalLightOrigin\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldFacets.fs#L2835-2835" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
+                  <p class="fsdocs-summary">
+                     Compute the origin for a directional light's shadow map, snapping it to texel-sized increments and offsetting
+ it by its forward offset scalar.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-params">
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    lightRotation
+                  </span>
+                  :
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.quaternion">Quaternion</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    lightCutoff
+                  </span>
+                  :
+                  <code>float32</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    offsetForwardScalar
+                  </span>
+                  :
+                  <code>single</code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+                <dt class="fsdocs-param">
+                  <span class="fsdocs-param-name">
+                    world
+                  </span>
+                  :
+                  <code><a href="/Nu/reference/nu-world.html">World</a></code>
+                </dt>
+                <dd class="fsdocs-param-docs"></dd>
+              </dl>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a></code>
                 </dt>
                 <dd class="fsdocs-return-docs"></dd>
               </dl>
