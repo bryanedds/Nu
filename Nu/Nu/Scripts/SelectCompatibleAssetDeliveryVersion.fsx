@@ -47,36 +47,21 @@ with _ -> ()
 
 // ---- NuGet feed query ----
 
-// A broken or offline system proxy can make nuget.org unreachable even when the network is fine, so we attempt
-// the query normally first (honoring any system proxy) and then fall back to direct connection with a warning.
-let fetchVersionsFromNuget () : Result<string[], string> =
-    let attempt useProxy =
-        task {
-            try
-                use handler = new HttpClientHandler (UseProxy = useProxy)
-                use client = new HttpClient (handler, Timeout = TimeSpan.FromSeconds 30.)
-                let url = "https://api.nuget.org/v3-flatcontainer/xamarin.google.android.play.asset.delivery/index.json"
-                let! json = client.GetStringAsync url
-                use doc = System.Text.Json.JsonDocument.Parse json
-                let root = doc.RootElement
-                let mutable versionsProp = Unchecked.defaultof<_>
-                if root.TryGetProperty ("versions", &versionsProp)
-                then
-                    return
-                        versionsProp.EnumerateArray ()
-                        |> Seq.map (fun v -> v.GetString ())
-                        |> Seq.filter (fun v -> not (String.IsNullOrWhiteSpace v))
-                        |> Seq.toArray
-                        |> Ok
-                else return Ok [||]
-            with exn -> return Error exn.Message }
-        |> Async.AwaitTask
-        |> Async.RunSynchronously
-    match attempt true with
-    | Ok versions -> Ok versions
-    | Error error ->
-        eprintfn "NuGet version query via system proxy failed (%s); retrying without proxy." error
-        attempt false
+let fetchVersionsFromNuget () : string[] =
+    task {
+        use client = new HttpClient (Timeout = TimeSpan.FromSeconds 30.)
+        try
+            let url = "https://api.nuget.org/v3-flatcontainer/xamarin.google.android.play.asset.delivery/index.json"
+            let! json = client.GetStringAsync url
+            use doc = System.Text.Json.JsonDocument.Parse json
+            let root = doc.RootElement
+            let mutable versionsProp = Unchecked.defaultof<_>
+            if root.TryGetProperty ("versions", &versionsProp)
+            then return versionsProp.EnumerateArray () |> Seq.map (fun v -> v.GetString ()) |> Seq.filter (fun v -> not (String.IsNullOrWhiteSpace v)) |> Seq.toArray
+            else return [||]
+        with _ -> return [||] }
+    |> Async.AwaitTask
+    |> Async.RunSynchronously
 
 let fallbackVersionsFromAssets () : string[] =
     let assetsPath = Path.Combine (projectDir, "obj", "project.assets.json")
@@ -153,20 +138,12 @@ let runRestoreProbe (candidate: string) : bool * bool =
 // ---- Main ----
 
 let candidates =
-    let fromNuGet =
-        match fetchVersionsFromNuget () with
-        | Ok versions -> versions
-        | Error error ->
-            eprintfn "NuGet version query failed (%s); falling back to project.assets.json." error
-            [||]
+    let fromNuGet = fetchVersionsFromNuget ()
     if fromNuGet.Length > 0 then fromNuGet
     else fallbackVersionsFromAssets ()
 
 if candidates.Length = 0 then
-    failwith
-        ("No Xamarin.Google.Android.Play.Asset.Delivery versions found to probe. " +
-         "Check network connectivity to api.nuget.org (including system proxy settings) " +
-         "or ensure Projects/Mobile/obj/project.assets.json exists from a prior restore.")
+    failwith "No Xamarin.Google.Android.Play.Asset.Delivery versions found to probe."
 
 let sorted =
     candidates
