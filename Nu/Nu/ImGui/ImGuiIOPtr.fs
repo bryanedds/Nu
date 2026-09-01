@@ -8,6 +8,7 @@ namespace ImGuiNET
 open System
 open ImGuizmoNET
 
+/// ImGui IOPtr operations.
 [<AutoOpen>]
 module ImGuiIOPtr =
 
