@@ -1083,10 +1083,9 @@ module WorldModule2 =
                 elif keyboardKey >= KeyboardKey.F1 && keyboardKey <= KeyboardKey.F12 then ImGuiKey.F1 + (keyboardKey - KeyboardKey.F1 |> LanguagePrimitives.EnumToValue |> LanguagePrimitives.EnumOfValue) |> List.singleton
                 else []
 
-        static member internal processWindowResize (world : World) =
+        static member private processWindowResizePositive (windowSize : Vector2i) (world : World) =
 
             // validate and normalize display configuration
-            let windowSize = World.getWindowSizeOtherwiseViewportSize world
             let virtualSize = World.getDisplayVirtualResolution world
             if virtualSize.X <= 0 || virtualSize.Y <= 0 then
                 Log.error ("Display virtual resolution must be positive, but was " + string virtualSize.X + "x" + string virtualSize.Y + ".")
@@ -1136,6 +1135,11 @@ module WorldModule2 =
                 let windowSize = World.getWindowSizeOtherwiseViewportSize world
                 let displayScalar, _ = selectDisplayScalarAndSize windowSize
                 World.synchronizeViewports windowSize displayScalar world
+
+        static member internal processWindowResize (world : World) =
+            let windowSize = World.getWindowSizeOtherwiseViewportSize world
+            if windowSize.X > 0 && windowSize.Y > 0 then
+                World.processWindowResizePositive windowSize world
 
         static member internal processInput2 (evt : SDL_Event) (world : World) =
             match evt.Type with
