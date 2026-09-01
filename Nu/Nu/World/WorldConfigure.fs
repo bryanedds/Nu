@@ -42,6 +42,7 @@ module Configure =
                 | nameof Constants.Render.FarPlaneDistanceExterior -> Constants.Render.FarPlaneDistanceExterior <- scvalue value
                 | nameof Constants.Render.NearPlaneDistanceImposter -> Constants.Render.NearPlaneDistanceImposter <- scvalue value
                 | nameof Constants.Render.FarPlaneDistanceImposter -> Constants.Render.FarPlaneDistanceImposter <- scvalue value
+                | nameof Constants.Engine.EyeMarginMaxScalar -> Constants.Engine.EyeMarginMaxScalar <- scvalue value
                 | nameof Constants.Render.DisplayVirtualResolution -> Constants.Render.DisplayVirtualResolution <- scvalue value
                 | nameof Constants.Render.SsaoResolutionDivisor -> Constants.Render.SsaoResolutionDivisor <- scvalue value
                 | nameof Constants.Render.TextureAnisotropyMax -> Constants.Render.TextureAnisotropyMax <- scvalue value

@@ -38,13 +38,13 @@ module WorldInputModule =
         static member getMousePosition2dInset (world : World) =
             let viewport = world.WindowViewport
             let mousePosition = World.getMousePosition world
-            Viewport.mouseTo2dInner world.Eye2dCenter world.Eye2dSize mousePosition viewport
+            Viewport.mouseTo2dInner world.Eye2dCenter world.Eye2dViewed mousePosition viewport
 
         /// Get the 2d world position of the mouse.
         static member getMousePosition2dWorld absolute (world : World) =
             let viewport = world.WindowViewport
             let mousePosition = World.getMousePosition world
-            Viewport.mouseToWorld2d absolute world.Eye2dCenter world.Eye2dSize mousePosition viewport
+            Viewport.mouseToWorld2d absolute world.Eye2dCenter world.Eye2dViewed mousePosition viewport
 
         /// Get the 3d screen position of the mouse.
         static member getMousePosition3dScreen (world : World) =

@@ -1,4 +1,4 @@
-﻿// Nu Game Engine.
+// Nu Game Engine.
 // Required Notice:
 // Copyright (C) Bryan Edds.
 // Nu Game Engine is licensed under the Nu Game Engine Noncommercial License.
@@ -454,7 +454,7 @@ module WorldModule2 =
             World.createEntity<StaticSpriteDispatcher> None DefaultOverlay (Some slideSprite.Surnames) slideGroup world |> ignore<Entity>
             World.setEntityProtection ManualProtection slideSprite world |> ignore<bool>
             slideSprite.SetPersistent false world
-            slideSprite.SetSize world.Eye2dSize.V3 world
+            slideSprite.SetSize world.Eye2dViewable.V3 world
             slideSprite.SetAbsolute true world
             match slideDescriptor.SlideImageOpt with
             | Some slideImage ->
@@ -850,27 +850,6 @@ module WorldModule2 =
             for entity in entities do
                 World.unregisterEntityPhysics entity world
 
-        static member private synchronizeViewports world =
-            let windowSize = World.getWindowSizeOtherwiseViewportSize world
-            let windowViewport = Viewport.makeWindowResolution (World.getDisplayVirtualResolution world) windowSize
-
-            World.setWindowViewport windowViewport world
-            World.setGeometryViewport (Viewport.makeGeometry windowViewport.Bounds.Size) world
-
-            // Rebuild cached 3d frusta because their aspect ratio depends on the virtual resolution.
-            let gameState = World.getGameState Nu.Game.Handle world
-            let resolution = World.getDisplayVirtualResolution world * Globals.Render.DisplayScalar
-            let viewportInterior = Viewport.makeInteriorViewed resolution
-            let viewportExterior = Viewport.makeExteriorViewed resolution
-            let viewportImposter = Viewport.makeImposterViewed resolution
-            World.setGameState
-                { gameState with
-                    Eye3dFrustumInterior = Viewport.getFrustum gameState.Eye3dCenter gameState.Eye3dRotation gameState.Eye3dFieldOfView viewportInterior
-                    Eye3dFrustumExterior = Viewport.getFrustum gameState.Eye3dCenter gameState.Eye3dRotation gameState.Eye3dFieldOfView viewportExterior
-                    Eye3dFrustumImposter = Viewport.getFrustum gameState.Eye3dCenter gameState.Eye3dRotation gameState.Eye3dFieldOfView viewportImposter }
-                Nu.Game.Handle
-                world
-
         /// Set the display's virtual resolution and synchronously resynchronize window state and viewports.
         static member setDisplayVirtualResolution (resolution : Vector2i) (world : World) =
             if resolution.X <= 0 || resolution.Y <= 0 then
@@ -978,7 +957,8 @@ module WorldModule2 =
             World.switchAmbientState world
 
             // synchronize viewports in case they get out of sync, such as during an undo operation
-            World.synchronizeViewports world
+            let windowSize = World.getWindowSizeOtherwiseViewportSize world
+            World.synchronizeViewports windowSize world.WindowViewport.DisplayScalar world
 
             // rebuild spatial trees
             Octree.clear world.Octree
@@ -1105,29 +1085,57 @@ module WorldModule2 =
 
         static member internal processWindowResize (world : World) =
 
-            // ensure window size is a factor of display virtual resolution, going to full screen otherwise
-            let virtualResolution = World.getDisplayVirtualResolution world
+            // validate and normalize display configuration
             let windowSize = World.getWindowSizeOtherwiseViewportSize world
-            if virtualResolution.X <= 0 || virtualResolution.Y <= 0 then
-                Log.error ("Display virtual resolution must be positive, but was " + string virtualResolution.X + "x" + string virtualResolution.Y + ".")
+            let virtualSize = World.getDisplayVirtualResolution world
+            if virtualSize.X <= 0 || virtualSize.Y <= 0 then
+                Log.error ("Display virtual resolution must be positive, but was " + string virtualSize.X + "x" + string virtualSize.Y + ".")
             else
-                let windowScalar =
-                    max (single windowSize.X / single virtualResolution.X |> ceil |> int |> max 1)
-                        (single windowSize.Y / single virtualResolution.Y |> ceil |> int |> max 1)
-                let windowSize' = windowScalar * virtualResolution
-                World.trySetWindowSize windowSize' world
-                let windowSize'' = World.getWindowSizeOtherwiseViewportSize world
-                if windowSize''.X < windowSize'.X || windowSize''.Y < windowSize'.Y then
-                    World.trySetWindowFullScreen true world
-
-                // synchronize display virtual scalar
-                let windowSize'' = World.getWindowSizeOtherwiseViewportSize world
-                let xScalar = windowSize''.X / virtualResolution.X
-                let yScalar = windowSize''.Y / virtualResolution.Y
-                Globals.Render.DisplayScalar <- max 1 (min xScalar yScalar)
-
-                // synchronize view ports
-                World.synchronizeViewports world
+                let eyeMarginMaxScalar = Vector2.Max (v2Zero, Constants.Engine.EyeMarginMaxScalar)
+                let virtualSizeWithMargin =
+                    virtualSize.V2 * (v2Dup 1.0f + 2.0f * eyeMarginMaxScalar)
+                let oldDisplayScalar = max 1 world.WindowViewport.DisplayScalar
+                let minSize scalar = virtualSize * scalar
+                let maxSize scalar =
+                    v2i
+                        (int (ceil (virtualSizeWithMargin.X * single scalar)))
+                        (int (ceil (virtualSizeWithMargin.Y * single scalar)))
+                let clampSize (minimum : Vector2i) (maximum : Vector2i) (size : Vector2i) =
+                    v2i
+                        (max minimum.X (min maximum.X size.X))
+                        (max minimum.Y (min maximum.Y size.Y))
+                let selectDisplayScalarAndSize (windowSize : Vector2i) =
+                    let oldMinimum = minSize oldDisplayScalar
+                    let oldMaximum = maxSize oldDisplayScalar
+                    let below = windowSize.X < oldMinimum.X || windowSize.Y < oldMinimum.Y
+                    let above = windowSize.X > oldMaximum.X || windowSize.Y > oldMaximum.Y
+                    let maximumRatio =
+                        max
+                            (int (ceil (single windowSize.X / single virtualSize.X)))
+                            (int (ceil (single windowSize.Y / single virtualSize.Y)))
+                    let maximumScalar = max (oldDisplayScalar + 1) (maximumRatio + 1)
+                    let minimumCandidate, maximumCandidate =
+                        if above && not below then oldDisplayScalar + 1, maximumScalar
+                        elif below && not above then 1, oldDisplayScalar
+                        else 1, maximumScalar
+                    seq {
+                        for scalar in minimumCandidate .. maximumCandidate do
+                            let candidateSize = clampSize (minSize scalar) (maxSize scalar) windowSize
+                            let dx = int64 candidateSize.X - int64 windowSize.X
+                            let dy = int64 candidateSize.Y - int64 windowSize.Y
+                            let distanceSquared = dx * dx + dy * dy
+                            yield struct (distanceSquared, abs (scalar - oldDisplayScalar), scalar, candidateSize) }
+                    |> Seq.min
+                    |> fun struct (_, _, scalar, size) -> scalar, size
+                let _, snappedSize = selectDisplayScalarAndSize windowSize
+                if snappedSize <> windowSize then
+                    World.trySetWindowSize snappedSize world
+                    let actualWindowSize = World.getWindowSizeOtherwiseViewportSize world
+                    if actualWindowSize.X < snappedSize.X || actualWindowSize.Y < snappedSize.Y then
+                        World.trySetWindowFullScreen true world
+                let windowSize = World.getWindowSizeOtherwiseViewportSize world
+                let displayScalar, _ = selectDisplayScalarAndSize windowSize
+                World.synchronizeViewports windowSize displayScalar world
 
         static member internal processInput2 (evt : SDL_Event) (world : World) =
             match evt.Type with
@@ -1143,11 +1151,10 @@ module WorldModule2 =
             | SDL_EventType.SDL_EVENT_MOUSE_MOTION ->
                 let io = ImGui.GetIO ()
                 let pixelDensity = World.tryGetWindowPixelDensity world |> Option.defaultValue 1.0f
-                let viewport = World.getWindowViewport world
-                io.AddMousePosEvent // scale by pixel density because SDL IO comes in from unscale window coords and offset by bounds min
-                    (evt.button.x * pixelDensity + single viewport.Bounds.Min.X,
-                     evt.button.y * pixelDensity - single viewport.Bounds.Min.Y)
-                let mousePosition = v2 (single evt.button.x) (single evt.button.y)
+                let mousePosition =
+                    v2 evt.motion.x evt.motion.y * pixelDensity -
+                    world.WindowViewport.Bounds.Min.V2
+                io.AddMousePosEvent (mousePosition.X, mousePosition.Y)
                 if World.isMouseButtonDown MouseLeft world then
                     let eventTrace = EventTrace.debug "World" "processInput2" "MouseDrag" EventTrace.empty
                     World.publishPlus { MouseMoveData.Position = mousePosition } Nu.Game.Handle.MouseDragEvent eventTrace Nu.Game.Handle true true world
@@ -1570,8 +1577,8 @@ module WorldModule2 =
 
         static member private renderScreenTransition renderPass (screen : Screen) world =
             match screen.GetTransitionState world with
-            | IncomingState transitionTime -> World.renderScreenTransition5 transitionTime world.Eye2dSize renderPass (screen.GetIncoming world) world
-            | OutgoingState transitionTime -> World.renderScreenTransition5 transitionTime world.Eye2dSize renderPass (screen.GetOutgoing world) world
+            | IncomingState transitionTime -> World.renderScreenTransition5 transitionTime world.Eye2dViewed renderPass (screen.GetIncoming world) world
+            | OutgoingState transitionTime -> World.renderScreenTransition5 transitionTime world.Eye2dViewed renderPass (screen.GetOutgoing world) world
             | IdlingState _ -> ()
 
         static member private renderSimulantsInternal8
@@ -2106,7 +2113,7 @@ module WorldModule2 =
                                                                         world.Eye3dRotation
                                                                         world.Eye3dFieldOfView
                                                                         world.Eye2dCenter
-                                                                        world.Eye2dSize
+                                                                        world.Eye2dViewed
                                                                         world.GeometryViewport
                                                                         world.WindowViewport
                                                                         windowProperties
