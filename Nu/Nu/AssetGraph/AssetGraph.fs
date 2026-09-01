@@ -85,7 +85,7 @@ type AssetDescriptor =
 /// Describes asset packages.
 type PackageDescriptor = AssetDescriptor list
 
-/// Asset graph abstract data type.
+/// Asset graph abstract data type module.
 [<RequireQualifiedAccess>]
 module AssetGraph =
 

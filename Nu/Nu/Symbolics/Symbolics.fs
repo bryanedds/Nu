@@ -17,7 +17,7 @@ type [<Struct>] SymbolLoadMetadata =
     { ImplicitDelimiters : bool
       StripCsvHeader : bool }
 
-/// Symbolics abstract data type.
+/// Symbolics abstract data type module.
 [<RequireQualifiedAccess>]
 module Symbolics =
 

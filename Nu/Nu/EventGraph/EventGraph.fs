@@ -39,7 +39,7 @@ type UnsubscriptionEntries =
 type EventTracer =
     string -> unit
 
-/// Event graph abstract data type.
+/// Event graph abstract data type module.
 [<RequireQualifiedAccess>]
 module EventGraph =
 

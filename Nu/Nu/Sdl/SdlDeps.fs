@@ -80,7 +80,7 @@ module SdlEvents =
     let tryConsume (event : SDL_Event outref) =
         PolledEvents.TryDequeue &event
 
-/// SdlDeps abstract data type.
+/// SdlDeps abstract data type module.
 [<RequireQualifiedAccess>]
 module SdlDeps =
 

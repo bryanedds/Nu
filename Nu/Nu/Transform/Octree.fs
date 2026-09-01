@@ -22,7 +22,7 @@ module OctelementMasks =
 // NOTE: opening this in order to make the Octelement property implementations reasonably succinct.
 open OctelementMasks
 
-/// Octelement abstract data type.
+/// Octelement abstract data type module.
 [<RequireQualifiedAccess>]
 module Octelement =
 
@@ -464,7 +464,7 @@ module internal Octnode =
 
 type internal Octnode<'e when 'e : equality> = Octnode.Octnode<'e>
 
-/// Octree abstract data type.
+/// Octree abstract data type module.
 [<RequireQualifiedAccess>]
 module Octree =
 
