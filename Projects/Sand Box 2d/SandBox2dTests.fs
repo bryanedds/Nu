@@ -10,7 +10,6 @@ open System.Numerics
 open NUnit.Framework
 open Prime
 open Nu
-
 module Tests =
 
     [<Test>]
