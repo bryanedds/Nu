@@ -201,7 +201,6 @@ module Render =
     let [<Uniform>] mutable NearPlaneDistanceOmnipresent = NearPlaneDistanceInterior
     let [<Uniform>] mutable FarPlaneDistanceOmnipresent = FarPlaneDistanceImposter
     let [<Uniform>] mutable DisplayVirtualResolution = match ConfigurationManager.AppSettings["DisplayVirtualResolution"] with null -> v2i 640 360 | value -> scvalue value
-    let [<Uniform>] mutable SsaoResolutionDivisor = match ConfigurationManager.AppSettings["SsaoResolutionDivisor"] with null -> 1 | value -> scvalue value
     let [<Uniform>] Play3dBoxSize = Vector3 64.0f
     let [<Uniform>] WindowClearColor = Color.Zero
     let [<Uniform>] ViewportClearColor = Color.Zero // NOTE: do not change this color as the deferred lighting shader checks if position.w zero to ignore fragment.

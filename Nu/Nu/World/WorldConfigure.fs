@@ -43,7 +43,6 @@ module Configure =
                 | nameof Constants.Render.NearPlaneDistanceImposter -> Constants.Render.NearPlaneDistanceImposter <- scvalue value
                 | nameof Constants.Render.FarPlaneDistanceImposter -> Constants.Render.FarPlaneDistanceImposter <- scvalue value
                 | nameof Constants.Render.DisplayVirtualResolution -> Constants.Render.DisplayVirtualResolution <- scvalue value
-                | nameof Constants.Render.SsaoResolutionDivisor -> Constants.Render.SsaoResolutionDivisor <- scvalue value
                 | nameof Constants.Render.TextureAnisotropyMax -> Constants.Render.TextureAnisotropyMax <- scvalue value
                 | nameof Constants.Render.TextureMinimalMipmapIndex -> Constants.Render.TextureMinimalMipmapIndex <- scvalue value
                 | nameof Constants.Render.ShadowVirtualResolution -> Constants.Render.ShadowVirtualResolution <- scvalue value
