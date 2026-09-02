@@ -765,6 +765,7 @@ module AssimpExtensions =
                 boneTransforms[i] <- Assimp.ExportMatrix boneInfo.BoneTransform
             (boneIds, boneOffsets, boneTransforms)
 
+/// Assimp context operations.
 [<RequireQualifiedAccess>]
 module AssimpContext =
 

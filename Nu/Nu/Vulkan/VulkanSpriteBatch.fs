@@ -75,6 +75,7 @@ type [<ReferenceEquality>] SpriteBatchEnv =
           mutable State : SpriteBatchState
           VulkanContext : VulkanContext }
 
+/// Sprite batch operations.
 [<RequireQualifiedAccess>]
 module SpriteBatch =
 

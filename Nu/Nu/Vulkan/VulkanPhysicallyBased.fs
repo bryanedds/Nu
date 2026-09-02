@@ -548,6 +548,7 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedSurface =
     override this.GetHashCode () =
         this.HashCode
 
+/// Physically-based surface operations.
 [<RequireQualifiedAccess>]
 module PhysicallyBasedSurfaceFns =
     let extractPresence = PhysicallyBasedSurface.extractPresence
@@ -797,6 +798,7 @@ type PhysicallyBasedPipelines =
       ForwardStaticPipeline : PhysicallyBasedPipeline
       ForwardAnimatedPipeline : PhysicallyBasedPipeline }
 
+/// Physically-based rendering operations.
 [<RequireQualifiedAccess>]
 module PhysicallyBased =
     

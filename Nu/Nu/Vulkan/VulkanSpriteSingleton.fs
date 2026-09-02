@@ -21,6 +21,7 @@ type SpriteVertStruct =
 type SpriteFragStruct =
     [<FieldOffset(0)>] val mutable color : Vector4
 
+/// Single sprite operations.
 [<RequireQualifiedAccess>]
 module SpriteSingleton =
 

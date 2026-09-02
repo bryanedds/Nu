@@ -61,6 +61,7 @@ type [<ReferenceEquality>] SdlConfig =
         |> Seq.map scstring
         |> String.join " "
 
+/// SDL event operations.
 [<RequireQualifiedAccess>]
 module SdlEvents =
 
@@ -79,6 +80,7 @@ module SdlEvents =
     let tryConsume (event : SDL_Event outref) =
         PolledEvents.TryDequeue &event
 
+/// SdlDeps abstract data type module.
 [<RequireQualifiedAccess>]
 module SdlDeps =
 

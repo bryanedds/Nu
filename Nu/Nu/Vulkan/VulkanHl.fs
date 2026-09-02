@@ -285,6 +285,7 @@ type SurfaceState =
     | SurfaceLost
     | SurfaceDestroyed
 
+/// Vulkan operations.
 [<AutoOpen>]
 module Vulkan =
 
@@ -306,6 +307,7 @@ module Vulkan =
     /// The Vulkan device API. Ignore the type parameter as it's only use to expose InstanceApi in a convenient way.
     let inline internal DeviceApi<'a> = DeviceApi_
 
+/// High-level vulkan operations.
 [<RequireQualifiedAccess>]
 module Hl =
 

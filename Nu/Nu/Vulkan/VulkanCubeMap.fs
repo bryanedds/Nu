@@ -53,6 +53,7 @@ type CubeMapPipeline =
 type CubeMapKey =
     string * string * string * string * string * string
 
+/// Cube map operations.
 [<RequireQualifiedAccess>]
 module CubeMap =
 

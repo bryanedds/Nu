@@ -44,6 +44,7 @@ type [<AllowNullLiteral>] ImGuiFileDialogState (directoryPath : string) =
             this.FileName <- PathF.GetFileName value
             this.DirectoryPath <- DirectoryInfo (PathF.GetDirectoryName value)
 
+/// ImGui operations relating to file dialog.
 [<RequireQualifiedAccess>]
 module ImGui =
 
