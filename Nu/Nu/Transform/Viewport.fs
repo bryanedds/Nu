@@ -17,8 +17,7 @@ type [<StructuralEquality; NoComparison>] Viewport =
       Inner : Box2i
       Bounds : Box2i
       Outer : Box2i
-      DisplayScalar : int
-      SsaoResolutionDivisor : int }
+      DisplayScalar : int }
 
     /// The aspect ratio of this viewport.
     member this.AspectRatio =
@@ -39,7 +38,7 @@ type [<StructuralEquality; NoComparison>] Viewport =
 
     /// The screen-space ambient occlusion texture buffer resolution appropriate for this viewport.
     member this.SsaoResolution =
-        this.Inner.Size / this.SsaoResolutionDivisor
+        this.Inner.Size
 
     /// Project to the given frame.
     static member project (source : Vector3) (frame : Matrix4x4) viewport =
@@ -241,8 +240,7 @@ type [<StructuralEquality; NoComparison>] Viewport =
           Inner = inner
           Bounds = bounds
           Outer = outer
-          DisplayScalar = Globals.Render.DisplayScalar
-          SsaoResolutionDivisor = Constants.Render.SsaoResolutionDivisor }
+          DisplayScalar = Globals.Render.DisplayScalar }
 
     static member makeGeometry (resolution : Vector2i) =
         let bounds = box2i v2iZero resolution
