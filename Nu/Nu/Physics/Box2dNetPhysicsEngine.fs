@@ -2161,6 +2161,7 @@ namespace Box2D.NET.Debugging
 open System
 open Box2D.NET
 
+/// Conveys debugging information about a Box2D.NET world.
 type B2WorldIdDebuggerDisplay (impl) =
     member this.AwakeBodyCount = B2Worlds.b2World_GetAwakeBodyCount impl
     member this.BodyEvents = B2Worlds.b2World_GetBodyEvents impl
@@ -2179,6 +2180,7 @@ type B2WorldIdDebuggerDisplay (impl) =
     member this.SensorEvents = B2Worlds.b2World_GetSensorEvents impl
     member this.UserData with get () = B2Worlds.b2World_GetUserData impl and set value = B2Worlds.b2World_SetUserData (impl, value)
 
+/// Conveys debugging information about a Box2D.NET body.
 type B2BodyIdDebuggerDisplay (impl) =
     member this.AABB = B2Bodies.b2Body_ComputeAABB impl
     member this.AngularDamping with get () = B2Bodies.b2Body_GetAngularDamping impl and set value = B2Bodies.b2Body_SetAngularDamping (impl, value)
@@ -2238,6 +2240,7 @@ type B2BodyIdDebuggerDisplay (impl) =
     member this.World = B2Bodies.b2Body_GetWorld impl
     member this.WorldCenterOfMass = B2Bodies.b2Body_GetWorldCenterOfMass impl
     
+/// Conveys debugging information about a Box2D.NET shape.
 type B2ShapeIdDebuggerDisplay (impl) =
     member this.AABB = B2Shapes.b2Shape_GetAABB impl
     member this.AreSensorEventsEnabled with get () = B2Shapes.b2Shape_AreSensorEventsEnabled impl and set value = B2Shapes.b2Shape_EnableSensorEvents (impl, value)
@@ -2282,6 +2285,7 @@ type B2ShapeIdDebuggerDisplay (impl) =
     member this.UserMaterial with get () = B2Shapes.b2Shape_GetUserMaterial impl and set value = B2Shapes.b2Shape_SetUserMaterial (impl, value)
     member this.World = B2Shapes.b2Shape_GetWorld impl
 
+/// Conveys debugging information about a Box2D.NET chain.
 type B2ChainIdDebuggerDisplay (impl) =
     member this.IsValid = B2Worlds.b2Chain_IsValid impl
     member this.SegmentCount = B2Shapes.b2Chain_GetSegmentCount impl
@@ -2296,6 +2300,7 @@ type B2ChainIdDebuggerDisplay (impl) =
     member this.SurfaceMaterialCount = B2Shapes.b2Chain_GetSurfaceMaterialCount impl
     member this.World = B2Shapes.b2Chain_GetWorld impl
 
+/// Conveys debugging information about a Box2D.NET joint.
 type B2JointIdDebuggerDisplay (impl) =
     member this.AngularSeparation = B2Joints.b2Joint_GetAngularSeparation impl
     member this.BodyA = B2Joints.b2Joint_GetBodyA impl
