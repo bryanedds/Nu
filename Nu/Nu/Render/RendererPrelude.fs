@@ -42,7 +42,7 @@ type Justification =
     | Unjustified of Wrapped : bool
     | Justified of Horizontal : JustificationHorizontal * Vertical : JustificationVertical
 
-/// A mutable particle type.
+/// A mutable particle value.
 type [<Struct>] Particle =
     { mutable Transform : Transform
       mutable InsetOpt : Box2 ValueOption

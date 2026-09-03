@@ -266,7 +266,7 @@ type [<SymbolicExpansion; CustomEquality; NoComparison>] Material =
         member this.Equals that =
             Material.equals this that
 
-/// A mutable 3d light probe value type.
+/// A mutable 3d light probe value.
 type [<Struct>] LightProbe3dValue =
     { mutable LightProbeId : uint64
       mutable Enabled : bool
@@ -274,7 +274,7 @@ type [<Struct>] LightProbe3dValue =
       mutable Bounds : Box3
       mutable Stale : bool }
 
-/// A mutable 3d light value type.
+/// A mutable 3d light value.
 type [<Struct>] Light3dValue =
     { mutable LightId : uint64
       mutable Origin : Vector3
@@ -289,7 +289,7 @@ type [<Struct>] Light3dValue =
       mutable LightType : LightType
       mutable DesireShadows : bool }
 
-/// A mutable billboard value type.
+/// A mutable billboard value.
 type [<Struct>] BillboardValue =
     { mutable ModelMatrix : Matrix4x4
       mutable CastShadow : bool
@@ -301,7 +301,7 @@ type [<Struct>] BillboardValue =
       mutable DepthTest : DepthTest
       mutable RenderType : RenderType }
 
-/// A mutable static model value type.
+/// A mutable static model value.
 type [<Struct>] StaticModelValue =
     { mutable ModelMatrix : Matrix4x4
       mutable CastShadow : bool
@@ -313,7 +313,7 @@ type [<Struct>] StaticModelValue =
       mutable DepthTest : DepthTest
       mutable RenderType : RenderType }
 
-/// A mutable static model surface value type.
+/// A mutable static model surface value.
 type [<Struct>] StaticModelSurfaceValue =
     { mutable ModelMatrix : Matrix4x4
       mutable CastShadow : bool
