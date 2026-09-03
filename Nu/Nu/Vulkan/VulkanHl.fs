@@ -272,18 +272,24 @@ type TextureCompression =
         | Uncompressed -> Bgra
         | ColorCompression | NormalCompression -> Rgba
 
-/// Represents a strict cycle ensuring that any presentation resources (surface and swapchains) that exist or are being
-/// created during the onset of app backgrounding on a mobile device are torn down/cancelled.
-type BackgroundingResponseState =
-    | PresentationSetupInitiated // setup of presentation resources has begun and may be complete
-    | PresentationTeardownPending // presentation resources can no longer be trusted as app has commenced backgrounding
-    | PresentationTeardownComplete // presentation resources have been destroyed and restoration will commence when app is back in foreground
-
 /// The state of the program's OS-provided rendering surface.
 type SurfaceState =
     | SurfaceReady
     | SurfaceLost
     | SurfaceDestroyed
+
+/// Represents a strict cycle ensuring that any presentation resources (surface and swapchains) that exist or are being
+/// created during the onset of app backgrounding on a mobile device are torn down/cancelled.
+type BackgroundingResponseState =
+
+    /// Setup of presentation resources has begun and may be complete.
+    | PresentationSetupInitiated
+
+    /// Presentation resources can no longer be trusted as app has commenced backgrounding.
+    | PresentationTeardownPending
+
+    /// Presentation resources have been destroyed and restoration will commence when app is back in foreground.
+    | PresentationTeardownComplete
 
 /// Vulkan operations.
 [<AutoOpen>]
@@ -410,13 +416,13 @@ module Hl =
     let internal setPresentationSetupInitiated () =
         lock BackgroundingResponseStateLock (fun () -> BackgroundingResponseState <- PresentationSetupInitiated)
 
-    /// Set the presentation teardown complete flag.
-    let internal setPresentationTeardownComplete () =
-        lock BackgroundingResponseStateLock (fun () -> BackgroundingResponseState <- PresentationTeardownComplete)
-
     /// Get whether the presentation teardown is pending due to backgrounding.
     let internal getBackgroundingRequested () =
         lock BackgroundingResponseStateLock (fun () -> BackgroundingResponseState = PresentationTeardownPending)
+
+    /// Set the presentation teardown complete flag.
+    let internal setPresentationTeardownComplete () =
+        lock BackgroundingResponseStateLock (fun () -> BackgroundingResponseState <- PresentationTeardownComplete)
 
     /// Get whether the window is minimized.
     let getWindowMinimized () =
