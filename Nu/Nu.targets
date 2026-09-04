@@ -46,7 +46,6 @@
 
         <!-- .NET runtime settings (defaults; set earlier in your project to override) -->
         <OutputType>Exe</OutputType> <!-- except <OutputType>; it is set to Library by default - override it after this target. -->
-        <ServerGarbageCollection Condition="'$(ServerGarbageCollection)' == '' And '$(TargetPlatformIdentifier)' != 'ios'">True</ServerGarbageCollection> <!-- this property is unsupported on iOS and will fail the build -->
         <TieredPGO Condition="'$(TieredPGO)' == ''">True</TieredPGO>
         <DisableFastUpToDateCheck Condition="'$(DisableFastUpToDateCheck)' == ''">True</DisableFastUpToDateCheck>
         <PublishSingleFile Condition="'$(PublishSingleFile)' == '' And '$(TargetPlatformIdentifier)' == ''">true</PublishSingleFile> <!-- for desktop, embed .NET DLLs into the generated executable. However, mobile doesn't support doing this. -->
