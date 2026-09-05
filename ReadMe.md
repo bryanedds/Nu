@@ -1,18 +1,5 @@
 Nu Game Engine [![Build status](https://github.com/bryanedds/Nu/actions/workflows/CI.yml/badge.svg)](https://github.com/bryanedds/Nu/actions/workflows/CI.yml) NOTE: build is occasionally failing because we temporarily run out of Github Actions :/
 
-BIG NEWS - Vulkan, Mac, iOS, and Android now available!
-==
-
-To upgrade your existing projects, you may pull latest and follow the steps at this wiki page -
-
-https://github.com/bryanedds/Nu/wiki/Converting-from-Nu-with-OpenGL-to-Nu-with-Vulkan
-
-This not only replaces our OpenGL renderers completely with Vulkan renderers, it also features important rendering and performance enhancements as well as makes Nu deployable on `Mac`, `iOS`, and `Android`!
-
-If you have any issues, please report them so we can fix them ASAP!
-
-This upgrade to Nu is all thanks to tremendous work from [@deanjl](https://github.com/deanjl), [@Happypig375](https://github.com/Happypig375), [@yvileapsis](https://github.com/yvileapsis), [@bryanedds](https://github.com/bryanedds), as well as the sustained support of our [donors](https://github.com/sponsors/bryanedds)!
-
 **Live Nu Game Engine Support on [Discord](https://discord.gg/BN79RxYAjD) [![Discord](https://img.shields.io/discord/700010129994809667)](https://discord.gg/BN79RxYAjD)**
 
 So... just what is the **Nu Game Engine**?
