@@ -22,8 +22,14 @@ module Xtension =
             { Properties_ : UMap<string, Property>
               Flags_ : int }
 
+        /// Get the properties of an Xtension.
         member this.Properties = this.Properties_
+
+        /// Check whether the Xtension uses mutation.
         member this.Imperative = this.Flags_ &&& ImperativeMask <> 0
+
+        /// Check whether the Xtension contains any DesignerProperty's or ComputedProperty's in constant-time (via an
+        /// internally-cached flag).
         member this.ContainsRuntimeProperties = this.Flags_ &&& ContainsRuntimePropertiesMask <> 0
 
     /// Get the properties of an Xtension.
