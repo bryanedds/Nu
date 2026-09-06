@@ -48,7 +48,7 @@ Photo-realistic yet user-friendly deferred, physically-based rendering.
 Rendering made efficient with instancing-by-default.
 
 ![image](https://github.com/user-attachments/assets/665f86a9-79e1-49de-bdaa-d6dfd0801824)
-Coherent dynamic lighting model with static global illumination.
+Coherent lighting model with dynamic light and shadows and image-based lighting.
 
 ![image](https://github.com/user-attachments/assets/0d3ad2c5-0a84-4eb3-a751-517ca663df49)
 Efficient and detailed screen space reflection.
