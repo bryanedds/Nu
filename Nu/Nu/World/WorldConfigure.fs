@@ -48,6 +48,7 @@ module Configure =
                 | nameof Constants.Render.ShadowVirtualResolution -> Constants.Render.ShadowVirtualResolution <- scvalue value
                 | nameof Constants.Render.ShadowDisplayScalarMax -> Constants.Render.ShadowDisplayScalarMax <- scvalue value
                 | nameof Constants.Render.ShadowCascadeLimits -> Constants.Render.ShadowCascadeLimits <- scvalue value
+                | nameof Constants.Render.SsaoResolutionDivisor -> Constants.Render.SsaoResolutionDivisor <- scvalue value
                 | nameof Constants.Render.StubRenderer3d -> Constants.Render.StubRenderer3d <- scvalue value
                 | nameof Constants.Audio.MasterAudioVolumeDefault -> Constants.Audio.MasterAudioVolumeDefault <- scvalue value
                 | nameof Constants.Audio.MasterSoundVolumeDefault -> Constants.Audio.MasterSoundVolumeDefault <- scvalue value

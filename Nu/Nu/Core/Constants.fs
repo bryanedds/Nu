@@ -175,7 +175,7 @@ module Engine =
 [<RequireQualifiedAccess>]
 module Render =
 
-    let [<Uniform>] MemoryConstrained = OperatingSystem.IsAndroid () || OperatingSystem.IsIOS () // TODO: update this as we can determine more platforms that are memory-constrained.
+    let [<Uniform>] ResourceConstrained = OperatingSystem.IsAndroid () || OperatingSystem.IsIOS () // TODO: update this as we can determine more platforms that are memory-constrained.
     let [<Literal>] IgnoreLightMapsName = "IgnoreLightMaps"
     let [<Literal>] OpaqueDistanceName = "OpaqueDistance"
     let [<Literal>] FinenessOffsetName = "FinenessOffset"
@@ -201,6 +201,7 @@ module Render =
     let [<Uniform>] mutable NearPlaneDistanceOmnipresent = NearPlaneDistanceInterior
     let [<Uniform>] mutable FarPlaneDistanceOmnipresent = FarPlaneDistanceImposter
     let [<Uniform>] mutable DisplayVirtualResolution = match ConfigurationManager.AppSettings["DisplayVirtualResolution"] with null -> v2i 640 360 | value -> scvalue value
+    let [<Uniform>] mutable SsaoResolutionDivisor = match ConfigurationManager.AppSettings["SsaoResolutionDivisor"] with null -> (if ResourceConstrained then 2 else 1) | value -> scvalue value
     let [<Uniform>] Play3dBoxSize = Vector3 64.0f
     let [<Uniform>] WindowClearColor = Color.Zero
     let [<Uniform>] ViewportClearColor = Color.Zero // NOTE: do not change this color as the deferred lighting shader checks if position.w zero to ignore fragment.
@@ -231,7 +232,7 @@ module Render =
     let [<Literal>] LightsMaxDeferred = 64 // NOTE: remember to update LIGHTS_MAX in deferred shaders when changing this!
     let [<Literal>] LightsMaxForward = 9 // NOTE: remember to update LIGHTS_MAX in forward shaders when changing this!
     let [<Uniform>] mutable ShadowVirtualResolution = match ConfigurationManager.AppSettings["ShadowVirtualResolution"] with null -> 256 | value -> scvalue value
-    let [<Uniform>] mutable ShadowDisplayScalarMax = match ConfigurationManager.AppSettings["ShadowDisplayScalarMax"] with null -> (if MemoryConstrained then 2 else 3) | value -> scvalue value
+    let [<Uniform>] mutable ShadowDisplayScalarMax = match ConfigurationManager.AppSettings["ShadowDisplayScalarMax"] with null -> (if ResourceConstrained then 2 else 3) | value -> scvalue value
     let [<Literal>] ShadowTexturesMax = 12 // NOTE: remember to update SHADOW_TEXTURES_MAX in shaders when changing this!
     let [<Literal>] ShadowMapsMax = 12 // NOTE: remember to update SHADOW_MAPS_MAX in shaders when changing this!
     let [<Literal>] ShadowCascadesMax = 1 // NOTE: remember to update SHADOW_CASCADES_MAX in shaders when changing this!
