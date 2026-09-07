@@ -134,7 +134,7 @@
         [ChromaticAberrationChannelOffsets [0.003 0.002 -0.002]]
         [ChromaticAberrationFocalPoint [0 0]]]]
       [MountOpt [Some ^]]
-      [Name Lighting3dConfig-0001]]
+      [Name Lighting3dConfig]]
      []]
     [Nav3dConfigDispatcher
      [[MountOpt [Some ^]]
