@@ -4251,7 +4251,6 @@ module PhysicallyBased =
         (view : Matrix4x4)
         (projectionUnflipped : Matrix4x4)
         (lightCutoffMargin : single)
-        (ssvfEnabled : int)
         (ssvfIntensity : single)
         (ssvfSteps : int)
         (ssvfAsymmetry : single)
@@ -4305,7 +4304,7 @@ module PhysicallyBased =
                 // specify lighting
                 let mutable lighting = LightingStruct ()
                 lighting.lightCutoffMargin <- lightCutoffMargin
-                lighting.ssvfEnabled <- ssvfEnabled
+                lighting.ssvfEnabled <- 1
                 lighting.ssvfIntensity <- ssvfIntensity
                 lighting.ssvfSteps <- ssvfSteps
                 lighting.ssvfAsymmetry <- ssvfAsymmetry

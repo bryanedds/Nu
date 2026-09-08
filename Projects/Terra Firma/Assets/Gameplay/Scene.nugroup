@@ -91,7 +91,7 @@
         [SsaoDistanceMax 0.05]
         [SsvfEnabled True]
         [SsvfIntensity 0.05]
-        [SsvfSteps 12]
+        [SsvfSteps 8]
         [SsvfAsymmetry 0.1]
         [SsrlEnabled True]
         [SsrlIntensity 0.5]
