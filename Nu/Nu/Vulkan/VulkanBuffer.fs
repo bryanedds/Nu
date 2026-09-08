@@ -58,6 +58,9 @@ type [<Struct>] BufferWrapper =
         let mutable vmaAllocationInfo = Unchecked.defaultof<VmaAllocationInfo>
         Vma.vmaCreateBuffer (context.VmaAllocator, &&bufferInfo, &&info, &vkBuffer, &vmaAllocation, &vmaAllocationInfo) |> Hl.check
 
+        // report buffer memory added
+        Hl.reportBufferMemoryChange (int64 bufferInfo.size)
+
         // make buffer wrapper
         let bufferWrapper =
             { VkBuffer_ = vkBuffer
@@ -155,6 +158,7 @@ type [<Struct>] BufferWrapper =
     static member destroy (bufferWrapper : BufferWrapper byref, context : VulkanContext) =
         if bufferWrapper.VkBuffer_.IsNotNull then
             Vma.vmaDestroyBuffer (context.VmaAllocator, bufferWrapper.VkBuffer_, bufferWrapper.VmaAllocation_)
+            Hl.reportBufferMemoryChange (-int64 bufferWrapper.Size_)
             bufferWrapper.VkBuffer_ <- VkBuffer.Null
 
 /// Represents a dynamically growing multibuffer with parallel underlying vulkan buffers. Maintains an internal
