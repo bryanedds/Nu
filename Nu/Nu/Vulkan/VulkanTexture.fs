@@ -274,22 +274,22 @@ type TextureWrapper =
       StagingBuffers : VulkanBuffer List }
 
     static member private createImage vkFormat extent mipLevels (textureType : TextureType) usageFlags (context : VulkanContext) =
-        let mutable info = VkImageCreateInfo ()
-        if textureType.IsTextureCubeMap then info.flags <- VkImageCreateFlags.CubeCompatible
-        info.imageType <- VkImageType.Image2D
-        info.format <- vkFormat
-        info.extent <- extent
-        info.mipLevels <- uint mipLevels
-        info.arrayLayers <- uint textureType.Layers
-        info.samples <- VkSampleCountFlags.Count1
-        info.tiling <- VkImageTiling.Optimal
-        info.usage <- usageFlags
-        info.sharingMode <- VkSharingMode.Exclusive
-        info.initialLayout <- Undefined.VkImageLayout
-        let aInfo = VmaAllocationCreateInfo (usage = VmaMemoryUsage.Auto)
+        let mutable imageInfo = VkImageCreateInfo ()
+        if textureType.IsTextureCubeMap then imageInfo.flags <- VkImageCreateFlags.CubeCompatible
+        imageInfo.imageType <- VkImageType.Image2D
+        imageInfo.format <- vkFormat
+        imageInfo.extent <- extent
+        imageInfo.mipLevels <- uint mipLevels
+        imageInfo.arrayLayers <- uint textureType.Layers
+        imageInfo.samples <- VkSampleCountFlags.Count1
+        imageInfo.tiling <- VkImageTiling.Optimal
+        imageInfo.usage <- usageFlags
+        imageInfo.sharingMode <- VkSharingMode.Exclusive
+        imageInfo.initialLayout <- Undefined.VkImageLayout
+        let allocInfo = VmaAllocationCreateInfo (usage = VmaMemoryUsage.AutoPreferDevice)
         let mutable image = Unchecked.defaultof<VkImage>
         let mutable allocation = Unchecked.defaultof<VmaAllocation>
-        Vma.vmaCreateImage (context.VmaAllocator, &info, &aInfo, &image, &allocation, nullPtr) |> Hl.check
+        Vma.vmaCreateImage (context.VmaAllocator, &imageInfo, &allocInfo, &image, &allocation, nullPtr) |> Hl.check
         (image, allocation)
 
     static member create pixelFormat (internalFormat : Vulkan.ImageFormat) metadata mipLevels (attachmentMode : AttachmentMode) (textureType : TextureType) usageFlags (context : VulkanContext) =
