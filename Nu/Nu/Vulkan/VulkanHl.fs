@@ -353,6 +353,14 @@ module Hl =
     let mutable internal Backgrounded_ = false
     let inline internal Backgrounded<'a> = Backgrounded_
 
+    // buffer memory counter
+    let mutable private BufferMemoryCountLock = obj ()
+    let mutable private BufferMemoryCount = 0L
+
+    // image memory counter
+    let mutable private ImageMemoryCountLock = obj ()
+    let mutable private ImageMemoryCount = 0L
+
     // draw counters
     let mutable private DrawCountersLock = obj ()
     let mutable private DrawInstanceCount = 0
@@ -427,6 +435,22 @@ module Hl =
     /// Get whether the window is minimized.
     let getWindowMinimized () =
         WindowProperties_.WindowFlags &&& SDL_WindowFlags.SDL_WINDOW_MINIMIZED <> LanguagePrimitives.EnumOfValue 0UL
+
+    /// Report the fact that buffer memory usage has been changed.
+    let reportBufferMemoryChange bytes =
+        lock BufferMemoryCountLock (fun () -> BufferMemoryCount <- BufferMemoryCount + bytes)
+
+    /// Get the buffer memory usage.
+    let getBufferMemoryCount () =
+        lock BufferMemoryCountLock (fun () -> BufferMemoryCount)
+
+    /// Report the fact that image memory usage has been changed.
+    let reportImageMemoryChange bytes =
+        lock ImageMemoryCountLock (fun () -> ImageMemoryCount <- ImageMemoryCount + bytes)
+
+    /// Get the image memory usage.
+    let getImageMemoryCount () =
+        lock ImageMemoryCountLock (fun () -> ImageMemoryCount)
 
     /// Report the fact that a draw call has just been made with the given number of instances.
     let reportDrawScope () =

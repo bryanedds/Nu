@@ -20,7 +20,11 @@ module Xtension =
             { Properties_ : Dictionary<string, Property>
               mutable ContainsRuntimeProperties_ : bool }
 
+        /// Get the properties of an Xtension.
         member this.Properties = this.Properties_
+
+        /// Check whether the Xtension contains any DesignerProperty's or ComputedProperty's in constant-time (via an
+        /// internally-cached flag).
         member this.ContainsRuntimeProperties = this.ContainsRuntimeProperties_
 
     /// Get the properties of an Xtension.
