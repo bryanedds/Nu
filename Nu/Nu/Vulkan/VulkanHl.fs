@@ -357,6 +357,10 @@ module Hl =
     let mutable private BufferMemoryCountLock = obj ()
     let mutable private BufferMemoryCount = 0L
 
+    // image memory counter
+    let mutable private ImageMemoryCountLock = obj ()
+    let mutable private ImageMemoryCount = 0L
+
     // draw counters
     let mutable private DrawCountersLock = obj ()
     let mutable private DrawInstanceCount = 0
@@ -439,6 +443,14 @@ module Hl =
     /// Get the buffer memory usage.
     let getBufferMemoryCount () =
         lock BufferMemoryCountLock (fun () -> BufferMemoryCount)
+
+    /// Report the fact that image memory usage has been changed.
+    let reportImageMemoryChange bytes =
+        lock ImageMemoryCountLock (fun () -> ImageMemoryCount <- ImageMemoryCount + bytes)
+
+    /// Get the image memory usage.
+    let getImageMemoryCount () =
+        lock ImageMemoryCountLock (fun () -> ImageMemoryCount)
 
     /// Report the fact that a draw call has just been made with the given number of instances.
     let reportDrawScope () =
