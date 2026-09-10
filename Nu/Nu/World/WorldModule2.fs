@@ -1101,9 +1101,10 @@ module WorldModule2 =
             | SDL_EventType.SDL_EVENT_QUIT ->
                 let eventTrace = EventTrace.debug "World" "processInput2" "ExitRequest" EventTrace.empty
                 World.publishPlus () Nu.Game.Handle.ExitRequestEvent eventTrace Nu.Game.Handle true true world
-            | SDL_EventType.SDL_EVENT_WINDOW_RESIZED
             | SDL_EventType.SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED
             | SDL_EventType.SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED
+            | SDL_EventType.SDL_EVENT_WINDOW_MINIMIZED
+            | SDL_EventType.SDL_EVENT_WINDOW_RESTORED
             | SDL_EventType.SDL_EVENT_WINDOW_ENTER_FULLSCREEN
             | SDL_EventType.SDL_EVENT_WINDOW_LEAVE_FULLSCREEN ->
                 World.processWindowResize world
@@ -2061,7 +2062,11 @@ module WorldModule2 =
                                                                     // rendering since SDL's window resize callback can
                                                                     // come in a frame late
                                                                     if  windowProperties.WidthPixels < world.WindowViewport.Bounds.Width ||
-                                                                        windowProperties.HeightPixels < world.WindowViewport.Bounds.Height then
+                                                                        windowProperties.HeightPixels < world.WindowViewport.Bounds.Height ||
+                                                                        world.WindowViewport.Inner.Width > world.WindowViewport.Bounds.Width ||
+                                                                        world.WindowViewport.Inner.Height > world.WindowViewport.Bounds.Height ||
+                                                                        world.WindowViewport.Bounds.Width > world.WindowViewport.Outer.Width ||
+                                                                        world.WindowViewport.Bounds.Height > world.WindowViewport.Outer.Height then
                                                                         World.processWindowResize world
 
                                                                     // process rendering (2/2)

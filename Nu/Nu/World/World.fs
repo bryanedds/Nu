@@ -520,7 +520,7 @@ module WorldModule4 =
             let imGui = ImGui (true, windowViewport.Bounds.Size)
             let physicsEngine2d = StubPhysicsEngine.make ()
             let physicsEngine3d = StubPhysicsEngine.make ()
-            let rendererProcess = RendererInline (WindowProperties.empty) :> RendererProcess
+            let rendererProcess = RendererInline (constant None, WindowProperties.empty) :> RendererProcess
             rendererProcess.Start imGui.Fonts None geometryViewport windowViewport // params implicate stub renderers
             let audioPlayer = StubAudioPlayer.make ()
             let cursorClient = StubCursorClient.make ()
@@ -624,10 +624,14 @@ module WorldModule4 =
             let physicsEngine2d = plugin.MakePhysicsEngine2d ()
             let physicsEngine3d = JoltPhysicsEngine.make Constants.Physics.GravityDefault
             let joltDebugRendererImGuiOpt = new JoltDebugRendererImGui ()
+            let worldRef = ref Unchecked.defaultof<World>
+            let tryGetWindowProperties = fun () ->
+                SdlEvents.poll () // NOTE: polling events might allow window restoration to go through.
+                World.tryGetWindowProperties worldRef.Value
             let rendererProcess =
                 if Constants.Engine.RunSynchronously
-                then RendererInline windowProperties :> RendererProcess
-                else RendererThread windowProperties :> RendererProcess
+                then RendererInline (tryGetWindowProperties, windowProperties) :> RendererProcess
+                else RendererThread (tryGetWindowProperties, windowProperties) :> RendererProcess
             rendererProcess.Start imGui.Fonts (SdlDeps.getWindowOpt sdlDeps) geometryViewport windowViewport
             for package in initialPackages do
                 rendererProcess.EnqueueMessage2d (LoadRenderPackage2d package)
@@ -652,6 +656,7 @@ module WorldModule4 =
                 World.makePlus
                     tryMakeEditContext plugin eventGraph jobGraph geometryViewport windowViewport lateBindingsInstances quadtree octree config (Some sdlDeps)
                     imGui physicsEngine2d physicsEngine3d (Some joltDebugRendererImGuiOpt) rendererProcess audioPlayer cursorClient activeGameDispatcher
+            worldRef.Value <- world
 
             // synchronize window size with actual size, e.g. fullscreen for mobile or a display with size smaller than
             // the configured DisplayScalar

@@ -4694,8 +4694,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let mutable region = Hl.makeBlit 0 0 0 targetLayer (VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)) targetBounds
         let filter = if uint geometryResolution.X = targetBounds.extent.width && uint geometryResolution.Y = targetBounds.extent.height then VkFilter.Nearest else VkFilter.Linear
         DeviceApi.vkCmdBlitImage (renderer.VulkanContext.RenderCommandBuffer, intermediateTexture.Image, TransferSrc.VkImageLayout, targetImage, TransferDst.VkImageLayout, 1u, &&region, filter)
-        Hl.recordTransitionLayout true 1 targetLayer 1 VkImageAspectFlags.Color TransferDst ColorAttachmentWrite targetImage renderer.VulkanContext.RenderCommandBuffer
         Texture.recordTransitionLayout TransferSrc ColorAttachmentRead intermediateTexture renderer.VulkanContext.RenderCommandBuffer
+        Hl.recordTransitionLayout true 1 targetLayer 1 VkImageAspectFlags.Color TransferDst ColorAttachmentWrite targetImage renderer.VulkanContext.RenderCommandBuffer
 
         // advance render pass index
         renderer.RenderPassIndex <- inc renderer.RenderPassIndex

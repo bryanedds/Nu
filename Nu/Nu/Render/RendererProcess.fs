@@ -16,6 +16,13 @@ open Prime
 open Vortice.Vulkan
 open Nu.Vulkan
 
+/// Represent the state of a window properties request.
+type WindowPropertiesRequest =
+    | WindowPropertiesRequestUninitiated
+    | WindowPropertiesRequestInitiated
+    | WindowPropertiesRequestSuccess of WindowProperties
+    | WindowPropertiesRequestFailure
+
 /// A renderer process that may or may not be threaded.
 /// TODO: name all these abstract method parameters.
 type RendererProcess =
@@ -60,12 +67,15 @@ type RendererProcess =
         /// Request to swap the underlying render buffer.
         abstract RequestSwap : unit -> unit
 
+        /// Request window properties from the render thread to the main thread where SDL is valid for interaction.
+        abstract RequestWindowProperties : unit -> WindowProperties option
+
         /// Terminate the rendering process, blocking until termination is complete.
         abstract Terminate : unit -> unit
         end
 
 /// A non-threaded render process.
-type RendererInline (windowProperties) =
+type RendererInline (tryGetWindowProperties, windowProperties) =
 
     let mutable started = false
     let mutable terminated = false
@@ -97,7 +107,7 @@ type RendererInline (windowProperties) =
 
                     // attempt to create VulkanContext, storing reference to it
                     let context =
-                        match VulkanContext.tryCreate window with
+                        match VulkanContext.tryCreate tryGetWindowProperties window with
                         | Some context -> context
                         | None -> Log.fail "Could not create Vulkan context." // TODO: P1: handle failure more gracefully here?
 
@@ -113,14 +123,13 @@ type RendererInline (windowProperties) =
                     Hl.initEmptyTexture emptyTexture
 
                     // create the resolve texture
-                    match Hl.tryGetSurfaceCapabilities context.PhysicalDevice.VkPhysicalDevice with
-                    | Some capabilities ->
-                        match Hl.tryGetSwapExtent capabilities with
-                        | Some swapExtent ->
-                            let usageFlags = VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferSrc ||| VkImageUsageFlags.TransferDst
-                            resolveTexture <- Attachment.createColorAttachment Texture2d usageFlags Rgba8 Rgba (int swapExtent.width) (int swapExtent.height) context
-                        | None -> Log.fail "Could not create resolve texture."
-                    | None -> Log.fail "Could not create resolve texture."
+                    let mutable width = Hl.WindowProperties.WidthPixels
+                    let mutable height = Hl.WindowProperties.HeightPixels
+                    if width <> 0 && height <> 0 then
+                        let usageFlags = VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferSrc ||| VkImageUsageFlags.TransferDst
+                        let surfaceExtent = VkExtent2D (width, height)
+                        resolveTexture <- Attachment.createColorAttachment Texture2d usageFlags Rgba8 Rgba (int surfaceExtent.width) (int surfaceExtent.height) context
+                    else Log.fail "Could not create resolve texture."
 
                     // create 3d renderer
                     let renderer3d =
@@ -207,12 +216,11 @@ type RendererInline (windowProperties) =
             | Some (renderer3d, renderer2d, rendererImGui, context) ->
 
                 // attempt to size resolve texture
-                match Hl.tryGetSurfaceCapabilities context.PhysicalDevice.VkPhysicalDevice with
-                | Some capabilities ->
-                    match Hl.tryGetSwapExtent capabilities with
-                    | Some swapExtent -> Attachment.updateColorAttachmentSize (int swapExtent.width) (int swapExtent.height) resolveTexture context
-                    | None -> ()
-                | None -> ()
+                let mutable width = Hl.WindowProperties.WidthPixels
+                let mutable height = Hl.WindowProperties.HeightPixels
+                if width <> 0 && height <> 0 then
+                    let surfaceExtent = VkExtent2D (width, height)
+                    Attachment.updateColorAttachmentSize (int surfaceExtent.width) (int surfaceExtent.height) resolveTexture context
 
                 // pre-render 3d. OPTIMIZATION: don't render geometry when no 3D messages are encountered.
                 let renderGeometry = messages3d.Count > 0
@@ -249,6 +257,9 @@ type RendererInline (windowProperties) =
             | Some (_, _, _, context) -> VulkanContext.present context
             | None -> ()
 
+        member ri.RequestWindowProperties () =
+            tryGetWindowProperties ()
+
         member ri.Terminate () =
             match dependenciesOpt with
             | Some (renderer3d, renderer2d, rendererImGui, context) ->
@@ -265,7 +276,7 @@ type RendererInline (windowProperties) =
             | None -> ()
 
 /// A threaded render process.
-type RendererThread (windowProperties) =
+type RendererThread (tryGetWindowProperties, windowProperties) =
 
     let [<VolatileField>] mutable threadOpt = None
     let [<VolatileField>] mutable started = false
@@ -273,6 +284,7 @@ type RendererThread (windowProperties) =
     let [<VolatileField>] mutable submissionOpt = Option<Frustum * Frustum * Frustum * RenderMessage3d List * RenderMessage2d List * RenderMessageImGui List * Vector3 * Quaternion * single * Vector2 * Vector2 * Viewport * Viewport * WindowProperties * ImDrawDataPtr>.None
     let [<VolatileField>] mutable swapRequested = false
     let [<VolatileField>] mutable swapRequestAcknowledged = false
+    let [<VolatileField>] mutable windowPropertiesRequest = WindowPropertiesRequestUninitiated
     let [<VolatileField>] mutable renderer3dConfig = Renderer3dConfig.defaultConfig
     let [<VolatileField>] mutable messageBufferIndex = 0
     let messageBuffers3d = [|List (); List ()|]
@@ -419,14 +431,13 @@ type RendererThread (windowProperties) =
         Hl.initEmptyTexture emptyTexture
 
         // create the resolve texture
-        match Hl.tryGetSurfaceCapabilities context.PhysicalDevice.VkPhysicalDevice with
-        | Some capabilities ->
-            match Hl.tryGetSwapExtent capabilities with
-            | Some swapExtent ->
-                let usageFlags = VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferSrc ||| VkImageUsageFlags.TransferDst
-                resolveTexture <- Attachment.createColorAttachment Texture2d usageFlags Rgba8 Rgba (int swapExtent.width) (int swapExtent.height) context
-            | None -> Log.fail "Could not create resolve texture."
-        | None -> Log.fail "Could not create resolve texture."
+        let mutable width = Hl.WindowProperties.WidthPixels
+        let mutable height = Hl.WindowProperties.HeightPixels
+        if width <> 0 && height <> 0 then
+            let usageFlags = VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferSrc ||| VkImageUsageFlags.TransferDst
+            let surfaceExtent = VkExtent2D (width, height)
+            resolveTexture <- Attachment.createColorAttachment Texture2d usageFlags Rgba8 Rgba (int surfaceExtent.width) (int surfaceExtent.height) context
+        else Log.fail "Could not create resolve texture."
 
         // create 3d renderer
         let renderer3d =
@@ -458,12 +469,11 @@ type RendererThread (windowProperties) =
             if not terminated then
 
                 // attempt to size resolve texture
-                match Hl.tryGetSurfaceCapabilities context.PhysicalDevice.VkPhysicalDevice with
-                | Some capabilities ->
-                    match Hl.tryGetSwapExtent capabilities with
-                    | Some swapExtent -> Attachment.updateColorAttachmentSize (int swapExtent.width) (int swapExtent.height) resolveTexture context
-                    | None -> ()
-                | None -> ()
+                let mutable width = Hl.WindowProperties.WidthPixels
+                let mutable height = Hl.WindowProperties.HeightPixels
+                if width <> 0 && height <> 0 then
+                    let surfaceExtent = VkExtent2D (width, height)
+                    Attachment.updateColorAttachmentSize (int surfaceExtent.width) (int surfaceExtent.height) resolveTexture context
 
                 // pre-render 3d. OPTIMIZATION: don't render geometry when no 3D messages are encountered.
                 let renderGeometry = messages3d.Count > 0
@@ -533,7 +543,7 @@ type RendererThread (windowProperties) =
 
                 // attempt to create VulkanContext on main thread, storing a reference for clean-up.
                 let context =
-                    match VulkanContext.tryCreate window with
+                    match VulkanContext.tryCreate tryGetWindowProperties window with
                     | Some context -> context
                     | None -> Log.fail "Could not create Vulkan context." // TODO: P1: handle failure more gracefully here?
                 contextOpt <- Some context
@@ -758,8 +768,30 @@ type RendererThread (windowProperties) =
         member rt.RequestSwap () =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             swapRequested <- true
-            while not swapRequestAcknowledged && not terminated do Thread.Yield () |> ignore<bool>
+            while not swapRequestAcknowledged && not terminated do
+                Thread.Yield () |> ignore<bool>
+                match windowPropertiesRequest with
+                | WindowPropertiesRequestInitiated ->
+                    windowPropertiesRequest <-
+                        match tryGetWindowProperties () with
+                        | Some windowProperties -> WindowPropertiesRequestSuccess windowProperties
+                        | None -> WindowPropertiesRequestFailure
+                | _ -> ()
             swapRequestAcknowledged <- false
+
+        member rt.RequestWindowProperties () =
+            match windowPropertiesRequest with
+            | WindowPropertiesRequestUninitiated ->
+                windowPropertiesRequest <- WindowPropertiesRequestInitiated
+                let mutable stable = windowPropertiesRequest // use a stable variable since multiple operations are needed on the volatile field
+                while stable.IsWindowPropertiesRequestInitiated do
+                    stable <- windowPropertiesRequest
+                    Thread.Yield () |> ignore<bool>
+                match stable with
+                | WindowPropertiesRequestSuccess windowProperties -> Some windowProperties
+                | WindowPropertiesRequestFailure -> None
+                | _ -> raise (InvalidOperationException "Render process window properties request in invalid state, indicating a logic bug in its usage.")
+            | _ -> raise (InvalidOperationException "Render process already requesting window properties.")
 
         member rt.Terminate () =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
