@@ -10,6 +10,7 @@ open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Numerics
 open System.Threading
+open Microsoft.FSharp.NativeInterop
 open SDL
 open ImGuiNET
 open Prime
@@ -17,11 +18,47 @@ open Vortice.Vulkan
 open Nu.Vulkan
 
 /// Represent the state of a window properties request.
-type WindowPropertiesRequest =
-    | WindowPropertiesRequestUninitiated
-    | WindowPropertiesRequestInitiated
-    | WindowPropertiesRequestSuccess of WindowProperties
-    | WindowPropertiesRequestFailure
+type TryCreateVulkanSurfaceRequest =
+    | TryCreateVulkanSurfaceRequestUninitiated
+    | TryCreateVulkanSurfaceRequestInitiated of SDL_Window nativeptr * VkInstance
+    | TryCreateVulkanSurfaceRequestSuccess of VkSurfaceKHR
+    | TryCreateVulkanSurfaceRequestFailure
+
+    /// Attempt to create a vulkan surface using the given SDL window and vulkan instance.
+    /// TODO: move this somewhere more general?
+    static member internal tryCreateVulkanSurface window instance =
+
+        // check that window resource is available
+        let windowResourceAvailable =
+            if OperatingSystem.IsAndroid () then
+                let windowProperties = Hl.WindowProperties.PropertiesHandle
+                let windowPointer = SDL3.SDL_GetPointerProperty (windowProperties, SDL3.SDL_PROP_WINDOW_ANDROID_WINDOW_POINTER, 0n)
+                windowPointer <> 0n
+            else true // will presumably never be blocked on other platforms
+
+        // ensure window resource is available for utilization
+        if windowResourceAvailable then
+
+            // inform the backgrounding callback that we begin the process of creating the surface and swapchain
+            // that may need to be aborted/destroyed at any point before _or_ after completion due to a
+            // backgrounding event, hence setup _initiated_
+            Hl.setPresentationSetupInitiated ()
+
+            // attempt to create vulkan surface
+            Log.info "Creating vulkan surface..."
+            let mutable surfacePtr = Unchecked.defaultof<VkSurfaceKHR_T nativeptr>
+            let instance = NativePtr.ofNativeInt (VkInstance.op_Implicit instance)
+            if SDL3.SDL_Vulkan_CreateSurface (window, instance, NativePtr.nullPtr, &&surfacePtr) |> SDLBool.op_Implicit then
+                Log.info "Created vulkan surface."
+                let surface = NativePtr.toNativeInt surfacePtr |> uint64 |> VkSurfaceKHR.op_Implicit
+                Some surface
+            else
+                Log.error "Failed to create vulkan surface."
+                Hl.setPresentationTeardownComplete () // inform callback to scrap setup attempt
+                None
+
+        // failure
+        else None
 
 /// A renderer process that may or may not be threaded.
 /// TODO: name all these abstract method parameters.
@@ -67,15 +104,15 @@ type RendererProcess =
         /// Request to swap the underlying render buffer.
         abstract RequestSwap : unit -> unit
 
-        /// Request window properties from the render thread to the main thread where SDL is valid for interaction.
-        abstract RequestWindowProperties : unit -> WindowProperties option
+        /// Attempt to create a vulkan surface on the main thread for the renderer thread.
+        abstract TryCreateVulkanSurface : SDL_Window nativeptr -> VkInstance -> VkSurfaceKHR option
 
         /// Terminate the rendering process, blocking until termination is complete.
         abstract Terminate : unit -> unit
         end
 
 /// A non-threaded render process.
-type RendererInline (tryGetWindowProperties, windowProperties) =
+type RendererInline (windowProperties) =
 
     let mutable started = false
     let mutable terminated = false
@@ -107,7 +144,7 @@ type RendererInline (tryGetWindowProperties, windowProperties) =
 
                     // attempt to create VulkanContext, storing reference to it
                     let context =
-                        match VulkanContext.tryCreate tryGetWindowProperties window with
+                        match VulkanContext.tryCreate TryCreateVulkanSurfaceRequest.tryCreateVulkanSurface window with
                         | Some context -> context
                         | None -> Log.fail "Could not create Vulkan context." // TODO: P1: handle failure more gracefully here?
 
@@ -257,8 +294,8 @@ type RendererInline (tryGetWindowProperties, windowProperties) =
             | Some (_, _, _, context) -> VulkanContext.present context
             | None -> ()
 
-        member ri.RequestWindowProperties () =
-            tryGetWindowProperties ()
+        member ri.TryCreateVulkanSurface window instance =
+            TryCreateVulkanSurfaceRequest.tryCreateVulkanSurface window instance
 
         member ri.Terminate () =
             match dependenciesOpt with
@@ -276,7 +313,7 @@ type RendererInline (tryGetWindowProperties, windowProperties) =
             | None -> ()
 
 /// A threaded render process.
-type RendererThread (tryGetWindowProperties, windowProperties) =
+type RendererThread (windowProperties) =
 
     let [<VolatileField>] mutable threadOpt = None
     let [<VolatileField>] mutable started = false
@@ -284,7 +321,7 @@ type RendererThread (tryGetWindowProperties, windowProperties) =
     let [<VolatileField>] mutable submissionOpt = Option<Frustum * Frustum * Frustum * RenderMessage3d List * RenderMessage2d List * RenderMessageImGui List * Vector3 * Quaternion * single * Vector2 * Vector2 * Viewport * Viewport * WindowProperties * ImDrawDataPtr>.None
     let [<VolatileField>] mutable swapRequested = false
     let [<VolatileField>] mutable swapRequestAcknowledged = false
-    let [<VolatileField>] mutable windowPropertiesRequest = WindowPropertiesRequestUninitiated
+    let [<VolatileField>] mutable tryCreateVulkanSurfaceRequest = TryCreateVulkanSurfaceRequestUninitiated
     let [<VolatileField>] mutable renderer3dConfig = Renderer3dConfig.defaultConfig
     let [<VolatileField>] mutable messageBufferIndex = 0
     let messageBuffers3d = [|List (); List ()|]
@@ -543,7 +580,7 @@ type RendererThread (tryGetWindowProperties, windowProperties) =
 
                 // attempt to create VulkanContext on main thread, storing a reference for clean-up.
                 let context =
-                    match VulkanContext.tryCreate tryGetWindowProperties window with
+                    match VulkanContext.tryCreate TryCreateVulkanSurfaceRequest.tryCreateVulkanSurface window with
                     | Some context -> context
                     | None -> Log.fail "Could not create Vulkan context." // TODO: P1: handle failure more gracefully here?
                 contextOpt <- Some context
@@ -770,26 +807,26 @@ type RendererThread (tryGetWindowProperties, windowProperties) =
             swapRequested <- true
             while not swapRequestAcknowledged && not terminated do
                 Thread.Yield () |> ignore<bool>
-                match windowPropertiesRequest with
-                | WindowPropertiesRequestInitiated ->
-                    windowPropertiesRequest <-
-                        match tryGetWindowProperties () with
-                        | Some windowProperties -> WindowPropertiesRequestSuccess windowProperties
-                        | None -> WindowPropertiesRequestFailure
+                match tryCreateVulkanSurfaceRequest with
+                | TryCreateVulkanSurfaceRequestInitiated (window, instance) ->
+                    tryCreateVulkanSurfaceRequest <- 
+                        match TryCreateVulkanSurfaceRequest.tryCreateVulkanSurface window instance with
+                        | Some vkSurface -> TryCreateVulkanSurfaceRequestSuccess vkSurface
+                        | None -> TryCreateVulkanSurfaceRequestFailure
                 | _ -> ()
             swapRequestAcknowledged <- false
 
-        member rt.RequestWindowProperties () =
-            match windowPropertiesRequest with
-            | WindowPropertiesRequestUninitiated ->
-                windowPropertiesRequest <- WindowPropertiesRequestInitiated
-                let mutable stable = windowPropertiesRequest // use a stable variable since multiple operations are needed on the volatile field
-                while stable.IsWindowPropertiesRequestInitiated do
-                    stable <- windowPropertiesRequest
+        member rt.TryCreateVulkanSurface window instance =
+            match tryCreateVulkanSurfaceRequest with
+            | TryCreateVulkanSurfaceRequestUninitiated ->
+                tryCreateVulkanSurfaceRequest <- TryCreateVulkanSurfaceRequestInitiated (window, instance)
+                let mutable stableRequest = tryCreateVulkanSurfaceRequest // use a stable variable since multiple operations are needed on the volatile field
+                while stableRequest.IsTryCreateVulkanSurfaceRequestInitiated do
+                    stableRequest <- tryCreateVulkanSurfaceRequest
                     Thread.Yield () |> ignore<bool>
-                match stable with
-                | WindowPropertiesRequestSuccess windowProperties -> Some windowProperties
-                | WindowPropertiesRequestFailure -> None
+                match stableRequest with
+                | TryCreateVulkanSurfaceRequestSuccess vkSurface -> Some vkSurface
+                | TryCreateVulkanSurfaceRequestFailure -> None
                 | _ -> raise (InvalidOperationException "Render process window properties request in invalid state, indicating a logic bug in its usage.")
             | _ -> raise (InvalidOperationException "Render process already requesting window properties.")
 

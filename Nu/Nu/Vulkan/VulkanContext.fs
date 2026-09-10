@@ -254,13 +254,13 @@ type Swapchain =
         this.SwapchainWrapperOpt_
 
     /// Attempt to recreate the current vulkan surface and ensure swapchain validity.
-    static member tryRecreateSurfaceAndEnsureSwapchainWrapper physicalDevice (swapchain : Swapchain) instance =
+    static member tryRecreateSurfaceAndEnsureSwapchainWrapper tryCreateVulkanSurface physicalDevice (swapchain : Swapchain) instance =
         match swapchain.SwapchainWrapperOpt_ with
         | Some swapchainWrapper ->
             SwapchainWrapper.destroy swapchainWrapper
             swapchain.SwapchainWrapperOpt_ <- None
         | None -> ()
-        Hl.tryRecreateSurface swapchain.Window_ instance
+        Hl.tryRecreateSurface tryCreateVulkanSurface swapchain.Window_ instance
         swapchain.SwapchainWrapperOpt_ <- SwapchainWrapper.tryCreate swapchain.SurfaceFormat_ physicalDevice
 
     /// Create a Swapchain.
@@ -283,7 +283,7 @@ type [<ReferenceEquality>] VulkanContext =
     private
         { Instance_ : VkInstance
           DebugMessengerOpt_ : VkDebugUtilsMessengerEXT option
-          RequestWindowProperties_ : unit -> WindowProperties option
+          TryCreateVulkanSurface_ : SDL_Window nativeptr -> VkInstance -> VkSurfaceKHR option
           PhysicalDevice_ : PhysicalDevice
           Device_ : VkDevice
           VmaAllocator_ : VmaAllocator
@@ -669,7 +669,7 @@ type [<ReferenceEquality>] VulkanContext =
                 
                     // when surface lost, attempt to recreate surface and etc and abandon frame
                     if Hl.Surface.IsSurfaceLost then
-                        Swapchain.tryRecreateSurfaceAndEnsureSwapchainWrapper context.PhysicalDevice_ context.Swapchain_ context.Instance_
+                        Swapchain.tryRecreateSurfaceAndEnsureSwapchainWrapper context.TryCreateVulkanSurface_ context.PhysicalDevice_ context.Swapchain_ context.Instance_
                         context.FrameAbandoned_ <- true
                         None
 
@@ -694,7 +694,7 @@ type [<ReferenceEquality>] VulkanContext =
                             | None -> None
                         match surfaceExtentOpt with
                         | None ->
-                            Swapchain.tryRecreateSurfaceAndEnsureSwapchainWrapper context.PhysicalDevice_ context.Swapchain_ context.Instance_
+                            Swapchain.tryRecreateSurfaceAndEnsureSwapchainWrapper context.TryCreateVulkanSurface_ context.PhysicalDevice_ context.Swapchain_ context.Instance_
                             context.FrameAbandoned_ <- true
                             None
 
@@ -708,7 +708,7 @@ type [<ReferenceEquality>] VulkanContext =
                                 | Some _ | None -> None
                             match swapchainWrapperOpt with
                             | None ->
-                                Swapchain.tryRecreateSurfaceAndEnsureSwapchainWrapper context.PhysicalDevice_ context.Swapchain_ context.Instance_
+                                Swapchain.tryRecreateSurfaceAndEnsureSwapchainWrapper context.TryCreateVulkanSurface_ context.PhysicalDevice_ context.Swapchain_ context.Instance_
                                 context.FrameAbandoned_ <- true
                                 None
 
@@ -876,7 +876,7 @@ type [<ReferenceEquality>] VulkanContext =
     /// Attempt to create a VulkanContext.
     /// NOTE: this procedure is intended to be invoked from the main thread to satisfy the requirements of Mac and
     /// iOS surface creation, and possibly other platforms.
-    static member tryCreate requestWindowProperties window =
+    static member tryCreate tryCreateVulkanSurface window =
 
         // load vulkan; not vulkan function
         Vulkan.vkInitialize () |> Hl.check
@@ -891,7 +891,7 @@ type [<ReferenceEquality>] VulkanContext =
         let debugMessengerOpt = VulkanContext.tryCreateDebugMessenger validationLayersActivated debugInfo
 
         // create surface
-        Hl.createSurface window instance
+        Hl.createSurface tryCreateVulkanSurface window instance
 
         // attempt to select physical device
         match VulkanContext.trySelectPhysicalDevice () with
@@ -945,7 +945,7 @@ type [<ReferenceEquality>] VulkanContext =
             let vulkanContext =
                 { Instance_ = instance
                   DebugMessengerOpt_ = debugMessengerOpt
-                  RequestWindowProperties_ = requestWindowProperties
+                  TryCreateVulkanSurface_ = tryCreateVulkanSurface
                   PhysicalDevice_ = physicalDevice
                   Device_ = device
                   VmaAllocator_ = allocator

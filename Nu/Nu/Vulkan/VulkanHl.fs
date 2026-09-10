@@ -375,7 +375,7 @@ module Hl =
         lock TextureIdCounterLock (fun () -> TextureIdCounter <- inc TextureIdCounter; TextureIdCounter)
 
     /// Initialize the empty texture value.
-    let initEmptyTexture emptyTexture =
+    let internal initEmptyTexture emptyTexture =
         if EmptyTextureOpt_.IsNone then
             EmptyTextureOpt_ <- Some emptyTexture
 
@@ -721,14 +721,6 @@ module Hl =
         result.extent.width <- uint extentWidth
         result.extent.height <- uint extentHeight
         result
-        
-    // Check whether window resource is availabile for utilization.
-    let private isWindowResourceAvailable () =
-        if OperatingSystem.IsAndroid () then
-            let windowProperties = WindowProperties.PropertiesHandle
-            let windowPointer = SDL3.SDL_GetPointerProperty (windowProperties, SDL3.SDL_PROP_WINDOW_ANDROID_WINDOW_POINTER, 0n)
-            windowPointer <> 0n
-        else true // will presumably never be blocked on other platforms
 
     /// Attempt to get surface capabilities.
     let tryGetSurfaceCapabilities vkPhysicalDevice =
@@ -745,37 +737,16 @@ module Hl =
         | SurfaceDestroyed -> None
 
     /// Attempt to create a Vulkan surface, returning the resulting SurfaceState.
-    let private tryCreateSurface window instance =
-
-        // attempt to recreate surface if destroyed
+    let private tryCreateSurface tryCreateVulkanSurface window instance =
         match Surface_ with
         | SurfaceLost _ | SurfaceDestroyed ->
-
-            // ensure window resource is available for utilization
-            if isWindowResourceAvailable () then
-
-                // inform the backgrounding callback that we begin the process of creating the surface and swapchain
-                // that may need to be aborted/destroyed at any point before _or_ after completion due to a
-                // backgrounding event, hence setup _initiated_
-                setPresentationSetupInitiated ()
-
-                // attempt to create vulkan surface
-                Log.info "Creating vulkan surface..."
-                let mutable surfacePtr = Unchecked.defaultof<VkSurfaceKHR_T nativeptr>
-                let instance = NativePtr.ofNativeInt (VkInstance.op_Implicit instance)
-                if SDL3.SDL_Vulkan_CreateSurface (window, instance, NativePtr.nullPtr, &&surfacePtr) |> SDLBool.op_Implicit then
-                    let surface = NativePtr.toNativeInt surfacePtr |> uint64 |> VkSurfaceKHR.op_Implicit
-                    Surface_ <- SurfaceReady surface
-                    Log.info "Created vulkan surface."
-                else
-                    setPresentationTeardownComplete () // inform callback to scrap setup attempt
-                    Log.error (SDL3.SDL_GetError ())
-
-        // just keep the existing surface
+            match tryCreateVulkanSurface window instance with
+            | Some vkSurface -> Surface_ <- SurfaceReady vkSurface
+            | None -> ()
         | SurfaceReady _ -> ()
 
     /// Create a vulkan surface, waiting for app to enter foreground when necessary.
-    let createSurface window instance =
+    let createSurface tryCreateVulkanSurface window instance =
 
         // wait for app to enter foreground if not already
         while Backgrounded_ do
@@ -784,7 +755,7 @@ module Hl =
         // attempt to recreate vulkan surface
         // NOTE: failure cannot be tolerated as this function is intended to guarantee surface creation, otherwise must
         // set up a retry mechanism
-        tryCreateSurface window instance
+        tryCreateSurface tryCreateVulkanSurface window instance
         if Surface_.IsSurfaceDestroyed then
             Log.fail "Vulkan surface creation failed."
 
