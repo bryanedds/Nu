@@ -51,8 +51,8 @@ type [<ReferenceEquality>] ConcurrentCommandQueue =
             DeviceApi.vkQueueSubmit (vkQueue, 1u, &&info, finishFence) |> Hl.check
 
             // wait for run to finish
-            // NOTE: on Android on my A17, we have to put vkWaitForFences in a loop because it will return before the given
-            // timeout with a VkResult.Timeout result (which I'm not sure is standard-conformant).
+            // NOTE: on Android on my A17, we have to put vkWaitForFences in a loop because it will return before the
+            // given timeout with a VkResult.Timeout result (which I'm not sure is standard-conformant).
             let mutable waiting = true
             while waiting do
                 let result = DeviceApi.vkWaitForFences (1u, &&finishFence, true, UInt64.MaxValue)
@@ -402,7 +402,8 @@ type [<ReferenceEquality>] VulkanContext =
         Vulkan.vkEnumerateInstanceLayerProperties (&&layerCount, layersPin.Pointer) |> Hl.check
 
         // check whether validation layer exists
-        // TODO: try to automatically prevent validation from interfering with Nsight, starting with VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT.
+        // TODO: try to automatically prevent validation from interfering with Nsight, starting with
+        // VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT.
         let validationLayerName = "VK_LAYER_KHRONOS_validation"
         let validationLayerExists = Array.exists (fun layer -> Hl.getLayerName layer = validationLayerName) layers
         if Constants.Render.RenderDebug && not validationLayerExists then
@@ -638,8 +639,9 @@ type [<ReferenceEquality>] VulkanContext =
         DeviceApi.vkCreateCommandPool (&info, nullPtr, &commandPool) |> Hl.check
         commandPool
 
-    /// Attempt to get the current swapchain wrapper in a valid rendering environment or else abandon frame.
-    static member private tryGetSwapchainWrapper context =
+    /// Attempt to get the swapchain wrapper in a validated rendering environment for utilization, or otherwise abandon
+    /// the current rendering frame.
+    static member private tryUtilizeSwapchainWrapper context =
 
         // when frame abandoned, just bail
         if context.FrameAbandoned_ then
@@ -703,6 +705,7 @@ type [<ReferenceEquality>] VulkanContext =
                 // swapchain wrapper available in a valid rendering environment
                 | Some _ as swapchainWrapperOpt -> swapchainWrapperOpt
 
+    /// Prepare the use of a new render command buffer.
     static member private beginRenderCommandBuffer context =
 
         // allocate current command buffer if needed
@@ -716,6 +719,7 @@ type [<ReferenceEquality>] VulkanContext =
         let mutable beginInfo = VkCommandBufferBeginInfo ()
         DeviceApi.vkBeginCommandBuffer (commandBuffer, &&beginInfo) |> Hl.check
 
+    /// Submit the current render command buffer.
     static member private endRenderCommandBuffer finalizeFrame context =
 
         // lock to get access to vulkan queue then submit it
@@ -752,7 +756,7 @@ type [<ReferenceEquality>] VulkanContext =
         // advance cursor
         context.RenderCommandBuffersCursor_ <- inc context.RenderCommandBuffersCursor_
 
-    /// Indicate that the current render command buffer is ready for submission and a new one shall be started.
+    /// Submit the current render command buffer and then start new one.
     static member advanceRenderCommandBuffer context =
         VulkanContext.endRenderCommandBuffer false context
         VulkanContext.beginRenderCommandBuffer context
@@ -798,7 +802,7 @@ type [<ReferenceEquality>] VulkanContext =
     static member endFrame windowViewport resolveImage (context : VulkanContext) =
 
         // attempt to blit the resolve image to the swapchain image, otherwise signal swapchain image semaphore manually
-        match VulkanContext.tryGetSwapchainWrapper context with
+        match VulkanContext.tryUtilizeSwapchainWrapper context with
         | Some swapchainWrapper ->
             let mutable imageIndex = Hl.ImageIndex
             let result = DeviceApi.vkAcquireNextImageKHR (swapchainWrapper.VkSwapchain, UInt64.MaxValue, context.SwapchainImageSemaphore_, VkFence.Null, &imageIndex)
@@ -836,7 +840,7 @@ type [<ReferenceEquality>] VulkanContext =
 
         // lock to get access to vulkan queue then present it
         ConcurrentCommandQueue.withLock context.PresentQueue_ $ fun vkQueue ->
-            match VulkanContext.tryGetSwapchainWrapper context with
+            match VulkanContext.tryUtilizeSwapchainWrapper context with
             | Some swapchainWrapper ->
                 let mutable renderSemaphore = context.RenderSemaphore_
                 let mutable vkSwapchain = swapchainWrapper.VkSwapchain
