@@ -657,7 +657,7 @@ type [<ReferenceEquality>] VulkanContext =
             context.FrameAbandoned_ <- true
             None
 
-        // when surface lost, attempt to recreate surface and etc and abandon frame
+        // when surface lost, attempt to recreate surface and its dependent swapchain wrapper and abandon frame
         elif Hl.Surface.IsSurfaceLost then
             Swapchain.tryRecreateSurfaceAndEnsureSwapchainWrapper context.TryCreateVulkanSurface_ context.PhysicalDevice_ context.Swapchain_ context.Instance_
             context.FrameAbandoned_ <- true
@@ -666,7 +666,8 @@ type [<ReferenceEquality>] VulkanContext =
         // surface not lost, proceed...
         else
 
-            // when capabilities or a valid surface extent are unavailable, attempt to recreate surface and etc and abandon frame
+            // when capabilities or a valid surface extent are unavailable, attempt to recreate surface and its
+            // dependent swapchain wrapper and abandon frame
             let surfaceExtentOpt =
                 match Hl.tryGetSurfaceCapabilities context.PhysicalDevice_.VkPhysicalDevice with
                 | Some capabilities ->
@@ -691,7 +692,8 @@ type [<ReferenceEquality>] VulkanContext =
             // capabilities and valid surface available, proceed...
             | Some surfaceExtent ->
 
-                // when swapchain wrapper is unavailable or extents don't match, attempt to recreate surface and etc and abandon frame
+                // when swapchain wrapper is unavailable or extents don't match, attempt to recreate surface and its
+                // dependent swapchain wrapper and abandon frame
                 let swapchainWrapperOpt =
                     match context.Swapchain_.SwapchainWrapperOpt with
                     | Some swapchainWrapper when swapchainWrapper.SwapExtent = surfaceExtent -> Some swapchainWrapper
