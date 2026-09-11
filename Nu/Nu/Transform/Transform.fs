@@ -37,7 +37,7 @@ module TransformMasks =
     let [<Literal>] Bounds3dDirtyMask =             0b001000000000000000000000u
     let [<Literal>] ManualProtectionMask =          0b010000000000000000000000u
     let [<Literal>] DeclarativeProtectionMask =     0b100000000000000000000000u
-    let [<Literal>] FlagsDefault =                  0b001100111001000011110001u
+    let [<Literal>] FlagsDefault =                  0b000000111001000011110001u
 
 // opening masks for succinctness
 open TransformMasks
@@ -374,7 +374,14 @@ type [<NoEquality; NoComparison>] Transform =
         left.Offset_.Equals right.Offset_ &&
         left.Size_.Equals right.Size_ &&
         left.Elevation_ = right.Elevation_ &&
-        left.Overflow_ = right.Overflow_
+        left.Overflow_ = right.Overflow_ &&
+        Presence.equals left.Presence_ right.Presence_ &&
+        match left.PresenceOverride_ with
+        | ValueSome leftPresence ->
+            match right.PresenceOverride_ with
+            | ValueSome rightPresence -> Presence.equals leftPresence rightPresence
+            | ValueNone -> false
+        | ValueNone -> match right.PresenceOverride_ with ValueSome _ -> false | ValueNone -> true
 
     /// Test transforms for equality.
     static member inline equals (left : Transform) (right : Transform) =
@@ -392,6 +399,9 @@ type [<NoEquality; NoComparison>] Transform =
         target.Size_ <- source.Size_
         target.Elevation_ <- source.Elevation_
         target.Overflow_ <- source.Overflow_
+        if source.Flags_ &&& Bounds3dDirtyMask = 0u then target.Bounds3d_ <- source.Bounds3d_; target.Bounds3dDirty <- false
+        target.Presence_ <- source.Presence_
+        target.PresenceOverride_ <- source.PresenceOverride_
 
     /// Assign the value of the left transform to the right.
     static member inline assign (source : Transform byref, target : Transform byref) =
@@ -405,10 +415,18 @@ type [<NoEquality; NoComparison>] Transform =
     static member makeDefault perimeterCentered =
         let mutable transform = Unchecked.defaultof<Transform>
         transform.Flags_ <- FlagsDefault
+        transform.Position_ <- Vector3 ()
         transform.Rotation_ <- Quaternion.Identity
         transform.Scale_ <- Vector3.One
+        transform.Offset_ <- Vector3 ()
+        transform.RotationMatrixOpt_ <- Matrix4x4.Identity
+        transform.Angles_ <- Vector3 ()
         transform.Size_ <- Vector3.One
+        transform.Elevation_ <- 0.0f
         transform.Overflow_ <- 1.0f
+        transform.Bounds3d_ <- Box3 (Vector3 -0.5f, Vector3.One)
+        transform.Presence_ <- Exterior
+        transform.PresenceOverride_ <- ValueNone
         transform.PerimeterCentered <- perimeterCentered
         transform
 
@@ -416,14 +434,16 @@ type [<NoEquality; NoComparison>] Transform =
     static member makePerimeter absolute (perimeter : Box3) offset elevation perimeterCentered =
         let mutable transform = Unchecked.defaultof<Transform>
         transform.Flags_ <- FlagsDefault ||| if absolute then AbsoluteMask else 0u
-        transform.Position_ <- if perimeterCentered then perimeter.Center else perimeter.Min
+        transform.Position <- if perimeterCentered then perimeter.Center else perimeter.Min
         transform.Rotation_ <- Quaternion.Identity
         transform.Scale_ <- v3One
         transform.Offset_ <- offset
+        transform.RotationMatrixOpt_ <- Matrix4x4.Identity
         transform.Size_ <- perimeter.Size
         transform.Angles_ <- v3Zero
         transform.Elevation_ <- elevation
         transform.Overflow_ <- 1.0f
+        transform.Presence_ <- Exterior
         transform.PerimeterCentered <- perimeterCentered
         transform
 
@@ -431,7 +451,7 @@ type [<NoEquality; NoComparison>] Transform =
     static member makeIntuitive absolute position scale offset size angles elevation perimeterCentered =
         let mutable transform = Transform.makeDefault perimeterCentered
         transform.Flags_ <- FlagsDefault ||| if absolute then AbsoluteMask else 0u
-        transform.Position_ <- position
+        transform.Position <- position
         transform.Scale_ <- scale
         transform.Offset_ <- offset
         transform.Size_ <- size

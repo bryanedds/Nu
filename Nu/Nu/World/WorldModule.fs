@@ -154,6 +154,14 @@ module WorldModule =
 
         static member internal mapAmbientState mapper (world : World) =
             world.WorldState <- { world.WorldState with AmbientState = mapper world.AmbientState }
+
+        static member internal clearTimeAdvancement (world : World) =
+            let ambientState = AmbientState.clearTimeAdvancement world.AmbientState
+            world.WorldState <- { world.WorldState with AmbientState = ambientState }
+
+        static member internal restoreTimeAdvancement timeAdvancing updateDelta clockDelta tickDelta (world : World) =
+            let ambientState = AmbientState.restoreTimeAdvancement timeAdvancing updateDelta clockDelta tickDelta  world.AmbientState
+            world.WorldState <- { world.WorldState with AmbientState = ambientState }
             
         /// Check that world time is advancing (not halted).
         static member getTimeAdvancing (world : World) =
@@ -434,18 +442,17 @@ module WorldModule =
                 if context.Names.Length > 0 then
                     let declared = world.DeclaredImSim
                     let timeAdvancing = world.TimeAdvancing
-                    let timeAdvancementCleared = world.TimeAdvancementCleared
                     let updateDelta = world.UpdateDelta
                     let clockDelta = world.ClockDelta
                     let tickDelta = world.TickDelta
                     fun (world : World) ->
                         let context' = world.ContextImSim
                         let declared' = world.DeclaredImSim
-                        World.mapAmbientState AmbientState.clearTimeAdvancement world
+                        if timeAdvancing then World.clearTimeAdvancement world
                         World.setContextAndDeclared context declared world
                         operation world
                         World.setContextAndDeclared context' declared' world
-                        World.mapAmbientState (AmbientState.restoreTimeAdvancement timeAdvancing timeAdvancementCleared updateDelta clockDelta tickDelta) world
+                        if timeAdvancing then World.restoreTimeAdvancement timeAdvancing updateDelta clockDelta tickDelta world
                 else operation
 
             // add tasklet

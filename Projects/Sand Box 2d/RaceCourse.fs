@@ -16,32 +16,18 @@ module RaceCourseScreenExtensions =
 type RaceCourseDispatcher () =
     inherit ScreenDispatcherImSim ()
     
-    static let RaceCourseScale = 16f
-    static let CarSpawnPosition = v3 0f 30f 0f
-    static let CarSpeedMax = 50f
-
-    static let RaceTrackContour =
-        // unlike the border in ToyBox which is a closed contour, an open contour used here defines ghost vertices at the ends.
-        // they are used to connect to other contours at their second and second-to-last links for seamless contour transitions
-        // and avoiding ghost collisions. here, we just set the ghost vertices to be the same as the second and second-to-last positions.
-        [|v2 -20f 5f (*Ghost vertex*); v2 -20f 5f; v2 -20f 0f; v2 20f 0f; v2 25f 0.25f; v2 30f 1f; v2 35f 4f; v2 40f 0f; v2 45f 0f;
-          v2 50f -1f; v2 55f -2f; v2 60f -2f; v2 65f -1.25f; v2 70f 0f; v2 75f 0.3f; v2 80f 1.5f; v2 85f 3.5f;
-          v2 90f 0f; v2 95f -0.5f; v2 100f -1f; v2 105f -2f; v2 110f -2.5f; v2 115f -1.3f; v2 120f 0f; v2 160f 0f;
-          v2 159f -10f; v2 201f -10f; v2 200f 0f; v2 240f 0f; v2 250f 5f; v2 250f -10f; v2 270f -10f; v2 270f 0f;
-          v2 310f 0f; v2 310f 5f; v2 310f 5f (*Ghost vertex*)|]
-        |> Array.rev // IMPORTANT: ContourShape only collides on the right hand side of each link!
+    // Keep the chassis and wheels above the first track segment at creation time.
+    // Wheel-joint motor speed is radians per second, rather than screen pixels per second.
+    static let RaceCourseScale = Sandbox2dGeometry.RaceCourseScale
+    static let CarMotorSpeedMax = Sandbox2dGeometry.CarMotorSpeedMax
 
     static let RaceTrackPoints =
-        RaceTrackContour
+        Sandbox2dGeometry.RaceTrackContour
         |> Array.map ((*) RaceCourseScale)
         |> Array.map _.V3
 
-    static let CarContour =
-        [|v2 -2.5f 0.92f; v2 -2.375f 1.46f; v2 -0.58f 1.92f; v2 0.46f 1.92f
-          v2 2.5f 1.17f; v2 2.5f 0.795f; v2 2.3f 0.67f; v2 -2.25f 0.65f|]
-
-    static let CarContourBounds =
-        Box2.Enclose CarContour
+    static let CarContour = Sandbox2dGeometry.CarContour
+    static let CarContourBounds = Sandbox2dGeometry.CarContourBounds
 
     static let CarPoints =
         CarContour
@@ -50,17 +36,10 @@ type RaceCourseDispatcher () =
         |> Array.map _.V3
 
     static let CarSize =
-        CarContour
-        |> Array.map (fun position -> position - CarContourBounds.Center)
-        |> Array.map (fun position -> position * RaceCourseScale)
-        |> Box2.Enclose
-        |> fun carBounds -> carBounds.Size.V3
+        Sandbox2dGeometry.carSize.V3
 
-    static let computeWheelOffset (position : Vector2) rotation =
-        position - CarContourBounds.Center
-        |> fun position -> position.Rotate rotation
-        |> fun position -> position * RaceCourseScale
-        |> fun position -> position.V3
+    static let CarSpawnPosition =
+        (Sandbox2dGeometry.CarContourBounds.Center * RaceCourseScale).V3 + v3 0f RaceCourseScale 0f
 
     // here we define default property values
     static member Properties =
@@ -86,6 +65,7 @@ type RaceCourseDispatcher () =
             World.doBlockBody2d "Race Track"
                 [Entity.Size .= v3 1f 1f 0f
                  Entity.BodyShape .= ContourShape { Links = RaceTrackPoints; Closed = false; TransformOpt = None; PropertiesOpt = None }
+                 Entity.Friction .= 0.6f
                  Entity.CollisionDetection .= Continuous] world |> ignore // keep car wheels above ground
             for (p1, p2) in Array.pairwise RaceTrackPoints do
                 World.doStaticSprite $"Race Track {p1} -> {p2}"
@@ -106,23 +86,19 @@ type RaceCourseDispatcher () =
                           TransformOpt = None
                           PropertiesOpt = None }
                  Entity.StaticImage .= Assets.Gameplay.CarImage
-                 Entity.Substance .= Density 4f
-                 Entity.Friction .= 0.2f] world |> ignore
+                 Entity.Substance .= Density (Sandbox2dGeometry.CarChassisDensity * Sandbox2dGeometry.SourceMassScale)
+                 Entity.Friction .= Sandbox2dGeometry.CarChassisFriction] world |> ignore
             let car = world.DeclaredEntity
 
             // declare wheels (and joints)
-            for (relation, position, density, frequency, friction, maxTorque) in
-                [("Back", v2 -1.709f 0.78f, 0.8f, 5f, 0.9f, 20f)
-                 ("Front", v2 1.54f 0.8f, 1f, 8.5f, 0.2f, 10f)] do
-                let carRotation = (car.GetRotation world).Angle2d
-                let wheelOffset = computeWheelOffset position carRotation
-                let wheelPosition = CarSpawnPosition + wheelOffset
+            for (relation, position, density, frequency, friction, maxTorque, isMotor) in Sandbox2dGeometry.CarWheelSpecs do
+                let wheelPosition = v3 position.X position.Y 0f * RaceCourseScale
                 World.doBallBody2d $"Wheel {relation}"
                     [Entity.Position |= wheelPosition
                      Entity.Rotation |= quatIdentity
                      Entity.Size .= v3One * RaceCourseScale
                      Entity.StaticImage .= Assets.Gameplay.WheelImage
-                     Entity.Substance .= Density (density * 2f)
+                     Entity.Substance .= Density (density * Sandbox2dGeometry.SourceMassScale)
                      Entity.Friction .= friction
                      Entity.Elevation .= 0.1f] world |> ignore
                 let (bodyJointId, _) =
@@ -137,20 +113,21 @@ type RaceCourseDispatcher () =
                             // the joint local anchor point for body A (car) is the relative position of body B (wheel)
                             // and the joint local anchor point for body B (wheel) is the left empty (origin)
                             jointDef.``base``.localFrameA.p <- B2Bodies.b2Body_GetLocalPoint (car, B2Bodies.b2Body_GetPosition wheel)
+                            jointDef.``base``.localFrameB.p <- B2Bodies.b2Body_GetLocalPoint (wheel, B2Bodies.b2Body_GetPosition wheel)
                             jointDef.``base``.localFrameA.q <- B2MathFunction.b2MakeRot MathF.PI_OVER_2 // wheel axis is vertical relative to car
                             jointDef.enableSpring <- true
                             jointDef.hertz <- frequency
-                            jointDef.dampingRatio <- 0.85f
-                            jointDef.maxMotorTorque <- maxTorque // this won't apply without enableMotor = true, which we'll set later via World.setBodyJointMotorEnabled
+                            jointDef.dampingRatio <- Sandbox2dGeometry.CarWheelDampingRatio
+                            jointDef.maxMotorTorque <- maxTorque * Sandbox2dGeometry.SourceTorqueScale
                             B2Joints.b2CreateWheelJoint (world, &jointDef) }
                          Entity.BodyJointTarget .= Address.makeFromString "^/Car"
                          Entity.BodyJointTarget2 .= Address.makeFromString $"^/Wheel {relation}"
                          Entity.CollideConnected .= false] world
-                if raceCourse.GetSelected world && relation = "Back" then
+                if raceCourse.GetSelected world && isMotor then
                     let acceleration = raceCourse.GetCarAcceleration world
-                    let motorSpeed = single (sign acceleration) * Math.SmoothStep (0f, CarSpeedMax, abs acceleration)
+                    let motorSpeed = Sandbox2dGeometry.carMotorSpeed acceleration
                     World.setBodyJointMotorSpeed motorSpeed bodyJointId world
-                    World.setBodyJointMotorEnabled (abs motorSpeed >= CarSpeedMax * 0.06f) bodyJointId world
+                    World.setBodyJointMotorEnabled (abs motorSpeed >= CarMotorSpeedMax * 0.06f) bodyJointId world
 
             // process car input
             if raceCourse.GetSelected world then
@@ -163,13 +140,15 @@ type RaceCourseDispatcher () =
                 else raceCourse.CarAcceleration.Map (fun a -> a - single (sign a) * 2.0f * world.ClockDelta) world
 
             // declare teeter totter
-            World.doBoxBody2d "Teeter Board"
-                [Entity.Position |= v3 140f 1f 0f * RaceCourseScale
-                 Entity.Rotation |= Quaternion.CreateFromAngle2d 0.15f
-                 Entity.Size .= v3 20f 0.5f 0f * RaceCourseScale
-                 Entity.StaticImage .= Assets.Default.Paddle
-                 Entity.Substance .= Density 1f
-                 Entity.CollisionDetection .= Continuous] world |> ignore
+            let teeterBodyId, _ =
+                World.doBoxBody2d "Teeter Board"
+                    [Entity.Position |= v3 140f Sandbox2dGeometry.TeeterCenterY 0f * RaceCourseScale
+                     Entity.Rotation |= Quaternion.CreateFromAngle2d Sandbox2dGeometry.TeeterInitialAngle
+                     Entity.Size .= v3 (2f * Sandbox2dGeometry.TeeterBoardHalfLength) (2f * Sandbox2dGeometry.TeeterBoardHalfThickness) 0f * RaceCourseScale
+                     Entity.StaticImage .= Assets.Default.Paddle
+                     Entity.Substance .= Density Sandbox2dGeometry.SourceMassScale
+                     Entity.CollisionDetection .= Continuous] world
+            let teeterInitializing = world.DeclaredInitializing
             World.doBodyJoint2d "Teeter Joint"
                 [Entity.BodyJoint |= Box2dNetBodyJoint { CreateBodyJoint = fun _ _ a b world ->
                     let mutable jointDef = B2Joints.b2DefaultRevoluteJointDef ()
@@ -177,20 +156,27 @@ type RaceCourseDispatcher () =
                     jointDef.``base``.bodyIdB <- b
                     jointDef.``base``.localFrameA.p <- B2Bodies.b2Body_GetLocalPoint (a, B2Bodies.b2Body_GetPosition b)
                     jointDef.enableLimit <- true // required for lowerAngle and upperAngle to take effect
-                    jointDef.lowerAngle <- -8.0f * MathF.PI / 180.0f
-                    jointDef.upperAngle <- 8.0f * MathF.PI / 180.0f
+                    jointDef.lowerAngle <- -Sandbox2dGeometry.TeeterAngleLimit
+                    jointDef.upperAngle <- Sandbox2dGeometry.TeeterAngleLimit
                     B2Joints.b2CreateRevoluteJoint (world, &jointDef) }
                  Entity.BodyJointTarget .= Address.makeFromString "^/Race Track"
                  Entity.BodyJointTarget2 .= Address.makeFromString "^/Teeter Board"
                  Entity.CollideConnected .= false] world |> ignore
+            if teeterInitializing then
+                World.applyBodyAngularImpulse (v3 0f 0f Sandbox2dGeometry.TeeterAngularImpulse) teeterBodyId world
 
             // declare bridge
-            for i in 0 .. 20 do
-                if i < 20 then
+            let bridgeEndpoints =
+                Array.init Sandbox2dGeometry.BridgeLinkCount (fun i ->
+                    v3 (160f + 2f * single i) -0.125f 0f, v3 (160f + 2f * single (i + 1)) -0.125f 0f)
+                |> Array.map (fun (a, b) -> a * RaceCourseScale, b * RaceCourseScale)
+            for i in 0 .. Sandbox2dGeometry.BridgeLinkCount do
+                if i < Sandbox2dGeometry.BridgeLinkCount then
+                    let endpoint1, endpoint2 = bridgeEndpoints[i]
                     World.doBoxBody2d $"Bridge {i}"
-                        [Entity.Position |= v3 (161f + 2f * single i) -0.125f 0f * RaceCourseScale
+                        [Entity.Position |= (endpoint1 + endpoint2) / 2f
                          Entity.Rotation |= quatIdentity
-                         Entity.Size .= v3 2f 0.25f 0f * RaceCourseScale
+                         Entity.Size .= v3 (endpoint2 - endpoint1).Magnitude Sandbox2dGeometry.BridgeLinkThickness 0f
                          Entity.Friction .= 0.6f
                          Entity.StaticImage .= Assets.Default.Paddle
                          Entity.CollisionDetection .= Continuous
@@ -199,9 +185,9 @@ type RaceCourseDispatcher () =
                     [Entity.BodyJoint |= Box2dNetBodyJoint {
                         CreateBodyJoint = fun _ toPhysicsV2 a b world ->
                             let p =
-                                if i < 20
-                                then B2Bodies.b2Body_GetPosition b - toPhysicsV2 (v3 RaceCourseScale 0f 0f)
-                                else B2Bodies.b2Body_GetPosition a + toPhysicsV2 (v3 RaceCourseScale 0f 0f)
+                                if i = 0 then toPhysicsV2 (fst bridgeEndpoints[0])
+                                elif i = Sandbox2dGeometry.BridgeLinkCount then toPhysicsV2 (snd bridgeEndpoints[i - 1])
+                                else toPhysicsV2 (snd bridgeEndpoints[i - 1])
                             let mutable jointDef = B2Joints.b2DefaultRevoluteJointDef ()
                             jointDef.``base``.bodyIdA <- a
                             jointDef.``base``.bodyIdB <- b
@@ -209,7 +195,9 @@ type RaceCourseDispatcher () =
                             jointDef.``base``.localFrameB.p <- B2Bodies.b2Body_GetLocalPoint (b, p)
                             B2Joints.b2CreateRevoluteJoint (world, &jointDef) }
                      Entity.BodyJointTarget .= Address.makeFromString (if i = 0 then "^/Race Track" else $"^/Bridge {i-1}")
-                     Entity.BodyJointTarget2 .= Address.makeFromString (if i < 20 then $"^/Bridge {i}" else "^/Race Track")] world |> ignore
+                     Entity.BodyJointTarget2 .= Address.makeFromString (if i < Sandbox2dGeometry.BridgeLinkCount then $"^/Bridge {i}" else "^/Race Track")
+                     // Adjacent planks already touch at their joint anchors; avoid collision impulses fighting the hinge.
+                     Entity.CollideConnected .= Sandbox2dGeometry.BridgeCollideConnected] world |> ignore
 
             // declare boxes
             for i in 0 .. 2 do
@@ -228,7 +216,7 @@ type RaceCourseDispatcher () =
             World.endGroup world
             
             // reset gravity from ToyBox
-            World.setGravity2d (World.getGravityDefault2d world) world
+            World.setGravity2d (v3 0f Sandbox2dGeometry.SourceGravity 0f) world
 
             // process car camera as the last task
             // menu offset (X = 60) + car lookahead (X = 40) + make objects spawn above ground (Y = 60)

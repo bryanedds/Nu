@@ -81,7 +81,6 @@ module WorldGameModule =
         member this.KeyboardKeyDownEvent = Events.KeyboardKeyDownEvent --> Game.Handle
         member this.KeyboardKeyUpEvent = Events.KeyboardKeyUpEvent --> Game.Handle
         member this.GamepadAxisChangeEvent axis index = Events.GamepadAxisChangeEvent axis index --> Game.Handle
-        member this.GamepadDirectionChangeEvent index = Events.GamepadDirectionChangeEvent index --> Game.Handle
         member this.GamepadButtonChangeEvent index = Events.GamepadButtonChangeEvent index --> Game.Handle
         member this.GamepadButtonDownEvent index = Events.GamepadButtonDownEvent index --> Game.Handle
         member this.GamepadButtonUpEvent index = Events.GamepadButtonUpEvent index --> Game.Handle
@@ -92,8 +91,8 @@ module WorldGameModule =
         member this.BodyAddingEvent = Events.BodyAddingEvent --> Game.Handle
         member this.BodyRemovingEvent = Events.BodyRemovingEvent --> Game.Handle
         member this.BodySeparationImplicitEvent = Events.BodySeparationImplicitEvent --> Game.Handle
-        member this.Gravity2dChangeEvent = Events.Gravity2dChange --> Game.Handle
-        member this.Gravity3dChangeEvent = Events.Gravity3dChange --> Game.Handle
+        member this.Gravity2dChangeEvent = Events.Gravity2dChangeEvent --> Game.Handle
+        member this.Gravity3dChangeEvent = Events.Gravity3dChangEvent --> Game.Handle
 
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world =

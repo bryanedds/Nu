@@ -1,14 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<!-- ============================================================
-	     Framework Targeting:
+	     Framework Targeting
 		 ============================================================ -->
 	<PropertyGroup>
 		<!-- Target frameworks: Android must be listed before desktop for Visual Studio to detect mobile debug targets.
 		     iOS builds will not work outside macOS. -->
 		<TargetFrameworks>net10.0-android;net10.0</TargetFrameworks>
 		<TargetFrameworks Condition="$([System.OperatingSystem]::IsMacOS())">$(TargetFrameworks);net10.0-ios</TargetFrameworks>
-		<!-- ENABLE MOBILE BUILDS HERE:
+        <!-- ENABLE MOBILE BUILDS HERE:
 		     For mobile builds, note the following -
 			 1) remove the following <TargetFrameworks> line to enable building for mobile by default. Removing in
 			 Visual Studio needs "Reload projects" to then be pressed.

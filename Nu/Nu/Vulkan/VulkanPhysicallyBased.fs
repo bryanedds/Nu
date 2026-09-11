@@ -548,6 +548,7 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedSurface =
     override this.GetHashCode () =
         this.HashCode
 
+/// Physically-based surface operations.
 [<RequireQualifiedAccess>]
 module PhysicallyBasedSurfaceFns =
     let extractPresence = PhysicallyBasedSurface.extractPresence
@@ -797,6 +798,7 @@ type PhysicallyBasedPipelines =
       ForwardStaticPipeline : PhysicallyBasedPipeline
       ForwardAnimatedPipeline : PhysicallyBasedPipeline }
 
+/// Physically-based rendering operations.
 [<RequireQualifiedAccess>]
 module PhysicallyBased =
     
@@ -948,8 +950,9 @@ module PhysicallyBased =
 
         // create ssao attachments
         let ssaoUsageFlags = VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferSrc ||| VkImageUsageFlags.TransferDst
-        let ssaoUnfilteredAttachment = Attachment.createColorAttachment Texture2d ssaoUsageFlags R16f Red geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y context
-        let ssaoFilteredAttachment = Attachment.createColorAttachment Texture2d ssaoUsageFlags R16f Red geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y context
+        let ssaoResolution = geometryViewport.SsaoResolution
+        let ssaoUnfilteredAttachment = Attachment.createColorAttachment Texture2d ssaoUsageFlags R16f Red ssaoResolution.X ssaoResolution.Y context
+        let ssaoFilteredAttachment = Attachment.createColorAttachment Texture2d ssaoUsageFlags R16f Red ssaoResolution.X ssaoResolution.Y context
 
         // create coloring attachments
         let coloringAttachments = Attachment.createColoringAttachments geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y context
@@ -987,7 +990,7 @@ module PhysicallyBased =
           ColoringAttachments = coloringAttachments
           CompositionAttachment = compositionAttachment }
 
-    /// Update the size of the attachments. Must be used every frame.
+    /// Update the size of the attachments.
     let updatePhysicallyBasedAttachmentsSize (geometryViewport : Viewport) (attachments : PhysicallyBasedAttachments) context =
         Attachment.updateColorAttachmentSize geometryViewport.ShadowTextureResolution.X geometryViewport.ShadowTextureResolution.Y attachments.GaussianEsmAttachment context
         Attachment.updateColorAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.ColorFull0Attachment context
@@ -1002,11 +1005,14 @@ module PhysicallyBased =
         Attachment.updateColorAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.BloomApplyAttachment context
         Attachment.updateToneMappingAttachmentsSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.ToneMappingAttachment context
         Attachment.updateGammaCorrectionAttachmentsSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.GammaCorrectionAttachment context
-        Attachment.updateShadowTextureArrayAttachmentsSize geometryViewport.ShadowTextureResolution.X geometryViewport.ShadowTextureResolution.Y attachments.ShadowTextureArrayAttachments context
+        let (colorTexture, zTexture) = attachments.ShadowTextureArrayAttachments
+        Attachment.updateShadowTextureArrayAttachmentsSize geometryViewport.ShadowTextureResolution.X geometryViewport.ShadowTextureResolution.Y colorTexture zTexture context
         for i in 0 .. dec attachments.ShadowMapAttachmentsArray.Length do
-            Attachment.updateShadowMapAttachmentsSize geometryViewport.ShadowMapResolution.X geometryViewport.ShadowMapResolution.Y attachments.ShadowMapAttachmentsArray[i] context
+            let (colorTexture, zTexture) = attachments.ShadowMapAttachmentsArray[i]
+            Attachment.updateShadowMapAttachmentsSize geometryViewport.ShadowMapResolution.X geometryViewport.ShadowMapResolution.Y colorTexture zTexture context
         for i in 0 .. dec attachments.ShadowCascadeArrayAttachmentsArray.Length do
-            Attachment.updateShadowCascadeArrayAttachmentsSize geometryViewport.ShadowCascadeResolution.X geometryViewport.ShadowCascadeResolution.Y attachments.ShadowCascadeArrayAttachmentsArray[i] context
+            let (colorTexture, zTexture) = attachments.ShadowCascadeArrayAttachmentsArray[i]
+            Attachment.updateShadowCascadeArrayAttachmentsSize geometryViewport.ShadowCascadeResolution.X geometryViewport.ShadowCascadeResolution.Y colorTexture zTexture context
         Attachment.updateGeometryAttachmentsSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.GeometryAttachments context
         Attachment.updateLightingAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.LightingAttachment context
         Attachment.updateFoggingAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.FoggingAttachment context
@@ -1014,31 +1020,35 @@ module PhysicallyBased =
         Attachment.updateAmbientAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.AmbientAttachment context
         Attachment.updateIrradianceAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.IrradianceAttachment context
         Attachment.updateEnvironmentFilterAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.EnvironmentFilterAttachment context
-        Attachment.updateColorAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.SsaoUnfilteredAttachment context
-        Attachment.updateColorAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.SsaoFilteredAttachment context
+        Attachment.updateColorAttachmentSize geometryViewport.SsaoResolution.X geometryViewport.SsaoResolution.Y attachments.SsaoUnfilteredAttachment context
+        Attachment.updateColorAttachmentSize geometryViewport.SsaoResolution.X geometryViewport.SsaoResolution.Y attachments.SsaoFilteredAttachment context
         Attachment.updateColoringAttachmentsSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.ColoringAttachments context
         Attachment.updateCompositionAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.CompositionAttachment context
 
     /// Destroy the physically-based attachments.
     let destroyPhysicallyBasedAttachments (attachments : PhysicallyBasedAttachments) context =
+        Attachment.destroyColorAttachment attachments.DownSampleColorAttachment context
+        Attachment.destroyColorAttachment attachments.DownSampleDepthAttachment context
+        Attachment.destroyColorAttachment attachments.UpSampleColorAttachment context
         Attachment.destroyColorAttachment attachments.GaussianEsmAttachment context
+        Attachment.destroyColorAttachment attachments.GaussianEsmArrayAttachment context
         Attachment.destroyColorAttachment attachments.ColorFull0Attachment context
         Attachment.destroyColorAttachment attachments.ColorFull1Attachment context
         Attachment.destroyColorAttachment attachments.ColorHalf0Attachment context
         Attachment.destroyColorAttachment attachments.ColorHalf1Attachment context
-        Attachment.destroyColorAttachment attachments.DownSampleColorAttachment context
-        Attachment.destroyColorAttachment attachments.DownSampleDepthAttachment context
-        Attachment.destroyColorAttachment attachments.UpSampleColorAttachment context
         Attachment.destroyColorAttachment attachments.BloomExtractAttachment context
         Attachment.destroyBloomSampleAttachments attachments.BloomSampleAttachments context
         Attachment.destroyColorAttachment attachments.BloomApplyAttachment context
         Attachment.destroyToneMappingAttachments attachments.ToneMappingAttachment context
         Attachment.destroyGammaCorrectionAttachment attachments.GammaCorrectionAttachment context
-        Attachment.destroyShadowTextureArrayAttachments attachments.ShadowTextureArrayAttachments context
+        let (colorTexture, zTexture) = attachments.ShadowTextureArrayAttachments
+        Attachment.destroyShadowTextureArrayAttachments colorTexture zTexture context
         for i in 0 .. dec attachments.ShadowMapAttachmentsArray.Length do
-            Attachment.destroyShadowMapAttachments attachments.ShadowMapAttachmentsArray[i] context
+            let (colorTexture, zTexture) = attachments.ShadowMapAttachmentsArray[i]
+            Attachment.destroyShadowMapAttachments colorTexture zTexture context
         for i in 0 .. dec attachments.ShadowCascadeArrayAttachmentsArray.Length do
-            Attachment.destroyShadowCascadeArrayAttachments attachments.ShadowCascadeArrayAttachmentsArray[i] context
+            let (colorTexture, zTexture) = attachments.ShadowCascadeArrayAttachmentsArray[i]
+            Attachment.destroyShadowCascadeArrayAttachments colorTexture zTexture context
         Attachment.destroyGeometryAttachments attachments.GeometryAttachments context
         Attachment.destroyLightingAttachment attachments.LightingAttachment context
         Attachment.destroyFoggingAttachment attachments.FoggingAttachment context
@@ -3677,6 +3687,7 @@ module PhysicallyBased =
         (view : Matrix4x4)
         (projectionUnflipped : Matrix4x4)
         (materialSampler : Sampler)
+        (loadOperation : LoadOperation)
         (colorAttachments : VkImageView array)
         (depthAttachment : Texture)
         (resolution : Vector2i)
@@ -3703,7 +3714,7 @@ module PhysicallyBased =
         // set up render
         let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
         let mutable vkViewport = Hl.makeViewport false renderArea
-        Hl.withRenderingInfo colorAttachments (Some depthAttachment.ImageView) renderArea LoadAttachments $ fun renderingInfo ->
+        Hl.withRenderingInfo colorAttachments (Some depthAttachment.ImageView) renderArea loadOperation $ fun renderingInfo ->
             let mutable renderingInfo = renderingInfo
             DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
         DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
@@ -4240,7 +4251,6 @@ module PhysicallyBased =
         (view : Matrix4x4)
         (projectionUnflipped : Matrix4x4)
         (lightCutoffMargin : single)
-        (ssvfEnabled : int)
         (ssvfIntensity : single)
         (ssvfSteps : int)
         (ssvfAsymmetry : single)
@@ -4294,7 +4304,7 @@ module PhysicallyBased =
                 // specify lighting
                 let mutable lighting = LightingStruct ()
                 lighting.lightCutoffMargin <- lightCutoffMargin
-                lighting.ssvfEnabled <- ssvfEnabled
+                lighting.ssvfEnabled <- 1
                 lighting.ssvfIntensity <- ssvfIntensity
                 lighting.ssvfSteps <- ssvfSteps
                 lighting.ssvfAsymmetry <- ssvfAsymmetry

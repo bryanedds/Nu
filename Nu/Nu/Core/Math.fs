@@ -1582,6 +1582,7 @@ type [<Struct>] Affine =
              Quaternion.Multiply (affine1.Rotation, affine2.Rotation),
              affine1.Scale * affine2.Scale)
 
+/// Math functions.
 [<RequireQualifiedAccess>]
 module Math =
 
@@ -1746,6 +1747,7 @@ module Math =
         let offset = AlignOffset (offset, alignment)
         offset + stride * count
 
+/// Math operators.
 [<AutoOpen>]
 module MathOperators =
 
@@ -1986,6 +1988,7 @@ type [<Struct>] FocalType =
 
 namespace System.Collections.Generic
 
+/// Ordered dictionary operations.
 [<RequireQualifiedAccess>]
 module OrderedDictionary =
 

@@ -12,6 +12,7 @@ open Vortice.Vulkan
 open Prime
 open Nu
 
+/// Represents the environment filter data for a shader.
 [<Struct; StructLayout (LayoutKind.Explicit)>]
 type EnvironmentFilterStruct =
     [<FieldOffset(0)>] val mutable roughness : single
@@ -33,6 +34,7 @@ type [<Struct>] LightMap =
       IrradianceMap : Texture
       EnvironmentFilterMap : Texture }
 
+/// Light map operations.
 [<RequireQualifiedAccess>]
 module LightMap =
 

@@ -144,9 +144,7 @@
         <AndroidNativeLibrary Include="$(MSBuildThisFileDirectory)Nu.Dependencies/ImGui/android/*/libcimgui.so" />
         <AndroidNativeLibrary Include="$(MSBuildThisFileDirectory)Nu.Dependencies/BulletSharpPInvoke/android/*/libbulletc.so" />
         <AndroidNativeLibrary Include="$(MSBuildThisFileDirectory)Nu.Dependencies/AssimpNet/android/*/libassimp.so" />
-
-        <!-- To uncomment the following line, also download Vulkan validation layers (https://github.com/KhronosGroup/Vulkan-ValidationLayers/releases) -->
-        <!--AndroidNativeLibrary Include="$(MSBuildThisFileDirectory)Nu.Dependencies/Vulkan-validation/**/*.so" Condition="'$(Configuration)' == 'Debug'" /-->
+        <AndroidNativeLibrary Include="$(MSBuildThisFileDirectory)Nu.Dependencies/Vulkan.Validation/android/*/*.so" Condition="'$(Configuration)' == 'Debug'" />
 
     </ItemGroup>
 

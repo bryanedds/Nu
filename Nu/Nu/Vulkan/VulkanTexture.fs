@@ -274,25 +274,41 @@ type TextureWrapper =
       StagingBuffers : VulkanBuffer List }
 
     static member private createImage vkFormat extent mipLevels (textureType : TextureType) usageFlags (context : VulkanContext) =
-        let mutable iInfo = VkImageCreateInfo ()
-        if textureType.IsTextureCubeMap then
-            iInfo.flags <- VkImageCreateFlags.CubeCompatible
-        iInfo.imageType <- VkImageType.Image2D
-        iInfo.format <- vkFormat
-        iInfo.extent <- extent
-        iInfo.mipLevels <- uint mipLevels
-        iInfo.arrayLayers <- uint textureType.Layers
-        iInfo.samples <- VkSampleCountFlags.Count1
-        iInfo.tiling <- VkImageTiling.Optimal
-        iInfo.usage <- usageFlags
-        iInfo.sharingMode <- VkSharingMode.Exclusive
-        iInfo.initialLayout <- Undefined.VkImageLayout
-        let aInfo = VmaAllocationCreateInfo (usage = VmaMemoryUsage.Auto)
+        let mutable imageInfo = VkImageCreateInfo ()
+        if textureType.IsTextureCubeMap then imageInfo.flags <- VkImageCreateFlags.CubeCompatible
+        imageInfo.imageType <- VkImageType.Image2D
+        imageInfo.format <- vkFormat
+        imageInfo.extent <- extent
+        imageInfo.mipLevels <- uint mipLevels
+        imageInfo.arrayLayers <- uint textureType.Layers
+        imageInfo.samples <- VkSampleCountFlags.Count1
+        imageInfo.tiling <- VkImageTiling.Optimal
+        imageInfo.usage <- usageFlags
+        imageInfo.sharingMode <- VkSharingMode.Exclusive
+        imageInfo.initialLayout <- Undefined.VkImageLayout
+        let mutable allocInfo = VmaAllocationCreateInfo (usage = VmaMemoryUsage.AutoPreferDevice)
         let mutable image = Unchecked.defaultof<VkImage>
         let mutable allocation = Unchecked.defaultof<VmaAllocation>
-        Vma.vmaCreateImage (context.VmaAllocator, &iInfo, &aInfo, &image, &allocation, nullPtr) |> Hl.check
+        let mutable allocationInfo = Unchecked.defaultof<VmaAllocationInfo>
+        Vma.vmaCreateImage (context.VmaAllocator, &&imageInfo, &&allocInfo, &image, &allocation, &allocationInfo) |> Hl.check
+        Hl.reportImageMemoryChange (int64 allocationInfo.size)
         (image, allocation)
 
+    static member private destroyImage texture (context : VulkanContext) =
+
+        // destroy image
+        let mutable allocationInfo = VmaAllocationInfo ()
+        Vma.vmaGetAllocationInfo (context.VmaAllocator, texture.Allocation, &&allocationInfo)
+        DeviceApi.vkDestroyImageView (texture.ImageView, nullPtr)
+        for i in 0 .. dec (texture.LayerViews.Length) do
+            DeviceApi.vkDestroyImageView (texture.LayerViews[i], nullPtr)
+        for i in 0 .. dec (texture.SubViews.GetLength 0) do
+            for j in 0 .. dec (texture.SubViews.GetLength 1) do
+                DeviceApi.vkDestroyImageView (texture.SubViews[i, j], nullPtr)
+        Vma.vmaDestroyImage (context.VmaAllocator, texture.Image, texture.Allocation)
+        Hl.reportImageMemoryChange -(int64 allocationInfo.size)
+
+    /// Create a texture wrapper.
     static member create pixelFormat (internalFormat : Vulkan.ImageFormat) metadata mipLevels (attachmentMode : AttachmentMode) (textureType : TextureType) usageFlags (context : VulkanContext) =
 
         // create image
@@ -343,16 +359,15 @@ type TextureWrapper =
           TextureMetadata = metadata
           StagingBuffers = List () }
 
+    /// Destroy a texture wrapper.
     static member destroy texture (context : VulkanContext) =
-        DeviceApi.vkDestroyImageView (texture.ImageView, nullPtr)
-        for i in 0 .. dec (texture.LayerViews.Length) do
-            DeviceApi.vkDestroyImageView (texture.LayerViews[i], nullPtr)
-        for i in 0 .. dec (texture.SubViews.GetLength 0) do
-            for j in 0 .. dec (texture.SubViews.GetLength 1) do
-                DeviceApi.vkDestroyImageView (texture.SubViews[i, j], nullPtr)
-        Vma.vmaDestroyImage (context.VmaAllocator, texture.Image, texture.Allocation)
+
+        // destroy any utilized staging buffers
         for i in 0 .. dec texture.StagingBuffers.Count do
             VulkanBuffer.destroy texture.StagingBuffers[i] context
+
+        // destroy image
+        TextureWrapper.destroyImage texture context
 
 /// An internal representation of a texture as managed by Vulkan.
 type [<CustomEquality; NoComparison>] TextureInternal =
@@ -429,7 +444,8 @@ type [<CustomEquality; NoComparison>] TextureInternal =
                     let mipGenSupport = formatProperties.optimalTilingFeatures &&& VkFormatFeatureFlags.SampledImageFilterLinear <> VkFormatFeatureFlags.None
                     
                     // calculate mip levels
-                    if mipGenSupport then max metadata.TextureWidth metadata.TextureHeight |> Math.Log2 |> floor |> inc |> int
+                    if mipGenSupport
+                    then max metadata.TextureWidth metadata.TextureHeight |> Math.Log2 |> floor |> inc |> int
                     else Log.errorOnce "Graphics device does not support mipmap generation for some used image format(s)."; 1
                 
                 | _ -> Log.infoOnce "Automatic mipmap generation not supported for attachment texture."; 1

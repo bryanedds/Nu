@@ -538,12 +538,14 @@ type [<Sealed>] BehaviorBuilder () =
     /// Monadic bind.
     member this.Bind (a, f) = Behavior.bind a f
 
+/// Behavior builder operations.
 [<AutoOpen>]
 module BehaviorBuilder =
 
     /// Builds behaviors.
     let behave = BehaviorBuilder ()
 
+/// Game time entension methods.
 [<RequireQualifiedAccess>]
 module GameTimeExtension =
     type GameTime with

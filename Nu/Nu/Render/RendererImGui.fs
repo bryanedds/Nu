@@ -21,15 +21,15 @@ type RenderMessageImGui =
 /// Renders an imgui view.
 /// NOTE: API is object-oriented / mutation-based because it's ported from a port. 
 type RendererImGui =
-    abstract Initialize : fonts : ImFontAtlasPtr -> unit
+    abstract Initialize : fonts : ImFontAtlasPtr -> VkFormat -> unit
     abstract PreRender : renderMessages : RenderMessageImGui List -> unit
-    abstract Render : viewport_ : Viewport -> drawData : ImDrawDataPtr -> unit
+    abstract Render : viewport_ : Viewport -> drawData : ImDrawDataPtr -> Texture -> unit
     abstract CleanUp : unit -> unit
 
 /// A stub imgui renderer.
 type StubRendererImGui () =
     interface RendererImGui with
-        member renderer.Initialize fonts =
+        member renderer.Initialize fonts _ =
             let mutable pixels = Unchecked.defaultof<nativeint>
             let mutable fontTextureWidth = 0
             let mutable fontTextureHeight = 0
@@ -37,7 +37,7 @@ type StubRendererImGui () =
             fonts.GetTexDataAsRGBA32 (&pixels, &fontTextureWidth, &fontTextureHeight, &bytesPerPixel)
             fonts.ClearTexData ()
         member renderer.PreRender _ = ()
-        member renderer.Render _ _ = ()
+        member renderer.Render _ _ _ = ()
         member renderer.CleanUp () = ()
 
 /// Renders an imgui view via Vulkan.
@@ -95,7 +95,7 @@ type VulkanRendererImGui
 
     interface RendererImGui with
         
-        member renderer.Initialize (fonts : ImFontAtlasPtr) =
+        member renderer.Initialize (fonts : ImFontAtlasPtr) resolveTextureFormat =
             
             // get font atlas data
             let mutable pixels = Unchecked.defaultof<nativeint>
@@ -136,7 +136,7 @@ type VulkanRendererImGui
                     [|Pipeline.descriptorSet<Texture * Sampler>
                         [|Pipeline.descriptor 0 CombinedImageSampler FragmentStage 1|]|]
                     [|Pipeline.pushConstant 0 (sizeof<Single> * 4) VertexStage|]
-                    [|context.SwapFormat|] None
+                    [|resolveTextureFormat|] None
                     [|vertexBuffer; indexBuffer|]
 
         member renderer.PreRender renderMessages =
@@ -173,7 +173,7 @@ type VulkanRendererImGui
                 let mutable removed = ()
                 assetTextureRequests.TryRemove (assetTag, &removed) |> ignore<bool>
 
-        member renderer.Render viewport_ (drawData : ImDrawDataPtr) =
+        member renderer.Render viewport_ (drawData : ImDrawDataPtr) (resolveTexture : Texture) =
 
             // update viewport
             viewport <- viewport_
@@ -183,137 +183,134 @@ type VulkanRendererImGui
             io.DisplaySize <- viewport.Bounds.Size.V2
             io.DisplayFramebufferScale <- v2One
 
-            // render when allowed
-            if context.RenderAllowed then
+            // grab pipeline, asserting non-None since shader reload for ImGui isn't supported
+            let vkPipeline = Pipeline.tryGetVkPipeline VulkanImGui false pipeline |> Option.get
 
-                // grab pipeline, asserting non-None since shader reload for ImGui isn't supported
-                let vkPipeline = Pipeline.tryGetVkPipeline VulkanImGui false pipeline |> Option.get
+            // set up render
+            let mutable renderArea = VkRect2D (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
+            let mutable vkViewport = Hl.makeViewport false renderArea
+            Hl.withRenderingInfo [|resolveTexture.ImageView|] None renderArea LoadAttachments $ fun renderingInfo ->
+                let mutable renderingInfo = renderingInfo
+                DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
+            DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
+            DeviceApi.vkCmdBindPipeline (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
 
-                // set up render
-                let mutable renderArea = VkRect2D (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)
-                let mutable vkViewport = Hl.makeViewport false renderArea
-                Hl.withRenderingInfo [|context.SwapchainImageView|] None renderArea LoadAttachments $ fun renderingInfo ->
-                    let mutable renderingInfo = renderingInfo
-                    DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
-                DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
-                DeviceApi.vkCmdBindPipeline (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
-
-                // compute offsets
-                if drawData.TotalVtxCount > 0 then
+            // compute offsets
+            if drawData.TotalVtxCount > 0 then
                     
-                    // get data buffer size totals for vertices and indices
-                    let vertexBufferSizeTotal = drawData.TotalVtxCount * sizeof<ImDrawVert>
-                    let indexBufferSizeTotal = drawData.TotalIdxCount * sizeof<uint16>
+                // get data buffer size totals for vertices and indices
+                let vertexBufferSizeTotal = drawData.TotalVtxCount * sizeof<ImDrawVert>
+                let indexBufferSizeTotal = drawData.TotalIdxCount * sizeof<uint16>
 
-                    // enlarge buffer sizes if needed
-                    while vertexBufferSizeTotal > vertexBufferSize do vertexBufferSize <- vertexBufferSize * 2
-                    while indexBufferSizeTotal > indexBufferSize do indexBufferSize <- indexBufferSize * 2
-                    VulkanBuffer.ensureWidth vertexBufferSize vertexBuffer context
-                    VulkanBuffer.ensureWidth indexBufferSize indexBuffer context
+                // enlarge buffer sizes if needed
+                while vertexBufferSizeTotal > vertexBufferSize do vertexBufferSize <- vertexBufferSize * 2
+                while indexBufferSizeTotal > indexBufferSize do indexBufferSize <- indexBufferSize * 2
+                VulkanBuffer.ensureWidth vertexBufferSize vertexBuffer context
+                VulkanBuffer.ensureWidth indexBufferSize indexBuffer context
 
-                    // upload vertices and indices
-                    let mutable vertexOffset = 0
-                    let mutable indexOffset = 0
-                    for i in 0 .. dec drawData.CmdListsCount do
-                        let drawList = let range = drawData.CmdLists in range[i]
-                        let vertexBufferSize = drawList.VtxBuffer.Size * sizeof<ImDrawVert>
-                        let indexBufferSize = drawList.IdxBuffer.Size * sizeof<uint16>
-                        VulkanBuffer.writeSubdata vertexOffset 0 vertexBufferSize 1 drawList.VtxBuffer.Data vertexBuffer context
-                        VulkanBuffer.writeSubdata indexOffset 0 indexBufferSize 1 drawList.IdxBuffer.Data indexBuffer context
-                        vertexOffset <- vertexOffset + vertexBufferSize
-                        indexOffset <- indexOffset + indexBufferSize
-
-                    // flush data
-                    VulkanBuffer.flushSubdata 0 0 vertexBufferSizeTotal 1 vertexBuffer context
-                    VulkanBuffer.flushSubdata 0 0 indexBufferSizeTotal 1 indexBuffer context
-
-                    // bind vertex and index buffers
-                    let mutable vertexBuffer = vertexBuffer.VkBuffer
-                    let mutable vertexOffset = 0UL
-                    DeviceApi.vkCmdBindVertexBuffers (context.RenderCommandBuffer, 0u, 1u, &&vertexBuffer, &&vertexOffset)
-                    DeviceApi.vkCmdBindIndexBuffer (context.RenderCommandBuffer, indexBuffer.VkBuffer, 0UL, VkIndexType.Uint16)
-
-                // set up scale and translation
-                let scale = Array.zeroCreate<single> 2
-                scale[0] <- 2.0f / drawData.DisplaySize.X
-                scale[1] <- 2.0f / drawData.DisplaySize.Y
-                use scalePin = new ArrayPin<_> (scale)
-                let translate = Array.zeroCreate<single> 2
-                translate[0] <- -1.0f - drawData.DisplayPos.X * scale[0]
-                translate[1] <- -1.0f - drawData.DisplayPos.Y * scale[1]
-                use translatePin = new ArrayPin<_> (translate)
-                DeviceApi.vkCmdPushConstants (context.RenderCommandBuffer, pipeline.PipelineLayout, VertexStage.VkShaderStageFlags, 0u, 8u, scalePin.VoidPtr)
-                DeviceApi.vkCmdPushConstants (context.RenderCommandBuffer, pipeline.PipelineLayout, VertexStage.VkShaderStageFlags, 8u, 8u, translatePin.VoidPtr)
-
-                // draw command lists, ignoring any commands that use blacklisted textures
-                let mutable globalVtxOffset = 0
-                let mutable globalIdxOffset = 0
+                // upload vertices and indices
+                let mutable vertexOffset = 0
+                let mutable indexOffset = 0
                 for i in 0 .. dec drawData.CmdListsCount do
-                    
-                    // draw commands from list
                     let drawList = let range = drawData.CmdLists in range[i]
-                    for j in 0 .. dec drawList.CmdBuffer.Size do
+                    let vertexBufferSize = drawList.VtxBuffer.Size * sizeof<ImDrawVert>
+                    let indexBufferSize = drawList.IdxBuffer.Size * sizeof<uint16>
+                    VulkanBuffer.writeSubdata vertexOffset 0 vertexBufferSize 1 drawList.VtxBuffer.Data vertexBuffer context
+                    VulkanBuffer.writeSubdata indexOffset 0 indexBufferSize 1 drawList.IdxBuffer.Data indexBuffer context
+                    vertexOffset <- vertexOffset + vertexBufferSize
+                    indexOffset <- indexOffset + indexBufferSize
 
-                        // only render when required texture is not in blacklist
-                        let pcmd = let buffer = drawList.CmdBuffer in buffer[j]
-                        if not (textureIdBlacklist.Contains (uint32 pcmd.TextureId)) then
+                // flush data
+                VulkanBuffer.flushSubdata 0 0 vertexBufferSizeTotal 1 vertexBuffer context
+                VulkanBuffer.flushSubdata 0 0 indexBufferSizeTotal 1 indexBuffer context
 
-                            // only process when no user callback is provided
-                            if pcmd.UserCallback = nativeint 0 then
+                // bind vertex and index buffers
+                let mutable vertexBuffer = vertexBuffer.VkBuffer
+                let mutable vertexOffset = 0UL
+                DeviceApi.vkCmdBindVertexBuffers (context.RenderCommandBuffer, 0u, 1u, &&vertexBuffer, &&vertexOffset)
+                DeviceApi.vkCmdBindIndexBuffer (context.RenderCommandBuffer, indexBuffer.VkBuffer, 0UL, VkIndexType.Uint16)
+
+            // set up scale and translation
+            let scale = Array.zeroCreate<single> 2
+            scale[0] <- 2.0f / drawData.DisplaySize.X
+            scale[1] <- 2.0f / drawData.DisplaySize.Y
+            use scalePin = new ArrayPin<_> (scale)
+            let translate = Array.zeroCreate<single> 2
+            translate[0] <- -1.0f - drawData.DisplayPos.X * scale[0]
+            translate[1] <- -1.0f - drawData.DisplayPos.Y * scale[1]
+            use translatePin = new ArrayPin<_> (translate)
+            DeviceApi.vkCmdPushConstants (context.RenderCommandBuffer, pipeline.PipelineLayout, VertexStage.VkShaderStageFlags, 0u, 8u, scalePin.VoidPtr)
+            DeviceApi.vkCmdPushConstants (context.RenderCommandBuffer, pipeline.PipelineLayout, VertexStage.VkShaderStageFlags, 8u, 8u, translatePin.VoidPtr)
+
+            // draw command lists, ignoring any commands that use blacklisted textures
+            let mutable globalVtxOffset = 0
+            let mutable globalIdxOffset = 0
+            for i in 0 .. dec drawData.CmdListsCount do
+                    
+                // draw commands from list
+                let drawList = let range = drawData.CmdLists in range[i]
+                for j in 0 .. dec drawList.CmdBuffer.Size do
+
+                    // only render when required texture is not in blacklist
+                    let pcmd = let buffer = drawList.CmdBuffer in buffer[j]
+                    if not (textureIdBlacklist.Contains (uint32 pcmd.TextureId)) then
+
+                        // only process when no user callback is provided
+                        if pcmd.UserCallback = nativeint 0 then
                                 
-                                // project scissor/clipping rectangles into framebuffer space
-                                let mutable clipMin =
-                                    v2
-                                        (pcmd.ClipRect.X - drawData.DisplayPos.X + vkViewport.x)
-                                        (pcmd.ClipRect.Y - drawData.DisplayPos.Y + vkViewport.y)
-                                let mutable clipMax =
-                                    v2
-                                        (pcmd.ClipRect.Z - drawData.DisplayPos.X + vkViewport.x)
-                                        (pcmd.ClipRect.W - drawData.DisplayPos.Y + vkViewport.y)
+                            // project scissor/clipping rectangles into framebuffer space
+                            let mutable clipMin =
+                                v2
+                                    (pcmd.ClipRect.X - drawData.DisplayPos.X + vkViewport.x)
+                                    (pcmd.ClipRect.Y - drawData.DisplayPos.Y + vkViewport.y)
+                            let mutable clipMax =
+                                v2
+                                    (pcmd.ClipRect.Z - drawData.DisplayPos.X + vkViewport.x)
+                                    (pcmd.ClipRect.W - drawData.DisplayPos.Y + vkViewport.y)
 
-                                // only draw if scissor is valid
-                                let width = uint (clipMax.X - clipMin.X)
-                                let height = uint (clipMax.Y - clipMin.Y)
-                                let mutable vkScissor = VkRect2D (int clipMin.X, int clipMin.Y, width, height)
-                                vkScissor <- Hl.clipRect renderArea vkScissor
-                                if Hl.validateRect vkScissor then
+                            // only draw if scissor is valid
+                            let width = uint (clipMax.X - clipMin.X)
+                            let height = uint (clipMax.Y - clipMin.Y)
+                            let mutable vkScissor = VkRect2D (int clipMin.X, int clipMin.Y, width, height)
+                            vkScissor <- Hl.clipRect renderArea vkScissor
+                            if Hl.validateRect vkScissor then
 
-                                    // set scissor
-                                    DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&vkScissor)
+                                // set scissor
+                                DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&vkScissor)
 
-                                    // specify material
-                                    let textureId = uint32 pcmd.TextureId
-                                    let (texture, sampler) as combined = (renderer.GetTexture textureId, renderer.GetSampler textureId)
-                                    let mutable materialDescriptorSet = Pipeline.specifyDescriptorSet 0 combined pipeline $ fun vkSet ->
-                                        Pipeline.writeDescriptorCombinedTextureSampler 0 0 texture sampler vkSet
+                                // specify material
+                                let textureId = uint32 pcmd.TextureId
+                                let (texture, sampler) as combined = (renderer.GetTexture textureId, renderer.GetSampler textureId)
+                                let mutable materialDescriptorSet = Pipeline.specifyDescriptorSet 0 combined pipeline $ fun vkSet ->
+                                    Pipeline.writeDescriptorCombinedTextureSampler 0 0 texture sampler vkSet
 
-                                    // bind descriptor set
-                                    DeviceApi.vkCmdBindDescriptorSets (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.PipelineLayout, 0u, 1u, &&materialDescriptorSet, 0u, nullPtr)
+                                // bind descriptor set
+                                DeviceApi.vkCmdBindDescriptorSets (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.PipelineLayout, 0u, 1u, &&materialDescriptorSet, 0u, nullPtr)
 
-                                    // draw
-                                    DeviceApi.vkCmdDrawIndexed (context.RenderCommandBuffer, pcmd.ElemCount, 1u, pcmd.IdxOffset + uint globalIdxOffset, int pcmd.VtxOffset + globalVtxOffset, 0u)
+                                // draw
+                                DeviceApi.vkCmdDrawIndexed (context.RenderCommandBuffer, pcmd.ElemCount, 1u, pcmd.IdxOffset + uint globalIdxOffset, int pcmd.VtxOffset + globalVtxOffset, 0u)
 
-                                    // report drawing
-                                    Hl.reportDrawCall 1 false
+                                // report drawing
+                                Hl.reportDrawCall 1 false
 
-                                    // advance pipeline
-                                    Pipeline.advance pipeline
+                                // advance pipeline
+                                Pipeline.advance pipeline
 
-                            // otherwise we don't have a way to handle user callbacks, so throw in that case
-                            else Log.warn "Encountered ImGui user callback; ignoring."
+                        // otherwise we don't have a way to handle user callbacks, so throw in that case
+                        else Log.warn "Encountered ImGui user callback; ignoring."
 
-                    // update offsets
-                    globalIdxOffset <- globalIdxOffset + drawList.IdxBuffer.Size
-                    globalVtxOffset <- globalVtxOffset + drawList.VtxBuffer.Size
+                // update offsets
+                globalIdxOffset <- globalIdxOffset + drawList.IdxBuffer.Size
+                globalVtxOffset <- globalVtxOffset + drawList.VtxBuffer.Size
 
-                // tear down render
-                DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
+            // tear down render
+            DeviceApi.vkCmdEndRendering context.RenderCommandBuffer
 
-                // report draw scope
-                Hl.reportDrawScope ()
+            // report draw scope
+            Hl.reportDrawScope ()
 
-                // advance rendering command buffer
-                VulkanContext.advanceRenderCommandBuffer context
+            // advance rendering command buffer
+            VulkanContext.advanceRenderCommandBuffer context
 
         member renderer.CleanUp () =
             Sampler.destroy fontSampler
@@ -327,7 +324,7 @@ type VulkanRendererImGui
 module VulkanRendererImGui =
 
     /// Make a Vulkan imgui renderer.
-    let make assetTextureRequests assetTextures fonts viewport context =
+    let make assetTextureRequests assetTextures fonts viewport resolveTexture context =
         let rendererImGui = VulkanRendererImGui (assetTextureRequests, assetTextures, viewport, context)
-        (rendererImGui :> RendererImGui).Initialize fonts
+        (rendererImGui :> RendererImGui).Initialize fonts resolveTexture
         rendererImGui

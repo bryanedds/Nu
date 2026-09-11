@@ -23,6 +23,7 @@ type SkyBoxPipeline =
       SkyBoxPropertiesUniform : VulkanBuffer
       Pipeline : Pipeline }
 
+/// Sky box operations.
 [<RequireQualifiedAccess>]
 module SkyBox =
 
@@ -49,7 +50,7 @@ module SkyBox =
                     [|Pipeline.descriptor 0 Sampler FragmentStage 1|]|]
                 [||] [|colorAttachmentFormat|] (Some depthAttachmentFormat)
                 [|eyeUniform; skyBoxPropertiesUniform|]
-        
+
         // make SkyBoxPipeline
         let skyBoxPipeline =
             { EyeUniform = eyeUniform

@@ -89,6 +89,7 @@ module Gaia =
     let mutable private DesiredEye3dCenter = v3Zero
     let mutable private DesiredEye3dRotation = quatIdentity
     let mutable private EyeChangedElsewhere = false
+    let mutable private ResetEyeRequested = false
     let mutable private FpsStartDateTime = DateTimeOffset.Now
     let mutable private FpsStartUpdateTime = 0L
     let mutable private InteractiveNeedsInitialization = true
@@ -1252,13 +1253,13 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     let fsprojFileLines = // TODO: P1: consider loading these references from Nu.fsproj.
                         [|"""<PackageReference Include="Aether.Physics2D" Version="2.2.0" />"""
                           """<PackageReference Include="AstcEncoderCSharp" Version="5.5.0" />"""
-                          """<PackageReference Include="Box2D.NET" Version="3.1.1.557" />"""
+                          """<PackageReference Include="Box2D.NET" Version="3.1.654" />"""
                           """<PackageReference Include="BCnEncoder.Net" Version="2.2.1" />"""
                           """<PackageReference Include="DotRecast.Recast.Toolset" Version="2026.1.1" />"""
                           """<PackageReference Include="JoltPhysicsSharp" Version="2.19.5" />"""
                           """<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.15.0" />"""
                           """<PackageReference Include="Pfim" Version="0.11.4" />"""
-                          """<PackageReference Include="Prime" Version="11.5.1" />"""
+                          """<PackageReference Include="Prime" Version="11.5.3" />"""
                           """<PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.1" />"""
                           """<PackageReference Include="System.Drawing.Common" Version="10.0.1" />"""
                           """<PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" />"""
@@ -1384,11 +1385,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
     let private tryReloadAll initializing world =
         tryReloadAssets world
         tryReloadCode initializing world
-
-    let private resetEye () =
-        DesiredEye2dCenter <- v2Zero
-        DesiredEye3dCenter <- Constants.Engine.Eye3dCenterDefault
-        DesiredEye3dRotation <- quatIdentity
 
     let private toggleTimeAdvancing (world : World) =
         let wasTimeAdvancing = world.TimeAdvancing
@@ -1736,9 +1732,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             elif ImGui.IsKeyPressed ImGuiKey.F8 then ReloadAssetsRequested <- 1
             elif ImGui.IsKeyPressed ImGuiKey.F9 && ImGui.IsShiftUp () then ReloadCodeRequested <- (false, 1)
             elif ImGui.IsKeyPressed ImGuiKey.F9 && ImGui.IsShiftDown () then ReloadCodeRequested <- (true, 1)
-            elif ImGui.IsKeyPressed ImGuiKey.F10 then OverlayMode <- not OverlayMode
+            elif ImGui.IsKeyPressed ImGuiKey.F10 then toggleViewMode CaptureMode world
             elif ImGui.IsKeyPressed ImGuiKey.F11 then toggleViewMode FreeMode world
-            elif ImGui.IsKeyPressed ImGuiKey.F12 then toggleViewMode CaptureMode world
+            elif ImGui.IsKeyPressed ImGuiKey.F12 then OverlayMode <- not OverlayMode
             elif ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then World.tryToggleWindowFullScreen world
             elif ImGui.IsKeyPressed ImGuiKey.UpArrow && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then tryReorderSelectedEntity true world
             elif ImGui.IsKeyPressed ImGuiKey.DownArrow && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then tryReorderSelectedEntity false world
@@ -1781,6 +1777,13 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         DragDropPayloadOpt <- None // TODO: P1: remove this line when AcceptDragDropPayload is exposed.
                         focusPropertyOpt None world
                         selectEntityOpt None world
+
+    let private updateResetEye () =
+        if ResetEyeRequested then
+            DesiredEye2dCenter <- v2Zero
+            DesiredEye3dCenter <- Constants.Engine.Eye3dCenterDefault
+            DesiredEye3dRotation <- quatIdentity
+            ResetEyeRequested <- false
 
     (* Top-Level Functions *)
 
@@ -2504,6 +2507,14 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
     let private imGuiFullScreenWindow world =
         if ViewMode.IsFreeMode then
             if ImGui.Begin ("Full Screen Enabled", ImGuiWindowFlags.NoNav ||| ImGuiWindowFlags.AlwaysAutoResize) then
+                ImGui.Text "Capture Mode (F10)"
+                ImGui.SameLine ()
+                let mutable captureMode = ViewMode.IsCaptureMode
+                if ImGui.Checkbox ("##captureMode", &captureMode) then
+                    setViewMode (if captureMode then CaptureMode else NormalMode) world
+                if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                    ImGui.Text "Toggle capture mode (F10 to toggle)."
+                    ImGui.EndTooltip ()
                 ImGui.Text "Free Mode (F11)"
                 ImGui.SameLine ()
                 let mutable freeMode = ViewMode.IsFreeMode
@@ -2511,14 +2522,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     setViewMode (if freeMode then FreeMode else NormalMode) world
                 if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                     ImGui.Text "Toggle free mode (F11 to toggle)."
-                    ImGui.EndTooltip ()
-                ImGui.Text "Capture Mode (F12)"
-                ImGui.SameLine ()
-                let mutable captureMode = ViewMode.IsCaptureMode
-                if ImGui.Checkbox ("##captureMode", &captureMode) then
-                    setViewMode (if captureMode then CaptureMode else NormalMode) world
-                if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                    ImGui.Text "Toggle capture mode (F12 to toggle)."
                     ImGui.EndTooltip ()
             ImGui.End ()
 
@@ -2677,7 +2680,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             ImGui.SameLine ()
             ImGui.Text "Eye:"
             ImGui.SameLine ()
-            if ImGui.Button "Reset" then resetEye ()
+            if ImGui.Button "Reset" then ResetEyeRequested <- true
             if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                 let mutable eye2dCenter = world.Eye2dCenter
                 let mutable eye3dCenter = world.Eye3dCenter
@@ -2739,9 +2742,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             ImGui.SameLine ()
             ImGui.Text "Overlay Mode"
             ImGui.SameLine ()
-            ImGui.Checkbox ("##overlayMode", &OverlayMode) |> ignore<bool>
+            let mutable captureMode = ViewMode.IsCaptureMode
+            if ImGui.Checkbox ("##captureMode", &captureMode) then
+                setViewMode (if captureMode then FreeMode else NormalMode) world
             if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                ImGui.Text "Toggle overlay mode (F10 to toggle)."
+                ImGui.Text "Toggle capture mode view (F10 to toggle)."
                 ImGui.EndTooltip ()
             ImGui.SameLine ()
             ImGui.Text "Free Mode"
@@ -2755,11 +2760,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             ImGui.SameLine ()
             ImGui.Text "Capture Mode"
             ImGui.SameLine ()
-            let mutable captureMode = ViewMode.IsCaptureMode
-            if ImGui.Checkbox ("##captureMode", &captureMode) then
-                setViewMode (if captureMode then FreeMode else NormalMode) world
+            ImGui.Checkbox ("##overlayMode", &OverlayMode) |> ignore<bool>
             if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                ImGui.Text "Toggle capture mode view (F12 to toggle)."
+                ImGui.Text "Toggle overlay mode (F12 to toggle)."
                 ImGui.EndTooltip ()
         ImGui.End ()
 
@@ -4298,6 +4301,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 updateEntityDrag world
                 updateAssetDrag world
                 updateHotkeys entityHierarchyFocused world
+
+                // deferred imgui input
+                updateResetEye ()
 
                 // HACK: because ImGui.BeginDragDropViewport isn't available yet -
                 // https://github.com/ocornut/imgui/issues/5204

@@ -10,6 +10,7 @@ open System.Text
 open FSharp.NativeInterop
 open Prime
 
+/// Native pointer operations.
 [<RequireQualifiedAccess>]
 module NativePtr =
 
@@ -107,6 +108,7 @@ module NativePtr =
         let offsetPtr = NativePtr.add destPtr offset
         NativePtr.copyBlock offsetPtr sourcePtr size
 
+/// Native pointer operators.
 [<AutoOpen>]
 module NativePtrOperators =
 
@@ -116,7 +118,7 @@ module NativePtrOperators =
 
     /// Null void pointer.
     let nullVoidPtr =
-        IntPtr.Zero.ToPointer()
+        IntPtr.Zero.ToPointer ()
     
     /// Convert a managed pointer to a typed native pointer.
     let inline asPointer<'a when 'a : unmanaged> (managedPtr : byref<'a>) : nativeptr<'a> =

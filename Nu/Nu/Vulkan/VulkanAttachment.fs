@@ -10,15 +10,16 @@ open Vortice.Vulkan
 open Prime
 open Nu
 
+/// Attachment operations.
 [<RequireQualifiedAccess>]
 module Attachment =
     
     /// Create a color attachment.
-    let createColorAttachment textureType optionalUsages internalFormat pixelFormat resolutionX resolutionY (context : VulkanContext) =
+    let createColorAttachment textureType optionalUsageFlags internalFormat pixelFormat resolutionX resolutionY (context : VulkanContext) =
         let metadata = TextureMetadata.make resolutionX resolutionY
         let textureInternal =
             TextureInternal.create
-                MipmapNone (AttachmentColor true) textureType optionalUsages
+                MipmapNone (AttachmentColor true) textureType optionalUsageFlags
                 (Hl.checkAttachmentFormat context.PhysicalDevice.VkPhysicalDevice internalFormat) pixelFormat metadata context
         EagerTexture textureInternal
 
@@ -101,15 +102,15 @@ module Attachment =
         (color, z)
     
     /// Update size of shadow texture array attachments.
-    let updateShadowTextureArrayAttachmentsSize resolutionX resolutionY (color, z) context =
+    let updateShadowTextureArrayAttachmentsSize resolutionX resolutionY colorTexture zTexture context =
         let metadata = TextureMetadata.make resolutionX resolutionY
-        Texture.updateSize metadata color context
-        Texture.updateSize metadata z context
+        Texture.updateSize metadata colorTexture context
+        Texture.updateSize metadata zTexture context
 
     /// Destroy shadow texture array attachments.
-    let destroyShadowTextureArrayAttachments (color : Texture, z : Texture) context =
-        Texture.destroy color context
-        Texture.destroy z context
+    let destroyShadowTextureArrayAttachments colorTexture zTexture context =
+        Texture.destroy colorTexture context
+        Texture.destroy zTexture context
     
     /// Create shadow map attachments.
     let createShadowMapAttachments shadowResolutionX shadowResolutionY context =
@@ -118,16 +119,16 @@ module Attachment =
         (color, z)
 
     /// Update size of shadow map attachments.
-    let updateShadowMapAttachmentsSize resolutionX resolutionY (color, z) context =
+    let updateShadowMapAttachmentsSize resolutionX resolutionY colorTexture zTexture context =
         let metadata = TextureMetadata.make resolutionX resolutionY
-        Texture.updateSize metadata color context
-        Texture.updateSize metadata z context
+        Texture.updateSize metadata colorTexture context
+        Texture.updateSize metadata zTexture context
 
     /// Destroy shadow map attachments.
-    let destroyShadowMapAttachments (color : Texture, z : Texture) context =
-        Texture.destroy color context
-        Texture.destroy z context
-    
+    let destroyShadowMapAttachments colorTexture zTexture context =
+        Texture.destroy colorTexture context
+        Texture.destroy zTexture context
+
     /// Create shadow cascade array attachments.
     let createShadowCascadeArrayAttachments shadowCascadeResolutionX shadowCascadeResolutionY shadowCascadeLevels context =
         let color =
@@ -138,15 +139,15 @@ module Attachment =
         (color, z)
     
     /// Update size of shadow cascade array attachments.
-    let updateShadowCascadeArrayAttachmentsSize resolutionX resolutionY (color, z) context =
+    let updateShadowCascadeArrayAttachmentsSize resolutionX resolutionY colorTexture zTexture context =
         let metadata = TextureMetadata.make resolutionX resolutionY
-        Texture.updateSize metadata color context
-        Texture.updateSize metadata z context
+        Texture.updateSize metadata colorTexture context
+        Texture.updateSize metadata zTexture context
 
     /// Destroy shadow cascade array attachments.
-    let destroyShadowCascadeArrayAttachments (color : Texture, z : Texture) context =
-        Texture.destroy color context
-        Texture.destroy z context
+    let destroyShadowCascadeArrayAttachments colorTexture zTexture context =
+        Texture.destroy colorTexture context
+        Texture.destroy zTexture context
     
     /// Create geometry attachments.
     let createGeometryAttachments resolutionX resolutionY context =

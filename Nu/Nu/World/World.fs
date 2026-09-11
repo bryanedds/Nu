@@ -46,9 +46,11 @@ type private GcEventListener () =
         if gcDebug && isNull InstanceOpt then
             InstanceOpt <- new GcEventListener ()
 
-// TODO: apply doc comments to the public part of this API.
+/// Platform-specific operations.
 [<RequireQualifiedAccess>]
 module Platform =
+
+    // TODO: apply doc comments to the public part of this API.
 
     let tryLoadNativeLibrary libraryPath =
         let mutable handle = 0n
@@ -134,6 +136,13 @@ module Platform =
             loadAssimpFramework ()
             configureJoltFramework ()
             configureVmaFramework ()
+
+        let configureMacNativeLibraries () =
+            configureFrameworkNativeLibraries ()
+            // NOTE: SDL needs the Vulkan loader, not an ICD such as MoltenVK; anchor the bundled loader to the
+            // managed executable directory because bare dylib lookup depends on the host search paths.
+            let vulkanLoaderPath = PathF.Combine (AppContext.BaseDirectory, "libvulkan.1.dylib")
+            SDL3.SDL_SetHint (SDL3.SDL_HINT_VULKAN_LIBRARY, vulkanLoaderPath) |> ignore<SDLBool>
 
         [<RequireQualifiedAccess>]
         module iOS =
@@ -232,7 +241,7 @@ type Nu () =
                 Platform.Android.configureAndroidNativeLibraries ()
                 Log.init None // disable Nu's default file log because the Android asset pack directory should be treated as read-only for incremental updates to work - https://developer.android.com/reference/com/google/android/play/core/assetpacks/AssetPackManager#getpacklocation
             elif OperatingSystem.IsMacOS () then
-                Platform.Apple.configureFrameworkNativeLibraries ()
+                Platform.Apple.configureMacNativeLibraries ()
 
             // ensure the current culture is invariate
             Thread.CurrentThread.CurrentCulture <- Globalization.CultureInfo.InvariantCulture
@@ -511,7 +520,7 @@ module WorldModule4 =
             let imGui = ImGui (true, windowViewport.Bounds.Size)
             let physicsEngine2d = StubPhysicsEngine.make ()
             let physicsEngine3d = StubPhysicsEngine.make ()
-            let rendererProcess = RendererInline (WindowProperties.empty) :> RendererProcess
+            let rendererProcess = RendererInline WindowProperties.empty :> RendererProcess
             rendererProcess.Start imGui.Fonts None geometryViewport windowViewport // params implicate stub renderers
             let audioPlayer = StubAudioPlayer.make ()
             let cursorClient = StubCursorClient.make ()

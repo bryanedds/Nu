@@ -233,6 +233,7 @@ type EffectDescriptor =
       Definitions : Definitions
       Content : Content }
 
+/// Effect descriptor operations.
 [<RequireQualifiedAccess>]
 module EffectDescriptor =
 

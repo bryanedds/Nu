@@ -55,10 +55,6 @@ type GamepadAxisData =
     { GamepadAxis : single }
 
 /// The data for a gamepad button event.
-type GamepadDirectionData =
-    { GamepadDirection : GamepadDirection }
-
-/// The data for a gamepad button event.
 type GamepadButtonData =
     { GamepadButton : GamepadButton
       Down : bool }
@@ -212,13 +208,13 @@ module Events =
     let BodyJointBreakEvent = stoa<BodyJointBreakData> "BodyJointBreak/Event"
 
     /// Raised when 2d gravity is changed.
-    let Gravity2dChange = stoa<ChangeData> "Gravity2d/Change/Event"
+    let Gravity2dChangeEvent = stoa<ChangeData> "Gravity2d/Change/Event"
 
     /// Raised when 3d gravity is changed.
-    let Gravity3dChange = stoa<ChangeData> "Gravity3d/Change/Event"
+    let Gravity3dChangEvent = stoa<ChangeData> "Gravity3d/Change/Event"
 
     /// Raised when a fluid emitter updates.
-    let FluidEmitterUpdateEvent = stoa<FluidEmitterMessage> "FluidEmitterUpdate/Event"
+    let FluidEmitterEvent = stoa<FluidEmitterMessage> "FluidEmitter/Event"
 
     /// Raised when a button is clicked.
     let ClickEvent = stoa<unit> "Click/Event"
@@ -336,9 +332,6 @@ module Events =
 
     /// Raised when a gamepad axis is changed.
     let GamepadAxisChangeEvent axis (index : uint) = rtoa<GamepadAxisData> [|"Gamepad"; GamepadAxis.toEventName axis + string index + "Change"; "Event"|]
-
-    /// Raised when a gamepad direction is changed.
-    let GamepadDirectionChangeEvent (index : uint) = rtoa<GamepadDirectionData> [|"Gamepad"; "Direction" + string index + "Change"; "Event"|]
 
     /// Raised when a gamepad button is pressed or released.
     let GamepadButtonChangeEvent (index : uint) = rtoa<GamepadButtonData> [|"Gamepad"; "Button" + string index + "Change"; "Event"|]

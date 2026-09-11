@@ -13,6 +13,7 @@ open Nu
 open Nu.Effects
 open Nu.Particles
 
+/// Effect abstract data type module.
 [<RequireQualifiedAccess>]
 module Effect =
 

@@ -520,10 +520,10 @@ module internal AmbientState =
             ClockDelta = 0.0f
             TickDelta = 0L }
 
-    let internal restoreTimeAdvancement timeAdvancing timeAdvancementCleared updateDelta clockDelta tickDelta (state : _ AmbientState) =
+    let internal restoreTimeAdvancement timeAdvancing updateDelta clockDelta tickDelta (state : _ AmbientState) =
         let flags = state.Flags
         let flags = if timeAdvancing then flags ||| TimeAdvancingMask else flags &&& ~~~TimeAdvancingMask
-        let flags = if timeAdvancementCleared then flags ||| TimeAdvancementClearedMask else flags &&& ~~~TimeAdvancementClearedMask
+        let flags = flags &&& ~~~TimeAdvancementClearedMask
         { state with
             Flags = flags
             UpdateDelta = updateDelta

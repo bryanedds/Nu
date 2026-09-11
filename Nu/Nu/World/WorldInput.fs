@@ -234,16 +234,6 @@ module WorldInputModule =
             ignore (world : World)
             GamepadState.tryToNuButton gamepadButton
 
-        /// Convert a GamepadDirection to SDL's representation.
-        static member toSdlDirection gamepadDirection world =
-            ignore (world : World)
-            GamepadState.toSdlDirection gamepadDirection
-
-        /// Convert SDL's representation of a hat direction to a GamepadDirection.
-        static member toNuDirection gamepadDirection world =
-            ignore (world : World)
-            GamepadState.toNuDirection gamepadDirection
-
         /// Get the given gamepad's left joystick axes.
         static member getStickLeft index world =
             ignore (world : World)
@@ -263,11 +253,6 @@ module WorldInputModule =
         static member getTriggerRight index world =
             ignore (world : World)
             GamepadState.getTriggerRight index
-
-        /// Get the given gamepad's current direction.
-        static member getDirection index world =
-            ignore (world : World)
-            GamepadState.getDirection index
 
         /// Check that the given gamepad's button is down.
         static member isButtonDown index button world =

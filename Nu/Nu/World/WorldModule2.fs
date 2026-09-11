@@ -136,7 +136,7 @@ module WorldModule2 =
                 World.unsubscribe WorldModuleInternal2.ScreenTransitionMouseX2Id world
                 World.unsubscribe WorldModuleInternal2.ScreenTransitionKeyboardKeyId world
             | IncomingState _ | OutgoingState _ -> ()
-                
+
         static member private updateScreenTransition3 transitionType (selectedScreen : Screen) world =
             let transition =
                 match transitionType with
@@ -1104,7 +1104,12 @@ module WorldModule2 =
             | SDL_EventType.SDL_EVENT_QUIT ->
                 let eventTrace = EventTrace.debug "World" "processInput2" "ExitRequest" EventTrace.empty
                 World.publishPlus () Nu.Game.Handle.ExitRequestEvent eventTrace Nu.Game.Handle true true world
-            | SDL_EventType.SDL_EVENT_WINDOW_RESIZED | SDL_EventType.SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED ->
+            | SDL_EventType.SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED
+            | SDL_EventType.SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED
+            | SDL_EventType.SDL_EVENT_WINDOW_MINIMIZED
+            | SDL_EventType.SDL_EVENT_WINDOW_RESTORED
+            | SDL_EventType.SDL_EVENT_WINDOW_ENTER_FULLSCREEN
+            | SDL_EventType.SDL_EVENT_WINDOW_LEAVE_FULLSCREEN ->
                 World.processWindowResize world
             | SDL_EventType.SDL_EVENT_MOUSE_MOTION ->
                 let io = ImGui.GetIO ()
@@ -1188,22 +1193,16 @@ module WorldModule2 =
                     World.publishPlus eventData Nu.Game.Handle.KeyboardKeyUpEvent eventTrace Nu.Game.Handle true true world
                     let eventTrace = EventTrace.debug "World" "processInput2" "KeyboardKeyChange" EventTrace.empty
                     World.publishPlus eventData Nu.Game.Handle.KeyboardKeyChangeEvent eventTrace Nu.Game.Handle true true world
-            | SDL_EventType.SDL_EVENT_JOYSTICK_AXIS_MOTION ->
-                let index = evt.jaxis.which |> LanguagePrimitives.EnumToValue
-                let axis = evt.jaxis.axis |> int |> enum<SDL_GamepadAxis>
-                let value = evt.jaxis.value
+            | SDL_EventType.SDL_EVENT_GAMEPAD_AXIS_MOTION ->
+                let index = evt.gaxis.which |> LanguagePrimitives.EnumToValue
+                let axis = evt.gaxis.axis |> int |> enum<SDL_GamepadAxis>
+                let value = evt.gaxis.value
                 let eventData = { GamepadAxis = GamepadState.toNuAxisValue value }
                 let eventTrace = EventTrace.debug "World" "processInput2" "GamepadAxisChange" EventTrace.empty
                 World.publishPlus eventData (Nu.Game.Handle.GamepadAxisChangeEvent (GamepadState.toNuAxis axis) index) eventTrace Nu.Game.Handle true true world
-            | SDL_EventType.SDL_EVENT_JOYSTICK_HAT_MOTION ->
-                let index = evt.jhat.which |> LanguagePrimitives.EnumToValue
-                let direction = evt.jhat.value
-                let eventData = { GamepadDirection = GamepadState.toNuDirection direction }
-                let eventTrace = EventTrace.debug "World" "processInput2" "GamepadDirectionChange" EventTrace.empty
-                World.publishPlus eventData (Nu.Game.Handle.GamepadDirectionChangeEvent index) eventTrace Nu.Game.Handle true true world
-            | SDL_EventType.SDL_EVENT_JOYSTICK_BUTTON_DOWN ->
-                let index = evt.jbutton.which |> LanguagePrimitives.EnumToValue
-                let button = evt.jbutton.button |> int |> enum<SDL_GamepadButton>
+            | SDL_EventType.SDL_EVENT_GAMEPAD_BUTTON_DOWN ->
+                let index = evt.gbutton.which |> LanguagePrimitives.EnumToValue
+                let button = evt.gbutton.button |> int |> enum<SDL_GamepadButton>
                 match GamepadState.tryToNuButton button with
                 | Some button ->
                     let eventData = { GamepadButton = button; Down = true }
@@ -1212,9 +1211,9 @@ module WorldModule2 =
                     let eventTrace = EventTrace.debug "World" "processInput2" "GamepadButtonChange" EventTrace.empty
                     World.publishPlus eventData (Nu.Game.Handle.GamepadButtonChangeEvent index) eventTrace Nu.Game.Handle true true world
                 | None -> ()
-            | SDL_EventType.SDL_EVENT_JOYSTICK_BUTTON_UP ->
-                let index = evt.jbutton.which |> LanguagePrimitives.EnumToValue
-                let button = evt.jbutton.button |> int |> enum<SDL_GamepadButton>
+            | SDL_EventType.SDL_EVENT_GAMEPAD_BUTTON_UP ->
+                let index = evt.gbutton.which |> LanguagePrimitives.EnumToValue
+                let button = evt.gbutton.button |> int |> enum<SDL_GamepadButton>
                 match GamepadState.tryToNuButton button with
                 | Some button ->
                     let eventData = { GamepadButton = button; Down = true }
@@ -1288,7 +1287,7 @@ module WorldModule2 =
                         if entity.GetExists world && entity.GetSelected world then
                             entity.SetXtensionPropertyWithoutEvent "FluidParticles" fluidEmitterMessage.FluidParticles world
                             let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
-                            World.publishPlus fluidEmitterMessage entity.FluidEmitterUpdateEvent eventTrace entity false false world
+                            World.publishPlus fluidEmitterMessage entity.FluidEmitterEvent eventTrace entity false false world
                     | _ -> ()
 
         /// Sweep the quadtree clean of all empty nodes.
@@ -1747,7 +1746,7 @@ module WorldModule2 =
                             // compute cull frustum
                             let shadowRotation = light.GetRotation world
                             let shadowCutoff = light.GetLightCutoff world
-                            let shadowOrigin = Light3dFacetModule.getDirectionalLightOrigin shadowRotation shadowCutoff offsetForwardScalar world
+                            let shadowOrigin = Light3dModule.getDirectionalLightOrigin shadowRotation shadowCutoff offsetForwardScalar world
                             let shadowForward = shadowRotation.Down
                             let shadowUp = shadowForward.OrthonormalUp
                             let shadowNearDistance = Constants.Render.NearPlaneDistanceInterior
@@ -1769,7 +1768,7 @@ module WorldModule2 =
                             let lightId = light.GetId world
                             let shadowRotation = light.GetRotation world
                             let shadowCutoff = light.GetLightCutoff world
-                            let shadowOrigin = Light3dFacetModule.getCascadedLightOrigin shadowRotation shadowCutoff world
+                            let shadowOrigin = Light3dModule.getCascadedLightOrigin shadowRotation shadowCutoff world
                             let shadowRotation = light.GetRotation world
                             let shadowForward = shadowRotation.Down
                             let shadowUp = shadowForward.OrthonormalUp
@@ -2069,6 +2068,17 @@ module WorldModule2 =
                                                                         | Some windowProperties -> windowProperties
                                                                         | None -> WindowProperties.empty
 
+                                                                    // ensure window viewport is sensible before
+                                                                    // rendering since SDL's window resize callback can
+                                                                    // come in a frame late
+                                                                    if  windowProperties.WidthPixels < world.WindowViewport.Bounds.Width ||
+                                                                        windowProperties.HeightPixels < world.WindowViewport.Bounds.Height ||
+                                                                        world.WindowViewport.Inner.Width > world.WindowViewport.Bounds.Width ||
+                                                                        world.WindowViewport.Inner.Height > world.WindowViewport.Bounds.Height ||
+                                                                        world.WindowViewport.Bounds.Width > world.WindowViewport.Outer.Width ||
+                                                                        world.WindowViewport.Bounds.Height > world.WindowViewport.Outer.Height then
+                                                                        World.processWindowResize world
+
                                                                     // process rendering (2/2)
                                                                     rendererProcess.SubmitMessages
                                                                         world.Eye3dFrustumInterior
@@ -2081,8 +2091,8 @@ module WorldModule2 =
                                                                         world.Eye2dSize
                                                                         world.GeometryViewport
                                                                         world.WindowViewport
-                                                                        drawData
                                                                         windowProperties
+                                                                        drawData
 
                                                                     // post-process imgui frame
                                                                     World.imGuiPostProcess world
@@ -2133,13 +2143,12 @@ module EntityDispatcherModule =
             World.scopeEntity entity [] world
             if zeroDelta then
                 let timeAdvancing = world.TimeAdvancing
-                let timeAdvancementCleared = world.TimeAdvancementCleared
                 let updateDelta = world.UpdateDelta
                 let clockDelta = world.ClockDelta
                 let tickDelta = world.TickDelta
-                World.mapAmbientState AmbientState.clearTimeAdvancement world
+                if timeAdvancing then World.clearTimeAdvancement world
                 this.Process (entity, world)
-                World.mapAmbientState (AmbientState.restoreTimeAdvancement timeAdvancing timeAdvancementCleared updateDelta clockDelta tickDelta) world
+                if timeAdvancing then World.restoreTimeAdvancement timeAdvancing updateDelta clockDelta tickDelta world
             else this.Process (entity, world)
 #if DEBUG
             if world.ContextImSim <> entity.EntityAddress then
@@ -2549,13 +2558,12 @@ module GroupDispatcherModule =
             World.scopeGroup group [] world
             if zeroDelta then
                 let timeAdvancing = world.TimeAdvancing
-                let timeAdvancementCleared = world.TimeAdvancementCleared
                 let updateDelta = world.UpdateDelta
                 let clockDelta = world.ClockDelta
                 let tickDelta = world.TickDelta
-                World.mapAmbientState AmbientState.clearTimeAdvancement world
+                if timeAdvancing then World.clearTimeAdvancement world
                 this.Process (group, world)
-                World.mapAmbientState (AmbientState.restoreTimeAdvancement timeAdvancing timeAdvancementCleared updateDelta clockDelta tickDelta) world
+                if timeAdvancing then World.restoreTimeAdvancement timeAdvancing updateDelta clockDelta tickDelta world
             else this.Process (group, world)
 #if DEBUG
             if world.ContextImSim <> group.GroupAddress then
@@ -2776,13 +2784,12 @@ module ScreenDispatcherModule =
             let results = World.doSubscriptionToSelectionEvents ScreenDispatcherImSimTryProcessSubscriptionName screen world
             if zeroDelta then
                 let timeAdvancing = world.TimeAdvancing
-                let timeAdvancementCleared = world.TimeAdvancementCleared
                 let updateDelta = world.UpdateDelta
                 let clockDelta = world.ClockDelta
                 let tickDelta = world.TickDelta
-                World.mapAmbientState AmbientState.clearTimeAdvancement world
+                if timeAdvancing then World.clearTimeAdvancement world
                 this.Process (FQueue.ofSeq results, screen, world)
-                World.mapAmbientState (AmbientState.restoreTimeAdvancement timeAdvancing timeAdvancementCleared updateDelta clockDelta tickDelta) world
+                if timeAdvancing then World.restoreTimeAdvancement timeAdvancing updateDelta clockDelta tickDelta world
             else this.Process (FQueue.ofSeq results, screen, world)
 #if DEBUG
             if world.ContextImSim <> screen.ScreenAddress then
@@ -3000,13 +3007,12 @@ module GameDispatcherModule =
             World.scopeGame [] world
             if zeroDelta then
                 let timeAdvancing = world.TimeAdvancing
-                let timeAdvancementCleared = world.TimeAdvancementCleared
                 let updateDelta = world.UpdateDelta
                 let clockDelta = world.ClockDelta
                 let tickDelta = world.TickDelta
-                World.mapAmbientState AmbientState.clearTimeAdvancement world
+                if timeAdvancing then World.clearTimeAdvancement world
                 this.Process (game, world)
-                World.mapAmbientState (AmbientState.restoreTimeAdvancement timeAdvancing timeAdvancementCleared updateDelta clockDelta tickDelta) world
+                if timeAdvancing then World.restoreTimeAdvancement timeAdvancing updateDelta clockDelta tickDelta world
             else this.Process (game, world)
 #if DEBUG
             if world.ContextImSim <> game.GameAddress then

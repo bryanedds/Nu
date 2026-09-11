@@ -31,6 +31,14 @@ type [<StructuralEquality; StructuralComparison; Struct>] Presence =
         | Imposter -> -Constants.Render.NearPlaneDistanceImposter // NOTE: special case where negative value inverts to near cutoff.
         | Exterior | Interior -> Constants.Render.FarPlaneDistanceExterior
 
+    /// Determine the equality of presence values.
+    static member equals (left : Presence) (right : Presence) =
+        match left with
+        | Interior -> right.IsInterior
+        | Exterior -> right.IsExterior
+        | Imposter -> right.IsImposter
+        | Omnipresent -> right.IsOmnipresent
+
     /// Determines the highest override in the context of the given presence configuration.
     static member highestOverride2 override_ (overrides : Presence voption array) =
         let mutable highest = override_

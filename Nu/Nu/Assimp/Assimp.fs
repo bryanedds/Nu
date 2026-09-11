@@ -649,7 +649,7 @@ module AssimpExtensions =
             (time : double,
              boneIds : Dictionary<string, int>,
              boneInfos : BoneInfo array,
-             boneWrites : int ref, // OPTIMIZATION: bones writes counter prevents us from traversing nodes in the hierarchy that would be redundant (once per duplicated armature).
+             boneWrites : int ref, // OPTIMIZATION: bone writes counter prevents us from traversing nodes in the hierarchy that would be redundant (once per duplicated armature).
              animationChannels : Dictionary<AnimationChannelKey, AnimationChannel>,
              animations : Animation array,
              node : Assimp.Node,
@@ -765,6 +765,7 @@ module AssimpExtensions =
                 boneTransforms[i] <- Assimp.ExportMatrix boneInfo.BoneTransform
             (boneIds, boneOffsets, boneTransforms)
 
+/// Assimp context operations.
 [<RequireQualifiedAccess>]
 module AssimpContext =
 
