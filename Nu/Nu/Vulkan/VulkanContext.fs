@@ -10,7 +10,6 @@ open System.Runtime.InteropServices
 open System.Collections.Generic
 open System.Reflection
 open System.Runtime.CompilerServices
-open System.Threading
 open FSharp.NativeInterop
 open SDL
 open Vortice.Vulkan
