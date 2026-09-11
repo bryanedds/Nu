@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<!-- ============================================================
-	     Framework Targeting:
+	     Framework Targeting
 		 ============================================================ -->
 	<PropertyGroup>
 		<!-- Target frameworks: Android must be listed before desktop for Visual Studio to detect mobile debug targets.

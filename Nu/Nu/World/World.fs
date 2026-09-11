@@ -501,7 +501,7 @@ module WorldModule4 =
             let imGui = ImGui (true, windowViewport.Bounds.Size)
             let physicsEngine2d = StubPhysicsEngine.make ()
             let physicsEngine3d = StubPhysicsEngine.make ()
-            let rendererProcess = RendererInline (WindowProperties.empty) :> RendererProcess
+            let rendererProcess = RendererInline WindowProperties.empty :> RendererProcess
             rendererProcess.Start imGui.Fonts None geometryViewport windowViewport // params implicate stub renderers
             let audioPlayer = StubAudioPlayer.make ()
             let cursorClient = StubCursorClient.make ()
