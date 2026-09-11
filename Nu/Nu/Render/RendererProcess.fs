@@ -18,15 +18,15 @@ open Vortice.Vulkan
 open Nu.Vulkan
 
 /// Represent the state of a window properties request.
-type TryCreateVulkanSurfaceRequest =
-    | TryCreateVulkanSurfaceRequestUninitiated
-    | TryCreateVulkanSurfaceRequestInitiated of SDL_Window nativeptr * VkInstance
-    | TryCreateVulkanSurfaceRequestSuccess of VkSurfaceKHR
-    | TryCreateVulkanSurfaceRequestFailure
+type TryCreateVkSurfaceRequest =
+    | TryCreateVkSurfaceRequestUninitiated
+    | TryCreateVkSurfaceRequestInitiated of SDL_Window nativeptr * VkInstance
+    | TryCreateVkSurfaceRequestSuccess of VkSurfaceKHR
+    | TryCreateVkSurfaceRequestFailure
 
     /// Attempt to create a vulkan surface using the given SDL window and vulkan instance.
     /// TODO: move this somewhere more general?
-    static member internal tryCreateVulkanSurface window instance =
+    static member internal tryCreateVkSurface window instance =
 
         // check that window resource is available
         let windowResourceAvailable =
@@ -105,7 +105,7 @@ type RendererProcess =
         abstract RequestSwap : unit -> unit
 
         /// Attempt to create a vulkan surface on the main thread for the renderer thread.
-        abstract TryCreateVulkanSurface : SDL_Window nativeptr -> VkInstance -> VkSurfaceKHR option
+        abstract TryCreateVkSurface : SDL_Window nativeptr -> VkInstance -> VkSurfaceKHR option
 
         /// Terminate the rendering process, blocking until termination is complete.
         abstract Terminate : unit -> unit
@@ -144,7 +144,7 @@ type RendererInline (windowProperties) =
 
                     // attempt to create VulkanContext, storing reference to it
                     let context =
-                        match VulkanContext.tryCreate TryCreateVulkanSurfaceRequest.tryCreateVulkanSurface window with
+                        match VulkanContext.tryCreate TryCreateVkSurfaceRequest.tryCreateVkSurface window with
                         | Some context -> context
                         | None -> Log.fail "Could not create Vulkan context." // TODO: P1: handle failure more gracefully here?
 
@@ -294,8 +294,8 @@ type RendererInline (windowProperties) =
             | Some (_, _, _, context) -> VulkanContext.present context
             | None -> ()
 
-        member ri.TryCreateVulkanSurface window instance =
-            TryCreateVulkanSurfaceRequest.tryCreateVulkanSurface window instance
+        member ri.TryCreateVkSurface window instance =
+            TryCreateVkSurfaceRequest.tryCreateVkSurface window instance
 
         member ri.Terminate () =
             match dependenciesOpt with
@@ -321,7 +321,7 @@ type RendererThread (windowProperties) =
     let [<VolatileField>] mutable submissionOpt = Option<Frustum * Frustum * Frustum * RenderMessage3d List * RenderMessage2d List * RenderMessageImGui List * Vector3 * Quaternion * single * Vector2 * Vector2 * Viewport * Viewport * WindowProperties * ImDrawDataPtr>.None
     let [<VolatileField>] mutable swapRequested = false
     let [<VolatileField>] mutable swapRequestAcknowledged = false
-    let [<VolatileField>] mutable tryCreateVulkanSurfaceRequest = TryCreateVulkanSurfaceRequestUninitiated
+    let [<VolatileField>] mutable tryCreateVkSurfaceRequest = TryCreateVkSurfaceRequestUninitiated
     let [<VolatileField>] mutable renderer3dConfig = Renderer3dConfig.defaultConfig
     let [<VolatileField>] mutable messageBufferIndex = 0
     let messageBuffers3d = [|List (); List ()|]
@@ -572,7 +572,7 @@ type RendererThread (windowProperties) =
         member rt.Start fonts windowOpt geometryViewport windowViewport =
 
             // validate state
-            if Option.isSome threadOpt then raise (InvalidOperationException "Render process already started.")
+            if Option.isSome threadOpt then raise (InvalidOperationException "Renderer process already started.")
 
             // attempt to start thread
             match windowOpt with
@@ -580,7 +580,7 @@ type RendererThread (windowProperties) =
 
                 // attempt to create VulkanContext on main thread, storing a reference for clean-up.
                 let context =
-                    match VulkanContext.tryCreate TryCreateVulkanSurfaceRequest.tryCreateVulkanSurface window with
+                    match VulkanContext.tryCreate TryCreateVkSurfaceRequest.tryCreateVkSurface window with
                     | Some context -> context
                     | None -> Log.fail "Could not create Vulkan context." // TODO: P1: handle failure more gracefully here?
                 contextOpt <- Some context
@@ -623,7 +623,7 @@ type RendererThread (windowProperties) =
             | (false, _) -> ValueNone
 
         member rt.EnqueueMessage3d message =
-            if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
+            if Option.isNone threadOpt then raise (InvalidOperationException "Renderer process not yet started or already terminated.")
             match message with
             | RenderStaticModel rsm ->
                 let cachedStaticModelMessage = allocStaticModelMessage ()
@@ -676,7 +676,7 @@ type RendererThread (windowProperties) =
             | _ -> messageBuffers3d[messageBufferIndex].Add message
 
         member rt.RenderStaticModelFast (modelMatrix, castShadow, presence, insetOpt, materialProperties, staticModel, clipped, depthTest, renderType, renderPass) =
-            if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
+            if Option.isNone threadOpt then raise (InvalidOperationException "Renderer process not yet started or already terminated.")
             let cachedStaticModelMessage = allocStaticModelMessage ()
             match cachedStaticModelMessage with
             | RenderCachedStaticModel cachedMessage ->
@@ -694,7 +694,7 @@ type RendererThread (windowProperties) =
             | _ -> failwithumf ()
 
         member rt.RenderStaticModelSurfaceFast (modelMatrix, castShadow, presence, insetOpt, materialProperties, material, staticModel, surfaceIndex, depthTest, renderType, renderPass) =
-            if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
+            if Option.isNone threadOpt then raise (InvalidOperationException "Renderer process not yet started or already terminated.")
             let cachedStaticModelSurfaceMessage = allocStaticModelSurfaceMessage ()
             match cachedStaticModelSurfaceMessage with
             | RenderCachedStaticModelSurface cachedMessage ->
@@ -713,7 +713,7 @@ type RendererThread (windowProperties) =
             | _ -> failwithumf ()
 
         member rt.RenderAnimatedModelFast (modelMatrix, castShadow, presence, insetOpt, materialProperties, boneTransforms, animatedModel, subsortOffsets, drsIndices, depthTest, renderType, renderPass) =
-            if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
+            if Option.isNone threadOpt then raise (InvalidOperationException "Renderer process not yet started or already terminated.")
             let cachedAnimatedModelMessage = allocAnimatedModelMessage ()
             match cachedAnimatedModelMessage with
             | RenderCachedAnimatedModel cachedMessage ->
@@ -733,7 +733,7 @@ type RendererThread (windowProperties) =
             | _ -> failwithumf ()
 
         member rt.EnqueueMessage2d message =
-            if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
+            if Option.isNone threadOpt then raise (InvalidOperationException "Renderer process not yet started or already terminated.")
             match message with
             | LayeredOperation2d operation ->
                 match operation.RenderOperation2d with
@@ -782,17 +782,17 @@ type RendererThread (windowProperties) =
             | _ -> failwithumf ()
 
         member rt.EnqueueMessageImGui message =
-            if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
+            if Option.isNone threadOpt then raise (InvalidOperationException "Renderer process not yet started or already terminated.")
             messageBuffersImGui[messageBufferIndex].Add message
 
         member rt.ClearMessages () =
-            if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
+            if Option.isNone threadOpt then raise (InvalidOperationException "Renderer process not yet started or already terminated.")
             messageBuffers3d[messageBufferIndex].Clear ()
             messageBuffers2d[messageBufferIndex].Clear ()
             messageBuffersImGui[messageBufferIndex].Clear ()
 
         member rt.SubmitMessages frustumInterior frustumExterior frustumImposter eye3dCenter eye3dRotation eye3dFieldOfView eye2dCenter eye2dSize geometryViewport windowViewport windowProperties drawData =
-            if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
+            if Option.isNone threadOpt then raise (InvalidOperationException "Renderer process not yet started or already terminated.")
             let messages3d = messageBuffers3d[messageBufferIndex]
             let messages2d = messageBuffers2d[messageBufferIndex]
             let messagesImGui = messageBuffersImGui[messageBufferIndex]
@@ -803,37 +803,40 @@ type RendererThread (windowProperties) =
             submissionOpt <- Some (frustumInterior, frustumExterior, frustumImposter, messages3d, messages2d, messagesImGui, eye3dCenter, eye3dRotation, eye3dFieldOfView, eye2dCenter, eye2dSize, geometryViewport, windowViewport, windowProperties, drawData)
 
         member rt.RequestSwap () =
-            if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
+            if Option.isNone threadOpt then raise (InvalidOperationException "Renderer process not yet started or already terminated.")
             swapRequested <- true
             while not swapRequestAcknowledged && not terminated do
                 Thread.Yield () |> ignore<bool>
-                match tryCreateVulkanSurfaceRequest with
-                | TryCreateVulkanSurfaceRequestInitiated (window, instance) ->
-                    tryCreateVulkanSurfaceRequest <- 
-                        match TryCreateVulkanSurfaceRequest.tryCreateVulkanSurface window instance with
-                        | Some vkSurface -> TryCreateVulkanSurfaceRequestSuccess vkSurface
-                        | None -> TryCreateVulkanSurfaceRequestFailure
+                match tryCreateVkSurfaceRequest with
+                | TryCreateVkSurfaceRequestInitiated (window, instance) ->
+                    tryCreateVkSurfaceRequest <- 
+                        match TryCreateVkSurfaceRequest.tryCreateVkSurface window instance with
+                        | Some vkSurface -> TryCreateVkSurfaceRequestSuccess vkSurface
+                        | None -> TryCreateVkSurfaceRequestFailure
                 | _ -> ()
             swapRequestAcknowledged <- false
 
-        member rt.TryCreateVulkanSurface window instance =
-            match tryCreateVulkanSurfaceRequest with
-            | TryCreateVulkanSurfaceRequestUninitiated ->
-                tryCreateVulkanSurfaceRequest <- TryCreateVulkanSurfaceRequestInitiated (window, instance)
-                let mutable stableRequest = tryCreateVulkanSurfaceRequest // use a stable variable since multiple operations are needed on the volatile field
-                while stableRequest.IsTryCreateVulkanSurfaceRequestInitiated do
-                    stableRequest <- tryCreateVulkanSurfaceRequest
+        member rt.TryCreateVkSurface window instance =
+            match tryCreateVkSurfaceRequest with
+            | TryCreateVkSurfaceRequestUninitiated ->
+                tryCreateVkSurfaceRequest <- TryCreateVkSurfaceRequestInitiated (window, instance)
+                let mutable stableRequest = tryCreateVkSurfaceRequest // use a stable variable since multiple operations are needed on the volatile field
+                while stableRequest.IsTryCreateVkSurfaceRequestInitiated do
+                    stableRequest <- tryCreateVkSurfaceRequest
                     Thread.Yield () |> ignore<bool>
-                match stableRequest with
-                | TryCreateVulkanSurfaceRequestSuccess vkSurface -> Some vkSurface
-                | TryCreateVulkanSurfaceRequestFailure -> None
-                | _ -> raise (InvalidOperationException "Render process window properties request in invalid state, indicating a logic bug in its usage.")
-            | _ -> raise (InvalidOperationException "Render process already requesting window properties.")
+                let vkSurfaceOpt =
+                    match stableRequest with
+                    | TryCreateVkSurfaceRequestSuccess vkSurface -> Some vkSurface
+                    | TryCreateVkSurfaceRequestFailure -> None
+                    | _ -> raise (InvalidOperationException "Renderer process tryCreateVkSurfaceRequest in invalid state, indicating a logic bug in its usage.")
+                tryCreateVkSurfaceRequest <- TryCreateVkSurfaceRequestUninitiated
+                vkSurfaceOpt
+            | _ -> raise (InvalidOperationException "Renderer process already makng tryCreateVkSurfaceRequest.")
 
         member rt.Terminate () =
-            if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
+            if Option.isNone threadOpt then raise (InvalidOperationException "Renderer process not yet started or already terminated.")
             let thread = Option.get threadOpt
-            if terminated then raise (InvalidOperationException "Redundant Terminate calls.")
+            if terminated then raise (InvalidOperationException "Redundant terminate calls.")
             terminated <- true
             thread.Join ()
             match contextOpt with
