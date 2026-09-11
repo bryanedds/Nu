@@ -223,8 +223,6 @@ type SwapchainWrapper =
     static member tryCreate surfaceFormat physicalDevice =
         match Hl.tryCreateVkSwapchain surfaceFormat physicalDevice.GraphicsQueueFamily physicalDevice.PresentQueueFamily physicalDevice.VkPhysicalDevice with
         | Some (vkSwapchain, surfaceExtent) ->
-
-            // make swapchain wrapper
             let images = SwapchainWrapper.getSwapchainImages vkSwapchain
             let imageViews = SwapchainWrapper.createImageViews surfaceFormat.format images
             let swapchainWrapper =
@@ -233,7 +231,6 @@ type SwapchainWrapper =
                   ImageViews = imageViews
                   SwapExtent = surfaceExtent }
             Some swapchainWrapper
-
         | None -> None
 
     /// Destroy a swapchain wrapper.
@@ -539,7 +536,7 @@ type [<ReferenceEquality>] VulkanContext =
 
         // fin
         physicalDeviceOpt
-    
+
     /// Create the logical device.
     static member private createLogicalDevice instance (physicalDevice : PhysicalDevice) =
 
@@ -641,79 +638,70 @@ type [<ReferenceEquality>] VulkanContext =
         DeviceApi.vkCreateCommandPool (&info, nullPtr, &commandPool) |> Hl.check
         commandPool
 
-    /// Attempt to get the current valid swapchain wrapper or abandon frame.
+    /// Attempt to get the current swapchain wrapper in a valid rendering environment or else abandon frame.
     static member private tryGetSwapchainWrapper context =
 
         // when frame abandoned, just bail
         if context.FrameAbandoned_ then
             None
 
-        // frame not abandoned, proceed
+        // when backgrounded, abandon frame
+        elif Hl.Backgrounded then
+            context.FrameAbandoned_ <- true
+            None
+
+        // when minimized, abandon frame
+        elif Hl.getWindowMinimized () then
+            context.FrameAbandoned_ <- true
+            None
+
+        // when surface lost, attempt to recreate surface and etc and abandon frame
+        elif Hl.Surface.IsSurfaceLost then
+            Swapchain.tryRecreateSurfaceAndEnsureSwapchainWrapper context.TryCreateVulkanSurface_ context.PhysicalDevice_ context.Swapchain_ context.Instance_
+            context.FrameAbandoned_ <- true
+            None
+
+        // surface not lost, proceed...
         else
 
-            // when backgrounded, abandon frame
-            if Hl.Backgrounded then
+            // when capabilities or a valid surface extent are unavailable, attempt to recreate surface and etc and abandon frame
+            let surfaceExtentOpt =
+                match Hl.tryGetSurfaceCapabilities context.PhysicalDevice_.VkPhysicalDevice with
+                | Some capabilities ->
+                    let mutable width = Hl.WindowProperties.WidthPixels
+                    let mutable height = Hl.WindowProperties.HeightPixels
+                    if width > 0 && height > 0 then
+                        width <- max width (int capabilities.minImageExtent.width)
+                        width <- min width (int capabilities.maxImageExtent.width)
+                        height <- max height (int capabilities.minImageExtent.height)
+                        height <- min height (int capabilities.maxImageExtent.height)
+                        if width > 0 && height > 0
+                        then Some (VkExtent2D (width, height))
+                        else None
+                    else None
+                | None -> None
+            match surfaceExtentOpt with
+            | None ->
+                Swapchain.tryRecreateSurfaceAndEnsureSwapchainWrapper context.TryCreateVulkanSurface_ context.PhysicalDevice_ context.Swapchain_ context.Instance_
                 context.FrameAbandoned_ <- true
                 None
 
-            // in foreground, proceed
-            else
+            // capabilities and valid surface available, proceed...
+            | Some surfaceExtent ->
 
-                // when minimized, abandon frame
-                if Hl.getWindowMinimized () then
+                // when swapchain wrapper is unavailable or extents don't match, attempt to recreate surface and etc and abandon frame
+                let swapchainWrapperOpt =
+                    match context.Swapchain_.SwapchainWrapperOpt with
+                    | Some swapchainWrapper when swapchainWrapper.SwapExtent = surfaceExtent -> Some swapchainWrapper
+                    | Some _ | None -> None
+                match swapchainWrapperOpt with
+                | None ->
+                    Swapchain.tryRecreateSurfaceAndEnsureSwapchainWrapper context.TryCreateVulkanSurface_ context.PhysicalDevice_ context.Swapchain_ context.Instance_
                     context.FrameAbandoned_ <- true
                     None
 
-                // not minimized, proceed
-                else
-                
-                    // when surface lost, attempt to recreate surface and etc and abandon frame
-                    if Hl.Surface.IsSurfaceLost then
-                        Swapchain.tryRecreateSurfaceAndEnsureSwapchainWrapper context.TryCreateVulkanSurface_ context.PhysicalDevice_ context.Swapchain_ context.Instance_
-                        context.FrameAbandoned_ <- true
-                        None
-
-                    // surface not lost, proceed
-                    else
-            
-                        // when capabilities or a valid surface extent are unavailable, attempt to recreate surface and etc and abandon frame
-                        let surfaceExtentOpt =
-                            match Hl.tryGetSurfaceCapabilities context.PhysicalDevice_.VkPhysicalDevice with
-                            | Some capabilities ->
-                                let mutable width = Hl.WindowProperties.WidthPixels
-                                let mutable height = Hl.WindowProperties.HeightPixels
-                                if width > 0 && height > 0 then
-                                    width <- max width (int capabilities.minImageExtent.width)
-                                    width <- min width (int capabilities.maxImageExtent.width)
-                                    height <- max height (int capabilities.minImageExtent.height)
-                                    height <- min height (int capabilities.maxImageExtent.height)
-                                    if width > 0 && height > 0
-                                    then Some (VkExtent2D (width, height))
-                                    else None
-                                else None
-                            | None -> None
-                        match surfaceExtentOpt with
-                        | None ->
-                            Swapchain.tryRecreateSurfaceAndEnsureSwapchainWrapper context.TryCreateVulkanSurface_ context.PhysicalDevice_ context.Swapchain_ context.Instance_
-                            context.FrameAbandoned_ <- true
-                            None
-
-                        // capabilities and valid surface available, proceed
-                        | Some surfaceExtent ->
-
-                            // when swapchain wrapper is unavailable or extents don't match, attempt to recreate surface and etc and abandon frame
-                            let swapchainWrapperOpt =
-                                match context.Swapchain_.SwapchainWrapperOpt with
-                                | Some swapchainWrapper when swapchainWrapper.SwapExtent = surfaceExtent -> Some swapchainWrapper
-                                | Some _ | None -> None
-                            match swapchainWrapperOpt with
-                            | None ->
-                                Swapchain.tryRecreateSurfaceAndEnsureSwapchainWrapper context.TryCreateVulkanSurface_ context.PhysicalDevice_ context.Swapchain_ context.Instance_
-                                context.FrameAbandoned_ <- true
-                                None
-
-                            // swapchain wrapper available, fin
-                            | Some _ as swapchainWrapperOpt -> swapchainWrapperOpt
+                // swapchain wrapper available in a valid rendering environment
+                | Some _ as swapchainWrapperOpt -> swapchainWrapperOpt
 
     static member private beginRenderCommandBuffer context =
 
