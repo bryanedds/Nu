@@ -7,15 +7,15 @@
     <meta content="Nu" name="author">
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
-    <meta property="og:title" content="DesiredScreen (Nu)" />
+    <meta property="og:title" content="TryCreateVkSurfaceRequest (Nu)" />
     <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="/Nu/">
-    <meta name="twitter:title" content="DesiredScreen (Nu)">
+    <meta name="twitter:title" content="TryCreateVkSurfaceRequest (Nu)">
     
-    <title>DesiredScreen (Nu) | Nu</title>
+    <title>TryCreateVkSurfaceRequest (Nu) | Nu</title>
     <link href="https://fonts.googleapis.com" rel="preconnect">
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
@@ -92,7 +92,7 @@
     <div id="content">
         <div>
   <h2>
-    DesiredScreen Type
+    TryCreateVkSurfaceRequest Type
   </h2>
   <dl class="fsdocs-metadata">
     <dt>
@@ -110,21 +110,15 @@
     </dt>
     <dt>
       All Interfaces: 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/nu-desiredscreen.html">DesiredScreen</a>&gt;</span></code>
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/nu-trycreatevksurfacerequest.html">TryCreateVkSurfaceRequest</a>&gt;</span></code>
       , 
       <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralequatable">IStructuralEquatable</a></code>
-      , 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.icomparable-1">IComparable</a>&lt;<a href="/Nu/reference/nu-desiredscreen.html">DesiredScreen</a>&gt;</span></code>
-      , 
-      <code><a href="https://learn.microsoft.com/dotnet/api/system.icomparable">IComparable</a></code>
-      , 
-      <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralcomparable">IStructuralComparable</a></code>
     </dt>
   </dl>
   <div class="fsdocs-xmldoc">
     <div>
       <p class="fsdocs-summary">
-         Specifies the desired screen, if any, or whether to ignore screen desire functionality altogether.
+         Represent the state of a window properties request.
       </p>
     </div>
   </div>
@@ -150,19 +144,115 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '5440', 5440)" onmouseover="showTip(event, '5440', 5440)">
+              <code onmouseout="hideTip(event, '8067', 8067)" onmouseover="showTip(event, '8067', 8067)">
                 <p>
-                  <a id="Desire">
-                    <a href="#Desire">
-                      <code><span>Desire&#32;<a href="/Nu/reference/nu-screen.html">Screen</a></span></code>
+                  <a id="TryCreateVkSurfaceRequestFailure">
+                    <a href="#TryCreateVkSurfaceRequestFailure">
+                      <code><span>TryCreateVkSurfaceRequestFailure</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="5440">
+              <div class="fsdocs-tip" id="8067">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>Desire&#32;<a href="/Nu/reference/nu-screen.html">Screen</a></span></code>
+                  <code><span>TryCreateVkSurfaceRequestFailure</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/RendererProcess.fs#L25-25" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8068', 8068)" onmouseover="showTip(event, '8068', 8068)">
+                <p>
+                  <a id="TryCreateVkSurfaceRequestInitiated">
+                    <a href="#TryCreateVkSurfaceRequestInitiated">
+                      <code><span>TryCreateVkSurfaceRequestInitiated(<span><span>nativeptr&lt;<a href="https://learn.microsoft.com/dotnet/api/sdl.sdl_window">SDL_Window</a>&gt;</span>,&#32;<a href="https://learn.microsoft.com/dotnet/api/vortice.vulkan.vkinstance">VkInstance</a></span>)</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8068">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>TryCreateVkSurfaceRequestInitiated(<span><span>nativeptr&lt;<a href="https://learn.microsoft.com/dotnet/api/sdl.sdl_window">SDL_Window</a>&gt;</span>,&#32;<a href="https://learn.microsoft.com/dotnet/api/vortice.vulkan.vkinstance">VkInstance</a></span>)</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item1
+                      </b>
+                      :
+                      <code><span>nativeptr&lt;<a href="https://learn.microsoft.com/dotnet/api/sdl.sdl_window">SDL_Window</a>&gt;</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        Item2
+                      </b>
+                      :
+                      <code><a href="https://learn.microsoft.com/dotnet/api/vortice.vulkan.vkinstance">VkInstance</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item1
+                </span>
+                :
+                <code><span>nativeptr&lt;<a href="https://learn.microsoft.com/dotnet/api/sdl.sdl_window">SDL_Window</a>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item2
+                </span>
+                :
+                <code><a href="https://learn.microsoft.com/dotnet/api/vortice.vulkan.vkinstance">VkInstance</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8069', 8069)" onmouseover="showTip(event, '8069', 8069)">
+                <p>
+                  <a id="TryCreateVkSurfaceRequestSuccess">
+                    <a href="#TryCreateVkSurfaceRequestSuccess">
+                      <code><span>TryCreateVkSurfaceRequestSuccess&#32;<a href="https://learn.microsoft.com/dotnet/api/vortice.vulkan.vksurfacekhr">VkSurfaceKHR</a></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8069">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>TryCreateVkSurfaceRequestSuccess&#32;<a href="https://learn.microsoft.com/dotnet/api/vortice.vulkan.vksurfacekhr">VkSurfaceKHR</a></span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -172,7 +262,7 @@
                         Item
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-screen.html">Screen</a></code>
+                      <code><a href="https://learn.microsoft.com/dotnet/api/vortice.vulkan.vksurfacekhr">VkSurfaceKHR</a></code>
                     </span>
                     <br/>
                   </ul>
@@ -188,7 +278,7 @@
                   Item
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-screen.html">Screen</a></code>
+                <code><a href="https://learn.microsoft.com/dotnet/api/vortice.vulkan.vksurfacekhr">VkSurfaceKHR</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
             </dl>
@@ -197,19 +287,19 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '5441', 5441)" onmouseover="showTip(event, '5441', 5441)">
+              <code onmouseout="hideTip(event, '8070', 8070)" onmouseover="showTip(event, '8070', 8070)">
                 <p>
-                  <a id="DesireIgnore">
-                    <a href="#DesireIgnore">
-                      <code><span>DesireIgnore</span></code>
+                  <a id="TryCreateVkSurfaceRequestUninitiated">
+                    <a href="#TryCreateVkSurfaceRequestUninitiated">
+                      <code><span>TryCreateVkSurfaceRequestUninitiated</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="5441">
+              <div class="fsdocs-tip" id="8070">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>DesireIgnore</span></code>
+                  <code><span>TryCreateVkSurfaceRequestUninitiated</span></code>
                   <br/>
                   <br/>
                 </div>
@@ -218,40 +308,7 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
-              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L261-261" class="fsdocs-source-link" title="Source on GitHub">
-                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
-              </a>
-              <p class="fsdocs-summary">
-                
-              </p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '5442', 5442)" onmouseover="showTip(event, '5442', 5442)">
-                <p>
-                  <a id="DesireNone">
-                    <a href="#DesireNone">
-                      <code><span>DesireNone</span></code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="5442">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code><span>DesireNone</span></code>
-                  <br/>
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <div class="fsdocs-summary">
-              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L260-260" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Render/RendererProcess.fs#L22-22" class="fsdocs-source-link" title="Source on GitHub">
                 <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
               </a>
               <p class="fsdocs-summary">
@@ -285,19 +342,19 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '5443', 5443)" onmouseover="showTip(event, '5443', 5443)">
+              <code onmouseout="hideTip(event, '8071', 8071)" onmouseover="showTip(event, '8071', 8071)">
                 <p>
-                  <a id="IsDesire">
-                    <a href="#IsDesire">
-                      <code><span>this.IsDesire</span></code>
+                  <a id="IsTryCreateVkSurfaceRequestFailure">
+                    <a href="#IsTryCreateVkSurfaceRequestFailure">
+                      <code><span>this.IsTryCreateVkSurfaceRequestFailure</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="5443">
+              <div class="fsdocs-tip" id="8071">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>this.IsDesire</span></code>
+                  <code><span>this.IsTryCreateVkSurfaceRequestFailure</span></code>
                   <br/>
                   <br/>
                   <span>
@@ -324,19 +381,19 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '5444', 5444)" onmouseover="showTip(event, '5444', 5444)">
+              <code onmouseout="hideTip(event, '8072', 8072)" onmouseover="showTip(event, '8072', 8072)">
                 <p>
-                  <a id="IsDesireIgnore">
-                    <a href="#IsDesireIgnore">
-                      <code><span>this.IsDesireIgnore</span></code>
+                  <a id="IsTryCreateVkSurfaceRequestInitiated">
+                    <a href="#IsTryCreateVkSurfaceRequestInitiated">
+                      <code><span>this.IsTryCreateVkSurfaceRequestInitiated</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="5444">
+              <div class="fsdocs-tip" id="8072">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>this.IsDesireIgnore</span></code>
+                  <code><span>this.IsTryCreateVkSurfaceRequestInitiated</span></code>
                   <br/>
                   <br/>
                   <span>
@@ -363,19 +420,58 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '5445', 5445)" onmouseover="showTip(event, '5445', 5445)">
+              <code onmouseout="hideTip(event, '8073', 8073)" onmouseover="showTip(event, '8073', 8073)">
                 <p>
-                  <a id="IsDesireNone">
-                    <a href="#IsDesireNone">
-                      <code><span>this.IsDesireNone</span></code>
+                  <a id="IsTryCreateVkSurfaceRequestSuccess">
+                    <a href="#IsTryCreateVkSurfaceRequestSuccess">
+                      <code><span>this.IsTryCreateVkSurfaceRequestSuccess</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="5445">
+              <div class="fsdocs-tip" id="8073">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>this.IsDesireNone</span></code>
+                  <code><span>this.IsTryCreateVkSurfaceRequestSuccess</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>bool</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8074', 8074)" onmouseover="showTip(event, '8074', 8074)">
+                <p>
+                  <a id="IsTryCreateVkSurfaceRequestUninitiated">
+                    <a href="#IsTryCreateVkSurfaceRequestUninitiated">
+                      <code><span>this.IsTryCreateVkSurfaceRequestUninitiated</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8074">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.IsTryCreateVkSurfaceRequestUninitiated</span></code>
                   <br/>
                   <br/>
                   <span>
