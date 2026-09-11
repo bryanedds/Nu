@@ -48,15 +48,19 @@ type [<Struct>] BufferWrapper =
     static member createPlus (uploadEnabled, bufferUsage, bufferInfo : VkBufferCreateInfo byref, context : VulkanContext) =
 
         // allocation create info
-        let mutable info = VmaAllocationCreateInfo ()
-        info.usage <- bufferUsage
-        if uploadEnabled then info.flags <- VmaAllocationCreateFlags.HostAccessSequentialWrite ||| VmaAllocationCreateFlags.Mapped
+        let mutable allocInfo = VmaAllocationCreateInfo ()
+        allocInfo.usage <- bufferUsage
+        if uploadEnabled then
+            allocInfo.flags <- VmaAllocationCreateFlags.HostAccessSequentialWrite ||| VmaAllocationCreateFlags.Mapped
 
         // create vma buffer
         let mutable vkBuffer = Unchecked.defaultof<VkBuffer>
         let mutable vmaAllocation = Unchecked.defaultof<VmaAllocation>
         let mutable vmaAllocationInfo = Unchecked.defaultof<VmaAllocationInfo>
-        Vma.vmaCreateBuffer (context.VmaAllocator, &&bufferInfo, &&info, &vkBuffer, &vmaAllocation, &vmaAllocationInfo) |> Hl.check
+        Vma.vmaCreateBuffer (context.VmaAllocator, &&bufferInfo, &&allocInfo, &vkBuffer, &vmaAllocation, &vmaAllocationInfo) |> Hl.check
+
+        // report buffer memory added
+        Hl.reportBufferMemoryChange (int64 bufferInfo.size)
 
         // make buffer wrapper
         let bufferWrapper =
@@ -155,6 +159,7 @@ type [<Struct>] BufferWrapper =
     static member destroy (bufferWrapper : BufferWrapper byref, context : VulkanContext) =
         if bufferWrapper.VkBuffer_.IsNotNull then
             Vma.vmaDestroyBuffer (context.VmaAllocator, bufferWrapper.VkBuffer_, bufferWrapper.VmaAllocation_)
+            Hl.reportBufferMemoryChange (-int64 bufferWrapper.Size_)
             bufferWrapper.VkBuffer_ <- VkBuffer.Null
 
 /// Represents a dynamically growing multibuffer with parallel underlying vulkan buffers. Maintains an internal
@@ -326,7 +331,7 @@ type VulkanBuffer =
         let size = memory.Length * sizeof<'a>
         use arrayPin = new ArrayPin<_> (memory)
         VulkanBuffer.createIndexStaged size arrayPin.NativeInt context
-    
+
     /// Destroy buffer.
     static member destroy (buffer : VulkanBuffer) context =
         for i in 0 .. dec buffer.BufferWrappers_.Length do

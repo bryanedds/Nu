@@ -82,7 +82,7 @@ module CubeMap =
                 match TextureData.tryCreate false faceFilePath with
                 | Some textureData ->
                     match textureData with
-                    | TextureData.TextureDataDotNet (metadata, bytes) ->
+                    | TextureDataDotNet (metadata, bytes) ->
                         let textureInternal =
                             match textureInternalOpt with
                             | Some textureInternal -> textureInternal
@@ -92,7 +92,7 @@ module CubeMap =
                                     Uncompressed.ImageFormat Uncompressed.PixelFormat metadata context
                         textureInternalOpt <- Some textureInternal
                         TextureInternal.uploadArray metadata 0 i bytes thread textureInternal context
-                    | TextureData.TextureDataMipmap (metadata, compressed, bytes, _) ->
+                    | TextureDataMipmap (metadata, compressed, bytes, _) ->
                         let textureInternal =
                             match textureInternalOpt with
                             | Some textureInternal -> textureInternal
@@ -103,7 +103,7 @@ module CubeMap =
                                     compression.ImageFormat compression.PixelFormat metadata context
                         textureInternalOpt <- Some textureInternal
                         TextureInternal.uploadArray metadata 0 i bytes thread textureInternal context
-                    | TextureData.TextureDataNative (metadata, bytesPtr, disposer) ->
+                    | TextureDataNative (metadata, bytesPtr, disposer) ->
                         use _ = disposer
                         let textureInternal =
                             match textureInternalOpt with

@@ -950,8 +950,9 @@ module PhysicallyBased =
 
         // create ssao attachments
         let ssaoUsageFlags = VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferSrc ||| VkImageUsageFlags.TransferDst
-        let ssaoUnfilteredAttachment = Attachment.createColorAttachment Texture2d ssaoUsageFlags R16f Red geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y context
-        let ssaoFilteredAttachment = Attachment.createColorAttachment Texture2d ssaoUsageFlags R16f Red geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y context
+        let ssaoResolution = geometryViewport.SsaoResolution
+        let ssaoUnfilteredAttachment = Attachment.createColorAttachment Texture2d ssaoUsageFlags R16f Red ssaoResolution.X ssaoResolution.Y context
+        let ssaoFilteredAttachment = Attachment.createColorAttachment Texture2d ssaoUsageFlags R16f Red ssaoResolution.X ssaoResolution.Y context
 
         // create coloring attachments
         let coloringAttachments = Attachment.createColoringAttachments geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y context
@@ -1019,8 +1020,8 @@ module PhysicallyBased =
         Attachment.updateAmbientAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.AmbientAttachment context
         Attachment.updateIrradianceAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.IrradianceAttachment context
         Attachment.updateEnvironmentFilterAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.EnvironmentFilterAttachment context
-        Attachment.updateColorAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.SsaoUnfilteredAttachment context
-        Attachment.updateColorAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.SsaoFilteredAttachment context
+        Attachment.updateColorAttachmentSize geometryViewport.SsaoResolution.X geometryViewport.SsaoResolution.Y attachments.SsaoUnfilteredAttachment context
+        Attachment.updateColorAttachmentSize geometryViewport.SsaoResolution.X geometryViewport.SsaoResolution.Y attachments.SsaoFilteredAttachment context
         Attachment.updateColoringAttachmentsSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.ColoringAttachments context
         Attachment.updateCompositionAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.CompositionAttachment context
 
@@ -4250,7 +4251,6 @@ module PhysicallyBased =
         (view : Matrix4x4)
         (projectionUnflipped : Matrix4x4)
         (lightCutoffMargin : single)
-        (ssvfEnabled : int)
         (ssvfIntensity : single)
         (ssvfSteps : int)
         (ssvfAsymmetry : single)
@@ -4304,7 +4304,7 @@ module PhysicallyBased =
                 // specify lighting
                 let mutable lighting = LightingStruct ()
                 lighting.lightCutoffMargin <- lightCutoffMargin
-                lighting.ssvfEnabled <- ssvfEnabled
+                lighting.ssvfEnabled <- 1
                 lighting.ssvfIntensity <- ssvfIntensity
                 lighting.ssvfSteps <- ssvfSteps
                 lighting.ssvfAsymmetry <- ssvfAsymmetry

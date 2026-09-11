@@ -28,10 +28,14 @@ type Job =
 type JobResult =
     | JobCompletion of IssueTime : DateTimeOffset * ResultTime : DateTimeOffset * Result : obj
     | JobException of IssueTime : DateTimeOffset * ResultTime : DateTimeOffset * Exception : Exception
+
+    /// The issue time of a job result.
     member this.IssueTime =
         match this with
         | JobCompletion (issueTime, _, _) -> issueTime
         | JobException (issueTime, _, _) -> issueTime
+
+    /// The result time of a job result.
     member this.ResultTime =
         match this with
         | JobCompletion (_, resultTime, _) -> resultTime

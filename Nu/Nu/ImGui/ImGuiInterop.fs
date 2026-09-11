@@ -13,7 +13,11 @@ open Microsoft.FSharp.NativeInterop
 /// ImGui Rect structure.
 [<Struct; StructLayout (LayoutKind.Sequential)>]
 type Rect =
+
+    /// Minimum point of the rectangle.
     val mutable Min : Vector2
+
+    /// Maximum point of the rectangle.
     val mutable Max : Vector2
 
 /// ImGui internal operations.
@@ -30,10 +34,10 @@ module ImGuiInternal =
     extern nativeint ImGui_GetDragDropPayload ()
 
     [<DllImport("cimgui", CallingConvention = CallingConvention.Cdecl, EntryPoint = "igDockBuilderGetCentralNode")>]
-    extern nativeint DockBuilder_GetCentralNode (uint32)
+    extern nativeint DockBuilder_GetCentralNode (uint32 dockSpaceId)
 
     [<DllImport("cimgui", CallingConvention = CallingConvention.Cdecl, EntryPoint = "ImGuiDockNode_Rect")>]
-    extern void DockNode_GetRect (nativeint, nativeint)
+    extern void DockNode_GetRect (nativeint rect, nativeint node)
 
     /// Clear the drag drop action.
     let tryCancelDragDrop () =

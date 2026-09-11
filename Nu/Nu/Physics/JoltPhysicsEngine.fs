@@ -367,7 +367,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
             | (false, _) -> (false, points)
         let unscaledPoints =
             if not optimized then
-                let hull = new BulletSharp.ConvexHullShape (unscaledPoints) // TODO: P1: attempt to find a way to remove dependency on Bullet here.
+                use hull = new BulletSharp.ConvexHullShape (unscaledPoints) // TODO: P1: attempt to find a way to remove dependency on Bullet here.
                 hull.OptimizeConvexHull ()
                 let unscaledPoints =
                     match hull.UnscaledPoints with

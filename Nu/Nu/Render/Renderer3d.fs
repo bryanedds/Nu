@@ -266,7 +266,7 @@ type [<SymbolicExpansion; CustomEquality; NoComparison>] Material =
         member this.Equals that =
             Material.equals this that
 
-/// A mutable 3d light probe value type.
+/// A mutable 3d light probe value.
 type [<Struct>] LightProbe3dValue =
     { mutable LightProbeId : uint64
       mutable Enabled : bool
@@ -274,7 +274,7 @@ type [<Struct>] LightProbe3dValue =
       mutable Bounds : Box3
       mutable Stale : bool }
 
-/// A mutable 3d light value type.
+/// A mutable 3d light value.
 type [<Struct>] Light3dValue =
     { mutable LightId : uint64
       mutable Origin : Vector3
@@ -289,7 +289,7 @@ type [<Struct>] Light3dValue =
       mutable LightType : LightType
       mutable DesireShadows : bool }
 
-/// A mutable billboard value type.
+/// A mutable billboard value.
 type [<Struct>] BillboardValue =
     { mutable ModelMatrix : Matrix4x4
       mutable CastShadow : bool
@@ -301,7 +301,7 @@ type [<Struct>] BillboardValue =
       mutable DepthTest : DepthTest
       mutable RenderType : RenderType }
 
-/// A mutable static model value type.
+/// A mutable static model value.
 type [<Struct>] StaticModelValue =
     { mutable ModelMatrix : Matrix4x4
       mutable CastShadow : bool
@@ -313,7 +313,7 @@ type [<Struct>] StaticModelValue =
       mutable DepthTest : DepthTest
       mutable RenderType : RenderType }
 
-/// A mutable static model surface value type.
+/// A mutable static model surface value.
 type [<Struct>] StaticModelSurfaceValue =
     { mutable ModelMatrix : Matrix4x4
       mutable CastShadow : bool
@@ -4316,13 +4316,13 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let fogAccumTexture =
 
             // but only when desired
-            if topLevelRender && ssvfEnabled = 1 then
+            if topLevelRender && ssvfEnabled = 1 && lightDesireFogs.Length > 0 then
 
                 // deferred render quad to fogging textures
                 let fogAccumTexture = renderer.PhysicallyBasedAttachments.FoggingAttachment
                 Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite fogAccumTexture renderer.VulkanContext.RenderCommandBuffer
                 PhysicallyBased.drawPhysicallyBasedDeferredFoggingSurface
-                    eyeCenter view geometryProjection renderer.LightingConfig.LightCutoffMargin ssvfEnabled renderer.LightingConfig.SsvfIntensity renderer.LightingConfig.SsvfSteps renderer.LightingConfig.SsvfAsymmetry
+                    eyeCenter view geometryProjection renderer.LightingConfig.LightCutoffMargin renderer.LightingConfig.SsvfIntensity renderer.LightingConfig.SsvfSteps renderer.LightingConfig.SsvfAsymmetry
                     depthTexture shadowTextureArray shadowMaps shadowCascades lightMaps.Length renderer.LightingConfig.LightMapSingletonBlendMargin
                     lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightDesireFogs lightShadowIndices (min lightIds.Length renderTasks.Lights.Count)
                     renderer.ShadowMatricesFlipped renderer.UnfilteredSampler renderer.FilteredSampler fogAccumTexture
@@ -4405,27 +4405,27 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead environmentFilterTexture renderer.VulkanContext.RenderCommandBuffer
 
         // run ssao pass
-        let ssaoTextureFiltered =
+        let ssaoTexture =
 
             // but only when desired
             if renderer.RendererConfig.SsaoEnabled && renderer.LightingConfig.SsaoEnabled then
 
                 // render deferred ssao
-                let ssaoUnfilteredResolution = renderer.GeometryViewport.SsaoResolution
+                let ssaoResolution = renderer.GeometryViewport.SsaoResolution
                 let ssaoUnfilteredTexture = renderer.PhysicallyBasedAttachments.SsaoUnfilteredAttachment
                 Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite ssaoUnfilteredTexture renderer.VulkanContext.RenderCommandBuffer
                 PhysicallyBased.drawPhysicallyBasedDeferredSsaoSurface
                     eyeCenter view geometryProjection
                     renderer.LightingConfig.SsaoIntensity renderer.LightingConfig.SsaoBias renderer.LightingConfig.SsaoRadius renderer.LightingConfig.SsaoDistanceMax renderer.RendererConfig.SsaoSampleCount
                     depthTexture normalPlusTexture renderer.UnfilteredSampler ssaoUnfilteredTexture
-                    ssaoUnfilteredResolution renderer.RenderPassIndex renderer.QuadGeometry renderer.PhysicallyBasedPipelines.DeferredSsaoPipeline renderer.VulkanContext
+                    ssaoResolution renderer.RenderPassIndex renderer.QuadGeometry renderer.PhysicallyBasedPipelines.DeferredSsaoPipeline renderer.VulkanContext
                 Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead ssaoUnfilteredTexture renderer.VulkanContext.RenderCommandBuffer
 
                 // filter deferred ssao
                 let ssaoFilteredTexture = renderer.PhysicallyBasedAttachments.SsaoFilteredAttachment
                 Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite ssaoFilteredTexture renderer.VulkanContext.RenderCommandBuffer
                 PhysicallyBased.drawFilterBoxSurface
-                    ssaoUnfilteredTexture renderer.UnfilteredSampler ssaoFilteredTexture ssaoUnfilteredResolution
+                    ssaoUnfilteredTexture renderer.UnfilteredSampler ssaoFilteredTexture ssaoResolution
                     renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterBox1dPipeline renderer.VulkanContext
                 Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead ssaoFilteredTexture renderer.VulkanContext.RenderCommandBuffer
                 ssaoFilteredTexture
@@ -4444,7 +4444,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             renderer.LightingConfig.SsrlDepthCutoff renderer.LightingConfig.SsrlDepthCutoffMargin renderer.LightingConfig.SsrlDistanceCutoff renderer.LightingConfig.SsrlDistanceCutoffMargin
             renderer.LightingConfig.SsrlRoughnessCutoff renderer.LightingConfig.SsrlRoughnessCutoffMargin renderer.LightingConfig.SsrlSlopeCutoff renderer.LightingConfig.SsrlSlopeCutoffMargin
             renderer.LightingConfig.SsrlEdgeHorizontalMargin renderer.LightingConfig.SsrlEdgeVerticalMargin
-            depthTexture albedoTexture materialTexture normalPlusTexture clearCoatPlusTexture lightAccumTexture renderer.BrdfTexture ambientTexture irradianceTexture environmentFilterTexture ssaoTextureFiltered
+            depthTexture albedoTexture materialTexture normalPlusTexture clearCoatPlusTexture lightAccumTexture renderer.BrdfTexture ambientTexture irradianceTexture environmentFilterTexture ssaoTexture
             renderer.UnfilteredSampler renderer.FilteredSampler colorTexture depthTexture2 geometryResolution renderer.RenderPassIndex renderer.QuadGeometry renderer.PhysicallyBasedPipelines.DeferredColoringPipeline renderer.VulkanContext
         Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead colorTexture renderer.VulkanContext.RenderCommandBuffer
         Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead depthTexture2 renderer.VulkanContext.RenderCommandBuffer
@@ -4694,8 +4694,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let mutable region = Hl.makeBlit 0 0 0 targetLayer (VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)) targetBounds
         let filter = if uint geometryResolution.X = targetBounds.extent.width && uint geometryResolution.Y = targetBounds.extent.height then VkFilter.Nearest else VkFilter.Linear
         DeviceApi.vkCmdBlitImage (renderer.VulkanContext.RenderCommandBuffer, intermediateTexture.Image, TransferSrc.VkImageLayout, targetImage, TransferDst.VkImageLayout, 1u, &&region, filter)
-        Hl.recordTransitionLayout true 1 targetLayer 1 VkImageAspectFlags.Color TransferDst ColorAttachmentWrite targetImage renderer.VulkanContext.RenderCommandBuffer
         Texture.recordTransitionLayout TransferSrc ColorAttachmentRead intermediateTexture renderer.VulkanContext.RenderCommandBuffer
+        Hl.recordTransitionLayout true 1 targetLayer 1 VkImageAspectFlags.Color TransferDst ColorAttachmentWrite targetImage renderer.VulkanContext.RenderCommandBuffer
 
         // advance render pass index
         renderer.RenderPassIndex <- inc renderer.RenderPassIndex

@@ -10,15 +10,13 @@ open System.Numerics
 open Prime
 
 /// Describes the bounds of a viewport.
-/// TODO: add missing doc comments to this type's functions.
 type [<StructuralEquality; NoComparison>] Viewport =
     { DistanceNear : single
       DistanceFar : single
       Inner : Box2i
       Bounds : Box2i
       Outer : Box2i
-      DisplayScalar : int
-      SsaoResolutionDivisor : int }
+      DisplayScalar : int }
 
     /// The aspect ratio of this viewport.
     member this.AspectRatio =
@@ -39,7 +37,7 @@ type [<StructuralEquality; NoComparison>] Viewport =
 
     /// The screen-space ambient occlusion texture buffer resolution appropriate for this viewport.
     member this.SsaoResolution =
-        this.Inner.Size / this.SsaoResolutionDivisor
+        this.Inner.Size / Constants.Render.SsaoResolutionDivisor
 
     /// Project to the given frame.
     static member project (source : Vector3) (frame : Matrix4x4) viewport =
@@ -235,23 +233,26 @@ type [<StructuralEquality; NoComparison>] Viewport =
         let c = a - b
         -Single.Epsilon <= c && c <= Single.Epsilon
 
+    /// Make a viewport.
     static member make distanceNear distanceFar inner bounds outer =
         { DistanceNear = distanceNear
           DistanceFar = distanceFar
           Inner = inner
           Bounds = bounds
           Outer = outer
-          DisplayScalar = Globals.Render.DisplayScalar
-          SsaoResolutionDivisor = Constants.Render.SsaoResolutionDivisor }
+          DisplayScalar = Globals.Render.DisplayScalar }
 
+    /// Make a viewport for the given geometry resolution.
     static member makeGeometry (resolution : Vector2i) =
         let bounds = box2i v2iZero resolution
         Viewport.make Constants.Render.NearPlaneDistanceOmnipresent Constants.Render.FarPlaneDistanceOmnipresent bounds bounds bounds
 
+    /// Make a viewport for the given window size.
     static member makeWindow inner bounds (windowSize : Vector2i) =
         let outer = box2i v2iZero windowSize
         Viewport.make Constants.Render.NearPlaneDistanceOmnipresent Constants.Render.FarPlaneDistanceOmnipresent inner bounds outer
 
+    /// Make a viewport for the given viewed window size.
     static member makeWindowViewed (eyeViewed : Vector2) (windowSize : Vector2i) =
         let displayScalar = Globals.Render.DisplayScalar
         let boundsSizeX = min (int (ceil (eyeViewed.X * single displayScalar))) windowSize.X
@@ -261,29 +262,36 @@ type [<StructuralEquality; NoComparison>] Viewport =
         let bounds = box2i boundsMin boundsSize
         Viewport.makeWindow bounds bounds windowSize // presume inner = bounds
 
+    /// Make a viewport for the given window size.
     static member makeWindow1 (windowSize : Vector2i) =
         Viewport.makeWindowViewed Constants.Render.DisplayVirtualResolution.V2 windowSize
 
+    /// Make a viewport based on the viewed interior view distances.
     static member makeInteriorViewed (resolution : Vector2i) =
         let bounds = box2i v2iZero resolution
         Viewport.make Constants.Render.NearPlaneDistanceInterior Constants.Render.FarPlaneDistanceInterior bounds bounds bounds
 
+    /// Make a viewport based on the interior view distances.
     static member makeInterior () =
         let outerResolution = Constants.Render.DisplayVirtualResolution * max 1 Globals.Render.DisplayScalar
         Viewport.makeInteriorViewed outerResolution
 
+    /// Make a viewport based on the viewed exterior view distances.
     static member makeExteriorViewed (resolution : Vector2i) =
         let bounds = box2i v2iZero resolution
         Viewport.make Constants.Render.NearPlaneDistanceExterior Constants.Render.FarPlaneDistanceExterior bounds bounds bounds
 
+    /// Make a viewport based on the exterior view distances.
     static member makeExterior () =
         let outerResolution = Constants.Render.DisplayVirtualResolution * max 1 Globals.Render.DisplayScalar
         Viewport.makeExteriorViewed outerResolution
 
+    /// Make a viewport based on the viewed imposter view distances.
     static member makeImposterViewed (resolution : Vector2i) =
         let bounds = box2i v2iZero resolution
         Viewport.make Constants.Render.NearPlaneDistanceImposter Constants.Render.FarPlaneDistanceImposter bounds bounds bounds
 
+    /// Make a viewport based on the imposter view distances.
     static member makeImposter () =
         let outerResolution = Constants.Render.DisplayVirtualResolution * max 1 Globals.Render.DisplayScalar
         Viewport.makeImposterViewed outerResolution

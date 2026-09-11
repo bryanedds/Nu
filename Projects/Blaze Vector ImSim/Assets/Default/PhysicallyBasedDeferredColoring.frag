@@ -304,7 +304,7 @@ void main()
     vec4 ambientColorAndBrightness = texture(sampler2D(ambientTexture, unfilteredSampler), texCoords);
     vec3 irradiance = texture(sampler2D(irradianceTexture, unfilteredSampler), texCoords).rgb;
     vec3 environmentFilter = texture(sampler2D(environmentFilterTexture, unfilteredSampler), texCoords).rgb;
-    float ssao = texture(sampler2D(ssaoTexture, unfilteredSampler), texCoords).r;
+    float ssao = texture(sampler2D(ssaoTexture, filteredSampler), texCoords).r;
 
     // compute materials
     float roughness = material.r;
