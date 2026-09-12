@@ -207,6 +207,7 @@ type SwapchainWrapper =
     static member private getSwapchainImages vkSwapchain =
         let mutable imageCount = 0u
         DeviceApi.vkGetSwapchainImagesKHR (vkSwapchain, &&imageCount, nullPtr) |> Hl.check
+        if imageCount > uint Constants.Vulkan.SwapchainImageMax then Log.warn "Swapchain image count greater than the conservative estimate in Constants.Vulkan.SwapchainImageMax."
         let images = Array.zeroCreate<VkImage> (int imageCount)
         use imagesPin = new ArrayPin<_> (images)
         DeviceApi.vkGetSwapchainImagesKHR (vkSwapchain, &&imageCount, imagesPin.Pointer) |> Hl.check
