@@ -39,8 +39,8 @@ type GameplayDispatcher () =
             // process screen selection
             let selecting = FQueue.contains Select selectionResults
             if selecting then
-                Simulants.Gameplay.SetGameplayState Playing world
-                Simulants.Gameplay.SetScore 0 world
+                screen.SetGameplayState Playing world
+                screen.SetScore 0 world
 
             // begin scene declaration
             let sceneGroupFilePath = "Assets/Gameplay/Scene.nugroup"
