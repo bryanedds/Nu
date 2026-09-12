@@ -49,6 +49,7 @@ module Vulkan =
     let [<Uniform>] FramesInFlight = 1 // NOTE: we avoid the use of multiple FiF in order to keep the renderer simple and low-latency.
     let [<Literal>] RenderCommandBufferCountDefault = 32
     let [<Literal>] DescriptorSetCountDefault = 32
+    let [<Literal>] SwapchainImageMax = 8
     let [<Uniform>] ShadowSurfaceInstanceThreshold = if ImmediateModeRendering then 1024 else 2048 // NOTE: splitting render passes is more costly on tile-based renderers.
     let [<Uniform>] DeferredSurfaceInstanceThreshold = if ImmediateModeRendering then 1024 else 2048 // NOTE: see above.
     let [<Uniform>] ForwardSurfaceInstanceThreshold = if ImmediateModeRendering then 128 else 256 // NOTE: see above.
