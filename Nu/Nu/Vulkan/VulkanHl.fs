@@ -809,7 +809,7 @@ module Hl =
                         // at least 3 for performance, but to keep latency low let's start with the more conservative recommendation of
                         // https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Swap_chain#page_Creating-the-swap-chain.
                         let minImageCount =
-                            if capabilities.maxImageCount = uint Constants.Vulkan.SwapchainImageMax
+                            if capabilities.maxImageCount = 0u
                             then capabilities.minImageCount + 1u
                             else min (capabilities.minImageCount + 1u) capabilities.maxImageCount
 

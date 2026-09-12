@@ -207,6 +207,7 @@ type SwapchainWrapper =
     static member private getSwapchainImages vkSwapchain =
         let mutable imageCount = 0u
         DeviceApi.vkGetSwapchainImagesKHR (vkSwapchain, &&imageCount, nullPtr) |> Hl.check
+        if imageCount > uint Constants.Vulkan.SwapchainImageMax then Log.warn "Swapchain image count greater than the conservative estimate in Constants.Vulkan.SwapchainImageMax."
         let images = Array.zeroCreate<VkImage> (int imageCount)
         use imagesPin = new ArrayPin<_> (images)
         DeviceApi.vkGetSwapchainImagesKHR (vkSwapchain, &&imageCount, imagesPin.Pointer) |> Hl.check
@@ -912,6 +913,9 @@ type [<ReferenceEquality>] VulkanContext =
             // setup execution for presentation on render thread
             let swapchainImageSemaphore = Hl.createSemaphore ()
 
+            // setup swapchain image render semaphores
+            let renderSemaphores = Array.init Constants.Vulkan.SwapchainImageMax (fun _ -> Hl.createSemaphore ())
+
             // setup transient (one time) execution on render thread
             let transientCommandPool = VulkanContext.createCommandPool true physicalDevice.GraphicsQueueFamily
             let transientFence = Hl.createFence false
@@ -923,13 +927,6 @@ type [<ReferenceEquality>] VulkanContext =
             // setup swapchain
             let surfaceFormat = VulkanContext.getSurfaceFormat physicalDevice.SurfaceFormats
             let swapchain = Swapchain.create surfaceFormat physicalDevice window
-
-            // setup render semaphores
-            let renderSemaphoreCount =
-                match swapchain.SwapchainWrapperOpt with
-                | Some swapchainWrapper -> swapchainWrapper.Images.Length
-                | None -> Constants.Vulkan.SwapchainImageMax
-            let renderSemaphores = Array.init renderSemaphoreCount (fun _ -> Hl.createSemaphore ())
 
             // make vulkan context
             let vulkanContext =
