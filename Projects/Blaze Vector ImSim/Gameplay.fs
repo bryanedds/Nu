@@ -37,7 +37,7 @@ type GameplayDispatcher () =
         if FQueue.contains Select selectionResults then
 
             // reset score
-            Simulants.Gameplay.SetScore 0 world
+            screen.SetScore 0 world
 
             // create stage sections from random section files
             for sectionIndex in 0 .. dec Constants.Gameplay.SectionCount do

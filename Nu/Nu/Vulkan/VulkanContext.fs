@@ -10,7 +10,6 @@ open System.Runtime.InteropServices
 open System.Collections.Generic
 open System.Reflection
 open System.Runtime.CompilerServices
-open System.Threading
 open FSharp.NativeInterop
 open SDL
 open Vortice.Vulkan
@@ -265,7 +264,7 @@ type Swapchain =
         { SwapchainWrapperOpt_ = SwapchainWrapper.tryCreate surfaceFormat physicalDevice
           Window_ = window
           SurfaceFormat_ = surfaceFormat }
-    
+
     /// Destroy a Swapchain.
     static member destroy swapchain =
         match swapchain.SwapchainWrapperOpt_ with
@@ -294,7 +293,7 @@ type [<ReferenceEquality>] VulkanContext =
           PresentQueue_ : ConcurrentCommandQueue
           TextureQueue_ : ConcurrentCommandQueue
           SwapchainImageSemaphore_ : VkSemaphore
-          RenderSemaphore_ : VkSemaphore
+          RenderSemaphores_ : VkSemaphore array
           RenderFence_ : VkFence
           TransientFence_ : VkFence
           TextureFence_ : VkFence
@@ -329,6 +328,9 @@ type [<ReferenceEquality>] VulkanContext =
 
     /// The render command queue.
     member this.RenderQueue = this.RenderQueue_
+
+    /// The current render semaphore.
+    member this.RenderSemaphore = this.RenderSemaphores_[int Hl.ImageIndex]
 
     /// The texture command queue.
     member this.TextureQueue = this.TextureQueue_
@@ -742,7 +744,7 @@ type [<ReferenceEquality>] VulkanContext =
                 submitInfo.waitSemaphoreCount <- 1u
                 submitInfo.pWaitSemaphores <- &&swapchainImageSemaphoreOpt
                 submitInfo.pWaitDstStageMask <- &&stageFlagOpt
-                renderSemaphoreOpt <- context.RenderSemaphore_
+                renderSemaphoreOpt <- context.RenderSemaphore
                 submitInfo.signalSemaphoreCount <- 1u
                 submitInfo.pSignalSemaphores <- &&renderSemaphoreOpt
                 renderFenceOpt <- context.RenderFence_
@@ -837,7 +839,7 @@ type [<ReferenceEquality>] VulkanContext =
         VulkanContext.withSwapchainWrapperOpt context $ function
             | Some swapchainWrapper ->
                 ConcurrentCommandQueue.withLock context.PresentQueue_ $ fun vkQueue ->
-                    let mutable renderSemaphore = context.RenderSemaphore_
+                    let mutable renderSemaphore = context.RenderSemaphore
                     let mutable vkSwapchain = swapchainWrapper.VkSwapchain
                     let mutable imageIndex = Hl.ImageIndex
                     let mutable info = VkPresentInfoKHR ()
@@ -910,9 +912,6 @@ type [<ReferenceEquality>] VulkanContext =
             // setup execution for presentation on render thread
             let swapchainImageSemaphore = Hl.createSemaphore ()
 
-            // setup serialized rendering
-            let renderSemaphore = Hl.createSemaphore ()
-
             // setup transient (one time) execution on render thread
             let transientCommandPool = VulkanContext.createCommandPool true physicalDevice.GraphicsQueueFamily
             let transientFence = Hl.createFence false
@@ -924,6 +923,13 @@ type [<ReferenceEquality>] VulkanContext =
             // setup swapchain
             let surfaceFormat = VulkanContext.getSurfaceFormat physicalDevice.SurfaceFormats
             let swapchain = Swapchain.create surfaceFormat physicalDevice window
+
+            // setup render semaphores
+            let renderSemaphoreCount =
+                match swapchain.SwapchainWrapperOpt with
+                | Some swapchainWrapper -> swapchainWrapper.Images.Length
+                | None -> Constants.Vulkan.SwapchainImageMax
+            let renderSemaphores = Array.init renderSemaphoreCount (fun _ -> Hl.createSemaphore ())
 
             // make vulkan context
             let vulkanContext =
@@ -943,7 +949,7 @@ type [<ReferenceEquality>] VulkanContext =
                   PresentQueue_ = presentQueue
                   TextureQueue_ = textureQueue
                   SwapchainImageSemaphore_ = swapchainImageSemaphore
-                  RenderSemaphore_ = renderSemaphore
+                  RenderSemaphores_ = renderSemaphores
                   RenderFence_ = renderFence
                   TransientFence_ = transientFence
                   TextureFence_ = textureFence
@@ -960,7 +966,7 @@ type [<ReferenceEquality>] VulkanContext =
     static member cleanUp context =
         Swapchain.destroy context.Swapchain_
         DeviceApi.vkDestroySemaphore (context.SwapchainImageSemaphore_, nullPtr)
-        DeviceApi.vkDestroySemaphore (context.RenderSemaphore_, nullPtr)
+        for renderSemaphore in context.RenderSemaphores_ do DeviceApi.vkDestroySemaphore (renderSemaphore, nullPtr)
         DeviceApi.vkDestroyFence (context.RenderFence_, nullPtr)
         DeviceApi.vkDestroyFence (context.TransientFence, nullPtr)
         DeviceApi.vkDestroyFence (context.TextureFence, nullPtr)
