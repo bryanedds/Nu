@@ -535,14 +535,13 @@ module Scope =
 
     /// Make a scope with in-place in and out delegates.
     let inline make<'a, 'b when 'a : struct> (getField : In<'a, 'b>) (setField : Out<'a, 'b>) : Scope<'a, 'b> =
-        { In =
-            fun (targets : 'a SArray) ->
-                let fields = SArray.zeroCreate targets.Length
-                let mutable i = 0
-                while i < targets.Length do
-                    getField.Invoke (&targets[i], &fields[i])
-                    i <- inc i
-                fields
+        { In = fun (targets : 'a SArray) ->
+            let fields = SArray.zeroCreate targets.Length
+            let mutable i = 0
+            while i < targets.Length do
+                getField.Invoke (&targets[i], &fields[i])
+                i <- inc i
+            fields
           Out = fun output fields (targets : 'a SArray) ->
             let mutable i = 0
             while i < targets.Length do
