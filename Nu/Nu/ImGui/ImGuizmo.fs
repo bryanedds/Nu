@@ -14,8 +14,7 @@ open Prime
 [<RequireQualifiedAccess>]
 module ImGuizmo =
 
-    /// TODO: P1: see if we need to store these as a dictionary of name-keyed states so more than one of these can be
-    /// in use at once.
+    /// TODO: P1: store these as a dictionary of name-keyed states so more than one of these can be in use at once.
     let mutable private BoxCenterSelectedOpt = Option<int>.None
 
     /// Manipulate a Box3 value via ImGuizmo.

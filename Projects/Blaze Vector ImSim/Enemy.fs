@@ -41,7 +41,7 @@ type EnemyDispatcher () =
         // process walking
         let bodyId = entity.GetBodyId world
         let entityBounds = entity.GetBounds world
-        if world.Advancing && entityBounds.Box2.Intersects world.Eye2dBounds then
+        if world.TimeAdvancing && entityBounds.Box2.Intersects world.Eye2dBounds then
             World.applyBodyForce Constants.Gameplay.EnemyWalkForce None bodyId world
 
         // process hits

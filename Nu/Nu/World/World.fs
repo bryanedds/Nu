@@ -46,9 +46,11 @@ type private GcEventListener () =
         if gcDebug && isNull InstanceOpt then
             InstanceOpt <- new GcEventListener ()
 
-// TODO: apply doc comments to the public part of this API.
+/// Platform-specific operations.
 [<RequireQualifiedAccess>]
 module Platform =
+
+    // TODO: apply doc comments to the public part of this API.
 
     let tryLoadNativeLibrary libraryPath =
         let mutable handle = 0n
@@ -134,6 +136,13 @@ module Platform =
             loadAssimpFramework ()
             configureJoltFramework ()
             configureVmaFramework ()
+
+        let configureMacNativeLibraries () =
+            configureFrameworkNativeLibraries ()
+            // NOTE: SDL needs the Vulkan loader, not an ICD such as MoltenVK; anchor the bundled loader to the
+            // managed executable directory because bare dylib lookup depends on the host search paths.
+            let vulkanLoaderPath = PathF.Combine (AppContext.BaseDirectory, "libvulkan.1.dylib")
+            SDL3.SDL_SetHint (SDL3.SDL_HINT_VULKAN_LIBRARY, vulkanLoaderPath) |> ignore<SDLBool>
 
         [<RequireQualifiedAccess>]
         module iOS =
@@ -224,16 +233,15 @@ type Nu () =
         // init only if needed
         if not Initialized then
 
+            // platform-specific log initialization
             if OperatingSystem.IsIOS () then
                 Platform.Apple.iOS.configureIosNativeLibraries ()
-                Log.init None // disable Nu's default file log because the iOS app bundle is read-only.
+                Log.init None // disable Nu's default file log because the iOS app bundle is read-only
             elif OperatingSystem.IsAndroid () then
                 Platform.Android.configureAndroidNativeLibraries ()
-                 // disable Nu's default file log because the Android asset pack directory should be treated as read-only for incremental updates to work:
-                 // https://developer.android.com/reference/com/google/android/play/core/assetpacks/AssetPackManager#getpacklocation
-                Log.init None
+                Log.init None // disable Nu's default file log because the Android asset pack directory should be treated as read-only for incremental updates to work - https://developer.android.com/reference/com/google/android/play/core/assetpacks/AssetPackManager#getpacklocation
             elif OperatingSystem.IsMacOS () then
-                Platform.Apple.configureFrameworkNativeLibraries ()
+                Platform.Apple.configureMacNativeLibraries ()
 
             // ensure the current culture is invariate
             Thread.CurrentThread.CurrentCulture <- Globalization.CultureInfo.InvariantCulture
@@ -426,7 +434,7 @@ module WorldModule4 =
             let intrinsicOverlays = World.makeIntrinsicOverlays lateBindingsInstances.Facets lateBindingsInstances.EntityDispatchers
             let overlayer = Overlayer.makeFromFileOpt intrinsicOverlays Assets.Global.OverlayerFilePath
             let timers = Timers.make ()
-            let ambientState = AmbientState.make worldConfig.Imperative worldConfig.Accompanied worldConfig.Advancing worldConfig.FramePacing symbolics overlayer timers sdlDepsOpt
+            let ambientState = AmbientState.make worldConfig.Imperative worldConfig.Accompanied worldConfig.TimeAdvancing worldConfig.FramePacing symbolics overlayer timers sdlDepsOpt
             let collectionConfig = AmbientState.getCollectionConfig ambientState
             let entityStates = SUMap.makeEmpty HashIdentity.Structural collectionConfig
             let groupStates = UMap.makeEmpty HashIdentity.Structural collectionConfig
@@ -512,7 +520,7 @@ module WorldModule4 =
             let imGui = ImGui (true, windowViewport.Bounds.Size)
             let physicsEngine2d = StubPhysicsEngine.make ()
             let physicsEngine3d = StubPhysicsEngine.make ()
-            let rendererProcess = RendererInline (WindowProperties.empty) :> RendererProcess
+            let rendererProcess = RendererInline WindowProperties.empty :> RendererProcess
             rendererProcess.Start imGui.Fonts None geometryViewport windowViewport // params implicate stub renderers
             let audioPlayer = StubAudioPlayer.make ()
             let cursorClient = StubCursorClient.make ()
@@ -534,7 +542,7 @@ module WorldModule4 =
             world
 
         /// Make the world with the given SDL dependencies.
-        static member make tryMakeEditContext sdlDeps config geometryViewport (windowViewport : Viewport) (plugin : NuPlugin) =
+        static member make tryMakeEditContext sdlDeps config windowSize geometryViewport (windowViewport : Viewport) (plugin : NuPlugin) =
 
             // compute window properties
             let windowProperties =
@@ -639,11 +647,16 @@ module WorldModule4 =
             let quadtree = Quadtree.make Constants.Engine.QuadtreeDepth Constants.Engine.QuadtreeSize
             let octree = Octree.make Constants.Engine.OctreeDepth Constants.Engine.OctreeSize
 
-            // make the world
+            // make the world record
             let world =
                 World.makePlus
                     tryMakeEditContext plugin eventGraph jobGraph geometryViewport windowViewport lateBindingsInstances quadtree octree config (Some sdlDeps)
                     imGui physicsEngine2d physicsEngine3d (Some joltDebugRendererImGuiOpt) rendererProcess audioPlayer cursorClient activeGameDispatcher
+
+            // synchronize window size with actual size, e.g. fullscreen for mobile or a display with size smaller than
+            // the configured DisplayScalar
+            if World.getWindowSizeOtherwiseViewportSize world <> windowSize then
+                World.processWindowResize world
 
             // add the keyed values
             for (key, value) in plugin.MakeKeyedValues world do
@@ -658,10 +671,8 @@ module WorldModule4 =
         static member runPlus tryMakeEditContext runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess firstFrameCallback worldConfig windowSize geometryViewport windowViewport plugin =
             match SdlDeps.tryMake worldConfig.SdlConfig worldConfig.Accompanied windowSize with
             | Right sdlDeps ->
-                use sdlDeps = sdlDeps // bind explicitly to dispose automatically
-                let world = World.make tryMakeEditContext sdlDeps worldConfig geometryViewport windowViewport plugin
-                if World.getWindowSizeOtherwiseViewportSize world <> windowSize then
-                    World.processWindowResized world // synchronize window size with actual size, e.g. fullscreen for mobile or a display with size smaller than the configured DisplayScalar
+                use _ = sdlDeps
+                let world = World.make tryMakeEditContext sdlDeps worldConfig windowSize geometryViewport windowViewport plugin
                 World.runWithCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess (Some firstFrameCallback) world
             | Left error -> Log.error error; Constants.Engine.ExitCodeFailure
 
@@ -671,4 +682,6 @@ module WorldModule4 =
             let windowSize = Constants.Render.DisplayVirtualResolution * Globals.Render.DisplayScalar
             let windowViewport = Viewport.makeWindow1 windowSize
             let geometryViewport = Viewport.makeGeometry windowViewport.Bounds.Size
-            World.runPlus (constant None) tautology ignore ignore ignore ignore ignore firstFrameCallback worldConfig windowViewport.Outer.Size geometryViewport windowViewport plugin
+            World.runPlus
+                (constant None) tautology ignore ignore ignore ignore ignore firstFrameCallback
+                worldConfig windowViewport.Outer.Size geometryViewport windowViewport plugin

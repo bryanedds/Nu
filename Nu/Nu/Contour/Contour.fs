@@ -10,6 +10,9 @@ open System.Collections.Generic
 open System.Numerics
 open Prime
 
+/// Contour operations.
+/// TODO: P0: get rid of excess frame-based allocation here, such as potentially by using memoization.
+/// TODO: see if it won't be too disruptive to make this code conform to our code standard.
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Contour =
 
@@ -201,7 +204,7 @@ module Contour =
             // For each curve, determine which horizontal bands it belongs to.
             let hAssignments = List<int * int>() // (bandIndex, curveIndex)
             for ci = 0 to curves.Length - 1 do
-                let c = curves.[ci]
+                let c = curves[ci]
                 if not (isStraightHorizontal c) then
                     let minY = min (min c.P1Y c.P2Y) c.P3Y
                     let maxY = max (max c.P1Y c.P2Y) c.P3Y
@@ -217,9 +220,9 @@ module Contour =
                 |> Seq.groupBy fst
                 |> Seq.map (fun (band, items) ->
                     let indices = items |> Seq.map snd |> Seq.toArray
-                    let sorted = indices |> Array.sortByDescending (fun ci -> curveMaxX curves.[ci])
+                    let sorted = indices |> Array.sortByDescending (fun ci -> curveMaxX curves[ci])
                     (band, sorted))
-                |> Seq.sortBy fst
+                |> Seq.sortWith (fun (band, _) (band2, _) -> band.CompareTo band2)
                 |> Seq.toArray
 
             // Build flat arrays.
@@ -233,6 +236,7 @@ module Contour =
                 for ci in indices do
                     hIndices.Add (uint32 ci)
                 hEntries.Add { CurveCount = uint32 indices.Length; CurveOffset = offset }
+
             // Pad remaining bands.
             while hEntries.Count < nHBands do
                 hEntries.Add { CurveCount = 0u; CurveOffset = uint32 hIndices.Count }
@@ -245,7 +249,7 @@ module Contour =
 
             let vAssignments = List<int * int>()
             for ci = 0 to curves.Length - 1 do
-                let c = curves.[ci]
+                let c = curves[ci]
                 if not (isStraightVertical c) then
                     let minX = min (min c.P1X c.P2X) c.P3X
                     let maxX = max (max c.P1X c.P2X) c.P3X
@@ -259,7 +263,7 @@ module Contour =
                 |> Seq.groupBy fst
                 |> Seq.map (fun (band, items) ->
                     let indices = items |> Seq.map snd |> Seq.toArray
-                    let sorted = indices |> Array.sortByDescending (fun ci -> curveMaxY curves.[ci])
+                    let sorted = indices |> Array.sortByDescending (fun ci -> curveMaxY curves[ci])
                     (band, sorted))
                 |> Seq.sortBy fst
                 |> Seq.toArray
@@ -431,7 +435,7 @@ module Contour =
                 current <- start
 
         // Remove an explicit closing endpoint; the closed offset path supplies its own closing edge.
-        if closed && points.Count > 1 && Vector2.DistanceSquared (points.[points.Count - 1], start) <= 0.0001f then
+        if closed && points.Count > 1 && Vector2.DistanceSquared (points[points.Count - 1], start) <= 0.0001f then
             points.RemoveAt (points.Count - 1)
         points.ToArray ()
 
@@ -447,13 +451,13 @@ module Contour =
             let normals = Array.zeroCreate<Vector2> edgeCount
             for i in 0 .. edgeCount - 1 do
                 let next = if i = n - 1 then 0 else i + 1
-                let dir = points.[next] - points.[i]
+                let dir = points[next] - points[i]
                 let len = dir.Length ()
                 if len > 0.0001f then
                     let dirN = dir / len
-                    normals.[i] <- v2 -dirN.Y dirN.X
+                    normals[i] <- v2 -dirN.Y dirN.X
                 else
-                    normals.[i] <- v2Zero
+                    normals[i] <- v2Zero
 
             let miterOffset (previousNormal : Vector2) nextNormal =
                 let sum = previousNormal + nextNormal
@@ -469,14 +473,14 @@ module Contour =
             let right = Array.zeroCreate<Vector2> n
             for i in 0 .. n - 1 do
                 let previousNormal, nextNormal =
-                    if not closed && i = 0 then normals.[0], normals.[0]
-                    elif not closed && i = n - 1 then normals.[edgeCount - 1], normals.[edgeCount - 1]
+                    if not closed && i = 0 then normals[0], normals[0]
+                    elif not closed && i = n - 1 then normals[edgeCount - 1], normals[edgeCount - 1]
                     else
-                        let previous = if i = 0 then normals.[edgeCount - 1] else normals.[i - 1]
-                        previous, normals.[i]
+                        let previous = if i = 0 then normals[edgeCount - 1] else normals[i - 1]
+                        previous, normals[i]
                 let offset = miterOffset previousNormal nextNormal
-                left.[i] <- points.[i] + offset
-                right.[i] <- points.[i] - offset
+                left[i] <- points[i] + offset
+                right[i] <- points[i] - offset
             left, right
 
     /// Convert offset rails into a filled stroke contour.

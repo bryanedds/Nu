@@ -3,21 +3,16 @@
 
 namespace Nu
 open System
+open System.Buffers
 open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
 open System.Text
 open FSharp.NativeInterop
 open Prime
 
+/// Native pointer operations.
 [<RequireQualifiedAccess>]
 module NativePtr =
-
-    /// A pre-allocated binary blob.
-    /// NOTE: this ought to be less accessible but function inlining doesn't permit.
-    type Blob =
-        { mutable Offset : int
-          Size : int
-          VoidPtr : voidptr }
 
     /// Tests whether the given native ptr is not null.
     let notNullPtr ptr =
@@ -113,44 +108,7 @@ module NativePtr =
         let offsetPtr = NativePtr.add destPtr offset
         NativePtr.copyBlock offsetPtr sourcePtr size
 
-    /// Allocate a Blob on the stack.
-    let inline allocateStackBlob size =
-        let ptr = NativePtr.stackalloc<byte> size
-        { Offset = 0; Size = size; VoidPtr = NativePtr.toVoidPtr ptr }
-
-    /// Write a value to a Blob.
-    let inline writeBlob (value : 'a) (blob : Blob) =
-        let writeSize = sizeof<'a>
-        if blob.Offset + writeSize <= blob.Size then
-            let bytePtr = NativePtr.ofVoidPtr<byte> blob.VoidPtr
-            let offsetPtr = NativePtr.add bytePtr blob.Offset
-            let voidPtr = NativePtr.toVoidPtr offsetPtr
-            let typePtr = NativePtr.ofVoidPtr<'a> voidPtr
-            NativePtr.write typePtr value
-            blob.Offset <- blob.Offset + writeSize
-            blob
-        else Log.warn "Attempted write into binary blob exceeds allocated boundaries; check data."; blob
-    
-    /// Write an array to a Blob.
-    let inline writeBlobArray (array : 'a array) (blob : Blob) =
-        let writeSize = sizeof<'a> * array.Length
-        if blob.Offset + writeSize <= blob.Size then
-            let bytePtr = NativePtr.ofVoidPtr<byte> blob.VoidPtr
-            let offsetPtr = NativePtr.add bytePtr blob.Offset
-            let voidPtr = NativePtr.toVoidPtr offsetPtr
-            let typePtr = NativePtr.ofVoidPtr<'a> voidPtr
-            for i in 0 .. dec array.Length do NativePtr.set typePtr i array[i]
-            blob.Offset <- blob.Offset + writeSize
-            blob
-        else Log.warn "Attempted write into binary blob exceeds allocated boundaries; check data."; blob
-
-    /// Add padding to a Blob.
-    let inline padBlob bytes (blob : Blob) =
-        if blob.Offset + bytes <= blob.Size then
-            blob.Offset <- blob.Offset + bytes
-            blob
-        else Log.warn "Attempted padding of binary blob exceeds allocated boundaries; check data."; blob
-
+/// Native pointer operators.
 [<AutoOpen>]
 module NativePtrOperators =
 
@@ -160,7 +118,7 @@ module NativePtrOperators =
 
     /// Null void pointer.
     let nullVoidPtr =
-        IntPtr.Zero.ToPointer()
+        IntPtr.Zero.ToPointer ()
     
     /// Convert a managed pointer to a typed native pointer.
     let inline asPointer<'a when 'a : unmanaged> (managedPtr : byref<'a>) : nativeptr<'a> =
@@ -175,7 +133,7 @@ module NativePtrOperators =
         NativePtr.asNativeInt &managedPtr
 
 /// Abstraction for native pointer pinning for arrays.
-type ArrayPin<'a when 'a : unmanaged> private (handle : Buffers.MemoryHandle, ptr : nativeptr<'a>) =
+type ArrayPin<'a when 'a : unmanaged> private (handle : MemoryHandle, ptr : nativeptr<'a>) =
 
     /// Create an ArrayPin for a given array.
     new (array : 'a array) =

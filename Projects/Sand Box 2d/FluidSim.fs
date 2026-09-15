@@ -264,6 +264,7 @@ type FluidSimDispatcher () =
                          Entity.StaticImage .= renders[toolName].Image
                          Entity.Color .= renders[toolName].Color
                      | Bubble ->
+                         Entity.InsetOpt .= Some Sandbox2dGeometry.BubbleImageInset
                          Entity.StaticImage .= Assets.Gameplay.BubbleImage
                      | Line ->
                          Entity.Size .= v3 25f 2f 0f
@@ -368,7 +369,7 @@ type FluidSimDispatcher () =
                      Entity.Color |= color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f] world |> ignore
 
             // mouse interactions with fluid system
-            if fluidSim.GetSelected world && world.Advancing then
+            if fluidSim.GetSelected world && world.TimeAdvancing then
                 let tool = fluidSim.GetSelectedTool world
                 match (tool, World.doFeeler "Feeler" [Entity.Position @= mousePosition.V3] world) with // a feeler is a touch and mouse left button detector respecting elevation such that buttons with higher elevation prevent this interaction.
                 | ((Water | Sand | Oil | Smoke), (true, _)) -> // doFeeler returns (isDown, justPressed) detecting touch and mouse left button.
@@ -381,11 +382,12 @@ type FluidSimDispatcher () =
                     // emit particles
                     World.emitFluidParticles particles fluidEmitterId world
                 | (Bubble, (true, _)) ->
-                    // summon a bubble
+                    // MouseBubbleSize is the radius in pixels; Entity.Size is a diameter.
                     fluidSim.MouseBubbleSize.Map inc world
                     World.doOrbBody2d "Bubble"
                         [Entity.Position @= mousePosition.V3
-                         Entity.Size @= v3Dup (fluidSim.GetMouseBubbleSize world)
+                         Entity.Size @= v3Dup (Sandbox2dGeometry.bubbleDiameter (fluidSim.GetMouseBubbleSize world))
+                         Entity.InsetOpt .= Some Sandbox2dGeometry.BubbleImageInset
                          Entity.StaticImage .= Assets.Gameplay.BubbleImage] world |> ignore
                 | (Bubble, (false, _)) when World.isMouseButtonReleased MouseLeft world -> // the feeler detects only presses, not releases.
                     // reset size when mouse left button is just released

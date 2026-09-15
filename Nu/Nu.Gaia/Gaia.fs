@@ -23,21 +23,21 @@ open Prime
 open Nu
 open Nu.Gaia
 
-//////////////////////////////////////////////////////////////////////////////////////
-// TODO:                                                                            //
-// Custom properties in order of priority:                                          //
-//  Enums                                                                           //
-//  Flag Enums                                                                      //
-//  CollisionMask                                                                   //
-//  CollisionCategories                                                             //
-//  CollisionDetection                                                              //
-//  BodyShape                                                                       //
-//  BodyJoint                                                                       //
-//  BlendMaterial                                                                   //
-//  TerrainMaterial                                                                 //
-//  DateTimeOffset?                                                                 //
-//  SymbolicCompression                                                             //
-//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////
+// TODO:                                    //
+// Custom properties in order of priority:  //
+//  Enums                                   //
+//  Flag Enums                              //
+//  CollisionMask                           //
+//  CollisionCategories                     //
+//  CollisionDetection                      //
+//  BodyShape                               //
+//  BodyJoint                               //
+//  BlendMaterial                           //
+//  TerrainMaterial                         //
+//  DateTimeOffset?                         //
+//  SymbolicCompression                     //
+//////////////////////////////////////////////
 
 [<RequireQualifiedAccess>]
 module Gaia =
@@ -89,6 +89,7 @@ module Gaia =
     let mutable private DesiredEye3dCenter = v3Zero
     let mutable private DesiredEye3dRotation = quatIdentity
     let mutable private EyeChangedElsewhere = false
+    let mutable private ResetEyeRequested = false
     let mutable private FpsStartDateTime = DateTimeOffset.Now
     let mutable private FpsStartUpdateTime = 0L
     let mutable private InteractiveNeedsInitialization = true
@@ -486,20 +487,20 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
     let private shouldSwallowMouseButton (world : World) =
         let io = ImGui.GetIO ()
         not io.WantCaptureMouseGlobal &&
-        (world.Halted || EditWhileAdvancing)
+        (world.TimeHalted || EditWhileAdvancing)
 
     let private canEditWithMouse (world : World) =
         let io = ImGui.GetIO ()
         match ViewMode with
         | NormalMode | FreeMode ->
             not io.WantCaptureMouseGlobal &&
-            (world.Halted || EditWhileAdvancing)
+            (world.TimeHalted || EditWhileAdvancing)
         | CaptureMode -> false
 
     let private canEditWithKeyboard (world : World) =
         let io = ImGui.GetIO ()
         not io.WantCaptureKeyboardGlobal &&
-        (world.Halted || EditWhileAdvancing)
+        (world.TimeHalted || EditWhileAdvancing)
 
     let private snapshot snapshotType (world : World) =
         Pasts <- (snapshotType, world.CurrentState) :: Pasts
@@ -890,10 +891,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private createRestorePoint world =
         World.playSound 0.0f 0.0f Constants.Audio.SoundVolumeDefault Assets.Default.Sound world
-        if world.Advancing then
-            World.setAdvancing false world
+        if world.TimeAdvancing then
+            World.setTimeAdvancing false world
             snapshot RestorePoint world
-            World.setAdvancing true world
+            World.setTimeAdvancing true world
         else snapshot RestorePoint world
 
     let private inductEntity atMouse (entity : Entity) (world : World)=
@@ -1252,13 +1253,13 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     let fsprojFileLines = // TODO: P1: consider loading these references from Nu.fsproj.
                         [|"""<PackageReference Include="Aether.Physics2D" Version="2.2.0" />"""
                           """<PackageReference Include="AstcEncoderCSharp" Version="5.5.0" />"""
-                          """<PackageReference Include="Box2D.NET" Version="3.1.1.557" />"""
+                          """<PackageReference Include="Box2D.NET" Version="3.1.654" />"""
                           """<PackageReference Include="BCnEncoder.Net" Version="2.2.1" />"""
                           """<PackageReference Include="DotRecast.Recast.Toolset" Version="2026.1.1" />"""
                           """<PackageReference Include="JoltPhysicsSharp" Version="2.22.0" />"""
                           """<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.15.0" />"""
                           """<PackageReference Include="Pfim" Version="0.11.4" />"""
-                          """<PackageReference Include="Prime" Version="11.5.1" />"""
+                          """<PackageReference Include="Prime" Version="11.5.3" />"""
                           """<PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.1" />"""
                           """<PackageReference Include="System.Drawing.Common" Version="10.0.1" />"""
                           """<PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" />"""
@@ -1280,21 +1281,14 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         |> Array.map (fun line -> line.Replace ("/>", ""))
                         |> Array.map (fun line -> line.Replace ("\"", ""))
                         |> Array.map (fun line -> line.Trim ())
-                    let fsprojDllFilePaths =
-                        fsprojFileLines
-                        |> Array.map (fun line -> line.Trim ())
-                        |> Array.filter (fun line -> line.Contains "HintPath" && line.Contains ".dll")
-                        |> Array.map (fun line -> line.Replace ("<HintPath>", ""))
-                        |> Array.map (fun line -> line.Replace ("</HintPath>", ""))
-                        |> Array.map (fun line -> line.Replace ("=", ""))
-                        |> Array.map (fun line -> line.Replace ("\"", ""))
-                        |> Array.map (fun line -> PathF.Normalize line)
-                        |> Array.map (fun line -> line.Trim ())
+                    let fsprojDllFilePaths = // TODO: see if we can pull these from the fsproj as well...
+                        [|"../Nu.Dependencies/AssimpNet/netstandard2.1/AssimpNet.dll"
+                          "../Nu.Dependencies/BulletSharpPInvoke/netstandard2.1/BulletSharp.dll"
+                          "../Nu.Dependencies/TiledSharp/lib/netstandard2.0/TiledSharp.dll"|]
                     let fsprojProjectLines = // TODO: see if we can pull these from the fsproj as well...
-                        ["#r \"../../../../../Nu/Nu.Math/bin/" + Constants.Engine.BuildName + "/" + Constants.Engine.TargetFramework + "/Nu.Math.dll\""
-                         "#r \"../../../../../Nu/Nu.Pipe/bin/" + Constants.Engine.BuildName + "/" + Constants.Engine.TargetFramework + "/Nu.Pipe.dll\""
-                         "#r \"../../../../../Nu/Nu.Spine/bin/" + Constants.Engine.BuildName + "/" + Constants.Engine.TargetFramework + "/Nu.Spine.dll\""
-                         "#r \"../../../../../Nu/Nu/bin/" + Constants.Engine.BuildName + "/" + Constants.Engine.TargetFramework + "/Nu.dll\""]
+                        [|"#r \"../../../../../Nu/Nu.Math/bin/" + Constants.Engine.BuildName + "/" + Constants.Engine.TargetFramework + "/Nu.Math.dll\""
+                          "#r \"../../../../../Nu/Nu.Pipe/bin/" + Constants.Engine.BuildName + "/" + Constants.Engine.TargetFramework + "/Nu.Pipe.dll\""
+                          "#r \"../../../../../Nu/Nu/bin/" + Constants.Engine.BuildName + "/" + Constants.Engine.TargetFramework + "/Nu.dll\""|]
                     let fsprojFsFilePaths =
                         fsprojFileLines
                         |> Array.map (fun line -> line.Trim ())
@@ -1392,20 +1386,15 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         tryReloadAssets world
         tryReloadCode initializing world
 
-    let private resetEye () =
-        DesiredEye2dCenter <- v2Zero
-        DesiredEye3dCenter <- Constants.Engine.Eye3dCenterDefault
-        DesiredEye3dRotation <- quatIdentity
-
-    let private toggleAdvancing (world : World) =
-        let wasAdvancing = world.Advancing
-        snapshot (if wasAdvancing then Halt else Advance) world
-        World.setAdvancing (not world.Advancing) world
+    let private toggleTimeAdvancing (world : World) =
+        let wasTimeAdvancing = world.TimeAdvancing
+        snapshot (if wasTimeAdvancing then Halt else Advance) world
+        World.setTimeAdvancing (not world.TimeAdvancing) world
 
     let private step (world : World) =
-        if world.Halted then
+        if world.TimeHalted then
             snapshot Step world
-            World.setAdvancing true world
+            World.setTimeAdvancing true world
             Stepping <- true
 
     let private trySelectTargetDirAndMakeNuPluginFromFilePathOpt filePathOpt =
@@ -1461,13 +1450,13 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 Log.error ("Invalid Nu Assembly: " + gaiaState.ProjectDllPath)
             (GaiaState.defaultState, ".", gaiaPlugin)
 
-    let private makeWorld sdlDeps worldConfig geometryViewport windowViewport (plugin : NuPlugin) =
+    let private makeWorld sdlDeps worldConfig windowSize geometryViewport windowViewport (plugin : NuPlugin) =
 
         // make the edit context maker
         let tryMakeEditContext = fun () -> Some (makeEditContext None None)
 
         // make the world
-        let world = World.make tryMakeEditContext sdlDeps worldConfig geometryViewport windowViewport plugin
+        let world = World.make tryMakeEditContext sdlDeps worldConfig windowSize geometryViewport windowViewport plugin
 
         // initialize event filter as not to flood the log
         World.setEventFilter Constants.Gaia.EventFilter world
@@ -1488,32 +1477,19 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
         // figure out which screen to use
         let screen =
-            match Game.GetDesiredScreen world with
-            | Desire screen -> screen
-            | DesireNone ->
-                match Game.GetSelectedScreenOpt world with
-                | None ->
-                    let screen = Game / "Screen"
-                    if not (screen.GetExists world) then
-                        let screen = World.createScreen (Some "Screen") world
-                        Game.SetDesiredScreen (Desire screen) world
-                        screen
-                    else screen
-                | Some screen -> screen
-            | DesireIgnore ->
-                match Game.GetSelectedScreenOpt world with
-                | None ->
-                    let screen = Game / "Screen"
-                    if not (screen.GetExists world) then
-                        let screen = World.createScreen (Some "Screen") world
-                        World.setSelectedScreen screen world
-                        let eventTrace = EventTrace.debug "World" "selectScreen" "Select" EventTrace.empty
-                        World.publishPlus () screen.SelectEvent eventTrace screen false false world
-                        let eventTrace = EventTrace.debug "World" "selectScreen" "PostSelect" EventTrace.empty
-                        World.publishPlus (Some screen) Game.PostSelectEvent eventTrace screen false false world
-                        screen
-                    else screen
-                | Some screen -> screen
+            match Game.GetSelectedScreenOpt world with
+            | None ->
+                let screen = Game / "Screen"
+                if not (screen.GetExists world) then
+                    let screen = World.createScreen (Some "Screen") world
+                    World.setSelectedScreen screen world
+                    let eventTrace = EventTrace.debug "World" "selectScreen" "Select" EventTrace.empty
+                    World.publishPlus () screen.SelectEvent eventTrace screen false false world
+                    let eventTrace = EventTrace.debug "World" "selectScreen" "PostSelect" EventTrace.empty
+                    World.publishPlus (Some screen) Game.PostSelectEvent eventTrace screen false false world
+                    screen
+                else screen
+            | Some screen -> screen
 
         // proceed directly to idle state
         World.selectScreen (IdlingState world.GameTime) screen world
@@ -1728,11 +1704,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         let entity = createEntity true false (Some (nameof TileMapDispatcher)) None world
                         entity.SetTileMap (AssetTag.specialize assetTag) world
                         entity.AutoBounds world
-                    | SpineSkeletonMetadata _ ->
-                        RightClickPosition <- World.getMousePosition world
-                        let entity = createEntity true false (Some (nameof SpineSkeletonDispatcher)) None world
-                        entity.SetSpineSkeleton (AssetTag.specialize assetTag) world
-                        entity.AutoBounds world
                     | StaticModelMetadata _ ->
                         RightClickPosition <- World.getMousePosition world
                         let entity = createEntity true false (Some (nameof StaticModelDispatcher)) None world
@@ -1755,15 +1726,15 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             if ImGui.IsKeyPressed ImGuiKey.F2 && SelectedEntityOpt.IsSome && SelectedEntityOpt.Value.GetProtection world = Unprotected then ShowRenameEntityDialog <- true
             elif ImGui.IsKeyPressed ImGuiKey.F3 then Snaps2dSelected <- not Snaps2dSelected
             elif ImGui.IsKeyPressed ImGuiKey.F4 && ImGui.IsAltDown () then ShowConfirmExitDialog <- true
-            elif ImGui.IsKeyPressed ImGuiKey.F5 then toggleAdvancing world
+            elif ImGui.IsKeyPressed ImGuiKey.F5 then toggleTimeAdvancing world
             elif ImGui.IsKeyPressed ImGuiKey.F6 then EditWhileAdvancing <- not EditWhileAdvancing
             elif ImGui.IsKeyPressed ImGuiKey.F7 then createRestorePoint world
             elif ImGui.IsKeyPressed ImGuiKey.F8 then ReloadAssetsRequested <- 1
             elif ImGui.IsKeyPressed ImGuiKey.F9 && ImGui.IsShiftUp () then ReloadCodeRequested <- (false, 1)
             elif ImGui.IsKeyPressed ImGuiKey.F9 && ImGui.IsShiftDown () then ReloadCodeRequested <- (true, 1)
-            elif ImGui.IsKeyPressed ImGuiKey.F10 then OverlayMode <- not OverlayMode
+            elif ImGui.IsKeyPressed ImGuiKey.F10 then toggleViewMode CaptureMode world
             elif ImGui.IsKeyPressed ImGuiKey.F11 then toggleViewMode FreeMode world
-            elif ImGui.IsKeyPressed ImGuiKey.F12 then toggleViewMode CaptureMode world
+            elif ImGui.IsKeyPressed ImGuiKey.F12 then OverlayMode <- not OverlayMode
             elif ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then World.tryToggleWindowFullScreen world
             elif ImGui.IsKeyPressed ImGuiKey.UpArrow && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then tryReorderSelectedEntity true world
             elif ImGui.IsKeyPressed ImGuiKey.DownArrow && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then tryReorderSelectedEntity false world
@@ -1806,6 +1777,13 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         DragDropPayloadOpt <- None // TODO: P1: remove this line when AcceptDragDropPayload is exposed.
                         focusPropertyOpt None world
                         selectEntityOpt None world
+
+    let private updateResetEye () =
+        if ResetEyeRequested then
+            DesiredEye2dCenter <- v2Zero
+            DesiredEye3dCenter <- Constants.Engine.Eye3dCenterDefault
+            DesiredEye3dRotation <- quatIdentity
+            ResetEyeRequested <- false
 
     (* Top-Level Functions *)
 
@@ -2468,7 +2446,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                 | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z -> entity.SetDegrees degrees world
                                 | OPERATION.SCALE -> entity.SetScale scale world
                                 | _ -> () // nothing to do
-                            if world.Advancing then
+                            if world.TimeAdvancing then
                                 match entity.TryGetProperty (nameof entity.LinearVelocity) world with
                                 | Some property when property.PropertyType = typeof<Vector3> -> entity.SetLinearVelocity v3Zero world
                                 | Some _ | None -> ()
@@ -2529,6 +2507,14 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
     let private imGuiFullScreenWindow world =
         if ViewMode.IsFreeMode then
             if ImGui.Begin ("Full Screen Enabled", ImGuiWindowFlags.NoNav ||| ImGuiWindowFlags.AlwaysAutoResize) then
+                ImGui.Text "Capture Mode (F10)"
+                ImGui.SameLine ()
+                let mutable captureMode = ViewMode.IsCaptureMode
+                if ImGui.Checkbox ("##captureMode", &captureMode) then
+                    setViewMode (if captureMode then CaptureMode else NormalMode) world
+                if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                    ImGui.Text "Toggle capture mode (F10 to toggle)."
+                    ImGui.EndTooltip ()
                 ImGui.Text "Free Mode (F11)"
                 ImGui.SameLine ()
                 let mutable freeMode = ViewMode.IsFreeMode
@@ -2536,14 +2522,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     setViewMode (if freeMode then FreeMode else NormalMode) world
                 if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                     ImGui.Text "Toggle free mode (F11 to toggle)."
-                    ImGui.EndTooltip ()
-                ImGui.Text "Capture Mode (F12)"
-                ImGui.SameLine ()
-                let mutable captureMode = ViewMode.IsCaptureMode
-                if ImGui.Checkbox ("##captureMode", &captureMode) then
-                    setViewMode (if captureMode then CaptureMode else NormalMode) world
-                if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                    ImGui.Text "Toggle capture mode (F12 to toggle)."
                     ImGui.EndTooltip ()
             ImGui.End ()
 
@@ -2564,11 +2542,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     if ImGui.MenuItem ("Undo", "Ctrl+Z") then tryUndo world |> ignore<bool>
                     if ImGui.MenuItem ("Redo", "Ctrl+Y") then tryRedo world |> ignore<bool>
                     ImGui.Separator ()
-                    if not world.Advancing then
-                        if ImGui.MenuItem ("Advance", "F5") then toggleAdvancing world
+                    if not world.TimeAdvancing then
+                        if ImGui.MenuItem ("Advance", "F5") then toggleTimeAdvancing world
                         if ImGui.MenuItem ("Step", "Alt+S") then step world
                     else
-                        if ImGui.MenuItem ("Halt", "F5") then toggleAdvancing world
+                        if ImGui.MenuItem ("Halt", "F5") then toggleTimeAdvancing world
                     if EditWhileAdvancing
                     then if ImGui.MenuItem ("Disable Edit while Advancing", "F6") then EditWhileAdvancing <- false
                     else if ImGui.MenuItem ("Enable Edit while Advancing", "F6") then EditWhileAdvancing <- true
@@ -2684,12 +2662,12 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             ImGui.SameLine ()
             ImGui.Text "|"
             ImGui.SameLine ()
-            if world.Halted then
-                if ImGui.Button "Advance (F5)" then toggleAdvancing world
+            if world.TimeHalted then
+                if ImGui.Button "Advance (F5)" then toggleTimeAdvancing world
                 ImGui.SameLine ()
                 if ImGui.Button "Step" then step world
             else
-                if ImGui.Button "Halt (F5)" then toggleAdvancing world
+                if ImGui.Button "Halt (F5)" then toggleTimeAdvancing world
                 ImGui.SameLine ()
                 ImGui.Checkbox ("Edit", &EditWhileAdvancing) |> ignore<bool>
             ImGui.SameLine ()
@@ -2702,7 +2680,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             ImGui.SameLine ()
             ImGui.Text "Eye:"
             ImGui.SameLine ()
-            if ImGui.Button "Reset" then resetEye ()
+            if ImGui.Button "Reset" then ResetEyeRequested <- true
             if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                 let mutable eye2dCenter = world.Eye2dCenter
                 let mutable eye3dCenter = world.Eye3dCenter
@@ -2764,9 +2742,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             ImGui.SameLine ()
             ImGui.Text "Overlay Mode"
             ImGui.SameLine ()
-            ImGui.Checkbox ("##overlayMode", &OverlayMode) |> ignore<bool>
+            let mutable captureMode = ViewMode.IsCaptureMode
+            if ImGui.Checkbox ("##captureMode", &captureMode) then
+                setViewMode (if captureMode then FreeMode else NormalMode) world
             if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                ImGui.Text "Toggle overlay mode (F10 to toggle)."
+                ImGui.Text "Toggle capture mode view (F10 to toggle)."
                 ImGui.EndTooltip ()
             ImGui.SameLine ()
             ImGui.Text "Free Mode"
@@ -2780,11 +2760,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             ImGui.SameLine ()
             ImGui.Text "Capture Mode"
             ImGui.SameLine ()
-            let mutable captureMode = ViewMode.IsCaptureMode
-            if ImGui.Checkbox ("##captureMode", &captureMode) then
-                setViewMode (if captureMode then FreeMode else NormalMode) world
+            ImGui.Checkbox ("##overlayMode", &OverlayMode) |> ignore<bool>
             if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                ImGui.Text "Toggle capture mode view (F12 to toggle)."
+                ImGui.Text "Toggle overlay mode (F12 to toggle)."
                 ImGui.EndTooltip ()
         ImGui.End ()
 
@@ -3221,7 +3199,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             FrameTimings.Dequeue () |> ignore<single>
             if ImPlot.BeginPlot ("FrameTimings", v2 -1.0f -1.0f, ImPlotFlags.NoTitle ||| ImPlotFlags.NoInputs) then
                 ImPlot.SetupLegend (ImPlotLocation.West, ImPlotLegendFlags.Outside)
-                ImPlot.SetupAxesLimits (0.0, double (dec TimingsArray.Length), 0.0, 40.0)
+                ImPlot.SetupAxesLimits (0.0, double (dec TimingsArray.Length), 0.0, 50.0)
                 ImPlot.SetupAxes ("Frame", "Time (ms)", ImPlotAxisFlags.NoLabel ||| ImPlotAxisFlags.NoTickLabels, ImPlotAxisFlags.None)
                 FrameTimings.CopyTo (TimingsArray, 0)
                 ImPlot.PlotLine ("Frame Time", &TimingsArray[0], TimingsArray.Length)
@@ -3584,7 +3562,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                 | RawMetadata -> Assets.Default.RawIconIcon
                                 | TextureMetadata _ -> asset<Image> packageName assetName
                                 | TileMapMetadata _ -> Assets.Default.TileMapIcon
-                                | SpineSkeletonMetadata _ -> Assets.Default.SpineSkeletonIcon
                                 | StaticModelMetadata _ -> Assets.Default.StaticModelIcon
                                 | AnimatedModelMetadata _ -> Assets.Default.AnimatedModelIcon
                                 | SoundMetadata -> Assets.Default.SoundIcon
@@ -3625,12 +3602,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                     (fun parentOpt world ->
                                         let entity = createEntity false false (Some (nameof TileMapDispatcher)) parentOpt world
                                         entity.SetTileMap (asset packageName assetName) world
-                                        entity.AutoBounds world
-                                        entity) |> Some
-                                | SpineSkeletonMetadata _ ->
-                                    (fun parentOpt world ->
-                                        let entity = createEntity false false (Some (nameof SpineSkeletonDispatcher)) parentOpt world
-                                        entity.SetSpineSkeleton (asset packageName assetName) world
                                         entity.AutoBounds world
                                         entity) |> Some
                                 | StaticModelMetadata _ ->
@@ -3727,7 +3698,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     | "ImSim Game" -> (PathF.GetFullPath (programDir + "/../../../../Nu.Template.ImSim.Game"), "Title", "nu-template-imsim-game")
                     | _ -> failwithumf ()
                 // work around https://github.com/dotnet/sdk/pull/55105 by manual normalization of drive letter
-                let templateDir = if templateDir.Length > 1 && templateDir.[1] = ':' then string (Char.ToUpperInvariant templateDir.[0]) + templateDir.Substring 1 else templateDir
+                let templateDir = if templateDir.Length > 1 && templateDir[1] = ':' then string (Char.ToUpperInvariant templateDir[0]) + templateDir.Substring 1 else templateDir
                 if Directory.Exists templateDir then
 
                     // attempt to create project files
@@ -4265,7 +4236,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
             // update stepping state
             if Stepping then
-                World.setAdvancing false world
+                World.setTimeAdvancing false world
                 Stepping <- false
 
             // use a generalized exception process
@@ -4330,6 +4301,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 updateEntityDrag world
                 updateAssetDrag world
                 updateHotkeys entityHierarchyFocused world
+
+                // deferred imgui input
+                updateResetEye ()
 
                 // HACK: because ImGui.BeginDragDropViewport isn't available yet -
                 // https://github.com/ocornut/imgui/issues/5204
@@ -4486,11 +4460,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         with exn ->
             if tryUndo world then
                 Futures <- [] // NOTE: clearing invalid futures.
-                let wasAdvancing = world.Advancing
-                if wasAdvancing then World.setAdvancing false world
+                let wasTimeAdvancing = world.TimeAdvancing
+                if wasTimeAdvancing then World.setTimeAdvancing false world
                 let errorMsg =
                     "Unexpected exception!\n" +
-                    "Rewound to previous world" + (if wasAdvancing then " and halted." else ".") +
+                    "Rewound to previous world" + (if wasTimeAdvancing then " and halted." else ".") +
                     "\nError due to: " + exn.Message +
                     "\nStack trace:\n" + string exn.StackTrace
                 Log.error errorMsg
@@ -4579,14 +4553,14 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             let worldConfig =
                 { Imperative = gaiaState.ProjectImperativeExecution
                   Accompanied = true
-                  Advancing = false
+                  TimeAdvancing = false
                   FramePacing = false
                   ModeOpt = gaiaState.ProjectEditModeOpt
                   SdlConfig = sdlConfig }
 
             // attempt to create the world
             let screenAndWorldOpt =
-                try let screenAndworld = makeWorld sdlDeps worldConfig geometryViewport windowViewport plugin
+                try let screenAndworld = makeWorld sdlDeps worldConfig windowSize geometryViewport windowViewport plugin
                     Right screenAndworld
                 with exn ->
                     let gaiaDirPath = PathF.GetDirectoryName (Assembly.GetExecutingAssembly ()).Location

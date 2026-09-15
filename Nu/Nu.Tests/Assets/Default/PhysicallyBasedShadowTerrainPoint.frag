@@ -12,11 +12,11 @@ struct EyeStruct
 
 layout(set = 0, binding = 0) uniform EyeUniform { EyeStruct eye; };
 
-layout(location = 0) in vec4 positionOut;
+layout(location = 0) in vec4 position;
 
 layout(location = 0) out float depth;
 
 void main()
 {
-	depth = length(positionOut.xyz - eye.center); // linear, world space depth
+	depth = length(position.xyz - eye.center); // linear, world space depth
 }

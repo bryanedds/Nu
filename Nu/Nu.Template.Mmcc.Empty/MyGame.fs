@@ -53,7 +53,7 @@ type MyGameDispatcher () =
 
     // here we describe the content of the game, including a screen, a group, and a couple example entities
     override this.Content (myGame, _) =
-        [Content.screen "Screen" Vanilla []
+        [Content.screen "Screen" true Vanilla []
             [Content.group "Group" []
                 [Content.staticModel "StaticModel"
                     [Entity.Position == v3 0.0f 0.0f -2.0f

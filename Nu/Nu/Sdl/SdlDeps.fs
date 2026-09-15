@@ -31,14 +31,19 @@ type SdlWindowConfig =
 
     /// A default SdlWindowConfig.
     static member val defaultConfig =
-        
-        // NOTE: our use of SDL_WINDOW_HIGH_PIXEL_DENSITY only changes behavior on Apple iOS/macOS or Linux Wayland.
-        // See https://wiki.libsdl.org/SDL3/README-highdpi
-        let noNotificationBar = if OperatingSystem.IsIOS () || OperatingSystem.IsAndroid () then SDL_WindowFlags.SDL_WINDOW_FULLSCREEN else Unchecked.defaultof<_>
+        let windowFullscreenOpt =
+            if OperatingSystem.IsIOS () || OperatingSystem.IsAndroid ()
+            then SDL_WindowFlags.SDL_WINDOW_FULLSCREEN
+            else Unchecked.defaultof<_>
+        let windowFlags =
+            SDL_WindowFlags.SDL_WINDOW_RESIZABLE |||
+            SDL_WindowFlags.SDL_WINDOW_VULKAN |||
+            SDL_WindowFlags.SDL_WINDOW_HIGH_PIXEL_DENSITY ||| // NOTE: this only changes behavior on Apple iOS/macOS or Linux Wayland (https://wiki.libsdl.org/SDL3/README-highdpi)
+            windowFullscreenOpt
         { WindowTitle = "Nu Game"
           WindowX = int SDL3.SDL_WINDOWPOS_UNDEFINED
           WindowY = int SDL3.SDL_WINDOWPOS_UNDEFINED
-          WindowFlags = SDL_WindowFlags.SDL_WINDOW_RESIZABLE ||| SDL_WindowFlags.SDL_WINDOW_VULKAN ||| SDL_WindowFlags.SDL_WINDOW_HIGH_PIXEL_DENSITY ||| noNotificationBar }
+          WindowFlags = windowFlags }
 
 /// Describes the general configuration of SDL.
 type [<ReferenceEquality>] SdlConfig =
@@ -56,6 +61,7 @@ type [<ReferenceEquality>] SdlConfig =
         |> Seq.map scstring
         |> String.join " "
 
+/// SDL event operations.
 [<RequireQualifiedAccess>]
 module SdlEvents =
 
@@ -74,6 +80,7 @@ module SdlEvents =
     let tryConsume (event : SDL_Event outref) =
         PolledEvents.TryDequeue &event
 
+/// SdlDeps abstract data type module.
 [<RequireQualifiedAccess>]
 module SdlDeps =
 
@@ -118,22 +125,26 @@ module SdlDeps =
         let initResult = create ()
         let error = SDL3.SDL_GetError ()
         if initResult
-        then Right ((), destroy)
+        then Right destroy
         else Left error
 
     /// Attempt to initalize an SDL resource.
-    let private tryMakeSdlResource create destroy =
+    let private tryMakeSdlResource create destroy destroyParent =
         let resource = create ()
-        if NativePtr.isNullPtr resource
-        then Left ("SDL3# resource creation failed due to '" + SDL3.SDL_GetError () + "'.")
-        else Right (resource, destroy)
+        if NativePtr.notNullPtr resource
+        then Right (resource, (fun () -> destroy resource; destroyParent ()))
+        else
+            destroyParent ()
+            Left ("SDL3# resource creation failed due to '" + SDL3.SDL_GetError () + "'.")
 
     /// Attempt to initalize a global SDL resource.
-    let private tryMakeSdlGlobalResource create destroy =
-        let resource : SDLBool = create ()
-        if SDLBool.op_Implicit resource
-        then Right ((), destroy)
-        else Left ("SDL3# global resource creation failed due to '" + SDL3.SDL_GetError () + "'.")
+    let private tryMakeSdlGlobalResource create destroy destroyParent =
+        let result = create ()
+        if SDLBool.op_Implicit result
+        then Right (fun () -> destroy (); destroyParent ())
+        else
+            destroyParent ()
+            Left ("SDL3# global resource creation failed due to '" + SDL3.SDL_GetError () + "'.")
 
     /// Get the display mode for the desktop occupied by the given window.
     let internal getDisplayModeInternal window =
@@ -164,21 +175,22 @@ module SdlDeps =
         | Some window ->
 
             // get a snapshot of whether screen was full
-            let mutable (windowWidth, windowHeight) = (0, 0)
-            SDL3.SDL_GetWindowSizeInPixels (window, &&windowWidth, &&windowHeight) |> ignore<SDLBool>
-            let displayMode = getDisplayModeInternal window
-            let wasFullScreen = windowWidth = displayMode.w || windowHeight = displayMode.h
+            let flags = SDL3.SDL_GetWindowFlags window
+            let wasFullScreen = flags &&& SDL_WindowFlags.SDL_WINDOW_FULLSCREEN <> LanguagePrimitives.EnumOfValue 0UL
 
             // change full screen status via flags
-            SDL3.SDL_SetWindowFullscreen (window, fullScreen) |> ignore<SDLBool>
+            let fullScreenChanged = SDL3.SDL_SetWindowFullscreen (window, fullScreen) |> SDLBool.op_Implicit
 
             // when changing from full screen, set window to windowed size and make sure its title bar is visible
-            if wasFullScreen && not fullScreen then
-                let pixelDensity = SDL3.SDL_GetWindowPixelDensity window
-                let sizeWindowed = Constants.Render.DisplayVirtualResolution * 2
-                SDL3.SDL_RestoreWindow window |> ignore<SDLBool>
-                SDL3.SDL_SetWindowSize (window, int (single sizeWindowed.X / pixelDensity), int (single sizeWindowed.Y / pixelDensity)) |> ignore
-                SDL3.SDL_SetWindowPosition (window, 100, 100) |> ignore<SDLBool> // NOTE: pretty arbitrary numbers here...
+            if  fullScreenChanged && wasFullScreen && not fullScreen &&
+                SDL3.SDL_SyncWindow window |> SDLBool.op_Implicit then
+                let windowSizeWindowed = Constants.Render.DisplayVirtualResolution * 2 // NOTE: hard-coded 2 means display scalar of size 2 is the default restore window size.
+                if  SDL3.SDL_RestoreWindow window |> SDLBool.op_Implicit &&
+                    SDL3.SDL_SyncWindow window |> SDLBool.op_Implicit then
+                    let pixelDensity = SDL3.SDL_GetWindowPixelDensity window // restoration can change the window's display, and therefore its pixel density
+                    if  SDL3.SDL_SetWindowSize (window, int (single windowSizeWindowed.X / pixelDensity), int (single windowSizeWindowed.Y / pixelDensity)) |> SDLBool.op_Implicit &&
+                        SDL3.SDL_SyncWindow window |> SDLBool.op_Implicit then
+                        SDL3.SDL_SetWindowPosition (window, 100, 100) |> ignore<SDLBool> // NOTE: pretty arbitrary numbers here...
 
         | None -> ()
         sdlDeps
@@ -267,32 +279,37 @@ module SdlDeps =
                     SDL_InitFlags.SDL_INIT_EVENTS
                 SDL3.SDL_Init initConfig)
 
-            (fun () -> SDL3.SDL_Quit ()) with
+            SDL3.SDL_Quit with
         | Left error -> Left error
-        | Right ((), destroy) ->
+        | Right destroy ->
             match tryMakeSdlResource
                 (fun () ->
 
                     // init sdl callback for app backgrounding on mobile devices
                     // NOTE: this happens before SDL window creation to ensure no backgrounding events are missed.
-                    SDL3.SDL_SetEventFilter (Vulkan.Hl.backgroundingCallback (), 0n) // TODO: P0: pass this in as a parameter to reduce critical coupling.
+                    SDL3.SDL_SetEventFilter (Vulkan.Hl.backgroundingCallback (), 0n) // TODO: P0: receive this as a parameter to reduce critical coupling.
                     
                     // attempt to create window
                     let windowConfig = sdlConfig.WindowConfig
                     let windowOpt = SDL3.SDL_CreateWindow (windowConfig.WindowTitle, windowSize.X, windowSize.Y, windowConfig.WindowFlags)
                     if NativePtr.notNullPtr windowOpt then
 
-                        // set window position
+                        // set window position, syncing as necessary
                         let window = windowOpt
                         SDL3.SDL_SetWindowPosition (window, windowConfig.WindowX, windowConfig.WindowY) |> ignore<SDLBool>
+                        SDL3.SDL_SyncWindow window |> ignore<SDLBool> // wait for the move so pixel density reflects the display now containing the window
+                        let pixelDensity = SDL3.SDL_GetWindowPixelDensity window
+                        SDL3.SDL_SetWindowSize (window, int (single windowSize.X / pixelDensity), int (single windowSize.Y / pixelDensity)) |> ignore<SDLBool>
+                        SDL3.SDL_SyncWindow window |> ignore<SDLBool> // wait for the resize because the pre-splash immediately queries pixel dimensions and the window surface
 
                         // start text input except on platforms that would obscure the game with a virtual keyboard
                         if not (SDL3.SDL_HasScreenKeyboardSupport ()) then
                             SDL3.SDL_StartTextInput window |> ignore<SDLBool>
 
                         // set to full screen when window taking up entire screen and unaccompanied
-                        let mutable displayMode = getDisplayModeInternal window
-                        if (windowSize.X = displayMode.w || windowSize.Y = displayMode.h) && not accompanied then
+                        let displayMode = getDisplayModeInternal window
+                        if  (windowSize.X = int (single displayMode.w * pixelDensity) || windowSize.Y = int (single displayMode.h * pixelDensity)) &&
+                            not accompanied then
                             SDL3.SDL_SetWindowFullscreen (window, true) |> ignore<SDLBool>
 
                         // attempt to show splash screen (software surface; will be overwritten by Vulkan)
@@ -301,15 +318,16 @@ module SdlDeps =
                     // fin
                     windowOpt)
 
-                (fun window -> SDL3.SDL_DestroyWindow window; destroy ()) with
+                SDL3.SDL_DestroyWindow
+                destroy with
             | Left error -> Left error
             | Right (window, destroy) ->
-                match tryMakeSdlGlobalResource SDL3_ttf.TTF_Init (fun () -> SDL3_ttf.TTF_Quit (); destroy window) with
+                match tryMakeSdlGlobalResource SDL3_ttf.TTF_Init SDL3_ttf.TTF_Quit destroy with
                 | Left error -> Left error
-                | Right ((), destroy) ->
-                    match tryMakeSdlGlobalResource SDL3_mixer.MIX_Init (fun () -> SDL3_mixer.MIX_Quit (); destroy ()) with
+                | Right destroy ->
+                    match tryMakeSdlGlobalResource SDL3_mixer.MIX_Init SDL3_mixer.MIX_Quit destroy with
                     | Left error -> Left error
-                    | Right ((), destroy) ->
+                    | Right destroy ->
                         Log.info
                             ("Initialized SDL " + sdlVersionToString (SDL3.SDL_GetVersion ()) +
                              ", SDL_ttf " + sdlVersionToString (SDL3_ttf.TTF_Version ()) +

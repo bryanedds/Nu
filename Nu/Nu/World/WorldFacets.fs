@@ -1004,7 +1004,7 @@ type TextBoxFacet () =
 
     static let handleMouseLeftDown evt (world : World) =
         let entity = evt.Subscriber : Entity
-        if world.Advancing && entity.GetVisible world then
+        if world.TimeAdvancing && entity.GetVisible world then
             let mutable transform = entity.GetTransform world
             let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
             let mousePositionWorld = World.getMousePosition2dWorld transform.Absolute world
@@ -1022,7 +1022,7 @@ type TextBoxFacet () =
         let data = evt.Data : KeyboardKeyData
         let caret = entity.GetCaret world
         let text = entity.GetText world
-        if  world.Advancing &&
+        if  world.TimeAdvancing &&
             entity.GetVisible world &&
             entity.GetEnabled world &&
             entity.GetFocused world &&
@@ -1071,7 +1071,7 @@ type TextBoxFacet () =
         let entity = evt.Subscriber : Entity
         let caret = entity.GetCaret world
         let text = entity.GetText world
-        if  world.Advancing &&
+        if  world.TimeAdvancing &&
             entity.GetVisible world &&
             entity.GetEnabled world &&
             entity.GetFocused world &&
@@ -1705,6 +1705,9 @@ module FluidEmitter2dFacetExtensions =
         member this.GetFluidEnabled world : bool = this.Get (nameof Entity.FluidEnabled) world
         member this.SetFluidEnabled (value : bool) world = this.Set (nameof Entity.FluidEnabled) value world
         member this.FluidEnabled = lens (nameof Entity.FluidEnabled) this this.GetFluidEnabled this.SetFluidEnabled
+        member this.GetFluidMessagesEnabled world : bool = this.Get (nameof Entity.FluidMessagesEnabled) world
+        member this.SetFluidMessagesEnabled (value : bool) world = this.Set (nameof Entity.FluidMessagesEnabled) value world
+        member this.FluidMessagesEnabled = lens (nameof Entity.FluidMessagesEnabled) this this.GetFluidMessagesEnabled this.SetFluidMessagesEnabled
         member this.GetFluidParticles world : FluidParticle SArray = this.Get (nameof Entity.FluidParticles) world
         member this.SetFluidParticles (value : FluidParticle SArray) world = this.Set (nameof Entity.FluidParticles) value world
         member this.FluidParticles = lens (nameof Entity.FluidParticles) this this.GetFluidParticles this.SetFluidParticles
@@ -1716,7 +1719,7 @@ module FluidEmitter2dFacetExtensions =
         member this.FluidCellSize = lens (nameof Entity.FluidCellSize) this this.GetFluidCellSize this.SetFluidCellSize
         member this.GetFluidEmitterId world : FluidEmitterId = this.Get (nameof Entity.FluidEmitterId) world
         member this.FluidEmitterId = lensReadOnly (nameof Entity.FluidEmitterId) this this.GetFluidEmitterId
-        member this.FluidEmitterUpdateEvent = Events.FluidEmitterUpdateEvent --> this
+        member this.FluidEmitterEvent = Events.FluidEmitterEvent --> this
 
 /// Augments an entity with the behavior of fluid emission.
 type FluidEmitter2dFacet () =
@@ -1728,6 +1731,7 @@ type FluidEmitter2dFacet () =
             Box2dNetFluidEmitterDescriptor
                 { Box2dNetFluidEmitterDescriptor.defaultDescriptor with
                     ParticlesMax = entity.GetFluidParticlesMax world
+                    MessagesEnabled = entity.GetFluidMessagesEnabled world
                     CellSize = entity.GetFluidCellSize world
                     Enabled = entity.GetFluidEnabled world
                     SimulationBounds = (entity.GetBounds world).Box2
@@ -1744,6 +1748,7 @@ type FluidEmitter2dFacet () =
 
     static member Properties =
         [define Entity.FluidEnabled true
+         define Entity.FluidMessagesEnabled true
          define Entity.FluidParticles SArray.empty
          define Entity.FluidParticlesMax 20000
          define Entity.FluidCellSize 20.0f
@@ -1755,6 +1760,7 @@ type FluidEmitter2dFacet () =
         // update fluid emitter when any of the descriptor properties is set
         for event in
             [emitter.FluidEnabled.ChangeEvent
+             emitter.FluidMessagesEnabled.ChangeEvent
              emitter.FluidParticlesMax.ChangeEvent
              emitter.FluidCellSize.ChangeEvent
              emitter.Bounds.ChangeEvent
@@ -2020,174 +2026,6 @@ type TmxMapFacet () =
         TmxMap.getAttributesInferred (entity.GetTileSizeDivisor world) tmxMap
 
 [<AutoOpen>]
-module SpineSkeletonExtensions =
-    type Entity with
-        member this.GetSpineSkeleton world : SpineSkeleton AssetTag = this.Get (nameof this.SpineSkeleton) world
-        member this.SetSpineSkeleton (value : SpineSkeleton AssetTag) world = this.Set (nameof this.SpineSkeleton) value world
-        member this.SpineSkeleton = lens (nameof this.SpineSkeleton) this this.GetSpineSkeleton this.SetSpineSkeleton
-        member this.GetSpineSkeletonStateOpt world : SpineSkeletonState option = this.Get (nameof this.SpineSkeletonStateOpt) world
-        member this.SetSpineSkeletonStateOpt (value : SpineSkeletonState option) world = this.Set (nameof this.SpineSkeletonStateOpt) value world
-        member this.SpineSkeletonStateOpt = lens (nameof this.SpineSkeletonStateOpt) this this.GetSpineSkeletonStateOpt this.SetSpineSkeletonStateOpt
-        member this.GetSpineAnimations world : SpineAnimation array = this.Get (nameof this.SpineAnimations) world
-        member this.SetSpineAnimations (value : SpineAnimation array) world = this.Set (nameof this.SpineAnimations) value world
-        member this.SpineAnimations = lens (nameof this.SpineAnimations) this this.GetSpineAnimations this.SetSpineAnimations
-        member this.GetSpineAnimationSpeed world : single = this.Get (nameof this.SpineAnimationSpeed) world
-        member this.SetSpineAnimationSpeed (value : single) world = this.Set (nameof this.SpineAnimationSpeed) value world
-        member this.SpineAnimationSpeed = lens (nameof this.SpineAnimationSpeed) this this.GetSpineAnimationSpeed this.SetSpineAnimationSpeed
-        member this.GetSpineAnimationMix world : single = this.Get (nameof this.SpineAnimationMix) world
-        member this.SetSpineAnimationMix (value : single) world = this.Set (nameof this.SpineAnimationMix) value world
-        member this.SpineAnimationMix = lens (nameof this.SpineAnimationMix) this this.GetSpineAnimationMix this.SetSpineAnimationMix
-        member this.SpineSkeletonAnimationTriggerEvent = Events.SpineSkeletonAnimationTriggerEvent --> this
-
-/// Augments an entity with Spine skeleton content.
-/// NOTE: SpineSkeleteState fields are inherently imperative and therefore currently unsupported by undo / redo.
-type SpineSkeletonFacet () =
-    inherit Facet (false, false, false)
-
-    static let getOrTryCreateSpineSkeletonState (entity : Entity) world =
-        let spineSkeleton = entity.GetSpineSkeleton world
-        match entity.GetSpineSkeletonStateOpt world with
-        | None ->
-            match Metadata.tryGetSpineSkeletonMetadata spineSkeleton with
-            | ValueSome metadata ->
-                let startTime = entity.GetStartTime world
-                let localTime = world.GameTime - startTime
-                let spineSkeletonInstance = Spine.Skeleton metadata.SpineSkeletonData
-                spineSkeletonInstance.Time <- localTime.Seconds
-                let spineAnimationStateData = Spine.AnimationStateData spineSkeletonInstance.Data
-                spineAnimationStateData.DefaultMix <- entity.GetSpineAnimationMix world
-                let spineAnimationState = Spine.AnimationState spineAnimationStateData
-                let spineAnimations = entity.GetSpineAnimations world
-                spineAnimationState.ClearTracks ()
-                let mutable i = 0
-                for spineAnimation in spineAnimations do
-                    if notNull (spineAnimationState.Data.SkeletonData.FindAnimation spineAnimation.SpineAnimationName) then
-                        spineAnimationState.SetAnimation (i, spineAnimation.SpineAnimationName, spineAnimation.SpineAnimationPlayback = Loop) |> ignore<Spine.TrackEntry>
-                        i <- inc i
-                let color = entity.GetColor world
-                spineSkeletonInstance.R <- color.R
-                spineSkeletonInstance.G <- color.G
-                spineSkeletonInstance.B <- color.B
-                spineSkeletonInstance.A <- color.A
-                let spineSkeletonState = { SpineSkeleton = spineSkeletonInstance; SpineAnimationState = spineAnimationState }
-                entity.SetSpineSkeletonStateOpt (Some spineSkeletonState) world
-                Some spineSkeletonState
-            | ValueNone -> None
-        | Some spineSkeletonState -> Some spineSkeletonState
-
-    static let handleAnimationChange evt world =
-        let entity = evt.Subscriber : Entity
-        entity.SetSpineSkeletonStateOpt None world
-        getOrTryCreateSpineSkeletonState entity world |> ignore<SpineSkeletonState option>
-        Cascade
-
-    static member Properties =
-        [define Entity.AlwaysUpdate true
-         define Entity.StartTime GameTime.zero
-         define Entity.Color Color.White
-         define Entity.Flip Unflipped
-         define Entity.SpineSkeleton Assets.Default.SpineSkeleton
-         nonPersistent Entity.SpineSkeletonStateOpt None
-         define Entity.SpineAnimations [|{ SpineAnimationName = "idle"; SpineAnimationPlayback = Loop }|]
-         define Entity.SpineAnimationSpeed 1.0f
-         define Entity.SpineAnimationMix 0.2f]
-
-    override this.Register (entity, world) =
-        World.sense handleAnimationChange entity.StartTime.ChangeEvent entity (nameof SpineSkeletonFacet) world
-        World.sense handleAnimationChange entity.SpineSkeleton.ChangeEvent entity (nameof SpineSkeletonFacet) world
-        World.sense handleAnimationChange entity.SpineAnimations.ChangeEvent entity (nameof SpineSkeletonFacet) world
-        World.sense handleAnimationChange entity.SpineAnimationMix.ChangeEvent entity (nameof SpineSkeletonFacet) world
-        entity.SetStartTime world.GameTime world
-
-    override this.Update (entity, world) =
-        if entity.GetEnabled world then
-            let gameDelta = world.GameDelta
-            match getOrTryCreateSpineSkeletonState entity world with
-            | Some spineSkeletonState ->
-                let startTrackArgs = List ()
-                let interruptTrackArgs = List ()
-                let completeTrackArgs = List ()
-                let endTrackArgs = List ()
-                let eventTrackArgs = List ()
-                let startDelegate = Spine.AnimationState.TrackEntryDelegate startTrackArgs.Add
-                let interruptDelegate = Spine.AnimationState.TrackEntryDelegate interruptTrackArgs.Add
-                let completeDelegate = Spine.AnimationState.TrackEntryDelegate completeTrackArgs.Add
-                let endDelegate = Spine.AnimationState.TrackEntryDelegate endTrackArgs.Add
-                let eventDelegate = Spine.AnimationState.TrackEntryEventDelegate (fun entry event -> eventTrackArgs.Add (entry, event))
-                spineSkeletonState.SpineAnimationState.add_Start startDelegate
-                spineSkeletonState.SpineAnimationState.add_Interrupt interruptDelegate
-                spineSkeletonState.SpineAnimationState.add_Complete completeDelegate
-                spineSkeletonState.SpineAnimationState.add_End endDelegate
-                spineSkeletonState.SpineAnimationState.add_Event eventDelegate
-                let color = entity.GetColor world
-                spineSkeletonState.SpineSkeleton.R <- color.R
-                spineSkeletonState.SpineSkeleton.G <- color.G
-                spineSkeletonState.SpineSkeleton.B <- color.B
-                spineSkeletonState.SpineSkeleton.A <- color.A
-                let struct (scaleX, scaleY) =
-                    match entity.GetFlip world with
-                    | Unflipped -> struct (1.0f, 1.0f)
-                    | Horizontal -> struct (-1.0f, 1.0f)
-                    | Vertical -> struct (1.0f, -1.0f)
-                    | Diagonal -> struct (-1.0f, -1.0f)
-                spineSkeletonState.SpineSkeleton.ScaleX <- scaleX
-                spineSkeletonState.SpineSkeleton.ScaleY <- scaleY
-                spineSkeletonState.SpineAnimationState.TimeScale <- entity.GetSpineAnimationSpeed world
-                spineSkeletonState.SpineSkeleton.Update gameDelta.SecondsF
-                spineSkeletonState.SpineAnimationState.Update gameDelta.SecondsF
-                spineSkeletonState.SpineAnimationState.Apply spineSkeletonState.SpineSkeleton |> ignore<bool>
-                spineSkeletonState.SpineSkeleton.UpdateWorldTransform Spine.Skeleton.Physics.Update
-                spineSkeletonState.SpineAnimationState.remove_Start startDelegate
-                spineSkeletonState.SpineAnimationState.remove_Interrupt interruptDelegate
-                spineSkeletonState.SpineAnimationState.remove_Complete completeDelegate
-                spineSkeletonState.SpineAnimationState.remove_End endDelegate
-                spineSkeletonState.SpineAnimationState.remove_Event eventDelegate
-                for arg in startTrackArgs do World.publishUnsorted (SpineSkeletonAnimationStartData arg) entity.SpineSkeletonAnimationTriggerEvent entity world
-                for arg in interruptTrackArgs do World.publishUnsorted (SpineSkeletonAnimationInterruptData arg) entity.SpineSkeletonAnimationTriggerEvent entity world
-                for arg in completeTrackArgs do World.publishUnsorted (SpineSkeletonAnimationCompleteData arg) entity.SpineSkeletonAnimationTriggerEvent entity world
-                for arg in endTrackArgs do World.publishUnsorted (SpineSkeletonAnimationEndData arg) entity.SpineSkeletonAnimationTriggerEvent entity world
-                for arg in eventTrackArgs do World.publishUnsorted (SpineSkeletonAnimationEventData arg) entity.SpineSkeletonAnimationTriggerEvent entity world
-            | None -> ()
-        else entity.StartTime.Map ((+) world.GameDelta) world
-
-    override this.Render (_, entity, world) =
-        let spineSkeleton = entity.GetSpineSkeleton world
-        match entity.GetSpineSkeletonStateOpt world with
-        | Some spineSkeletonState ->
-            let mutable transform = entity.GetTransform world
-            let spineSkeletonId = entity.GetId world
-            let spineSkeletonClone = Spine.Skeleton spineSkeletonState.SpineSkeleton // NOTE: this is where the bulk of this entity's allocations are coming from.
-            let renderSpineSkeleton = RenderSpineSkeleton { Transform = transform; SpineSkeletonId = spineSkeletonId; SpineSkeletonClone = spineSkeletonClone }
-            let renderOperation = LayeredOperation2d { Elevation = transform.Elevation; Horizon = transform.Horizon; AssetTag = spineSkeleton; RenderOperation2d = renderSpineSkeleton }
-            World.enqueueRenderMessage2d renderOperation world
-        | None -> ()
-
-    override this.GetAttributesInferred (entity, world) =
-        match getOrTryCreateSpineSkeletonState entity world with
-        | Some spineSkeletonState ->
-
-            // update skeleton so we can take some actual metrics
-            spineSkeletonState.SpineAnimationState.Apply spineSkeletonState.SpineSkeleton |> ignore<bool>
-            spineSkeletonState.SpineSkeleton.UpdateWorldTransform Spine.Skeleton.Physics.Update
-            let mutable (minX, minY, maxX, maxY) = (Single.MaxValue, Single.MaxValue, Single.MinValue, Single.MinValue)
-
-            // compute bounds
-            // NOTE: this uses a simplistic algorithm that merely makes a very loose approximation of the bounds since
-            // SkeletonBounds doesn't work in our test case.
-            // TODO: P1: improve the accuracy of this algorithm.
-            for slot in spineSkeletonState.SpineSkeleton.Slots do
-                if slot.Bone.Active then
-                    minX <- min minX slot.Bone.AX
-                    minY <- min minY slot.Bone.AY
-                    maxX <- max maxX slot.Bone.AX
-                    maxY <- max maxY slot.Bone.AY
-            let skeletonSize = v3 (maxX - minX) (maxY - minY) 0.0f
-            let skeletonOffset = v3 ((skeletonSize.X * 0.5f - maxX) / skeletonSize.X * 0.5f) ((skeletonSize.Y * 0.5f - maxY) / skeletonSize.Y * 0.5f) 0.0f
-            AttributesInferred.important skeletonSize skeletonOffset
-
-        | None -> base.GetAttributesInferred (entity, world)
-
-[<AutoOpen>]
 module CircleContour2dExtensions =
     type Entity with
         member this.GetFillWinding world : ContourWinding = this.Get (nameof Entity.FillWinding) world
@@ -2227,8 +2065,7 @@ type CircleContour2dFacet () =
          define Entity.FillColor Color.Black
          define Entity.FillWinding ContourWinding.NonZero
          define Entity.StrokeColor Color.White
-         define Entity.StrokeThickness 1.0f
-         ]
+         define Entity.StrokeThickness 1.0f]
 
     override this.Register (entity, world) =
         for propertyName in [nameof Entity.Size; nameof Entity.Scale; nameof Entity.StrokeThickness] do
@@ -2238,10 +2075,7 @@ type CircleContour2dFacet () =
     override this.Render (_, entity, world) =
         let fill = ContourFill.ofColorWinding (entity.GetFillColor world) (entity.GetFillWinding world)
         let stroke = ContourStroke.ofColorThickness (entity.GetStrokeColor world) (entity.GetStrokeThickness world)
-        let prepared =
-            Contour.make
-                fill stroke commands
-                (entity.GetSize world * entity.GetScale world).V2
+        let prepared = Contour.make fill stroke commands (entity.GetSize world * entity.GetScale world).V2
         World.renderContour
             { Transform = entity.GetTransform world
               ClipOpt = entity.GetClipOpt world |> Option.toValueOption
@@ -2268,8 +2102,7 @@ type RectangleContour2dFacet () =
          define Entity.FillColor Color.Black
          define Entity.FillWinding ContourWinding.NonZero
          define Entity.StrokeColor Color.White
-         define Entity.StrokeThickness 1.0f
-         ]
+         define Entity.StrokeThickness 1.0f]
 
     override this.Register (entity, world) =
         for propertyName in [nameof Entity.Size; nameof Entity.Scale; nameof Entity.StrokeThickness] do
@@ -2279,10 +2112,7 @@ type RectangleContour2dFacet () =
     override this.Render (_, entity, world) =
         let fill = ContourFill.ofColorWinding (entity.GetFillColor world) (entity.GetFillWinding world)
         let stroke = ContourStroke.ofColorThickness (entity.GetStrokeColor world) (entity.GetStrokeThickness world)
-        let prepared =
-            Contour.make
-                fill stroke recCommands
-                (entity.GetSize world * entity.GetScale world).V2
+        let prepared = Contour.make fill stroke recCommands (entity.GetSize world * entity.GetScale world).V2
         World.renderContour
             { Transform = entity.GetTransform world
               ClipOpt = entity.GetClipOpt world |> Option.toValueOption
@@ -2350,8 +2180,7 @@ type SpiralContour2dFacet () =
          define Entity.StrokeThickness 1.0f
          define Entity.Turns 5.0f
          define Entity.Spacing 0.1f
-         define Entity.PointsPerTurn 50.0f
-         ]
+         define Entity.PointsPerTurn 50.0f]
 
     override this.Register (entity, world) =
         for propertyName in
@@ -2366,7 +2195,9 @@ type SpiralContour2dFacet () =
         let stroke = ContourStroke.ofColorThickness (entity.GetStrokeColor world) (entity.GetStrokeThickness world)
         let prepared =
             Contour.make
-                fill stroke (computeSpiralCommands (entity.GetTurns world) (entity.GetSpacing world) (entity.GetPointsPerTurn world))
+                fill
+                stroke
+                (computeSpiralCommands (entity.GetTurns world) (entity.GetSpacing world) (entity.GetPointsPerTurn world))
                 (entity.GetSize world * entity.GetScale world).V2
         World.renderContour
             { Transform = entity.GetTransform world
@@ -2458,8 +2289,7 @@ type WedgeContour2dFacet () =
          define Entity.StrokeColor Color.White
          define Entity.StrokeThickness 1.0f
          define Entity.AngleBegin 0.0f
-         define Entity.AngleEnd MathF.PI
-         ]
+         define Entity.AngleEnd MathF.PI]
 
     override this.Register (entity, world) =
         for propertyName in [nameof Entity.Size; nameof Entity.Scale; nameof Entity.StrokeThickness] do
@@ -2471,7 +2301,9 @@ type WedgeContour2dFacet () =
         let stroke = ContourStroke.ofColorThickness (entity.GetStrokeColor world) (entity.GetStrokeThickness world)
         let prepared =
             Contour.make
-                fill stroke (computeWedgeCommands (entity.GetAngleBegin world) (entity.GetAngleEnd world) 0.5f)
+                fill
+                stroke
+                (computeWedgeCommands (entity.GetAngleBegin world) (entity.GetAngleEnd world) 0.5f)
                 (entity.GetSize world * entity.GetScale world).V2
         World.renderContour
             { Transform = entity.GetTransform world
@@ -2531,8 +2363,7 @@ type RectangleRoundedContour2dFacet () =
          define Entity.FillWinding ContourWinding.NonZero
          define Entity.StrokeColor Color.White
          define Entity.StrokeThickness 1.0f
-         define Entity.CornerRadius 4.0f
-         ]
+         define Entity.CornerRadius 4.0f]
 
     override this.Register (entity, world) =
         for propertyName in [nameof Entity.Size; nameof Entity.Scale; nameof Entity.CornerRadius; nameof Entity.StrokeThickness] do
@@ -2543,10 +2374,7 @@ type RectangleRoundedContour2dFacet () =
         let size = (entity.GetSize world * entity.GetScale world).V2
         let fill = ContourFill.ofColorWinding (entity.GetFillColor world) (entity.GetFillWinding world)
         let stroke = ContourStroke.ofColorThickness (entity.GetStrokeColor world) (entity.GetStrokeThickness world)
-        let prepared =
-            Contour.make
-                fill stroke (computeRoundedRectCommands (entity.GetCornerRadius world) size)
-                size
+        let prepared = Contour.make fill stroke (computeRoundedRectCommands (entity.GetCornerRadius world) size) size
         World.renderContour
             { Transform = entity.GetTransform world
               ClipOpt = entity.GetClipOpt world |> Option.toValueOption
@@ -2721,7 +2549,7 @@ type LayoutFacet () =
                         then child.GetLayoutOrder world
                         else 0
                     let order = child.GetOrder world
-                    (layoutOrder, order, child))
+                    (layoutOrder :> IComparable, order :> IComparable, child)) // OPTIMIZATION: boxing here to avoid it downstream.
                 |> Array.sortBy ab_
                 |> Array.map __c
             let perimeter = (entity.GetPerimeter world).Box2 // gui currently ignores rotation
@@ -2847,6 +2675,9 @@ type SkyBoxFacet () =
 module LightProbe3dFacetExtensions =
     type Entity with
 
+        member this.GetExcludeGlobalLights world : bool = this.Get (nameof this.ExcludeGlobalLights) world
+        member this.SetExcludeGlobalLights (value : bool) world = this.Set (nameof this.ExcludeGlobalLights) value world
+        member this.ExcludeGlobalLights = lens (nameof this.ExcludeGlobalLights) this this.GetExcludeGlobalLights this.SetExcludeGlobalLights
         member this.GetProbeBounds world : Box3 = this.Get (nameof this.ProbeBounds) world
         member this.SetProbeBounds (value : Box3) world = this.Set (nameof this.ProbeBounds) value world
         member this.ProbeBounds = lens (nameof this.ProbeBounds) this this.GetProbeBounds this.SetProbeBounds
@@ -2889,6 +2720,7 @@ type LightProbe3dFacet () =
          define Entity.Static true
          define Entity.AmbientColor Color.White
          define Entity.AmbientBrightness 0.5f
+         define Entity.ExcludeGlobalLights false
          define Entity.ProbeBounds (box3 (v3Dup Constants.Render.LightProbeSizeDefault * -0.5f) (v3Dup Constants.Render.LightProbeSizeDefault))
          nonPersistent Entity.ProbeStale false]
 
@@ -2994,8 +2826,9 @@ module Light3dFacetExtensions =
             let shadowProjection = this.ComputeShadowProjection world
             Frustum (shadowView * shadowProjection)
 
+/// 3D light operations.
 [<RequireQualifiedAccess>]
-module Light3dFacetModule =
+module Light3dModule =
 
     /// Compute the origin for a directional light's shadow map, snapping it to texel-sized increments and offsetting
     /// it by its forward offset scalar.
@@ -3083,8 +2916,8 @@ type Light3dFacet () =
         let origin =
             match lightType with
             | PointLight | SpotLight (_, _) -> entity.GetPosition world
-            | DirectionalLight offsetForwardScalar -> Light3dFacetModule.getDirectionalLightOrigin rotation lightCutoff offsetForwardScalar world
-            | CascadedLight -> Light3dFacetModule.getCascadedLightOrigin rotation lightCutoff world
+            | DirectionalLight offsetForwardScalar -> Light3dModule.getDirectionalLightOrigin rotation lightCutoff offsetForwardScalar world
+            | CascadedLight -> Light3dModule.getCascadedLightOrigin rotation lightCutoff world
         let direction = rotation.Down
         let color = entity.GetColor world
         let brightness = entity.GetBrightness world
@@ -3839,7 +3672,7 @@ type AnimatedModelFacet () =
                 let playBox = fst' (World.getPlayBounds3d world)
                 let outsidePlayBounds = entity.GetPresence world <> Omnipresent && not (entity.GetAlwaysUpdate world) && not (playBox.Intersects (evt.Subscriber.GetBounds world))
                 let disabled = not (entity.GetEnabled world)
-                let notUpdating = world.Halted || outsidePlayBounds || disabled
+                let notUpdating = world.TimeHalted || outsidePlayBounds || disabled
                 if notUpdating then evt.Subscriber.AnimateBones world
                 Cascade)
             (entity.ChangeEvent (nameof entity.Animations)) entity (nameof AnimatedModelFacet) world
@@ -4321,7 +4154,7 @@ type TraversalInterpolatedFacet () =
 
         // ensure position history isn't stale when editing
         match op with
-        | ViewportOverlay _ when world.Halted ->
+        | ViewportOverlay _ when world.TimeHalted ->
             let position = entity.GetPosition world
             let positionHistory = FQueue.singleton (world.GameTime, position)
             entity.SetPositionHistory positionHistory world

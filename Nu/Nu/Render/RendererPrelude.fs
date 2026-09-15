@@ -42,7 +42,7 @@ type Justification =
     | Unjustified of Wrapped : bool
     | Justified of Horizontal : JustificationHorizontal * Vertical : JustificationVertical
 
-/// A mutable particle type.
+/// A mutable particle value.
 type [<Struct>] Particle =
     { mutable Transform : Transform
       mutable InsetOpt : Box2 ValueOption
@@ -78,15 +78,29 @@ type [<CustomEquality; NoComparison>] RenderPass =
             | (_, _) -> false
         else false
 
-    static member private equals this that =
-        refEq this that ||
-        match this with
+    /// Hash a render pass.
+    /// OPTIMIZATION: we hash only certain parts of the render pass in order to make hashing cheaper.
+    static member hash renderPass =
+        match renderPass with
+        | LightMapPass (id, _) -> hash id
+        | ShadowPass (id, indexInfoOpt, _, dynamicShadows, _, _) ->
+            1 ^^^
+            hash id ^^^
+            (match indexInfoOpt with Some (index, _, _) -> hash index | None -> 0) ^^^
+            hash dynamicShadows
+        | ReflectionPass (id, _) -> 2 ^^^ hash id
+        | NormalPass -> 3
+
+    /// Check that render passes are equal.
+    static member equals left right =
+        refEq left right ||
+        match left with
         | LightMapPass (id, bounds) ->
-            match that with
+            match right with
             | LightMapPass (id2, bounds2) -> id = id2 && bounds = bounds2
             | _ -> false
         | ShadowPass (id, indexInfoOpt, lightType, dynamicShadows, rotation, frustum) ->
-            match that with
+            match right with
             | ShadowPass (id2, indexInfoOpt2, lightType2, dynamicShadows2, rotation2, frustum2) ->
                 id = id2 &&
                 (match indexInfoOpt with
@@ -101,23 +115,13 @@ type [<CustomEquality; NoComparison>] RenderPass =
                 frustum = frustum2
             | _ -> false
         | ReflectionPass (id, frustum) ->
-            match that with
+            match right with
             | ReflectionPass (id2, frustum2) -> id = id2 && frustum = frustum2
             | _ -> false
-        | NormalPass -> that.IsNormalPass
+        | NormalPass -> right.IsNormalPass
 
     override this.GetHashCode () =
-
-        // OPTIMIZATION: we hash only certain parts of the render pass in order to make hashing cheaper.
-        match this with
-        | LightMapPass (id, _) -> hash id
-        | ShadowPass (id, indexInfoOpt, _, dynamicShadows, _, _) ->
-            1 ^^^
-            hash id ^^^
-            (match indexInfoOpt with Some (index, _, _) -> hash index | None -> 0) ^^^
-            hash dynamicShadows
-        | ReflectionPass (id, _) -> 2 ^^^ hash id
-        | NormalPass -> 3
+        RenderPass.hash this
 
     override this.Equals that =
         match that with

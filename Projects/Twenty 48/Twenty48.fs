@@ -40,13 +40,7 @@ type Twenty48Dispatcher () =
 
     // here we define the game's properties and event handling
     override this.Definitions (twenty48, _) =
-        [Game.DesiredScreen :=
-            match twenty48 with
-            | Splash -> Desire Simulants.Splash
-            | Title -> Desire Simulants.Title
-            | Credits -> Desire Simulants.Credits
-            | Gameplay -> Desire Simulants.Gameplay
-         if twenty48 = Splash then Simulants.Splash.DeselectingEvent => ShowTitle
+        [if twenty48.IsSplash then Simulants.Splash.DeselectingEvent => ShowTitle
          Simulants.TitleCredits.ClickEvent => ShowCredits
          Simulants.TitlePlay.ClickEvent => ShowGameplay
          Simulants.TitleExit.ClickEvent => Exit
@@ -67,8 +61,8 @@ type Twenty48Dispatcher () =
         | Exit -> if world.Unaccompanied then World.exit world
 
     // here we describe the content of the game, including all of its screens
-    override this.Content (_, _) =
-        [Content.screen Simulants.Splash.Name (Slide (Constants.Dissolve.Default, Constants.Slide.Default, None, Simulants.Title)) [] []
-         Content.screenWithGroupFromFile Simulants.Title.Name (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Title.nugroup" [] []
-         Content.screenWithGroupFromFile Simulants.Credits.Name (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Credits.nugroup" [] []
-         Content.screen<GameplayDispatcher> Simulants.Gameplay.Name (Dissolve (Constants.Dissolve.Default, None)) [] []]
+    override this.Content (twenty48, _) =
+        [Content.screen Simulants.Splash.Name twenty48.IsSplash (Slide (Constants.Dissolve.Default, Constants.Slide.Default, None, Simulants.Title)) [] []
+         Content.screenWithGroupFromFile Simulants.Title.Name twenty48.IsTitle (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Title.nugroup" [] []
+         Content.screenWithGroupFromFile Simulants.Credits.Name twenty48.IsCredits (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Credits.nugroup" [] []
+         Content.screen<GameplayDispatcher> Simulants.Gameplay.Name twenty48.IsGameplay (Dissolve (Constants.Dissolve.Default, None)) [] []]

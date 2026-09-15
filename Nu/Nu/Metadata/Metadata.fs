@@ -21,18 +21,12 @@ type TileMapMetadata =
     { TileMapImageAssets : struct (TmxTileset * Image AssetTag) array
       TileMap : TmxMap }
 
-/// Metadata of a Spine skeleton.
-type SpineSkeletonMetadata =
-    { SpineSkeletonData : Spine.SkeletonData
-      SpineAtlas : Spine.Atlas }
-
 /// Metadata for an asset. Useful to describe various attributes of an asset without having the full asset loaded into
 /// memory.
 type Metadata =
     | RawMetadata
     | TextureMetadata of TextureMetadata
     | TileMapMetadata of TileMapMetadata
-    | SpineSkeletonMetadata of SpineSkeletonMetadata
     | StaticModelMetadata of PhysicallyBasedModel
     | AnimatedModelMetadata of PhysicallyBasedModel
     | SoundMetadata
@@ -115,43 +109,6 @@ module Metadata =
             None
 
     /// Thread-safe.
-    let private tryGenerateSpineSkeletonMetadata (asset : Asset) =
-        try let directoryPath = PathF.GetDirectoryName asset.FilePath
-            let fileName = PathF.GetFileNameWithoutExtension asset.FilePath
-            let fileExtension = PathF.GetExtensionLower asset.FilePath
-            let getTexture filePath =
-                match tryGenerateTextureMetadataFromFilePath filePath with
-                | Some metadata ->
-                    let assetTag = AssetTag.make<Image> asset.AssetTag.PackageName (PathF.GetFileNameWithoutExtension filePath)
-                    (metadata.TextureWidth, metadata.TextureHeight, assetTag :> obj)
-                | None ->
-                    let assetTag = AssetTag.make<Image> Assets.Default.PackageName Assets.Default.ImageName
-                    (32, 32, assetTag :> obj) // TODO: P1: turn the resolution into constants?
-            let spineAtlasFilePath = PathF.Combine (directoryPath, fileName + ".atlas")
-            let spineAtlasFilePath = if not (File.Exists spineAtlasFilePath) then spineAtlasFilePath.Replace (fileName, fileName.Replace ("-ess", "")) else spineAtlasFilePath
-            let spineAtlasFilePath = if not (File.Exists spineAtlasFilePath) then spineAtlasFilePath.Replace (fileName, fileName.Replace ("-pro", "")) else spineAtlasFilePath
-            let spineAtlasFilePath = if not (File.Exists spineAtlasFilePath) then spineAtlasFilePath.Replace (fileName, fileName.Replace ("-ent", "")) else spineAtlasFilePath
-            let spineAtlasFilePath = if not (File.Exists spineAtlasFilePath) then spineAtlasFilePath.Replace (fileName, fileName.Replace ("-edu", "")) else spineAtlasFilePath
-            let spineTextureRetriever = Spine.TextureRetriever getTexture
-            try let spineAtlas = Spine.Atlas (spineAtlasFilePath, spineTextureRetriever)
-                if fileExtension = ".skel" then
-                    let spineSkeletonBin = Spine.SkeletonBinary spineAtlas
-                    let spineSkeletonData = spineSkeletonBin.ReadSkeletonData asset.FilePath
-                    Some (SpineSkeletonMetadata { SpineSkeletonData = spineSkeletonData; SpineAtlas = spineAtlas })
-                else
-                    let spineSkeletonJson = Spine.SkeletonJson spineAtlas
-                    let spineSkeletonData = spineSkeletonJson.ReadSkeletonData asset.FilePath
-                    Some (SpineSkeletonMetadata { SpineSkeletonData = spineSkeletonData; SpineAtlas = spineAtlas })
-            with exn ->
-                let errorMessage = "Failed to load Spine skeleton data '" + asset.FilePath + "' due to: " + scstring exn
-                Log.error errorMessage
-                None
-        with exn ->
-            let errorMessage = "Failed to load Spine skeleton data '" + asset.FilePath + "' due to: " + scstring exn
-            Log.error errorMessage
-            None
-
-    /// Thread-safe.
     let private tryGenerateModelMetadata (asset : Asset) =
         if File.Exists asset.FilePath then
             let textureClient = TextureClient None // unused. TODO: consider making this opt.
@@ -177,7 +134,6 @@ module Metadata =
         | RawExtension _ -> tryGenerateRawMetadata asset
         | ImageExtension _ -> tryGenerateTextureMetadata asset
         | TileMapExtension _ -> tryGenerateTileMapMetadata asset
-        | SpineSkeletonExtension _ -> tryGenerateSpineSkeletonMetadata asset
         | ModelExtension _ -> tryGenerateModelMetadata asset
         | SoundExtension _ -> Some SoundMetadata
         | SongExtension _ -> Some SongMetadata
@@ -400,25 +356,6 @@ module Metadata =
     /// Thread-safe.
     let getTileMapMetadata tileMap =
         ValueOption.get (tryGetTileMapMetadata tileMap)
-
-    /// Attempt to get the metadata of the given Spine skeleton.
-    /// Thread-safe.
-    let tryGetSpineSkeletonMetadata (spineSkeleton : SpineSkeleton AssetTag) =
-        match tryGetMetadata spineSkeleton with
-        | ValueSome (SpineSkeletonMetadata spineSkeletonMetadata) -> ValueSome spineSkeletonMetadata
-        | ValueSome _->
-            Log.warn
-                ("This failure to locate Spine skeleton metadata may mean that you used the same asset name (file " +
-                 "name without extension) for a Spine skeleton as you did for one of its image files. Make sure that " +
-                 "your Spine skeleton .json or .skel file has a name that is different than any of its image files, " +
-                 "such as suffixing its file name with -ess or -pro.")
-            ValueNone
-        | ValueNone -> ValueNone
-
-    /// Forcibly get the metadata of the given Spine skeleton (throwing on failure).
-    /// Thread-safe.
-    let getSpineSkeletonMetadata spineSkeleton =
-        ValueOption.get (tryGetSpineSkeletonMetadata spineSkeleton)
 
     /// Thread-safe.
     let private tryGetModelMetadata model =

@@ -40,13 +40,7 @@ type BlazeVectorDispatcher () =
 
     // here we define the game's properties and event handling
     override this.Definitions (blazeVector, _) =
-        [Game.DesiredScreen :=
-            match blazeVector with
-            | Splash -> Desire Simulants.Splash
-            | Title -> Desire Simulants.Title
-            | Credits -> Desire Simulants.Credits
-            | Gameplay -> Desire Simulants.Gameplay
-         if blazeVector = Splash then Simulants.Splash.DeselectingEvent => ShowTitle
+        [if blazeVector.IsSplash then Simulants.Splash.DeselectingEvent => ShowTitle
          Simulants.TitleCredits.ClickEvent => ShowCredits
          Simulants.TitlePlay.ClickEvent => ShowGameplay
          Simulants.TitleExit.ClickEvent => Exit
@@ -67,11 +61,11 @@ type BlazeVectorDispatcher () =
         | Exit -> if world.Unaccompanied then World.exit world
 
     // here we describe the content of the game, including all of its screens
-    override this.Content (_, _) =
-        [Content.screen Simulants.Splash.Name (Slide (Constants.Dissolve.Default, Constants.Slide.Default, None, Simulants.Title)) [] []
-         Content.screenWithGroupFromFile Simulants.Title.Name (Dissolve (Constants.Dissolve.Default, Some Assets.Gui.MachinerySong)) Assets.Gui.TitleGroupFilePath [] []
-         Content.screenWithGroupFromFile Simulants.Credits.Name (Dissolve (Constants.Dissolve.Default, Some Assets.Gui.MachinerySong)) Assets.Gui.CreditsGroupFilePath [] []
-         Content.screen<GameplayDispatcher> Simulants.Gameplay.Name (Dissolve (Constants.Dissolve.Default, Some Assets.Gameplay.DeadBlazeSong)) [] []]
+    override this.Content (blazeVector, _) =
+        [Content.screen Simulants.Splash.Name blazeVector.IsSplash (Slide (Constants.Dissolve.Default, Constants.Slide.Default, None, Simulants.Title)) [] []
+         Content.screenWithGroupFromFile Simulants.Title.Name blazeVector.IsTitle (Dissolve (Constants.Dissolve.Default, Some Assets.Gui.MachinerySong)) Assets.Gui.TitleGroupFilePath [] []
+         Content.screenWithGroupFromFile Simulants.Credits.Name blazeVector.IsCredits (Dissolve (Constants.Dissolve.Default, Some Assets.Gui.MachinerySong)) Assets.Gui.CreditsGroupFilePath [] []
+         Content.screen<GameplayDispatcher> Simulants.Gameplay.Name blazeVector.IsGameplay (Dissolve (Constants.Dissolve.Default, Some Assets.Gameplay.DeadBlazeSong)) [] []]
 
     // this is just a quick hack to exit the game upon hitting Alt+F4. generally, you'd want to define an MMCC mapping
     // from a Game.UpdateEvent to a command to handle it, but that's not the point of this little code demo.

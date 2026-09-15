@@ -1,7 +1,7 @@
 #version 450 core
 
 const float PI = 3.141592654;
-const uint SAMPLE_COUNT = 1024u;
+const uint SAMPLE_COUNT = 512u; // NOTE: this was decreased from 1024u to prevent GPU timeouts on modern iOS devices.
 
 struct EnvironmentFilterStruct
 {
@@ -11,11 +11,11 @@ struct EnvironmentFilterStruct
 
 layout(set = 0, binding = 1) uniform EnvironmentFilterUniform { EnvironmentFilterStruct environmentFilter; };
 
-layout(set = 1, binding = 0) uniform textureCube cubeMap;
+layout(set = 1, binding = 0) uniform textureCube inputCubeMap;
 
-layout(set = 2, binding = 0) uniform sampler samp;
+layout(set = 2, binding = 0) uniform sampler inputSampler;
 
-layout(location = 0) in vec3 positionOut;
+layout(location = 0) in vec3 position;
 
 layout(location = 0) out vec4 frag;
 
@@ -79,7 +79,7 @@ void main()
     // compute normal
     float roughness = environmentFilter.roughness;
     float resolution = environmentFilter.resolution;
-    vec3 normal = normalize(positionOut);
+    vec3 normal = normalize(position);
 
     // make the simplifying assumption that v equals r equals the normal
     vec3 r = normal;
@@ -107,7 +107,7 @@ void main()
             float saTexel = 4.0 * PI / (6.0 * resolution * resolution);
             float saSample = 1.0 / (float(SAMPLE_COUNT) * pdf + 0.0001);
             float mipLevel = roughness == 0.0 ? 0.0 : 0.5 * log2(saSample / saTexel);
-            vec3 sampleColor = textureLod(samplerCube(cubeMap, samp), l, mipLevel).rgb;
+            vec3 sampleColor = textureLod(samplerCube(inputCubeMap, inputSampler), l, mipLevel).rgb;
             if (!any(isnan(sampleColor))) // TODO: understand why NaN can come from this sample and try to apply a more appropriate fix.
             {
                 filterColor += sampleColor * nDotL;

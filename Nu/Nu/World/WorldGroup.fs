@@ -42,7 +42,7 @@ module WorldGroupModule =
         member this.PreUpdateEvent = Events.PreUpdateEvent --> this
         member this.UpdateEvent = Events.UpdateEvent --> this
         member this.PostUpdateEvent = Events.PostUpdateEvent --> this
-        member this.TimeUpdateEvent = Events.TimeUpdateEvent --> this
+        member this.TimeAdvanceEvent = Events.TimeAdvanceEvent --> this
 
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world =

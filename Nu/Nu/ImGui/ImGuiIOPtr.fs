@@ -8,6 +8,7 @@ namespace ImGuiNET
 open System
 open ImGuizmoNET
 
+/// ImGui IOPtr operations.
 [<AutoOpen>]
 module ImGuiIOPtr =
 
@@ -20,6 +21,7 @@ module ImGuiIOPtr =
         WantCaptureMouseLocal <- false
         WantCaptureKeyboardLocal <- false
 
+    /// ImGui IOPtr operations.
     type ImGuiIOPtr with
 
         member this.WantCaptureMouseLocal = WantCaptureMouseLocal

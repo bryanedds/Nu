@@ -13,14 +13,8 @@
 		<Tailcalls>False</Tailcalls>
 		<WarningLevel>5</WarningLevel>
 		<WarningsAsErrors>FS0026;FS0049;FS3239;$(WarningsAsErrors)</WarningsAsErrors>
-		<DisableImplicitFSharpCoreReference>True</DisableImplicitFSharpCoreReference> <!-- Do not conflict with core Nu project. -->
+		<DisableImplicitFSharpCoreReference>True</DisableImplicitFSharpCoreReference> <!-- avoids conflict with Nu.fsproj -->
 	</PropertyGroup>
-
-	<Target Name="OverridePublishDir" AfterTargets="AssignTargetPaths">
-		<PropertyGroup>
-			<PublishDir>$(OutputPath)</PublishDir>
-		</PropertyGroup>
-	</Target>
 
     <ItemGroup>
         <None Include="Assets\*" />
@@ -44,7 +38,6 @@
 	<ItemGroup>
 		<ProjectReference Include="..\Nu\Nu.fsproj" />
 		<ProjectReference Include="..\Nu.Math\Nu.Math.csproj" />
-		<ProjectReference Include="..\Nu.Spine\Nu.Spine.csproj" />
 	</ItemGroup>
 
 </Project>

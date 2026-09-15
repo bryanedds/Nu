@@ -9,7 +9,7 @@ open Twenty48
 type GameplayMessage =
     | StartPlaying
     | FinishQuitting
-    | TimeUpdate
+    | AdvanceTime
     | TryShift of Direction
     | Nil
     interface Message
@@ -42,7 +42,7 @@ type GameplayDispatcher () =
     override this.Definitions (_, _) =
         [Screen.SelectEvent => StartPlaying
          Screen.DeselectingEvent => FinishQuitting
-         Screen.TimeUpdateEvent => TimeUpdate
+         Screen.TimeAdvanceEvent => AdvanceTime
          Game.KeyboardKeyDownEvent =|> fun evt ->
             if not evt.Data.Repeated then
                 match evt.Data.KeyboardKey with
@@ -63,11 +63,11 @@ type GameplayDispatcher () =
         | FinishQuitting ->
             just Gameplay.empty
 
-        | TimeUpdate ->
+        | AdvanceTime ->
             just { gameplay with GameplayTime = inc gameplay.GameplayTime }
 
         | TryShift direction ->
-            if world.Advancing && gameplay.GameplayState = Playing false then
+            if world.TimeAdvancing && gameplay.GameplayState = Playing false then
                 let gameplay = Gameplay.shift direction gameplay
                 just gameplay
             else just gameplay

@@ -12,7 +12,7 @@ layout(set = 0, binding = 1) uniform texture2D inputTexture;
 
 layout(set = 1, binding = 0) uniform sampler inputSampler;
 
-layout(location = 0) in vec2 texCoordsOut;
+layout(location = 0) in vec2 texCoords;
 
 layout(location = 0) out vec4 frag;
 
@@ -27,11 +27,11 @@ void main()
 
     // compute luminosity values
     vec3 lum = vec3(0.299, 0.587, 0.114);
-    float lumTL = dot(lum, texture(sampler2D(inputTexture, inputSampler), vec2(-1.0, -1.0) * texelSize + texCoordsOut.xy).xyz);
-    float lumTR = dot(lum, texture(sampler2D(inputTexture, inputSampler), vec2(+1.0, -1.0) * texelSize + texCoordsOut.xy).xyz);
-    float lumBL = dot(lum, texture(sampler2D(inputTexture, inputSampler), vec2(-1.0, +1.0) * texelSize + texCoordsOut.xy).xyz);
-    float lumBR = dot(lum, texture(sampler2D(inputTexture, inputSampler), vec2(+1.0, +1.0) * texelSize + texCoordsOut.xy).xyz);
-    float lumCC = dot(lum, texture(sampler2D(inputTexture, inputSampler), texCoordsOut.xy).xyz);
+    float lumTL = dot(lum, texture(sampler2D(inputTexture, inputSampler), vec2(-1.0, -1.0) * texelSize + texCoords.xy).xyz);
+    float lumTR = dot(lum, texture(sampler2D(inputTexture, inputSampler), vec2(+1.0, -1.0) * texelSize + texCoords.xy).xyz);
+    float lumBL = dot(lum, texture(sampler2D(inputTexture, inputSampler), vec2(-1.0, +1.0) * texelSize + texCoords.xy).xyz);
+    float lumBR = dot(lum, texture(sampler2D(inputTexture, inputSampler), vec2(+1.0, +1.0) * texelSize + texCoords.xy).xyz);
+    float lumCC = dot(lum, texture(sampler2D(inputTexture, inputSampler), texCoords.xy).xyz);
 
     // compute blur direction
     vec2 dir;
@@ -43,13 +43,13 @@ void main()
 
     // sample the texture in two locations along the computed direction to create an initial blurred color
     vec3 result1 = 0.5 * (
-        texture(sampler2D(inputTexture, inputSampler), dir * vec2(1.0 / 3.0 - 0.5) + texCoordsOut.xy).xyz +
-        texture(sampler2D(inputTexture, inputSampler), dir * vec2(2.0 / 3.0 - 0.5) + texCoordsOut.xy).xyz);
+        texture(sampler2D(inputTexture, inputSampler), dir * vec2(1.0 / 3.0 - 0.5) + texCoords.xy).xyz +
+        texture(sampler2D(inputTexture, inputSampler), dir * vec2(2.0 / 3.0 - 0.5) + texCoords.xy).xyz);
 
     // sample the texture at additional points and blend them with the initial blur to refine the result
     vec3 result2 = result1 * 0.5 + 0.25 * (
-        texture(sampler2D(inputTexture, inputSampler), dir * vec2(0.0 / 3.0 - 0.5) + texCoordsOut.xy).xyz +
-        texture(sampler2D(inputTexture, inputSampler), dir * vec2(3.0 / 3.0 - 0.5) + texCoordsOut.xy).xyz);
+        texture(sampler2D(inputTexture, inputSampler), dir * vec2(0.0 / 3.0 - 0.5) + texCoords.xy).xyz +
+        texture(sampler2D(inputTexture, inputSampler), dir * vec2(3.0 / 3.0 - 0.5) + texCoords.xy).xyz);
 
     // compute the minimum and maximum luminosity of the surrounding texels to use for edge detection
     float lumMin = min(lumCC, min(min(lumTL, lumTR), min(lumBL, lumBR)));

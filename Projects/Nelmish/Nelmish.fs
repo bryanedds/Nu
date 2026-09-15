@@ -37,7 +37,7 @@ type NelmishDispatcher () =
     // here we describe the content of the game including its one screen, one group, three button entities, and one
     // text control
     override this.Content (model, _) =
-        [Content.screen "Screen" Vanilla []
+        [Content.screen "Screen" true Vanilla []
             [Content.group "Group" []
                 [Content.button "Decrement"
                     [Entity.Position == v3 -88.0f 64.0f 0.0f

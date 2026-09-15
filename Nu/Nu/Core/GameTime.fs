@@ -25,7 +25,10 @@ open Nu
 [<RequireQualifiedAccess>]
 module GameTime =
 
+    /// The desired frame rate.
     let [<Uniform>] mutable DesiredFrameRate = match ConfigurationManager.AppSettings["DesiredFrameRate"] with null -> StaticFrameRate 60L | desiredFrameRate -> scvalue<FrameRate> desiredFrameRate
+
+    /// The desired frame time slop.
     let [<Literal>] DesiredFrameTimeSlop = 0.0001
 
 namespace Nu

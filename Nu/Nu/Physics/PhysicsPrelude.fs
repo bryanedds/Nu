@@ -357,7 +357,7 @@ type BodyType =
     /// Movable vehicle body that responds to forces and collisions and can be driven by vehicle-specific constraints.
     | Vehicle
 
-    // Check that this body type is some sort of character.
+    /// Check that this body type is some sort of character.
     member this.IsCharacter =
         match this with
         | Static | Kinematic | Dynamic | Vehicle -> false
@@ -649,6 +649,7 @@ type [<SymbolicExpansion>] FluidParticleConfig =
 /// Describes a particle-based 2d fluid emitter for Box2D.NET.
 type Box2dNetFluidEmitterDescriptor =
     { Enabled : bool
+      MessagesEnabled : bool
       ParticlesMax : int
       CellSize : single
       Configs : Map<string, FluidParticleConfig>
@@ -657,6 +658,7 @@ type Box2dNetFluidEmitterDescriptor =
 
     static member val defaultDescriptor =
         { Enabled = true
+          MessagesEnabled = true
           ParticlesMax = 20000
           CellSize = 10.0f
           Configs =

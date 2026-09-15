@@ -150,10 +150,6 @@ module WorldImSim =
             World.monitor (fun event world -> mapResult (FQueue.conj $ BodySeparationImplicitData event.Data) world; Cascade) entity.BodySeparationImplicitEvent entity world
             World.monitor (fun event world -> mapResult (FQueue.conj $ BodyTransformData event.Data) world; Cascade) entity.BodyTransformEvent entity world
 
-        /// TODO: document this!
-        static member initSpineSkeletonAnimationResult mapResult (entity : Entity) world =
-            World.monitor (fun event world -> mapResult (FQueue.conj $ event.Data) world; Cascade) entity.SpineSkeletonAnimationTriggerEvent entity world
-
         /// Clear the current ImSim context.
         static member scopeWorld world =
             World.setContext Address.empty world
@@ -679,13 +675,6 @@ module WorldImSim =
             let results = World.doEntityPlus<TmxMapDispatcher, _> FQueue.empty World.initBodyResult name args world
             (world.DeclaredEntity.GetBodyId world, results)
 
-        /// <summary>
-        /// ImSim declare a tile map with the given arguments.
-        /// See <see cref="SpineSkeletonDispatcher" />.
-        /// </summary>
-        static member doSpineSkeleton name args world =
-            World.doEntityPlus<SpineSkeletonDispatcher, _> FQueue.empty World.initSpineSkeletonAnimationResult name args world
-            
         /// <summary>
         /// ImSim declare a 2d circle contour with the given arguments.
         /// See <see cref="CircleContour2dDispatcher" />.

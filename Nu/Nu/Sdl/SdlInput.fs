@@ -68,21 +68,13 @@ type GamepadAxis =
         | "TriggerRight" -> TriggerRight
         | _ -> failwithumf ()
 
-/// Describes a gamepad direction.
-type GamepadDirection =
-    | DirectionUp
-    | DirectionUpLeft
-    | DirectionLeft
-    | DirectionDownLeft
-    | DirectionDown
-    | DirectionDownRight
-    | DirectionRight
-    | DirectionUpRight
-    | DirectionCentered
-
 /// Describes a gamepad button.
 // TODO: The actual button and the button name should be decoupled! See https://wiki.libsdl.org/SDL3/SDL_GamepadButton#remarks
 type GamepadButton =
+    | ButtonUp
+    | ButtonLeft
+    | ButtonDown
+    | ButtonRight
     | ButtonA
     | ButtonB
     | ButtonX
@@ -285,22 +277,21 @@ module internal KeyboardState =
         SDL3.SDL_GetModState () &&& SDL_Keymod.SDL_KMOD_NUM <> SDL_Keymod.SDL_KMOD_NONE
 
 /// Exposes the ongoing state of gamepads.
-[<RequireQualifiedAccess>]        
+[<RequireQualifiedAccess>]
 module GamepadState =
 
-    let mutable private Joysticks = [||]
+    let mutable private Gamepads : SDL_Gamepad nativeptr array = [||]
 
     /// Initialize gamepad state.
     let internal init () =
-        use joysticks = SDL3.SDL_GetJoysticks ()
-        // NOTE: we don't have a matching call to SDL3.SDL_CloseJoystick, but it may not be necessary
-        Joysticks <- Array.init joysticks.Count (fun i -> SDL3.SDL_OpenJoystick joysticks[i])
+        use joystickIds = SDL3.SDL_GetGamepads ()
+        Gamepads <- Array.init joystickIds.Count (fun i -> SDL3.SDL_OpenGamepad joystickIds[i])
 
-    /// Get the number of open gamepad.
+    /// Get the number of open gamepads.
     let internal getGamepadCount () =
-        Array.length Joysticks
+        Array.length Gamepads
 
-    /// Convert an SDL joystick axis to a GamepadAxis.
+    /// Convert an SDL gamepad axis to a GamepadAxis.
     let internal toNuAxis axis =
         match axis with
         | SDL_GamepadAxis.SDL_GAMEPAD_AXIS_LEFTX -> StickLeftX
@@ -309,7 +300,7 @@ module GamepadState =
         | SDL_GamepadAxis.SDL_GAMEPAD_AXIS_RIGHTY -> StickRightY
         | SDL_GamepadAxis.SDL_GAMEPAD_AXIS_LEFT_TRIGGER -> TriggerLeft
         | SDL_GamepadAxis.SDL_GAMEPAD_AXIS_RIGHT_TRIGGER -> TriggerRight
-        | _ -> failwith "Invalid SDL joystick axis."
+        | _ -> failwith "Invalid SDL gamepad axis."
 
     /// Convert a GamepadAxis to SDL's representation.
     let internal toSdlAxis axis =
@@ -324,6 +315,10 @@ module GamepadState =
     /// Convert a GamepadButton to SDL's representation.
     let internal toSdlButton gamepadButton =
         match gamepadButton with
+        | ButtonUp -> SDL_GamepadButton.SDL_GAMEPAD_BUTTON_DPAD_UP
+        | ButtonRight -> SDL_GamepadButton.SDL_GAMEPAD_BUTTON_DPAD_RIGHT
+        | ButtonDown -> SDL_GamepadButton.SDL_GAMEPAD_BUTTON_DPAD_DOWN
+        | ButtonLeft -> SDL_GamepadButton.SDL_GAMEPAD_BUTTON_DPAD_LEFT
         | ButtonA -> SDL_GamepadButton.SDL_GAMEPAD_BUTTON_SOUTH
         | ButtonB -> SDL_GamepadButton.SDL_GAMEPAD_BUTTON_EAST
         | ButtonX -> SDL_GamepadButton.SDL_GAMEPAD_BUTTON_WEST
@@ -333,9 +328,13 @@ module GamepadState =
         | ButtonSelect -> SDL_GamepadButton.SDL_GAMEPAD_BUTTON_BACK
         | ButtonStart -> SDL_GamepadButton.SDL_GAMEPAD_BUTTON_START
 
-    /// Try to convert SDL's representation of a joystick button to a GamepadButton.
+    /// Try to convert SDL's representation of a gamepad button to a GamepadButton.
     let internal tryToNuButton gamepadButton =
         match gamepadButton with
+        | SDL_GamepadButton.SDL_GAMEPAD_BUTTON_DPAD_UP -> Some ButtonUp
+        | SDL_GamepadButton.SDL_GAMEPAD_BUTTON_DPAD_RIGHT -> Some ButtonRight
+        | SDL_GamepadButton.SDL_GAMEPAD_BUTTON_DPAD_DOWN -> Some ButtonDown
+        | SDL_GamepadButton.SDL_GAMEPAD_BUTTON_DPAD_LEFT -> Some ButtonLeft
         | SDL_GamepadButton.SDL_GAMEPAD_BUTTON_SOUTH -> Some ButtonA
         | SDL_GamepadButton.SDL_GAMEPAD_BUTTON_EAST -> Some ButtonB
         | SDL_GamepadButton.SDL_GAMEPAD_BUTTON_WEST -> Some ButtonX
@@ -346,34 +345,7 @@ module GamepadState =
         | SDL_GamepadButton.SDL_GAMEPAD_BUTTON_START -> Some ButtonStart
         | _ -> None
 
-    /// Convert a GamepadDirection to SDL's representation.
-    let internal toSdlDirection gamepadDirection =
-        match gamepadDirection with
-        | DirectionUp -> SDL3.SDL_HAT_UP
-        | DirectionUpLeft -> SDL3.SDL_HAT_LEFTUP
-        | DirectionLeft -> SDL3.SDL_HAT_LEFT
-        | DirectionDownLeft -> SDL3.SDL_HAT_LEFTDOWN
-        | DirectionDown -> SDL3.SDL_HAT_DOWN
-        | DirectionDownRight -> SDL3.SDL_HAT_RIGHTDOWN
-        | DirectionRight -> SDL3.SDL_HAT_RIGHT
-        | DirectionUpRight -> SDL3.SDL_HAT_RIGHTUP
-        | DirectionCentered -> SDL3.SDL_HAT_CENTERED
-
-    /// Convert SDL's representation of a hat direction to a GamepadDirection.
-    let internal toNuDirection gamepadDirection =
-        match uint32 gamepadDirection with
-        | SDL3.SDL_HAT_UP -> DirectionUp
-        | SDL3.SDL_HAT_LEFTUP -> DirectionUpLeft
-        | SDL3.SDL_HAT_LEFT -> DirectionLeft
-        | SDL3.SDL_HAT_LEFTDOWN -> DirectionDownLeft
-        | SDL3.SDL_HAT_DOWN -> DirectionDown
-        | SDL3.SDL_HAT_RIGHTDOWN -> DirectionDownRight
-        | SDL3.SDL_HAT_RIGHT -> DirectionRight
-        | SDL3.SDL_HAT_RIGHTUP -> DirectionUpRight
-        | SDL3.SDL_HAT_CENTERED -> DirectionCentered
-        | _ -> failwith "Invalid SDL hat direction."
-
-    /// Convert an SDL joystick axis value to a float in the range -1.0f to 1.0f.
+    /// Convert an SDL gamepad axis value to a float in the range -1.0f to 1.0f.
     let internal toNuAxisValue (axisValue : int16) =
         if axisValue >= 0s
         then single axisValue / single Int16.MaxValue
@@ -381,49 +353,41 @@ module GamepadState =
 
     /// Get the given gamepad's left joystick axes.
     let internal getStickLeft index =
-        match Array.tryItem index Joysticks with
-        | Some joystick ->
-            let x = SDL3.SDL_GetJoystickAxis (joystick, int SDL_GamepadAxis.SDL_GAMEPAD_AXIS_LEFTX)
-            let y = SDL3.SDL_GetJoystickAxis (joystick, int SDL_GamepadAxis.SDL_GAMEPAD_AXIS_LEFTY)
+        match Array.tryItem index Gamepads with
+        | Some gamepad ->
+            let x = SDL3.SDL_GetGamepadAxis (gamepad, SDL_GamepadAxis.SDL_GAMEPAD_AXIS_LEFTX)
+            let y = SDL3.SDL_GetGamepadAxis (gamepad, SDL_GamepadAxis.SDL_GAMEPAD_AXIS_LEFTY)
             v2 (toNuAxisValue x) (toNuAxisValue y)
         | None -> v2Zero
 
     /// Get the given gamepad's right joystick axes.
     let internal getStickRight index =
-        match Array.tryItem index Joysticks with
-        | Some joystick ->
-            let x = SDL3.SDL_GetJoystickAxis (joystick, int SDL_GamepadAxis.SDL_GAMEPAD_AXIS_RIGHTX)
-            let y = SDL3.SDL_GetJoystickAxis (joystick, int SDL_GamepadAxis.SDL_GAMEPAD_AXIS_RIGHTY)
+        match Array.tryItem index Gamepads with
+        | Some gamepad ->
+            let x = SDL3.SDL_GetGamepadAxis (gamepad, SDL_GamepadAxis.SDL_GAMEPAD_AXIS_RIGHTX)
+            let y = SDL3.SDL_GetGamepadAxis (gamepad, SDL_GamepadAxis.SDL_GAMEPAD_AXIS_RIGHTY)
             v2 (toNuAxisValue x) (toNuAxisValue y)
         | None -> v2Zero
 
     /// Get the given gamepad's left trigger axis.
     let internal getTriggerLeft index =
-        match Array.tryItem index Joysticks with
-        | Some joystick ->
-            let value = SDL3.SDL_GetJoystickAxis (joystick, int SDL_GamepadAxis.SDL_GAMEPAD_AXIS_LEFT_TRIGGER)
+        match Array.tryItem index Gamepads with
+        | Some gamepad ->
+            let value = SDL3.SDL_GetGamepadAxis (gamepad, SDL_GamepadAxis.SDL_GAMEPAD_AXIS_LEFT_TRIGGER)
             toNuAxisValue value
         | None -> 0.0f
 
     /// Get the given gamepad's right trigger axis.
     let internal getTriggerRight index =
-        match Array.tryItem index Joysticks with
-        | Some joystick ->
-            let value = SDL3.SDL_GetJoystickAxis (joystick, int SDL_GamepadAxis.SDL_GAMEPAD_AXIS_RIGHT_TRIGGER)
+        match Array.tryItem index Gamepads with
+        | Some gamepad ->
+            let value = SDL3.SDL_GetGamepadAxis (gamepad, SDL_GamepadAxis.SDL_GAMEPAD_AXIS_RIGHT_TRIGGER)
             toNuAxisValue value
         | None -> 0.0f
-
-    /// Get the given gamepad's current direction.
-    let internal getDirection index =
-        match Array.tryItem index Joysticks with
-        | Some gamepad ->
-            let hat = SDL3.SDL_GetJoystickHat (gamepad, 0)
-            toNuDirection hat
-        | None -> DirectionCentered
 
     /// Check that the given gamepad's button is down.
     let internal isButtonDown index button =
         let sdlButton = toSdlButton button
-        match Array.tryItem index Joysticks with
-        | Some joystick -> SDL3.SDL_GetJoystickButton (joystick, int sdlButton)
+        match Array.tryItem index Gamepads with
+        | Some gamepad -> SDL3.SDL_GetGamepadButton (gamepad, sdlButton)
         | None -> false

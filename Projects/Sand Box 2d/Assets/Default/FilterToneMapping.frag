@@ -16,7 +16,7 @@ layout(set = 0, binding = 1) uniform texture2D inputTexture;
 
 layout(set = 1, binding = 0) uniform sampler inputSampler;
 
-layout(location = 0) in vec2 texCoordsOut;
+layout(location = 0) in vec2 texCoords;
 
 layout(location = 0) out vec4 frag;
 
@@ -216,7 +216,7 @@ vec3 applyKronosNeutralToneMap(vec3 color)
 void main()
 {
     // apply tone mapping
-    vec3 color = texture(sampler2D(inputTexture, inputSampler), texCoordsOut, 0).xyz;
+    vec3 color = texture(sampler2D(inputTexture, inputSampler), texCoords, 0).xyz;
     switch (toneMapping.toneMapType)
     {
         case 0: color = applyAgXToneMap(color * toneMapping.lightExposure, toneMapping.toneMapSlope, toneMapping.toneMapOffset, toneMapping.toneMapPower, toneMapping.toneMapSaturation); break;

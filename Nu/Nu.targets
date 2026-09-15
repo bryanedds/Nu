@@ -81,9 +81,6 @@
         <Reference Include="BulletSharpPInvoke">
             <HintPath>$(MSBuildThisFileDirectory)Nu.Dependencies/BulletSharpPInvoke/netstandard2.1/BulletSharp.dll</HintPath>
         </Reference>
-        <Reference Include="OpenGL.Net">
-            <HintPath>$(MSBuildThisFileDirectory)Nu.Dependencies/OpenGL.NET/lib/netcoreapp2.2/OpenGL.Net.dll</HintPath>
-        </Reference>
         <Reference Include="TiledSharp">
             <HintPath>$(MSBuildThisFileDirectory)Nu.Dependencies/TiledSharp/lib/netstandard2.0/TiledSharp.dll</HintPath>
         </Reference>
@@ -145,10 +142,9 @@
         <AndroidNativeLibrary Include="$(MSBuildThisFileDirectory)Nu.Dependencies/ShaderC/android/*/libshaderc_shared.so" />
         <AndroidNativeLibrary Include="$(MSBuildThisFileDirectory)Nu.Dependencies/ShaderC/android/*/libc++_shared.so" />
         <AndroidNativeLibrary Include="$(MSBuildThisFileDirectory)Nu.Dependencies/ImGui/android/*/libcimgui.so" />
+        <AndroidNativeLibrary Include="$(MSBuildThisFileDirectory)Nu.Dependencies/BulletSharpPInvoke/android/*/libbulletc.so" />
         <AndroidNativeLibrary Include="$(MSBuildThisFileDirectory)Nu.Dependencies/AssimpNet/android/*/libassimp.so" />
-
-        <!-- To uncomment the following line, also download Vulkan validation layers (https://github.com/KhronosGroup/Vulkan-ValidationLayers/releases) -->
-        <!--AndroidNativeLibrary Include="$(MSBuildThisFileDirectory)Nu.Dependencies/Vulkan-validation/**/*.so" Condition="'$(Configuration)' == 'Debug'" /-->
+        <AndroidNativeLibrary Include="$(MSBuildThisFileDirectory)Nu.Dependencies/Vulkan.Validation/android/*/*.so" Condition="'$(Configuration)' == 'Debug'" />
 
     </ItemGroup>
 

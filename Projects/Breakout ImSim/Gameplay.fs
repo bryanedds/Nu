@@ -67,10 +67,10 @@ type GameplayDispatcher () =
                         [for i in 0 .. dec 5 do
                             for j in 0 .. dec 6 do
                                 (Gen.name, Brick.make (v3 (single i * 64.0f - 128.0f) (single j * 16.0f + 64.0f) 0.0f))]
-                Simulants.Gameplay.SetBricks bricks world
-                Simulants.Gameplay.SetScore 0 world
-                Simulants.Gameplay.SetLives 5 world
-                Simulants.Gameplay.SetGameplayState Playing world
+                screen.SetBricks bricks world
+                screen.SetScore 0 world
+                screen.SetLives 5 world
+                screen.SetGameplayState Playing world
 
             // declare scene group
             World.beginGroupFromFile "Scene" "Assets/Gameplay/Scene.nugroup" [] world
@@ -112,7 +112,7 @@ type GameplayDispatcher () =
             let paddle = world.DeclaredEntity
 
             // process paddle movement
-            if  world.Advancing &&
+            if  world.TimeAdvancing &&
                 screen.GetGameplayState world = Playing &&
                 screen.GetLives world > 0 &&
                 (screen.GetBricks world).Count > 0 then
@@ -212,7 +212,7 @@ type GameplayDispatcher () =
 
             // ensure game is unpaused when quitting
             if screen.GetGameplayState world = Quit then
-                World.setAdvancing true world
+                World.setTimeAdvancing true world
 
             // end scene declaration
             World.endGroup world

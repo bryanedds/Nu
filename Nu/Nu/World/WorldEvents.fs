@@ -55,10 +55,6 @@ type GamepadAxisData =
     { GamepadAxis : single }
 
 /// The data for a gamepad button event.
-type GamepadDirectionData =
-    { GamepadDirection : GamepadDirection }
-
-/// The data for a gamepad button event.
 type GamepadButtonData =
     { GamepadButton : GamepadButton
       Down : bool }
@@ -129,14 +125,6 @@ type MountData =
     { Mount : Entity
       Mounter : Entity }
 
-/// The data for describing an animation trigger event.
-type SpineSkeletonAnimationTriggerData =
-    | SpineSkeletonAnimationStartData of Spine.TrackEntry
-    | SpineSkeletonAnimationInterruptData of Spine.TrackEntry
-    | SpineSkeletonAnimationCompleteData of Spine.TrackEntry
-    | SpineSkeletonAnimationEndData of Spine.TrackEntry
-    | SpineSkeletonAnimationEventData of Spine.TrackEntry * Spine.Event
-
 /// Engine and simulation events that come with Nu.
 [<RequireQualifiedAccess>]
 module Events =
@@ -166,7 +154,7 @@ module Events =
     let PostSelectEvent = stoa<Screen option> "PostSelect/Event"
 
     /// Raised when the engine's representation of current time changes.
-    let TimeUpdateEvent = stoa<unit> "TimeUpdate/Event"
+    let TimeAdvanceEvent = stoa<unit> "TimeAdvance/Event"
 
     /// Raised when a key-value pair is changed in the world.
     let KeyedValueChangeEvent key = rtoa<KeyedValueChangeData> [|"KeyedValue"; key; "Change"; "Event"|]
@@ -220,16 +208,13 @@ module Events =
     let BodyJointBreakEvent = stoa<BodyJointBreakData> "BodyJointBreak/Event"
 
     /// Raised when 2d gravity is changed.
-    let Gravity2dChange = stoa<ChangeData> "Gravity2d/Change/Event"
+    let Gravity2dChangeEvent = stoa<ChangeData> "Gravity2d/Change/Event"
 
     /// Raised when 3d gravity is changed.
-    let Gravity3dChange = stoa<ChangeData> "Gravity3d/Change/Event"
+    let Gravity3dChangEvent = stoa<ChangeData> "Gravity3d/Change/Event"
 
     /// Raised when a fluid emitter updates.
-    let FluidEmitterUpdateEvent = stoa<FluidEmitterMessage> "FluidEmitterUpdate/Event"
-
-    /// Raised when a Spine skeleton animation event is triggered.
-    let SpineSkeletonAnimationTriggerEvent = stoa<SpineSkeletonAnimationTriggerData> "SpineSkeletonAnimationTrigger/Event"
+    let FluidEmitterEvent = stoa<FluidEmitterMessage> "FluidEmitter/Event"
 
     /// Raised when a button is clicked.
     let ClickEvent = stoa<unit> "Click/Event"
@@ -347,9 +332,6 @@ module Events =
 
     /// Raised when a gamepad axis is changed.
     let GamepadAxisChangeEvent axis (index : uint) = rtoa<GamepadAxisData> [|"Gamepad"; GamepadAxis.toEventName axis + string index + "Change"; "Event"|]
-
-    /// Raised when a gamepad direction is changed.
-    let GamepadDirectionChangeEvent (index : uint) = rtoa<GamepadDirectionData> [|"Gamepad"; "Direction" + string index + "Change"; "Event"|]
 
     /// Raised when a gamepad button is pressed or released.
     let GamepadButtonChangeEvent (index : uint) = rtoa<GamepadButtonData> [|"Gamepad"; "Button" + string index + "Change"; "Event"|]

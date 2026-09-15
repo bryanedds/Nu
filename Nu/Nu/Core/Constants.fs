@@ -43,13 +43,16 @@ module Assimp =
 [<RequireQualifiedAccess>]
 module Vulkan =
 
-    let [<Uniform>] FramesInFlight = 1 // NOTE: no use of multiple FiF - https://vsynchronicity.wordpress.com/2026/06/25/saying-no-to-multiple-frames-in-flight-in-nu-game-engine/
-    let [<Uniform>] MoltenVk = OperatingSystem.IsIOS () || match ConfigurationManager.AppSettings.["MoltenVk"] with null -> true | value -> scvalue value // NOTE: setting this to false uses KosmicKrisp on macOS, but FPS of Metrics project drops from 50 to 2.
+    let [<Uniform>] TileBasedRendering = OperatingSystem.IsAndroid () || OperatingSystem.IsIOS () // TODO: update this as we can determine more platforms where tile-based rendering is used.
+    let [<Uniform>] ImmediateModeRendering = not TileBasedRendering
+    let [<Uniform>] MoltenVk = OperatingSystem.IsIOS () || match ConfigurationManager.AppSettings["MoltenVk"] with null -> true | value -> scvalue value // NOTE: setting this to false uses KosmicKrisp on macOS, but FPS of Metrics project drops from 50 to 2.
+    let [<Uniform>] FramesInFlight = 1 // NOTE: we avoid the use of multiple FiF in order to keep the renderer simple and low-latency.
     let [<Literal>] RenderCommandBufferCountDefault = 32
     let [<Literal>] DescriptorSetCountDefault = 32
-    let [<Literal>] ShadowSurfaceInstanceThreshold = 1024
-    let [<Literal>] DeferredSurfaceInstanceThreshold = 1024
-    let [<Literal>] ForwardSurfaceInstanceThreshold = 128
+    let [<Literal>] SwapchainImageMax = 32 // NOTE: assuming this is a conservative maximum of the number of swapchain images available.
+    let [<Uniform>] ShadowSurfaceInstanceThreshold = if ImmediateModeRendering then 1024 else 2048 // NOTE: splitting render passes is more costly on tile-based renderers.
+    let [<Uniform>] DeferredSurfaceInstanceThreshold = if ImmediateModeRendering then 1024 else 2048 // NOTE: see above.
+    let [<Uniform>] ForwardSurfaceInstanceThreshold = if ImmediateModeRendering then 128 else 256 // NOTE: see above.
 
 [<RequireQualifiedAccess>]
 module ImGui =
@@ -111,7 +114,7 @@ module Engine =
     let [<Uniform>] OctreeSize = Vector3 (OctnodeSize * single (pown 2 OctreeDepth))
     let [<Uniform>] mutable EventTracing = match ConfigurationManager.AppSettings["EventTracing"] with null -> false | value -> scvalue value
     let [<Uniform>] mutable EventFilter = match ConfigurationManager.AppSettings["EventFilter"] with null -> Pass | value -> scvalue value
-    let [<Uniform>] EnvironmentMagnitudeThreshold = 48.0f // sqrt (32^2 + 32^2 + 16^2) = more likely an environment that a static prop
+    let [<Uniform>] EnvironmentMagnitudeThreshold = 48.0f // sqrt (32^2 + 32^2 + 16^2) = more likely an environment than a static prop
     let [<Uniform>] NonPersistentPropertyNames =
         FrozenSet.ToFrozenSet
             ([(* Simulant Properties *)
@@ -162,16 +165,18 @@ module Engine =
               "Light"
               "Optimized"],
              StringComparer.Ordinal)
-    let [<Literal>] BuildName =
+    let [<Literal>] EngineDebug =
 #if DEBUG
-        "Debug"
+        true
 #else
-        "Release"
+        false
 #endif
+    let [<Literal>] BuildName = if EngineDebug then "Debug" else "Release"
 
 [<RequireQualifiedAccess>]
 module Render =
 
+    let [<Uniform>] ResourceConstrained = OperatingSystem.IsAndroid () || OperatingSystem.IsIOS () // TODO: update this as we can determine more platforms that are memory-constrained.
     let [<Literal>] IgnoreLightMapsName = "IgnoreLightMaps"
     let [<Literal>] OpaqueDistanceName = "OpaqueDistance"
     let [<Literal>] FinenessOffsetName = "FinenessOffset"
@@ -187,6 +192,7 @@ module Render =
     let [<Literal>] NavShapeName = "NavShape"
     let [<Uniform>] mutable RenderDebug = match ConfigurationManager.AppSettings["RenderDebug"] with null -> false | value -> scvalue value
     let [<Uniform>] mutable RenderVsync = match ConfigurationManager.AppSettings["RenderVsync"] with null -> true | value -> scvalue value
+    let [<Uniform>] mutable StubRenderer3d = match ConfigurationManager.AppSettings["StubRenderer3d"] with null -> false | value -> scvalue value
     let [<Uniform>] mutable NearPlaneDistanceInterior = match ConfigurationManager.AppSettings["NearPlaneDistanceInterior"] with null -> 0.125f | value -> scvalue value
     let [<Uniform>] mutable FarPlaneDistanceInterior = match ConfigurationManager.AppSettings["FarPlaneDistanceInterior"] with null -> 20.0f | value -> scvalue value
     let [<Uniform>] mutable NearPlaneDistanceExterior = match ConfigurationManager.AppSettings["NearPlaneDistanceExterior"] with null -> 20.0f | value -> scvalue value
@@ -196,7 +202,7 @@ module Render =
     let [<Uniform>] mutable NearPlaneDistanceOmnipresent = NearPlaneDistanceInterior
     let [<Uniform>] mutable FarPlaneDistanceOmnipresent = FarPlaneDistanceImposter
     let [<Uniform>] mutable DisplayVirtualResolution = match ConfigurationManager.AppSettings["DisplayVirtualResolution"] with null -> v2i 640 360 | value -> scvalue value
-    let [<Uniform>] mutable SsaoResolutionDivisor = match ConfigurationManager.AppSettings["SsaoResolutionDivisor"] with null -> 1 | value -> scvalue value
+    let [<Uniform>] mutable SsaoResolutionDivisor = match ConfigurationManager.AppSettings["SsaoResolutionDivisor"] with null -> 2 | value -> scvalue value
     let [<Uniform>] Play3dBoxSize = Vector3 64.0f
     let [<Uniform>] WindowClearColor = Color.Zero
     let [<Uniform>] ViewportClearColor = Color.Zero // NOTE: do not change this color as the deferred lighting shader checks if position.w zero to ignore fragment.
@@ -207,16 +213,12 @@ module Render =
     let [<Literal>] TexturePriorityDefault = 0.5f // higher priority than (supposed) default, but not maximum. this value is arrived at through experimenting with a Windows NVidia driver.
     let [<Uniform>] mutable TextureAnisotropyMax = match ConfigurationManager.AppSettings["TextureAnisotropyMax"] with null -> 16.0f | value -> scvalue value
     let [<Uniform>] mutable TextureMinimalMipmapIndex = match ConfigurationManager.AppSettings["TextureMinimalMipmapIndex"] with null -> 2 | value -> scvalue value
-    let [<Uniform>] mutable TextureBlockCompression =
-        match ConfigurationManager.AppSettings["TextureBlockCompression"] with
-        | null -> if OperatingSystem.IsMacOS () || OperatingSystem.IsAndroid () || OperatingSystem.IsIOS() then AstcCompression else BcCompression
-        | value -> scvalue value
+    let [<Uniform>] TextureBlockCompression = if OperatingSystem.IsMacOS () || OperatingSystem.IsAndroid () || OperatingSystem.IsIOS() then AstcCompression else BcCompression
     let [<Literal>] SpriteBatchSize = 192 // NOTE: remember to update SPRITE_BATCH_SIZE in shaders when changing this!
     let [<Literal>] SpriteBorderTexelScalar = 0.001f
     let [<Literal>] SpriteMessagesPrealloc = 256
     let [<Literal>] StaticModelMessagesPrealloc = 256
     let [<Literal>] StaticModelSurfaceMessagesPrealloc = 256
-    let [<Uniform>] mutable SpineSkeletonScalar = match ConfigurationManager.AppSettings["SpineSkeletonScalar"] with null -> 1.0f / 3.0f | value -> scvalue value
     let [<Literal>] BonesMax = 128 // NOTE: remember to update BONES_MAX in shaders when changing this!
     let [<Literal>] BonesInfluenceMax = 4 // NOTE: remember to update BONES_INFLUENCE_MAX in shaders when changing this!
     let [<Literal>] AnimatedModelRateScalar = 30.0f // some arbitrary scale that mixamo fbx exported from blender seems to like...
@@ -231,10 +233,10 @@ module Render =
     let [<Literal>] LightsMaxDeferred = 64 // NOTE: remember to update LIGHTS_MAX in deferred shaders when changing this!
     let [<Literal>] LightsMaxForward = 9 // NOTE: remember to update LIGHTS_MAX in forward shaders when changing this!
     let [<Uniform>] mutable ShadowVirtualResolution = match ConfigurationManager.AppSettings["ShadowVirtualResolution"] with null -> 256 | value -> scvalue value
-    let [<Uniform>] mutable ShadowDisplayScalarMax = match ConfigurationManager.AppSettings["ShadowDisplayScalarMax"] with null -> 3 | value -> scvalue value
+    let [<Uniform>] mutable ShadowDisplayScalarMax = match ConfigurationManager.AppSettings["ShadowDisplayScalarMax"] with null -> (if ResourceConstrained then 2 else 3) | value -> scvalue value
     let [<Literal>] ShadowTexturesMax = 12 // NOTE: remember to update SHADOW_TEXTURES_MAX in shaders when changing this!
     let [<Literal>] ShadowMapsMax = 12 // NOTE: remember to update SHADOW_MAPS_MAX in shaders when changing this!
-    let [<Literal>] ShadowCascadesMax = 2 // NOTE: remember to update SHADOW_CASCADES_MAX in shaders when changing this!
+    let [<Literal>] ShadowCascadesMax = 1 // NOTE: remember to update SHADOW_CASCADES_MAX in shaders when changing this!
     let [<Literal>] ShadowCascadeLevels = 3 // NOTE: remember to update SHADOW_CASCADE_LEVELS_SIZE in shaders when changing this!
     let [<Uniform>] mutable ShadowCascadeLimits = match ConfigurationManager.AppSettings["ShadowCascadeLimits"] with null -> [|0.2f; 0.6f; 1.0f|] | value -> scvalue value
     let [<Literal>] ShadowFovMax = 2.1f // NOTE: remember to update SHADOW_FOV_MAX in shaders when changing this!
@@ -272,20 +274,20 @@ module Render =
     let [<Literal>] SssEnabledLocalDefault = true
     let [<Literal>] SsaoEnabledGlobalDefault = true
     let [<Literal>] SsaoEnabledLocalDefault = true
-    let [<Literal>] SsaoSampleCountDefault = 24
+    let [<Literal>] SsaoSampleCountDefault = 12
     let [<Literal>] SsaoSampleCountMax = 128
-    let [<Literal>] SsaoIntensityDefault = 1.35f
+    let [<Literal>] SsaoIntensityDefault = 1.5f
     let [<Literal>] SsaoBiasDefault = 0.01f
     let [<Literal>] SsaoRadiusDefault = 0.2f
-    let [<Literal>] SsaoDistanceMaxDefault = 0.15f
+    let [<Literal>] SsaoDistanceMaxDefault = 0.05f
     let [<Literal>] SsvfEnabledGlobalDefault = true
     let [<Literal>] SsvfEnabledLocalDefault = true
     let [<Literal>] SsvfIntensityDefault = 1.0f
-    let [<Literal>] SsvfStepsDefault = 12
+    let [<Literal>] SsvfStepsDefault = 8
     let [<Literal>] SsvfAsymmetryDefault = 0.1f
     let [<Literal>] SsrlEnabledGlobalDefault = true
     let [<Literal>] SsrlEnabledLocalDefault = true
-    let [<Literal>] SsrlIntensityDefault = 4.0f
+    let [<Literal>] SsrlIntensityDefault = 0.5f
     let [<Literal>] SsrlDetailDefault = 0.21f
     let [<Literal>] SsrlRefinementsMaxDefault = 24
     let [<Literal>] SsrlRayThicknessDefault = 0.025f
@@ -320,8 +322,9 @@ module Render =
     let [<Literal>] DepthOfFieldEnabledLocalDefault = false
     let [<Literal>] DepthOfFieldNearDistanceDefault = 0.0f
     let [<Literal>] DepthOfFieldFarDistanceDefault = 64.0f
+    let [<Literal>] DepthOfFieldRadiusDefault = 5.0f
     let [<Uniform>] DepthOfFieldFocalTypeDefault = StaticFocalDistance
-    let [<Literal>] DepthOfFieldFocalDistanceDefault = 1.0f
+    let [<Literal>] DepthOfFieldFocalDistanceDefault = 0.5f
     let [<Uniform>] DepthOfFieldFocalPointDefault = Vector2.Zero
     let [<Literal>] ChromaticAberrationEnabledGlobalDefault = true
     let [<Literal>] ChromaticAberrationEnabledLocalDefault = false
@@ -356,15 +359,14 @@ module Render =
     let [<Literal>] Body3dSegmentRenderMagnitudeMax = 48.0f
     let [<Literal>] Body3dSegmentRenderDistanceMax = 40.0f
     let [<Literal>] Body3dRenderDistanceMax = 32.0f
-    let [<Uniform>] mutable SkipRendering3d = match ConfigurationManager.AppSettings["SkipRendering3d"] with null -> false | value -> scvalue value
 
 [<RequireQualifiedAccess>]
 module Audio =
 
     let [<Literal>] TrackPoolSize = 64
-    let [<Literal>] MasterAudioVolumeDefault = 1.0f
-    let [<Literal>] MasterSoundVolumeDefault = 1.0f
-    let [<Literal>] MasterSongVolumeDefault = 1.0f
+    let [<Uniform>] mutable MasterAudioVolumeDefault = match ConfigurationManager.AppSettings["MasterAudioVolumeDefault"] with null -> 1.0f | value -> scvalue value
+    let [<Uniform>] mutable MasterSoundVolumeDefault = match ConfigurationManager.AppSettings["MasterSoundVolumeDefault"] with null -> 1.0f | value -> scvalue value
+    let [<Uniform>] mutable MasterSongVolumeDefault = match ConfigurationManager.AppSettings["MasterSongVolumeDefault"] with null -> 1.0f | value -> scvalue value
     let [<Literal>] SoundVolumeDefault = 1.0f
     let [<Literal>] SongVolumeDefault = 1.0f
     let [<Uniform>] FadeOutTimeDefault = GameTime.ofSeconds 0.5
@@ -378,11 +380,12 @@ module Physics =
     let [<Literal>] FrictionDefault = 0.5f
     let [<Literal>] AngularDampingDefault = 0.2f
     let [<Literal>] CollisionWildcard = "*"
+    let [<Literal>] Collision2dLinearSlop = 0.005f // Box2D default in meters; the package constant is internal.
     let [<Uniform>] mutable Collision2dSteps = match ConfigurationManager.AppSettings["Collision2dSteps"] with null -> 4 | value -> scvalue value
     let [<Uniform>] mutable Collision2dFrameCompensation = match ConfigurationManager.AppSettings["Collision2dFrameCompensation"] with null -> false | value -> scvalue value
-    let [<Uniform>] mutable Collision3dBodiesMax = match ConfigurationManager.AppSettings["Collision3dBodiesMax"] with null -> 65536 | value -> scvalue value
-    let [<Uniform>] mutable Collision3dBodyPairsMax = match ConfigurationManager.AppSettings["Collision3dBodyPairsMax"] with null -> 32768 | value -> scvalue value
-    let [<Uniform>] mutable Collision3dContactConstraintsMax = match ConfigurationManager.AppSettings["Collision3dContactConstraintsMax"] with null -> 16384 | value -> scvalue value
+    let [<Uniform>] mutable Collision3dBodiesMax = match ConfigurationManager.AppSettings["Collision3dBodiesMax"] with null -> 131072 | value -> scvalue value
+    let [<Uniform>] mutable Collision3dBodyPairsMax = match ConfigurationManager.AppSettings["Collision3dBodyPairsMax"] with null -> 65536 | value -> scvalue value
+    let [<Uniform>] mutable Collision3dContactConstraintsMax = match ConfigurationManager.AppSettings["Collision3dContactConstraintsMax"] with null -> 32768 | value -> scvalue value
     let [<Uniform>] mutable Collision3dSteps = match ConfigurationManager.AppSettings["Collision3dSteps"] with null -> 1 | value -> scvalue value
     let [<Uniform>] mutable Collision3dThreads = match ConfigurationManager.AppSettings["Collision3dThreads"] with null -> max 1 (Environment.ProcessorCount - 2) | value -> scvalue value
     let [<Uniform>] mutable Collision3dBarriersMax = match ConfigurationManager.AppSettings["Collision3dBarriersMax"] with null -> max 1 (Environment.ProcessorCount - 2) | value -> scvalue value
@@ -473,7 +476,6 @@ module Effects =
 module Paths =
 
     let [<Literal>] LogFilePath = "Log.txt"
-    // TODO: review nomenclature for extensionless file paths.
     let [<Literal>] ImGuiShaderFilePath = "Assets/Default/ImGui"
     let [<Literal>] SpriteShaderFilePath = "Assets/Default/Sprite"
     let [<Literal>] SpriteBatchShaderFilePath = "Assets/Default/SpriteBatch"
@@ -506,10 +508,8 @@ module Paths =
     let [<Literal>] PhysicallyBasedForwardStaticShaderFilePath = "Assets/Default/PhysicallyBasedForwardStatic"
     let [<Literal>] PhysicallyBasedForwardAnimatedShaderFilePath = "Assets/Default/PhysicallyBasedForwardAnimated"
     let [<Literal>] FilterBox1dShaderFilePath = "Assets/Default/FilterBox1d"
-    let [<Literal>] FilterGaussian2dShaderFilePath = "Assets/Default/FilterGaussian2d"
-    let [<Literal>] FilterGaussianArray2dShaderFilePath = "Assets/Default/FilterGaussianArray2d"
     let [<Literal>] FilterGaussianEsmShaderFilePath = "Assets/Default/FilterGaussianEsm"
-    let [<Literal>] FilterGaussian3dShaderFilePath = "Assets/Default/FilterGaussian3d"
+    let [<Literal>] FilterGaussianDofShaderFilePath = "Assets/Default/FilterGaussianDof"
     let [<Literal>] FilterBilateralDownSample4dShaderFilePath = "Assets/Default/FilterBilateralDownSample4d"
     let [<Literal>] FilterBilateralUpSample4dShaderFilePath = "Assets/Default/FilterBilateralUpSample4d"
     let [<Literal>] FilterBloomExtractShaderFilePath = "Assets/Default/FilterBloomExtract"

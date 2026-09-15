@@ -45,7 +45,7 @@ type GameplayDispatcher () =
 
             // ensure game is unpaused when quitting
             if screen.GetGameplayState world = Quit then
-                World.setAdvancing true world
+                World.setTimeAdvancing true world
 
             // end scene declaration
             World.endGroup world

@@ -43,7 +43,7 @@ type PlayerDispatcher () =
 
         // process walking
         let bodyId = entity.GetBodyId world
-        if world.Advancing then
+        if world.TimeAdvancing then
             let groundTangentOpt = World.getBodyToGroundContactTangentOpt bodyId world
             let force =
                 match groundTangentOpt with
@@ -59,7 +59,7 @@ type PlayerDispatcher () =
 
         // process shooting
         let fallen = (entity.GetPosition world).Y <= -320.0f
-        if world.Advancing && not fallen && world.UpdateTime % 5L = 0L then
+        if world.TimeAdvancing && not fallen && world.UpdateTime % 5L = 0L then
             let bullet = World.createEntity<BulletDispatcher> None NoOverlay None entity.Group world // OPTIMIZATION: NoOverlay to avoid reflection.
             bullet.SetPosition (entity.GetPosition world + v3 16.0f 1.0f 0.0f) world
             bullet.SetElevation (entity.GetElevation world) world
@@ -68,7 +68,7 @@ type PlayerDispatcher () =
             World.playSound 0.0f 0.0f 1.0f Assets.Gameplay.ShotSound world
 
         // process jumping
-        if  world.Advancing &&
+        if  world.TimeAdvancing &&
             world.UpdateTime >= entity.GetLastTimeJump world + 12L &&
             world.UpdateTime <= entity.GetLastTimeGrounded world + 10L &&
             World.isKeyboardKeyPressed KeyboardKey.Space world then
