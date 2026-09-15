@@ -67,7 +67,7 @@ type RenderStyle =
 
 /// The shape of a navigation body (includes both 2d and 3d representations, with some cases unsupported depending on
 /// the dimensionality of the system utilizing it).
-type NavShape =
+type [<Struct>] NavShape =
     | EmptyNavShape
     | BoundsNavShape
     | ContourNavShape

@@ -24,7 +24,7 @@ type EnvironmentFilterPipeline =
       EnvironmentFilterUniform : VulkanBuffer
       Pipeline : Pipeline }
 
-/// A collection of maps consisting a light map.
+/// A collection of cube maps composing a single light map.
 type [<Struct>] LightMap =
     { Enabled : bool
       Origin : Vector3

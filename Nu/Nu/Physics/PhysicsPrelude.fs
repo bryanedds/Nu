@@ -357,7 +357,7 @@ type BodyType =
     /// Movable vehicle body that responds to forces and collisions and can be driven by vehicle-specific constraints.
     | Vehicle
 
-    // Check that this body type is some sort of character.
+    /// Check that this body type is some sort of character.
     member this.IsCharacter =
         match this with
         | Static | Kinematic | Dynamic | Vehicle -> false

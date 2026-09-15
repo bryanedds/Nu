@@ -2588,10 +2588,13 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                         else surface
                     match renderType with
                     | DeferredRenderType ->
-                        let preBatch = struct (surface, staticModelSurfaces)
-                        if not surface.SurfaceMaterial.Clipped
-                        then renderTasks.DeferredStaticPreBatches.Add (preBatchId, preBatch)
-                        else renderTasks.DeferredStaticClippedPreBatches.Add (preBatchId, preBatch)
+                        let preBatches =
+                            if not surface.SurfaceMaterial.Clipped
+                            then renderTasks.DeferredStaticPreBatches
+                            else renderTasks.DeferredStaticClippedPreBatches
+                        if preBatches.ContainsKey preBatchId then
+                            Log.warnOnce "Multiple pre-batches with the same PreBatchId may indicate undesired usage. Only the last submitted deferred pre-batch will be rendered."
+                        preBatches[preBatchId] <- struct (surface, staticModelSurfaces)
                     | ForwardRenderType (subsort, sort) ->
                         for (model, castShadow, presence, insetOpt, properties, bounds) in staticModelSurfaces do
                             let unculled =
