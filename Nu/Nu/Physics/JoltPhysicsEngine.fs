@@ -111,6 +111,7 @@ type JoltPhysicsEngineRenderContext =
 and [<ReferenceEquality>] JoltPhysicsEngine =
     private
         { PhysicsContext : PhysicsSystem
+          PhysicsContextSettings : PhysicsSystemSettings // NOTE: need to hold on to this to keep its references valid.
           JobSystem : JobSystemThreadPool
           UnscaledPointsCache : Dictionary<UnscaledPointsKey, Vector3 array>
           CharacterVsCharacterCollision : CharacterVsCharacterCollisionSimple
@@ -974,7 +975,8 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
         | (false, _) ->
             match physicsEngine.Bodies.TryGetValue setBodyRotationMessage.BodyId with
             | (true, bodyID) ->
-                physicsEngine.PhysicsContext.BodyInterface.SetRotation (&bodyID, &setBodyRotationMessage.Rotation, Activation.Activate) // force activation so that a transform message will be produced
+                let rotation = setBodyRotationMessage.Rotation.Normalized // NOTE: Jolt expects this to be normalized.
+                physicsEngine.PhysicsContext.BodyInterface.SetRotation (&bodyID, &rotation, Activation.Activate) // force activation so that a transform message will be produced
             | (false, _) -> ()
 
     static member private setBodyLinearVelocity (setBodyLinearVelocityMessage : SetBodyLinearVelocityMessage) physicsEngine =
@@ -1309,6 +1311,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
 
         // make physics engine
         { PhysicsContext = physicsSystem
+          PhysicsContextSettings = physicsSystemSettings
           JobSystem = jobSystem
           UnscaledPointsCache = dictPlus UnscaledPointsKey.comparer []
           CharacterVsCharacterCollision = new CharacterVsCharacterCollisionSimple ()
