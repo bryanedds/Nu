@@ -55,13 +55,15 @@ type [<Struct>] private BodyUserData =
 type [<Struct>] private BodyConstraintEvent =
     | BodyConstraintBreak of BodyJointId : BodyJointId * BreakingPoint : single * BreakingOverflow : single
 
-type private BodyFilterLambda (predicateBodyID, predicateBody) =
+type private BodyFilterLambda (predicateBodyID, predicateBody) as this =
     inherit BodyFilter ()
+    do this.OwnsHandle <- true
     override this.ShouldCollide bodyID = predicateBodyID bodyID
     override this.ShouldCollideLocked body = predicateBody body
 
-type private BodyDrawFilterLambda (predicateBody) =
+type private BodyDrawFilterLambda (predicateBody) as this =
     inherit BodyDrawFilter ()
+    do this.OwnsHandle <- true
     override this.ShouldDraw body = predicateBody body
 
 type [<CustomEquality; NoComparison>] private UnscaledPointsKey =
