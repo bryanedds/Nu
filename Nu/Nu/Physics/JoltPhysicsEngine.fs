@@ -74,7 +74,7 @@ type [<CustomEquality; NoComparison>] private UnscaledPointsKey =
         chs.HashCode
 
     static member equals left right =
-        left.HashCode = right.HashCode && // TODO: ensure this isn't just a minor pessimization.
+        left.HashCode = right.HashCode && // TODO: ensure this isn't just a pessimization.
         Enumerable.SequenceEqual (left.Vertices, right.Vertices)
 
     static member comparer =
