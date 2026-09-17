@@ -55,13 +55,15 @@ type [<Struct>] private BodyUserData =
 type [<Struct>] private BodyConstraintEvent =
     | BodyConstraintBreak of BodyJointId : BodyJointId * BreakingPoint : single * BreakingOverflow : single
 
-type private BodyFilterLambda (predicateBodyID, predicateBody) =
+type private BodyFilterLambda (predicateBodyID, predicateBody) as this =
     inherit BodyFilter ()
+    do this.OwnsHandle <- true
     override this.ShouldCollide bodyID = predicateBodyID bodyID
     override this.ShouldCollideLocked body = predicateBody body
 
-type private BodyDrawFilterLambda (predicateBody) =
+type private BodyDrawFilterLambda (predicateBody) as this =
     inherit BodyDrawFilter ()
+    do this.OwnsHandle <- true
     override this.ShouldDraw body = predicateBody body
 
 type [<CustomEquality; NoComparison>] private UnscaledPointsKey =
@@ -72,7 +74,7 @@ type [<CustomEquality; NoComparison>] private UnscaledPointsKey =
         chs.HashCode
 
     static member equals left right =
-        left.HashCode = right.HashCode && // TODO: ensure this isn't just a minor pessimization.
+        left.HashCode = right.HashCode && // TODO: ensure this isn't just a pessimization.
         Enumerable.SequenceEqual (left.Vertices, right.Vertices)
 
     static member comparer =
@@ -111,6 +113,7 @@ type JoltPhysicsEngineRenderContext =
 and [<ReferenceEquality>] JoltPhysicsEngine =
     private
         { PhysicsContext : PhysicsSystem
+          PhysicsContextSettings : PhysicsSystemSettings // NOTE: need to hold on to this to keep its references valid.
           JobSystem : JobSystemThreadPool
           UnscaledPointsCache : Dictionary<UnscaledPointsKey, Vector3 array>
           CharacterVsCharacterCollision : CharacterVsCharacterCollisionSimple
@@ -580,7 +583,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
         | BodyShapes bodyShapes -> JoltPhysicsEngine.attachBodyShapes bodyProperties bodyShapes scShapeSettings masses physicsEngine
 
     static member private createBodyNonCharacter mass layer motionType (shapeSettings : ShapeSettings) (bodyId : BodyId) (bodyProperties : BodyProperties) (physicsEngine : JoltPhysicsEngine) =
-        let mutable bodyCreationSettings = new BodyCreationSettings (shapeSettings, &bodyProperties.Center, &bodyProperties.Rotation, motionType, layer)
+        use mutable bodyCreationSettings = new BodyCreationSettings (shapeSettings, &bodyProperties.Center, &bodyProperties.Rotation, motionType, layer)
         bodyCreationSettings.AllowSleeping <- bodyProperties.SleepingAllowed
         bodyCreationSettings.Friction <- bodyProperties.Friction
         bodyCreationSettings.Restitution <- bodyProperties.Restitution
@@ -690,7 +693,9 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
         | Choice1Of3 () ->
 
             // create body
-            JoltPhysicsEngine.createBodyNonCharacter mass objectLayer motionType scShapeSettings bodyId bodyProperties physicsEngine |> ignore
+            let (_, body) = JoltPhysicsEngine.createBodyNonCharacter mass objectLayer motionType scShapeSettings bodyId bodyProperties physicsEngine
+            use body = body
+            ()
 
         | Choice2Of3 characterProperties ->
 
@@ -790,10 +795,11 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
 
             // create vehicle offset COM shape
             let offset = v3Down * 1.25f // TODO: P1: expose this as parameter.
-            let offsetComShapeSettings = new OffsetCenterOfMassShapeSettings (&offset, scShapeSettings)
+            use offsetComShapeSettings = new OffsetCenterOfMassShapeSettings (&offset, scShapeSettings)
 
-            // create vehicle body
+            // create vehicle body, setting up body for disposal
             let (bodyId, body) = JoltPhysicsEngine.createBodyNonCharacter mass objectLayer motionType offsetComShapeSettings bodyId bodyProperties physicsEngine
+            use body = body
             
             // create vehicle constraint
             let vehicleConstraint = new VehicleConstraint (body, vehicleConstraintSettings)
@@ -974,7 +980,8 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
         | (false, _) ->
             match physicsEngine.Bodies.TryGetValue setBodyRotationMessage.BodyId with
             | (true, bodyID) ->
-                physicsEngine.PhysicsContext.BodyInterface.SetRotation (&bodyID, &setBodyRotationMessage.Rotation, Activation.Activate) // force activation so that a transform message will be produced
+                let rotation = setBodyRotationMessage.Rotation.Normalized // NOTE: Jolt expects this to be normalized.
+                physicsEngine.PhysicsContext.BodyInterface.SetRotation (&bodyID, &rotation, Activation.Activate) // force activation so that a transform message will be produced
             | (false, _) -> ()
 
     static member private setBodyLinearVelocity (setBodyLinearVelocityMessage : SetBodyLinearVelocityMessage) physicsEngine =
@@ -1309,6 +1316,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
 
         // make physics engine
         { PhysicsContext = physicsSystem
+          PhysicsContextSettings = physicsSystemSettings
           JobSystem = jobSystem
           UnscaledPointsCache = dictPlus UnscaledPointsKey.comparer []
           CharacterVsCharacterCollision = new CharacterVsCharacterCollisionSimple ()
@@ -1445,7 +1453,7 @@ and [<ReferenceEquality>] JoltPhysicsEngine =
             false // no fluid emitter support
 
         member physicsEngine.RayCast (ray, collisionCategory, collisionMask, closestOnly) =
-            let ray = new Ray (&ray.Origin, &ray.Direction)
+            let ray = Ray (&ray.Origin, &ray.Direction)
             let bodyFilterID bodyID =
                 match physicsEngine.BodyUserData.TryGetValue bodyID with
                 | (true, bodyUserData) ->
