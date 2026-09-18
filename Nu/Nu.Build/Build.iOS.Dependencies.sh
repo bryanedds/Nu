@@ -8,7 +8,7 @@ assimp_version="${ASSIMP_VERSION:-5.2.4}"
 assimp_tag="${ASSIMP_TAG:-v$assimp_version}"
 bulletsharp_rev="${BULLETSHARP_REV:-22261cf}"
 cimgui_nativebuild_rev="${CIMGUI_NATIVEBUILD_REV:-3c24d703aa5ed86ba8b898ade871f90b26d12b1e}"
-joltc_rev="${JOLTC_REV:-52d8c98}"
+joltc_rev="${JOLTC_REV:-886e088}"
 ios_deployment_target="${IOS_DEPLOYMENT_TARGET:-13.0}"
 build_root="${BUILD_ROOT:-/private/tmp/nu-ios-native-build}"
 
