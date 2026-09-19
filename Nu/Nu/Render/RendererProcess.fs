@@ -300,7 +300,7 @@ type RendererInline (windowProperties) =
         member ri.Terminate () =
             match dependenciesOpt with
             | Some (renderer3d, renderer2d, rendererImGui, context) ->
-                VulkanContext.waitIdle context
+                DeviceApi.vkDeviceWaitIdle () |> Hl.check
                 renderer3d.CleanUp ()
                 renderer2d.CleanUp ()
                 rendererImGui.CleanUp ()
@@ -309,7 +309,6 @@ type RendererInline (windowProperties) =
                 VulkanContext.cleanUp context
                 dependenciesOpt <- None
                 terminated <- true
-
             | None -> ()
 
 /// A threaded render process.
@@ -560,7 +559,7 @@ type RendererThread (windowProperties) =
                         VulkanContext.present context
 
         // clean up
-        VulkanContext.waitIdle context
+        DeviceApi.vkDeviceWaitIdle () |> Hl.check
         renderer3d.CleanUp ()
         renderer2d.CleanUp ()
         rendererImGui.CleanUp ()

@@ -235,7 +235,6 @@ type SwapchainWrapper =
 
     /// Destroy a swapchain wrapper.
     static member destroy swapchainWrapper =
-        DeviceApi.vkDeviceWaitIdle () |> Hl.check
         for i in 0 .. dec swapchainWrapper.ImageViews.Length do DeviceApi.vkDestroyImageView (swapchainWrapper.ImageViews[i], nullPtr)
         DeviceApi.vkDestroySwapchainKHR (swapchainWrapper.VkSwapchain, nullPtr)
 
@@ -648,20 +647,24 @@ type [<ReferenceEquality>] VulkanContext =
 
         // when frame abandoned, just bail
         if context.FrameAbandoned_ then
-            ()
+            callback None
 
         // when backgrounded, abandon frame
         elif Hl.Backgrounded then
             context.FrameAbandoned_ <- true
+            callback None
 
         // when minimized, abandon frame
         elif Hl.getWindowMinimized () then
             context.FrameAbandoned_ <- true
+            callback None
 
         // when surface lost, attempt to recreate surface and its dependent swapchain wrapper and abandon frame
         elif Hl.Surface.IsSurfaceLost then
+            DeviceApi.vkDeviceWaitIdle () |> Hl.check
             Swapchain.tryRecreateSurfaceAndEnsureSwapchainWrapper context.TryCreateVkSurface_ context.PhysicalDevice_ context.Swapchain_ context.Instance_
             context.FrameAbandoned_ <- true
+            callback None
 
         // surface not lost, proceed...
         else
@@ -685,8 +688,10 @@ type [<ReferenceEquality>] VulkanContext =
                 | None -> None
             match surfaceExtentOpt with
             | None ->
+                DeviceApi.vkDeviceWaitIdle () |> Hl.check
                 Swapchain.tryRecreateSurfaceAndEnsureSwapchainWrapper context.TryCreateVkSurface_ context.PhysicalDevice_ context.Swapchain_ context.Instance_
                 context.FrameAbandoned_ <- true
+                callback None
 
             // capabilities and valid surface available, proceed...
             | Some surfaceExtent ->
@@ -699,8 +704,10 @@ type [<ReferenceEquality>] VulkanContext =
                     | Some _ | None -> None
                 match swapchainWrapperOpt with
                 | None ->
+                    DeviceApi.vkDeviceWaitIdle () |> Hl.check
                     Swapchain.tryRecreateSurfaceAndEnsureSwapchainWrapper context.TryCreateVkSurface_ context.PhysicalDevice_ context.Swapchain_ context.Instance_
                     context.FrameAbandoned_ <- true
+                    callback None
 
                 // swapchain wrapper available in a valid rendering environment
                 | Some _ as swapchainWrapperOpt -> callback swapchainWrapperOpt
@@ -854,11 +861,15 @@ type [<ReferenceEquality>] VulkanContext =
                     | VkResult.ErrorOutOfDateKHR -> Hl.loseSurface ()
                     | VkResult.SuboptimalKHR -> () // NOTE: ignore for now since Android always signals this.
                     | result -> Hl.check result
-            | None -> ()
-
-    /// Wait for all device operations to complete before cleaning up resources.
-    static member waitIdle (_ : VulkanContext) =
-        DeviceApi.vkDeviceWaitIdle () |> Hl.check
+            | None ->
+                ConcurrentCommandQueue.withLock context.RenderQueue_ $ fun vkQueue ->
+                    let mutable renderSemaphore = context.RenderSemaphore
+                    let mutable submitInfo = VkSubmitInfo ()
+                    let mutable stageFlagOpt = VkPipelineStageFlags.AllCommands
+                    submitInfo.waitSemaphoreCount <- 1u
+                    submitInfo.pWaitSemaphores <- &&renderSemaphore
+                    submitInfo.pWaitDstStageMask <- &&stageFlagOpt
+                    DeviceApi.vkQueueSubmit (vkQueue, submitInfo, VkFence.Null) |> Hl.check
 
     /// Attempt to create a VulkanContext.
     /// NOTE: this procedure is intended to be invoked from the main thread to satisfy the requirements of Mac and
@@ -961,6 +972,7 @@ type [<ReferenceEquality>] VulkanContext =
     /// Clean-up a vulkan context.
     /// NOTE: intended to be invoked from the main thread.
     static member cleanUp context =
+        DeviceApi.vkDeviceWaitIdle () |> Hl.check
         Swapchain.destroy context.Swapchain_
         DeviceApi.vkDestroySemaphore (context.SwapchainImageSemaphore_, nullPtr)
         for renderSemaphore in context.RenderSemaphores_ do DeviceApi.vkDestroySemaphore (renderSemaphore, nullPtr)
