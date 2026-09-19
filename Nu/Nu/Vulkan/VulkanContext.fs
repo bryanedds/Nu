@@ -862,7 +862,7 @@ type [<ReferenceEquality>] VulkanContext =
                     | VkResult.SuboptimalKHR -> () // NOTE: ignore for now since Android always signals this.
                     | result -> Hl.check result
             | None ->
-                ConcurrentCommandQueue.withLock context.RenderQueue_ $ fun vkQueue ->
+                ConcurrentCommandQueue.withLock context.PresentQueue_ $ fun vkQueue ->
                     let mutable renderSemaphore = context.RenderSemaphore
                     let mutable submitInfo = VkSubmitInfo ()
                     let mutable stageFlagOpt = VkPipelineStageFlags.AllCommands
