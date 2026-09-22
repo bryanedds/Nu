@@ -10,7 +10,8 @@ type MetricsEntityDispatcher () =
 
 #if !MMCC
     override this.Update (entity, world) =
-        entity.SetAngles (v3 0.0f 0.0f ((entity.GetAngles world).Z + 0.05f)) world
+        let rotation = Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, world.UpdateTime % 360L |> single |> degToRadF)
+        entity.SetRotation rotation world
 #endif
 
     override this.Render (renderPass, entity, world) =
