@@ -282,7 +282,7 @@ type ToyBoxDispatcher () =
 
         // declare anchor 1
         let offset = v2 (Gen.randomf1 500f - 250f) (Gen.randomf1 350f - 175f)
-        let (anchorPosition1, anchorPosition2) = Sandbox2dGeometry.bridgeEndpoints spawnCenter offset
+        let (anchorPosition1, anchorPosition2) = Geometrics.bridgeEndpoints spawnCenter offset
         World.doOrbBody2d name
             [Entity.Position |= anchorPosition1
              Entity.Sensor .= true] world |> ignore
@@ -299,8 +299,8 @@ type ToyBoxDispatcher () =
         let currentAnchorPosition2 = anchor2.GetPosition world
         // declare bridge links
         let names = Array.init 6 (sprintf "%s Paddle %d" name)
-        let endpointPairs = Sandbox2dGeometry.bridgeLinkEndpoints currentAnchorPosition1 currentAnchorPosition2 names.Length
-        let desiredSizes = endpointPairs |> Array.map (fun (endpoint1, endpoint2) -> v3 Sandbox2dGeometry.BridgeLinkThickness (endpoint2 - endpoint1).Magnitude 0f)
+        let endpointPairs = Geometrics.bridgeLinkEndpoints currentAnchorPosition1 currentAnchorPosition2 names.Length
+        let desiredSizes = endpointPairs |> Array.map (fun (endpoint1, endpoint2) -> v3 Geometrics.BridgeLinkThickness (endpoint2 - endpoint1).Magnitude 0f)
         let bridgeResized =
             names
             |> Array.mapi (fun i linkName ->
@@ -311,10 +311,10 @@ type ToyBoxDispatcher () =
             let endpoint1, endpoint2 = endpointPairs[i]
             World.doBoxBody2d names[i]
                 [Entity.Position |= (endpoint1 + endpoint2) / 2f
-                 Entity.Rotation |= Sandbox2dGeometry.bridgeRotation endpoint1 endpoint2
+                 Entity.Rotation |= Geometrics.bridgeRotation endpoint1 endpoint2
                  Entity.Size @= desiredSizes[i]
-                 Entity.LinearDamping .= Sandbox2dGeometry.BridgeLinearDamping
-                 Entity.AngularDamping .= Sandbox2dGeometry.BridgeAngularDamping
+                 Entity.LinearDamping .= Geometrics.BridgeLinearDamping
+                 Entity.AngularDamping .= Geometrics.BridgeAngularDamping
                  Entity.StaticImage .= Assets.Default.Paddle
                  // paddles are thin, so use continuous collision detection to prevent tunnelling at high velocities
                  Entity.CollisionDetection .= Continuous] world |> ignore
@@ -333,19 +333,19 @@ type ToyBoxDispatcher () =
                     if jointIndex = 0 then B2MathFunction.b2Vec2_zero
                     else
                         let p1, p2 = endpointPairs[jointIndex - 1]
-                        Sandbox2dGeometry.bridgeJointLocalEndpoint (toPhysics ((p2 - p1).Magnitude / 2f)) true |> fun p -> B2Vec2 (p.X, p.Y)
+                        Geometrics.bridgeJointLocalEndpoint (toPhysics ((p2 - p1).Magnitude / 2f)) true |> fun p -> B2Vec2 (p.X, p.Y)
                 jointDef.``base``.localFrameB.p <-
                     if jointIndex = names.Length then B2MathFunction.b2Vec2_zero
                     else
                         let p1, p2 = endpointPairs[jointIndex]
-                        Sandbox2dGeometry.bridgeJointLocalEndpoint (toPhysics ((p2 - p1).Magnitude / 2f)) false |> fun p -> B2Vec2 (p.X, p.Y)
+                        Geometrics.bridgeJointLocalEndpoint (toPhysics ((p2 - p1).Magnitude / 2f)) false |> fun p -> B2Vec2 (p.X, p.Y)
                 B2Joints.b2CreateRevoluteJoint (world, &jointDef) }
             let bodyJointProperty = if bridgeResized then Entity.BodyJoint @= bodyJoint else Entity.BodyJoint |= bodyJoint
             World.doBodyJoint2d $"{n2} Link"
                 [Entity.BodyJointTarget .= Address.makeFromString $"^/{n1}"
                  Entity.BodyJointTarget2 .= Address.makeFromString $"^/{n2}"
                  // adjacent links already meet at the hinge anchor; collision impulses would fight the constraint.
-                 Entity.CollideConnected .= Sandbox2dGeometry.BridgeCollideConnected
+                 Entity.CollideConnected .= Geometrics.BridgeCollideConnected
                  bodyJointProperty] world |> ignore
 
     static let declareFan name spawnCenter (toyBox : Screen) world =
@@ -458,7 +458,7 @@ type ToyBoxDispatcher () =
 
         // declare torso
         let torsoWidth = 40f
-        let torsoHeight = Sandbox2dGeometry.RagdollLimbSpacing
+        let torsoHeight = Geometrics.RagdollLimbSpacing
         for (i, componentName, connectsTo, revoluteAngle) in
             [1f, "Torso Upper", "Head", None
              2f, "Torso Middle", "Torso Upper", Some (MathF.PI / 8f)
@@ -480,8 +480,8 @@ type ToyBoxDispatcher () =
                     let mutable jointDef = B2Joints.b2DefaultRevoluteJointDef ()
                     jointDef.``base``.bodyIdA <- a
                     jointDef.``base``.bodyIdB <- b
-                    jointDef.``base``.localFrameA.p <- new _ (0f, Sandbox2dGeometry.ragdollTorsoJointLocalOffset (toPhysics torsoHeight) false)
-                    jointDef.``base``.localFrameB.p <- new _ (0f, Sandbox2dGeometry.ragdollTorsoJointLocalOffset (toPhysics torsoHeight) true)
+                    jointDef.``base``.localFrameA.p <- new _ (0f, Geometrics.ragdollTorsoJointLocalOffset (toPhysics torsoHeight) false)
+                    jointDef.``base``.localFrameB.p <- new _ (0f, Geometrics.ragdollTorsoJointLocalOffset (toPhysics torsoHeight) true)
                     jointDef.enableLimit <- true // angle limits are allowed for revolute joints
                     jointDef.lowerAngle <- -revoluteAngle
                     jointDef.upperAngle <- revoluteAngle
@@ -513,7 +513,7 @@ type ToyBoxDispatcher () =
         let armHeight = armWidth / 2f
         for (side, direction) in ["Left", -1f; "Right", 1f] do
             for (pos1, posIncrement, rotation, armOrLeg, connectsToTorso) in
-                [v3 (Sandbox2dGeometry.ragdollArmCenterX torsoWidth armWidth direction) (ballY - ballSize / 2f - torsoHeight / 2f) 0f, v3 (direction * armWidth) 0f 0f, 0f, "Arm", "Upper"
+                [v3 (Geometrics.ragdollArmCenterX torsoWidth armWidth direction) (ballY - ballSize / 2f - torsoHeight / 2f) 0f, v3 (direction * armWidth) 0f 0f, 0f, "Arm", "Upper"
                  v3 (direction * torsoWidth * 0.25f) (ballY - ballSize / 2f - 3f * torsoHeight - armHeight) 0f, v3 0f -armWidth 0f, MathF.PI_OVER_2, "Leg", "Lower"] do
             for (pos, upperOrLower, connectsTo) in
                 [pos1, "Upper", $"Torso {connectsToTorso}"
@@ -530,7 +530,7 @@ type ToyBoxDispatcher () =
                  Entity.MountOpt .= None] world |> ignore
             let twoBodyJoint = Box2dNetBodyJoint { CreateBodyJoint = fun _ toPhysicsV2 a b world ->
                 let jointPosition =
-                    Sandbox2dGeometry.limbJointAnchor spawnCenter pos posIncrement
+                    Geometrics.limbJointAnchor spawnCenter pos posIncrement
                     |> toPhysicsV2
                 let mutable jointDef = B2Joints.b2DefaultRevoluteJointDef ()
                 jointDef.``base``.bodyIdA <- a

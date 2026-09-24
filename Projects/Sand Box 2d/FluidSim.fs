@@ -264,7 +264,7 @@ type FluidSimDispatcher () =
                          Entity.StaticImage .= renders[toolName].Image
                          Entity.Color .= renders[toolName].Color
                      | Bubble ->
-                         Entity.InsetOpt .= Some Sandbox2dGeometry.BubbleImageInset
+                         Entity.InsetOpt .= Some Geometrics.BubbleImageInset
                          Entity.StaticImage .= Assets.Gameplay.BubbleImage
                      | Line ->
                          Entity.Size .= v3 25f 2f 0f
@@ -386,8 +386,8 @@ type FluidSimDispatcher () =
                     fluidSim.MouseBubbleSize.Map inc world
                     World.doOrbBody2d "Bubble"
                         [Entity.Position @= mousePosition.V3
-                         Entity.Size @= v3Dup (Sandbox2dGeometry.bubbleDiameter (fluidSim.GetMouseBubbleSize world))
-                         Entity.InsetOpt .= Some Sandbox2dGeometry.BubbleImageInset
+                         Entity.Size @= v3Dup (Geometrics.bubbleDiameter (fluidSim.GetMouseBubbleSize world))
+                         Entity.InsetOpt .= Some Geometrics.BubbleImageInset
                          Entity.StaticImage .= Assets.Gameplay.BubbleImage] world |> ignore
                 | (Bubble, (false, _)) when World.isMouseButtonReleased MouseLeft world -> // the feeler detects only presses, not releases.
                     // reset size when mouse left button is just released
