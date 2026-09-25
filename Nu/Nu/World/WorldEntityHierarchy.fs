@@ -178,7 +178,7 @@ module WorldEntityHierarchyExtensions =
             let frozenPreBatches =
                 Dictionary<
                     bool * Material * Vulkan.PhysicallyBasedSurface * DepthTest * RenderType,
-                    Guid * StaticModel AssetTag * int * (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) List> ()
+                    Guid * StaticModel AssetTag * int * StaticModelSurfacePreBatchItem List> ()
             let frozenShapes = List ()
             let rec getFrozenArtifacts (entity : Entity) =
                 if entity <> parent then
@@ -203,7 +203,13 @@ module WorldEntityHierarchyExtensions =
                             let metadata = Metadata.getStaticModelMetadata staticModel
                             let surface = metadata.Surfaces[surfaceIndex]
                             let frozenKey = (material.Clipped, material, surface, depthTest, renderType)
-                            let frozenValue = (affineMatrix, castShadow, presence, Option.defaultValue box2Zero insetOpt, properties, entityBounds)
+                            let frozenValue =
+                                { ModelMatrix = affineMatrix
+                                  CastShadow = castShadow
+                                  Presence = presence
+                                  Inset = Option.defaultValue box2Zero insetOpt
+                                  MaterialProperties = properties
+                                  Bounds = entityBounds }
                             match frozenPreBatches.TryGetValue frozenKey with
                             | (true, (_, _, _, preBatch)) -> preBatch.Add frozenValue
                             | (false, _) -> frozenPreBatches.Add (frozenKey, (Gen.id, staticModel, surfaceIndex, List [frozenValue]))
@@ -262,7 +268,13 @@ module WorldEntityHierarchyExtensions =
                                 let metadata = Metadata.getStaticModelMetadata staticModel
                                 let surface = metadata.Surfaces[surfaceIndex]
                                 let frozenKey = (clipped, material, surface, depthTest, renderType)
-                                let frozenValue = (affineMatrix, castShadow, presence, Option.defaultValue box2Zero insetOpt, properties, surfaceBounds)
+                                let frozenValue =
+                                    { ModelMatrix = affineMatrix
+                                      CastShadow = castShadow
+                                      Presence = presence
+                                      Inset = Option.defaultValue box2Zero insetOpt
+                                      MaterialProperties = properties
+                                      Bounds = surfaceBounds }
                                 match frozenPreBatches.TryGetValue frozenKey with
                                 | (true, (_, _, _, preBatch)) -> preBatch.Add frozenValue
                                 | (false, _) -> frozenPreBatches.Add (frozenKey, (Gen.id, staticModel, surfaceIndex, List [frozenValue]))
@@ -297,7 +309,7 @@ module WorldEntityHierarchyExtensions =
                     let (clipped, material, _, depthTest, renderType) = entry.Key
                     let (preBatchId, staticModel, surfaceIndex, preBatch) = entry.Value
                     { PreBatchId = preBatchId
-                      StaticModelSurfaces = Seq.toArray preBatch
+                      PreBatchItems = Seq.toArray preBatch
                       Material = material
                       StaticModel = staticModel
                       SurfaceIndex = surfaceIndex

@@ -543,10 +543,19 @@ type RenderStaticModelSurface =
       RenderType : RenderType
       RenderPass : RenderPass }
 
-/// Describes a pre-composed batch of static model surfaces.
+/// Represents a batchable static model surface.
+type [<Struct>] StaticModelSurfacePreBatchItem =
+    { ModelMatrix : Matrix4x4
+      CastShadow : bool 
+      Presence : Presence
+      Inset : Box2
+      MaterialProperties : MaterialProperties
+      Bounds : Box3 }
+
+/// Represents a pre-composed batch of static model surfaces.
 type StaticModelSurfacePreBatch =
     { PreBatchId : Guid
-      StaticModelSurfaces : (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array
+      PreBatchItems : StaticModelSurfacePreBatchItem array
       Material : Material
       StaticModel : StaticModel AssetTag
       SurfaceIndex : int
@@ -1108,9 +1117,9 @@ type [<ReferenceEquality>] private RenderTasks =
       LightMapRenders : uint64 HashSet
       Lights : SortableLight List
       DeferredStatic : Dictionary<PhysicallyBasedSurface, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>
-      DeferredStaticPreBatches : Dictionary<Guid, struct (PhysicallyBasedSurface * (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array)>
+      DeferredStaticPreBatches : Dictionary<Guid, struct (PhysicallyBasedSurface * StaticModelSurfacePreBatchItem array)>
       DeferredStaticClipped : Dictionary<PhysicallyBasedSurface, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>
-      DeferredStaticClippedPreBatches : Dictionary<Guid, struct (PhysicallyBasedSurface * (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array)>
+      DeferredStaticClippedPreBatches : Dictionary<Guid, struct (PhysicallyBasedSurface * StaticModelSurfacePreBatchItem array)>
       DeferredAnimated : Dictionary<AnimatedModelSurfaceKey, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>
       DeferredTerrains : struct (TerrainDescriptor * TerrainPatchDescriptor * PhysicallyBasedGeometry) List
       Forward : struct (single * single * Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * PhysicallyBasedSurface * DepthTest) List
@@ -2563,7 +2572,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
     static member private categorizeStaticModelSurfacePreBatch
         (preBatchId : Guid,
-         staticModelSurfaces : _ array,
+         preBatchItems : StaticModelSurfacePreBatchItem array,
          material : Material,
          staticModel : StaticModel AssetTag,
          surfaceIndex : int,
@@ -2594,21 +2603,22 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                             else renderTasks.DeferredStaticClippedPreBatches
                         if preBatches.ContainsKey preBatchId then
                             Log.warnOnce "Multiple pre-batches with the same PreBatchId may indicate undesired usage. Only the last submitted deferred pre-batch will be rendered."
-                        preBatches[preBatchId] <- struct (surface, staticModelSurfaces)
+                        preBatches[preBatchId] <- struct (surface, preBatchItems)
                     | ForwardRenderType (subsort, sort) ->
-                        for (model, castShadow, presence, insetOpt, properties, bounds) in staticModelSurfaces do
+                        for i in 0 .. dec preBatchItems.Length do
+                            let item = &preBatchItems[i]
                             let unculled =
                                 match renderPass with
                                 | LightMapPass (_, _) -> true // TODO: see if we have enough context to cull here.
                                 | ShadowPass (_, _, shadowLightType, _, _, shadowFrustum) ->
-                                    if castShadow then // TODO: see if we should check for CastShadow when constructing the pre-batch.
+                                    if item.CastShadow then // TODO: see if we should check for CastShadow when constructing the pre-batch.
                                         let shadowFrustumInteriorOpt = if LightType.shouldShadowInterior shadowLightType then ValueSome shadowFrustum else ValueNone
-                                        Presence.intersects3d shadowFrustumInteriorOpt shadowFrustum shadowFrustum false presence bounds
+                                        Presence.intersects3d shadowFrustumInteriorOpt shadowFrustum shadowFrustum false item.Presence item.Bounds
                                     else false
-                                | ReflectionPass (_, reflFrustum) -> Presence.intersects3d ValueNone reflFrustum reflFrustum false presence bounds
-                                | NormalPass -> Presence.intersects3d (ValueSome frustumInterior) frustumExterior frustumImposter false presence bounds
+                                | ReflectionPass (_, reflFrustum) -> Presence.intersects3d ValueNone reflFrustum reflFrustum false item.Presence item.Bounds
+                                | NormalPass -> Presence.intersects3d (ValueSome frustumInterior) frustumExterior frustumImposter false item.Presence item.Bounds
                             if unculled then
-                                renderTasks.Forward.Add struct (subsort, sort, model, castShadow, presence, insetOpt, properties, ValueNone, surface, depthTest)
+                                renderTasks.Forward.Add struct (subsort, sort, item.ModelMatrix, item.CastShadow, item.Presence, item.Inset, item.MaterialProperties, ValueNone, surface, depthTest)
             | _ -> ()
         | ValueNone -> ()
 
@@ -3016,12 +3026,12 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             | RenderStaticModelSurfacePreBatch rsmsb ->
                 let renderPass = rsmsb.RenderPass
                 let renderTasks = VulkanRenderer3d.getRenderTasks renderPass renderer
-                VulkanRenderer3d.categorizeStaticModelSurfacePreBatch (rsmsb.StaticModelSurfacePreBatch.PreBatchId, rsmsb.StaticModelSurfacePreBatch.StaticModelSurfaces, rsmsb.StaticModelSurfacePreBatch.Material, rsmsb.StaticModelSurfacePreBatch.StaticModel, rsmsb.StaticModelSurfacePreBatch.SurfaceIndex, rsmsb.StaticModelSurfacePreBatch.DepthTest, rsmsb.StaticModelSurfacePreBatch.RenderType, frustumInterior, frustumExterior, frustumImposter, renderPass, renderTasks, renderer)
+                VulkanRenderer3d.categorizeStaticModelSurfacePreBatch (rsmsb.StaticModelSurfacePreBatch.PreBatchId, rsmsb.StaticModelSurfacePreBatch.PreBatchItems, rsmsb.StaticModelSurfacePreBatch.Material, rsmsb.StaticModelSurfacePreBatch.StaticModel, rsmsb.StaticModelSurfacePreBatch.SurfaceIndex, rsmsb.StaticModelSurfacePreBatch.DepthTest, rsmsb.StaticModelSurfacePreBatch.RenderType, frustumInterior, frustumExterior, frustumImposter, renderPass, renderTasks, renderer)
             | RenderStaticModelSurfacePreBatches rsmsbs ->
                 let renderPass = rsmsbs.RenderPass
                 let renderTasks = VulkanRenderer3d.getRenderTasks renderPass renderer
                 for preBatch in rsmsbs.StaticModelSurfacePreBatches do
-                    VulkanRenderer3d.categorizeStaticModelSurfacePreBatch (preBatch.PreBatchId, preBatch.StaticModelSurfaces, preBatch.Material, preBatch.StaticModel, preBatch.SurfaceIndex, preBatch.DepthTest, preBatch.RenderType, frustumInterior, frustumExterior, frustumImposter, renderPass, renderTasks, renderer)
+                    VulkanRenderer3d.categorizeStaticModelSurfacePreBatch (preBatch.PreBatchId, preBatch.PreBatchItems, preBatch.Material, preBatch.StaticModel, preBatch.SurfaceIndex, preBatch.DepthTest, preBatch.RenderType, frustumInterior, frustumExterior, frustumImposter, renderPass, renderTasks, renderer)
             | RenderStaticModel rsm ->
                 let insetOpt = Option.toValueOption rsm.InsetOpt
                 let renderTasks = VulkanRenderer3d.getRenderTasks rsm.RenderPass renderer
@@ -3098,7 +3108,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         renderer.GeometryInstanced.Add surface.PhysicallyBasedGeometry |> ignore<bool>
 
     static member private renderPhysicallyBasedShadowSurfacePreBatch
-        shadowLightType shadowFrustum bones (parameters : (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array) (surface : PhysicallyBasedSurface)
+        shadowLightType shadowFrustum bones (parameters : StaticModelSurfacePreBatchItem array) (surface : PhysicallyBasedSurface)
         uniformsDescriptorSet pipeline renderer =
 
         // ensure we have a large enough instance fields array
@@ -3110,13 +3120,13 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // blit parameters to instance fields
         let mutable i = 0
         for j in 0 .. dec parameters.Length do
-            let (model, castShadow, presence, _, _, bounds) = parameters[j]
+            let item = &parameters[j]
             let unculled =
-                castShadow &&
+                item.CastShadow &&
                 let shadowFrustumInteriorOpt = if LightType.shouldShadowInterior shadowLightType then ValueSome shadowFrustum else ValueNone
-                Presence.intersects3d shadowFrustumInteriorOpt shadowFrustum shadowFrustum false presence bounds
+                Presence.intersects3d shadowFrustumInteriorOpt shadowFrustum shadowFrustum false item.Presence item.Bounds
             if unculled then
-                model.ToArray (renderer.InstanceFields, i * Constants.Render.InstanceFieldCount)
+                item.ModelMatrix.ToArray (renderer.InstanceFields, i * Constants.Render.InstanceFieldCount)
                 i <- inc i
 
         // draw shadow surfaces
@@ -3195,7 +3205,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         renderer.GeometryInstanced.Add surface.PhysicallyBasedGeometry |> ignore<bool>
 
     static member private renderPhysicallyBasedDeferredSurfacePreBatch
-        frustumInterior frustumExterior frustumImposter renderPass bones (parameters : (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) array) (surface : PhysicallyBasedSurface)
+        frustumInterior frustumExterior frustumImposter renderPass bones (parameters : StaticModelSurfacePreBatchItem array) (surface : PhysicallyBasedSurface)
         eyeDescriptorSet samplerDescriptorSet pipeline renderer =
 
         // ensure we have a large enough instance fields array
@@ -3207,32 +3217,32 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // blit parameters to instance fields
         let mutable i = 0
         for j in 0 .. dec parameters.Length do
-            let (model, _, presence, texCoordsOffset, properties, bounds) = parameters[j]
+            let item = &parameters[j]
             let unculled =
                 match renderPass with
                 | LightMapPass (_, _) -> true // TODO: see if we have enough context to cull here.
                 | ShadowPass (_, _, shadowLightType, _, _, shadowFrustum) ->
                     let shadowFrustumInteriorOpt = if LightType.shouldShadowInterior shadowLightType then ValueSome shadowFrustum else ValueNone
-                    Presence.intersects3d shadowFrustumInteriorOpt shadowFrustum shadowFrustum false presence bounds
-                | ReflectionPass (_, reflFrustum) -> Presence.intersects3d ValueNone reflFrustum reflFrustum false presence bounds
-                | NormalPass -> Presence.intersects3d (ValueSome frustumInterior) frustumExterior frustumImposter false presence bounds
+                    Presence.intersects3d shadowFrustumInteriorOpt shadowFrustum shadowFrustum false item.Presence item.Bounds
+                | ReflectionPass (_, reflFrustum) -> Presence.intersects3d ValueNone reflFrustum reflFrustum false item.Presence item.Bounds
+                | NormalPass -> Presence.intersects3d (ValueSome frustumInterior) frustumExterior frustumImposter false item.Presence item.Bounds
             if unculled then
-                model.ToArray (renderer.InstanceFields, i * Constants.Render.InstanceFieldCount)
-                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 16] <- texCoordsOffset.Min.X
-                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 16 + 1] <- texCoordsOffset.Min.Y
-                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 16 + 2] <- texCoordsOffset.Min.X + texCoordsOffset.Size.X
-                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 16 + 3] <- texCoordsOffset.Min.Y + texCoordsOffset.Size.Y
-                let albedo = match properties.AlbedoOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Albedo
-                let roughness = match properties.RoughnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Roughness
-                let metallic = match properties.MetallicOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Metallic
-                let ambientOcclusion = match properties.AmbientOcclusionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.AmbientOcclusion
-                let emission = match properties.EmissionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Emission
-                let height = match properties.HeightOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Height
-                let ignoreLightMaps = match properties.IgnoreLightMapsOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.IgnoreLightMaps
-                let finenessOffset = match properties.FinenessOffsetOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.FinenessOffset
-                let scatterType = match properties.ScatterTypeOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ScatterType
-                let clearCoat = match properties.ClearCoatOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ClearCoat
-                let clearCoatRoughness = match properties.ClearCoatRoughnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ClearCoatRoughness
+                item.ModelMatrix.ToArray (renderer.InstanceFields, i * Constants.Render.InstanceFieldCount)
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 16] <- item.Inset.Min.X
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 16 + 1] <- item.Inset.Min.Y
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 16 + 2] <- item.Inset.Min.X + item.Inset.Size.X
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 16 + 3] <- item.Inset.Min.Y + item.Inset.Size.Y
+                let albedo = match item.MaterialProperties.AlbedoOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Albedo
+                let roughness = match item.MaterialProperties.RoughnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Roughness
+                let metallic = match item.MaterialProperties.MetallicOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Metallic
+                let ambientOcclusion = match item.MaterialProperties.AmbientOcclusionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.AmbientOcclusion
+                let emission = match item.MaterialProperties.EmissionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Emission
+                let height = match item.MaterialProperties.HeightOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Height
+                let ignoreLightMaps = match item.MaterialProperties.IgnoreLightMapsOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.IgnoreLightMaps
+                let finenessOffset = match item.MaterialProperties.FinenessOffsetOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.FinenessOffset
+                let scatterType = match item.MaterialProperties.ScatterTypeOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ScatterType
+                let clearCoat = match item.MaterialProperties.ClearCoatOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ClearCoat
+                let clearCoatRoughness = match item.MaterialProperties.ClearCoatRoughnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ClearCoatRoughness
                 renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 20] <- albedo.R
                 renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 20 + 1] <- albedo.G
                 renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 20 + 2] <- albedo.B
@@ -3243,7 +3253,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 24 + 3] <- emission
                 renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 28] <- surface.SurfaceMaterial.AlbedoTexture.TextureMetadata.TextureTexelHeight * height
                 renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 29] <- if ignoreLightMaps then 1.0f else 0.0f
-                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 30] <- presence.DepthCutoff
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 30] <- item.Presence.DepthCutoff
                 renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 31] <- 0.0f // free
                 renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 32] <- finenessOffset
                 renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 33] <- scatterType.Enumerate
