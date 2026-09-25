@@ -5,13 +5,13 @@
 // See https://github.com/bryanedds/Nu/blob/master/License.md.
 
 namespace SandBox2d
-
 open System
 open System.Numerics
 open Nu
 
 /// Pure geometry conventions used by the physics demonstrations.
-module Sandbox2dGeometry =
+[<RequireQualifiedAccess>]
+module Geometrics =
 
     let RaceCourseScale = 16f
 

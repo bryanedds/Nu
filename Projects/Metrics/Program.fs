@@ -10,7 +10,8 @@ type MetricsEntityDispatcher () =
 
 #if !MMCC
     override this.Update (entity, world) =
-        entity.SetAngles (v3 0.0f 0.0f ((entity.GetAngles world).Z + 0.05f)) world
+        let rotation = Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, world.UpdateTime % 360L |> single |> degToRadF)
+        entity.SetRotation rotation world
 #endif
 
     override this.Render (renderPass, entity, world) =
@@ -47,7 +48,7 @@ type MmccGameMessage =
     interface Message
 
 type MmccGameDispatcher () =
-    inherit GameDispatcher<Intss, MmccGameMessage, Command> (Intss.init 100) // 10,000 entities
+    inherit GameDispatcher<Intss, MmccGameMessage, Command> (Intss.init 111) // 12,321 entities
 
     override this.Definitions (_, _) =
         [Game.UpdateEvent => Inc]
@@ -63,7 +64,7 @@ type MmccGameDispatcher () =
                     [for (j, int) in ints.Ints.Pairs' do
                         Content.entity<MetricsEntityDispatcher> (string j)
                             [Entity.Presence == Omnipresent
-                             Entity.Position == v3 (single i * 5.0f - 245.0f) (single j * 2.75f - 135.0f) -250.0f
+                             Entity.Position == v3 (single i * 5.0f - 275.0f) (single j * 2.75f - 150.0f) -275.0f
                              Entity.Scale := v3Dup (single (int % 10)) * 0.5f]]
              Content.group "Other" []
                 [Content.skyBox "SkyBox" []
@@ -84,10 +85,10 @@ type MyGameDispatcher () =
 #if IMSIM
     inherit GameDispatcherImSim ()
 
-    static let Positions = // 10,000 entities
+    static let Positions = // 12,500 entities
         [|for i in 0 .. dec 50 do
             for j in 0 .. dec 50 do
-                for k in 0 .. dec 4 do
+                for k in 0 .. dec 5 do
                     yield v3 (single i * 0.5f) (single j * 0.5f) (single k * 0.5f)|]
 
     override this.Process (_, world) =
@@ -106,10 +107,10 @@ type MyGameDispatcher () =
 #else
     inherit GameDispatcher ()
 
-    static let Positions = // 20,000 entities
+    static let Positions = // 25,000 entities
         [|for i in 0 .. dec 50 do
             for j in 0 .. dec 50 do
-                for k in 0 .. dec 8 do
+                for k in 0 .. dec 10 do
                     yield v3 (single i * 0.5f) (single j * 0.5f) (single k * 0.5f)|]
 
     override this.Register (_, world) =
