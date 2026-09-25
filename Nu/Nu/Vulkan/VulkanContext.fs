@@ -19,12 +19,12 @@ open Nu
 /// A command queue that internally synchronizes use across multiple threads.
 type [<ReferenceEquality>] ConcurrentCommandQueue =
     private
-        { VkQueue_ : VkQueue
-          Lock_ : obj }
+        { VkQueueLock_ : obj
+          VkQueue_ : VkQueue }
 
     /// Perform an arbitrary operation on the internal vulkan queue.
     static member withLock<'a> queue (op : VkQueue -> 'a) : 'a =
-        lock queue.Lock_ (fun () -> op queue.VkQueue_)
+        lock queue.VkQueueLock_ (fun () -> op queue.VkQueue_)
 
     /// Wait for Queue to finish execution.
     static member waitIdle queue =
@@ -67,7 +67,7 @@ type [<ReferenceEquality>] ConcurrentCommandQueue =
     static member create queueFamilyIndex queueIndex =
         let mutable vkQueue = Unchecked.defaultof<VkQueue>
         DeviceApi.vkGetDeviceQueue (queueFamilyIndex, queueIndex, &vkQueue)
-        { VkQueue_ = vkQueue; Lock_ = obj () }
+        { VkQueueLock_ = obj (); VkQueue_ = vkQueue }
 
 /// A representation of a physical device and associated information.
 type PhysicalDevice =
@@ -242,8 +242,8 @@ type SwapchainWrapper =
 type Swapchain =
     private
         { mutable SwapchainWrapperOpt_ : SwapchainWrapper option
-          Window_ : SDL_Window nativeptr
-          SurfaceFormat_ : VkSurfaceFormatKHR }
+          SurfaceFormat_ : VkSurfaceFormatKHR
+          Window_ : SDL_Window nativeptr }
 
     /// The underlying vulkan swapchain when available.
     member this.SwapchainWrapperOpt =
@@ -262,8 +262,8 @@ type Swapchain =
     /// Create a Swapchain.
     static member create surfaceFormat physicalDevice window =
         { SwapchainWrapperOpt_ = SwapchainWrapper.tryCreate surfaceFormat physicalDevice
-          Window_ = window
-          SurfaceFormat_ = surfaceFormat }
+          SurfaceFormat_ = surfaceFormat
+          Window_ = window }
 
     /// Destroy a Swapchain.
     static member destroy swapchain =
@@ -475,7 +475,7 @@ type [<ReferenceEquality>] VulkanContext =
             InstanceApi.vkCreateDebugUtilsMessengerEXT (&info, nullPtr, &debugMessenger) |> Hl.check
             Some debugMessenger
         else None
-    
+
     /// Select compatible physical device when available.
     static member private trySelectPhysicalDevice () =
 
@@ -583,7 +583,7 @@ type [<ReferenceEquality>] VulkanContext =
         // specify device features to be enabled
         let mutable features = VkPhysicalDeviceFeatures ()
         if physicalDevice.SupportsAnisotropy then features.samplerAnisotropy <- true
-        
+
         // create device
         let mutable info = VkDeviceCreateInfo ()
         info.pNext <- asVoidPtr &vulkan13
