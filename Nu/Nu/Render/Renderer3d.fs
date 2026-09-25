@@ -58,6 +58,7 @@ type [<SymbolicExpansion>] TerrainMaterialProperties =
 [<RequireQualifiedAccess>]
 module TerrainMaterialProperties =
 
+    /// Terrain material properties with populated default properties.
     let defaultProperties =
         { AlbedoOpt = Some Constants.Render.AlbedoDefault
           RoughnessOpt = Some Constants.Render.RoughnessDefault
@@ -65,6 +66,7 @@ module TerrainMaterialProperties =
           HeightOpt = Some Constants.Render.HeightDefault
           IgnoreLightMapsOpt = Some false }
 
+    /// Empty terrain material properties.
     let empty =
         { AlbedoOpt = None
           RoughnessOpt = None
