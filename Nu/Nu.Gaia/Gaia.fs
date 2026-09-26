@@ -1352,23 +1352,25 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         focusPropertyOpt None world // drop any reference to old property type
                         World.updateLateBindings initializing FsiSession.DynamicAssemblies world // replace references to old types
                         Log.info "Code updated."
-                    | (Choice2Of2 _, diags) ->
-                        let diagsStr =
-                            diags
-                            |> Array.map (fun diag ->
-                                let range = diag.Range
-                                let start = range.Start
-                                let end_ = range.End
-                                let debugCodeProperty = typeof<FSharp.Compiler.Text.Range>.GetProperty ("DebugCode", BindingFlags.NonPublic ||| BindingFlags.Instance)
-                                let debugCodeOpt = if notNull debugCodeProperty then debugCodeProperty.GetValue range :?> string else null
-                                let debugCode = if String.IsNullOrEmpty debugCodeOpt then "<unavailable>" else debugCodeOpt
-                                let diagStr =
-                                    string diag.Severity + " " + diag.ErrorNumberText + " in " +
-                                    diag.FileName + " " + string start + "-" + string end_ + "\n" +
-                                    debugCode + " -> " + diag.Message
-                                diagStr)
-                            |> String.join Environment.NewLine
-                        Log.error ("Failed to compile code due to:\n" + diagsStr)
+                    | (Choice2Of2 exn, diags) ->
+                        if diags.Length > 0 then
+                            let diagsStr =
+                                diags
+                                |> Array.map (fun diag ->
+                                    let range = diag.Range
+                                    let start = range.Start
+                                    let end_ = range.End
+                                    let debugCodeProperty = typeof<FSharp.Compiler.Text.Range>.GetProperty ("DebugCode", BindingFlags.NonPublic ||| BindingFlags.Instance)
+                                    let debugCodeOpt = if notNull debugCodeProperty then debugCodeProperty.GetValue range :?> string else null
+                                    let debugCode = if String.IsNullOrEmpty debugCodeOpt then "<unavailable>" else debugCodeOpt
+                                    let diagStr =
+                                        string diag.Severity + " " + diag.ErrorNumberText + " in " +
+                                        diag.FileName + " " + string start + "-" + string end_ + "\n" +
+                                        debugCode + " -> " + diag.Message
+                                    diagStr)
+                                |> String.join Environment.NewLine
+                            Log.error ("Failed to compile code due to:\n" + diagsStr)
+                        else Log.error ("Failed to compile code due to:\n" + scstring exn)
                         World.switch worldStateOld world
                     FsiErrorStream.GetStringBuilder().Clear() |> ignore<StringBuilder>
                     FsiOutStream.GetStringBuilder().Clear() |> ignore<StringBuilder>
@@ -3331,9 +3333,12 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     if errorStr.Length > 0
                     then InteractiveOutputStr <- InteractiveOutputStr + errorStr
                     else InteractiveOutputStr <- InteractiveOutputStr + Environment.NewLine + outStr
-                | (Choice2Of2 _, diags) ->
+                | (Choice2Of2 exn, diags) ->
+                    let exnStr = "Unhandled exception: " + scstring exn
+                    InteractiveOutputStr <- InteractiveOutputStr + Environment.NewLine + exnStr
                     let diagsStr = diags |> Array.map _.Message |> String.join Environment.NewLine
-                    InteractiveOutputStr <- InteractiveOutputStr + Environment.NewLine + diagsStr
+                    if diagsStr.Length > 0 then
+                        InteractiveOutputStr <- InteractiveOutputStr + Environment.NewLine + diagsStr
                 InteractiveOutputStr <-
                     InteractiveOutputStr.Split Environment.NewLine
                     |> Array.filter (not << String.IsNullOrWhiteSpace)
