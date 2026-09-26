@@ -665,7 +665,7 @@ type LazyTexture (filePath : string, minimalTexture : TextureInternal) =
                 | Left error -> Log.info ("Could not serve lazy texture due to:" + error)
                 fullServeAttempted <- true
 
-/// A 2d texture.
+/// A vulkan texture.
 type [<CustomEquality; NoComparison>] Texture =
     | EmptyTexture
     | EagerTexture of TextureInternal

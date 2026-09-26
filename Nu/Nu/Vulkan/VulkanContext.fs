@@ -16,59 +16,6 @@ open Vortice.Vulkan
 open Prime
 open Nu
 
-/// A command queue that internally synchronizes use across multiple threads.
-type [<ReferenceEquality>] ConcurrentCommandQueue =
-    private
-        { VkQueueLock_ : obj
-          VkQueue_ : VkQueue }
-
-    /// Perform an arbitrary operation on the internal vulkan queue.
-    static member withLock<'a> queue (op : VkQueue -> 'a) : 'a =
-        lock queue.VkQueueLock_ (fun () -> op queue.VkQueue_)
-
-    /// Wait for Queue to finish execution.
-    static member waitIdle queue =
-        ConcurrentCommandQueue.withLock queue $ fun vkQueue ->
-            DeviceApi.vkQueueWaitIdle vkQueue |> Hl.check
-
-    /// Transiently run and then free the given command buffer. Command pool and finish fence must NOT be shared
-    /// between threads!
-    static member runTransient commandBuffer commandPool finishFence (commandQueue : ConcurrentCommandQueue) =
-
-        // lock to get access to vulkan queue then run commands
-        let mutable commandBuffer = commandBuffer
-        let mutable finishFence = finishFence
-        ConcurrentCommandQueue.withLock commandQueue $ fun vkQueue ->
-
-            // end command buffer
-            DeviceApi.vkEndCommandBuffer commandBuffer |> Hl.check
-
-            // submit commands
-            let mutable info = VkSubmitInfo ()
-            info.commandBufferCount <- 1u
-            info.pCommandBuffers <- &&commandBuffer
-            DeviceApi.vkQueueSubmit (vkQueue, 1u, &&info, finishFence) |> Hl.check
-
-            // wait for run to finish
-            // NOTE: on Android on my A17, we have to put vkWaitForFences in a loop because it will return before the
-            // given timeout with a VkResult.Timeout result (which I'm not sure is standard-conformant).
-            let mutable waiting = true
-            while waiting do
-                let result = DeviceApi.vkWaitForFences (1u, &&finishFence, true, UInt64.MaxValue)
-                if result <> VkResult.Timeout then
-                    waiting <- false
-                    Hl.check result
-            DeviceApi.vkResetFences (1u, &&finishFence) |> Hl.check
-
-            // free command buffer
-            DeviceApi.vkFreeCommandBuffers (commandPool, 1u, &&commandBuffer)
-
-    /// Create a ConcurrentCommandQueue.
-    static member create queueFamilyIndex queueIndex =
-        let mutable vkQueue = Unchecked.defaultof<VkQueue>
-        DeviceApi.vkGetDeviceQueue (queueFamilyIndex, queueIndex, &vkQueue)
-        { VkQueueLock_ = obj (); VkQueue_ = vkQueue }
-
 /// A representation of a physical device and associated information.
 type PhysicalDevice =
     { VkPhysicalDevice : VkPhysicalDevice
@@ -272,6 +219,59 @@ type Swapchain =
             SwapchainWrapper.destroy swapchainWrapper
             swapchain.SwapchainWrapperOpt_ <- None
         | None -> ()
+
+/// A command queue that internally synchronizes use across multiple threads.
+type [<ReferenceEquality>] ConcurrentCommandQueue =
+    private
+        { VkQueueLock_ : obj
+          VkQueue_ : VkQueue }
+
+    /// Perform an arbitrary operation on the internal vulkan queue.
+    static member withLock<'a> queue (op : VkQueue -> 'a) : 'a =
+        lock queue.VkQueueLock_ (fun () -> op queue.VkQueue_)
+
+    /// Wait for Queue to finish execution.
+    static member waitIdle queue =
+        ConcurrentCommandQueue.withLock queue $ fun vkQueue ->
+            DeviceApi.vkQueueWaitIdle vkQueue |> Hl.check
+
+    /// Transiently run and then free the given command buffer. Command pool and finish fence must NOT be shared
+    /// between threads!
+    static member runTransient commandBuffer commandPool finishFence (commandQueue : ConcurrentCommandQueue) =
+
+        // lock to get access to vulkan queue then run commands
+        let mutable commandBuffer = commandBuffer
+        let mutable finishFence = finishFence
+        ConcurrentCommandQueue.withLock commandQueue $ fun vkQueue ->
+
+            // end command buffer
+            DeviceApi.vkEndCommandBuffer commandBuffer |> Hl.check
+
+            // submit commands
+            let mutable info = VkSubmitInfo ()
+            info.commandBufferCount <- 1u
+            info.pCommandBuffers <- &&commandBuffer
+            DeviceApi.vkQueueSubmit (vkQueue, 1u, &&info, finishFence) |> Hl.check
+
+            // wait for run to finish
+            // NOTE: on Android on my A17, we have to put vkWaitForFences in a loop because it will return before the
+            // given timeout with a VkResult.Timeout result (which I'm not sure is standard-conformant).
+            let mutable waiting = true
+            while waiting do
+                let result = DeviceApi.vkWaitForFences (1u, &&finishFence, true, UInt64.MaxValue)
+                if result <> VkResult.Timeout then
+                    waiting <- false
+                    Hl.check result
+            DeviceApi.vkResetFences (1u, &&finishFence) |> Hl.check
+
+            // free command buffer
+            DeviceApi.vkFreeCommandBuffers (commandPool, 1u, &&commandBuffer)
+
+    /// Create a ConcurrentCommandQueue.
+    static member create queueFamilyIndex queueIndex =
+        let mutable vkQueue = Unchecked.defaultof<VkQueue>
+        DeviceApi.vkGetDeviceQueue (queueFamilyIndex, queueIndex, &vkQueue)
+        { VkQueueLock_ = obj (); VkQueue_ = vkQueue }
 
 /// Exposes the vulkan handles that must be globally accessible within the renderer.
 /// TODO: P1: group fields / properties by role rather than type.
