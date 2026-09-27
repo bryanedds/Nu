@@ -575,6 +575,7 @@ type Freezer3dFacet () =
                 World.defer
                     (fun world ->
                         // TODO: P1: figure out why we have to defer most of this stuff.
+                        entity.SetRotation quatIdentity world
                         entity.SetSize size world
                         entity.SetOffset offset world
                         entity.SetPermafrozenPreBatches frozenPreBatches world
