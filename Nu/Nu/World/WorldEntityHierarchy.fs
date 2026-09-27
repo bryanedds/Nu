@@ -567,13 +567,21 @@ type Freezer3dFacet () =
             if ImGui.Button "Permafreeze" then
                 append.EditContext.Snapshot Permafreeze world
                 entity.Permafreeze world
+                let size = entity.GetSize world
+                let offset = entity.GetOffset world
                 let frozenPreBatches = entity.GetFrozenPreBatches world
                 let frozenShapes = entity.GetFrozenShapes world
                 World.changeEntityDispatcher (nameof Permafreezer3dDispatcher) entity world
-                entity.SetPermafrozenPreBatches frozenPreBatches world
-                entity.SetPermafrozenShapes frozenShapes world
-                let getFrozenShapes = fun (entity : Entity) -> entity.GetPermafrozenShapes
-                entity.RegisterFrozenShapesPhysics getFrozenShapes world
+                World.defer
+                    (fun world ->
+                        // TODO: P1: figure out why we have to defer most of this stuff.
+                        entity.SetSize size world
+                        entity.SetOffset offset world
+                        entity.SetPermafrozenPreBatches frozenPreBatches world
+                        entity.SetPermafrozenShapes frozenShapes world
+                        entity.RegisterFrozenShapesPhysics _.GetPermafrozenShapes world
+                        entity.FacetNames.Map (Set.remove typeof<Freezer3dFacet>.Name) world)
+                    entity world
         | _ -> ()
 
 [<AutoOpen>]
