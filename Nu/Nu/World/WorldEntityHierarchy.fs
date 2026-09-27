@@ -282,7 +282,7 @@ module WorldEntityHierarchyExtensions =
                                     let affine = Affine.make (entity.GetPosition world) (entity.GetRotation world) (entity.GetScale world)
                                     let navShape = entity.GetNavShape world
                                     let bodyShape = entity.GetBodyShape world
-                                    frozenShapes.Add (surfaceBounds, affineMatrix, staticModel, surfaceIndex, navShape, affine, bodyShape)
+                                    frozenShapes.Add (surfaceBounds, surfaceMatrix, staticModel, surfaceIndex, navShape, affine, bodyShape)
                                 surfaceIndex <- inc surfaceIndex
                             frozenEntities.Add entity
                 for child in entity.GetChildren world do
