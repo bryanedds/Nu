@@ -1122,7 +1122,11 @@ module WorldModule =
         /// Present SimulantState properties for viewing.
         static member internal viewSimulantStateProperties state =
             let properties = World.getSimulantStateProperties state
-            properties |> Array.ofList |> Array.map a_c |> Array.sortBy fst
+            properties
+            |> Array.ofList
+            |> Array.filter (fun (name, _, _) -> not (Constants.Engine.NonDebugViewablePropertyNames.Contains name))
+            |> Array.map a_c
+            |> Array.sortBy fst
 
     type World with // Handlers
 
