@@ -295,6 +295,10 @@ module WorldEntityHierarchyExtensions =
                     entity.SetBodyFrozen true world
             match boundsOpt with
             | Some bounds ->
+                let boundsOffset = parent.GetPosition world
+                let bounds = bounds.Translate -boundsOffset
+                let bounds = bounds.Transform (Matrix4x4.CreateFromQuaternion (parent.GetRotation world).Inverted)
+                let bounds = bounds.Translate boundsOffset
                 if bounds.Size.Magnitude >= Constants.Engine.EnvironmentMagnitudeThreshold then
                     parent.SetPickable false world
                     Log.infoOnce "Presuming large frozen parent contains an environment due to total bounds of children and therefore setting it non-pickable."
@@ -575,7 +579,6 @@ type Freezer3dFacet () =
                 World.defer
                     (fun world ->
                         // TODO: P1: figure out why we have to defer most of this stuff.
-                        entity.SetRotation quatIdentity world
                         entity.SetSize size world
                         entity.SetOffset offset world
                         entity.SetPermafrozenPreBatches frozenPreBatches world
