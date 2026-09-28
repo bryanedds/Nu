@@ -164,6 +164,11 @@ module Engine =
               "Light"
               "Optimized"],
              StringComparer.Ordinal)
+    let [<Uniform>] NonDebugViewablePropertyNames =
+        FrozenSet.ToFrozenSet
+            ([(* Entity Properties *)
+              "PropagatedDescriptorOpt"],
+             StringComparer.Ordinal)
     let [<Literal>] EngineDebug =
 #if DEBUG
         true

@@ -269,7 +269,7 @@ module WorldEntityHierarchyExtensions =
                                 let surface = metadata.Surfaces[surfaceIndex]
                                 let frozenKey = (clipped, material, surface, depthTest, renderType)
                                 let frozenValue =
-                                    { ModelMatrix = affineMatrix
+                                    { ModelMatrix = surfaceMatrix
                                       CastShadow = castShadow
                                       Presence = presence
                                       Inset = Option.defaultValue box2Zero insetOpt
@@ -282,7 +282,7 @@ module WorldEntityHierarchyExtensions =
                                     let affine = Affine.make (entity.GetPosition world) (entity.GetRotation world) (entity.GetScale world)
                                     let navShape = entity.GetNavShape world
                                     let bodyShape = entity.GetBodyShape world
-                                    frozenShapes.Add (surfaceBounds, affineMatrix, staticModel, surfaceIndex, navShape, affine, bodyShape)
+                                    frozenShapes.Add (surfaceBounds, surfaceMatrix, staticModel, surfaceIndex, navShape, affine, bodyShape)
                                 surfaceIndex <- inc surfaceIndex
                             frozenEntities.Add entity
                 for child in entity.GetChildren world do
@@ -295,6 +295,10 @@ module WorldEntityHierarchyExtensions =
                     entity.SetBodyFrozen true world
             match boundsOpt with
             | Some bounds ->
+                let boundsOffset = parent.GetPosition world
+                let bounds = bounds.Translate -boundsOffset
+                let bounds = bounds.Transform (Matrix4x4.CreateFromQuaternion (parent.GetRotation world).Inverted)
+                let bounds = bounds.Translate boundsOffset
                 if bounds.Size.Magnitude >= Constants.Engine.EnvironmentMagnitudeThreshold then
                     parent.SetPickable false world
                     Log.infoOnce "Presuming large frozen parent contains an environment due to total bounds of children and therefore setting it non-pickable."
@@ -567,13 +571,21 @@ type Freezer3dFacet () =
             if ImGui.Button "Permafreeze" then
                 append.EditContext.Snapshot Permafreeze world
                 entity.Permafreeze world
+                let size = entity.GetSize world
+                let offset = entity.GetOffset world
                 let frozenPreBatches = entity.GetFrozenPreBatches world
                 let frozenShapes = entity.GetFrozenShapes world
                 World.changeEntityDispatcher (nameof Permafreezer3dDispatcher) entity world
-                entity.SetPermafrozenPreBatches frozenPreBatches world
-                entity.SetPermafrozenShapes frozenShapes world
-                let getFrozenShapes = fun (entity : Entity) -> entity.GetPermafrozenShapes
-                entity.RegisterFrozenShapesPhysics getFrozenShapes world
+                World.defer
+                    (fun world ->
+                        // TODO: P1: figure out why we have to defer most of this stuff.
+                        entity.SetSize size world
+                        entity.SetOffset offset world
+                        entity.SetPermafrozenPreBatches frozenPreBatches world
+                        entity.SetPermafrozenShapes frozenShapes world
+                        entity.RegisterFrozenShapesPhysics _.GetPermafrozenShapes world
+                        entity.FacetNames.Map (Set.remove typeof<Freezer3dFacet>.Name) world)
+                    entity world
         | _ -> ()
 
 [<AutoOpen>]
