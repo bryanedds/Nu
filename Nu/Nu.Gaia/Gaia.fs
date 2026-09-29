@@ -1951,10 +1951,13 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private imGuiAppendPropertiesDispatcherExplicit simulant world =
         let ty = getType (World.getDispatcher simulant world)
-        if ImGui.CollapsingHeader (ty.Name.Spaced, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow) then
+        if ImGui.CollapsingHeader (ty.Name.Spaced, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow ||| ImGuiTreeNodeFlags.AllowOverlap) then
+            let y = ImGui.GetCursorPosY ()
             let unfocusProperty () = focusPropertyOpt None world
             let appendProperties : AppendProperties = { EditContext = makeEditContext None (Some unfocusProperty) }
             World.edit (fun o -> o.GetType () = ty) (AppendProperties appendProperties) simulant world
+            y
+        else ImGui.GetCursorPosY ()
 
     let private imGuiEditPropertyRecord
         (getProperty : PropertyDescriptor -> Simulant -> World -> obj)
@@ -2041,8 +2044,15 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 | _ -> failwithumf ()
             match propertyCategory with // preempt with dispatcher category if it is not represented by any of the properties
             | Right ty when not appendedToDispatcher && not (ty.IsAssignableTo typeof<Dispatcher>) ->
-                imGuiAppendPropertiesDispatcherExplicit simulant world
+                let yBeforeHeader = ImGui.GetCursorPosY ()
+                let yAfterHeader = imGuiAppendPropertiesDispatcherExplicit simulant world
                 appendedToDispatcher <- true
+                if yAfterHeader = ImGui.GetCursorPosY () then // overwrite dispatcher header when no dispatcher properties
+                    let drawList = ImGui.GetWindowDrawList ()
+                    let itemMin = ImGui.GetItemRectMin ()
+                    let itemMax = ImGui.GetItemRectMax ()
+                    drawList.AddRectFilled (itemMin, itemMax, ImGui.ColorConvertFloat4ToU32 (Vector4 (0.45f, 0.45f, 0.45f, 1.0f)), 5.0f) // draw colored square to overwrite unutilized header
+                    ImGui.SetCursorPosY yBeforeHeader // back up cursor Y if it didn't advance due to no dispatcher properties
             | Right _ | Left _ -> ()
             if  (propertyCategoryName <> "Model" || modelUsed) &&
                 (propertyCategoryName = "Ambient" || ImGui.CollapsingHeader (propertyCategoryName + "##category", ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow)) then
@@ -2178,7 +2188,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     imGuiEditEntityAppliedTypes entity world
                 | _ ->
                     Log.infoOnce "Unexpected simulant type."
-        if not appendedToDispatcher then imGuiAppendPropertiesDispatcherExplicit simulant world
+        if not appendedToDispatcher then imGuiAppendPropertiesDispatcherExplicit simulant world |> ignore<single>
         detectEyeChangedElsewhere world
 
     let private imGuiViewportManipulation (world : World) =
