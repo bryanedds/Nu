@@ -2118,7 +2118,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     let drawList = ImGui.GetWindowDrawList ()
                     let itemMin = ImGui.GetItemRectMin ()
                     let itemMax = ImGui.GetItemRectMax ()
-                    drawList.AddRectFilled (itemMin, itemMax, ImGui.ColorConvertFloat4ToU32 (Vector4 (0.45f, 0.45f, 0.45f, 1.0f)), 5.0f) // draw colored square to overwrite unutilized header
+                    drawList.AddRectFilled (itemMin, itemMax, ImGui.ColorConvertFloat4ToU32 (Vector4 (0.4f, 0.4f, 0.4f, 1.0f)), 5.0f) // draw colored square to overwrite unutilized header
                     ImGui.SetCursorPosY yBeforeHeader // back up cursor Y if it didn't advance due to no dispatcher properties
             | Right _ | Left _ -> ()
             if  (propertyCategoryName <> "Model" || modelUsed) &&
