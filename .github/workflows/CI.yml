@@ -10,7 +10,7 @@ jobs:
           - windows-11-arm
           - ubuntu-24.04-arm
           - ubuntu-latest
-          - macos-26 # choose a macOS version with Xcode that is supported by https://github.com/dotnet/macios/releases
+          - xcode-27 # choose a macOS version with Xcode that is supported by https://github.com/dotnet/macios/releases
       fail-fast: false # Don't cancel one when another fails
     runs-on: ${{ matrix.os }}
     steps:
