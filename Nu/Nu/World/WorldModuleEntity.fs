@@ -2104,10 +2104,10 @@ module WorldModuleEntity =
                 entitiesIndexed <-
                     match entitiesIndexed.TryGetValue struct (entity.Group, ty) with
                     | (true, entities) ->
-                        let entities = USet.add entity entities
+                        let entities = SUSet.add entity entities
                         UMap.add struct (entity.Group, ty) entities entitiesIndexed
                     | (false, _) ->
-                        UMap.add struct (entity.Group, ty) (USet.singleton HashIdentity.Structural config entity) entitiesIndexed
+                        UMap.add struct (entity.Group, ty) (SUSet.singleton HashIdentity.Structural config entity) entitiesIndexed
             world.WorldState <- { world.WorldState with EntitiesIndexed = entitiesIndexed }
 
         static member internal unregisterEntityIndex (ty : Type) (entity : Entity) (world : World) =
@@ -2116,8 +2116,8 @@ module WorldModuleEntity =
                 entitiesIndexed <-
                     match entitiesIndexed.TryGetValue struct (entity.Group, ty) with
                     | (true, entities) ->
-                        let entities = USet.remove entity entities
-                        if USet.isEmpty entities
+                        let entities = SUSet.remove entity entities
+                        if SUSet.isEmpty entities
                         then UMap.remove struct (entity.Group, ty) entitiesIndexed
                         else UMap.add struct (entity.Group, ty) entities entitiesIndexed
                     | (false, _) ->
