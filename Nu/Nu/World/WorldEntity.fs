@@ -666,19 +666,19 @@ module WorldEntityModule =
         static member getEntitiesAs<'d when 'd :> EntityDispatcher> (group : Group) (world : World) : Entity seq =
             match world.EntitiesIndexed.TryGetValue struct (group, typeof<'d>) with
             | (true, entities) -> entities
-            | (false, _) -> SUSet.makeEmpty HashIdentity.Structural (World.getCollectionConfig world)
+            | (false, _) -> USet.makeEmpty HashIdentity.Structural (World.getCollectionConfig world)
 
         /// Get all the entities in a group that have a given facet type.
         static member getEntitiesWith<'f when 'f :> Facet> (group : Group) (world : World) : Entity seq =
             match world.EntitiesIndexed.TryGetValue struct (group, typeof<'f>) with
             | (true, entities) -> entities
-            | (false, _) -> SUSet.makeEmpty HashIdentity.Structural (World.getCollectionConfig world)
+            | (false, _) -> USet.makeEmpty HashIdentity.Structural (World.getCollectionConfig world)
 
         /// Get all the entities in a group.
         static member getEntities (group : Group) (world : World) : Entity seq =
             match world.EntitiesIndexed.TryGetValue struct (group, typeof<EntityDispatcher>) with
             | (true, entities) -> entities
-            | (false, _) -> SUSet.makeEmpty HashIdentity.Structural (World.getCollectionConfig world)
+            | (false, _) -> USet.makeEmpty HashIdentity.Structural (World.getCollectionConfig world)
 
         /// Get all the entities in a group in depth-first order.
         static member getEntitiesDepthFirst (group : Group) (world : World) =
