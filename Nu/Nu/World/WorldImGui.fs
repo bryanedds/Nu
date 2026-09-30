@@ -1025,12 +1025,12 @@ module WorldImGui =
                 lighting3dEdited <- ImGui.SliderFloat ("Bloom Filter Radius", &bloomFilterRadius, 0.0f, 0.01f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 ImGui.Text "Depth of Field"
                 lighting3dEdited <- ImGui.Checkbox ("Depth of Field Enabled", &depthOfFieldEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderFloat ("Depth of Field Near Distance", &depthOfFieldNearDistance, 0.0f, 256.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderFloat ("Depth of Field Far Distance", &depthOfFieldFarDistance, 0.0f, 256.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Depth of Field Near Distance", &depthOfFieldNearDistance, 0.0f, 128.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Depth of Field Far Distance", &depthOfFieldFarDistance, 0.0f, 128.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Depth of Field Radius", &depthOfFieldRadius, 0.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.Combo ("Depth of Field Focal Depth Type", &depthOfFieldFocalType, FocalType.Names, FocalType.Names.Length) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.Combo ("Depth of Field Focal Type", &depthOfFieldFocalType, FocalType.Names, FocalType.Names.Length) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 if depthOfFieldFocalType = StaticFocalDistance.Enumerate then
-                    lighting3dEdited <- ImGui.SliderFloat ("Depth of Field Focal Depth", &depthOfFieldFocalDistance, 0.0f, 256.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                    lighting3dEdited <- ImGui.SliderFloat ("Depth of Field Focal Distance", &depthOfFieldFocalDistance, 0.0f, 64.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 elif depthOfFieldFocalType = DynamicFocalDistance.Enumerate then
                     lighting3dEdited <- ImGui.SliderFloat2 ("Depth of Field Focal Point", &depthOfFieldFocalPoint, -0.5f, 0.5f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 ImGui.Text "Chromatic Aberration"
