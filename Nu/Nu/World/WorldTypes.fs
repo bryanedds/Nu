@@ -1925,7 +1925,7 @@ and [<ReferenceEquality>] World =
           AmbientState : World AmbientState
           Subsystems : Subsystems
           Simulants : Dictionary<Simulant, Simulant HashSet option> // OPTIMIZATION: using None instead of empty HashSet to descrease number of HashSet instances.
-          EntitiesIndexed : Dictionary<struct (Group * Type), Entity HashSet> // NOTE: could even add: Dictionary<string, EntitySubquery * Entities SHashSet> to entry value where subqueries are populated via NuPlugin.
+          EntitiesIndexed : Dictionary<struct (Group * Type), Entity HashSet>
           WorldExtension : WorldExtension }
 
     /// Check that the world is alive (still running).
