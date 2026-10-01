@@ -1352,23 +1352,25 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         focusPropertyOpt None world // drop any reference to old property type
                         World.updateLateBindings initializing FsiSession.DynamicAssemblies world // replace references to old types
                         Log.info "Code updated."
-                    | (Choice2Of2 _, diags) ->
-                        let diagsStr =
-                            diags
-                            |> Array.map (fun diag ->
-                                let range = diag.Range
-                                let start = range.Start
-                                let end_ = range.End
-                                let debugCodeProperty = typeof<FSharp.Compiler.Text.Range>.GetProperty ("DebugCode", BindingFlags.NonPublic ||| BindingFlags.Instance)
-                                let debugCodeOpt = if notNull debugCodeProperty then debugCodeProperty.GetValue range :?> string else null
-                                let debugCode = if String.IsNullOrEmpty debugCodeOpt then "<unavailable>" else debugCodeOpt
-                                let diagStr =
-                                    string diag.Severity + " " + diag.ErrorNumberText + " in " +
-                                    diag.FileName + " " + string start + "-" + string end_ + "\n" +
-                                    debugCode + " -> " + diag.Message
-                                diagStr)
-                            |> String.join Environment.NewLine
-                        Log.error ("Failed to compile code due to:\n" + diagsStr)
+                    | (Choice2Of2 exn, diags) ->
+                        if diags.Length > 0 then
+                            let diagsStr =
+                                diags
+                                |> Array.map (fun diag ->
+                                    let range = diag.Range
+                                    let start = range.Start
+                                    let end_ = range.End
+                                    let debugCodeProperty = typeof<FSharp.Compiler.Text.Range>.GetProperty ("DebugCode", BindingFlags.NonPublic ||| BindingFlags.Instance)
+                                    let debugCodeOpt = if notNull debugCodeProperty then debugCodeProperty.GetValue range :?> string else null
+                                    let debugCode = if String.IsNullOrEmpty debugCodeOpt then "<unavailable>" else debugCodeOpt
+                                    let diagStr =
+                                        string diag.Severity + " " + diag.ErrorNumberText + " in " +
+                                        diag.FileName + " " + string start + "-" + string end_ + "\n" +
+                                        debugCode + " -> " + diag.Message
+                                    diagStr)
+                                |> String.join Environment.NewLine
+                            Log.error ("Failed to compile code due to:\n" + diagsStr)
+                        else Log.error ("Failed to compile code due to:\n" + scstring exn)
                         World.switch worldStateOld world
                     FsiErrorStream.GetStringBuilder().Clear() |> ignore<StringBuilder>
                     FsiOutStream.GetStringBuilder().Clear() |> ignore<StringBuilder>
@@ -2016,10 +2018,13 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private imGuiAppendPropertiesDispatcherExplicit simulant world =
         let ty = getType (World.getDispatcher simulant world)
-        if ImGui.CollapsingHeader (ty.Name.Spaced, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow) then
+        if ImGui.CollapsingHeader (ty.Name.Spaced, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow ||| ImGuiTreeNodeFlags.AllowOverlap) then
+            let y = ImGui.GetCursorPosY ()
             let unfocusProperty () = focusPropertyOpt None world
             let appendProperties : AppendProperties = { EditContext = makeEditContext None (Some unfocusProperty) }
             World.edit (fun o -> o.GetType () = ty) (AppendProperties appendProperties) simulant world
+            y
+        else ImGui.GetCursorPosY ()
 
     let private imGuiEditPropertyRecord
         (getProperty : PropertyDescriptor -> Simulant -> World -> obj)
@@ -2106,8 +2111,15 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 | _ -> failwithumf ()
             match propertyCategory with // preempt with dispatcher category if it is not represented by any of the properties
             | Right ty when not appendedToDispatcher && not (ty.IsAssignableTo typeof<Dispatcher>) ->
-                imGuiAppendPropertiesDispatcherExplicit simulant world
+                let yBeforeHeader = ImGui.GetCursorPosY ()
+                let yAfterHeader = imGuiAppendPropertiesDispatcherExplicit simulant world
                 appendedToDispatcher <- true
+                if yAfterHeader = ImGui.GetCursorPosY () then // overwrite dispatcher header when no dispatcher properties
+                    let drawList = ImGui.GetWindowDrawList ()
+                    let itemMin = ImGui.GetItemRectMin ()
+                    let itemMax = ImGui.GetItemRectMax ()
+                    drawList.AddRectFilled (itemMin, itemMax, ImGui.ColorConvertFloat4ToU32 (Vector4 (0.4f, 0.4f, 0.4f, 1.0f)), 5.0f) // draw colored square to overwrite unutilized header
+                    ImGui.SetCursorPosY yBeforeHeader // back up cursor Y if it didn't advance due to no dispatcher properties
             | Right _ | Left _ -> ()
             if  (propertyCategoryName <> "Model" || modelUsed) &&
                 (propertyCategoryName = "Ambient" || ImGui.CollapsingHeader (propertyCategoryName + "##category", ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow)) then
@@ -2243,7 +2255,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     imGuiEditEntityAppliedTypes entity world
                 | _ ->
                     Log.infoOnce "Unexpected simulant type."
-        if not appendedToDispatcher then imGuiAppendPropertiesDispatcherExplicit simulant world
+        if not appendedToDispatcher then imGuiAppendPropertiesDispatcherExplicit simulant world |> ignore<single>
         detectEyeChangedElsewhere world
 
     let private imGuiViewportManipulation (world : World) =
@@ -3331,9 +3343,12 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     if errorStr.Length > 0
                     then InteractiveOutputStr <- InteractiveOutputStr + errorStr
                     else InteractiveOutputStr <- InteractiveOutputStr + Environment.NewLine + outStr
-                | (Choice2Of2 _, diags) ->
+                | (Choice2Of2 exn, diags) ->
+                    let exnStr = "Unhandled exception: " + scstring exn
+                    InteractiveOutputStr <- InteractiveOutputStr + Environment.NewLine + exnStr
                     let diagsStr = diags |> Array.map _.Message |> String.join Environment.NewLine
-                    InteractiveOutputStr <- InteractiveOutputStr + Environment.NewLine + diagsStr
+                    if diagsStr.Length > 0 then
+                        InteractiveOutputStr <- InteractiveOutputStr + Environment.NewLine + diagsStr
                 InteractiveOutputStr <-
                     InteractiveOutputStr.Split Environment.NewLine
                     |> Array.filter (not << String.IsNullOrWhiteSpace)

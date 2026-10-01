@@ -65,11 +65,11 @@ type TryCreateVkSurfaceRequest =
 type RendererProcess =
     interface
 
-        /// Start the rendering process.
-        abstract Start : ImFontAtlasPtr -> SDL_Window nativeptr option -> Viewport -> Viewport -> unit
-
         /// The current configuration of the 3d renderer.
         abstract Renderer3dConfig : Renderer3dConfig
+
+        /// Start the rendering process.
+        abstract Start : ImFontAtlasPtr -> SDL_Window nativeptr option -> Viewport -> Viewport -> unit
 
         /// Attempt to get a texture id that can be used to visually represent the specified asset.
         abstract TryGetImGuiTextureId : AssetTag -> uint32 voption
@@ -94,9 +94,6 @@ type RendererProcess =
 
         /// Enqueue an ImGui rendering message.
         abstract EnqueueMessageImGui : RenderMessageImGui -> unit
-
-        /// Clear enqueued render messages.
-        abstract ClearMessages : unit -> unit
 
         /// Submit enqueued render messages for processing.
         abstract SubmitMessages : Frustum -> Frustum -> Frustum -> Vector3 -> Quaternion -> single -> Vector2 -> Vector2 -> Viewport -> Viewport -> WindowProperties -> ImDrawDataPtr -> unit
@@ -128,6 +125,11 @@ type RendererInline (windowProperties) =
     do Hl.setWindowProperties windowProperties
 
     interface RendererProcess with
+
+        member ri.Renderer3dConfig =
+            match dependenciesOpt with
+            | Some (renderer3d, _, _, _) -> renderer3d.RendererConfig
+            | None -> Renderer3dConfig.defaultConfig
 
         member ri.Start fonts windowOpt_ geometryViewport windowViewport =
 
@@ -192,11 +194,6 @@ type RendererInline (windowProperties) =
             // fail on already created
             | Some _ -> raise (InvalidOperationException "Redundant Start calls.")
 
-        member ri.Renderer3dConfig =
-            match dependenciesOpt with
-            | Some (renderer3d, _, _, _) -> renderer3d.RendererConfig
-            | None -> Renderer3dConfig.defaultConfig
-
         member ri.TryGetImGuiTextureId assetTag =
             assetTextureRequests[assetTag] <- ()
             match assetTextureOpts.TryGetValue assetTag with
@@ -237,11 +234,6 @@ type RendererInline (windowProperties) =
             match dependenciesOpt with
             | Some _ -> messagesImGui.Add message 
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
-
-        member ri.ClearMessages () =
-            messages3d.Clear ()
-            messages2d.Clear ()
-            messagesImGui.Clear ()
 
         member ri.SubmitMessages frustumInterior frustumExterior frustumImposter eye3dCenter eye3dRotation eye3dFieldOfView eye2dCenter eye2dSize geometryViewport windowViewport windowProperties drawData =
 
@@ -300,7 +292,7 @@ type RendererInline (windowProperties) =
         member ri.Terminate () =
             match dependenciesOpt with
             | Some (renderer3d, renderer2d, rendererImGui, context) ->
-                VulkanContext.waitIdle context
+                DeviceApi.vkDeviceWaitIdle () |> Hl.check
                 renderer3d.CleanUp ()
                 renderer2d.CleanUp ()
                 rendererImGui.CleanUp ()
@@ -309,7 +301,6 @@ type RendererInline (windowProperties) =
                 VulkanContext.cleanUp context
                 dependenciesOpt <- None
                 terminated <- true
-
             | None -> ()
 
 /// A threaded render process.
@@ -560,7 +551,7 @@ type RendererThread (windowProperties) =
                         VulkanContext.present context
 
         // clean up
-        VulkanContext.waitIdle context
+        DeviceApi.vkDeviceWaitIdle () |> Hl.check
         renderer3d.CleanUp ()
         renderer2d.CleanUp ()
         rendererImGui.CleanUp ()
@@ -568,6 +559,9 @@ type RendererThread (windowProperties) =
         Texture.destroy resolveTexture context
 
     interface RendererProcess with
+
+        member rt.Renderer3dConfig =
+            renderer3dConfig
 
         member rt.Start fonts windowOpt geometryViewport windowViewport =
 
@@ -612,9 +606,6 @@ type RendererThread (windowProperties) =
 
             // wait for thread to finish starting
             while not started do Thread.Yield () |> ignore<bool>
-
-        member rt.Renderer3dConfig =
-            renderer3dConfig
 
         member rt.TryGetImGuiTextureId assetTag =
             assetTextureRequests[assetTag] <- ()
@@ -784,12 +775,6 @@ type RendererThread (windowProperties) =
         member rt.EnqueueMessageImGui message =
             if Option.isNone threadOpt then raise (InvalidOperationException "Renderer process not yet started or already terminated.")
             messageBuffersImGui[messageBufferIndex].Add message
-
-        member rt.ClearMessages () =
-            if Option.isNone threadOpt then raise (InvalidOperationException "Renderer process not yet started or already terminated.")
-            messageBuffers3d[messageBufferIndex].Clear ()
-            messageBuffers2d[messageBufferIndex].Clear ()
-            messageBuffersImGui[messageBufferIndex].Clear ()
 
         member rt.SubmitMessages frustumInterior frustumExterior frustumImposter eye3dCenter eye3dRotation eye3dFieldOfView eye2dCenter eye2dSize geometryViewport windowViewport windowProperties drawData =
             if Option.isNone threadOpt then raise (InvalidOperationException "Renderer process not yet started or already terminated.")

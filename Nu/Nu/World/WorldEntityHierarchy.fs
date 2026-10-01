@@ -178,7 +178,7 @@ module WorldEntityHierarchyExtensions =
             let frozenPreBatches =
                 Dictionary<
                     bool * Material * Vulkan.PhysicallyBasedSurface * DepthTest * RenderType,
-                    Guid * StaticModel AssetTag * int * (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Box3) List> ()
+                    Guid * StaticModel AssetTag * int * StaticModelSurfacePreBatchItem List> ()
             let frozenShapes = List ()
             let rec getFrozenArtifacts (entity : Entity) =
                 if entity <> parent then
@@ -203,7 +203,13 @@ module WorldEntityHierarchyExtensions =
                             let metadata = Metadata.getStaticModelMetadata staticModel
                             let surface = metadata.Surfaces[surfaceIndex]
                             let frozenKey = (material.Clipped, material, surface, depthTest, renderType)
-                            let frozenValue = (affineMatrix, castShadow, presence, Option.defaultValue box2Zero insetOpt, properties, entityBounds)
+                            let frozenValue =
+                                { ModelMatrix = affineMatrix
+                                  CastShadow = castShadow
+                                  Presence = presence
+                                  Inset = Option.defaultValue box2Zero insetOpt
+                                  MaterialProperties = properties
+                                  Bounds = entityBounds }
                             match frozenPreBatches.TryGetValue frozenKey with
                             | (true, (_, _, _, preBatch)) -> preBatch.Add frozenValue
                             | (false, _) -> frozenPreBatches.Add (frozenKey, (Gen.id, staticModel, surfaceIndex, List [frozenValue]))
@@ -262,7 +268,13 @@ module WorldEntityHierarchyExtensions =
                                 let metadata = Metadata.getStaticModelMetadata staticModel
                                 let surface = metadata.Surfaces[surfaceIndex]
                                 let frozenKey = (clipped, material, surface, depthTest, renderType)
-                                let frozenValue = (affineMatrix, castShadow, presence, Option.defaultValue box2Zero insetOpt, properties, surfaceBounds)
+                                let frozenValue =
+                                    { ModelMatrix = surfaceMatrix
+                                      CastShadow = castShadow
+                                      Presence = presence
+                                      Inset = Option.defaultValue box2Zero insetOpt
+                                      MaterialProperties = properties
+                                      Bounds = surfaceBounds }
                                 match frozenPreBatches.TryGetValue frozenKey with
                                 | (true, (_, _, _, preBatch)) -> preBatch.Add frozenValue
                                 | (false, _) -> frozenPreBatches.Add (frozenKey, (Gen.id, staticModel, surfaceIndex, List [frozenValue]))
@@ -270,7 +282,7 @@ module WorldEntityHierarchyExtensions =
                                     let affine = Affine.make (entity.GetPosition world) (entity.GetRotation world) (entity.GetScale world)
                                     let navShape = entity.GetNavShape world
                                     let bodyShape = entity.GetBodyShape world
-                                    frozenShapes.Add (surfaceBounds, affineMatrix, staticModel, surfaceIndex, navShape, affine, bodyShape)
+                                    frozenShapes.Add (surfaceBounds, surfaceMatrix, staticModel, surfaceIndex, navShape, affine, bodyShape)
                                 surfaceIndex <- inc surfaceIndex
                             frozenEntities.Add entity
                 for child in entity.GetChildren world do
@@ -283,6 +295,10 @@ module WorldEntityHierarchyExtensions =
                     entity.SetBodyFrozen true world
             match boundsOpt with
             | Some bounds ->
+                let boundsOffset = parent.GetPosition world
+                let bounds = bounds.Translate -boundsOffset
+                let bounds = bounds.Transform (Matrix4x4.CreateFromQuaternion (parent.GetRotation world).Inverted)
+                let bounds = bounds.Translate boundsOffset
                 if bounds.Size.Magnitude >= Constants.Engine.EnvironmentMagnitudeThreshold then
                     parent.SetPickable false world
                     Log.infoOnce "Presuming large frozen parent contains an environment due to total bounds of children and therefore setting it non-pickable."
@@ -297,7 +313,7 @@ module WorldEntityHierarchyExtensions =
                     let (clipped, material, _, depthTest, renderType) = entry.Key
                     let (preBatchId, staticModel, surfaceIndex, preBatch) = entry.Value
                     { PreBatchId = preBatchId
-                      StaticModelSurfaces = Seq.toArray preBatch
+                      PreBatchItems = Seq.toArray preBatch
                       Material = material
                       StaticModel = staticModel
                       SurfaceIndex = surfaceIndex
@@ -555,13 +571,21 @@ type Freezer3dFacet () =
             if ImGui.Button "Permafreeze" then
                 append.EditContext.Snapshot Permafreeze world
                 entity.Permafreeze world
+                let size = entity.GetSize world
+                let offset = entity.GetOffset world
                 let frozenPreBatches = entity.GetFrozenPreBatches world
                 let frozenShapes = entity.GetFrozenShapes world
                 World.changeEntityDispatcher (nameof Permafreezer3dDispatcher) entity world
-                entity.SetPermafrozenPreBatches frozenPreBatches world
-                entity.SetPermafrozenShapes frozenShapes world
-                let getFrozenShapes = fun (entity : Entity) -> entity.GetPermafrozenShapes
-                entity.RegisterFrozenShapesPhysics getFrozenShapes world
+                World.defer
+                    (fun world ->
+                        // TODO: P1: figure out why we have to defer most of this stuff.
+                        entity.SetSize size world
+                        entity.SetOffset offset world
+                        entity.SetPermafrozenPreBatches frozenPreBatches world
+                        entity.SetPermafrozenShapes frozenShapes world
+                        entity.RegisterFrozenShapesPhysics _.GetPermafrozenShapes world
+                        entity.FacetNames.Map (Set.remove typeof<Freezer3dFacet>.Name) world)
+                    entity world
         | _ -> ()
 
 [<AutoOpen>]

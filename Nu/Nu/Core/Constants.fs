@@ -167,6 +167,11 @@ module Engine =
               "Light"
               "Optimized"],
              StringComparer.Ordinal)
+    let [<Uniform>] NonDebugViewablePropertyNames =
+        FrozenSet.ToFrozenSet
+            ([(* Entity Properties *)
+              "PropagatedDescriptorOpt"],
+             StringComparer.Ordinal)
     let [<Literal>] EngineDebug =
 #if DEBUG
         true
@@ -204,7 +209,7 @@ module Render =
     let [<Uniform>] mutable NearPlaneDistanceOmnipresent = NearPlaneDistanceInterior
     let [<Uniform>] mutable FarPlaneDistanceOmnipresent = FarPlaneDistanceImposter
     let [<Uniform>] mutable DisplayVirtualResolution = match ConfigurationManager.AppSettings["DisplayVirtualResolution"] with null -> v2i 640 360 | value -> scvalue value
-    let [<Uniform>] mutable SsaoResolutionDivisor = match ConfigurationManager.AppSettings["SsaoResolutionDivisor"] with null -> 2 | value -> scvalue value
+    let [<Uniform>] mutable SsaoResolutionDivisor = match ConfigurationManager.AppSettings["SsaoResolutionDivisor"] with null -> 1 | value -> scvalue value
     let [<Uniform>] Play3dBoxSize = Vector3 64.0f
     let [<Uniform>] WindowClearColor = Color.Zero
     let [<Uniform>] ViewportClearColor = Color.Zero // NOTE: do not change this color as the deferred lighting shader checks if position.w zero to ignore fragment.
@@ -326,7 +331,7 @@ module Render =
     let [<Literal>] DepthOfFieldFarDistanceDefault = 64.0f
     let [<Literal>] DepthOfFieldRadiusDefault = 5.0f
     let [<Uniform>] DepthOfFieldFocalTypeDefault = StaticFocalDistance
-    let [<Literal>] DepthOfFieldFocalDistanceDefault = 0.5f
+    let [<Literal>] DepthOfFieldFocalDistanceDefault = 0.25f
     let [<Uniform>] DepthOfFieldFocalPointDefault = Vector2.Zero
     let [<Literal>] ChromaticAberrationEnabledGlobalDefault = true
     let [<Literal>] ChromaticAberrationEnabledLocalDefault = false
@@ -385,9 +390,9 @@ module Physics =
     let [<Literal>] Collision2dLinearSlop = 0.005f // Box2D default in meters; the package constant is internal.
     let [<Uniform>] mutable Collision2dSteps = match ConfigurationManager.AppSettings["Collision2dSteps"] with null -> 4 | value -> scvalue value
     let [<Uniform>] mutable Collision2dFrameCompensation = match ConfigurationManager.AppSettings["Collision2dFrameCompensation"] with null -> false | value -> scvalue value
-    let [<Uniform>] mutable Collision3dBodiesMax = match ConfigurationManager.AppSettings["Collision3dBodiesMax"] with null -> 65536 | value -> scvalue value
-    let [<Uniform>] mutable Collision3dBodyPairsMax = match ConfigurationManager.AppSettings["Collision3dBodyPairsMax"] with null -> 32768 | value -> scvalue value
-    let [<Uniform>] mutable Collision3dContactConstraintsMax = match ConfigurationManager.AppSettings["Collision3dContactConstraintsMax"] with null -> 16384 | value -> scvalue value
+    let [<Uniform>] mutable Collision3dBodiesMax = match ConfigurationManager.AppSettings["Collision3dBodiesMax"] with null -> 131072 | value -> scvalue value
+    let [<Uniform>] mutable Collision3dBodyPairsMax = match ConfigurationManager.AppSettings["Collision3dBodyPairsMax"] with null -> 65536 | value -> scvalue value
+    let [<Uniform>] mutable Collision3dContactConstraintsMax = match ConfigurationManager.AppSettings["Collision3dContactConstraintsMax"] with null -> 32768 | value -> scvalue value
     let [<Uniform>] mutable Collision3dSteps = match ConfigurationManager.AppSettings["Collision3dSteps"] with null -> 1 | value -> scvalue value
     let [<Uniform>] mutable Collision3dThreads = match ConfigurationManager.AppSettings["Collision3dThreads"] with null -> max 1 (Environment.ProcessorCount - 2) | value -> scvalue value
     let [<Uniform>] mutable Collision3dBarriersMax = match ConfigurationManager.AppSettings["Collision3dBarriersMax"] with null -> max 1 (Environment.ProcessorCount - 2) | value -> scvalue value

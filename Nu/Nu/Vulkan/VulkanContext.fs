@@ -16,59 +16,6 @@ open Vortice.Vulkan
 open Prime
 open Nu
 
-/// A command queue that internally synchronizes use across multiple threads.
-type [<ReferenceEquality>] ConcurrentCommandQueue =
-    private
-        { VkQueue_ : VkQueue
-          Lock_ : obj }
-
-    /// Perform an arbitrary operation on the internal vulkan queue.
-    static member withLock<'a> queue (op : VkQueue -> 'a) : 'a =
-        lock queue.Lock_ (fun () -> op queue.VkQueue_)
-
-    /// Wait for Queue to finish execution.
-    static member waitIdle queue =
-        ConcurrentCommandQueue.withLock queue $ fun vkQueue ->
-            DeviceApi.vkQueueWaitIdle vkQueue |> Hl.check
-
-    /// Transiently run and then free the given command buffer. Command pool and finish fence must NOT be shared
-    /// between threads!
-    static member runTransient commandBuffer commandPool finishFence (commandQueue : ConcurrentCommandQueue) =
-
-        // lock to get access to vulkan queue then run commands
-        let mutable commandBuffer = commandBuffer
-        let mutable finishFence = finishFence
-        ConcurrentCommandQueue.withLock commandQueue $ fun vkQueue ->
-
-            // end command buffer
-            DeviceApi.vkEndCommandBuffer commandBuffer |> Hl.check
-
-            // submit commands
-            let mutable info = VkSubmitInfo ()
-            info.commandBufferCount <- 1u
-            info.pCommandBuffers <- &&commandBuffer
-            DeviceApi.vkQueueSubmit (vkQueue, 1u, &&info, finishFence) |> Hl.check
-
-            // wait for run to finish
-            // NOTE: on Android on my A17, we have to put vkWaitForFences in a loop because it will return before the
-            // given timeout with a VkResult.Timeout result (which I'm not sure is standard-conformant).
-            let mutable waiting = true
-            while waiting do
-                let result = DeviceApi.vkWaitForFences (1u, &&finishFence, true, UInt64.MaxValue)
-                if result <> VkResult.Timeout then
-                    waiting <- false
-                    Hl.check result
-            DeviceApi.vkResetFences (1u, &&finishFence) |> Hl.check
-
-            // free command buffer
-            DeviceApi.vkFreeCommandBuffers (commandPool, 1u, &&commandBuffer)
-
-    /// Create a ConcurrentCommandQueue.
-    static member create queueFamilyIndex queueIndex =
-        let mutable vkQueue = Unchecked.defaultof<VkQueue>
-        DeviceApi.vkGetDeviceQueue (queueFamilyIndex, queueIndex, &vkQueue)
-        { VkQueue_ = vkQueue; Lock_ = obj () }
-
 /// A representation of a physical device and associated information.
 type PhysicalDevice =
     { VkPhysicalDevice : VkPhysicalDevice
@@ -235,7 +182,6 @@ type SwapchainWrapper =
 
     /// Destroy a swapchain wrapper.
     static member destroy swapchainWrapper =
-        DeviceApi.vkDeviceWaitIdle () |> Hl.check
         for i in 0 .. dec swapchainWrapper.ImageViews.Length do DeviceApi.vkDestroyImageView (swapchainWrapper.ImageViews[i], nullPtr)
         DeviceApi.vkDestroySwapchainKHR (swapchainWrapper.VkSwapchain, nullPtr)
 
@@ -243,8 +189,8 @@ type SwapchainWrapper =
 type Swapchain =
     private
         { mutable SwapchainWrapperOpt_ : SwapchainWrapper option
-          Window_ : SDL_Window nativeptr
-          SurfaceFormat_ : VkSurfaceFormatKHR }
+          SurfaceFormat_ : VkSurfaceFormatKHR
+          Window_ : SDL_Window nativeptr }
 
     /// The underlying vulkan swapchain when available.
     member this.SwapchainWrapperOpt =
@@ -263,8 +209,8 @@ type Swapchain =
     /// Create a Swapchain.
     static member create surfaceFormat physicalDevice window =
         { SwapchainWrapperOpt_ = SwapchainWrapper.tryCreate surfaceFormat physicalDevice
-          Window_ = window
-          SurfaceFormat_ = surfaceFormat }
+          SurfaceFormat_ = surfaceFormat
+          Window_ = window }
 
     /// Destroy a Swapchain.
     static member destroy swapchain =
@@ -273,6 +219,59 @@ type Swapchain =
             SwapchainWrapper.destroy swapchainWrapper
             swapchain.SwapchainWrapperOpt_ <- None
         | None -> ()
+
+/// A command queue that internally synchronizes use across multiple threads.
+type [<ReferenceEquality>] ConcurrentCommandQueue =
+    private
+        { VkQueueLock_ : obj
+          VkQueue_ : VkQueue }
+
+    /// Perform an arbitrary operation on the internal vulkan queue.
+    static member withLock<'a> queue (op : VkQueue -> 'a) : 'a =
+        lock queue.VkQueueLock_ (fun () -> op queue.VkQueue_)
+
+    /// Wait for Queue to finish execution.
+    static member waitIdle queue =
+        ConcurrentCommandQueue.withLock queue $ fun vkQueue ->
+            DeviceApi.vkQueueWaitIdle vkQueue |> Hl.check
+
+    /// Transiently run and then free the given command buffer. Command pool and finish fence must NOT be shared
+    /// between threads!
+    static member runTransient commandBuffer commandPool finishFence (commandQueue : ConcurrentCommandQueue) =
+
+        // lock to get access to vulkan queue then run commands
+        let mutable commandBuffer = commandBuffer
+        let mutable finishFence = finishFence
+        ConcurrentCommandQueue.withLock commandQueue $ fun vkQueue ->
+
+            // end command buffer
+            DeviceApi.vkEndCommandBuffer commandBuffer |> Hl.check
+
+            // submit commands
+            let mutable info = VkSubmitInfo ()
+            info.commandBufferCount <- 1u
+            info.pCommandBuffers <- &&commandBuffer
+            DeviceApi.vkQueueSubmit (vkQueue, 1u, &&info, finishFence) |> Hl.check
+
+            // wait for run to finish
+            // NOTE: on Android on my A17, we have to put vkWaitForFences in a loop because it will return before the
+            // given timeout with a VkResult.Timeout result (which I'm not sure is standard-conformant).
+            let mutable waiting = true
+            while waiting do
+                let result = DeviceApi.vkWaitForFences (1u, &&finishFence, true, UInt64.MaxValue)
+                if result <> VkResult.Timeout then
+                    waiting <- false
+                    Hl.check result
+            DeviceApi.vkResetFences (1u, &&finishFence) |> Hl.check
+
+            // free command buffer
+            DeviceApi.vkFreeCommandBuffers (commandPool, 1u, &&commandBuffer)
+
+    /// Create a ConcurrentCommandQueue.
+    static member create queueFamilyIndex queueIndex =
+        let mutable vkQueue = Unchecked.defaultof<VkQueue>
+        DeviceApi.vkGetDeviceQueue (queueFamilyIndex, queueIndex, &vkQueue)
+        { VkQueueLock_ = obj (); VkQueue_ = vkQueue }
 
 /// Exposes the vulkan handles that must be globally accessible within the renderer.
 /// TODO: P1: group fields / properties by role rather than type.
@@ -476,7 +475,7 @@ type [<ReferenceEquality>] VulkanContext =
             InstanceApi.vkCreateDebugUtilsMessengerEXT (&info, nullPtr, &debugMessenger) |> Hl.check
             Some debugMessenger
         else None
-    
+
     /// Select compatible physical device when available.
     static member private trySelectPhysicalDevice () =
 
@@ -584,7 +583,7 @@ type [<ReferenceEquality>] VulkanContext =
         // specify device features to be enabled
         let mutable features = VkPhysicalDeviceFeatures ()
         if physicalDevice.SupportsAnisotropy then features.samplerAnisotropy <- true
-        
+
         // create device
         let mutable info = VkDeviceCreateInfo ()
         info.pNext <- asVoidPtr &vulkan13
@@ -648,20 +647,24 @@ type [<ReferenceEquality>] VulkanContext =
 
         // when frame abandoned, just bail
         if context.FrameAbandoned_ then
-            ()
+            callback None
 
         // when backgrounded, abandon frame
         elif Hl.Backgrounded then
             context.FrameAbandoned_ <- true
+            callback None
 
         // when minimized, abandon frame
         elif Hl.getWindowMinimized () then
             context.FrameAbandoned_ <- true
+            callback None
 
         // when surface lost, attempt to recreate surface and its dependent swapchain wrapper and abandon frame
         elif Hl.Surface.IsSurfaceLost then
+            DeviceApi.vkDeviceWaitIdle () |> Hl.check
             Swapchain.tryRecreateSurfaceAndEnsureSwapchainWrapper context.TryCreateVkSurface_ context.PhysicalDevice_ context.Swapchain_ context.Instance_
             context.FrameAbandoned_ <- true
+            callback None
 
         // surface not lost, proceed...
         else
@@ -685,8 +688,10 @@ type [<ReferenceEquality>] VulkanContext =
                 | None -> None
             match surfaceExtentOpt with
             | None ->
+                DeviceApi.vkDeviceWaitIdle () |> Hl.check
                 Swapchain.tryRecreateSurfaceAndEnsureSwapchainWrapper context.TryCreateVkSurface_ context.PhysicalDevice_ context.Swapchain_ context.Instance_
                 context.FrameAbandoned_ <- true
+                callback None
 
             // capabilities and valid surface available, proceed...
             | Some surfaceExtent ->
@@ -699,8 +704,10 @@ type [<ReferenceEquality>] VulkanContext =
                     | Some _ | None -> None
                 match swapchainWrapperOpt with
                 | None ->
+                    DeviceApi.vkDeviceWaitIdle () |> Hl.check
                     Swapchain.tryRecreateSurfaceAndEnsureSwapchainWrapper context.TryCreateVkSurface_ context.PhysicalDevice_ context.Swapchain_ context.Instance_
                     context.FrameAbandoned_ <- true
+                    callback None
 
                 // swapchain wrapper available in a valid rendering environment
                 | Some _ as swapchainWrapperOpt -> callback swapchainWrapperOpt
@@ -854,11 +861,15 @@ type [<ReferenceEquality>] VulkanContext =
                     | VkResult.ErrorOutOfDateKHR -> Hl.loseSurface ()
                     | VkResult.SuboptimalKHR -> () // NOTE: ignore for now since Android always signals this.
                     | result -> Hl.check result
-            | None -> ()
-
-    /// Wait for all device operations to complete before cleaning up resources.
-    static member waitIdle (_ : VulkanContext) =
-        DeviceApi.vkDeviceWaitIdle () |> Hl.check
+            | None ->
+                ConcurrentCommandQueue.withLock context.PresentQueue_ $ fun vkQueue ->
+                    let mutable renderSemaphore = context.RenderSemaphore
+                    let mutable submitInfo = VkSubmitInfo ()
+                    let mutable stageFlagOpt = VkPipelineStageFlags.AllCommands
+                    submitInfo.waitSemaphoreCount <- 1u
+                    submitInfo.pWaitSemaphores <- &&renderSemaphore
+                    submitInfo.pWaitDstStageMask <- &&stageFlagOpt
+                    DeviceApi.vkQueueSubmit (vkQueue, submitInfo, VkFence.Null) |> Hl.check
 
     /// Attempt to create a VulkanContext.
     /// NOTE: this procedure is intended to be invoked from the main thread to satisfy the requirements of Mac and
@@ -961,6 +972,7 @@ type [<ReferenceEquality>] VulkanContext =
     /// Clean-up a vulkan context.
     /// NOTE: intended to be invoked from the main thread.
     static member cleanUp context =
+        DeviceApi.vkDeviceWaitIdle () |> Hl.check
         Swapchain.destroy context.Swapchain_
         DeviceApi.vkDestroySemaphore (context.SwapchainImageSemaphore_, nullPtr)
         for renderSemaphore in context.RenderSemaphores_ do DeviceApi.vkDestroySemaphore (renderSemaphore, nullPtr)
