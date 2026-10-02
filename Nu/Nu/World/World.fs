@@ -429,7 +429,8 @@ module WorldModule4 =
         static member makePlus
             tryMakeEditContext plugin eventGraph jobGraph geometryViewport windowViewport lateBindingsInstances quadtree octree worldConfig sdlDepsOpt
             imGui physicsEngine2d physicsEngine3d rendererPhysics3dOpt rendererProcess audioPlayer cursorClient activeGameDispatcher =
-            Nu.init () // ensure game engine is initialized
+            Nu.init () // ensure we haven't forgot to initialize Nu!
+            SymbolicConverter.Init (if worldConfig.Imperative then Imperative else Functional)
             let symbolics = Symbolics.makeEmpty ()
             let intrinsicOverlays = World.makeIntrinsicOverlays lateBindingsInstances.Facets lateBindingsInstances.EntityDispatchers
             let overlayer = Overlayer.makeFromFileOpt intrinsicOverlays Assets.Global.OverlayerFilePath
