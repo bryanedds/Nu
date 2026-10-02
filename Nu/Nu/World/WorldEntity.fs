@@ -911,7 +911,7 @@ module WorldEntityModule =
                     if descendantSource.GetExists world && descendantSource.HasPropagationTargets world then
                         World.setEntityPropagationSourceOpt (Some descendantSource) descendentEntity world |> ignore<bool>
             let mountOpt = match parent with :? Entity -> Some Address.parent | _ -> None
-            entity.SetMountOptWithAdjustment false mountOpt world
+            entity.SetMountOptWithAdjustment true mountOpt world
             entity
 
         /// Paste an entity.
