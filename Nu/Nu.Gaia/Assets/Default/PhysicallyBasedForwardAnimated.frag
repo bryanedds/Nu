@@ -978,7 +978,7 @@ void main()
 
             // cook-torrance brdf
             float ndf = distributionGGX(n, h, roughnessCompensated);
-            float g = geometrySchlick(n, v, l, roughnessCompensated);
+            float g = geometrySchlick(n, v, l, roughness);
             vec3 f = fresnelSchlick(hDotV, f0);
 
             // compute specularity
@@ -994,7 +994,7 @@ void main()
 
             // compute burley diffusion approximation (unlike lambert, this is NOT energy-preserving!)
             float lDotH = saturate(dot(l, h));
-            float f90 = 0.5 + 2.0 * roughnessCompensated * lDotH * lDotH; // retroreflection term
+            float f90 = 0.5 + 2.0 * roughness * lDotH * lDotH; // retroreflection term
             float lightScatter = pow(1.0 - nDotL, 5.0) * (f90 - 1.0) + 1.0;
             float viewScatter  = pow(1.0 - nDotV, 5.0) * (f90 - 1.0) + 1.0;
             float burley = lightScatter * viewScatter;
