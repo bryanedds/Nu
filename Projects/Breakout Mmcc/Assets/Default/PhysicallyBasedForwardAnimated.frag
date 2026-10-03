@@ -926,7 +926,7 @@ void main()
         LightStruct light = lights[i];
         bool lightPoint = light.lightType == 0;
         bool lightSpot = light.lightType == 1;
-        float hDotV, intensity, roughnessCompensated;
+        float hDotV, intensity, roughnessCompensation;
         vec3 l, h, radiance;
         if (lightPoint || lightSpot)
         {
@@ -955,7 +955,7 @@ void main()
             h = normalize(v + l);
             hDotV = saturate(dot(h, v));
             intensity = 1.0;
-            roughnessCompensated = roughness;
+            roughnessCompensation = 0.0;
             radiance = light.color * light.brightness;
         }
 
@@ -977,7 +977,7 @@ void main()
             }
 
             // cook-torrance brdf
-            float ndf = distributionGGX(n, h, roughnessCompensated);
+            float ndf = distributionGGX(normal, h, saturate(roughness + roughnessCompensation));
             float g = geometrySchlick(n, v, l, roughness);
             vec3 f = fresnelSchlick(hDotV, f0);
 
