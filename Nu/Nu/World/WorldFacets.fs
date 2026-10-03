@@ -2899,7 +2899,7 @@ type Light3dFacet () =
          define Entity.AttenuationQuadratic Constants.Render.AttenuationQuadraticDefault
          define Entity.AutoAttenuate true
          define Entity.LightCutoff Constants.Render.LightCutoffDefault
-         define Entity.LightType (PointLight 0.5f)
+         define Entity.LightType (PointLight 0.0f)
          define Entity.DesireShadows false
          define Entity.DynamicShadows true
          define Entity.DesireFog false]
