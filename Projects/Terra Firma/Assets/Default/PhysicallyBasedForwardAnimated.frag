@@ -112,6 +112,7 @@ struct LightStruct
     float attenuationQuadratic;
     float cutoff;
     int lightType;
+    float radius;
     float coneInner;
     float coneOuter;
     int desireFog;
@@ -921,7 +922,7 @@ void main()
     vec3 fogAccum = vec3(0.0);
     for (int i = 0; i < lightsGeneral.lightsCount; ++i)
     {
-        // per-light radiance
+        // compute per-light attributes and compensate roughness where applicable
         LightStruct light = lights[i];
         bool lightPoint = light.lightType == 0;
         bool lightSpot = light.lightType == 1;
@@ -929,6 +930,7 @@ void main()
         vec3 l, h, radiance;
         if (lightPoint || lightSpot)
         {
+            // compute attributes
             vec3 d = light.origin - position.xyz;
             l = normalize(d);
             h = normalize(v + l);
@@ -945,6 +947,10 @@ void main()
             float halfConeScalar = clamp(1.0 - halfConeBetween / halfConeDelta, 0.0, 1.0);
             intensity = attenuation * halfConeScalar * cutoffScalar;
             radiance = light.color * light.brightness * intensity;
+
+            // apply radius compensation to roughness to simulate increase in light size
+            float angularSize = max(light.radius, 0.0) / max(distance, 0.0001);
+            roughness = saturate(sqrt(roughness * roughness + angularSize * angularSize));
         }
         else
         {

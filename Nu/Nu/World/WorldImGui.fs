@@ -699,24 +699,32 @@ module WorldImGui =
                 if ImGui.IsItemFocused () then context.FocusProperty ()
                 let (edited, light) =
                     match index with
-                    | 0 -> (edited, light)
+                    | 0 ->
+                        match light with
+                        | PointLight radius ->
+                            let mutable radius = radius
+                            ImGui.Indent ()
+                            let radiusEdited = ImGui.DragFloat ("Radius via " + name, &radius, context.SnapDrag)
+                            if ImGui.IsItemFocused () then context.FocusProperty ()
+                            ImGui.Unindent ()
+                            (edited || radiusEdited, PointLight radius)
+                        | SpotLight (_, _, _) | DirectionalLight _ | CascadedLight -> failwithumf ()
                     | 1 ->
                         match light with
-                        | PointLight -> failwithumf ()
-                        | SpotLight (innerCone, outerCone) ->
-                            let mutable (innerCone, outerCone) = (innerCone, outerCone)
+                        | SpotLight (radius, innerCone, outerCone) ->
+                            let mutable (radius, innerCone, outerCone) = (radius, innerCone, outerCone)
                             ImGui.Indent ()
+                            let radiusEdited = ImGui.DragFloat ("Radius via " + name, &radius, context.SnapDrag)
+                            if ImGui.IsItemFocused () then context.FocusProperty ()
                             let innerConeEdited = ImGui.DragFloat ("InnerCone via " + name, &innerCone, context.SnapDrag)
                             if ImGui.IsItemFocused () then context.FocusProperty ()
                             let outerConeEdited = ImGui.DragFloat ("OuterCone via " + name, &outerCone, context.SnapDrag)
                             if ImGui.IsItemFocused () then context.FocusProperty ()
                             ImGui.Unindent ()
-                            (edited || innerConeEdited || outerConeEdited, SpotLight (innerCone, outerCone))
-                        | DirectionalLight _ -> failwithumf ()
-                        | CascadedLight -> failwithumf ()
+                            (edited || radiusEdited || innerConeEdited || outerConeEdited, SpotLight (radius, innerCone, outerCone))
+                        | PointLight _ | DirectionalLight _ | CascadedLight -> failwithumf ()
                     | 2 ->
                         match light with
-                        | PointLight | SpotLight (_, _) -> failwithumf ()
                         | DirectionalLight offsetForwardScalar ->
                             let mutable offsetForwardScalar = offsetForwardScalar
                             ImGui.Indent ()
@@ -724,8 +732,11 @@ module WorldImGui =
                             if ImGui.IsItemFocused () then context.FocusProperty ()
                             ImGui.Unindent ()
                             (edited || forwardOffsetScalarEdited, DirectionalLight offsetForwardScalar)
-                        | CascadedLight -> failwithumf ()
-                    | 3 -> (edited, light)
+                        | PointLight _ | SpotLight (_, _, _) | CascadedLight -> failwithumf ()
+                    | 3 ->
+                        match light with
+                        | CascadedLight -> (edited, light)
+                        | PointLight _ | SpotLight (_, _, _) | DirectionalLight _ -> failwithumf ()
                     | _ -> failwithumf ()
                 (false, edited, light :> obj)
             | :? Substance as substance ->

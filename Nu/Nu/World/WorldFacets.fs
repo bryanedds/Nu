@@ -2791,9 +2791,9 @@ module Light3dFacetExtensions =
 
         member this.ComputeShadowView world =
             match this.GetLightType world with
-            | PointLight ->
+            | PointLight _ ->
                 Matrix4x4.CreateTranslation (-this.GetPosition world)
-            | SpotLight (_, _) ->
+            | SpotLight (_, _, _) ->
                 let shadowOrigin = this.GetPosition world
                 let shadowRotation = this.GetRotation world
                 let shadowForward = shadowRotation.Down
@@ -2810,10 +2810,10 @@ module Light3dFacetExtensions =
 
         member this.ComputeShadowProjection world =
             match this.GetLightType world with
-            | PointLight ->
+            | PointLight _ ->
                 let shadowCutoff = max (this.GetLightCutoff world) (Constants.Render.NearPlaneDistanceInterior * 2.0f)
                 Matrix4x4.CreateOrthographic (shadowCutoff * 2.0f, shadowCutoff * 2.0f, -shadowCutoff, shadowCutoff)
-            | SpotLight (_, coneOuter) ->
+            | SpotLight (_, _, coneOuter) ->
                 let shadowFov = max (min coneOuter Constants.Render.ShadowFovMax) 0.01f
                 let shadowCutoff = max (this.GetLightCutoff world) (Constants.Render.NearPlaneDistanceInterior * 2.0f)
                 Matrix4x4.CreatePerspectiveFieldOfView (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceInterior, shadowCutoff)
@@ -2899,7 +2899,7 @@ type Light3dFacet () =
          define Entity.AttenuationQuadratic Constants.Render.AttenuationQuadraticDefault
          define Entity.AutoAttenuate true
          define Entity.LightCutoff Constants.Render.LightCutoffDefault
-         define Entity.LightType PointLight
+         define Entity.LightType (PointLight 0.0f)
          define Entity.DesireShadows false
          define Entity.DynamicShadows true
          define Entity.DesireFog false]
@@ -2915,7 +2915,7 @@ type Light3dFacet () =
         let lightType = entity.GetLightType world
         let origin =
             match lightType with
-            | PointLight | SpotLight (_, _) -> entity.GetPosition world
+            | PointLight _ | SpotLight (_, _, _) -> entity.GetPosition world
             | DirectionalLight offsetForwardScalar -> Light3dModule.getDirectionalLightOrigin rotation lightCutoff offsetForwardScalar world
             | CascadedLight -> Light3dModule.getCascadedLightOrigin rotation lightCutoff world
         let direction = rotation.Down

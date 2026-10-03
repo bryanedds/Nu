@@ -1808,14 +1808,14 @@ type [<Struct>] Flip =
 
 /// Type of light.
 type LightType =
-    | PointLight
-    | SpotLight of ConeInner : single * ConeOuter : single
+    | PointLight of Radius : single
+    | SpotLight of Radius : single * ConeInner : single * ConeOuter : single
     | DirectionalLight of OffsetForwardScalar : single
     | CascadedLight
 
     member this.IsLocalLight =
         match this with
-        | PointLight | SpotLight _ -> true
+        | PointLight _ | SpotLight _ -> true
         | DirectionalLight _ | CascadedLight -> false
 
     member this.IsGlobalLight =
@@ -1824,28 +1824,35 @@ type LightType =
     /// Convert to an int tag that can be utilized by a shader.
     member this.Enumerate =
         match this with
-        | PointLight -> 0
-        | SpotLight _ -> 1
+        | PointLight _ -> 0
+        | SpotLight (_, _, _) -> 1
         | DirectionalLight _ -> 2
         | CascadedLight -> 3
+
+    member this.Radius =
+        match this with
+        | PointLight radius -> radius
+        | SpotLight (radius, _, _) -> radius
+        | DirectionalLight _ -> 0.0f
+        | CascadedLight -> 0.0f
 
     /// Whether the shadows for this light render to a cube map.
     member this.ShadowsUseCubeMap =
         match this with
-        | PointLight -> true
-        | SpotLight _ | DirectionalLight _ | CascadedLight -> false
+        | PointLight _ -> true
+        | SpotLight (_, _, _) | DirectionalLight _ | CascadedLight -> false
 
     /// Check that the light should shadow interior surfaces with the given shadowIndexInfoOpt information.
     static member shouldShadowInterior lightType =
         match lightType with
-        | PointLight | SpotLight (_, _) -> true
+        | PointLight _ | SpotLight (_, _, _) -> true
         | DirectionalLight _ | CascadedLight -> false
 
     /// Make a light type from an enumeration value that can be utilized by a shader.
     static member makeFromEnumeration enumeration =
         match enumeration with
-        | 0 -> PointLight
-        | 1 -> SpotLight (0.9f, 1.0f)
+        | 0 -> PointLight 0.0f
+        | 1 -> SpotLight (0.0f, 0.9f, 1.0f)
         | 2 -> DirectionalLight 0.0f
         | 3 -> CascadedLight
         | _ -> failwithumf ()

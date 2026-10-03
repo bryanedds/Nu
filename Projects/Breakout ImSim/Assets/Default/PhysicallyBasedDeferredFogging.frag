@@ -92,6 +92,7 @@ struct LightStruct
     float attenuationQuadratic;
     float cutoff;
     int lightType;
+    float radius;
     float coneInner;
     float coneOuter;
     int desireFog;
