@@ -1432,36 +1432,36 @@ module WorldModule2 =
 
                 // update game
                 world.Timers.UpdateGameTimer.Restart ()
-                World.tryProcessGame false game world
                 if timeAdvancing then World.updateGame game world
+                World.tryProcessGame false game world
                 world.Timers.UpdateGameTimer.Stop ()
 
                 // process screens
                 world.Timers.UpdateScreensTimer.Restart ()
                 for screen in screens do
-                    if screen.GetExists world then World.tryProcessScreen false screen world
                     if timeAdvancing && screen.GetExists world && Option.contains screen selectedScreenOpt then World.updateScreen screen world
+                    if screen.GetExists world then World.tryProcessScreen false screen world
                 world.Timers.UpdateScreensTimer.Stop ()
 
                 // update groups
                 world.Timers.UpdateGroupsTimer.Restart ()
                 for group in groups do
-                    if group.GetExists world then World.tryProcessGroup false group world
                     if timeAdvancing && Option.contains group.Screen selectedScreenOpt && group.GetExists world then World.updateGroup group world
+                    if group.GetExists world then World.tryProcessGroup false group world
                 world.Timers.UpdateGroupsTimer.Stop ()
 
                 // update entities
                 world.Timers.UpdateEntitiesTimer.Restart ()
                 for element in WorldModuleInternal2.HashSet3dNormalCached do
-                    if element.Entry.GetExists world then
-                        World.tryProcessEntity false element.Entry world
                     if element.Entry.GetExists world && (timeAdvancing && not (element.Entry.GetStatic world) || element.Entry.GetAlwaysUpdate world) then
                         World.updateEntity element.Entry world
+                    if element.Entry.GetExists world then
+                        World.tryProcessEntity false element.Entry world
                 for element in WorldModuleInternal2.HashSet2dNormalCached do
-                    if element.Entry.GetExists world then
-                        World.tryProcessEntity false element.Entry world
                     if element.Entry.GetExists world && (timeAdvancing && not (element.Entry.GetStatic world) || element.Entry.GetAlwaysUpdate world) then
                         World.updateEntity element.Entry world
+                    if element.Entry.GetExists world then
+                        World.tryProcessEntity false element.Entry world
                 world.Timers.UpdateEntitiesTimer.Stop ()
 
             // free cached values
