@@ -4137,18 +4137,20 @@ type TraversalInterpolatedFacet () =
 
     override this.Update (entity, world) =
 
-        // process history for the frame
-        let historyMax = entity.GetTraversalHistoryMax world
-        let time = world.GameTime
-        let filterFQueue (history : FQueue<GameTime * 'a>) =
-            if FQueue.notEmpty history then
-                let (head, tail) = FQueue.uncons history
-                if fst head <= time - historyMax then tail else history // OPTIMIZATION: only filter oldest item instead of all items.
-            else history
-        entity.PositionHistory.Map (filterFQueue >> FQueue.conj (time, entity.GetPosition world)) world
-        entity.RotationHistory.Map (filterFQueue >> FQueue.conj (time, entity.GetRotation world)) world
-        entity.LinearVelocityHistory.Map (filterFQueue >> FQueue.conj (time, entity.GetLinearVelocity world)) world
-        entity.AngularVelocityHistory.Map (filterFQueue >> FQueue.conj (time, entity.GetAngularVelocity world)) world
+        // update history for interposation at the end of frame
+        World.defer (fun world ->
+            let historyMax = entity.GetTraversalHistoryMax world
+            let time = world.GameTime
+            let filterFQueue (history : FQueue<GameTime * 'a>) =
+                if FQueue.notEmpty history then
+                    let (head, tail) = FQueue.uncons history
+                    if fst head <= time - historyMax then tail else history // OPTIMIZATION: only filter oldest item instead of all items.
+                else history
+            entity.PositionHistory.Map (filterFQueue >> FQueue.conj (time, entity.GetPosition world)) world
+            entity.RotationHistory.Map (filterFQueue >> FQueue.conj (time, entity.GetRotation world)) world
+            entity.LinearVelocityHistory.Map (filterFQueue >> FQueue.conj (time, entity.GetLinearVelocity world)) world
+            entity.AngularVelocityHistory.Map (filterFQueue >> FQueue.conj (time, entity.GetAngularVelocity world)) world)
+            entity world
 
     override this.Edit (op, entity, world) =
 
