@@ -322,19 +322,16 @@ type CharacterDispatcher () =
                  Entity.NavShape .= EmptyNavShape] world
         let weapon = world.DeclaredEntity
 
-        // update weapon transform in a deferred manner (after model animation has been applied)
-        World.defer (fun world ->
-            let weaponTransform =
-                match animatedModel.TryGetBoneTransformByName Constants.Gameplay.CharacterWeaponHandBoneName world with
-                | Some weaponHandBoneTransform ->
-                    Matrix4x4.CreateTranslation (v3 -0.1f 0.0f 0.02f) *
-                    Matrix4x4.CreateFromAxisAngle (v3Forward, MathF.PI_OVER_2) *
-                    weaponHandBoneTransform
-                | None -> m4Identity
-            weapon.SetPosition weaponTransform.Translation world
-            weapon.SetRotation weaponTransform.Rotation world)
-            entity
-            world
+        // update weapon transform
+        let weaponTransform =
+            match animatedModel.TryGetBoneTransformByName Constants.Gameplay.CharacterWeaponHandBoneName world with
+            | Some weaponHandBoneTransform ->
+                Matrix4x4.CreateTranslation (v3 -0.1f 0.0f 0.02f) *
+                Matrix4x4.CreateFromAxisAngle (v3Forward, MathF.PI_OVER_2) *
+                weaponHandBoneTransform
+            | None -> m4Identity
+        weapon.SetPosition weaponTransform.Translation world
+        weapon.SetRotation weaponTransform.Rotation world
 
         // process weapon collisions
         for result in results do
