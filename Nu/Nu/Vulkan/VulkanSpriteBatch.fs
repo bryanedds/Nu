@@ -13,7 +13,7 @@ open Vortice.Vulkan
 open Prime
 open Nu
 
-[<Struct; StructLayout (LayoutKind.Explicit)>]
+[<Struct; StructLayout (LayoutKind.Explicit, Size = 64)>]
 type SpriteStruct =
     [<FieldOffset(0)>] val mutable perimeter : Vector4
     [<FieldOffset(16)>] val mutable pivot : Vector2

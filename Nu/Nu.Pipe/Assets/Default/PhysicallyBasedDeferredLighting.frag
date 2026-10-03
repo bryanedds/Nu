@@ -48,6 +48,7 @@ struct LightStruct
     float attenuationQuadratic;
     float cutoff;
     int lightType;
+    float radius;
     float coneInner;
     float coneOuter;
     int desireFog;
@@ -498,14 +499,15 @@ void main()
         vec3 f0 = mix(vec3(0.04), albedo, metallic); // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
         for (int i = 0; i < lighting.lightsCount; ++i)
         {
-            // compute per-light radiance
+            // compute per-light attributes and compensate roughness where applicable
             LightStruct light = lights[i];
             bool lightPoint = light.lightType == 0;
             bool lightSpot = light.lightType == 1;
-            float hDotV, intensity;
+            float hDotV, intensity, roughnessCompensated;
             vec3 l, h, radiance;
             if (lightPoint || lightSpot)
             {
+                // compute attributes
                 vec3 d = light.origin - position.xyz;
                 l = normalize(d);
                 h = normalize(v + l);
@@ -521,6 +523,7 @@ void main()
                 float halfConeBetween = angle - halfConeInner;
                 float halfConeScalar = clamp(1.0 - halfConeBetween / halfConeDelta, 0.0, 1.0);
                 intensity = attenuation * halfConeScalar * cutoffScalar;
+                roughnessCompensated = saturate(roughness + (exp(max(0.0, light.radius) / 8.0) - 1.0));
                 radiance = light.color * light.brightness * intensity;
             }
             else
@@ -529,6 +532,7 @@ void main()
                 h = normalize(v + l);
                 hDotV = saturate(dot(h, v));
                 intensity = 1.0;
+                roughnessCompensated = roughness;
                 radiance = light.color * light.brightness;
             }
 
@@ -550,8 +554,8 @@ void main()
                 }
 
                 // cook-torrance brdf
-                float ndf = distributionGGX(normal, h, roughness);
-                float g = geometrySchlick(normal, v, l, roughness);
+                float ndf = distributionGGX(normal, h, roughnessCompensated);
+                float g = geometrySchlick(normal, v, l, roughnessCompensated);
                 vec3 f = fresnelSchlick(hDotV, f0);
 
                 // compute specularity
@@ -589,7 +593,7 @@ void main()
 
                 // compute burley diffusion approximation (unlike lambert, this is NOT energy-preserving!)
                 float lDotH = saturate(dot(l, h));
-                float f90 = 0.5 + 2.0 * roughness * lDotH * lDotH; // retroreflection term
+                float f90 = 0.5 + 2.0 * roughnessCompensated * lDotH * lDotH; // retroreflection term
                 float lightScatter = pow(1.0 - nDotL, 5.0) * (f90 - 1.0) + 1.0;
                 float viewScatter = pow(1.0 - nDotV, 5.0) * (f90 - 1.0) + 1.0;
                 float burley = lightScatter * viewScatter;

@@ -153,7 +153,7 @@ type Lighting2Struct =
     [<FieldOffset(28)>] val mutable lightsCount : int
     [<FieldOffset(32)>] val mutable shadowNear : single
 
-[<Struct; StructLayout (LayoutKind.Explicit)>]
+[<Struct; StructLayout (LayoutKind.Explicit, Size = 64)>]
 type LightMapStruct =
     [<FieldOffset(0)>] val mutable origin : Vector3
     [<FieldOffset(16)>] val mutable min : Vector3
@@ -167,7 +167,7 @@ type LightsGeneralStruct =
     [<FieldOffset(4)>] val mutable lightMapSingletonBlendMargin : single
     [<FieldOffset(8)>] val mutable lightsCount : int
 
-[<Struct; StructLayout (LayoutKind.Explicit)>]
+[<Struct; StructLayout (LayoutKind.Explicit, Size = 96)>]
 type LightStruct =
     [<FieldOffset(0)>] val mutable origin : Vector3
     [<FieldOffset(16)>] val mutable direction : Vector3
@@ -177,10 +177,11 @@ type LightStruct =
     [<FieldOffset(52)>] val mutable attenuationQuadratic : single
     [<FieldOffset(56)>] val mutable cutoff : single
     [<FieldOffset(60)>] val mutable lightType : int
-    [<FieldOffset(64)>] val mutable coneInner : single
-    [<FieldOffset(68)>] val mutable coneOuter : single
-    [<FieldOffset(72)>] val mutable desireFog : int
-    [<FieldOffset(76)>] val mutable shadowIndex : int
+    [<FieldOffset(64)>] val mutable radius : single
+    [<FieldOffset(68)>] val mutable coneInner : single
+    [<FieldOffset(72)>] val mutable coneOuter : single
+    [<FieldOffset(76)>] val mutable desireFog : int
+    [<FieldOffset(80)>] val mutable shadowIndex : int
 
 [<Struct; StructLayout (LayoutKind.Explicit)>]
 type SsaoStruct =
@@ -4060,6 +4061,7 @@ module PhysicallyBased =
         (lightAttenuationQuadratics : single array)
         (lightCutoffs : single array)
         (lightTypes : int array)
+        (lightRadii : single array)
         (lightConeInners : single array)
         (lightConeOuters : single array)
         (lightDesireFogs : int array)
@@ -4122,6 +4124,7 @@ module PhysicallyBased =
                         light.attenuationQuadratic <- lightAttenuationQuadratics[i]
                         light.cutoff <- lightCutoffs[i]
                         light.lightType <- lightTypes[i]
+                        light.radius <- lightRadii[i]
                         light.coneInner <- lightConeInners[i]
                         light.coneOuter <- lightConeOuters[i]
                         light.desireFog <- lightDesireFogs[i]
@@ -4268,6 +4271,7 @@ module PhysicallyBased =
         (lightAttenuationQuadratics : single array)
         (lightCutoffs : single array)
         (lightTypes : int array)
+        (lightRadii : single array)
         (lightConeInners : single array)
         (lightConeOuters : single array)
         (lightDesireFogs : int array)
@@ -4332,6 +4336,7 @@ module PhysicallyBased =
                         light.attenuationQuadratic <- lightAttenuationQuadratics[i]
                         light.cutoff <- lightCutoffs[i]
                         light.lightType <- lightTypes[i]
+                        light.radius <- lightRadii[i]
                         light.coneInner <- lightConeInners[i]
                         light.coneOuter <- lightConeOuters[i]
                         light.desireFog <- lightDesireFogs[i]
@@ -5588,6 +5593,7 @@ module PhysicallyBased =
         (lightAttenuationQuadratics : single array)
         (lightCutoffs : single array)
         (lightTypes : int array)
+        (lightRadii : single array)
         (lightConeInners : single array)
         (lightConeOuters : single array)
         (lightDesireFogs : int array)
@@ -5670,6 +5676,7 @@ module PhysicallyBased =
                         light.attenuationQuadratic <- lightAttenuationQuadratics[i]
                         light.cutoff <- lightCutoffs[i]
                         light.lightType <- lightTypes[i]
+                        light.radius <- lightRadii[i]
                         light.coneInner <- lightConeInners[i]
                         light.coneOuter <- lightConeOuters[i]
                         light.desireFog <- lightDesireFogs[i]
@@ -6188,10 +6195,12 @@ type PhysicallyBasedSceneClient () =
                                 let names = Array.append names [|"Light" + if i > 0 then string i else ""|]
                                 let lightMatrix = Assimp.ExportMatrix node.TransformWorld
                                 let color = color (min 1.0f light.ColorDiffuse.R) (min 1.0f light.ColorDiffuse.G) (min 1.0f light.ColorDiffuse.B) 1.0f
+                                let areaSize = light.AreaSize
+                                let radius = areaSize.Length () * 0.5f
                                 let lightType =
                                     match light.LightType with
-                                    | Assimp.LightSourceType.Spot -> SpotLight (light.AngleInnerCone, light.AngleOuterCone)
-                                    | _ -> PointLight // default to point light
+                                    | Assimp.LightSourceType.Spot -> SpotLight (radius, light.AngleInnerCone, light.AngleOuterCone)
+                                    | _ -> PointLight radius // default to point light
                                 let physicallyBasedLight =
                                     { LightNames = names
                                       LightMatrixIsIdentity = lightMatrix.IsIdentity

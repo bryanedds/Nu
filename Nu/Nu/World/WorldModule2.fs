@@ -1669,7 +1669,7 @@ module WorldModule2 =
                     let lightType = light.GetLightType world
                     let dynamicShadows = light.GetDynamicShadows world
                     match lightType with
-                    | PointLight ->
+                    | PointLight _ ->
                         if shadowMapsCount < Constants.Render.ShadowMapsMax then
 
                             // grab light info
@@ -1702,7 +1702,7 @@ module WorldModule2 =
                             // fin
                             shadowMapsCount <- inc shadowMapsCount
 
-                    | SpotLight (_, _) ->
+                    | SpotLight (_, _, _) ->
                         if shadowTexturesCount < Constants.Render.ShadowTexturesMax then
                             World.renderSimulantsInternal false (ShadowPass (light.GetId world, None, lightType, dynamicShadows, light.GetRotation world, shadowFrustum)) world
                             shadowTexturesCount <- inc shadowTexturesCount
