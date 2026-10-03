@@ -503,7 +503,7 @@ void main()
             LightStruct light = lights[i];
             bool lightPoint = light.lightType == 0;
             bool lightSpot = light.lightType == 1;
-            float hDotV, intensity, roughnessCompensated;
+            float hDotV, intensity, roughnessCompensation;
             vec3 l, h, radiance;
             if (lightPoint || lightSpot)
             {
@@ -523,7 +523,7 @@ void main()
                 float halfConeBetween = angle - halfConeInner;
                 float halfConeScalar = clamp(1.0 - halfConeBetween / halfConeDelta, 0.0, 1.0);
                 intensity = attenuation * halfConeScalar * cutoffScalar;
-                roughnessCompensated = saturate(roughness + (exp(max(0.0, light.radius) / 8.0) - 1.0));
+                roughnessCompensation = exp(max(0.0, light.radius) / 8.0) - 1.0;
                 radiance = light.color * light.brightness * intensity;
             }
             else
@@ -532,7 +532,7 @@ void main()
                 h = normalize(v + l);
                 hDotV = saturate(dot(h, v));
                 intensity = 1.0;
-                roughnessCompensated = roughness;
+                roughnessCompensation = 0.0;
                 radiance = light.color * light.brightness;
             }
 
@@ -554,8 +554,8 @@ void main()
                 }
 
                 // cook-torrance brdf
-                float ndf = distributionGGX(normal, h, roughnessCompensated);
-                float g = geometrySchlick(normal, v, l, roughnessCompensated);
+                float ndf = distributionGGX(normal, h, saturate(roughness + roughnessCompensation));
+                float g = geometrySchlick(normal, v, l, roughness);
                 vec3 f = fresnelSchlick(hDotV, f0);
 
                 // compute specularity
@@ -572,7 +572,7 @@ void main()
                     vec3 f0 = vec3(pow((CLEAR_COAT_REFRACTIVE_INDEX - 1.0) / (CLEAR_COAT_REFRACTIVE_INDEX + 1.0), 2.0));
 
                     // cook-torrance brdf
-                    float ndf = distributionGGX(clearCoatNormal, h, clearCoatRoughness);
+                    float ndf = distributionGGX(clearCoatNormal, h, saturate(clearCoatRoughness + roughnessCompensation));
                     float g = geometrySchlick(clearCoatNormal, v, l, clearCoatRoughness);
                     vec3 f = fresnelSchlick(hDotV, f0);
 
@@ -593,7 +593,7 @@ void main()
 
                 // compute burley diffusion approximation (unlike lambert, this is NOT energy-preserving!)
                 float lDotH = saturate(dot(l, h));
-                float f90 = 0.5 + 2.0 * roughnessCompensated * lDotH * lDotH; // retroreflection term
+                float f90 = 0.5 + 2.0 * roughness * lDotH * lDotH; // retroreflection term
                 float lightScatter = pow(1.0 - nDotL, 5.0) * (f90 - 1.0) + 1.0;
                 float viewScatter = pow(1.0 - nDotV, 5.0) * (f90 - 1.0) + 1.0;
                 float burley = lightScatter * viewScatter;
