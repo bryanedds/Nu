@@ -977,7 +977,7 @@ void main()
             }
 
             // cook-torrance brdf
-            float ndf = distributionGGX(normal, h, saturate(roughness + roughnessCompensation));
+            float ndf = distributionGGX(n, h, saturate(roughness + roughnessCompensation));
             float g = geometrySchlick(n, v, l, roughness);
             vec3 f = fresnelSchlick(hDotV, f0);
 
