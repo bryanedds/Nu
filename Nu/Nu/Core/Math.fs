@@ -1807,7 +1807,7 @@ type [<Struct>] Flip =
     | Diagonal
 
 /// Type of light.
-type LightType =
+type [<DefaultValue "[PointLight 0.5]">] LightType =
     | PointLight of Radius : single
     | SpotLight of Radius : single * ConeInner : single * ConeOuter : single
     | DirectionalLight of OffsetForwardScalar : single
@@ -1851,8 +1851,8 @@ type LightType =
     /// Make a light type from an enumeration value that can be utilized by a shader.
     static member makeFromEnumeration enumeration =
         match enumeration with
-        | 0 -> PointLight 0.0f
-        | 1 -> SpotLight (0.0f, 0.9f, 1.0f)
+        | 0 -> PointLight 0.5f
+        | 1 -> SpotLight (0.5f, 0.9f, 1.0f)
         | 2 -> DirectionalLight 0.0f
         | 3 -> CascadedLight
         | _ -> failwithumf ()
