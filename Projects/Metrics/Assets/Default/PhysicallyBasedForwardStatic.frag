@@ -946,8 +946,7 @@ void main()
             float halfConeBetween = angle - halfConeInner;
             float halfConeScalar = clamp(1.0 - halfConeBetween / halfConeDelta, 0.0, 1.0);
             intensity = attenuation * halfConeScalar * cutoffScalar;
-            float angularSize = max(light.radius, 0.0) / max(distance, 0.0001);
-            roughnessCompensated = saturate(sqrt(roughness * roughness + angularSize * angularSize));
+            roughnessCompensated = saturate(roughness + (exp(light.radius) - 1.0) / 12.0);
             radiance = light.color * light.brightness * intensity;
         }
         else
