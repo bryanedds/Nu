@@ -55,7 +55,7 @@ module Attachment =
         [|for i in 0 .. dec Constants.Render.BloomSampleLevels do
             let (resolutionX', resolutionY') = (resolutionX >>> i, resolutionY >>> i)
             if resolutionX' = 0 || resolutionY' = 0 then failwith ("Invalid resolution [" + string resolutionX' + " " + string resolutionY' + "] for bloom filter level.")
-            createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgb16f Rgb resolutionX' resolutionY' context|]
+            createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba16f Rgb resolutionX' resolutionY' context|]
 
     /// Update size of bloom sample attachments.
     let updateBloomSampleAttachmentsSize resolutionX resolutionY (bloomSamples : Texture array) context =
@@ -71,7 +71,7 @@ module Attachment =
 
     /// Create tone-mapping attachments.
     let createToneMappingAttachments resolutionX resolutionY context =
-        createColorAttachment Texture2d (VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferSrc ||| VkImageUsageFlags.TransferDst) Rgb16f Rgb resolutionX resolutionY context
+        createColorAttachment Texture2d (VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferSrc ||| VkImageUsageFlags.TransferDst) Rgba16f Rgb resolutionX resolutionY context
 
     /// Update size of tone-mapping attachments.
     let updateToneMappingAttachmentsSize resolutionX resolutionY toneMapping context =
@@ -186,7 +186,7 @@ module Attachment =
 
     /// Create lighting attachment.
     let createLightingAttachment resolutionX resolutionY context =
-        createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgb16f Rgb resolutionX resolutionY context
+        createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba16f Rgb resolutionX resolutionY context
 
     /// Update size of lighting attachment.
     let updateLightingAttachmentSize resolutionX resolutionY lighting context =
@@ -251,7 +251,7 @@ module Attachment =
 
     /// Create fogging attachment.
     let createFoggingAttachment resolutionX resolutionY context =
-        createColorAttachment Texture2d (VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferDst) Rgb16f Rgb resolutionX resolutionY context
+        createColorAttachment Texture2d (VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferDst) Rgba16f Rgb resolutionX resolutionY context
 
     /// Update size of fogging attachment.
     let updateFoggingAttachmentSize resolutionX resolutionY fogging context =
@@ -264,7 +264,7 @@ module Attachment =
 
     /// Create coloring attachments.
     let createColoringAttachments resolutionX resolutionY context =
-        let color = createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgb16f Rgb resolutionX resolutionY context
+        let color = createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba16f Rgb resolutionX resolutionY context
         let depth = createColorAttachment Texture2d VkImageUsageFlags.Sampled R16f Red resolutionX resolutionY context
         (color, depth)
 
