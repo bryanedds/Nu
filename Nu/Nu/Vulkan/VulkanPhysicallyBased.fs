@@ -301,19 +301,22 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial =
 
     /// Compute hash.
     static member hash material =
-        (hash material.AlbedoTexture <<<            00) ^^^
-        (hash material.RoughnessTexture <<<         02) ^^^
-        (hash material.MetallicTexture <<<          04) ^^^
-        (hash material.AmbientOcclusionTexture <<<  06) ^^^
-        (hash material.EmissionTexture <<<          08) ^^^
-        (hash material.NormalTexture <<<            10) ^^^
-        (hash material.HeightTexture <<<            12) ^^^
-        (hash material.SubdermalTexture <<<         14) ^^^
-        (hash material.FinenessTexture <<<          16) ^^^
-        (hash material.ScatterTexture <<<           18) ^^^
-        (hash material.TwoSided <<<                 20) ^^^
-        (hash material.Clipped <<<                  22) ^^^
-        (hash material.Names <<<                    24)
+        (hash material.AlbedoTexture <<<                00) ^^^
+        (hash material.RoughnessTexture <<<             01) ^^^
+        (hash material.MetallicTexture <<<              02) ^^^
+        (hash material.AmbientOcclusionTexture <<<      03) ^^^
+        (hash material.EmissionTexture <<<              04) ^^^
+        (hash material.NormalTexture <<<                05) ^^^
+        (hash material.HeightTexture <<<                06) ^^^
+        (hash material.SubdermalTexture <<<             07) ^^^
+        (hash material.FinenessTexture <<<              08) ^^^
+        (hash material.ScatterTexture <<<               09) ^^^
+        (hash material.ClearCoatTexture <<<             10) ^^^
+        (hash material.ClearCoatRoughnessTexture <<<    11) ^^^
+        (hash material.ClearCoatNormalTexture <<<       12) ^^^
+        (hash material.TwoSided <<<                     13) ^^^
+        (hash material.Clipped <<<                      14) ^^^
+        (hash material.Names <<<                        15)
 
     /// Determing equality.
     static member equals left right =
@@ -328,6 +331,9 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial =
         left.SubdermalTexture = right.SubdermalTexture &&
         left.FinenessTexture = right.FinenessTexture &&
         left.ScatterTexture = right.ScatterTexture &&
+        left.ClearCoatTexture = right.ClearCoatTexture &&
+        left.ClearCoatRoughnessTexture = right.ClearCoatRoughnessTexture &&
+        left.ClearCoatNormalTexture = right.ClearCoatNormalTexture &&
         left.TwoSided = right.TwoSided &&
         left.Clipped = right.Clipped &&
         left.Names = right.Names
