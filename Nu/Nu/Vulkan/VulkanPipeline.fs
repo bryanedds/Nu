@@ -420,7 +420,6 @@ type Pipeline =
         for vkPipeline in pipeline.VkPipelines_.Values do
             DeviceApi.vkDestroyPipeline (vkPipeline, nullPtr)
         pipeline.VkPipelines_.Clear ()
-            
 
     /// Try to get the VkPipeline built for the given settings.
     static member tryGetVkPipeline blend cullFace pipeline =
