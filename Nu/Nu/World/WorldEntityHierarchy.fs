@@ -121,6 +121,9 @@ module WorldEntityHierarchyExtensions =
                             let refractiveIndex = Vulkan.PhysicallyBasedSurfaceFns.extractRefractiveIndex Constants.Render.RefractiveIndexDefault staticModelMetadata.SceneOpt surface
                             let clearCoat = Vulkan.PhysicallyBasedSurfaceFns.extractClearCoat Constants.Render.ClearCoatDefault staticModelMetadata.SceneOpt surface
                             let clearCoatRoughness = Vulkan.PhysicallyBasedSurfaceFns.extractClearCoatRoughness Constants.Render.ClearCoatRoughnessDefault staticModelMetadata.SceneOpt surface
+                            let userDefineds =
+                                [for i in 0 .. dec 8 do
+                                    Vulkan.PhysicallyBasedSurfaceFns.extractUserDefined i Constants.Render.UserDefinedDefault staticModelMetadata.SceneOpt surface]
                             child.SetPositionLocal position world
                             child.SetRotationLocal rotation world
                             child.SetScaleLocal scale world
@@ -144,7 +147,15 @@ module WorldEntityHierarchyExtensions =
                                   SubsurfaceCutoffMarginOpt = ValueSome subsurfaceCutoffMargin
                                   RefractiveIndexOpt = ValueSome refractiveIndex
                                   ClearCoatOpt = ValueSome clearCoat
-                                  ClearCoatRoughnessOpt = ValueSome clearCoatRoughness }
+                                  ClearCoatRoughnessOpt = ValueSome clearCoatRoughness
+                                  UserDefinedOpt = ValueSome userDefineds[0]
+                                  UserDefined2Opt = ValueSome userDefineds[1]
+                                  UserDefined3Opt = ValueSome userDefineds[2]
+                                  UserDefined4Opt = ValueSome userDefineds[3]
+                                  UserDefined5Opt = ValueSome userDefineds[4]
+                                  UserDefined6Opt = ValueSome userDefineds[5]
+                                  UserDefined7Opt = ValueSome userDefineds[6]
+                                  UserDefined8Opt = ValueSome userDefineds[7] }
                             child.SetMaterialProperties properties world
                             let material =
                                 if surfaceMaterialsPopulated then
@@ -161,6 +172,8 @@ module WorldEntityHierarchyExtensions =
                                       ClearCoatImageOpt = Metadata.tryGetStaticModelClearCoatImage surface.SurfaceMaterialIndex staticModel
                                       ClearCoatRoughnessImageOpt = Metadata.tryGetStaticModelClearCoatRoughnessImage surface.SurfaceMaterialIndex staticModel
                                       ClearCoatNormalImageOpt = Metadata.tryGetStaticModelClearCoatNormalImage surface.SurfaceMaterialIndex staticModel
+                                      UserDefinedImageOpt = Metadata.tryGetStaticModelUserDefinedImage surface.SurfaceMaterialIndex staticModel
+                                      UserDefined2ImageOpt = Metadata.tryGetStaticModelUserDefined2Image surface.SurfaceMaterialIndex staticModel
                                       TwoSidedOpt = Metadata.tryGetStaticModelTwoSided surface.SurfaceMaterialIndex staticModel
                                       ClippedOpt = Metadata.tryGetStaticModelClipped surface.SurfaceMaterialIndex staticModel }
                                 else Material.empty
@@ -261,6 +274,8 @@ module WorldEntityHierarchyExtensions =
                                           ClearCoatImageOpt = Metadata.tryGetStaticModelClearCoatImage surface.SurfaceMaterialIndex staticModel
                                           ClearCoatRoughnessImageOpt = Metadata.tryGetStaticModelClearCoatRoughnessImage surface.SurfaceMaterialIndex staticModel
                                           ClearCoatNormalImageOpt = Metadata.tryGetStaticModelClearCoatNormalImage surface.SurfaceMaterialIndex staticModel
+                                          UserDefinedImageOpt = Metadata.tryGetStaticModelUserDefinedImage surface.SurfaceMaterialIndex staticModel
+                                          UserDefined2ImageOpt = Metadata.tryGetStaticModelUserDefined2Image surface.SurfaceMaterialIndex staticModel
                                           TwoSidedOpt = Metadata.tryGetStaticModelTwoSided surface.SurfaceMaterialIndex staticModel
                                           ClippedOpt = Metadata.tryGetStaticModelClipped surface.SurfaceMaterialIndex staticModel }
                                     else Material.empty

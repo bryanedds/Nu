@@ -240,7 +240,16 @@ type PhysicallyBasedMaterialProperties =
       SubsurfaceCutoffMargin : single
       RefractiveIndex : single
       ClearCoat : single
-      ClearCoatRoughness : single }
+      ClearCoatRoughness : single
+      // NOTE: 10 fields here are available for engine use
+      UserDefined : single
+      UserDefined2 : single
+      UserDefined3 : single
+      UserDefined4 : single
+      UserDefined5 : single
+      UserDefined6 : single
+      UserDefined7 : single
+      UserDefined8 : single }
 
     /// The empty material properties.
     static member empty =
@@ -259,7 +268,15 @@ type PhysicallyBasedMaterialProperties =
           SubsurfaceCutoffMargin = 0.0f
           RefractiveIndex = 0.0f
           ClearCoat = 0.0f
-          ClearCoatRoughness = 0.0f }
+          ClearCoatRoughness = 0.0f
+          UserDefined = 0.0f
+          UserDefined2 = 0.0f
+          UserDefined3 = 0.0f
+          UserDefined4 = 0.0f
+          UserDefined5 = 0.0f
+          UserDefined6 = 0.0f
+          UserDefined7 = 0.0f
+          UserDefined8 = 0.0f }
 
 /// Describes a physically-based material.
 type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial =
@@ -276,6 +293,8 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial =
       ClearCoatTexture : Texture
       ClearCoatRoughnessTexture : Texture
       ClearCoatNormalTexture : Texture
+      UserDefinedTexture : Texture
+      UserDefined2Texture : Texture
       TwoSided : bool
       Clipped : bool
       Names : string }
@@ -295,6 +314,8 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial =
           ClearCoatTexture = Texture.EmptyTexture
           ClearCoatRoughnessTexture = Texture.EmptyTexture
           ClearCoatNormalTexture = Texture.EmptyTexture
+          UserDefinedTexture = Texture.EmptyTexture
+          UserDefined2Texture = Texture.EmptyTexture
           TwoSided = false
           Clipped = false
           Names = "" }
@@ -314,9 +335,11 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial =
         (hash material.ClearCoatTexture <<<             10) ^^^
         (hash material.ClearCoatRoughnessTexture <<<    11) ^^^
         (hash material.ClearCoatNormalTexture <<<       12) ^^^
-        (hash material.TwoSided <<<                     13) ^^^
-        (hash material.Clipped <<<                      14) ^^^
-        (hash material.Names <<<                        15)
+        (hash material.UserDefinedTexture <<<           13) ^^^
+        (hash material.UserDefined2Texture <<<          14) ^^^
+        (hash material.TwoSided <<<                     15) ^^^
+        (hash material.Clipped <<<                      16) ^^^
+        (hash material.Names <<<                        17)
 
     /// Determing equality.
     static member equals left right =
@@ -334,6 +357,8 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial =
         left.ClearCoatTexture = right.ClearCoatTexture &&
         left.ClearCoatRoughnessTexture = right.ClearCoatRoughnessTexture &&
         left.ClearCoatNormalTexture = right.ClearCoatNormalTexture &&
+        left.UserDefinedTexture = right.UserDefinedTexture &&
+        left.UserDefined2Texture = right.UserDefined2Texture &&
         left.TwoSided = right.TwoSided &&
         left.Clipped = right.Clipped &&
         left.Names = right.Names
@@ -518,6 +543,16 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedSurface =
             | Some _ | None -> clearCoatRoughnessDefault
         | ValueSome clearCoatRoughness -> clearCoatRoughness
 
+    static member extractUserDefined index userDefinedDefault (sceneOpt : Assimp.Scene option) surface =
+        match surface.SurfaceNode.UserDefinedOpt index with
+        | ValueNone ->
+            match sceneOpt with
+            | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
+                let material = scene.Materials[surface.SurfaceMaterialIndex]
+                ValueOption.defaultValue userDefinedDefault (material.UserDefinedOpt index)
+            | Some _ | None -> userDefinedDefault
+        | ValueSome clearCoatRoughness -> clearCoatRoughness
+
     static member extractNavShape shapeDefault (sceneOpt : Assimp.Scene option) surface =
         match surface.SurfaceNode.NavShapeOpt with
         | ValueNone ->
@@ -570,6 +605,7 @@ module PhysicallyBasedSurfaceFns =
     let extractRefractiveIndex = PhysicallyBasedSurface.extractRefractiveIndex
     let extractClearCoat = PhysicallyBasedSurface.extractClearCoat
     let extractClearCoatRoughness = PhysicallyBasedSurface.extractClearCoatRoughness
+    let extractUserDefined = PhysicallyBasedSurface.extractUserDefined
     let extractNavShape = PhysicallyBasedSurface.extractNavShape
     let hash = PhysicallyBasedSurface.hash
     let equals = PhysicallyBasedSurface.equals
@@ -810,66 +846,69 @@ type PhysicallyBasedPipelines =
 module PhysicallyBased =
     
     // static vertex definition
-    let StaticTexCoordsOffset =     (3 (*position*)) * sizeof<single>
-    let StaticNormalOffset =        (3 (*position*) + 2 (*tex coords*)) * sizeof<single>
-    let StaticVertexSize =          (3 (*position*) + 2 (*tex coords*) + 3 (*normal*)) * sizeof<single>
+    let StaticVertexFieldCount = 16
     let StaticVertices =
-        [|Pipeline.vertex 0 StaticVertexSize VkVertexInputRate.Vertex
+        [|Pipeline.vertex 0 (StaticVertexFieldCount * sizeof<single>) VkVertexInputRate.Vertex
             [|Pipeline.attribute 0 Single3 0
-              Pipeline.attribute 1 Single2 StaticTexCoordsOffset
-              Pipeline.attribute 2 Single3 StaticNormalOffset|]
+              Pipeline.attribute 1 Single2 12
+              Pipeline.attribute 2 Single2 20
+              Pipeline.attribute 3 Single2 28
+              Pipeline.attribute 4 Single3 36
+              Pipeline.attribute 5 Single4 48|]
           Pipeline.vertex 1 (Constants.Render.InstanceFieldCount * sizeof<single>) VkVertexInputRate.Instance
-            [|Pipeline.attribute 3 Single4 0
-              Pipeline.attribute 4 Single4 (4 * sizeof<single>)
-              Pipeline.attribute 5 Single4 (8 * sizeof<single>)
-              Pipeline.attribute 6 Single4 (12 * sizeof<single>)
-              Pipeline.attribute 7 Single4 (16 * sizeof<single>)
-              Pipeline.attribute 8 Single4 (20 * sizeof<single>)
-              Pipeline.attribute 9 Single4 (24 * sizeof<single>)
-              Pipeline.attribute 10 Single4 (28 * sizeof<single>)
-              Pipeline.attribute 11 Single4 (32 * sizeof<single>)
-              Pipeline.attribute 12 Single4 (36 * sizeof<single>)|]|]
+            [|Pipeline.attribute 6 Single4 0
+              Pipeline.attribute 7 Single4 (4 * sizeof<single>)
+              Pipeline.attribute 8 Single4 (8 * sizeof<single>)
+              Pipeline.attribute 9 Single4 (12 * sizeof<single>)
+              Pipeline.attribute 10 Single4 (16 * sizeof<single>)
+              Pipeline.attribute 11 Single4 (20 * sizeof<single>)
+              Pipeline.attribute 12 Single4 (24 * sizeof<single>)
+              Pipeline.attribute 13 Single4 (28 * sizeof<single>)
+              Pipeline.attribute 14 Single4 (32 * sizeof<single>)
+              Pipeline.attribute 15 Single4 (36 * sizeof<single>)
+              Pipeline.attribute 16 Single4 (40 * sizeof<single>)
+              Pipeline.attribute 17 Single4 (44 * sizeof<single>)
+              Pipeline.attribute 18 Single4 (48 * sizeof<single>)
+              Pipeline.attribute 19 Single4 (52 * sizeof<single>)|]|]
 
     // animated vertex definition
-    let AnimatedTexCoordsOffset =   (3 (*position*)) * sizeof<single>
-    let AnimatedNormalOffset =      (3 (*position*) + 2 (*tex coords*)) * sizeof<single>
-    let AnimatedBoneIdsOffset =     (3 (*position*) + 2 (*tex coords*) + 3 (*normal*)) * sizeof<single>
-    let AnimatedWeightsOffset =     (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 4 (*boneIds*)) * sizeof<single>
-    let AnimatedVertexSize =        (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 4 (*boneIds*) + 4 (*weights*)) * sizeof<single>
+    let AnimatedVertexFieldCount = 24
     let AnimatedVertices =
-        [|Pipeline.vertex 0 AnimatedVertexSize VkVertexInputRate.Vertex
+        [|Pipeline.vertex 0 (AnimatedVertexFieldCount * sizeof<single>) VkVertexInputRate.Vertex
             [|Pipeline.attribute 0 Single3 0
-              Pipeline.attribute 1 Single2 AnimatedTexCoordsOffset
-              Pipeline.attribute 2 Single3 AnimatedNormalOffset
-              Pipeline.attribute 3 Single4 AnimatedBoneIdsOffset
-              Pipeline.attribute 4 Single4 AnimatedWeightsOffset|]
+              Pipeline.attribute 1 Single2 12
+              Pipeline.attribute 2 Single2 20
+              Pipeline.attribute 3 Single2 28
+              Pipeline.attribute 4 Single3 36
+              Pipeline.attribute 5 Single4 48
+              Pipeline.attribute 6 Single4 64
+              Pipeline.attribute 7 Single4 80|]
           Pipeline.vertex 1 (Constants.Render.InstanceFieldCount * sizeof<single>) VkVertexInputRate.Instance
-            [|Pipeline.attribute 5 Single4 0
-              Pipeline.attribute 6 Single4 (4 * sizeof<single>)
-              Pipeline.attribute 7 Single4 (8 * sizeof<single>)
-              Pipeline.attribute 8 Single4 (12 * sizeof<single>)
-              Pipeline.attribute 9 Single4 (16 * sizeof<single>)
-              Pipeline.attribute 10 Single4 (20 * sizeof<single>)
-              Pipeline.attribute 11 Single4 (24 * sizeof<single>)
-              Pipeline.attribute 12 Single4 (28 * sizeof<single>)
-              Pipeline.attribute 13 Single4 (32 * sizeof<single>)
-              Pipeline.attribute 14 Single4 (36 * sizeof<single>)|]|]
+            [|Pipeline.attribute 8 Single4 0
+              Pipeline.attribute 9 Single4 (4 * sizeof<single>)
+              Pipeline.attribute 10 Single4 (8 * sizeof<single>)
+              Pipeline.attribute 11 Single4 (12 * sizeof<single>)
+              Pipeline.attribute 12 Single4 (16 * sizeof<single>)
+              Pipeline.attribute 13 Single4 (20 * sizeof<single>)
+              Pipeline.attribute 14 Single4 (24 * sizeof<single>)
+              Pipeline.attribute 15 Single4 (28 * sizeof<single>)
+              Pipeline.attribute 16 Single4 (32 * sizeof<single>)
+              Pipeline.attribute 17 Single4 (36 * sizeof<single>)
+              Pipeline.attribute 18 Single4 (40 * sizeof<single>)
+              Pipeline.attribute 19 Single4 (44 * sizeof<single>)
+              Pipeline.attribute 20 Single4 (48 * sizeof<single>)
+              Pipeline.attribute 21 Single4 (52 * sizeof<single>)|]|]
 
     // terrain vertex definition
-    let TerrainTexCoordsOffset =    (3 (*position*)) * sizeof<single>
-    let TerrainNormalOffset =       (3 (*position*) + 2 (*tex coords*)) * sizeof<single>
-    let TerrainTintOffset =         (3 (*position*) + 2 (*tex coords*) + 3 (*normal*)) * sizeof<single>
-    let TerrainBlendsOffset =       (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 3 (*tint*)) * sizeof<single>
-    let TerrainBlends2Offset =      (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 3 (*tint*) + 4 (*blends*)) * sizeof<single>
-    let TerrainVertexSize =         (3 (*position*) + 2 (*tex coords*) + 3 (*normal*) + 3 (*tint*) + 4 (*blends*) + 4 (*blends2*)) * sizeof<single>
+    let TerrainVertexFieldCount = 19
     let TerrainVertices =
-        [|Pipeline.vertex 0 TerrainVertexSize VkVertexInputRate.Vertex
+        [|Pipeline.vertex 0 (TerrainVertexFieldCount * sizeof<single>) VkVertexInputRate.Vertex
             [|Pipeline.attribute 0 Single3 0
-              Pipeline.attribute 1 Single2 TerrainTexCoordsOffset
-              Pipeline.attribute 2 Single3 TerrainNormalOffset
-              Pipeline.attribute 3 Single3 TerrainTintOffset
-              Pipeline.attribute 4 Single4 TerrainBlendsOffset
-              Pipeline.attribute 5 Single4 TerrainBlends2Offset|]
+              Pipeline.attribute 1 Single2 12
+              Pipeline.attribute 2 Single3 20
+              Pipeline.attribute 3 Single3 32
+              Pipeline.attribute 4 Single4 44
+              Pipeline.attribute 5 Single4 60|]
           Pipeline.vertex 1 (Constants.Render.InstanceFieldCount * sizeof<single>) VkVertexInputRate.Instance
             [|Pipeline.attribute 6 Single4 0
               Pipeline.attribute 7 Single4 (4 * sizeof<single>)
@@ -1074,13 +1113,13 @@ module PhysicallyBased =
         // make vertex data
         let vertexData =
             [|
-                (*   positions   *)         (* tex coords *)    (*    normals    *)
-                -1.0f; -1.0f; +0.0f;        0.0f; 0.0f;          0.0f;  0.0f;  1.0f // bottom-left
-                +1.0f; -1.0f; +0.0f;        1.0f; 0.0f;          0.0f;  0.0f;  1.0f // bottom-right
-                +1.0f; +1.0f; +0.0f;        1.0f; 1.0f;          0.0f;  0.0f;  1.0f // top-right
-                +1.0f; +1.0f; +0.0f;        1.0f; 1.0f;          0.0f;  0.0f;  1.0f // top-right
-                -1.0f; +1.0f; +0.0f;        0.0f; 1.0f;          0.0f;  0.0f;  1.0f // top-left
-                -1.0f; -1.0f; +0.0f;        0.0f; 0.0f;          0.0f;  0.0f;  1.0f // bottom-left
+                (*   positions   *)         (* tex coords *)    (* tex coords 2 *)  (* tex coords 3 *)  (*    normals    *)     (*   colors   *)
+                -1.0f; -1.0f; +0.0f;        0.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     0.0f; 0.0f; 0.0f; 0.0f // bottom-left
+                +1.0f; -1.0f; +0.0f;        1.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     0.0f; 0.0f; 0.0f; 0.0f // bottom-right
+                +1.0f; +1.0f; +0.0f;        1.0f; 1.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     0.0f; 0.0f; 0.0f; 0.0f // top-right
+                +1.0f; +1.0f; +0.0f;        1.0f; 1.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     0.0f; 0.0f; 0.0f; 0.0f // top-right
+                -1.0f; +1.0f; +0.0f;        0.0f; 1.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     0.0f; 0.0f; 0.0f; 0.0f // top-left
+                -1.0f; -1.0f; +0.0f;        0.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     0.0f; 0.0f; 0.0f; 0.0f // bottom-left
             |]
 
         // make index data trivially
@@ -1098,13 +1137,13 @@ module PhysicallyBased =
         // make vertex data
         let vertexData =
             [|
-                (*   positions   *)         (* tex coords *)    (*    normals    *)
-                -0.5f; -0.5f; +0.0f;        0.0f; 0.0f;          0.0f;  0.0f;  1.0f // bottom-left
-                +0.5f; -0.5f; +0.0f;        0.0f; 0.0f;          0.0f;  0.0f;  1.0f // bottom-right
-                +0.5f; +0.5f; +0.0f;        0.0f; 0.0f;          0.0f;  0.0f;  1.0f // top-right
-                +0.5f; +0.5f; +0.0f;        0.0f; 0.0f;          0.0f;  0.0f;  1.0f // top-right
-                -0.5f; +0.5f; +0.0f;        0.0f; 0.0f;          0.0f;  0.0f;  1.0f // top-left
-                -0.5f; -0.5f; +0.0f;        0.0f; 0.0f;          0.0f;  0.0f;  1.0f // bottom-left
+                (*   positions   *)         (* tex coords *)    (* tex coords 2 *)  (* tex coords 3 *)  (*    normals    *)     (*   colors   *)
+                -0.5f; -0.5f; +0.0f;        0.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     0.0f; 0.0f; 0.0f; 0.0f // bottom-left
+                +0.5f; -0.5f; +0.0f;        0.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     0.0f; 0.0f; 0.0f; 0.0f // bottom-right
+                +0.5f; +0.5f; +0.0f;        0.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     0.0f; 0.0f; 0.0f; 0.0f // top-right
+                +0.5f; +0.5f; +0.0f;        0.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     0.0f; 0.0f; 0.0f; 0.0f // top-right
+                -0.5f; +0.5f; +0.0f;        0.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     0.0f; 0.0f; 0.0f; 0.0f // top-left
+                -0.5f; -0.5f; +0.0f;        0.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     0.0f; 0.0f; 0.0f; 0.0f // bottom-left
             |]
 
         // make index data trivially
@@ -1122,13 +1161,13 @@ module PhysicallyBased =
         // make vertex data
         let vertexData =
             [|
-                (*   positions   *)         (* tex coords *)    (*    normals    *)
-                -0.5f; -0.5f; +0.0f;        0.0f; 0.0f;          0.0f;  0.0f;  1.0f // bottom-left
-                +0.5f; -0.5f; +0.0f;        0.0f; 0.0f;          0.0f;  0.0f;  1.0f // bottom-right
-                +0.5f; +0.5f; +0.0f;        0.0f; 0.0f;          0.0f;  0.0f;  1.0f // top-right
-                -0.5f; -0.5f; +0.0f;        0.0f; 0.0f;          0.0f;  0.0f;  1.0f // top-right
-                +0.5f; +0.5f; +0.0f;        0.0f; 0.0f;          0.0f;  0.0f;  1.0f // top-left
-                -0.5f; +0.5f; +0.0f;        0.0f; 0.0f;          0.0f;  0.0f;  1.0f // bottom-left
+                (*   positions   *)         (* tex coords *)    (* tex coords *)    (* tex coords *)    (*    normals    *)     (*   colors   *)
+                -0.5f; -0.5f; +0.0f;        0.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     0.0f; 0.0f; 0.0f; 0.0f // bottom-left
+                +0.5f; -0.5f; +0.0f;        0.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     0.0f; 0.0f; 0.0f; 0.0f // bottom-right
+                +0.5f; +0.5f; +0.0f;        0.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     0.0f; 0.0f; 0.0f; 0.0f // top-right
+                -0.5f; -0.5f; +0.0f;        0.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     0.0f; 0.0f; 0.0f; 0.0f // top-right
+                +0.5f; +0.5f; +0.0f;        0.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     0.0f; 0.0f; 0.0f; 0.0f // top-left
+                -0.5f; +0.5f; +0.0f;        0.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     0.0f; 0.0f; 0.0f; 0.0f // bottom-left
             |]
 
         // make index data trivially
@@ -1212,6 +1251,8 @@ module PhysicallyBased =
         let clearCoatTextureFilePath =          if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_clear_coat")              elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_clear_coat")               else ""
         let clearCoatRoughnessTextureFilePath = if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_clear_coat_roughness")    elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_clear_coat_roughness")     else ""
         let clearCoatNormalTextureFilePath =    if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_clear_coat_normal")       elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_clear_coat_normal")        else ""
+        let userDefinedTextureFilePath =        if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_user_defined")            elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_user_defined")             else ""
+        let userDefined2TextureFilePath =       if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_user_defined_2")          elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_user_defined_2")           else ""
         let rmTextureFilePath =                 if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "RM")                 elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "RM")                   elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "RM")                    else ""
         let rmaTextureFilePath =                if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "RMA")                elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "RMA")                  elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "RMA")                   else ""
         let roughnessTextureFilePath =          if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Roughness")          elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Roughness")            elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Roughness")             else ""
@@ -1230,6 +1271,8 @@ module PhysicallyBased =
         let clearCoatTextureFilePath' =         if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "ClearCoat")          elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "ClearCoat")            elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "ClearCoat")             else ""
         let clearCoatRoughnessTextureFilePath' =if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "ClearCoatRoughness") elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "ClearCoatRoughness")   elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "ClearCoatRoughness")    else ""
         let clearCoatNormalTextureFilePath' =   if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "ClearCoatNormal")    elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "ClearCoatNormal")      elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "ClearCoatNormal")       else ""
+        let userDefinedTextureFilePath' =       if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "UserDefined")        elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "UserDefined")          elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "UserDefined")           else ""
+        let userDefined2TextureFilePath' =      if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "UserDefined2")       elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "UserDefined2")         elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "UserDefined2")          else ""
 
         // attempt to load roughness info
         let roughness = Constants.Render.RoughnessDefault
@@ -1509,6 +1552,33 @@ module PhysicallyBased =
                     | Left _ -> defaultMaterial.ClearCoatNormalTexture
             | None -> defaultMaterial.ClearCoatNormalTexture
 
+        // attempt to load user-defined values
+        let userDefineds =
+            [for i in 0 .. dec 8 do
+                match material.UserDefinedOpt i with
+                | ValueSome subsurfaceCutoffMargin -> subsurfaceCutoffMargin
+                | ValueNone -> Constants.Render.UserDefinedDefault]
+        let userDefinedTexture =
+            match contextOpt with
+            | Some context ->
+                match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression userDefinedTextureFilePath) (dirPrefix + userDefinedTextureFilePath) RenderThread context with
+                | Right texture -> texture
+                | Left _ ->
+                    match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression userDefinedTextureFilePath') (dirPrefix + userDefinedTextureFilePath') RenderThread context with
+                    | Right texture -> texture
+                    | Left _ -> defaultMaterial.UserDefinedTexture
+            | None -> defaultMaterial.UserDefinedTexture
+        let userDefined2Texture =
+            match contextOpt with
+            | Some context ->
+                match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression userDefined2TextureFilePath) (dirPrefix + userDefined2TextureFilePath) RenderThread context with
+                | Right texture -> texture
+                | Left _ ->
+                    match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression userDefined2TextureFilePath') (dirPrefix + userDefined2TextureFilePath') RenderThread context with
+                    | Right texture -> texture
+                    | Left _ -> defaultMaterial.UserDefined2Texture
+            | None -> defaultMaterial.UserDefined2Texture
+
         // compute two-sidedness
         let twoSided =
             match material.TwoSidedOpt with
@@ -1552,7 +1622,15 @@ module PhysicallyBased =
               SpecularScalar = specularScalar
               RefractiveIndex = refractiveIndex
               ClearCoat = clearCoat
-              ClearCoatRoughness = clearCoatRoughness }
+              ClearCoatRoughness = clearCoatRoughness
+              UserDefined = userDefineds[0]
+              UserDefined2 = userDefineds[1]
+              UserDefined3 = userDefineds[2]
+              UserDefined4 = userDefineds[3]
+              UserDefined5 = userDefineds[4]
+              UserDefined6 = userDefineds[5]
+              UserDefined7 = userDefineds[6]
+              UserDefined8 = userDefineds[7] }
 
         // make material
         let material =
@@ -1569,6 +1647,8 @@ module PhysicallyBased =
               ClearCoatTexture = clearCoatTexture
               ClearCoatRoughnessTexture = clearCoatRoughnessTexture
               ClearCoatNormalTexture = clearCoatNormalTexture
+              UserDefinedTexture = userDefinedTexture
+              UserDefined2Texture = userDefined2Texture
               TwoSided = twoSided
               Clipped = clipped
               Names = names }
@@ -1593,22 +1673,33 @@ module PhysicallyBased =
     let createPhysicallyBasedStaticMesh indexData (mesh : Assimp.Mesh) =
 
         // populate vertex data and bounds
-        let vertexData = Array.zeroCreate<single> (mesh.Vertices.Count * 8)
+        let vertexData = Array.zeroCreate<single> (mesh.Vertices.Count * StaticVertexFieldCount)
         let mutable positionMin = v3Zero
         let mutable positionMax = v3Zero
         for i in 0 .. dec mesh.Vertices.Count do
-            let v = i * 8
+            let v = i * StaticVertexFieldCount
             let position = if i < mesh.VertexCount then mesh.Vertices[i] else Assimp.Vector3D (0.0f, 0.0f, 0.0f)
-            let texCoords = if i < mesh.TextureCoordinateChannels[0].Capacity then mesh.TextureCoordinateChannels[0][i] else Assimp.Vector3D (0.0f, 0.0f, 0.0f)
+            let texCoords = if mesh.TextureCoordinateChannelCount >= 1 && i < mesh.TextureCoordinateChannels[0].Capacity then mesh.TextureCoordinateChannels[0][i] else Assimp.Vector3D (0.0f, 0.0f, 0.0f)
+            let texCoords2 = if mesh.TextureCoordinateChannelCount >= 2 && i < mesh.TextureCoordinateChannels[1].Capacity then mesh.TextureCoordinateChannels[1][i] else Assimp.Vector3D (0.0f, 0.0f, 0.0f)
+            let texCoords3 = if mesh.TextureCoordinateChannelCount >= 3 && i < mesh.TextureCoordinateChannels[2].Capacity then mesh.TextureCoordinateChannels[2][i] else Assimp.Vector3D (0.0f, 0.0f, 0.0f)
             let normal = if i < mesh.Normals.Count then mesh.Normals[i] else Assimp.Vector3D (0.5f, 0.5f, 1.0f)
+            let color = if mesh.VertexColorChannelCount >= 1 && i < mesh.VertexColorChannels[0].Count then mesh.VertexColorChannels[0][i] else Assimp.Color4D (0.0f, 0.0f, 0.0f, 0.0f)
             vertexData[v] <- position.X
             vertexData[v+1] <- position.Y
             vertexData[v+2] <- position.Z
             vertexData[v+3] <- texCoords.X
             vertexData[v+4] <- 1.0f - texCoords.Y
-            vertexData[v+5] <- normal.X
-            vertexData[v+6] <- normal.Y
-            vertexData[v+7] <- normal.Z
+            vertexData[v+5] <- texCoords2.X
+            vertexData[v+6] <- 1.0f - texCoords2.Y
+            vertexData[v+7] <- texCoords3.X
+            vertexData[v+8] <- 1.0f - texCoords3.Y
+            vertexData[v+9] <- normal.X
+            vertexData[v+10] <- normal.Y
+            vertexData[v+11] <- normal.Z
+            vertexData[v+12] <- color.R
+            vertexData[v+13] <- color.G
+            vertexData[v+14] <- color.B
+            vertexData[v+15] <- color.A
             positionMin.X <- min positionMin.X position.X
             positionMin.Y <- min positionMin.Y position.Y
             positionMin.Z <- min positionMin.Z position.Z
@@ -1624,30 +1715,43 @@ module PhysicallyBased =
     let createPhysicallyBasedAnimatedMesh indexData (mesh : Assimp.Mesh) =
 
         // populate vertex data (except bone) and bounds
-        let vertexData = Array.zeroCreate<single> (mesh.Vertices.Count * 16)
+        let boneIdsOffset = 16
+        let weightsOffset = 20
+        let vertexData = Array.zeroCreate<single> (mesh.Vertices.Count * AnimatedVertexFieldCount)
         let mutable positionMin = v3Zero
         let mutable positionMax = v3Zero
         for i in 0 .. dec mesh.Vertices.Count do
-            let v = i * 16
+            let v = i * AnimatedVertexFieldCount
             let position = if i < mesh.VertexCount then mesh.Vertices[i] else Assimp.Vector3D (0.0f, 0.0f, 0.0f)
-            let texCoords = if i < mesh.TextureCoordinateChannels[0].Capacity then mesh.TextureCoordinateChannels[0][i] else Assimp.Vector3D (0.0f, 0.0f, 0.0f)
+            let texCoords = if mesh.TextureCoordinateChannelCount >= 1 && i < mesh.TextureCoordinateChannels[0].Capacity then mesh.TextureCoordinateChannels[0][i] else Assimp.Vector3D (0.0f, 0.0f, 0.0f)
+            let texCoords2 = if mesh.TextureCoordinateChannelCount >= 2 && i < mesh.TextureCoordinateChannels[1].Capacity then mesh.TextureCoordinateChannels[1][i] else Assimp.Vector3D (0.0f, 0.0f, 0.0f)
+            let texCoords3 = if mesh.TextureCoordinateChannelCount >= 3 && i < mesh.TextureCoordinateChannels[2].Capacity then mesh.TextureCoordinateChannels[2][i] else Assimp.Vector3D (0.0f, 0.0f, 0.0f)
             let normal = if i < mesh.Normals.Count then mesh.Normals[i] else Assimp.Vector3D (0.5f, 0.5f, 1.0f)
+            let color = if mesh.VertexColorChannelCount >= 1 && i < mesh.VertexColorChannels[0].Count then mesh.VertexColorChannels[0][i] else Assimp.Color4D (0.0f, 0.0f, 0.0f, 0.0f)
             vertexData[v] <- position.X
             vertexData[v+1] <- position.Y
             vertexData[v+2] <- position.Z
             vertexData[v+3] <- texCoords.X
             vertexData[v+4] <- 1.0f - texCoords.Y
-            vertexData[v+5] <- normal.X
-            vertexData[v+6] <- normal.Y
-            vertexData[v+7] <- normal.Z
-            vertexData[v+8] <- -1.0f
-            vertexData[v+9] <- -1.0f
-            vertexData[v+10] <- -1.0f
-            vertexData[v+11] <- -1.0f
-            vertexData[v+12] <- 0.0f
-            vertexData[v+13] <- 0.0f
-            vertexData[v+14] <- 0.0f
-            vertexData[v+15] <- 0.0f
+            vertexData[v+5] <- texCoords2.X
+            vertexData[v+6] <- 1.0f - texCoords2.Y
+            vertexData[v+7] <- texCoords3.X
+            vertexData[v+8] <- 1.0f - texCoords3.Y
+            vertexData[v+9] <- normal.X
+            vertexData[v+10] <- normal.Y
+            vertexData[v+11] <- normal.Z
+            vertexData[v+12] <- color.R
+            vertexData[v+13] <- color.G
+            vertexData[v+14] <- color.B
+            vertexData[v+15] <- color.A
+            vertexData[v+16] <- -1.0f // boneIdsOffset
+            vertexData[v+17] <- -1.0f
+            vertexData[v+18] <- -1.0f
+            vertexData[v+19] <- -1.0f
+            vertexData[v+20] <- 0.0f // weightsOffset
+            vertexData[v+21] <- 0.0f
+            vertexData[v+22] <- 0.0f
+            vertexData[v+23] <- 0.0f
             positionMin.X <- min positionMin.X position.X
             positionMin.Y <- min positionMin.Y position.Y
             positionMin.Z <- min positionMin.Z position.Z
@@ -1662,36 +1766,36 @@ module PhysicallyBased =
             let weightsCount = mesh.Bones[boneIndex].VertexWeights.Count
             for weightIndex in 0 .. dec weightsCount do
                 let vertexId = weights[weightIndex].VertexID
-                let vertexOffset = vertexId * 16
+                let vertexOffset = vertexId * AnimatedVertexFieldCount
                 let weight = weights[weightIndex].Weight
                 if weight > 0.0f then
 
                     // find a free slot to specify the current index and weight (free slots are designated as -1.0f index above)
                     let mutable found = false
                     let mutable i = 0
-                    while not found && i < Constants.Render.BonesInfluenceMax do
-                        if vertexData[vertexOffset+8+i] = single boneIndex then // already found
+                    while not found && i < 4 do
+                        if vertexData[vertexOffset+boneIdsOffset+i] = single boneIndex then // already found
                             found <- true
-                        elif vertexData[vertexOffset+8+i] < 0.0f then // found free slot
-                            vertexData[vertexOffset+8+i] <- single boneIndex
-                            vertexData[vertexOffset+12+i] <- weight
+                        elif vertexData[vertexOffset+boneIdsOffset+i] < 0.0f then // found free slot
+                            vertexData[vertexOffset+boneIdsOffset+i] <- single boneIndex
+                            vertexData[vertexOffset+weightsOffset+i] <- weight
                             found <- true
                         else i <- inc i
 
                     // when all slots are allocated, replace the index and weight of the lowest-weight entry iff the current weight is higher
                     if not found then
                         let mutable lowestOpt = ValueNone
-                        for i in 0 .. dec Constants.Render.BonesInfluenceMax do
+                        for i in 0 .. dec 4 do
                             match lowestOpt with
                             | ValueSome lowest ->
-                                if vertexData[vertexOffset+12+i] < vertexData[vertexOffset+12+lowest] then
+                                if vertexData[vertexOffset+weightsOffset+i] < vertexData[vertexOffset+weightsOffset+lowest] then
                                     lowestOpt <- ValueSome i
                             | ValueNone -> lowestOpt <- ValueSome i
                         match lowestOpt with
                         | ValueSome lowest ->
-                            if vertexData[vertexOffset+12+lowest] < weight then
-                                vertexData[vertexOffset+8+lowest] <- single boneIndex
-                                vertexData[vertexOffset+12+lowest] <- weight
+                            if vertexData[vertexOffset+weightsOffset+lowest] < weight then
+                                vertexData[vertexOffset+boneIdsOffset+lowest] <- single boneIndex
+                                vertexData[vertexOffset+weightsOffset+lowest] <- weight
                         | ValueNone -> failwithumf ()
 
         // fin
@@ -1724,10 +1828,10 @@ module PhysicallyBased =
             | None ->
 
                 // compute vertices
-                let vertices = Array.zeroCreate (vertexData.Length / 8)
+                let vertices = Array.zeroCreate (vertexData.Length / 16)
                 let vertexData = vertexData.Span
                 for i in 0 .. dec vertices.Length do
-                    let j = i * 8
+                    let j = i * 16
                     let vertex = v3 vertexData[j] vertexData[j+1] vertexData[j+2]
                     vertices[i] <- vertex
 
@@ -1799,10 +1903,10 @@ module PhysicallyBased =
             | None ->
 
                 // compute vertices
-                let vertices = Array.zeroCreate (vertexData.Length / 16)
+                let vertices = Array.zeroCreate (vertexData.Length / 24)
                 let vertexData = vertexData.Span
                 for i in 0 .. dec vertices.Length do
-                    let j = i * 16
+                    let j = i * 24
                     let vertex = v3 vertexData[j] vertexData[j+1] vertexData[j+2]
                     vertices[i] <- vertex
 
@@ -1901,10 +2005,10 @@ module PhysicallyBased =
             | None ->
 
                 // compute vertices
-                let vertices = Array.zeroCreate (vertexData.Length / 19)
+                let vertices = Array.zeroCreate (vertexData.Length / TerrainVertexFieldCount)
                 let vertexData = vertexData.Span
                 for i in 0 .. dec vertices.Length do
-                    let j = i * 19
+                    let j = i * TerrainVertexFieldCount
                     let vertex = v3 vertexData[j] vertexData[j+1] vertexData[j+2]
                     vertices[i] <- vertex
 
@@ -3637,7 +3741,9 @@ module PhysicallyBased =
                       Pipeline.descriptor 9 SampledImage FragmentStage 1 // scatterTexture
                       Pipeline.descriptor 10 SampledImage FragmentStage 1 // clearCoatTexture
                       Pipeline.descriptor 11 SampledImage FragmentStage 1 // clearCoatRoughnessTexture
-                      Pipeline.descriptor 12 SampledImage FragmentStage 1|] // clearCoatNormalTexture
+                      Pipeline.descriptor 12 SampledImage FragmentStage 1 // clearCoatNormalTexture
+                      Pipeline.descriptor 13 SampledImage FragmentStage 1 // userDefinedTexture
+                      Pipeline.descriptor 14 SampledImage FragmentStage 1|] // userDefined2Texture
 
                   // descriptor set 2: dynamic
                   Pipeline.descriptorSet<int>
@@ -3768,6 +3874,8 @@ module PhysicallyBased =
                     Pipeline.writeDescriptorSampledTexture 10 0 material.ClearCoatTexture vkSet
                     Pipeline.writeDescriptorSampledTexture 11 0 material.ClearCoatRoughnessTexture vkSet
                     Pipeline.writeDescriptorSampledTexture 12 0 material.ClearCoatNormalTexture vkSet
+                    Pipeline.writeDescriptorSampledTexture 13 0 material.UserDefinedTexture vkSet
+                    Pipeline.writeDescriptorSampledTexture 14 0 material.UserDefined2Texture vkSet
 
                 // specify dynamic when animated
                 let mutable dynamicDescriptorSet =
@@ -5633,6 +5741,8 @@ module PhysicallyBased =
                 Pipeline.writeDescriptorSampledTexture 4 0 material.EmissionTexture vkSet
                 Pipeline.writeDescriptorSampledTexture 5 0 material.NormalTexture vkSet
                 Pipeline.writeDescriptorSampledTexture 6 0 material.HeightTexture vkSet
+                Pipeline.writeDescriptorSampledTexture 13 0 material.UserDefinedTexture vkSet
+                Pipeline.writeDescriptorSampledTexture 14 0 material.UserDefined2Texture vkSet
 
             // specify dynamic
             // NOTE: we do more work on bones specification even when there aren't bones to specify than in the other
