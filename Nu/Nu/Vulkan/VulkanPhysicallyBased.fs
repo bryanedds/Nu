@@ -241,7 +241,7 @@ type PhysicallyBasedMaterialProperties =
       RefractiveIndex : single
       ClearCoat : single
       ClearCoatRoughness : single
-      // NOTE: 10 fields here are available for engine use
+      // NOTE: 10 fields here are reserved for engine use.
       UserDefined : single
       UserDefined2 : single
       UserDefined3 : single

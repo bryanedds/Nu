@@ -93,7 +93,7 @@ type [<SymbolicExpansion>] MaterialProperties =
       RefractiveIndexOpt : single voption // forward only
       ClearCoatOpt : single voption // deferred only - TODO: consider implementing for forward surfaces as well.
       ClearCoatRoughnessOpt : single voption // deferred only - TODO: same as above.
-      // NOTE: 10 fields here are available for engine use
+      // NOTE: 10 fields here are reserved for engine use.
       UserDefinedOpt : single voption
       UserDefined2Opt : single voption
       UserDefined3Opt : single voption
