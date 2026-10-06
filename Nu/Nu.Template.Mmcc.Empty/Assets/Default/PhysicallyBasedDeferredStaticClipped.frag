@@ -49,6 +49,7 @@ layout(location = 3) out vec4 normalPlusOut;
 layout(location = 4) out vec4 subdermalPlusOut;
 layout(location = 5) out vec4 scatterPlusOut;
 layout(location = 6) out vec4 clearCoatPlusOut;
+layout(location = 7) out vec4 userDefinedOut;
 
 // NOTE: algorithm from Chapter 16 of OpenGL Shading Language.
 vec3 saturate(vec3 rgb, float adjustment)
@@ -174,4 +175,7 @@ void main()
         clearCoatPlusOut.ba = encodeOctahedral(clearCoatNormal);
     }
     else clearCoatPlusOut = vec4(0.0);
+
+    // write zero to user-defined
+    userDefinedOut = vec4(0.0);
 }

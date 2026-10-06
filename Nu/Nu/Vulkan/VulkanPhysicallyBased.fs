@@ -211,7 +211,7 @@ type PhysicallyBasedAttachments =
       ShadowTextureArrayAttachments : Texture * Texture
       ShadowMapAttachmentsArray : (Texture * Texture) array
       ShadowCascadeArrayAttachmentsArray : (Texture * Texture) array
-      GeometryAttachments : Texture * Texture * Texture * Texture * Texture * Texture * Texture * Texture
+      GeometryAttachments : Texture * Texture * Texture * Texture * Texture * Texture * Texture * Texture * Texture
       LightingAttachment : Texture
       FoggingAttachment : Texture
       LightMappingAttachment : Texture
@@ -4121,9 +4121,10 @@ module PhysicallyBased =
                       Pipeline.descriptor 8 SampledImage FragmentStage 1 // subdermalPlus
                       Pipeline.descriptor 9 SampledImage FragmentStage 1 // scatterPlus
                       Pipeline.descriptor 10 SampledImage FragmentStage 1 // clearCoatPlus
-                      Pipeline.descriptor 11 SampledImage FragmentStage 1 // shadowTextures
-                      Pipeline.descriptor 12 SampledImage FragmentStage Constants.Render.ShadowMapsMax // shadowMaps
-                      Pipeline.descriptor 13 SampledImage FragmentStage Constants.Render.ShadowCascadesMax|] // shadowCascades
+                      Pipeline.descriptor 11 SampledImage FragmentStage 1 // userDefined
+                      Pipeline.descriptor 12 SampledImage FragmentStage 1 // shadowTextures
+                      Pipeline.descriptor 13 SampledImage FragmentStage Constants.Render.ShadowMapsMax // shadowMaps
+                      Pipeline.descriptor 14 SampledImage FragmentStage Constants.Render.ShadowCascadesMax|] // shadowCascades
                   Pipeline.descriptorSet<Unit>
                     [|Pipeline.descriptor 0 Sampler FragmentStage 1
                       Pipeline.descriptor 1 Sampler FragmentStage 1|]|]
@@ -4164,6 +4165,7 @@ module PhysicallyBased =
         (subdermalPlusTexture : Texture)
         (scatterPlusTexture : Texture)
         (clearCoatPlusTexture : Texture)
+        (userDefinedTexture : Texture)
         (shadowTextureArray : Texture)
         (shadowMaps : Texture array)
         (shadowCascades : Texture array)
@@ -4262,9 +4264,10 @@ module PhysicallyBased =
                 Pipeline.writeDescriptorSampledTexture 8 0 subdermalPlusTexture vkSet
                 Pipeline.writeDescriptorSampledTexture 9 0 scatterPlusTexture vkSet
                 Pipeline.writeDescriptorSampledTexture 10 0 clearCoatPlusTexture vkSet
-                Pipeline.writeDescriptorSampledTexture 11 0 shadowTextureArray vkSet
-                Pipeline.writeDescriptorSampledTextures 12 0 (Array.tryTake Constants.Render.ShadowMapsMax shadowMaps) vkSet
-                Pipeline.writeDescriptorSampledTextures 13 0 (Array.tryTake Constants.Render.ShadowCascadesMax shadowCascades) vkSet
+                Pipeline.writeDescriptorSampledTexture 11 0 userDefinedTexture vkSet
+                Pipeline.writeDescriptorSampledTexture 12 0 shadowTextureArray vkSet
+                Pipeline.writeDescriptorSampledTextures 13 0 (Array.tryTake Constants.Render.ShadowMapsMax shadowMaps) vkSet
+                Pipeline.writeDescriptorSampledTextures 14 0 (Array.tryTake Constants.Render.ShadowCascadesMax shadowCascades) vkSet
 
             // specify samplers
             let mutable samplersDescriptorSet = Pipeline.specifyDescriptorSet 1 Unit pipeline.Pipeline $ fun vkSet ->
@@ -5246,12 +5249,13 @@ module PhysicallyBased =
                       Pipeline.descriptor 4 SampledImage FragmentStage 1 // materialTexture
                       Pipeline.descriptor 5 SampledImage FragmentStage 1 // normalPlusTexture
                       Pipeline.descriptor 6 SampledImage FragmentStage 1 // clearCoatPlusTexture
-                      Pipeline.descriptor 7 SampledImage FragmentStage 1 // lightAccumTexture
-                      Pipeline.descriptor 8 SampledImage FragmentStage 1 // brdfTexture
-                      Pipeline.descriptor 9 SampledImage FragmentStage 1 // ambientTexture
-                      Pipeline.descriptor 10 SampledImage FragmentStage 1 // irradianceTexture
-                      Pipeline.descriptor 11 SampledImage FragmentStage 1 // environmentFilterTexture
-                      Pipeline.descriptor 12 SampledImage FragmentStage 1|] // ssaoTexture
+                      Pipeline.descriptor 7 SampledImage FragmentStage 1 // userDefinedTexture
+                      Pipeline.descriptor 8 SampledImage FragmentStage 1 // lightAccumTexture
+                      Pipeline.descriptor 9 SampledImage FragmentStage 1 // brdfTexture
+                      Pipeline.descriptor 10 SampledImage FragmentStage 1 // ambientTexture
+                      Pipeline.descriptor 11 SampledImage FragmentStage 1 // irradianceTexture
+                      Pipeline.descriptor 12 SampledImage FragmentStage 1 // environmentFilterTexture
+                      Pipeline.descriptor 13 SampledImage FragmentStage 1|] // ssaoTexture
                   Pipeline.descriptorSet<Unit>
                     [|Pipeline.descriptor 0 Sampler FragmentStage 1
                       Pipeline.descriptor 1 Sampler FragmentStage 1|]|]
@@ -5299,6 +5303,7 @@ module PhysicallyBased =
         (materialTexture : Texture)
         (normalPlusTexture : Texture)
         (clearCoatPlusTexture : Texture)
+        (userDefinedTexture : Texture)
         (lightAccumTexture : Texture)
         (brdfTexture : Texture)
         (ambientTexture : Texture)
@@ -5362,12 +5367,13 @@ module PhysicallyBased =
                 Pipeline.writeDescriptorSampledTexture 4 0 materialTexture vkSet
                 Pipeline.writeDescriptorSampledTexture 5 0 normalPlusTexture vkSet
                 Pipeline.writeDescriptorSampledTexture 6 0 clearCoatPlusTexture vkSet
-                Pipeline.writeDescriptorSampledTexture 7 0 lightAccumTexture vkSet
-                Pipeline.writeDescriptorSampledTexture 8 0 brdfTexture vkSet
-                Pipeline.writeDescriptorSampledTexture 9 0 ambientTexture vkSet
-                Pipeline.writeDescriptorSampledTexture 10 0 irradianceTexture vkSet
-                Pipeline.writeDescriptorSampledTexture 11 0 environmentFilterTexture vkSet
-                Pipeline.writeDescriptorSampledTexture 12 0 ssaoTexture vkSet
+                Pipeline.writeDescriptorSampledTexture 7 0 userDefinedTexture vkSet
+                Pipeline.writeDescriptorSampledTexture 8 0 lightAccumTexture vkSet
+                Pipeline.writeDescriptorSampledTexture 9 0 brdfTexture vkSet
+                Pipeline.writeDescriptorSampledTexture 10 0 ambientTexture vkSet
+                Pipeline.writeDescriptorSampledTexture 11 0 irradianceTexture vkSet
+                Pipeline.writeDescriptorSampledTexture 12 0 environmentFilterTexture vkSet
+                Pipeline.writeDescriptorSampledTexture 13 0 ssaoTexture vkSet
 
             // specify samplers
             let mutable samplersDescriptorSet = Pipeline.specifyDescriptorSet 1 Unit pipeline.Pipeline $ fun vkSet ->
@@ -5433,8 +5439,9 @@ module PhysicallyBased =
                     [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // eye
                       Pipeline.descriptor 1 UniformBuffer FragmentStage 1 // lighting
                       Pipeline.descriptor 2 SampledImage FragmentStage 1 // depthTexture
-                      Pipeline.descriptor 3 SampledImage FragmentStage 1 // colorTexture
-                      Pipeline.descriptor 4 SampledImage FragmentStage 1|] // fogAccumTexture
+                      Pipeline.descriptor 3 SampledImage FragmentStage 1 // userDefinedTexture
+                      Pipeline.descriptor 4 SampledImage FragmentStage 1 // colorTexture
+                      Pipeline.descriptor 5 SampledImage FragmentStage 1|] // fogAccumTexture
                   Pipeline.descriptorSet<Unit>
                     [|Pipeline.descriptor 0 Sampler FragmentStage 1|]|]
                 [||] [|colorAttachmentFormat|] None
@@ -5465,6 +5472,7 @@ module PhysicallyBased =
         (fogDensity : single)
         (fogColor : Color)
         (depthTexture : Texture)
+        (userDefinedTexture : Texture)
         (colorTexture : Texture)
         (fogAccumTexture : Texture)
         (unfilteredSampler : Sampler)
@@ -5506,8 +5514,9 @@ module PhysicallyBased =
 
                 // specify textures
                 Pipeline.writeDescriptorSampledTexture 2 0 depthTexture vkSet
-                Pipeline.writeDescriptorSampledTexture 3 0 colorTexture vkSet
-                Pipeline.writeDescriptorSampledTexture 4 0 fogAccumTexture vkSet
+                Pipeline.writeDescriptorSampledTexture 3 0 userDefinedTexture vkSet
+                Pipeline.writeDescriptorSampledTexture 4 0 colorTexture vkSet
+                Pipeline.writeDescriptorSampledTexture 5 0 fogAccumTexture vkSet
 
             // specify samplers
             let mutable samplersDescriptorSet = Pipeline.specifyDescriptorSet 1 Unit pipeline.Pipeline $ fun vkSet ->
@@ -5994,10 +6003,10 @@ module PhysicallyBased =
                 context
 
         // create deferred static pipeline
-        let (depth, albedo, material, normalPlus, subdermalPlus, scatterPlus, clearCoatPlus, z) =
+        let (depth, albedo, material, normalPlus, subdermalPlus, scatterPlus, clearCoatPlus, userDefined, z) =
             attachments.GeometryAttachments
         let deferredColorAttachmentFormats =
-            [|depth.VkFormat; albedo.VkFormat; material.VkFormat; normalPlus.VkFormat; subdermalPlus.VkFormat; scatterPlus.VkFormat; clearCoatPlus.VkFormat|]
+            [|depth.VkFormat; albedo.VkFormat; material.VkFormat; normalPlus.VkFormat; subdermalPlus.VkFormat; scatterPlus.VkFormat; clearCoatPlus.VkFormat; userDefined.VkFormat|]
         let deferredStaticPipeline =
             createPhysicallyBasedPipeline
                 lightMapsMax
@@ -6037,12 +6046,10 @@ module PhysicallyBased =
                 context
 
         // create deferred terrain pipeline
-        let deferredTerrainColorAttachmentFormats =
-            [|depth.VkFormat; albedo.VkFormat; material.VkFormat; normalPlus.VkFormat; subdermalPlus.VkFormat; scatterPlus.VkFormat|]
         let deferredTerrainPipeline =
             createPhysicallyBasedTerrainPipeline
                 Constants.Paths.PhysicallyBasedDeferredTerrainShaderFilePath
-                deferredTerrainColorAttachmentFormats
+                deferredColorAttachmentFormats
                 z.VkFormat
                 context
         
