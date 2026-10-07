@@ -844,7 +844,11 @@ type PhysicallyBasedPipelines =
       DeferredCompositionPipeline : PhysicallyBasedDeferredCompositionPipeline
       ForwardStaticPipeline : PhysicallyBasedPipeline
       ForwardAnimatedPipeline : PhysicallyBasedPipeline
-      UserDefinedPipelines : Dictionary<string, PhysicallyBasedPipeline>
+      UserDefinedDeferredStaticPipelines : Dictionary<string, PhysicallyBasedPipeline>
+      UserDefinedDeferredStaticClippedPipelines : Dictionary<string, PhysicallyBasedPipeline>
+      UserDefinedDeferredAnimatedPipelines : Dictionary<string, PhysicallyBasedPipeline>
+      UserDefinedForwardStaticPipelines : Dictionary<string, PhysicallyBasedPipeline>
+      UserDefinedForwardAnimatedPipelines : Dictionary<string, PhysicallyBasedPipeline>
       UserDefinedTerrainPipelines : Dictionary<string, PhysicallyBasedDeferredTerrainPipeline> }
 
 /// Physically-based rendering operations.
@@ -3977,7 +3981,7 @@ module PhysicallyBased =
             { EyeUniform = eyeUniform
               Lighting3Uniform = terrainFragUniform
               Pipeline = pipeline }
-        
+
         // fin
         physicallyBasedDeferredTerrainPipeline
     
@@ -6144,7 +6148,11 @@ module PhysicallyBased =
               DeferredCompositionPipeline = deferredCompositionPipeline
               ForwardStaticPipeline = forwardStaticPipeline
               ForwardAnimatedPipeline = forwardAnimatedPipeline
-              UserDefinedPipelines = dictPlus StringComparer.Ordinal []
+              UserDefinedDeferredStaticPipelines = dictPlus StringComparer.Ordinal []
+              UserDefinedDeferredStaticClippedPipelines = dictPlus StringComparer.Ordinal []
+              UserDefinedDeferredAnimatedPipelines = dictPlus StringComparer.Ordinal []
+              UserDefinedForwardStaticPipelines = dictPlus StringComparer.Ordinal []
+              UserDefinedForwardAnimatedPipelines = dictPlus StringComparer.Ordinal []
               UserDefinedTerrainPipelines = dictPlus StringComparer.Ordinal [] }
 
         // fin
@@ -6189,7 +6197,11 @@ module PhysicallyBased =
         Pipeline.beginFrame physicallyBasedPipelines.DeferredCompositionPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.ForwardStaticPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.ForwardAnimatedPipeline.Pipeline
-        for pipeline in physicallyBasedPipelines.UserDefinedPipelines.Values do Pipeline.beginFrame pipeline.Pipeline
+        for pipeline in physicallyBasedPipelines.UserDefinedDeferredStaticPipelines.Values do Pipeline.beginFrame pipeline.Pipeline
+        for pipeline in physicallyBasedPipelines.UserDefinedDeferredStaticClippedPipelines.Values do Pipeline.beginFrame pipeline.Pipeline
+        for pipeline in physicallyBasedPipelines.UserDefinedDeferredAnimatedPipelines.Values do Pipeline.beginFrame pipeline.Pipeline
+        for pipeline in physicallyBasedPipelines.UserDefinedForwardStaticPipelines.Values do Pipeline.beginFrame pipeline.Pipeline
+        for pipeline in physicallyBasedPipelines.UserDefinedForwardAnimatedPipelines.Values do Pipeline.beginFrame pipeline.Pipeline
         for pipeline in physicallyBasedPipelines.UserDefinedTerrainPipelines.Values do Pipeline.beginFrame pipeline.Pipeline
 
     let destroyPhysicallyBasedPipelines physicallyBasedPipelines context =
@@ -6231,7 +6243,11 @@ module PhysicallyBased =
         destroyPhysicallyBasedDeferredCompositionPipeline physicallyBasedPipelines.DeferredCompositionPipeline context
         destroyPhysicallyBasedPipeline physicallyBasedPipelines.ForwardStaticPipeline context
         destroyPhysicallyBasedPipeline physicallyBasedPipelines.ForwardAnimatedPipeline context
-        for pipeline in physicallyBasedPipelines.UserDefinedPipelines.Values do destroyPhysicallyBasedPipeline pipeline context
+        for pipeline in physicallyBasedPipelines.UserDefinedDeferredStaticPipelines.Values do destroyPhysicallyBasedPipeline pipeline context
+        for pipeline in physicallyBasedPipelines.UserDefinedDeferredStaticClippedPipelines.Values do destroyPhysicallyBasedPipeline pipeline context
+        for pipeline in physicallyBasedPipelines.UserDefinedDeferredAnimatedPipelines.Values do destroyPhysicallyBasedPipeline pipeline context
+        for pipeline in physicallyBasedPipelines.UserDefinedForwardStaticPipelines.Values do destroyPhysicallyBasedPipeline pipeline context
+        for pipeline in physicallyBasedPipelines.UserDefinedForwardAnimatedPipelines.Values do destroyPhysicallyBasedPipeline pipeline context
         for pipeline in physicallyBasedPipelines.UserDefinedTerrainPipelines.Values do destroyPhysicallyBasedDeferredTerrainPipeline pipeline context
 
     let reloadPhysicallyBasedShaders physicallyBasedPipelines context =
@@ -6273,7 +6289,11 @@ module PhysicallyBased =
         Pipeline.reloadShaders physicallyBasedPipelines.DeferredCompositionPipeline.Pipeline context
         Pipeline.reloadShaders physicallyBasedPipelines.ForwardStaticPipeline.Pipeline context
         Pipeline.reloadShaders physicallyBasedPipelines.ForwardAnimatedPipeline.Pipeline context
-        for pipeline in physicallyBasedPipelines.UserDefinedPipelines.Values do Pipeline.reloadShaders pipeline.Pipeline context
+        for pipeline in physicallyBasedPipelines.UserDefinedDeferredStaticPipelines.Values do Pipeline.reloadShaders pipeline.Pipeline context
+        for pipeline in physicallyBasedPipelines.UserDefinedDeferredStaticClippedPipelines.Values do Pipeline.reloadShaders pipeline.Pipeline context
+        for pipeline in physicallyBasedPipelines.UserDefinedDeferredAnimatedPipelines.Values do Pipeline.reloadShaders pipeline.Pipeline context
+        for pipeline in physicallyBasedPipelines.UserDefinedForwardStaticPipelines.Values do Pipeline.reloadShaders pipeline.Pipeline context
+        for pipeline in physicallyBasedPipelines.UserDefinedForwardAnimatedPipelines.Values do Pipeline.reloadShaders pipeline.Pipeline context
         for pipeline in physicallyBasedPipelines.UserDefinedTerrainPipelines.Values do Pipeline.reloadShaders pipeline.Pipeline context
 
 /// Memoizes physically-based scene loads.

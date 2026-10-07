@@ -10,6 +10,24 @@ open SandBox3d
 type SandBox3dPlugin () =
     inherit NuPlugin ()
 
+    let DeferredStaticFlipped =
+        { PipelineName = "DeferredStaticFlipped"
+          PipelineType = DeferredStatic
+          ShaderPath = "Assets/Gameplay/PhysicallyBasedDeferredStatic"
+          Blends = [|Vulkan.VulkanUnblended|]
+          CullModes = [|false; true|]
+          MaterialPropertiesUserDefinedOptNames = [|"TestField"|]
+          MaterialUserDefinedImageOptNames = [|"TestImage"|] }
+
+    let TerrainFlipped =
+        { PipelineName = "TerrainFlipped"
+          PipelineType = Terrain
+          ShaderPath = "Assets/Gameplay/PhysicallyBasedDeferredTerrain"
+          Blends = [|Vulkan.VulkanUnblended|]
+          CullModes = [|true|]
+          MaterialPropertiesUserDefinedOptNames = [||]
+          MaterialUserDefinedImageOptNames = [||] }
+
     let WallIndex = 0
 
     let createWallColumnModel corner (affine : Affine) (parent : Entity) world =
@@ -166,17 +184,12 @@ type SandBox3dPlugin () =
         [Assets.Gui.PackageName
          Assets.Gameplay.PackageName]
 
+    override this.UserDefinedPipelineDescriptors =
+        Map.ofSeq
+            [(DeferredStaticFlipped.PipelineName, DeferredStaticFlipped)
+             (TerrainFlipped.PipelineName, TerrainFlipped)]
+
     override this.ProcessFns =
         let fns = base.ProcessFns
         let fns = Map.add "Wall" (v3i 3 4 3, wall) fns
         fns
-
-    override this.SetUp world =
-        let descriptor =
-            { PipelineName = "TerrainFlipped"
-              PipelineType = Terrain
-              ShaderPath = "Assets/Gameplay/PhysicallyBasedDeferredTerrain"
-              Blends = [|Vulkan.VulkanUnblended|]
-              CullModes = [|true|] }
-        let message = CreateUserDefinedPipeline { PipelineDescriptor = descriptor }
-        World.enqueueRenderMessage3d message world

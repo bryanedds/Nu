@@ -1894,10 +1894,6 @@ module WorldModule2 =
             World.processPhysics3d world
             World.processPhysics2d world
 
-        /// Set up the resources held by the world.
-        static member setUp (world : World) =
-            world.WorldExtension.Plugin.SetUp world
-
         /// Clean up the resources held by the world.
         static member cleanUp (world : World) =
             world.WorldExtension.Plugin.CleanUp world

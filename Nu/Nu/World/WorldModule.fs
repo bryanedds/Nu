@@ -943,6 +943,10 @@ module WorldModule =
             | (true, callback) -> callback world
             | (false, _) -> ()
 
+        /// Get the user-defined pipeline descriptors.
+        static member getUserDefinedPipelineDescriptors (world : World) =
+            world.WorldExtension.Plugin.UserDefinedPipelineDescriptors
+
         /// Attempt to make an emitter with the given parameters.
         static member tryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle (world : World) =
             match world.WorldExtension.Plugin.MakeEmitters.TryGetValue emitterStyle with

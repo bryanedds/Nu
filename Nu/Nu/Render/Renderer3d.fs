@@ -75,7 +75,7 @@ module TerrainMaterialProperties =
           IgnoreLightMapsOpt = None }
 
 /// Indicates the type of rendering pipeline.
-type PipelineType =
+type Pipeline3dType =
     | DeferredStatic
     | DeferredStaticClipped
     | DeferredAnimated
@@ -480,17 +480,19 @@ type CachedAnimatedModelMessage =
       mutable CachedAnimatedModelRenderType : RenderType
       mutable CachedAnimatedModelRenderPass : RenderPass }
 
-/// Describes a user-defined rendering pipeline.
-type UserDefinedPipelineDescriptor =
+/// Describes a user-defined 3D rendering pipeline.
+type UserDefinedPipeline3dDescriptor =
     { PipelineName : string
-      PipelineType : PipelineType
+      PipelineType : Pipeline3dType
       ShaderPath : string
       Blends : VulkanBlend array
-      CullModes : bool array }
+      CullModes : bool array
+      MaterialPropertiesUserDefinedOptNames : string array
+      MaterialUserDefinedImageOptNames : string array }
 
-/// Describes how to create a user-defined rendering pipeline.
-type CreateUserDefinedPipeline =
-    { PipelineDescriptor : UserDefinedPipelineDescriptor }
+/// Describes how to create a user-defined 3D rendering pipeline.
+type CreateUserDefinedPipeline3d =
+    { Pipeline3dDescriptor : UserDefinedPipeline3dDescriptor }
 
 /// Describes a static model surface.
 type StaticModelSurfaceDescriptor =
@@ -913,7 +915,7 @@ type [<SymbolicExpansion>] Renderer3dConfig =
 
 /// A message to the 3d renderer.
 type RenderMessage3d =
-    | CreateUserDefinedPipeline of CreateUserDefinedPipeline
+    | CreateUserDefinedPipeline of CreateUserDefinedPipeline3d
     | CreateUserDefinedStaticModel of CreateUserDefinedStaticModel
     | DestroyUserDefinedStaticModel of DestroyUserDefinedStaticModel
     | RenderSkyBox of RenderSkyBox
@@ -1911,7 +1913,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             | ValueNone -> None
         | RawHeightMap map -> Some (map.Resolution.X, map.Resolution.Y)
 
-    static member private tryCreateUserDefinedPipeline (descriptor : UserDefinedPipelineDescriptor) renderer =
+    static member private tryCreateUserDefinedPipeline (descriptor : UserDefinedPipeline3dDescriptor) renderer =
 
         let (depth, albedo, material, normalPlus, subdermalPlus, scatterPlus, clearCoatPlus, userDefined, z) =
             renderer.PhysicallyBasedAttachments.GeometryAttachments
@@ -1926,33 +1928,65 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 let composition = renderer.PhysicallyBasedAttachments.CompositionAttachment
                 ([|composition.VkFormat|], z.VkFormat)
 
-        let (lightMapsMax, lightsMax, vertexBindings, terrain) =
+        let (lightMapsMax, lightsMax, vertexBindings) =
             match descriptor.PipelineType with
             | DeferredStatic | DeferredStaticClipped | ForwardStatic ->
-                (Constants.Render.LightMapsMaxDeferred, Constants.Render.LightsMaxDeferred, PhysicallyBased.StaticVertices, false)
+                (Constants.Render.LightMapsMaxDeferred, Constants.Render.LightsMaxDeferred, PhysicallyBased.StaticVertices)
             | DeferredAnimated | ForwardAnimated ->
-                (Constants.Render.LightMapsMaxForward, Constants.Render.LightsMaxForward, PhysicallyBased.AnimatedVertices, false)
+                (Constants.Render.LightMapsMaxForward, Constants.Render.LightsMaxForward, PhysicallyBased.AnimatedVertices)
             | Terrain ->
-                (Constants.Render.LightMapsMaxDeferred, Constants.Render.LightsMaxDeferred, PhysicallyBased.TerrainVertices, true)
+                (Constants.Render.LightMapsMaxDeferred, Constants.Render.LightsMaxDeferred, PhysicallyBased.TerrainVertices)
 
-        if terrain then
+        match descriptor.PipelineType with
+        | DeferredStatic ->
+            let pipeline = PhysicallyBased.createPhysicallyBasedPipeline lightMapsMax lightsMax descriptor.ShaderPath descriptor.Blends descriptor.CullModes vertexBindings colorAttachmentFormats depthAttachmentFormat renderer.VulkanContext
+            match renderer.PhysicallyBasedPipelines.UserDefinedDeferredStaticPipelines.TryGetValue descriptor.PipelineName with
+            | (true, pipeline) ->                
+                ConcurrentCommandQueue.waitIdle renderer.VulkanContext.RenderQueue // pipeline may still be in use by previous frame
+                PhysicallyBased.destroyPhysicallyBasedPipeline pipeline renderer.VulkanContext
+            | (false, _) -> ()
+            renderer.PhysicallyBasedPipelines.UserDefinedDeferredStaticPipelines.[descriptor.PipelineName] <- pipeline
+        | DeferredStaticClipped ->
+            let pipeline = PhysicallyBased.createPhysicallyBasedPipeline lightMapsMax lightsMax descriptor.ShaderPath descriptor.Blends descriptor.CullModes vertexBindings colorAttachmentFormats depthAttachmentFormat renderer.VulkanContext
+            match renderer.PhysicallyBasedPipelines.UserDefinedDeferredStaticClippedPipelines.TryGetValue descriptor.PipelineName with
+            | (true, pipeline) ->                
+                ConcurrentCommandQueue.waitIdle renderer.VulkanContext.RenderQueue // pipeline may still be in use by previous frame
+                PhysicallyBased.destroyPhysicallyBasedPipeline pipeline renderer.VulkanContext
+            | (false, _) -> ()
+            renderer.PhysicallyBasedPipelines.UserDefinedDeferredStaticClippedPipelines.[descriptor.PipelineName] <- pipeline
+        | DeferredAnimated ->
+            let pipeline = PhysicallyBased.createPhysicallyBasedPipeline lightMapsMax lightsMax descriptor.ShaderPath descriptor.Blends descriptor.CullModes vertexBindings colorAttachmentFormats depthAttachmentFormat renderer.VulkanContext
+            match renderer.PhysicallyBasedPipelines.UserDefinedDeferredAnimatedPipelines.TryGetValue descriptor.PipelineName with
+            | (true, pipeline) ->                
+                ConcurrentCommandQueue.waitIdle renderer.VulkanContext.RenderQueue // pipeline may still be in use by previous frame
+                PhysicallyBased.destroyPhysicallyBasedPipeline pipeline renderer.VulkanContext
+            | (false, _) -> ()
+            renderer.PhysicallyBasedPipelines.UserDefinedDeferredAnimatedPipelines.[descriptor.PipelineName] <- pipeline
+        | ForwardStatic ->
+            let pipeline = PhysicallyBased.createPhysicallyBasedPipeline lightMapsMax lightsMax descriptor.ShaderPath descriptor.Blends descriptor.CullModes vertexBindings colorAttachmentFormats depthAttachmentFormat renderer.VulkanContext
+            match renderer.PhysicallyBasedPipelines.UserDefinedForwardStaticPipelines.TryGetValue descriptor.PipelineName with
+            | (true, pipeline) ->                
+                ConcurrentCommandQueue.waitIdle renderer.VulkanContext.RenderQueue // pipeline may still be in use by previous frame
+                PhysicallyBased.destroyPhysicallyBasedPipeline pipeline renderer.VulkanContext
+            | (false, _) -> ()
+            renderer.PhysicallyBasedPipelines.UserDefinedForwardStaticPipelines.[descriptor.PipelineName] <- pipeline
+        | ForwardAnimated ->
+            let pipeline = PhysicallyBased.createPhysicallyBasedPipeline lightMapsMax lightsMax descriptor.ShaderPath descriptor.Blends descriptor.CullModes vertexBindings colorAttachmentFormats depthAttachmentFormat renderer.VulkanContext
+            match renderer.PhysicallyBasedPipelines.UserDefinedForwardAnimatedPipelines.TryGetValue descriptor.PipelineName with
+            | (true, pipeline) ->                
+                ConcurrentCommandQueue.waitIdle renderer.VulkanContext.RenderQueue // pipeline may still be in use by previous frame
+                PhysicallyBased.destroyPhysicallyBasedPipeline pipeline renderer.VulkanContext
+            | (false, _) -> ()
+            renderer.PhysicallyBasedPipelines.UserDefinedForwardAnimatedPipelines.[descriptor.PipelineName] <- pipeline
+        | Terrain ->
             let pipeline = PhysicallyBased.createPhysicallyBasedTerrainPipeline descriptor.ShaderPath colorAttachmentFormats depthAttachmentFormat renderer.VulkanContext
             match renderer.PhysicallyBasedPipelines.UserDefinedTerrainPipelines.TryGetValue descriptor.PipelineName with
             | (true, pipeline) ->                
                 ConcurrentCommandQueue.waitIdle renderer.VulkanContext.RenderQueue // pipeline may still be in use by previous frame
-                renderer.PhysicallyBasedPipelines.UserDefinedTerrainPipelines.Remove descriptor.PipelineName |> ignore<bool>
                 PhysicallyBased.destroyPhysicallyBasedDeferredTerrainPipeline pipeline renderer.VulkanContext
             | (false, _) -> ()
-            renderer.PhysicallyBasedPipelines.UserDefinedTerrainPipelines.Add (descriptor.PipelineName, pipeline)
-        else
-            let pipeline = PhysicallyBased.createPhysicallyBasedPipeline lightMapsMax lightsMax descriptor.ShaderPath descriptor.Blends descriptor.CullModes vertexBindings colorAttachmentFormats depthAttachmentFormat renderer.VulkanContext
-            match renderer.PhysicallyBasedPipelines.UserDefinedPipelines.TryGetValue descriptor.PipelineName with
-            | (true, pipeline) ->                
-                ConcurrentCommandQueue.waitIdle renderer.VulkanContext.RenderQueue // pipeline may still be in use by previous frame
-                renderer.PhysicallyBasedPipelines.UserDefinedPipelines.Remove descriptor.PipelineName |> ignore<bool>
-                PhysicallyBased.destroyPhysicallyBasedPipeline pipeline renderer.VulkanContext
-            | (false, _) -> ()
-            renderer.PhysicallyBasedPipelines.UserDefinedPipelines.Add (descriptor.PipelineName, pipeline)
+            renderer.PhysicallyBasedPipelines.UserDefinedTerrainPipelines.[descriptor.PipelineName] <- pipeline
+            
 
     static member private tryCreateUserDefinedStaticModel surfaceDescriptors bounds (assetTag : StaticModel AssetTag) renderer =
 
@@ -3325,7 +3359,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         for message in renderMessages do
             match message with
             | CreateUserDefinedPipeline cudp ->
-                VulkanRenderer3d.tryCreateUserDefinedPipeline cudp.PipelineDescriptor renderer
+                VulkanRenderer3d.tryCreateUserDefinedPipeline cudp.Pipeline3dDescriptor renderer
             | CreateUserDefinedStaticModel cudsm ->
                 VulkanRenderer3d.tryCreateUserDefinedStaticModel cudsm.StaticModelSurfaceDescriptors cudsm.Bounds cudsm.StaticModel renderer
             | DestroyUserDefinedStaticModel dudsm ->
@@ -4637,13 +4671,16 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let geometryResolution = renderer.GeometryViewport.Bounds.Size
 
         // deferred static surface rendering
-        let pipelineNames = hashSetPlus StringComparer.Ordinal renderTasks.DeferredStatic.Keys
-        for pipelineName in renderTasks.DeferredStaticPreBatches.Keys do pipelineNames.Add pipelineName |> ignore<bool>
+        let pipelineNames =
+            renderTasks.DeferredStatic.Keys
+            |> Seq.append renderTasks.DeferredStaticPreBatches.Keys
+            |> Seq.map (fun name -> if renderer.PhysicallyBasedPipelines.UserDefinedDeferredStaticPipelines.ContainsKey name then name else Constants.Render.PipelineNameDefault)
+            |> hashSetPlus StringComparer.Ordinal
         for pipelineName in pipelineNames do
 
             // compute pipeline
             let pipeline =
-                match renderer.PhysicallyBasedPipelines.UserDefinedPipelines.TryGetValue pipelineName with
+                match renderer.PhysicallyBasedPipelines.UserDefinedDeferredStaticPipelines.TryGetValue pipelineName with
                 | (true, pipeline) -> pipeline
                 | (false, _) -> renderer.PhysicallyBasedPipelines.DeferredStaticPipeline
 
@@ -4693,13 +4730,16 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             endBatch ()
 
         // deferred static surface clipped rendering
-        let pipelineNames = hashSetPlus StringComparer.Ordinal renderTasks.DeferredStaticClipped.Keys
-        for pipelineName in renderTasks.DeferredStaticClippedPreBatches.Keys do pipelineNames.Add pipelineName |> ignore<bool>
+        let pipelineNames =
+            renderTasks.DeferredStaticClipped.Keys
+            |> Seq.append renderTasks.DeferredStaticClippedPreBatches.Keys
+            |> Seq.map (fun name -> if renderer.PhysicallyBasedPipelines.UserDefinedDeferredStaticClippedPipelines.ContainsKey name then name else Constants.Render.PipelineNameDefault)
+            |> hashSetPlus StringComparer.Ordinal
         for pipelineName in pipelineNames do
 
             // compute pipeline
             let pipeline =
-                match renderer.PhysicallyBasedPipelines.UserDefinedPipelines.TryGetValue pipelineName with
+                match renderer.PhysicallyBasedPipelines.UserDefinedDeferredStaticClippedPipelines.TryGetValue pipelineName with
                 | (true, pipeline) -> pipeline
                 | (false, _) -> renderer.PhysicallyBasedPipelines.DeferredStaticClippedPipeline
 
@@ -4745,12 +4785,15 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             endBatch ()
 
         // deferred animated rendering
-        let pipelineNames = hashSetPlus StringComparer.Ordinal renderTasks.DeferredAnimated.Keys
+        let pipelineNames =
+            renderTasks.DeferredAnimated.Keys
+            |> Seq.map (fun name -> if renderer.PhysicallyBasedPipelines.UserDefinedDeferredAnimatedPipelines.ContainsKey name then name else Constants.Render.PipelineNameDefault)
+            |> hashSetPlus StringComparer.Ordinal
         for pipelineName in pipelineNames do
 
             // compute pipeline
             let pipeline =
-                match renderer.PhysicallyBasedPipelines.UserDefinedPipelines.TryGetValue pipelineName with
+                match renderer.PhysicallyBasedPipelines.UserDefinedDeferredAnimatedPipelines.TryGetValue pipelineName with
                 | (true, pipeline) -> pipeline
                 | (false, _) -> renderer.PhysicallyBasedPipelines.DeferredAnimatedPipeline
 
@@ -5014,16 +5057,18 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         for struct (_, _, model, castShadow, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest, _, _) in forwardSurfacesSortBuffer do
             renderTasks.ForwardSorted.Add struct (model, castShadow, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest)
         forwardSurfacesSortBuffer.Clear ()
-        
+
         // render forward (static and animated) surfaces to composition attachment
         for (model, _, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest) in renderTasks.ForwardSorted do
             let pipeline =
-                match renderer.PhysicallyBasedPipelines.UserDefinedPipelines.TryGetValue surface.SurfaceMaterial.PipelineName with
-                | (true, pipeline) -> pipeline
-                | (false, _) ->
-                    if boneTransformsOpt.IsNone
-                    then renderer.PhysicallyBasedPipelines.ForwardStaticPipeline
-                    else renderer.PhysicallyBasedPipelines.ForwardAnimatedPipeline
+                if boneTransformsOpt.IsNone then
+                    match renderer.PhysicallyBasedPipelines.UserDefinedForwardStaticPipelines.TryGetValue surface.SurfaceMaterial.PipelineName with
+                    | (true, pipeline) -> pipeline
+                    | (false, _) -> renderer.PhysicallyBasedPipelines.ForwardStaticPipeline
+                else
+                    match renderer.PhysicallyBasedPipelines.UserDefinedForwardAnimatedPipelines.TryGetValue surface.SurfaceMaterial.PipelineName with
+                    | (true, pipeline) -> pipeline
+                    | (false, _) -> renderer.PhysicallyBasedPipelines.ForwardAnimatedPipeline
             checkBatch pipeline
             let (lightMapOrigins, lightMapMins, lightMapSizes, lightMapAmbientColors, lightMapAmbientBrightnesses, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
                 let surfaceBounds = surface.SurfaceBounds.Transform model

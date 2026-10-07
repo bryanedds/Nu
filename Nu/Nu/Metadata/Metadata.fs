@@ -1022,13 +1022,13 @@ module Metadata =
 
     /// Attempt to get the user-defined asset for the given material index and animated model.
     /// Thread-safe.
-    let tryGetAnimatedModelUserDefinedImage materialIndex (staticModel : StaticModel AssetTag) =
-        tryGetModelUserDefinedImage materialIndex staticModel
+    let tryGetAnimatedModelUserDefinedImage materialIndex (animatedModel : AnimatedModel AssetTag) =
+        tryGetModelUserDefinedImage materialIndex animatedModel
 
     /// Attempt to get the user-defined 2 asset for the given material index and animated model.
     /// Thread-safe.
-    let tryGetAnimatedModelUserDefined2Image materialIndex (staticModel : StaticModel AssetTag) =
-        tryGetModelUserDefined2Image materialIndex staticModel
+    let tryGetAnimatedModelUserDefined2Image materialIndex (animatedModel : AnimatedModel AssetTag) =
+        tryGetModelUserDefined2Image materialIndex animatedModel
 
     /// Attempt to get the two-sided property for the given material index and animated model.
     /// Thread-safe.
@@ -1037,8 +1037,8 @@ module Metadata =
 
     /// Attempt to get the pipeline name for the given material index and animated model.
     /// Thread-safe.
-    let tryGetAnimatedModelPipelineName materialIndex (staticModel : StaticModel AssetTag) =
-        tryGetModelPipelineName materialIndex staticModel
+    let tryGetAnimatedModelPipelineName materialIndex (animatedModel : AnimatedModel AssetTag) =
+        tryGetModelPipelineName materialIndex animatedModel
 
     /// Attempt to get the 3d navigation shape property for the given material index and animated model.
     /// Thread-safe.
