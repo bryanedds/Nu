@@ -433,7 +433,7 @@ module WorldModule4 =
             Nu.init ()
 
             // init symbolic conversion
-            SymbolicConverter.Init (if worldConfig.Imperative then Imperative else Functional)
+            SymbolicConverter.Init worldConfig.Imperative
 
             // make actual world record
             let symbolics = Symbolics.makeEmpty ()
