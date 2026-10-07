@@ -370,7 +370,6 @@ module WorldModule4 =
             WorldImSim.Reinitializing <- true
             Content.UpdateLateBindingsCount <- inc Content.UpdateLateBindingsCount
             World.clearEntityFromClipboard world // HACK: clear what's on the clipboard rather than changing its dispatcher instance.
-            world.WorldExtension.Plugin.CleanUp ()
 
             // update late-bound types
             let pluginType =
@@ -430,7 +429,7 @@ module WorldModule4 =
             tryMakeEditContext plugin eventGraph jobGraph geometryViewport windowViewport lateBindingsInstances quadtree octree worldConfig sdlDepsOpt
             imGui physicsEngine2d physicsEngine3d rendererPhysics3dOpt rendererProcess audioPlayer cursorClient activeGameDispatcher =
             Nu.init () // ensure we haven't forgot to initialize Nu!
-            SymbolicConverter.Init (if worldConfig.Imperative then Imperative else Functional)
+            SymbolicConverter.Init worldConfig.Imperative
             let symbolics = Symbolics.makeEmpty ()
             let intrinsicOverlays = World.makeIntrinsicOverlays lateBindingsInstances.Facets lateBindingsInstances.EntityDispatchers
             let overlayer = Overlayer.makeFromFileOpt intrinsicOverlays Assets.Global.OverlayerFilePath
