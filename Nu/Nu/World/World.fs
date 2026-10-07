@@ -370,7 +370,6 @@ module WorldModule4 =
             WorldImSim.Reinitializing <- true
             Content.UpdateLateBindingsCount <- inc Content.UpdateLateBindingsCount
             World.clearEntityFromClipboard world // HACK: clear what's on the clipboard rather than changing its dispatcher instance.
-            world.WorldExtension.Plugin.CleanUp ()
 
             // update late-bound types
             let pluginType =
@@ -485,6 +484,7 @@ module WorldModule4 =
                     GameState = Reflection.attachProperties GameState.copy gameState.Dispatcher gameState worldState }
             let world = { WorldState = worldState }
             WorldTypes.WorldForDebug <- world
+            world.WorldExtension.Plugin.SetUp world
             world
 
         /// Make a world with stub dependencies.

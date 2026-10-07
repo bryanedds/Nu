@@ -2277,13 +2277,13 @@ and [<AbstractClass>] NuPlugin () =
     abstract ProcessFns : Map<string, Vector3i * BlockMap.ProcessFn<Entity, World>>
     default this.ProcessFns = Map.empty
 
-    /// Clean-up any user-defined resources of the plugin, such with shutting down a Steamworks API.
-    abstract CleanUp : unit -> unit
-    default this.CleanUp () = ()
+    /// Set up any user-defined global resources.
+    abstract SetUp : World -> unit
+    default this.SetUp _ = ()
 
-    /// Invoke a user-defined callback.
-    abstract Invoke : callbackName : string -> callbackArgs : obj list -> world : World -> unit
-    default this.Invoke _ _ _ = ()
+    /// Clean up any user-defined global resources.
+    abstract CleanUp : World -> unit
+    default this.CleanUp _ = ()
 
     /// Make a list of keyed values to hook into the engine.
     abstract MakeKeyedValues : world : World -> ((string * obj) list)

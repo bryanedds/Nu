@@ -3381,7 +3381,8 @@ type BasicStaticBillboardEmitterFacet () =
                               UserDefinedImageOpt = match emitterMaterial.UserDefinedImageOpt with ValueSome userDefinedImage -> ValueSome userDefinedImage | ValueNone -> descriptor.Material.UserDefinedImageOpt
                               UserDefined2ImageOpt = match emitterMaterial.UserDefined2ImageOpt with ValueSome userDefined2Image -> ValueSome userDefined2Image | ValueNone -> descriptor.Material.UserDefined2ImageOpt
                               TwoSidedOpt = match emitterMaterial.TwoSidedOpt with ValueSome twoSided -> ValueSome twoSided | ValueNone -> descriptor.Material.TwoSidedOpt
-                              ClippedOpt = match emitterMaterial.ClippedOpt with ValueSome clipped -> ValueSome clipped | ValueNone -> descriptor.Material.ClippedOpt }
+                              ClippedOpt = match emitterMaterial.ClippedOpt with ValueSome clipped -> ValueSome clipped | ValueNone -> descriptor.Material.ClippedOpt
+                              PipelineNameOpt = match emitterMaterial.PipelineNameOpt with ValueSome pipelineName -> ValueSome pipelineName | ValueNone -> descriptor.Material.PipelineNameOpt }
                         Some
                             (RenderBillboardParticles
                                 { CastShadow = castShadow
@@ -3438,7 +3439,7 @@ type StaticModelFacet () =
                 match entity.GetRenderStyle world with
                 | Deferred -> DeferredRenderType
                 | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
-            World.renderStaticModelFast (&affineMatrix, castShadow, presence, insetOpt, &properties, staticModel, clipped, depthTest, renderType, renderPass, world)
+            World.renderStaticModelFast (&affineMatrix, castShadow, presence, insetOpt, properties, staticModel, clipped, depthTest, renderType, renderPass, world)
 
     override this.GetAttributesInferred (entity, world) =
         let staticModel = entity.GetStaticModel world
@@ -3511,7 +3512,7 @@ type StaticModelSurfaceFacet () =
                 match entity.GetRenderStyle world with
                 | Deferred -> DeferredRenderType
                 | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
-            World.renderStaticModelSurfaceFast (&affineMatrix, castShadow, presence, insetOpt, &properties, &material, staticModel, surfaceIndex, depthTest, renderType, renderPass, world)
+            World.renderStaticModelSurfaceFast (&affineMatrix, castShadow, presence, insetOpt, properties, material, staticModel, surfaceIndex, depthTest, renderType, renderPass, world)
 
     override this.GetAttributesInferred (entity, world) =
         match Metadata.tryGetStaticModelMetadata (entity.GetStaticModel world) with
@@ -3664,6 +3665,7 @@ type AnimatedModelFacet () =
     static member Properties =
         [define Entity.InsetOpt None
          define Entity.MaterialProperties MaterialProperties.empty
+         define Entity.Material Material.empty
          define Entity.Animations [|{ StartTime = GameTime.zero; LifeTimeOpt = None; Name = ""; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BoneFilterOpt = None }|]
          define Entity.AnimatedModel Assets.Default.AnimatedModel
          define Entity.SubsortOffsets Map.empty
@@ -3723,6 +3725,7 @@ type AnimatedModelFacet () =
             let presence = transform.Presence
             let insetOpt = Option.toValueOption (entity.GetInsetOpt world)
             let properties = entity.GetMaterialProperties world
+            let material = entity.GetMaterial world
             let animatedModel = entity.GetAnimatedModel world
             let subsortOffsets = entity.GetSubsortOffsets world
             let drsIndices = entity.GetDualRenderedSurfaceIndices world
@@ -3732,7 +3735,7 @@ type AnimatedModelFacet () =
                 | Deferred -> DeferredRenderType
                 | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
             match entity.GetBoneTransformsOpt world with
-            | Some boneTransforms -> World.renderAnimatedModelFast (&affineMatrix, castShadow, presence, insetOpt, &properties, boneTransforms, animatedModel, subsortOffsets, drsIndices, depthTest, renderType, renderPass, world)
+            | Some boneTransforms -> World.renderAnimatedModelFast (&affineMatrix, castShadow, presence, insetOpt, properties, material, boneTransforms, animatedModel, subsortOffsets, drsIndices, depthTest, renderType, renderPass, world)
             | None -> ()
 
     override this.GetAttributesInferred (entity, world) =
@@ -3793,6 +3796,9 @@ module TerrainFacetExtensions =
         member this.GetTerrainMaterial world : TerrainMaterial = this.Get (nameof this.TerrainMaterial) world
         member this.SetTerrainMaterial (value : TerrainMaterial) world = this.Set (nameof this.TerrainMaterial) value world
         member this.TerrainMaterial = lens (nameof this.TerrainMaterial) this this.GetTerrainMaterial this.SetTerrainMaterial
+        member this.GetTerrainPipelineName world : string = this.Get (nameof this.TerrainPipelineName) world
+        member this.SetTerrainPipelineName (value : string) world = this.Set (nameof this.TerrainPipelineName) value world
+        member this.TerrainPipelineName = lens (nameof this.TerrainPipelineName) this this.GetTerrainPipelineName this.SetTerrainPipelineName
         member this.GetTintImageOpt world : Image AssetTag option = this.Get (nameof this.TintImageOpt) world
         member this.SetTintImageOpt (value : Image AssetTag option) world = this.Set (nameof this.TintImageOpt) value world
         member this.TintImageOpt = lens (nameof this.TintImageOpt) this this.GetTintImageOpt this.SetTintImageOpt
@@ -3859,6 +3865,7 @@ type TerrainFacet () =
                       RedsMap
                         [|Assets.Default.TerrainLayer0Blend
                           Assets.Default.TerrainLayer1Blend|]})
+         define Entity.TerrainPipelineName Constants.Render.PipelineNameDefault
          define Entity.TintImageOpt None
          define Entity.NormalImageOpt None
          define Entity.Tiles (v2 256.0f 256.0f)
@@ -3932,6 +3939,7 @@ type TerrainFacet () =
                   InsetOpt = entity.GetInsetOpt world
                   MaterialProperties = entity.GetTerrainMaterialProperties world
                   Material = entity.GetTerrainMaterial world
+                  PipelineName = entity.GetTerrainPipelineName world
                   TintImageOpt = entity.GetTintImageOpt world
                   NormalImageOpt = entity.GetNormalImageOpt world
                   Tiles = entity.GetTiles world

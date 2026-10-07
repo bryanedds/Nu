@@ -175,7 +175,8 @@ module WorldEntityHierarchyExtensions =
                                       UserDefinedImageOpt = Metadata.tryGetStaticModelUserDefinedImage surface.SurfaceMaterialIndex staticModel
                                       UserDefined2ImageOpt = Metadata.tryGetStaticModelUserDefined2Image surface.SurfaceMaterialIndex staticModel
                                       TwoSidedOpt = Metadata.tryGetStaticModelTwoSided surface.SurfaceMaterialIndex staticModel
-                                      ClippedOpt = Metadata.tryGetStaticModelClipped surface.SurfaceMaterialIndex staticModel }
+                                      ClippedOpt = Metadata.tryGetStaticModelClipped surface.SurfaceMaterialIndex staticModel
+                                      PipelineNameOpt = Metadata.tryGetStaticModelPipelineName surface.SurfaceMaterialIndex staticModel }
                                 else Material.empty
                             child.SetMaterial material world
                             child.SetRenderStyle renderStyle world
@@ -277,7 +278,8 @@ module WorldEntityHierarchyExtensions =
                                           UserDefinedImageOpt = Metadata.tryGetStaticModelUserDefinedImage surface.SurfaceMaterialIndex staticModel
                                           UserDefined2ImageOpt = Metadata.tryGetStaticModelUserDefined2Image surface.SurfaceMaterialIndex staticModel
                                           TwoSidedOpt = Metadata.tryGetStaticModelTwoSided surface.SurfaceMaterialIndex staticModel
-                                          ClippedOpt = Metadata.tryGetStaticModelClipped surface.SurfaceMaterialIndex staticModel }
+                                          ClippedOpt = Metadata.tryGetStaticModelClipped surface.SurfaceMaterialIndex staticModel
+                                          PipelineNameOpt = Metadata.tryGetStaticModelPipelineName surface.SurfaceMaterialIndex staticModel }
                                     else Material.empty
                                 boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine surfaceBounds) | None -> Some surfaceBounds
                                 let metadata = Metadata.getStaticModelMetadata staticModel

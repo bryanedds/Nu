@@ -559,7 +559,8 @@ module EffectSystem =
                       UserDefinedImageOpt = ValueNone // TODO: P0: make these aspects.
                       UserDefined2ImageOpt = ValueNone
                       TwoSidedOpt = ValueSome twoSided
-                      ClippedOpt = ValueSome clipped }
+                      ClippedOpt = ValueSome clipped
+                      PipelineNameOpt = ValueNone } // TODO: P0: make this an aspect.
                 let billboardToken =
                     BillboardToken
                         { ModelMatrix = affineMatrix

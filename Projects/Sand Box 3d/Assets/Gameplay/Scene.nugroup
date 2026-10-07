@@ -1,6 +1,6 @@
 [GroupDispatcher
  [[Editing True]
-  [Model ["Microsoft.FSharp.Core.Unit, FSharp.Core, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" []]]
+  [Model ["Microsoft.FSharp.Core.Unit, FSharp.Core, Version=10.1.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" []]]
   [Name Scene]
   [Persistent True]]
  [[SkyBoxDispatcher
@@ -8,6 +8,15 @@
     [Name SkyBox]
     [Presence Omnipresent]
     [Static True]]
+   []]
+  [TerrainDispatcher
+   [[AlwaysRender True]
+    [MountOpt [Some ^]]
+    [Name Terrain]
+    [Presence Omnipresent]
+    [Size [512 128 512]]
+    [Static True]
+    [TerrainPipelineName TerrainFlipped]]
    []]
   [Light3dDispatcher
    [[AttenuationLinear 0.013888889]

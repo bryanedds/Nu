@@ -297,6 +297,7 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial =
       UserDefined2Texture : Texture
       TwoSided : bool
       Clipped : bool
+      PipelineName : string
       Names : string }
 
     /// The empty material.
@@ -318,6 +319,7 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial =
           UserDefined2Texture = Texture.EmptyTexture
           TwoSided = false
           Clipped = false
+          PipelineName = Constants.Render.PipelineNameDefault
           Names = "" }
 
     /// Compute hash.
@@ -339,7 +341,8 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial =
         (hash material.UserDefined2Texture <<<          14) ^^^
         (hash material.TwoSided <<<                     15) ^^^
         (hash material.Clipped <<<                      16) ^^^
-        (hash material.Names <<<                        17)
+        (hash material.PipelineName <<<                 17) ^^^
+        (hash material.Names <<<                        18)
 
     /// Determing equality.
     static member equals left right =
@@ -361,6 +364,7 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial =
         left.UserDefined2Texture = right.UserDefined2Texture &&
         left.TwoSided = right.TwoSided &&
         left.Clipped = right.Clipped &&
+        left.PipelineName = right.PipelineName &&
         left.Names = right.Names
 
     override this.GetHashCode () = 
@@ -839,7 +843,9 @@ type PhysicallyBasedPipelines =
       DeferredColoringPipeline : PhysicallyBasedDeferredColoringPipeline
       DeferredCompositionPipeline : PhysicallyBasedDeferredCompositionPipeline
       ForwardStaticPipeline : PhysicallyBasedPipeline
-      ForwardAnimatedPipeline : PhysicallyBasedPipeline }
+      ForwardAnimatedPipeline : PhysicallyBasedPipeline
+      UserDefinedPipelines : Dictionary<string, PhysicallyBasedPipeline>
+      UserDefinedTerrainPipelines : Dictionary<string, PhysicallyBasedDeferredTerrainPipeline> }
 
 /// Physically-based rendering operations.
 [<RequireQualifiedAccess>]
@@ -1591,6 +1597,12 @@ module PhysicallyBased =
             | ValueSome clipped -> clipped
             | ValueNone -> false
 
+        // compute pipeline name override
+        let pipelineName =
+            match material.PipelineNameOpt with
+            | ValueSome pipelineName -> pipelineName
+            | ValueNone -> Constants.Render.PipelineNameDefault
+
         // compose names when not rendering so that surfaces can be correlated without textures
         let names =
             match contextOpt with
@@ -1651,6 +1663,7 @@ module PhysicallyBased =
               UserDefined2Texture = userDefined2Texture
               TwoSided = twoSided
               Clipped = clipped
+              PipelineName = pipelineName
               Names = names }
 
         // fin
@@ -3697,7 +3710,7 @@ module PhysicallyBased =
         VulkanContext.advanceRenderCommandBuffer context
 
     /// Create a physically-based pipeline.
-    let createPhysicallyBasedPipeline lightMapsMax lightsMax shaderPath blends cullModes vertexBindings colorAttachmentFormats depthTestOpt context =
+    let createPhysicallyBasedPipeline lightMapsMax lightsMax shaderPath blends cullModes vertexBindings colorAttachmentFormats depthTestFormat context =
 
         // create set 0 uniform buffers
         let eyeUniform = VulkanBuffer.create Uniform sizeof<EyeStruct> context
@@ -3767,7 +3780,7 @@ module PhysicallyBased =
                       Pipeline.descriptor 4 Sampler FragmentStage 1
                       Pipeline.descriptor 5 Sampler FragmentStage 1|]|]
 
-                [||] colorAttachmentFormats depthTestOpt
+                [||] colorAttachmentFormats (Some depthTestFormat)
                 [|eyeUniform
                   lightingUniform
                   boneUniform
@@ -6016,7 +6029,7 @@ module PhysicallyBased =
                 [|false; true|]
                 StaticVertices
                 deferredColorAttachmentFormats
-                (Some z.VkFormat)
+                z.VkFormat
                 context
 
         // create deferred static clipped pipeline
@@ -6029,7 +6042,7 @@ module PhysicallyBased =
                 [|false; true|]
                 StaticVertices
                 deferredColorAttachmentFormats
-                (Some z.VkFormat)
+                z.VkFormat
                 context
 
         // create deferred animated pipeline
@@ -6042,7 +6055,7 @@ module PhysicallyBased =
                 [|false; true|]
                 AnimatedVertices
                 deferredColorAttachmentFormats
-                (Some z.VkFormat)
+                z.VkFormat
                 context
 
         // create deferred terrain pipeline
@@ -6075,7 +6088,7 @@ module PhysicallyBased =
                 [|false; true|]
                 StaticVertices
                 [|composition.VkFormat|]
-                (Some z.VkFormat)
+                z.VkFormat
                 context
 
         // create forward animated pipeline
@@ -6088,7 +6101,7 @@ module PhysicallyBased =
                 [|false; true|]
                 AnimatedVertices
                 [|composition.VkFormat|]
-                (Some z.VkFormat)
+                z.VkFormat
                 context
         
         // create PhysicallyBasedPipelines
@@ -6130,7 +6143,9 @@ module PhysicallyBased =
               DeferredColoringPipeline = deferredColoringPipeline
               DeferredCompositionPipeline = deferredCompositionPipeline
               ForwardStaticPipeline = forwardStaticPipeline
-              ForwardAnimatedPipeline = forwardAnimatedPipeline }
+              ForwardAnimatedPipeline = forwardAnimatedPipeline
+              UserDefinedPipelines = dictPlus StringComparer.Ordinal []
+              UserDefinedTerrainPipelines = dictPlus StringComparer.Ordinal [] }
 
         // fin
         physicallyBasedPipelines
@@ -6174,6 +6189,8 @@ module PhysicallyBased =
         Pipeline.beginFrame physicallyBasedPipelines.DeferredCompositionPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.ForwardStaticPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.ForwardAnimatedPipeline.Pipeline
+        for pipeline in physicallyBasedPipelines.UserDefinedPipelines.Values do Pipeline.beginFrame pipeline.Pipeline
+        for pipeline in physicallyBasedPipelines.UserDefinedTerrainPipelines.Values do Pipeline.beginFrame pipeline.Pipeline
 
     let destroyPhysicallyBasedPipelines physicallyBasedPipelines context =
         destroyFilterBoxPipeline physicallyBasedPipelines.FilterBox1dPipeline context
@@ -6214,6 +6231,8 @@ module PhysicallyBased =
         destroyPhysicallyBasedDeferredCompositionPipeline physicallyBasedPipelines.DeferredCompositionPipeline context
         destroyPhysicallyBasedPipeline physicallyBasedPipelines.ForwardStaticPipeline context
         destroyPhysicallyBasedPipeline physicallyBasedPipelines.ForwardAnimatedPipeline context
+        for pipeline in physicallyBasedPipelines.UserDefinedPipelines.Values do destroyPhysicallyBasedPipeline pipeline context
+        for pipeline in physicallyBasedPipelines.UserDefinedTerrainPipelines.Values do destroyPhysicallyBasedDeferredTerrainPipeline pipeline context
 
     let reloadPhysicallyBasedShaders physicallyBasedPipelines context =
         Pipeline.reloadShaders physicallyBasedPipelines.FilterBox1dPipeline.Pipeline context
@@ -6254,6 +6273,8 @@ module PhysicallyBased =
         Pipeline.reloadShaders physicallyBasedPipelines.DeferredCompositionPipeline.Pipeline context
         Pipeline.reloadShaders physicallyBasedPipelines.ForwardStaticPipeline.Pipeline context
         Pipeline.reloadShaders physicallyBasedPipelines.ForwardAnimatedPipeline.Pipeline context
+        for pipeline in physicallyBasedPipelines.UserDefinedPipelines.Values do Pipeline.reloadShaders pipeline.Pipeline context
+        for pipeline in physicallyBasedPipelines.UserDefinedTerrainPipelines.Values do Pipeline.reloadShaders pipeline.Pipeline context
 
 /// Memoizes physically-based scene loads.
 type PhysicallyBasedSceneClient () =

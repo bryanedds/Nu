@@ -943,10 +943,6 @@ module WorldModule =
             | (true, callback) -> callback world
             | (false, _) -> ()
 
-        /// Invoke a user-defined callback.
-        static member invoke name args (world : World) =
-            world.WorldExtension.Plugin.Invoke name args world
-
         /// Attempt to make an emitter with the given parameters.
         static member tryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle (world : World) =
             match world.WorldExtension.Plugin.MakeEmitters.TryGetValue emitterStyle with

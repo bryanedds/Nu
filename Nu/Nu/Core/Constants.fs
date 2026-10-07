@@ -39,6 +39,7 @@ module Assimp =
     let [<Literal>] UserDefinedName = RawPropertyPrefix + "UserDefined"
     let [<Literal>] TwoSidedPropertyName = RawPropertyPrefix + "TwoSided"
     let [<Literal>] ClippedPropertyName = RawPropertyPrefix + "Clipped"
+    let [<Literal>] PipelineNamePropertyName = RawPropertyPrefix + "PipelineName"
     let [<Literal>] NavShapePropertyName = RawPropertyPrefix + "NavShape"
 
 [<RequireQualifiedAccess>]
@@ -196,6 +197,7 @@ module Render =
     let [<Literal>] UserDefinedName = "UserDefined"
     let [<Literal>] TwoSidedName = "TwoSided"
     let [<Literal>] ClippedName = "Clipped"
+    let [<Literal>] PipelineNameName = "PipelineName"
     let [<Literal>] NavShapeName = "NavShape"
     let [<Uniform>] mutable RenderDebug = match ConfigurationManager.AppSettings["RenderDebug"] with null -> false | value -> scvalue value
     let [<Uniform>] mutable RenderVsync = match ConfigurationManager.AppSettings["RenderVsync"] with null -> true | value -> scvalue value
@@ -251,6 +253,7 @@ module Render =
     let [<Literal>] EnvironmentFilterResolution = 512
     let [<Literal>] EnvironmentFilterMips = 7 // NOTE: changing this requires changing the REFLECTION_LOD_MAX constants in shader code.
     let [<Literal>] BloomSampleLevels = 6
+    let [<Literal>] PipelineNameDefault = "Default"
     let [<Literal>] LightMappingEnabledDefault = true
     let [<Literal>] LightCutoffMarginDefault = 0.4f
     let [<Literal>] LightAmbientBoostCutoffDefault = 0.3f

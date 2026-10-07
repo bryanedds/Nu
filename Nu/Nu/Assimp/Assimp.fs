@@ -434,6 +434,17 @@ module AssimpExtensions =
                 else ValueSome false
             | ValueNone -> ValueNone
 
+        member this.PipelineNameOpt =
+            match this.TryGetMaterialProperty Constants.Assimp.PipelineNamePropertyName with
+            | ValueSome property ->
+                if property.PropertyType = Assimp.PropertyType.String then
+                    try match property.GetStringValue () with
+                        | "" -> ValueSome Constants.Render.PipelineNameDefault // NOTE: replace empty name with default.
+                        | str -> ValueSome str
+                    with _ -> ValueNone
+                else ValueSome Constants.Render.PipelineNameDefault
+            | ValueNone -> ValueNone
+
         member this.NavShapeOpt =
             match this.TryGetMaterialProperty Constants.Assimp.NavShapePropertyName with
             | ValueSome property ->

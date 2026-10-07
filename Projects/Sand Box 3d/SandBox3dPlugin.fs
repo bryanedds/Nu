@@ -170,3 +170,13 @@ type SandBox3dPlugin () =
         let fns = base.ProcessFns
         let fns = Map.add "Wall" (v3i 3 4 3, wall) fns
         fns
+
+    override this.SetUp world =
+        let descriptor =
+            { PipelineName = "TerrainFlipped"
+              PipelineType = Terrain
+              ShaderPath = "Assets/Gameplay/PhysicallyBasedDeferredTerrain"
+              Blends = [|Vulkan.VulkanUnblended|]
+              CullModes = [|true|] }
+        let message = CreateUserDefinedPipeline { PipelineDescriptor = descriptor }
+        World.enqueueRenderMessage3d message world

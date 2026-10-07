@@ -810,6 +810,19 @@ module Metadata =
         | ValueNone -> ValueNone
 
     /// Thread-safe.
+    let private tryGetModelPipelineName materialIndex model =
+        match tryGetModelMetadata model with
+        | ValueSome modelMetadata ->
+            match modelMetadata.SceneOpt with
+            | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
+                let material = scene.Materials[materialIndex]
+                match material.PipelineNameOpt with
+                | ValueSome clipped -> ValueSome clipped
+                | ValueNone -> ValueNone
+            | Some _ | None -> ValueNone
+        | ValueNone -> ValueNone
+
+    /// Thread-safe.
     let private tryGetModelNavShape materialIndex model =
         match tryGetModelMetadata model with
         | ValueSome modelMetadata ->
@@ -920,6 +933,11 @@ module Metadata =
     let tryGetStaticModelClipped materialIndex (staticModel : StaticModel AssetTag) =
         tryGetModelClipped materialIndex staticModel
 
+    /// Attempt to get the pipeline name for the given material index and static model.
+    /// Thread-safe.
+    let tryGetStaticModelPipelineName materialIndex (staticModel : StaticModel AssetTag) =
+        tryGetModelPipelineName materialIndex staticModel
+
     /// Attempt to get the 3d navigation shape for the given material index and static model.
     /// Thread-safe.
     let tryGetStaticModelNavShape materialIndex (staticModel : StaticModel AssetTag) =
@@ -1002,10 +1020,25 @@ module Metadata =
     let tryGetAnimatedModelClearCoatNormalImage materialIndex (animatedModel : AnimatedModel AssetTag) =
         tryGetModelClearCoatNormalImage materialIndex animatedModel
 
+    /// Attempt to get the user-defined asset for the given material index and animated model.
+    /// Thread-safe.
+    let tryGetAnimatedModelUserDefinedImage materialIndex (staticModel : StaticModel AssetTag) =
+        tryGetModelUserDefinedImage materialIndex staticModel
+
+    /// Attempt to get the user-defined 2 asset for the given material index and animated model.
+    /// Thread-safe.
+    let tryGetAnimatedModelUserDefined2Image materialIndex (staticModel : StaticModel AssetTag) =
+        tryGetModelUserDefined2Image materialIndex staticModel
+
     /// Attempt to get the two-sided property for the given material index and animated model.
     /// Thread-safe.
     let tryGetAnimatedModelTwoSided materialIndex (animatedModel : AnimatedModel AssetTag) =
         tryGetModelTwoSided materialIndex animatedModel
+
+    /// Attempt to get the pipeline name for the given material index and animated model.
+    /// Thread-safe.
+    let tryGetAnimatedModelPipelineName materialIndex (staticModel : StaticModel AssetTag) =
+        tryGetModelPipelineName materialIndex staticModel
 
     /// Attempt to get the 3d navigation shape property for the given material index and animated model.
     /// Thread-safe.
