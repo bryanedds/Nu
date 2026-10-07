@@ -6113,7 +6113,6 @@ module PhysicallyBased =
         Pipeline.reloadShaders physicallyBasedPipelines.FilterChromaticAberrationPipeline.Pipeline context
         Pipeline.reloadShaders physicallyBasedPipelines.FilterFxaaPipeline.Pipeline context
         Pipeline.reloadShaders physicallyBasedPipelines.FilterGammaCorrectionPipeline.Pipeline context
-        Pipeline.reloadShaders physicallyBasedPipelines.FilterFxaaPipeline.Pipeline context
         Pipeline.reloadShaders physicallyBasedPipelines.ShadowStaticPointPipeline.Pipeline context
         Pipeline.reloadShaders physicallyBasedPipelines.ShadowStaticSpotPipeline.Pipeline context
         Pipeline.reloadShaders physicallyBasedPipelines.ShadowStaticDirectionalPipeline.Pipeline context
@@ -6126,6 +6125,7 @@ module PhysicallyBased =
         Pipeline.reloadShaders physicallyBasedPipelines.DeferredStaticPipeline.Pipeline context
         Pipeline.reloadShaders physicallyBasedPipelines.DeferredStaticClippedPipeline.Pipeline context
         Pipeline.reloadShaders physicallyBasedPipelines.DeferredAnimatedPipeline.Pipeline context
+        Pipeline.reloadShaders physicallyBasedPipelines.DeferredTerrainPipeline.Pipeline context
         Pipeline.reloadShaders physicallyBasedPipelines.DeferredLightingPipeline.Pipeline context
         Pipeline.reloadShaders physicallyBasedPipelines.DeferredFoggingPipeline.Pipeline context
         Pipeline.reloadShaders physicallyBasedPipelines.DeferredLightMappingPipeline.Pipeline context
