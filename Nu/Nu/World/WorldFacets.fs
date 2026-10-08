@@ -3861,7 +3861,10 @@ type TerrainFacet () =
                   BlendMap =
                       RedsMap
                         [|Assets.Default.TerrainLayer0Blend
-                          Assets.Default.TerrainLayer1Blend|]})
+                          Assets.Default.TerrainLayer1Blend|]
+                  UserDefinedImage = Assets.Default.MaterialUserDefined
+                  UserDefined2Image = Assets.Default.MaterialUserDefined2
+                  PipelineName = Constants.Render.PipelineNameDefault })
          define Entity.TintImageOpt None
          define Entity.NormalImageOpt None
          define Entity.Tiles (v2 256.0f 256.0f)

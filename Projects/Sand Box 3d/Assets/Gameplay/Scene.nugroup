@@ -16,6 +16,15 @@
     [Presence Omnipresent]
     [Size [512 128 512]]
     [Static True]
+    [TerrainMaterial
+     [BlendMaterial
+      [[[[Default TerrainLayer0Albedo] [Default TerrainLayer0Roughness] [Default TerrainLayer0AmbientOcclusion] [Default TerrainLayer0Normal] [Default TerrainLayer0Height]]
+        [[Default TerrainLayer1Albedo] [Default TerrainLayer1Roughness] [Default TerrainLayer1AmbientOcclusion] [Default TerrainLayer1Normal] [Default TerrainLayer1Height]]]
+       [RedsMap
+        [[Default TerrainLayer0Blend] [Default TerrainLayer1Blend]]]
+       [Default MaterialUserDefined]
+       [Default MaterialUserDefined2]
+       TerrainFlipped]]]
     [TerrainMaterialProperties
      [[AlbedoOpt
        [Some [1 1 1 1]]]
@@ -23,7 +32,14 @@
       [AmbientOcclusionOpt [Some 1]]
       [HeightOpt [Some 1]]
       [IgnoreLightMapsOpt [Some False]]
-      [PipelineNameOpt [Some TerrainFlipped]]]]]
+      [UserDefinedOpt None]
+      [UserDefined2Opt None]
+      [UserDefined3Opt None]
+      [UserDefined4Opt None]
+      [UserDefined5Opt None]
+      [UserDefined6Opt None]
+      [UserDefined7Opt None]
+      [UserDefined8Opt None]]]]
    []]
   [Light3dDispatcher
    [[AttenuationLinear 0.013888889]

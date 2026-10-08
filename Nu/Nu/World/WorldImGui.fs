@@ -896,9 +896,9 @@ module WorldImGui =
                                     if index < names.Length then
                                         let asset index : Image AssetTag =
                                             match index with
-                                            | 0 -> asset Assets.Default.PackageName Assets.Default.MaterialUserDefinedName
-                                            | 1 -> asset Assets.Default.PackageName Assets.Default.MaterialUserDefined2Name
-                                            | _ -> asset Assets.Default.PackageName Assets.Default.MaterialUserDefinedName
+                                            | 0 -> Assets.Default.MaterialUserDefined
+                                            | 1 -> Assets.Default.MaterialUserDefined2
+                                            | _ -> Assets.Default.MaterialUserDefined
                                         match field :?> Image AssetTag voption with
                                         | ValueNone ->
                                             let mutable isSome = false

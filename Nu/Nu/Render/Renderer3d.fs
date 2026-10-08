@@ -22,7 +22,14 @@ type [<SymbolicExpansion>] TerrainMaterialProperties =
       AmbientOcclusionOpt : single option
       HeightOpt : single option
       IgnoreLightMapsOpt : bool option
-      PipelineNameOpt : string option }
+      UserDefinedOpt : single option
+      UserDefined2Opt : single option
+      UserDefined3Opt : single option
+      UserDefined4Opt : single option
+      UserDefined5Opt : single option
+      UserDefined6Opt : single option
+      UserDefined7Opt : single option
+      UserDefined8Opt : single option }
 
 /// A layer from which a 3d terrain's material is composed.
 type TerrainLayer =
@@ -43,12 +50,18 @@ type FlatMaterial =
       RoughnessImage : Image AssetTag
       AmbientOcclusionImage : Image AssetTag
       NormalImage : Image AssetTag
-      HeightImage : Image AssetTag }
+      HeightImage : Image AssetTag
+      UserDefinedImage : Image AssetTag
+      UserDefined2Image : Image AssetTag
+      PipelineName : string }
 
 /// Blend-weighted material for a 3d terrain.
 type BlendMaterial =
     { TerrainLayers : TerrainLayer array
-      BlendMap : BlendMap }
+      BlendMap : BlendMap
+      UserDefinedImage : Image AssetTag
+      UserDefined2Image : Image AssetTag
+      PipelineName : string }
 
 /// Describes the material of which a 3d terrain is composed.
 type TerrainMaterial =
@@ -66,7 +79,14 @@ module TerrainMaterialProperties =
           AmbientOcclusionOpt = Some Constants.Render.AmbientOcclusionDefault
           HeightOpt = Some Constants.Render.HeightDefault
           IgnoreLightMapsOpt = Some false
-          PipelineNameOpt = Some Constants.Render.PipelineNameDefault }
+          UserDefinedOpt = Some Constants.Render.UserDefinedDefault
+          UserDefined2Opt = Some Constants.Render.UserDefinedDefault
+          UserDefined3Opt = Some Constants.Render.UserDefinedDefault
+          UserDefined4Opt = Some Constants.Render.UserDefinedDefault
+          UserDefined5Opt = Some Constants.Render.UserDefinedDefault
+          UserDefined6Opt = Some Constants.Render.UserDefinedDefault
+          UserDefined7Opt = Some Constants.Render.UserDefinedDefault
+          UserDefined8Opt = Some Constants.Render.UserDefinedDefault }
 
     /// Empty terrain material properties.
     let empty =
@@ -75,7 +95,14 @@ module TerrainMaterialProperties =
           AmbientOcclusionOpt = None
           HeightOpt = None
           IgnoreLightMapsOpt = None
-          PipelineNameOpt = None }
+          UserDefinedOpt = None
+          UserDefined2Opt = None
+          UserDefined3Opt = None
+          UserDefined4Opt = None
+          UserDefined5Opt = None
+          UserDefined6Opt = None
+          UserDefined7Opt = None
+          UserDefined8Opt = None }
 
 /// Indicates the type of rendering pipeline.
 type Pipeline3dType =
@@ -3349,7 +3376,10 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 for entry in patchGeometries do
                     let patchDescriptor = entry.Key
                     let patchGeometry = entry.Value
-                    let pipelineName = Option.defaultValue Constants.Render.PipelineNameDefault terrainDescriptor.MaterialProperties.PipelineNameOpt
+                    let pipelineName =
+                        match terrainDescriptor.Material with
+                        | FlatMaterial material -> material.PipelineName
+                        | BlendMaterial material -> material.PipelineName
                     let item =
                         match renderTasks.DeferredTerrains.TryGetValue pipelineName with
                         | (true, item) -> item
