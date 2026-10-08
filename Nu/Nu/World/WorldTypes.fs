@@ -2256,6 +2256,10 @@ and [<AbstractClass>] NuPlugin () =
     abstract EditModes : Map<string, World -> unit>
     default this.EditModes = Map.empty
 
+    /// Describes a collection of user-defined 3D pipelines to create.
+    abstract UserDefinedPipeline3dDescriptors : Map<string, UserDefinedPipeline3dDescriptor>
+    default this.UserDefinedPipeline3dDescriptors = Map.empty
+
     /// The packages that should be loaded at start-up in all contexts, including in audio player, renderers, and
     /// metadata. The Default package is always included.
     abstract InitialPackages : string list
@@ -2276,18 +2280,6 @@ and [<AbstractClass>] NuPlugin () =
     /// Attempt to make a block process function of the given name.
     abstract ProcessFns : Map<string, Vector3i * BlockMap.ProcessFn<Entity, World>>
     default this.ProcessFns = Map.empty
-
-    /// Clean-up any user-defined resources of the plugin, such with shutting down a Steamworks API.
-    abstract CleanUp : unit -> unit
-    default this.CleanUp () = ()
-
-    /// Invoke a user-defined callback.
-    abstract Invoke : callbackName : string -> callbackArgs : obj list -> world : World -> unit
-    default this.Invoke _ _ _ = ()
-
-    /// Make a list of keyed values to hook into the engine.
-    abstract MakeKeyedValues : world : World -> ((string * obj) list)
-    default this.MakeKeyedValues _ = []
 
     /// Make the 2D physics engine for the engine to use.
     abstract MakePhysicsEngine2d : unit -> PhysicsEngine
@@ -2312,6 +2304,10 @@ and [<AbstractClass>] NuPlugin () =
                 | (false, _) -> circles.Add (struct (color, radius), List [center])
             override _.EyeBounds = eyeBounds }
 
+    /// Initialize any user-defined world-spanning resources.
+    abstract Init : World -> unit
+    default this.Init _ = ()
+
     /// A callback at the beginning of each frame.
     abstract PreProcess : world : World -> unit
     default this.PreProcess _ = ()
@@ -2331,6 +2327,10 @@ and [<AbstractClass>] NuPlugin () =
     /// A callback for imgui post-processing.
     abstract ImGuiPostProcess : world : World -> unit
     default this.ImGuiPostProcess _ = ()
+
+    /// Clean up any user-defined world-spanning resources.
+    abstract CleanUp : World -> unit
+    default this.CleanUp _ = ()
 
     /// Birth facets / dispatchers of type 'a from plugin.
     member internal this.Birth<'a> assemblies =

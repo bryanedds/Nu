@@ -132,7 +132,7 @@ type BlockMapDispatcher () =
                     let modelMatrix = Matrix4x4.CreateTranslation position
                     let materialProperties = { MaterialProperties.empty with AlbedoOpt = ValueSome color }
                     World.renderStaticModelSurfaceFast
-                        (&modelMatrix, blockMap.Config.CastShadows, Omnipresent, ValueNone, &materialProperties, &material,
+                        (&modelMatrix, blockMap.Config.CastShadows, Omnipresent, ValueNone, materialProperties, material,
                          Assets.Default.StaticModel, 0, LessThanTest, DeferredRenderType, renderPass, world)
                 | None -> ()
 
@@ -161,7 +161,7 @@ type BlockMapDispatcher () =
                             let offset = offsetI.V3 * blockMapScale
                             let modelMatrix = Matrix4x4.CreateTranslation (position + offset)
                             World.renderStaticModelSurfaceFast
-                                (&modelMatrix, blockMap.Config.CastShadows, Omnipresent, ValueNone, &materialProperties, &material,
+                                (&modelMatrix, blockMap.Config.CastShadows, Omnipresent, ValueNone, materialProperties, material,
                                  Assets.Default.StaticModel, 0, LessThanTest, DeferredRenderType, renderPass, world)
                     | None -> ()
                 | None -> ()

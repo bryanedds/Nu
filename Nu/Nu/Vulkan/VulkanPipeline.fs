@@ -420,7 +420,6 @@ type Pipeline =
         for vkPipeline in pipeline.VkPipelines_.Values do
             DeviceApi.vkDestroyPipeline (vkPipeline, nullPtr)
         pipeline.VkPipelines_.Clear ()
-            
 
     /// Try to get the VkPipeline built for the given settings.
     static member tryGetVkPipeline blend cullFace pipeline =
@@ -621,7 +620,7 @@ type Pipeline =
         Pipeline.createVkPipelines pipeline
 
     /// Create a vertex + fragment shader pipeline.
-    static member create<'k when 'k : equality>
+    static member create
         shaderPath
         (blends : VulkanBlend array)
         (cullModes : bool array)
@@ -657,7 +656,7 @@ type Pipeline =
             descriptorSets[i] <- definition.CreateDescriptorSet descriptorSetLayouts[i]
 
         // create pipeline layout and vkPipelines
-        if blends.Length < 1 then Log.fail "No pipeline blend was specified."
+        if blends.Length < 1 then Log.error "No pipeline blend was specified."
         let shaderPathVert = shaderPath + ".vert"
         let shaderPathFrag = shaderPath + ".frag"
         let pipelineSettings = Array.allPairs blends cullModes

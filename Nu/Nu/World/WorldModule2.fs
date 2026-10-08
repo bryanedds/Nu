@@ -1894,12 +1894,12 @@ module WorldModule2 =
             World.processPhysics3d world
             World.processPhysics2d world
 
-        /// Clean-up the resources held by the world.
+        /// Clean up the resources held by the world.
         static member cleanUp (world : World) =
+            world.WorldExtension.Plugin.CleanUp world
             world.WorldExtension.JobGraph.CleanUp ()
             World.unregisterGame Nu.Game.Handle world
             World.cleanUpSubsystems world |> ignore
-            world.WorldExtension.Plugin.CleanUp ()
 
         /// Run the game engine with the given handlers, but don't clean up at the end.
         static member runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess firstFrameCallbackOpt (world : World) =

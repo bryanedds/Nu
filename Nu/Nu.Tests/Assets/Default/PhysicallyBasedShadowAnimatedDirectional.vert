@@ -13,9 +13,9 @@ layout(set = 0, binding = 0) uniform ShadowVertUniform { ShadowVertStruct shadow
 layout(set = 1, binding = 0) uniform BonesUniform { mat4 bones[BONES_MAX]; };
 
 layout(location = 0) in vec3 position;
-layout(location = 3) in vec4 boneIds;
-layout(location = 4) in vec4 weights;
-layout(location = 5) in mat4 model;
+layout(location = 6) in vec4 boneIds;
+layout(location = 7) in vec4 weights;
+layout(location = 8) in mat4 model;
 
 void main()
 {

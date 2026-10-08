@@ -428,8 +428,14 @@ module WorldModule4 =
         static member makePlus
             tryMakeEditContext plugin eventGraph jobGraph geometryViewport windowViewport lateBindingsInstances quadtree octree worldConfig sdlDepsOpt
             imGui physicsEngine2d physicsEngine3d rendererPhysics3dOpt rendererProcess audioPlayer cursorClient activeGameDispatcher =
-            Nu.init () // ensure we haven't forgot to initialize Nu!
+
+            // ensure we haven't forgot to initialize Nu!
+            Nu.init ()
+
+            // init symbolic conversion
             SymbolicConverter.Init worldConfig.Imperative
+
+            // make actual world record
             let symbolics = Symbolics.makeEmpty ()
             let intrinsicOverlays = World.makeIntrinsicOverlays lateBindingsInstances.Facets lateBindingsInstances.EntityDispatchers
             let overlayer = Overlayer.makeFromFileOpt intrinsicOverlays Assets.Global.OverlayerFilePath
@@ -483,7 +489,11 @@ module WorldModule4 =
                 { worldState with
                     GameState = Reflection.attachProperties GameState.copy gameState.Dispatcher gameState worldState }
             let world = { WorldState = worldState }
+
+            // initialize world debugging reference
             WorldTypes.WorldForDebug <- world
+
+            // fin
             world
 
         /// Make a world with stub dependencies.
@@ -658,9 +668,12 @@ module WorldModule4 =
             if World.getWindowSizeOtherwiseViewportSize world <> windowSize then
                 World.processWindowResize world
 
-            // add the keyed values
-            for (key, value) in plugin.MakeKeyedValues world do
-                World.addKeyedValue key value world
+            // initialize plugin
+            world.WorldExtension.Plugin.Init world
+
+            // initialize 3D pipelines
+            for descriptor in world.WorldExtension.Plugin.UserDefinedPipeline3dDescriptors.Values do
+                World.enqueueRenderMessage3d (CreateUserDefinedPipeline { Pipeline3dDescriptor = descriptor }) world
 
             // register the game
             World.registerGame Game world

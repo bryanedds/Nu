@@ -943,9 +943,9 @@ module WorldModule =
             | (true, callback) -> callback world
             | (false, _) -> ()
 
-        /// Invoke a user-defined callback.
-        static member invoke name args (world : World) =
-            world.WorldExtension.Plugin.Invoke name args world
+        /// Get the user-defined pipeline 3D descriptors.
+        static member getUserDefinedPipeline3dDescriptors (world : World) =
+            world.WorldExtension.Plugin.UserDefinedPipeline3dDescriptors
 
         /// Attempt to make an emitter with the given parameters.
         static member tryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle (world : World) =
