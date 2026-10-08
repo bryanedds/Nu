@@ -82,7 +82,7 @@ layout(set = 0, binding = 3) uniform texture2D albedoTexture;
 layout(set = 0, binding = 4) uniform texture2D materialTexture;
 layout(set = 0, binding = 5) uniform texture2D normalPlusTexture;
 layout(set = 0, binding = 6) uniform texture2D clearCoatPlusTexture;
-layout(set = 0, binding = 7) uniform texture2D userDefinedTexture;
+layout(set = 0, binding = 7) uniform texture2D userDefinedBufferTexture;
 layout(set = 0, binding = 8) uniform texture2D lightAccumTexture;
 layout(set = 0, binding = 9) uniform texture2D brdfTexture;
 layout(set = 0, binding = 10) uniform texture2D ambientTexture;

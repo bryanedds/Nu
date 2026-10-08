@@ -3355,14 +3355,14 @@ type BasicStaticBillboardEmitterFacet () =
                               RefractiveIndexOpt = match emitterProperties.RefractiveIndexOpt with ValueSome refractiveIndex -> ValueSome refractiveIndex | ValueNone -> descriptor.MaterialProperties.RefractiveIndexOpt
                               ClearCoatOpt = match emitterProperties.ClearCoatOpt with ValueSome clearCoat -> ValueSome clearCoat | ValueNone -> descriptor.MaterialProperties.ClearCoatOpt
                               ClearCoatRoughnessOpt = match emitterProperties.ClearCoatRoughnessOpt with ValueSome clearCoatRoughness -> ValueSome clearCoatRoughness | ValueNone -> descriptor.MaterialProperties.ClearCoatRoughnessOpt
-                              UserDefinedOpt = match emitterProperties.UserDefinedOpt with ValueSome userDefined -> ValueSome userDefined | ValueNone -> descriptor.MaterialProperties.UserDefinedOpt
-                              UserDefined2Opt = match emitterProperties.UserDefined2Opt with ValueSome userDefined -> ValueSome userDefined | ValueNone -> descriptor.MaterialProperties.UserDefined2Opt
-                              UserDefined3Opt = match emitterProperties.UserDefined3Opt with ValueSome userDefined -> ValueSome userDefined | ValueNone -> descriptor.MaterialProperties.UserDefined3Opt
-                              UserDefined4Opt = match emitterProperties.UserDefined4Opt with ValueSome userDefined -> ValueSome userDefined | ValueNone -> descriptor.MaterialProperties.UserDefined4Opt
-                              UserDefined5Opt = match emitterProperties.UserDefined5Opt with ValueSome userDefined -> ValueSome userDefined | ValueNone -> descriptor.MaterialProperties.UserDefined5Opt
-                              UserDefined6Opt = match emitterProperties.UserDefined6Opt with ValueSome userDefined -> ValueSome userDefined | ValueNone -> descriptor.MaterialProperties.UserDefined6Opt
-                              UserDefined7Opt = match emitterProperties.UserDefined7Opt with ValueSome userDefined -> ValueSome userDefined | ValueNone -> descriptor.MaterialProperties.UserDefined7Opt
-                              UserDefined8Opt = match emitterProperties.UserDefined8Opt with ValueSome userDefined -> ValueSome userDefined | ValueNone -> descriptor.MaterialProperties.UserDefined8Opt }
+                              UserDefinedSettingOpt = match emitterProperties.UserDefinedSettingOpt with ValueSome userDefinedSetting -> ValueSome userDefinedSetting | ValueNone -> descriptor.MaterialProperties.UserDefinedSettingOpt
+                              UserDefinedSetting2Opt = match emitterProperties.UserDefinedSetting2Opt with ValueSome userDefinedSetting -> ValueSome userDefinedSetting | ValueNone -> descriptor.MaterialProperties.UserDefinedSetting2Opt
+                              UserDefinedSetting3Opt = match emitterProperties.UserDefinedSetting3Opt with ValueSome userDefinedSetting -> ValueSome userDefinedSetting | ValueNone -> descriptor.MaterialProperties.UserDefinedSetting3Opt
+                              UserDefinedSetting4Opt = match emitterProperties.UserDefinedSetting4Opt with ValueSome userDefinedSetting -> ValueSome userDefinedSetting | ValueNone -> descriptor.MaterialProperties.UserDefinedSetting4Opt
+                              UserDefinedSetting5Opt = match emitterProperties.UserDefinedSetting5Opt with ValueSome userDefinedSetting -> ValueSome userDefinedSetting | ValueNone -> descriptor.MaterialProperties.UserDefinedSetting5Opt
+                              UserDefinedSetting6Opt = match emitterProperties.UserDefinedSetting6Opt with ValueSome userDefinedSetting -> ValueSome userDefinedSetting | ValueNone -> descriptor.MaterialProperties.UserDefinedSetting6Opt
+                              UserDefinedSetting7Opt = match emitterProperties.UserDefinedSetting7Opt with ValueSome userDefinedSetting -> ValueSome userDefinedSetting | ValueNone -> descriptor.MaterialProperties.UserDefinedSetting7Opt
+                              UserDefinedSetting8Opt = match emitterProperties.UserDefinedSetting8Opt with ValueSome userDefinedSetting -> ValueSome userDefinedSetting | ValueNone -> descriptor.MaterialProperties.UserDefinedSetting8Opt }
                         let emitterMaterial = entity.GetEmitterMaterial world
                         let material =
                             { AlbedoImageOpt = match emitterMaterial.AlbedoImageOpt with ValueSome albedoImage -> ValueSome albedoImage | ValueNone -> descriptor.Material.AlbedoImageOpt
@@ -3379,7 +3379,7 @@ type BasicStaticBillboardEmitterFacet () =
                               ClearCoatRoughnessImageOpt = match emitterMaterial.ClearCoatRoughnessImageOpt with ValueSome clearCoatRoughnessImage -> ValueSome clearCoatRoughnessImage | ValueNone -> descriptor.Material.ClearCoatRoughnessImageOpt
                               ClearCoatNormalImageOpt = match emitterMaterial.ClearCoatNormalImageOpt with ValueSome clearCoatNormalImage -> ValueSome clearCoatNormalImage | ValueNone -> descriptor.Material.ClearCoatNormalImageOpt
                               UserDefinedImageOpt = match emitterMaterial.UserDefinedImageOpt with ValueSome userDefinedImage -> ValueSome userDefinedImage | ValueNone -> descriptor.Material.UserDefinedImageOpt
-                              UserDefined2ImageOpt = match emitterMaterial.UserDefined2ImageOpt with ValueSome userDefined2Image -> ValueSome userDefined2Image | ValueNone -> descriptor.Material.UserDefined2ImageOpt
+                              UserDefinedImage2Opt = match emitterMaterial.UserDefinedImage2Opt with ValueSome userDefinedImage2 -> ValueSome userDefinedImage2 | ValueNone -> descriptor.Material.UserDefinedImage2Opt
                               TwoSidedOpt = match emitterMaterial.TwoSidedOpt with ValueSome twoSided -> ValueSome twoSided | ValueNone -> descriptor.Material.TwoSidedOpt
                               ClippedOpt = match emitterMaterial.ClippedOpt with ValueSome clipped -> ValueSome clipped | ValueNone -> descriptor.Material.ClippedOpt
                               PipelineNameOpt = match emitterMaterial.PipelineNameOpt with ValueSome pipelineName -> ValueSome pipelineName | ValueNone -> descriptor.Material.PipelineNameOpt }
@@ -3862,8 +3862,8 @@ type TerrainFacet () =
                       RedsMap
                         [|Assets.Default.TerrainLayer0Blend
                           Assets.Default.TerrainLayer1Blend|]
-                  UserDefinedImage = Assets.Default.MaterialUserDefined
-                  UserDefined2Image = Assets.Default.MaterialUserDefined2
+                  UserDefinedImage = Assets.Default.MaterialUserDefinedImage
+                  UserDefinedImage2 = Assets.Default.MaterialUserDefinedImage2
                   PipelineName = Constants.Render.PipelineNameDefault })
          define Entity.TintImageOpt None
          define Entity.NormalImageOpt None

@@ -778,13 +778,13 @@ module WorldImGui =
                     | _ -> None
                 World.imGuiEditPropertyRecordPlus tryReplaceAnimationName true name (typeof<Animation>) animation context world
             | :? TerrainMaterialProperties as tmps ->
-                let tryReplaceUserDefinedOptName (fieldInfo : PropertyInfo) (field : obj) =
+                let tryReplaceUserDefinedSettingOpt (fieldInfo : PropertyInfo) (field : obj) =
                     match context.SelectedEntityOpt with
                     | Some selectedEntity ->
-                        let userDefinedSubstring = "UserDefined"
+                        let userDefinedSettingSubstring = "UserDefinedSetting"
                         let optSubstring = "Opt"
-                        if fieldInfo.Name.StartsWith userDefinedSubstring && fieldInfo.Name.EndsWith optSubstring then
-                            let numberStr = fieldInfo.Name.Substring (userDefinedSubstring.Length, fieldInfo.Name.Length - userDefinedSubstring.Length - optSubstring.Length)
+                        if fieldInfo.Name.StartsWith userDefinedSettingSubstring && fieldInfo.Name.EndsWith optSubstring then
+                            let numberStr = fieldInfo.Name.Substring (userDefinedSettingSubstring.Length, fieldInfo.Name.Length - userDefinedSettingSubstring.Length - optSubstring.Length)
                             let numberOpt =
                                 if numberStr.Length = 0
                                 then Some 1
@@ -805,7 +805,7 @@ module WorldImGui =
                                 let descriptors = World.getUserDefinedPipeline3dDescriptors world
                                 match descriptors.TryGetValue pipelineName with
                                 | (true, pipelineDescriptor) ->
-                                    let names = pipelineDescriptor.MaterialPropertiesUserDefinedNames
+                                    let names = pipelineDescriptor.UserDefinedSettingNames
                                     let index = dec number
                                     if index < names.Length then
                                         match field :?> single option with
@@ -831,15 +831,15 @@ module WorldImGui =
                             | None -> Some (false, field)
                         else None
                     | None -> None
-                World.imGuiEditPropertyRecordPlus tryReplaceUserDefinedOptName true name (typeof<TerrainMaterialProperties>) tmps context world
+                World.imGuiEditPropertyRecordPlus tryReplaceUserDefinedSettingOpt true name (typeof<TerrainMaterialProperties>) tmps context world
             | :? MaterialProperties as mps ->
-                let tryReplaceUserDefinedOptName (fieldInfo : PropertyInfo) (field : obj) =
+                let tryReplaceUserDefinedSettingOpt (fieldInfo : PropertyInfo) (field : obj) =
                     match context.SelectedEntityOpt with
                     | Some selectedEntity ->
-                        let userDefinedSubstring = "UserDefined"
+                        let userDefinedSettingSubstring = "UserDefinedSetting"
                         let optSubstring = "Opt"
-                        if fieldInfo.Name.StartsWith userDefinedSubstring && fieldInfo.Name.EndsWith optSubstring then
-                            let numberStr = fieldInfo.Name.Substring (userDefinedSubstring.Length, fieldInfo.Name.Length - userDefinedSubstring.Length - optSubstring.Length)
+                        if fieldInfo.Name.StartsWith userDefinedSettingSubstring && fieldInfo.Name.EndsWith optSubstring then
+                            let numberStr = fieldInfo.Name.Substring (userDefinedSettingSubstring.Length, fieldInfo.Name.Length - userDefinedSettingSubstring.Length - optSubstring.Length)
                             let numberOpt =
                                 if numberStr.Length = 0
                                 then Some 1
@@ -878,7 +878,7 @@ module WorldImGui =
                                 let descriptors = World.getUserDefinedPipeline3dDescriptors world
                                 match descriptors.TryGetValue pipelineName with
                                 | (true, pipelineDescriptor) ->
-                                    let names = pipelineDescriptor.MaterialPropertiesUserDefinedNames
+                                    let names = pipelineDescriptor.UserDefinedSettingNames
                                     let index = dec number
                                     if index < names.Length then
                                         match field :?> single voption with
@@ -904,15 +904,15 @@ module WorldImGui =
                             | None -> Some (false, field)
                         else None
                     | None -> None
-                World.imGuiEditPropertyRecordPlus tryReplaceUserDefinedOptName false name (typeof<MaterialProperties>) mps context world
+                World.imGuiEditPropertyRecordPlus tryReplaceUserDefinedSettingOpt false name (typeof<MaterialProperties>) mps context world
             | :? Material as material ->
-                let tryReplaceUserDefinedImageOptName (fieldInfo : PropertyInfo) (field : obj) =
+                let tryReplaceUserDefinedImageOpt (fieldInfo : PropertyInfo) (field : obj) =
                     match context.SelectedEntityOpt with
                     | Some selectedEntity ->
-                        let userDefinedSubstring = "UserDefined"
-                        let imageOptSubstring = "ImageOpt"
-                        if fieldInfo.Name.StartsWith userDefinedSubstring && fieldInfo.Name.EndsWith imageOptSubstring then
-                            let numberStr = fieldInfo.Name.Substring (userDefinedSubstring.Length, fieldInfo.Name.Length - userDefinedSubstring.Length - imageOptSubstring.Length)
+                        let userDefinedImageSubstring = "UserDefinedImage"
+                        let optSubstring = "Opt"
+                        if fieldInfo.Name.StartsWith userDefinedImageSubstring && fieldInfo.Name.EndsWith optSubstring then
+                            let numberStr = fieldInfo.Name.Substring (userDefinedImageSubstring.Length, fieldInfo.Name.Length - userDefinedImageSubstring.Length - optSubstring.Length)
                             let numberOpt =
                                 if numberStr.Length = 0
                                 then Some 1
@@ -947,14 +947,14 @@ module WorldImGui =
                                 let descriptors = World.getUserDefinedPipeline3dDescriptors world
                                 match descriptors.TryGetValue pipelineName with
                                 | (true, pipelineDescriptor) ->
-                                    let names = pipelineDescriptor.MaterialUserDefinedImageNames
+                                    let names = pipelineDescriptor.UserDefinedImageNames
                                     let index = dec number
                                     if index < names.Length then
                                         let asset index : Image AssetTag =
                                             match index with
-                                            | 0 -> Assets.Default.MaterialUserDefined
-                                            | 1 -> Assets.Default.MaterialUserDefined2
-                                            | _ -> Assets.Default.MaterialUserDefined
+                                            | 0 -> Assets.Default.MaterialUserDefinedImage
+                                            | 1 -> Assets.Default.MaterialUserDefinedImage2
+                                            | _ -> Assets.Default.MaterialUserDefinedImage
                                         match field :?> Image AssetTag voption with
                                         | ValueNone ->
                                             let mutable isSome = false
@@ -1008,7 +1008,7 @@ module WorldImGui =
                                     Some (pipelineNameEdited, ValueSome pipelineName :> obj)
                         else None
                     | None -> None
-                World.imGuiEditPropertyRecordPlus tryReplaceUserDefinedImageOptName false name (typeof<Material>) material context world
+                World.imGuiEditPropertyRecordPlus tryReplaceUserDefinedImageOpt false name (typeof<Material>) material context world
             | :? Justification as justification ->
                 let (_, caseNameEdited, caseName) = World.imGuiSelectCase name ty justification context
                 let justification =

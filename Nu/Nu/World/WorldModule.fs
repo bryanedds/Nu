@@ -943,7 +943,7 @@ module WorldModule =
             | (true, callback) -> callback world
             | (false, _) -> ()
 
-        /// Get the user-defined pipeline 3D descriptors.
+        /// Get the user-defined 3D pipeline descriptors.
         static member getUserDefinedPipeline3dDescriptors (world : World) =
             world.WorldExtension.Plugin.UserDefinedPipeline3dDescriptors
 

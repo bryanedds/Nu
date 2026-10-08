@@ -9,10 +9,10 @@ open SandBox3d
 module MaterialPropertiesExtensions =
 
     type MaterialProperties with
-        member this.TestFieldOpt = this.UserDefinedOpt
-        member this.TestField = this.UserDefined
-        member this.SetTestFieldOpt value = { this with UserDefinedOpt = value } // would be nice if F# allowed usage to be baked down to { this with TestFieldOpt = value }
-        member this.SetTestField value = { this with UserDefinedOpt = ValueSome value }
+        member this.TestSettingOpt = this.UserDefinedSettingOpt
+        member this.TestSetting = this.UserDefinedSetting
+        member this.SetTestSettingOpt value = { this with UserDefinedSettingOpt = value } // would be nice if F# allowed usage to be baked down to { this with TestSettingOpt = value }
+        member this.SetTestSetting value = { this with UserDefinedSettingOpt = ValueSome value }
 
     type Material with
         member this.TestImageOpt = this.UserDefinedImageOpt

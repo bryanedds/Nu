@@ -403,11 +403,11 @@ module AssimpExtensions =
                 else ValueNone
             | ValueNone -> ValueNone
 
-        member this.UserDefinedOpt index =
+        member this.UserDefinedSettingOpt index =
             let propertyName =
                 if index = 0
-                then Constants.Assimp.UserDefinedName
-                else Constants.Assimp.UserDefinedName + string (inc index)
+                then Constants.Assimp.UserDefinedSettingPropertyName
+                else Constants.Assimp.UserDefinedSettingPropertyName + string (inc index)
             match this.TryGetMaterialProperty propertyName with
             | ValueSome property ->
                 if property.PropertyType = Assimp.PropertyType.String then
@@ -616,11 +616,11 @@ module AssimpExtensions =
                 | _ -> ValueNone
             else ValueNone
 
-        member this.UserDefinedOpt index =
+        member this.UserDefinedSettingOpt index =
             let propertyName =
                 if index = 0
-                then Constants.Render.UserDefinedName
-                else Constants.Render.UserDefinedName + string (inc index)
+                then Constants.Render.UserDefinedSettingName
+                else Constants.Render.UserDefinedSettingName + string (inc index)
             let mutable entry = Unchecked.defaultof<_>
             if this.Metadata.TryGetValue (propertyName, &entry) then
                 match entry.DataType with

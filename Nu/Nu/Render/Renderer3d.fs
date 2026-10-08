@@ -22,14 +22,14 @@ type [<SymbolicExpansion>] TerrainMaterialProperties =
       AmbientOcclusionOpt : single option
       HeightOpt : single option
       IgnoreLightMapsOpt : bool option
-      UserDefinedOpt : single option
-      UserDefined2Opt : single option
-      UserDefined3Opt : single option
-      UserDefined4Opt : single option
-      UserDefined5Opt : single option
-      UserDefined6Opt : single option
-      UserDefined7Opt : single option
-      UserDefined8Opt : single option }
+      UserDefinedSettingOpt : single option
+      UserDefinedSetting2Opt : single option
+      UserDefinedSetting3Opt : single option
+      UserDefinedSetting4Opt : single option
+      UserDefinedSetting5Opt : single option
+      UserDefinedSetting6Opt : single option
+      UserDefinedSetting7Opt : single option
+      UserDefinedSetting8Opt : single option }
 
 /// A layer from which a 3d terrain's material is composed.
 type TerrainLayer =
@@ -52,7 +52,7 @@ type FlatMaterial =
       NormalImage : Image AssetTag
       HeightImage : Image AssetTag
       UserDefinedImage : Image AssetTag
-      UserDefined2Image : Image AssetTag
+      UserDefinedImage2 : Image AssetTag
       PipelineName : string }
 
 /// Blend-weighted material for a 3d terrain.
@@ -60,7 +60,7 @@ type BlendMaterial =
     { TerrainLayers : TerrainLayer array
       BlendMap : BlendMap
       UserDefinedImage : Image AssetTag
-      UserDefined2Image : Image AssetTag
+      UserDefinedImage2 : Image AssetTag
       PipelineName : string }
 
 /// Describes the material of which a 3d terrain is composed.
@@ -79,14 +79,14 @@ module TerrainMaterialProperties =
           AmbientOcclusionOpt = Some Constants.Render.AmbientOcclusionDefault
           HeightOpt = Some Constants.Render.HeightDefault
           IgnoreLightMapsOpt = Some false
-          UserDefinedOpt = Some Constants.Render.UserDefinedDefault
-          UserDefined2Opt = Some Constants.Render.UserDefinedDefault
-          UserDefined3Opt = Some Constants.Render.UserDefinedDefault
-          UserDefined4Opt = Some Constants.Render.UserDefinedDefault
-          UserDefined5Opt = Some Constants.Render.UserDefinedDefault
-          UserDefined6Opt = Some Constants.Render.UserDefinedDefault
-          UserDefined7Opt = Some Constants.Render.UserDefinedDefault
-          UserDefined8Opt = Some Constants.Render.UserDefinedDefault }
+          UserDefinedSettingOpt = Some Constants.Render.UserDefinedSettingDefault
+          UserDefinedSetting2Opt = Some Constants.Render.UserDefinedSettingDefault
+          UserDefinedSetting3Opt = Some Constants.Render.UserDefinedSettingDefault
+          UserDefinedSetting4Opt = Some Constants.Render.UserDefinedSettingDefault
+          UserDefinedSetting5Opt = Some Constants.Render.UserDefinedSettingDefault
+          UserDefinedSetting6Opt = Some Constants.Render.UserDefinedSettingDefault
+          UserDefinedSetting7Opt = Some Constants.Render.UserDefinedSettingDefault
+          UserDefinedSetting8Opt = Some Constants.Render.UserDefinedSettingDefault }
 
     /// Empty terrain material properties.
     let empty =
@@ -95,14 +95,14 @@ module TerrainMaterialProperties =
           AmbientOcclusionOpt = None
           HeightOpt = None
           IgnoreLightMapsOpt = None
-          UserDefinedOpt = None
-          UserDefined2Opt = None
-          UserDefined3Opt = None
-          UserDefined4Opt = None
-          UserDefined5Opt = None
-          UserDefined6Opt = None
-          UserDefined7Opt = None
-          UserDefined8Opt = None }
+          UserDefinedSettingOpt = None
+          UserDefinedSetting2Opt = None
+          UserDefinedSetting3Opt = None
+          UserDefinedSetting4Opt = None
+          UserDefinedSetting5Opt = None
+          UserDefinedSetting6Opt = None
+          UserDefinedSetting7Opt = None
+          UserDefinedSetting8Opt = None }
 
 /// Indicates the type of rendering pipeline.
 type Pipeline3dType =
@@ -133,14 +133,14 @@ type [<SymbolicExpansion>] MaterialProperties =
       ClearCoatOpt : single voption // deferred only - TODO: consider implementing for forward surfaces as well.
       ClearCoatRoughnessOpt : single voption // deferred only - TODO: same as above.
       // NOTE: 10 fields here are reserved for engine use.
-      UserDefinedOpt : single voption
-      UserDefined2Opt : single voption
-      UserDefined3Opt : single voption
-      UserDefined4Opt : single voption
-      UserDefined5Opt : single voption
-      UserDefined6Opt : single voption
-      UserDefined7Opt : single voption
-      UserDefined8Opt : single voption }
+      UserDefinedSettingOpt : single voption
+      UserDefinedSetting2Opt : single voption
+      UserDefinedSetting3Opt : single voption
+      UserDefinedSetting4Opt : single voption
+      UserDefinedSetting5Opt : single voption
+      UserDefinedSetting6Opt : single voption
+      UserDefinedSetting7Opt : single voption
+      UserDefinedSetting8Opt : single voption }
 
     member this.Albedo = ValueOption.defaultValue Constants.Render.AlbedoDefault this.AlbedoOpt
     member this.Roughness = ValueOption.defaultValue Constants.Render.RoughnessDefault this.RoughnessOpt
@@ -158,14 +158,14 @@ type [<SymbolicExpansion>] MaterialProperties =
     member this.RefractiveIndex = ValueOption.defaultValue Constants.Render.RefractiveIndexDefault this.RefractiveIndexOpt
     member this.ClearCoat = ValueOption.defaultValue Constants.Render.ClearCoatDefault this.ClearCoatOpt
     member this.ClearCoatRoughness = ValueOption.defaultValue Constants.Render.ClearCoatRoughnessDefault this.ClearCoatRoughnessOpt
-    member this.UserDefined = ValueOption.defaultValue 0.0f this.UserDefinedOpt
-    member this.UserDefined2 = ValueOption.defaultValue 0.0f this.UserDefined2Opt
-    member this.UserDefined3 = ValueOption.defaultValue 0.0f this.UserDefined3Opt
-    member this.UserDefined4 = ValueOption.defaultValue 0.0f this.UserDefined4Opt
-    member this.UserDefined5 = ValueOption.defaultValue 0.0f this.UserDefined5Opt
-    member this.UserDefined6 = ValueOption.defaultValue 0.0f this.UserDefined6Opt
-    member this.UserDefined7 = ValueOption.defaultValue 0.0f this.UserDefined7Opt
-    member this.UserDefined8 = ValueOption.defaultValue 0.0f this.UserDefined8Opt
+    member this.UserDefinedSetting = ValueOption.defaultValue 0.0f this.UserDefinedSettingOpt
+    member this.UserDefinedSetting2 = ValueOption.defaultValue 0.0f this.UserDefinedSetting2Opt
+    member this.UserDefinedSetting3 = ValueOption.defaultValue 0.0f this.UserDefinedSetting3Opt
+    member this.UserDefinedSetting4 = ValueOption.defaultValue 0.0f this.UserDefinedSetting4Opt
+    member this.UserDefinedSetting5 = ValueOption.defaultValue 0.0f this.UserDefinedSetting5Opt
+    member this.UserDefinedSetting6 = ValueOption.defaultValue 0.0f this.UserDefinedSetting6Opt
+    member this.UserDefinedSetting7 = ValueOption.defaultValue 0.0f this.UserDefinedSetting7Opt
+    member this.UserDefinedSetting8 = ValueOption.defaultValue 0.0f this.UserDefinedSetting8Opt
 
     /// Material properties with populated default properties.
     static member val defaultProperties =
@@ -185,14 +185,14 @@ type [<SymbolicExpansion>] MaterialProperties =
           RefractiveIndexOpt = ValueSome Constants.Render.RefractiveIndexDefault
           ClearCoatOpt = ValueSome Constants.Render.ClearCoatDefault
           ClearCoatRoughnessOpt = ValueSome Constants.Render.ClearCoatRoughnessDefault
-          UserDefinedOpt = ValueSome Constants.Render.UserDefinedDefault
-          UserDefined2Opt = ValueSome Constants.Render.UserDefinedDefault
-          UserDefined3Opt = ValueSome Constants.Render.UserDefinedDefault
-          UserDefined4Opt = ValueSome Constants.Render.UserDefinedDefault
-          UserDefined5Opt = ValueSome Constants.Render.UserDefinedDefault
-          UserDefined6Opt = ValueSome Constants.Render.UserDefinedDefault
-          UserDefined7Opt = ValueSome Constants.Render.UserDefinedDefault
-          UserDefined8Opt = ValueSome Constants.Render.UserDefinedDefault }
+          UserDefinedSettingOpt = ValueSome Constants.Render.UserDefinedSettingDefault
+          UserDefinedSetting2Opt = ValueSome Constants.Render.UserDefinedSettingDefault
+          UserDefinedSetting3Opt = ValueSome Constants.Render.UserDefinedSettingDefault
+          UserDefinedSetting4Opt = ValueSome Constants.Render.UserDefinedSettingDefault
+          UserDefinedSetting5Opt = ValueSome Constants.Render.UserDefinedSettingDefault
+          UserDefinedSetting6Opt = ValueSome Constants.Render.UserDefinedSettingDefault
+          UserDefinedSetting7Opt = ValueSome Constants.Render.UserDefinedSettingDefault
+          UserDefinedSetting8Opt = ValueSome Constants.Render.UserDefinedSettingDefault }
 
     /// Empty material properties.
     static member val empty =
@@ -212,14 +212,14 @@ type [<SymbolicExpansion>] MaterialProperties =
           RefractiveIndexOpt = ValueNone
           ClearCoatOpt = ValueNone
           ClearCoatRoughnessOpt = ValueNone
-          UserDefinedOpt = ValueNone
-          UserDefined2Opt = ValueNone
-          UserDefined3Opt = ValueNone
-          UserDefined4Opt = ValueNone
-          UserDefined5Opt = ValueNone
-          UserDefined6Opt = ValueNone
-          UserDefined7Opt = ValueNone
-          UserDefined8Opt = ValueNone }
+          UserDefinedSettingOpt = ValueNone
+          UserDefinedSetting2Opt = ValueNone
+          UserDefinedSetting3Opt = ValueNone
+          UserDefinedSetting4Opt = ValueNone
+          UserDefinedSetting5Opt = ValueNone
+          UserDefinedSetting6Opt = ValueNone
+          UserDefinedSetting7Opt = ValueNone
+          UserDefinedSetting8Opt = ValueNone }
 
 /// Material description for surfaces.
 type [<SymbolicExpansion; CustomEquality; NoComparison>] Material =
@@ -237,7 +237,7 @@ type [<SymbolicExpansion; CustomEquality; NoComparison>] Material =
       ClearCoatRoughnessImageOpt : Image AssetTag voption
       ClearCoatNormalImageOpt : Image AssetTag voption
       UserDefinedImageOpt : Image AssetTag voption
-      UserDefined2ImageOpt : Image AssetTag voption
+      UserDefinedImage2Opt : Image AssetTag voption
       TwoSidedOpt : bool voption
       ClippedOpt : bool voption
       PipelineNameOpt : string voption }
@@ -255,8 +255,8 @@ type [<SymbolicExpansion; CustomEquality; NoComparison>] Material =
     member this.ClearCoatImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialClearCoatName) this.ClearCoatImageOpt
     member this.ClearCoatRoughnessImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialClearCoatRoughnessName) this.ClearCoatRoughnessImageOpt
     member this.ClearCoatNormalImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialClearCoatNormalName) this.ClearCoatNormalImageOpt
-    member this.UserDefinedImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialUserDefinedName) this.UserDefinedImageOpt
-    member this.UserDefined2Image = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialUserDefined2Name) this.UserDefined2ImageOpt
+    member this.UserDefinedImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialUserDefinedImageName) this.UserDefinedImageOpt
+    member this.UserDefinedImage2 = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialUserDefinedImage2Name) this.UserDefinedImage2Opt
     member this.TwoSided = ValueOption.defaultValue false this.TwoSidedOpt
     member this.Clipped = ValueOption.defaultValue false this.ClippedOpt
     member this.PipelineName = ValueOption.defaultValue Constants.Render.PipelineNameDefault this.PipelineNameOpt
@@ -277,7 +277,7 @@ type [<SymbolicExpansion; CustomEquality; NoComparison>] Material =
         hash material.ClearCoatRoughnessImageOpt ^^^
         hash material.ClearCoatNormalImageOpt ^^^
         hash material.UserDefinedImageOpt ^^^
-        hash material.UserDefined2ImageOpt ^^^
+        hash material.UserDefinedImage2Opt ^^^
         hash material.TwoSidedOpt ^^^
         hash material.ClippedOpt ^^^
         hash material.PipelineNameOpt
@@ -299,7 +299,7 @@ type [<SymbolicExpansion; CustomEquality; NoComparison>] Material =
         this.ClearCoatRoughnessImageOpt = that.ClearCoatRoughnessImageOpt &&
         this.ClearCoatNormalImageOpt = that.ClearCoatNormalImageOpt &&
         this.UserDefinedImageOpt = that.UserDefinedImageOpt &&
-        this.UserDefined2ImageOpt = that.UserDefined2ImageOpt &&
+        this.UserDefinedImage2Opt = that.UserDefinedImage2Opt &&
         this.TwoSidedOpt = that.TwoSidedOpt &&
         this.ClippedOpt = that.ClippedOpt &&
         this.PipelineNameOpt = that.PipelineNameOpt
@@ -319,8 +319,8 @@ type [<SymbolicExpansion; CustomEquality; NoComparison>] Material =
           ClearCoatImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialClearCoatName)
           ClearCoatRoughnessImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialClearCoatRoughnessName)
           ClearCoatNormalImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialClearCoatNormalName)
-          UserDefinedImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialUserDefinedName)
-          UserDefined2ImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialUserDefined2Name)
+          UserDefinedImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialUserDefinedImageName)
+          UserDefinedImage2Opt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialUserDefinedImage2Name)
           TwoSidedOpt = ValueSome false
           ClippedOpt = ValueSome false
           PipelineNameOpt = ValueSome Constants.Render.PipelineNameDefault }
@@ -341,7 +341,7 @@ type [<SymbolicExpansion; CustomEquality; NoComparison>] Material =
           ClearCoatRoughnessImageOpt = ValueNone
           ClearCoatNormalImageOpt = ValueNone
           UserDefinedImageOpt = ValueNone
-          UserDefined2ImageOpt = ValueNone
+          UserDefinedImage2Opt = ValueNone
           TwoSidedOpt = ValueNone
           ClippedOpt = ValueNone
           PipelineNameOpt = ValueNone }
@@ -514,8 +514,8 @@ type UserDefinedPipeline3dDescriptor =
     { PipelineType : Pipeline3dType
       PipelineName : string
       ShaderPath : string
-      MaterialPropertiesUserDefinedNames : string array
-      MaterialUserDefinedImageNames : string array }
+      UserDefinedSettingNames : string array
+      UserDefinedImageNames : string array }
 
 /// Describes how to create a user-defined 3D rendering pipeline.
 type CreateUserDefinedPipeline3d =
@@ -548,7 +548,7 @@ type StaticModelSurfaceDescriptor =
       ClearCoatRoughnessImage : Image AssetTag
       ClearCoatNormalImage : Image AssetTag
       UserDefinedImage : Image AssetTag
-      UserDefined2Image : Image AssetTag
+      UserDefinedImage2 : Image AssetTag
       TwoSided : bool
       Clipped : bool
       PipelineName : string }
@@ -1832,15 +1832,15 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                         match renderAsset with
                         | RawAsset | TextureAsset _ | FontAsset _ | CubeMapAsset _ ->
                             renderAsset
-                        | StaticModelAsset (userDefined, staticModel) ->
+                        | StaticModelAsset (userDefinedImage, staticModel) ->
                             match staticModel.SceneOpt with
-                            | Some scene when not userDefined ->
+                            | Some scene when not userDefinedImage ->
                                 let surfaces =
                                     [|for surface in staticModel.Surfaces do
                                         let surfaceMaterial = scene.Materials[surface.SurfaceMaterialIndex]
                                         let (_, surfaceMaterial) = PhysicallyBased.createPhysicallyBasedMaterial dirPath renderer.PhysicallyBasedMaterial renderPackage.PackageState.TextureClient surfaceMaterial (Some renderer.VulkanContext)
                                         { surface with HashCode = surface.HashCode ^^^ hash surfaceMaterial; SurfaceMaterial = surfaceMaterial }|]
-                                StaticModelAsset (userDefined, { staticModel with Surfaces = surfaces })
+                                StaticModelAsset (userDefinedImage, { staticModel with Surfaces = surfaces })
                             | Some _ | None -> renderAsset
                         | AnimatedModelAsset animatedModel ->
                             match animatedModel.SceneOpt with
@@ -1942,7 +1942,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
     static member private tryCreateUserDefinedPipeline (descriptor : UserDefinedPipeline3dDescriptor) renderer =
 
-        let (depth, albedo, material, normalPlus, subdermalPlus, scatterPlus, clearCoatPlus, userDefined, z) =
+        let (depth, albedo, material, normalPlus, subdermalPlus, scatterPlus, clearCoatPlus, userDefinedBuffer, depthBuffer) =
             renderer.PhysicallyBasedAttachments.GeometryAttachments
 
         let (blends, cullModes) =
@@ -1958,11 +1958,11 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             match descriptor.PipelineType with
             | DeferredStatic | DeferredStaticClipped | DeferredAnimated | Terrain ->
                 let deferredColorAttachmentFormats =
-                    [|depth.VkFormat; albedo.VkFormat; material.VkFormat; normalPlus.VkFormat; subdermalPlus.VkFormat; scatterPlus.VkFormat; clearCoatPlus.VkFormat; userDefined.VkFormat|]
-                (deferredColorAttachmentFormats, z.VkFormat)
+                    [|depth.VkFormat; albedo.VkFormat; material.VkFormat; normalPlus.VkFormat; subdermalPlus.VkFormat; scatterPlus.VkFormat; clearCoatPlus.VkFormat; userDefinedBuffer.VkFormat|]
+                (deferredColorAttachmentFormats, depthBuffer.VkFormat)
             | ForwardStatic | ForwardAnimated ->
                 let composition = renderer.PhysicallyBasedAttachments.CompositionAttachment
-                ([|composition.VkFormat|], z.VkFormat)
+                ([|composition.VkFormat|], depthBuffer.VkFormat)
 
         let (lightMapsMax, lightsMax, vertexBindings) =
             match descriptor.PipelineType with
@@ -2072,14 +2072,14 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                       RefractiveIndex = surfaceDescriptor.MaterialProperties.RefractiveIndex
                       ClearCoat = surfaceDescriptor.MaterialProperties.ClearCoat
                       ClearCoatRoughness = surfaceDescriptor.MaterialProperties.ClearCoatRoughness
-                      UserDefined = surfaceDescriptor.MaterialProperties.UserDefined
-                      UserDefined2 = surfaceDescriptor.MaterialProperties.UserDefined2
-                      UserDefined3 = surfaceDescriptor.MaterialProperties.UserDefined3
-                      UserDefined4 = surfaceDescriptor.MaterialProperties.UserDefined4
-                      UserDefined5 = surfaceDescriptor.MaterialProperties.UserDefined5
-                      UserDefined6 = surfaceDescriptor.MaterialProperties.UserDefined6
-                      UserDefined7 = surfaceDescriptor.MaterialProperties.UserDefined7
-                      UserDefined8 = surfaceDescriptor.MaterialProperties.UserDefined8 }
+                      UserDefinedSetting = surfaceDescriptor.MaterialProperties.UserDefinedSetting
+                      UserDefinedSetting2 = surfaceDescriptor.MaterialProperties.UserDefinedSetting2
+                      UserDefinedSetting3 = surfaceDescriptor.MaterialProperties.UserDefinedSetting3
+                      UserDefinedSetting4 = surfaceDescriptor.MaterialProperties.UserDefinedSetting4
+                      UserDefinedSetting5 = surfaceDescriptor.MaterialProperties.UserDefinedSetting5
+                      UserDefinedSetting6 = surfaceDescriptor.MaterialProperties.UserDefinedSetting6
+                      UserDefinedSetting7 = surfaceDescriptor.MaterialProperties.UserDefinedSetting7
+                      UserDefinedSetting8 = surfaceDescriptor.MaterialProperties.UserDefinedSetting8 }
 
                 // make material
                 let material =
@@ -2096,8 +2096,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                       ClearCoatTexture = match VulkanRenderer3d.tryGetRenderAsset surfaceDescriptor.ClearCoatImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.ClearCoatTexture
                       ClearCoatRoughnessTexture = match VulkanRenderer3d.tryGetRenderAsset surfaceDescriptor.ClearCoatRoughnessImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.ClearCoatRoughnessTexture
                       ClearCoatNormalTexture = match VulkanRenderer3d.tryGetRenderAsset surfaceDescriptor.ClearCoatNormalImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.ClearCoatNormalTexture
-                      UserDefinedTexture = match VulkanRenderer3d.tryGetRenderAsset surfaceDescriptor.UserDefinedImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.UserDefinedTexture
-                      UserDefined2Texture = match VulkanRenderer3d.tryGetRenderAsset surfaceDescriptor.UserDefined2Image renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.UserDefined2Texture
+                      UserDefinedImageTexture = match VulkanRenderer3d.tryGetRenderAsset surfaceDescriptor.UserDefinedImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.UserDefinedImageTexture
+                      UserDefinedImage2Texture = match VulkanRenderer3d.tryGetRenderAsset surfaceDescriptor.UserDefinedImage2 renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.UserDefinedImage2Texture
                       TwoSided = surfaceDescriptor.TwoSided
                       Clipped = surfaceDescriptor.Clipped
                       PipelineName = surfaceDescriptor.PipelineName
@@ -2489,14 +2489,14 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             match VulkanRenderer3d.tryGetRenderAsset material.ClearCoatNormalImage renderer with
             | ValueSome (TextureAsset texture) -> texture
             | _ -> renderer.PhysicallyBasedMaterial.ClearCoatNormalTexture
-        let userDefinedTexture =
+        let userDefinedImageTexture =
             match VulkanRenderer3d.tryGetRenderAsset material.UserDefinedImage renderer with
             | ValueSome (TextureAsset texture) -> texture
-            | _ -> renderer.PhysicallyBasedMaterial.UserDefinedTexture
-        let userDefined2Texture =
-            match VulkanRenderer3d.tryGetRenderAsset material.UserDefined2Image renderer with
+            | _ -> renderer.PhysicallyBasedMaterial.UserDefinedImageTexture
+        let userDefinedImage2Texture =
+            match VulkanRenderer3d.tryGetRenderAsset material.UserDefinedImage2 renderer with
             | ValueSome (TextureAsset texture) -> texture
-            | _ -> renderer.PhysicallyBasedMaterial.UserDefined2Texture
+            | _ -> renderer.PhysicallyBasedMaterial.UserDefinedImage2Texture
         let properties : PhysicallyBasedMaterialProperties =
             { Albedo = properties.Albedo
               Roughness = properties.Roughness
@@ -2514,14 +2514,14 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               RefractiveIndex = properties.RefractiveIndex
               ClearCoat = properties.ClearCoat
               ClearCoatRoughness = properties.ClearCoatRoughness
-              UserDefined = properties.UserDefined
-              UserDefined2 = properties.UserDefined2
-              UserDefined3 = properties.UserDefined3
-              UserDefined4 = properties.UserDefined4
-              UserDefined5 = properties.UserDefined5
-              UserDefined6 = properties.UserDefined6
-              UserDefined7 = properties.UserDefined7
-              UserDefined8 = properties.UserDefined8 }
+              UserDefinedSetting = properties.UserDefinedSetting
+              UserDefinedSetting2 = properties.UserDefinedSetting2
+              UserDefinedSetting3 = properties.UserDefinedSetting3
+              UserDefinedSetting4 = properties.UserDefinedSetting4
+              UserDefinedSetting5 = properties.UserDefinedSetting5
+              UserDefinedSetting6 = properties.UserDefinedSetting6
+              UserDefinedSetting7 = properties.UserDefinedSetting7
+              UserDefinedSetting8 = properties.UserDefinedSetting8 }
         let material : PhysicallyBasedMaterial =
             { AlbedoTexture = albedoTexture
               RoughnessTexture = roughnessTexture
@@ -2536,8 +2536,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               ClearCoatTexture = clearCoatTexture
               ClearCoatRoughnessTexture = clearCoatRoughnessTexture
               ClearCoatNormalTexture = clearCoatNormalTexture
-              UserDefinedTexture = userDefinedTexture
-              UserDefined2Texture = userDefined2Texture
+              UserDefinedImageTexture = userDefinedImageTexture
+              UserDefinedImage2Texture = userDefinedImage2Texture
               TwoSided = material.TwoSided
               Clipped = material.Clipped
               PipelineName = material.PipelineName
@@ -2636,20 +2636,20 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 | ValueSome (TextureAsset texture) -> texture
                 | _ -> surfaceMaterial.ClearCoatNormalTexture
             | ValueNone -> surfaceMaterial.ClearCoatNormalTexture
-        let userDefinedTexture =
+        let userDefinedImageTexture =
             match material.UserDefinedImageOpt with
             | ValueSome image ->
                 match VulkanRenderer3d.tryGetRenderAsset image renderer with
                 | ValueSome (TextureAsset texture) -> texture
-                | _ -> surfaceMaterial.UserDefinedTexture
-            | ValueNone -> surfaceMaterial.UserDefinedTexture
-        let userDefined2Texture =
-            match material.UserDefined2ImageOpt with
+                | _ -> surfaceMaterial.UserDefinedImageTexture
+            | ValueNone -> surfaceMaterial.UserDefinedImageTexture
+        let userDefinedImage2Texture =
+            match material.UserDefinedImage2Opt with
             | ValueSome image ->
                 match VulkanRenderer3d.tryGetRenderAsset image renderer with
                 | ValueSome (TextureAsset texture) -> texture
-                | _ -> surfaceMaterial.UserDefined2Texture
-            | ValueNone -> surfaceMaterial.UserDefined2Texture
+                | _ -> surfaceMaterial.UserDefinedImage2Texture
+            | ValueNone -> surfaceMaterial.UserDefinedImage2Texture
         let twoSided =
             match material.TwoSidedOpt with
             | ValueSome twoSided -> twoSided
@@ -2676,8 +2676,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               ClearCoatTexture = clearCoatTexture
               ClearCoatRoughnessTexture = clearCoatRoughnessTexture
               ClearCoatNormalTexture = clearCoatNormalTexture
-              UserDefinedTexture = userDefinedTexture
-              UserDefined2Texture = userDefined2Texture
+              UserDefinedImageTexture = userDefinedImageTexture
+              UserDefinedImage2Texture = userDefinedImage2Texture
               TwoSided = twoSided
               Clipped = clipped
               PipelineName = pipelineNameOpt
@@ -3626,14 +3626,14 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             let scatterType = match properties.ScatterTypeOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ScatterType
             let clearCoat = match properties.ClearCoatOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ClearCoat
             let clearCoatRoughness = match properties.ClearCoatRoughnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ClearCoatRoughness
-            let userDefined = match properties.UserDefinedOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefined
-            let userDefined2 = match properties.UserDefinedOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefined2
-            let userDefined3 = match properties.UserDefinedOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefined3
-            let userDefined4 = match properties.UserDefinedOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefined4
-            let userDefined5 = match properties.UserDefinedOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefined5
-            let userDefined6 = match properties.UserDefinedOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefined6
-            let userDefined7 = match properties.UserDefinedOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefined7
-            let userDefined8 = match properties.UserDefinedOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefined8
+            let userDefinedSetting = match properties.UserDefinedSettingOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefinedSetting
+            let userDefinedSetting2 = match properties.UserDefinedSetting2Opt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefinedSetting2
+            let userDefinedSetting3 = match properties.UserDefinedSetting3Opt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefinedSetting3
+            let userDefinedSetting4 = match properties.UserDefinedSetting4Opt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefinedSetting4
+            let userDefinedSetting5 = match properties.UserDefinedSetting5Opt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefinedSetting5
+            let userDefinedSetting6 = match properties.UserDefinedSetting6Opt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefinedSetting6
+            let userDefinedSetting7 = match properties.UserDefinedSetting7Opt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefinedSetting7
+            let userDefinedSetting8 = match properties.UserDefinedSetting8Opt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefinedSetting8
             renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 20] <- albedo.R
             renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 20 + 1] <- albedo.G
             renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 20 + 2] <- albedo.B
@@ -3662,14 +3662,14 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 45] <- 0.0f // reserved
             renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 46] <- 0.0f // reserved
             renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 47] <- 0.0f // reserved
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 48] <- userDefined
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 49] <- userDefined2
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 50] <- userDefined3
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 51] <- userDefined4
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 52] <- userDefined5
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 53] <- userDefined6
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 54] <- userDefined7
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 55] <- userDefined8
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 48] <- userDefinedSetting
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 49] <- userDefinedSetting2
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 50] <- userDefinedSetting3
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 51] <- userDefinedSetting4
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 52] <- userDefinedSetting5
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 53] <- userDefinedSetting6
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 54] <- userDefinedSetting7
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 55] <- userDefinedSetting8
 
         // draw deferred surfaces
         PhysicallyBased.drawPhysicallyBasedDeferredSurfaces
@@ -3718,6 +3718,14 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 let scatterType = match item.MaterialProperties.ScatterTypeOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ScatterType
                 let clearCoat = match item.MaterialProperties.ClearCoatOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ClearCoat
                 let clearCoatRoughness = match item.MaterialProperties.ClearCoatRoughnessOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ClearCoatRoughness
+                let userDefinedSetting = match item.MaterialProperties.UserDefinedSettingOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefinedSetting
+                let userDefinedSetting2 = match item.MaterialProperties.UserDefinedSetting2Opt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefinedSetting2
+                let userDefinedSetting3 = match item.MaterialProperties.UserDefinedSetting3Opt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefinedSetting3
+                let userDefinedSetting4 = match item.MaterialProperties.UserDefinedSetting4Opt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefinedSetting4
+                let userDefinedSetting5 = match item.MaterialProperties.UserDefinedSetting5Opt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefinedSetting5
+                let userDefinedSetting6 = match item.MaterialProperties.UserDefinedSetting6Opt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefinedSetting6
+                let userDefinedSetting7 = match item.MaterialProperties.UserDefinedSetting7Opt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefinedSetting7
+                let userDefinedSetting8 = match item.MaterialProperties.UserDefinedSetting8Opt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefinedSetting8
                 renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 20] <- albedo.R
                 renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 20 + 1] <- albedo.G
                 renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 20 + 2] <- albedo.B
@@ -3736,6 +3744,24 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 35] <- 0.0f // free
                 renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 36] <- clearCoat
                 renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 37] <- clearCoatRoughness
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 38] <- 0.0f // reserved
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 39] <- 0.0f // reserved
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 40] <- 0.0f // reserved
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 41] <- 0.0f // reserved
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 42] <- 0.0f // reserved
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 43] <- 0.0f // reserved
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 44] <- 0.0f // reserved
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 45] <- 0.0f // reserved
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 46] <- 0.0f // reserved
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 47] <- 0.0f // reserved
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 48] <- userDefinedSetting
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 49] <- userDefinedSetting2
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 50] <- userDefinedSetting3
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 51] <- userDefinedSetting4
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 52] <- userDefinedSetting5
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 53] <- userDefinedSetting6
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 54] <- userDefinedSetting7
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 55] <- userDefinedSetting8
                 i <- inc i
 
         // draw deferred surfaces
@@ -3793,14 +3819,14 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             let subsurfaceCutoffMargin = match properties.SubsurfaceCutoffMarginOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.SubsurfaceCutoffMargin
             let specularScalar = match properties.SpecularScalarOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.SpecularScalar
             let refractiveIndex = match properties.RefractiveIndexOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.RefractiveIndex
-            let userDefined = match properties.UserDefinedOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefined
-            let userDefined2 = match properties.UserDefinedOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefined2
-            let userDefined3 = match properties.UserDefinedOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefined3
-            let userDefined4 = match properties.UserDefinedOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefined4
-            let userDefined5 = match properties.UserDefinedOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefined5
-            let userDefined6 = match properties.UserDefinedOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefined6
-            let userDefined7 = match properties.UserDefinedOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefined7
-            let userDefined8 = match properties.UserDefinedOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefined8
+            let userDefinedSetting = match properties.UserDefinedSettingOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefinedSetting
+            let userDefinedSetting2 = match properties.UserDefinedSetting2Opt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefinedSetting2
+            let userDefinedSetting3 = match properties.UserDefinedSetting3Opt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefinedSetting3
+            let userDefinedSetting4 = match properties.UserDefinedSetting4Opt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefinedSetting4
+            let userDefinedSetting5 = match properties.UserDefinedSetting5Opt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefinedSetting5
+            let userDefinedSetting6 = match properties.UserDefinedSetting6Opt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefinedSetting6
+            let userDefinedSetting7 = match properties.UserDefinedSetting7Opt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefinedSetting7
+            let userDefinedSetting8 = match properties.UserDefinedSetting8Opt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.UserDefinedSetting8
             renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 20] <- albedo.R
             renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 20 + 1] <- albedo.G
             renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 20 + 2] <- albedo.B
@@ -3829,14 +3855,14 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 45] <- 0.0f // reserved
             renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 46] <- 0.0f // reserved
             renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 47] <- 0.0f // reserved
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 48] <- userDefined
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 49] <- userDefined2
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 50] <- userDefined3
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 51] <- userDefined4
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 52] <- userDefined5
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 53] <- userDefined6
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 54] <- userDefined7
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 55] <- userDefined8
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 48] <- userDefinedSetting
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 49] <- userDefinedSetting2
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 50] <- userDefinedSetting3
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 51] <- userDefinedSetting4
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 52] <- userDefinedSetting5
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 53] <- userDefinedSetting6
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 54] <- userDefinedSetting7
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 55] <- userDefinedSetting8
 
         // make these bindings mutable for passing by ref
         let mutable (uniformsDescriptorSet, samplersDescriptorSet) =
@@ -4463,14 +4489,14 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               RefractiveIndex = Constants.Render.RefractiveIndexDefault
               ClearCoat = Constants.Render.ClearCoatDefault
               ClearCoatRoughness = Constants.Render.ClearCoatRoughnessDefault
-              UserDefined = Constants.Render.UserDefinedDefault
-              UserDefined2 = Constants.Render.UserDefinedDefault
-              UserDefined3 = Constants.Render.UserDefinedDefault
-              UserDefined4 = Constants.Render.UserDefinedDefault
-              UserDefined5 = Constants.Render.UserDefinedDefault
-              UserDefined6 = Constants.Render.UserDefinedDefault
-              UserDefined7 = Constants.Render.UserDefinedDefault
-              UserDefined8 = Constants.Render.UserDefinedDefault }
+              UserDefinedSetting = Constants.Render.UserDefinedSettingDefault
+              UserDefinedSetting2 = Constants.Render.UserDefinedSettingDefault
+              UserDefinedSetting3 = Constants.Render.UserDefinedSettingDefault
+              UserDefinedSetting4 = Constants.Render.UserDefinedSettingDefault
+              UserDefinedSetting5 = Constants.Render.UserDefinedSettingDefault
+              UserDefinedSetting6 = Constants.Render.UserDefinedSettingDefault
+              UserDefinedSetting7 = Constants.Render.UserDefinedSettingDefault
+              UserDefinedSetting8 = Constants.Render.UserDefinedSettingDefault }
         let (texelWidth, texelHeight, materials) =
             match terrainDescriptor.Material with
             | BlendMaterial blendMaterial ->
@@ -4700,8 +4726,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             else Array.init Constants.Render.LightsMaxDeferred (constant -1)
 
         // transition geometry textures to writing
-        let (depthTexture, albedoTexture, materialTexture, normalPlusTexture, subdermalPlusTexture, scatterPlusTexture, clearCoatPlusTexture, userDefinedTexture, zTexture) = renderer.PhysicallyBasedAttachments.GeometryAttachments
-        let geometryTextureViews = [|depthTexture.ImageView; albedoTexture.ImageView; materialTexture.ImageView; normalPlusTexture.ImageView; subdermalPlusTexture.ImageView; scatterPlusTexture.ImageView; clearCoatPlusTexture.ImageView; userDefinedTexture.ImageView|]
+        let (depthTexture, albedoTexture, materialTexture, normalPlusTexture, subdermalPlusTexture, scatterPlusTexture, clearCoatPlusTexture, userDefinedBufferTexture, depthBufferTexture) = renderer.PhysicallyBasedAttachments.GeometryAttachments
+        let geometryTextureViews = [|depthTexture.ImageView; albedoTexture.ImageView; materialTexture.ImageView; normalPlusTexture.ImageView; subdermalPlusTexture.ImageView; scatterPlusTexture.ImageView; clearCoatPlusTexture.ImageView; userDefinedBufferTexture.ImageView|]
         Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite depthTexture renderer.VulkanContext.RenderCommandBuffer
         Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite albedoTexture renderer.VulkanContext.RenderCommandBuffer
         Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite materialTexture renderer.VulkanContext.RenderCommandBuffer
@@ -4709,13 +4735,13 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite subdermalPlusTexture renderer.VulkanContext.RenderCommandBuffer
         Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite scatterPlusTexture renderer.VulkanContext.RenderCommandBuffer
         Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite clearCoatPlusTexture renderer.VulkanContext.RenderCommandBuffer
-        Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite userDefinedTexture renderer.VulkanContext.RenderCommandBuffer
-        Texture.recordTransitionLayout DepthAttachmentRead DepthAttachmentWrite zTexture renderer.VulkanContext.RenderCommandBuffer
+        Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite userDefinedBufferTexture renderer.VulkanContext.RenderCommandBuffer
+        Texture.recordTransitionLayout DepthAttachmentRead DepthAttachmentWrite depthBufferTexture renderer.VulkanContext.RenderCommandBuffer
 
         // clear geometry textures
         let geometryResolution = renderer.GeometryViewport.Bounds.Size
         let mutable renderArea = VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)
-        Hl.withRenderingInfo geometryTextureViews (Some zTexture.ImageView) renderArea (ClearAttachments Constants.Render.ViewportClearColor) $ fun renderingInfo ->
+        Hl.withRenderingInfo geometryTextureViews (Some depthBufferTexture.ImageView) renderArea (ClearAttachments Constants.Render.ViewportClearColor) $ fun renderingInfo ->
             let mutable renderingInfo = renderingInfo
             DeviceApi.vkCmdBeginRendering (renderer.VulkanContext.RenderCommandBuffer, &&renderingInfo)
         DeviceApi.vkCmdEndRendering renderer.VulkanContext.RenderCommandBuffer
@@ -4746,7 +4772,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             let beginBatch = fun () ->
                 let (eyeDescriptorSet', samplerDescriptorSet') =
                     VulkanRenderer3d.beginPhysicallyBasedDeferredSurfaces
-                        eyeCenter view geometryProjection renderer.MaterialSampler LoadAttachments geometryTextureViews zTexture
+                        eyeCenter view geometryProjection renderer.MaterialSampler LoadAttachments geometryTextureViews depthBufferTexture
                         geometryResolution renderer.RenderPassIndex pipeline renderer
                 eyeDescriptorSet <- eyeDescriptorSet'
                 samplerDescriptorSet <- samplerDescriptorSet'
@@ -4805,7 +4831,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             let beginBatch = fun () ->
                 let (eyeDescriptorSet', samplerDescriptorSet') =
                     VulkanRenderer3d.beginPhysicallyBasedDeferredSurfaces
-                        eyeCenter view geometryProjection renderer.MaterialSampler LoadAttachments geometryTextureViews zTexture
+                        eyeCenter view geometryProjection renderer.MaterialSampler LoadAttachments geometryTextureViews depthBufferTexture
                         geometryResolution renderer.RenderPassIndex pipeline renderer
                 eyeDescriptorSet <- eyeDescriptorSet'
                 samplerDescriptorSet <- samplerDescriptorSet'
@@ -4856,7 +4882,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             // begin deferred animated rendering
             let (eyeDescriptorSet, samplerDescriptorSet) =
                 VulkanRenderer3d.beginPhysicallyBasedDeferredSurfaces
-                    eyeCenter view geometryProjection renderer.MaterialSampler LoadAttachments geometryTextureViews zTexture
+                    eyeCenter view geometryProjection renderer.MaterialSampler LoadAttachments geometryTextureViews depthBufferTexture
                     geometryResolution renderer.RenderPassIndex pipeline renderer
         
             // render animated surfaces deferred
@@ -4886,7 +4912,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 VulkanRenderer3d.renderPhysicallyBasedTerrain
                     false eyeCenter view geometryProjection
                     renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
-                    descriptor renderer.MaterialSampler geometry geometryTextureViews zTexture
+                    descriptor renderer.MaterialSampler geometry geometryTextureViews depthBufferTexture
                     geometryResolution renderer.RenderPassIndex pipeline renderer
 
         // transition geometry textures (except zTexture) back to reading
@@ -4897,7 +4923,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead subdermalPlusTexture renderer.VulkanContext.RenderCommandBuffer
         Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead scatterPlusTexture renderer.VulkanContext.RenderCommandBuffer
         Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead clearCoatPlusTexture renderer.VulkanContext.RenderCommandBuffer
-        Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead userDefinedTexture renderer.VulkanContext.RenderCommandBuffer
+        Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead userDefinedBufferTexture renderer.VulkanContext.RenderCommandBuffer
 
         // gather shadow resources
         let shadowTextureArray = fst renderer.PhysicallyBasedAttachments.ShadowTextureArrayAttachments
@@ -4911,7 +4937,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite lightAccumTexture renderer.VulkanContext.RenderCommandBuffer
         PhysicallyBased.drawPhysicallyBasedDeferredLightingSurface
             eyeCenter view geometryProjection renderer.LightingConfig.LightCutoffMargin renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity sssEnabled
-            depthTexture albedoTexture materialTexture normalPlusTexture subdermalPlusTexture scatterPlusTexture clearCoatPlusTexture userDefinedTexture shadowTextureArray shadowMaps shadowCascades
+            depthTexture albedoTexture materialTexture normalPlusTexture subdermalPlusTexture scatterPlusTexture clearCoatPlusTexture userDefinedBufferTexture shadowTextureArray shadowMaps shadowCascades
             lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightRadii lightConeInners lightConeOuters lightDesireFogs lightShadowIndices (min lightIds.Length renderTasks.Lights.Count) shadowNear renderer.ShadowMatricesFlipped renderer.UnfilteredSampler renderer.FilteredSampler
             geometryResolution renderer.RenderPassIndex renderer.QuadGeometry lightAccumTexture renderer.PhysicallyBasedPipelines.DeferredLightingPipeline renderer.VulkanContext
         Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead lightAccumTexture renderer.VulkanContext.RenderCommandBuffer
@@ -5049,7 +5075,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             renderer.LightingConfig.SsrlDepthCutoff renderer.LightingConfig.SsrlDepthCutoffMargin renderer.LightingConfig.SsrlDistanceCutoff renderer.LightingConfig.SsrlDistanceCutoffMargin
             renderer.LightingConfig.SsrlRoughnessCutoff renderer.LightingConfig.SsrlRoughnessCutoffMargin renderer.LightingConfig.SsrlSlopeCutoff renderer.LightingConfig.SsrlSlopeCutoffMargin
             renderer.LightingConfig.SsrlEdgeHorizontalMargin renderer.LightingConfig.SsrlEdgeVerticalMargin
-            depthTexture albedoTexture materialTexture normalPlusTexture clearCoatPlusTexture userDefinedTexture lightAccumTexture renderer.BrdfTexture ambientTexture irradianceTexture environmentFilterTexture ssaoTexture
+            depthTexture albedoTexture materialTexture normalPlusTexture clearCoatPlusTexture userDefinedBufferTexture lightAccumTexture renderer.BrdfTexture ambientTexture irradianceTexture environmentFilterTexture ssaoTexture
             renderer.UnfilteredSampler renderer.FilteredSampler colorTexture depthTexture2 geometryResolution renderer.RenderPassIndex renderer.QuadGeometry renderer.PhysicallyBasedPipelines.DeferredColoringPipeline renderer.VulkanContext
         Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead colorTexture renderer.VulkanContext.RenderCommandBuffer
         Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead depthTexture2 renderer.VulkanContext.RenderCommandBuffer
@@ -5063,7 +5089,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let fogType = renderer.LightingConfig.FogType.Enumerate
         PhysicallyBased.drawPhysicallyBasedDeferredCompositionSurface
             eyeCenter view geometryProjection fogEnabled fogType renderer.LightingConfig.FogStart renderer.LightingConfig.FogFinish renderer.LightingConfig.FogDensity renderer.LightingConfig.FogColor
-            depthTexture userDefinedTexture colorTexture fogAccumTexture renderer.UnfilteredSampler compositionTexture
+            depthTexture userDefinedBufferTexture colorTexture fogAccumTexture renderer.UnfilteredSampler compositionTexture
             geometryResolution renderer.RenderPassIndex renderer.QuadGeometry renderer.PhysicallyBasedPipelines.DeferredCompositionPipeline renderer.VulkanContext
 
         // attempt to render sky box to composition attachment
@@ -5071,7 +5097,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         | Some (cubeMapColor, cubeMapBrightness, cubeMap, _) ->
             SkyBox.drawSkyBox
                 eyeCenter viewSkyBox windowProjection cubeMapColor cubeMapBrightness cubeMap renderer.CubeMapGeometry renderer.FilteredSampler
-                compositionTexture zTexture geometryResolution renderer.SkyBoxPipeline renderer.VulkanContext
+                compositionTexture depthBufferTexture geometryResolution renderer.SkyBoxPipeline renderer.VulkanContext
         | None -> ()
 
         // render forward (static and animated) surfaces to composition attachment
@@ -5089,7 +5115,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
                     fogEnabled fogType renderer.LightingConfig.FogStart renderer.LightingConfig.FogFinish renderer.LightingConfig.FogDensity renderer.LightingConfig.FogColor ssvfEnabled renderer.LightingConfig.SsvfIntensity forwardSsvfSteps renderer.LightingConfig.SsvfAsymmetry
                     ssrrEnabled renderer.LightingConfig.SsrrIntensity renderer.LightingConfig.SsrrDetail renderer.LightingConfig.SsrrRefinementsMax renderer.LightingConfig.SsrrRayThickness renderer.LightingConfig.SsrrDistanceCutoff renderer.LightingConfig.SsrrDistanceCutoffMargin renderer.LightingConfig.SsrrEdgeHorizontalMargin renderer.LightingConfig.SsrrEdgeVerticalMargin shadowNear
-                    depthTexture2 colorTexture renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap renderer.UnfilteredSampler renderer.FilteredSampler renderer.MaterialSampler compositionTexture zTexture geometryResolution renderer.RenderPassIndex forwardPipeline renderer.VulkanContext
+                    depthTexture2 colorTexture renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap renderer.UnfilteredSampler renderer.FilteredSampler renderer.MaterialSampler compositionTexture depthBufferTexture geometryResolution renderer.RenderPassIndex forwardPipeline renderer.VulkanContext
             uniformsDescriptorSet <- uniformsDescriptorSet'
             samplersDescriptorSet <- samplersDescriptorSet'
         let endBatch = fun () -> VulkanRenderer3d.endPhysicallyBasedForwardSurfaces forwardPipeline renderer.VulkanContext
@@ -5147,7 +5173,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
         // end rendering to composition attachment as well as zTexture
         Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead compositionTexture renderer.VulkanContext.RenderCommandBuffer
-        Texture.recordTransitionLayout DepthAttachmentWrite DepthAttachmentRead zTexture renderer.VulkanContext.RenderCommandBuffer
+        Texture.recordTransitionLayout DepthAttachmentWrite DepthAttachmentRead depthBufferTexture renderer.VulkanContext.RenderCommandBuffer
 
         // apply bloom filter when desired
         if topLevelRender && renderer.RendererConfig.BloomEnabled && renderer.LightingConfig.BloomEnabled then
@@ -5584,14 +5610,14 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 match TextureInternal.tryCreate false true NormalCompression ("Assets/Default/MaterialClearCoatNormal" + ext) RenderThread context with
                 | Right textureInternal -> EagerTexture textureInternal
                 | Left error -> failwith ("Could not load material clear coat normal texture due to: " + error)
-            let userDefinedTexture =
-                match TextureInternal.tryCreate false true ColorCompression ("Assets/Default/MaterialUserDefined" + ext) RenderThread context with
+            let userDefinedImageTexture =
+                match TextureInternal.tryCreate false true ColorCompression ("Assets/Default/MaterialUserDefinedImage" + ext) RenderThread context with
                 | Right textureInternal -> EagerTexture textureInternal
-                | Left error -> failwith ("Could not load material user-defined texture due to: " + error)
-            let userDefined2Texture =
-                match TextureInternal.tryCreate false true ColorCompression ("Assets/Default/MaterialUserDefined2" + ext) RenderThread context with
+                | Left error -> failwith ("Could not load material user-defined image texture due to: " + error)
+            let userDefinedImage2Texture =
+                match TextureInternal.tryCreate false true ColorCompression ("Assets/Default/MaterialUserDefinedImage2" + ext) RenderThread context with
                 | Right textureInternal -> EagerTexture textureInternal
-                | Left error -> failwith ("Could not load material user-defined 2 texture due to: " + error)
+                | Left error -> failwith ("Could not load material user-defined image 2 texture due to: " + error)
             { AlbedoTexture = albedoTexture
               RoughnessTexture = roughnessTexture
               MetallicTexture = metallicTexture
@@ -5605,8 +5631,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               ClearCoatTexture = clearCoatTexture
               ClearCoatRoughnessTexture = clearCoatRoughnessTexture
               ClearCoatNormalTexture = clearCoatNormalTexture
-              UserDefinedTexture = userDefinedTexture
-              UserDefined2Texture = userDefined2Texture
+              UserDefinedImageTexture = userDefinedImageTexture
+              UserDefinedImage2Texture = userDefinedImage2Texture
               TwoSided = false
               Clipped = false
               PipelineName = Constants.Render.PipelineNameDefault
@@ -5736,8 +5762,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             Texture.destroy renderer.PhysicallyBasedMaterial.ClearCoatTexture renderer.VulkanContext
             Texture.destroy renderer.PhysicallyBasedMaterial.ClearCoatRoughnessTexture renderer.VulkanContext
             Texture.destroy renderer.PhysicallyBasedMaterial.ClearCoatNormalTexture renderer.VulkanContext
-            Texture.destroy renderer.PhysicallyBasedMaterial.UserDefinedTexture renderer.VulkanContext
-            Texture.destroy renderer.PhysicallyBasedMaterial.UserDefined2Texture renderer.VulkanContext
+            Texture.destroy renderer.PhysicallyBasedMaterial.UserDefinedImageTexture renderer.VulkanContext
+            Texture.destroy renderer.PhysicallyBasedMaterial.UserDefinedImage2Texture renderer.VulkanContext
 
             // destroy omnipresent attachments
             PhysicallyBased.destroyPhysicallyBasedAttachments renderer.PhysicallyBasedAttachments renderer.VulkanContext
