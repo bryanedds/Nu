@@ -16,7 +16,14 @@
     [Presence Omnipresent]
     [Size [512 128 512]]
     [Static True]
-    [TerrainPipelineName TerrainFlipped]]
+    [TerrainMaterialProperties
+     [[AlbedoOpt
+       [Some [1 1 1 1]]]
+      [RoughnessOpt [Some 1]]
+      [AmbientOcclusionOpt [Some 1]]
+      [HeightOpt [Some 1]]
+      [IgnoreLightMapsOpt [Some False]]
+      [PipelineNameOpt [Some TerrainFlipped]]]]]
    []]
   [Light3dDispatcher
    [[AttenuationLinear 0.013888889]

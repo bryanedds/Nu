@@ -370,13 +370,24 @@ module WorldEntityModule =
         member this.SetProperty propertyName property world =
             World.setEntityProperty propertyName property this world |> ignore<bool>
 
-        /// To try set an xtension property value.
+        /// Try to set an xtension property value.
         member this.TrySet<'a> propertyName (value : 'a) world =
             World.trySetEntityXtensionValue propertyName value this world
 
         /// Set an xtension property value.
         member this.Set<'a> propertyName (value : 'a) world =
             World.setEntityXtensionValue<'a> propertyName value this world
+
+        /// Try to map an xtension property value.
+        member this.TryMap<'a> (mapper : 'a -> 'a) propertyName world =
+            match this.TryGet<'a> propertyName world with
+            | ValueSome value -> this.TrySet<'a> propertyName (mapper value) world
+            | ValueNone -> struct (false, false)
+
+        /// Map an xtension property value.
+        member this.Map<'a> (mapper : 'a -> 'a) propertyName world =
+            let value = this.Get<'a> propertyName world
+            this.Set<'a> propertyName (mapper value) world
 
         /// Set an xtension property value without publishing an event.
         member internal this.SetXtensionPropertyWithoutEvent<'a> propertyName (value : 'a) world =

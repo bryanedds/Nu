@@ -3796,9 +3796,6 @@ module TerrainFacetExtensions =
         member this.GetTerrainMaterial world : TerrainMaterial = this.Get (nameof this.TerrainMaterial) world
         member this.SetTerrainMaterial (value : TerrainMaterial) world = this.Set (nameof this.TerrainMaterial) value world
         member this.TerrainMaterial = lens (nameof this.TerrainMaterial) this this.GetTerrainMaterial this.SetTerrainMaterial
-        member this.GetTerrainPipelineName world : string = this.Get (nameof this.TerrainPipelineName) world
-        member this.SetTerrainPipelineName (value : string) world = this.Set (nameof this.TerrainPipelineName) value world
-        member this.TerrainPipelineName = lens (nameof this.TerrainPipelineName) this this.GetTerrainPipelineName this.SetTerrainPipelineName
         member this.GetTintImageOpt world : Image AssetTag option = this.Get (nameof this.TintImageOpt) world
         member this.SetTintImageOpt (value : Image AssetTag option) world = this.Set (nameof this.TintImageOpt) value world
         member this.TintImageOpt = lens (nameof this.TintImageOpt) this this.GetTintImageOpt this.SetTintImageOpt
@@ -3865,7 +3862,6 @@ type TerrainFacet () =
                       RedsMap
                         [|Assets.Default.TerrainLayer0Blend
                           Assets.Default.TerrainLayer1Blend|]})
-         define Entity.TerrainPipelineName Constants.Render.PipelineNameDefault
          define Entity.TintImageOpt None
          define Entity.NormalImageOpt None
          define Entity.Tiles (v2 256.0f 256.0f)
@@ -3939,7 +3935,6 @@ type TerrainFacet () =
                   InsetOpt = entity.GetInsetOpt world
                   MaterialProperties = entity.GetTerrainMaterialProperties world
                   Material = entity.GetTerrainMaterial world
-                  PipelineName = entity.GetTerrainPipelineName world
                   TintImageOpt = entity.GetTintImageOpt world
                   NormalImageOpt = entity.GetNormalImageOpt world
                   Tiles = entity.GetTiles world

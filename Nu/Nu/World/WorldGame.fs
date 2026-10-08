@@ -124,6 +124,17 @@ module WorldGameModule =
         member this.Set<'a> propertyName (value : 'a) world =
             World.setGameXtensionValue<'a> propertyName value this world
 
+        /// Try to map an xtension property value.
+        member this.TryMap<'a> (mapper : 'a -> 'a) propertyName world =
+            match this.TryGet<'a> propertyName world with
+            | ValueSome value -> this.TrySet<'a> propertyName (mapper value) world
+            | ValueNone -> struct (false, false)
+
+        /// Map an xtension property value.
+        member this.Map<'a> (mapper : 'a -> 'a) propertyName world =
+            let value = this.Get<'a> propertyName world
+            this.Set<'a> propertyName (mapper value) world
+
         /// Check that a game dispatches in the same manner as the dispatcher with the given type.
         member this.Is (dispatcherType, world) = Reflection.dispatchesAs dispatcherType (this.GetDispatcher world)
 

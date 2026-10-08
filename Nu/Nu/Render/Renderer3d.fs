@@ -15,6 +15,15 @@ open SDL
 open Prime
 open Nu.Vulkan
 
+/// Material properties for terrain surfaces.
+type [<SymbolicExpansion>] TerrainMaterialProperties =
+    { AlbedoOpt : Color option
+      RoughnessOpt : single option
+      AmbientOcclusionOpt : single option
+      HeightOpt : single option
+      IgnoreLightMapsOpt : bool option
+      PipelineNameOpt : string option }
+
 /// A layer from which a 3d terrain's material is composed.
 type TerrainLayer =
     { AlbedoImage : Image AssetTag
@@ -46,14 +55,6 @@ type TerrainMaterial =
     | FlatMaterial of FlatMaterial
     | BlendMaterial of BlendMaterial
 
-/// Material properties for terrain surfaces.
-type [<SymbolicExpansion>] TerrainMaterialProperties =
-    { AlbedoOpt : Color option
-      RoughnessOpt : single option
-      AmbientOcclusionOpt : single option
-      HeightOpt : single option
-      IgnoreLightMapsOpt : bool option }
-
 /// TerrainMaterialProperties functions.
 [<RequireQualifiedAccess>]
 module TerrainMaterialProperties =
@@ -64,7 +65,8 @@ module TerrainMaterialProperties =
           RoughnessOpt = Some Constants.Render.RoughnessDefault
           AmbientOcclusionOpt = Some Constants.Render.AmbientOcclusionDefault
           HeightOpt = Some Constants.Render.HeightDefault
-          IgnoreLightMapsOpt = Some false }
+          IgnoreLightMapsOpt = Some false
+          PipelineNameOpt = Some Constants.Render.PipelineNameDefault }
 
     /// Empty terrain material properties.
     let empty =
@@ -72,7 +74,8 @@ module TerrainMaterialProperties =
           RoughnessOpt = None
           AmbientOcclusionOpt = None
           HeightOpt = None
-          IgnoreLightMapsOpt = None }
+          IgnoreLightMapsOpt = None
+          PipelineNameOpt = None }
 
 /// Indicates the type of rendering pipeline.
 type Pipeline3dType =
@@ -420,7 +423,6 @@ type TerrainDescriptor =
       InsetOpt : Box2 option
       MaterialProperties : TerrainMaterialProperties
       Material : TerrainMaterial
-      PipelineName : string
       TintImageOpt : Image AssetTag option
       NormalImageOpt : Image AssetTag option
       Tiles : Vector2
@@ -3347,12 +3349,13 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 for entry in patchGeometries do
                     let patchDescriptor = entry.Key
                     let patchGeometry = entry.Value
+                    let pipelineName = Option.defaultValue Constants.Render.PipelineNameDefault terrainDescriptor.MaterialProperties.PipelineNameOpt
                     let item =
-                        match renderTasks.DeferredTerrains.TryGetValue terrainDescriptor.PipelineName with
+                        match renderTasks.DeferredTerrains.TryGetValue pipelineName with
                         | (true, item) -> item
                         | (false, _) ->
                             let item = List ()
-                            renderTasks.DeferredTerrains.Add (terrainDescriptor.PipelineName, item)
+                            renderTasks.DeferredTerrains.Add (pipelineName, item)
                             item
                     item.Add struct (terrainDescriptor, patchDescriptor, patchGeometry)
             | (false, _) -> ()
