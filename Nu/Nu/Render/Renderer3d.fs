@@ -5692,6 +5692,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             Texture.destroy renderer.PhysicallyBasedMaterial.ClearCoatTexture renderer.VulkanContext
             Texture.destroy renderer.PhysicallyBasedMaterial.ClearCoatRoughnessTexture renderer.VulkanContext
             Texture.destroy renderer.PhysicallyBasedMaterial.ClearCoatNormalTexture renderer.VulkanContext
+            Texture.destroy renderer.PhysicallyBasedMaterial.UserDefinedTexture renderer.VulkanContext
+            Texture.destroy renderer.PhysicallyBasedMaterial.UserDefined2Texture renderer.VulkanContext
 
             // destroy omnipresent attachments
             PhysicallyBased.destroyPhysicallyBasedAttachments renderer.PhysicallyBasedAttachments renderer.VulkanContext
