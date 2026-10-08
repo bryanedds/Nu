@@ -778,7 +778,57 @@ module WorldImGui =
                     | _ -> None
                 World.imGuiEditPropertyRecordPlus tryReplaceAnimationName true name (typeof<Animation>) animation context world
             | :? TerrainMaterialProperties as tmps ->
-                World.imGuiEditPropertyRecord true name (typeof<TerrainMaterialProperties>) tmps context world
+                let tryReplaceUserDefinedOptName (fieldInfo : PropertyInfo) (field : obj) =
+                    match context.SelectedEntityOpt with
+                    | Some selectedEntity ->
+                        let pipelineName =
+                            match selectedEntity.TryGetProperty "TerrainMaterial" world with
+                            | Some property when (property.PropertyValue :? TerrainMaterial) ->
+                                let material = property.PropertyValue :?> TerrainMaterial
+                                match material with
+                                | FlatMaterial material -> material.PipelineName
+                                | BlendMaterial material -> material.PipelineName
+                            | Some _ | None -> Constants.Render.PipelineNameDefault
+                        let userDefinedSubstring = "UserDefined"
+                        let optSubstring = "Opt"
+                        if fieldInfo.Name.StartsWith userDefinedSubstring && fieldInfo.Name.EndsWith optSubstring then
+                            let numberStr = fieldInfo.Name.Substring (userDefinedSubstring.Length, fieldInfo.Name.Length - userDefinedSubstring.Length - optSubstring.Length)
+                            let numberOpt =
+                                if numberStr.Length = 0
+                                then Some 1
+                                else
+                                    match Int32.TryParse numberStr with
+                                    | (true, number) -> Some number
+                                    | (false, _) -> None
+                            match numberOpt with
+                            | Some number ->
+                                let descriptors = World.getUserDefinedPipeline3dDescriptors world
+                                match descriptors.TryGetValue pipelineName with
+                                | (true, pipelineDescriptor) ->
+                                    let names = pipelineDescriptor.MaterialPropertiesUserDefinedOptNames
+                                    let index = dec number
+                                    if index < names.Length then
+                                        match field :?> single option with
+                                        | None ->
+                                            let mutable isSome = false
+                                            let isSomeChanged = ImGui.Checkbox (names[index] + "##" + name + "value", &isSome)
+                                            Some (isSomeChanged, if isSomeChanged then Some 0.0f :> obj else field)
+                                        | Some value ->
+                                            let mutable isSome = true
+                                            let isSomeChanged = ImGui.Checkbox ("##" + names[index] + name + "value", &isSome)
+                                            if isSomeChanged then
+                                                Some (isSomeChanged, Option<single>.None :> obj)
+                                            else
+                                                ImGui.SameLine ()
+                                                let mutable value = value
+                                                let valueChanged = ImGui.DragFloat (names[index] + "##" + name + "isSome", &value, context.SnapDrag)
+                                                Some (valueChanged, Some value :> obj)
+                                    else Some (false, field)
+                                | (false, _) -> Some (false, field)
+                            | None -> Some (false, field)
+                        else None
+                    | None -> None
+                World.imGuiEditPropertyRecordPlus tryReplaceUserDefinedOptName true name (typeof<TerrainMaterialProperties>) tmps context world
             | :? MaterialProperties as mps ->
                 let tryReplaceUserDefinedOptName (fieldInfo : PropertyInfo) (field : obj) =
                     match context.SelectedEntityOpt with

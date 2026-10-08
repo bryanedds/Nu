@@ -21,7 +21,7 @@ type SandBox3dPlugin () =
         { PipelineType = Terrain
           PipelineName = "TerrainFlipped"
           ShaderPath = "Assets/Gameplay/DeferredTerrainFlipped"
-          MaterialPropertiesUserDefinedOptNames = [||]
+          MaterialPropertiesUserDefinedOptNames = [|"TestFieldOpt"|]
           MaterialUserDefinedImageOptNames = [||] }
 
     let WallIndex = 0
