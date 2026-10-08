@@ -14,15 +14,15 @@ type SandBox3dPlugin () =
         { PipelineType = DeferredStatic
           PipelineName = "DeferredStaticFlipped"
           ShaderPath = "Assets/Gameplay/DeferredStaticFlipped"
-          MaterialPropertiesUserDefinedOptNames = [|"TestFieldOpt"|]
-          MaterialUserDefinedImageOptNames = [|"TestImageOpt"|] }
+          MaterialPropertiesUserDefinedNames = [|"TestFieldOpt"|]
+          MaterialUserDefinedImageNames = [|"TestImageOpt"|] }
 
     let TerrainFlipped =
         { PipelineType = Terrain
           PipelineName = "TerrainFlipped"
           ShaderPath = "Assets/Gameplay/DeferredTerrainFlipped"
-          MaterialPropertiesUserDefinedOptNames = [|"TestFieldOpt"|]
-          MaterialUserDefinedImageOptNames = [||] }
+          MaterialPropertiesUserDefinedNames = [|"TestFieldOpt"|]
+          MaterialUserDefinedImageNames = [||] }
 
     let WallIndex = 0
 

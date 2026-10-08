@@ -514,8 +514,8 @@ type UserDefinedPipeline3dDescriptor =
     { PipelineType : Pipeline3dType
       PipelineName : string
       ShaderPath : string
-      MaterialPropertiesUserDefinedOptNames : string array
-      MaterialUserDefinedImageOptNames : string array }
+      MaterialPropertiesUserDefinedNames : string array
+      MaterialUserDefinedImageNames : string array }
 
 /// Describes how to create a user-defined 3D rendering pipeline.
 type CreateUserDefinedPipeline3d =
