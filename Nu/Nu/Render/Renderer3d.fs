@@ -1921,7 +1921,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             | DeferredStatic | DeferredStaticClipped | DeferredAnimated ->
                 ([|VulkanUnblended|], [|false; true|])
             | ForwardStatic | ForwardAnimated ->
-                ([|VulkanUnblended; VulkanTransparent|], [|false; true|])
+                ([|VulkanUnblended; VulkanTransparent; VulkanAdditive; VulkanSummation; VulkanOverwrite|], [|false; true|])
             | Terrain ->
                 ([|VulkanUnblended|], [|true|])
 

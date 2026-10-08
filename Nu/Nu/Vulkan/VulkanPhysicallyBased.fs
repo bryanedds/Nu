@@ -6088,7 +6088,7 @@ module PhysicallyBased =
                 Constants.Render.LightMapsMaxForward
                 Constants.Render.LightsMaxForward
                 Constants.Paths.PhysicallyBasedForwardStaticShaderFilePath
-                [|VulkanUnblended; VulkanTransparent|]
+                [|VulkanUnblended; VulkanTransparent; VulkanAdditive; VulkanSummation; VulkanOverwrite|]
                 [|false; true|]
                 StaticVertices
                 [|composition.VkFormat|]
@@ -6101,7 +6101,7 @@ module PhysicallyBased =
                 Constants.Render.LightMapsMaxForward
                 Constants.Render.LightsMaxForward
                 Constants.Paths.PhysicallyBasedForwardAnimatedShaderFilePath
-                [|VulkanUnblended; VulkanTransparent|]
+                [|VulkanUnblended; VulkanTransparent; VulkanAdditive; VulkanSummation; VulkanOverwrite|]
                 [|false; true|]
                 AnimatedVertices
                 [|composition.VkFormat|]
