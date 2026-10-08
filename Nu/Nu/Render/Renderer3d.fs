@@ -4672,8 +4672,13 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite userDefinedTexture renderer.VulkanContext.RenderCommandBuffer
         Texture.recordTransitionLayout DepthAttachmentRead DepthAttachmentWrite zTexture renderer.VulkanContext.RenderCommandBuffer
 
-        // compute geometry resolution
+        // clear geometry textures
         let geometryResolution = renderer.GeometryViewport.Bounds.Size
+        let mutable renderArea = VkRect2D (0, 0, uint geometryResolution.X, uint geometryResolution.Y)
+        Hl.withRenderingInfo geometryTextureViews (Some zTexture.ImageView) renderArea (ClearAttachments Constants.Render.ViewportClearColor) $ fun renderingInfo ->
+            let mutable renderingInfo = renderingInfo
+            DeviceApi.vkCmdBeginRendering (renderer.VulkanContext.RenderCommandBuffer, &&renderingInfo)
+        DeviceApi.vkCmdEndRendering renderer.VulkanContext.RenderCommandBuffer
 
         // deferred static surface rendering
         let pipelineNames =
@@ -4696,14 +4701,10 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             let mutable committed = 0
             let mutable eyeDescriptorSet = Unchecked.defaultof<_>
             let mutable samplerDescriptorSet = Unchecked.defaultof<_>
-            let beginBatch = fun clear ->
-                let loadOperation =
-                    if clear
-                    then ClearAttachments Constants.Render.ViewportClearColor
-                    else LoadAttachments
+            let beginBatch = fun () ->
                 let (eyeDescriptorSet', samplerDescriptorSet') =
                     VulkanRenderer3d.beginPhysicallyBasedDeferredSurfaces
-                        eyeCenter view geometryProjection renderer.MaterialSampler loadOperation geometryTextureViews zTexture
+                        eyeCenter view geometryProjection renderer.MaterialSampler LoadAttachments geometryTextureViews zTexture
                         geometryResolution renderer.RenderPassIndex pipeline renderer
                 eyeDescriptorSet <- eyeDescriptorSet'
                 samplerDescriptorSet <- samplerDescriptorSet'
@@ -4713,9 +4714,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 let delta = counted - committed
                 if delta >= Constants.Vulkan.DeferredSurfaceInstanceThreshold then
                     endBatch ()
-                    beginBatch false
+                    beginBatch ()
                     committed <- counted
-            beginBatch true
+            beginBatch ()
 
             // render deferred static surfaces
             match renderTasks.DeferredStatic.TryGetValue pipelineName with
