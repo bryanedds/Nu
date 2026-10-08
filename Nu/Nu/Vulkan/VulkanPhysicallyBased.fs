@@ -242,14 +242,14 @@ type PhysicallyBasedMaterialProperties =
       ClearCoat : single
       ClearCoatRoughness : single
       // NOTE: 10 fields here are reserved for engine use.
-      UserDefinedSetting : single
+      UserDefinedSetting0 : single
+      UserDefinedSetting1 : single
       UserDefinedSetting2 : single
       UserDefinedSetting3 : single
       UserDefinedSetting4 : single
       UserDefinedSetting5 : single
       UserDefinedSetting6 : single
-      UserDefinedSetting7 : single
-      UserDefinedSetting8 : single }
+      UserDefinedSetting7 : single }
 
     /// The empty material properties.
     static member empty =
@@ -269,14 +269,14 @@ type PhysicallyBasedMaterialProperties =
           RefractiveIndex = 0.0f
           ClearCoat = 0.0f
           ClearCoatRoughness = 0.0f
-          UserDefinedSetting = 0.0f
+          UserDefinedSetting0 = 0.0f
+          UserDefinedSetting1 = 0.0f
           UserDefinedSetting2 = 0.0f
           UserDefinedSetting3 = 0.0f
           UserDefinedSetting4 = 0.0f
           UserDefinedSetting5 = 0.0f
           UserDefinedSetting6 = 0.0f
-          UserDefinedSetting7 = 0.0f
-          UserDefinedSetting8 = 0.0f }
+          UserDefinedSetting7 = 0.0f }
 
 /// Describes a physically-based material.
 type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial =
@@ -293,8 +293,8 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial =
       ClearCoatTexture : Texture
       ClearCoatRoughnessTexture : Texture
       ClearCoatNormalTexture : Texture
-      UserDefinedImageTexture : Texture
-      UserDefinedImage2Texture : Texture
+      UserDefinedImage0Texture : Texture
+      UserDefinedImage1Texture : Texture
       TwoSided : bool
       Clipped : bool
       PipelineName : string
@@ -315,8 +315,8 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial =
           ClearCoatTexture = Texture.EmptyTexture
           ClearCoatRoughnessTexture = Texture.EmptyTexture
           ClearCoatNormalTexture = Texture.EmptyTexture
-          UserDefinedImageTexture = Texture.EmptyTexture
-          UserDefinedImage2Texture = Texture.EmptyTexture
+          UserDefinedImage0Texture = Texture.EmptyTexture
+          UserDefinedImage1Texture = Texture.EmptyTexture
           TwoSided = false
           Clipped = false
           PipelineName = Constants.Render.PipelineNameDefault
@@ -337,8 +337,8 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial =
         (hash material.ClearCoatTexture <<<             10) ^^^
         (hash material.ClearCoatRoughnessTexture <<<    11) ^^^
         (hash material.ClearCoatNormalTexture <<<       12) ^^^
-        (hash material.UserDefinedImageTexture <<<      13) ^^^
-        (hash material.UserDefinedImage2Texture <<<     14) ^^^
+        (hash material.UserDefinedImage0Texture <<<     13) ^^^
+        (hash material.UserDefinedImage1Texture <<<     14) ^^^
         (hash material.TwoSided <<<                     15) ^^^
         (hash material.Clipped <<<                      16) ^^^
         (hash material.PipelineName <<<                 17) ^^^
@@ -360,8 +360,8 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial =
         left.ClearCoatTexture = right.ClearCoatTexture &&
         left.ClearCoatRoughnessTexture = right.ClearCoatRoughnessTexture &&
         left.ClearCoatNormalTexture = right.ClearCoatNormalTexture &&
-        left.UserDefinedImageTexture = right.UserDefinedImageTexture &&
-        left.UserDefinedImage2Texture = right.UserDefinedImage2Texture &&
+        left.UserDefinedImage0Texture = right.UserDefinedImage0Texture &&
+        left.UserDefinedImage1Texture = right.UserDefinedImage1Texture &&
         left.TwoSided = right.TwoSided &&
         left.Clipped = right.Clipped &&
         left.PipelineName = right.PipelineName &&
@@ -1261,8 +1261,8 @@ module PhysicallyBased =
         let clearCoatTextureFilePath =          if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_clear_coat")              elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_clear_coat")               else ""
         let clearCoatRoughnessTextureFilePath = if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_clear_coat_roughness")    elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_clear_coat_roughness")     else ""
         let clearCoatNormalTextureFilePath =    if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_clear_coat_normal")       elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_clear_coat_normal")        else ""
-        let userDefinedImageTextureFilePath =   if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_user_defined_image")      elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_user_defined_image")       else ""
-        let userDefinedImage2TextureFilePath =  if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_user_defined_Image_2")    elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_user_defined_Image_2")     else ""
+        let userDefinedImage0TextureFilePath =  if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_user_defined_image_0")    elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_user_defined_image_0")     else ""
+        let userDefinedImage1TextureFilePath =  if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_user_defined_Image_1")    elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_user_defined_Image_1")     else ""
         let rmTextureFilePath =                 if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "RM")                 elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "RM")                   elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "RM")                    else ""
         let rmaTextureFilePath =                if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "RMA")                elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "RMA")                  elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "RMA")                   else ""
         let roughnessTextureFilePath =          if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Roughness")          elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Roughness")            elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Roughness")             else ""
@@ -1281,8 +1281,8 @@ module PhysicallyBased =
         let clearCoatTextureFilePath' =         if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "ClearCoat")          elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "ClearCoat")            elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "ClearCoat")             else ""
         let clearCoatRoughnessTextureFilePath' =if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "ClearCoatRoughness") elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "ClearCoatRoughness")   elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "ClearCoatRoughness")    else ""
         let clearCoatNormalTextureFilePath' =   if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "ClearCoatNormal")    elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "ClearCoatNormal")      elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "ClearCoatNormal")       else ""
-        let userDefinedImageTextureFilePath' =  if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "UserDefinedImage")   elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "UserDefinedImage")     elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "UserDefinedImage")      else ""
-        let userDefinedImage2TextureFilePath' = if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "UserDefinedImage2")  elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "UserDefinedImage2")    elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "UserDefinedImage2")     else ""
+        let userDefinedImage0TextureFilePath' = if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "UserDefinedImage0")  elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "UserDefinedImage0")    elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "UserDefinedImage0")     else ""
+        let userDefinedImage1TextureFilePath' = if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "UserDefinedImage1")  elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "UserDefinedImage1")    elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "UserDefinedImage1")     else ""
 
         // attempt to load roughness info
         let roughness = Constants.Render.RoughnessDefault
@@ -1568,26 +1568,26 @@ module PhysicallyBased =
                 match material.UserDefinedSettingOpt i with
                 | ValueSome userDefinedSetting -> userDefinedSetting
                 | ValueNone -> Constants.Render.UserDefinedSettingDefault]
-        let userDefinedImageTexture =
+        let userDefinedImage0Texture =
             match contextOpt with
             | Some context ->
-                match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression userDefinedImageTextureFilePath) (dirPrefix + userDefinedImageTextureFilePath) RenderThread context with
+                match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression userDefinedImage0TextureFilePath) (dirPrefix + userDefinedImage0TextureFilePath) RenderThread context with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression userDefinedImageTextureFilePath') (dirPrefix + userDefinedImageTextureFilePath') RenderThread context with
+                    match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression userDefinedImage0TextureFilePath') (dirPrefix + userDefinedImage0TextureFilePath') RenderThread context with
                     | Right texture -> texture
-                    | Left _ -> defaultMaterial.UserDefinedImageTexture
-            | None -> defaultMaterial.UserDefinedImageTexture
-        let userDefinedImage2Texture =
+                    | Left _ -> defaultMaterial.UserDefinedImage0Texture
+            | None -> defaultMaterial.UserDefinedImage0Texture
+        let userDefinedImage1Texture =
             match contextOpt with
             | Some context ->
-                match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression userDefinedImage2TextureFilePath) (dirPrefix + userDefinedImage2TextureFilePath) RenderThread context with
+                match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression userDefinedImage1TextureFilePath) (dirPrefix + userDefinedImage1TextureFilePath) RenderThread context with
                 | Right texture -> texture
                 | Left _ ->
-                    match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression userDefinedImage2TextureFilePath') (dirPrefix + userDefinedImage2TextureFilePath') RenderThread context with
+                    match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression userDefinedImage1TextureFilePath') (dirPrefix + userDefinedImage1TextureFilePath') RenderThread context with
                     | Right texture -> texture
-                    | Left _ -> defaultMaterial.UserDefinedImage2Texture
-            | None -> defaultMaterial.UserDefinedImage2Texture
+                    | Left _ -> defaultMaterial.UserDefinedImage1Texture
+            | None -> defaultMaterial.UserDefinedImage1Texture
 
         // compute two-sidedness
         let twoSided =
@@ -1639,14 +1639,14 @@ module PhysicallyBased =
               RefractiveIndex = refractiveIndex
               ClearCoat = clearCoat
               ClearCoatRoughness = clearCoatRoughness
-              UserDefinedSetting = userDefinedSettings[0]
-              UserDefinedSetting2 = userDefinedSettings[1]
-              UserDefinedSetting3 = userDefinedSettings[2]
-              UserDefinedSetting4 = userDefinedSettings[3]
-              UserDefinedSetting5 = userDefinedSettings[4]
-              UserDefinedSetting6 = userDefinedSettings[5]
-              UserDefinedSetting7 = userDefinedSettings[6]
-              UserDefinedSetting8 = userDefinedSettings[7] }
+              UserDefinedSetting0 = userDefinedSettings[0]
+              UserDefinedSetting1 = userDefinedSettings[1]
+              UserDefinedSetting2 = userDefinedSettings[2]
+              UserDefinedSetting3 = userDefinedSettings[3]
+              UserDefinedSetting4 = userDefinedSettings[4]
+              UserDefinedSetting5 = userDefinedSettings[5]
+              UserDefinedSetting6 = userDefinedSettings[6]
+              UserDefinedSetting7 = userDefinedSettings[7] }
 
         // make material
         let material =
@@ -1663,8 +1663,8 @@ module PhysicallyBased =
               ClearCoatTexture = clearCoatTexture
               ClearCoatRoughnessTexture = clearCoatRoughnessTexture
               ClearCoatNormalTexture = clearCoatNormalTexture
-              UserDefinedImageTexture = userDefinedImageTexture
-              UserDefinedImage2Texture = userDefinedImage2Texture
+              UserDefinedImage0Texture = userDefinedImage0Texture
+              UserDefinedImage1Texture = userDefinedImage1Texture
               TwoSided = twoSided
               Clipped = clipped
               PipelineName = pipelineName
@@ -3759,8 +3759,8 @@ module PhysicallyBased =
                       Pipeline.descriptor 10 SampledImage FragmentStage 1 // clearCoatTexture
                       Pipeline.descriptor 11 SampledImage FragmentStage 1 // clearCoatRoughnessTexture
                       Pipeline.descriptor 12 SampledImage FragmentStage 1 // clearCoatNormalTexture
-                      Pipeline.descriptor 13 SampledImage FragmentStage 1 // userDefinedImageTexture
-                      Pipeline.descriptor 14 SampledImage FragmentStage 1|] // userDefinedImage2Texture
+                      Pipeline.descriptor 13 SampledImage FragmentStage 1 // userDefinedImage0Texture
+                      Pipeline.descriptor 14 SampledImage FragmentStage 1|] // userDefinedImage1Texture
 
                   // descriptor set 2: dynamic
                   Pipeline.descriptorSet<int>
@@ -3891,8 +3891,8 @@ module PhysicallyBased =
                     Pipeline.writeDescriptorSampledTexture 10 0 material.ClearCoatTexture vkSet
                     Pipeline.writeDescriptorSampledTexture 11 0 material.ClearCoatRoughnessTexture vkSet
                     Pipeline.writeDescriptorSampledTexture 12 0 material.ClearCoatNormalTexture vkSet
-                    Pipeline.writeDescriptorSampledTexture 13 0 material.UserDefinedImageTexture vkSet
-                    Pipeline.writeDescriptorSampledTexture 14 0 material.UserDefinedImage2Texture vkSet
+                    Pipeline.writeDescriptorSampledTexture 13 0 material.UserDefinedImage0Texture vkSet
+                    Pipeline.writeDescriptorSampledTexture 14 0 material.UserDefinedImage1Texture vkSet
 
                 // specify dynamic when animated
                 let mutable dynamicDescriptorSet =
@@ -5767,8 +5767,8 @@ module PhysicallyBased =
                 Pipeline.writeDescriptorSampledTexture 4 0 material.EmissionTexture vkSet
                 Pipeline.writeDescriptorSampledTexture 5 0 material.NormalTexture vkSet
                 Pipeline.writeDescriptorSampledTexture 6 0 material.HeightTexture vkSet
-                Pipeline.writeDescriptorSampledTexture 13 0 material.UserDefinedImageTexture vkSet
-                Pipeline.writeDescriptorSampledTexture 14 0 material.UserDefinedImage2Texture vkSet
+                Pipeline.writeDescriptorSampledTexture 13 0 material.UserDefinedImage0Texture vkSet
+                Pipeline.writeDescriptorSampledTexture 14 0 material.UserDefinedImage1Texture vkSet
 
             // specify dynamic
             // NOTE: we do more work on bones specification even when there aren't bones to specify than in the other

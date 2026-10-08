@@ -784,16 +784,13 @@ module WorldImGui =
                         let userDefinedSettingSubstring = "UserDefinedSetting"
                         let optSubstring = "Opt"
                         if fieldInfo.Name.StartsWith userDefinedSettingSubstring && fieldInfo.Name.EndsWith optSubstring then
-                            let numberStr = fieldInfo.Name.Substring (userDefinedSettingSubstring.Length, fieldInfo.Name.Length - userDefinedSettingSubstring.Length - optSubstring.Length)
-                            let numberOpt =
-                                if numberStr.Length = 0
-                                then Some 1
-                                else
-                                    match Int32.TryParse numberStr with
-                                    | (true, number) -> Some number
-                                    | (false, _) -> None
-                            match numberOpt with
-                            | Some number ->
+                            let indexStr = fieldInfo.Name.Substring (userDefinedSettingSubstring.Length, fieldInfo.Name.Length - userDefinedSettingSubstring.Length - optSubstring.Length)
+                            let indexOpt =
+                                match Int32.TryParse indexStr with
+                                | (true, number) -> Some number
+                                | (false, _) -> None
+                            match indexOpt with
+                            | Some index ->
                                 let pipelineName =
                                     match selectedEntity.TryGetProperty "TerrainMaterial" world with
                                     | Some property when (property.PropertyValue :? TerrainMaterial) ->
@@ -806,7 +803,6 @@ module WorldImGui =
                                 match descriptors.TryGetValue pipelineName with
                                 | (true, pipelineDescriptor) ->
                                     let names = pipelineDescriptor.UserDefinedSettingNames
-                                    let index = dec number
                                     if index < names.Length then
                                         match field :?> single option with
                                         | None ->
@@ -839,16 +835,13 @@ module WorldImGui =
                         let userDefinedSettingSubstring = "UserDefinedSetting"
                         let optSubstring = "Opt"
                         if fieldInfo.Name.StartsWith userDefinedSettingSubstring && fieldInfo.Name.EndsWith optSubstring then
-                            let numberStr = fieldInfo.Name.Substring (userDefinedSettingSubstring.Length, fieldInfo.Name.Length - userDefinedSettingSubstring.Length - optSubstring.Length)
-                            let numberOpt =
-                                if numberStr.Length = 0
-                                then Some 1
-                                else
-                                    match Int32.TryParse numberStr with
-                                    | (true, number) -> Some number
-                                    | (false, _) -> None
-                            match numberOpt with
-                            | Some number ->
+                            let indexStr = fieldInfo.Name.Substring (userDefinedSettingSubstring.Length, fieldInfo.Name.Length - userDefinedSettingSubstring.Length - optSubstring.Length)
+                            let indexOpt =
+                                match Int32.TryParse indexStr with
+                                | (true, number) -> Some number
+                                | (false, _) -> None
+                            match indexOpt with
+                            | Some index ->
                                 let pipelineName =
                                     match selectedEntity.TryGetProperty "Material" world with
                                     | Some property when (property.PropertyValue :? Material) ->
@@ -879,7 +872,6 @@ module WorldImGui =
                                 match descriptors.TryGetValue pipelineName with
                                 | (true, pipelineDescriptor) ->
                                     let names = pipelineDescriptor.UserDefinedSettingNames
-                                    let index = dec number
                                     if index < names.Length then
                                         match field :?> single voption with
                                         | ValueNone ->
@@ -912,16 +904,13 @@ module WorldImGui =
                         let userDefinedImageSubstring = "UserDefinedImage"
                         let optSubstring = "Opt"
                         if fieldInfo.Name.StartsWith userDefinedImageSubstring && fieldInfo.Name.EndsWith optSubstring then
-                            let numberStr = fieldInfo.Name.Substring (userDefinedImageSubstring.Length, fieldInfo.Name.Length - userDefinedImageSubstring.Length - optSubstring.Length)
-                            let numberOpt =
-                                if numberStr.Length = 0
-                                then Some 1
-                                else
-                                    match Int32.TryParse numberStr with
-                                    | (true, number) -> Some number
-                                    | (false, _) -> None
-                            match numberOpt with
-                            | Some number ->
+                            let indexStr = fieldInfo.Name.Substring (userDefinedImageSubstring.Length, fieldInfo.Name.Length - userDefinedImageSubstring.Length - optSubstring.Length)
+                            let indexOpt =
+                                match Int32.TryParse indexStr with
+                                | (true, number) -> Some number
+                                | (false, _) -> None
+                            match indexOpt with
+                            | Some index ->
                                 let pipelineName =
                                     match material.PipelineNameOpt with
                                     | ValueSome pipelineName -> pipelineName
@@ -948,13 +937,12 @@ module WorldImGui =
                                 match descriptors.TryGetValue pipelineName with
                                 | (true, pipelineDescriptor) ->
                                     let names = pipelineDescriptor.UserDefinedImageNames
-                                    let index = dec number
                                     if index < names.Length then
                                         let asset index : Image AssetTag =
                                             match index with
-                                            | 0 -> Assets.Default.MaterialUserDefinedImage
-                                            | 1 -> Assets.Default.MaterialUserDefinedImage2
-                                            | _ -> Assets.Default.MaterialUserDefinedImage
+                                            | 0 -> Assets.Default.MaterialUserDefinedImage0
+                                            | 1 -> Assets.Default.MaterialUserDefinedImage1
+                                            | _ -> Assets.Default.MaterialUserDefinedImage0
                                         match field :?> Image AssetTag voption with
                                         | ValueNone ->
                                             let mutable isSome = false

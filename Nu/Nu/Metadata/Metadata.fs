@@ -738,7 +738,7 @@ module Metadata =
         | ValueNone -> ValueNone
 
     /// Thread-safe.
-    let private tryGetModelUserDefinedImage materialIndex model =
+    let private tryGetModelUserDefinedImage0 materialIndex model =
         match tryGetModelMetadata model with
         | ValueSome modelMetadata ->
             match modelMetadata.SceneOpt with
@@ -751,17 +751,22 @@ module Metadata =
                     let hasBaseColor =              albedoAssetName.Contains "BaseColor"
                     let hasDiffuse =                albedoAssetName.Contains "Diffuse"
                     let hasAlbedo =                 albedoAssetName.Contains "Albedo"
-                    let userDefinedImageAsset =     asset albedoImage.PackageName (if has_bc then albedoAssetName.Replace ("_bc", "_user_defined_image")            elif has_d then albedoAssetName.Replace ("_d", "_user_defined_image")           else "")
-                    let userDefinedImageAsset' =    asset albedoImage.PackageName (if hasBaseColor then albedoAssetName.Replace ("BaseColor", "UserDefinedImage")   elif hasDiffuse then albedoAssetName.Replace ("Diffuse", "UserDefinedImage")    elif hasAlbedo  then albedoAssetName.Replace ("Albedo", "UserDefinedImage") else "")
-                    if getMetadataExists userDefinedImageAsset then ValueSome userDefinedImageAsset
-                    elif getMetadataExists userDefinedImageAsset' then ValueSome userDefinedImageAsset'
+<<<<<<< Updated upstream
+                    let userDefinedImage0Asset =    asset albedoImage.PackageName (if has_bc then albedoAssetName.Replace ("_bc", "_user_defined_image_0")          elif has_d then albedoAssetName.Replace ("_d", "_user_defined_image_0")         else "")
+                    let userDefinedImage0Asset' =   asset albedoImage.PackageName (if hasBaseColor then albedoAssetName.Replace ("BaseColor", "UserDefinedImage0")  elif hasDiffuse then albedoAssetName.Replace ("Diffuse", "UserDefinedImage0")   elif hasAlbedo  then albedoAssetName.Replace ("Albedo", "UserDefinedImage0") else "")
+=======
+                    let userDefinedImage0Asset =     asset albedoImage.PackageName (if has_bc then albedoAssetName.Replace ("_bc", "_user_defined_image_0")         elif has_d then albedoAssetName.Replace ("_d", "_user_defined_image_0")         else "")
+                    let userDefinedImage0Asset' =    asset albedoImage.PackageName (if hasBaseColor then albedoAssetName.Replace ("BaseColor", "UserDefinedImage0") elif hasDiffuse then albedoAssetName.Replace ("Diffuse", "UserDefinedImage0")   elif hasAlbedo  then albedoAssetName.Replace ("Albedo", "UserDefinedImage0") else "")
+>>>>>>> Stashed changes
+                    if getMetadataExists userDefinedImage0Asset then ValueSome userDefinedImage0Asset
+                    elif getMetadataExists userDefinedImage0Asset' then ValueSome userDefinedImage0Asset'
                     else ValueNone
                 | ValueNone -> ValueNone
             | Some _ | None -> ValueNone
         | ValueNone -> ValueNone
 
     /// Thread-safe.
-    let private tryGetModelUserDefinedImage2 materialIndex model =
+    let private tryGetModelUserDefinedImage1 materialIndex model =
         match tryGetModelMetadata model with
         | ValueSome modelMetadata ->
             match modelMetadata.SceneOpt with
@@ -774,10 +779,10 @@ module Metadata =
                     let hasBaseColor =              albedoAssetName.Contains "BaseColor"
                     let hasDiffuse =                albedoAssetName.Contains "Diffuse"
                     let hasAlbedo =                 albedoAssetName.Contains "Albedo"
-                    let userDefinedImage2Asset =    asset albedoImage.PackageName (if has_bc then albedoAssetName.Replace ("_bc", "_user_defined_image_2")          elif has_d then albedoAssetName.Replace ("_d", "_user_defined_image_2")         else "")
-                    let userDefinedImage2Asset' =   asset albedoImage.PackageName (if hasBaseColor then albedoAssetName.Replace ("BaseColor", "UserDefinedImage2")  elif hasDiffuse then albedoAssetName.Replace ("Diffuse", "UserDefinedImage2")   elif hasAlbedo  then albedoAssetName.Replace ("Albedo", "UserDefinedImage2") else "")
-                    if getMetadataExists userDefinedImage2Asset then ValueSome userDefinedImage2Asset
-                    elif getMetadataExists userDefinedImage2Asset' then ValueSome userDefinedImage2Asset'
+                    let userDefinedImage1Asset =    asset albedoImage.PackageName (if has_bc then albedoAssetName.Replace ("_bc", "_user_defined_image_1")          elif has_d then albedoAssetName.Replace ("_d", "_user_defined_image_1")         else "")
+                    let userDefinedImage1Asset' =   asset albedoImage.PackageName (if hasBaseColor then albedoAssetName.Replace ("BaseColor", "UserDefinedImage1")  elif hasDiffuse then albedoAssetName.Replace ("Diffuse", "UserDefinedImage1")   elif hasAlbedo  then albedoAssetName.Replace ("Albedo", "UserDefinedImage1") else "")
+                    if getMetadataExists userDefinedImage1Asset then ValueSome userDefinedImage1Asset
+                    elif getMetadataExists userDefinedImage1Asset' then ValueSome userDefinedImage1Asset'
                     else ValueNone
                 | ValueNone -> ValueNone
             | Some _ | None -> ValueNone
@@ -908,15 +913,15 @@ module Metadata =
     let tryGetStaticModelClearCoatNormalImage materialIndex (staticModel : StaticModel AssetTag) =
         tryGetModelClearCoatNormalImage materialIndex staticModel
 
-    /// Attempt to get the user-defined image asset for the given material index and static model.
+    /// Attempt to get the user-defined image 0 asset for the given material index and static model.
     /// Thread-safe.
-    let tryGetStaticModelUserDefinedImage materialIndex (staticModel : StaticModel AssetTag) =
-        tryGetModelUserDefinedImage materialIndex staticModel
+    let tryGetStaticModelUserDefinedImage0 materialIndex (staticModel : StaticModel AssetTag) =
+        tryGetModelUserDefinedImage0 materialIndex staticModel
 
-    /// Attempt to get the user-defined image 2 asset for the given material index and static model.
+    /// Attempt to get the user-defined image 1 asset for the given material index and static model.
     /// Thread-safe.
-    let tryGetStaticModelUserDefinedImage2 materialIndex (staticModel : StaticModel AssetTag) =
-        tryGetModelUserDefinedImage2 materialIndex staticModel
+    let tryGetStaticModelUserDefinedImage1 materialIndex (staticModel : StaticModel AssetTag) =
+        tryGetModelUserDefinedImage1 materialIndex staticModel
 
     /// Attempt to get the scatter image asset for the given material index and static model.
     /// Thread-safe.
@@ -1020,15 +1025,15 @@ module Metadata =
     let tryGetAnimatedModelClearCoatNormalImage materialIndex (animatedModel : AnimatedModel AssetTag) =
         tryGetModelClearCoatNormalImage materialIndex animatedModel
 
-    /// Attempt to get the user-defined asset for the given material index and animated model.
+    /// Attempt to get the user-defined image 0 asset for the given material index and animated model.
     /// Thread-safe.
-    let tryGetAnimatedModelUserDefinedImage materialIndex (animatedModel : AnimatedModel AssetTag) =
-        tryGetModelUserDefinedImage materialIndex animatedModel
+    let tryGetAnimatedModelUserDefinedImage0 materialIndex (animatedModel : AnimatedModel AssetTag) =
+        tryGetModelUserDefinedImage0 materialIndex animatedModel
 
-    /// Attempt to get the user-defined 2 asset for the given material index and animated model.
+    /// Attempt to get the user-defined image 1 asset for the given material index and animated model.
     /// Thread-safe.
-    let tryGetAnimatedModelUserDefinedImage2 materialIndex (animatedModel : AnimatedModel AssetTag) =
-        tryGetModelUserDefinedImage2 materialIndex animatedModel
+    let tryGetAnimatedModelUserDefinedImage1 materialIndex (animatedModel : AnimatedModel AssetTag) =
+        tryGetModelUserDefinedImage1 materialIndex animatedModel
 
     /// Attempt to get the two-sided property for the given material index and animated model.
     /// Thread-safe.
