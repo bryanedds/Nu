@@ -671,8 +671,8 @@ module WorldModule4 =
             // initialize plugin
             world.WorldExtension.Plugin.Init world
 
-            // initialize pipelines
-            for descriptor in world.WorldExtension.Plugin.UserDefinedPipelineDescriptors.Values do
+            // initialize 3D pipelines
+            for descriptor in world.WorldExtension.Plugin.UserDefinedPipeline3dDescriptors.Values do
                 World.enqueueRenderMessage3d (CreateUserDefinedPipeline { Pipeline3dDescriptor = descriptor }) world
 
             // register the game

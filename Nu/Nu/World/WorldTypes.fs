@@ -2256,9 +2256,9 @@ and [<AbstractClass>] NuPlugin () =
     abstract EditModes : Map<string, World -> unit>
     default this.EditModes = Map.empty
 
-    /// Describes a collection of user-defined pipelines to create.
-    abstract UserDefinedPipelineDescriptors : Map<string, UserDefinedPipeline3dDescriptor>
-    default this.UserDefinedPipelineDescriptors = Map.empty
+    /// Describes a collection of user-defined 3D pipelines to create.
+    abstract UserDefinedPipeline3dDescriptors : Map<string, UserDefinedPipeline3dDescriptor>
+    default this.UserDefinedPipeline3dDescriptors = Map.empty
 
     /// The packages that should be loaded at start-up in all contexts, including in audio player, renderers, and
     /// metadata. The Default package is always included.

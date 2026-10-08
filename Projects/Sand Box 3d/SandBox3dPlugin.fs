@@ -184,7 +184,7 @@ type SandBox3dPlugin () =
         [Assets.Gui.PackageName
          Assets.Gameplay.PackageName]
 
-    override this.UserDefinedPipelineDescriptors =
+    override this.UserDefinedPipeline3dDescriptors =
         Map.ofSeq
             [(DeferredStaticFlipped.PipelineName, DeferredStaticFlipped)
              (TerrainFlipped.PipelineName, TerrainFlipped)]

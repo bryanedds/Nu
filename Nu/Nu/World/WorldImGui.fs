@@ -818,7 +818,7 @@ module WorldImGui =
                                     | (false, _) -> None
                             match numberOpt with
                             | Some number ->
-                                let descriptors = World.getUserDefinedPipelineDescriptors world
+                                let descriptors = World.getUserDefinedPipeline3dDescriptors world
                                 match descriptors.TryGetValue pipelineName with
                                 | (true, pipelineDescriptor) ->
                                     let names = pipelineDescriptor.MaterialPropertiesUserDefinedOptNames
@@ -880,7 +880,7 @@ module WorldImGui =
                                     | (false, _) -> None
                             match numberOpt with
                             | Some number ->
-                                let descriptors = World.getUserDefinedPipelineDescriptors world
+                                let descriptors = World.getUserDefinedPipeline3dDescriptors world
                                 match descriptors.TryGetValue pipelineName with
                                 | (true, pipelineDescriptor) ->
                                     let names = pipelineDescriptor.MaterialUserDefinedImageOptNames
