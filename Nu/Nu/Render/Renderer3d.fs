@@ -4676,6 +4676,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             |> Seq.append renderTasks.DeferredStaticPreBatches.Keys
             |> Seq.map (fun name -> if name = Constants.Render.PipelineNameDefault || renderer.PhysicallyBasedPipelines.UserDefinedDeferredStaticPipelines.ContainsKey name then Some name else None)
             |> Seq.definitize
+            |> Seq.filter (fun name -> match renderTasks.DeferredStatic.TryGetValue name with (true, item) -> item.Count > 0 | (false, _) -> false || match renderTasks.DeferredStatic.TryGetValue name with (true, item) -> item.Count > 0 | (false, _) -> false)
             |> hashSetPlus StringComparer.Ordinal
         for pipelineName in pipelineNames do
 
@@ -4736,6 +4737,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             |> Seq.append renderTasks.DeferredStaticClippedPreBatches.Keys
             |> Seq.map (fun name -> if name = Constants.Render.PipelineNameDefault || renderer.PhysicallyBasedPipelines.UserDefinedDeferredStaticClippedPipelines.ContainsKey name then Some name else None)
             |> Seq.definitize
+            |> Seq.filter (fun name -> match renderTasks.DeferredStaticClipped.TryGetValue name with (true, item) -> item.Count > 0 | (false, _) -> false || match renderTasks.DeferredStaticClippedPreBatches.TryGetValue name with (true, item) -> item.Count > 0 | (false, _) -> false)
             |> hashSetPlus StringComparer.Ordinal
         for pipelineName in pipelineNames do
 
@@ -4791,6 +4793,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             renderTasks.DeferredAnimated.Keys
             |> Seq.map (fun name -> if name = Constants.Render.PipelineNameDefault || renderer.PhysicallyBasedPipelines.UserDefinedDeferredAnimatedPipelines.ContainsKey name then Some name else None)
             |> Seq.definitize
+            |> Seq.filter (fun name -> match renderTasks.DeferredAnimated.TryGetValue name with (true, item) -> item.Count > 0 | (false, _) -> false)
             |> hashSetPlus StringComparer.Ordinal
         for pipelineName in pipelineNames do
 
