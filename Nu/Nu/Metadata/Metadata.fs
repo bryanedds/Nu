@@ -751,13 +751,8 @@ module Metadata =
                     let hasBaseColor =              albedoAssetName.Contains "BaseColor"
                     let hasDiffuse =                albedoAssetName.Contains "Diffuse"
                     let hasAlbedo =                 albedoAssetName.Contains "Albedo"
-<<<<<<< Updated upstream
                     let userDefinedImage0Asset =    asset albedoImage.PackageName (if has_bc then albedoAssetName.Replace ("_bc", "_user_defined_image_0")          elif has_d then albedoAssetName.Replace ("_d", "_user_defined_image_0")         else "")
                     let userDefinedImage0Asset' =   asset albedoImage.PackageName (if hasBaseColor then albedoAssetName.Replace ("BaseColor", "UserDefinedImage0")  elif hasDiffuse then albedoAssetName.Replace ("Diffuse", "UserDefinedImage0")   elif hasAlbedo  then albedoAssetName.Replace ("Albedo", "UserDefinedImage0") else "")
-=======
-                    let userDefinedImage0Asset =     asset albedoImage.PackageName (if has_bc then albedoAssetName.Replace ("_bc", "_user_defined_image_0")         elif has_d then albedoAssetName.Replace ("_d", "_user_defined_image_0")         else "")
-                    let userDefinedImage0Asset' =    asset albedoImage.PackageName (if hasBaseColor then albedoAssetName.Replace ("BaseColor", "UserDefinedImage0") elif hasDiffuse then albedoAssetName.Replace ("Diffuse", "UserDefinedImage0")   elif hasAlbedo  then albedoAssetName.Replace ("Albedo", "UserDefinedImage0") else "")
->>>>>>> Stashed changes
                     if getMetadataExists userDefinedImage0Asset then ValueSome userDefinedImage0Asset
                     elif getMetadataExists userDefinedImage0Asset' then ValueSome userDefinedImage0Asset'
                     else ValueNone
