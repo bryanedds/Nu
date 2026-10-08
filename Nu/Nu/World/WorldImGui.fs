@@ -790,17 +790,21 @@ module WorldImGui =
                                 match material.PipelineNameOpt with
                                 | ValueSome pipelineName -> pipelineName
                                 | ValueNone ->
+                                    let surfaceIndex =
+                                        match selectedEntity.TryGetProperty "SurfaceIndex" world with
+                                        | Some property when (property.PropertyValue :? int) -> property.PropertyValue :?> int
+                                        | Some _ | None -> 0 // NOTE: hard-coding first surface.
                                     match selectedEntity.TryGetProperty "StaticModel" world with
                                     | Some property when (property.PropertyValue :? StaticModel AssetTag) ->
                                         let staticModel = property.PropertyValue :?> StaticModel AssetTag
-                                        match Metadata.tryGetStaticModelPipelineName 0 staticModel with // NOTE: hard-coding first surface.
+                                        match Metadata.tryGetStaticModelPipelineName surfaceIndex staticModel with
                                         | ValueSome pipelineName -> pipelineName
                                         | ValueNone -> Constants.Render.PipelineNameDefault
                                     | Some _ | None ->
                                         match selectedEntity.TryGetProperty "AnimatedModel" world with
                                         | Some property when (property.PropertyValue :? AnimatedModel AssetTag) ->
                                             let animatedModel = property.PropertyValue :?> AnimatedModel AssetTag
-                                            match Metadata.tryGetAnimatedModelPipelineName 0 animatedModel with // NOTE: hard-coding first surface.
+                                            match Metadata.tryGetAnimatedModelPipelineName surfaceIndex animatedModel with
                                             | ValueSome pipelineName -> pipelineName
                                             | ValueNone -> Constants.Render.PipelineNameDefault
                                         | Some _ | None -> Constants.Render.PipelineNameDefault
@@ -853,17 +857,21 @@ module WorldImGui =
                             match material.PipelineNameOpt with
                             | ValueSome pipelineName -> pipelineName
                             | ValueNone ->
+                                let surfaceIndex =
+                                    match selectedEntity.TryGetProperty "SurfaceIndex" world with
+                                    | Some property when (property.PropertyValue :? int) -> property.PropertyValue :?> int
+                                    | Some _ | None -> 0 // NOTE: hard-coding first surface.
                                 match selectedEntity.TryGetProperty "StaticModel" world with
                                 | Some property when (property.PropertyValue :? StaticModel AssetTag) ->
                                     let staticModel = property.PropertyValue :?> StaticModel AssetTag
-                                    match Metadata.tryGetStaticModelPipelineName 0 staticModel with // NOTE: hard-coding first surface.
+                                    match Metadata.tryGetStaticModelPipelineName surfaceIndex staticModel with
                                     | ValueSome pipelineName -> pipelineName
                                     | ValueNone -> Constants.Render.PipelineNameDefault
                                 | Some _ | None ->
                                     match selectedEntity.TryGetProperty "AnimatedModel" world with
                                     | Some property when (property.PropertyValue :? AnimatedModel AssetTag) ->
                                         let animatedModel = property.PropertyValue :?> AnimatedModel AssetTag
-                                        match Metadata.tryGetAnimatedModelPipelineName 0 animatedModel with // NOTE: hard-coding first surface.
+                                        match Metadata.tryGetAnimatedModelPipelineName surfaceIndex animatedModel with
                                         | ValueSome pipelineName -> pipelineName
                                         | ValueNone -> Constants.Render.PipelineNameDefault
                                     | Some _ | None -> Constants.Render.PipelineNameDefault
