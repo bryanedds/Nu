@@ -4674,7 +4674,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let pipelineNames =
             renderTasks.DeferredStatic.Keys
             |> Seq.append renderTasks.DeferredStaticPreBatches.Keys
-            |> Seq.map (fun name -> if renderer.PhysicallyBasedPipelines.UserDefinedDeferredStaticPipelines.ContainsKey name then name else Constants.Render.PipelineNameDefault)
+            |> Seq.map (fun name -> if name = Constants.Render.PipelineNameDefault || renderer.PhysicallyBasedPipelines.UserDefinedDeferredStaticPipelines.ContainsKey name then Some name else None)
+            |> Seq.definitize
             |> hashSetPlus StringComparer.Ordinal
         for pipelineName in pipelineNames do
 
@@ -4733,7 +4734,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let pipelineNames =
             renderTasks.DeferredStaticClipped.Keys
             |> Seq.append renderTasks.DeferredStaticClippedPreBatches.Keys
-            |> Seq.map (fun name -> if renderer.PhysicallyBasedPipelines.UserDefinedDeferredStaticClippedPipelines.ContainsKey name then name else Constants.Render.PipelineNameDefault)
+            |> Seq.map (fun name -> if name = Constants.Render.PipelineNameDefault || renderer.PhysicallyBasedPipelines.UserDefinedDeferredStaticClippedPipelines.ContainsKey name then Some name else None)
+            |> Seq.definitize
             |> hashSetPlus StringComparer.Ordinal
         for pipelineName in pipelineNames do
 
@@ -4787,7 +4789,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // deferred animated rendering
         let pipelineNames =
             renderTasks.DeferredAnimated.Keys
-            |> Seq.map (fun name -> if renderer.PhysicallyBasedPipelines.UserDefinedDeferredAnimatedPipelines.ContainsKey name then name else Constants.Render.PipelineNameDefault)
+            |> Seq.map (fun name -> if name = Constants.Render.PipelineNameDefault || renderer.PhysicallyBasedPipelines.UserDefinedDeferredAnimatedPipelines.ContainsKey name then Some name else None)
+            |> Seq.definitize
             |> hashSetPlus StringComparer.Ordinal
         for pipelineName in pipelineNames do
 
