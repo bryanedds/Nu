@@ -482,11 +482,9 @@ type CachedAnimatedModelMessage =
 
 /// Describes a user-defined 3D rendering pipeline.
 type UserDefinedPipeline3dDescriptor =
-    { PipelineName : string
-      PipelineType : Pipeline3dType
+    { PipelineType : Pipeline3dType
+      PipelineName : string
       ShaderPath : string
-      Blends : VulkanBlend array
-      CullModes : bool array
       MaterialPropertiesUserDefinedOptNames : string array
       MaterialUserDefinedImageOptNames : string array }
 
@@ -1918,6 +1916,15 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let (depth, albedo, material, normalPlus, subdermalPlus, scatterPlus, clearCoatPlus, userDefined, z) =
             renderer.PhysicallyBasedAttachments.GeometryAttachments
 
+        let (blends, cullModes) =
+            match descriptor.PipelineType with
+            | DeferredStatic | DeferredStaticClipped | DeferredAnimated ->
+                ([|VulkanUnblended|], [|false; true|])
+            | ForwardStatic | ForwardAnimated ->
+                ([|VulkanUnblended; VulkanTransparent|], [|false; true|])
+            | Terrain ->
+                ([|VulkanUnblended|], [|true|])
+
         let (colorAttachmentFormats, depthAttachmentFormat) =
             match descriptor.PipelineType with
             | DeferredStatic | DeferredStaticClipped | DeferredAnimated | Terrain ->
@@ -1940,7 +1947,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         match descriptor.PipelineType with
         | DeferredStatic ->
             let pipelines = renderer.PhysicallyBasedPipelines.UserDefinedDeferredStaticPipelines
-            let pipeline = PhysicallyBased.createPhysicallyBasedPipeline lightMapsMax lightsMax descriptor.ShaderPath descriptor.Blends descriptor.CullModes vertexBindings colorAttachmentFormats depthAttachmentFormat renderer.VulkanContext
+            let pipeline = PhysicallyBased.createPhysicallyBasedPipeline lightMapsMax lightsMax descriptor.ShaderPath blends cullModes vertexBindings colorAttachmentFormats depthAttachmentFormat renderer.VulkanContext
             match pipelines.TryGetValue descriptor.PipelineName with
             | (true, pipeline) ->                
                 ConcurrentCommandQueue.waitIdle renderer.VulkanContext.RenderQueue // pipeline may still be in use by previous frame
@@ -1949,7 +1956,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             pipelines[descriptor.PipelineName] <- pipeline
         | DeferredStaticClipped ->
             let pipelines = renderer.PhysicallyBasedPipelines.UserDefinedDeferredStaticClippedPipelines
-            let pipeline = PhysicallyBased.createPhysicallyBasedPipeline lightMapsMax lightsMax descriptor.ShaderPath descriptor.Blends descriptor.CullModes vertexBindings colorAttachmentFormats depthAttachmentFormat renderer.VulkanContext
+            let pipeline = PhysicallyBased.createPhysicallyBasedPipeline lightMapsMax lightsMax descriptor.ShaderPath blends cullModes vertexBindings colorAttachmentFormats depthAttachmentFormat renderer.VulkanContext
             match pipelines.TryGetValue descriptor.PipelineName with
             | (true, pipeline) ->                
                 ConcurrentCommandQueue.waitIdle renderer.VulkanContext.RenderQueue // pipeline may still be in use by previous frame
@@ -1958,7 +1965,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             pipelines[descriptor.PipelineName] <- pipeline
         | DeferredAnimated ->
             let pipelines = renderer.PhysicallyBasedPipelines.UserDefinedDeferredAnimatedPipelines
-            let pipeline = PhysicallyBased.createPhysicallyBasedPipeline lightMapsMax lightsMax descriptor.ShaderPath descriptor.Blends descriptor.CullModes vertexBindings colorAttachmentFormats depthAttachmentFormat renderer.VulkanContext
+            let pipeline = PhysicallyBased.createPhysicallyBasedPipeline lightMapsMax lightsMax descriptor.ShaderPath blends cullModes vertexBindings colorAttachmentFormats depthAttachmentFormat renderer.VulkanContext
             match pipelines.TryGetValue descriptor.PipelineName with
             | (true, pipeline) ->                
                 ConcurrentCommandQueue.waitIdle renderer.VulkanContext.RenderQueue // pipeline may still be in use by previous frame
@@ -1967,7 +1974,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             pipelines[descriptor.PipelineName] <- pipeline
         | ForwardStatic ->
             let pipelines = renderer.PhysicallyBasedPipelines.UserDefinedForwardStaticPipelines
-            let pipeline = PhysicallyBased.createPhysicallyBasedPipeline lightMapsMax lightsMax descriptor.ShaderPath descriptor.Blends descriptor.CullModes vertexBindings colorAttachmentFormats depthAttachmentFormat renderer.VulkanContext
+            let pipeline = PhysicallyBased.createPhysicallyBasedPipeline lightMapsMax lightsMax descriptor.ShaderPath blends cullModes vertexBindings colorAttachmentFormats depthAttachmentFormat renderer.VulkanContext
             match pipelines.TryGetValue descriptor.PipelineName with
             | (true, pipeline) ->                
                 ConcurrentCommandQueue.waitIdle renderer.VulkanContext.RenderQueue // pipeline may still be in use by previous frame
@@ -1976,7 +1983,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             pipelines[descriptor.PipelineName] <- pipeline
         | ForwardAnimated ->
             let pipelines = renderer.PhysicallyBasedPipelines.UserDefinedForwardAnimatedPipelines
-            let pipeline = PhysicallyBased.createPhysicallyBasedPipeline lightMapsMax lightsMax descriptor.ShaderPath descriptor.Blends descriptor.CullModes vertexBindings colorAttachmentFormats depthAttachmentFormat renderer.VulkanContext
+            let pipeline = PhysicallyBased.createPhysicallyBasedPipeline lightMapsMax lightsMax descriptor.ShaderPath blends cullModes vertexBindings colorAttachmentFormats depthAttachmentFormat renderer.VulkanContext
             match pipelines.TryGetValue descriptor.PipelineName with
             | (true, pipeline) ->                
                 ConcurrentCommandQueue.waitIdle renderer.VulkanContext.RenderQueue // pipeline may still be in use by previous frame
