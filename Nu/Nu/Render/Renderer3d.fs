@@ -480,7 +480,7 @@ type CachedStaticModelSurfaceMessage =
       mutable CachedStaticModelSurfaceRenderPass : RenderPass }
 
 /// An internally cached animated model used to reduce GC promotion or pressure.
-/// TODO: P1: add a corresponding workflow for AnimatedModelSurface.
+/// TODO: P0: add a corresponding workflow for AnimatedModelSurface.
 type CachedAnimatedModelMessage =
     { mutable CachedAnimatedModelMatrix : Matrix4x4
       mutable CachedAnimatedModelCastShadow : bool
