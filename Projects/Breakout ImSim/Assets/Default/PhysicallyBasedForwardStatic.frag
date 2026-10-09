@@ -133,9 +133,8 @@ layout(set = 1, binding = 2) uniform texture2D metallicTexture;
 layout(set = 1, binding = 3) uniform texture2D ambientOcclusionTexture;
 layout(set = 1, binding = 4) uniform texture2D emissionTexture;
 layout(set = 1, binding = 5) uniform texture2D normalTexture;
-layout(set = 1, binding = 6) uniform texture2D heightTexture;
-layout(set = 1, binding = 13) uniform texture2D userDefinedImage0Texture;
-layout(set = 1, binding = 14) uniform texture2D userDefinedImage1Texture;
+layout(set = 1, binding = 12) uniform texture2D userDefinedImage0Texture;
+layout(set = 1, binding = 13) uniform texture2D userDefinedImage1Texture;
 
 layout(set = 2, binding = 1) uniform LightMapUniform { LightMapStruct lightMaps[LIGHT_MAPS_MAX]; };
 layout(set = 2, binding = 2) uniform LightsGeneralUniform { LightsGeneralStruct lightsGeneral; };
@@ -156,7 +155,7 @@ layout(location = 1) in vec2 texCoords;
 layout(location = 2) in vec3 normal;
 layout(location = 3) flat in vec4 albedo;
 layout(location = 4) flat in vec4 material;
-layout(location = 5) flat in vec4 heightPlus;
+layout(location = 5) flat in vec4 miscellany;
 layout(location = 6) flat in vec4 subsurfacePlus;
 
 layout(location = 0) out vec4 frag;
@@ -849,7 +848,7 @@ void computeSsrr(float depth, vec4 position, vec3 normal, float refractiveIndex,
 void main()
 {
     // discard when depth out of range
-    float depthCutoff = heightPlus.z;
+    float depthCutoff = miscellany.y;
     float depth = gl_FragCoord.z / gl_FragCoord.w;
     if (depthCutoff >= 0.0) { if (depth > depthCutoff) discard; }
     else if (depth <= -depthCutoff) discard;
@@ -868,18 +867,9 @@ void main()
     tangent = normalize(tangent - normal * dot(normal, tangent));
     binormal = cross(normal, tangent);
     mat3 toWorld = mat3(tangent, binormal, normal);
-    mat3 toTangent = transpose(toWorld);
-
-    // compute tex coords in parallax occlusion space
-    vec3 eyeCenterTangent = toTangent * eye.center;
-    vec3 positionTangent = toTangent * position.xyz;
-    vec3 toEyeTangent = normalize(eyeCenterTangent - positionTangent);
-    float height = texture(sampler2D(heightTexture, materialSampler), texCoords).x * heightPlus.x;
-    vec2 parallax = toEyeTangent.xy * height;
-    vec2 texCoords = texCoords - parallax;
 
     // compute albedo with alpha sample
-    float opaqueDistance = heightPlus.w;
+    float opaqueDistance = miscellany.z;
     vec4 albedoSample = texture(sampler2D(albedoTexture, materialSampler), texCoords);
     vec4 albedoPlus =
         vec4(
@@ -907,7 +897,7 @@ void main()
     vec3 emission = vec3(texture(sampler2D(emissionTexture, materialSampler), texCoords).r * material.a);
 
     // compute ignore light maps
-    bool ignoreLightMaps = heightPlus.y != 0.0;
+    bool ignoreLightMaps = miscellany.x != 0.0;
 
     // compute subsurface properties
     float subsurfaceCutoff = subsurfacePlus.x;

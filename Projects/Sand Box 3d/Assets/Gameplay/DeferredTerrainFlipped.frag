@@ -32,7 +32,6 @@ layout(set = 1, binding = 0) uniform texture2D albedoTextures[TERRAIN_LAYERS_MAX
 layout(set = 1, binding = 1) uniform texture2D roughnessTextures[TERRAIN_LAYERS_MAX];
 layout(set = 1, binding = 2) uniform texture2D ambientOcclusionTextures[TERRAIN_LAYERS_MAX];
 layout(set = 1, binding = 3) uniform texture2D normalTextures[TERRAIN_LAYERS_MAX];
-layout(set = 1, binding = 4) uniform texture2D heightTextures[TERRAIN_LAYERS_MAX];
 
 layout(set = 2, binding = 0) uniform sampler materialSampler;
 
@@ -43,7 +42,7 @@ layout(location = 3) in vec4 blends[2];
 layout(location = 5) in vec3 tint;
 layout(location = 6) flat in vec4 albedo;
 layout(location = 7) flat in vec4 material;
-layout(location = 8) flat in vec4 heightPlus;
+layout(location = 8) flat in vec4 miscellany;
 
 layout(location = 0) out float depthOut;
 layout(location = 1) out vec3 albedoOut;
@@ -74,20 +73,6 @@ void main()
     tangent = normalize(tangent - normal * dot(normal, tangent));
     binormal = cross(normal, tangent);
     mat3 toWorld = mat3(tangent, binormal, normal);
-    mat3 toTangent = transpose(toWorld);
-
-    // compute height blend, height, and ignore local light maps
-    float heightBlend = 0.0;
-    for (int i = 0; i < min(terrainFrag.layersCount, TERRAIN_LAYERS_MAX); ++i)
-        heightBlend += texture(sampler2D(heightTextures[i], materialSampler), texCoords).r * blends[i/4][i%4];
-    float height = heightBlend * heightPlus.x;
-
-    // compute tex coords in parallax space
-    vec3 eyeCenterTangent = toTangent * eye.center;
-    vec3 positionTangent = toTangent * position.xyz;
-    vec3 toEyeTangent = normalize(eyeCenterTangent - positionTangent);
-    vec2 parallax = toEyeTangent.xy * height;
-    vec2 texCoords = texCoords - parallax;
 
     // compute albedo and material blends
     vec4 albedoBlend = vec4(0.0);
@@ -104,9 +89,9 @@ void main()
         normalBlend += decodeNormal(texture(sampler2D(normalTextures[i], materialSampler), texCoords).xy) * blend;
     }
 
-    // compute normal and ignore local height maps
+    // compute normal and ignore local light maps
     normalPlusOut.xyz = normalize(toWorld * normalize(normalBlend));
-    normalPlusOut.w = heightPlus.y;
+    normalPlusOut.w = miscellany.x;
 
     // compute roughness with specular anti-aliasing (Tokuyoshi & Kaplanyan 2019)
     // NOTE: the SAA algo also includes derivative scalars that are currently not utilized here due to lack of need -

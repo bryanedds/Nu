@@ -48,7 +48,7 @@ layout(location = 8) in mat4 model;
 layout(location = 12) in vec4 texCoordsOffset;
 layout(location = 13) in vec4 albedo;
 layout(location = 14) in vec4 material;
-layout(location = 15) in vec4 heightPlus;
+layout(location = 15) in vec4 miscellany;
 layout(location = 16) in vec4 subsurfacePlus;
 layout(location = 17) in vec4 clearCoatPlus; // NOTE: z and w are reserved for additional engine parameters.
 layout(location = 18) in vec4 reservedSettings[2];
@@ -59,7 +59,7 @@ layout(location = 1) out vec2 texCoordsOut;
 layout(location = 2) out vec3 normalOut;
 layout(location = 3) flat out vec4 albedoOut;
 layout(location = 4) flat out vec4 materialOut;
-layout(location = 5) flat out vec4 heightPlusOut;
+layout(location = 5) flat out vec4 miscellanyOut;
 layout(location = 6) flat out vec4 subsurfacePlusOut;
 
 void main()
@@ -86,7 +86,7 @@ void main()
     albedoOut = albedo;
     materialOut = material;
     normalOut = transpose(inverse(mat3(model))) * normalBlended.xyz;
-    heightPlusOut = heightPlus;
+    miscellanyOut = miscellany;
     subsurfacePlusOut = subsurfacePlus;
     gl_Position = eye.viewProjection * positionOut;
 }

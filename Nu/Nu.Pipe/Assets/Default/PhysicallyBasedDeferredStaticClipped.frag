@@ -23,15 +23,14 @@ layout(set = 1, binding = 2) uniform texture2D metallicTexture;
 layout(set = 1, binding = 3) uniform texture2D ambientOcclusionTexture;
 layout(set = 1, binding = 4) uniform texture2D emissionTexture;
 layout(set = 1, binding = 5) uniform texture2D normalTexture;
-layout(set = 1, binding = 6) uniform texture2D heightTexture;
-layout(set = 1, binding = 7) uniform texture2D subdermalTexture;
-layout(set = 1, binding = 8) uniform texture2D finenessTexture;
-layout(set = 1, binding = 9) uniform texture2D scatterTexture;
-layout(set = 1, binding = 10) uniform texture2D clearCoatTexture;
-layout(set = 1, binding = 11) uniform texture2D clearCoatRoughnessTexture;
-layout(set = 1, binding = 12) uniform texture2D clearCoatNormalTexture;
-layout(set = 1, binding = 13) uniform texture2D userDefinedImage0Texture;
-layout(set = 1, binding = 14) uniform texture2D userDefinedImage1Texture;
+layout(set = 1, binding = 6) uniform texture2D subdermalTexture;
+layout(set = 1, binding = 7) uniform texture2D finenessTexture;
+layout(set = 1, binding = 8) uniform texture2D scatterTexture;
+layout(set = 1, binding = 9) uniform texture2D clearCoatTexture;
+layout(set = 1, binding = 10) uniform texture2D clearCoatRoughnessTexture;
+layout(set = 1, binding = 11) uniform texture2D clearCoatNormalTexture;
+layout(set = 1, binding = 12) uniform texture2D userDefinedImage0Texture;
+layout(set = 1, binding = 13) uniform texture2D userDefinedImage1Texture;
 
 layout(set = 3, binding = 0) uniform sampler materialSampler;
 
@@ -40,7 +39,7 @@ layout(location = 1) in vec2 texCoords;
 layout(location = 2) in vec3 normal;
 layout(location = 3) flat in vec4 albedo;
 layout(location = 4) flat in vec4 material;
-layout(location = 5) flat in vec4 heightPlus;
+layout(location = 5) flat in vec4 miscellany;
 layout(location = 6) flat in vec4 subsurfacePlus;
 layout(location = 7) flat in vec4 clearCoatPlus;
 
@@ -105,24 +104,15 @@ void main()
     tangent = normalize(tangent - normal * dot(normal, tangent));
     binormal = cross(normal, tangent);
     mat3 toWorld = mat3(tangent, binormal, normal);
-    mat3 toTangent = transpose(toWorld);
-
-    // compute tex coords in parallax space
-    vec3 eyeCenterTangent = toTangent * eye.center;
-    vec3 positionTangent = toTangent * position.xyz;
-    vec3 toEyeTangent = normalize(eyeCenterTangent - positionTangent);
-    float height = texture(sampler2D(heightTexture, materialSampler), texCoords).x * heightPlus.x;
-    vec2 parallax = toEyeTangent.xy * height;
-    vec2 texCoords = texCoords - parallax;
 
     // compute albedo
     vec4 albedoSample = texture(sampler2D(albedoTexture, materialSampler), texCoords);
     if (albedoSample.a < ALBEDO_ALPHA_MIN) discard;
     albedoOut = pow(albedoSample.rgb, vec3(GAMMA)) * albedo.rgb;
 
-    // compute normal and ignore local height maps
+    // compute normal and ignore local light maps
     normalPlusOut.xyz = normalize(toWorld * decodeNormal(texture(sampler2D(normalTexture, materialSampler), texCoords).xy));
-    normalPlusOut.w = heightPlus.y;
+    normalPlusOut.w = miscellany.x;
 
     // compute roughness with specular anti-aliasing (Tokuyoshi & Kaplanyan 2019)
     // NOTE: the SAA algo also includes derivative scalars that are currently not utilized here due to lack of need -
