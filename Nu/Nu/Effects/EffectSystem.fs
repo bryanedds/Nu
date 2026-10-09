@@ -204,7 +204,6 @@ module EffectSystem =
         | Color color -> slice.Color <- color; slice
         | Blend blend -> slice.Blend <- blend; slice
         | Emission emission -> slice.Emission <- emission; slice
-        | Height height -> slice.Height <- height; slice
         | IgnoreLightMaps ignoreLightMaps -> slice.IgnoreLightMaps <- ignoreLightMaps; slice
         | Flip flip -> slice.Flip <- flip; slice
         | Brightness brightness -> slice.Brightness <- brightness; slice
@@ -298,14 +297,6 @@ module EffectSystem =
                 let tweened = tween (fun (x, y) -> x * single y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
                 let applied = applyTween Color.Multiply Color.Divide Color.Pow Color.Modulo slice.Color tweened applicator
                 slice.Emission <- applied
-            slice
-        | Heights (applicator, algorithm, playback, keyFrames) ->
-            if Array.notEmpty keyFrames then
-                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
-                let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
-                let tweened = tween (fun (x, y) -> x * single y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.Height tweened applicator
-                slice.Height <- applied
             slice
         | IgnoreLightMapses (applicator, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
@@ -498,7 +489,7 @@ module EffectSystem =
         // build implicitly mounted content
         evalContent content slice history effectSystem
 
-    and private evalBillboard albedo roughness metallic ambientOcclusion emission normal height twoSided clipped aspects content (slice : Slice) history effectSystem =
+    and private evalBillboard albedo roughness metallic ambientOcclusion emission normal twoSided clipped aspects content (slice : Slice) history effectSystem =
 
         // pull image from resource
         let imageAlbedo = evalResource albedo effectSystem
@@ -507,7 +498,6 @@ module EffectSystem =
         let imageAmbientOcclusion = evalResource ambientOcclusion effectSystem
         let imageEmission = evalResource emission effectSystem
         let imageNormal = evalResource normal effectSystem
-        let imageHeight = evalResource height effectSystem
 
         // eval aspects
         let slice = evalAspects aspects slice effectSystem
@@ -523,7 +513,6 @@ module EffectSystem =
                       MetallicOpt = ValueNone
                       AmbientOcclusionOpt = ValueNone
                       EmissionOpt = ValueSome slice.Emission.R
-                      HeightOpt = ValueSome slice.Height
                       IgnoreLightMapsOpt = ValueSome slice.IgnoreLightMaps
                       OpaqueDistanceOpt = ValueNone
                       FinenessOffsetOpt = ValueNone
@@ -549,7 +538,6 @@ module EffectSystem =
                       AmbientOcclusionImageOpt = ValueSome (AssetTag.specialize<Image> imageAmbientOcclusion)
                       EmissionImageOpt = ValueSome (AssetTag.specialize<Image> imageEmission)
                       NormalImageOpt = ValueSome (AssetTag.specialize<Image> imageNormal)
-                      HeightImageOpt = ValueSome (AssetTag.specialize<Image> imageHeight)
                       SubdermalImageOpt = ValueNone
                       FinenessImageOpt = ValueNone
                       ScatterImageOpt = ValueNone
@@ -598,7 +586,6 @@ module EffectSystem =
                       MetallicOpt = ValueNone
                       AmbientOcclusionOpt = ValueNone
                       EmissionOpt = ValueSome slice.Emission.R
-                      HeightOpt = ValueSome slice.Height
                       IgnoreLightMapsOpt = ValueSome slice.IgnoreLightMaps
                       OpaqueDistanceOpt = ValueNone
                       FinenessOffsetOpt = ValueNone
@@ -727,8 +714,8 @@ module EffectSystem =
             evalTextSprite resource text fontSizing fontStyling aspects content slice history effectSystem
         | Light3d (lightType, aspects, content) ->
             evalLight3d lightType aspects content slice history effectSystem
-        | Billboard (resourceAlbedo, resourceRoughness, resourceMetallic, resourceAmbientOcclusion, resourceEmission, resourceNormal, resourceHeight, twoSided, clipped, aspects, content) ->
-            evalBillboard resourceAlbedo resourceRoughness resourceMetallic resourceAmbientOcclusion resourceEmission resourceNormal resourceHeight twoSided clipped aspects content slice history effectSystem
+        | Billboard (resourceAlbedo, resourceRoughness, resourceMetallic, resourceAmbientOcclusion, resourceEmission, resourceNormal, twoSided, clipped, aspects, content) ->
+            evalBillboard resourceAlbedo resourceRoughness resourceMetallic resourceAmbientOcclusion resourceEmission resourceNormal twoSided clipped aspects content slice history effectSystem
         | StaticModel (resource, clipped, aspects, content) ->
             evalStaticModel resource clipped aspects content slice history effectSystem
         | Mount (Shift shift, aspects, content) ->

@@ -114,7 +114,6 @@ module Effect =
                   Color = Color.One
                   Blend = Transparent
                   Emission = Color.Zero
-                  Height = Constants.Render.HeightDefault
                   IgnoreLightMaps = false
                   Flip = Unflipped
                   Brightness = Constants.Render.BrightnessDefault

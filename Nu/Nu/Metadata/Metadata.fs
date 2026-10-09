@@ -570,36 +570,6 @@ module Metadata =
         | ValueNone -> ValueNone
 
     /// Thread-safe.
-    let private tryGetModelHeightImage materialIndex model =
-        match tryGetModelMetadata model with
-        | ValueSome modelMetadata ->
-            match modelMetadata.SceneOpt with
-            | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
-                let material = scene.Materials[materialIndex]
-                let mutable (_, heightTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Height, 0)
-                if isNull heightTextureSlot.FilePath then heightTextureSlot.FilePath <- "" // ensure not null
-                let assetName = PathF.GetFileNameWithoutExtension heightTextureSlot.FilePath
-                let image = asset model.PackageName assetName
-                if not (getMetadataExists image) then
-                    match tryGetModelAlbedoImage materialIndex model with
-                    | ValueSome albedoImage ->
-                        let albedoAssetName =   albedoImage.AssetName
-                        let has_bc =            albedoAssetName.Contains "_bc"
-                        let has_d =             albedoAssetName.Contains "_d"
-                        let hasBaseColor =      albedoAssetName.Contains "BaseColor"
-                        let hasDiffuse =        albedoAssetName.Contains "Diffuse"
-                        let hasAlbedo =         albedoAssetName.Contains "Albedo"
-                        let hAsset =            asset albedoImage.PackageName (if has_bc then albedoAssetName.Replace ("_bc", "_h")                 elif has_d then albedoAssetName.Replace ("_d", "_h")                else "")
-                        let heightAsset =       asset albedoImage.PackageName (if hasBaseColor then albedoAssetName.Replace ("BaseColor", "Height") elif hasDiffuse then albedoAssetName.Replace ("Diffuse", "Height")  elif hasAlbedo  then albedoAssetName.Replace ("Albedo", "Height") else "")
-                        if getMetadataExists hAsset then ValueSome hAsset
-                        elif getMetadataExists heightAsset then ValueSome heightAsset
-                        else ValueNone
-                    | ValueNone -> ValueNone
-                else ValueSome image
-            | Some _ | None -> ValueNone
-        | ValueNone -> ValueNone
-
-    /// Thread-safe.
     let private tryGetModelSubdermalImage materialIndex model =
         match tryGetModelMetadata model with
         | ValueSome modelMetadata ->
@@ -878,11 +848,6 @@ module Metadata =
     let tryGetStaticModelNormalImage materialIndex (staticModel : StaticModel AssetTag) =
         tryGetModelNormalImage materialIndex staticModel
 
-    /// Attempt to get the height image asset for the given material index and static model.
-    /// Thread-safe.
-    let tryGetStaticModelHeightImage materialIndex (staticModel : StaticModel AssetTag) =
-        tryGetModelHeightImage materialIndex staticModel
-
     /// Attempt to get the subsurface image asset for the given material index and static model.
     /// Thread-safe.
     let tryGetStaticModelSubdermalImage materialIndex (staticModel : StaticModel AssetTag) =
@@ -984,11 +949,6 @@ module Metadata =
     /// Thread-safe.
     let tryGetAnimatedModelNormalImage materialIndex (animatedModel : AnimatedModel AssetTag) =
         tryGetModelNormalImage materialIndex animatedModel
-
-    /// Attempt to get the height image asset for the given material index and animated model.
-    /// Thread-safe.
-    let tryGetAnimatedModelHeightImage materialIndex (animatedModel : AnimatedModel AssetTag) =
-        tryGetModelHeightImage materialIndex animatedModel
 
     /// Attempt to get the subdermal image asset for the given material index and animated model.
     /// Thread-safe.

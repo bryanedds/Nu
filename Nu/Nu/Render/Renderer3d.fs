@@ -20,7 +20,6 @@ type [<SymbolicExpansion>] TerrainMaterialProperties =
     { AlbedoOpt : Color option
       RoughnessOpt : single option
       AmbientOcclusionOpt : single option
-      HeightOpt : single option
       IgnoreLightMapsOpt : bool option
       UserDefinedSetting0Opt : single option
       UserDefinedSetting1Opt : single option
@@ -36,8 +35,7 @@ type TerrainLayer =
     { AlbedoImage : Image AssetTag
       RoughnessImage : Image AssetTag
       AmbientOcclusionImage : Image AssetTag
-      NormalImage : Image AssetTag
-      HeightImage : Image AssetTag }
+      NormalImage : Image AssetTag }
 
 /// Blend-weights for a 3d terrain.
 type BlendMap =
@@ -77,7 +75,6 @@ module TerrainMaterialProperties =
         { AlbedoOpt = Some Constants.Render.AlbedoDefault
           RoughnessOpt = Some Constants.Render.RoughnessDefault
           AmbientOcclusionOpt = Some Constants.Render.AmbientOcclusionDefault
-          HeightOpt = Some Constants.Render.HeightDefault
           IgnoreLightMapsOpt = Some false
           UserDefinedSetting0Opt = Some Constants.Render.UserDefinedSettingDefault
           UserDefinedSetting1Opt = Some Constants.Render.UserDefinedSettingDefault
@@ -93,7 +90,6 @@ module TerrainMaterialProperties =
         { AlbedoOpt = None
           RoughnessOpt = None
           AmbientOcclusionOpt = None
-          HeightOpt = None
           IgnoreLightMapsOpt = None
           UserDefinedSetting0Opt = None
           UserDefinedSetting1Opt = None
@@ -121,7 +117,6 @@ type [<SymbolicExpansion>] MaterialProperties =
       MetallicOpt : single voption
       AmbientOcclusionOpt : single voption
       EmissionOpt : single voption
-      HeightOpt : single voption
       IgnoreLightMapsOpt : bool voption
       OpaqueDistanceOpt : single voption // forward only
       FinenessOffsetOpt : single voption // deferred only
@@ -147,7 +142,6 @@ type [<SymbolicExpansion>] MaterialProperties =
     member this.Metallic = ValueOption.defaultValue Constants.Render.MetallicDefault this.MetallicOpt
     member this.AmbientOcclusion = ValueOption.defaultValue Constants.Render.AmbientOcclusionDefault this.AmbientOcclusionOpt
     member this.Emission = ValueOption.defaultValue Constants.Render.EmissionDefault this.EmissionOpt
-    member this.Height = ValueOption.defaultValue Constants.Render.HeightDefault this.HeightOpt
     member this.IgnoreLightMaps = ValueOption.defaultValue Constants.Render.IgnoreLightMapsDefault this.IgnoreLightMapsOpt
     member this.OpaqueDistance = ValueOption.defaultValue Constants.Render.OpaqueDistanceDefault this.OpaqueDistanceOpt
     member this.FinenessOffset = ValueOption.defaultValue Constants.Render.FinenessOffsetDefault this.FinenessOffsetOpt
@@ -174,7 +168,6 @@ type [<SymbolicExpansion>] MaterialProperties =
           MetallicOpt = ValueSome Constants.Render.MetallicDefault
           AmbientOcclusionOpt = ValueSome Constants.Render.AmbientOcclusionDefault
           EmissionOpt = ValueSome Constants.Render.EmissionDefault
-          HeightOpt = ValueSome Constants.Render.HeightDefault
           IgnoreLightMapsOpt = ValueSome Constants.Render.IgnoreLightMapsDefault
           OpaqueDistanceOpt = ValueSome Constants.Render.OpaqueDistanceDefault
           FinenessOffsetOpt = ValueSome Constants.Render.FinenessOffsetDefault
@@ -201,7 +194,6 @@ type [<SymbolicExpansion>] MaterialProperties =
           MetallicOpt = ValueNone
           AmbientOcclusionOpt = ValueNone
           EmissionOpt = ValueNone
-          HeightOpt = ValueNone
           IgnoreLightMapsOpt = ValueNone
           OpaqueDistanceOpt = ValueNone
           FinenessOffsetOpt = ValueNone
@@ -229,7 +221,6 @@ type [<SymbolicExpansion; CustomEquality; NoComparison>] Material =
       AmbientOcclusionImageOpt : Image AssetTag voption
       EmissionImageOpt : Image AssetTag voption
       NormalImageOpt : Image AssetTag voption
-      HeightImageOpt : Image AssetTag voption
       SubdermalImageOpt : Image AssetTag voption
       FinenessImageOpt : Image AssetTag voption
       ScatterImageOpt : Image AssetTag voption
@@ -248,7 +239,6 @@ type [<SymbolicExpansion; CustomEquality; NoComparison>] Material =
     member this.AmbientOcclusionImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialAmbientOcclusionName) this.AmbientOcclusionImageOpt
     member this.EmissionImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialEmissionName) this.EmissionImageOpt
     member this.NormalImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialNormalName) this.NormalImageOpt
-    member this.HeightImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialHeightName) this.HeightImageOpt
     member this.SubdermalImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialSubdermalName) this.SubdermalImageOpt
     member this.FinenessImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialFinenessName) this.FinenessImageOpt
     member this.ScatterImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialScatterName) this.ScatterImageOpt
@@ -269,7 +259,6 @@ type [<SymbolicExpansion; CustomEquality; NoComparison>] Material =
         hash material.AmbientOcclusionImageOpt ^^^
         hash material.EmissionImageOpt ^^^
         hash material.NormalImageOpt ^^^
-        hash material.HeightImageOpt ^^^
         hash material.SubdermalImageOpt ^^^
         hash material.FinenessImageOpt ^^^
         hash material.ScatterImageOpt ^^^
@@ -291,7 +280,6 @@ type [<SymbolicExpansion; CustomEquality; NoComparison>] Material =
         this.AmbientOcclusionImageOpt = that.AmbientOcclusionImageOpt &&
         this.EmissionImageOpt = that.EmissionImageOpt &&
         this.NormalImageOpt = that.NormalImageOpt &&
-        this.HeightImageOpt = that.HeightImageOpt &&
         this.SubdermalImageOpt = that.SubdermalImageOpt &&
         this.FinenessImageOpt = that.FinenessImageOpt &&
         this.ScatterImageOpt = that.ScatterImageOpt &&
@@ -312,7 +300,6 @@ type [<SymbolicExpansion; CustomEquality; NoComparison>] Material =
           AmbientOcclusionImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialAmbientOcclusionName)
           EmissionImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialEmissionName)
           NormalImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialNormalName)
-          HeightImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialHeightName)
           SubdermalImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialSubdermalName)
           FinenessImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialFinenessName)
           ScatterImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialScatterName)
@@ -333,7 +320,6 @@ type [<SymbolicExpansion; CustomEquality; NoComparison>] Material =
           AmbientOcclusionImageOpt = ValueNone
           EmissionImageOpt = ValueNone
           NormalImageOpt = ValueNone
-          HeightImageOpt = ValueNone
           SubdermalImageOpt = ValueNone
           FinenessImageOpt = ValueNone
           ScatterImageOpt = ValueNone
@@ -2061,7 +2047,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                       Metallic = surfaceDescriptor.MaterialProperties.Metallic
                       AmbientOcclusion = surfaceDescriptor.MaterialProperties.AmbientOcclusion
                       Emission = surfaceDescriptor.MaterialProperties.Emission
-                      Height = surfaceDescriptor.MaterialProperties.Height
                       IgnoreLightMaps = surfaceDescriptor.MaterialProperties.IgnoreLightMaps
                       OpaqueDistance = surfaceDescriptor.MaterialProperties.OpaqueDistance
                       FinenessOffset = surfaceDescriptor.MaterialProperties.FinenessOffset
@@ -2089,7 +2074,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                       AmbientOcclusionTexture = match VulkanRenderer3d.tryGetRenderAsset surfaceDescriptor.AmbientOcclusionImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.AmbientOcclusionTexture
                       EmissionTexture = match VulkanRenderer3d.tryGetRenderAsset surfaceDescriptor.EmissionImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.EmissionTexture
                       NormalTexture = match VulkanRenderer3d.tryGetRenderAsset surfaceDescriptor.NormalImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.NormalTexture
-                      HeightTexture = match VulkanRenderer3d.tryGetRenderAsset surfaceDescriptor.HeightImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.HeightTexture
                       SubdermalTexture = match VulkanRenderer3d.tryGetRenderAsset surfaceDescriptor.SubdermalImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.SubdermalTexture
                       FinenessTexture = match VulkanRenderer3d.tryGetRenderAsset surfaceDescriptor.FinenessImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.FinenessTexture
                       ScatterTexture = match VulkanRenderer3d.tryGetRenderAsset surfaceDescriptor.ScatterImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.ScatterTexture
@@ -2461,10 +2445,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             match VulkanRenderer3d.tryGetRenderAsset material.NormalImage renderer with
             | ValueSome (TextureAsset texture) -> texture
             | _ -> renderer.PhysicallyBasedMaterial.NormalTexture
-        let heightTexture =
-            match VulkanRenderer3d.tryGetRenderAsset material.HeightImage renderer with
-            | ValueSome (TextureAsset texture) -> texture
-            | _ -> renderer.PhysicallyBasedMaterial.HeightTexture
         let subdermalTexture =
             match VulkanRenderer3d.tryGetRenderAsset material.SubdermalImage renderer with
             | ValueSome (TextureAsset texture) -> texture
@@ -2503,7 +2483,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               Metallic = properties.Metallic
               AmbientOcclusion = properties.AmbientOcclusion
               Emission = properties.Emission
-              Height = properties.Height
               IgnoreLightMaps = properties.IgnoreLightMaps
               OpaqueDistance = properties.OpaqueDistance
               FinenessOffset = properties.FinenessOffset
@@ -2529,7 +2508,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               AmbientOcclusionTexture = ambientOcclusionTexture
               EmissionTexture = emissionTexture
               NormalTexture = normalTexture
-              HeightTexture = heightTexture
               SubdermalTexture = subdermalTexture
               FinenessTexture = finenessTexture
               ScatterTexture = scatterTexture
@@ -2587,13 +2565,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 | ValueSome (TextureAsset texture) -> texture
                 | _ -> surfaceMaterial.NormalTexture
             | ValueNone -> surfaceMaterial.NormalTexture
-        let heightTexture =
-            match material.HeightImageOpt with
-            | ValueSome image ->
-                match VulkanRenderer3d.tryGetRenderAsset image renderer with
-                | ValueSome (TextureAsset texture) -> texture
-                | _ -> surfaceMaterial.HeightTexture
-            | ValueNone -> surfaceMaterial.HeightTexture
         let finenessTexture =
             match material.FinenessImageOpt with
             | ValueSome image ->
@@ -2669,7 +2640,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               AmbientOcclusionTexture = ambientOcclusionTexture
               EmissionTexture = emissionTexture
               NormalTexture = normalTexture
-              HeightTexture = heightTexture
               SubdermalTexture = subdermalTexture
               FinenessTexture = finenessTexture
               ScatterTexture = scatterTexture
@@ -3620,7 +3590,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             let metallic = match properties.MetallicOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Metallic
             let ambientOcclusion = match properties.AmbientOcclusionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.AmbientOcclusion
             let emission = match properties.EmissionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Emission
-            let height = match properties.HeightOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Height
             let ignoreLightMaps = match properties.IgnoreLightMapsOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.IgnoreLightMaps
             let finenessOffset = match properties.FinenessOffsetOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.FinenessOffset
             let scatterType = match properties.ScatterTypeOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ScatterType
@@ -3642,9 +3611,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 24 + 1] <- metallic
             renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 24 + 2] <- ambientOcclusion
             renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 24 + 3] <- emission
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 28] <- surface.SurfaceMaterial.AlbedoTexture.TextureMetadata.TextureTexelHeight * height
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 29] <- if ignoreLightMaps then 1.0f else 0.0f
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 30] <- presence.DepthCutoff
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 28] <- if ignoreLightMaps then 1.0f else 0.0f
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 29] <- presence.DepthCutoff
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 30] <- 0.0f // free
             renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 31] <- 0.0f // free
             renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 32] <- finenessOffset
             renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 33] <- scatterType.Enumerate
@@ -3712,7 +3681,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 let metallic = match item.MaterialProperties.MetallicOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Metallic
                 let ambientOcclusion = match item.MaterialProperties.AmbientOcclusionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.AmbientOcclusion
                 let emission = match item.MaterialProperties.EmissionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Emission
-                let height = match item.MaterialProperties.HeightOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Height
                 let ignoreLightMaps = match item.MaterialProperties.IgnoreLightMapsOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.IgnoreLightMaps
                 let finenessOffset = match item.MaterialProperties.FinenessOffsetOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.FinenessOffset
                 let scatterType = match item.MaterialProperties.ScatterTypeOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.ScatterType
@@ -3734,9 +3702,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 24 + 1] <- metallic
                 renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 24 + 2] <- ambientOcclusion
                 renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 24 + 3] <- emission
-                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 28] <- surface.SurfaceMaterial.AlbedoTexture.TextureMetadata.TextureTexelHeight * height
-                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 29] <- if ignoreLightMaps then 1.0f else 0.0f
-                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 30] <- item.Presence.DepthCutoff
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 28] <- if ignoreLightMaps then 1.0f else 0.0f
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 29] <- item.Presence.DepthCutoff
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 30] <- 0.0f // free
                 renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 31] <- 0.0f // free
                 renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 32] <- finenessOffset
                 renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 33] <- scatterType.Enumerate
@@ -3812,7 +3780,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             let metallic = match properties.MetallicOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Metallic
             let ambientOcclusion = match properties.AmbientOcclusionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.AmbientOcclusion
             let emission = match properties.EmissionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Emission
-            let height = match properties.HeightOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Height
             let ignoreLightMaps = match properties.IgnoreLightMapsOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.IgnoreLightMaps
             let opaqueDistance = match properties.OpaqueDistanceOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.OpaqueDistance
             let subsurfaceCutoff = match properties.SubsurfaceCutoffOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.SubsurfaceCutoff
@@ -3835,10 +3802,10 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 24 + 1] <- metallic
             renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 24 + 2] <- ambientOcclusion
             renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 24 + 3] <- emission
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 28] <- surface.SurfaceMaterial.AlbedoTexture.TextureMetadata.TextureTexelHeight * height
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 29] <- if ignoreLightMaps then 1.0f else 0.0f
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 30] <- presence.DepthCutoff
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 31] <- opaqueDistance
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 28] <- if ignoreLightMaps then 1.0f else 0.0f
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 29] <- presence.DepthCutoff
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 30] <- opaqueDistance
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 31] <- 0.0f // free
             renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 32] <- subsurfaceCutoff
             renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 33] <- subsurfaceCutoffMargin
             renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 34] <- specularScalar
@@ -4478,7 +4445,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               Metallic = Constants.Render.MetallicDefault
               AmbientOcclusion = Option.defaultValue Constants.Render.AmbientOcclusionDefault terrainMaterialProperties.AmbientOcclusionOpt
               Emission = Constants.Render.EmissionDefault
-              Height = Option.defaultValue Constants.Render.HeightDefault terrainMaterialProperties.HeightOpt
               IgnoreLightMaps = Option.defaultValue Constants.Render.IgnoreLightMapsDefault terrainMaterialProperties.IgnoreLightMapsOpt
               OpaqueDistance = Constants.Render.OpaqueDistanceDefault
               FinenessOffset = Constants.Render.FinenessOffsetDefault
@@ -4524,10 +4490,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                             match VulkanRenderer3d.tryGetRenderAsset layer.NormalImage renderer with
                             | ValueSome renderAsset -> match renderAsset with TextureAsset texture -> texture | _ -> defaultMaterial.NormalTexture
                             | ValueNone -> defaultMaterial.NormalTexture
-                        let heightTexture =
-                            match VulkanRenderer3d.tryGetRenderAsset layer.HeightImage renderer with
-                            | ValueSome renderAsset -> match renderAsset with TextureAsset texture -> texture | _ -> defaultMaterial.HeightTexture
-                            | ValueNone -> defaultMaterial.HeightTexture
                         let albedoMetadata = albedoTexture.TextureMetadata
                         texelWidth <- min texelWidth albedoMetadata.TextureTexelWidth
                         texelHeight <- min texelHeight albedoMetadata.TextureTexelHeight
@@ -4535,8 +4497,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                             AlbedoTexture = albedoTexture
                             RoughnessTexture = roughnessTexture
                             AmbientOcclusionTexture = ambientOcclusionTexture
-                            NormalTexture = normalTexture
-                            HeightTexture = heightTexture }|]
+                            NormalTexture = normalTexture }|]
                 (texelWidth, texelHeight, materials)
             | FlatMaterial flatMaterial ->
                 let defaultMaterial =
@@ -4557,17 +4518,12 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     match VulkanRenderer3d.tryGetRenderAsset flatMaterial.NormalImage renderer with
                     | ValueSome renderAsset -> match renderAsset with TextureAsset texture -> texture | _ -> defaultMaterial.NormalTexture
                     | ValueNone -> defaultMaterial.NormalTexture
-                let heightTexture =
-                    match VulkanRenderer3d.tryGetRenderAsset flatMaterial.HeightImage renderer with
-                    | ValueSome renderAsset -> match renderAsset with TextureAsset texture -> texture | _ -> defaultMaterial.HeightTexture
-                    | ValueNone -> defaultMaterial.HeightTexture
                 let material =
                     { defaultMaterial with
                         AlbedoTexture = albedoTexture
                         RoughnessTexture = roughnessTexture
                         AmbientOcclusionTexture = ambientOcclusionTexture
-                        NormalTexture = normalTexture
-                        HeightTexture = heightTexture }
+                        NormalTexture = normalTexture }
                 let albedoMetadata = albedoTexture.TextureMetadata
                 (albedoMetadata.TextureTexelWidth, albedoMetadata.TextureTexelHeight, [|material|])
         let materials =
@@ -4599,7 +4555,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         instanceFields[25] <- materialProperties.Metallic
         instanceFields[26] <- materialProperties.AmbientOcclusion
         instanceFields[27] <- materialProperties.Emission
-        instanceFields[28] <- texelHeight * materialProperties.Height
         PhysicallyBased.drawPhysicallyBasedTerrain
             shadowCubeMapFace eyeCenter view projection
             instanceFields lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity
@@ -5582,10 +5537,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 match TextureInternal.tryCreate false true NormalCompression ("Assets/Default/MaterialNormal" + ext) RenderThread context with
                 | Right textureInternal -> EagerTexture textureInternal
                 | Left error -> failwith ("Could not load material normal texture due to: " + error)
-            let heightTexture =
-                match TextureInternal.tryCreate false true ColorCompression ("Assets/Default/MaterialHeight" + ext) RenderThread context with
-                | Right textureInternal -> EagerTexture textureInternal
-                | Left error -> failwith ("Could not load material height texture due to: " + error)
             let subdermalTexture =
                 match TextureInternal.tryCreate false true ColorCompression ("Assets/Default/MaterialSubdermal" + ext) RenderThread context with
                 | Right textureInternal -> EagerTexture textureInternal
@@ -5624,7 +5575,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               AmbientOcclusionTexture = ambientOcclusionTexture
               EmissionTexture = emissionTexture
               NormalTexture = normalTexture
-              HeightTexture = heightTexture
               SubdermalTexture = subdermalTexture
               FinenessTexture = finenessTexture
               ScatterTexture = scatterTexture
@@ -5755,7 +5705,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             Texture.destroy renderer.PhysicallyBasedMaterial.AmbientOcclusionTexture renderer.VulkanContext
             Texture.destroy renderer.PhysicallyBasedMaterial.EmissionTexture renderer.VulkanContext
             Texture.destroy renderer.PhysicallyBasedMaterial.NormalTexture renderer.VulkanContext
-            Texture.destroy renderer.PhysicallyBasedMaterial.HeightTexture renderer.VulkanContext
             Texture.destroy renderer.PhysicallyBasedMaterial.SubdermalTexture renderer.VulkanContext
             Texture.destroy renderer.PhysicallyBasedMaterial.FinenessTexture renderer.VulkanContext
             Texture.destroy renderer.PhysicallyBasedMaterial.ScatterTexture renderer.VulkanContext

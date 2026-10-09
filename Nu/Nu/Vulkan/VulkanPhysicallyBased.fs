@@ -230,7 +230,6 @@ type PhysicallyBasedMaterialProperties =
       Metallic : single
       AmbientOcclusion : single
       Emission : single
-      Height : single
       IgnoreLightMaps : bool
       OpaqueDistance : single
       FinenessOffset : single
@@ -258,7 +257,6 @@ type PhysicallyBasedMaterialProperties =
           Metallic = 0.0f
           AmbientOcclusion = 0.0f
           Emission = 0.0f
-          Height = 0.0f
           IgnoreLightMaps = false
           OpaqueDistance = 0.0f
           FinenessOffset = 0.0f
@@ -286,7 +284,6 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial =
       AmbientOcclusionTexture : Texture
       EmissionTexture : Texture
       NormalTexture : Texture
-      HeightTexture : Texture
       SubdermalTexture : Texture
       FinenessTexture : Texture
       ScatterTexture : Texture
@@ -308,7 +305,6 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial =
           AmbientOcclusionTexture = Texture.EmptyTexture
           EmissionTexture = Texture.EmptyTexture
           NormalTexture = Texture.EmptyTexture
-          HeightTexture = Texture.EmptyTexture
           SubdermalTexture = Texture.EmptyTexture
           FinenessTexture = Texture.EmptyTexture
           ScatterTexture = Texture.EmptyTexture
@@ -330,19 +326,18 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial =
         (hash material.AmbientOcclusionTexture <<<      03) ^^^
         (hash material.EmissionTexture <<<              04) ^^^
         (hash material.NormalTexture <<<                05) ^^^
-        (hash material.HeightTexture <<<                06) ^^^
-        (hash material.SubdermalTexture <<<             07) ^^^
-        (hash material.FinenessTexture <<<              08) ^^^
-        (hash material.ScatterTexture <<<               09) ^^^
-        (hash material.ClearCoatTexture <<<             10) ^^^
-        (hash material.ClearCoatRoughnessTexture <<<    11) ^^^
-        (hash material.ClearCoatNormalTexture <<<       12) ^^^
-        (hash material.UserDefinedImage0Texture <<<     13) ^^^
-        (hash material.UserDefinedImage1Texture <<<     14) ^^^
-        (hash material.TwoSided <<<                     15) ^^^
-        (hash material.Clipped <<<                      16) ^^^
-        (hash material.PipelineName <<<                 17) ^^^
-        (hash material.Names <<<                        18)
+        (hash material.SubdermalTexture <<<             06) ^^^
+        (hash material.FinenessTexture <<<              07) ^^^
+        (hash material.ScatterTexture <<<               08) ^^^
+        (hash material.ClearCoatTexture <<<             09) ^^^
+        (hash material.ClearCoatRoughnessTexture <<<    10) ^^^
+        (hash material.ClearCoatNormalTexture <<<       11) ^^^
+        (hash material.UserDefinedImage0Texture <<<     12) ^^^
+        (hash material.UserDefinedImage1Texture <<<     13) ^^^
+        (hash material.TwoSided <<<                     14) ^^^
+        (hash material.Clipped <<<                      15) ^^^
+        (hash material.PipelineName <<<                 16) ^^^
+        (hash material.Names <<<                        17)
 
     /// Determing equality.
     static member equals left right =
@@ -353,7 +348,6 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial =
         left.AmbientOcclusionTexture = right.AmbientOcclusionTexture &&
         left.EmissionTexture = right.EmissionTexture &&
         left.NormalTexture = right.NormalTexture &&
-        left.HeightTexture = right.HeightTexture &&
         left.SubdermalTexture = right.SubdermalTexture &&
         left.FinenessTexture = right.FinenessTexture &&
         left.ScatterTexture = right.ScatterTexture &&
@@ -1254,7 +1248,6 @@ module PhysicallyBased =
         let aoTextureFilePath =                 if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_ao")                      elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_ao")                       else ""
         let eTextureFilePath =                  if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_e")                       elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_e")                        else ""
         let nTextureFilePath =                  if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_n")                       elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_n")                        else ""
-        let hTextureFilePath =                  if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_h")                       elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_h")                        else ""
         let subdermalTextureFilePath =          if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_subdermal")               elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_subdermal")                else ""
         let finenessTextureFilePath =           if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_fineness")                elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_fineness")                 else ""
         let scatterTextureFilePath =            if has_bc       then substitutionPrefix + albedoTextureFileName.Replace ("_bc", "_scatter")                 elif has_d      then substitutionPrefix + albedoTextureFileName.Replace ("_d", "_scatter")                  else ""
@@ -1274,7 +1267,6 @@ module PhysicallyBased =
         let normalTextureFilePath =             if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Normal")             elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Normal")               elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Normal")                else ""
         let emissiveTextureFilePath =           if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Emissive")           elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Emissive")             elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Emissive")              else ""
         let emissionTextureFilePath =           if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Emission")           elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Emission")             elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Emission")              else ""
-        let heightTextureFilePath =             if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Height")             elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Height")               elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Height")                else ""
         let subdermalTextureFilePath' =         if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Subdermal")          elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Subdermal")            elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Subdermal")             else ""
         let finenessTextureFilePath' =          if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Fineness")           elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Fineness")             elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Fineness")              else ""
         let scatterTextureFilePath' =           if hasBaseColor then substitutionPrefix + albedoTextureFileName.Replace ("BaseColor", "Scatter")            elif hasDiffuse then substitutionPrefix + albedoTextureFileName.Replace ("Diffuse", "Scatter")              elif hasAlbedo  then substitutionPrefix + albedoTextureFileName.Replace ("Albedo", "Scatter")               else ""
@@ -1429,26 +1421,6 @@ module PhysicallyBased =
                         | Right texture -> texture
                         | Left _ -> defaultMaterial.NormalTexture
             | None -> defaultMaterial.NormalTexture
-
-        // attempt to load height info
-        let height = Constants.Render.HeightDefault
-        let mutable (_, heightTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Height, 0)
-        if isNull heightTextureSlot.FilePath
-        then heightTextureSlot.FilePath <- "" // ensure not null
-        else heightTextureSlot.FilePath <- PathF.Normalize heightTextureSlot.FilePath
-        let heightTexture =
-            match contextOpt with
-            | Some context ->
-                match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression heightTextureSlot.FilePath) (dirPrefix + heightTextureSlot.FilePath) RenderThread context with
-                | Right texture -> texture
-                | Left _ ->
-                    match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression hTextureFilePath) (dirPrefix + hTextureFilePath) RenderThread context with
-                    | Right texture -> texture
-                    | Left _ ->
-                        match textureClient.TryCreateTextureFiltered true (Hl.inferTextureCompression heightTextureFilePath) (dirPrefix + heightTextureFilePath) RenderThread context with
-                        | Right texture -> texture
-                        | Left _ -> defaultMaterial.HeightTexture
-            | None -> defaultMaterial.HeightTexture
 
         // compute ignore light maps
         let ignoreLightMaps =
@@ -1617,8 +1589,7 @@ module PhysicallyBased =
                 ambientOcclusionTextureSlotA.FilePath + "/" +
                 ambientOcclusionTextureSlotB.FilePath + "/" +
                 emissionTextureSlot.FilePath + "/" +
-                normalTextureSlot.FilePath + "/" +
-                heightTextureSlot.FilePath
+                normalTextureSlot.FilePath
             | None -> ""
 
         // make properties
@@ -1628,7 +1599,6 @@ module PhysicallyBased =
               Metallic = metallic
               AmbientOcclusion = ambientOcclusion
               Emission = emission
-              Height = height
               IgnoreLightMaps = ignoreLightMaps
               OpaqueDistance = opaqueDistance
               FinenessOffset = finenessOffset
@@ -1656,7 +1626,6 @@ module PhysicallyBased =
               AmbientOcclusionTexture = ambientOcclusionTexture
               EmissionTexture = emissionTexture
               NormalTexture = normalTexture
-              HeightTexture = heightTexture
               SubdermalTexture = subdermalTexture
               FinenessTexture = finenessTexture
               ScatterTexture = scatterTexture
@@ -3752,15 +3721,14 @@ module PhysicallyBased =
                       Pipeline.descriptor 3 SampledImage FragmentStage 1 // ambientOcclusionTexture
                       Pipeline.descriptor 4 SampledImage FragmentStage 1 // emissionTexture
                       Pipeline.descriptor 5 SampledImage FragmentStage 1 // normalTexture
-                      Pipeline.descriptor 6 SampledImage FragmentStage 1 // heightTexture
-                      Pipeline.descriptor 7 SampledImage FragmentStage 1 // subdermalTexture
-                      Pipeline.descriptor 8 SampledImage FragmentStage 1 // finenessTexture
-                      Pipeline.descriptor 9 SampledImage FragmentStage 1 // scatterTexture
-                      Pipeline.descriptor 10 SampledImage FragmentStage 1 // clearCoatTexture
-                      Pipeline.descriptor 11 SampledImage FragmentStage 1 // clearCoatRoughnessTexture
-                      Pipeline.descriptor 12 SampledImage FragmentStage 1 // clearCoatNormalTexture
-                      Pipeline.descriptor 13 SampledImage FragmentStage 1 // userDefinedImage0Texture
-                      Pipeline.descriptor 14 SampledImage FragmentStage 1|] // userDefinedImage1Texture
+                      Pipeline.descriptor 6 SampledImage FragmentStage 1 // subdermalTexture
+                      Pipeline.descriptor 7 SampledImage FragmentStage 1 // finenessTexture
+                      Pipeline.descriptor 8 SampledImage FragmentStage 1 // scatterTexture
+                      Pipeline.descriptor 9 SampledImage FragmentStage 1 // clearCoatTexture
+                      Pipeline.descriptor 10 SampledImage FragmentStage 1 // clearCoatRoughnessTexture
+                      Pipeline.descriptor 11 SampledImage FragmentStage 1 // clearCoatNormalTexture
+                      Pipeline.descriptor 12 SampledImage FragmentStage 1 // userDefinedImage0Texture
+                      Pipeline.descriptor 13 SampledImage FragmentStage 1|] // userDefinedImage1Texture
 
                   // descriptor set 2: dynamic
                   Pipeline.descriptorSet<int>
@@ -3884,15 +3852,14 @@ module PhysicallyBased =
                     Pipeline.writeDescriptorSampledTexture 3 0 material.AmbientOcclusionTexture vkSet
                     Pipeline.writeDescriptorSampledTexture 4 0 material.EmissionTexture vkSet
                     Pipeline.writeDescriptorSampledTexture 5 0 material.NormalTexture vkSet
-                    Pipeline.writeDescriptorSampledTexture 6 0 material.HeightTexture vkSet
-                    Pipeline.writeDescriptorSampledTexture 7 0 material.SubdermalTexture vkSet
-                    Pipeline.writeDescriptorSampledTexture 8 0 material.FinenessTexture vkSet
-                    Pipeline.writeDescriptorSampledTexture 9 0 material.ScatterTexture vkSet
-                    Pipeline.writeDescriptorSampledTexture 10 0 material.ClearCoatTexture vkSet
-                    Pipeline.writeDescriptorSampledTexture 11 0 material.ClearCoatRoughnessTexture vkSet
-                    Pipeline.writeDescriptorSampledTexture 12 0 material.ClearCoatNormalTexture vkSet
-                    Pipeline.writeDescriptorSampledTexture 13 0 material.UserDefinedImage0Texture vkSet
-                    Pipeline.writeDescriptorSampledTexture 14 0 material.UserDefinedImage1Texture vkSet
+                    Pipeline.writeDescriptorSampledTexture 6 0 material.SubdermalTexture vkSet
+                    Pipeline.writeDescriptorSampledTexture 7 0 material.FinenessTexture vkSet
+                    Pipeline.writeDescriptorSampledTexture 8 0 material.ScatterTexture vkSet
+                    Pipeline.writeDescriptorSampledTexture 9 0 material.ClearCoatTexture vkSet
+                    Pipeline.writeDescriptorSampledTexture 10 0 material.ClearCoatRoughnessTexture vkSet
+                    Pipeline.writeDescriptorSampledTexture 11 0 material.ClearCoatNormalTexture vkSet
+                    Pipeline.writeDescriptorSampledTexture 12 0 material.UserDefinedImage0Texture vkSet
+                    Pipeline.writeDescriptorSampledTexture 13 0 material.UserDefinedImage1Texture vkSet
 
                 // specify dynamic when animated
                 let mutable dynamicDescriptorSet =
@@ -3969,8 +3936,7 @@ module PhysicallyBased =
                     [|Pipeline.descriptor 0 SampledImage FragmentStage Constants.Render.TerrainLayersMax // albedoTextures
                       Pipeline.descriptor 1 SampledImage FragmentStage Constants.Render.TerrainLayersMax // roughnessTextures
                       Pipeline.descriptor 2 SampledImage FragmentStage Constants.Render.TerrainLayersMax // ambientOcclusionTextures
-                      Pipeline.descriptor 3 SampledImage FragmentStage Constants.Render.TerrainLayersMax // normalTextures
-                      Pipeline.descriptor 4 SampledImage FragmentStage Constants.Render.TerrainLayersMax|] // heightTextures
+                      Pipeline.descriptor 3 SampledImage FragmentStage Constants.Render.TerrainLayersMax|] // normalTextures
                   Pipeline.descriptorSet<Unit>
                     [|Pipeline.descriptor 0 Sampler FragmentStage 1|]|]
                 [||] colorAttachmentFormats (Some depthTest)
@@ -4059,7 +4025,6 @@ module PhysicallyBased =
                 Pipeline.writeDescriptorSampledTextures 1 0 (materials |> Array.map _.RoughnessTexture) vkSet
                 Pipeline.writeDescriptorSampledTextures 2 0 (materials |> Array.map _.AmbientOcclusionTexture) vkSet
                 Pipeline.writeDescriptorSampledTextures 3 0 (materials |> Array.map _.NormalTexture) vkSet
-                Pipeline.writeDescriptorSampledTextures 4 0 (materials |> Array.map _.HeightTexture) vkSet
 
             // specify samplers
             let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 2 Unit pipeline.Pipeline $ fun vkSet ->
@@ -5766,9 +5731,8 @@ module PhysicallyBased =
                 Pipeline.writeDescriptorSampledTexture 3 0 material.AmbientOcclusionTexture vkSet
                 Pipeline.writeDescriptorSampledTexture 4 0 material.EmissionTexture vkSet
                 Pipeline.writeDescriptorSampledTexture 5 0 material.NormalTexture vkSet
-                Pipeline.writeDescriptorSampledTexture 6 0 material.HeightTexture vkSet
-                Pipeline.writeDescriptorSampledTexture 13 0 material.UserDefinedImage0Texture vkSet
-                Pipeline.writeDescriptorSampledTexture 14 0 material.UserDefinedImage1Texture vkSet
+                Pipeline.writeDescriptorSampledTexture 12 0 material.UserDefinedImage0Texture vkSet
+                Pipeline.writeDescriptorSampledTexture 13 0 material.UserDefinedImage1Texture vkSet
 
             // specify dynamic
             // NOTE: we do more work on bones specification even when there aren't bones to specify than in the other
