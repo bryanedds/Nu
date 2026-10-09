@@ -248,10 +248,10 @@ and [<CustomEquality; CustomComparison>] SortPriority =
             | _ -> failwithumf ()
 
 /// Specified the requested song, if any, or whether to ignore song request functionality altogether.
-and RequestedSong =
-    | Request of SongDescriptor
+and SongRequest =
+    | RequestSong of SongDescriptor
     | RequestFadeOut of GameTime
-    | RequestNone
+    | RequestSilence
     | RequestIgnore
 
 /// Describes the behavior of a screen.
@@ -1083,7 +1083,7 @@ and [<ReferenceEquality; CLIMutable>] ScreenState =
       TransitionState : TransitionState
       Incoming : Transition
       Outgoing : Transition
-      RequestedSong : RequestedSong
+      SongRequest : SongRequest
       SlideOpt : Slide option
       Nav3d : Nav3d
       Persistent : bool
@@ -1129,7 +1129,7 @@ and [<ReferenceEquality; CLIMutable>] ScreenState =
           TransitionState = IdlingState time
           Incoming = Transition.make Incoming
           Outgoing = Transition.make Outgoing
-          RequestedSong = RequestIgnore
+          SongRequest = RequestIgnore
           SlideOpt = None
           Nav3d = Nav3d.makeEmpty ()
           Persistent = true

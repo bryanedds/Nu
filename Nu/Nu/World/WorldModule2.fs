@@ -259,11 +259,11 @@ module WorldModule2 =
                 | OutgoingState transitionTime -> World.updateScreenOutgoing transitionTime selectedScreen world
             | None -> ()
 
-        static member private updateScreenRequestedSong world =
+        static member private updateScreenSongRequest world =
             match World.getSelectedScreenOpt world with
             | Some selectedScreen ->
-                match World.getScreenRequestedSong selectedScreen world with
-                | Request song ->
+                match World.getScreenSongRequest selectedScreen world with
+                | RequestSong song ->
                     match World.getSongOpt world with
                     | Some current ->
                         if  current.FadeInTime <> song.FadeInTime ||
@@ -276,13 +276,13 @@ module WorldModule2 =
                             World.setSongVolume song.Volume world
                     | None -> World.playSong song.FadeInTime song.FadeOutTime song.StartTime song.RepeatLimitOpt song.Volume song.Song world
                 | RequestFadeOut fadeOutTime -> if not (World.getSongFadingOut world) then World.fadeOutSong fadeOutTime world
-                | RequestNone -> World.stopSong world
+                | RequestSilence -> World.stopSong world
                 | RequestIgnore -> ()
             | None -> ()
 
         static member private processScreenTransitioning world =
             World.updateScreenTransition world
-            World.updateScreenRequestedSong world
+            World.updateScreenSongRequest world
 
         /// Try to transition to the given screen if no other transition is in progress.
         static member tryTransitionScreen destination world =

@@ -117,7 +117,7 @@ module WorldModuleScreen =
         static member internal getScreenTransitionState screen world = (World.getScreenState screen world).TransitionState
         static member internal getScreenIncoming screen world = (World.getScreenState screen world).Incoming
         static member internal getScreenOutgoing screen world = (World.getScreenState screen world).Outgoing
-        static member internal getScreenRequestedSong screen world = (World.getScreenState screen world).RequestedSong
+        static member internal getScreenSongRequest screen world = (World.getScreenState screen world).SongRequest
         static member internal getScreenSlideOpt screen world = (World.getScreenState screen world).SlideOpt
         static member internal getScreenNav3d screen world = (World.getScreenState screen world).Nav3d
         static member internal getScreenPersistent screen world = (World.getScreenState screen world).Persistent
@@ -212,12 +212,12 @@ module WorldModuleScreen =
                 true
             else false
 
-        static member internal setScreenRequestedSong value screen world =
+        static member internal setScreenSongRequest value screen world =
             let screenState = World.getScreenState screen world
-            let previous = screenState.RequestedSong
+            let previous = screenState.SongRequest
             if value <> previous then
-                World.setScreenState { screenState with RequestedSong = value } screen world
-                World.publishScreenChange (nameof screenState.RequestedSong) previous value screen world
+                World.setScreenState { screenState with SongRequest = value } screen world
+                World.publishScreenChange (nameof screenState.SongRequest) previous value screen world
                 true
             else false
 
@@ -499,7 +499,7 @@ module WorldModuleScreen =
                  ("TransitionState", fun screen world -> { PropertyType = typeof<TransitionState>; PropertyValue = World.getScreenTransitionState screen world })
                  ("Incoming", fun screen world -> { PropertyType = typeof<Transition>; PropertyValue = World.getScreenIncoming screen world })
                  ("Outgoing", fun screen world -> { PropertyType = typeof<Transition>; PropertyValue = World.getScreenOutgoing screen world })
-                 ("RequestedSong", fun screen world -> { PropertyType = typeof<RequestedSong>; PropertyValue = World.getScreenRequestedSong screen world })
+                 ("SongRequest", fun screen world -> { PropertyType = typeof<SongRequest>; PropertyValue = World.getScreenSongRequest screen world })
                  ("SlideOpt", fun screen world -> { PropertyType = typeof<Slide option>; PropertyValue = World.getScreenSlideOpt screen world })
                  ("Nav3d", fun screen world -> { PropertyType = typeof<Nav3d>; PropertyValue = World.getScreenNav3d screen world })
                  ("Persistent", fun screen world -> { PropertyType = typeof<bool>; PropertyValue = World.getScreenPersistent screen world })
@@ -517,7 +517,7 @@ module WorldModuleScreen =
                  ("TransitionState", fun property screen world -> World.setScreenTransitionState (property.PropertyValue :?> TransitionState) screen world)
                  ("Incoming", fun property screen world -> World.setScreenIncoming (property.PropertyValue :?> Transition) screen world)
                  ("Outgoing", fun property screen world -> World.setScreenOutgoing (property.PropertyValue :?> Transition) screen world)
-                 ("RequestedSong", fun property screen world -> World.setScreenRequestedSong (property.PropertyValue :?> RequestedSong) screen world)
+                 ("SongRequest", fun property screen world -> World.setScreenSongRequest (property.PropertyValue :?> SongRequest) screen world)
                  ("SlideOpt", fun property screen world -> World.setScreenSlideOpt (property.PropertyValue :?> Slide option) screen world)
                  ("Persistent", fun property screen world -> World.setScreenPersistent (property.PropertyValue :?> bool) screen world)]
         ScreenSetters <- screenSetters.ToFrozenDictionary ()
