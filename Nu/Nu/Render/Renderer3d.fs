@@ -480,6 +480,7 @@ type CachedStaticModelSurfaceMessage =
       mutable CachedStaticModelSurfaceRenderPass : RenderPass }
 
 /// An internally cached animated model used to reduce GC promotion or pressure.
+/// TODO: P1: add a corresponding workflow for AnimatedModelSurface.
 type CachedAnimatedModelMessage =
     { mutable CachedAnimatedModelMatrix : Matrix4x4
       mutable CachedAnimatedModelCastShadow : bool
@@ -689,6 +690,22 @@ type RenderStaticModels =
     { StaticModels : (Matrix4x4 * bool * Presence * Box2 option * MaterialProperties) SList
       StaticModel : StaticModel AssetTag
       Clipped : bool
+      DepthTest : DepthTest
+      RenderType : RenderType
+      RenderPass : RenderPass }
+
+/// Describes how to render an animated model surface.
+type RenderAnimatedModelSurface =
+    { ModelMatrix : Matrix4x4
+      CastShadow : bool
+      Presence : Presence
+      InsetOpt : Box2 option
+      MaterialProperties : MaterialProperties
+      Material : Material
+      BoneTransforms : Matrix4x4 array
+      AnimatedModel : AnimatedModel AssetTag
+      SurfaceIndex : int
+      DualRendered : bool
       DepthTest : DepthTest
       RenderType : RenderType
       RenderPass : RenderPass }
@@ -946,6 +963,7 @@ type RenderMessage3d =
     | RenderCachedStaticModel of CachedStaticModelMessage
     | RenderCachedStaticModelSurface of CachedStaticModelSurfaceMessage
     | RenderUserDefinedStaticModel of RenderUserDefinedStaticModel
+    | RenderAnimatedModelSurface of RenderAnimatedModelSurface
     | RenderAnimatedModel of RenderAnimatedModel
     | RenderAnimatedModels of RenderAnimatedModels
     | RenderCachedAnimatedModel of CachedAnimatedModelMessage
@@ -3083,6 +3101,75 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             | _ -> Log.infoOnce ("Cannot render static model with a non-static model asset for '" + scstring staticModel + "'.")
         | ValueNone -> Log.infoOnce ("Cannot render static model due to unloadable asset(s) for '" + scstring staticModel + "'.")
 
+    static member private categorizeAnimatedModelSurface
+        (model : Matrix4x4 inref,
+         castShadow : bool,
+         presence : Presence,
+         insetOpt : Box2 voption inref,
+         properties : MaterialProperties,
+         material : Material,
+         boneTransforms : Matrix4x4 array,
+         animatedModel : AnimatedModel AssetTag,
+         surfaceIndex : int,
+         dualRendering : bool,
+         depthTest : DepthTest,
+         renderType : RenderType,
+         renderTasks : RenderTasks,
+         renderer) =
+
+        // ensure we have the required animated model
+        match VulkanRenderer3d.tryGetRenderAsset animatedModel renderer with
+        | ValueSome renderAsset ->
+            match renderAsset with
+            | AnimatedModelAsset modelAsset ->
+
+                // compute tex coords offset
+                let surface = modelAsset.Surfaces[surfaceIndex]
+                let texCoordsOffset =
+                    match insetOpt with
+                    | ValueSome inset ->
+                        let albedoMetadata = surface.SurfaceMaterial.AlbedoTexture.TextureMetadata
+                        let texelWidth = albedoMetadata.TextureTexelWidth
+                        let texelHeight = albedoMetadata.TextureTexelHeight
+                        let px = inset.Min.X * texelWidth
+                        let py = (inset.Min.Y + inset.Size.Y) * texelHeight
+                        let sx = inset.Size.X * texelWidth
+                        let sy = -inset.Size.Y * texelHeight
+                        Box2 (px, py, sx, sy)
+                    | ValueNone -> box2 v2Zero v2Zero
+
+                // apply surface material
+                let surfaceMaterial = VulkanRenderer3d.applySurfaceMaterial material surface.SurfaceMaterial renderer
+                let surface = { surface with HashCode = surface.HashCode ^^^ hash surfaceMaterial; SurfaceMaterial = surfaceMaterial }
+
+                // deferred render animated surface when needed
+                if renderType = DeferredRenderType || dualRendering then
+                    let item =
+                        match renderTasks.DeferredAnimated.TryGetValue surface.SurfaceMaterial.PipelineName with
+                        | (true, item) -> item
+                        | (false, _) ->
+                            let item = dictPlus AnimatedModelSurfaceKey.comparer []
+                            renderTasks.DeferredAnimated.Add (surface.SurfaceMaterial.PipelineName, item)
+                            item
+                    let animatedModelSurfaceKey = { BoneTransforms = boneTransforms; AnimatedSurface = surface }
+                    match item.TryGetValue animatedModelSurfaceKey with
+                    | (true, renderOps) -> renderOps.Add struct (model, castShadow, presence, texCoordsOffset, properties)
+                    | (false, _) -> item.Add (animatedModelSurfaceKey, List ([struct (model, castShadow, presence, texCoordsOffset, properties)]))
+
+                // forward render animated surface when needed
+                let sortsOpt =
+                    match renderType with
+                    | ForwardRenderType (subsort, sort) -> ValueSome struct (subsort, sort)
+                    | _ -> if dualRendering then ValueSome struct (0.0f, 0.0f) else ValueNone
+                match sortsOpt with
+                | ValueSome struct (subsort, sort) ->
+                    renderTasks.Forward.Add struct (subsort, sort, model, castShadow, presence, texCoordsOffset, properties, ValueSome boneTransforms, surface, depthTest)
+                | ValueNone -> ()
+
+            // unable to render
+            | _ -> Log.infoOnce ("Cannot render animated model with a non-animated model asset '" + scstring animatedModel + "'.")
+        | ValueNone -> Log.infoOnce ("Cannot render animated model due to unloadable asset(s) for '" + scstring animatedModel + "'.")
+
     static member private categorizeAnimatedModel
         (model : Matrix4x4 inref,
          castShadow : bool,
@@ -3098,6 +3185,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
          renderType : RenderType,
          renderTasks : RenderTasks,
          renderer) =
+
+        // TODO: P1: see if we can implement this function mostly in terms of categorizeAnimatedModelSurface or perhaps
+        // some new function common to both.
 
         // ensure we have the required animated model
         match VulkanRenderer3d.tryGetRenderAsset animatedModel renderer with
@@ -3472,10 +3562,14 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 let renderTasks = VulkanRenderer3d.getRenderTasks rudsm.RenderPass renderer
                 VulkanRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, &rudsm.ModelMatrix, rudsm.CastShadow, rudsm.Presence, &insetOpt, rudsm.MaterialProperties, assetTag, rudsm.Clipped, rudsm.DepthTest, rudsm.RenderType, rudsm.RenderPass, renderTasks, renderer)
                 renderer.UserDefinedStaticModelsToDestroy.Add assetTag
-            | RenderAnimatedModel rsm ->
-                let insetOpt = Option.toValueOption rsm.InsetOpt
-                let renderTasks = VulkanRenderer3d.getRenderTasks rsm.RenderPass renderer
-                VulkanRenderer3d.categorizeAnimatedModel (&rsm.ModelMatrix, rsm.CastShadow, rsm.Presence, &insetOpt, rsm.MaterialProperties, rsm.Material, rsm.BoneTransforms, rsm.AnimatedModel, rsm.SubsortOffsets, rsm.DualRenderedSurfaceIndices, rsm.DepthTest, rsm.RenderType, renderTasks, renderer)
+            | RenderAnimatedModelSurface rams ->
+                let insetOpt = Option.toValueOption rams.InsetOpt
+                let renderTasks = VulkanRenderer3d.getRenderTasks rams.RenderPass renderer
+                VulkanRenderer3d.categorizeAnimatedModelSurface (&rams.ModelMatrix, rams.CastShadow, rams.Presence, &insetOpt, rams.MaterialProperties, rams.Material, rams.BoneTransforms, rams.AnimatedModel, rams.SurfaceIndex, rams.DualRendered, rams.DepthTest, rams.RenderType, renderTasks, renderer)
+            | RenderAnimatedModel ram ->
+                let insetOpt = Option.toValueOption ram.InsetOpt
+                let renderTasks = VulkanRenderer3d.getRenderTasks ram.RenderPass renderer
+                VulkanRenderer3d.categorizeAnimatedModel (&ram.ModelMatrix, ram.CastShadow, ram.Presence, &insetOpt, ram.MaterialProperties, ram.Material, ram.BoneTransforms, ram.AnimatedModel, ram.SubsortOffsets, ram.DualRenderedSurfaceIndices, ram.DepthTest, ram.RenderType, renderTasks, renderer)
             | RenderAnimatedModels rams ->
                 let renderTasks = VulkanRenderer3d.getRenderTasks rams.RenderPass renderer
                 VulkanRenderer3d.categorizeAnimatedModels (rams.AnimatedModels, rams.BoneTransforms, rams.AnimatedModel, rams.SubsortOffsets, rams.DualRenderedSurfaceIndices, rams.DepthTest, rams.RenderType, renderTasks, renderer)
