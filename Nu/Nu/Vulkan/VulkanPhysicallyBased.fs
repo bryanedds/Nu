@@ -1564,7 +1564,7 @@ module PhysicallyBased =
 
         // attempt to load user-defined settings
         let userDefinedSettings =
-            [for i in 0 .. dec 8 do
+            [for i in 0 .. dec Constants.Render.UserDefinedSettingCount do
                 match material.UserDefinedSettingOpt i with
                 | ValueSome userDefinedSetting -> userDefinedSetting
                 | ValueNone -> Constants.Render.UserDefinedSettingDefault]

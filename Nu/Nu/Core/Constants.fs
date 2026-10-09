@@ -253,6 +253,7 @@ module Render =
     let [<Literal>] EnvironmentFilterResolution = 512
     let [<Literal>] EnvironmentFilterMips = 7 // NOTE: changing this requires changing the REFLECTION_LOD_MAX constants in shader code.
     let [<Literal>] BloomSampleLevels = 6
+    let [<Literal>] UserDefinedSettingCount = 8 // NOTE: to change this requires more changes across F# and shaders!
     let [<Literal>] PipelineNameDefault = "Default"
     let [<Literal>] LightMappingEnabledDefault = true
     let [<Literal>] LightCutoffMarginDefault = 0.4f
