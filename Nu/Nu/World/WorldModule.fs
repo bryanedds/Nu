@@ -102,12 +102,6 @@ module internal WorldModuleInternal =
 [<AutoOpen>]
 module WorldModule =
 
-    type World with // Construction
-
-        /// Choose a world to be used as the active world for debugging.
-        static member internal choose (world : World) =
-            world.Choose ()
-
     type World with // Caching
 
         /// Get the simulants.
@@ -564,23 +558,14 @@ module WorldModule =
         static member internal getSubsystems world =
             world.Subsystems
 
-        static member internal setSubsystems subsystems world =
-            World.choose { world with Subsystems = subsystems }
-
-        static member internal mapSubsystems mapper world =
-            World.setSubsystems (mapper world.Subsystems) world
-
         static member internal cleanUpSubsystems world =
-            World.mapSubsystems (fun subsystems ->
-                subsystems.CursorClient.CleanUp ()
-                subsystems.AudioPlayer.CleanUp ()
-                match subsystems.RendererPhysics3dOpt with Some renderer -> renderer.Dispose () | None -> ()
-                subsystems.RendererProcess.Terminate ()
-                subsystems.PhysicsEngine3d.CleanUp ()
-                subsystems.PhysicsEngine2d.CleanUp ()
-                subsystems.ImGui.CleanUp ()
-                subsystems)
-                world
+            world.Subsystems.CursorClient.CleanUp ()
+            world.Subsystems.AudioPlayer.CleanUp ()
+            match world.Subsystems.RendererPhysics3dOpt with Some renderer -> renderer.Dispose () | None -> ()
+            world.Subsystems.RendererProcess.Terminate ()
+            world.Subsystems.PhysicsEngine3d.CleanUp ()
+            world.Subsystems.PhysicsEngine2d.CleanUp ()
+            world.Subsystems.ImGui.CleanUp ()
 
     type World with // EventGraph
 
@@ -870,9 +855,9 @@ module WorldModule =
             | (true, callback) -> callback world
             | (false, _) -> ()
 
-        /// Invoke a user-defined callback.
-        static member invoke name args world =
-            world.WorldExtension.Plugin.Invoke name args world
+        /// Get the user-defined 3D pipeline descriptors.
+        static member getUserDefinedPipeline3dDescriptors (world : World) =
+            world.WorldExtension.Plugin.UserDefinedPipeline3dDescriptors
 
         /// Attempt to make an emitter with the given parameters.
         static member tryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle world =

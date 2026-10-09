@@ -51,6 +51,8 @@ layout(location = 2) out vec4 materialOut;
 layout(location = 3) out vec4 normalPlusOut;
 layout(location = 4) out vec4 subdermalPlusOut;
 layout(location = 5) out vec4 scatterPlusOut;
+layout(location = 6) out vec4 clearCoatPlusOut;
+layout(location = 7) out vec4 userDefinedBufferOut;
 
 vec3 decodeNormal(vec2 normalEncoded)
 {
@@ -124,4 +126,6 @@ void main()
     materialOut = vec4(roughness * material.g, 0.0, ambientOcclusionBlend * material.b, 0.0);
     subdermalPlusOut = vec4(0.0);
     scatterPlusOut = vec4(0.0);
+    clearCoatPlusOut = vec4(0.0);
+    userDefinedBufferOut = vec4(0.0);
 }

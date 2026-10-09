@@ -30,6 +30,8 @@ layout(set = 1, binding = 9) uniform texture2D scatterTexture;
 layout(set = 1, binding = 10) uniform texture2D clearCoatTexture;
 layout(set = 1, binding = 11) uniform texture2D clearCoatRoughnessTexture;
 layout(set = 1, binding = 12) uniform texture2D clearCoatNormalTexture;
+layout(set = 1, binding = 13) uniform texture2D userDefinedImage0Texture;
+layout(set = 1, binding = 14) uniform texture2D userDefinedImage1Texture;
 
 layout(set = 3, binding = 0) uniform sampler materialSampler;
 
@@ -49,6 +51,7 @@ layout(location = 3) out vec4 normalPlusOut;
 layout(location = 4) out vec4 subdermalPlusOut;
 layout(location = 5) out vec4 scatterPlusOut;
 layout(location = 6) out vec4 clearCoatPlusOut;
+layout(location = 7) out vec4 userDefinedBufferOut;
 
 // NOTE: algorithm from Chapter 16 of OpenGL Shading Language.
 vec3 saturate(vec3 rgb, float adjustment)
@@ -174,4 +177,7 @@ void main()
         clearCoatPlusOut.ba = encodeOctahedral(clearCoatNormal);
     }
     else clearCoatPlusOut = vec4(0.0);
+
+    // write zero to user-defined buffer
+    userDefinedBufferOut = vec4(0.0);
 }

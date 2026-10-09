@@ -63,8 +63,9 @@ struct LightingStruct
 layout(set = 0, binding = 0) uniform EyeUniform { EyeStruct eye; };
 layout(set = 0, binding = 1) uniform LightingUniform { LightingStruct lighting; };
 layout(set = 0, binding = 2) uniform texture2D depthTexture;
-layout(set = 0, binding = 3) uniform texture2D colorTexture;
-layout(set = 0, binding = 4) uniform texture2D fogAccumTexture;
+layout(set = 0, binding = 3) uniform texture2D userDefinedBufferTexture;
+layout(set = 0, binding = 4) uniform texture2D colorTexture;
+layout(set = 0, binding = 5) uniform texture2D fogAccumTexture;
 
 layout(set = 1, binding = 0) uniform sampler unfilteredSampler;
 

@@ -20,7 +20,7 @@ open Prime
 module internal WorldTypes =
 
     // Debugging variables.
-    let mutable internal Chosen = obj ()
+    let mutable internal WorldForDebug = obj ()
 
     // Empty content variables.
     // OPTIMIZATION: allows us to avoid allocating content objects for entities that don't use them.
@@ -1400,7 +1400,7 @@ and [<TypeConverter (typeof<GameConverter>)>] Game (gameAddress : Game Address) 
 
     /// Get the latest value of a game's properties.
     [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
-    member private this.View = WorldTypes.viewGame handle WorldTypes.Chosen
+    member private this.View = WorldTypes.viewGame handle WorldTypes.WorldForDebug
 
     /// A convenience accessor to get the universal game handle.
     static member Handle = handle
@@ -1502,7 +1502,7 @@ and [<TypeConverter (typeof<ScreenConverter>)>] Screen (screenAddress) =
 
     /// Get the latest value of a screen's properties.
     [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
-    member private this.View = WorldTypes.viewScreen (this :> obj) WorldTypes.Chosen
+    member private this.View = WorldTypes.viewScreen (this :> obj) WorldTypes.WorldForDebug
 
     /// Derive a group from its screen.
     static member (/) (screen : Screen, groupName) = Group (atoa<Screen, Group> screen.ScreenAddress --> ntoa groupName)
@@ -1603,7 +1603,7 @@ and [<TypeConverter (typeof<GroupConverter>)>] Group (groupAddress) =
 
     /// Get the latest value of a group's properties.
     [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
-    member private this.View = WorldTypes.viewGroup (this :> obj) WorldTypes.Chosen
+    member private this.View = WorldTypes.viewGroup (this :> obj) WorldTypes.WorldForDebug
 
     /// Derive an entity from its group.
     static member (/) (group : Group, entityName) = Entity (atoa<Group, Entity> group.GroupAddress --> ntoa entityName)
@@ -1727,7 +1727,7 @@ and [<TypeConverter (typeof<EntityConverter>)>] Entity (entityAddress) =
 
     /// Get the latest value of an entity's properties.
     [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
-    member private this.View = WorldTypes.viewEntity (this :> obj) WorldTypes.Chosen
+    member private this.View = WorldTypes.viewEntity (this :> obj) WorldTypes.WorldForDebug
 
     /// Derive an entity from its parent entity.
     static member (/) (parentEntity : Entity, entityName) = Entity (parentEntity.EntityAddress --> ntoa entityName)
@@ -2150,10 +2150,6 @@ and [<ReferenceEquality>] World =
         let eyeFieldOfView = this.Eye3dFieldOfView
         Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView this.WindowViewport
 
-    member inline internal this.Choose () =
-        WorldTypes.Chosen <- this
-        this
-
     override this.ToString () =
         // NOTE: too big to print in the debugger, so printing nothing.
         ""
@@ -2169,6 +2165,10 @@ and [<AbstractClass>] NuPlugin () =
     /// Provides a list of modes for setting game state via the editor.
     abstract EditModes : Map<string, World -> unit>
     default this.EditModes = Map.empty
+
+    /// Describes a collection of user-defined 3D pipelines to create.
+    abstract UserDefinedPipeline3dDescriptors : Map<string, UserDefinedPipeline3dDescriptor>
+    default this.UserDefinedPipeline3dDescriptors = Map.empty
 
     /// The packages that should be loaded at start-up in all contexts, including in audio player, renderers, and
     /// metadata. The Default package is always included.
@@ -2190,18 +2190,6 @@ and [<AbstractClass>] NuPlugin () =
     /// Attempt to make a block process function of the given name.
     abstract ProcessFns : Map<string, Vector3i * BlockMap.ProcessFn<Entity, World>>
     default this.ProcessFns = Map.empty
-
-    /// Clean-up any user-defined resources of the plugin, such with shutting down a Steamworks API.
-    abstract CleanUp : unit -> unit
-    default this.CleanUp () = ()
-
-    /// Invoke a user-defined callback.
-    abstract Invoke : callbackName : string -> callbackArgs : obj list -> world : World -> unit
-    default this.Invoke _ _ _ = ()
-
-    /// Make a list of keyed values to hook into the engine.
-    abstract MakeKeyedValues : world : World -> (string * obj) list
-    default this.MakeKeyedValues _ = []
 
     /// Make the 2D physics engine for the engine to use.
     abstract MakePhysicsEngine2d : unit -> PhysicsEngine
@@ -2226,6 +2214,10 @@ and [<AbstractClass>] NuPlugin () =
                 | (false, _) -> circles.Add (struct (color, radius), List [center])
             override _.EyeBounds = eyeBounds }
 
+    /// Initialize any user-defined world-spanning resources.
+    abstract Init : World -> unit
+    default this.Init _ = ()
+
     /// A callback at the beginning of each frame.
     abstract PreProcess : world : World -> unit
     default this.PreProcess _ = ()
@@ -2245,6 +2237,10 @@ and [<AbstractClass>] NuPlugin () =
     /// A callback for imgui post-processing.
     abstract ImGuiPostProcess : world : World -> unit
     default this.ImGuiPostProcess _ = ()
+
+    /// Clean up any user-defined world-spanning resources.
+    abstract CleanUp : World -> unit
+    default this.CleanUp _ = ()
 
     /// Birth facets / dispatchers of type 'a from plugin.
     member internal this.Birth<'a> assemblies =

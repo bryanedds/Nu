@@ -5,6 +5,21 @@ open Prime
 open Nu
 open SandBox3d
 
+[<AutoOpen>]
+module MaterialPropertiesExtensions =
+
+    type MaterialProperties with
+        member this.TestSettingOpt = this.UserDefinedSetting0Opt
+        member this.TestSetting = this.UserDefinedSetting0
+        member this.SetTestSettingOpt value = { this with UserDefinedSetting0Opt = value } // would be nice if F# allowed usage to be baked down to { this with TestSettingOpt = value }
+        member this.SetTestSetting value = { this with UserDefinedSetting0Opt = ValueSome value }
+
+    type Material with
+        member this.TestImageOpt = this.UserDefinedImage0Opt
+        member this.TestImage = this.UserDefinedImage0
+        member this.SetTestImageOpt value = { this with UserDefinedImage0Opt = value }
+        member this.SetTestImage value = { this with UserDefinedImage0Opt = ValueSome value }
+
 // this represents the state of gameplay simulation.
 type GameplayState =
     | Playing

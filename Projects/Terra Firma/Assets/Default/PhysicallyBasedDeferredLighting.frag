@@ -66,9 +66,10 @@ layout(set = 0, binding = 7) uniform texture2D normalPlusTexture;
 layout(set = 0, binding = 8) uniform texture2D subdermalPlusTexture;
 layout(set = 0, binding = 9) uniform texture2D scatterPlusTexture;
 layout(set = 0, binding = 10) uniform texture2D clearCoatPlusTexture;
-layout(set = 0, binding = 11) uniform texture2DArray shadowTextures;
-layout(set = 0, binding = 12) uniform textureCube shadowMaps[SHADOW_MAPS_MAX];
-layout(set = 0, binding = 13) uniform texture2DArray shadowCascades[SHADOW_CASCADES_MAX];
+layout(set = 0, binding = 11) uniform texture2D userDefinedBufferTexture;
+layout(set = 0, binding = 12) uniform texture2DArray shadowTextures;
+layout(set = 0, binding = 13) uniform textureCube shadowMaps[SHADOW_MAPS_MAX];
+layout(set = 0, binding = 14) uniform texture2DArray shadowCascades[SHADOW_CASCADES_MAX];
 
 layout(set = 1, binding = 0) uniform sampler unfilteredSampler;
 layout(set = 1, binding = 1) uniform sampler filteredSampler;

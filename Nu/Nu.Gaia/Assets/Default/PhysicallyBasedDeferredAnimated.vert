@@ -38,16 +38,21 @@ layout(set = 2, binding = 0) uniform BonesUniform { mat4 bones[BONES_MAX]; };
 
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec2 texCoords;
-layout(location = 2) in vec3 normal;
-layout(location = 3) in vec4 boneIds;
-layout(location = 4) in vec4 weights;
-layout(location = 5) in mat4 model;
-layout(location = 9) in vec4 texCoordsOffset;
-layout(location = 10) in vec4 albedo;
-layout(location = 11) in vec4 material;
-layout(location = 12) in vec4 heightPlus;
-layout(location = 13) in vec4 subsurfacePlus;
-layout(location = 14) in vec4 clearCoatPlus; // NOTE: z and w are free for additional parameters.
+layout(location = 2) in vec2 texCoords2;
+layout(location = 3) in vec2 texCoords3;
+layout(location = 4) in vec3 normal;
+layout(location = 5) in vec4 color;
+layout(location = 6) in vec4 boneIds;
+layout(location = 7) in vec4 weights;
+layout(location = 8) in mat4 model;
+layout(location = 12) in vec4 texCoordsOffset;
+layout(location = 13) in vec4 albedo;
+layout(location = 14) in vec4 material;
+layout(location = 15) in vec4 heightPlus;
+layout(location = 16) in vec4 subsurfacePlus;
+layout(location = 17) in vec4 clearCoatPlus; // NOTE: z and w are reserved for additional engine parameters.
+layout(location = 18) in vec4 reservedSettings[2];
+layout(location = 20) in vec4 userDefinedSettings[2];
 
 layout(location = 0) out vec4 positionOut;
 layout(location = 1) out vec2 texCoordsOut;

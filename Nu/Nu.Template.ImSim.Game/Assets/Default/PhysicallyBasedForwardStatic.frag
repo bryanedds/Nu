@@ -134,6 +134,8 @@ layout(set = 1, binding = 3) uniform texture2D ambientOcclusionTexture;
 layout(set = 1, binding = 4) uniform texture2D emissionTexture;
 layout(set = 1, binding = 5) uniform texture2D normalTexture;
 layout(set = 1, binding = 6) uniform texture2D heightTexture;
+layout(set = 1, binding = 13) uniform texture2D userDefinedImage0Texture;
+layout(set = 1, binding = 14) uniform texture2D userDefinedImage1Texture;
 
 layout(set = 2, binding = 1) uniform LightMapUniform { LightMapStruct lightMaps[LIGHT_MAPS_MAX]; };
 layout(set = 2, binding = 2) uniform LightsGeneralUniform { LightsGeneralStruct lightsGeneral; };

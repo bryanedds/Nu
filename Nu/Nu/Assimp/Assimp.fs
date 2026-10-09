@@ -403,6 +403,19 @@ module AssimpExtensions =
                 else ValueNone
             | ValueNone -> ValueNone
 
+        member this.UserDefinedSettingOpt index =
+            let propertyName =
+                if index = 0
+                then Constants.Assimp.UserDefinedSettingPropertyName
+                else Constants.Assimp.UserDefinedSettingPropertyName + string (inc index)
+            match this.TryGetMaterialProperty propertyName with
+            | ValueSome property ->
+                if property.PropertyType = Assimp.PropertyType.String then
+                    try property.GetStringValue () |> scvalueMemo<single> |> ValueSome
+                    with _ -> ValueNone
+                else ValueNone
+            | ValueNone -> ValueNone
+
         member this.TwoSidedOpt =
             match this.TryGetMaterialProperty Constants.Assimp.TwoSidedPropertyName with
             | ValueSome property ->
@@ -419,6 +432,17 @@ module AssimpExtensions =
                     try property.GetStringValue () |> scvalueMemo<bool> |> ValueSome
                     with _ -> ValueNone
                 else ValueSome false
+            | ValueNone -> ValueNone
+
+        member this.PipelineNameOpt =
+            match this.TryGetMaterialProperty Constants.Assimp.PipelineNamePropertyName with
+            | ValueSome property ->
+                if property.PropertyType = Assimp.PropertyType.String then
+                    try match property.GetStringValue () with
+                        | "" -> ValueSome Constants.Render.PipelineNameDefault // NOTE: replace empty name with default.
+                        | str -> ValueSome str
+                    with _ -> ValueNone
+                else ValueSome Constants.Render.PipelineNameDefault
             | ValueNone -> ValueNone
 
         member this.NavShapeOpt =
@@ -585,6 +609,20 @@ module AssimpExtensions =
         member this.ClearCoatRoughnessOpt =
             let mutable entry = Unchecked.defaultof<_>
             if this.Metadata.TryGetValue (Constants.Render.ClearCoatRoughnessName, &entry) then
+                match entry.DataType with
+                | Assimp.MetaDataType.String ->
+                    try entry.Data :?> string |> scvalueMemo<single> |> ValueSome
+                    with _ -> ValueNone
+                | _ -> ValueNone
+            else ValueNone
+
+        member this.UserDefinedSettingOpt index =
+            let propertyName =
+                if index = 0
+                then Constants.Render.UserDefinedSettingName
+                else Constants.Render.UserDefinedSettingName + string (inc index)
+            let mutable entry = Unchecked.defaultof<_>
+            if this.Metadata.TryGetValue (propertyName, &entry) then
                 match entry.DataType with
                 | Assimp.MetaDataType.String ->
                     try entry.Data :?> string |> scvalueMemo<single> |> ValueSome
