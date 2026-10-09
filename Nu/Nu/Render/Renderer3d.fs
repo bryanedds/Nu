@@ -673,6 +673,8 @@ type RenderStaticModelSurfacePreBatches =
       RenderPass : RenderPass }
 
 /// Describes how to render a static model.
+/// TODO: P0: see if we can add Material to this in the way we added it to RenderAnimatedModel without incurring a
+/// significant amount of processing overhead.
 type RenderStaticModel =
     { ModelMatrix : Matrix4x4
       CastShadow : bool
