@@ -2535,7 +2535,6 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Clipped True]
       [MountOpt [Some ^]]
       [Name Palm]
       [Offset [0.020943403 1.4849783 0.15160239]]
@@ -2565,7 +2564,6 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Clipped True]
       [MountOpt [Some ^]]
       [Name Palm-0009]
       [Offset [0.020943403 1.4849783 0.15160239]]
@@ -2582,7 +2580,6 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Clipped True]
       [MountOpt [Some ^]]
       [Name Palm-0010]
       [Offset [0.020943403 1.4849783 0.15160239]]
@@ -2601,7 +2598,6 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Clipped True]
       [MountOpt [Some ^]]
       [Name Palm-0011]
       [Offset [0.020943403 1.4849783 0.15160239]]
@@ -2620,7 +2616,6 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Clipped True]
       [MountOpt [Some ^]]
       [Name Palm-0012]
       [Offset [0.020943403 1.4849783 0.15160239]]
@@ -2639,7 +2634,6 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Clipped True]
       [MountOpt [Some ^]]
       [Name Palm-0013]
       [Offset [0.020943403 1.4849783 0.15160239]]
@@ -2658,7 +2652,6 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Clipped True]
       [MountOpt [Some ^]]
       [Name Palm-0014]
       [Offset [0.020943403 1.4849783 0.15160239]]
@@ -2677,7 +2670,6 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Clipped True]
       [MountOpt [Some ^]]
       [Name Palm-0016]
       [Offset [0.020943403 1.4849783 0.15160239]]
@@ -3846,7 +3838,6 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Clipped True]
       [MountOpt [Some ^]]
       [Name Palm]
       [Offset [0.020943403 1.4849783 0.15160239]]
@@ -3862,7 +3853,6 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Clipped True]
       [MountOpt [Some ^]]
       [Name Palm-0009]
       [Offset [0.020943403 1.4849783 0.15160239]]
@@ -3879,7 +3869,6 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Clipped True]
       [MountOpt [Some ^]]
       [Name Palm-0010]
       [Offset [0.020943403 1.4849783 0.15160239]]
@@ -3898,7 +3887,6 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Clipped True]
       [MountOpt [Some ^]]
       [Name Palm-0011]
       [Offset [0.020943403 1.4849783 0.15160239]]
@@ -3917,7 +3905,6 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Clipped True]
       [MountOpt [Some ^]]
       [Name Palm-0012]
       [Offset [0.020943403 1.4849783 0.15160239]]
@@ -3936,7 +3923,6 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Clipped True]
       [MountOpt [Some ^]]
       [Name Palm-0013]
       [Offset [0.020943403 1.4849783 0.15160239]]
@@ -3955,7 +3941,6 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Clipped True]
       [MountOpt [Some ^]]
       [Name Palm-0014]
       [Offset [0.020943403 1.4849783 0.15160239]]
@@ -3974,7 +3959,6 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Clipped True]
       [MountOpt [Some ^]]
       [Name Palm-0016]
       [Offset [0.020943403 1.4849783 0.15160239]]
@@ -5129,7 +5113,6 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Clipped True]
       [MountOpt [Some ^]]
       [Name Palm]
       [Offset [0.020943403 1.4849783 0.15160239]]
@@ -5145,7 +5128,6 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Clipped True]
       [MountOpt [Some ^]]
       [Name Palm-0009]
       [Offset [0.020943403 1.4849783 0.15160239]]
@@ -5162,7 +5144,6 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Clipped True]
       [MountOpt [Some ^]]
       [Name Palm-0010]
       [Offset [0.020943403 1.4849783 0.15160239]]
@@ -5181,7 +5162,6 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Clipped True]
       [MountOpt [Some ^]]
       [Name Palm-0011]
       [Offset [0.020943403 1.4849783 0.15160239]]
@@ -5200,7 +5180,6 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Clipped True]
       [MountOpt [Some ^]]
       [Name Palm-0012]
       [Offset [0.020943403 1.4849783 0.15160239]]
@@ -5219,7 +5198,6 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Clipped True]
       [MountOpt [Some ^]]
       [Name Palm-0013]
       [Offset [0.020943403 1.4849783 0.15160239]]
@@ -5238,7 +5216,6 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Clipped True]
       [MountOpt [Some ^]]
       [Name Palm-0014]
       [Offset [0.020943403 1.4849783 0.15160239]]
@@ -5257,7 +5234,6 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Clipped True]
       [MountOpt [Some ^]]
       [Name Palm-0016]
       [Offset [0.020943403 1.4849783 0.15160239]]
@@ -6412,7 +6388,6 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Clipped True]
       [MountOpt [Some ^]]
       [Name Palm]
       [Offset [0.020943403 1.4849783 0.15160239]]
@@ -6428,7 +6403,6 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Clipped True]
       [MountOpt [Some ^]]
       [Name Palm-0009]
       [Offset [0.020943403 1.4849783 0.15160239]]
@@ -6445,7 +6419,6 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Clipped True]
       [MountOpt [Some ^]]
       [Name Palm-0010]
       [Offset [0.020943403 1.4849783 0.15160239]]
@@ -6464,7 +6437,6 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Clipped True]
       [MountOpt [Some ^]]
       [Name Palm-0011]
       [Offset [0.020943403 1.4849783 0.15160239]]
@@ -6483,7 +6455,6 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Clipped True]
       [MountOpt [Some ^]]
       [Name Palm-0012]
       [Offset [0.020943403 1.4849783 0.15160239]]
@@ -6502,7 +6473,6 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Clipped True]
       [MountOpt [Some ^]]
       [Name Palm-0013]
       [Offset [0.020943403 1.4849783 0.15160239]]
@@ -6521,7 +6491,6 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Clipped True]
       [MountOpt [Some ^]]
       [Name Palm-0014]
       [Offset [0.020943403 1.4849783 0.15160239]]
@@ -6540,7 +6509,6 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Clipped True]
       [MountOpt [Some ^]]
       [Name Palm-0016]
       [Offset [0.020943403 1.4849783 0.15160239]]

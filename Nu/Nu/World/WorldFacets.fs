@@ -3403,9 +3403,6 @@ type BasicStaticBillboardEmitterFacet () =
 [<AutoOpen>]
 module StaticModelFacetExtensions =
     type Entity with
-        member this.GetClipped world : bool = this.Get (nameof this.Clipped) world
-        member this.SetClipped (value : bool) world = this.Set (nameof this.Clipped) value world
-        member this.Clipped = lens (nameof this.Clipped) this this.GetClipped this.SetClipped
         member this.GetStaticModel world : StaticModel AssetTag = this.Get (nameof this.StaticModel) world
         member this.SetStaticModel (value : StaticModel AssetTag) world = this.Set (nameof this.StaticModel) value world
         member this.StaticModel = lens (nameof this.StaticModel) this this.GetStaticModel this.SetStaticModel
@@ -3417,7 +3414,7 @@ type StaticModelFacet () =
     static member Properties =
         [define Entity.InsetOpt None
          define Entity.MaterialProperties MaterialProperties.empty
-         define Entity.Clipped false
+         define Entity.Material Material.empty
          define Entity.DepthTest LessThanTest
          define Entity.RenderStyle Deferred
          define Entity.StaticModel Assets.Default.StaticModel]
@@ -3430,14 +3427,14 @@ type StaticModelFacet () =
             let presence = transform.Presence
             let insetOpt = ValueOption.ofOption (entity.GetInsetOpt world)
             let properties = entity.GetMaterialProperties world
+            let material = entity.GetMaterial world
             let staticModel = entity.GetStaticModel world
-            let clipped = entity.GetClipped world
             let depthTest = entity.GetDepthTest world
             let renderType =
                 match entity.GetRenderStyle world with
                 | Deferred -> DeferredRenderType
                 | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
-            World.renderStaticModelFast (&affineMatrix, castShadow, presence, insetOpt, properties, staticModel, clipped, depthTest, renderType, renderPass, world)
+            World.renderStaticModelFast (&affineMatrix, castShadow, presence, insetOpt, properties, material, staticModel, depthTest, renderType, renderPass, world)
 
     override this.GetAttributesInferred (entity, world) =
         let staticModel = entity.GetStaticModel world

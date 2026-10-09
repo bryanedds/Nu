@@ -386,8 +386,8 @@ type [<Struct>] StaticModelValue =
       mutable Presence : Presence
       mutable InsetOpt : Box2 option
       mutable MaterialProperties : MaterialProperties
+      mutable Material : Material
       mutable StaticModel : StaticModel AssetTag
-      mutable Clipped : bool
       mutable DepthTest : DepthTest
       mutable RenderType : RenderType }
 
@@ -459,8 +459,8 @@ type CachedStaticModelMessage =
       mutable CachedStaticModelPresence : Presence
       mutable CachedStaticModelInsetOpt : Box2 voption
       mutable CachedStaticModelMaterialProperties : MaterialProperties
+      mutable CachedStaticModelMaterial : Material
       mutable CachedStaticModel : StaticModel AssetTag
-      mutable CachedStaticModelClipped : bool
       mutable CachedStaticModelDepthTest : DepthTest
       mutable CachedStaticModelRenderType : RenderType
       mutable CachedStaticModelRenderPass : RenderPass }
@@ -658,7 +658,6 @@ type StaticModelSurfacePreBatch =
       Material : Material
       StaticModel : StaticModel AssetTag
       SurfaceIndex : int
-      Clipped : bool
       DepthTest : DepthTest
       RenderType : RenderType }
 
@@ -681,17 +680,16 @@ type RenderStaticModel =
       Presence : Presence
       InsetOpt : Box2 option
       MaterialProperties : MaterialProperties
+      Material : Material
       StaticModel : StaticModel AssetTag
-      Clipped : bool
       DepthTest : DepthTest
       RenderType : RenderType
       RenderPass : RenderPass }
 
 /// Describes how to render multiple static model with shared attributes.
 type RenderStaticModels =
-    { StaticModels : (Matrix4x4 * bool * Presence * Box2 option * MaterialProperties) SList
+    { StaticModels : (Matrix4x4 * bool * Presence * Box2 option * MaterialProperties * Material) SList
       StaticModel : StaticModel AssetTag
-      Clipped : bool
       DepthTest : DepthTest
       RenderType : RenderType
       RenderPass : RenderPass }
@@ -743,10 +741,10 @@ type RenderAnimatedModels =
 type RenderUserDefinedStaticModel =
     { ModelMatrix : Matrix4x4
       CastShadow : bool
-      Clipped : bool
       Presence : Presence
       InsetOpt : Box2 option
       MaterialProperties : MaterialProperties
+      Material : Material
       StaticModelSurfaceDescriptors : StaticModelSurfaceDescriptor array
       Bounds : Box3
       DepthTest : DepthTest
@@ -3031,8 +3029,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
          presence : Presence,
          insetOpt : Box2 voption inref,
          properties : MaterialProperties,
+         material : Material,
          staticModel : StaticModel AssetTag,
-         clipped : bool,
          depthTest : DepthTest,
          renderType : RenderType,
          renderPass : RenderPass,
@@ -3075,9 +3073,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                         renderTasks.Lights.Add light
                 for surface in modelAsset.Surfaces do
                     let surface = // OPTIMIZATION: apply surface material only if effective.
-                        if clipped then
-                            let surfaceMaterial = { surface.SurfaceMaterial with Clipped = clipped }
-                            { surface with HashCode = surface.HashCode ^^^ hash surfaceMaterial; SurfaceMaterial = surfaceMaterial}
+                        if material <> Material.empty then
+                            let surfaceMaterial = VulkanRenderer3d.applySurfaceMaterial material surface.SurfaceMaterial renderer
+                            { surface with HashCode = surface.HashCode ^^^ hash surfaceMaterial; SurfaceMaterial = surfaceMaterial }
                         else surface
                     let surfaceMatrix = if surface.SurfaceMatrixIsIdentity then model else surface.SurfaceMatrix * model
                     let surfaceBounds = surface.SurfaceBounds.Transform surfaceMatrix
@@ -3546,23 +3544,23 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             | RenderStaticModel rsm ->
                 let insetOpt = Option.toValueOption rsm.InsetOpt
                 let renderTasks = VulkanRenderer3d.getRenderTasks rsm.RenderPass renderer
-                VulkanRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, &rsm.ModelMatrix, rsm.CastShadow, rsm.Presence, &insetOpt, rsm.MaterialProperties, rsm.StaticModel, rsm.Clipped, rsm.DepthTest, rsm.RenderType, rsm.RenderPass, renderTasks, renderer)
+                VulkanRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, &rsm.ModelMatrix, rsm.CastShadow, rsm.Presence, &insetOpt, rsm.MaterialProperties, rsm.Material, rsm.StaticModel, rsm.DepthTest, rsm.RenderType, rsm.RenderPass, renderTasks, renderer)
             | RenderStaticModels rsms ->
                 let renderTasks = VulkanRenderer3d.getRenderTasks rsms.RenderPass renderer
-                for (model, castShadow, presence, insetOpt, properties) in rsms.StaticModels do // TODO: see if these should be struct tuples.
+                for (model, castShadow, presence, insetOpt, properties, material) in rsms.StaticModels do // TODO: see if these should be struct tuples.
                     let insetOpt = Option.toValueOption insetOpt
-                    VulkanRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, &model, castShadow, presence, &insetOpt, properties, rsms.StaticModel, rsms.Clipped, rsms.DepthTest, rsms.RenderType, rsms.RenderPass, renderTasks, renderer)
+                    VulkanRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, &model, castShadow, presence, &insetOpt, properties, material, rsms.StaticModel, rsms.DepthTest, rsms.RenderType, rsms.RenderPass, renderTasks, renderer)
             | RenderCachedStaticModelSurface csmsm ->
                 VulkanRenderer3d.categorizeStaticModelSurfaceByIndex (&csmsm.CachedStaticModelSurfaceMatrix, csmsm.CachedStaticModelSurfaceCastShadow, csmsm.CachedStaticModelSurfacePresence, &csmsm.CachedStaticModelSurfaceInsetOpt, csmsm.CachedStaticModelSurfaceMaterialProperties, csmsm.CachedStaticModelSurfaceMaterial, csmsm.CachedStaticModelSurfaceModel, csmsm.CachedStaticModelSurfaceIndex, csmsm.CachedStaticModelSurfaceDepthTest, csmsm.CachedStaticModelSurfaceRenderType, csmsm.CachedStaticModelSurfaceRenderPass, renderer)
             | RenderCachedStaticModel csmm ->
                 let renderTasks = VulkanRenderer3d.getRenderTasks csmm.CachedStaticModelRenderPass renderer
-                VulkanRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, &csmm.CachedStaticModelMatrix, csmm.CachedStaticModelCastShadow, csmm.CachedStaticModelPresence, &csmm.CachedStaticModelInsetOpt, csmm.CachedStaticModelMaterialProperties, csmm.CachedStaticModel, csmm.CachedStaticModelClipped, csmm.CachedStaticModelDepthTest, csmm.CachedStaticModelRenderType, csmm.CachedStaticModelRenderPass, renderTasks, renderer)
+                VulkanRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, &csmm.CachedStaticModelMatrix, csmm.CachedStaticModelCastShadow, csmm.CachedStaticModelPresence, &csmm.CachedStaticModelInsetOpt, csmm.CachedStaticModelMaterialProperties, csmm.CachedStaticModelMaterial, csmm.CachedStaticModel, csmm.CachedStaticModelDepthTest, csmm.CachedStaticModelRenderType, csmm.CachedStaticModelRenderPass, renderTasks, renderer)
             | RenderUserDefinedStaticModel rudsm ->
                 let insetOpt = Option.toValueOption rudsm.InsetOpt
                 let assetTag = asset Assets.Default.PackageName Gen.name // TODO: see if we should instead use a specialized package for temporary assets like these.
                 VulkanRenderer3d.tryCreateUserDefinedStaticModel rudsm.StaticModelSurfaceDescriptors rudsm.Bounds assetTag renderer
                 let renderTasks = VulkanRenderer3d.getRenderTasks rudsm.RenderPass renderer
-                VulkanRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, &rudsm.ModelMatrix, rudsm.CastShadow, rudsm.Presence, &insetOpt, rudsm.MaterialProperties, assetTag, rudsm.Clipped, rudsm.DepthTest, rudsm.RenderType, rudsm.RenderPass, renderTasks, renderer)
+                VulkanRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, &rudsm.ModelMatrix, rudsm.CastShadow, rudsm.Presence, &insetOpt, rudsm.MaterialProperties, rudsm.Material, assetTag, rudsm.DepthTest, rudsm.RenderType, rudsm.RenderPass, renderTasks, renderer)
                 renderer.UserDefinedStaticModelsToDestroy.Add assetTag
             | RenderAnimatedModelSurface rams ->
                 let insetOpt = Option.toValueOption rams.InsetOpt

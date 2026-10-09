@@ -604,6 +604,8 @@ module EffectSystem =
                       UserDefinedSetting5Opt = ValueNone
                       UserDefinedSetting6Opt = ValueNone
                       UserDefinedSetting7Opt = ValueNone }
+                let material =
+                    { Material.empty with ClippedOpt = ValueSome clipped }
                 let staticModelToken =
                     StaticModelToken
                         { ModelMatrix = affineMatrix
@@ -611,8 +613,8 @@ module EffectSystem =
                           Presence = effectSystem.EffectPresence
                           InsetOpt = insetOpt
                           MaterialProperties = properties
+                          Material = material
                           StaticModel = staticModel
-                          Clipped = clipped
                           DepthTest = LessThanTest
                           RenderType = effectSystem.EffectRenderType }
                 addDataToken staticModelToken effectSystem

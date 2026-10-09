@@ -36,8 +36,8 @@ module WorldRender =
             World.enqueueRenderMessage3d (ConfigureRenderer3d config) world
 
         /// Send a message to the render system to render a static model using a fast path.
-        static member renderStaticModelFast (modelMatrix : Matrix4x4 inref, castShadow, presence, insetOpt, materialProperties : MaterialProperties, staticModel, clipped, depthTest, renderType, renderPass, world) =
-            (World.getRendererProcess world).RenderStaticModelFast (&modelMatrix, castShadow, presence, insetOpt, materialProperties, staticModel, clipped, depthTest, renderType, renderPass)
+        static member renderStaticModelFast (modelMatrix : Matrix4x4 inref, castShadow, presence, insetOpt, materialProperties : MaterialProperties, material : Material, staticModel, depthTest, renderType, renderPass, world) =
+            (World.getRendererProcess world).RenderStaticModelFast (&modelMatrix, castShadow, presence, insetOpt, materialProperties, material, staticModel, depthTest, renderType, renderPass)
 
         /// Send a message to the render system to render a static model surface using a fast path.
         static member renderStaticModelSurfaceFast (modelMatrix : Matrix4x4 inref, castShadow, presence, insetOpt, materialProperties : MaterialProperties, material : Material, staticModel, surfaceIndex, depthTest, renderType, renderPass, world) =

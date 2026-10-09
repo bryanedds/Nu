@@ -189,7 +189,7 @@ module WorldEntityHierarchyExtensions =
             let frozenEntities = List ()
             let frozenPreBatches =
                 Dictionary<
-                    bool * Material * Vulkan.PhysicallyBasedSurface * DepthTest * RenderType,
+                    Material * Vulkan.PhysicallyBasedSurface * DepthTest * RenderType,
                     Guid * StaticModel AssetTag * int * StaticModelSurfacePreBatchItem List> ()
             let frozenShapes = List ()
             let rec getFrozenArtifacts (entity : Entity) =
@@ -214,7 +214,7 @@ module WorldEntityHierarchyExtensions =
                             frozenEntities.Add entity
                             let metadata = Metadata.getStaticModelMetadata staticModel
                             let surface = metadata.Surfaces[surfaceIndex]
-                            let frozenKey = (material.Clipped, material, surface, depthTest, renderType)
+                            let frozenKey = (material, surface, depthTest, renderType)
                             let frozenValue =
                                 { ModelMatrix = affineMatrix
                                   CastShadow = castShadow
@@ -240,8 +240,8 @@ module WorldEntityHierarchyExtensions =
                             let affineMatrix = transform.AffineMatrix
                             let insetOpt = match entity.GetInsetOpt world with Some inset -> Some inset | None -> None // OPTIMIZATION: localize boxed value in memory.
                             let properties = entity.GetMaterialProperties world
+                            let material = entity.GetMaterial world
                             let staticModel = entity.GetStaticModel world
-                            let clipped = entity.GetClipped world
                             let depthTest = entity.GetDepthTest world
                             let metadata = Metadata.getStaticModelMetadata (entity.GetStaticModel world)
                             let mutable surfaceIndex = 0
@@ -277,11 +277,11 @@ module WorldEntityHierarchyExtensions =
                                           TwoSidedOpt = Metadata.tryGetStaticModelTwoSided surface.SurfaceMaterialIndex staticModel
                                           ClippedOpt = Metadata.tryGetStaticModelClipped surface.SurfaceMaterialIndex staticModel
                                           PipelineNameOpt = Metadata.tryGetStaticModelPipelineName surface.SurfaceMaterialIndex staticModel }
-                                    else Material.empty
+                                    else material
                                 boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine surfaceBounds) | None -> Some surfaceBounds
                                 let metadata = Metadata.getStaticModelMetadata staticModel
                                 let surface = metadata.Surfaces[surfaceIndex]
-                                let frozenKey = (clipped, material, surface, depthTest, renderType)
+                                let frozenKey = (material, surface, depthTest, renderType)
                                 let frozenValue =
                                     { ModelMatrix = surfaceMatrix
                                       CastShadow = castShadow
@@ -324,14 +324,13 @@ module WorldEntityHierarchyExtensions =
             let frozenPreBatches =
                 frozenPreBatches
                 |> Seq.map (fun entry ->
-                    let (clipped, material, _, depthTest, renderType) = entry.Key
+                    let (material, _, depthTest, renderType) = entry.Key
                     let (preBatchId, staticModel, surfaceIndex, preBatch) = entry.Value
                     { PreBatchId = preBatchId
                       PreBatchItems = Seq.toArray preBatch
                       Material = material
                       StaticModel = staticModel
                       SurfaceIndex = surfaceIndex
-                      Clipped = clipped
                       DepthTest = depthTest
                       RenderType = renderType })
                 |> Seq.toArray
