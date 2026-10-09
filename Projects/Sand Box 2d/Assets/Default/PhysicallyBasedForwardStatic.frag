@@ -155,7 +155,7 @@ layout(location = 1) in vec2 texCoords;
 layout(location = 2) in vec3 normal;
 layout(location = 3) flat in vec4 albedo;
 layout(location = 4) flat in vec4 material;
-layout(location = 5) flat in vec4 miscellany;
+layout(location = 5) flat in vec4 attributes;
 layout(location = 6) flat in vec4 subsurfacePlus;
 
 layout(location = 0) out vec4 frag;
@@ -848,7 +848,7 @@ void computeSsrr(float depth, vec4 position, vec3 normal, float refractiveIndex,
 void main()
 {
     // discard when depth out of range
-    float depthCutoff = miscellany.y;
+    float depthCutoff = attributes.y;
     float depth = gl_FragCoord.z / gl_FragCoord.w;
     if (depthCutoff >= 0.0) { if (depth > depthCutoff) discard; }
     else if (depth <= -depthCutoff) discard;
@@ -869,7 +869,7 @@ void main()
     mat3 toWorld = mat3(tangent, binormal, normal);
 
     // compute albedo with alpha sample
-    float opaqueDistance = miscellany.z;
+    float opaqueDistance = attributes.z;
     vec4 albedoSample = texture(sampler2D(albedoTexture, materialSampler), texCoords);
     vec4 albedoPlus =
         vec4(
@@ -897,7 +897,7 @@ void main()
     vec3 emission = vec3(texture(sampler2D(emissionTexture, materialSampler), texCoords).r * material.a);
 
     // compute ignore light maps
-    bool ignoreLightMaps = miscellany.x != 0.0;
+    bool ignoreLightMaps = attributes.x != 0.0;
 
     // compute subsurface properties
     float subsurfaceCutoff = subsurfacePlus.x;

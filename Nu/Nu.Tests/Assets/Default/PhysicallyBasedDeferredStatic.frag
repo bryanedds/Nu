@@ -38,7 +38,7 @@ layout(location = 1) in vec2 texCoords;
 layout(location = 2) in vec3 normal;
 layout(location = 3) flat in vec4 albedo;
 layout(location = 4) flat in vec4 material;
-layout(location = 5) flat in vec4 miscellany;
+layout(location = 5) flat in vec4 attributes;
 layout(location = 6) flat in vec4 subsurfacePlus;
 layout(location = 7) flat in vec4 clearCoatPlus;
 
@@ -110,7 +110,7 @@ void main()
 
     // compute normal and ignore local light maps
     normalPlusOut.xyz = normalize(toWorld * decodeNormal(texture(sampler2D(normalTexture, materialSampler), texCoords).xy));
-    normalPlusOut.w = miscellany.x;
+    normalPlusOut.w = attributes.x;
 
     // compute roughness with specular anti-aliasing (Tokuyoshi & Kaplanyan 2019)
     // NOTE: the SAA algo also includes derivative scalars that are currently not utilized here due to lack of need -
