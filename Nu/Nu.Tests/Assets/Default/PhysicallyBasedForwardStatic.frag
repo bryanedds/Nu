@@ -156,7 +156,7 @@ layout(location = 1) in vec2 texCoords;
 layout(location = 2) in vec3 normal;
 layout(location = 3) flat in vec4 albedo;
 layout(location = 4) flat in vec4 material;
-layout(location = 5) flat in vec4 attributes;
+layout(location = 5) flat in vec4 material2;
 layout(location = 6) flat in vec4 subsurfacePlus;
 
 layout(location = 0) out vec4 frag;
@@ -849,7 +849,7 @@ void computeSsrr(float depth, vec4 position, vec3 normal, float refractiveIndex,
 void main()
 {
     // discard when depth out of range
-    float depthCutoff = attributes.y;
+    float depthCutoff = material2.y;
     float depth = gl_FragCoord.z / gl_FragCoord.w;
     if (depthCutoff >= 0.0) { if (depth > depthCutoff) discard; }
     else if (depth <= -depthCutoff) discard;
@@ -870,7 +870,7 @@ void main()
     mat3 toWorld = mat3(tangent, binormal, normal);
 
     // compute albedo with alpha sample
-    float opaqueDistance = attributes.z;
+    float opaqueDistance = material2.z;
     vec4 albedoSample = texture(sampler2D(albedoTexture, materialSampler), texCoords);
     vec4 albedoPlus =
         vec4(
@@ -898,7 +898,7 @@ void main()
     vec3 emission = vec3(texture(sampler2D(emissionTexture, materialSampler), texCoords).r * material.a);
 
     // compute ignore light maps
-    bool ignoreLightMaps = attributes.x != 0.0;
+    bool ignoreLightMaps = material2.x != 0.0;
 
     // compute subsurface properties
     float subsurfaceCutoff = subsurfacePlus.x;
@@ -915,7 +915,7 @@ void main()
     vec3 fogAccum = vec3(0.0);
     for (int i = 0; i < lightsGeneral.lightsCount; ++i)
     {
-        // compute per-light attributes and compensate roughness where applicable
+        // compute per-light material2 and compensate roughness where applicable
         LightStruct light = lights[i];
         bool lightPoint = light.lightType == 0;
         bool lightSpot = light.lightType == 1;
@@ -923,7 +923,7 @@ void main()
         vec3 l, h, radiance;
         if (lightPoint || lightSpot)
         {
-            // compute attributes
+            // compute material2
             vec3 d = light.origin - position.xyz;
             l = normalize(d);
             h = normalize(v + l);

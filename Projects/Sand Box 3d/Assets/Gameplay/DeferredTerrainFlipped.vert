@@ -41,7 +41,7 @@ layout(location = 6) in mat4 model;
 layout(location = 10) in vec4 texCoordsOffset;
 layout(location = 11) in vec4 albedo;
 layout(location = 12) in vec4 material;
-layout(location = 13) in vec4 attributes;
+layout(location = 13) in vec4 material2;
 layout(location = 14) in vec4 subsurfacePlus; // NOTE: currently unutilized, but kept around to stay in sync with instance field count.
 layout(location = 16) in vec4 reservedSettings;
 layout(location = 17) in vec4 userDefinedSettings[2];
@@ -53,7 +53,7 @@ layout(location = 3) out vec4 blendsOut[2];
 layout(location = 5) out vec3 tintOut;
 layout(location = 6) flat out vec4 albedoOut;
 layout(location = 7) flat out vec4 materialOut;
-layout(location = 8) flat out vec4 attributesOut;
+layout(location = 8) flat out vec4 material2Out;
 layout(location = 9) flat out vec4 userDefinedSettingsOut[2];
 
 void main()
@@ -66,7 +66,7 @@ void main()
     albedoOut = albedo;
     materialOut = material;
     normalOut = transpose(inverse(mat3(model))) * normal;
-    attributesOut = attributes;
+    material2Out = material2;
     userDefinedSettingsOut = userDefinedSettings;
     blendsOut[0] = blends[0];
     blendsOut[1] = blends[1];

@@ -45,7 +45,7 @@ layout(location = 3) in vec4 blends[2];
 layout(location = 5) in vec3 tint;
 layout(location = 6) flat in vec4 albedo;
 layout(location = 7) flat in vec4 material;
-layout(location = 8) flat in vec4 attributes;
+layout(location = 8) flat in vec4 material2;
 
 layout(location = 0) out float depthOut;
 layout(location = 1) out vec3 albedoOut;
@@ -94,7 +94,7 @@ void main()
 
     // compute normal and ignore local light maps
     normalPlusOut.xyz = normalize(toWorld * normalize(normalBlend));
-    normalPlusOut.w = attributes.x;
+    normalPlusOut.w = material2.x;
 
     // compute roughness with specular anti-aliasing (Tokuyoshi & Kaplanyan 2019)
     // NOTE: the SAA algo also includes derivative scalars that are currently not utilized here due to lack of need -
