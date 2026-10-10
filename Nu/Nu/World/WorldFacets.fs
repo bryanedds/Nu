@@ -3846,11 +3846,13 @@ type TerrainFacet () =
                     [|{ AlbedoImage = Assets.Default.TerrainLayer0Albedo
                         RoughnessImage = Assets.Default.TerrainLayer0Roughness
                         AmbientOcclusionImage = Assets.Default.TerrainLayer0AmbientOcclusion
-                        NormalImage = Assets.Default.TerrainLayer0Normal }
+                        NormalImage = Assets.Default.TerrainLayer0Normal
+                        UserDefinedImage = Assets.Default.TerrainLayer0UserDefinedImage }
                       { AlbedoImage = Assets.Default.TerrainLayer1Albedo
                         RoughnessImage = Assets.Default.TerrainLayer1Roughness
                         AmbientOcclusionImage = Assets.Default.TerrainLayer1AmbientOcclusion
-                        NormalImage = Assets.Default.TerrainLayer1Normal }|]
+                        NormalImage = Assets.Default.TerrainLayer1Normal
+                        UserDefinedImage = Assets.Default.TerrainLayer1UserDefinedImage }|]
                   BlendMap =
                       RedsMap
                         [|Assets.Default.TerrainLayer0Blend

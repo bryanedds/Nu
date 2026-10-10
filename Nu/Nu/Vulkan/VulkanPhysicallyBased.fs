@@ -3937,8 +3937,9 @@ module PhysicallyBased =
                       Pipeline.descriptor 1 SampledImage FragmentStage Constants.Render.TerrainLayersMax // roughnessTextures
                       Pipeline.descriptor 2 SampledImage FragmentStage Constants.Render.TerrainLayersMax // ambientOcclusionTextures
                       Pipeline.descriptor 3 SampledImage FragmentStage Constants.Render.TerrainLayersMax // normalTextures
-                      Pipeline.descriptor 4 SampledImage FragmentStage 1 // userDefinedImage0Texture
-                      Pipeline.descriptor 5 SampledImage FragmentStage 1|] // userDefinedImage1Texture
+                      Pipeline.descriptor 4 SampledImage FragmentStage Constants.Render.TerrainLayersMax // userDefinedImageTextures
+                      Pipeline.descriptor 5 SampledImage FragmentStage 1 // userDefinedImage0Texture
+                      Pipeline.descriptor 6 SampledImage FragmentStage 1|] // userDefinedImage1Texture
                   Pipeline.descriptorSet<Unit>
                     [|Pipeline.descriptor 0 Sampler FragmentStage 1|]|]
                 [||] colorAttachmentFormats (Some depthTest)
@@ -4029,8 +4030,9 @@ module PhysicallyBased =
                 Pipeline.writeDescriptorSampledTextures 1 0 (materials |> Array.map _.RoughnessTexture) vkSet
                 Pipeline.writeDescriptorSampledTextures 2 0 (materials |> Array.map _.AmbientOcclusionTexture) vkSet
                 Pipeline.writeDescriptorSampledTextures 3 0 (materials |> Array.map _.NormalTexture) vkSet
-                Pipeline.writeDescriptorSampledTexture 4 0 userDefinedImage0Texture vkSet
-                Pipeline.writeDescriptorSampledTexture 5 0 userDefinedImage1Texture vkSet
+                Pipeline.writeDescriptorSampledTextures 4 0 (materials |> Array.map _.UserDefinedImage0Texture) vkSet
+                Pipeline.writeDescriptorSampledTexture 5 0 userDefinedImage0Texture vkSet
+                Pipeline.writeDescriptorSampledTexture 6 0 userDefinedImage1Texture vkSet
 
             // specify samplers
             let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 2 Unit pipeline.Pipeline $ fun vkSet ->

@@ -18,8 +18,8 @@
     [Static True]
     [TerrainMaterial
      [BlendMaterial
-      [[[[Default TerrainLayer0Albedo] [Default TerrainLayer0Roughness] [Default TerrainLayer0AmbientOcclusion] [Default TerrainLayer0Normal]]
-        [[Default TerrainLayer1Albedo] [Default TerrainLayer1Roughness] [Default TerrainLayer1AmbientOcclusion] [Default TerrainLayer1Normal]]]
+      [[[[Default TerrainLayer0Albedo] [Default TerrainLayer0Roughness] [Default TerrainLayer0AmbientOcclusion] [Default TerrainLayer0Normal] [Default TerrainLayer0UserDefinedImage]]
+        [[Default TerrainLayer1Albedo] [Default TerrainLayer1Roughness] [Default TerrainLayer1AmbientOcclusion] [Default TerrainLayer1Normal] [Default TerrainLayer1UserDefinedImage]]]
        [RedsMap
         [[Default TerrainLayer0Blend] [Default TerrainLayer1Blend]]]
        [Default MaterialNormal]

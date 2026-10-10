@@ -35,7 +35,8 @@ type TerrainLayer =
     { AlbedoImage : Image AssetTag
       RoughnessImage : Image AssetTag
       AmbientOcclusionImage : Image AssetTag
-      NormalImage : Image AssetTag }
+      NormalImage : Image AssetTag
+      UserDefinedImage : Image AssetTag }
 
 /// Blend-weights for a 3d terrain.
 type BlendMap =
@@ -48,7 +49,7 @@ type FlatMaterial =
       RoughnessImage : Image AssetTag
       AmbientOcclusionImage : Image AssetTag
       NormalImage : Image AssetTag
-      HeightImage : Image AssetTag
+      UserDefinedImage : Image AssetTag
       UserDefinedImage0 : Image AssetTag
       UserDefinedImage1 : Image AssetTag
       PipelineName : string }
@@ -4584,6 +4585,10 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                             match VulkanRenderer3d.tryGetRenderAsset layer.NormalImage renderer with
                             | ValueSome renderAsset -> match renderAsset with TextureAsset texture -> texture | _ -> defaultMaterial.NormalTexture
                             | ValueNone -> defaultMaterial.NormalTexture
+                        let userDefinedImageTexture =
+                            match VulkanRenderer3d.tryGetRenderAsset layer.UserDefinedImage renderer with
+                            | ValueSome renderAsset -> match renderAsset with TextureAsset texture -> texture | _ -> defaultMaterial.UserDefinedImage0Texture
+                            | ValueNone -> defaultMaterial.UserDefinedImage0Texture
                         let albedoMetadata = albedoTexture.TextureMetadata
                         texelWidth <- min texelWidth albedoMetadata.TextureTexelWidth
                         texelHeight <- min texelHeight albedoMetadata.TextureTexelHeight
@@ -4591,7 +4596,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                             AlbedoTexture = albedoTexture
                             RoughnessTexture = roughnessTexture
                             AmbientOcclusionTexture = ambientOcclusionTexture
-                            NormalTexture = normalTexture }|]
+                            NormalTexture = normalTexture
+                            UserDefinedImage0Texture = userDefinedImageTexture }|]
                 let userDefinedImage0Texture =
                     match VulkanRenderer3d.tryGetRenderAsset blendMaterial.UserDefinedImage0 renderer with
                     | ValueSome renderAsset -> match renderAsset with TextureAsset texture -> texture | _ -> defaultMaterial.NormalTexture
@@ -4620,12 +4626,17 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     match VulkanRenderer3d.tryGetRenderAsset flatMaterial.NormalImage renderer with
                     | ValueSome renderAsset -> match renderAsset with TextureAsset texture -> texture | _ -> defaultMaterial.NormalTexture
                     | ValueNone -> defaultMaterial.NormalTexture
+                let userDefinedImageTexture =
+                    match VulkanRenderer3d.tryGetRenderAsset flatMaterial.UserDefinedImage renderer with
+                    | ValueSome renderAsset -> match renderAsset with TextureAsset texture -> texture | _ -> defaultMaterial.UserDefinedImage0Texture
+                    | ValueNone -> defaultMaterial.UserDefinedImage0Texture
                 let material =
                     { defaultMaterial with
                         AlbedoTexture = albedoTexture
                         RoughnessTexture = roughnessTexture
                         AmbientOcclusionTexture = ambientOcclusionTexture
-                        NormalTexture = normalTexture }
+                        NormalTexture = normalTexture
+                        UserDefinedImage0Texture = userDefinedImageTexture }
                 let albedoMetadata = albedoTexture.TextureMetadata
                 let userDefinedImage0Texture =
                     match VulkanRenderer3d.tryGetRenderAsset flatMaterial.UserDefinedImage0 renderer with
