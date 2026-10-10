@@ -32,7 +32,7 @@ layout(set = 1, binding = 0) uniform texture2D albedoTextures[TERRAIN_LAYERS_MAX
 layout(set = 1, binding = 1) uniform texture2D roughnessTextures[TERRAIN_LAYERS_MAX];
 layout(set = 1, binding = 2) uniform texture2D ambientOcclusionTextures[TERRAIN_LAYERS_MAX];
 layout(set = 1, binding = 3) uniform texture2D normalTextures[TERRAIN_LAYERS_MAX];
-layout(set = 1, binding = 4) uniform texture2D userDefinedTextures[TERRAIN_LAYERS_MAX];
+layout(set = 1, binding = 4) uniform texture2D userDefinedImageTextures[TERRAIN_LAYERS_MAX];
 layout(set = 1, binding = 5) uniform texture2D userDefinedImage0Texture;
 layout(set = 1, binding = 6) uniform texture2D userDefinedImage1Texture;
 

@@ -154,10 +154,11 @@ layout(set = 3, binding = 2) uniform sampler materialSampler;
 layout(location = 0) in vec4 position;
 layout(location = 1) in vec2 texCoords;
 layout(location = 2) in vec3 normal;
-layout(location = 3) flat in vec4 albedo;
-layout(location = 4) flat in vec4 material;
-layout(location = 5) flat in vec4 material2;
-layout(location = 6) flat in vec4 subsurfacePlus;
+layout(location = 3) in vec3 tangent;
+layout(location = 4) flat in vec4 albedo;
+layout(location = 5) flat in vec4 material;
+layout(location = 6) flat in vec4 material2;
+layout(location = 7) flat in vec4 subsurfacePlus;
 
 layout(location = 0) out vec4 frag;
 
@@ -221,16 +222,16 @@ vec2 rayBoxIntersectionRatios(vec3 rayOrigin, vec3 rayDirection, vec3 boxMin, ve
     return tEnter < tExit ? vec2(tEnter, tExit) : vec2(0.0);
 }
 
-float distributionGGX(vec3 normal, vec3 h, float roughness)
+float distributionGGXAnisotropic(vec3 normal, vec3 tangent, vec3 binormal, vec3 h, float roughness, float anisotropy)
 {
     float a = roughness * roughness;
-    float aPow2 = a * a;
+    float at = max(0.001, a * (1.0 + anisotropy));
+    float ab = max(0.001, a * (1.0 - anisotropy));
+    float tDotH = dot(tangent, h);
+    float bDotH = dot(binormal, h);
     float nDotH = saturate(dot(normal, h));
-    float nDotHPow2 = nDotH * nDotH;
-    float nom = aPow2;
-    float denom = nDotHPow2 * (aPow2 - 1.0) + 1.0;
-    denom = PI * denom * denom;
-    return nom / denom;
+    float denom = (tDotH * tDotH) / (at * at) + (bDotH * bDotH) / (ab * ab) + nDotH * nDotH;
+    return 1.0 / (PI * at * ab * denom * denom);
 }
 
 float geometrySchlickGGX(float nDotV, float roughness)
@@ -856,29 +857,23 @@ void main()
 
     // compute basic fragment data
     vec3 normal = normalize(normal);
+    vec3 tangent = normalize(tangent);
+    vec3 binormal = -normalize(cross(normal, tangent));
+    mat3 toWorld = mat3(tangent, binormal, normal);
     float distance = length(position.xyz - eye.center);
 
-    // compute spatial converters
-    vec3 q1 = dFdx(position.xyz);
-    vec3 q2 = dFdy(position.xyz);
-    vec2 st1 = dFdx(texCoords);
-    vec2 st2 = dFdy(texCoords);
-    vec3 tangent = normalize(q1 * st2.t - q2 * st1.t);
-    vec3 binormal = -normalize(cross(normal, tangent));
-    tangent = normalize(tangent - normal * dot(normal, tangent));
-    binormal = cross(normal, tangent);
-    mat3 toWorld = mat3(tangent, binormal, normal);
-
     // compute albedo with alpha sample
-    float opaqueDistance = material2.z;
+    float opaqueDistance = material2.w;
     vec4 albedoSample = texture(sampler2D(albedoTexture, materialSampler), texCoords);
     vec4 albedoPlus =
         vec4(
             pow(albedoSample.rgb, vec3(GAMMA)) * albedo.rgb,
             mix(albedoSample.a, 1.0, smoothstep(opaqueDistance * 0.667, opaqueDistance, distance)));
 
-    // compute normal
+    // compute n, t, b in world space
     vec3 n = normalize(toWorld * decodeNormal(texture(sampler2D(normalTexture, materialSampler), texCoords).xy));
+    vec3 t = normalize(tangent - n * dot(tangent, n));
+    vec3 b = normalize(cross(n, t));
 
     // compute roughness with specular anti-aliasing (Tokuyoshi & Kaplanyan 2019)
     // NOTE: the SAA algo also includes derivative scalars that are currently not utilized here due to lack of need -
@@ -899,6 +894,9 @@ void main()
 
     // compute ignore light maps
     bool ignoreLightMaps = material2.x != 0.0;
+
+    // compute anisotropy
+    float anisotropy = clamp(material2.z, -0.99, 0.99);
 
     // compute subsurface properties
     float subsurfaceCutoff = subsurfacePlus.x;
@@ -970,7 +968,7 @@ void main()
             }
 
             // cook-torrance brdf
-            float ndf = distributionGGX(n, h, saturate(roughness + roughnessCompensation));
+            float ndf = distributionGGXAnisotropic(n, t, b, h, saturate(roughness + roughnessCompensation), anisotropy);
             float g = geometrySchlick(n, v, l, roughness);
             vec3 f = fresnelSchlick(hDotV, f0);
 

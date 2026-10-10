@@ -119,6 +119,7 @@ type [<SymbolicExpansion>] MaterialProperties =
       AmbientOcclusionOpt : single voption
       EmissionOpt : single voption
       IgnoreLightMapsOpt : bool voption
+      AnisotropyOpt : single voption // forward only
       OpaqueDistanceOpt : single voption // forward only
       FinenessOffsetOpt : single voption // deferred only
       ScatterTypeOpt : ScatterType voption // deferred only - TODO: consider moving this and related use above FinenessOffsetOpt.
@@ -144,6 +145,7 @@ type [<SymbolicExpansion>] MaterialProperties =
     member this.AmbientOcclusion = ValueOption.defaultValue Constants.Render.AmbientOcclusionDefault this.AmbientOcclusionOpt
     member this.Emission = ValueOption.defaultValue Constants.Render.EmissionDefault this.EmissionOpt
     member this.IgnoreLightMaps = ValueOption.defaultValue Constants.Render.IgnoreLightMapsDefault this.IgnoreLightMapsOpt
+    member this.Anisotropy = ValueOption.defaultValue Constants.Render.AnisotropyDefault this.AnisotropyOpt
     member this.OpaqueDistance = ValueOption.defaultValue Constants.Render.OpaqueDistanceDefault this.OpaqueDistanceOpt
     member this.FinenessOffset = ValueOption.defaultValue Constants.Render.FinenessOffsetDefault this.FinenessOffsetOpt
     member this.ScatterType = ValueOption.defaultValue Constants.Render.ScatterTypeDefault this.ScatterTypeOpt
@@ -170,6 +172,7 @@ type [<SymbolicExpansion>] MaterialProperties =
           AmbientOcclusionOpt = ValueSome Constants.Render.AmbientOcclusionDefault
           EmissionOpt = ValueSome Constants.Render.EmissionDefault
           IgnoreLightMapsOpt = ValueSome Constants.Render.IgnoreLightMapsDefault
+          AnisotropyOpt = ValueSome Constants.Render.AnisotropyDefault
           OpaqueDistanceOpt = ValueSome Constants.Render.OpaqueDistanceDefault
           FinenessOffsetOpt = ValueSome Constants.Render.FinenessOffsetDefault
           ScatterTypeOpt = ValueSome Constants.Render.ScatterTypeDefault
@@ -196,6 +199,7 @@ type [<SymbolicExpansion>] MaterialProperties =
           AmbientOcclusionOpt = ValueNone
           EmissionOpt = ValueNone
           IgnoreLightMapsOpt = ValueNone
+          AnisotropyOpt = ValueNone
           OpaqueDistanceOpt = ValueNone
           FinenessOffsetOpt = ValueNone
           ScatterTypeOpt = ValueNone
@@ -2074,6 +2078,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                       AmbientOcclusion = surfaceDescriptor.MaterialProperties.AmbientOcclusion
                       Emission = surfaceDescriptor.MaterialProperties.Emission
                       IgnoreLightMaps = surfaceDescriptor.MaterialProperties.IgnoreLightMaps
+                      Anisotropy = surfaceDescriptor.MaterialProperties.Anisotropy
                       OpaqueDistance = surfaceDescriptor.MaterialProperties.OpaqueDistance
                       FinenessOffset = surfaceDescriptor.MaterialProperties.FinenessOffset
                       ScatterType = surfaceDescriptor.MaterialProperties.ScatterType
@@ -2515,6 +2520,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               AmbientOcclusion = properties.AmbientOcclusion
               Emission = properties.Emission
               IgnoreLightMaps = properties.IgnoreLightMaps
+              Anisotropy = properties.Anisotropy
               OpaqueDistance = properties.OpaqueDistance
               FinenessOffset = properties.FinenessOffset
               ScatterType = properties.ScatterType
@@ -3889,6 +3895,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             let ambientOcclusion = match properties.AmbientOcclusionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.AmbientOcclusion
             let emission = match properties.EmissionOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Emission
             let ignoreLightMaps = match properties.IgnoreLightMapsOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.IgnoreLightMaps
+            let anisotropy = match properties.AnisotropyOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.Anisotropy
             let opaqueDistance = match properties.OpaqueDistanceOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.OpaqueDistance
             let subsurfaceCutoff = match properties.SubsurfaceCutoffOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.SubsurfaceCutoff
             let subsurfaceCutoffMargin = match properties.SubsurfaceCutoffMarginOpt with ValueSome value -> value | ValueNone -> surface.SurfaceMaterialProperties.SubsurfaceCutoffMargin
@@ -3912,8 +3919,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 24 + 3] <- emission
             renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 28] <- if ignoreLightMaps then 1.0f else 0.0f
             renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 29] <- presence.DepthCutoff
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 30] <- opaqueDistance
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 31] <- 0.0f // free
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 30] <- anisotropy
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 31] <- opaqueDistance
             renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 32] <- subsurfaceCutoff
             renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 33] <- subsurfaceCutoffMargin
             renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 34] <- specularScalar
@@ -4550,6 +4557,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               AmbientOcclusion = Option.defaultValue Constants.Render.AmbientOcclusionDefault terrainMaterialProperties.AmbientOcclusionOpt
               Emission = Constants.Render.EmissionDefault
               IgnoreLightMaps = Option.defaultValue Constants.Render.IgnoreLightMapsDefault terrainMaterialProperties.IgnoreLightMapsOpt
+              Anisotropy = Constants.Render.AnisotropyDefault
               OpaqueDistance = Constants.Render.OpaqueDistanceDefault
               FinenessOffset = Constants.Render.FinenessOffsetDefault
               ScatterType = Constants.Render.ScatterTypeDefault

@@ -38,11 +38,12 @@ layout(set = 3, binding = 0) uniform sampler materialSampler;
 layout(location = 0) in vec4 position;
 layout(location = 1) in vec2 texCoords;
 layout(location = 2) in vec3 normal;
-layout(location = 3) flat in vec4 albedo;
-layout(location = 4) flat in vec4 material;
-layout(location = 5) flat in vec4 material2;
-layout(location = 6) flat in vec4 subsurfacePlus;
-layout(location = 7) flat in vec4 clearCoatPlus;
+layout(location = 3) in vec3 tangent;
+layout(location = 4) flat in vec4 albedo;
+layout(location = 5) flat in vec4 material;
+layout(location = 6) flat in vec4 material2;
+layout(location = 7) flat in vec4 subsurfacePlus;
+layout(location = 8) flat in vec4 clearCoatPlus;
 
 layout(location = 0) out float depthOut;
 layout(location = 1) out vec3 albedoOut;
@@ -95,15 +96,9 @@ void main()
     depthOut = gl_FragCoord.z;
 
     // compute spatial converters
-    vec3 q1 = dFdx(position.xyz);
-    vec3 q2 = dFdy(position.xyz);
-    vec2 st1 = dFdx(texCoords);
-    vec2 st2 = dFdy(texCoords);
     vec3 normal = normalize(normal);
-    vec3 tangent = normalize(q1 * st2.t - q2 * st1.t);
+    vec3 tangent = normalize(tangent);
     vec3 binormal = -normalize(cross(normal, tangent));
-    tangent = normalize(tangent - normal * dot(normal, tangent));
-    binormal = cross(normal, tangent);
     mat3 toWorld = mat3(tangent, binormal, normal);
 
     // compute albedo

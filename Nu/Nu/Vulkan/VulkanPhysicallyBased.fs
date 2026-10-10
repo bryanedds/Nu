@@ -231,6 +231,7 @@ type PhysicallyBasedMaterialProperties =
       AmbientOcclusion : single
       Emission : single
       IgnoreLightMaps : bool
+      Anisotropy : single
       OpaqueDistance : single
       FinenessOffset : single
       ScatterType : ScatterType
@@ -258,6 +259,7 @@ type PhysicallyBasedMaterialProperties =
           AmbientOcclusion = 0.0f
           Emission = 0.0f
           IgnoreLightMaps = false
+          Anisotropy = 0.0f
           OpaqueDistance = 0.0f
           FinenessOffset = 0.0f
           ScatterType = NoScatter
@@ -455,6 +457,16 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedSurface =
             | Some _ | None -> ignoreLightMapsDefault
         | ValueSome ignoreLightMaps -> ignoreLightMaps
 
+    static member extractAnisotropy anisotropyDefault (sceneOpt : Assimp.Scene option) surface =
+        match surface.SurfaceNode.AnisotropyOpt with
+        | ValueNone ->
+            match sceneOpt with
+            | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
+                let material = scene.Materials[surface.SurfaceMaterialIndex]
+                ValueOption.defaultValue anisotropyDefault material.AnisotropyOpt
+            | Some _ | None -> anisotropyDefault
+        | ValueSome anisotropy -> anisotropy
+
     static member extractOpaqueDistance opaqueDistanceDefault (sceneOpt : Assimp.Scene option) surface =
         match surface.SurfaceNode.OpaqueDistanceOpt with
         | ValueNone ->
@@ -598,6 +610,7 @@ module PhysicallyBasedSurfaceFns =
     let extractPresence = PhysicallyBasedSurface.extractPresence
     let extractRenderStyle = PhysicallyBasedSurface.extractRenderStyle
     let extractIgnoreLightMaps = PhysicallyBasedSurface.extractIgnoreLightMaps
+    let extractAnisotropy = PhysicallyBasedSurface.extractAnisotropy
     let extractOpaqueDistance = PhysicallyBasedSurface.extractOpaqueDistance
     let extractFinenessOffset = PhysicallyBasedSurface.extractFinenessOffset
     let extractScatterType = PhysicallyBasedSurface.extractScatterType
@@ -854,7 +867,7 @@ type PhysicallyBasedPipelines =
 module PhysicallyBased =
     
     // static vertex definition
-    let StaticVertexFieldCount = 16
+    let StaticVertexFieldCount = 19
     let StaticVertices =
         [|Pipeline.vertex 0 (StaticVertexFieldCount * sizeof<single>) VkVertexInputRate.Vertex
             [|Pipeline.attribute 0 Single3 0
@@ -862,25 +875,26 @@ module PhysicallyBased =
               Pipeline.attribute 2 Single2 20
               Pipeline.attribute 3 Single2 28
               Pipeline.attribute 4 Single3 36
-              Pipeline.attribute 5 Single4 48|]
+              Pipeline.attribute 5 Single4 48
+              Pipeline.attribute 6 Single4 60|]
           Pipeline.vertex 1 (Constants.Render.InstanceFieldCount * sizeof<single>) VkVertexInputRate.Instance
-            [|Pipeline.attribute 6 Single4 0
-              Pipeline.attribute 7 Single4 (4 * sizeof<single>)
-              Pipeline.attribute 8 Single4 (8 * sizeof<single>)
-              Pipeline.attribute 9 Single4 (12 * sizeof<single>)
-              Pipeline.attribute 10 Single4 (16 * sizeof<single>)
-              Pipeline.attribute 11 Single4 (20 * sizeof<single>)
-              Pipeline.attribute 12 Single4 (24 * sizeof<single>)
-              Pipeline.attribute 13 Single4 (28 * sizeof<single>)
-              Pipeline.attribute 14 Single4 (32 * sizeof<single>)
-              Pipeline.attribute 15 Single4 (36 * sizeof<single>)
-              Pipeline.attribute 16 Single4 (40 * sizeof<single>)
-              Pipeline.attribute 17 Single4 (44 * sizeof<single>)
-              Pipeline.attribute 18 Single4 (48 * sizeof<single>)
-              Pipeline.attribute 19 Single4 (52 * sizeof<single>)|]|]
+            [|Pipeline.attribute 7 Single4 0
+              Pipeline.attribute 8 Single4 (4 * sizeof<single>)
+              Pipeline.attribute 9 Single4 (8 * sizeof<single>)
+              Pipeline.attribute 10 Single4 (12 * sizeof<single>)
+              Pipeline.attribute 11 Single4 (16 * sizeof<single>)
+              Pipeline.attribute 12 Single4 (20 * sizeof<single>)
+              Pipeline.attribute 13 Single4 (24 * sizeof<single>)
+              Pipeline.attribute 14 Single4 (28 * sizeof<single>)
+              Pipeline.attribute 15 Single4 (32 * sizeof<single>)
+              Pipeline.attribute 16 Single4 (36 * sizeof<single>)
+              Pipeline.attribute 17 Single4 (40 * sizeof<single>)
+              Pipeline.attribute 18 Single4 (44 * sizeof<single>)
+              Pipeline.attribute 19 Single4 (48 * sizeof<single>)
+              Pipeline.attribute 20 Single4 (52 * sizeof<single>)|]|]
 
     // animated vertex definition
-    let AnimatedVertexFieldCount = 24
+    let AnimatedVertexFieldCount = 27
     let AnimatedVertices =
         [|Pipeline.vertex 0 (AnimatedVertexFieldCount * sizeof<single>) VkVertexInputRate.Vertex
             [|Pipeline.attribute 0 Single3 0
@@ -889,23 +903,24 @@ module PhysicallyBased =
               Pipeline.attribute 3 Single2 28
               Pipeline.attribute 4 Single3 36
               Pipeline.attribute 5 Single4 48
-              Pipeline.attribute 6 Single4 64
-              Pipeline.attribute 7 Single4 80|]
+              Pipeline.attribute 6 Single4 60
+              Pipeline.attribute 7 Single4 76
+              Pipeline.attribute 8 Single4 92|]
           Pipeline.vertex 1 (Constants.Render.InstanceFieldCount * sizeof<single>) VkVertexInputRate.Instance
-            [|Pipeline.attribute 8 Single4 0
-              Pipeline.attribute 9 Single4 (4 * sizeof<single>)
-              Pipeline.attribute 10 Single4 (8 * sizeof<single>)
-              Pipeline.attribute 11 Single4 (12 * sizeof<single>)
-              Pipeline.attribute 12 Single4 (16 * sizeof<single>)
-              Pipeline.attribute 13 Single4 (20 * sizeof<single>)
-              Pipeline.attribute 14 Single4 (24 * sizeof<single>)
-              Pipeline.attribute 15 Single4 (28 * sizeof<single>)
-              Pipeline.attribute 16 Single4 (32 * sizeof<single>)
-              Pipeline.attribute 17 Single4 (36 * sizeof<single>)
-              Pipeline.attribute 18 Single4 (40 * sizeof<single>)
-              Pipeline.attribute 19 Single4 (44 * sizeof<single>)
-              Pipeline.attribute 20 Single4 (48 * sizeof<single>)
-              Pipeline.attribute 21 Single4 (52 * sizeof<single>)|]|]
+            [|Pipeline.attribute 9 Single4 0
+              Pipeline.attribute 10 Single4 (4 * sizeof<single>)
+              Pipeline.attribute 11 Single4 (8 * sizeof<single>)
+              Pipeline.attribute 12 Single4 (12 * sizeof<single>)
+              Pipeline.attribute 13 Single4 (16 * sizeof<single>)
+              Pipeline.attribute 14 Single4 (20 * sizeof<single>)
+              Pipeline.attribute 15 Single4 (24 * sizeof<single>)
+              Pipeline.attribute 16 Single4 (28 * sizeof<single>)
+              Pipeline.attribute 17 Single4 (32 * sizeof<single>)
+              Pipeline.attribute 18 Single4 (36 * sizeof<single>)
+              Pipeline.attribute 19 Single4 (40 * sizeof<single>)
+              Pipeline.attribute 20 Single4 (44 * sizeof<single>)
+              Pipeline.attribute 21 Single4 (48 * sizeof<single>)
+              Pipeline.attribute 22 Single4 (52 * sizeof<single>)|]|]
 
     // terrain vertex definition
     let TerrainVertexFieldCount = 19
@@ -1121,13 +1136,13 @@ module PhysicallyBased =
         // make vertex data
         let vertexData =
             [|
-                (*   positions   *)         (* tex coords *)    (* tex coords 2 *)  (* tex coords 3 *)  (*    normals    *)     (*   colors   *)
-                -1.0f; -1.0f; +0.0f;        0.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     0.0f; 0.0f; 0.0f; 0.0f // bottom-left
-                +1.0f; -1.0f; +0.0f;        1.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     0.0f; 0.0f; 0.0f; 0.0f // bottom-right
-                +1.0f; +1.0f; +0.0f;        1.0f; 1.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     0.0f; 0.0f; 0.0f; 0.0f // top-right
-                +1.0f; +1.0f; +0.0f;        1.0f; 1.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     0.0f; 0.0f; 0.0f; 0.0f // top-right
-                -1.0f; +1.0f; +0.0f;        0.0f; 1.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     0.0f; 0.0f; 0.0f; 0.0f // top-left
-                -1.0f; -1.0f; +0.0f;        0.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     0.0f; 0.0f; 0.0f; 0.0f // bottom-left
+                (*   positions   *)         (* tex coords *)    (* tex coords 2 *)  (* tex coords 3 *)  (*    normals    *)     (*    tangents   *)     (*   colors   *)
+                -1.0f; -1.0f; +0.0f;        0.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     1.0f;  0.0f;  0.0f;     0.0f; 0.0f; 0.0f; 0.0f // bottom-left
+                +1.0f; -1.0f; +0.0f;        1.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     1.0f;  0.0f;  0.0f;     0.0f; 0.0f; 0.0f; 0.0f // bottom-right
+                +1.0f; +1.0f; +0.0f;        1.0f; 1.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     1.0f;  0.0f;  0.0f;     0.0f; 0.0f; 0.0f; 0.0f // top-right
+                +1.0f; +1.0f; +0.0f;        1.0f; 1.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     1.0f;  0.0f;  0.0f;     0.0f; 0.0f; 0.0f; 0.0f // top-right
+                -1.0f; +1.0f; +0.0f;        0.0f; 1.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     1.0f;  0.0f;  0.0f;     0.0f; 0.0f; 0.0f; 0.0f // top-left
+                -1.0f; -1.0f; +0.0f;        0.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     1.0f;  0.0f;  0.0f;     0.0f; 0.0f; 0.0f; 0.0f // bottom-left
             |]
 
         // make index data trivially
@@ -1145,13 +1160,13 @@ module PhysicallyBased =
         // make vertex data
         let vertexData =
             [|
-                (*   positions   *)         (* tex coords *)    (* tex coords 2 *)  (* tex coords 3 *)  (*    normals    *)     (*   colors   *)
-                -0.5f; -0.5f; +0.0f;        0.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     0.0f; 0.0f; 0.0f; 0.0f // bottom-left
-                +0.5f; -0.5f; +0.0f;        0.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     0.0f; 0.0f; 0.0f; 0.0f // bottom-right
-                +0.5f; +0.5f; +0.0f;        0.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     0.0f; 0.0f; 0.0f; 0.0f // top-right
-                +0.5f; +0.5f; +0.0f;        0.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     0.0f; 0.0f; 0.0f; 0.0f // top-right
-                -0.5f; +0.5f; +0.0f;        0.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     0.0f; 0.0f; 0.0f; 0.0f // top-left
-                -0.5f; -0.5f; +0.0f;        0.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     0.0f; 0.0f; 0.0f; 0.0f // bottom-left
+                (*   positions   *)         (* tex coords *)    (* tex coords 2 *)  (* tex coords 3 *)  (*    normals    *)     (*    tangents   *)     (*   colors   *)
+                -0.5f; -0.5f; +0.0f;        0.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     1.0f;  0.0f;  0.0f;     0.0f; 0.0f; 0.0f; 0.0f // bottom-left
+                +0.5f; -0.5f; +0.0f;        0.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     1.0f;  0.0f;  0.0f;     0.0f; 0.0f; 0.0f; 0.0f // bottom-right
+                +0.5f; +0.5f; +0.0f;        0.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     1.0f;  0.0f;  0.0f;     0.0f; 0.0f; 0.0f; 0.0f // top-right
+                +0.5f; +0.5f; +0.0f;        0.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     1.0f;  0.0f;  0.0f;     0.0f; 0.0f; 0.0f; 0.0f // top-right
+                -0.5f; +0.5f; +0.0f;        0.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     1.0f;  0.0f;  0.0f;     0.0f; 0.0f; 0.0f; 0.0f // top-left
+                -0.5f; -0.5f; +0.0f;        0.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     1.0f;  0.0f;  0.0f;     0.0f; 0.0f; 0.0f; 0.0f // bottom-left
             |]
 
         // make index data trivially
@@ -1169,13 +1184,13 @@ module PhysicallyBased =
         // make vertex data
         let vertexData =
             [|
-                (*   positions   *)         (* tex coords *)    (* tex coords *)    (* tex coords *)    (*    normals    *)     (*   colors   *)
-                -0.5f; -0.5f; +0.0f;        0.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     0.0f; 0.0f; 0.0f; 0.0f // bottom-left
-                +0.5f; -0.5f; +0.0f;        0.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     0.0f; 0.0f; 0.0f; 0.0f // bottom-right
-                +0.5f; +0.5f; +0.0f;        0.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     0.0f; 0.0f; 0.0f; 0.0f // top-right
-                -0.5f; -0.5f; +0.0f;        0.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     0.0f; 0.0f; 0.0f; 0.0f // top-right
-                +0.5f; +0.5f; +0.0f;        0.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     0.0f; 0.0f; 0.0f; 0.0f // top-left
-                -0.5f; +0.5f; +0.0f;        0.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     0.0f; 0.0f; 0.0f; 0.0f // bottom-left
+                (*   positions   *)         (* tex coords *)    (* tex coords *)    (* tex coords *)    (*    normals    *)     (*    tangents   *)     (*   colors   *)
+                -0.5f; -0.5f; +0.0f;        0.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     1.0f;  0.0f;  0.0f;     0.0f; 0.0f; 0.0f; 0.0f // bottom-left
+                +0.5f; -0.5f; +0.0f;        0.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     1.0f;  0.0f;  0.0f;     0.0f; 0.0f; 0.0f; 0.0f // bottom-right
+                +0.5f; +0.5f; +0.0f;        0.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     1.0f;  0.0f;  0.0f;     0.0f; 0.0f; 0.0f; 0.0f // top-right
+                -0.5f; -0.5f; +0.0f;        0.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     1.0f;  0.0f;  0.0f;     0.0f; 0.0f; 0.0f; 0.0f // top-right
+                +0.5f; +0.5f; +0.0f;        0.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     1.0f;  0.0f;  0.0f;     0.0f; 0.0f; 0.0f; 0.0f // top-left
+                -0.5f; +0.5f; +0.0f;        0.0f; 0.0f;         0.0f; 0.0f;         0.0f; 0.0f;         0.0f;  0.0f;  1.0f;     1.0f;  0.0f;  0.0f;     0.0f; 0.0f; 0.0f; 0.0f // bottom-left
             |]
 
         // make index data trivially
@@ -1434,6 +1449,12 @@ module PhysicallyBased =
             | ValueSome ignoreLightMaps -> ignoreLightMaps
             | ValueNone -> Constants.Render.IgnoreLightMapsDefault
 
+        // compute anisotropy
+        let anisotropy =
+            match material.AnisotropyOpt with
+            | ValueSome anisotropy -> anisotropy
+            | ValueNone -> Constants.Render.AnisotropyDefault
+
         // compute opaque distance
         let opaqueDistance =
             match material.OpaqueDistanceOpt with
@@ -1616,6 +1637,7 @@ module PhysicallyBased =
               AmbientOcclusion = ambientOcclusion
               Emission = emission
               IgnoreLightMaps = ignoreLightMaps
+              Anisotropy = anisotropy
               OpaqueDistance = opaqueDistance
               FinenessOffset = finenessOffset
               ScatterType = scatterType
@@ -1686,6 +1708,7 @@ module PhysicallyBased =
             let texCoords2 = if mesh.TextureCoordinateChannelCount >= 2 && i < mesh.TextureCoordinateChannels[1].Capacity then mesh.TextureCoordinateChannels[1][i] else Assimp.Vector3D (0.0f, 0.0f, 0.0f)
             let texCoords3 = if mesh.TextureCoordinateChannelCount >= 3 && i < mesh.TextureCoordinateChannels[2].Capacity then mesh.TextureCoordinateChannels[2][i] else Assimp.Vector3D (0.0f, 0.0f, 0.0f)
             let normal = if i < mesh.Normals.Count then mesh.Normals[i] else Assimp.Vector3D (0.5f, 0.5f, 1.0f)
+            let tangent = if i < mesh.Tangents.Count then mesh.Tangents[i] else Assimp.Vector3D (0.5f, 1.0f, 0.5f)
             let color = if mesh.VertexColorChannelCount >= 1 && i < mesh.VertexColorChannels[0].Count then mesh.VertexColorChannels[0][i] else Assimp.Color4D (0.0f, 0.0f, 0.0f, 0.0f)
             vertexData[v] <- position.X
             vertexData[v+1] <- position.Y
@@ -1699,10 +1722,13 @@ module PhysicallyBased =
             vertexData[v+9] <- normal.X
             vertexData[v+10] <- normal.Y
             vertexData[v+11] <- normal.Z
-            vertexData[v+12] <- color.R
-            vertexData[v+13] <- color.G
-            vertexData[v+14] <- color.B
-            vertexData[v+15] <- color.A
+            vertexData[v+12] <- tangent.X
+            vertexData[v+13] <- tangent.Y
+            vertexData[v+14] <- tangent.Z
+            vertexData[v+15] <- color.R
+            vertexData[v+16] <- color.G
+            vertexData[v+17] <- color.B
+            vertexData[v+18] <- color.A
             positionMin.X <- min positionMin.X position.X
             positionMin.Y <- min positionMin.Y position.Y
             positionMin.Z <- min positionMin.Z position.Z
@@ -1718,8 +1744,8 @@ module PhysicallyBased =
     let createPhysicallyBasedAnimatedMesh indexData (mesh : Assimp.Mesh) =
 
         // populate vertex data (except bone) and bounds
-        let boneIdsOffset = 16
-        let weightsOffset = 20
+        let boneIdsOffset = 19
+        let weightsOffset = 23
         let vertexData = Array.zeroCreate<single> (mesh.Vertices.Count * AnimatedVertexFieldCount)
         let mutable positionMin = v3Zero
         let mutable positionMax = v3Zero
@@ -1729,7 +1755,8 @@ module PhysicallyBased =
             let texCoords = if mesh.TextureCoordinateChannelCount >= 1 && i < mesh.TextureCoordinateChannels[0].Capacity then mesh.TextureCoordinateChannels[0][i] else Assimp.Vector3D (0.0f, 0.0f, 0.0f)
             let texCoords2 = if mesh.TextureCoordinateChannelCount >= 2 && i < mesh.TextureCoordinateChannels[1].Capacity then mesh.TextureCoordinateChannels[1][i] else Assimp.Vector3D (0.0f, 0.0f, 0.0f)
             let texCoords3 = if mesh.TextureCoordinateChannelCount >= 3 && i < mesh.TextureCoordinateChannels[2].Capacity then mesh.TextureCoordinateChannels[2][i] else Assimp.Vector3D (0.0f, 0.0f, 0.0f)
-            let normal = if i < mesh.Normals.Count then mesh.Normals[i] else Assimp.Vector3D (0.5f, 0.5f, 1.0f)
+            let normal = if i < mesh.Normals.Count then mesh.Normals[i] else Assimp.Vector3D (0.0f, 0.0f, 1.0f)
+            let tangent = if i < mesh.Tangents.Count then mesh.Tangents[i] else Assimp.Vector3D (1.0f, 0.0f, 0.0f)
             let color = if mesh.VertexColorChannelCount >= 1 && i < mesh.VertexColorChannels[0].Count then mesh.VertexColorChannels[0][i] else Assimp.Color4D (0.0f, 0.0f, 0.0f, 0.0f)
             vertexData[v] <- position.X
             vertexData[v+1] <- position.Y
@@ -1743,18 +1770,21 @@ module PhysicallyBased =
             vertexData[v+9] <- normal.X
             vertexData[v+10] <- normal.Y
             vertexData[v+11] <- normal.Z
-            vertexData[v+12] <- color.R
-            vertexData[v+13] <- color.G
-            vertexData[v+14] <- color.B
-            vertexData[v+15] <- color.A
-            vertexData[v+16] <- -1.0f // boneIdsOffset
-            vertexData[v+17] <- -1.0f
-            vertexData[v+18] <- -1.0f
-            vertexData[v+19] <- -1.0f
-            vertexData[v+20] <- 0.0f // weightsOffset
-            vertexData[v+21] <- 0.0f
-            vertexData[v+22] <- 0.0f
-            vertexData[v+23] <- 0.0f
+            vertexData[v+12] <- tangent.X
+            vertexData[v+13] <- tangent.Y
+            vertexData[v+14] <- tangent.Z
+            vertexData[v+15] <- color.R
+            vertexData[v+16] <- color.G
+            vertexData[v+17] <- color.B
+            vertexData[v+18] <- color.A
+            vertexData[v+19] <- -1.0f // boneIdsOffset
+            vertexData[v+20] <- -1.0f
+            vertexData[v+21] <- -1.0f
+            vertexData[v+22] <- -1.0f
+            vertexData[v+23] <- 0.0f // weightsOffset
+            vertexData[v+24] <- 0.0f
+            vertexData[v+25] <- 0.0f
+            vertexData[v+26] <- 0.0f
             positionMin.X <- min positionMin.X position.X
             positionMin.Y <- min positionMin.Y position.Y
             positionMin.Z <- min positionMin.Z position.Z

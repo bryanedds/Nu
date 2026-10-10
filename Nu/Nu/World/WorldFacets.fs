@@ -3345,6 +3345,7 @@ type BasicStaticBillboardEmitterFacet () =
                               AmbientOcclusionOpt = match emitterProperties.AmbientOcclusionOpt with ValueSome ambientOcclusion -> ValueSome ambientOcclusion | ValueNone -> descriptor.MaterialProperties.AmbientOcclusionOpt
                               EmissionOpt = match emitterProperties.EmissionOpt with ValueSome emission -> ValueSome emission | ValueNone -> descriptor.MaterialProperties.EmissionOpt
                               IgnoreLightMapsOpt = match emitterProperties.IgnoreLightMapsOpt with ValueSome ignoreLightMaps -> ValueSome ignoreLightMaps | ValueNone -> descriptor.MaterialProperties.IgnoreLightMapsOpt
+                              AnisotropyOpt = match emitterProperties.AnisotropyOpt with ValueSome anisotropy -> ValueSome anisotropy | ValueNone -> descriptor.MaterialProperties.AnisotropyOpt
                               OpaqueDistanceOpt = ValueNone
                               FinenessOffsetOpt = match emitterProperties.FinenessOffsetOpt with ValueSome finenessOffset -> ValueSome finenessOffset | ValueNone -> descriptor.MaterialProperties.FinenessOffsetOpt
                               ScatterTypeOpt = match emitterProperties.ScatterTypeOpt with ValueSome scatterType -> ValueSome scatterType | ValueNone -> descriptor.MaterialProperties.ScatterTypeOpt

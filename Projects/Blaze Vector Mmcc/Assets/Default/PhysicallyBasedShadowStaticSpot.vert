@@ -8,7 +8,7 @@ struct ShadowVertStruct
 layout(set = 0, binding = 0) uniform ShadowVertUniform { ShadowVertStruct shadowVert; };
 
 layout(location = 0) in vec3 position;
-layout(location = 6) in mat4 model;
+layout(location = 7) in mat4 model;
 
 void main()
 {
