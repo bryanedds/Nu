@@ -913,7 +913,7 @@ void main()
     vec3 fogAccum = vec3(0.0);
     for (int i = 0; i < lightsGeneral.lightsCount; ++i)
     {
-        // compute per-light material2 and compensate roughness where applicable
+        // compute per-light attributes and compensate roughness where applicable
         LightStruct light = lights[i];
         bool lightPoint = light.lightType == 0;
         bool lightSpot = light.lightType == 1;
@@ -921,7 +921,7 @@ void main()
         vec3 l, h, radiance;
         if (lightPoint || lightSpot)
         {
-            // compute material2
+            // compute attributes
             vec3 d = light.origin - position.xyz;
             l = normalize(d);
             h = normalize(v + l);
