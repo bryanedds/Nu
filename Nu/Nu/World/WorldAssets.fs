@@ -62,6 +62,7 @@ module Assets =
         let [<Uniform>] MaterialScatter = asset<Image> PackageName Assets.Default.MaterialScatterName
         let [<Uniform>] MaterialUserDefinedImage0 = asset<Image> PackageName Assets.Default.MaterialUserDefinedImage0Name
         let [<Uniform>] MaterialUserDefinedImage1 = asset<Image> PackageName Assets.Default.MaterialUserDefinedImage1Name
+        let [<Uniform>] MaterialUserDefinedImage2 = asset<Image> PackageName Assets.Default.MaterialUserDefinedImage2Name
         let [<Uniform>] TerrainLayer0Albedo = asset<Image> PackageName Assets.Default.TerrainLayer0AlbedoName
         let [<Uniform>] TerrainLayer0Roughness = asset<Image> PackageName Assets.Default.TerrainLayer0RoughnessName
         let [<Uniform>] TerrainLayer0AmbientOcclusion = asset<Image> PackageName Assets.Default.TerrainLayer0AmbientOcclusionName

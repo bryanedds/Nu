@@ -948,6 +948,7 @@ module WorldImGui =
                                             match index with
                                             | 0 -> Assets.Default.MaterialUserDefinedImage0
                                             | 1 -> Assets.Default.MaterialUserDefinedImage1
+                                            | 2 -> Assets.Default.MaterialUserDefinedImage2
                                             | _ -> failwithumf ()
                                         let mutable valueOpt = field :?> Image AssetTag voption
                                         let mutable isSome = valueOpt.IsSome

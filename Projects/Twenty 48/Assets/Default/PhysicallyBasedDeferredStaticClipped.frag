@@ -31,6 +31,7 @@ layout(set = 1, binding = 10) uniform texture2D clearCoatRoughnessTexture;
 layout(set = 1, binding = 11) uniform texture2D clearCoatNormalTexture;
 layout(set = 1, binding = 12) uniform texture2D userDefinedImage0Texture;
 layout(set = 1, binding = 13) uniform texture2D userDefinedImage1Texture;
+layout(set = 1, binding = 14) uniform texture2D userDefinedImage2Texture;
 
 layout(set = 3, binding = 0) uniform sampler materialSampler;
 

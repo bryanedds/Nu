@@ -546,6 +546,7 @@ module EffectSystem =
                       ClearCoatNormalImageOpt = ValueNone
                       UserDefinedImage0Opt = ValueNone // TODO: P0: make these aspects.
                       UserDefinedImage1Opt = ValueNone
+                      UserDefinedImage2Opt = ValueNone
                       TwoSidedOpt = ValueSome twoSided
                       ClippedOpt = ValueSome clipped
                       PipelineNameOpt = ValueNone } // TODO: P0: make this an aspect.

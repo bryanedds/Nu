@@ -754,6 +754,29 @@ module Metadata =
         | ValueNone -> ValueNone
 
     /// Thread-safe.
+    let private tryGetModelUserDefinedImage2 materialIndex model =
+        match tryGetModelMetadata model with
+        | ValueSome modelMetadata ->
+            match modelMetadata.SceneOpt with
+            | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
+                match tryGetModelAlbedoImage materialIndex model with
+                | ValueSome albedoImage ->
+                    let albedoAssetName =           albedoImage.AssetName
+                    let has_bc =                    albedoAssetName.Contains "_bc"
+                    let has_d =                     albedoAssetName.Contains "_d"
+                    let hasBaseColor =              albedoAssetName.Contains "BaseColor"
+                    let hasDiffuse =                albedoAssetName.Contains "Diffuse"
+                    let hasAlbedo =                 albedoAssetName.Contains "Albedo"
+                    let userDefinedImage2Asset =    asset albedoImage.PackageName (if has_bc then albedoAssetName.Replace ("_bc", "_user_defined_image_2")          elif has_d then albedoAssetName.Replace ("_d", "_user_defined_image_2")         else "")
+                    let userDefinedImage2Asset' =   asset albedoImage.PackageName (if hasBaseColor then albedoAssetName.Replace ("BaseColor", "UserDefinedImage2")  elif hasDiffuse then albedoAssetName.Replace ("Diffuse", "UserDefinedImage2")   elif hasAlbedo  then albedoAssetName.Replace ("Albedo", "UserDefinedImage2") else "")
+                    if getMetadataExists userDefinedImage2Asset then ValueSome userDefinedImage2Asset
+                    elif getMetadataExists userDefinedImage2Asset' then ValueSome userDefinedImage2Asset'
+                    else ValueNone
+                | ValueNone -> ValueNone
+            | Some _ | None -> ValueNone
+        | ValueNone -> ValueNone
+
+    /// Thread-safe.
     let private tryGetModelTwoSided materialIndex model =
         match tryGetModelMetadata model with
         | ValueSome modelMetadata ->
@@ -883,6 +906,11 @@ module Metadata =
     let tryGetStaticModelUserDefinedImage1 materialIndex (staticModel : StaticModel AssetTag) =
         tryGetModelUserDefinedImage1 materialIndex staticModel
 
+    /// Attempt to get the user-defined image 2 asset for the given material index and static model.
+    /// Thread-safe.
+    let tryGetStaticModelUserDefinedImage2 materialIndex (staticModel : StaticModel AssetTag) =
+        tryGetModelUserDefinedImage2 materialIndex staticModel
+
     /// Attempt to get the scatter image asset for the given material index and static model.
     /// Thread-safe.
     let tryGetStaticModelScatterImage materialIndex (staticModel : StaticModel AssetTag) =
@@ -989,6 +1017,11 @@ module Metadata =
     /// Thread-safe.
     let tryGetAnimatedModelUserDefinedImage1 materialIndex (animatedModel : AnimatedModel AssetTag) =
         tryGetModelUserDefinedImage1 materialIndex animatedModel
+
+    /// Attempt to get the user-defined image 2 asset for the given material index and animated model.
+    /// Thread-safe.
+    let tryGetAnimatedModelUserDefinedImage2 materialIndex (animatedModel : AnimatedModel AssetTag) =
+        tryGetModelUserDefinedImage2 materialIndex animatedModel
 
     /// Attempt to get the two-sided property for the given material index and animated model.
     /// Thread-safe.

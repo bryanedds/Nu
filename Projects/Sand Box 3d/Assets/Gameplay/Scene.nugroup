@@ -371,6 +371,7 @@
       [ClearCoatNormalImageOpt None]
       [UserDefinedImage0Opt None]
       [UserDefinedImage1Opt None]
+      [UserDefinedImage2Opt None]
       [TwoSidedOpt None]
       [ClippedOpt None]
       [PipelineNameOpt [Some DeferredStaticFlipped]]]]

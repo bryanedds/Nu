@@ -230,6 +230,7 @@ type [<SymbolicExpansion; CustomEquality; NoComparison>] Material =
       ClearCoatNormalImageOpt : Image AssetTag voption
       UserDefinedImage0Opt : Image AssetTag voption
       UserDefinedImage1Opt : Image AssetTag voption
+      UserDefinedImage2Opt : Image AssetTag voption
       TwoSidedOpt : bool voption
       ClippedOpt : bool voption
       PipelineNameOpt : string voption }
@@ -248,6 +249,7 @@ type [<SymbolicExpansion; CustomEquality; NoComparison>] Material =
     member this.ClearCoatNormalImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialClearCoatNormalName) this.ClearCoatNormalImageOpt
     member this.UserDefinedImage0 = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialUserDefinedImage0Name) this.UserDefinedImage0Opt
     member this.UserDefinedImage1 = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialUserDefinedImage1Name) this.UserDefinedImage1Opt
+    member this.UserDefinedImage2 = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialUserDefinedImage2Name) this.UserDefinedImage2Opt
     member this.TwoSided = ValueOption.defaultValue false this.TwoSidedOpt
     member this.Clipped = ValueOption.defaultValue false this.ClippedOpt
     member this.PipelineName = ValueOption.defaultValue Constants.Render.PipelineNameDefault this.PipelineNameOpt
@@ -268,6 +270,7 @@ type [<SymbolicExpansion; CustomEquality; NoComparison>] Material =
         hash material.ClearCoatNormalImageOpt ^^^
         hash material.UserDefinedImage0Opt ^^^
         hash material.UserDefinedImage1Opt ^^^
+        hash material.UserDefinedImage2Opt ^^^
         hash material.TwoSidedOpt ^^^
         hash material.ClippedOpt ^^^
         hash material.PipelineNameOpt
@@ -289,6 +292,7 @@ type [<SymbolicExpansion; CustomEquality; NoComparison>] Material =
         this.ClearCoatNormalImageOpt = that.ClearCoatNormalImageOpt &&
         this.UserDefinedImage0Opt = that.UserDefinedImage0Opt &&
         this.UserDefinedImage1Opt = that.UserDefinedImage1Opt &&
+        this.UserDefinedImage2Opt = that.UserDefinedImage2Opt &&
         this.TwoSidedOpt = that.TwoSidedOpt &&
         this.ClippedOpt = that.ClippedOpt &&
         this.PipelineNameOpt = that.PipelineNameOpt
@@ -309,6 +313,7 @@ type [<SymbolicExpansion; CustomEquality; NoComparison>] Material =
           ClearCoatNormalImageOpt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialClearCoatNormalName)
           UserDefinedImage0Opt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialUserDefinedImage0Name)
           UserDefinedImage1Opt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialUserDefinedImage1Name)
+          UserDefinedImage2Opt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialUserDefinedImage2Name)
           TwoSidedOpt = ValueSome false
           ClippedOpt = ValueSome false
           PipelineNameOpt = ValueSome Constants.Render.PipelineNameDefault }
@@ -329,6 +334,7 @@ type [<SymbolicExpansion; CustomEquality; NoComparison>] Material =
           ClearCoatNormalImageOpt = ValueNone
           UserDefinedImage0Opt = ValueNone
           UserDefinedImage1Opt = ValueNone
+          UserDefinedImage2Opt = ValueNone
           TwoSidedOpt = ValueNone
           ClippedOpt = ValueNone
           PipelineNameOpt = ValueNone }
@@ -537,6 +543,7 @@ type StaticModelSurfaceDescriptor =
       ClearCoatNormalImage : Image AssetTag
       UserDefinedImage0 : Image AssetTag
       UserDefinedImage1 : Image AssetTag
+      UserDefinedImage2 : Image AssetTag
       TwoSided : bool
       Clipped : bool
       PipelineName : string }
@@ -2101,6 +2108,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                       ClearCoatNormalTexture = match VulkanRenderer3d.tryGetRenderAsset surfaceDescriptor.ClearCoatNormalImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.ClearCoatNormalTexture
                       UserDefinedImage0Texture = match VulkanRenderer3d.tryGetRenderAsset surfaceDescriptor.UserDefinedImage0 renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.UserDefinedImage0Texture
                       UserDefinedImage1Texture = match VulkanRenderer3d.tryGetRenderAsset surfaceDescriptor.UserDefinedImage1 renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.UserDefinedImage1Texture
+                      UserDefinedImage2Texture = match VulkanRenderer3d.tryGetRenderAsset surfaceDescriptor.UserDefinedImage2 renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.UserDefinedImage2Texture
                       TwoSided = surfaceDescriptor.TwoSided
                       Clipped = surfaceDescriptor.Clipped
                       PipelineName = surfaceDescriptor.PipelineName
@@ -2496,6 +2504,10 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             match VulkanRenderer3d.tryGetRenderAsset material.UserDefinedImage1 renderer with
             | ValueSome (TextureAsset texture) -> texture
             | _ -> renderer.PhysicallyBasedMaterial.UserDefinedImage1Texture
+        let userDefinedImage2Texture =
+            match VulkanRenderer3d.tryGetRenderAsset material.UserDefinedImage2 renderer with
+            | ValueSome (TextureAsset texture) -> texture
+            | _ -> renderer.PhysicallyBasedMaterial.UserDefinedImage2Texture
         let properties : PhysicallyBasedMaterialProperties =
             { Albedo = properties.Albedo
               Roughness = properties.Roughness
@@ -2535,6 +2547,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               ClearCoatNormalTexture = clearCoatNormalTexture
               UserDefinedImage0Texture = userDefinedImage0Texture
               UserDefinedImage1Texture = userDefinedImage1Texture
+              UserDefinedImage2Texture = userDefinedImage2Texture
               TwoSided = material.TwoSided
               Clipped = material.Clipped
               PipelineName = material.PipelineName
@@ -2640,6 +2653,13 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 | ValueSome (TextureAsset texture) -> texture
                 | _ -> surfaceMaterial.UserDefinedImage1Texture
             | ValueNone -> surfaceMaterial.UserDefinedImage1Texture
+        let userDefinedImage2Texture =
+            match material.UserDefinedImage2Opt with
+            | ValueSome image ->
+                match VulkanRenderer3d.tryGetRenderAsset image renderer with
+                | ValueSome (TextureAsset texture) -> texture
+                | _ -> surfaceMaterial.UserDefinedImage2Texture
+            | ValueNone -> surfaceMaterial.UserDefinedImage2Texture
         let twoSided =
             match material.TwoSidedOpt with
             | ValueSome twoSided -> twoSided
@@ -2667,6 +2687,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               ClearCoatNormalTexture = clearCoatNormalTexture
               UserDefinedImage0Texture = userDefinedImage0Texture
               UserDefinedImage1Texture = userDefinedImage1Texture
+              UserDefinedImage2Texture = userDefinedImage2Texture
               TwoSided = twoSided
               Clipped = clipped
               PipelineName = pipelineNameOpt
@@ -5718,6 +5739,10 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 match TextureInternal.tryCreate false true ColorCompression ("Assets/Default/MaterialUserDefinedImage1" + ext) RenderThread context with
                 | Right textureInternal -> EagerTexture textureInternal
                 | Left error -> failwith ("Could not load material user-defined image 1 texture due to: " + error)
+            let userDefinedImage2Texture =
+                match TextureInternal.tryCreate false true ColorCompression ("Assets/Default/MaterialUserDefinedImage2" + ext) RenderThread context with
+                | Right textureInternal -> EagerTexture textureInternal
+                | Left error -> failwith ("Could not load material user-defined image 2 texture due to: " + error)
             { AlbedoTexture = albedoTexture
               RoughnessTexture = roughnessTexture
               MetallicTexture = metallicTexture
@@ -5732,6 +5757,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               ClearCoatNormalTexture = clearCoatNormalTexture
               UserDefinedImage0Texture = userDefinedImage0Texture
               UserDefinedImage1Texture = userDefinedImage1Texture
+              UserDefinedImage2Texture = userDefinedImage2Texture
               TwoSided = false
               Clipped = false
               PipelineName = Constants.Render.PipelineNameDefault
@@ -5862,6 +5888,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             Texture.destroy renderer.PhysicallyBasedMaterial.ClearCoatNormalTexture renderer.VulkanContext
             Texture.destroy renderer.PhysicallyBasedMaterial.UserDefinedImage0Texture renderer.VulkanContext
             Texture.destroy renderer.PhysicallyBasedMaterial.UserDefinedImage1Texture renderer.VulkanContext
+            Texture.destroy renderer.PhysicallyBasedMaterial.UserDefinedImage2Texture renderer.VulkanContext
 
             // destroy omnipresent attachments
             PhysicallyBased.destroyPhysicallyBasedAttachments renderer.PhysicallyBasedAttachments renderer.VulkanContext

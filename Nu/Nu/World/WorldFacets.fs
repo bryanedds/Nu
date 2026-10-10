@@ -3378,6 +3378,7 @@ type BasicStaticBillboardEmitterFacet () =
                               ClearCoatNormalImageOpt = match emitterMaterial.ClearCoatNormalImageOpt with ValueSome clearCoatNormalImage -> ValueSome clearCoatNormalImage | ValueNone -> descriptor.Material.ClearCoatNormalImageOpt
                               UserDefinedImage0Opt = match emitterMaterial.UserDefinedImage0Opt with ValueSome userDefinedImage -> ValueSome userDefinedImage | ValueNone -> descriptor.Material.UserDefinedImage0Opt
                               UserDefinedImage1Opt = match emitterMaterial.UserDefinedImage1Opt with ValueSome userDefinedImage -> ValueSome userDefinedImage | ValueNone -> descriptor.Material.UserDefinedImage1Opt
+                              UserDefinedImage2Opt = match emitterMaterial.UserDefinedImage2Opt with ValueSome userDefinedImage -> ValueSome userDefinedImage | ValueNone -> descriptor.Material.UserDefinedImage2Opt
                               TwoSidedOpt = match emitterMaterial.TwoSidedOpt with ValueSome twoSided -> ValueSome twoSided | ValueNone -> descriptor.Material.TwoSidedOpt
                               ClippedOpt = match emitterMaterial.ClippedOpt with ValueSome clipped -> ValueSome clipped | ValueNone -> descriptor.Material.ClippedOpt
                               PipelineNameOpt = match emitterMaterial.PipelineNameOpt with ValueSome pipelineName -> ValueSome pipelineName | ValueNone -> descriptor.Material.PipelineNameOpt }

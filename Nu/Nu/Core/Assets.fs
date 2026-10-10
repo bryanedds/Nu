@@ -79,6 +79,7 @@ module Default =
     let [<Literal>] MaterialClearCoatNormalName = "MaterialClearCoatNormal"
     let [<Literal>] MaterialUserDefinedImage0Name = "MaterialUserDefinedImage0"
     let [<Literal>] MaterialUserDefinedImage1Name = "MaterialUserDefinedImage1"
+    let [<Literal>] MaterialUserDefinedImage2Name = "MaterialUserDefinedImage2"
     let [<Literal>] TerrainLayer0AlbedoName = "TerrainLayer0Albedo"
     let [<Literal>] TerrainLayer0RoughnessName = "TerrainLayer0Roughness"
     let [<Literal>] TerrainLayer0AmbientOcclusionName = "TerrainLayer0AmbientOcclusion"
