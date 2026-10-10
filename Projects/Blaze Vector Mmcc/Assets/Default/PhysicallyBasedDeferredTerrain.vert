@@ -1,7 +1,6 @@
 #version 450 core
 
 const int TEX_COORDS_OFFSET_VERTS = 6;
-const int TERRAIN_LAYERS_MAX = 6;
 
 const vec2 TEX_COORDS_OFFSET_FILTERS[TEX_COORDS_OFFSET_VERTS] =
     vec2[TEX_COORDS_OFFSET_VERTS](
@@ -44,6 +43,8 @@ layout(location = 11) in vec4 albedo;
 layout(location = 12) in vec4 material;
 layout(location = 13) in vec4 attributes;
 layout(location = 14) in vec4 subsurfacePlus; // NOTE: currently unutilized, but kept around to stay in sync with instance field count.
+layout(location = 16) in vec4 reservedSettings[2];
+layout(location = 18) in vec4 userDefinedSettings[2];
 
 layout(location = 0) out vec4 positionOut;
 layout(location = 1) out vec2 texCoordsOut;

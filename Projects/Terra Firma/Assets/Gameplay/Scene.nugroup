@@ -44,7 +44,21 @@
       [PositionLocal [1.3 59.8 -85.3]]
       [Presence Omnipresent]
       [Size [512 128 512]]
-      [Static True]]
+      [Static True]
+      [TerrainMaterialProperties
+       [[AlbedoOpt
+         [Some [1 1 1 1]]]
+        [RoughnessOpt [Some 1]]
+        [AmbientOcclusionOpt [Some 1]]
+        [IgnoreLightMapsOpt [Some True]]
+        [UserDefinedSetting0Opt [Some 0]]
+        [UserDefinedSetting1Opt [Some 0]]
+        [UserDefinedSetting2Opt [Some 0]]
+        [UserDefinedSetting3Opt [Some 0]]
+        [UserDefinedSetting4Opt [Some 0]]
+        [UserDefinedSetting5Opt [Some 0]]
+        [UserDefinedSetting6Opt [Some 0]]
+        [UserDefinedSetting7Opt [Some 0]]]]]
      []]
     [LightProbe3dDispatcher
      [[AmbientColor [1 0.8901961 0.78431374 1]]

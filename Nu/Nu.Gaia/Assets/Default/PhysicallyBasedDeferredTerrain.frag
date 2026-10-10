@@ -1,7 +1,7 @@
 #version 450 core
 
 const float GAMMA = 2.2;
-const int TERRAIN_LAYERS_MAX = 6;
+const int TERRAIN_LAYERS_MAX = 7;
 const float SAA_VARIANCE = 0.1; // TODO: consider exposing as terrainFrag config property.
 const float SAA_THRESHOLD = 0.1; // TODO: consider exposing as terrainFrag config property.
 
@@ -32,6 +32,8 @@ layout(set = 1, binding = 0) uniform texture2D albedoTextures[TERRAIN_LAYERS_MAX
 layout(set = 1, binding = 1) uniform texture2D roughnessTextures[TERRAIN_LAYERS_MAX];
 layout(set = 1, binding = 2) uniform texture2D ambientOcclusionTextures[TERRAIN_LAYERS_MAX];
 layout(set = 1, binding = 3) uniform texture2D normalTextures[TERRAIN_LAYERS_MAX];
+layout(set = 1, binding = 4) uniform texture2D userDefinedImage0Texture;
+layout(set = 1, binding = 5) uniform texture2D userDefinedImage1Texture;
 
 layout(set = 2, binding = 0) uniform sampler materialSampler;
 

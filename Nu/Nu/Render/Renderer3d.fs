@@ -4531,7 +4531,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
     static member private renderPhysicallyBasedTerrain
         shadowCubeMapFace eyeCenter view projection
         lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity
-        (terrainDescriptor : TerrainDescriptor) materialSampler geometry colorAttachments depthAttachment resolution renderPassIndex pipeline renderer =
+        terrainDescriptor materialSampler geometry colorAttachments depthAttachment resolution renderPassIndex pipeline renderer =
         let terrainMaterialProperties = terrainDescriptor.MaterialProperties
         let materialProperties =
             { Albedo = Option.defaultValue Constants.Render.AlbedoDefault terrainMaterialProperties.AlbedoOpt
@@ -4549,25 +4549,25 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               RefractiveIndex = Constants.Render.RefractiveIndexDefault
               ClearCoat = Constants.Render.ClearCoatDefault
               ClearCoatRoughness = Constants.Render.ClearCoatRoughnessDefault
-              UserDefinedSetting0 = Constants.Render.UserDefinedSettingDefault
-              UserDefinedSetting1 = Constants.Render.UserDefinedSettingDefault
-              UserDefinedSetting2 = Constants.Render.UserDefinedSettingDefault
-              UserDefinedSetting3 = Constants.Render.UserDefinedSettingDefault
-              UserDefinedSetting4 = Constants.Render.UserDefinedSettingDefault
-              UserDefinedSetting5 = Constants.Render.UserDefinedSettingDefault
-              UserDefinedSetting6 = Constants.Render.UserDefinedSettingDefault
-              UserDefinedSetting7 = Constants.Render.UserDefinedSettingDefault }
-        let (texelWidth, texelHeight, materials) =
+              UserDefinedSetting0 = Option.defaultValue Constants.Render.UserDefinedSettingDefault terrainMaterialProperties.UserDefinedSetting0Opt
+              UserDefinedSetting1 = Option.defaultValue Constants.Render.UserDefinedSettingDefault terrainMaterialProperties.UserDefinedSetting1Opt
+              UserDefinedSetting2 = Option.defaultValue Constants.Render.UserDefinedSettingDefault terrainMaterialProperties.UserDefinedSetting2Opt
+              UserDefinedSetting3 = Option.defaultValue Constants.Render.UserDefinedSettingDefault terrainMaterialProperties.UserDefinedSetting3Opt
+              UserDefinedSetting4 = Option.defaultValue Constants.Render.UserDefinedSettingDefault terrainMaterialProperties.UserDefinedSetting4Opt
+              UserDefinedSetting5 = Option.defaultValue Constants.Render.UserDefinedSettingDefault terrainMaterialProperties.UserDefinedSetting5Opt
+              UserDefinedSetting6 = Option.defaultValue Constants.Render.UserDefinedSettingDefault terrainMaterialProperties.UserDefinedSetting6Opt
+              UserDefinedSetting7 = Option.defaultValue Constants.Render.UserDefinedSettingDefault terrainMaterialProperties.UserDefinedSetting7Opt }
+        let (texelWidth, texelHeight, materials, userDefinedImage0Texture, userDefinedImage1Texture) =
             match terrainDescriptor.Material with
             | BlendMaterial blendMaterial ->
+                let defaultMaterial =
+                    renderer.PhysicallyBasedMaterial
                 let mutable texelWidth = Single.MaxValue
                 let mutable texelHeight = Single.MaxValue
                 let materials =
                     [|for i in 0 .. dec blendMaterial.TerrainLayers.Length do
                         let layer =
                             blendMaterial.TerrainLayers[i]
-                        let defaultMaterial =
-                            renderer.PhysicallyBasedMaterial
                         let albedoTexture =
                             match VulkanRenderer3d.tryGetRenderAsset layer.AlbedoImage renderer with
                             | ValueSome renderAsset -> match renderAsset with TextureAsset texture -> texture | _ -> defaultMaterial.AlbedoTexture
@@ -4592,7 +4592,15 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                             RoughnessTexture = roughnessTexture
                             AmbientOcclusionTexture = ambientOcclusionTexture
                             NormalTexture = normalTexture }|]
-                (texelWidth, texelHeight, materials)
+                let userDefinedImage0Texture =
+                    match VulkanRenderer3d.tryGetRenderAsset blendMaterial.UserDefinedImage0 renderer with
+                    | ValueSome renderAsset -> match renderAsset with TextureAsset texture -> texture | _ -> defaultMaterial.NormalTexture
+                    | ValueNone -> defaultMaterial.UserDefinedImage0Texture
+                let userDefinedImage1Texture =
+                    match VulkanRenderer3d.tryGetRenderAsset blendMaterial.UserDefinedImage1 renderer with
+                    | ValueSome renderAsset -> match renderAsset with TextureAsset texture -> texture | _ -> defaultMaterial.NormalTexture
+                    | ValueNone -> defaultMaterial.UserDefinedImage1Texture
+                (texelWidth, texelHeight, materials, userDefinedImage0Texture, userDefinedImage1Texture)
             | FlatMaterial flatMaterial ->
                 let defaultMaterial =
                     renderer.PhysicallyBasedMaterial
@@ -4619,7 +4627,15 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                         AmbientOcclusionTexture = ambientOcclusionTexture
                         NormalTexture = normalTexture }
                 let albedoMetadata = albedoTexture.TextureMetadata
-                (albedoMetadata.TextureTexelWidth, albedoMetadata.TextureTexelHeight, [|material|])
+                let userDefinedImage0Texture =
+                    match VulkanRenderer3d.tryGetRenderAsset flatMaterial.UserDefinedImage0 renderer with
+                    | ValueSome renderAsset -> match renderAsset with TextureAsset texture -> texture | _ -> defaultMaterial.NormalTexture
+                    | ValueNone -> defaultMaterial.UserDefinedImage0Texture
+                let userDefinedImage1Texture =
+                    match VulkanRenderer3d.tryGetRenderAsset flatMaterial.UserDefinedImage1 renderer with
+                    | ValueSome renderAsset -> match renderAsset with TextureAsset texture -> texture | _ -> defaultMaterial.NormalTexture
+                    | ValueNone -> defaultMaterial.UserDefinedImage1Texture
+                (albedoMetadata.TextureTexelWidth, albedoMetadata.TextureTexelHeight, [|material|], userDefinedImage0Texture, userDefinedImage1Texture)
         let materials =
             Array.create Constants.Render.TerrainLayersMax PhysicallyBasedMaterial.empty
             |> Array.append materials
@@ -4649,10 +4665,38 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         instanceFields[25] <- materialProperties.Metallic
         instanceFields[26] <- materialProperties.AmbientOcclusion
         instanceFields[27] <- materialProperties.Emission
+        instanceFields[28] <- if materialProperties.IgnoreLightMaps then 1.0f else 0.0f
+        instanceFields[29] <- 0.0f // free
+        instanceFields[30] <- 0.0f // free
+        instanceFields[31] <- 0.0f // free
+        instanceFields[32] <- 0.0f // free
+        instanceFields[33] <- 0.0f // free
+        instanceFields[34] <- 0.0f // free
+        instanceFields[35] <- 0.0f // free
+        instanceFields[36] <- 0.0f // free
+        instanceFields[37] <- 0.0f // free
+        instanceFields[38] <- 0.0f // reserved
+        instanceFields[39] <- 0.0f // reserved
+        instanceFields[40] <- 0.0f // reserved
+        instanceFields[41] <- 0.0f // reserved
+        instanceFields[42] <- 0.0f // reserved
+        instanceFields[43] <- 0.0f // reserved
+        instanceFields[44] <- 0.0f // reserved
+        instanceFields[45] <- 0.0f // reserved
+        instanceFields[46] <- 0.0f // reserved
+        instanceFields[47] <- 0.0f // reserved
+        instanceFields[48] <- materialProperties.UserDefinedSetting0
+        instanceFields[49] <- materialProperties.UserDefinedSetting1
+        instanceFields[50] <- materialProperties.UserDefinedSetting2
+        instanceFields[51] <- materialProperties.UserDefinedSetting3
+        instanceFields[52] <- materialProperties.UserDefinedSetting4
+        instanceFields[53] <- materialProperties.UserDefinedSetting5
+        instanceFields[54] <- materialProperties.UserDefinedSetting6
+        instanceFields[55] <- materialProperties.UserDefinedSetting7
         PhysicallyBased.drawPhysicallyBasedTerrain
             shadowCubeMapFace eyeCenter view projection
             instanceFields lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity
-            materials materialSampler geometry colorAttachments depthAttachment resolution renderPassIndex pipeline renderer.VulkanContext
+            materials userDefinedImage0Texture userDefinedImage1Texture materialSampler geometry colorAttachments depthAttachment resolution renderPassIndex pipeline renderer.VulkanContext
 
         // track geometry instancing
         renderer.GeometryInstanced.Add geometry |> ignore<bool>
