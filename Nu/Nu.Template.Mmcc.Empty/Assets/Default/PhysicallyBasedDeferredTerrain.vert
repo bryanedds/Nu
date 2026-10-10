@@ -43,8 +43,8 @@ layout(location = 11) in vec4 albedo;
 layout(location = 12) in vec4 material;
 layout(location = 13) in vec4 attributes;
 layout(location = 14) in vec4 subsurfacePlus; // NOTE: currently unutilized, but kept around to stay in sync with instance field count.
-layout(location = 16) in vec4 reservedSettings[2];
-layout(location = 18) in vec4 userDefinedSettings[2];
+layout(location = 16) in vec4 reservedSettings;
+layout(location = 17) in vec4 userDefinedSettings[2];
 
 layout(location = 0) out vec4 positionOut;
 layout(location = 1) out vec2 texCoordsOut;

@@ -45,8 +45,8 @@ layout(location = 12) in vec4 material;
 layout(location = 13) in vec4 attributes;
 layout(location = 14) in vec4 subsurfacePlus;
 layout(location = 15) in vec4 clearCoatPlus; // NOTE: z and w are reserved for additional engine parameters.
-layout(location = 16) in vec4 reservedSettings[2];
-layout(location = 18) in vec4 userDefinedSettings[2];
+layout(location = 16) in vec4 reservedSettings;
+layout(location = 17) in vec4 userDefinedSettings[2];
 
 layout(location = 0) out vec4 positionOut;
 layout(location = 1) out vec2 texCoordsOut;
@@ -56,6 +56,7 @@ layout(location = 4) flat out vec4 materialOut;
 layout(location = 5) flat out vec4 attributesOut;
 layout(location = 6) flat out vec4 subsurfacePlusOut;
 layout(location = 7) flat out vec4 clearCoatPlusOut;
+layout(location = 8) flat out vec4 userDefinedSettingsOut[2];
 
 void main()
 {
@@ -70,5 +71,6 @@ void main()
     attributesOut = attributes;
     subsurfacePlusOut = subsurfacePlus;
     clearCoatPlusOut = clearCoatPlus;
+    userDefinedSettingsOut = userDefinedSettings;
     gl_Position = eye.viewProjection * positionOut;
 }

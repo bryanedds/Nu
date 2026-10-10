@@ -128,7 +128,7 @@ type [<SymbolicExpansion>] MaterialProperties =
       RefractiveIndexOpt : single voption // forward only
       ClearCoatOpt : single voption // deferred only - TODO: consider implementing for forward surfaces as well.
       ClearCoatRoughnessOpt : single voption // deferred only - TODO: same as above.
-      // NOTE: 10 fields here are reserved for engine use.
+      // NOTE: 6 fields here are reserved for engine use.
       UserDefinedSetting0Opt : single voption
       UserDefinedSetting1Opt : single voption
       UserDefinedSetting2Opt : single voption
@@ -3743,18 +3743,14 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 41] <- 0.0f // reserved
             renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 42] <- 0.0f // reserved
             renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 43] <- 0.0f // reserved
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 44] <- 0.0f // reserved
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 45] <- 0.0f // reserved
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 46] <- 0.0f // reserved
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 47] <- 0.0f // reserved
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 48] <- userDefinedSetting0
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 49] <- userDefinedSetting1
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 50] <- userDefinedSetting2
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 51] <- userDefinedSetting3
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 52] <- userDefinedSetting4
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 53] <- userDefinedSetting5
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 54] <- userDefinedSetting6
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 55] <- userDefinedSetting7
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 44] <- userDefinedSetting0
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 45] <- userDefinedSetting1
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 46] <- userDefinedSetting2
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 47] <- userDefinedSetting3
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 48] <- userDefinedSetting4
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 49] <- userDefinedSetting5
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 50] <- userDefinedSetting6
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 51] <- userDefinedSetting7
 
         // draw deferred surfaces
         PhysicallyBased.drawPhysicallyBasedDeferredSurfaces
@@ -3834,18 +3830,14 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 41] <- 0.0f // reserved
                 renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 42] <- 0.0f // reserved
                 renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 43] <- 0.0f // reserved
-                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 44] <- 0.0f // reserved
-                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 45] <- 0.0f // reserved
-                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 46] <- 0.0f // reserved
-                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 47] <- 0.0f // reserved
-                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 48] <- userDefinedSetting0
-                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 49] <- userDefinedSetting1
-                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 50] <- userDefinedSetting2
-                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 51] <- userDefinedSetting3
-                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 52] <- userDefinedSetting4
-                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 53] <- userDefinedSetting5
-                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 54] <- userDefinedSetting6
-                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 55] <- userDefinedSetting7
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 44] <- userDefinedSetting0
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 45] <- userDefinedSetting1
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 46] <- userDefinedSetting2
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 47] <- userDefinedSetting3
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 48] <- userDefinedSetting4
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 49] <- userDefinedSetting5
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 50] <- userDefinedSetting6
+                renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 51] <- userDefinedSetting7
                 i <- inc i
 
         // draw deferred surfaces
@@ -3934,18 +3926,14 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 41] <- 0.0f // reserved
             renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 42] <- 0.0f // reserved
             renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 43] <- 0.0f // reserved
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 44] <- 0.0f // reserved
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 45] <- 0.0f // reserved
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 46] <- 0.0f // reserved
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 47] <- 0.0f // reserved
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 48] <- userDefinedSetting0
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 49] <- userDefinedSetting1
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 50] <- userDefinedSetting2
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 51] <- userDefinedSetting3
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 52] <- userDefinedSetting4
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 53] <- userDefinedSetting5
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 54] <- userDefinedSetting6
-            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 55] <- userDefinedSetting7
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 44] <- userDefinedSetting0
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 45] <- userDefinedSetting1
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 46] <- userDefinedSetting2
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 47] <- userDefinedSetting3
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 48] <- userDefinedSetting4
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 49] <- userDefinedSetting5
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 50] <- userDefinedSetting6
+            renderer.InstanceFields[i * Constants.Render.InstanceFieldCount + 51] <- userDefinedSetting7
 
         // make these bindings mutable for passing by ref
         let mutable (uniformsDescriptorSet, samplersDescriptorSet) =
@@ -4713,18 +4701,14 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         instanceFields[41] <- 0.0f // reserved
         instanceFields[42] <- 0.0f // reserved
         instanceFields[43] <- 0.0f // reserved
-        instanceFields[44] <- 0.0f // reserved
-        instanceFields[45] <- 0.0f // reserved
-        instanceFields[46] <- 0.0f // reserved
-        instanceFields[47] <- 0.0f // reserved
-        instanceFields[48] <- materialProperties.UserDefinedSetting0
-        instanceFields[49] <- materialProperties.UserDefinedSetting1
-        instanceFields[50] <- materialProperties.UserDefinedSetting2
-        instanceFields[51] <- materialProperties.UserDefinedSetting3
-        instanceFields[52] <- materialProperties.UserDefinedSetting4
-        instanceFields[53] <- materialProperties.UserDefinedSetting5
-        instanceFields[54] <- materialProperties.UserDefinedSetting6
-        instanceFields[55] <- materialProperties.UserDefinedSetting7
+        instanceFields[44] <- materialProperties.UserDefinedSetting0
+        instanceFields[45] <- materialProperties.UserDefinedSetting1
+        instanceFields[46] <- materialProperties.UserDefinedSetting2
+        instanceFields[47] <- materialProperties.UserDefinedSetting3
+        instanceFields[48] <- materialProperties.UserDefinedSetting4
+        instanceFields[49] <- materialProperties.UserDefinedSetting5
+        instanceFields[50] <- materialProperties.UserDefinedSetting6
+        instanceFields[51] <- materialProperties.UserDefinedSetting7
         PhysicallyBased.drawPhysicallyBasedTerrain
             shadowCubeMapFace eyeCenter view projection
             instanceFields lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity

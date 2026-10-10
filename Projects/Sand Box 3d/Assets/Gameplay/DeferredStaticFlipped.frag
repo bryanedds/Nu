@@ -28,8 +28,8 @@ layout(set = 1, binding = 8) uniform texture2D scatterTexture;
 layout(set = 1, binding = 9) uniform texture2D clearCoatTexture;
 layout(set = 1, binding = 10) uniform texture2D clearCoatRoughnessTexture;
 layout(set = 1, binding = 11) uniform texture2D clearCoatNormalTexture;
-layout(set = 1, binding = 12) uniform texture2D userDefinedImageTexture;
-layout(set = 1, binding = 13) uniform texture2D userDefined2ImageTexture;
+layout(set = 1, binding = 12) uniform texture2D userDefinedImage0Texture;
+layout(set = 1, binding = 13) uniform texture2D userDefinedImage1Texture;
 layout(set = 1, binding = 14) uniform texture2D userDefinedImage2Texture;
 
 layout(set = 3, binding = 0) uniform sampler materialSampler;
@@ -42,6 +42,7 @@ layout(location = 4) flat in vec4 material;
 layout(location = 5) flat in vec4 attributes;
 layout(location = 6) flat in vec4 subsurfacePlus;
 layout(location = 7) flat in vec4 clearCoatPlus;
+layout(location = 8) flat in vec4 userDefinedSettings[2];
 
 layout(location = 0) out float depthOut;
 layout(location = 1) out vec3 albedoOut;
@@ -107,7 +108,7 @@ void main()
 
     // compute albedo
     vec4 albedoSample = texture(sampler2D(albedoTexture, materialSampler), texCoords);
-    albedoOut = vec3(1.0) - pow(albedoSample.rgb, vec3(GAMMA)) * albedo.rgb;
+    albedoOut = vec3(userDefinedSettings[0][0]) - pow(albedoSample.rgb, vec3(GAMMA)) * albedo.rgb;
 
     // compute normal and ignore local light maps
     normalPlusOut.xyz = normalize(toWorld * decodeNormal(texture(sampler2D(normalTexture, materialSampler), texCoords).xy));

@@ -51,8 +51,8 @@ layout(location = 14) in vec4 material;
 layout(location = 15) in vec4 attributes;
 layout(location = 16) in vec4 subsurfacePlus;
 layout(location = 17) in vec4 clearCoatPlus; // NOTE: z and w are reserved for additional engine parameters.
-layout(location = 18) in vec4 reservedSettings[2];
-layout(location = 20) in vec4 userDefinedSettings[2];
+layout(location = 18) in vec4 reservedSettings;
+layout(location = 19) in vec4 userDefinedSettings[2];
 
 layout(location = 0) out vec4 positionOut;
 layout(location = 1) out vec2 texCoordsOut;
