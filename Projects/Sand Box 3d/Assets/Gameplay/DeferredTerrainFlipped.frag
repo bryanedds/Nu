@@ -32,6 +32,8 @@ layout(set = 1, binding = 0) uniform texture2D albedoTextures[TERRAIN_LAYERS_MAX
 layout(set = 1, binding = 1) uniform texture2D roughnessTextures[TERRAIN_LAYERS_MAX];
 layout(set = 1, binding = 2) uniform texture2D ambientOcclusionTextures[TERRAIN_LAYERS_MAX];
 layout(set = 1, binding = 3) uniform texture2D normalTextures[TERRAIN_LAYERS_MAX];
+layout(set = 1, binding = 4) uniform texture2D userDefinedImage0Texture;
+layout(set = 1, binding = 5) uniform texture2D userDefinedImage1Texture;
 
 layout(set = 2, binding = 0) uniform sampler materialSampler;
 
@@ -43,6 +45,7 @@ layout(location = 5) in vec3 tint;
 layout(location = 6) flat in vec4 albedo;
 layout(location = 7) flat in vec4 material;
 layout(location = 8) flat in vec4 attributes;
+layout(location = 9) flat in vec4 userDefinedSettings[2];
 
 layout(location = 0) out float depthOut;
 layout(location = 1) out vec3 albedoOut;
@@ -82,7 +85,7 @@ void main()
     for (int i = 0; i < min(terrainFrag.layersCount, TERRAIN_LAYERS_MAX); ++i)
     {
         float blend = blends[i/4][i%4];
-        albedoBlend += texture(sampler2D(albedoTextures[i], materialSampler), texCoords) * blend;
+        albedoBlend += texture(sampler2D(userDefinedImage0Texture, materialSampler), texCoords) * blend;
         vec4 roughness = texture(sampler2D(roughnessTextures[i], materialSampler), texCoords);
         roughnessBlend += (roughness.a == 1.0f ? roughness.r : roughness.a) * blend;
         ambientOcclusionBlend += texture(sampler2D(ambientOcclusionTextures[i], materialSampler), texCoords).b * blend;
@@ -107,7 +110,7 @@ void main()
 
     // populate remaining outputs
     depthOut = gl_FragCoord.z;
-    albedoOut = vec3(1.0) - pow(albedoBlend.rgb, vec3(GAMMA)) * tint * albedo.rgb;
+    albedoOut = vec3(userDefinedSettings[0][0]) - pow(albedoBlend.rgb, vec3(GAMMA)) * tint * albedo.rgb;
     materialOut = vec4(roughness * material.g, 0.0, ambientOcclusionBlend * material.b, 0.0);
     subdermalPlusOut = vec4(0.0);
     scatterPlusOut = vec4(0.0);
