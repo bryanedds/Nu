@@ -526,6 +526,7 @@ type StaticModelSurfaceDescriptor =
       TexCoordses2 : Vector2 array
       TexCoordses3 : Vector2 array
       Normals : Vector3 array
+      Tangents : Vector3 array
       Colors : Color array
       Indices : int array
       ModelMatrix : Matrix4x4
@@ -2142,10 +2143,13 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                         vertexData[u+9] <- surfaceDescriptor.Normals[i].X
                         vertexData[u+10] <- surfaceDescriptor.Normals[i].Y
                         vertexData[u+11] <- surfaceDescriptor.Normals[i].Z
-                        vertexData[u+12] <- surfaceDescriptor.Colors[i].R
-                        vertexData[u+13] <- surfaceDescriptor.Colors[i].G
-                        vertexData[u+14] <- surfaceDescriptor.Colors[i].B
-                        vertexData[u+15] <- surfaceDescriptor.Colors[i].A
+                        vertexData[u+12] <- surfaceDescriptor.Tangents[i].X
+                        vertexData[u+13] <- surfaceDescriptor.Tangents[i].Y
+                        vertexData[u+14] <- surfaceDescriptor.Tangents[i].Z
+                        vertexData[u+15] <- surfaceDescriptor.Colors[i].R
+                        vertexData[u+16] <- surfaceDescriptor.Colors[i].G
+                        vertexData[u+17] <- surfaceDescriptor.Colors[i].B
+                        vertexData[u+18] <- surfaceDescriptor.Colors[i].A
                         i <- inc i
                 with :? IndexOutOfRangeException ->
                     Log.info "Vertex data truncated due to an unequal count among surface descriptor Positions, TexCoordses, and Normals."

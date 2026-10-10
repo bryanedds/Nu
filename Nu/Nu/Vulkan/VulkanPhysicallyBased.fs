@@ -1861,10 +1861,10 @@ module PhysicallyBased =
             | None ->
 
                 // compute vertices
-                let vertices = Array.zeroCreate (vertexData.Length / 16)
+                let vertices = Array.zeroCreate (vertexData.Length / StaticVertexFieldCount)
                 let vertexData = vertexData.Span
                 for i in 0 .. dec vertices.Length do
-                    let j = i * 16
+                    let j = i * StaticVertexFieldCount
                     let vertex = v3 vertexData[j] vertexData[j+1] vertexData[j+2]
                     vertices[i] <- vertex
 
@@ -1936,10 +1936,10 @@ module PhysicallyBased =
             | None ->
 
                 // compute vertices
-                let vertices = Array.zeroCreate (vertexData.Length / 24)
+                let vertices = Array.zeroCreate (vertexData.Length / AnimatedVertexFieldCount)
                 let vertexData = vertexData.Span
                 for i in 0 .. dec vertices.Length do
-                    let j = i * 24
+                    let j = i * AnimatedVertexFieldCount
                     let vertex = v3 vertexData[j] vertexData[j+1] vertexData[j+2]
                     vertices[i] <- vertex
 
