@@ -215,9 +215,9 @@ type RendererInline (windowProperties) =
             | Some _ -> messages3d.Add (RenderStaticModelSurface { ModelMatrix = modelMatrix; CastShadow = castShadow; Presence = presence; InsetOpt = Option.ofValueOption insetOpt; MaterialProperties = materialProperties; Material = material; StaticModel = staticModel; SurfaceIndex = surfaceIndex; DepthTest = depthTest; RenderType = renderType; RenderPass = renderPass })
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
-        member ri.RenderAnimatedModelFast (modelMatrix, castShadow, presence, insetOpt, materialProperties, material, boneTransforms, animatedModel, subsortOffsets, dualMaterialPropertyOpts, depthTest, renderType, renderPass) =
+        member ri.RenderAnimatedModelFast (modelMatrix, castShadow, presence, insetOpt, materialProperties, material, boneTransforms, animatedModel, subsortOffsets, dualRenderedSurfaces, depthTest, renderType, renderPass) =
             match dependenciesOpt with
-            | Some _ -> messages3d.Add (RenderAnimatedModel { ModelMatrix = modelMatrix; CastShadow = castShadow; Presence = presence; InsetOpt = Option.ofValueOption insetOpt; MaterialProperties = materialProperties; Material = material; BoneTransforms = boneTransforms; AnimatedModel = animatedModel; SubsortOffsets = subsortOffsets; DualMaterialPropertyOpts = dualMaterialPropertyOpts; DepthTest = depthTest; RenderType = renderType; RenderPass = renderPass })
+            | Some _ -> messages3d.Add (RenderAnimatedModel { ModelMatrix = modelMatrix; CastShadow = castShadow; Presence = presence; InsetOpt = Option.ofValueOption insetOpt; MaterialProperties = materialProperties; Material = material; BoneTransforms = boneTransforms; AnimatedModel = animatedModel; SubsortOffsets = subsortOffsets; DualRenderedSurfaces = dualRenderedSurfaces; DepthTest = depthTest; RenderType = renderType; RenderPass = renderPass })
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
         member ri.EnqueueMessage2d message =
@@ -408,7 +408,7 @@ type RendererThread (windowProperties) =
                           CachedAnimatedModelBoneTransforms = Unchecked.defaultof<_>
                           CachedAnimatedModel = Unchecked.defaultof<_>
                           CachedAnimatedModelSubsortOffsets = Unchecked.defaultof<_>
-                          CachedAnimatedModelDualMaterialPropertyOpts = Unchecked.defaultof<_>
+                          CachedAnimatedModelDualRenderedSurfaces = Unchecked.defaultof<_>
                           CachedAnimatedModelDepthTest = Unchecked.defaultof<_>
                           CachedAnimatedModelRenderType = Unchecked.defaultof<_>
                           CachedAnimatedModelRenderPass = Unchecked.defaultof<_> }
@@ -705,7 +705,7 @@ type RendererThread (windowProperties) =
                 messageBuffers3d[messageBufferIndex].Add cachedStaticModelSurfaceMessage
             | _ -> failwithumf ()
 
-        member rt.RenderAnimatedModelFast (modelMatrix, castShadow, presence, insetOpt, materialProperties, material, boneTransforms, animatedModel, subsortOffsets, dualMaterialPropertyOpts, depthTest, renderType, renderPass) =
+        member rt.RenderAnimatedModelFast (modelMatrix, castShadow, presence, insetOpt, materialProperties, material, boneTransforms, animatedModel, subsortOffsets, dualRenderedSurfaces, depthTest, renderType, renderPass) =
             if Option.isNone threadOpt then raise (InvalidOperationException "Renderer process not yet started or already terminated.")
             let cachedAnimatedModelMessage = allocAnimatedModelMessage ()
             match cachedAnimatedModelMessage with
@@ -719,7 +719,7 @@ type RendererThread (windowProperties) =
                 cachedMessage.CachedAnimatedModelBoneTransforms <- boneTransforms
                 cachedMessage.CachedAnimatedModel <- animatedModel
                 cachedMessage.CachedAnimatedModelSubsortOffsets <- subsortOffsets
-                cachedMessage.CachedAnimatedModelDualMaterialPropertyOpts <- dualMaterialPropertyOpts
+                cachedMessage.CachedAnimatedModelDualRenderedSurfaces <- dualRenderedSurfaces
                 cachedMessage.CachedAnimatedModelDepthTest <- depthTest
                 cachedMessage.CachedAnimatedModelRenderType <- renderType
                 cachedMessage.CachedAnimatedModelRenderPass <- renderPass
