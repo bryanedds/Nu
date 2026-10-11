@@ -3345,6 +3345,7 @@ type BasicStaticBillboardEmitterFacet () =
                               AmbientOcclusionOpt = match emitterProperties.AmbientOcclusionOpt with ValueSome ambientOcclusion -> ValueSome ambientOcclusion | ValueNone -> descriptor.MaterialProperties.AmbientOcclusionOpt
                               EmissionOpt = match emitterProperties.EmissionOpt with ValueSome emission -> ValueSome emission | ValueNone -> descriptor.MaterialProperties.EmissionOpt
                               IgnoreLightMapsOpt = match emitterProperties.IgnoreLightMapsOpt with ValueSome ignoreLightMaps -> ValueSome ignoreLightMaps | ValueNone -> descriptor.MaterialProperties.IgnoreLightMapsOpt
+                              AnisotropyOpt = match emitterProperties.AnisotropyOpt with ValueSome anisotropy -> ValueSome anisotropy | ValueNone -> descriptor.MaterialProperties.AnisotropyOpt
                               OpaqueDistanceOpt = ValueNone
                               FinenessOffsetOpt = match emitterProperties.FinenessOffsetOpt with ValueSome finenessOffset -> ValueSome finenessOffset | ValueNone -> descriptor.MaterialProperties.FinenessOffsetOpt
                               ScatterTypeOpt = match emitterProperties.ScatterTypeOpt with ValueSome scatterType -> ValueSome scatterType | ValueNone -> descriptor.MaterialProperties.ScatterTypeOpt
@@ -3378,6 +3379,7 @@ type BasicStaticBillboardEmitterFacet () =
                               ClearCoatNormalImageOpt = match emitterMaterial.ClearCoatNormalImageOpt with ValueSome clearCoatNormalImage -> ValueSome clearCoatNormalImage | ValueNone -> descriptor.Material.ClearCoatNormalImageOpt
                               UserDefinedImage0Opt = match emitterMaterial.UserDefinedImage0Opt with ValueSome userDefinedImage -> ValueSome userDefinedImage | ValueNone -> descriptor.Material.UserDefinedImage0Opt
                               UserDefinedImage1Opt = match emitterMaterial.UserDefinedImage1Opt with ValueSome userDefinedImage -> ValueSome userDefinedImage | ValueNone -> descriptor.Material.UserDefinedImage1Opt
+                              UserDefinedImage2Opt = match emitterMaterial.UserDefinedImage2Opt with ValueSome userDefinedImage -> ValueSome userDefinedImage | ValueNone -> descriptor.Material.UserDefinedImage2Opt
                               TwoSidedOpt = match emitterMaterial.TwoSidedOpt with ValueSome twoSided -> ValueSome twoSided | ValueNone -> descriptor.Material.TwoSidedOpt
                               ClippedOpt = match emitterMaterial.ClippedOpt with ValueSome clipped -> ValueSome clipped | ValueNone -> descriptor.Material.ClippedOpt
                               PipelineNameOpt = match emitterMaterial.PipelineNameOpt with ValueSome pipelineName -> ValueSome pipelineName | ValueNone -> descriptor.Material.PipelineNameOpt }
@@ -3403,9 +3405,6 @@ type BasicStaticBillboardEmitterFacet () =
 [<AutoOpen>]
 module StaticModelFacetExtensions =
     type Entity with
-        member this.GetClipped world : bool = this.Get (nameof this.Clipped) world
-        member this.SetClipped (value : bool) world = this.Set (nameof this.Clipped) value world
-        member this.Clipped = lens (nameof this.Clipped) this this.GetClipped this.SetClipped
         member this.GetStaticModel world : StaticModel AssetTag = this.Get (nameof this.StaticModel) world
         member this.SetStaticModel (value : StaticModel AssetTag) world = this.Set (nameof this.StaticModel) value world
         member this.StaticModel = lens (nameof this.StaticModel) this this.GetStaticModel this.SetStaticModel
@@ -3417,7 +3416,7 @@ type StaticModelFacet () =
     static member Properties =
         [define Entity.InsetOpt None
          define Entity.MaterialProperties MaterialProperties.empty
-         define Entity.Clipped false
+         define Entity.Material Material.empty
          define Entity.DepthTest LessThanTest
          define Entity.RenderStyle Deferred
          define Entity.StaticModel Assets.Default.StaticModel]
@@ -3430,14 +3429,14 @@ type StaticModelFacet () =
             let presence = transform.Presence
             let insetOpt = ValueOption.ofOption (entity.GetInsetOpt world)
             let properties = entity.GetMaterialProperties world
+            let material = entity.GetMaterial world
             let staticModel = entity.GetStaticModel world
-            let clipped = entity.GetClipped world
             let depthTest = entity.GetDepthTest world
             let renderType =
                 match entity.GetRenderStyle world with
                 | Deferred -> DeferredRenderType
                 | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
-            World.renderStaticModelFast (&affineMatrix, castShadow, presence, insetOpt, properties, staticModel, clipped, depthTest, renderType, renderPass, world)
+            World.renderStaticModelFast (&affineMatrix, castShadow, presence, insetOpt, properties, material, staticModel, depthTest, renderType, renderPass, world)
 
     override this.GetAttributesInferred (entity, world) =
         let staticModel = entity.GetStaticModel world
@@ -3591,9 +3590,9 @@ module AnimatedModelFacetExtensions =
         member this.GetSubsortOffsets world : Map<int, single> = this.Get (nameof this.SubsortOffsets) world
         member this.SetSubsortOffsets (value : Map<int, single>) world = this.Set (nameof this.SubsortOffsets) value world
         member this.SubsortOffsets = lens (nameof this.SubsortOffsets) this this.GetSubsortOffsets this.SetSubsortOffsets
-        member this.GetDualRenderedSurfaceIndices world : int Set = this.Get (nameof this.DualRenderedSurfaceIndices) world
-        member this.SetDualRenderedSurfaceIndices (value : int Set) world = this.Set (nameof this.DualRenderedSurfaceIndices) value world
-        member this.DualRenderedSurfaceIndices = lens (nameof this.DualRenderedSurfaceIndices) this this.GetDualRenderedSurfaceIndices this.SetDualRenderedSurfaceIndices
+        member this.GetDualRenderedSurfaces world : Map<int, MaterialProperties option> = this.Get (nameof this.DualRenderedSurfaces) world
+        member this.SetDualRenderedSurfaces (value : Map<int, MaterialProperties option>) world = this.Set (nameof this.DualRenderedSurfaces) value world
+        member this.DualRenderedSurfaces = lens (nameof this.DualRenderedSurfaces) this this.GetDualRenderedSurfaces this.SetDualRenderedSurfaces
         member this.GetBoneIdsOpt world : Dictionary<string, int> option = this.Get (nameof this.BoneIdsOpt) world
         member this.SetBoneIdsOpt (value : Dictionary<string, int> option) world = this.Set (nameof this.BoneIdsOpt) value world
         member this.BoneIdsOpt = lens (nameof this.BoneIdsOpt) this this.GetBoneIdsOpt this.SetBoneIdsOpt
@@ -3666,7 +3665,7 @@ type AnimatedModelFacet () =
          define Entity.Animations [|{ StartTime = GameTime.zero; LifeTimeOpt = None; Name = ""; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BoneFilterOpt = None }|]
          define Entity.AnimatedModel Assets.Default.AnimatedModel
          define Entity.SubsortOffsets Map.empty
-         define Entity.DualRenderedSurfaceIndices Set.empty
+         define Entity.DualRenderedSurfaces Map.empty
          define Entity.DepthTest LessThanTest
          define Entity.RenderStyle Deferred
          nonPersistent Entity.BoneIdsOpt None
@@ -3725,14 +3724,14 @@ type AnimatedModelFacet () =
             let material = entity.GetMaterial world
             let animatedModel = entity.GetAnimatedModel world
             let subsortOffsets = entity.GetSubsortOffsets world
-            let drsIndices = entity.GetDualRenderedSurfaceIndices world
+            let dualRenderedSurfaces = entity.GetDualRenderedSurfaces world
             let depthTest = entity.GetDepthTest world
             let renderType =
                 match entity.GetRenderStyle world with
                 | Deferred -> DeferredRenderType
                 | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
             match entity.GetBoneTransformsOpt world with
-            | Some boneTransforms -> World.renderAnimatedModelFast (&affineMatrix, castShadow, presence, insetOpt, properties, material, boneTransforms, animatedModel, subsortOffsets, drsIndices, depthTest, renderType, renderPass, world)
+            | Some boneTransforms -> World.renderAnimatedModelFast (&affineMatrix, castShadow, presence, insetOpt, properties, material, boneTransforms, animatedModel, subsortOffsets, dualRenderedSurfaces, depthTest, renderType, renderPass, world)
             | None -> ()
 
     override this.GetAttributesInferred (entity, world) =
@@ -3848,11 +3847,13 @@ type TerrainFacet () =
                     [|{ AlbedoImage = Assets.Default.TerrainLayer0Albedo
                         RoughnessImage = Assets.Default.TerrainLayer0Roughness
                         AmbientOcclusionImage = Assets.Default.TerrainLayer0AmbientOcclusion
-                        NormalImage = Assets.Default.TerrainLayer0Normal }
+                        NormalImage = Assets.Default.TerrainLayer0Normal
+                        UserDefinedImage = Assets.Default.TerrainLayer0UserDefinedImage }
                       { AlbedoImage = Assets.Default.TerrainLayer1Albedo
                         RoughnessImage = Assets.Default.TerrainLayer1Roughness
                         AmbientOcclusionImage = Assets.Default.TerrainLayer1AmbientOcclusion
-                        NormalImage = Assets.Default.TerrainLayer1Normal }|]
+                        NormalImage = Assets.Default.TerrainLayer1Normal
+                        UserDefinedImage = Assets.Default.TerrainLayer1UserDefinedImage }|]
                   BlendMap =
                       RedsMap
                         [|Assets.Default.TerrainLayer0Blend

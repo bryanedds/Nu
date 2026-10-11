@@ -20,8 +20,7 @@ type MetricsEntityDispatcher () =
         let affineMatrix = transform.AffineMatrix
         let castShadow = transform.CastShadow
         let presence = transform.Presence
-        let properties = MaterialProperties.empty
-        World.renderStaticModelFast (&affineMatrix, castShadow, presence, ValueNone, properties, staticModel, false, LessThanTest, DeferredRenderType, renderPass, world)
+        World.renderStaticModelFast (&affineMatrix, castShadow, presence, ValueNone, MaterialProperties.empty, Material.empty, staticModel, LessThanTest, DeferredRenderType, renderPass, world)
 
     override this.GetAttributesInferred (entity, world) =
         let staticModel = entity.GetModelGeneric world

@@ -322,6 +322,15 @@ module AssimpExtensions =
                 else ValueNone
             | ValueNone -> ValueNone
 
+        member this.AnisotropyOpt =
+            match this.TryGetMaterialProperty Constants.Assimp.AnisotropyPropertyName with
+            | ValueSome property ->
+                if property.PropertyType = Assimp.PropertyType.String then
+                    try property.GetStringValue () |> scvalueMemo<single> |> ValueSome
+                    with _ -> ValueNone
+                else ValueNone
+            | ValueNone -> ValueNone
+
         member this.OpaqueDistanceOpt =
             match this.TryGetMaterialProperty Constants.Assimp.OpaqueDistancePropertyName with
             | ValueSome property ->
@@ -522,6 +531,16 @@ module AssimpExtensions =
                 match entry.DataType with
                 | Assimp.MetaDataType.String ->
                     try entry.Data :?> string |> scvalueMemo<bool> |> ValueSome
+                    with _ -> ValueNone
+                | _ -> ValueNone
+            else ValueNone
+
+        member this.AnisotropyOpt =
+            let mutable entry = Unchecked.defaultof<_>
+            if this.Metadata.TryGetValue (Constants.Render.AnisotropyName, &entry) then
+                match entry.DataType with
+                | Assimp.MetaDataType.String ->
+                    try entry.Data :?> string |> scvalueMemo<single> |> ValueSome
                     with _ -> ValueNone
                 | _ -> ValueNone
             else ValueNone

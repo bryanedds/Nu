@@ -259,11 +259,11 @@ module WorldModule2 =
                 | OutgoingState transitionTime -> World.updateScreenOutgoing transitionTime selectedScreen world
             | None -> ()
 
-        static member private updateScreenRequestedSong world =
+        static member private updateScreenSongRequest world =
             match World.getSelectedScreenOpt world with
             | Some selectedScreen ->
-                match World.getScreenRequestedSong selectedScreen world with
-                | Request song ->
+                match World.getScreenSongRequest selectedScreen world with
+                | RequestSong song ->
                     match World.getSongOpt world with
                     | Some current ->
                         if  current.FadeInTime <> song.FadeInTime ||
@@ -276,13 +276,13 @@ module WorldModule2 =
                             World.setSongVolume song.Volume world
                     | None -> World.playSong song.FadeInTime song.FadeOutTime song.StartTime song.RepeatLimitOpt song.Volume song.Song world
                 | RequestFadeOut fadeOutTime -> if not (World.getSongFadingOut world) then World.fadeOutSong fadeOutTime world
-                | RequestNone -> World.stopSong world
+                | RequestSilence -> World.stopSong world
                 | RequestIgnore -> ()
             | None -> ()
 
         static member private processScreenTransitioning world =
             World.updateScreenTransition world
-            World.updateScreenRequestedSong world
+            World.updateScreenSongRequest world
 
         /// Try to transition to the given screen if no other transition is in progress.
         static member tryTransitionScreen destination world =
@@ -2428,7 +2428,7 @@ module EntityPropertyDescriptor =
             | ValueSome lateBindings ->
                 match propertyDescriptor.PropertyName with
                 | nameof Entity.MaterialProperties -> (5, Left "Material")
-                | nameof Entity.Material | nameof Entity.Clipped -> (6, Left "Material 2")
+                | nameof Entity.Material -> (6, Left "Material 2")
                 | _ -> (Int32.MaxValue, Right lateBindings))
         |> Seq.sortBy (function ((i, Left name), _) -> (i, Left name) | ((i, Right (ty : Type)), _) -> (i, Right (not (ty.IsAssignableTo typeof<Dispatcher>), ty.Name)))
         |> Seq.map (fun ((_, category), descriptors) -> (category, Seq.map snd descriptors))

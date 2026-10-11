@@ -802,26 +802,29 @@ module WorldImGui =
                                 let descriptors = World.getUserDefinedPipeline3dDescriptors world
                                 match descriptors.TryGetValue pipelineName with
                                 | (true, pipelineDescriptor) ->
-                                    let names = pipelineDescriptor.UserDefinedSettingNames
-                                    if index < names.Length then
-                                        match field :?> single option with
-                                        | None ->
-                                            let mutable isSome = false
-                                            let isSomeChanged = ImGui.Checkbox (names[index] + "##" + name + "value", &isSome)
-                                            if ImGui.IsItemFocused () then context.FocusProperty ()
-                                            Some (isSomeChanged, if isSomeChanged then Some 0.0f :> obj else field)
+                                    let settingNames = pipelineDescriptor.UserDefinedSettingNames
+                                    if index < settingNames.Length then
+                                        let mutable valueOpt = field :?> single option
+                                        let mutable isSome = valueOpt.IsSome
+                                        let isSomeEdited = ImGui.Checkbox ("##" + settingNames[index], &isSome)
+                                        if ImGui.IsItemFocused () then context.FocusProperty ()
+                                        if isSomeEdited then
+                                            if isSome
+                                            then valueOpt <- Some Constants.Render.UserDefinedSettingDefault
+                                            else valueOpt <- None
+                                        match valueOpt with
                                         | Some value ->
-                                            let mutable isSome = true
-                                            let isSomeChanged = ImGui.Checkbox ("##" + names[index] + name + "value", &isSome)
+                                            ImGui.SameLine ()
+                                            ImGui.PushID name
+                                            let mutable value = value
+                                            let valueEdited = ImGui.DragFloat (settingNames[index], &value, context.SnapDrag)
                                             if ImGui.IsItemFocused () then context.FocusProperty ()
-                                            if isSomeChanged then
-                                                Some (isSomeChanged, Option<single>.None :> obj)
-                                            else
-                                                ImGui.SameLine ()
-                                                let mutable value = value
-                                                let valueChanged = ImGui.DragFloat (names[index] + "##" + name + "isSome", &value, context.SnapDrag)
-                                                if ImGui.IsItemFocused () then context.FocusProperty ()
-                                                Some (valueChanged, Some value :> obj)
+                                            ImGui.PopID ()
+                                            Some (isSomeEdited || valueEdited, Some value :> obj)
+                                        | None ->
+                                            ImGui.SameLine ()
+                                            ImGui.Text settingNames[index]
+                                            Some (isSomeEdited, valueOpt :> obj)
                                     else Some (false, field)
                                 | (false, _) -> Some (false, field)
                             | None -> Some (false, field)
@@ -871,26 +874,29 @@ module WorldImGui =
                                 let descriptors = World.getUserDefinedPipeline3dDescriptors world
                                 match descriptors.TryGetValue pipelineName with
                                 | (true, pipelineDescriptor) ->
-                                    let names = pipelineDescriptor.UserDefinedSettingNames
-                                    if index < names.Length then
-                                        match field :?> single voption with
-                                        | ValueNone ->
-                                            let mutable isSome = false
-                                            let isSomeChanged = ImGui.Checkbox (names[index] + "##" + name + "isSome", &isSome)
-                                            if ImGui.IsItemFocused () then context.FocusProperty ()
-                                            Some (isSomeChanged, if isSomeChanged then ValueSome 0.0f :> obj else field)
+                                    let settingNames = pipelineDescriptor.UserDefinedSettingNames
+                                    if index < settingNames.Length then
+                                        let mutable valueOpt = field :?> single voption
+                                        let mutable isSome = valueOpt.IsSome
+                                        let isSomeEdited = ImGui.Checkbox ("##" + settingNames[index], &isSome)
+                                        if ImGui.IsItemFocused () then context.FocusProperty ()
+                                        if isSomeEdited then
+                                            if isSome
+                                            then valueOpt <- ValueSome Constants.Render.UserDefinedSettingDefault
+                                            else valueOpt <- ValueNone
+                                        match valueOpt with
                                         | ValueSome value ->
-                                            let mutable isSome = true
-                                            let isSomeChanged = ImGui.Checkbox ("##" + names[index] + name + "isSome", &isSome)
+                                            ImGui.SameLine ()
+                                            ImGui.PushID name
+                                            let mutable value = value
+                                            let valueEdited = ImGui.DragFloat (settingNames[index], &value, context.SnapDrag)
                                             if ImGui.IsItemFocused () then context.FocusProperty ()
-                                            if isSomeChanged then
-                                                Some (isSomeChanged, ValueOption<single>.None :> obj)
-                                            else
-                                                ImGui.SameLine ()
-                                                let mutable value = value
-                                                let valueChanged = ImGui.DragFloat (names[index] + "##" + name + "value", &value, context.SnapDrag)
-                                                if ImGui.IsItemFocused () then context.FocusProperty ()
-                                                Some (valueChanged, ValueSome value :> obj)
+                                            ImGui.PopID ()
+                                            Some (isSomeEdited || valueEdited, ValueSome value :> obj)
+                                        | ValueNone ->
+                                            ImGui.SameLine ()
+                                            ImGui.Text settingNames[index]
+                                            Some (isSomeEdited, valueOpt :> obj)
                                     else Some (false, field)
                                 | (false, _) -> Some (false, field)
                             | None -> Some (false, field)
@@ -936,64 +942,71 @@ module WorldImGui =
                                 let descriptors = World.getUserDefinedPipeline3dDescriptors world
                                 match descriptors.TryGetValue pipelineName with
                                 | (true, pipelineDescriptor) ->
-                                    let names = pipelineDescriptor.UserDefinedImageNames
-                                    if index < names.Length then
+                                    let imageNames = pipelineDescriptor.UserDefinedImageNames
+                                    if index < imageNames.Length then
                                         let asset index : Image AssetTag =
                                             match index with
                                             | 0 -> Assets.Default.MaterialUserDefinedImage0
                                             | 1 -> Assets.Default.MaterialUserDefinedImage1
-                                            | _ -> Assets.Default.MaterialUserDefinedImage0
-                                        match field :?> Image AssetTag voption with
-                                        | ValueNone ->
-                                            let mutable isSome = false
-                                            let isSomeChanged = ImGui.Checkbox (names[index] + "##" + name + "isSome", &isSome)
-                                            if ImGui.IsItemFocused () then context.FocusProperty ()
-                                            Some (isSomeChanged, if isSomeChanged then ValueSome (asset index) :> obj else field)
+                                            | 2 -> Assets.Default.MaterialUserDefinedImage2
+                                            | _ -> failwithumf ()
+                                        let mutable valueOpt = field :?> Image AssetTag voption
+                                        let mutable isSome = valueOpt.IsSome
+                                        let isSomeEdited = ImGui.Checkbox ("##" + imageNames[index], &isSome)
+                                        if ImGui.IsItemFocused () then context.FocusProperty ()
+                                        if isSomeEdited then
+                                            if isSome
+                                            then valueOpt <- ValueSome (asset index)
+                                            else valueOpt <- ValueNone
+                                        match valueOpt with
                                         | ValueSome value ->
-                                            let mutable isSome = true
-                                            let isSomeChanged = ImGui.Checkbox ("##" + names[index] + name + "isSome", &isSome)
-                                            if ImGui.IsItemFocused () then context.FocusProperty ()
-                                            if isSomeChanged then
-                                                Some (isSomeChanged, ValueOption<Image AssetTag>.None :> obj)
-                                            else
-                                                ImGui.SameLine ()
-                                                let mutable valueStr = scstring value
-                                                let valueChanged = ImGui.InputText (names[index] + "##" + name + "value", &valueStr, 4096u)
+                                            ImGui.SameLine ()
+                                            ImGui.PushID name
+                                            let mutable value = value
+                                            let mutable valueStr = scstring value
+                                            let valueEdited = ImGui.InputText (imageNames[index], &valueStr, 4096u)
+                                            try let value = scvalue<Image AssetTag> valueStr
                                                 if ImGui.IsItemFocused () then context.FocusProperty ()
-                                                try let value = scvalue valueStr in Some (valueChanged, ValueSome value :> obj)
-                                                with _ -> Some (false, field)
+                                                ImGui.PopID ()
+                                                Some (isSomeEdited || valueEdited, ValueSome value :> obj)
+                                            with _ -> Some (false, field)
+                                        | ValueNone ->
+                                            ImGui.SameLine ()
+                                            ImGui.Text imageNames[index]
+                                            Some (isSomeEdited, valueOpt :> obj)
                                     else Some (false, field)
                                 | (false, _) -> Some (false, field)
                             | None -> Some (false, field)
                         elif fieldInfo.Name = nameof material.PipelineNameOpt then
-                            let pipelineNameOpt = field :?> string voption
+                            let mutable pipelineNameOpt = field :?> string voption
+                            let mutable isSome = pipelineNameOpt.IsSome
+                            let isSomeEdited = ImGui.Checkbox ("##" + fieldInfo.Name, &isSome)
+                            if ImGui.IsItemFocused () then context.FocusProperty ()
+                            if isSomeEdited then
+                                if isSome
+                                then pipelineNameOpt <- ValueSome Constants.Render.PipelineNameDefault
+                                else pipelineNameOpt <- ValueNone
                             match pipelineNameOpt with
-                            | ValueNone ->
-                                let mutable isSome = false
-                                let isSomeChanged = ImGui.Checkbox (fieldInfo.Name + "##" + name + "isSome", &isSome)
-                                if ImGui.IsItemFocused () then context.FocusProperty ()
-                                Some (isSomeChanged, if isSomeChanged then ValueSome Constants.Render.PipelineNameDefault :> obj else field)
                             | ValueSome pipelineName ->
-                                let mutable isSome = true
-                                let isSomeChanged = ImGui.Checkbox ("##" + fieldInfo.Name + name + "isSome", &isSome)
+                                ImGui.SameLine ()
+                                ImGui.PushID name
+                                let descriptors = World.getUserDefinedPipeline3dDescriptors world
+                                let pipelineNames = seq { Constants.Render.PipelineNameDefault; yield! descriptors.Keys }
+                                let mutable pipelineNameEdited = false
+                                if ImGui.BeginCombo (name, pipelineName) then
+                                    for pipelineName' in pipelineNames do
+                                        if String.notEmpty pipelineName' && ImGui.Selectable (pipelineName', (pipelineName' = pipelineName)) then
+                                            if pipelineName <> pipelineName' then
+                                                pipelineNameOpt <- ValueSome pipelineName'
+                                                pipelineNameEdited <- true
+                                    ImGui.EndCombo ()
                                 if ImGui.IsItemFocused () then context.FocusProperty ()
-                                if isSomeChanged then
-                                    Some (isSomeChanged, ValueOption<string>.None :> obj)
-                                else
-                                    ImGui.SameLine ()
-                                    let descriptors = World.getUserDefinedPipeline3dDescriptors world
-                                    let pipelineNames = seq { Constants.Render.PipelineNameDefault; yield! descriptors.Keys }
-                                    let mutable pipelineName = pipelineName
-                                    let mutable pipelineNameEdited = false
-                                    if ImGui.BeginCombo (name, pipelineName) then
-                                        for pipelineName' in pipelineNames do
-                                            if String.notEmpty pipelineName' && ImGui.Selectable (pipelineName', (pipelineName' = pipelineName)) then
-                                                if pipelineName <> pipelineName' then
-                                                    pipelineName <- pipelineName'
-                                                    pipelineNameEdited <- true
-                                        ImGui.EndCombo ()
-                                    if ImGui.IsItemFocused () then context.FocusProperty ()
-                                    Some (pipelineNameEdited, ValueSome pipelineName :> obj)
+                                ImGui.PopID ()
+                                Some (isSomeEdited || pipelineNameEdited, pipelineNameOpt :> obj)
+                            | ValueNone ->
+                                ImGui.SameLine ()
+                                ImGui.Text name
+                                Some (isSomeEdited, pipelineNameOpt :> obj)
                         else None
                     | None -> None
                 World.imGuiEditPropertyRecordPlus tryReplaceUserDefinedImageOpt false name (typeof<Material>) material context world
