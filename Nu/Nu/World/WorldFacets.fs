@@ -3590,9 +3590,9 @@ module AnimatedModelFacetExtensions =
         member this.GetSubsortOffsets world : Map<int, single> = this.Get (nameof this.SubsortOffsets) world
         member this.SetSubsortOffsets (value : Map<int, single>) world = this.Set (nameof this.SubsortOffsets) value world
         member this.SubsortOffsets = lens (nameof this.SubsortOffsets) this this.GetSubsortOffsets this.SetSubsortOffsets
-        member this.GetDualRenderedSurfaceIndices world : int Set = this.Get (nameof this.DualRenderedSurfaceIndices) world
-        member this.SetDualRenderedSurfaceIndices (value : int Set) world = this.Set (nameof this.DualRenderedSurfaceIndices) value world
-        member this.DualRenderedSurfaceIndices = lens (nameof this.DualRenderedSurfaceIndices) this this.GetDualRenderedSurfaceIndices this.SetDualRenderedSurfaceIndices
+        member this.GetDualMaterialPropertyOpts world : Map<int, MaterialProperties option> = this.Get (nameof this.DualMaterialPropertyOpts) world
+        member this.SetDualMaterialPropertyOpts (value : Map<int, MaterialProperties option>) world = this.Set (nameof this.DualMaterialPropertyOpts) value world
+        member this.DualMaterialPropertyOpts = lens (nameof this.DualMaterialPropertyOpts) this this.GetDualMaterialPropertyOpts this.SetDualMaterialPropertyOpts
         member this.GetBoneIdsOpt world : Dictionary<string, int> option = this.Get (nameof this.BoneIdsOpt) world
         member this.SetBoneIdsOpt (value : Dictionary<string, int> option) world = this.Set (nameof this.BoneIdsOpt) value world
         member this.BoneIdsOpt = lens (nameof this.BoneIdsOpt) this this.GetBoneIdsOpt this.SetBoneIdsOpt
@@ -3666,7 +3666,7 @@ type AnimatedModelFacet () =
          define Entity.Animations [|{ StartTime = GameTime.zero; LifeTimeOpt = None; Name = ""; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BoneFilterOpt = None }|]
          define Entity.AnimatedModel Assets.Default.AnimatedModel
          define Entity.SubsortOffsets Map.empty
-         define Entity.DualRenderedSurfaceIndices Set.empty
+         define Entity.DualMaterialPropertyOpts Map.empty
          define Entity.DepthTest LessThanTest
          define Entity.RenderStyle Deferred
          nonPersistent Entity.BoneIdsOpt None
@@ -3725,14 +3725,14 @@ type AnimatedModelFacet () =
             let material = entity.GetMaterial world
             let animatedModel = entity.GetAnimatedModel world
             let subsortOffsets = entity.GetSubsortOffsets world
-            let drsIndices = entity.GetDualRenderedSurfaceIndices world
+            let dualMaterialPropertyOpts = entity.GetDualMaterialPropertyOpts world
             let depthTest = entity.GetDepthTest world
             let renderType =
                 match entity.GetRenderStyle world with
                 | Deferred -> DeferredRenderType
                 | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
             match entity.GetBoneTransformsOpt world with
-            | Some boneTransforms -> World.renderAnimatedModelFast (&affineMatrix, castShadow, presence, insetOpt, properties, material, boneTransforms, animatedModel, subsortOffsets, drsIndices, depthTest, renderType, renderPass, world)
+            | Some boneTransforms -> World.renderAnimatedModelFast (&affineMatrix, castShadow, presence, insetOpt, properties, material, boneTransforms, animatedModel, subsortOffsets, dualMaterialPropertyOpts, depthTest, renderType, renderPass, world)
             | None -> ()
 
     override this.GetAttributesInferred (entity, world) =

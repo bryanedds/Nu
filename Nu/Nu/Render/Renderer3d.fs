@@ -502,7 +502,7 @@ type CachedAnimatedModelMessage =
       mutable CachedAnimatedModelBoneTransforms : Matrix4x4 array
       mutable CachedAnimatedModel : AnimatedModel AssetTag
       mutable CachedAnimatedModelSubsortOffsets : Map<int, single>
-      mutable CachedAnimatedModelDualRenderedSurfaceIndices : int Set
+      mutable CachedAnimatedModelDualMaterialPropertyOpts : Map<int, MaterialProperties option>
       mutable CachedAnimatedModelDepthTest : DepthTest
       mutable CachedAnimatedModelRenderType : RenderType
       mutable CachedAnimatedModelRenderPass : RenderPass }
@@ -734,7 +734,7 @@ type RenderAnimatedModel =
       BoneTransforms : Matrix4x4 array
       AnimatedModel : AnimatedModel AssetTag
       SubsortOffsets : Map<int, single>
-      DualRenderedSurfaceIndices : int Set
+      DualMaterialPropertyOpts : Map<int, MaterialProperties option>
       DepthTest : DepthTest
       RenderType : RenderType
       RenderPass : RenderPass }
@@ -745,7 +745,7 @@ type RenderAnimatedModels =
       AnimatedModels : (Matrix4x4 * bool * Presence * Box2 option * MaterialProperties * Material) SList
       AnimatedModel : AnimatedModel AssetTag
       SubsortOffsets : Map<int, single>
-      DualRenderedSurfaceIndices : int Set
+      DualMaterialPropertyOpts : Map<int, MaterialProperties option>
       DepthTest : DepthTest
       RenderType : RenderType
       RenderPass : RenderPass }
@@ -3212,7 +3212,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
          boneTransforms : Matrix4x4 array,
          animatedModel : AnimatedModel AssetTag,
          subsortOffsets : Map<int, single>,
-         drsIndices : int Set,
+         dualMaterialPropertyOpts : Map<int, MaterialProperties option>,
          depthTest : DepthTest,
          renderType : RenderType,
          renderTasks : RenderTasks,
@@ -3250,7 +3250,10 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     let surface = { surface with HashCode = surface.HashCode ^^^ hash surfaceMaterial; SurfaceMaterial = surfaceMaterial }
 
                     // check if dual rendering needed
-                    let dualRendering = drsIndices.Contains i
+                    let (dualRendering, properties) =
+                        match dualMaterialPropertyOpts.TryGetValue i with
+                        | (true, propertiesOpt) -> (true, Option.defaultValue properties propertiesOpt)
+                        | (false, _) -> (false, properties)
 
                     // deferred render animated surface when needed
                     if renderType = DeferredRenderType || dualRendering then
@@ -3289,7 +3292,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
          boneTransforms : Matrix4x4 array,
          animatedModel : AnimatedModel AssetTag,
          subsortOffsets : Map<int, single>,
-         drsIndices : int Set,
+         dualMaterialPropertyOpts : Map<int, MaterialProperties option>,
          depthTest : DepthTest,
          renderType : RenderType,
          renderTasks : RenderTasks,
@@ -3326,6 +3329,12 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                         let surfaceMaterial = VulkanRenderer3d.applySurfaceMaterial material surface.SurfaceMaterial renderer
                         let surface = { surface with HashCode = surface.HashCode ^^^ hash surfaceMaterial; SurfaceMaterial = surfaceMaterial }
 
+                        // check if dual rendering needed
+                        let (dualRendering, properties) =
+                            match dualMaterialPropertyOpts.TryGetValue i with
+                            | (true, propertiesOpt) -> (true, Option.defaultValue properties propertiesOpt)
+                            | (false, _) -> (false, properties)
+
                         // deferred render animated surface when needed
                         if renderType = DeferredRenderType then
                             let item =
@@ -3348,7 +3357,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                         let sortsOpt =
                             match renderType with
                             | ForwardRenderType (subsort, sort) -> ValueSome struct (subsort + subsortOffset, sort)
-                            | _ -> if drsIndices.Contains i then ValueSome struct (subsortOffset, 0.0f) else ValueNone
+                            | _ -> if dualRendering then ValueSome struct (subsortOffset, 0.0f) else ValueNone
                         match sortsOpt with
                         | ValueSome struct (subsort, sort) ->
                             renderTasks.Forward.Add struct (subsort, sort, model, castShadow, presence, texCoordsOffset, properties, ValueSome boneTransforms, surface, depthTest)
@@ -3601,13 +3610,13 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             | RenderAnimatedModel ram ->
                 let insetOpt = Option.toValueOption ram.InsetOpt
                 let renderTasks = VulkanRenderer3d.getRenderTasks ram.RenderPass renderer
-                VulkanRenderer3d.categorizeAnimatedModel (&ram.ModelMatrix, ram.CastShadow, ram.Presence, &insetOpt, ram.MaterialProperties, ram.Material, ram.BoneTransforms, ram.AnimatedModel, ram.SubsortOffsets, ram.DualRenderedSurfaceIndices, ram.DepthTest, ram.RenderType, renderTasks, renderer)
+                VulkanRenderer3d.categorizeAnimatedModel (&ram.ModelMatrix, ram.CastShadow, ram.Presence, &insetOpt, ram.MaterialProperties, ram.Material, ram.BoneTransforms, ram.AnimatedModel, ram.SubsortOffsets, ram.DualMaterialPropertyOpts, ram.DepthTest, ram.RenderType, renderTasks, renderer)
             | RenderAnimatedModels rams ->
                 let renderTasks = VulkanRenderer3d.getRenderTasks rams.RenderPass renderer
-                VulkanRenderer3d.categorizeAnimatedModels (rams.AnimatedModels, rams.BoneTransforms, rams.AnimatedModel, rams.SubsortOffsets, rams.DualRenderedSurfaceIndices, rams.DepthTest, rams.RenderType, renderTasks, renderer)
+                VulkanRenderer3d.categorizeAnimatedModels (rams.AnimatedModels, rams.BoneTransforms, rams.AnimatedModel, rams.SubsortOffsets, rams.DualMaterialPropertyOpts, rams.DepthTest, rams.RenderType, renderTasks, renderer)
             | RenderCachedAnimatedModel camm ->
                 let renderTasks = VulkanRenderer3d.getRenderTasks camm.CachedAnimatedModelRenderPass renderer
-                VulkanRenderer3d.categorizeAnimatedModel (&camm.CachedAnimatedModelMatrix, camm.CachedAnimatedModelCastShadow, camm.CachedAnimatedModelPresence, &camm.CachedAnimatedModelInsetOpt, camm.CachedAnimatedModelMaterialProperties, camm.CachedAnimatedModelMaterial, camm.CachedAnimatedModelBoneTransforms, camm.CachedAnimatedModel, camm.CachedAnimatedModelSubsortOffsets, camm.CachedAnimatedModelDualRenderedSurfaceIndices, camm.CachedAnimatedModelDepthTest, camm.CachedAnimatedModelRenderType, renderTasks, renderer)
+                VulkanRenderer3d.categorizeAnimatedModel (&camm.CachedAnimatedModelMatrix, camm.CachedAnimatedModelCastShadow, camm.CachedAnimatedModelPresence, &camm.CachedAnimatedModelInsetOpt, camm.CachedAnimatedModelMaterialProperties, camm.CachedAnimatedModelMaterial, camm.CachedAnimatedModelBoneTransforms, camm.CachedAnimatedModel, camm.CachedAnimatedModelSubsortOffsets, camm.CachedAnimatedModelDualMaterialPropertyOpts, camm.CachedAnimatedModelDepthTest, camm.CachedAnimatedModelRenderType, renderTasks, renderer)
             | RenderTerrain rt ->
                 let renderTasks = VulkanRenderer3d.getRenderTasks rt.RenderPass renderer
                 VulkanRenderer3d.categorizeTerrain (rt.Visible, rt.TerrainDescriptor, renderTasks, renderer)
