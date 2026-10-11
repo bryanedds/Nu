@@ -1,4 +1,4 @@
-Nu Game Engine [![Build status](https://github.com/bryanedds/Nu/actions/workflows/CI.yml/badge.svg)](https://github.com/bryanedds/Nu/actions/workflows/CI.yml) NOTE: build is occasionally failing because we temporarily run out of Github Actions :/
+Nu Game Engine [![Build status](https://github.com/bryanedds/Nu/actions/workflows/CI.yml/badge.svg)](https://github.com/bryanedds/Nu/actions/workflows/CI.yml)
 
 **Live Nu Game Engine Support on [Discord](https://discord.gg/BN79RxYAjD) [![Discord](https://img.shields.io/discord/700010129994809667)](https://discord.gg/BN79RxYAjD)**
 
