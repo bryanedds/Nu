@@ -502,7 +502,7 @@ type CachedAnimatedModelMessage =
       mutable CachedAnimatedModelBoneTransforms : Matrix4x4 array
       mutable CachedAnimatedModel : AnimatedModel AssetTag
       mutable CachedAnimatedModelSubsortOffsets : Map<int, single>
-      mutable CachedAnimatedModelDualMaterialPropertyOpts : Map<int, MaterialProperties option>
+      mutable CachedAnimatedModelDualSurfaces : Map<int, bool * MaterialProperties option>
       mutable CachedAnimatedModelDepthTest : DepthTest
       mutable CachedAnimatedModelRenderType : RenderType
       mutable CachedAnimatedModelRenderPass : RenderPass }
@@ -734,7 +734,7 @@ type RenderAnimatedModel =
       BoneTransforms : Matrix4x4 array
       AnimatedModel : AnimatedModel AssetTag
       SubsortOffsets : Map<int, single>
-      DualMaterialPropertyOpts : Map<int, MaterialProperties option>
+      DualSurfaces : Map<int, bool * MaterialProperties option>
       DepthTest : DepthTest
       RenderType : RenderType
       RenderPass : RenderPass }
@@ -745,7 +745,7 @@ type RenderAnimatedModels =
       AnimatedModels : (Matrix4x4 * bool * Presence * Box2 option * MaterialProperties * Material) SList
       AnimatedModel : AnimatedModel AssetTag
       SubsortOffsets : Map<int, single>
-      DualMaterialPropertyOpts : Map<int, MaterialProperties option>
+      DualSurfaces : Map<int, bool * MaterialProperties option>
       DepthTest : DepthTest
       RenderType : RenderType
       RenderPass : RenderPass }
@@ -3212,7 +3212,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
          boneTransforms : Matrix4x4 array,
          animatedModel : AnimatedModel AssetTag,
          subsortOffsets : Map<int, single>,
-         dualMaterialPropertyOpts : Map<int, MaterialProperties option>,
+         dualSurfaces : Map<int, bool * MaterialProperties option>,
          depthTest : DepthTest,
          renderType : RenderType,
          renderTasks : RenderTasks,
@@ -3250,13 +3250,15 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     let surface = { surface with HashCode = surface.HashCode ^^^ hash surfaceMaterial; SurfaceMaterial = surfaceMaterial }
 
                     // check if dual rendering needed
-                    let (dualRendering, properties) =
-                        match dualMaterialPropertyOpts.TryGetValue i with
-                        | (true, propertiesOpt) -> (true, Option.defaultValue properties propertiesOpt)
-                        | (false, _) -> (false, properties)
+                    let (dualRendering, forwardOnly, properties) =
+                        match dualSurfaces.TryGetValue i with
+                        | (true, (forwardOnly, propertiesOpt)) -> (true, forwardOnly, Option.defaultValue properties propertiesOpt)
+                        | (false, _) -> (false, false, properties)
 
-                    // deferred render animated surface when needed
-                    if renderType = DeferredRenderType || dualRendering then
+                    // render surface appropriately
+                    if renderType = DeferredRenderType && not dualRendering && not forwardOnly then
+
+                        // deferred render animated surface
                         let item =
                             match renderTasks.DeferredAnimated.TryGetValue surface.SurfaceMaterial.PipelineName with
                             | (true, item) -> item
@@ -3269,19 +3271,21 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                         | (true, renderOps) -> renderOps.Add struct (model, castShadow, presence, texCoordsOffset, properties)
                         | (false, _) -> item.Add (animatedModelSurfaceKey, List ([struct (model, castShadow, presence, texCoordsOffset, properties)]))
 
-                    // forward render animated surface when needed
-                    let subsortOffset =
-                        match subsortOffsets.TryGetValue i with
-                        | (true, subsortOffset) -> subsortOffset
-                        | (false, _) -> 0.0f
-                    let sortsOpt =
-                        match renderType with
-                        | ForwardRenderType (subsort, sort) -> ValueSome struct (subsort + subsortOffset, sort)
-                        | _ -> if dualRendering then ValueSome struct (subsortOffset, 0.0f) else ValueNone
-                    match sortsOpt with
-                    | ValueSome struct (subsort, sort) ->
-                        renderTasks.Forward.Add struct (subsort, sort, model, castShadow, presence, texCoordsOffset, properties, ValueSome boneTransforms, surface, depthTest)
-                    | ValueNone -> ()
+                    else
+                        
+                        // forward render animated surface
+                        let subsortOffset =
+                            match subsortOffsets.TryGetValue i with
+                            | (true, subsortOffset) -> subsortOffset
+                            | (false, _) -> 0.0f
+                        let sortsOpt =
+                            match renderType with
+                            | ForwardRenderType (subsort, sort) -> ValueSome struct (subsort + subsortOffset, sort)
+                            | _ -> if dualRendering then ValueSome struct (subsortOffset, 0.0f) else ValueNone
+                        match sortsOpt with
+                        | ValueSome struct (subsort, sort) ->
+                            renderTasks.Forward.Add struct (subsort, sort, model, castShadow, presence, texCoordsOffset, properties, ValueSome boneTransforms, surface, depthTest)
+                        | ValueNone -> ()
 
             // unable to render
             | _ -> Log.infoOnce ("Cannot render animated model with a non-animated model asset '" + scstring animatedModel + "'.")
@@ -3292,7 +3296,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
          boneTransforms : Matrix4x4 array,
          animatedModel : AnimatedModel AssetTag,
          subsortOffsets : Map<int, single>,
-         dualMaterialPropertyOpts : Map<int, MaterialProperties option>,
+         dualSurfaces : Map<int, bool * MaterialProperties option>,
          depthTest : DepthTest,
          renderType : RenderType,
          renderTasks : RenderTasks,
@@ -3330,13 +3334,15 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                         let surface = { surface with HashCode = surface.HashCode ^^^ hash surfaceMaterial; SurfaceMaterial = surfaceMaterial }
 
                         // check if dual rendering needed
-                        let (dualRendering, properties) =
-                            match dualMaterialPropertyOpts.TryGetValue i with
-                            | (true, propertiesOpt) -> (true, Option.defaultValue properties propertiesOpt)
-                            | (false, _) -> (false, properties)
+                        let (dualRendering, forwardOnly, properties) =
+                            match dualSurfaces.TryGetValue i with
+                            | (true, (forwardOnly, propertiesOpt)) -> (true, forwardOnly, Option.defaultValue properties propertiesOpt)
+                            | (false, _) -> (false, false, properties)
 
-                        // deferred render animated surface when needed
-                        if renderType = DeferredRenderType then
+                        // render animated surface appropriately
+                        if renderType = DeferredRenderType && not dualRendering && not forwardOnly then
+                        
+                            // deferred render animated surface
                             let item =
                                 match renderTasks.DeferredAnimated.TryGetValue surface.SurfaceMaterial.PipelineName with
                                 | (true, item) -> item
@@ -3349,19 +3355,21 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                             | (true, renderOps) -> renderOps.Add struct (model, castShadow, presence, texCoordsOffset, properties)
                             | (false, _) -> item.Add (animatedModelSurfaceKey, List ([struct (model, castShadow, presence, texCoordsOffset, properties)]))
 
-                        // forward render animated surface when needed
-                        let subsortOffset =
-                            match subsortOffsets.TryGetValue i with
-                            | (true, subsortOffset) -> subsortOffset
-                            | (false, _) -> 0.0f
-                        let sortsOpt =
-                            match renderType with
-                            | ForwardRenderType (subsort, sort) -> ValueSome struct (subsort + subsortOffset, sort)
-                            | _ -> if dualRendering then ValueSome struct (subsortOffset, 0.0f) else ValueNone
-                        match sortsOpt with
-                        | ValueSome struct (subsort, sort) ->
-                            renderTasks.Forward.Add struct (subsort, sort, model, castShadow, presence, texCoordsOffset, properties, ValueSome boneTransforms, surface, depthTest)
-                        | ValueNone -> ()
+                        else
+
+                            // forward render animated surface
+                            let subsortOffset =
+                                match subsortOffsets.TryGetValue i with
+                                | (true, subsortOffset) -> subsortOffset
+                                | (false, _) -> 0.0f
+                            let sortsOpt =
+                                match renderType with
+                                | ForwardRenderType (subsort, sort) -> ValueSome struct (subsort + subsortOffset, sort)
+                                | _ -> if dualRendering then ValueSome struct (subsortOffset, 0.0f) else ValueNone
+                            match sortsOpt with
+                            | ValueSome struct (subsort, sort) ->
+                                renderTasks.Forward.Add struct (subsort, sort, model, castShadow, presence, texCoordsOffset, properties, ValueSome boneTransforms, surface, depthTest)
+                            | ValueNone -> ()
 
             // unable to render
             | _ -> Log.infoOnce ("Cannot render animated model with a non-animated model asset '" + scstring animatedModel + "'.")
@@ -3610,13 +3618,13 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             | RenderAnimatedModel ram ->
                 let insetOpt = Option.toValueOption ram.InsetOpt
                 let renderTasks = VulkanRenderer3d.getRenderTasks ram.RenderPass renderer
-                VulkanRenderer3d.categorizeAnimatedModel (&ram.ModelMatrix, ram.CastShadow, ram.Presence, &insetOpt, ram.MaterialProperties, ram.Material, ram.BoneTransforms, ram.AnimatedModel, ram.SubsortOffsets, ram.DualMaterialPropertyOpts, ram.DepthTest, ram.RenderType, renderTasks, renderer)
+                VulkanRenderer3d.categorizeAnimatedModel (&ram.ModelMatrix, ram.CastShadow, ram.Presence, &insetOpt, ram.MaterialProperties, ram.Material, ram.BoneTransforms, ram.AnimatedModel, ram.SubsortOffsets, ram.DualSurfaces, ram.DepthTest, ram.RenderType, renderTasks, renderer)
             | RenderAnimatedModels rams ->
                 let renderTasks = VulkanRenderer3d.getRenderTasks rams.RenderPass renderer
-                VulkanRenderer3d.categorizeAnimatedModels (rams.AnimatedModels, rams.BoneTransforms, rams.AnimatedModel, rams.SubsortOffsets, rams.DualMaterialPropertyOpts, rams.DepthTest, rams.RenderType, renderTasks, renderer)
+                VulkanRenderer3d.categorizeAnimatedModels (rams.AnimatedModels, rams.BoneTransforms, rams.AnimatedModel, rams.SubsortOffsets, rams.DualSurfaces, rams.DepthTest, rams.RenderType, renderTasks, renderer)
             | RenderCachedAnimatedModel camm ->
                 let renderTasks = VulkanRenderer3d.getRenderTasks camm.CachedAnimatedModelRenderPass renderer
-                VulkanRenderer3d.categorizeAnimatedModel (&camm.CachedAnimatedModelMatrix, camm.CachedAnimatedModelCastShadow, camm.CachedAnimatedModelPresence, &camm.CachedAnimatedModelInsetOpt, camm.CachedAnimatedModelMaterialProperties, camm.CachedAnimatedModelMaterial, camm.CachedAnimatedModelBoneTransforms, camm.CachedAnimatedModel, camm.CachedAnimatedModelSubsortOffsets, camm.CachedAnimatedModelDualMaterialPropertyOpts, camm.CachedAnimatedModelDepthTest, camm.CachedAnimatedModelRenderType, renderTasks, renderer)
+                VulkanRenderer3d.categorizeAnimatedModel (&camm.CachedAnimatedModelMatrix, camm.CachedAnimatedModelCastShadow, camm.CachedAnimatedModelPresence, &camm.CachedAnimatedModelInsetOpt, camm.CachedAnimatedModelMaterialProperties, camm.CachedAnimatedModelMaterial, camm.CachedAnimatedModelBoneTransforms, camm.CachedAnimatedModel, camm.CachedAnimatedModelSubsortOffsets, camm.CachedAnimatedModelDualSurfaces, camm.CachedAnimatedModelDepthTest, camm.CachedAnimatedModelRenderType, renderTasks, renderer)
             | RenderTerrain rt ->
                 let renderTasks = VulkanRenderer3d.getRenderTasks rt.RenderPass renderer
                 VulkanRenderer3d.categorizeTerrain (rt.Visible, rt.TerrainDescriptor, renderTasks, renderer)
