@@ -36,7 +36,11 @@ layout(set = 1, binding = 4) uniform texture2D userDefinedImageTextures[TERRAIN_
 layout(set = 1, binding = 5) uniform texture2D userDefinedImage0Texture;
 layout(set = 1, binding = 6) uniform texture2D userDefinedImage1Texture;
 
-layout(set = 2, binding = 0) uniform sampler materialSampler;
+layout(set = 2, binding = 0) uniform sampler materialRepeatSampler;
+layout(set = 2, binding = 1) uniform sampler materialRepeatMirrorSampler;
+layout(set = 2, binding = 2) uniform sampler materialClampToEdge;
+layout(set = 2, binding = 3) uniform sampler materialClampToEdgeMirrorSampler;
+layout(set = 2, binding = 4) uniform sampler materialClampToBorder;
 
 layout(location = 0) in vec4 position;
 layout(location = 1) in vec2 texCoords;
@@ -86,11 +90,11 @@ void main()
     for (int i = 0; i < min(terrainFrag.layersCount, TERRAIN_LAYERS_MAX); ++i)
     {
         float blend = blends[i/4][i%4];
-        albedoBlend += texture(sampler2D(userDefinedImage0Texture, materialSampler), texCoords) * blend;
-        vec4 roughness = texture(sampler2D(roughnessTextures[i], materialSampler), texCoords);
+        albedoBlend += texture(sampler2D(userDefinedImage0Texture, materialRepeatSampler), texCoords) * blend;
+        vec4 roughness = texture(sampler2D(roughnessTextures[i], materialRepeatSampler), texCoords);
         roughnessBlend += (roughness.a == 1.0f ? roughness.r : roughness.a) * blend;
-        ambientOcclusionBlend += texture(sampler2D(ambientOcclusionTextures[i], materialSampler), texCoords).b * blend;
-        normalBlend += decodeNormal(texture(sampler2D(normalTextures[i], materialSampler), texCoords).xy) * blend;
+        ambientOcclusionBlend += texture(sampler2D(ambientOcclusionTextures[i], materialRepeatSampler), texCoords).b * blend;
+        normalBlend += decodeNormal(texture(sampler2D(normalTextures[i], materialRepeatSampler), texCoords).xy) * blend;
     }
 
     // compute normal and ignore local light maps

@@ -149,7 +149,11 @@ layout(set = 2, binding = 9) uniform texture2DArray shadowCascades[SHADOW_CASCAD
 
 layout(set = 3, binding = 0) uniform sampler unfilteredSampler;
 layout(set = 3, binding = 1) uniform sampler filteredSampler;
-layout(set = 3, binding = 2) uniform sampler materialSampler;
+layout(set = 3, binding = 2) uniform sampler materialRepeatSampler;
+layout(set = 3, binding = 3) uniform sampler materialRepeatMirrorSampler;
+layout(set = 3, binding = 4) uniform sampler materialClampToEdge;
+layout(set = 3, binding = 5) uniform sampler materialClampToEdgeMirrorSampler;
+layout(set = 3, binding = 6) uniform sampler materialClampToBorder;
 
 layout(location = 0) in vec4 position;
 layout(location = 1) in vec2 texCoords;
@@ -864,21 +868,21 @@ void main()
 
     // compute albedo with alpha sample
     float opaqueDistance = material2.w;
-    vec4 albedoSample = texture(sampler2D(albedoTexture, materialSampler), texCoords);
+    vec4 albedoSample = texture(sampler2D(albedoTexture, materialRepeatSampler), texCoords);
     vec4 albedoPlus =
         vec4(
             pow(albedoSample.rgb, vec3(GAMMA)) * albedo.rgb,
             mix(albedoSample.a, 1.0, smoothstep(opaqueDistance * 0.667, opaqueDistance, distance)));
 
     // compute n, t, b in world space
-    vec3 n = normalize(toWorld * decodeNormal(texture(sampler2D(normalTexture, materialSampler), texCoords).xy));
+    vec3 n = normalize(toWorld * decodeNormal(texture(sampler2D(normalTexture, materialRepeatSampler), texCoords).xy));
     vec3 t = normalize(tangent - n * dot(tangent, n));
     vec3 b = normalize(cross(n, t));
 
     // compute roughness with specular anti-aliasing (Tokuyoshi & Kaplanyan 2019)
     // NOTE: the SAA algo also includes derivative scalars that are currently not utilized here due to lack of need -
     // https://github.com/google/filament/blob/d7b44a2585a7ce19615dbe226501acc3fe3f0c16/shaders/src/surface_shading_lit.fs#L41-L42
-    float roughness = texture(sampler2D(roughnessTexture, materialSampler), texCoords).r * material.r;
+    float roughness = texture(sampler2D(roughnessTexture, materialRepeatSampler), texCoords).r * material.r;
     vec3 du = dFdx(n);
     vec3 dv = dFdy(n);
     float variance = SAA_VARIANCE * (dot(du, du) + dot(dv, dv));
@@ -888,9 +892,9 @@ void main()
     roughness = sqrt(sqrt(roughnessPerceptualSquared));
 
     // compute remaining material properties
-    float metallic = texture(sampler2D(metallicTexture, materialSampler), texCoords).g * material.g;
-    float ambientOcclusion = texture(sampler2D(ambientOcclusionTexture, materialSampler), texCoords).b * material.b;
-    vec3 emission = vec3(texture(sampler2D(emissionTexture, materialSampler), texCoords).r * material.a);
+    float metallic = texture(sampler2D(metallicTexture, materialRepeatSampler), texCoords).g * material.g;
+    float ambientOcclusion = texture(sampler2D(ambientOcclusionTexture, materialRepeatSampler), texCoords).b * material.b;
+    vec3 emission = vec3(texture(sampler2D(emissionTexture, materialRepeatSampler), texCoords).r * material.a);
 
     // compute ignore light maps
     bool ignoreLightMaps = material2.x != 0.0;

@@ -941,7 +941,12 @@ module PhysicallyBased =
               Pipeline.attribute 11 Single4 (20 * sizeof<single>)
               Pipeline.attribute 12 Single4 (24 * sizeof<single>)
               Pipeline.attribute 13 Single4 (28 * sizeof<single>)
-              Pipeline.attribute 14 Single4 (32 * sizeof<single>)|]|]
+              Pipeline.attribute 14 Single4 (32 * sizeof<single>)
+              Pipeline.attribute 15 Single4 (36 * sizeof<single>)
+              Pipeline.attribute 16 Single4 (40 * sizeof<single>)
+              Pipeline.attribute 17 Single4 (44 * sizeof<single>)
+              Pipeline.attribute 18 Single4 (48 * sizeof<single>)
+              Pipeline.attribute 19 Single4 (52 * sizeof<single>)|]|]
 
     /// Create the attachments required for physically-based rendering.
     let createPhysicallyBasedAttachments (geometryViewport : Viewport) context =
@@ -3797,8 +3802,7 @@ module PhysicallyBased =
                       Pipeline.descriptor 1 Sampler FragmentStage 1
                       Pipeline.descriptor 2 Sampler FragmentStage 1
                       Pipeline.descriptor 3 Sampler FragmentStage 1
-                      Pipeline.descriptor 4 Sampler FragmentStage 1
-                      Pipeline.descriptor 5 Sampler FragmentStage 1|]|]
+                      Pipeline.descriptor 4 Sampler FragmentStage 1|]|]
 
                 [||] colorAttachmentFormats (Some depthTestFormat)
                 [|eyeUniform
@@ -3832,7 +3836,7 @@ module PhysicallyBased =
         (eyeCenter : Vector3)
         (view : Matrix4x4)
         (projectionUnflipped : Matrix4x4)
-        (materialSampler : Sampler)
+        (materialSamplers : Sampler array)
         (loadOperation : LoadOperation)
         (colorAttachments : VkImageView array)
         (depthAttachment : Texture)
@@ -3855,7 +3859,11 @@ module PhysicallyBased =
 
         // specify samplers
         let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 3 Unit pipeline.Pipeline $ fun vkSet ->
-            Pipeline.writeDescriptorSampler 0 0 materialSampler vkSet
+            Pipeline.writeDescriptorSampler 0 0 materialSamplers[0] vkSet
+            Pipeline.writeDescriptorSampler 1 0 materialSamplers[1] vkSet
+            Pipeline.writeDescriptorSampler 2 0 materialSamplers[2] vkSet
+            Pipeline.writeDescriptorSampler 3 0 materialSamplers[3] vkSet
+            Pipeline.writeDescriptorSampler 4 0 materialSamplers[4] vkSet
             
         // set up render
         let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
@@ -3990,7 +3998,11 @@ module PhysicallyBased =
                       Pipeline.descriptor 5 SampledImage FragmentStage 1 // userDefinedImage0Texture
                       Pipeline.descriptor 6 SampledImage FragmentStage 1|] // userDefinedImage1Texture
                   Pipeline.descriptorSet<Unit>
-                    [|Pipeline.descriptor 0 Sampler FragmentStage 1|]|]
+                    [|Pipeline.descriptor 0 Sampler FragmentStage 1
+                      Pipeline.descriptor 1 Sampler FragmentStage 1
+                      Pipeline.descriptor 2 Sampler FragmentStage 1
+                      Pipeline.descriptor 3 Sampler FragmentStage 1
+                      Pipeline.descriptor 4 Sampler FragmentStage 1|]|]
                 [||] colorAttachmentFormats (Some depthTest)
                 [|eyeUniform; terrainFragUniform|]
 
@@ -4021,7 +4033,7 @@ module PhysicallyBased =
         (materials : PhysicallyBasedMaterial array)
         (userDefinedImage0Texture : Texture)
         (userDefinedImage1Texture : Texture)
-        (materialSampler : Sampler)
+        (materialSamplers : Sampler array)
         (geometry : PhysicallyBasedGeometry)
         (colorAttachments : VkImageView array)
         (depthAttachment : Texture)
@@ -4085,7 +4097,11 @@ module PhysicallyBased =
 
             // specify samplers
             let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 2 Unit pipeline.Pipeline $ fun vkSet ->
-                Pipeline.writeDescriptorSampler 0 0 materialSampler vkSet
+                Pipeline.writeDescriptorSampler 0 0 materialSamplers[0] vkSet
+                Pipeline.writeDescriptorSampler 1 0 materialSamplers[1] vkSet
+                Pipeline.writeDescriptorSampler 2 0 materialSamplers[2] vkSet
+                Pipeline.writeDescriptorSampler 3 0 materialSamplers[3] vkSet
+                Pipeline.writeDescriptorSampler 4 0 materialSamplers[4] vkSet
 
             // specify instancing
             use instanceFieldsPin = new ArrayPin<_> (instanceFields)
@@ -5646,7 +5662,7 @@ module PhysicallyBased =
         (environmentFilterMap : Texture)
         (unfilteredSampler : Sampler)
         (filteredSampler : Sampler)
-        (materialSampler : Sampler)
+        (materialSamplers : Sampler array)
         (colorAttachment : Texture)
         (depthAttachment : Texture)
         (resolution : Vector2i)
@@ -5714,7 +5730,11 @@ module PhysicallyBased =
         let mutable samplersDescriptorSet = Pipeline.specifyDescriptorSet 3 Unit pipeline.Pipeline $ fun vkSet ->
             Pipeline.writeDescriptorSampler 0 0 unfilteredSampler vkSet
             Pipeline.writeDescriptorSampler 1 0 filteredSampler vkSet
-            Pipeline.writeDescriptorSampler 2 0 materialSampler vkSet
+            Pipeline.writeDescriptorSampler 2 0 materialSamplers[0] vkSet
+            Pipeline.writeDescriptorSampler 3 0 materialSamplers[1] vkSet
+            Pipeline.writeDescriptorSampler 4 0 materialSamplers[2] vkSet
+            Pipeline.writeDescriptorSampler 5 0 materialSamplers[3] vkSet
+            Pipeline.writeDescriptorSampler 6 0 materialSamplers[4] vkSet
 
         // set up render
         let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)

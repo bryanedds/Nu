@@ -1545,7 +1545,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           mutable WindowViewport : Viewport
           UnfilteredSampler : Sampler
           FilteredSampler : Sampler
-          MaterialSampler : Sampler
+          MaterialSamplers : Sampler array // TODO: consider making this a record type with named fields.
           mutable RenderPassIndex : int
           GeometryInstanced : PhysicallyBasedGeometry HashSet
           mutable SkyBoxPipeline : SkyBoxPipeline
@@ -3698,9 +3698,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         PhysicallyBased.endPhysicallyBasedShadowSurfaces pipeline context
 
     static member private beginPhysicallyBasedDeferredSurfaces
-        eyeCenter view projection materialSampler loadOperation colorAttachments depthAttachment resolution renderPassIndex pipeline renderer =
+        eyeCenter view projection materialSamplers loadOperation colorAttachments depthAttachment resolution renderPassIndex pipeline renderer =
         PhysicallyBased.beginPhysicallyBasedDeferredSurfaces
-            eyeCenter view projection materialSampler loadOperation colorAttachments depthAttachment resolution renderPassIndex pipeline renderer.VulkanContext
+            eyeCenter view projection materialSamplers loadOperation colorAttachments depthAttachment resolution renderPassIndex pipeline renderer.VulkanContext
 
     static member private renderPhysicallyBasedDeferredSurfaces
         bones (parameters : struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List) (surface : PhysicallyBasedSurface)
@@ -3876,11 +3876,11 @@ type [<ReferenceEquality>] VulkanRenderer3d =
     static member private beginPhysicallyBasedForwardSurfaces
         eyeCenter view projection lightCutoffMargin lightAmbientColor lightAmbientBrightness lightAmbientBoostCutoff lightAmbientBoostScalar lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity
         fogEnabled fogType fogStart fogFinish fogDensity fogColor ssvfEnabled ssvfIntensity ssvfSteps ssvfAsymmetry ssrrEnabled ssrrIntensity ssrrDetail ssrrRefinementsMax ssrrRayThickness ssrrDistanceCutoff ssrrDistanceCutoffMargin ssrrEdgeHorizontalMargin ssrrEdgeVerticalMargin shadowNear
-        depthTexture colorTexture brdfTexture irradianceMap environmentFilterMap unfilteredSampler filteredSampler materialSampler colorAttachment depthAttachment resolution renderPass pipeline context =
+        depthTexture colorTexture brdfTexture irradianceMap environmentFilterMap unfilteredSampler filteredSampler materialSamplers colorAttachment depthAttachment resolution renderPass pipeline context =
         PhysicallyBased.beginPhysicallyBasedForwardSurfaces
             eyeCenter view projection lightCutoffMargin lightAmbientColor lightAmbientBrightness lightAmbientBoostCutoff lightAmbientBoostScalar lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity
             fogEnabled fogType fogStart fogFinish fogDensity fogColor ssvfEnabled ssvfIntensity ssvfSteps ssvfAsymmetry ssrrEnabled ssrrIntensity ssrrDetail ssrrRefinementsMax ssrrRayThickness ssrrDistanceCutoff ssrrDistanceCutoffMargin ssrrEdgeHorizontalMargin ssrrEdgeVerticalMargin shadowNear
-            depthTexture colorTexture brdfTexture irradianceMap environmentFilterMap unfilteredSampler filteredSampler materialSampler colorAttachment depthAttachment resolution renderPass pipeline context
+            depthTexture colorTexture brdfTexture irradianceMap environmentFilterMap unfilteredSampler filteredSampler materialSamplers colorAttachment depthAttachment resolution renderPass pipeline context
 
     static member private renderPhysicallyBasedForwardSurfaces
         bonesArrays (parameters : struct (Matrix4x4 * Presence * Box2 * MaterialProperties) SList)
@@ -4216,7 +4216,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     VulkanRenderer3d.renderPhysicallyBasedTerrain
                         lightType.ShadowsUseCubeMap lightOrigin lightView lightProjection
                         renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
-                        descriptor renderer.MaterialSampler geometry [|colorAttachment|] depthAttachment resolution renderer.RenderPassIndex shadowTerrainPipeline renderer
+                        descriptor renderer.MaterialSamplers geometry [|colorAttachment|] depthAttachment resolution renderer.RenderPassIndex shadowTerrainPipeline renderer
 
         // render forward (static and animated) surface shadows
         let mutable counted = 0
@@ -4561,7 +4561,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
     static member private renderPhysicallyBasedTerrain
         shadowCubeMapFace eyeCenter view projection
         lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity
-        terrainDescriptor materialSampler geometry colorAttachments depthAttachment resolution renderPassIndex pipeline renderer =
+        terrainDescriptor materialSamplers geometry colorAttachments depthAttachment resolution renderPassIndex pipeline renderer =
         let terrainMaterialProperties = terrainDescriptor.MaterialProperties
         let materialProperties =
             { Albedo = Option.defaultValue Constants.Render.AlbedoDefault terrainMaterialProperties.AlbedoOpt
@@ -4733,7 +4733,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         PhysicallyBased.drawPhysicallyBasedTerrain
             shadowCubeMapFace eyeCenter view projection
             instanceFields lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity
-            materials userDefinedImage0Texture userDefinedImage1Texture materialSampler geometry colorAttachments depthAttachment resolution renderPassIndex pipeline renderer.VulkanContext
+            materials userDefinedImage0Texture userDefinedImage1Texture materialSamplers geometry colorAttachments depthAttachment resolution renderPassIndex pipeline renderer.VulkanContext
 
         // track geometry instancing
         renderer.GeometryInstanced.Add geometry |> ignore<bool>
@@ -4902,7 +4902,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             let beginBatch = fun () ->
                 let (eyeDescriptorSet', samplerDescriptorSet') =
                     VulkanRenderer3d.beginPhysicallyBasedDeferredSurfaces
-                        eyeCenter view geometryProjection renderer.MaterialSampler LoadAttachments geometryTextureViews depthBufferTexture
+                        eyeCenter view geometryProjection renderer.MaterialSamplers LoadAttachments geometryTextureViews depthBufferTexture
                         geometryResolution renderer.RenderPassIndex pipeline renderer
                 eyeDescriptorSet <- eyeDescriptorSet'
                 samplerDescriptorSet <- samplerDescriptorSet'
@@ -4961,7 +4961,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             let beginBatch = fun () ->
                 let (eyeDescriptorSet', samplerDescriptorSet') =
                     VulkanRenderer3d.beginPhysicallyBasedDeferredSurfaces
-                        eyeCenter view geometryProjection renderer.MaterialSampler LoadAttachments geometryTextureViews depthBufferTexture
+                        eyeCenter view geometryProjection renderer.MaterialSamplers LoadAttachments geometryTextureViews depthBufferTexture
                         geometryResolution renderer.RenderPassIndex pipeline renderer
                 eyeDescriptorSet <- eyeDescriptorSet'
                 samplerDescriptorSet <- samplerDescriptorSet'
@@ -5012,7 +5012,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             // begin deferred animated rendering
             let (eyeDescriptorSet, samplerDescriptorSet) =
                 VulkanRenderer3d.beginPhysicallyBasedDeferredSurfaces
-                    eyeCenter view geometryProjection renderer.MaterialSampler LoadAttachments geometryTextureViews depthBufferTexture
+                    eyeCenter view geometryProjection renderer.MaterialSamplers LoadAttachments geometryTextureViews depthBufferTexture
                     geometryResolution renderer.RenderPassIndex pipeline renderer
         
             // render animated surfaces deferred
@@ -5042,7 +5042,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 VulkanRenderer3d.renderPhysicallyBasedTerrain
                     false eyeCenter view geometryProjection
                     renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
-                    descriptor renderer.MaterialSampler geometry geometryTextureViews depthBufferTexture
+                    descriptor renderer.MaterialSamplers geometry geometryTextureViews depthBufferTexture
                     geometryResolution renderer.RenderPassIndex pipeline renderer
 
         // transition geometry textures (except zTexture) back to reading
@@ -5245,7 +5245,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
                     fogEnabled fogType renderer.LightingConfig.FogStart renderer.LightingConfig.FogFinish renderer.LightingConfig.FogDensity renderer.LightingConfig.FogColor ssvfEnabled renderer.LightingConfig.SsvfIntensity forwardSsvfSteps renderer.LightingConfig.SsvfAsymmetry
                     ssrrEnabled renderer.LightingConfig.SsrrIntensity renderer.LightingConfig.SsrrDetail renderer.LightingConfig.SsrrRefinementsMax renderer.LightingConfig.SsrrRayThickness renderer.LightingConfig.SsrrDistanceCutoff renderer.LightingConfig.SsrrDistanceCutoffMargin renderer.LightingConfig.SsrrEdgeHorizontalMargin renderer.LightingConfig.SsrrEdgeVerticalMargin shadowNear
-                    depthTexture2 colorTexture renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap renderer.UnfilteredSampler renderer.FilteredSampler renderer.MaterialSampler compositionTexture depthBufferTexture geometryResolution renderer.RenderPassIndex forwardPipeline renderer.VulkanContext
+                    depthTexture2 colorTexture renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap renderer.UnfilteredSampler renderer.FilteredSampler renderer.MaterialSamplers compositionTexture depthBufferTexture geometryResolution renderer.RenderPassIndex forwardPipeline renderer.VulkanContext
             uniformsDescriptorSet <- uniformsDescriptorSet'
             samplersDescriptorSet <- samplersDescriptorSet'
         let endBatch = fun () -> VulkanRenderer3d.endPhysicallyBasedForwardSurfaces forwardPipeline renderer.VulkanContext
@@ -5571,7 +5571,12 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // create samplers
         let unfilteredSampler = Sampler.create VkSamplerAddressMode.ClampToEdge VkFilter.Nearest VkFilter.Nearest false context
         let filteredSampler = Sampler.create VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear false context
-        let materialSampler = Sampler.create VkSamplerAddressMode.Repeat VkFilter.Linear VkFilter.Linear true context
+        let materialSamplers =
+            [|Sampler.create VkSamplerAddressMode.Repeat VkFilter.Linear VkFilter.Linear true context
+              Sampler.create VkSamplerAddressMode.MirroredRepeat VkFilter.Linear VkFilter.Linear true context
+              Sampler.create VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear true context
+              Sampler.create VkSamplerAddressMode.MirrorClampToEdge VkFilter.Linear VkFilter.Linear true context
+              Sampler.create VkSamplerAddressMode.ClampToBorder VkFilter.Linear VkFilter.Linear true context|]
 
         // create physically-based attachments using the geometry viewport
         let physicallyBasedAttachments = PhysicallyBased.createPhysicallyBasedAttachments geometryViewport context
@@ -5788,7 +5793,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               WindowViewport = windowViewport
               UnfilteredSampler = unfilteredSampler
               FilteredSampler = filteredSampler
-              MaterialSampler = materialSampler
+              MaterialSamplers = materialSamplers
               RenderPassIndex = 0
               GeometryInstanced = hashSetPlus HashIdentity.Reference []
               SkyBoxPipeline = skyBoxPipeline
@@ -5851,7 +5856,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             // destroy omnipresent samplers
             Sampler.destroy renderer.FilteredSampler
             Sampler.destroy renderer.UnfilteredSampler
-            Sampler.destroy renderer.MaterialSampler
+            for sampler in renderer.MaterialSamplers do Sampler.destroy sampler
 
             // destroy omnipresent pipelines
             SkyBox.destroySkyBoxPipeline renderer.SkyBoxPipeline renderer.VulkanContext
