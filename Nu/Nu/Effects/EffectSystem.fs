@@ -205,6 +205,7 @@ module EffectSystem =
         | Blend blend -> slice.Blend <- blend; slice
         | Emission emission -> slice.Emission <- emission; slice
         | IgnoreLightMaps ignoreLightMaps -> slice.IgnoreLightMaps <- ignoreLightMaps; slice
+        | Anisotropy anisotropy -> slice.Anisotropy <- anisotropy; slice
         | Flip flip -> slice.Flip <- flip; slice
         | Brightness brightness -> slice.Brightness <- brightness; slice
         | Specularity specularity -> slice.Specularity <- specularity; slice
@@ -304,6 +305,14 @@ module EffectSystem =
                 let (_, keyFrame, _) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let applied = applyLogic slice.Enabled keyFrame.LogicValue applicator
                 slice.IgnoreLightMaps <- applied
+            slice
+        | Anisotropies (applicator, algorithm, playback, keyFrames) ->
+            if Array.notEmpty keyFrames then
+                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+                let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
+                let tweened = tween (fun (x, y) -> x * single y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
+                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.Anisotropy tweened applicator
+                slice.Anisotropy <- applied
             slice
         | Brightnesses (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
@@ -499,7 +508,7 @@ module EffectSystem =
         // build implicitly mounted content
         evalContent content slice history effectSystem
 
-    and private evalBillboard albedo roughness metallic ambientOcclusion emission normal cullMode clipped aspects content (slice : Slice) history effectSystem =
+    and private evalBillboard albedo roughness metallic ambientOcclusion emission normal cullMode depthTest depthWrite clipped blend pipelineName aspects content (slice : Slice) history effectSystem =
 
         // pull image from resource
         let imageAlbedo = evalResource albedo effectSystem
@@ -524,11 +533,11 @@ module EffectSystem =
                       AmbientOcclusionOpt = ValueNone
                       EmissionOpt = ValueSome slice.Emission.R
                       IgnoreLightMapsOpt = ValueSome slice.IgnoreLightMaps
-                      AnisotropyOpt = ValueNone // TODO: consider making this an aspect?
+                      AnisotropyOpt = ValueSome slice.Anisotropy
                       OpaqueDistanceOpt = ValueNone
                       FinenessOffsetOpt = ValueNone
                       ScatterTypeOpt = ValueNone
-                      SpecularScalarOpt = ValueNone // TODO: consider making this an aspect?
+                      SpecularScalarOpt = ValueSome slice.Specularity
                       SubsurfaceCutoffOpt = ValueNone
                       SubsurfaceCutoffMarginOpt = ValueNone
                       RefractiveIndexOpt = ValueNone
@@ -560,10 +569,10 @@ module EffectSystem =
                       UserDefinedImage2Opt = ValueNone
                       CullModeOpt = ValueSome cullMode
                       ClippedOpt = ValueSome clipped
-                      DepthTestOpt = ValueSome LessThanTest // TODO: P0: make these aspects.
-                      DepthWriteOpt = ValueSome true
-                      BlendOpt = ValueNone
-                      PipelineNameOpt = ValueNone }
+                      DepthTestOpt = ValueSome depthTest
+                      DepthWriteOpt = ValueSome depthWrite
+                      BlendOpt = ValueSome blend
+                      PipelineNameOpt = ValueSome (if pipelineName = "" then Constants.Render.PipelineNameDefault else pipelineName) }
                 let billboardToken =
                     BillboardToken
                         { ModelMatrix = affineMatrix
@@ -580,7 +589,7 @@ module EffectSystem =
         // build implicitly mounted content
         evalContent content slice history effectSystem
 
-    and private evalStaticModel resource clipped aspects content (slice : Slice) history effectSystem =
+    and private evalStaticModel resource cullMode depthTest depthWrite clipped blend pipelineName aspects content (slice : Slice) history effectSystem =
 
         // pull image from resource
         let staticModel = evalResource resource effectSystem
@@ -601,11 +610,11 @@ module EffectSystem =
                       AmbientOcclusionOpt = ValueNone
                       EmissionOpt = ValueSome slice.Emission.R
                       IgnoreLightMapsOpt = ValueSome slice.IgnoreLightMaps
-                      AnisotropyOpt = ValueNone // TODO: consider making this an aspect?
+                      AnisotropyOpt = ValueSome slice.Anisotropy
                       OpaqueDistanceOpt = ValueNone
                       FinenessOffsetOpt = ValueNone
                       ScatterTypeOpt = ValueNone
-                      SpecularScalarOpt = ValueNone // TODO: consider making this an aspect?
+                      SpecularScalarOpt = ValueNone
                       SubsurfaceCutoffOpt = ValueNone
                       SubsurfaceCutoffMarginOpt = ValueNone
                       RefractiveIndexOpt = ValueNone
@@ -620,7 +629,13 @@ module EffectSystem =
                       UserDefinedSetting6Opt = ValueNone
                       UserDefinedSetting7Opt = ValueNone }
                 let material =
-                    { Material.empty with ClippedOpt = ValueSome clipped }
+                    { Material.empty with
+                        CullModeOpt = ValueSome cullMode
+                        ClippedOpt = ValueSome clipped
+                        DepthTestOpt = ValueSome depthTest
+                        DepthWriteOpt = ValueSome depthWrite
+                        BlendOpt = ValueSome blend
+                        PipelineNameOpt = ValueSome (if pipelineName = "" then Constants.Render.PipelineNameDefault else pipelineName) }
                 let staticModelToken =
                     StaticModelToken
                         { ModelMatrix = affineMatrix
@@ -730,10 +745,14 @@ module EffectSystem =
             evalTextSprite resource text fontSizing fontStyling aspects content slice history effectSystem
         | Light3d (lightType, aspects, content) ->
             evalLight3d lightType aspects content slice history effectSystem
-        | Billboard (resourceAlbedo, resourceRoughness, resourceMetallic, resourceAmbientOcclusion, resourceEmission, resourceNormal, cullMode, clipped, aspects, content) ->
-            evalBillboard resourceAlbedo resourceRoughness resourceMetallic resourceAmbientOcclusion resourceEmission resourceNormal cullMode clipped aspects content slice history effectSystem
-        | StaticModel (resource, clipped, aspects, content) ->
-            evalStaticModel resource clipped aspects content slice history effectSystem
+        | BillboardPlus (resourceAlbedo, resourceRoughness, resourceMetallic, resourceAmbientOcclusion, resourceEmission, resourceNormal, cullMode, depthTest, depthWrite, clipped, blend, pipelineName, aspects, content) ->
+            evalBillboard resourceAlbedo resourceRoughness resourceMetallic resourceAmbientOcclusion resourceEmission resourceNormal cullMode depthTest depthWrite clipped blend pipelineName aspects content slice history effectSystem
+        | Billboard (resourceAlbedo, resourceRoughness, resourceMetallic, resourceAmbientOcclusion, resourceEmission, resourceNormal, aspects, content) ->
+            evalBillboard resourceAlbedo resourceRoughness resourceMetallic resourceAmbientOcclusion resourceEmission resourceNormal CullNone LessThanTest true false Transparent Constants.Render.PipelineNameDefault aspects content slice history effectSystem
+        | StaticModelPlus (resource, cullMode, depthTest, depthWrite, clipped, blend, pipelineName, aspects, content) ->
+            evalStaticModel resource cullMode depthTest depthWrite clipped blend pipelineName aspects content slice history effectSystem
+        | StaticModel (resource, aspects, content) ->
+            evalStaticModel resource CullNone LessThanTest true false Transparent Constants.Render.PipelineNameDefault aspects content slice history effectSystem
         | Mount (Shift shift, aspects, content) ->
             evalMount shift aspects content slice history effectSystem
         | Repeat (Shift shift, repetition, incrementAspects, content) ->

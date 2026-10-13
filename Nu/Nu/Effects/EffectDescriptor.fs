@@ -58,6 +58,7 @@ type Slice =
       mutable Blend : Blend
       mutable Emission : Color
       mutable IgnoreLightMaps : bool
+      mutable Anisotropy : single
       mutable Flip : Flip
       mutable Brightness : single
       mutable Specularity : single
@@ -164,6 +165,7 @@ and Aspect =
     | Blend of Blend
     | Emission of Color
     | IgnoreLightMaps of bool
+    | Anisotropy of single
     | Flip of Flip
     | Brightness of single
     | Specularity of single
@@ -182,6 +184,7 @@ and Aspect =
     | Colors of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenCKeyFrame array
     | Emissions of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenCKeyFrame array
     | IgnoreLightMapses of Applicator : LogicApplicator * Playback : Playback * KeyFrames : LogicKeyFrame array
+    | Anisotropies of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
     | Brightnesses of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
     | Specularities of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
     | LightCutoffs of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
@@ -195,8 +198,10 @@ and Content =
     | StaticSprite of Image : Resource * Aspects : Aspect array * Content : Content
     | AnimatedSprite of Image : Resource * CelSize : Vector2i * CelCount : int * CelRun : int * CelDelay : GameTime * Playback : Playback * Aspects : Aspect array * Content : Content
     | TextSprite of Font : Resource * Text : string * FontSizing : single option * FontStyling : FontStyle Set * Aspects : Aspect array * Content : Content
-    | Billboard of Albedo : Resource * Roughness : Resource * Metallic : Resource * AmbientOcclusion : Resource * Emission : Resource * Normal : Resource * CullMode : CullMode * Clipped : bool * Aspects : Aspect array * Content : Content
-    | StaticModel of Resource : Resource * Clipped : bool * Aspects : Aspect array * Content : Content
+    | BillboardPlus of Albedo : Resource * Roughness : Resource * Metallic : Resource * AmbientOcclusion : Resource * Emission : Resource * Normal : Resource * CullMode : CullMode * DepthTest : DepthTest * DepthWrite : bool * Clipped : bool * Blend : Blend * PipelineName : string * Aspects : Aspect array * Content : Content
+    | Billboard of Albedo : Resource * Roughness : Resource * Metallic : Resource * AmbientOcclusion : Resource * Emission : Resource * Normal : Resource * Aspects : Aspect array * Content : Content
+    | StaticModelPlus of Resource : Resource * CullMode : CullMode * DepthTest : DepthTest * DepthWrite : bool * Clipped : bool * Blend : Blend * PipelineName : string * Aspects : Aspect array * Content : Content
+    | StaticModel of Resource : Resource * Aspects : Aspect array * Content : Content
     | Light3d of LightType : LightType * Aspects : Aspect array * Content : Content
     | Mount of Shift : Shift * Aspects : Aspect array * Content : Content
     | Repeat of Shift : Shift * Repetition * Aspects : Aspect array * Content : Content

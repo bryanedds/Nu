@@ -115,6 +115,7 @@ module Effect =
                   Blend = Transparent
                   Emission = Color.Zero
                   IgnoreLightMaps = false
+                  Anisotropy = 0.0f
                   Flip = Unflipped
                   Brightness = Constants.Render.BrightnessDefault
                   Specularity = 1.0f
