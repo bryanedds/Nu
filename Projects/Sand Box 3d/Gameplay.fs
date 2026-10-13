@@ -6,7 +6,7 @@ open Nu
 open SandBox3d
 
 [<AutoOpen>]
-module MaterialExtensions =
+module UserDefinedExtensions =
 
     type Material with
         member this.TestImageOpt = this.UserDefinedImage0Opt
@@ -14,14 +14,15 @@ module MaterialExtensions =
         member this.SetTestImageOpt value = { this with UserDefinedImage0Opt = value }
         member this.SetTestImage value = { this with UserDefinedImage0Opt = ValueSome value }
 
-[<AutoOpen>]
-module MaterialPropertiesExtensions =
-
     type MaterialProperties with
         member this.TestSettingOpt = this.UserDefinedSetting0Opt
         member this.TestSetting = this.UserDefinedSetting0
         member this.SetTestSettingOpt value = { this with UserDefinedSetting0Opt = value } // would be nice if F# allowed usage to be baked down to { this with TestSettingOpt = value }
         member this.SetTestSetting value = { this with UserDefinedSetting0Opt = ValueSome value }
+
+    module Effects =
+        let TestEffectSetting = Effects.UserDefinedSetting0
+        let TestEffectSettings = Effects.UserDefinedSetting0s
 
 // this represents the state of gameplay simulation.
 type GameplayState =

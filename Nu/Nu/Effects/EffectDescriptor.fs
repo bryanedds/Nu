@@ -64,7 +64,11 @@ type Slice =
       mutable Specularity : single
       mutable LightCutoff : single
       mutable Volume : single
-      mutable Enabled : bool }
+      mutable Enabled : bool
+      mutable UserDefinedSetting0 : single
+      mutable UserDefinedSetting1 : single
+      mutable UserDefinedSetting2 : single
+      mutable UserDefinedSetting3 : single }
     static member copy slice =
         { slice with SliceDelta = slice.SliceDelta }
 
@@ -150,7 +154,6 @@ type Resource =
 
 /// An aspect (property) of a piece of effect content.
 and Aspect =
-    | Enabled of bool
     | PositionAbsolute of Vector3
     | Position of Vector3
     | PositionLocal of Vector3
@@ -171,7 +174,11 @@ and Aspect =
     | Specularity of single
     | LightCutoff of single
     | Volume of single
-    | Enableds of Applicator : LogicApplicator * Playback : Playback * KeyFrames : LogicKeyFrame array
+    | Enabled of bool
+    | UserDefinedSetting0 of single
+    | UserDefinedSetting1 of single
+    | UserDefinedSetting2 of single
+    | UserDefinedSetting3 of single
     | Positions of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : Tween3KeyFrame array
     | PositionLocals of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : Tween3KeyFrame array
     | Scales of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : Tween3KeyFrame array
@@ -189,6 +196,11 @@ and Aspect =
     | Specularities of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
     | LightCutoffs of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
     | Volumes of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
+    | Enableds of Applicator : LogicApplicator * Playback : Playback * KeyFrames : LogicKeyFrame array
+    | UserDefinedSetting0s of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
+    | UserDefinedSetting1s of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
+    | UserDefinedSetting2s of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
+    | UserDefinedSetting3s of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
     | Expand of Name : string * Args : Argument array
     | Aspects of Aspects : Aspect array
 

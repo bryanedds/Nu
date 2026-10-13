@@ -212,6 +212,10 @@ module EffectSystem =
         | LightCutoff lightCutoff -> slice.LightCutoff <- lightCutoff; slice
         | Volume volume -> slice.Volume <- volume; slice
         | Enabled enabled -> slice.Enabled <- enabled; slice
+        | UserDefinedSetting0 setting -> slice.UserDefinedSetting0 <- setting; slice
+        | UserDefinedSetting1 setting -> slice.UserDefinedSetting0 <- setting; slice
+        | UserDefinedSetting2 setting -> slice.UserDefinedSetting0 <- setting; slice
+        | UserDefinedSetting3 setting -> slice.UserDefinedSetting0 <- setting; slice
         | Positions (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
@@ -351,6 +355,38 @@ module EffectSystem =
                 let (_, keyFrame, _) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let applied = applyLogic slice.Enabled keyFrame.LogicValue applicator
                 slice.Enabled <- applied
+            slice
+        | UserDefinedSetting0s (applicator, algorithm, playback, keyFrames) ->
+            if Array.notEmpty keyFrames then
+                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+                let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
+                let tweened = tween (fun (x, y) -> x * single y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
+                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.UserDefinedSetting0 tweened applicator
+                slice.UserDefinedSetting0 <- applied
+            slice
+        | UserDefinedSetting1s (applicator, algorithm, playback, keyFrames) ->
+            if Array.notEmpty keyFrames then
+                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+                let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
+                let tweened = tween (fun (x, y) -> x * single y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
+                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.UserDefinedSetting1 tweened applicator
+                slice.UserDefinedSetting1 <- applied
+            slice
+        | UserDefinedSetting2s (applicator, algorithm, playback, keyFrames) ->
+            if Array.notEmpty keyFrames then
+                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+                let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
+                let tweened = tween (fun (x, y) -> x * single y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
+                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.UserDefinedSetting2 tweened applicator
+                slice.UserDefinedSetting2 <- applied
+            slice
+        | UserDefinedSetting3s (applicator, algorithm, playback, keyFrames) ->
+            if Array.notEmpty keyFrames then
+                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+                let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
+                let tweened = tween (fun (x, y) -> x * single y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
+                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.UserDefinedSetting3 tweened applicator
+                slice.UserDefinedSetting3 <- applied
             slice
         | Aspect.Expand (definitionName, _) ->
             match Map.tryFind definitionName effectSystem.EffectEnv with
