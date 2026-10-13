@@ -224,61 +224,6 @@ type PhysicallyBasedAttachments =
       ColoringAttachments : Texture * Texture
       CompositionAttachment : Texture }
 
-/// Describes the configurable properties of a physically-based material.
-type PhysicallyBasedMaterialProperties =
-    { Albedo : Color
-      Roughness : single
-      Metallic : single
-      AmbientOcclusion : single
-      Emission : single
-      IgnoreLightMaps : bool
-      Anisotropy : single
-      OpaqueDistance : single
-      FinenessOffset : single
-      ScatterType : ScatterType
-      SpecularScalar : single
-      SubsurfaceCutoff : single
-      SubsurfaceCutoffMargin : single
-      RefractiveIndex : single
-      ClearCoat : single
-      ClearCoatRoughness : single
-      // NOTE: 6 fields here are reserved for engine use.
-      UserDefinedSetting0 : single
-      UserDefinedSetting1 : single
-      UserDefinedSetting2 : single
-      UserDefinedSetting3 : single
-      UserDefinedSetting4 : single
-      UserDefinedSetting5 : single
-      UserDefinedSetting6 : single
-      UserDefinedSetting7 : single }
-
-    /// The empty material properties.
-    static member empty =
-        { Albedo = Color.Zero
-          Roughness = 0.0f
-          Metallic = 0.0f
-          AmbientOcclusion = 0.0f
-          Emission = 0.0f
-          IgnoreLightMaps = false
-          Anisotropy = 0.0f
-          OpaqueDistance = 0.0f
-          FinenessOffset = 0.0f
-          ScatterType = NoScatter
-          SpecularScalar = 0.0f
-          SubsurfaceCutoff = 0.0f
-          SubsurfaceCutoffMargin = 0.0f
-          RefractiveIndex = 0.0f
-          ClearCoat = 0.0f
-          ClearCoatRoughness = 0.0f
-          UserDefinedSetting0 = 0.0f
-          UserDefinedSetting1 = 0.0f
-          UserDefinedSetting2 = 0.0f
-          UserDefinedSetting3 = 0.0f
-          UserDefinedSetting4 = 0.0f
-          UserDefinedSetting5 = 0.0f
-          UserDefinedSetting6 = 0.0f
-          UserDefinedSetting7 = 0.0f }
-
 /// Describes a physically-based material.
 type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial =
     { AlbedoTexture : Texture
@@ -388,6 +333,61 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial =
         | :? PhysicallyBasedMaterial as that -> PhysicallyBasedMaterial.equals this that
         | _ -> false
 
+/// Describes the configurable properties of a physically-based material.
+type PhysicallyBasedMaterialProperties =
+    { Albedo : Color
+      Roughness : single
+      Metallic : single
+      AmbientOcclusion : single
+      Emission : single
+      IgnoreLightMaps : bool
+      Anisotropy : single
+      OpaqueDistance : single
+      FinenessOffset : single
+      ScatterType : ScatterType
+      SpecularScalar : single
+      SubsurfaceCutoff : single
+      SubsurfaceCutoffMargin : single
+      RefractiveIndex : single
+      ClearCoat : single
+      ClearCoatRoughness : single
+      // NOTE: 6 fields here are reserved for engine use.
+      UserDefinedSetting0 : single
+      UserDefinedSetting1 : single
+      UserDefinedSetting2 : single
+      UserDefinedSetting3 : single
+      UserDefinedSetting4 : single
+      UserDefinedSetting5 : single
+      UserDefinedSetting6 : single
+      UserDefinedSetting7 : single }
+
+    /// The empty material properties.
+    static member empty =
+        { Albedo = Color.Zero
+          Roughness = 0.0f
+          Metallic = 0.0f
+          AmbientOcclusion = 0.0f
+          Emission = 0.0f
+          IgnoreLightMaps = false
+          Anisotropy = 0.0f
+          OpaqueDistance = 0.0f
+          FinenessOffset = 0.0f
+          ScatterType = NoScatter
+          SpecularScalar = 0.0f
+          SubsurfaceCutoff = 0.0f
+          SubsurfaceCutoffMargin = 0.0f
+          RefractiveIndex = 0.0f
+          ClearCoat = 0.0f
+          ClearCoatRoughness = 0.0f
+          UserDefinedSetting0 = 0.0f
+          UserDefinedSetting1 = 0.0f
+          UserDefinedSetting2 = 0.0f
+          UserDefinedSetting3 = 0.0f
+          UserDefinedSetting4 = 0.0f
+          UserDefinedSetting5 = 0.0f
+          UserDefinedSetting6 = 0.0f
+          UserDefinedSetting7 = 0.0f }
+
 /// Describes some physically-based geometry that's loaded into VRAM.
 type PhysicallyBasedGeometry =
     { Bounds : Box3
@@ -421,8 +421,8 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedSurface =
       SurfaceMatrixIsIdentity : bool // OPTIMIZATION: avoid matrix multiply when unnecessary.
       SurfaceMatrix : Matrix4x4
       SurfaceBounds : Box3
-      SurfaceMaterialProperties : PhysicallyBasedMaterialProperties
       SurfaceMaterial : PhysicallyBasedMaterial
+      SurfaceMaterialProperties : PhysicallyBasedMaterialProperties
       SurfaceMaterialIndex : int
       SurfaceNode : Assimp.Node
       PhysicallyBasedGeometry : PhysicallyBasedGeometry }
@@ -590,7 +590,7 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedSurface =
             | Some _ | None -> shapeDefault
         | ValueSome shape -> shape
 
-    static member make names (surfaceMatrix : Matrix4x4) bounds properties material materialIndex surfaceNode geometry =
+    static member make names (surfaceMatrix : Matrix4x4) bounds material properties materialIndex surfaceNode geometry =
         let hashCode =
             hash material ^^^
             hash materialIndex ^^^
@@ -600,8 +600,8 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedSurface =
           SurfaceMatrixIsIdentity = surfaceMatrix.IsIdentity
           SurfaceMatrix = surfaceMatrix
           SurfaceBounds = bounds
-          SurfaceMaterialProperties = properties
           SurfaceMaterial = material
+          SurfaceMaterialProperties = properties
           SurfaceMaterialIndex = materialIndex
           SurfaceNode = surfaceNode
           PhysicallyBasedGeometry = geometry }
@@ -1666,6 +1666,31 @@ module PhysicallyBased =
                 normalTextureSlot.FilePath
             | None -> ""
 
+        // make material
+        let material =
+            { AlbedoTexture = albedoTexture
+              RoughnessTexture = roughnessTexture
+              MetallicTexture = metallicTexture
+              AmbientOcclusionTexture = ambientOcclusionTexture
+              EmissionTexture = emissionTexture
+              NormalTexture = normalTexture
+              SubdermalTexture = subdermalTexture
+              FinenessTexture = finenessTexture
+              ScatterTexture = scatterTexture
+              ClearCoatTexture = clearCoatTexture
+              ClearCoatRoughnessTexture = clearCoatRoughnessTexture
+              ClearCoatNormalTexture = clearCoatNormalTexture
+              UserDefinedImage0Texture = userDefinedImage0Texture
+              UserDefinedImage1Texture = userDefinedImage1Texture
+              UserDefinedImage2Texture = userDefinedImage2Texture
+              CullMode = cullMode
+              Clipped = clipped
+              DepthTest = depthTest
+              DepthWrite = depthWrite
+              Blend = blend
+              PipelineName = pipelineName
+              Names = names }
+
         // make properties
         let properties =
             { Albedo = color albedo.R albedo.G albedo.B albedo.A
@@ -1693,46 +1718,21 @@ module PhysicallyBased =
               UserDefinedSetting6 = userDefinedSettings[6]
               UserDefinedSetting7 = userDefinedSettings[7] }
 
-        // make material
-        let material =
-            { AlbedoTexture = albedoTexture
-              RoughnessTexture = roughnessTexture
-              MetallicTexture = metallicTexture
-              AmbientOcclusionTexture = ambientOcclusionTexture
-              EmissionTexture = emissionTexture
-              NormalTexture = normalTexture
-              SubdermalTexture = subdermalTexture
-              FinenessTexture = finenessTexture
-              ScatterTexture = scatterTexture
-              ClearCoatTexture = clearCoatTexture
-              ClearCoatRoughnessTexture = clearCoatRoughnessTexture
-              ClearCoatNormalTexture = clearCoatNormalTexture
-              UserDefinedImage0Texture = userDefinedImage0Texture
-              UserDefinedImage1Texture = userDefinedImage1Texture
-              UserDefinedImage2Texture = userDefinedImage2Texture
-              CullMode = cullMode
-              Clipped = clipped
-              DepthTest = depthTest
-              DepthWrite = depthWrite
-              Blend = blend
-              PipelineName = pipelineName
-              Names = names }
-
         // fin
-        (properties, material)
+        (material, properties)
 
     /// Attempt to create physically-based material from an assimp scene.
     /// Thread-safe if contextOpt = None.
     let tryCreatePhysicallyBasedMaterials dirPath defaultMaterial textureClient (scene : Assimp.Scene) contextOpt =
         let mutable errorOpt = None
-        let propertiesAndMaterials = Array.zeroCreate scene.Materials.Count
+        let materials = Array.zeroCreate scene.Materials.Count
         for i in 0 .. dec scene.Materials.Count do
             if Option.isNone errorOpt then
-                let (properties, material) = createPhysicallyBasedMaterial dirPath defaultMaterial textureClient scene.Materials[i] contextOpt
-                propertiesAndMaterials[i] <- (properties, material)
+                let (material, properties) = createPhysicallyBasedMaterial dirPath defaultMaterial textureClient scene.Materials[i] contextOpt
+                materials[i] <- (material, properties)
         match errorOpt with
         | Some error -> Left error
-        | None -> Right propertiesAndMaterials
+        | None -> Right materials
 
     /// Create physically-based static mesh from an assimp mesh.
     let createPhysicallyBasedStaticMesh indexData (mesh : Assimp.Mesh) =
@@ -6471,9 +6471,9 @@ type PhysicallyBasedSceneClient () =
                             let names = Array.append names [|"Geometry" + if i > 0 then string (inc i) else ""|]
                             let meshIndex = node.MeshIndices[i]
                             let materialIndex = scene.Meshes[meshIndex].MaterialIndex
-                            let (properties, material) = materials[materialIndex]
+                            let (material, properties) = materials[materialIndex]
                             let geometry = geometries[meshIndex]
-                            let surface = PhysicallyBasedSurface.make names transform geometry.Bounds properties material materialIndex node geometry
+                            let surface = PhysicallyBasedSurface.make names transform geometry.Bounds material properties materialIndex node geometry
                             bounds <- bounds.Combine (geometry.Bounds.Transform transform)
                             surfaces.Add surface
                             yield PhysicallyBasedSurface surface|]

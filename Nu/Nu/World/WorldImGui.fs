@@ -340,8 +340,8 @@ module WorldImGui =
                     ty.GetGenericTypeDefinition () = typedefof<_ option> &&
                     (not ty.GenericTypeArguments[0].IsGenericType || ty.GenericTypeArguments[0].GetGenericTypeDefinition () <> typedefof<_ option>) &&
                     (not ty.GenericTypeArguments[0].IsGenericType || ty.GenericTypeArguments[0].GetGenericTypeDefinition () <> typedefof<_ voption>) &&
-                    ty.GenericTypeArguments[0] <> typeof<MaterialProperties> &&
                     ty.GenericTypeArguments[0] <> typeof<Material> &&
+                    ty.GenericTypeArguments[0] <> typeof<MaterialProperties> &&
                     (ty.GenericTypeArguments[0].IsValueType ||
                      ty.GenericTypeArguments[0] = typeof<string> ||
                      ty.GenericTypeArguments[0] = typeof<Slide> ||
@@ -430,8 +430,8 @@ module WorldImGui =
                      ty.GetGenericTypeDefinition () = typedefof<_ voption> &&
                      (not ty.GenericTypeArguments[0].IsGenericType || ty.GenericTypeArguments[0].GetGenericTypeDefinition () <> typedefof<_ option>) &&
                      (not ty.GenericTypeArguments[0].IsGenericType || ty.GenericTypeArguments[0].GetGenericTypeDefinition () <> typedefof<_ voption>) &&
-                     ty.GenericTypeArguments[0] <> typeof<MaterialProperties> &&
                      ty.GenericTypeArguments[0] <> typeof<Material> &&
+                     ty.GenericTypeArguments[0] <> typeof<MaterialProperties> &&
                      (ty.GenericTypeArguments[0].IsValueType ||
                       ty.GenericTypeArguments[0] = typeof<string> ||
                       ty.GenericTypeArguments[0] = typeof<Slide> ||
@@ -831,78 +831,6 @@ module WorldImGui =
                         else None
                     | None -> None
                 World.imGuiEditPropertyRecordPlus tryReplaceUserDefinedSettingOpt true name (typeof<TerrainMaterialProperties>) tmps context world
-            | :? MaterialProperties as mps ->
-                let tryReplaceUserDefinedSettingOpt (fieldInfo : PropertyInfo) (field : obj) =
-                    match context.SelectedEntityOpt with
-                    | Some selectedEntity ->
-                        let userDefinedSettingSubstring = "UserDefinedSetting"
-                        let optSubstring = "Opt"
-                        if fieldInfo.Name.StartsWith userDefinedSettingSubstring && fieldInfo.Name.EndsWith optSubstring then
-                            let indexStr = fieldInfo.Name.Substring (userDefinedSettingSubstring.Length, fieldInfo.Name.Length - userDefinedSettingSubstring.Length - optSubstring.Length)
-                            let indexOpt =
-                                match Int32.TryParse indexStr with
-                                | (true, number) -> Some number
-                                | (false, _) -> None
-                            match indexOpt with
-                            | Some index ->
-                                let pipelineName =
-                                    match selectedEntity.TryGetProperty "Material" world with
-                                    | Some property when (property.PropertyValue :? Material) ->
-                                        let material = property.PropertyValue :?> Material
-                                        match material.PipelineNameOpt with
-                                        | ValueSome pipelineName -> pipelineName
-                                        | ValueNone ->
-                                            let surfaceIndex =
-                                                match selectedEntity.TryGetProperty "SurfaceIndex" world with
-                                                | Some property when (property.PropertyValue :? int) -> property.PropertyValue :?> int
-                                                | Some _ | None -> 0 // NOTE: hard-coding first surface.
-                                            match selectedEntity.TryGetProperty "StaticModel" world with
-                                            | Some property when (property.PropertyValue :? StaticModel AssetTag) ->
-                                                let staticModel = property.PropertyValue :?> StaticModel AssetTag
-                                                match Metadata.tryGetStaticModelPipelineName surfaceIndex staticModel with
-                                                | ValueSome pipelineName -> pipelineName
-                                                | ValueNone -> Constants.Render.PipelineNameDefault
-                                            | Some _ | None ->
-                                                match selectedEntity.TryGetProperty "AnimatedModel" world with
-                                                | Some property when (property.PropertyValue :? AnimatedModel AssetTag) ->
-                                                    let animatedModel = property.PropertyValue :?> AnimatedModel AssetTag
-                                                    match Metadata.tryGetAnimatedModelPipelineName surfaceIndex animatedModel with
-                                                    | ValueSome pipelineName -> pipelineName
-                                                    | ValueNone -> Constants.Render.PipelineNameDefault
-                                                | Some _ | None -> Constants.Render.PipelineNameDefault
-                                    | Some _ | None -> Constants.Render.PipelineNameDefault
-                                let descriptors = World.getUserDefinedPipeline3dDescriptors world
-                                match descriptors.TryGetValue pipelineName with
-                                | (true, pipelineDescriptor) ->
-                                    let settingNames = pipelineDescriptor.UserDefinedSettingNames
-                                    if index < settingNames.Length then
-                                        let mutable valueOpt = field :?> single voption
-                                        let mutable isSome = valueOpt.IsSome
-                                        let isSomeEdited = ImGui.Checkbox ("##" + settingNames[index], &isSome)
-                                        if ImGui.IsItemFocused () then context.FocusProperty ()
-                                        if isSomeEdited then
-                                            if isSome
-                                            then valueOpt <- ValueSome Constants.Render.UserDefinedSettingDefault
-                                            else valueOpt <- ValueNone
-                                        match valueOpt with
-                                        | ValueSome value ->
-                                            ImGui.SameLine ()
-                                            ImGui.PushID name
-                                            let mutable value = value
-                                            let valueEdited = ImGui.DragFloat (settingNames[index], &value, context.SnapDrag)
-                                            if ImGui.IsItemFocused () then context.FocusProperty ()
-                                            ImGui.PopID ()
-                                            Some (isSomeEdited || valueEdited, ValueSome value :> obj)
-                                        | ValueNone ->
-                                            ImGui.SameLine ()
-                                            ImGui.Text settingNames[index]
-                                            Some (isSomeEdited, valueOpt :> obj)
-                                    else Some (false, field)
-                                | (false, _) -> Some (false, field)
-                            | None -> Some (false, field)
-                        else None
-                    | None -> None
-                World.imGuiEditPropertyRecordPlus tryReplaceUserDefinedSettingOpt false name (typeof<MaterialProperties>) mps context world
             | :? Material as material ->
                 let tryReplaceUserDefinedImageOpt (fieldInfo : PropertyInfo) (field : obj) =
                     match context.SelectedEntityOpt with
@@ -1010,6 +938,78 @@ module WorldImGui =
                         else None
                     | None -> None
                 World.imGuiEditPropertyRecordPlus tryReplaceUserDefinedImageOpt false name (typeof<Material>) material context world
+            | :? MaterialProperties as mps ->
+                let tryReplaceUserDefinedSettingOpt (fieldInfo : PropertyInfo) (field : obj) =
+                    match context.SelectedEntityOpt with
+                    | Some selectedEntity ->
+                        let userDefinedSettingSubstring = "UserDefinedSetting"
+                        let optSubstring = "Opt"
+                        if fieldInfo.Name.StartsWith userDefinedSettingSubstring && fieldInfo.Name.EndsWith optSubstring then
+                            let indexStr = fieldInfo.Name.Substring (userDefinedSettingSubstring.Length, fieldInfo.Name.Length - userDefinedSettingSubstring.Length - optSubstring.Length)
+                            let indexOpt =
+                                match Int32.TryParse indexStr with
+                                | (true, number) -> Some number
+                                | (false, _) -> None
+                            match indexOpt with
+                            | Some index ->
+                                let pipelineName =
+                                    match selectedEntity.TryGetProperty "Material" world with
+                                    | Some property when (property.PropertyValue :? Material) ->
+                                        let material = property.PropertyValue :?> Material
+                                        match material.PipelineNameOpt with
+                                        | ValueSome pipelineName -> pipelineName
+                                        | ValueNone ->
+                                            let surfaceIndex =
+                                                match selectedEntity.TryGetProperty "SurfaceIndex" world with
+                                                | Some property when (property.PropertyValue :? int) -> property.PropertyValue :?> int
+                                                | Some _ | None -> 0 // NOTE: hard-coding first surface.
+                                            match selectedEntity.TryGetProperty "StaticModel" world with
+                                            | Some property when (property.PropertyValue :? StaticModel AssetTag) ->
+                                                let staticModel = property.PropertyValue :?> StaticModel AssetTag
+                                                match Metadata.tryGetStaticModelPipelineName surfaceIndex staticModel with
+                                                | ValueSome pipelineName -> pipelineName
+                                                | ValueNone -> Constants.Render.PipelineNameDefault
+                                            | Some _ | None ->
+                                                match selectedEntity.TryGetProperty "AnimatedModel" world with
+                                                | Some property when (property.PropertyValue :? AnimatedModel AssetTag) ->
+                                                    let animatedModel = property.PropertyValue :?> AnimatedModel AssetTag
+                                                    match Metadata.tryGetAnimatedModelPipelineName surfaceIndex animatedModel with
+                                                    | ValueSome pipelineName -> pipelineName
+                                                    | ValueNone -> Constants.Render.PipelineNameDefault
+                                                | Some _ | None -> Constants.Render.PipelineNameDefault
+                                    | Some _ | None -> Constants.Render.PipelineNameDefault
+                                let descriptors = World.getUserDefinedPipeline3dDescriptors world
+                                match descriptors.TryGetValue pipelineName with
+                                | (true, pipelineDescriptor) ->
+                                    let settingNames = pipelineDescriptor.UserDefinedSettingNames
+                                    if index < settingNames.Length then
+                                        let mutable valueOpt = field :?> single voption
+                                        let mutable isSome = valueOpt.IsSome
+                                        let isSomeEdited = ImGui.Checkbox ("##" + settingNames[index], &isSome)
+                                        if ImGui.IsItemFocused () then context.FocusProperty ()
+                                        if isSomeEdited then
+                                            if isSome
+                                            then valueOpt <- ValueSome Constants.Render.UserDefinedSettingDefault
+                                            else valueOpt <- ValueNone
+                                        match valueOpt with
+                                        | ValueSome value ->
+                                            ImGui.SameLine ()
+                                            ImGui.PushID name
+                                            let mutable value = value
+                                            let valueEdited = ImGui.DragFloat (settingNames[index], &value, context.SnapDrag)
+                                            if ImGui.IsItemFocused () then context.FocusProperty ()
+                                            ImGui.PopID ()
+                                            Some (isSomeEdited || valueEdited, ValueSome value :> obj)
+                                        | ValueNone ->
+                                            ImGui.SameLine ()
+                                            ImGui.Text settingNames[index]
+                                            Some (isSomeEdited, valueOpt :> obj)
+                                    else Some (false, field)
+                                | (false, _) -> Some (false, field)
+                            | None -> Some (false, field)
+                        else None
+                    | None -> None
+                World.imGuiEditPropertyRecordPlus tryReplaceUserDefinedSettingOpt false name (typeof<MaterialProperties>) mps context world
             | :? Justification as justification ->
                 let (_, caseNameEdited, caseName) = World.imGuiSelectCase name ty justification context
                 let justification =
