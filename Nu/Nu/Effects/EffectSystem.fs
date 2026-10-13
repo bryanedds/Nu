@@ -564,11 +564,7 @@ module EffectSystem =
                         UserDefinedSetting0Opt = ValueSome (match properties.UserDefinedSetting0Opt with ValueSome setting -> setting * slice.UserDefinedSetting0 | ValueNone -> slice.UserDefinedSetting0)
                         UserDefinedSetting1Opt = ValueSome (match properties.UserDefinedSetting1Opt with ValueSome setting -> setting * slice.UserDefinedSetting1 | ValueNone -> slice.UserDefinedSetting1)
                         UserDefinedSetting2Opt = ValueSome (match properties.UserDefinedSetting2Opt with ValueSome setting -> setting * slice.UserDefinedSetting2 | ValueNone -> slice.UserDefinedSetting2)
-                        UserDefinedSetting3Opt = ValueSome (match properties.UserDefinedSetting3Opt with ValueSome setting -> setting * slice.UserDefinedSetting3 | ValueNone -> slice.UserDefinedSetting3)
-                        UserDefinedSetting4Opt = ValueNone // TODO: P0: consider making these aspects as well.
-                        UserDefinedSetting5Opt = ValueNone
-                        UserDefinedSetting6Opt = ValueNone
-                        UserDefinedSetting7Opt = ValueNone }
+                        UserDefinedSetting3Opt = ValueSome (match properties.UserDefinedSetting3Opt with ValueSome setting -> setting * slice.UserDefinedSetting3 | ValueNone -> slice.UserDefinedSetting3) }
                 let billboardToken =
                     BillboardToken
                         { ModelMatrix = affineMatrix
@@ -609,11 +605,7 @@ module EffectSystem =
                         UserDefinedSetting0Opt = ValueSome (match properties.UserDefinedSetting0Opt with ValueSome setting -> setting * slice.UserDefinedSetting0 | ValueNone -> slice.UserDefinedSetting0)
                         UserDefinedSetting1Opt = ValueSome (match properties.UserDefinedSetting1Opt with ValueSome setting -> setting * slice.UserDefinedSetting1 | ValueNone -> slice.UserDefinedSetting1)
                         UserDefinedSetting2Opt = ValueSome (match properties.UserDefinedSetting2Opt with ValueSome setting -> setting * slice.UserDefinedSetting2 | ValueNone -> slice.UserDefinedSetting2)
-                        UserDefinedSetting3Opt = ValueSome (match properties.UserDefinedSetting3Opt with ValueSome setting -> setting * slice.UserDefinedSetting3 | ValueNone -> slice.UserDefinedSetting3)
-                        UserDefinedSetting4Opt = ValueNone // TODO: P0: consider making these aspects as well.
-                        UserDefinedSetting5Opt = ValueNone
-                        UserDefinedSetting6Opt = ValueNone
-                        UserDefinedSetting7Opt = ValueNone }
+                        UserDefinedSetting3Opt = ValueSome (match properties.UserDefinedSetting3Opt with ValueSome setting -> setting * slice.UserDefinedSetting3 | ValueNone -> slice.UserDefinedSetting3) }
                 let staticModelToken =
                     StaticModelToken
                         { ModelMatrix = affineMatrix

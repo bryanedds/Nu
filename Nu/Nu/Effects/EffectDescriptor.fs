@@ -68,7 +68,7 @@ type Slice =
       mutable UserDefinedSetting0 : single
       mutable UserDefinedSetting1 : single
       mutable UserDefinedSetting2 : single
-      mutable UserDefinedSetting3 : single }
+      mutable UserDefinedSetting3 : single } // TODO: consider utilizing settings 4-7 as well.
     static member copy slice =
         { slice with SliceDelta = slice.SliceDelta }
 
