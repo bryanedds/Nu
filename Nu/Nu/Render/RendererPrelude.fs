@@ -11,12 +11,6 @@ open Prime
 open SDL
 open Nu.Vulkan
 
-/// The blend mode of a sprite.
-type [<Struct>] Blend =
-    | Transparent
-    | Additive
-    | Overwrite
-
 /// Represents an aspect of font styling.
 type [<Struct>] FontStyle =
     | Bold

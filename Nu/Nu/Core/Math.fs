@@ -1799,6 +1799,19 @@ type [<Struct>] BlockCompression =
     | BcCompression
     | AstcCompression
 
+// The cull mode of a surface.
+type [<Struct>] CullMode =
+    | CullNone
+    | CullFront
+    | CullBack
+
+/// The blend mode of a sprite or surface.
+type [<Struct>] Blend =
+    | Unblended
+    | Transparent
+    | Additive
+    | Overwrite
+
 /// The flip-ness of an image.
 type [<Struct>] Flip =
     | Unflipped

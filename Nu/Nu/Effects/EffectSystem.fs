@@ -489,7 +489,7 @@ module EffectSystem =
         // build implicitly mounted content
         evalContent content slice history effectSystem
 
-    and private evalBillboard albedo roughness metallic ambientOcclusion emission normal twoSided clipped aspects content (slice : Slice) history effectSystem =
+    and private evalBillboard albedo roughness metallic ambientOcclusion emission normal cullMode clipped aspects content (slice : Slice) history effectSystem =
 
         // pull image from resource
         let imageAlbedo = evalResource albedo effectSystem
@@ -548,8 +548,9 @@ module EffectSystem =
                       UserDefinedImage0Opt = ValueNone // TODO: P0: make these aspects.
                       UserDefinedImage1Opt = ValueNone
                       UserDefinedImage2Opt = ValueNone
-                      TwoSidedOpt = ValueSome twoSided
+                      CullModeOpt = ValueSome cullMode
                       ClippedOpt = ValueSome clipped
+                      BlendOpt = ValueNone // TODO: P0: make this an aspect.
                       PipelineNameOpt = ValueNone } // TODO: P0: make this an aspect.
                 let billboardToken =
                     BillboardToken
@@ -719,8 +720,8 @@ module EffectSystem =
             evalTextSprite resource text fontSizing fontStyling aspects content slice history effectSystem
         | Light3d (lightType, aspects, content) ->
             evalLight3d lightType aspects content slice history effectSystem
-        | Billboard (resourceAlbedo, resourceRoughness, resourceMetallic, resourceAmbientOcclusion, resourceEmission, resourceNormal, twoSided, clipped, aspects, content) ->
-            evalBillboard resourceAlbedo resourceRoughness resourceMetallic resourceAmbientOcclusion resourceEmission resourceNormal twoSided clipped aspects content slice history effectSystem
+        | Billboard (resourceAlbedo, resourceRoughness, resourceMetallic, resourceAmbientOcclusion, resourceEmission, resourceNormal, cullMode, clipped, aspects, content) ->
+            evalBillboard resourceAlbedo resourceRoughness resourceMetallic resourceAmbientOcclusion resourceEmission resourceNormal cullMode clipped aspects content slice history effectSystem
         | StaticModel (resource, clipped, aspects, content) ->
             evalStaticModel resource clipped aspects content slice history effectSystem
         | Mount (Shift shift, aspects, content) ->

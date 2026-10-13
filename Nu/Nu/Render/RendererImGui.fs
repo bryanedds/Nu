@@ -128,7 +128,7 @@ type VulkanRendererImGui
             pipeline <-
                 Pipeline.create
                     Constants.Paths.ImGuiShaderFilePath
-                    [|VulkanImGui|] [|false|]
+                    [|VulkanImGui|] [|CullNone|]
                     [|Pipeline.vertex 0 sizeof<ImDrawVert> VkVertexInputRate.Vertex
                         [|Pipeline.attribute 0 Single2 (NativePtr.offsetOf<ImDrawVert> (nameof Unchecked.defaultof<ImDrawVert>.pos))
                           Pipeline.attribute 1 Single2 (NativePtr.offsetOf<ImDrawVert> (nameof Unchecked.defaultof<ImDrawVert>.uv))
@@ -184,7 +184,7 @@ type VulkanRendererImGui
             io.DisplayFramebufferScale <- v2One
 
             // grab pipeline, asserting non-None since shader reload for ImGui isn't supported
-            let vkPipeline = Pipeline.tryGetVkPipeline VulkanImGui false pipeline |> Option.get
+            let vkPipeline = Pipeline.tryGetVkPipeline VulkanImGui CullNone pipeline |> Option.get
 
             // set up render
             let mutable renderArea = VkRect2D (viewport.Bounds.Min.X, viewport.Bounds.Min.Y, uint viewport.Bounds.Size.X, uint viewport.Bounds.Size.Y)

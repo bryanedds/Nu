@@ -3380,8 +3380,9 @@ type BasicStaticBillboardEmitterFacet () =
                               UserDefinedImage0Opt = match emitterMaterial.UserDefinedImage0Opt with ValueSome userDefinedImage -> ValueSome userDefinedImage | ValueNone -> descriptor.Material.UserDefinedImage0Opt
                               UserDefinedImage1Opt = match emitterMaterial.UserDefinedImage1Opt with ValueSome userDefinedImage -> ValueSome userDefinedImage | ValueNone -> descriptor.Material.UserDefinedImage1Opt
                               UserDefinedImage2Opt = match emitterMaterial.UserDefinedImage2Opt with ValueSome userDefinedImage -> ValueSome userDefinedImage | ValueNone -> descriptor.Material.UserDefinedImage2Opt
-                              TwoSidedOpt = match emitterMaterial.TwoSidedOpt with ValueSome twoSided -> ValueSome twoSided | ValueNone -> descriptor.Material.TwoSidedOpt
+                              CullModeOpt = match emitterMaterial.CullModeOpt with ValueSome cullMode -> ValueSome cullMode | ValueNone -> descriptor.Material.CullModeOpt
                               ClippedOpt = match emitterMaterial.ClippedOpt with ValueSome clipped -> ValueSome clipped | ValueNone -> descriptor.Material.ClippedOpt
+                              BlendOpt = match emitterMaterial.BlendOpt with ValueSome blend -> ValueSome blend | ValueNone -> descriptor.Material.BlendOpt
                               PipelineNameOpt = match emitterMaterial.PipelineNameOpt with ValueSome pipelineName -> ValueSome pipelineName | ValueNone -> descriptor.Material.PipelineNameOpt }
                         Some
                             (RenderBillboardParticles

@@ -203,12 +203,12 @@ type Pipeline =
           VkDescriptorSetLayouts_ : VkDescriptorSetLayout array
           ShaderPathVert_ : string
           ShaderPathFrag_ : string
-          PipelineSettings_ : (VulkanBlend * bool) array
+          PipelineSettings_ : (VulkanBlend * CullMode) array
           VkVertexBindings_ : VkVertexInputBindingDescription array
           VkVertexAttributes_ : VkVertexInputAttributeDescription array
           VkColorAttachmentFormats_ : VkFormat array
           VkDepthTestFormatOpt_ : VkFormat option
-          mutable VkPipelines_ : Dictionary<VulkanBlend * bool, VkPipeline> // TODO: P0: make sure no allocation happens on look-up.
+          mutable VkPipelines_ : Dictionary<VulkanBlend * CullMode, VkPipeline> // TODO: P0: make sure no allocation happens on look-up.
           mutable DrawIndex_ : int }
 
     /// The pipeline layout.
@@ -258,13 +258,13 @@ type Pipeline =
     static member private tryCreateVertAndFragPipelines
         shaderPathVert
         shaderPathFrag
-        (pipelineSettings : (VulkanBlend * bool) array)
+        (pipelineSettings : (VulkanBlend * CullMode) array)
         (vertexBindings : VkVertexInputBindingDescription array)
         (vertexAttributes : VkVertexInputAttributeDescription array)
         pipelineLayout
         (colorAttachmentFormats : VkFormat array)
         depthTestFormatOpt =
-        
+
         // try to create shader modules
         let moduleResults =
             (Hl.tryCreateShaderModuleFromGlsl shaderPathVert ShaderKind.VertexShader,
@@ -310,7 +310,7 @@ type Pipeline =
             // input assembly; multisample
             let mutable iaInfo = VkPipelineInputAssemblyStateCreateInfo (topology = VkPrimitiveTopology.TriangleList)
             let mutable mInfo = VkPipelineMultisampleStateCreateInfo (rasterizationSamples = VkSampleCountFlags.Count1)
-            
+
             // depth-stencil info
             let mutable dInfo = VkPipelineDepthStencilStateCreateInfo ()
             match depthTestFormatOpt with
@@ -336,17 +336,17 @@ type Pipeline =
             match depthTestFormatOpt with
             | Some depthTestFormat -> rnInfo.depthAttachmentFormat <- depthTestFormat
             | None -> ()
-            
+
             // pipeline create infos
             let blendStates = NativePtr.stackalloc<VkPipelineColorBlendAttachmentState> (pipelineSettings.Length * colorAttachmentFormats.Length)
             let bInfos = NativePtr.stackalloc<VkPipelineColorBlendStateCreateInfo> pipelineSettings.Length
             let rInfos = NativePtr.stackalloc<VkPipelineRasterizationStateCreateInfo> pipelineSettings.Length
             let infos = NativePtr.stackalloc<VkGraphicsPipelineCreateInfo> pipelineSettings.Length
             for i in 0 .. dec pipelineSettings.Length do
-            
+
                 // extract settings
-                let (blend, cullFace) = pipelineSettings[i]
-                
+                let (blend, cullMode) = pipelineSettings[i]
+
                 // blend info (specifying blend state for each color attachment)
                 let blendState = VulkanBlend.makeAttachment blend
                 for j in 0 .. dec colorAttachmentFormats.Length do NativePtr.set blendStates (i * colorAttachmentFormats.Length + j) blendState
@@ -356,7 +356,11 @@ type Pipeline =
                 NativePtr.set bInfos i bInfo
 
                 // cull mode
-                rInfo.cullMode <- if cullFace then VkCullModeFlags.Back else VkCullModeFlags.None
+                rInfo.cullMode <-
+                    match cullMode with
+                    | CullNone -> VkCullModeFlags.None
+                    | CullBack -> VkCullModeFlags.Back
+                    | CullFront -> VkCullModeFlags.Front
                 NativePtr.set rInfos i rInfo
 
                 // create info
@@ -376,19 +380,19 @@ type Pipeline =
                 info.renderPass <- VkRenderPass.Null
                 info.subpass <- 0u
                 NativePtr.set infos i info
-                
+
             // create vulkan pipelines
             let vkPipelines = Array.zeroCreate<VkPipeline> pipelineSettings.Length
             use vkPipelinesPin = new ArrayPin<_> (vkPipelines)
             DeviceApi.vkCreateGraphicsPipelines (VkPipelineCache.Null, uint vkPipelines.Length, infos, nullPtr, vkPipelinesPin.Pointer) |> Hl.check
-            
+
             // destroy shader modules
             DeviceApi.vkDestroyShaderModule (moduleVert, nullPtr)
             DeviceApi.vkDestroyShaderModule (moduleFrag, nullPtr)
-            
+
             // pack vulkan pipelines with settings
             Array.zip pipelineSettings vkPipelines
-        
+
         // abort
         | (moduleVertResult, moduleFragResult) ->
             match moduleVertResult with
@@ -422,8 +426,8 @@ type Pipeline =
         pipeline.VkPipelines_.Clear ()
 
     /// Try to get the VkPipeline built for the given settings.
-    static member tryGetVkPipeline blend cullFace pipeline =
-        Dictionary.tryFind (blend, cullFace) pipeline.VkPipelines_
+    static member tryGetVkPipeline blend cullMode pipeline =
+        Dictionary.tryFind (blend, cullMode) pipeline.VkPipelines_
 
     /// Write a uniform buffer to the given descriptor set.
     static member writeDescriptorUniformBuffer (binding : int) (descriptorIndex : int) (buffer : VulkanBuffer) vkDescriptorSet =
@@ -623,7 +627,7 @@ type Pipeline =
     static member create
         shaderPath
         (blends : VulkanBlend array)
-        (cullModes : bool array)
+        (cullModes : CullMode array)
         (vertexBindings : VertexBinding array)
         (descriptorSetDefinitions : DescriptorSetDefinition array)
         (pushConstants : PushConstant array)

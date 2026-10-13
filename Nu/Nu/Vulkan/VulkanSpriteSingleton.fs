@@ -39,7 +39,7 @@ module SpriteSingleton =
         let pipeline =
             Pipeline.create
                 Constants.Paths.SpriteShaderFilePath
-                [|VulkanTransparent|] [|true|]
+                [|VulkanTransparent|] [|CullBack|]
                 [|Pipeline.vertex 0 VertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Single2 0|]|]
                 [|Pipeline.descriptorSet<int>
@@ -129,7 +129,7 @@ module SpriteSingleton =
         if Hl.validateRect scissor then
 
             // only draw when required vkPipeline exists
-            match Pipeline.tryGetVkPipeline VulkanTransparent true pipeline with
+            match Pipeline.tryGetVkPipeline VulkanTransparent CullBack pipeline with
             | Some vkPipeline ->
 
                 // compute unflipped tex coords

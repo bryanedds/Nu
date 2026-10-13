@@ -175,8 +175,9 @@ module WorldEntityHierarchyExtensions =
                                       UserDefinedImage0Opt = Metadata.tryGetStaticModelUserDefinedImage0 surface.SurfaceMaterialIndex staticModel
                                       UserDefinedImage1Opt = Metadata.tryGetStaticModelUserDefinedImage1 surface.SurfaceMaterialIndex staticModel
                                       UserDefinedImage2Opt = Metadata.tryGetStaticModelUserDefinedImage2 surface.SurfaceMaterialIndex staticModel
-                                      TwoSidedOpt = Metadata.tryGetStaticModelTwoSided surface.SurfaceMaterialIndex staticModel
+                                      CullModeOpt = Metadata.tryGetStaticModelCullMode surface.SurfaceMaterialIndex staticModel
                                       ClippedOpt = Metadata.tryGetStaticModelClipped surface.SurfaceMaterialIndex staticModel
+                                      BlendOpt = Metadata.tryGetStaticModelBlend surface.SurfaceMaterialIndex staticModel
                                       PipelineNameOpt = Metadata.tryGetStaticModelPipelineName surface.SurfaceMaterialIndex staticModel }
                                 else Material.empty
                             child.SetMaterial material world
@@ -278,8 +279,9 @@ module WorldEntityHierarchyExtensions =
                                           UserDefinedImage0Opt = Metadata.tryGetStaticModelUserDefinedImage0 surface.SurfaceMaterialIndex staticModel
                                           UserDefinedImage1Opt = Metadata.tryGetStaticModelUserDefinedImage1 surface.SurfaceMaterialIndex staticModel
                                           UserDefinedImage2Opt = Metadata.tryGetStaticModelUserDefinedImage2 surface.SurfaceMaterialIndex staticModel
-                                          TwoSidedOpt = Metadata.tryGetStaticModelTwoSided surface.SurfaceMaterialIndex staticModel
+                                          CullModeOpt = Metadata.tryGetStaticModelCullMode surface.SurfaceMaterialIndex staticModel
                                           ClippedOpt = Metadata.tryGetStaticModelClipped surface.SurfaceMaterialIndex staticModel
+                                          BlendOpt = Metadata.tryGetStaticModelBlend surface.SurfaceMaterialIndex staticModel
                                           PipelineNameOpt = Metadata.tryGetStaticModelPipelineName surface.SurfaceMaterialIndex staticModel }
                                     else material
                                 boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine surfaceBounds) | None -> Some surfaceBounds

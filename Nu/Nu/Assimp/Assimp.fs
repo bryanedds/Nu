@@ -425,13 +425,13 @@ module AssimpExtensions =
                 else ValueNone
             | ValueNone -> ValueNone
 
-        member this.TwoSidedOpt =
-            match this.TryGetMaterialProperty Constants.Assimp.TwoSidedPropertyName with
+        member this.CullModeOpt =
+            match this.TryGetMaterialProperty Constants.Assimp.CullModePropertyName with
             | ValueSome property ->
                 if property.PropertyType = Assimp.PropertyType.String then
-                    try property.GetStringValue () |> scvalueMemo<bool> |> ValueSome
+                    try property.GetStringValue () |> scvalueMemo<CullMode> |> ValueSome
                     with _ -> ValueNone
-                else ValueSome false
+                else ValueSome CullBack
             | ValueNone -> ValueNone
 
         member this.ClippedOpt =
@@ -441,6 +441,15 @@ module AssimpExtensions =
                     try property.GetStringValue () |> scvalueMemo<bool> |> ValueSome
                     with _ -> ValueNone
                 else ValueSome false
+            | ValueNone -> ValueNone
+
+        member this.BlendOpt =
+            match this.TryGetMaterialProperty Constants.Assimp.BlendPropertyName with
+            | ValueSome property ->
+                if property.PropertyType = Assimp.PropertyType.String then
+                    try property.GetStringValue () |> scvalueMemo<Blend> |> ValueSome
+                    with _ -> ValueNone
+                else ValueSome Transparent
             | ValueNone -> ValueNone
 
         member this.PipelineNameOpt =

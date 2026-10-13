@@ -466,6 +466,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         // prepare blending info for pipeline
         let pipelineBlend =
             match blend with
+            | Unblended -> VulkanUnblended
             | Transparent -> VulkanTransparent
             | Additive -> VulkanAdditive
             | Overwrite -> VulkanOverwrite

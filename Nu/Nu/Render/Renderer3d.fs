@@ -235,8 +235,9 @@ type [<SymbolicExpansion; CustomEquality; NoComparison>] Material =
       UserDefinedImage0Opt : Image AssetTag voption
       UserDefinedImage1Opt : Image AssetTag voption
       UserDefinedImage2Opt : Image AssetTag voption
-      TwoSidedOpt : bool voption
+      CullModeOpt : CullMode voption
       ClippedOpt : bool voption
+      BlendOpt : Blend voption
       PipelineNameOpt : string voption }
 
     member this.AlbedoImage = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialAlbedoName) this.AlbedoImageOpt
@@ -254,8 +255,9 @@ type [<SymbolicExpansion; CustomEquality; NoComparison>] Material =
     member this.UserDefinedImage0 = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialUserDefinedImage0Name) this.UserDefinedImage0Opt
     member this.UserDefinedImage1 = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialUserDefinedImage1Name) this.UserDefinedImage1Opt
     member this.UserDefinedImage2 = ValueOption.defaultValue (asset Assets.Default.PackageName Assets.Default.MaterialUserDefinedImage2Name) this.UserDefinedImage2Opt
-    member this.TwoSided = ValueOption.defaultValue false this.TwoSidedOpt
+    member this.CullMode = ValueOption.defaultValue CullBack this.CullModeOpt
     member this.Clipped = ValueOption.defaultValue false this.ClippedOpt
+    member this.Blend = ValueOption.defaultValue Transparent this.BlendOpt
     member this.PipelineName = ValueOption.defaultValue Constants.Render.PipelineNameDefault this.PipelineNameOpt
 
     /// Get the hash code for this material.
@@ -275,8 +277,9 @@ type [<SymbolicExpansion; CustomEquality; NoComparison>] Material =
         hash material.UserDefinedImage0Opt ^^^
         hash material.UserDefinedImage1Opt ^^^
         hash material.UserDefinedImage2Opt ^^^
-        hash material.TwoSidedOpt ^^^
+        hash material.CullModeOpt ^^^
         hash material.ClippedOpt ^^^
+        hash material.BlendOpt ^^^
         hash material.PipelineNameOpt
 
     /// Check that two materials are equal.
@@ -297,8 +300,9 @@ type [<SymbolicExpansion; CustomEquality; NoComparison>] Material =
         this.UserDefinedImage0Opt = that.UserDefinedImage0Opt &&
         this.UserDefinedImage1Opt = that.UserDefinedImage1Opt &&
         this.UserDefinedImage2Opt = that.UserDefinedImage2Opt &&
-        this.TwoSidedOpt = that.TwoSidedOpt &&
+        this.CullModeOpt = that.CullModeOpt &&
         this.ClippedOpt = that.ClippedOpt &&
+        this.BlendOpt = that.BlendOpt &&
         this.PipelineNameOpt = that.PipelineNameOpt
 
     /// The material with populated default images.
@@ -318,8 +322,9 @@ type [<SymbolicExpansion; CustomEquality; NoComparison>] Material =
           UserDefinedImage0Opt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialUserDefinedImage0Name)
           UserDefinedImage1Opt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialUserDefinedImage1Name)
           UserDefinedImage2Opt = ValueSome (asset Assets.Default.PackageName Assets.Default.MaterialUserDefinedImage2Name)
-          TwoSidedOpt = ValueSome false
+          CullModeOpt = ValueSome CullBack
           ClippedOpt = ValueSome false
+          BlendOpt = ValueSome Transparent
           PipelineNameOpt = ValueSome Constants.Render.PipelineNameDefault }
 
     /// The empty material.
@@ -339,8 +344,9 @@ type [<SymbolicExpansion; CustomEquality; NoComparison>] Material =
           UserDefinedImage0Opt = ValueNone
           UserDefinedImage1Opt = ValueNone
           UserDefinedImage2Opt = ValueNone
-          TwoSidedOpt = ValueNone
+          CullModeOpt = ValueNone
           ClippedOpt = ValueNone
+          BlendOpt = ValueNone
           PipelineNameOpt = ValueNone }
 
     override this.GetHashCode () =
@@ -549,8 +555,9 @@ type StaticModelSurfaceDescriptor =
       UserDefinedImage0 : Image AssetTag
       UserDefinedImage1 : Image AssetTag
       UserDefinedImage2 : Image AssetTag
-      TwoSided : bool
+      CullMode : CullMode
       Clipped : bool
+      Blend : Blend
       PipelineName : string }
 
 /// Describes how to create a user-defined static model.
@@ -1965,11 +1972,11 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let (blends, cullModes) =
             match descriptor.PipelineType with
             | DeferredStatic | DeferredStaticClipped | DeferredAnimated ->
-                ([|VulkanUnblended|], [|false; true|])
+                ([|VulkanUnblended|], [|CullNone; CullBack; CullFront|])
             | ForwardStatic | ForwardAnimated ->
-                ([|VulkanUnblended; VulkanTransparent; VulkanAdditive; VulkanSummation; VulkanOverwrite|], [|false; true|])
+                ([|VulkanUnblended; VulkanTransparent; VulkanAdditive; VulkanSummation; VulkanOverwrite|], [|CullNone; CullBack; CullFront|])
             | Terrain ->
-                ([|VulkanUnblended|], [|true|])
+                ([|VulkanUnblended|], [|CullBack|])
 
         let (colorAttachmentFormats, depthAttachmentFormat) =
             match descriptor.PipelineType with
@@ -2115,8 +2122,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                       UserDefinedImage0Texture = match VulkanRenderer3d.tryGetRenderAsset surfaceDescriptor.UserDefinedImage0 renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.UserDefinedImage0Texture
                       UserDefinedImage1Texture = match VulkanRenderer3d.tryGetRenderAsset surfaceDescriptor.UserDefinedImage1 renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.UserDefinedImage1Texture
                       UserDefinedImage2Texture = match VulkanRenderer3d.tryGetRenderAsset surfaceDescriptor.UserDefinedImage2 renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.UserDefinedImage2Texture
-                      TwoSided = surfaceDescriptor.TwoSided
+                      CullMode = surfaceDescriptor.CullMode
                       Clipped = surfaceDescriptor.Clipped
+                      Blend = surfaceDescriptor.Blend
                       PipelineName = surfaceDescriptor.PipelineName
                       Names = "" }
 
@@ -2558,8 +2566,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               UserDefinedImage0Texture = userDefinedImage0Texture
               UserDefinedImage1Texture = userDefinedImage1Texture
               UserDefinedImage2Texture = userDefinedImage2Texture
-              TwoSided = material.TwoSided
+              CullMode = material.CullMode
               Clipped = material.Clipped
+              Blend = material.Blend
               PipelineName = material.PipelineName
               Names = "" }
         struct (properties, material)
@@ -2670,14 +2679,18 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 | ValueSome (TextureAsset texture) -> texture
                 | _ -> surfaceMaterial.UserDefinedImage2Texture
             | ValueNone -> surfaceMaterial.UserDefinedImage2Texture
-        let twoSided =
-            match material.TwoSidedOpt with
-            | ValueSome twoSided -> twoSided
-            | ValueNone -> surfaceMaterial.TwoSided
+        let cullMode =
+            match material.CullModeOpt with
+            | ValueSome cullMode -> cullMode
+            | ValueNone -> surfaceMaterial.CullMode
         let clipped =
             match material.ClippedOpt with
             | ValueSome clipped -> clipped
             | ValueNone -> surfaceMaterial.Clipped
+        let blend =
+            match material.BlendOpt with
+            | ValueSome blend -> blend
+            | ValueNone -> surfaceMaterial.Blend
         let pipelineNameOpt =
             match material.PipelineNameOpt with
             | ValueSome pipelineName -> pipelineName
@@ -2698,8 +2711,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               UserDefinedImage0Texture = userDefinedImage0Texture
               UserDefinedImage1Texture = userDefinedImage1Texture
               UserDefinedImage2Texture = userDefinedImage2Texture
-              TwoSided = twoSided
+              CullMode = cullMode
               Clipped = clipped
+              Blend = blend
               PipelineName = pipelineNameOpt
               Names = "" }
         surfaceMaterial
@@ -5768,8 +5782,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               UserDefinedImage0Texture = userDefinedImage0Texture
               UserDefinedImage1Texture = userDefinedImage1Texture
               UserDefinedImage2Texture = userDefinedImage2Texture
-              TwoSided = false
+              CullMode = CullBack
               Clipped = false
+              Blend = Transparent
               PipelineName = Constants.Render.PipelineNameDefault
               Names = "" }
         
