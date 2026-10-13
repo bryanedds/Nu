@@ -117,6 +117,7 @@ module Effect =
                   IgnoreLightMaps = false
                   Flip = Unflipped
                   Brightness = Constants.Render.BrightnessDefault
+                  Specularity = 1.0f
                   LightCutoff = Constants.Render.LightCutoffDefault
                   Volume = Constants.Audio.SoundVolumeDefault
                   Enabled = true }

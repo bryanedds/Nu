@@ -60,6 +60,7 @@ type Slice =
       mutable IgnoreLightMaps : bool
       mutable Flip : Flip
       mutable Brightness : single
+      mutable Specularity : single
       mutable LightCutoff : single
       mutable Volume : single
       mutable Enabled : bool }
@@ -165,6 +166,7 @@ and Aspect =
     | IgnoreLightMaps of bool
     | Flip of Flip
     | Brightness of single
+    | Specularity of single
     | LightCutoff of single
     | Volume of single
     | Enableds of Applicator : LogicApplicator * Playback : Playback * KeyFrames : LogicKeyFrame array
@@ -181,6 +183,7 @@ and Aspect =
     | Emissions of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenCKeyFrame array
     | IgnoreLightMapses of Applicator : LogicApplicator * Playback : Playback * KeyFrames : LogicKeyFrame array
     | Brightnesses of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
+    | Specularities of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
     | LightCutoffs of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
     | Volumes of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
     | Expand of Name : string * Args : Argument array

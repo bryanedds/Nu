@@ -207,6 +207,7 @@ module EffectSystem =
         | IgnoreLightMaps ignoreLightMaps -> slice.IgnoreLightMaps <- ignoreLightMaps; slice
         | Flip flip -> slice.Flip <- flip; slice
         | Brightness brightness -> slice.Brightness <- brightness; slice
+        | Specularity specularity -> slice.Specularity <- specularity; slice
         | LightCutoff lightCutoff -> slice.LightCutoff <- lightCutoff; slice
         | Volume volume -> slice.Volume <- volume; slice
         | Enabled enabled -> slice.Enabled <- enabled; slice
@@ -311,6 +312,14 @@ module EffectSystem =
                 let tweened = tween (fun (x, y) -> x * single y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
                 let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.Brightness tweened applicator
                 slice.Brightness <- applied
+            slice
+        | Specularities (applicator, algorithm, playback, keyFrames) ->
+            if Array.notEmpty keyFrames then
+                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+                let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
+                let tweened = tween (fun (x, y) -> x * single y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
+                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.Specularity tweened applicator
+                slice.Specularity <- applied
             slice
         | LightCutoffs (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
@@ -480,7 +489,7 @@ module EffectSystem =
                           Brightness = slice.Brightness
                           AttenuationLinear = 1.0f / (slice.Brightness * slice.LightCutoff)
                           AttenuationQuadratic = 1.0f / (slice.Brightness * slice.LightCutoff * slice.LightCutoff)
-                          Specularity = 1.0f // TODO: P0: make this an aspect?
+                          Specularity = slice.Specularity
                           LightCutoff = slice.LightCutoff
                           LightType = lightType
                           DesireShadows = false }
