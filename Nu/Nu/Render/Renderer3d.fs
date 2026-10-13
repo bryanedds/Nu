@@ -4911,6 +4911,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         DeviceApi.vkCmdEndRendering renderer.VulkanContext.RenderCommandBuffer
 
         // deferred static surface rendering
+        // TODO: consider getting rid of frame-based allocation here.
         let pipelineNames =
             renderTasks.DeferredStatic.Keys
             |> Seq.append renderTasks.DeferredStaticPreBatches.Keys
@@ -4970,6 +4971,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             endBatch ()
 
         // deferred static surface clipped rendering
+        // TODO: consider getting rid of frame-based allocation here.
         let pipelineNames =
             renderTasks.DeferredStaticClipped.Keys
             |> Seq.append renderTasks.DeferredStaticClippedPreBatches.Keys
