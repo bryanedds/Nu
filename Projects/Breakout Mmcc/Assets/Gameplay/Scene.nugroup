@@ -7,11 +7,4 @@
    [[AmbientBrightness 0.5]
     [Name SkyBox]
     [Position [0 -2.5 0]]]
-   []]
-  [Light3dDispatcher
-   [[LightCutoff 8]
-    [LightType [DirectionalLight 0]]
-    [Name Light3d]
-    [Position [0 2.5 0]]
-    [Presence Omnipresent]]
    []]]]

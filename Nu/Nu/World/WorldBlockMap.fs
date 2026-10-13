@@ -133,7 +133,7 @@ type BlockMapDispatcher () =
                     let materialProperties = { MaterialProperties.empty with AlbedoOpt = ValueSome color }
                     World.renderStaticModelSurfaceFast
                         (&modelMatrix, blockMap.Config.CastShadows, Omnipresent, ValueNone, materialProperties, material,
-                         Assets.Default.StaticModel, 0, LessThanTest, DeferredRenderType, renderPass, world)
+                         Assets.Default.StaticModel, 0, DeferredRenderType, renderPass, world)
                 | None -> ()
 
             // render cursor when needed
@@ -162,7 +162,7 @@ type BlockMapDispatcher () =
                             let modelMatrix = Matrix4x4.CreateTranslation (position + offset)
                             World.renderStaticModelSurfaceFast
                                 (&modelMatrix, blockMap.Config.CastShadows, Omnipresent, ValueNone, materialProperties, material,
-                                 Assets.Default.StaticModel, 0, LessThanTest, DeferredRenderType, renderPass, world)
+                                 Assets.Default.StaticModel, 0, DeferredRenderType, renderPass, world)
                     | None -> ()
                 | None -> ()
             | Some _ | None -> ()

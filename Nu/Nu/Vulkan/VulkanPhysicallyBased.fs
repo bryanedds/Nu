@@ -175,13 +175,14 @@ type LightStruct =
     [<FieldOffset(44)>] val mutable brightness : single
     [<FieldOffset(48)>] val mutable attenuationLinear : single
     [<FieldOffset(52)>] val mutable attenuationQuadratic : single
-    [<FieldOffset(56)>] val mutable cutoff : single
-    [<FieldOffset(60)>] val mutable lightType : int
-    [<FieldOffset(64)>] val mutable radius : single
-    [<FieldOffset(68)>] val mutable coneInner : single
-    [<FieldOffset(72)>] val mutable coneOuter : single
-    [<FieldOffset(76)>] val mutable desireFog : int
-    [<FieldOffset(80)>] val mutable shadowIndex : int
+    [<FieldOffset(56)>] val mutable specularity : single
+    [<FieldOffset(60)>] val mutable cutoff : single
+    [<FieldOffset(64)>] val mutable lightType : int
+    [<FieldOffset(68)>] val mutable radius : single
+    [<FieldOffset(72)>] val mutable coneInner : single
+    [<FieldOffset(76)>] val mutable coneOuter : single
+    [<FieldOffset(80)>] val mutable desireFog : int
+    [<FieldOffset(84)>] val mutable shadowIndex : int
 
 [<Struct; StructLayout (LayoutKind.Explicit)>]
 type SsaoStruct =
@@ -295,8 +296,11 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial =
       UserDefinedImage0Texture : Texture
       UserDefinedImage1Texture : Texture
       UserDefinedImage2Texture : Texture
-      TwoSided : bool
+      CullMode : CullMode
       Clipped : bool
+      DepthTest : DepthTest
+      DepthWrite : bool
+      Blend : Blend
       PipelineName : string
       Names : string }
 
@@ -317,8 +321,11 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial =
           UserDefinedImage0Texture = Texture.EmptyTexture
           UserDefinedImage1Texture = Texture.EmptyTexture
           UserDefinedImage2Texture = Texture.EmptyTexture
-          TwoSided = false
+          CullMode = CullBack
           Clipped = false
+          DepthTest = LessThanTest
+          DepthWrite = true
+          Blend = Transparent
           PipelineName = Constants.Render.PipelineNameDefault
           Names = "" }
 
@@ -339,10 +346,13 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial =
         (hash material.UserDefinedImage0Texture <<<     12) ^^^
         (hash material.UserDefinedImage1Texture <<<     13) ^^^
         (hash material.UserDefinedImage2Texture <<<     14) ^^^
-        (hash material.TwoSided <<<                     15) ^^^
+        (hash material.CullMode <<<                     15) ^^^
         (hash material.Clipped <<<                      16) ^^^
-        (hash material.PipelineName <<<                 17) ^^^
-        (hash material.Names <<<                        18)
+        (hash material.DepthTest <<<                    17) ^^^
+        (hash material.DepthWrite <<<                   18) ^^^
+        (hash material.Blend <<<                        19) ^^^
+        (hash material.PipelineName <<<                 20) ^^^
+        (hash material.Names <<<                        21)
 
     /// Determing equality.
     static member equals left right =
@@ -362,8 +372,11 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial =
         left.UserDefinedImage0Texture = right.UserDefinedImage0Texture &&
         left.UserDefinedImage1Texture = right.UserDefinedImage1Texture &&
         left.UserDefinedImage2Texture = right.UserDefinedImage2Texture &&
-        left.TwoSided = right.TwoSided &&
+        left.CullMode = right.CullMode &&
         left.Clipped = right.Clipped &&
+        left.DepthTest = right.DepthTest &&
+        left.DepthWrite = right.DepthWrite &&
+        left.Blend = right.Blend &&
         left.PipelineName = right.PipelineName &&
         left.Names = right.Names
 
@@ -643,6 +656,7 @@ type PhysicallyBasedLight =
       LightBrightness : single
       LightAttenuationLinear : single
       LightAttenuationQuadratic : single
+      LightSpecularity : single
       LightCutoff : single
       LightType : LightType
       LightDesireShadows : bool }
@@ -941,7 +955,12 @@ module PhysicallyBased =
               Pipeline.attribute 11 Single4 (20 * sizeof<single>)
               Pipeline.attribute 12 Single4 (24 * sizeof<single>)
               Pipeline.attribute 13 Single4 (28 * sizeof<single>)
-              Pipeline.attribute 14 Single4 (32 * sizeof<single>)|]|]
+              Pipeline.attribute 14 Single4 (32 * sizeof<single>)
+              Pipeline.attribute 15 Single4 (36 * sizeof<single>)
+              Pipeline.attribute 16 Single4 (40 * sizeof<single>)
+              Pipeline.attribute 17 Single4 (44 * sizeof<single>)
+              Pipeline.attribute 18 Single4 (48 * sizeof<single>)
+              Pipeline.attribute 19 Single4 (52 * sizeof<single>)|]|]
 
     /// Create the attachments required for physically-based rendering.
     let createPhysicallyBasedAttachments (geometryViewport : Viewport) context =
@@ -1598,17 +1617,35 @@ module PhysicallyBased =
                     | Left _ -> defaultMaterial.UserDefinedImage2Texture
             | None -> defaultMaterial.UserDefinedImage2Texture
 
-        // compute two-sidedness
-        let twoSided =
-            match material.TwoSidedOpt with
-            | ValueSome twoSided -> twoSided
-            | ValueNone -> material.IsTwoSided
+        // compute cull mode
+        let cullMode =
+            match material.CullModeOpt with
+            | ValueSome cullMode -> cullMode
+            | ValueNone -> CullBack
 
         // compute clippedness
         let clipped =
             match material.ClippedOpt with
             | ValueSome clipped -> clipped
             | ValueNone -> false
+
+        // compute depth test
+        let depthTest =
+            match material.DepthTestOpt with
+            | ValueSome depthTest -> depthTest
+            | ValueNone -> LessThanTest
+
+        // compute depth write
+        let depthWrite =
+            match material.DepthWriteOpt with
+            | ValueSome depthWrite -> depthWrite
+            | ValueNone -> true
+
+        // compute blend mode
+        let blend =
+            match material.BlendOpt with
+            | ValueSome blend -> blend
+            | ValueNone -> Transparent
 
         // compute pipeline name override
         let pipelineName =
@@ -1673,8 +1710,11 @@ module PhysicallyBased =
               UserDefinedImage0Texture = userDefinedImage0Texture
               UserDefinedImage1Texture = userDefinedImage1Texture
               UserDefinedImage2Texture = userDefinedImage2Texture
-              TwoSided = twoSided
+              CullMode = cullMode
               Clipped = clipped
+              DepthTest = depthTest
+              DepthWrite = depthWrite
+              Blend = blend
               PipelineName = pipelineName
               Names = names }
 
@@ -2085,7 +2125,7 @@ module PhysicallyBased =
         let pipeline =
             Pipeline.create
                 shaderPath
-                [|VulkanUnblended|] [|false|] StaticVertices
+                [|VulkanUnblended|] [|CullNone|] StaticVertices
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 SampledImage FragmentStage 1|] // inputTexture
                   Pipeline.descriptorSet<Unit>
@@ -2115,7 +2155,7 @@ module PhysicallyBased =
         (context : VulkanContext) =
 
         // only draw when required vkPipeline exists
-        match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
+        match Pipeline.tryGetVkPipeline VulkanUnblended CullNone pipeline.Pipeline with
         | Some vkPipeline ->
 
             // specify texture
@@ -2175,7 +2215,7 @@ module PhysicallyBased =
         let pipeline =
             Pipeline.create
                 shaderFilePath
-                [|VulkanUnblended|] [|false|] StaticVertices
+                [|VulkanUnblended|] [|CullNone|] StaticVertices
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 SampledImage FragmentStage 1 // colorTexture
                       Pipeline.descriptor 1 SampledImage FragmentStage 1|] // depthTexture
@@ -2208,7 +2248,7 @@ module PhysicallyBased =
         (context : VulkanContext) =
 
         // only draw when required vkPipeline exists
-        match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
+        match Pipeline.tryGetVkPipeline VulkanUnblended CullNone pipeline.Pipeline with
         | Some vkPipeline ->
 
             // specify textures
@@ -2269,7 +2309,7 @@ module PhysicallyBased =
         let pipeline =
             Pipeline.create
                 shaderFilePath
-                [|VulkanUnblended|] [|false|] StaticVertices
+                [|VulkanUnblended|] [|CullNone|] StaticVertices
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 SampledImage FragmentStage 1 // downSampledColorTexture
                       Pipeline.descriptor 1 SampledImage FragmentStage 1 // downSampledDepthTexture
@@ -2303,7 +2343,7 @@ module PhysicallyBased =
         (context : VulkanContext) =
 
         // only draw when required vkPipeline exists
-        match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
+        match Pipeline.tryGetVkPipeline VulkanUnblended CullNone pipeline.Pipeline with
         | Some vkPipeline ->
 
             // specify textures
@@ -2368,7 +2408,7 @@ module PhysicallyBased =
         let pipeline =
             Pipeline.create
                 Constants.Paths.FilterGaussianEsmShaderFilePath
-                [|VulkanUnblended|] [|false|] StaticVertices
+                [|VulkanUnblended|] [|CullNone|] StaticVertices
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1|] // gaussianEsm
                   Pipeline.descriptorSet<int>
@@ -2403,7 +2443,7 @@ module PhysicallyBased =
         (context : VulkanContext) =
 
         // only draw when required vkPipeline exists
-        match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
+        match Pipeline.tryGetVkPipeline VulkanUnblended CullNone pipeline.Pipeline with
         | Some vkPipeline ->
 
             // specify gaussianEsm
@@ -2474,7 +2514,7 @@ module PhysicallyBased =
         let pipeline =
             Pipeline.create
                 Constants.Paths.FilterGaussianDofShaderFilePath
-                [|VulkanUnblended|] [|false|] StaticVertices
+                [|VulkanUnblended|] [|CullNone|] StaticVertices
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1|] // gaussianDof
                   Pipeline.descriptorSet<int>
@@ -2509,7 +2549,7 @@ module PhysicallyBased =
         (context : VulkanContext) =
 
         // only draw when required vkPipeline exists
-        match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
+        match Pipeline.tryGetVkPipeline VulkanUnblended CullNone pipeline.Pipeline with
         | Some vkPipeline ->
 
             // specify gaussianDof
@@ -2581,7 +2621,7 @@ module PhysicallyBased =
         let pipeline =
             Pipeline.create
                 Constants.Paths.FilterDepthOfFieldShaderFilePath
-                [|VulkanUnblended|] [|false|] StaticVertices
+                [|VulkanUnblended|] [|CullNone|] StaticVertices
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // eye
                       Pipeline.descriptor 1 UniformBuffer FragmentStage 1 // depthOfField
@@ -2633,7 +2673,7 @@ module PhysicallyBased =
         let viewProjection = view * projection
 
         // only draw when required vkPipeline exists
-        match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
+        match Pipeline.tryGetVkPipeline VulkanUnblended CullNone pipeline.Pipeline with
         | Some vkPipeline ->
 
             // specify uniforms
@@ -2716,7 +2756,7 @@ module PhysicallyBased =
         let pipeline =
             Pipeline.create
                 Constants.Paths.FilterBloomDownSampleShaderFilePath
-                [|VulkanUnblended|] [|false|] StaticVertices
+                [|VulkanUnblended|] [|CullNone|] StaticVertices
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // bloomDownSample
                       Pipeline.descriptor 1 SampledImage FragmentStage 1|] // inputTexture
@@ -2750,7 +2790,7 @@ module PhysicallyBased =
         (context : VulkanContext) =
 
         // only draw when required vkPipeline exists
-        match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
+        match Pipeline.tryGetVkPipeline VulkanUnblended CullNone pipeline.Pipeline with
         | Some vkPipeline ->
 
             // draw down-sample levels
@@ -2838,7 +2878,7 @@ module PhysicallyBased =
         let pipeline =
             Pipeline.create
                 Constants.Paths.FilterBloomUpSampleShaderFilePath
-                [|VulkanSummation|] [|false|] StaticVertices
+                [|VulkanSummation|] [|CullNone|] StaticVertices
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // bloomUpSample
                       Pipeline.descriptor 1 SampledImage FragmentStage 1|] // inputTexture
@@ -2870,7 +2910,7 @@ module PhysicallyBased =
         (context : VulkanContext) =
 
         // only draw when required vkPipeline exists
-        match Pipeline.tryGetVkPipeline VulkanSummation false pipeline.Pipeline with
+        match Pipeline.tryGetVkPipeline VulkanSummation CullNone pipeline.Pipeline with
         | Some vkPipeline ->
 
             // draw up-sample levels
@@ -2956,7 +2996,7 @@ module PhysicallyBased =
         let pipeline =
             Pipeline.create
                 Constants.Paths.FilterBloomExtractShaderFilePath
-                [|VulkanUnblended|] [|false|] StaticVertices
+                [|VulkanUnblended|] [|CullNone|] StaticVertices
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // bloomExtract
                       Pipeline.descriptor 1 SampledImage FragmentStage 1|] // inputTexture
@@ -2989,7 +3029,7 @@ module PhysicallyBased =
         (context : VulkanContext) =
 
         // only draw when required vkPipeline exists
-        match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
+        match Pipeline.tryGetVkPipeline VulkanUnblended CullNone pipeline.Pipeline with
         | Some vkPipeline ->
 
             // specify uniforms
@@ -3059,7 +3099,7 @@ module PhysicallyBased =
         let pipeline =
             Pipeline.create
                 Constants.Paths.FilterBloomApplyShaderFilePath
-                [|VulkanUnblended|] [|false|] StaticVertices
+                [|VulkanUnblended|] [|CullNone|] StaticVertices
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // bloomApply
                       Pipeline.descriptor 1 SampledImage FragmentStage 1 // bloomFilterTexture
@@ -3094,7 +3134,7 @@ module PhysicallyBased =
         (context : VulkanContext) =
 
         // only draw when required vkPipeline exists
-        match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
+        match Pipeline.tryGetVkPipeline VulkanUnblended CullNone pipeline.Pipeline with
         | Some vkPipeline ->
 
             // specify uniforms
@@ -3165,7 +3205,7 @@ module PhysicallyBased =
         let pipeline =
             Pipeline.create
                 Constants.Paths.FilterToneMappingShaderFilePath
-                [|VulkanUnblended|] [|false|] StaticVertices
+                [|VulkanUnblended|] [|CullNone|] StaticVertices
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // toneMapping
                       Pipeline.descriptor 1 SampledImage FragmentStage 1|] // inputTexture
@@ -3204,7 +3244,7 @@ module PhysicallyBased =
         (context : VulkanContext) =
 
         // only draw when required vkPipeline exists
-        match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
+        match Pipeline.tryGetVkPipeline VulkanUnblended CullNone pipeline.Pipeline with
         | Some vkPipeline ->
 
             // specify uniforms
@@ -3282,7 +3322,7 @@ module PhysicallyBased =
         let pipeline =
             Pipeline.create
                 Constants.Paths.FilterChromaticAberrationShaderFilePath
-                [|VulkanUnblended|] [|false|] StaticVertices
+                [|VulkanUnblended|] [|CullNone|] StaticVertices
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // chromaticAberration
                       Pipeline.descriptor 1 SampledImage FragmentStage 1|] // inputTexture
@@ -3316,7 +3356,7 @@ module PhysicallyBased =
         (context : VulkanContext) =
 
         // only draw when required vkPipeline exists
-        match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
+        match Pipeline.tryGetVkPipeline VulkanUnblended CullNone pipeline.Pipeline with
         | Some vkPipeline ->
 
             // specify uniforms
@@ -3386,7 +3426,7 @@ module PhysicallyBased =
         let pipeline =
             Pipeline.create
                 Constants.Paths.FilterFxaaShaderFilePath
-                [|VulkanUnblended|] [|false|] StaticVertices
+                [|VulkanUnblended|] [|CullNone|] StaticVertices
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // fxaa
                       Pipeline.descriptor 1 SampledImage FragmentStage 1|] // inputTexture
@@ -3421,7 +3461,7 @@ module PhysicallyBased =
         (context : VulkanContext) =
 
         // only draw when required vkPipeline exists
-        match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
+        match Pipeline.tryGetVkPipeline VulkanUnblended CullNone pipeline.Pipeline with
         | Some vkPipeline ->
 
             // specify uniforms
@@ -3488,7 +3528,7 @@ module PhysicallyBased =
         let pipeline =
             Pipeline.create
                 Constants.Paths.FilterGammaCorrectionShaderFilePath
-                [|VulkanUnblended|] [|false|] StaticVertices
+                [|VulkanUnblended|] [|CullNone|] StaticVertices
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 SampledImage FragmentStage 1|] // inputTexture
                   Pipeline.descriptorSet<Unit>
@@ -3517,7 +3557,7 @@ module PhysicallyBased =
         (context : VulkanContext) =
 
         // only draw when required vkPipeline exists
-        match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
+        match Pipeline.tryGetVkPipeline VulkanUnblended CullNone pipeline.Pipeline with
         | Some vkPipeline ->
 
             // specify uniforms
@@ -3571,7 +3611,7 @@ module PhysicallyBased =
         | None -> Log.warnOnce ("Cannot draw " + getTypeName pipeline + " because VkPipeline does not exist.")
 
     /// Create a physically-based shadow pipeline.
-    let createPhysicallyBasedShadowPipeline shaderPath vertexBindings colorAttachmentFormats depthTestFormat context =
+    let createPhysicallyBasedShadowPipeline shaderPath vertexBindings colorAttachmentFormats depthAttachmentFormat context =
 
         // create set 0 uniform buffers
         let shadowVertUniform = VulkanBuffer.create Uniform sizeof<ShadowVertStruct> context
@@ -3584,13 +3624,13 @@ module PhysicallyBased =
         let pipeline =
             Pipeline.create
                 shaderPath
-                [|VulkanUnblended|] [|false; true|] vertexBindings
+                [|VulkanUnblended|] [|CullNone; CullBack; CullFront|] vertexBindings
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer VertexStage 1
                       Pipeline.descriptor 1 UniformBuffer FragmentStage 1|]
                   Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer VertexStage 1|]|]
-                [||] colorAttachmentFormats (Some depthTestFormat)
+                [||] colorAttachmentFormats (Some depthAttachmentFormat)
                 [|shadowVertUniform; boneUniform; shadowFragUniform|]
 
         // make PhysicallyBasedDepthPipeline
@@ -3667,7 +3707,7 @@ module PhysicallyBased =
         if surfacesCount > 0 then
 
             // only draw when required vkPipeline exists
-            match Pipeline.tryGetVkPipeline VulkanUnblended (not material.TwoSided) pipeline.Pipeline with
+            match Pipeline.tryGetVkPipeline VulkanUnblended material.CullMode pipeline.Pipeline with
             | Some vkPipeline ->
 
                 // specify instancing
@@ -3687,6 +3727,7 @@ module PhysicallyBased =
                 // set up pipeline
                 DeviceApi.vkCmdBindPipeline (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
                 DeviceApi.vkCmdSetDepthTestEnable (context.RenderCommandBuffer, true)
+                DeviceApi.vkCmdSetDepthWriteEnable (context.RenderCommandBuffer, true)
                 DeviceApi.vkCmdSetDepthCompareOp (context.RenderCommandBuffer, VkCompareOp.Less)
 
                 // bind vertex and index buffers
@@ -3730,7 +3771,7 @@ module PhysicallyBased =
         VulkanContext.advanceRenderCommandBuffer context
 
     /// Create a physically-based pipeline.
-    let createPhysicallyBasedPipeline lightMapsMax lightsMax shaderPath blends cullModes vertexBindings colorAttachmentFormats depthTestFormat context =
+    let createPhysicallyBasedPipeline lightMapsMax lightsMax shaderPath blends cullModes vertexBindings colorAttachmentFormats depthAttachmentFormat context =
 
         // create set 0 uniform buffers
         let eyeUniform = VulkanBuffer.create Uniform sizeof<EyeStruct> context
@@ -3798,9 +3839,10 @@ module PhysicallyBased =
                       Pipeline.descriptor 2 Sampler FragmentStage 1
                       Pipeline.descriptor 3 Sampler FragmentStage 1
                       Pipeline.descriptor 4 Sampler FragmentStage 1
-                      Pipeline.descriptor 5 Sampler FragmentStage 1|]|]
+                      Pipeline.descriptor 5 Sampler FragmentStage 1
+                      Pipeline.descriptor 6 Sampler FragmentStage 1|]|]
 
-                [||] colorAttachmentFormats (Some depthTestFormat)
+                [||] colorAttachmentFormats (Some depthAttachmentFormat)
                 [|eyeUniform
                   lightingUniform
                   boneUniform
@@ -3832,7 +3874,7 @@ module PhysicallyBased =
         (eyeCenter : Vector3)
         (view : Matrix4x4)
         (projectionUnflipped : Matrix4x4)
-        (materialSampler : Sampler)
+        (materialSamplers : Sampler array)
         (loadOperation : LoadOperation)
         (colorAttachments : VkImageView array)
         (depthAttachment : Texture)
@@ -3855,7 +3897,11 @@ module PhysicallyBased =
 
         // specify samplers
         let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 3 Unit pipeline.Pipeline $ fun vkSet ->
-            Pipeline.writeDescriptorSampler 0 0 materialSampler vkSet
+            Pipeline.writeDescriptorSampler 0 0 materialSamplers[0] vkSet
+            Pipeline.writeDescriptorSampler 1 0 materialSamplers[1] vkSet
+            Pipeline.writeDescriptorSampler 2 0 materialSamplers[2] vkSet
+            Pipeline.writeDescriptorSampler 3 0 materialSamplers[3] vkSet
+            Pipeline.writeDescriptorSampler 4 0 materialSamplers[4] vkSet
             
         // set up render
         let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
@@ -3885,7 +3931,7 @@ module PhysicallyBased =
         if surfacesCount > 0 then
 
             // only draw when required vkPipeline exists
-            match Pipeline.tryGetVkPipeline VulkanUnblended (not material.TwoSided) pipeline.Pipeline with
+            match Pipeline.tryGetVkPipeline VulkanUnblended material.CullMode pipeline.Pipeline with
             | Some vkPipeline ->
 
                 // specify instancing
@@ -3922,8 +3968,9 @@ module PhysicallyBased =
 
                 // set up pipeline
                 DeviceApi.vkCmdBindPipeline (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
-                DeviceApi.vkCmdSetDepthTestEnable (context.RenderCommandBuffer, true)
-                DeviceApi.vkCmdSetDepthCompareOp (context.RenderCommandBuffer, VkCompareOp.Less)
+                DeviceApi.vkCmdSetDepthTestEnable (context.RenderCommandBuffer, not material.DepthTest.IsAlwaysPassTest)
+                DeviceApi.vkCmdSetDepthWriteEnable (context.RenderCommandBuffer, material.DepthWrite)
+                DeviceApi.vkCmdSetDepthCompareOp (context.RenderCommandBuffer, Pipeline.depthTestToVkCompareOp material.DepthTest)
 
                 // bind vertex and index buffers
                 let vertexBuffers = [|geometry.VertexBuffer.VkBuffer; geometry.InstanceBuffer.VkBuffer|]
@@ -3977,7 +4024,7 @@ module PhysicallyBased =
         let pipeline =
             Pipeline.create
                 shaderFilePath
-                [|VulkanUnblended|] [|true|] TerrainVertices
+                [|VulkanUnblended|] [|CullBack|] TerrainVertices
                 [|Pipeline.descriptorSet<int * int>
                     [|Pipeline.descriptor 0 UniformBuffer VertexAndFragmentStage 1 // eye
                       Pipeline.descriptor 1 UniformBuffer FragmentStage 1|] // terrainFrag
@@ -3990,7 +4037,11 @@ module PhysicallyBased =
                       Pipeline.descriptor 5 SampledImage FragmentStage 1 // userDefinedImage0Texture
                       Pipeline.descriptor 6 SampledImage FragmentStage 1|] // userDefinedImage1Texture
                   Pipeline.descriptorSet<Unit>
-                    [|Pipeline.descriptor 0 Sampler FragmentStage 1|]|]
+                    [|Pipeline.descriptor 0 Sampler FragmentStage 1
+                      Pipeline.descriptor 1 Sampler FragmentStage 1
+                      Pipeline.descriptor 2 Sampler FragmentStage 1
+                      Pipeline.descriptor 3 Sampler FragmentStage 1
+                      Pipeline.descriptor 4 Sampler FragmentStage 1|]|]
                 [||] colorAttachmentFormats (Some depthTest)
                 [|eyeUniform; terrainFragUniform|]
 
@@ -4021,7 +4072,7 @@ module PhysicallyBased =
         (materials : PhysicallyBasedMaterial array)
         (userDefinedImage0Texture : Texture)
         (userDefinedImage1Texture : Texture)
-        (materialSampler : Sampler)
+        (materialSamplers : Sampler array)
         (geometry : PhysicallyBasedGeometry)
         (colorAttachments : VkImageView array)
         (depthAttachment : Texture)
@@ -4050,7 +4101,7 @@ module PhysicallyBased =
         DeviceApi.vkCmdSetScissor (context.RenderCommandBuffer, 0u, 1u, &&renderArea)
 
         // only draw when required vkPipeline exists
-        match Pipeline.tryGetVkPipeline VulkanUnblended true pipeline.Pipeline with
+        match Pipeline.tryGetVkPipeline VulkanUnblended CullBack pipeline.Pipeline with
         | Some vkPipeline ->
 
             // specify uniforms
@@ -4085,7 +4136,11 @@ module PhysicallyBased =
 
             // specify samplers
             let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 2 Unit pipeline.Pipeline $ fun vkSet ->
-                Pipeline.writeDescriptorSampler 0 0 materialSampler vkSet
+                Pipeline.writeDescriptorSampler 0 0 materialSamplers[0] vkSet
+                Pipeline.writeDescriptorSampler 1 0 materialSamplers[1] vkSet
+                Pipeline.writeDescriptorSampler 2 0 materialSamplers[2] vkSet
+                Pipeline.writeDescriptorSampler 3 0 materialSamplers[3] vkSet
+                Pipeline.writeDescriptorSampler 4 0 materialSamplers[4] vkSet
 
             // specify instancing
             use instanceFieldsPin = new ArrayPin<_> (instanceFields)
@@ -4094,6 +4149,7 @@ module PhysicallyBased =
             // set up pipeline
             DeviceApi.vkCmdBindPipeline (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
             DeviceApi.vkCmdSetDepthTestEnable (context.RenderCommandBuffer, true)
+            DeviceApi.vkCmdSetDepthWriteEnable (context.RenderCommandBuffer, true)
             DeviceApi.vkCmdSetDepthCompareOp (context.RenderCommandBuffer, VkCompareOp.Less)
 
             // bind vertex and index buffers
@@ -4147,7 +4203,7 @@ module PhysicallyBased =
         let pipeline =
             Pipeline.create
                 Constants.Paths.PhysicallyBasedDeferredLightingShaderFilePath
-                [|VulkanUnblended|] [|false|] StaticVertices
+                [|VulkanUnblended|] [|CullNone|] StaticVertices
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // eye
                       Pipeline.descriptor 1 UniformBuffer FragmentStage 1 // lighting
@@ -4214,6 +4270,7 @@ module PhysicallyBased =
         (lightBrightnesses : single array)
         (lightAttenuationLinears : single array)
         (lightAttenuationQuadratics : single array)
+        (lightSpecularities : single array)
         (lightCutoffs : single array)
         (lightTypes : int array)
         (lightRadii : single array)
@@ -4240,7 +4297,7 @@ module PhysicallyBased =
         let viewProjection = view * projection
 
         // only draw when required vkPipeline exists
-        match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
+        match Pipeline.tryGetVkPipeline VulkanUnblended CullNone pipeline.Pipeline with
         | Some vkPipeline ->
 
             // specify uniforms
@@ -4277,6 +4334,7 @@ module PhysicallyBased =
                         light.brightness <- lightBrightnesses[i]
                         light.attenuationLinear <- lightAttenuationLinears[i]
                         light.attenuationQuadratic <- lightAttenuationQuadratics[i]
+                        light.specularity <- lightSpecularities[i]
                         light.cutoff <- lightCutoffs[i]
                         light.lightType <- lightTypes[i]
                         light.radius <- lightRadii[i]
@@ -4371,7 +4429,7 @@ module PhysicallyBased =
         let pipeline =
             Pipeline.create
                 Constants.Paths.PhysicallyBasedDeferredFoggingShaderFilePath
-                [|VulkanUnblended|] [|false|] StaticVertices
+                [|VulkanUnblended|] [|CullNone|] StaticVertices
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // eye
                       Pipeline.descriptor 1 UniformBuffer FragmentStage 1 // lighting
@@ -4425,6 +4483,7 @@ module PhysicallyBased =
         (lightBrightnesses : single array)
         (lightAttenuationLinears : single array)
         (lightAttenuationQuadratics : single array)
+        (lightSpecularities : single array)
         (lightCutoffs : single array)
         (lightTypes : int array)
         (lightRadii : single array)
@@ -4450,7 +4509,7 @@ module PhysicallyBased =
         let viewProjection = view * projection
 
         // only draw when required vkPipeline exists
-        match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
+        match Pipeline.tryGetVkPipeline VulkanUnblended CullNone pipeline.Pipeline with
         | Some vkPipeline ->
 
             // specify uniforms
@@ -4490,6 +4549,7 @@ module PhysicallyBased =
                         light.brightness <- lightBrightnesses[i]
                         light.attenuationLinear <- lightAttenuationLinears[i]
                         light.attenuationQuadratic <- lightAttenuationQuadratics[i]
+                        light.specularity <- lightSpecularities[i]
                         light.cutoff <- lightCutoffs[i]
                         light.lightType <- lightTypes[i]
                         light.radius <- lightRadii[i]
@@ -4574,7 +4634,7 @@ module PhysicallyBased =
         let pipeline =
             Pipeline.create
                 Constants.Paths.PhysicallyBasedDeferredLightMappingShaderFilePath
-                [|VulkanUnblended|] [|false|] StaticVertices
+                [|VulkanUnblended|] [|CullNone|] StaticVertices
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // eye
                       Pipeline.descriptor 1 UniformBuffer FragmentStage 1 // lightMaps
@@ -4630,7 +4690,7 @@ module PhysicallyBased =
         let viewProjection = view * projection
 
         // only draw when required vkPipeline exists
-        match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
+        match Pipeline.tryGetVkPipeline VulkanUnblended CullNone pipeline.Pipeline with
         | Some vkPipeline ->
 
             // specify uniforms
@@ -4726,7 +4786,7 @@ module PhysicallyBased =
         let pipeline =
             Pipeline.create
                 Constants.Paths.PhysicallyBasedDeferredAmbientShaderFilePath
-                [|VulkanUnblended|] [|false|] StaticVertices
+                [|VulkanUnblended|] [|CullNone|] StaticVertices
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // eye
                       Pipeline.descriptor 1 UniformBuffer FragmentStage 1 // lightMap
@@ -4778,7 +4838,7 @@ module PhysicallyBased =
         let viewProjection = view * projection
 
         // only draw when required vkPipeline exists
-        match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
+        match Pipeline.tryGetVkPipeline VulkanUnblended CullNone pipeline.Pipeline with
         | Some vkPipeline ->
 
             // specify uniforms
@@ -4867,7 +4927,7 @@ module PhysicallyBased =
         let pipeline =
             Pipeline.create
                 Constants.Paths.PhysicallyBasedDeferredIrradianceShaderFilePath
-                [|VulkanUnblended|] [|false|] StaticVertices
+                [|VulkanUnblended|] [|CullNone|] StaticVertices
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // eye
                       Pipeline.descriptor 1 SampledImage FragmentStage 1 // depth
@@ -4919,7 +4979,7 @@ module PhysicallyBased =
         let viewProjection = view * projection
 
         // only draw when required vkPipeline exists
-        match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
+        match Pipeline.tryGetVkPipeline VulkanUnblended CullNone pipeline.Pipeline with
         | Some vkPipeline ->
 
             // specify uniforms
@@ -4995,7 +5055,7 @@ module PhysicallyBased =
         let pipeline =
             Pipeline.create
                 Constants.Paths.PhysicallyBasedDeferredEnvironmentFilterShaderFilePath
-                [|VulkanUnblended|] [|false|] StaticVertices
+                [|VulkanUnblended|] [|CullNone|] StaticVertices
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // eye
                       Pipeline.descriptor 1 UniformBuffer FragmentStage 1 // lightMaps
@@ -5058,7 +5118,7 @@ module PhysicallyBased =
         let viewProjection = view * projection
 
         // only draw when required vkPipeline exists
-        match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
+        match Pipeline.tryGetVkPipeline VulkanUnblended CullNone pipeline.Pipeline with
         | Some vkPipeline ->
 
             // specify uniforms
@@ -5151,7 +5211,7 @@ module PhysicallyBased =
         let pipeline =
             Pipeline.create
                 Constants.Paths.PhysicallyBasedDeferredSsaoShaderFilePath
-                [|VulkanUnblended|] [|false|] StaticVertices
+                [|VulkanUnblended|] [|CullNone|] StaticVertices
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // eye
                       Pipeline.descriptor 1 UniformBuffer FragmentStage 1 // ssao
@@ -5202,7 +5262,7 @@ module PhysicallyBased =
         let viewProjection = view * projection
 
         // only draw when required vkPipeline exists
-        match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
+        match Pipeline.tryGetVkPipeline VulkanUnblended CullNone pipeline.Pipeline with
         | Some vkPipeline ->
 
             // specify uniforms
@@ -5279,7 +5339,7 @@ module PhysicallyBased =
         let pipeline =
             Pipeline.create
                 Constants.Paths.PhysicallyBasedDeferredColoringShaderFilePath
-                [|VulkanUnblended|] [|false|] StaticVertices
+                [|VulkanUnblended|] [|CullNone|] StaticVertices
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // eye
                       Pipeline.descriptor 1 UniformBuffer FragmentStage 1 // lighting
@@ -5351,8 +5411,7 @@ module PhysicallyBased =
         (ssaoTexture : Texture)
         (unfilteredSampler : Sampler)
         (filteredSampler : Sampler)
-        (coloringAttachment : Texture)
-        (depthAttachment : Texture)
+        (colorAttachments : VkImageView array)
         (resolution : Vector2i)
         (renderPassIndex : int)
         (geometry : PhysicallyBasedGeometry)
@@ -5366,7 +5425,7 @@ module PhysicallyBased =
         let viewProjection = view * projection
 
         // only draw when required vkPipeline exists
-        match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
+        match Pipeline.tryGetVkPipeline VulkanUnblended CullNone pipeline.Pipeline with
         | Some vkPipeline ->
 
             // specify uniforms
@@ -5422,7 +5481,7 @@ module PhysicallyBased =
             // set up render
             let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
-            Hl.withRenderingInfo [|coloringAttachment.ImageView; depthAttachment.ImageView|] None renderArea (ClearAttachments Constants.Render.ViewportClearColor) $ fun renderingInfo ->
+            Hl.withRenderingInfo colorAttachments None renderArea (ClearAttachments Constants.Render.ViewportClearColor) $ fun renderingInfo ->
                 let mutable renderingInfo = renderingInfo
                 DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
             DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
@@ -5473,7 +5532,7 @@ module PhysicallyBased =
         let pipeline =
             Pipeline.create
                 Constants.Paths.PhysicallyBasedDeferredCompositionShaderFilePath
-                [|VulkanUnblended|] [|false|] StaticVertices
+                [|VulkanUnblended|] [|CullNone|] StaticVertices
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // eye
                       Pipeline.descriptor 1 UniformBuffer FragmentStage 1 // lighting
@@ -5529,7 +5588,7 @@ module PhysicallyBased =
         let viewProjection = view * projection
 
         // only draw when required vkPipeline exists
-        match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
+        match Pipeline.tryGetVkPipeline VulkanUnblended CullNone pipeline.Pipeline with
         | Some vkPipeline ->
 
             // specify uniforms
@@ -5646,9 +5705,9 @@ module PhysicallyBased =
         (environmentFilterMap : Texture)
         (unfilteredSampler : Sampler)
         (filteredSampler : Sampler)
-        (materialSampler : Sampler)
-        (colorAttachment : Texture)
-        (depthAttachment : Texture)
+        (materialSamplers : Sampler array)
+        (colorAttachments : VkImageView array)
+        (depthAttachment : VkImageView)
         (resolution : Vector2i)
         (renderPassIndex : int)
         (pipeline : PhysicallyBasedPipeline)
@@ -5714,12 +5773,16 @@ module PhysicallyBased =
         let mutable samplersDescriptorSet = Pipeline.specifyDescriptorSet 3 Unit pipeline.Pipeline $ fun vkSet ->
             Pipeline.writeDescriptorSampler 0 0 unfilteredSampler vkSet
             Pipeline.writeDescriptorSampler 1 0 filteredSampler vkSet
-            Pipeline.writeDescriptorSampler 2 0 materialSampler vkSet
+            Pipeline.writeDescriptorSampler 2 0 materialSamplers[0] vkSet
+            Pipeline.writeDescriptorSampler 3 0 materialSamplers[1] vkSet
+            Pipeline.writeDescriptorSampler 4 0 materialSamplers[2] vkSet
+            Pipeline.writeDescriptorSampler 5 0 materialSamplers[3] vkSet
+            Pipeline.writeDescriptorSampler 6 0 materialSamplers[4] vkSet
 
         // set up render
         let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
         let mutable vkViewport = Hl.makeViewport false renderArea
-        Hl.withRenderingInfo [|colorAttachment.ImageView|] (Some depthAttachment.ImageView) renderArea LoadAttachments $ fun renderingInfo ->
+        Hl.withRenderingInfo colorAttachments (Some depthAttachment) renderArea LoadAttachments $ fun renderingInfo ->
             let mutable renderingInfo = renderingInfo
             DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
         DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
@@ -5753,6 +5816,7 @@ module PhysicallyBased =
         (lightBrightnesses : single array)
         (lightAttenuationLinears : single array)
         (lightAttenuationQuadratics : single array)
+        (lightSpecularities : single array)
         (lightCutoffs : single array)
         (lightTypes : int array)
         (lightRadii : single array)
@@ -5764,16 +5828,14 @@ module PhysicallyBased =
         (shadowMatrices : Matrix4x4 array)
         (material : PhysicallyBasedMaterial)
         (geometry : PhysicallyBasedGeometry)
-        (depthTest : DepthTest)
-        (blending : bool)
         (uniformsDescriptorSet : VkDescriptorSet)
         (samplersDescriptorSet : VkDescriptorSet)
         (pipeline : PhysicallyBasedPipeline)
         (context : VulkanContext) =
 
         // only draw when required vkPipeline exists
-        let blend = if blending then VulkanTransparent else VulkanUnblended
-        match Pipeline.tryGetVkPipeline blend (not material.TwoSided) pipeline.Pipeline with
+        let blend = Pipeline.blendToVkBlend material.Blend
+        match Pipeline.tryGetVkPipeline blend material.CullMode pipeline.Pipeline with
         | Some vkPipeline ->
 
             // specify instancing
@@ -5838,6 +5900,7 @@ module PhysicallyBased =
                         light.brightness <- lightBrightnesses[i]
                         light.attenuationLinear <- lightAttenuationLinears[i]
                         light.attenuationQuadratic <- lightAttenuationQuadratics[i]
+                        light.specularity <- lightSpecularities[i]
                         light.cutoff <- lightCutoffs[i]
                         light.lightType <- lightTypes[i]
                         light.radius <- lightRadii[i]
@@ -5865,8 +5928,9 @@ module PhysicallyBased =
 
             // set up pipeline
             DeviceApi.vkCmdBindPipeline (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
-            DeviceApi.vkCmdSetDepthTestEnable (context.RenderCommandBuffer, not depthTest.IsAlwaysPassTest)
-            DeviceApi.vkCmdSetDepthCompareOp (context.RenderCommandBuffer, Pipeline.depthTestToVkCompareOp depthTest)
+            DeviceApi.vkCmdSetDepthTestEnable (context.RenderCommandBuffer, not material.DepthTest.IsAlwaysPassTest)
+            DeviceApi.vkCmdSetDepthWriteEnable (context.RenderCommandBuffer, material.DepthWrite)
+            DeviceApi.vkCmdSetDepthCompareOp (context.RenderCommandBuffer, Pipeline.depthTestToVkCompareOp material.DepthTest)
 
             // bind vertex and index buffers
             let vertexBuffers = [|geometry.VertexBuffer.VkBuffer; geometry.InstanceBuffer.VkBuffer|]
@@ -6052,7 +6116,7 @@ module PhysicallyBased =
                 lightsMax
                 Constants.Paths.PhysicallyBasedDeferredStaticShaderFilePath
                 [|VulkanUnblended|]
-                [|false; true|]
+                [|CullNone; CullBack; CullFront|]
                 StaticVertices
                 deferredColorAttachmentFormats
                 depthBuffer.VkFormat
@@ -6065,7 +6129,7 @@ module PhysicallyBased =
                 lightsMax
                 Constants.Paths.PhysicallyBasedDeferredStaticClippedShaderFilePath
                 [|VulkanUnblended|]
-                [|false; true|]
+                [|CullNone; CullBack; CullFront|]
                 StaticVertices
                 deferredColorAttachmentFormats
                 depthBuffer.VkFormat
@@ -6078,7 +6142,7 @@ module PhysicallyBased =
                 lightsMax
                 Constants.Paths.PhysicallyBasedDeferredAnimatedShaderFilePath
                 [|VulkanUnblended|]
-                [|false; true|]
+                [|CullNone; CullBack; CullFront|]
                 AnimatedVertices
                 deferredColorAttachmentFormats
                 depthBuffer.VkFormat
@@ -6111,9 +6175,9 @@ module PhysicallyBased =
                 Constants.Render.LightsMaxForward
                 Constants.Paths.PhysicallyBasedForwardStaticShaderFilePath
                 [|VulkanUnblended; VulkanTransparent; VulkanAdditive; VulkanSummation; VulkanOverwrite|]
-                [|false; true|]
+                [|CullNone; CullBack; CullFront|]
                 StaticVertices
-                [|composition.VkFormat|]
+                [|depth.VkFormat; composition.VkFormat|]
                 depthBuffer.VkFormat
                 context
 
@@ -6124,9 +6188,9 @@ module PhysicallyBased =
                 Constants.Render.LightsMaxForward
                 Constants.Paths.PhysicallyBasedForwardAnimatedShaderFilePath
                 [|VulkanUnblended; VulkanTransparent; VulkanAdditive; VulkanSummation; VulkanOverwrite|]
-                [|false; true|]
+                [|CullNone; CullBack; CullFront|]
                 AnimatedVertices
-                [|composition.VkFormat|]
+                [|depth.VkFormat; composition.VkFormat|]
                 depthBuffer.VkFormat
                 context
         
@@ -6395,6 +6459,7 @@ type PhysicallyBasedSceneClient () =
                                       LightBrightness = Constants.Render.BrightnessDefault // TODO: figure out if we can populate this properly.
                                       LightAttenuationLinear = if light.AttenuationLinear > 0.0f then light.AttenuationLinear else Constants.Render.AttenuationLinearDefault
                                       LightAttenuationQuadratic = if light.AttenuationQuadratic > 0.0f then light.AttenuationQuadratic else Constants.Render.AttenuationQuadraticDefault
+                                      LightSpecularity = 1.0f
                                       LightCutoff = Constants.Render.LightCutoffDefault // TODO: figure out if we can populate this properly.
                                       LightType = lightType
                                       LightDesireShadows = false }

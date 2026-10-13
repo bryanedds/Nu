@@ -75,13 +75,6 @@ type GameplayDispatcher () =
             // declare scene group
             World.beginGroupFromFile "Scene" "Assets/Gameplay/Scene.nugroup" [] world
 
-            // declare sky box
-            World.doSkyBox "SkyBox" [] world
-
-            // declare background model
-            let rotation = Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, world.UpdateTime % 360L |> single |> degToRadF)
-            World.doStaticModel "StaticModel" [Entity.Scale .= v3Dup 0.5f; Entity.Rotation @= rotation] world
-
             // declare walls
             let (leftWallBodyId, _) =
                 World.doBlockBody2d "LeftWall"

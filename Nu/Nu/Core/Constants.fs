@@ -38,8 +38,11 @@ module Assimp =
     let [<Literal>] ClearCoatPropertyName = RawPropertyPrefix + "ClearCoat"
     let [<Literal>] ClearCoatRoughnessPropertyName = RawPropertyPrefix + "ClearCoatRoughness"
     let [<Literal>] UserDefinedSettingPropertyName = RawPropertyPrefix + "UserDefinedSetting"
-    let [<Literal>] TwoSidedPropertyName = RawPropertyPrefix + "TwoSided"
+    let [<Literal>] CullModePropertyName = RawPropertyPrefix + "CullMode"
     let [<Literal>] ClippedPropertyName = RawPropertyPrefix + "Clipped"
+    let [<Literal>] DepthTestPropertyName = RawPropertyPrefix + "DepthTest"
+    let [<Literal>] DepthWritePropertyName = RawPropertyPrefix + "DepthWrite"
+    let [<Literal>] BlendPropertyName = RawPropertyPrefix + "Blend"
     let [<Literal>] PipelineNamePropertyName = RawPropertyPrefix + "PipelineName"
     let [<Literal>] NavShapePropertyName = RawPropertyPrefix + "NavShape"
 

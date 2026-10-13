@@ -777,14 +777,14 @@ module Metadata =
         | ValueNone -> ValueNone
 
     /// Thread-safe.
-    let private tryGetModelTwoSided materialIndex model =
+    let private tryGetModelCullMode materialIndex model =
         match tryGetModelMetadata model with
         | ValueSome modelMetadata ->
             match modelMetadata.SceneOpt with
             | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
                 let material = scene.Materials[materialIndex]
-                match material.TwoSidedOpt with
-                | ValueSome twoSided -> ValueSome twoSided
+                match material.CullModeOpt with
+                | ValueSome cullMode -> ValueSome cullMode
                 | ValueNone -> ValueNone
             | Some _ | None -> ValueNone
         | ValueNone -> ValueNone
@@ -798,6 +798,42 @@ module Metadata =
                 let material = scene.Materials[materialIndex]
                 match material.ClippedOpt with
                 | ValueSome clipped -> ValueSome clipped
+                | ValueNone -> ValueNone
+            | Some _ | None -> ValueNone
+        | ValueNone -> ValueNone
+
+    let private tryGetModelDepthTest materialIndex model =
+        match tryGetModelMetadata model with
+        | ValueSome modelMetadata ->
+            match modelMetadata.SceneOpt with
+            | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
+                let material = scene.Materials[materialIndex]
+                match material.DepthTestOpt with
+                | ValueSome depthTest -> ValueSome depthTest
+                | ValueNone -> ValueNone
+            | Some _ | None -> ValueNone
+        | ValueNone -> ValueNone
+
+    let private tryGetModelDepthWrite materialIndex model =
+        match tryGetModelMetadata model with
+        | ValueSome modelMetadata ->
+            match modelMetadata.SceneOpt with
+            | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
+                let material = scene.Materials[materialIndex]
+                match material.DepthWriteOpt with
+                | ValueSome depthWrite -> ValueSome depthWrite
+                | ValueNone -> ValueNone
+            | Some _ | None -> ValueNone
+        | ValueNone -> ValueNone
+
+    let private tryGetModelBlend materialIndex model =
+        match tryGetModelMetadata model with
+        | ValueSome modelMetadata ->
+            match modelMetadata.SceneOpt with
+            | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
+                let material = scene.Materials[materialIndex]
+                match material.BlendOpt with
+                | ValueSome blendMode -> ValueSome blendMode
                 | ValueNone -> ValueNone
             | Some _ | None -> ValueNone
         | ValueNone -> ValueNone
@@ -916,15 +952,30 @@ module Metadata =
     let tryGetStaticModelScatterImage materialIndex (staticModel : StaticModel AssetTag) =
         tryGetModelScatterImage materialIndex staticModel
 
-    /// Attempt to get the two-sided property for the given material index and static model.
+    /// Attempt to get the cull mode for the given material index and static model.
     /// Thread-safe.
-    let tryGetStaticModelTwoSided materialIndex (staticModel : StaticModel AssetTag) =
-        tryGetModelTwoSided materialIndex staticModel
+    let tryGetStaticModelCullMode materialIndex (staticModel : StaticModel AssetTag) =
+        tryGetModelCullMode materialIndex staticModel
 
     /// Attempt to get the clipped property for the given material index and static model.
     /// Thread-safe.
     let tryGetStaticModelClipped materialIndex (staticModel : StaticModel AssetTag) =
         tryGetModelClipped materialIndex staticModel
+
+    /// Attempt to get the depth test for the given material index and static model.
+    /// Thread-safe.
+    let tryGetStaticModelDepthTest materialIndex (staticModel : StaticModel AssetTag) =
+        tryGetModelDepthTest materialIndex staticModel
+
+    /// Attempt to get the depth write for the given material index and static model.
+    /// Thread-safe.
+    let tryGetStaticModelDepthWrite materialIndex (staticModel : StaticModel AssetTag) =
+        tryGetModelDepthWrite materialIndex staticModel
+
+    /// Attempt to get the blend property for the given material index and static model.
+    /// Thread-safe.
+    let tryGetStaticModelBlend materialIndex (staticModel : StaticModel AssetTag) =
+        tryGetModelBlend materialIndex staticModel
 
     /// Attempt to get the pipeline name for the given material index and static model.
     /// Thread-safe.
@@ -1023,10 +1074,25 @@ module Metadata =
     let tryGetAnimatedModelUserDefinedImage2 materialIndex (animatedModel : AnimatedModel AssetTag) =
         tryGetModelUserDefinedImage2 materialIndex animatedModel
 
-    /// Attempt to get the two-sided property for the given material index and animated model.
+    /// Attempt to get the cull mode for the given material index and animated model.
     /// Thread-safe.
-    let tryGetAnimatedModelTwoSided materialIndex (animatedModel : AnimatedModel AssetTag) =
-        tryGetModelTwoSided materialIndex animatedModel
+    let tryGetAnimatedModelCullMode materialIndex (animatedModel : AnimatedModel AssetTag) =
+        tryGetModelCullMode materialIndex animatedModel
+
+    /// Attempt to get the depth test for the given material index and animated model.
+    /// Thread-safe.
+    let tryGetAnimatedModelDepthTest materialIndex (animatedModel : AnimatedModel AssetTag) =
+        tryGetModelDepthTest materialIndex animatedModel
+
+    /// Attempt to get the depth write for the given material index and animated model.
+    /// Thread-safe.
+    let tryGetAnimatedModelDepthWrite materialIndex (animatedModel : AnimatedModel AssetTag) =
+        tryGetModelDepthWrite materialIndex animatedModel
+
+    /// Attempt to get the blend property for the given material index and animated model.
+    /// Thread-safe.
+    let tryGetAnimatedModelBlend materialIndex (animatedModel : AnimatedModel AssetTag) =
+        tryGetModelBlend materialIndex animatedModel
 
     /// Attempt to get the pipeline name for the given material index and animated model.
     /// Thread-safe.
