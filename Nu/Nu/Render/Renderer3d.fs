@@ -503,7 +503,6 @@ type CachedStaticModelSurfaceMessage =
       mutable CachedStaticModelSurfaceRenderPass : RenderPass }
 
 /// An internally cached animated model used to reduce GC promotion or pressure.
-/// TODO: P0: add a corresponding workflow for AnimatedModelSurface.
 type CachedAnimatedModelMessage =
     { mutable CachedAnimatedModelMatrix : Matrix4x4
       mutable CachedAnimatedModelCastShadow : bool
@@ -517,6 +516,21 @@ type CachedAnimatedModelMessage =
       mutable CachedAnimatedModelDualRenderedSurfaces : Map<int, MaterialProperties option>
       mutable CachedAnimatedModelRenderType : RenderType
       mutable CachedAnimatedModelRenderPass : RenderPass }
+
+/// An internally cached animated model surface used to reduce GC promotion or pressure.
+type CachedAnimatedModelSurfaceMessage =
+    { mutable CachedAnimatedModelSurfaceMatrix : Matrix4x4
+      mutable CachedAnimatedModelSurfaceCastShadow : bool
+      mutable CachedAnimatedModelSurfacePresence : Presence
+      mutable CachedAnimatedModelSurfaceInsetOpt : Box2 voption
+      mutable CachedAnimatedModelSurfaceMaterial : Material
+      mutable CachedAnimatedModelSurfaceMaterialProperties : MaterialProperties
+      mutable CachedAnimatedModelSurfaceBoneTransforms : Matrix4x4 array
+      mutable CachedAnimatedModelSurfaceModel : AnimatedModel AssetTag
+      mutable CachedAnimatedModelSurfaceIndex : int
+      mutable CachedAnimatedModelSurfaceDualRendering : bool
+      mutable CachedAnimatedModelSurfaceRenderType : RenderType
+      mutable CachedAnimatedModelSurfaceRenderPass : RenderPass }
 
 /// Describes a user-defined 3D rendering pipeline.
 type UserDefinedPipeline3dDescriptor =
@@ -982,6 +996,7 @@ type RenderMessage3d =
     | RenderAnimatedModel of RenderAnimatedModel
     | RenderAnimatedModels of RenderAnimatedModels
     | RenderCachedAnimatedModel of CachedAnimatedModelMessage
+    | RenderCachedAnimatedModelSurface of CachedAnimatedModelSurfaceMessage
     | RenderTerrain of RenderTerrain
     | ConfigureLighting3d of Lighting3dConfig
     | ConfigureRenderer3d of Renderer3dConfig
@@ -3622,11 +3637,11 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 for (model, castShadow, presence, insetOpt, properties, material) in rsms.StaticModels do // TODO: see if these should be struct tuples.
                     let insetOpt = Option.toValueOption insetOpt
                     VulkanRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, &model, castShadow, presence, &insetOpt, properties, material, rsms.StaticModel, rsms.RenderType, rsms.RenderPass, renderTasks, renderer)
-            | RenderCachedStaticModelSurface csmsm ->
-                VulkanRenderer3d.categorizeStaticModelSurfaceByIndex (&csmsm.CachedStaticModelSurfaceMatrix, csmsm.CachedStaticModelSurfaceCastShadow, csmsm.CachedStaticModelSurfacePresence, &csmsm.CachedStaticModelSurfaceInsetOpt, csmsm.CachedStaticModelSurfaceMaterial, csmsm.CachedStaticModelSurfaceMaterialProperties, csmsm.CachedStaticModelSurfaceModel, csmsm.CachedStaticModelSurfaceIndex, csmsm.CachedStaticModelSurfaceRenderType, csmsm.CachedStaticModelSurfaceRenderPass, renderer)
             | RenderCachedStaticModel csmm ->
                 let renderTasks = VulkanRenderer3d.getRenderTasks csmm.CachedStaticModelRenderPass renderer
                 VulkanRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, &csmm.CachedStaticModelMatrix, csmm.CachedStaticModelCastShadow, csmm.CachedStaticModelPresence, &csmm.CachedStaticModelInsetOpt, csmm.CachedStaticModelMaterial, csmm.CachedStaticModelMaterialProperties, csmm.CachedStaticModel, csmm.CachedStaticModelRenderType, csmm.CachedStaticModelRenderPass, renderTasks, renderer)
+            | RenderCachedStaticModelSurface csmsm ->
+                VulkanRenderer3d.categorizeStaticModelSurfaceByIndex (&csmsm.CachedStaticModelSurfaceMatrix, csmsm.CachedStaticModelSurfaceCastShadow, csmsm.CachedStaticModelSurfacePresence, &csmsm.CachedStaticModelSurfaceInsetOpt, csmsm.CachedStaticModelSurfaceMaterial, csmsm.CachedStaticModelSurfaceMaterialProperties, csmsm.CachedStaticModelSurfaceModel, csmsm.CachedStaticModelSurfaceIndex, csmsm.CachedStaticModelSurfaceRenderType, csmsm.CachedStaticModelSurfaceRenderPass, renderer)
             | RenderUserDefinedStaticModel rudsm ->
                 let insetOpt = Option.toValueOption rudsm.InsetOpt
                 let assetTag = asset Assets.Default.PackageName Gen.name // TODO: see if we should instead use a specialized package for temporary assets like these.
@@ -3645,9 +3660,12 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             | RenderAnimatedModels rams ->
                 let renderTasks = VulkanRenderer3d.getRenderTasks rams.RenderPass renderer
                 VulkanRenderer3d.categorizeAnimatedModels (rams.AnimatedModels, rams.BoneTransforms, rams.AnimatedModel, rams.SubsortOffsets, rams.DualRenderedSurfaces, rams.RenderType, renderTasks, renderer)
-            | RenderCachedAnimatedModel camm ->
-                let renderTasks = VulkanRenderer3d.getRenderTasks camm.CachedAnimatedModelRenderPass renderer
-                VulkanRenderer3d.categorizeAnimatedModel (&camm.CachedAnimatedModelMatrix, camm.CachedAnimatedModelCastShadow, camm.CachedAnimatedModelPresence, &camm.CachedAnimatedModelInsetOpt, camm.CachedAnimatedModelMaterial, camm.CachedAnimatedModelMaterialProperties, camm.CachedAnimatedModelBoneTransforms, camm.CachedAnimatedModel, camm.CachedAnimatedModelSubsortOffsets, camm.CachedAnimatedModelDualRenderedSurfaces, camm.CachedAnimatedModelRenderType, renderTasks, renderer)
+            | RenderCachedAnimatedModel cam ->
+                let renderTasks = VulkanRenderer3d.getRenderTasks cam.CachedAnimatedModelRenderPass renderer
+                VulkanRenderer3d.categorizeAnimatedModel (&cam.CachedAnimatedModelMatrix, cam.CachedAnimatedModelCastShadow, cam.CachedAnimatedModelPresence, &cam.CachedAnimatedModelInsetOpt, cam.CachedAnimatedModelMaterial, cam.CachedAnimatedModelMaterialProperties, cam.CachedAnimatedModelBoneTransforms, cam.CachedAnimatedModel, cam.CachedAnimatedModelSubsortOffsets, cam.CachedAnimatedModelDualRenderedSurfaces, cam.CachedAnimatedModelRenderType, renderTasks, renderer)
+            | RenderCachedAnimatedModelSurface cams ->
+                let renderTasks = VulkanRenderer3d.getRenderTasks cams.CachedAnimatedModelSurfaceRenderPass renderer
+                VulkanRenderer3d.categorizeAnimatedModelSurface (&cams.CachedAnimatedModelSurfaceMatrix, cams.CachedAnimatedModelSurfaceCastShadow, cams.CachedAnimatedModelSurfacePresence, &cams.CachedAnimatedModelSurfaceInsetOpt, cams.CachedAnimatedModelSurfaceMaterial, cams.CachedAnimatedModelSurfaceMaterialProperties, cams.CachedAnimatedModelSurfaceBoneTransforms, cams.CachedAnimatedModelSurfaceModel, cams.CachedAnimatedModelSurfaceIndex, cams.CachedAnimatedModelSurfaceDualRendering, cams.CachedAnimatedModelSurfaceRenderType, renderTasks, renderer)
             | RenderTerrain rt ->
                 let renderTasks = VulkanRenderer3d.getRenderTasks rt.RenderPass renderer
                 VulkanRenderer3d.categorizeTerrain (rt.Visible, rt.TerrainDescriptor, renderTasks, renderer)

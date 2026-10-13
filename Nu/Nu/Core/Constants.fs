@@ -236,6 +236,7 @@ module Render =
     let [<Literal>] BonesMax = 128 // NOTE: remember to update BONES_MAX in shaders when changing this!
     let [<Literal>] AnimatedModelRateScalar = 30.0f // some arbitrary scale that mixamo fbx exported from blender seems to like...
     let [<Literal>] AnimatedModelMessagesPrealloc = 128
+    let [<Literal>] AnimatedModelSurfaceMessagesPrealloc = 128
     let [<Literal>] InstanceFieldCount = 52 // NOTE: up to 43 is reserved for engine use, 38 - 43 are free for engine use, and 44 - 51 are user-defined.
     let [<Literal>] InstanceBatchPrealloc = 256
     let [<Literal>] TerrainLayersMax = 6
