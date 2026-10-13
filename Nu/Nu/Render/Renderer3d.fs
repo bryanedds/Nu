@@ -1986,7 +1986,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 (deferredColorAttachmentFormats, depthBuffer.VkFormat)
             | ForwardStatic | ForwardAnimated ->
                 let composition = renderer.PhysicallyBasedAttachments.CompositionAttachment
-                ([|composition.VkFormat|], depthBuffer.VkFormat)
+                ([|depth.VkFormat; composition.VkFormat|], depthBuffer.VkFormat)
 
         let (lightMapsMax, lightsMax, vertexBindings) =
             match descriptor.PipelineType with
@@ -3890,11 +3890,11 @@ type [<ReferenceEquality>] VulkanRenderer3d =
     static member private beginPhysicallyBasedForwardSurfaces
         eyeCenter view projection lightCutoffMargin lightAmbientColor lightAmbientBrightness lightAmbientBoostCutoff lightAmbientBoostScalar lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity
         fogEnabled fogType fogStart fogFinish fogDensity fogColor ssvfEnabled ssvfIntensity ssvfSteps ssvfAsymmetry ssrrEnabled ssrrIntensity ssrrDetail ssrrRefinementsMax ssrrRayThickness ssrrDistanceCutoff ssrrDistanceCutoffMargin ssrrEdgeHorizontalMargin ssrrEdgeVerticalMargin shadowNear
-        depthTexture colorTexture brdfTexture irradianceMap environmentFilterMap unfilteredSampler filteredSampler materialSamplers colorAttachment depthAttachment resolution renderPass pipeline context =
+        depthTexture colorTexture brdfTexture irradianceMap environmentFilterMap unfilteredSampler filteredSampler materialSamplers colorAttachments depthAttachment resolution renderPass pipeline context =
         PhysicallyBased.beginPhysicallyBasedForwardSurfaces
             eyeCenter view projection lightCutoffMargin lightAmbientColor lightAmbientBrightness lightAmbientBoostCutoff lightAmbientBoostScalar lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity
             fogEnabled fogType fogStart fogFinish fogDensity fogColor ssvfEnabled ssvfIntensity ssvfSteps ssvfAsymmetry ssrrEnabled ssrrIntensity ssrrDetail ssrrRefinementsMax ssrrRayThickness ssrrDistanceCutoff ssrrDistanceCutoffMargin ssrrEdgeHorizontalMargin ssrrEdgeVerticalMargin shadowNear
-            depthTexture colorTexture brdfTexture irradianceMap environmentFilterMap unfilteredSampler filteredSampler materialSamplers colorAttachment depthAttachment resolution renderPass pipeline context
+            depthTexture colorTexture brdfTexture irradianceMap environmentFilterMap unfilteredSampler filteredSampler materialSamplers colorAttachments depthAttachment resolution renderPass pipeline context
 
     static member private renderPhysicallyBasedForwardSurfaces
         bonesArrays (parameters : struct (Matrix4x4 * Presence * Box2 * MaterialProperties) SList)
@@ -5059,7 +5059,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     descriptor renderer.MaterialSamplers geometry geometryTextureViews depthBufferTexture
                     geometryResolution renderer.RenderPassIndex pipeline renderer
 
-        // transition geometry textures (except zTexture) back to reading
+        // transition geometry textures (except depthBufferTexture) back to reading
         Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead depthTexture renderer.VulkanContext.RenderCommandBuffer
         Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead albedoTexture renderer.VulkanContext.RenderCommandBuffer
         Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead materialTexture renderer.VulkanContext.RenderCommandBuffer
@@ -5210,9 +5210,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
         // setup coloring attachments
         let ssrlEnabled = if renderer.RendererConfig.SsrlEnabled && renderer.LightingConfig.SsrlEnabled then 1 else 0
-        let (colorTexture, depthTexture2) = renderer.PhysicallyBasedAttachments.ColoringAttachments
+        let (colorTexture, depth2Texture) = renderer.PhysicallyBasedAttachments.ColoringAttachments
         Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite colorTexture renderer.VulkanContext.RenderCommandBuffer
-        Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite depthTexture2 renderer.VulkanContext.RenderCommandBuffer
+        Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite depth2Texture renderer.VulkanContext.RenderCommandBuffer
         PhysicallyBased.drawPhysicallyBasedDeferredColoringSurface
             eyeCenter view geometryProjection renderer.LightingConfig.LightAmbientBoostCutoff renderer.LightingConfig.LightAmbientBoostScalar
             ssrlEnabled renderer.LightingConfig.SsrlIntensity renderer.LightingConfig.SsrlDetail renderer.LightingConfig.SsrlRefinementsMax renderer.LightingConfig.SsrlRayThickness renderer.LightingConfig.SsrlTowardEyeCutoff
@@ -5220,20 +5220,21 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             renderer.LightingConfig.SsrlRoughnessCutoff renderer.LightingConfig.SsrlRoughnessCutoffMargin renderer.LightingConfig.SsrlSlopeCutoff renderer.LightingConfig.SsrlSlopeCutoffMargin
             renderer.LightingConfig.SsrlEdgeHorizontalMargin renderer.LightingConfig.SsrlEdgeVerticalMargin
             depthTexture albedoTexture materialTexture normalPlusTexture clearCoatPlusTexture userDefinedBufferTexture lightAccumTexture renderer.BrdfTexture ambientTexture irradianceTexture environmentFilterTexture ssaoTexture
-            renderer.UnfilteredSampler renderer.FilteredSampler colorTexture depthTexture2 geometryResolution renderer.RenderPassIndex renderer.QuadGeometry renderer.PhysicallyBasedPipelines.DeferredColoringPipeline renderer.VulkanContext
+            renderer.UnfilteredSampler renderer.FilteredSampler [|colorTexture.ImageView; depth2Texture.ImageView|] geometryResolution renderer.RenderPassIndex renderer.QuadGeometry renderer.PhysicallyBasedPipelines.DeferredColoringPipeline renderer.VulkanContext
         Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead colorTexture renderer.VulkanContext.RenderCommandBuffer
-        Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead depthTexture2 renderer.VulkanContext.RenderCommandBuffer
+        Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead depth2Texture renderer.VulkanContext.RenderCommandBuffer
 
-        // begin rendering to composition attachment
+        // begin rendering to depth and composition attachments
         let compositionTexture = renderer.PhysicallyBasedAttachments.CompositionAttachment
+        Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite depthTexture renderer.VulkanContext.RenderCommandBuffer
         Texture.recordTransitionLayout ColorAttachmentRead ColorAttachmentWrite compositionTexture renderer.VulkanContext.RenderCommandBuffer
 
-        // deferred render composition quad to composition attachments
+        // deferred render composition quad to composition attachment
         let fogEnabled = if renderer.LightingConfig.FogEnabled then 1 else 0
         let fogType = renderer.LightingConfig.FogType.Enumerate
         PhysicallyBased.drawPhysicallyBasedDeferredCompositionSurface
             eyeCenter view geometryProjection fogEnabled fogType renderer.LightingConfig.FogStart renderer.LightingConfig.FogFinish renderer.LightingConfig.FogDensity renderer.LightingConfig.FogColor
-            depthTexture userDefinedBufferTexture colorTexture fogAccumTexture renderer.UnfilteredSampler compositionTexture
+            depth2Texture userDefinedBufferTexture colorTexture fogAccumTexture renderer.UnfilteredSampler compositionTexture
             geometryResolution renderer.RenderPassIndex renderer.QuadGeometry renderer.PhysicallyBasedPipelines.DeferredCompositionPipeline renderer.VulkanContext
 
         // attempt to render sky box to composition attachment
@@ -5244,7 +5245,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 compositionTexture depthBufferTexture geometryResolution renderer.SkyBoxPipeline renderer.VulkanContext
         | None -> ()
 
-        // render forward (static and animated) surfaces to composition attachment
+        // render forward (static and animated) surfaces to depth and composition attachments
         let mutable counted = 0
         let mutable committed = 0
         let mutable forwardPipeline = renderer.PhysicallyBasedPipelines.ForwardStaticPipeline // speculatively start with forward static
@@ -5259,7 +5260,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
                     fogEnabled fogType renderer.LightingConfig.FogStart renderer.LightingConfig.FogFinish renderer.LightingConfig.FogDensity renderer.LightingConfig.FogColor ssvfEnabled renderer.LightingConfig.SsvfIntensity forwardSsvfSteps renderer.LightingConfig.SsvfAsymmetry
                     ssrrEnabled renderer.LightingConfig.SsrrIntensity renderer.LightingConfig.SsrrDetail renderer.LightingConfig.SsrrRefinementsMax renderer.LightingConfig.SsrrRayThickness renderer.LightingConfig.SsrrDistanceCutoff renderer.LightingConfig.SsrrDistanceCutoffMargin renderer.LightingConfig.SsrrEdgeHorizontalMargin renderer.LightingConfig.SsrrEdgeVerticalMargin shadowNear
-                    depthTexture2 colorTexture renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap renderer.UnfilteredSampler renderer.FilteredSampler renderer.MaterialSamplers compositionTexture depthBufferTexture geometryResolution renderer.RenderPassIndex forwardPipeline renderer.VulkanContext
+                    depth2Texture colorTexture renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap renderer.UnfilteredSampler renderer.FilteredSampler renderer.MaterialSamplers [|depthTexture.ImageView; compositionTexture.ImageView|] depthBufferTexture.ImageView geometryResolution renderer.RenderPassIndex forwardPipeline renderer.VulkanContext
             uniformsDescriptorSet <- uniformsDescriptorSet'
             samplersDescriptorSet <- samplersDescriptorSet'
         let endBatch = fun () -> VulkanRenderer3d.endPhysicallyBasedForwardSurfaces forwardPipeline renderer.VulkanContext
@@ -5284,7 +5285,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             renderTasks.ForwardSorted.Add struct (model, castShadow, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest)
         forwardSurfacesSortBuffer.Clear ()
 
-        // render forward (static and animated) surfaces to composition attachment
+        // render forward (static and animated) surfaces to depth and composition attachments
         for (model, _, presence, texCoordsOffset, properties, boneTransformsOpt, surface, depthTest) in renderTasks.ForwardSorted do
             let pipeline =
                 if boneTransformsOpt.IsNone then
@@ -5312,10 +5313,11 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 surface depthTest true uniformsDescriptorSet samplersDescriptorSet pipeline renderer
             advanceBatch 1
 
-        // end forward (static and animated) surface rendering to composition attachment
+        // end forward (static and animated) surface rendering to depth and composition attachments
         endBatch ()
 
-        // end rendering to composition attachment as well as zTexture
+        // end rendering to depth and composition attachments as well as depthBufferTexture
+        Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead depthTexture renderer.VulkanContext.RenderCommandBuffer
         Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead compositionTexture renderer.VulkanContext.RenderCommandBuffer
         Texture.recordTransitionLayout DepthAttachmentWrite DepthAttachmentRead depthBufferTexture renderer.VulkanContext.RenderCommandBuffer
 
@@ -5597,8 +5599,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
         // create sky box pipeline
         let compositionTexture = physicallyBasedAttachments.CompositionAttachment
-        let (_, _, _, _, _, _, _, _, zTexture) = physicallyBasedAttachments.GeometryAttachments
-        let skyBoxPipeline = SkyBox.createSkyBoxPipeline compositionTexture.VkFormat zTexture.VkFormat context
+        let (_, _, _, _, _, _, _, _, depthBufferTexture) = physicallyBasedAttachments.GeometryAttachments
+        let skyBoxPipeline = SkyBox.createSkyBoxPipeline compositionTexture.VkFormat depthBufferTexture.VkFormat context
 
         // create irradiance pipeline
         let irradianceFormat = Rgba16f

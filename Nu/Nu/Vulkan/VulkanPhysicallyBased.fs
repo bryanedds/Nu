@@ -5380,8 +5380,7 @@ module PhysicallyBased =
         (ssaoTexture : Texture)
         (unfilteredSampler : Sampler)
         (filteredSampler : Sampler)
-        (coloringAttachment : Texture)
-        (depthAttachment : Texture)
+        (colorAttachments : VkImageView array)
         (resolution : Vector2i)
         (renderPassIndex : int)
         (geometry : PhysicallyBasedGeometry)
@@ -5451,7 +5450,7 @@ module PhysicallyBased =
             // set up render
             let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
             let mutable vkViewport = Hl.makeViewport false renderArea
-            Hl.withRenderingInfo [|coloringAttachment.ImageView; depthAttachment.ImageView|] None renderArea (ClearAttachments Constants.Render.ViewportClearColor) $ fun renderingInfo ->
+            Hl.withRenderingInfo colorAttachments None renderArea (ClearAttachments Constants.Render.ViewportClearColor) $ fun renderingInfo ->
                 let mutable renderingInfo = renderingInfo
                 DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
             DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
@@ -5676,8 +5675,8 @@ module PhysicallyBased =
         (unfilteredSampler : Sampler)
         (filteredSampler : Sampler)
         (materialSamplers : Sampler array)
-        (colorAttachment : Texture)
-        (depthAttachment : Texture)
+        (colorAttachments : VkImageView array)
+        (depthAttachment : VkImageView)
         (resolution : Vector2i)
         (renderPassIndex : int)
         (pipeline : PhysicallyBasedPipeline)
@@ -5752,7 +5751,7 @@ module PhysicallyBased =
         // set up render
         let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
         let mutable vkViewport = Hl.makeViewport false renderArea
-        Hl.withRenderingInfo [|colorAttachment.ImageView|] (Some depthAttachment.ImageView) renderArea LoadAttachments $ fun renderingInfo ->
+        Hl.withRenderingInfo colorAttachments (Some depthAttachment) renderArea LoadAttachments $ fun renderingInfo ->
             let mutable renderingInfo = renderingInfo
             DeviceApi.vkCmdBeginRendering (context.RenderCommandBuffer, &&renderingInfo)
         DeviceApi.vkCmdSetViewport (context.RenderCommandBuffer, 0u, 1u, &&vkViewport)
@@ -6146,7 +6145,7 @@ module PhysicallyBased =
                 [|VulkanUnblended; VulkanTransparent; VulkanAdditive; VulkanSummation; VulkanOverwrite|]
                 [|CullNone; CullBack; CullFront|]
                 StaticVertices
-                [|composition.VkFormat|]
+                [|depth.VkFormat; composition.VkFormat|]
                 depthBuffer.VkFormat
                 context
 
@@ -6159,7 +6158,7 @@ module PhysicallyBased =
                 [|VulkanUnblended; VulkanTransparent; VulkanAdditive; VulkanSummation; VulkanOverwrite|]
                 [|CullNone; CullBack; CullFront|]
                 AnimatedVertices
-                [|composition.VkFormat|]
+                [|depth.VkFormat; composition.VkFormat|]
                 depthBuffer.VkFormat
                 context
         

@@ -164,7 +164,8 @@ layout(location = 5) flat in vec4 material;
 layout(location = 6) flat in vec4 material2;
 layout(location = 7) flat in vec4 subsurfacePlus;
 
-layout(location = 0) out vec4 frag;
+layout(location = 0) out float depthOut;
+layout(location = 1) out vec4 compositionOut;
 
 float saturate(float v)
 {
@@ -855,7 +856,7 @@ void main()
 {
     // discard when depth out of range
     float depthCutoff = material2.y;
-    float depth = gl_FragCoord.z / gl_FragCoord.w;
+    float depth = gl_FragCoord.z;
     if (depthCutoff >= 0.0) { if (depth > depthCutoff) discard; }
     else if (depth <= -depthCutoff) discard;
 
@@ -1179,6 +1180,7 @@ void main()
         }
     }
 
-    // write fragment
-    frag = vec4(color, alpha);
+    // write depth and composition
+    depthOut = depth;
+    compositionOut = vec4(color, alpha);
 }
