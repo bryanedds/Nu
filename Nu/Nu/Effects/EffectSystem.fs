@@ -508,7 +508,7 @@ module EffectSystem =
         // build implicitly mounted content
         evalContent content slice history effectSystem
 
-    and private evalBillboard albedo roughness metallic ambientOcclusion emission normal cullMode depthTest depthWrite clipped blend pipelineName aspects content (slice : Slice) history effectSystem =
+    and private evalBillboard albedo roughness metallic ambientOcclusion emission normal userDefinedImage0 userDefinedImage1 userDefinedImage2 cullMode depthTest depthWrite clipped blend pipelineName aspects content (slice : Slice) history effectSystem =
 
         // pull image from resource
         let imageAlbedo = evalResource albedo effectSystem
@@ -517,6 +517,9 @@ module EffectSystem =
         let imageAmbientOcclusion = evalResource ambientOcclusion effectSystem
         let imageEmission = evalResource emission effectSystem
         let imageNormal = evalResource normal effectSystem
+        let imageUserDefinedImage0 = evalResource userDefinedImage0 effectSystem
+        let imageUserDefinedImage1 = evalResource userDefinedImage1 effectSystem
+        let imageUserDefinedImage2 = evalResource userDefinedImage2 effectSystem
 
         // eval aspects
         let slice = evalAspects aspects slice effectSystem
@@ -564,9 +567,9 @@ module EffectSystem =
                       ClearCoatImageOpt = ValueNone
                       ClearCoatRoughnessImageOpt = ValueNone
                       ClearCoatNormalImageOpt = ValueNone
-                      UserDefinedImage0Opt = ValueNone // TODO: P0: make these aspects.
-                      UserDefinedImage1Opt = ValueNone
-                      UserDefinedImage2Opt = ValueNone
+                      UserDefinedImage0Opt = ValueSome (AssetTag.specialize<Image> imageUserDefinedImage0)
+                      UserDefinedImage1Opt = ValueSome (AssetTag.specialize<Image> imageUserDefinedImage1)
+                      UserDefinedImage2Opt = ValueSome (AssetTag.specialize<Image> imageUserDefinedImage2)
                       CullModeOpt = ValueSome cullMode
                       ClippedOpt = ValueSome clipped
                       DepthTestOpt = ValueSome depthTest
@@ -589,7 +592,7 @@ module EffectSystem =
         // build implicitly mounted content
         evalContent content slice history effectSystem
 
-    and private evalStaticModel resource cullMode depthTest depthWrite clipped blend pipelineName aspects content (slice : Slice) history effectSystem =
+    and private evalStaticModel resource propertiesOpt materialOpt aspects content (slice : Slice) history effectSystem =
 
         // pull image from resource
         let staticModel = evalResource resource effectSystem
@@ -603,39 +606,23 @@ module EffectSystem =
                 let staticModel = AssetTag.specialize<StaticModel> staticModel
                 let affineMatrix = Matrix4x4.CreateAffine (slice.Position, slice.Angles.RollPitchYaw, slice.Scale)
                 let insetOpt = if slice.Inset.Equals box2Zero then None else Some slice.Inset
+                let properties = Option.defaultValue MaterialProperties.empty propertiesOpt
                 let properties =
-                    { AlbedoOpt = ValueSome slice.Color
-                      RoughnessOpt = ValueNone
-                      MetallicOpt = ValueNone
-                      AmbientOcclusionOpt = ValueNone
-                      EmissionOpt = ValueSome slice.Emission.R
-                      IgnoreLightMapsOpt = ValueSome slice.IgnoreLightMaps
-                      AnisotropyOpt = ValueSome slice.Anisotropy
-                      OpaqueDistanceOpt = ValueNone
-                      FinenessOffsetOpt = ValueNone
-                      ScatterTypeOpt = ValueNone
-                      SpecularScalarOpt = ValueNone
-                      SubsurfaceCutoffOpt = ValueNone
-                      SubsurfaceCutoffMarginOpt = ValueNone
-                      RefractiveIndexOpt = ValueNone
-                      ClearCoatOpt = ValueNone
-                      ClearCoatRoughnessOpt = ValueNone
-                      UserDefinedSetting0Opt = ValueNone // TODO: P0: make these aspects.
-                      UserDefinedSetting1Opt = ValueNone
-                      UserDefinedSetting2Opt = ValueNone
-                      UserDefinedSetting3Opt = ValueNone
-                      UserDefinedSetting4Opt = ValueNone
-                      UserDefinedSetting5Opt = ValueNone
-                      UserDefinedSetting6Opt = ValueNone
-                      UserDefinedSetting7Opt = ValueNone }
-                let material =
-                    { Material.empty with
-                        CullModeOpt = ValueSome cullMode
-                        ClippedOpt = ValueSome clipped
-                        DepthTestOpt = ValueSome depthTest
-                        DepthWriteOpt = ValueSome depthWrite
-                        BlendOpt = ValueSome blend
-                        PipelineNameOpt = ValueSome (if pipelineName = "" then Constants.Render.PipelineNameDefault else pipelineName) }
+                    { properties with
+                        AlbedoOpt = ValueSome (match properties.AlbedoOpt with ValueSome albedo -> albedo * slice.Color | ValueNone -> slice.Color)
+                        EmissionOpt = ValueSome (match properties.EmissionOpt with ValueSome emission -> emission * slice.Emission.R | ValueNone -> slice.Emission.R)
+                        IgnoreLightMapsOpt = ValueSome (match properties.IgnoreLightMapsOpt with ValueSome ignoreLightMaps -> ignoreLightMaps && slice.IgnoreLightMaps | ValueNone -> slice.IgnoreLightMaps)
+                        AnisotropyOpt = ValueSome (match properties.AnisotropyOpt with ValueSome anisotropy -> anisotropy * slice.Anisotropy | ValueNone -> slice.Anisotropy)
+                        SpecularScalarOpt = ValueSome (match properties.SpecularScalarOpt with ValueSome specularScalarOpt -> specularScalarOpt * slice.Specularity | ValueNone -> slice.Anisotropy)
+                        UserDefinedSetting0Opt = ValueNone // TODO: P0: make these aspects.
+                        UserDefinedSetting1Opt = ValueNone
+                        UserDefinedSetting2Opt = ValueNone
+                        UserDefinedSetting3Opt = ValueNone
+                        UserDefinedSetting4Opt = ValueNone
+                        UserDefinedSetting5Opt = ValueNone
+                        UserDefinedSetting6Opt = ValueNone
+                        UserDefinedSetting7Opt = ValueNone }
+                let material = Option.defaultValue Material.empty materialOpt
                 let staticModelToken =
                     StaticModelToken
                         { ModelMatrix = affineMatrix
@@ -745,14 +732,17 @@ module EffectSystem =
             evalTextSprite resource text fontSizing fontStyling aspects content slice history effectSystem
         | Light3d (lightType, aspects, content) ->
             evalLight3d lightType aspects content slice history effectSystem
-        | BillboardPlus (resourceAlbedo, resourceRoughness, resourceMetallic, resourceAmbientOcclusion, resourceEmission, resourceNormal, cullMode, depthTest, depthWrite, clipped, blend, pipelineName, aspects, content) ->
-            evalBillboard resourceAlbedo resourceRoughness resourceMetallic resourceAmbientOcclusion resourceEmission resourceNormal cullMode depthTest depthWrite clipped blend pipelineName aspects content slice history effectSystem
+        | BillboardPlus (resourceAlbedo, resourceRoughness, resourceMetallic, resourceAmbientOcclusion, resourceEmission, resourceNormal, resourceUserDefinedImage0, resourceUserDefinedImage1, resourceUserDefinedImage2, cullMode, depthTest, depthWrite, clipped, blend, pipelineName, aspects, content) ->
+            evalBillboard resourceAlbedo resourceRoughness resourceMetallic resourceAmbientOcclusion resourceEmission resourceNormal resourceUserDefinedImage0 resourceUserDefinedImage1 resourceUserDefinedImage2 cullMode depthTest depthWrite clipped blend pipelineName aspects content slice history effectSystem
         | Billboard (resourceAlbedo, resourceRoughness, resourceMetallic, resourceAmbientOcclusion, resourceEmission, resourceNormal, aspects, content) ->
-            evalBillboard resourceAlbedo resourceRoughness resourceMetallic resourceAmbientOcclusion resourceEmission resourceNormal CullNone LessThanTest true false Transparent Constants.Render.PipelineNameDefault aspects content slice history effectSystem
-        | StaticModelPlus (resource, cullMode, depthTest, depthWrite, clipped, blend, pipelineName, aspects, content) ->
-            evalStaticModel resource cullMode depthTest depthWrite clipped blend pipelineName aspects content slice history effectSystem
+            let userDefinedImage0Resource = Resource (Assets.Default.PackageName, Assets.Default.MaterialUserDefinedImage0Name)
+            let userDefinedImage1Resource = Resource (Assets.Default.PackageName, Assets.Default.MaterialUserDefinedImage1Name)
+            let userDefinedImage2Resource = Resource (Assets.Default.PackageName, Assets.Default.MaterialUserDefinedImage2Name)
+            evalBillboard resourceAlbedo resourceRoughness resourceMetallic resourceAmbientOcclusion resourceEmission resourceNormal userDefinedImage0Resource userDefinedImage1Resource userDefinedImage2Resource CullNone LessThanTest true false Transparent Constants.Render.PipelineNameDefault aspects content slice history effectSystem
+        | StaticModelPlus (resource, propertiesOpt, materialOpt, aspects, content) ->
+            evalStaticModel resource propertiesOpt materialOpt aspects content slice history effectSystem
         | StaticModel (resource, aspects, content) ->
-            evalStaticModel resource CullNone LessThanTest true false Transparent Constants.Render.PipelineNameDefault aspects content slice history effectSystem
+            evalStaticModel resource None None aspects content slice history effectSystem
         | Mount (Shift shift, aspects, content) ->
             evalMount shift aspects content slice history effectSystem
         | Repeat (Shift shift, repetition, incrementAspects, content) ->
