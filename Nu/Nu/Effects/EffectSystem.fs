@@ -480,6 +480,7 @@ module EffectSystem =
                           Brightness = slice.Brightness
                           AttenuationLinear = 1.0f / (slice.Brightness * slice.LightCutoff)
                           AttenuationQuadratic = 1.0f / (slice.Brightness * slice.LightCutoff * slice.LightCutoff)
+                          Specularity = 1.0f // TODO: P0: make this an aspect?
                           LightCutoff = slice.LightCutoff
                           LightType = lightType
                           DesireShadows = false }

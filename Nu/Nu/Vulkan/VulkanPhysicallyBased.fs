@@ -175,13 +175,14 @@ type LightStruct =
     [<FieldOffset(44)>] val mutable brightness : single
     [<FieldOffset(48)>] val mutable attenuationLinear : single
     [<FieldOffset(52)>] val mutable attenuationQuadratic : single
-    [<FieldOffset(56)>] val mutable cutoff : single
-    [<FieldOffset(60)>] val mutable lightType : int
-    [<FieldOffset(64)>] val mutable radius : single
-    [<FieldOffset(68)>] val mutable coneInner : single
-    [<FieldOffset(72)>] val mutable coneOuter : single
-    [<FieldOffset(76)>] val mutable desireFog : int
-    [<FieldOffset(80)>] val mutable shadowIndex : int
+    [<FieldOffset(56)>] val mutable specularity : single
+    [<FieldOffset(60)>] val mutable cutoff : single
+    [<FieldOffset(64)>] val mutable lightType : int
+    [<FieldOffset(68)>] val mutable radius : single
+    [<FieldOffset(72)>] val mutable coneInner : single
+    [<FieldOffset(76)>] val mutable coneOuter : single
+    [<FieldOffset(80)>] val mutable desireFog : int
+    [<FieldOffset(84)>] val mutable shadowIndex : int
 
 [<Struct; StructLayout (LayoutKind.Explicit)>]
 type SsaoStruct =
@@ -655,6 +656,7 @@ type PhysicallyBasedLight =
       LightBrightness : single
       LightAttenuationLinear : single
       LightAttenuationQuadratic : single
+      LightSpecularity : single
       LightCutoff : single
       LightType : LightType
       LightDesireShadows : bool }
@@ -4268,6 +4270,7 @@ module PhysicallyBased =
         (lightBrightnesses : single array)
         (lightAttenuationLinears : single array)
         (lightAttenuationQuadratics : single array)
+        (lightSpecularities : single array)
         (lightCutoffs : single array)
         (lightTypes : int array)
         (lightRadii : single array)
@@ -4331,6 +4334,7 @@ module PhysicallyBased =
                         light.brightness <- lightBrightnesses[i]
                         light.attenuationLinear <- lightAttenuationLinears[i]
                         light.attenuationQuadratic <- lightAttenuationQuadratics[i]
+                        light.specularity <- lightSpecularities[i]
                         light.cutoff <- lightCutoffs[i]
                         light.lightType <- lightTypes[i]
                         light.radius <- lightRadii[i]
@@ -4479,6 +4483,7 @@ module PhysicallyBased =
         (lightBrightnesses : single array)
         (lightAttenuationLinears : single array)
         (lightAttenuationQuadratics : single array)
+        (lightSpecularities : single array)
         (lightCutoffs : single array)
         (lightTypes : int array)
         (lightRadii : single array)
@@ -4544,6 +4549,7 @@ module PhysicallyBased =
                         light.brightness <- lightBrightnesses[i]
                         light.attenuationLinear <- lightAttenuationLinears[i]
                         light.attenuationQuadratic <- lightAttenuationQuadratics[i]
+                        light.specularity <- lightSpecularities[i]
                         light.cutoff <- lightCutoffs[i]
                         light.lightType <- lightTypes[i]
                         light.radius <- lightRadii[i]
@@ -5810,6 +5816,7 @@ module PhysicallyBased =
         (lightBrightnesses : single array)
         (lightAttenuationLinears : single array)
         (lightAttenuationQuadratics : single array)
+        (lightSpecularities : single array)
         (lightCutoffs : single array)
         (lightTypes : int array)
         (lightRadii : single array)
@@ -5893,6 +5900,7 @@ module PhysicallyBased =
                         light.brightness <- lightBrightnesses[i]
                         light.attenuationLinear <- lightAttenuationLinears[i]
                         light.attenuationQuadratic <- lightAttenuationQuadratics[i]
+                        light.specularity <- lightSpecularities[i]
                         light.cutoff <- lightCutoffs[i]
                         light.lightType <- lightTypes[i]
                         light.radius <- lightRadii[i]
@@ -6451,6 +6459,7 @@ type PhysicallyBasedSceneClient () =
                                       LightBrightness = Constants.Render.BrightnessDefault // TODO: figure out if we can populate this properly.
                                       LightAttenuationLinear = if light.AttenuationLinear > 0.0f then light.AttenuationLinear else Constants.Render.AttenuationLinearDefault
                                       LightAttenuationQuadratic = if light.AttenuationQuadratic > 0.0f then light.AttenuationQuadratic else Constants.Render.AttenuationQuadraticDefault
+                                      LightSpecularity = 1.0f
                                       LightCutoff = Constants.Render.LightCutoffDefault // TODO: figure out if we can populate this properly.
                                       LightType = lightType
                                       LightDesireShadows = false }

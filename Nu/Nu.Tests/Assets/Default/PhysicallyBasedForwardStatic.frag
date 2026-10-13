@@ -110,6 +110,7 @@ struct LightStruct
     float brightness;
     float attenuationLinear;
     float attenuationQuadratic;
+    float specularity;
     float cutoff;
     int lightType;
     float radius;
@@ -981,7 +982,7 @@ void main()
             vec3 numerator = ndf * g * f;
             float nDotL = saturate(dot(n, l));
             float denominator = 4.0 * nDotV * nDotL + 0.0001; // add epsilon to prevent division by zero
-            vec3 specular = clamp(numerator / denominator, 0.0, 10000.0);
+            vec3 specular = clamp(numerator / denominator, 0.0, 10000.0) * light.specularity;
 
             // compute diffusion
             vec3 kS = f;

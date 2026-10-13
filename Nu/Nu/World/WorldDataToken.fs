@@ -43,6 +43,7 @@ module WorldDataToken =
                       Brightness = light.Brightness
                       AttenuationLinear = light.AttenuationLinear
                       AttenuationQuadratic = light.AttenuationQuadratic
+                      Specularity = light.Specularity
                       LightCutoff = light.LightCutoff
                       LightType = light.LightType
                       DesireShadows = false

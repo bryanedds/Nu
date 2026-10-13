@@ -2775,6 +2775,9 @@ module Light3dFacetExtensions =
         member this.GetLightCutoff world : single = this.Get (nameof this.LightCutoff) world
         member this.SetLightCutoff (value : single) world = this.Set (nameof this.LightCutoff) value world
         member this.LightCutoff = lens (nameof this.LightCutoff) this this.GetLightCutoff this.SetLightCutoff
+        member this.GetSpecularity world : single = this.Get (nameof this.Specularity) world
+        member this.SetSpecularity (value : single) world = this.Set (nameof this.Specularity) value world
+        member this.Specularity = lens (nameof this.Specularity) this this.GetSpecularity this.SetSpecularity
         member this.GetLightType world : LightType = this.Get (nameof this.LightType) world
         member this.SetLightType (value : LightType) world = this.Set (nameof this.LightType) value world
         member this.LightType = lens (nameof this.LightType) this this.GetLightType this.SetLightType
@@ -2898,6 +2901,7 @@ type Light3dFacet () =
          define Entity.AttenuationQuadratic Constants.Render.AttenuationQuadraticDefault
          define Entity.AutoAttenuate true
          define Entity.LightCutoff Constants.Render.LightCutoffDefault
+         define Entity.Specularity 1.0f
          define Entity.LightType (PointLight 0.0f)
          define Entity.DesireShadows false
          define Entity.DynamicShadows true
@@ -2911,6 +2915,7 @@ type Light3dFacet () =
         let lightId = entity.GetId world
         let rotation = entity.GetRotation world
         let lightCutoff = entity.GetLightCutoff world
+        let specularity = entity.GetSpecularity world
         let lightType = entity.GetLightType world
         let origin =
             match lightType with
@@ -2936,6 +2941,7 @@ type Light3dFacet () =
                   AttenuationLinear = attenuationLinear
                   AttenuationQuadratic = attenuationQuadratic
                   LightCutoff = lightCutoff
+                  Specularity = specularity
                   LightType = lightType
                   DesireShadows = desireShadows
                   DynamicShadows = dynamicShadows

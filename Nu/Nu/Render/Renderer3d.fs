@@ -390,6 +390,7 @@ type [<Struct>] Light3dValue =
       mutable Brightness : single
       mutable AttenuationLinear : single
       mutable AttenuationQuadratic : single
+      mutable Specularity : single
       mutable LightCutoff : single
       mutable LightType : LightType
       mutable DesireShadows : bool }
@@ -610,6 +611,7 @@ type RenderLight3d =
       Brightness : single
       AttenuationLinear : single
       AttenuationQuadratic : single
+      Specularity : single
       LightCutoff : single
       LightType : LightType
       DesireShadows : bool
@@ -1097,6 +1099,7 @@ type private SortableLight =
       SortableLightBrightness : single
       SortableLightAttenuationLinear : single
       SortableLightAttenuationQuadratic : single
+      SortableLightSpecularity : single
       SortableLightCutoff : single
       SortableLightType : int
       SortableLightRadius : single
@@ -1175,6 +1178,7 @@ type private SortableLight =
         let lightBrightnesses = Array.zeroCreate<single> lightsMax
         let lightAttenuationLinears = Array.zeroCreate<single> lightsMax
         let lightAttenuationQuadratics = Array.zeroCreate<single> lightsMax
+        let lightSpecularities = Array.zeroCreate<single> lightsMax
         let lightCutoffs = Array.zeroCreate<single> lightsMax
         let lightTypes = Array.zeroCreate<int> lightsMax
         let lightRadii = Array.zeroCreate<single> lightsMax
@@ -1195,13 +1199,14 @@ type private SortableLight =
                 lightBrightnesses[i] <- light.SortableLightBrightness
                 lightAttenuationLinears[i] <- light.SortableLightAttenuationLinear
                 lightAttenuationQuadratics[i] <- light.SortableLightAttenuationQuadratic
+                lightSpecularities[i] <- light.SortableLightSpecularity
                 lightCutoffs[i] <- light.SortableLightCutoff
                 lightTypes[i] <- light.SortableLightType
                 lightRadii[i] <- light.SortableLightRadius
                 lightConeInners[i] <- light.SortableLightConeInner
                 lightConeOuters[i] <- light.SortableLightConeOuter
                 lightDesireFogs[i] <- light.SortableLightDesireFog
-        (lightIds, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightTypes, lightRadii, lightConeInners, lightConeOuters, lightDesireFogs)
+        (lightIds, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightSpecularities, lightCutoffs, lightTypes, lightRadii, lightConeInners, lightConeOuters, lightDesireFogs)
 
     /// Sort light shadow indices.
     static member sortLightShadowIndices (lightShadowIndices : Dictionary<uint64, int>) (lightIds : uint64 array) =
@@ -3104,6 +3109,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                               SortableLightBrightness = light.LightBrightness
                               SortableLightAttenuationLinear = light.LightAttenuationLinear
                               SortableLightAttenuationQuadratic = light.LightAttenuationQuadratic
+                              SortableLightSpecularity = light.LightSpecularity
                               SortableLightCutoff = light.LightCutoff
                               SortableLightType = light.LightType.Enumerate
                               SortableLightRadius = light.LightType.Radius
@@ -3563,6 +3569,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                       SortableLightBrightness = rl.Brightness
                       SortableLightAttenuationLinear = rl.AttenuationLinear
                       SortableLightAttenuationQuadratic = rl.AttenuationQuadratic
+                      SortableLightSpecularity = rl.Specularity
                       SortableLightCutoff = rl.LightCutoff
                       SortableLightType = rl.LightType.Enumerate
                       SortableLightRadius = rl.LightType.Radius
@@ -3912,7 +3919,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
     static member private renderPhysicallyBasedForwardSurfaces
         bonesArrays (parameters : struct (Matrix4x4 * Presence * Box2 * MaterialProperties) SList)
         irradianceMaps environmentFilterMaps shadowTextureArray shadowMaps shadowCascades lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses lightMapsCount lightMapSingletonBlendMargin
-        lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightRadii lightConeInners lightConeOuters lightDesireFogs lightShadowIndices lightsCount shadowMatricesFlipped
+        lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightSpecularities lightCutoffs lightTypes lightRadii lightConeInners lightConeOuters lightDesireFogs lightShadowIndices lightsCount shadowMatricesFlipped
         (surface : PhysicallyBasedSurface) uniformsDescriptorSet samplersDescriptorSet pipeline renderer =
 
         // ensure we have a large enough instance fields array
@@ -3990,7 +3997,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         PhysicallyBased.drawPhysicallyBasedForwardSurfaces
             bonesArrays parameters.Length renderer.InstanceFields
             irradianceMaps environmentFilterMaps shadowTextureArray shadowMaps shadowCascades lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses lightMapsCount lightMapSingletonBlendMargin
-            lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightRadii lightConeInners lightConeOuters lightDesireFogs lightShadowIndices lightsCount shadowMatricesFlipped
+            lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightSpecularities lightCutoffs lightTypes lightRadii lightConeInners lightConeOuters lightDesireFogs lightShadowIndices lightsCount shadowMatricesFlipped
             surface.SurfaceMaterial surface.PhysicallyBasedGeometry uniformsDescriptorSet samplersDescriptorSet pipeline renderer.VulkanContext
 
         // track geometry instancing
@@ -4873,7 +4880,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                  Array.create Constants.Render.LightMapsMaxDeferred renderer.EnvironmentFilterMap)
 
         // sort lights for deferred rendering relative to eye center
-        let (lightIds, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightTypes, lightRadii, lightConeInners, lightConeOuters, lightDesireFogs) =
+        let (lightIds, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightSpecularities, lightCutoffs, lightTypes, lightRadii, lightConeInners, lightConeOuters, lightDesireFogs) =
             SortableLight.sortLights Constants.Render.LightsMaxDeferred eyeCenter renderTasks.Lights
 
         // compute light shadow indices according to sorted lights
@@ -5095,7 +5102,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         PhysicallyBased.drawPhysicallyBasedDeferredLightingSurface
             eyeCenter view geometryProjection renderer.LightingConfig.LightCutoffMargin renderer.LightingConfig.LightShadowSamples renderer.LightingConfig.LightShadowBias renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity sssEnabled
             depthTexture albedoTexture materialTexture normalPlusTexture subdermalPlusTexture scatterPlusTexture clearCoatPlusTexture userDefinedBufferTexture shadowTextureArray shadowMaps shadowCascades
-            lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightRadii lightConeInners lightConeOuters lightDesireFogs lightShadowIndices (min lightIds.Length renderTasks.Lights.Count) shadowNear renderer.ShadowMatricesFlipped renderer.UnfilteredSampler renderer.FilteredSampler
+            lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightSpecularities lightCutoffs lightTypes lightRadii lightConeInners lightConeOuters lightDesireFogs lightShadowIndices (min lightIds.Length renderTasks.Lights.Count) shadowNear renderer.ShadowMatricesFlipped renderer.UnfilteredSampler renderer.FilteredSampler
             geometryResolution renderer.RenderPassIndex renderer.QuadGeometry lightAccumTexture renderer.PhysicallyBasedPipelines.DeferredLightingPipeline renderer.VulkanContext
         Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead lightAccumTexture renderer.VulkanContext.RenderCommandBuffer
 
@@ -5112,7 +5119,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 PhysicallyBased.drawPhysicallyBasedDeferredFoggingSurface
                     eyeCenter view geometryProjection renderer.LightingConfig.LightCutoffMargin renderer.LightingConfig.SsvfIntensity renderer.LightingConfig.SsvfSteps renderer.LightingConfig.SsvfAsymmetry
                     depthTexture shadowTextureArray shadowMaps shadowCascades lightMaps.Length renderer.LightingConfig.LightMapSingletonBlendMargin
-                    lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightRadii lightConeInners lightConeOuters lightDesireFogs lightShadowIndices (min lightIds.Length renderTasks.Lights.Count)
+                    lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightSpecularities lightCutoffs lightTypes lightRadii lightConeInners lightConeOuters lightDesireFogs lightShadowIndices (min lightIds.Length renderTasks.Lights.Count)
                     renderer.ShadowMatricesFlipped renderer.UnfilteredSampler renderer.FilteredSampler fogAccumTexture
                     geometryResolution renderer.RenderPassIndex renderer.QuadGeometry renderer.PhysicallyBasedPipelines.DeferredFoggingPipeline renderer.VulkanContext
                 Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead fogAccumTexture renderer.VulkanContext.RenderCommandBuffer
@@ -5313,7 +5320,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             let (lightMapOrigins, lightMapMins, lightMapSizes, lightMapAmbientColors, lightMapAmbientBrightnesses, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps) =
                 let surfaceBounds = surface.SurfaceBounds.Transform model
                 SortableLightMap.sortLightMaps Constants.Render.LightMapsMaxForward model.Translation (Some surfaceBounds) lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMaps
-            let (lightIds, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightTypes, lightRadii, lightConeInners, lightConeOuters, lightDesireFogs) =
+            let (lightIds, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightSpecularities, lightCutoffs, lightTypes, lightRadii, lightConeInners, lightConeOuters, lightDesireFogs) =
                 SortableLight.sortLights Constants.Render.LightsMaxForward model.Translation renderTasks.Lights
             let lightShadowIndices =
                 SortableLight.sortLightShadowIndices renderer.LightShadowIndices lightIds
@@ -5322,7 +5329,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             VulkanRenderer3d.renderPhysicallyBasedForwardSurfaces
                 bonesArray (SList.singleton (model, presence, texCoordsOffset, properties))
                 lightMapIrradianceMaps lightMapEnvironmentFilterMaps shadowTextureArray shadowMaps shadowCascades lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses lightMaps.Length renderer.LightingConfig.LightMapSingletonBlendMargin
-                lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightRadii lightConeInners lightConeOuters lightDesireFogs lightShadowIndices (min lightIds.Length renderTasks.Lights.Count) renderer.ShadowMatricesFlipped
+                lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightSpecularities lightCutoffs lightTypes lightRadii lightConeInners lightConeOuters lightDesireFogs lightShadowIndices (min lightIds.Length renderTasks.Lights.Count) renderer.ShadowMatricesFlipped
                 surface uniformsDescriptorSet samplersDescriptorSet pipeline renderer
             advanceBatch 1
 

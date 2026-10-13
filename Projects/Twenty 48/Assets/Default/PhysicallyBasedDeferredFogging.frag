@@ -90,6 +90,7 @@ struct LightStruct
     float brightness;
     float attenuationLinear;
     float attenuationQuadratic;
+    float specularity;
     float cutoff;
     int lightType;
     float radius;
