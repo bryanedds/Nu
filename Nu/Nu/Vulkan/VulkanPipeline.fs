@@ -263,7 +263,7 @@ type Pipeline =
         (vertexAttributes : VkVertexInputAttributeDescription array)
         pipelineLayout
         (colorAttachmentFormats : VkFormat array)
-        depthTestFormatOpt =
+        depthAttachmentFormatOpt =
 
         // try to create shader modules
         let moduleResults =
@@ -313,14 +313,14 @@ type Pipeline =
 
             // depth-stencil info
             let mutable dInfo = VkPipelineDepthStencilStateCreateInfo ()
-            match depthTestFormatOpt with
+            match depthAttachmentFormatOpt with
             | Some _ ->
                 dInfo.depthWriteEnable <- true
             | None -> ()
 
             // dynamic state info
             let dynamicStates =
-                match depthTestFormatOpt with
+                match depthAttachmentFormatOpt with
                 | Some _ -> [|VkDynamicState.Viewport; VkDynamicState.Scissor; VkDynamicState.DepthTestEnable; VkDynamicState.DepthCompareOp|]
                 | None -> [|VkDynamicState.Viewport; VkDynamicState.Scissor|]
             use dynamicStatesPin = new ArrayPin<_> (dynamicStates)
@@ -333,7 +333,7 @@ type Pipeline =
             let mutable rnInfo = VkPipelineRenderingCreateInfo ()
             rnInfo.colorAttachmentCount <- uint colorAttachmentFormats.Length
             rnInfo.pColorAttachmentFormats <- colorAttachmentFormatsPin.Pointer
-            match depthTestFormatOpt with
+            match depthAttachmentFormatOpt with
             | Some depthTestFormat -> rnInfo.depthAttachmentFormat <- depthTestFormat
             | None -> ()
 

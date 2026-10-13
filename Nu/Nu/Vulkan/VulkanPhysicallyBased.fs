@@ -3587,7 +3587,7 @@ module PhysicallyBased =
         | None -> Log.warnOnce ("Cannot draw " + getTypeName pipeline + " because VkPipeline does not exist.")
 
     /// Create a physically-based shadow pipeline.
-    let createPhysicallyBasedShadowPipeline shaderPath vertexBindings colorAttachmentFormats depthTestFormat context =
+    let createPhysicallyBasedShadowPipeline shaderPath vertexBindings colorAttachmentFormats depthAttachmentFormat context =
 
         // create set 0 uniform buffers
         let shadowVertUniform = VulkanBuffer.create Uniform sizeof<ShadowVertStruct> context
@@ -3606,7 +3606,7 @@ module PhysicallyBased =
                       Pipeline.descriptor 1 UniformBuffer FragmentStage 1|]
                   Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer VertexStage 1|]|]
-                [||] colorAttachmentFormats (Some depthTestFormat)
+                [||] colorAttachmentFormats (Some depthAttachmentFormat)
                 [|shadowVertUniform; boneUniform; shadowFragUniform|]
 
         // make PhysicallyBasedDepthPipeline
@@ -3746,7 +3746,7 @@ module PhysicallyBased =
         VulkanContext.advanceRenderCommandBuffer context
 
     /// Create a physically-based pipeline.
-    let createPhysicallyBasedPipeline lightMapsMax lightsMax shaderPath blends cullModes vertexBindings colorAttachmentFormats depthTestFormat context =
+    let createPhysicallyBasedPipeline lightMapsMax lightsMax shaderPath blends cullModes vertexBindings colorAttachmentFormats depthAttachmentFormat context =
 
         // create set 0 uniform buffers
         let eyeUniform = VulkanBuffer.create Uniform sizeof<EyeStruct> context
@@ -3817,7 +3817,7 @@ module PhysicallyBased =
                       Pipeline.descriptor 5 Sampler FragmentStage 1
                       Pipeline.descriptor 6 Sampler FragmentStage 1|]|]
 
-                [||] colorAttachmentFormats (Some depthTestFormat)
+                [||] colorAttachmentFormats (Some depthAttachmentFormat)
                 [|eyeUniform
                   lightingUniform
                   boneUniform
