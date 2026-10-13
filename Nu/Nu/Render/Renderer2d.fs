@@ -463,17 +463,12 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                     (if flipH then -texCoordsUnflipped.Size.X else texCoordsUnflipped.Size.X)
                     (if flipV then -texCoordsUnflipped.Size.Y else texCoordsUnflipped.Size.Y))
 
-        // prepare blending info for pipeline
-        let pipelineBlend =
-            match blend with
-            | Unblended -> VulkanUnblended
-            | Transparent -> VulkanTransparent
-            | Additive -> VulkanAdditive
-            | Overwrite -> VulkanOverwrite
+        // compute vulkan blend
+        let vulkanBlend = Pipeline.blendToVkBlend blend
 
         // attempt to draw regular sprite
         if color.A <> 0.0f then
-            SpriteBatch.submitSpriteBatchSprite (absolute, min, size, pivot, rotation, &texCoords, &clipOpt, &color, pipelineBlend, texture, renderer.Viewport, resolveTexture, renderer.SpriteBatchEnv)
+            SpriteBatch.submitSpriteBatchSprite (absolute, min, size, pivot, rotation, &texCoords, &clipOpt, &color, vulkanBlend, texture, renderer.Viewport, resolveTexture, renderer.SpriteBatchEnv)
 
         // attempt to draw emission sprite
         if emission.A <> 0.0f then

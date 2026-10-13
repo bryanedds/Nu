@@ -550,8 +550,10 @@ module EffectSystem =
                       UserDefinedImage2Opt = ValueNone
                       CullModeOpt = ValueSome cullMode
                       ClippedOpt = ValueSome clipped
-                      BlendOpt = ValueNone // TODO: P0: make this an aspect.
-                      PipelineNameOpt = ValueNone } // TODO: P0: make this an aspect.
+                      DepthTestOpt = ValueSome LessThanTest // TODO: P0: make these aspects.
+                      DepthWriteOpt = ValueSome true
+                      BlendOpt = ValueNone
+                      PipelineNameOpt = ValueNone }
                 let billboardToken =
                     BillboardToken
                         { ModelMatrix = affineMatrix
@@ -561,7 +563,6 @@ module EffectSystem =
                           MaterialProperties = properties
                           Material = material
                           ShadowOffset = effectSystem.EffectShadowOffset
-                          DepthTest = LessThanTest
                           RenderType = effectSystem.EffectRenderType }
                 addDataToken billboardToken effectSystem
             else effectSystem
@@ -619,7 +620,6 @@ module EffectSystem =
                           MaterialProperties = properties
                           Material = material
                           StaticModel = staticModel
-                          DepthTest = LessThanTest
                           RenderType = effectSystem.EffectRenderType }
                 addDataToken staticModelToken effectSystem
             else effectSystem

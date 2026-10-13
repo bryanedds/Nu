@@ -443,6 +443,24 @@ module AssimpExtensions =
                 else ValueSome false
             | ValueNone -> ValueNone
 
+        member this.DepthTestOpt =
+            match this.TryGetMaterialProperty Constants.Assimp.DepthTestPropertyName with
+            | ValueSome property ->
+                if property.PropertyType = Assimp.PropertyType.String then
+                    try property.GetStringValue () |> scvalueMemo<DepthTest> |> ValueSome
+                    with _ -> ValueNone
+                else ValueSome LessThanOrEqualTest
+            | ValueNone -> ValueNone
+
+        member this.DepthWriteOpt =
+            match this.TryGetMaterialProperty Constants.Assimp.DepthWritePropertyName with
+            | ValueSome property ->
+                if property.PropertyType = Assimp.PropertyType.String then
+                    try property.GetStringValue () |> scvalueMemo<bool> |> ValueSome
+                    with _ -> ValueNone
+                else ValueSome true
+            | ValueNone -> ValueNone
+
         member this.BlendOpt =
             match this.TryGetMaterialProperty Constants.Assimp.BlendPropertyName with
             | ValueSome property ->

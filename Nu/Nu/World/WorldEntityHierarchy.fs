@@ -177,6 +177,8 @@ module WorldEntityHierarchyExtensions =
                                       UserDefinedImage2Opt = Metadata.tryGetStaticModelUserDefinedImage2 surface.SurfaceMaterialIndex staticModel
                                       CullModeOpt = Metadata.tryGetStaticModelCullMode surface.SurfaceMaterialIndex staticModel
                                       ClippedOpt = Metadata.tryGetStaticModelClipped surface.SurfaceMaterialIndex staticModel
+                                      DepthTestOpt = Metadata.tryGetStaticModelDepthTest surface.SurfaceMaterialIndex staticModel
+                                      DepthWriteOpt = Metadata.tryGetStaticModelDepthWrite surface.SurfaceMaterialIndex staticModel
                                       BlendOpt = Metadata.tryGetStaticModelBlend surface.SurfaceMaterialIndex staticModel
                                       PipelineNameOpt = Metadata.tryGetStaticModelPipelineName surface.SurfaceMaterialIndex staticModel }
                                 else Material.empty
@@ -193,7 +195,7 @@ module WorldEntityHierarchyExtensions =
             let frozenEntities = List ()
             let frozenPreBatches =
                 Dictionary<
-                    Material * Vulkan.PhysicallyBasedSurface * DepthTest * RenderType,
+                    Material * Vulkan.PhysicallyBasedSurface * RenderType,
                     Guid * StaticModel AssetTag * int * StaticModelSurfacePreBatchItem List> ()
             let frozenShapes = List ()
             let rec getFrozenArtifacts (entity : Entity) =
@@ -212,13 +214,12 @@ module WorldEntityHierarchyExtensions =
                             let material = entity.GetMaterial world
                             let staticModel = entity.GetStaticModel world
                             let surfaceIndex = entity.GetSurfaceIndex world
-                            let depthTest = entity.GetDepthTest world
                             let renderType = match entity.GetRenderStyle world with Deferred -> DeferredRenderType | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
                             boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine entityBounds) | None -> Some entityBounds
                             frozenEntities.Add entity
                             let metadata = Metadata.getStaticModelMetadata staticModel
                             let surface = metadata.Surfaces[surfaceIndex]
-                            let frozenKey = (material, surface, depthTest, renderType)
+                            let frozenKey = (material, surface, renderType)
                             let frozenValue =
                                 { ModelMatrix = affineMatrix
                                   CastShadow = castShadow
@@ -246,7 +247,6 @@ module WorldEntityHierarchyExtensions =
                             let properties = entity.GetMaterialProperties world
                             let material = entity.GetMaterial world
                             let staticModel = entity.GetStaticModel world
-                            let depthTest = entity.GetDepthTest world
                             let metadata = Metadata.getStaticModelMetadata (entity.GetStaticModel world)
                             let mutable surfaceIndex = 0
                             while surfaceIndex < metadata.Surfaces.Length do
@@ -281,13 +281,15 @@ module WorldEntityHierarchyExtensions =
                                           UserDefinedImage2Opt = Metadata.tryGetStaticModelUserDefinedImage2 surface.SurfaceMaterialIndex staticModel
                                           CullModeOpt = Metadata.tryGetStaticModelCullMode surface.SurfaceMaterialIndex staticModel
                                           ClippedOpt = Metadata.tryGetStaticModelClipped surface.SurfaceMaterialIndex staticModel
+                                          DepthTestOpt = Metadata.tryGetStaticModelDepthTest surface.SurfaceMaterialIndex staticModel
+                                          DepthWriteOpt = Metadata.tryGetStaticModelDepthWrite surface.SurfaceMaterialIndex staticModel
                                           BlendOpt = Metadata.tryGetStaticModelBlend surface.SurfaceMaterialIndex staticModel
                                           PipelineNameOpt = Metadata.tryGetStaticModelPipelineName surface.SurfaceMaterialIndex staticModel }
                                     else material
                                 boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine surfaceBounds) | None -> Some surfaceBounds
                                 let metadata = Metadata.getStaticModelMetadata staticModel
                                 let surface = metadata.Surfaces[surfaceIndex]
-                                let frozenKey = (material, surface, depthTest, renderType)
+                                let frozenKey = (material, surface, renderType)
                                 let frozenValue =
                                     { ModelMatrix = surfaceMatrix
                                       CastShadow = castShadow
@@ -330,14 +332,13 @@ module WorldEntityHierarchyExtensions =
             let frozenPreBatches =
                 frozenPreBatches
                 |> Seq.map (fun entry ->
-                    let (material, _, depthTest, renderType) = entry.Key
+                    let (material, _, renderType) = entry.Key
                     let (preBatchId, staticModel, surfaceIndex, preBatch) = entry.Value
                     { PreBatchId = preBatchId
                       PreBatchItems = Seq.toArray preBatch
                       Material = material
                       StaticModel = staticModel
                       SurfaceIndex = surfaceIndex
-                      DepthTest = depthTest
                       RenderType = renderType })
                 |> Seq.toArray
             (frozenPreBatches, Array.ofSeq frozenShapes, world)

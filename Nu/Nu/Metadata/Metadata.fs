@@ -802,6 +802,30 @@ module Metadata =
             | Some _ | None -> ValueNone
         | ValueNone -> ValueNone
 
+    let private tryGetModelDepthTest materialIndex model =
+        match tryGetModelMetadata model with
+        | ValueSome modelMetadata ->
+            match modelMetadata.SceneOpt with
+            | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
+                let material = scene.Materials[materialIndex]
+                match material.DepthTestOpt with
+                | ValueSome depthTest -> ValueSome depthTest
+                | ValueNone -> ValueNone
+            | Some _ | None -> ValueNone
+        | ValueNone -> ValueNone
+
+    let private tryGetModelDepthWrite materialIndex model =
+        match tryGetModelMetadata model with
+        | ValueSome modelMetadata ->
+            match modelMetadata.SceneOpt with
+            | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
+                let material = scene.Materials[materialIndex]
+                match material.DepthWriteOpt with
+                | ValueSome depthWrite -> ValueSome depthWrite
+                | ValueNone -> ValueNone
+            | Some _ | None -> ValueNone
+        | ValueNone -> ValueNone
+
     let private tryGetModelBlend materialIndex model =
         match tryGetModelMetadata model with
         | ValueSome modelMetadata ->
@@ -938,6 +962,16 @@ module Metadata =
     let tryGetStaticModelClipped materialIndex (staticModel : StaticModel AssetTag) =
         tryGetModelClipped materialIndex staticModel
 
+    /// Attempt to get the depth test for the given material index and static model.
+    /// Thread-safe.
+    let tryGetStaticModelDepthTest materialIndex (staticModel : StaticModel AssetTag) =
+        tryGetModelDepthTest materialIndex staticModel
+
+    /// Attempt to get the depth write for the given material index and static model.
+    /// Thread-safe.
+    let tryGetStaticModelDepthWrite materialIndex (staticModel : StaticModel AssetTag) =
+        tryGetModelDepthWrite materialIndex staticModel
+
     /// Attempt to get the blend property for the given material index and static model.
     /// Thread-safe.
     let tryGetStaticModelBlend materialIndex (staticModel : StaticModel AssetTag) =
@@ -1045,6 +1079,18 @@ module Metadata =
     let tryGetAnimatedModelCullMode materialIndex (animatedModel : AnimatedModel AssetTag) =
         tryGetModelCullMode materialIndex animatedModel
 
+    /// Attempt to get the depth test for the given material index and animated model.
+    /// Thread-safe.
+    let tryGetAnimatedModelDepthTest materialIndex (animatedModel : AnimatedModel AssetTag) =
+        tryGetModelDepthTest materialIndex animatedModel
+
+    /// Attempt to get the depth write for the given material index and animated model.
+    /// Thread-safe.
+    let tryGetAnimatedModelDepthWrite materialIndex (animatedModel : AnimatedModel AssetTag) =
+        tryGetModelDepthWrite materialIndex animatedModel
+
+    /// Attempt to get the blend property for the given material index and animated model.
+    /// Thread-safe.
     let tryGetAnimatedModelBlend materialIndex (animatedModel : AnimatedModel AssetTag) =
         tryGetModelBlend materialIndex animatedModel
 

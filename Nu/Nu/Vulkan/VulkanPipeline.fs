@@ -598,6 +598,13 @@ type Pipeline =
         { Offset = offset
           Size = size
           ShaderStage = shaderStage }
+
+    static member blendToVkBlend blend =
+        match blend with
+        | Unblended -> VulkanUnblended
+        | Transparent -> VulkanTransparent
+        | Additive -> VulkanAdditive
+        | Overwrite -> VulkanOverwrite
     
     /// Convert DepthTest to VkCompareOp.
     /// TODO: BGE: since this is the odd one out in terms of being the only function directly in this module that is

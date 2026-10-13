@@ -297,6 +297,8 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial =
       UserDefinedImage2Texture : Texture
       CullMode : CullMode
       Clipped : bool
+      DepthTest : DepthTest
+      DepthWrite : bool
       Blend : Blend
       PipelineName : string
       Names : string }
@@ -320,6 +322,8 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial =
           UserDefinedImage2Texture = Texture.EmptyTexture
           CullMode = CullBack
           Clipped = false
+          DepthTest = LessThanTest
+          DepthWrite = true
           Blend = Transparent
           PipelineName = Constants.Render.PipelineNameDefault
           Names = "" }
@@ -343,9 +347,11 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial =
         (hash material.UserDefinedImage2Texture <<<     14) ^^^
         (hash material.CullMode <<<                     15) ^^^
         (hash material.Clipped <<<                      16) ^^^
-        (hash material.Blend <<<                        17) ^^^
-        (hash material.PipelineName <<<                 18) ^^^
-        (hash material.Names <<<                        19)
+        (hash material.DepthTest <<<                    17) ^^^
+        (hash material.DepthWrite <<<                   18) ^^^
+        (hash material.Blend <<<                        19) ^^^
+        (hash material.PipelineName <<<                 20) ^^^
+        (hash material.Names <<<                        21)
 
     /// Determing equality.
     static member equals left right =
@@ -367,6 +373,8 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial =
         left.UserDefinedImage2Texture = right.UserDefinedImage2Texture &&
         left.CullMode = right.CullMode &&
         left.Clipped = right.Clipped &&
+        left.DepthTest = right.DepthTest &&
+        left.DepthWrite = right.DepthWrite &&
         left.Blend = right.Blend &&
         left.PipelineName = right.PipelineName &&
         left.Names = right.Names
@@ -1619,6 +1627,18 @@ module PhysicallyBased =
             | ValueSome clipped -> clipped
             | ValueNone -> false
 
+        // compute depth test
+        let depthTest =
+            match material.DepthTestOpt with
+            | ValueSome depthTest -> depthTest
+            | ValueNone -> LessThanTest
+
+        // compute depth write
+        let depthWrite =
+            match material.DepthWriteOpt with
+            | ValueSome depthWrite -> depthWrite
+            | ValueNone -> true
+
         // compute blend mode
         let blend =
             match material.BlendOpt with
@@ -1690,6 +1710,8 @@ module PhysicallyBased =
               UserDefinedImage2Texture = userDefinedImage2Texture
               CullMode = cullMode
               Clipped = clipped
+              DepthTest = depthTest
+              DepthWrite = depthWrite
               Blend = blend
               PipelineName = pipelineName
               Names = names }
@@ -3703,6 +3725,7 @@ module PhysicallyBased =
                 // set up pipeline
                 DeviceApi.vkCmdBindPipeline (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
                 DeviceApi.vkCmdSetDepthTestEnable (context.RenderCommandBuffer, true)
+                DeviceApi.vkCmdSetDepthWriteEnable (context.RenderCommandBuffer, true)
                 DeviceApi.vkCmdSetDepthCompareOp (context.RenderCommandBuffer, VkCompareOp.Less)
 
                 // bind vertex and index buffers
@@ -3943,8 +3966,9 @@ module PhysicallyBased =
 
                 // set up pipeline
                 DeviceApi.vkCmdBindPipeline (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
-                DeviceApi.vkCmdSetDepthTestEnable (context.RenderCommandBuffer, true)
-                DeviceApi.vkCmdSetDepthCompareOp (context.RenderCommandBuffer, VkCompareOp.Less)
+                DeviceApi.vkCmdSetDepthTestEnable (context.RenderCommandBuffer, not material.DepthTest.IsAlwaysPassTest)
+                DeviceApi.vkCmdSetDepthWriteEnable (context.RenderCommandBuffer, material.DepthWrite)
+                DeviceApi.vkCmdSetDepthCompareOp (context.RenderCommandBuffer, Pipeline.depthTestToVkCompareOp material.DepthTest)
 
                 // bind vertex and index buffers
                 let vertexBuffers = [|geometry.VertexBuffer.VkBuffer; geometry.InstanceBuffer.VkBuffer|]
@@ -4123,6 +4147,7 @@ module PhysicallyBased =
             // set up pipeline
             DeviceApi.vkCmdBindPipeline (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
             DeviceApi.vkCmdSetDepthTestEnable (context.RenderCommandBuffer, true)
+            DeviceApi.vkCmdSetDepthWriteEnable (context.RenderCommandBuffer, true)
             DeviceApi.vkCmdSetDepthCompareOp (context.RenderCommandBuffer, VkCompareOp.Less)
 
             // bind vertex and index buffers
@@ -5796,15 +5821,13 @@ module PhysicallyBased =
         (shadowMatrices : Matrix4x4 array)
         (material : PhysicallyBasedMaterial)
         (geometry : PhysicallyBasedGeometry)
-        (depthTest : DepthTest)
-        (blending : bool)
         (uniformsDescriptorSet : VkDescriptorSet)
         (samplersDescriptorSet : VkDescriptorSet)
         (pipeline : PhysicallyBasedPipeline)
         (context : VulkanContext) =
 
         // only draw when required vkPipeline exists
-        let blend = if blending then VulkanTransparent else VulkanUnblended
+        let blend = Pipeline.blendToVkBlend material.Blend
         match Pipeline.tryGetVkPipeline blend material.CullMode pipeline.Pipeline with
         | Some vkPipeline ->
 
@@ -5897,8 +5920,9 @@ module PhysicallyBased =
 
             // set up pipeline
             DeviceApi.vkCmdBindPipeline (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
-            DeviceApi.vkCmdSetDepthTestEnable (context.RenderCommandBuffer, not depthTest.IsAlwaysPassTest)
-            DeviceApi.vkCmdSetDepthCompareOp (context.RenderCommandBuffer, Pipeline.depthTestToVkCompareOp depthTest)
+            DeviceApi.vkCmdSetDepthTestEnable (context.RenderCommandBuffer, not material.DepthTest.IsAlwaysPassTest)
+            DeviceApi.vkCmdSetDepthWriteEnable (context.RenderCommandBuffer, material.DepthWrite)
+            DeviceApi.vkCmdSetDepthCompareOp (context.RenderCommandBuffer, Pipeline.depthTestToVkCompareOp material.DepthTest)
 
             // bind vertex and index buffers
             let vertexBuffers = [|geometry.VertexBuffer.VkBuffer; geometry.InstanceBuffer.VkBuffer|]
