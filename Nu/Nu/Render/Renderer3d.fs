@@ -1313,7 +1313,6 @@ type [<ReferenceEquality>] private RenderTasks =
             for entry in item do
                 entry.Value.Clear ()
 
-        // renderTasks.DeferredAnimatedRemovals.Clear () TODO: P0: ensure dummying this out doesn't cause a regression, then clean up.
         renderTasks.Forward.Clear ()
         renderTasks.ForwardSorted.Clear ()
 
