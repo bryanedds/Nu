@@ -644,7 +644,7 @@ module Hl =
         blit
         
     /// Make a VkRenderingInfo and utilize within the given scope for memory safety.
-    let withRenderingInfo (colorAttachments : VkImageView array) depthAttachmentOpt renderArea loadOperation action =
+    let withRenderingInfo (colorAttachments : VkImageView array) depthAttachmentOpt writeDepth renderArea loadOperation action =
         
         // color attachment infos
         let colorInfos = Array.zeroCreate colorAttachments.Length

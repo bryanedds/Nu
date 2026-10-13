@@ -207,7 +207,7 @@ type Pipeline =
           VkVertexBindings_ : VkVertexInputBindingDescription array
           VkVertexAttributes_ : VkVertexInputAttributeDescription array
           VkColorAttachmentFormats_ : VkFormat array
-          VkDepthTestFormatOpt_ : VkFormat option
+          VkDepthAttachmentFormatOpt_ : VkFormat option
           mutable VkPipelines_ : Dictionary<VulkanBlend * CullMode, VkPipeline> // TODO: P0: make sure no allocation happens on look-up.
           mutable DrawIndex_ : int }
 
@@ -415,7 +415,7 @@ type Pipeline =
                 pipeline.VkVertexAttributes_
                 pipeline.VkPipelineLayout_
                 pipeline.VkColorAttachmentFormats_
-                pipeline.VkDepthTestFormatOpt_
+                pipeline.VkDepthAttachmentFormatOpt_
         for (config, vkPipeline) in vkPipelines do
             pipeline.VkPipelines_.Add (config, vkPipeline)
 
@@ -632,7 +632,7 @@ type Pipeline =
         (descriptorSetDefinitions : DescriptorSetDefinition array)
         (pushConstants : PushConstant array)
         colorAttachmentFormats
-        depthTestFormatOpt
+        depthAttachmemntFormatOpt
         buffers =
 
         // convert vertex and push constant data to vulkan objects
@@ -674,7 +674,7 @@ type Pipeline =
                 vertexAttributes
                 vkPipelineLayout
                 colorAttachmentFormats
-                depthTestFormatOpt
+                depthAttachmemntFormatOpt
 
         // make Pipeline
         let pipeline =
@@ -688,7 +688,7 @@ type Pipeline =
               VkVertexBindings_ = vertexBindingDescriptions
               VkVertexAttributes_ = vertexAttributes
               VkColorAttachmentFormats_ = colorAttachmentFormats
-              VkDepthTestFormatOpt_ = depthTestFormatOpt
+              VkDepthAttachmentFormatOpt_ = depthAttachmemntFormatOpt
               VkPipelines_ = dictPlus HashIdentity.Structural vkPipelines
               DrawIndex_ = 0 }
 
