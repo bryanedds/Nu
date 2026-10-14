@@ -4298,7 +4298,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             let lightProbeModels =
                 entities
                 |> Seq.filter (fun entity -> entity.Group = SelectedGroup && entity.Group.GetEditing world && eyeFrustum.Intersects (entity.GetBounds world))
-                |> Seq.map (fun light -> (light.GetAffineMatrix world, false, Omnipresent, None, MaterialProperties.defaultProperties, Material.empty))
+                |> Seq.map (fun light -> (light.GetAffineMatrix world, false, Omnipresent, None, Material.empty, MaterialProperties.defaultProperties))
                 |> SList.ofSeq
             if SList.notEmpty lightProbeModels then
                 World.enqueueRenderMessage3d
@@ -4314,7 +4314,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             let lightModels =
                 entities
                 |> Seq.filter (fun entity -> entity.Group = SelectedGroup && entity.Group.GetEditing world && eyeFrustum.Intersects (entity.GetBounds world))
-                |> Seq.map (fun light -> (light.GetAffineMatrix world, false, Omnipresent, None, MaterialProperties.defaultProperties, Material.empty))
+                |> Seq.map (fun light -> (light.GetAffineMatrix world, false, Omnipresent, None, Material.empty, MaterialProperties.defaultProperties))
                 |> SList.ofSeq
             if SList.notEmpty lightModels then
                 World.enqueueRenderMessage3d
@@ -4371,8 +4371,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                   CastShadow = false
                                   Presence = Omnipresent
                                   InsetOpt = None
-                                  MaterialProperties = { MaterialProperties.defaultProperties with SpecularScalarOpt = ValueSome 0.0f }
                                   Material = { Material.empty with ClippedOpt = ValueSome true }
+                                  MaterialProperties = { MaterialProperties.defaultProperties with SpecularScalarOpt = ValueSome 0.0f }
                                   StaticModel = Assets.Default.HighlightModel
                                   RenderType = DeferredRenderType
                                   RenderPass = NormalPass })

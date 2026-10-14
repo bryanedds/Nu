@@ -2427,8 +2427,8 @@ module EntityPropertyDescriptor =
                 | _ -> (4, Left "Configuration")
             | ValueSome lateBindings ->
                 match propertyDescriptor.PropertyName with
-                | nameof Entity.MaterialProperties -> (5, Left "Material")
-                | nameof Entity.Material -> (6, Left "Material 2")
+                | nameof Entity.Material -> (5, Left "Material")
+                | nameof Entity.MaterialProperties -> (6, Left "Material Properties")
                 | _ -> (Int32.MaxValue, Right lateBindings))
         |> Seq.sortBy (function ((i, Left name), _) -> (i, Left name) | ((i, Right (ty : Type)), _) -> (i, Right (not (ty.IsAssignableTo typeof<Dispatcher>), ty.Name)))
         |> Seq.map (fun ((_, category), descriptors) -> (category, Seq.map snd descriptors))

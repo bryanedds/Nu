@@ -115,11 +115,17 @@ module Effect =
                   Blend = Transparent
                   Emission = Color.Zero
                   IgnoreLightMaps = false
+                  Anisotropy = 0.0f
                   Flip = Unflipped
                   Brightness = Constants.Render.BrightnessDefault
+                  Specularity = 1.0f
                   LightCutoff = Constants.Render.LightCutoffDefault
                   Volume = Constants.Audio.SoundVolumeDefault
-                  Enabled = true }
+                  Enabled = true
+                  UserDefinedSetting0 = Constants.Render.UserDefinedSettingDefault
+                  UserDefinedSetting1 = Constants.Render.UserDefinedSettingDefault
+                  UserDefinedSetting2 = Constants.Render.UserDefinedSettingDefault
+                  UserDefinedSetting3 = Constants.Render.UserDefinedSettingDefault }
             let effectSystem = EffectSystem.make localTime transform.Absolute transform.CastShadow transform.Presence effect.ClipOpt_ effect.ShadowOffset_ effect.RenderType_ effect.Definitions_
 
             // evaluate effect with effect system

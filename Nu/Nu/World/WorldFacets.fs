@@ -1307,8 +1307,8 @@ type EffectFacet () =
                         RenderBillboardParticles
                             { CastShadow = castShadow
                               Presence = presence
-                              MaterialProperties = descriptor.MaterialProperties
                               Material = descriptor.Material
+                              MaterialProperties = descriptor.MaterialProperties
                               ShadowOffset = descriptor.ShadowOffset
                               Particles = descriptor.Particles
                               RenderType = descriptor.RenderType
@@ -2978,12 +2978,12 @@ type Light3dFacet () =
 [<AutoOpen>]
 module StaticBillboardFacetExtensions =
     type Entity with
-        member this.GetMaterialProperties world : MaterialProperties = this.Get (nameof this.MaterialProperties) world
-        member this.SetMaterialProperties (value : MaterialProperties) world = this.Set (nameof this.MaterialProperties) value world
-        member this.MaterialProperties = lens (nameof this.MaterialProperties) this this.GetMaterialProperties this.SetMaterialProperties
         member this.GetMaterial world : Material = this.Get (nameof this.Material) world
         member this.SetMaterial (value : Material) world = this.Set (nameof this.Material) value world
         member this.Material = lens (nameof this.Material) this this.GetMaterial this.SetMaterial
+        member this.GetMaterialProperties world : MaterialProperties = this.Get (nameof this.MaterialProperties) world
+        member this.SetMaterialProperties (value : MaterialProperties) world = this.Set (nameof this.MaterialProperties) value world
+        member this.MaterialProperties = lens (nameof this.MaterialProperties) this this.GetMaterialProperties this.SetMaterialProperties
         member this.GetRenderStyle world : RenderStyle = this.Get (nameof this.RenderStyle) world
         member this.SetRenderStyle (value : RenderStyle) world = this.Set (nameof this.RenderStyle) value world
         member this.RenderStyle = lens (nameof this.RenderStyle) this this.GetRenderStyle this.SetRenderStyle
@@ -3003,8 +3003,8 @@ type StaticBillboardFacet () =
 
     static member Properties =
         [define Entity.InsetOpt None
-         define Entity.MaterialProperties MaterialProperties.defaultProperties
          define Entity.Material Material.defaultMaterial
+         define Entity.MaterialProperties MaterialProperties.defaultProperties
          define Entity.RenderStyle Deferred
          define Entity.ShadowOffset Constants.Engine.BillboardShadowOffsetDefault
          define Entity.OrientUp true
@@ -3017,8 +3017,8 @@ type StaticBillboardFacet () =
             let affineMatrix = transform.AffineMatrix
             let presence = transform.Presence
             let insetOpt = entity.GetInsetOpt world
-            let properties = entity.GetMaterialProperties world
             let material = entity.GetMaterial world
+            let properties = entity.GetMaterialProperties world
             let shadowOffset = entity.GetShadowOffset world
             let orientUp = entity.GetOrientUp world
             let planar = entity.GetPlanar world
@@ -3029,7 +3029,7 @@ type StaticBillboardFacet () =
             World.enqueueRenderMessage3d
                 (RenderBillboard
                     { CastShadow = castShadow; Presence = presence; ModelMatrix = affineMatrix; InsetOpt = insetOpt; OrientUp = orientUp; Planar = planar;
-                      MaterialProperties = properties; Material = material; ShadowOffset = shadowOffset; RenderType = renderType; RenderPass = renderPass })
+                      Material = material; MaterialProperties = properties; ShadowOffset = shadowOffset; RenderType = renderType; RenderPass = renderPass })
                 world
 
     override this.RayCast (ray, entity, world) =
@@ -3067,8 +3067,8 @@ type AnimatedBillboardFacet () =
          define Entity.CelRun 4
          define Entity.AnimationDelay (GameTime.ofSeconds (1.0 / 15.0))
          define Entity.AnimationStride 1
-         define Entity.MaterialProperties MaterialProperties.defaultProperties
          define Entity.Material Material.defaultMaterial
+         define Entity.MaterialProperties MaterialProperties.defaultProperties
          define Entity.RenderStyle Deferred
          define Entity.ShadowOffset Constants.Engine.BillboardShadowOffsetDefault
          define Entity.OrientUp true
@@ -3085,8 +3085,8 @@ type AnimatedBillboardFacet () =
             let affineMatrix = transform.AffineMatrix
             let presence = transform.Presence
             let insetOpt = getSpriteInsetOpt entity world
-            let properties = entity.GetMaterialProperties world
             let material = entity.GetMaterial world
+            let properties = entity.GetMaterialProperties world
             let shadowOffset = entity.GetShadowOffset world
             let orientUp = entity.GetOrientUp world
             let planar = entity.GetPlanar world
@@ -3097,7 +3097,7 @@ type AnimatedBillboardFacet () =
             World.enqueueRenderMessage3d
                 (RenderBillboard
                     { CastShadow = castShadow; Presence = presence; ModelMatrix = affineMatrix; InsetOpt = insetOpt; OrientUp = orientUp; Planar = planar;
-                      MaterialProperties = properties; Material = material; ShadowOffset = shadowOffset; RenderType = renderType; RenderPass = renderPass })
+                      Material = material; MaterialProperties = properties; ShadowOffset = shadowOffset; RenderType = renderType; RenderPass = renderPass })
                 world
 
     override this.RayCast (ray, entity, world) =
@@ -3109,12 +3109,12 @@ type AnimatedBillboardFacet () =
 [<AutoOpen>]
 module BasicStaticBillboardEmitterFacetExtensions =
     type Entity with
-        member this.GetEmitterMaterialProperties world : MaterialProperties = this.Get (nameof this.EmitterMaterialProperties) world
-        member this.SetEmitterMaterialProperties (value : MaterialProperties) world = this.Set (nameof this.EmitterMaterialProperties) value world
-        member this.EmitterMaterialProperties = lens (nameof this.EmitterMaterialProperties) this this.GetEmitterMaterialProperties this.SetEmitterMaterialProperties
         member this.GetEmitterMaterial world : Material = this.Get (nameof this.EmitterMaterial) world
         member this.SetEmitterMaterial (value : Material) world = this.Set (nameof this.EmitterMaterial) value world
         member this.EmitterMaterial = lens (nameof this.EmitterMaterial) this this.GetEmitterMaterial this.SetEmitterMaterial
+        member this.GetEmitterMaterialProperties world : MaterialProperties = this.Get (nameof this.EmitterMaterialProperties) world
+        member this.SetEmitterMaterialProperties (value : MaterialProperties) world = this.Set (nameof this.EmitterMaterialProperties) value world
+        member this.EmitterMaterialProperties = lens (nameof this.EmitterMaterialProperties) this this.GetEmitterMaterialProperties this.SetEmitterMaterialProperties
         member this.GetEmitterCastShadow world : bool = this.Get (nameof this.EmitterCastShadow) world
         member this.SetEmitterCastShadow (value : bool) world = this.Set (nameof this.EmitterCastShadow) value world
         member this.EmitterCastShadow = lens (nameof this.EmitterCastShadow) this this.GetEmitterCastShadow this.SetEmitterCastShadow
@@ -3185,14 +3185,14 @@ type BasicStaticBillboardEmitterFacet () =
         | Particles.OutputEmitter (name, emitter) -> mapParticleSystem (fun ps -> { ps with Emitters = Map.add name emitter ps.Emitters }) entity world
         | Particles.Outputs outputs -> for output in outputs do processOutput output entity world
 
-    static let handleEmitterMaterialPropertiesChange evt world =
-        let emitterMaterialProperties = evt.Data.Value :?> MaterialProperties
-        mapEmitter (fun emitter -> if emitter.MaterialProperties <> emitterMaterialProperties then { emitter with MaterialProperties = emitterMaterialProperties } else emitter) evt.Subscriber world
-        Cascade
-
     static let handleEmitterMaterialChange evt world =
         let emitterMaterial = evt.Data.Value :?> Material
         mapEmitter (fun emitter -> if emitter.Material <> emitterMaterial then { emitter with Material = emitterMaterial } else emitter) evt.Subscriber world
+        Cascade
+
+    static let handleEmitterMaterialPropertiesChange evt world =
+        let emitterMaterialProperties = evt.Data.Value :?> MaterialProperties
+        mapEmitter (fun emitter -> if emitter.MaterialProperties <> emitterMaterialProperties then { emitter with MaterialProperties = emitterMaterialProperties } else emitter) evt.Subscriber world
         Cascade
 
     static let handleEmitterShadowOffsetChange evt world =
@@ -3276,8 +3276,8 @@ type BasicStaticBillboardEmitterFacet () =
 
     static member Properties =
         [define Entity.SelfDestruct false
-         define Entity.EmitterMaterialProperties MaterialProperties.defaultProperties
          define Entity.EmitterMaterial Material.defaultMaterial
+         define Entity.EmitterMaterialProperties MaterialProperties.defaultProperties
          define Entity.EmitterLifeTimeOpt GameTime.zero
          define Entity.ParticleLifeTimeMaxOpt (GameTime.ofSeconds 1.0)
          define Entity.ParticleRate (match Constants.GameTime.DesiredFrameRate with StaticFrameRate _ -> 1.0f | DynamicFrameRate _ -> 60.0f)
@@ -3297,8 +3297,8 @@ type BasicStaticBillboardEmitterFacet () =
         entity.SetParticleSystem particleSystem world
         World.sense handlePositionChange entity.Position.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
         World.sense handleRotationChange entity.Rotation.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
-        World.sense handleEmitterMaterialPropertiesChange entity.EmitterMaterialProperties.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
         World.sense handleEmitterMaterialChange entity.EmitterMaterial.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
+        World.sense handleEmitterMaterialPropertiesChange entity.EmitterMaterialProperties.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
         World.sense handleEmitterShadowOffsetChange entity.EmitterShadowOffset.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
         World.sense handleEmitterRenderStyleChange entity.EmitterRenderStyle.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
         World.sense handleEmitterLifeTimeOptChange entity.EmitterLifeTimeOpt.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
@@ -3335,6 +3335,29 @@ type BasicStaticBillboardEmitterFacet () =
                 |> List.map (fun descriptor ->
                     match descriptor with
                     | Particles.BillboardParticlesDescriptor descriptor ->
+                        let emitterMaterial = entity.GetEmitterMaterial world
+                        let material =
+                            { AlbedoImageOpt = match emitterMaterial.AlbedoImageOpt with ValueSome albedoImage -> ValueSome albedoImage | ValueNone -> descriptor.Material.AlbedoImageOpt
+                              RoughnessImageOpt = match emitterMaterial.RoughnessImageOpt with ValueSome roughnessImage -> ValueSome roughnessImage | ValueNone -> descriptor.Material.RoughnessImageOpt
+                              MetallicImageOpt = match emitterMaterial.MetallicImageOpt with ValueSome metallicImage -> ValueSome metallicImage | ValueNone -> descriptor.Material.MetallicImageOpt
+                              AmbientOcclusionImageOpt = match emitterMaterial.AmbientOcclusionImageOpt with ValueSome ambientOcclusionImage -> ValueSome ambientOcclusionImage | ValueNone -> descriptor.Material.AmbientOcclusionImageOpt
+                              EmissionImageOpt = match emitterMaterial.EmissionImageOpt with ValueSome emissionImage -> ValueSome emissionImage | ValueNone -> descriptor.Material.EmissionImageOpt
+                              NormalImageOpt = match emitterMaterial.NormalImageOpt with ValueSome normalImage -> ValueSome normalImage | ValueNone -> descriptor.Material.NormalImageOpt
+                              SubdermalImageOpt = match emitterMaterial.SubdermalImageOpt with ValueSome subdermalImage -> ValueSome subdermalImage | ValueNone -> descriptor.Material.SubdermalImageOpt
+                              FinenessImageOpt = match emitterMaterial.FinenessImageOpt with ValueSome finenessImage -> ValueSome finenessImage | ValueNone -> descriptor.Material.FinenessImageOpt
+                              ScatterImageOpt = match emitterMaterial.ScatterImageOpt with ValueSome scatterImage -> ValueSome scatterImage | ValueNone -> descriptor.Material.ScatterImageOpt
+                              ClearCoatImageOpt = match emitterMaterial.ClearCoatImageOpt with ValueSome clearCoatImage -> ValueSome clearCoatImage | ValueNone -> descriptor.Material.ClearCoatImageOpt
+                              ClearCoatRoughnessImageOpt = match emitterMaterial.ClearCoatRoughnessImageOpt with ValueSome clearCoatRoughnessImage -> ValueSome clearCoatRoughnessImage | ValueNone -> descriptor.Material.ClearCoatRoughnessImageOpt
+                              ClearCoatNormalImageOpt = match emitterMaterial.ClearCoatNormalImageOpt with ValueSome clearCoatNormalImage -> ValueSome clearCoatNormalImage | ValueNone -> descriptor.Material.ClearCoatNormalImageOpt
+                              UserDefinedImage0Opt = match emitterMaterial.UserDefinedImage0Opt with ValueSome userDefinedImage -> ValueSome userDefinedImage | ValueNone -> descriptor.Material.UserDefinedImage0Opt
+                              UserDefinedImage1Opt = match emitterMaterial.UserDefinedImage1Opt with ValueSome userDefinedImage -> ValueSome userDefinedImage | ValueNone -> descriptor.Material.UserDefinedImage1Opt
+                              UserDefinedImage2Opt = match emitterMaterial.UserDefinedImage2Opt with ValueSome userDefinedImage -> ValueSome userDefinedImage | ValueNone -> descriptor.Material.UserDefinedImage2Opt
+                              CullModeOpt = match emitterMaterial.CullModeOpt with ValueSome cullMode -> ValueSome cullMode | ValueNone -> descriptor.Material.CullModeOpt
+                              ClippedOpt = match emitterMaterial.ClippedOpt with ValueSome clipped -> ValueSome clipped | ValueNone -> descriptor.Material.ClippedOpt
+                              DepthTestOpt = match emitterMaterial.DepthTestOpt with ValueSome depthTest -> ValueSome depthTest | ValueNone -> descriptor.Material.DepthTestOpt
+                              DepthWriteOpt = match emitterMaterial.DepthWriteOpt with ValueSome depthWrite -> ValueSome depthWrite | ValueNone -> descriptor.Material.DepthWriteOpt
+                              BlendOpt = match emitterMaterial.BlendOpt with ValueSome blend -> ValueSome blend | ValueNone -> descriptor.Material.BlendOpt
+                              PipelineNameOpt = match emitterMaterial.PipelineNameOpt with ValueSome pipelineName -> ValueSome pipelineName | ValueNone -> descriptor.Material.PipelineNameOpt }
                         let emitterProperties = entity.GetEmitterMaterialProperties world
                         let properties =
                             { AlbedoOpt = match emitterProperties.AlbedoOpt with ValueSome albedo -> ValueSome albedo | ValueNone -> descriptor.MaterialProperties.AlbedoOpt
@@ -3361,35 +3384,12 @@ type BasicStaticBillboardEmitterFacet () =
                               UserDefinedSetting5Opt = match emitterProperties.UserDefinedSetting5Opt with ValueSome userDefinedSetting -> ValueSome userDefinedSetting | ValueNone -> descriptor.MaterialProperties.UserDefinedSetting5Opt
                               UserDefinedSetting6Opt = match emitterProperties.UserDefinedSetting6Opt with ValueSome userDefinedSetting -> ValueSome userDefinedSetting | ValueNone -> descriptor.MaterialProperties.UserDefinedSetting6Opt
                               UserDefinedSetting7Opt = match emitterProperties.UserDefinedSetting7Opt with ValueSome userDefinedSetting -> ValueSome userDefinedSetting | ValueNone -> descriptor.MaterialProperties.UserDefinedSetting7Opt }
-                        let emitterMaterial = entity.GetEmitterMaterial world
-                        let material =
-                            { AlbedoImageOpt = match emitterMaterial.AlbedoImageOpt with ValueSome albedoImage -> ValueSome albedoImage | ValueNone -> descriptor.Material.AlbedoImageOpt
-                              RoughnessImageOpt = match emitterMaterial.RoughnessImageOpt with ValueSome roughnessImage -> ValueSome roughnessImage | ValueNone -> descriptor.Material.RoughnessImageOpt
-                              MetallicImageOpt = match emitterMaterial.MetallicImageOpt with ValueSome metallicImage -> ValueSome metallicImage | ValueNone -> descriptor.Material.MetallicImageOpt
-                              AmbientOcclusionImageOpt = match emitterMaterial.AmbientOcclusionImageOpt with ValueSome ambientOcclusionImage -> ValueSome ambientOcclusionImage | ValueNone -> descriptor.Material.AmbientOcclusionImageOpt
-                              EmissionImageOpt = match emitterMaterial.EmissionImageOpt with ValueSome emissionImage -> ValueSome emissionImage | ValueNone -> descriptor.Material.EmissionImageOpt
-                              NormalImageOpt = match emitterMaterial.NormalImageOpt with ValueSome normalImage -> ValueSome normalImage | ValueNone -> descriptor.Material.NormalImageOpt
-                              SubdermalImageOpt = match emitterMaterial.SubdermalImageOpt with ValueSome subdermalImage -> ValueSome subdermalImage | ValueNone -> descriptor.Material.SubdermalImageOpt
-                              FinenessImageOpt = match emitterMaterial.FinenessImageOpt with ValueSome finenessImage -> ValueSome finenessImage | ValueNone -> descriptor.Material.FinenessImageOpt
-                              ScatterImageOpt = match emitterMaterial.ScatterImageOpt with ValueSome scatterImage -> ValueSome scatterImage | ValueNone -> descriptor.Material.ScatterImageOpt
-                              ClearCoatImageOpt = match emitterMaterial.ClearCoatImageOpt with ValueSome clearCoatImage -> ValueSome clearCoatImage | ValueNone -> descriptor.Material.ClearCoatImageOpt
-                              ClearCoatRoughnessImageOpt = match emitterMaterial.ClearCoatRoughnessImageOpt with ValueSome clearCoatRoughnessImage -> ValueSome clearCoatRoughnessImage | ValueNone -> descriptor.Material.ClearCoatRoughnessImageOpt
-                              ClearCoatNormalImageOpt = match emitterMaterial.ClearCoatNormalImageOpt with ValueSome clearCoatNormalImage -> ValueSome clearCoatNormalImage | ValueNone -> descriptor.Material.ClearCoatNormalImageOpt
-                              UserDefinedImage0Opt = match emitterMaterial.UserDefinedImage0Opt with ValueSome userDefinedImage -> ValueSome userDefinedImage | ValueNone -> descriptor.Material.UserDefinedImage0Opt
-                              UserDefinedImage1Opt = match emitterMaterial.UserDefinedImage1Opt with ValueSome userDefinedImage -> ValueSome userDefinedImage | ValueNone -> descriptor.Material.UserDefinedImage1Opt
-                              UserDefinedImage2Opt = match emitterMaterial.UserDefinedImage2Opt with ValueSome userDefinedImage -> ValueSome userDefinedImage | ValueNone -> descriptor.Material.UserDefinedImage2Opt
-                              CullModeOpt = match emitterMaterial.CullModeOpt with ValueSome cullMode -> ValueSome cullMode | ValueNone -> descriptor.Material.CullModeOpt
-                              ClippedOpt = match emitterMaterial.ClippedOpt with ValueSome clipped -> ValueSome clipped | ValueNone -> descriptor.Material.ClippedOpt
-                              DepthTestOpt = match emitterMaterial.DepthTestOpt with ValueSome depthTest -> ValueSome depthTest | ValueNone -> descriptor.Material.DepthTestOpt
-                              DepthWriteOpt = match emitterMaterial.DepthWriteOpt with ValueSome depthWrite -> ValueSome depthWrite | ValueNone -> descriptor.Material.DepthWriteOpt
-                              BlendOpt = match emitterMaterial.BlendOpt with ValueSome blend -> ValueSome blend | ValueNone -> descriptor.Material.BlendOpt
-                              PipelineNameOpt = match emitterMaterial.PipelineNameOpt with ValueSome pipelineName -> ValueSome pipelineName | ValueNone -> descriptor.Material.PipelineNameOpt }
                         Some
                             (RenderBillboardParticles
                                 { CastShadow = castShadow
                                   Presence = presence
-                                  MaterialProperties = properties
                                   Material = material
+                                  MaterialProperties = properties
                                   ShadowOffset = descriptor.ShadowOffset
                                   Particles = descriptor.Particles
                                   RenderType = descriptor.RenderType
@@ -3415,8 +3415,8 @@ type StaticModelFacet () =
 
     static member Properties =
         [define Entity.InsetOpt None
-         define Entity.MaterialProperties MaterialProperties.empty
          define Entity.Material Material.empty
+         define Entity.MaterialProperties MaterialProperties.empty
          define Entity.RenderStyle Deferred
          define Entity.StaticModel Assets.Default.StaticModel]
 
@@ -3427,14 +3427,14 @@ type StaticModelFacet () =
             let affineMatrix = transform.AffineMatrix
             let presence = transform.Presence
             let insetOpt = ValueOption.ofOption (entity.GetInsetOpt world)
-            let properties = entity.GetMaterialProperties world
             let material = entity.GetMaterial world
+            let properties = entity.GetMaterialProperties world
             let staticModel = entity.GetStaticModel world
             let renderType =
                 match entity.GetRenderStyle world with
                 | Deferred -> DeferredRenderType
                 | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
-            World.renderStaticModelFast (&affineMatrix, castShadow, presence, insetOpt, properties, material, staticModel, renderType, renderPass, world)
+            World.renderStaticModelFast (&affineMatrix, castShadow, presence, insetOpt, material, properties, staticModel, renderType, renderPass, world)
 
     override this.GetAttributesInferred (entity, world) =
         let staticModel = entity.GetStaticModel world
@@ -3484,8 +3484,8 @@ type StaticModelSurfaceFacet () =
 
     static member Properties =
         [define Entity.InsetOpt None
-         define Entity.MaterialProperties MaterialProperties.defaultProperties
          define Entity.Material Material.empty
+         define Entity.MaterialProperties MaterialProperties.defaultProperties
          define Entity.RenderStyle Deferred
          define Entity.StaticModel Assets.Default.StaticModel
          define Entity.SurfaceIndex 0]
@@ -3497,15 +3497,15 @@ type StaticModelSurfaceFacet () =
             let affineMatrix = transform.AffineMatrix
             let presence = transform.Presence
             let insetOpt = Option.toValueOption (entity.GetInsetOpt world)
-            let properties = entity.GetMaterialProperties world
             let material = entity.GetMaterial world
+            let properties = entity.GetMaterialProperties world
             let staticModel = entity.GetStaticModel world
             let surfaceIndex = entity.GetSurfaceIndex world
             let renderType =
                 match entity.GetRenderStyle world with
                 | Deferred -> DeferredRenderType
                 | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
-            World.renderStaticModelSurfaceFast (&affineMatrix, castShadow, presence, insetOpt, properties, material, staticModel, surfaceIndex, renderType, renderPass, world)
+            World.renderStaticModelSurfaceFast (&affineMatrix, castShadow, presence, insetOpt, material, properties, staticModel, surfaceIndex, renderType, renderPass, world)
 
     override this.GetAttributesInferred (entity, world) =
         match Metadata.tryGetStaticModelMetadata (entity.GetStaticModel world) with
@@ -3656,8 +3656,8 @@ type AnimatedModelFacet () =
 
     static member Properties =
         [define Entity.InsetOpt None
-         define Entity.MaterialProperties MaterialProperties.empty
          define Entity.Material Material.empty
+         define Entity.MaterialProperties MaterialProperties.empty
          define Entity.Animations [|{ StartTime = GameTime.zero; LifeTimeOpt = None; Name = ""; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BoneFilterOpt = None }|]
          define Entity.AnimatedModel Assets.Default.AnimatedModel
          define Entity.SubsortOffsets Map.empty
@@ -3715,8 +3715,8 @@ type AnimatedModelFacet () =
             let affineMatrix = transform.AffineMatrix
             let presence = transform.Presence
             let insetOpt = Option.toValueOption (entity.GetInsetOpt world)
-            let properties = entity.GetMaterialProperties world
             let material = entity.GetMaterial world
+            let properties = entity.GetMaterialProperties world
             let animatedModel = entity.GetAnimatedModel world
             let subsortOffsets = entity.GetSubsortOffsets world
             let dualRenderedSurfaces = entity.GetDualRenderedSurfaces world
@@ -3725,7 +3725,7 @@ type AnimatedModelFacet () =
                 | Deferred -> DeferredRenderType
                 | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
             match entity.GetBoneTransformsOpt world with
-            | Some boneTransforms -> World.renderAnimatedModelFast (&affineMatrix, castShadow, presence, insetOpt, properties, material, boneTransforms, animatedModel, subsortOffsets, dualRenderedSurfaces, renderType, renderPass, world)
+            | Some boneTransforms -> World.renderAnimatedModelFast (&affineMatrix, castShadow, presence, insetOpt, material, properties, boneTransforms, animatedModel, subsortOffsets, dualRenderedSurfaces, renderType, renderPass, world)
             | None -> ()
 
     override this.GetAttributesInferred (entity, world) =
@@ -3780,12 +3780,12 @@ type AnimatedModelFacet () =
 module TerrainFacetExtensions =
     type Entity with
 
-        member this.GetTerrainMaterialProperties world : TerrainMaterialProperties = this.Get (nameof this.TerrainMaterialProperties) world
-        member this.SetTerrainMaterialProperties (value : TerrainMaterialProperties) world = this.Set (nameof this.TerrainMaterialProperties) value world
-        member this.TerrainMaterialProperties = lens (nameof this.TerrainMaterialProperties) this this.GetTerrainMaterialProperties this.SetTerrainMaterialProperties
         member this.GetTerrainMaterial world : TerrainMaterial = this.Get (nameof this.TerrainMaterial) world
         member this.SetTerrainMaterial (value : TerrainMaterial) world = this.Set (nameof this.TerrainMaterial) value world
         member this.TerrainMaterial = lens (nameof this.TerrainMaterial) this this.GetTerrainMaterial this.SetTerrainMaterial
+        member this.GetTerrainMaterialProperties world : TerrainMaterialProperties = this.Get (nameof this.TerrainMaterialProperties) world
+        member this.SetTerrainMaterialProperties (value : TerrainMaterialProperties) world = this.Set (nameof this.TerrainMaterialProperties) value world
+        member this.TerrainMaterialProperties = lens (nameof this.TerrainMaterialProperties) this this.GetTerrainMaterialProperties this.SetTerrainMaterialProperties
         member this.GetTintImageOpt world : Image AssetTag option = this.Get (nameof this.TintImageOpt) world
         member this.SetTintImageOpt (value : Image AssetTag option) world = this.Set (nameof this.TintImageOpt) value world
         member this.TintImageOpt = lens (nameof this.TintImageOpt) this this.GetTintImageOpt this.SetTintImageOpt
@@ -3834,7 +3834,6 @@ type TerrainFacet () =
          define Entity.CollisionCategories "1"
          define Entity.CollisionMask Constants.Physics.CollisionWildcard
          define Entity.InsetOpt None
-         define Entity.TerrainMaterialProperties TerrainMaterialProperties.defaultProperties
          define Entity.TerrainMaterial
             (BlendMaterial
                 { TerrainLayers =
@@ -3855,6 +3854,7 @@ type TerrainFacet () =
                   UserDefinedImage0 = Assets.Default.MaterialUserDefinedImage0
                   UserDefinedImage1 = Assets.Default.MaterialUserDefinedImage1
                   PipelineName = Constants.Render.PipelineNameDefault })
+         define Entity.TerrainMaterialProperties TerrainMaterialProperties.defaultProperties
          define Entity.TintImageOpt None
          define Entity.NormalImageOpt None
          define Entity.Tiles (v2 256.0f 256.0f)
@@ -3926,8 +3926,8 @@ type TerrainFacet () =
                 { Bounds = transform.Bounds3d
                   CastShadow = castShadow
                   InsetOpt = entity.GetInsetOpt world
-                  MaterialProperties = entity.GetTerrainMaterialProperties world
                   Material = entity.GetTerrainMaterial world
+                  MaterialProperties = entity.GetTerrainMaterialProperties world
                   TintImageOpt = entity.GetTintImageOpt world
                   NormalImageOpt = entity.GetNormalImageOpt world
                   Tiles = entity.GetTiles world

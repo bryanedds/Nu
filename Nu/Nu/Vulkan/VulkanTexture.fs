@@ -437,8 +437,7 @@ type [<CustomEquality; NoComparison>] TextureInternal =
                 match attachmentMode with
                 | AttachmentNone ->
 
-                    // check if hardware supports mipmap generation; this is done here to prevent unused (i.e. blank) mip levels
-                    // TODO: P0: check for VkFormatFeatureFlags.BlitSrc/Dst as well.
+                    // check that hardware supports mipmap generation; this is done here to prevent unused (i.e. blank) mip levels
                     let mutable formatProperties = Unchecked.defaultof<VkFormatProperties>
                     InstanceApi.vkGetPhysicalDeviceFormatProperties (context.PhysicalDevice.VkPhysicalDevice, internalFormat.VkFormat, &formatProperties)
                     let mipGenSupport = formatProperties.optimalTilingFeatures &&& VkFormatFeatureFlags.SampledImageFilterLinear <> VkFormatFeatureFlags.None
