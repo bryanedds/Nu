@@ -810,7 +810,7 @@ type [<ReferenceEquality>] StaticSpriteEmitter<'a when 'a :> Particle and 'a : e
         // fin
         (output + output2 + output3 + output4, emitter)
 
-    /// Make a basic particle emitter.
+    /// Make a basic static sprite particle emitter.
     static member make<'a>
         time body absolute elevation blend clipOpt image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
         constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors toParticlesDescriptor : 'a StaticSpriteEmitter =
@@ -1064,7 +1064,7 @@ type [<ReferenceEquality>] StaticBillboardEmitter<'a when 'a :> Particle and 'a 
         // fin
         (output + output2 + output3 + output4, emitter)
 
-    /// Make a basic particle emitter.
+    /// Make a basic billboard particle emitter.
     static member make<'a>
         time body absolute material properties
         shadowOffset renderType lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
