@@ -36,14 +36,6 @@ type Justification =
     | Unjustified of Wrapped : bool
     | Justified of Horizontal : JustificationHorizontal * Vertical : JustificationVertical
 
-/// A mutable particle value.
-type [<Struct>] Particle =
-    { mutable Transform : Transform
-      mutable InsetOpt : Box2 ValueOption
-      mutable Color : Color
-      mutable Emission : Color
-      mutable Flip : Flip }
-
 /// The type of rendering used on a surface (for use by the lower-level renderer API).
 type [<Struct>] RenderType =
     | DeferredRenderType

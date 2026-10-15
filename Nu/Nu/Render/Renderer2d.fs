@@ -16,16 +16,44 @@ open TiledSharp
 open Prime
 open Nu.Vulkan
 
+/// A mutable particle value.
+type [<Struct>] Particle =
+    { mutable Transform : Transform
+      mutable InsetOpt : Box2 ValueOption
+      mutable Color : Color
+      mutable Emission : Color
+      mutable Flip : Flip
+      mutable UserDefinedSetting0 : single
+      mutable UserDefinedSetting1 : single
+      mutable UserDefinedSetting2 : single
+      mutable UserDefinedSetting3 : single
+      mutable UserDefinedSetting4 : single
+      mutable UserDefinedSetting5 : single
+      mutable UserDefinedSetting6 : single
+      mutable UserDefinedSetting7 : single }
+
 /// A mutable sprite value.
 type [<Struct>] SpriteValue =
     { mutable Transform : Transform
       mutable InsetOpt : Box2 voption
       mutable ClipOpt : Box2 voption
       mutable Image : Image AssetTag
+      mutable UserDefinedImage0 : Image AssetTag
+      mutable UserDefinedImage1 : Image AssetTag
+      mutable UserDefinedImage2 : Image AssetTag
+      mutable PipelineName : string
       mutable Color : Color
       mutable Blend : Blend
       mutable Emission : Color
-      mutable Flip : Flip }
+      mutable Flip : Flip
+      mutable UserDefinedSetting0 : single
+      mutable UserDefinedSetting1 : single
+      mutable UserDefinedSetting2 : single
+      mutable UserDefinedSetting3 : single
+      mutable UserDefinedSetting4 : single
+      mutable UserDefinedSetting5 : single
+      mutable UserDefinedSetting6 : single
+      mutable UserDefinedSetting7 : single }
 
 /// A mutable text value.
 type [<Struct>] TextValue =
@@ -45,10 +73,22 @@ type SpriteDescriptor =
       InsetOpt : Box2 voption
       ClipOpt : Box2 voption
       Image : Image AssetTag
+      UserDefinedImage0 : Image AssetTag
+      UserDefinedImage1 : Image AssetTag
+      UserDefinedImage2 : Image AssetTag
+      PipelineName : string
       Color : Color
       Blend : Blend
       Emission : Color
-      Flip : Flip }
+      Flip : Flip
+      UserDefinedSetting0 : single
+      UserDefinedSetting1 : single
+      UserDefinedSetting2 : single
+      UserDefinedSetting3 : single
+      UserDefinedSetting4 : single
+      UserDefinedSetting5 : single
+      UserDefinedSetting6 : single
+      UserDefinedSetting7 : single }
 
 /// Describes how to render multiple sprites to a rendering subsystem.
 type [<NoEquality; NoComparison>] SpritesDescriptor =
@@ -80,8 +120,12 @@ type [<NoEquality; NoComparison>] SpriteParticlesDescriptor =
       Elevation : single
       Horizon : single
       ClipOpt : Box2 voption
-      Blend : Blend
       Image : Image AssetTag
+      UserDefinedImage0 : Image AssetTag
+      UserDefinedImage1 : Image AssetTag
+      UserDefinedImage2 : Image AssetTag
+      PipelineName : string
+      Blend : Blend
       Particles : Particle SArray }
 
 /// Describes how to render text to a rendering subsystem.
