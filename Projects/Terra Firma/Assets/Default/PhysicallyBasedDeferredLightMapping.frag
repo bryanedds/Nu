@@ -4,7 +4,7 @@ const float PI = 3.141592654;
 const float FLOAT_MAX = 3.402823466e+38;
 const int LIGHT_MAPS_MAX = 26;
 
-struct EyeStruct
+struct Eye3dStruct
 {
     vec3 center;
     mat4 view;
@@ -14,7 +14,7 @@ struct EyeStruct
     mat4 viewProjection;
 };
 
-struct LightMapStruct
+struct LightMap3dStruct
 {
     vec3 origin;
     vec3 min;
@@ -23,16 +23,16 @@ struct LightMapStruct
     float ambientBrightness;
 };
 
-struct LightsGeneralStruct
+struct Lighting3d3Struct
 {
     int lightMapsCount;
     float lightMapSingletonBlendMargin;
     int lightsCount;
 };
 
-layout(set = 0, binding = 0) uniform EyeUniform { EyeStruct eye; };
-layout(set = 0, binding = 1) uniform LightMapsUniform { LightMapStruct lightMaps[LIGHT_MAPS_MAX]; };
-layout(set = 0, binding = 2) uniform LightsGeneralUniform { LightsGeneralStruct lightsGeneral; };
+layout(set = 0, binding = 0) uniform Eye3dUniform { Eye3dStruct eye; };
+layout(set = 0, binding = 1) uniform LightMap3dsUniform { LightMap3dStruct lightMaps[LIGHT_MAPS_MAX]; };
+layout(set = 0, binding = 2) uniform Lighting3d3Uniform { Lighting3d3Struct lighting3; };
 layout(set = 0, binding = 3) uniform texture2D depthTexture;
 layout(set = 0, binding = 4) uniform texture2D normalPlusTexture;
 
@@ -120,9 +120,9 @@ void main()
     float lm2DistanceSquared = FLOAT_MAX;
     if (!ignoreLightMaps)
     {
-        for (int i = 0; i < lightsGeneral.lightMapsCount; ++i)
+        for (int i = 0; i < lighting3.lightMapsCount; ++i)
         {
-            LightMapStruct lightMap = lightMaps[i];
+            LightMap3dStruct lightMap = lightMaps[i];
             if (inBounds(position.xyz, lightMap.min, lightMap.size))
             {
                 vec3 delta = lightMap.origin - position.xyz;
@@ -150,7 +150,7 @@ void main()
         vec3 min1 = lightMaps[lm1].min;
         vec3 size1 = lightMaps[lm1].size;
         float distance = distanceToOutside(position.xyz, min1, size1);
-        ratio = 1.0 - smoothstep(0.0, lightsGeneral.lightMapSingletonBlendMargin, distance);
+        ratio = 1.0 - smoothstep(0.0, lighting3.lightMapSingletonBlendMargin, distance);
     }
     else if (lm1 != -1 && lm2 != -1)
     {

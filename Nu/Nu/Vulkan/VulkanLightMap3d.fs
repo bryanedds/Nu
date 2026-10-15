@@ -20,12 +20,12 @@ type EnvironmentFilterStruct =
 
 /// Describes an environment filter pipeline that's loaded into GPU.
 type EnvironmentFilterPipeline =
-    { EyeUniform : VulkanBuffer
+    { Eye3dUniform : VulkanBuffer
       EnvironmentFilterUniform : VulkanBuffer
       Pipeline : Pipeline }
 
-/// A collection of cube maps composing a single light map.
-type [<Struct>] LightMap =
+/// A collection of cube maps composing a single 3d light map.
+type [<Struct>] LightMap3d =
     { Enabled : bool
       Origin : Vector3
       Bounds : Box3
@@ -36,7 +36,7 @@ type [<Struct>] LightMap =
 
 /// Light map operations.
 [<RequireQualifiedAccess>]
-module LightMap =
+module LightMap3d =
 
     /// Create a reflection map.
     let createReflectionMap render resolution origin ambientColor ambientBrightness getCommandBuffer context =
@@ -149,7 +149,7 @@ module LightMap =
     let createEnvironmentFilterPipeline shaderPath colorAttachmentFormat (context : VulkanContext) =
 
         // create uniform buffers
-        let eyeUniform = VulkanBuffer.create Uniform sizeof<EyeStruct> context
+        let eyeUniform = VulkanBuffer.create Uniform sizeof<Eye3dStruct> context
         let environmentFilterUniform = VulkanBuffer.create Uniform sizeof<EnvironmentFilterStruct> context
 
         // create pipeline
@@ -169,7 +169,7 @@ module LightMap =
                 [|eyeUniform; environmentFilterUniform|]
 
         // fin
-        { EyeUniform = eyeUniform; EnvironmentFilterUniform = environmentFilterUniform; Pipeline = pipeline }
+        { Eye3dUniform = eyeUniform; EnvironmentFilterUniform = environmentFilterUniform; Pipeline = pipeline }
     
     /// Destroy an EnvironmentFilterPipeline.
     let destroyEnvironmentFilterPipeline environmentFilterPipeline context =
@@ -206,9 +206,9 @@ module LightMap =
             let mutable uniformDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.Pipeline.DrawIndex pipeline.Pipeline $ fun vkSet ->
 
                 // specify eye
-                let eye = EyeStruct (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
-                VulkanBuffer.uploadValue eye pipeline.EyeUniform context
-                Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.EyeUniform vkSet
+                let eye = Eye3dStruct (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
+                VulkanBuffer.uploadValue eye pipeline.Eye3dUniform context
+                Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.Eye3dUniform vkSet
 
                 // specify environment filter
                 let environmentFilter = EnvironmentFilterStruct (roughness = roughness, resolution = resolution)
