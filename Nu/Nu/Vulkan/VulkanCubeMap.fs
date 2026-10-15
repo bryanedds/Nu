@@ -14,9 +14,9 @@ open Vortice.Vulkan
 open Prime
 open Nu
 
-/// Represents the eye data for a shader.
+/// Represents the 3d eye data for a shader.
 [<Struct; StructLayout (LayoutKind.Explicit)>]
-type EyeStruct =
+type Eye3dStruct =
     [<FieldOffset(0)>] val mutable center : Vector3
     [<FieldOffset(16)>] val mutable view : Matrix4x4
     [<FieldOffset(80)>] val mutable viewInverse : Matrix4x4
@@ -46,7 +46,7 @@ type [<Struct>] CubeMapSurface =
 
 /// Describes a cube map pipeline that's loaded into GPU.
 type CubeMapPipeline =
-    { EyeUniform : VulkanBuffer
+    { Eye3dUniform : VulkanBuffer
       Pipeline : Pipeline }
 
 /// The key identifying a cube map.
@@ -249,7 +249,7 @@ module CubeMap =
     let createCubeMapPipeline shaderPath colorAttachmentFormat (context : VulkanContext) =
 
         // create eye buffer
-        let eyeUniform = VulkanBuffer.create Uniform sizeof<EyeStruct> context
+        let eyeUniform = VulkanBuffer.create Uniform sizeof<Eye3dStruct> context
 
         // create pipeline
         let pipeline =
@@ -267,7 +267,7 @@ module CubeMap =
                 [|eyeUniform|]
 
         // fin
-        { EyeUniform = eyeUniform; Pipeline = pipeline }
+        { Eye3dUniform = eyeUniform; Pipeline = pipeline }
     
     /// Destroy a CubeMapPipeline.
     let destroyCubeMapPipeline cubeMapPipeline context =
@@ -301,9 +301,9 @@ module CubeMap =
 
             // specify eye
             let mutable eyeDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.Pipeline.DrawIndex pipeline.Pipeline $ fun vkSet ->
-                let eye = EyeStruct (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
-                VulkanBuffer.uploadValue eye pipeline.EyeUniform context
-                Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.EyeUniform vkSet
+                let eye = Eye3dStruct (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
+                VulkanBuffer.uploadValue eye pipeline.Eye3dUniform context
+                Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.Eye3dUniform vkSet
 
             // specify material
             let mutable materialDescriptorSet = Pipeline.specifyDescriptorSet 1 cubeMap pipeline.Pipeline $ fun vkSet ->

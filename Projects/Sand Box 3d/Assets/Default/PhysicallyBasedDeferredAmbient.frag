@@ -2,7 +2,7 @@
 
 const int LIGHT_MAPS_MAX = 26;
 
-struct EyeStruct
+struct Eye3dStruct
 {
     vec3 center;
     mat4 view;
@@ -12,7 +12,7 @@ struct EyeStruct
     mat4 viewProjection;
 };
 
-struct LightMapStruct
+struct LightMap3dStruct
 {
     vec3 origin;
     vec3 min;
@@ -21,9 +21,9 @@ struct LightMapStruct
     float ambientBrightness;
 };
 
-layout(set = 0, binding = 0) uniform EyeUniform { EyeStruct eye; };
-layout(set = 0, binding = 1) uniform LightMapUniform { LightMapStruct lightMapFallback; };
-layout(set = 0, binding = 2) uniform LightMapsUniform { LightMapStruct lightMaps[LIGHT_MAPS_MAX]; };
+layout(set = 0, binding = 0) uniform Eye3dUniform { Eye3dStruct eye; };
+layout(set = 0, binding = 1) uniform LightMap3dUniform { LightMap3dStruct lightMapFallback; };
+layout(set = 0, binding = 2) uniform LightMap3dsUniform { LightMap3dStruct lightMaps[LIGHT_MAPS_MAX]; };
 layout(set = 0, binding = 3) uniform texture2D depthTexture;
 layout(set = 0, binding = 4) uniform texture2D lightMappingTexture;
 

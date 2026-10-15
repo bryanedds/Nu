@@ -15,7 +15,7 @@ const vec4 SSVF_DITHERING[4] =
         vec4(0.1875, 0.6875, 0.0625, 0.5625),
         vec4(0.9375, 0.4375, 0.8125, 0.3125));
 
-struct EyeStruct
+struct Eye3dStruct
 {
     vec3 center;
     mat4 view;
@@ -25,7 +25,7 @@ struct EyeStruct
     mat4 viewProjection;
 };
 
-struct LightingStruct
+struct Lighting3dStruct
 {
     float lightCutoffMargin;
     vec3 lightAmbientColor;
@@ -75,14 +75,14 @@ struct LightingStruct
     float shadowNear;
 };
 
-struct LightsGeneralStruct
+struct Lighting3d3Struct
 {
     int lightMapsCount;
     float lightMapSingletonBlendMargin;
     int lightsCount;
 };
 
-struct LightStruct
+struct Light3dStruct
 {
     vec3 origin;
     vec3 direction;
@@ -100,10 +100,10 @@ struct LightStruct
     int shadowIndex;
 };
 
-layout(set = 0, binding = 0) uniform EyeUniform { EyeStruct eye; };
-layout(set = 0, binding = 1) uniform LightingUniform { LightingStruct lighting; };
-layout(set = 0, binding = 2) uniform LightsGeneralUniform { LightsGeneralStruct lightsGeneral; };
-layout(set = 0, binding = 3) uniform LightsUniform { LightStruct lights[LIGHTS_MAX]; };
+layout(set = 0, binding = 0) uniform Eye3dUniform { Eye3dStruct eye; };
+layout(set = 0, binding = 1) uniform Lighting3dUniform { Lighting3dStruct lighting; };
+layout(set = 0, binding = 2) uniform Lighting3d3Uniform { Lighting3d3Struct lighting3; };
+layout(set = 0, binding = 3) uniform Light3dsUniform { Light3dStruct lights[LIGHTS_MAX]; };
 layout(set = 0, binding = 4) uniform ShadowMatricesUniform { mat4 shadowMatrices[SHADOW_TEXTURES_MAX + SHADOW_CASCADES_MAX * SHADOW_CASCADE_LEVELS]; };
 layout(set = 0, binding = 5) uniform texture2D depthTexture;
 layout(set = 0, binding = 6) uniform texture2DArray shadowTextures;
@@ -125,7 +125,7 @@ vec4 depthToPosition(float depth, vec2 texCoords)
     return eye.viewInverse * positionView;
 }
 
-vec3 computeFogAccumPoint(vec4 position, LightStruct light)
+vec3 computeFogAccumPoint(vec4 position, Light3dStruct light)
 {
     // compute ray info
     vec3 startPosition = eye.center;
@@ -227,7 +227,7 @@ vec3 computeFogAccumPoint(vec4 position, LightStruct light)
     return smoothstep(0.0, 1.0, result / validSteps) * light.color * light.brightness * lighting.ssvfIntensity;
 }
 
-vec3 computeFogAccumSpot(vec4 position, LightStruct light)
+vec3 computeFogAccumSpot(vec4 position, Light3dStruct light)
 {
     // compute ray info
     vec3 startPosition = eye.center;
@@ -332,7 +332,7 @@ vec3 computeFogAccumSpot(vec4 position, LightStruct light)
     return smoothstep(0.0, 1.0, result / validSteps) * light.color * light.brightness * lighting.ssvfIntensity;
 }
 
-vec3 computeFogAccumDirectional(vec4 position, LightStruct light)
+vec3 computeFogAccumDirectional(vec4 position, Light3dStruct light)
 {
     // compute ray info
     vec3 startPosition = eye.center;
@@ -400,7 +400,7 @@ vec3 computeFogAccumDirectional(vec4 position, LightStruct light)
     return smoothstep(0.0, 1.0, result / lighting.ssvfSteps) * light.color * light.brightness * lighting.ssvfIntensity;
 }
 
-vec3 computeFogAccumCascaded(vec4 position, LightStruct light)
+vec3 computeFogAccumCascaded(vec4 position, Light3dStruct light)
 {
     // compute ray info
     vec3 startPosition = eye.center;
@@ -489,9 +489,9 @@ void main()
         vec4 position = depthToPosition(depth, texCoords);
 
         // accumulate fog
-        for (int i = 0; i < lightsGeneral.lightsCount; ++i)
+        for (int i = 0; i < lighting3.lightsCount; ++i)
         {
-            LightStruct light = lights[i];
+            Light3dStruct light = lights[i];
             if (light.desireFog == 1)
             {
                 switch (light.lightType)

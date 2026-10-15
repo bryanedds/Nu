@@ -1,6 +1,6 @@
 #version 450 core
 
-struct EyeStruct
+struct Eye3dStruct
 {
     vec3 center;
     mat4 view;
@@ -19,7 +19,7 @@ struct DepthOfFieldStruct
     vec2 focalPoint;
 };
 
-layout(set = 0, binding = 0) uniform EyeUniform { EyeStruct eye; };
+layout(set = 0, binding = 0) uniform Eye3dUniform { Eye3dStruct eye; };
 layout(set = 0, binding = 1) uniform DepthOfFieldUniform { DepthOfFieldStruct depthOfField; };
 layout(set = 0, binding = 2) uniform texture2D depthTexture;
 layout(set = 0, binding = 3) uniform texture2D blurredTexture;
