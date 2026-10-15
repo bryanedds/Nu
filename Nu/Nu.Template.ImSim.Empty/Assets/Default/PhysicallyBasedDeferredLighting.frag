@@ -46,8 +46,10 @@ struct LightStruct
     float brightness;
     float attenuationLinear;
     float attenuationQuadratic;
+    float specularity;
     float cutoff;
     int lightType;
+    float radius;
     float coneInner;
     float coneOuter;
     int desireFog;
@@ -65,9 +67,10 @@ layout(set = 0, binding = 7) uniform texture2D normalPlusTexture;
 layout(set = 0, binding = 8) uniform texture2D subdermalPlusTexture;
 layout(set = 0, binding = 9) uniform texture2D scatterPlusTexture;
 layout(set = 0, binding = 10) uniform texture2D clearCoatPlusTexture;
-layout(set = 0, binding = 11) uniform texture2DArray shadowTextures;
-layout(set = 0, binding = 12) uniform textureCube shadowMaps[SHADOW_MAPS_MAX];
-layout(set = 0, binding = 13) uniform texture2DArray shadowCascades[SHADOW_CASCADES_MAX];
+layout(set = 0, binding = 11) uniform texture2D userDefinedBufferTexture;
+layout(set = 0, binding = 12) uniform texture2DArray shadowTextures;
+layout(set = 0, binding = 13) uniform textureCube shadowMaps[SHADOW_MAPS_MAX];
+layout(set = 0, binding = 14) uniform texture2DArray shadowCascades[SHADOW_CASCADES_MAX];
 
 layout(set = 1, binding = 0) uniform sampler unfilteredSampler;
 layout(set = 1, binding = 1) uniform sampler filteredSampler;
@@ -498,14 +501,15 @@ void main()
         vec3 f0 = mix(vec3(0.04), albedo, metallic); // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
         for (int i = 0; i < lighting.lightsCount; ++i)
         {
-            // compute per-light radiance
+            // compute per-light attributes and compensate roughness where applicable
             LightStruct light = lights[i];
             bool lightPoint = light.lightType == 0;
             bool lightSpot = light.lightType == 1;
-            float hDotV, intensity;
+            float hDotV, intensity, roughnessCompensation;
             vec3 l, h, radiance;
             if (lightPoint || lightSpot)
             {
+                // compute attributes
                 vec3 d = light.origin - position.xyz;
                 l = normalize(d);
                 h = normalize(v + l);
@@ -521,6 +525,7 @@ void main()
                 float halfConeBetween = angle - halfConeInner;
                 float halfConeScalar = clamp(1.0 - halfConeBetween / halfConeDelta, 0.0, 1.0);
                 intensity = attenuation * halfConeScalar * cutoffScalar;
+                roughnessCompensation = exp(light.radius / 8.0) - 1.0;
                 radiance = light.color * light.brightness * intensity;
             }
             else
@@ -529,6 +534,7 @@ void main()
                 h = normalize(v + l);
                 hDotV = saturate(dot(h, v));
                 intensity = 1.0;
+                roughnessCompensation = 0.0;
                 radiance = light.color * light.brightness;
             }
 
@@ -550,7 +556,7 @@ void main()
                 }
 
                 // cook-torrance brdf
-                float ndf = distributionGGX(normal, h, roughness);
+                float ndf = distributionGGX(normal, h, saturate(roughness + roughnessCompensation));
                 float g = geometrySchlick(normal, v, l, roughness);
                 vec3 f = fresnelSchlick(hDotV, f0);
 
@@ -558,7 +564,7 @@ void main()
                 vec3 numerator = ndf * g * f;
                 float nDotL = saturate(dot(normal, l));
                 float denominator = 4.0 * nDotV * nDotL + 0.0001; // add epsilon to prevent division by zero
-                vec3 specular = clamp(numerator / denominator, 0.0, 10000.0);
+                vec3 specular = clamp(numerator / denominator, 0.0, 10000.0) * light.specularity;
 
                 // mix in specularity of clear coat when desired
                 if (clearCoat > 0.0)
@@ -568,7 +574,7 @@ void main()
                     vec3 f0 = vec3(pow((CLEAR_COAT_REFRACTIVE_INDEX - 1.0) / (CLEAR_COAT_REFRACTIVE_INDEX + 1.0), 2.0));
 
                     // cook-torrance brdf
-                    float ndf = distributionGGX(clearCoatNormal, h, clearCoatRoughness);
+                    float ndf = distributionGGX(clearCoatNormal, h, saturate(clearCoatRoughness + roughnessCompensation));
                     float g = geometrySchlick(clearCoatNormal, v, l, clearCoatRoughness);
                     vec3 f = fresnelSchlick(hDotV, f0);
 
@@ -576,7 +582,7 @@ void main()
                     vec3 numerator = ndf * g * f;
                     float nDotL = saturate(dot(clearCoatNormal, l));
                     float denominator = 4.0 * nDotV * nDotL + 0.0001; // add epsilon to prevent division by zero
-                    vec3 clearCoatSpecular = clamp(numerator / denominator, 0.0, 10000.0);
+                    vec3 clearCoatSpecular = clamp(numerator / denominator, 0.0, 10000.0) * light.specularity;
 
                     // mix specular
                     specular = mix(specular, clearCoatSpecular, clearCoat);

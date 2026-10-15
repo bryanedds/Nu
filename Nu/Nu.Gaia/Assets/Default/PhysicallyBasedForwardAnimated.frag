@@ -110,8 +110,10 @@ struct LightStruct
     float brightness;
     float attenuationLinear;
     float attenuationQuadratic;
+    float specularity;
     float cutoff;
     int lightType;
+    float radius;
     float coneInner;
     float coneOuter;
     int desireFog;
@@ -132,7 +134,9 @@ layout(set = 1, binding = 2) uniform texture2D metallicTexture;
 layout(set = 1, binding = 3) uniform texture2D ambientOcclusionTexture;
 layout(set = 1, binding = 4) uniform texture2D emissionTexture;
 layout(set = 1, binding = 5) uniform texture2D normalTexture;
-layout(set = 1, binding = 6) uniform texture2D heightTexture;
+layout(set = 1, binding = 12) uniform texture2D userDefinedImage0Texture;
+layout(set = 1, binding = 13) uniform texture2D userDefinedImage1Texture;
+layout(set = 1, binding = 14) uniform texture2D userDefinedImage2Texture;
 
 layout(set = 2, binding = 1) uniform LightMapUniform { LightMapStruct lightMaps[LIGHT_MAPS_MAX]; };
 layout(set = 2, binding = 2) uniform LightsGeneralUniform { LightsGeneralStruct lightsGeneral; };
@@ -146,17 +150,23 @@ layout(set = 2, binding = 9) uniform texture2DArray shadowCascades[SHADOW_CASCAD
 
 layout(set = 3, binding = 0) uniform sampler unfilteredSampler;
 layout(set = 3, binding = 1) uniform sampler filteredSampler;
-layout(set = 3, binding = 2) uniform sampler materialSampler;
+layout(set = 3, binding = 2) uniform sampler materialRepeatSampler;
+layout(set = 3, binding = 3) uniform sampler materialRepeatMirrorSampler;
+layout(set = 3, binding = 4) uniform sampler materialClampToEdge;
+layout(set = 3, binding = 5) uniform sampler materialClampToEdgeMirrorSampler;
+layout(set = 3, binding = 6) uniform sampler materialClampToBorder;
 
 layout(location = 0) in vec4 position;
 layout(location = 1) in vec2 texCoords;
 layout(location = 2) in vec3 normal;
-layout(location = 3) flat in vec4 albedo;
-layout(location = 4) flat in vec4 material;
-layout(location = 5) flat in vec4 heightPlus;
-layout(location = 6) flat in vec4 subsurfacePlus;
+layout(location = 3) in vec3 tangent;
+layout(location = 4) flat in vec4 albedo;
+layout(location = 5) flat in vec4 material;
+layout(location = 6) flat in vec4 material2;
+layout(location = 7) flat in vec4 subsurfacePlus;
 
-layout(location = 0) out vec4 frag;
+layout(location = 0) out float depthOut;
+layout(location = 1) out vec4 compositionOut;
 
 float saturate(float v)
 {
@@ -218,16 +228,16 @@ vec2 rayBoxIntersectionRatios(vec3 rayOrigin, vec3 rayDirection, vec3 boxMin, ve
     return tEnter < tExit ? vec2(tEnter, tExit) : vec2(0.0);
 }
 
-float distributionGGX(vec3 normal, vec3 h, float roughness)
+float distributionGGXAnisotropic(vec3 normal, vec3 tangent, vec3 binormal, vec3 h, float roughness, float anisotropy)
 {
     float a = roughness * roughness;
-    float aPow2 = a * a;
+    float at = max(0.001, a * (1.0 + anisotropy));
+    float ab = max(0.001, a * (1.0 - anisotropy));
+    float tDotH = dot(tangent, h);
+    float bDotH = dot(binormal, h);
     float nDotH = saturate(dot(normal, h));
-    float nDotHPow2 = nDotH * nDotH;
-    float nom = aPow2;
-    float denom = nDotHPow2 * (aPow2 - 1.0) + 1.0;
-    denom = PI * denom * denom;
-    return nom / denom;
+    float denom = (tDotH * tDotH) / (at * at) + (bDotH * bDotH) / (ab * ab) + nDotH * nDotH;
+    return 1.0 / (PI * at * ab * denom * denom);
 }
 
 float geometrySchlickGGX(float nDotV, float roughness)
@@ -846,50 +856,35 @@ void computeSsrr(float depth, vec4 position, vec3 normal, float refractiveIndex,
 void main()
 {
     // discard when depth out of range
-    float depthCutoff = heightPlus.z;
-    float depth = gl_FragCoord.z / gl_FragCoord.w;
+    float depthCutoff = material2.y;
+    float depth = gl_FragCoord.z;
     if (depthCutoff >= 0.0) { if (depth > depthCutoff) discard; }
     else if (depth <= -depthCutoff) discard;
 
     // compute basic fragment data
     vec3 normal = normalize(normal);
+    vec3 tangent = normalize(tangent);
+    vec3 binormal = -normalize(cross(normal, tangent));
+    mat3 toWorld = mat3(tangent, binormal, normal);
     float distance = length(position.xyz - eye.center);
 
-    // compute spatial converters
-    vec3 q1 = dFdx(position.xyz);
-    vec3 q2 = dFdy(position.xyz);
-    vec2 st1 = dFdx(texCoords);
-    vec2 st2 = dFdy(texCoords);
-    vec3 tangent = normalize(q1 * st2.t - q2 * st1.t);
-    vec3 binormal = -normalize(cross(normal, tangent));
-    tangent = normalize(tangent - normal * dot(normal, tangent));
-    binormal = cross(normal, tangent);
-    mat3 toWorld = mat3(tangent, binormal, normal);
-    mat3 toTangent = transpose(toWorld);
-
-    // compute tex coords in parallax occlusion space
-    vec3 eyeCenterTangent = toTangent * eye.center;
-    vec3 positionTangent = toTangent * position.xyz;
-    vec3 toEyeTangent = normalize(eyeCenterTangent - positionTangent);
-    float height = texture(sampler2D(heightTexture, materialSampler), texCoords).x * heightPlus.x;
-    vec2 parallax = toEyeTangent.xy * height;
-    vec2 texCoords = texCoords - parallax;
-
     // compute albedo with alpha sample
-    float opaqueDistance = heightPlus.w;
-    vec4 albedoSample = texture(sampler2D(albedoTexture, materialSampler), texCoords);
+    float opaqueDistance = material2.w;
+    vec4 albedoSample = texture(sampler2D(albedoTexture, materialRepeatSampler), texCoords);
     vec4 albedoPlus =
         vec4(
             pow(albedoSample.rgb, vec3(GAMMA)) * albedo.rgb,
             mix(albedoSample.a, 1.0, smoothstep(opaqueDistance * 0.667, opaqueDistance, distance)));
 
-    // compute normal
-    vec3 n = normalize(toWorld * decodeNormal(texture(sampler2D(normalTexture, materialSampler), texCoords).xy));
+    // compute n, t, b in world space
+    vec3 n = normalize(toWorld * decodeNormal(texture(sampler2D(normalTexture, materialRepeatSampler), texCoords).xy));
+    vec3 t = normalize(tangent - n * dot(tangent, n));
+    vec3 b = normalize(cross(n, t));
 
     // compute roughness with specular anti-aliasing (Tokuyoshi & Kaplanyan 2019)
     // NOTE: the SAA algo also includes derivative scalars that are currently not utilized here due to lack of need -
     // https://github.com/google/filament/blob/d7b44a2585a7ce19615dbe226501acc3fe3f0c16/shaders/src/surface_shading_lit.fs#L41-L42
-    float roughness = texture(sampler2D(roughnessTexture, materialSampler), texCoords).r * material.r;
+    float roughness = texture(sampler2D(roughnessTexture, materialRepeatSampler), texCoords).r * material.r;
     vec3 du = dFdx(n);
     vec3 dv = dFdy(n);
     float variance = SAA_VARIANCE * (dot(du, du) + dot(dv, dv));
@@ -899,12 +894,15 @@ void main()
     roughness = sqrt(sqrt(roughnessPerceptualSquared));
 
     // compute remaining material properties
-    float metallic = texture(sampler2D(metallicTexture, materialSampler), texCoords).g * material.g;
-    float ambientOcclusion = texture(sampler2D(ambientOcclusionTexture, materialSampler), texCoords).b * material.b;
-    vec3 emission = vec3(texture(sampler2D(emissionTexture, materialSampler), texCoords).r * material.a);
+    float metallic = texture(sampler2D(metallicTexture, materialRepeatSampler), texCoords).g * material.g;
+    float ambientOcclusion = texture(sampler2D(ambientOcclusionTexture, materialRepeatSampler), texCoords).b * material.b;
+    vec3 emission = vec3(texture(sampler2D(emissionTexture, materialRepeatSampler), texCoords).r * material.a);
 
     // compute ignore light maps
-    bool ignoreLightMaps = heightPlus.y != 0.0;
+    bool ignoreLightMaps = material2.x != 0.0;
+
+    // compute anisotropy
+    float anisotropy = clamp(material2.z, -0.99, 0.99);
 
     // compute subsurface properties
     float subsurfaceCutoff = subsurfacePlus.x;
@@ -921,14 +919,15 @@ void main()
     vec3 fogAccum = vec3(0.0);
     for (int i = 0; i < lightsGeneral.lightsCount; ++i)
     {
-        // per-light radiance
+        // compute per-light attributes and compensate roughness where applicable
         LightStruct light = lights[i];
         bool lightPoint = light.lightType == 0;
         bool lightSpot = light.lightType == 1;
-        float hDotV, intensity;
+        float hDotV, intensity, roughnessCompensation;
         vec3 l, h, radiance;
         if (lightPoint || lightSpot)
         {
+            // compute attributes
             vec3 d = light.origin - position.xyz;
             l = normalize(d);
             h = normalize(v + l);
@@ -944,6 +943,7 @@ void main()
             float halfConeBetween = angle - halfConeInner;
             float halfConeScalar = clamp(1.0 - halfConeBetween / halfConeDelta, 0.0, 1.0);
             intensity = attenuation * halfConeScalar * cutoffScalar;
+            roughnessCompensation = exp(light.radius / 8.0) - 1.0;
             radiance = light.color * light.brightness * intensity;
         }
         else
@@ -952,6 +952,7 @@ void main()
             h = normalize(v + l);
             hDotV = saturate(dot(h, v));
             intensity = 1.0;
+            roughnessCompensation = 0.0;
             radiance = light.color * light.brightness;
         }
 
@@ -973,7 +974,7 @@ void main()
             }
 
             // cook-torrance brdf
-            float ndf = distributionGGX(n, h, roughness);
+            float ndf = distributionGGXAnisotropic(n, t, b, h, saturate(roughness + roughnessCompensation), anisotropy);
             float g = geometrySchlick(n, v, l, roughness);
             vec3 f = fresnelSchlick(hDotV, f0);
 
@@ -981,7 +982,7 @@ void main()
             vec3 numerator = ndf * g * f;
             float nDotL = saturate(dot(n, l));
             float denominator = 4.0 * nDotV * nDotL + 0.0001; // add epsilon to prevent division by zero
-            vec3 specular = clamp(numerator / denominator, 0.0, 10000.0);
+            vec3 specular = clamp(numerator / denominator, 0.0, 10000.0) * light.specularity;
 
             // compute diffusion
             vec3 kS = f;
@@ -1180,6 +1181,7 @@ void main()
         }
     }
 
-    // write fragment
-    frag = vec4(color, alpha);
+    // write depth and composition
+    depthOut = depth;
+    compositionOut = vec4(color, alpha);
 }

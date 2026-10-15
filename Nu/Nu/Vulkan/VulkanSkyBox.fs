@@ -38,7 +38,7 @@ module SkyBox =
         let pipeline =
             Pipeline.create
                 Constants.Paths.SkyBoxShaderFilePath
-                [|VulkanUnblended|] [|false|]
+                [|VulkanUnblended|] [|CullNone|]
                 [|Pipeline.vertex 0 CubeMap.VertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Single3 0|]|]
                 [|Pipeline.descriptorSet<int>
@@ -87,7 +87,7 @@ module SkyBox =
         let viewProjection = view * projection
 
         // only draw when required vkPipeline exists
-        match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
+        match Pipeline.tryGetVkPipeline VulkanUnblended CullNone pipeline.Pipeline with
         | Some vkPipeline ->
 
             // specify uniforms

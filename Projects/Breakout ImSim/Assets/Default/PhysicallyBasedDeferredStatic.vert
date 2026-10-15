@@ -34,23 +34,30 @@ layout(set = 0, binding = 0) uniform EyeUniform { EyeStruct eye; };
 
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec2 texCoords;
-layout(location = 2) in vec3 normal;
-layout(location = 3) in mat4 model;
-layout(location = 7) in vec4 texCoordsOffset;
-layout(location = 8) in vec4 albedo;
-layout(location = 9) in vec4 material;
-layout(location = 10) in vec4 heightPlus;
-layout(location = 11) in vec4 subsurfacePlus;
-layout(location = 12) in vec4 clearCoatPlus; // NOTE: z and w are free for additional parameters.
+layout(location = 2) in vec2 texCoords2;
+layout(location = 3) in vec2 texCoords3;
+layout(location = 4) in vec3 normal;
+layout(location = 5) in vec3 tangent;
+layout(location = 6) in vec4 color;
+layout(location = 7) in mat4 model;
+layout(location = 11) in vec4 texCoordsOffset;
+layout(location = 12) in vec4 albedo;
+layout(location = 13) in vec4 material;
+layout(location = 14) in vec4 material2;
+layout(location = 15) in vec4 subsurfacePlus;
+layout(location = 16) in vec4 clearCoatPlus; // NOTE: z and w are reserved for additional engine parameters.
+layout(location = 17) in vec4 reservedSettings;
+layout(location = 18) in vec4 userDefinedSettings[2];
 
 layout(location = 0) out vec4 positionOut;
 layout(location = 1) out vec2 texCoordsOut;
 layout(location = 2) out vec3 normalOut;
-layout(location = 3) flat out vec4 albedoOut;
-layout(location = 4) flat out vec4 materialOut;
-layout(location = 5) flat out vec4 heightPlusOut;
-layout(location = 6) flat out vec4 subsurfacePlusOut;
-layout(location = 7) flat out vec4 clearCoatPlusOut;
+layout(location = 3) out vec3 tangentOut;
+layout(location = 4) flat out vec4 albedoOut;
+layout(location = 5) flat out vec4 materialOut;
+layout(location = 6) flat out vec4 material2Out;
+layout(location = 7) flat out vec4 subsurfacePlusOut;
+layout(location = 8) flat out vec4 clearCoatPlusOut;
 
 void main()
 {
@@ -59,10 +66,11 @@ void main()
     vec2 texCoordsOffsetFilter = TEX_COORDS_OFFSET_FILTERS[texCoordsOffsetIndex];
     vec2 texCoordsOffsetFilter2 = TEX_COORDS_OFFSET_FILTERS_2[texCoordsOffsetIndex];
     texCoordsOut = texCoords + texCoordsOffset.xy * texCoordsOffsetFilter + texCoordsOffset.zw * texCoordsOffsetFilter2;
+    normalOut = transpose(inverse(mat3(model))) * normal;
+    tangentOut = transpose(inverse(mat3(model))) * tangent;
     albedoOut = albedo;
     materialOut = material;
-    normalOut = transpose(inverse(mat3(model))) * normal;
-    heightPlusOut = heightPlus;
+    material2Out = material2;
     subsurfacePlusOut = subsurfacePlus;
     clearCoatPlusOut = clearCoatPlus;
     gl_Position = eye.viewProjection * positionOut;

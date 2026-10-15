@@ -204,13 +204,18 @@ module EffectSystem =
         | Color color -> slice.Color <- color; slice
         | Blend blend -> slice.Blend <- blend; slice
         | Emission emission -> slice.Emission <- emission; slice
-        | Height height -> slice.Height <- height; slice
         | IgnoreLightMaps ignoreLightMaps -> slice.IgnoreLightMaps <- ignoreLightMaps; slice
+        | Anisotropy anisotropy -> slice.Anisotropy <- anisotropy; slice
         | Flip flip -> slice.Flip <- flip; slice
         | Brightness brightness -> slice.Brightness <- brightness; slice
+        | Specularity specularity -> slice.Specularity <- specularity; slice
         | LightCutoff lightCutoff -> slice.LightCutoff <- lightCutoff; slice
         | Volume volume -> slice.Volume <- volume; slice
         | Enabled enabled -> slice.Enabled <- enabled; slice
+        | UserDefinedSetting0 setting -> slice.UserDefinedSetting0 <- setting; slice
+        | UserDefinedSetting1 setting -> slice.UserDefinedSetting0 <- setting; slice
+        | UserDefinedSetting2 setting -> slice.UserDefinedSetting0 <- setting; slice
+        | UserDefinedSetting3 setting -> slice.UserDefinedSetting0 <- setting; slice
         | Positions (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
@@ -299,19 +304,19 @@ module EffectSystem =
                 let applied = applyTween Color.Multiply Color.Divide Color.Pow Color.Modulo slice.Color tweened applicator
                 slice.Emission <- applied
             slice
-        | Heights (applicator, algorithm, playback, keyFrames) ->
-            if Array.notEmpty keyFrames then
-                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
-                let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
-                let tweened = tween (fun (x, y) -> x * single y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.Height tweened applicator
-                slice.Height <- applied
-            slice
         | IgnoreLightMapses (applicator, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (_, keyFrame, _) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let applied = applyLogic slice.Enabled keyFrame.LogicValue applicator
                 slice.IgnoreLightMaps <- applied
+            slice
+        | Anisotropies (applicator, algorithm, playback, keyFrames) ->
+            if Array.notEmpty keyFrames then
+                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+                let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
+                let tweened = tween (fun (x, y) -> x * single y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
+                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.Anisotropy tweened applicator
+                slice.Anisotropy <- applied
             slice
         | Brightnesses (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
@@ -320,6 +325,14 @@ module EffectSystem =
                 let tweened = tween (fun (x, y) -> x * single y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
                 let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.Brightness tweened applicator
                 slice.Brightness <- applied
+            slice
+        | Specularities (applicator, algorithm, playback, keyFrames) ->
+            if Array.notEmpty keyFrames then
+                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+                let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
+                let tweened = tween (fun (x, y) -> x * single y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
+                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.Specularity tweened applicator
+                slice.Specularity <- applied
             slice
         | LightCutoffs (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
@@ -342,6 +355,38 @@ module EffectSystem =
                 let (_, keyFrame, _) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let applied = applyLogic slice.Enabled keyFrame.LogicValue applicator
                 slice.Enabled <- applied
+            slice
+        | UserDefinedSetting0s (applicator, algorithm, playback, keyFrames) ->
+            if Array.notEmpty keyFrames then
+                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+                let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
+                let tweened = tween (fun (x, y) -> x * single y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
+                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.UserDefinedSetting0 tweened applicator
+                slice.UserDefinedSetting0 <- applied
+            slice
+        | UserDefinedSetting1s (applicator, algorithm, playback, keyFrames) ->
+            if Array.notEmpty keyFrames then
+                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+                let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
+                let tweened = tween (fun (x, y) -> x * single y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
+                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.UserDefinedSetting1 tweened applicator
+                slice.UserDefinedSetting1 <- applied
+            slice
+        | UserDefinedSetting2s (applicator, algorithm, playback, keyFrames) ->
+            if Array.notEmpty keyFrames then
+                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+                let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
+                let tweened = tween (fun (x, y) -> x * single y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
+                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.UserDefinedSetting2 tweened applicator
+                slice.UserDefinedSetting2 <- applied
+            slice
+        | UserDefinedSetting3s (applicator, algorithm, playback, keyFrames) ->
+            if Array.notEmpty keyFrames then
+                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+                let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
+                let tweened = tween (fun (x, y) -> x * single y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
+                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.UserDefinedSetting3 tweened applicator
+                slice.UserDefinedSetting3 <- applied
             slice
         | Aspect.Expand (definitionName, _) ->
             match Map.tryFind definitionName effectSystem.EffectEnv with
@@ -489,6 +534,7 @@ module EffectSystem =
                           Brightness = slice.Brightness
                           AttenuationLinear = 1.0f / (slice.Brightness * slice.LightCutoff)
                           AttenuationQuadratic = 1.0f / (slice.Brightness * slice.LightCutoff * slice.LightCutoff)
+                          Specularity = slice.Specularity
                           LightCutoff = slice.LightCutoff
                           LightType = lightType
                           DesireShadows = false }
@@ -498,16 +544,7 @@ module EffectSystem =
         // build implicitly mounted content
         evalContent content slice history effectSystem
 
-    and private evalBillboard albedo roughness metallic ambientOcclusion emission normal height twoSided clipped aspects content (slice : Slice) history effectSystem =
-
-        // pull image from resource
-        let imageAlbedo = evalResource albedo effectSystem
-        let imageRoughness = evalResource roughness effectSystem
-        let imageMetallic = evalResource metallic effectSystem
-        let imageAmbientOcclusion = evalResource ambientOcclusion effectSystem
-        let imageEmission = evalResource emission effectSystem
-        let imageNormal = evalResource normal effectSystem
-        let imageHeight = evalResource height effectSystem
+    and private evalBillboard material properties aspects content (slice : Slice) history effectSystem =
 
         // eval aspects
         let slice = evalAspects aspects slice effectSystem
@@ -518,48 +555,25 @@ module EffectSystem =
                 let affineMatrix = Matrix4x4.CreateAffine (slice.Position, slice.Angles.RollPitchYaw, slice.Scale)
                 let insetOpt = if slice.Inset.Equals box2Zero then None else Some slice.Inset
                 let properties =
-                    { AlbedoOpt = ValueSome slice.Color
-                      RoughnessOpt = ValueNone
-                      MetallicOpt = ValueNone
-                      AmbientOcclusionOpt = ValueNone
-                      EmissionOpt = ValueSome slice.Emission.R
-                      HeightOpt = ValueSome slice.Height
-                      IgnoreLightMapsOpt = ValueSome slice.IgnoreLightMaps
-                      OpaqueDistanceOpt = ValueNone
-                      FinenessOffsetOpt = ValueNone
-                      ScatterTypeOpt = ValueNone
-                      SpecularScalarOpt = ValueSome 0.0f // TODO: consider making this an aspect?
-                      SubsurfaceCutoffOpt = ValueNone
-                      SubsurfaceCutoffMarginOpt = ValueNone
-                      RefractiveIndexOpt = ValueNone
-                      ClearCoatOpt = ValueNone
-                      ClearCoatRoughnessOpt = ValueNone }
-                let material =
-                    { AlbedoImageOpt = ValueSome (AssetTag.specialize<Image> imageAlbedo)
-                      RoughnessImageOpt = ValueSome (AssetTag.specialize<Image> imageRoughness)
-                      MetallicImageOpt = ValueSome (AssetTag.specialize<Image> imageMetallic)
-                      AmbientOcclusionImageOpt = ValueSome (AssetTag.specialize<Image> imageAmbientOcclusion)
-                      EmissionImageOpt = ValueSome (AssetTag.specialize<Image> imageEmission)
-                      NormalImageOpt = ValueSome (AssetTag.specialize<Image> imageNormal)
-                      HeightImageOpt = ValueSome (AssetTag.specialize<Image> imageHeight)
-                      SubdermalImageOpt = ValueNone
-                      FinenessImageOpt = ValueNone
-                      ScatterImageOpt = ValueNone
-                      ClearCoatImageOpt = ValueNone
-                      ClearCoatRoughnessImageOpt = ValueNone
-                      ClearCoatNormalImageOpt = ValueNone
-                      TwoSidedOpt = ValueSome twoSided
-                      ClippedOpt = ValueSome clipped }
+                    { properties with
+                        AlbedoOpt = ValueSome (match properties.AlbedoOpt with ValueSome albedo -> albedo * slice.Color | ValueNone -> slice.Color)
+                        EmissionOpt = ValueSome (match properties.EmissionOpt with ValueSome emission -> emission * slice.Emission.R | ValueNone -> slice.Emission.R)
+                        IgnoreLightMapsOpt = ValueSome (match properties.IgnoreLightMapsOpt with ValueSome ignoreLightMaps -> ignoreLightMaps && slice.IgnoreLightMaps | ValueNone -> slice.IgnoreLightMaps)
+                        AnisotropyOpt = ValueSome (match properties.AnisotropyOpt with ValueSome anisotropy -> anisotropy * slice.Anisotropy | ValueNone -> slice.Anisotropy)
+                        SpecularScalarOpt = ValueSome (match properties.SpecularScalarOpt with ValueSome specularScalar -> specularScalar * slice.Specularity | ValueNone -> slice.Anisotropy)
+                        UserDefinedSetting0Opt = ValueSome (match properties.UserDefinedSetting0Opt with ValueSome setting -> setting * slice.UserDefinedSetting0 | ValueNone -> slice.UserDefinedSetting0)
+                        UserDefinedSetting1Opt = ValueSome (match properties.UserDefinedSetting1Opt with ValueSome setting -> setting * slice.UserDefinedSetting1 | ValueNone -> slice.UserDefinedSetting1)
+                        UserDefinedSetting2Opt = ValueSome (match properties.UserDefinedSetting2Opt with ValueSome setting -> setting * slice.UserDefinedSetting2 | ValueNone -> slice.UserDefinedSetting2)
+                        UserDefinedSetting3Opt = ValueSome (match properties.UserDefinedSetting3Opt with ValueSome setting -> setting * slice.UserDefinedSetting3 | ValueNone -> slice.UserDefinedSetting3) }
                 let billboardToken =
                     BillboardToken
                         { ModelMatrix = affineMatrix
                           CastShadow = effectSystem.EffectCastShadow
                           Presence = effectSystem.EffectPresence
                           InsetOpt = insetOpt
-                          MaterialProperties = properties
                           Material = material
+                          MaterialProperties = properties
                           ShadowOffset = effectSystem.EffectShadowOffset
-                          DepthTest = LessThanTest
                           RenderType = effectSystem.EffectRenderType }
                 addDataToken billboardToken effectSystem
             else effectSystem
@@ -567,7 +581,7 @@ module EffectSystem =
         // build implicitly mounted content
         evalContent content slice history effectSystem
 
-    and private evalStaticModel resource clipped aspects content (slice : Slice) history effectSystem =
+    and private evalStaticModel resource material properties aspects content (slice : Slice) history effectSystem =
 
         // pull image from resource
         let staticModel = evalResource resource effectSystem
@@ -582,32 +596,25 @@ module EffectSystem =
                 let affineMatrix = Matrix4x4.CreateAffine (slice.Position, slice.Angles.RollPitchYaw, slice.Scale)
                 let insetOpt = if slice.Inset.Equals box2Zero then None else Some slice.Inset
                 let properties =
-                    { AlbedoOpt = ValueSome slice.Color
-                      RoughnessOpt = ValueNone
-                      MetallicOpt = ValueNone
-                      AmbientOcclusionOpt = ValueNone
-                      EmissionOpt = ValueSome slice.Emission.R
-                      HeightOpt = ValueSome slice.Height
-                      IgnoreLightMapsOpt = ValueSome slice.IgnoreLightMaps
-                      OpaqueDistanceOpt = ValueNone
-                      FinenessOffsetOpt = ValueNone
-                      ScatterTypeOpt = ValueNone
-                      SubsurfaceCutoffOpt = ValueNone
-                      SubsurfaceCutoffMarginOpt = ValueNone
-                      SpecularScalarOpt = ValueNone
-                      RefractiveIndexOpt = ValueNone
-                      ClearCoatOpt = ValueNone
-                      ClearCoatRoughnessOpt = ValueNone }
+                    { properties with
+                        AlbedoOpt = ValueSome (match properties.AlbedoOpt with ValueSome albedo -> albedo * slice.Color | ValueNone -> slice.Color)
+                        EmissionOpt = ValueSome (match properties.EmissionOpt with ValueSome emission -> emission * slice.Emission.R | ValueNone -> slice.Emission.R)
+                        IgnoreLightMapsOpt = ValueSome (match properties.IgnoreLightMapsOpt with ValueSome ignoreLightMaps -> ignoreLightMaps && slice.IgnoreLightMaps | ValueNone -> slice.IgnoreLightMaps)
+                        AnisotropyOpt = ValueSome (match properties.AnisotropyOpt with ValueSome anisotropy -> anisotropy * slice.Anisotropy | ValueNone -> slice.Anisotropy)
+                        SpecularScalarOpt = ValueSome (match properties.SpecularScalarOpt with ValueSome specularScalarOpt -> specularScalarOpt * slice.Specularity | ValueNone -> slice.Anisotropy)
+                        UserDefinedSetting0Opt = ValueSome (match properties.UserDefinedSetting0Opt with ValueSome setting -> setting * slice.UserDefinedSetting0 | ValueNone -> slice.UserDefinedSetting0)
+                        UserDefinedSetting1Opt = ValueSome (match properties.UserDefinedSetting1Opt with ValueSome setting -> setting * slice.UserDefinedSetting1 | ValueNone -> slice.UserDefinedSetting1)
+                        UserDefinedSetting2Opt = ValueSome (match properties.UserDefinedSetting2Opt with ValueSome setting -> setting * slice.UserDefinedSetting2 | ValueNone -> slice.UserDefinedSetting2)
+                        UserDefinedSetting3Opt = ValueSome (match properties.UserDefinedSetting3Opt with ValueSome setting -> setting * slice.UserDefinedSetting3 | ValueNone -> slice.UserDefinedSetting3) }
                 let staticModelToken =
                     StaticModelToken
                         { ModelMatrix = affineMatrix
                           CastShadow = effectSystem.EffectCastShadow
                           Presence = effectSystem.EffectPresence
                           InsetOpt = insetOpt
+                          Material = material
                           MaterialProperties = properties
                           StaticModel = staticModel
-                          Clipped = clipped
-                          DepthTest = LessThanTest
                           RenderType = effectSystem.EffectRenderType }
                 addDataToken staticModelToken effectSystem
             else effectSystem
@@ -708,10 +715,10 @@ module EffectSystem =
             evalTextSprite resource text fontSizing fontStyling aspects content slice history effectSystem
         | Light3d (lightType, aspects, content) ->
             evalLight3d lightType aspects content slice history effectSystem
-        | Billboard (resourceAlbedo, resourceRoughness, resourceMetallic, resourceAmbientOcclusion, resourceEmission, resourceNormal, resourceHeight, twoSided, clipped, aspects, content) ->
-            evalBillboard resourceAlbedo resourceRoughness resourceMetallic resourceAmbientOcclusion resourceEmission resourceNormal resourceHeight twoSided clipped aspects content slice history effectSystem
-        | StaticModel (resource, clipped, aspects, content) ->
-            evalStaticModel resource clipped aspects content slice history effectSystem
+        | Billboard (materialOpt, propertiesOpt, aspects, content) ->
+            evalBillboard materialOpt propertiesOpt aspects content slice history effectSystem
+        | StaticModel (resource, material, properties, aspects, content) ->
+            evalStaticModel resource material properties aspects content slice history effectSystem
         | Mount (Shift shift, aspects, content) ->
             evalMount shift aspects content slice history effectSystem
         | Repeat (Shift shift, repetition, incrementAspects, content) ->

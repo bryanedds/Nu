@@ -55,7 +55,7 @@ module Attachment =
         [|for i in 0 .. dec Constants.Render.BloomSampleLevels do
             let (resolutionX', resolutionY') = (resolutionX >>> i, resolutionY >>> i)
             if resolutionX' = 0 || resolutionY' = 0 then failwith ("Invalid resolution [" + string resolutionX' + " " + string resolutionY' + "] for bloom filter level.")
-            createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgb16f Rgb resolutionX' resolutionY' context|]
+            createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba16f Rgb resolutionX' resolutionY' context|]
 
     /// Update size of bloom sample attachments.
     let updateBloomSampleAttachmentsSize resolutionX resolutionY (bloomSamples : Texture array) context =
@@ -71,7 +71,7 @@ module Attachment =
 
     /// Create tone-mapping attachments.
     let createToneMappingAttachments resolutionX resolutionY context =
-        createColorAttachment Texture2d (VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferSrc ||| VkImageUsageFlags.TransferDst) Rgb16f Rgb resolutionX resolutionY context
+        createColorAttachment Texture2d (VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferSrc ||| VkImageUsageFlags.TransferDst) Rgba16f Rgb resolutionX resolutionY context
 
     /// Update size of tone-mapping attachments.
     let updateToneMappingAttachmentsSize resolutionX resolutionY toneMapping context =
@@ -158,11 +158,12 @@ module Attachment =
         let subdermalPlus = createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba8 Rgba resolutionX resolutionY context
         let scatterPlus = createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba8 Rgba resolutionX resolutionY context
         let clearCoatPlus = createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba16f Rgba resolutionX resolutionY context
-        let z = createDepthAttachment VkImageUsageFlags.None resolutionX resolutionY context
-        (depth, albedo, material, normalPlus, subdermalPlus, scatterPlus, clearCoatPlus, z)
+        let userDefinedBuffer = createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba16f Rgba resolutionX resolutionY context
+        let depthBuffer = createDepthAttachment VkImageUsageFlags.None resolutionX resolutionY context
+        (depth, albedo, material, normalPlus, subdermalPlus, scatterPlus, clearCoatPlus, userDefinedBuffer, depthBuffer)
     
     /// Update size of geometry attachments.
-    let updateGeometryAttachmentsSize resolutionX resolutionY (depth, albedo, material, normalPlus, subdermalPlus, scatterPlus, clearCoatPlus, z) context =
+    let updateGeometryAttachmentsSize resolutionX resolutionY (depth, albedo, material, normalPlus, subdermalPlus, scatterPlus, clearCoatPlus, userDefinedBuffer, depthBuffer) context =
         let metadata = TextureMetadata.make resolutionX resolutionY
         Texture.updateSize metadata depth context
         Texture.updateSize metadata albedo context
@@ -171,10 +172,11 @@ module Attachment =
         Texture.updateSize metadata subdermalPlus context
         Texture.updateSize metadata scatterPlus context
         Texture.updateSize metadata clearCoatPlus context
-        Texture.updateSize metadata z context
+        Texture.updateSize metadata userDefinedBuffer context
+        Texture.updateSize metadata depthBuffer context
 
     /// Destroy geometry attachments.
-    let destroyGeometryAttachments (depth : Texture, albedo : Texture, material : Texture, normalPlus : Texture, subdermalPlus : Texture, scatterPlus : Texture, clearCoatPlus : Texture, z : Texture) context =
+    let destroyGeometryAttachments (depth : Texture, albedo : Texture, material : Texture, normalPlus : Texture, subdermalPlus : Texture, scatterPlus : Texture, clearCoatPlus : Texture, userDefinedBuffer : Texture, depthBuffer : Texture) context =
         Texture.destroy depth context
         Texture.destroy albedo context
         Texture.destroy material context
@@ -182,11 +184,12 @@ module Attachment =
         Texture.destroy subdermalPlus context
         Texture.destroy scatterPlus context
         Texture.destroy clearCoatPlus context
-        Texture.destroy z context
+        Texture.destroy userDefinedBuffer context
+        Texture.destroy depthBuffer context
 
     /// Create lighting attachment.
     let createLightingAttachment resolutionX resolutionY context =
-        createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgb16f Rgb resolutionX resolutionY context
+        createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba16f Rgb resolutionX resolutionY context
 
     /// Update size of lighting attachment.
     let updateLightingAttachmentSize resolutionX resolutionY lighting context =
@@ -251,7 +254,7 @@ module Attachment =
 
     /// Create fogging attachment.
     let createFoggingAttachment resolutionX resolutionY context =
-        createColorAttachment Texture2d (VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferDst) Rgb16f Rgb resolutionX resolutionY context
+        createColorAttachment Texture2d (VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferDst) Rgba16f Rgb resolutionX resolutionY context
 
     /// Update size of fogging attachment.
     let updateFoggingAttachmentSize resolutionX resolutionY fogging context =
@@ -264,7 +267,7 @@ module Attachment =
 
     /// Create coloring attachments.
     let createColoringAttachments resolutionX resolutionY context =
-        let color = createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgb16f Rgb resolutionX resolutionY context
+        let color = createColorAttachment Texture2d VkImageUsageFlags.Sampled Rgba16f Rgb resolutionX resolutionY context
         let depth = createColorAttachment Texture2d VkImageUsageFlags.Sampled R16f Red resolutionX resolutionY context
         (color, depth)
 

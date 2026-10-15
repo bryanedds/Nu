@@ -112,6 +112,7 @@ module WorldEntityHierarchyExtensions =
                             let presence = Vulkan.PhysicallyBasedSurfaceFns.extractPresence presenceConferred staticModelMetadata.SceneOpt surface
                             let renderStyle = Vulkan.PhysicallyBasedSurfaceFns.extractRenderStyle Deferred staticModelMetadata.SceneOpt surface
                             let ignoreLightMaps = Vulkan.PhysicallyBasedSurfaceFns.extractIgnoreLightMaps Constants.Render.IgnoreLightMapsDefault staticModelMetadata.SceneOpt surface
+                            let anisotropy = Vulkan.PhysicallyBasedSurfaceFns.extractAnisotropy Constants.Render.AnisotropyDefault staticModelMetadata.SceneOpt surface
                             let opaqueDistance = Vulkan.PhysicallyBasedSurfaceFns.extractOpaqueDistance Constants.Render.OpaqueDistanceDefault staticModelMetadata.SceneOpt surface
                             let finenessOffset = Vulkan.PhysicallyBasedSurfaceFns.extractFinenessOffset Constants.Render.FinenessOffsetDefault staticModelMetadata.SceneOpt surface
                             let scatterType = Vulkan.PhysicallyBasedSurfaceFns.extractScatterType Constants.Render.ScatterTypeDefault staticModelMetadata.SceneOpt surface
@@ -121,6 +122,9 @@ module WorldEntityHierarchyExtensions =
                             let refractiveIndex = Vulkan.PhysicallyBasedSurfaceFns.extractRefractiveIndex Constants.Render.RefractiveIndexDefault staticModelMetadata.SceneOpt surface
                             let clearCoat = Vulkan.PhysicallyBasedSurfaceFns.extractClearCoat Constants.Render.ClearCoatDefault staticModelMetadata.SceneOpt surface
                             let clearCoatRoughness = Vulkan.PhysicallyBasedSurfaceFns.extractClearCoatRoughness Constants.Render.ClearCoatRoughnessDefault staticModelMetadata.SceneOpt surface
+                            let userDefinedSettings =
+                                [for i in 0 .. dec 8 do
+                                    Vulkan.PhysicallyBasedSurfaceFns.extractUserDefinedSetting i Constants.Render.UserDefinedSettingDefault staticModelMetadata.SceneOpt surface]
                             child.SetPositionLocal position world
                             child.SetRotationLocal rotation world
                             child.SetScaleLocal scale world
@@ -128,24 +132,6 @@ module WorldEntityHierarchyExtensions =
                             child.SetStatic true world
                             child.SetStaticModel staticModel world
                             child.SetSurfaceIndex i world
-                            let properties =
-                                { AlbedoOpt = ValueSome surface.SurfaceMaterialProperties.Albedo
-                                  RoughnessOpt = ValueSome surface.SurfaceMaterialProperties.Roughness
-                                  MetallicOpt = ValueSome surface.SurfaceMaterialProperties.Metallic
-                                  AmbientOcclusionOpt = ValueSome surface.SurfaceMaterialProperties.AmbientOcclusion
-                                  EmissionOpt = ValueSome surface.SurfaceMaterialProperties.Emission
-                                  HeightOpt = ValueSome surface.SurfaceMaterialProperties.Height
-                                  IgnoreLightMapsOpt = ValueSome ignoreLightMaps
-                                  OpaqueDistanceOpt = ValueSome opaqueDistance
-                                  FinenessOffsetOpt = ValueSome finenessOffset
-                                  ScatterTypeOpt = ValueSome scatterType
-                                  SpecularScalarOpt = ValueSome specularScalar
-                                  SubsurfaceCutoffOpt = ValueSome subsurfaceCutoff
-                                  SubsurfaceCutoffMarginOpt = ValueSome subsurfaceCutoffMargin
-                                  RefractiveIndexOpt = ValueSome refractiveIndex
-                                  ClearCoatOpt = ValueSome clearCoat
-                                  ClearCoatRoughnessOpt = ValueSome clearCoatRoughness }
-                            child.SetMaterialProperties properties world
                             let material =
                                 if surfaceMaterialsPopulated then
                                     { AlbedoImageOpt = Metadata.tryGetStaticModelAlbedoImage surface.SurfaceMaterialIndex staticModel
@@ -154,17 +140,49 @@ module WorldEntityHierarchyExtensions =
                                       AmbientOcclusionImageOpt = Metadata.tryGetStaticModelAmbientOcclusionImage surface.SurfaceMaterialIndex staticModel
                                       EmissionImageOpt = Metadata.tryGetStaticModelEmissionImage surface.SurfaceMaterialIndex staticModel
                                       NormalImageOpt = Metadata.tryGetStaticModelNormalImage surface.SurfaceMaterialIndex staticModel
-                                      HeightImageOpt = Metadata.tryGetStaticModelHeightImage surface.SurfaceMaterialIndex staticModel
                                       SubdermalImageOpt = Metadata.tryGetStaticModelSubdermalImage surface.SurfaceMaterialIndex staticModel
                                       FinenessImageOpt = Metadata.tryGetStaticModelFinenessImage surface.SurfaceMaterialIndex staticModel
                                       ScatterImageOpt = Metadata.tryGetStaticModelScatterImage surface.SurfaceMaterialIndex staticModel
                                       ClearCoatImageOpt = Metadata.tryGetStaticModelClearCoatImage surface.SurfaceMaterialIndex staticModel
                                       ClearCoatRoughnessImageOpt = Metadata.tryGetStaticModelClearCoatRoughnessImage surface.SurfaceMaterialIndex staticModel
                                       ClearCoatNormalImageOpt = Metadata.tryGetStaticModelClearCoatNormalImage surface.SurfaceMaterialIndex staticModel
-                                      TwoSidedOpt = Metadata.tryGetStaticModelTwoSided surface.SurfaceMaterialIndex staticModel
-                                      ClippedOpt = Metadata.tryGetStaticModelClipped surface.SurfaceMaterialIndex staticModel }
+                                      UserDefinedImage0Opt = Metadata.tryGetStaticModelUserDefinedImage0 surface.SurfaceMaterialIndex staticModel
+                                      UserDefinedImage1Opt = Metadata.tryGetStaticModelUserDefinedImage1 surface.SurfaceMaterialIndex staticModel
+                                      UserDefinedImage2Opt = Metadata.tryGetStaticModelUserDefinedImage2 surface.SurfaceMaterialIndex staticModel
+                                      CullModeOpt = Metadata.tryGetStaticModelCullMode surface.SurfaceMaterialIndex staticModel
+                                      ClippedOpt = Metadata.tryGetStaticModelClipped surface.SurfaceMaterialIndex staticModel
+                                      DepthTestOpt = Metadata.tryGetStaticModelDepthTest surface.SurfaceMaterialIndex staticModel
+                                      DepthWriteOpt = Metadata.tryGetStaticModelDepthWrite surface.SurfaceMaterialIndex staticModel
+                                      BlendOpt = Metadata.tryGetStaticModelBlend surface.SurfaceMaterialIndex staticModel
+                                      PipelineNameOpt = Metadata.tryGetStaticModelPipelineName surface.SurfaceMaterialIndex staticModel }
                                 else Material.empty
                             child.SetMaterial material world
+                            let properties =
+                                { AlbedoOpt = ValueSome surface.SurfaceMaterialProperties.Albedo
+                                  RoughnessOpt = ValueSome surface.SurfaceMaterialProperties.Roughness
+                                  MetallicOpt = ValueSome surface.SurfaceMaterialProperties.Metallic
+                                  AmbientOcclusionOpt = ValueSome surface.SurfaceMaterialProperties.AmbientOcclusion
+                                  EmissionOpt = ValueSome surface.SurfaceMaterialProperties.Emission
+                                  IgnoreLightMapsOpt = ValueSome ignoreLightMaps
+                                  AnisotropyOpt = ValueSome anisotropy
+                                  OpaqueDistanceOpt = ValueSome opaqueDistance
+                                  FinenessOffsetOpt = ValueSome finenessOffset
+                                  ScatterTypeOpt = ValueSome scatterType
+                                  SpecularScalarOpt = ValueSome specularScalar
+                                  SubsurfaceCutoffOpt = ValueSome subsurfaceCutoff
+                                  SubsurfaceCutoffMarginOpt = ValueSome subsurfaceCutoffMargin
+                                  RefractiveIndexOpt = ValueSome refractiveIndex
+                                  ClearCoatOpt = ValueSome clearCoat
+                                  ClearCoatRoughnessOpt = ValueSome clearCoatRoughness
+                                  UserDefinedSetting0Opt = ValueSome userDefinedSettings[0]
+                                  UserDefinedSetting1Opt = ValueSome userDefinedSettings[1]
+                                  UserDefinedSetting2Opt = ValueSome userDefinedSettings[2]
+                                  UserDefinedSetting3Opt = ValueSome userDefinedSettings[3]
+                                  UserDefinedSetting4Opt = ValueSome userDefinedSettings[4]
+                                  UserDefinedSetting5Opt = ValueSome userDefinedSettings[5]
+                                  UserDefinedSetting6Opt = ValueSome userDefinedSettings[6]
+                                  UserDefinedSetting7Opt = ValueSome userDefinedSettings[7] }
+                            child.SetMaterialProperties properties world
                             child.SetRenderStyle renderStyle world
                             child.AutoBounds world
                             i <- inc i)
@@ -177,7 +195,7 @@ module WorldEntityHierarchyExtensions =
             let frozenEntities = List ()
             let frozenPreBatches =
                 Dictionary<
-                    bool * Material * Vulkan.PhysicallyBasedSurface * DepthTest * RenderType,
+                    Material * Vulkan.PhysicallyBasedSurface * RenderType,
                     Guid * StaticModel AssetTag * int * StaticModelSurfacePreBatchItem List> ()
             let frozenShapes = List ()
             let rec getFrozenArtifacts (entity : Entity) =
@@ -196,13 +214,12 @@ module WorldEntityHierarchyExtensions =
                             let material = entity.GetMaterial world
                             let staticModel = entity.GetStaticModel world
                             let surfaceIndex = entity.GetSurfaceIndex world
-                            let depthTest = entity.GetDepthTest world
                             let renderType = match entity.GetRenderStyle world with Deferred -> DeferredRenderType | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
                             boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine entityBounds) | None -> Some entityBounds
                             frozenEntities.Add entity
                             let metadata = Metadata.getStaticModelMetadata staticModel
                             let surface = metadata.Surfaces[surfaceIndex]
-                            let frozenKey = (material.Clipped, material, surface, depthTest, renderType)
+                            let frozenKey = (material, surface, renderType)
                             let frozenValue =
                                 { ModelMatrix = affineMatrix
                                   CastShadow = castShadow
@@ -227,10 +244,9 @@ module WorldEntityHierarchyExtensions =
                             let castShadow = transform.CastShadow
                             let affineMatrix = transform.AffineMatrix
                             let insetOpt = match entity.GetInsetOpt world with Some inset -> Some inset | None -> None // OPTIMIZATION: localize boxed value in memory.
+                            let material = entity.GetMaterial world
                             let properties = entity.GetMaterialProperties world
                             let staticModel = entity.GetStaticModel world
-                            let clipped = entity.GetClipped world
-                            let depthTest = entity.GetDepthTest world
                             let metadata = Metadata.getStaticModelMetadata (entity.GetStaticModel world)
                             let mutable surfaceIndex = 0
                             while surfaceIndex < metadata.Surfaces.Length do
@@ -254,20 +270,26 @@ module WorldEntityHierarchyExtensions =
                                           AmbientOcclusionImageOpt = Metadata.tryGetStaticModelAmbientOcclusionImage surface.SurfaceMaterialIndex staticModel
                                           EmissionImageOpt = Metadata.tryGetStaticModelEmissionImage surface.SurfaceMaterialIndex staticModel
                                           NormalImageOpt = Metadata.tryGetStaticModelNormalImage surface.SurfaceMaterialIndex staticModel
-                                          HeightImageOpt = Metadata.tryGetStaticModelHeightImage surface.SurfaceMaterialIndex staticModel
                                           SubdermalImageOpt = Metadata.tryGetStaticModelSubdermalImage surface.SurfaceMaterialIndex staticModel
                                           FinenessImageOpt = Metadata.tryGetStaticModelFinenessImage surface.SurfaceMaterialIndex staticModel
                                           ScatterImageOpt = Metadata.tryGetStaticModelScatterImage surface.SurfaceMaterialIndex staticModel
                                           ClearCoatImageOpt = Metadata.tryGetStaticModelClearCoatImage surface.SurfaceMaterialIndex staticModel
                                           ClearCoatRoughnessImageOpt = Metadata.tryGetStaticModelClearCoatRoughnessImage surface.SurfaceMaterialIndex staticModel
                                           ClearCoatNormalImageOpt = Metadata.tryGetStaticModelClearCoatNormalImage surface.SurfaceMaterialIndex staticModel
-                                          TwoSidedOpt = Metadata.tryGetStaticModelTwoSided surface.SurfaceMaterialIndex staticModel
-                                          ClippedOpt = Metadata.tryGetStaticModelClipped surface.SurfaceMaterialIndex staticModel }
-                                    else Material.empty
+                                          UserDefinedImage0Opt = Metadata.tryGetStaticModelUserDefinedImage0 surface.SurfaceMaterialIndex staticModel
+                                          UserDefinedImage1Opt = Metadata.tryGetStaticModelUserDefinedImage1 surface.SurfaceMaterialIndex staticModel
+                                          UserDefinedImage2Opt = Metadata.tryGetStaticModelUserDefinedImage2 surface.SurfaceMaterialIndex staticModel
+                                          CullModeOpt = Metadata.tryGetStaticModelCullMode surface.SurfaceMaterialIndex staticModel
+                                          ClippedOpt = Metadata.tryGetStaticModelClipped surface.SurfaceMaterialIndex staticModel
+                                          DepthTestOpt = Metadata.tryGetStaticModelDepthTest surface.SurfaceMaterialIndex staticModel
+                                          DepthWriteOpt = Metadata.tryGetStaticModelDepthWrite surface.SurfaceMaterialIndex staticModel
+                                          BlendOpt = Metadata.tryGetStaticModelBlend surface.SurfaceMaterialIndex staticModel
+                                          PipelineNameOpt = Metadata.tryGetStaticModelPipelineName surface.SurfaceMaterialIndex staticModel }
+                                    else material
                                 boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine surfaceBounds) | None -> Some surfaceBounds
                                 let metadata = Metadata.getStaticModelMetadata staticModel
                                 let surface = metadata.Surfaces[surfaceIndex]
-                                let frozenKey = (clipped, material, surface, depthTest, renderType)
+                                let frozenKey = (material, surface, renderType)
                                 let frozenValue =
                                     { ModelMatrix = surfaceMatrix
                                       CastShadow = castShadow
@@ -310,15 +332,13 @@ module WorldEntityHierarchyExtensions =
             let frozenPreBatches =
                 frozenPreBatches
                 |> Seq.map (fun entry ->
-                    let (clipped, material, _, depthTest, renderType) = entry.Key
+                    let (material, _, renderType) = entry.Key
                     let (preBatchId, staticModel, surfaceIndex, preBatch) = entry.Value
                     { PreBatchId = preBatchId
                       PreBatchItems = Seq.toArray preBatch
                       Material = material
                       StaticModel = staticModel
                       SurfaceIndex = surfaceIndex
-                      Clipped = clipped
-                      DepthTest = depthTest
                       RenderType = renderType })
                 |> Seq.toArray
             (frozenPreBatches, Array.ofSeq frozenShapes, world)

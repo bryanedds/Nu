@@ -155,7 +155,7 @@ module LightMap =
         // create pipeline
         let pipeline =
             Pipeline.create
-                shaderPath [|VulkanUnblended|] [|false|]
+                shaderPath [|VulkanUnblended|] [|CullNone|]
                 [|Pipeline.vertex 0 ((3 (*position*)) * sizeof<single>) VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Single3 0|]|]
                 [|Pipeline.descriptorSet<int>
@@ -199,7 +199,7 @@ module LightMap =
         let viewProjection = view * projection
 
         // only draw when required vkPipeline exists
-        match Pipeline.tryGetVkPipeline VulkanUnblended false pipeline.Pipeline with
+        match Pipeline.tryGetVkPipeline VulkanUnblended CullNone pipeline.Pipeline with
         | Some vkPipeline ->
 
             // specify uniforms

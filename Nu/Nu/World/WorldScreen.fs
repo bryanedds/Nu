@@ -41,9 +41,9 @@ module WorldScreenModule =
         member this.GetOutgoing world = World.getScreenOutgoing this world
         member this.SetOutgoing value world = World.setScreenOutgoing value this world |> ignore<bool>
         member this.Outgoing = lens (nameof this.Outgoing) this this.GetOutgoing this.SetOutgoing
-        member this.GetRequestedSong world = World.getScreenRequestedSong this world
-        member this.SetRequestedSong value world = World.setScreenRequestedSong value this world |> ignore<bool>
-        member this.RequestedSong = lens (nameof this.RequestedSong) this this.GetRequestedSong this.SetRequestedSong
+        member this.GetSongRequest world = World.getScreenSongRequest this world
+        member this.SetSongRequest value world = World.setScreenSongRequest value this world |> ignore<bool>
+        member this.SongRequest = lens (nameof this.SongRequest) this this.GetSongRequest this.SetSongRequest
         member this.GetSlideOpt world = World.getScreenSlideOpt this world
         member this.SetSlideOpt value world = World.setScreenSlideOpt value this world |> ignore<bool>
         member this.SlideOpt = lens (nameof this.SlideOpt) this this.GetSlideOpt this.SetSlideOpt
@@ -102,6 +102,17 @@ module WorldScreenModule =
         /// Set an xtension property value.
         member this.Set<'a> propertyName (value : 'a) world =
             World.setScreenXtensionValue<'a> propertyName value this world
+
+        /// Try to map an xtension property value.
+        member this.TryMap<'a> (mapper : 'a -> 'a) propertyName world =
+            match this.TryGet<'a> propertyName world with
+            | ValueSome value -> this.TrySet<'a> propertyName (mapper value) world
+            | ValueNone -> struct (false, false)
+
+        /// Map an xtension property value.
+        member this.Map<'a> (mapper : 'a -> 'a) propertyName world =
+            let value = this.Get<'a> propertyName world
+            this.Set<'a> propertyName (mapper value) world
 
         /// Check that a screen is in an idling state (not transitioning in nor out).
         member this.GetIdling world =

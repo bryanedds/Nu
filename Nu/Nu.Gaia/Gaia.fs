@@ -1259,7 +1259,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                           """<PackageReference Include="JoltPhysicsSharp" Version="2.19.5" />"""
                           """<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.15.0" />"""
                           """<PackageReference Include="Pfim" Version="0.11.4" />"""
-                          """<PackageReference Include="Prime" Version="11.5.3" />"""
+                          """<PackageReference Include="Prime" Version="11.5.5" />"""
                           """<PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.1" />"""
                           """<PackageReference Include="System.Drawing.Common" Version="10.0.1" />"""
                           """<PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" />"""
@@ -3008,31 +3008,36 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         ImGui.EndTooltip ()
                     ImGui.PopID ()
                     match SelectedEntityOpt with
-                    | Some selectedEntity when not (propagationSources.Contains selectedEntity) ->
-                        ImGui.SameLine ()
-                        ImGui.PushID ("##asChild" + scstringMemo entity)
-                        if ImGui.SmallButton "as Child" then
-                            snapshot DuplicateEntity world
-                            let positionSnapEir = if Snaps2dSelected then Left (a__ Snaps2d) else Right (a__ Snaps3d)
-                            let duplicate = World.pasteEntity NewEntityDistance RightClickPosition positionSnapEir PasteAtLook entity selectedEntity world
-                            selectEntityOpt (Some duplicate) world
-                        ImGui.PopID ()
-                        if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                            ImGui.Text "Create a copy of the specified entity as a child of the selected entity."
-                            ImGui.EndTooltip ()
-                        ImGui.SameLine ()
-                        ImGui.PushID ("##atLocalOrigin" + scstringMemo entity)
-                        if ImGui.SmallButton "at Local Origin" then
-                            snapshot DuplicateEntity world
-                            let positionSnapEir = if Snaps2dSelected then Left (a__ Snaps2d) else Right (a__ Snaps3d)
-                            let duplicate = World.pasteEntity NewEntityDistance RightClickPosition positionSnapEir PasteAtLook entity selectedEntity world
-                            duplicate.SetPositionLocal v3Zero world
-                            selectEntityOpt (Some duplicate) world
-                        ImGui.PopID ()
-                        if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                            ImGui.Text "Create as copy of the specified entity as a child of the selected entity at local origin."
-                            ImGui.EndTooltip ()
-                    | Some _ | None -> ()
+                    | Some selectedEntity ->
+                        let propagationSources =
+                            [entity; yield! World.getEntityDescendants entity world]
+                            |> List.map (fun entity -> entity.GetPropagationSourceOpt world)
+                            |> List.definitize
+                        if entity <> selectedEntity && not (List.contains selectedEntity propagationSources) then
+                            ImGui.SameLine ()
+                            ImGui.PushID ("##asChild" + scstringMemo entity)
+                            if ImGui.SmallButton "as Child" then
+                                snapshot DuplicateEntity world
+                                let positionSnapEir = if Snaps2dSelected then Left (a__ Snaps2d) else Right (a__ Snaps3d)
+                                let duplicate = World.pasteEntity NewEntityDistance RightClickPosition positionSnapEir PasteAtLook entity selectedEntity world
+                                selectEntityOpt (Some duplicate) world
+                            ImGui.PopID ()
+                            if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                                ImGui.Text "Create a copy of the specified entity as a child of the selected entity."
+                                ImGui.EndTooltip ()
+                            ImGui.SameLine ()
+                            ImGui.PushID ("##atLocalOrigin" + scstringMemo entity)
+                            if ImGui.SmallButton "at Local Origin" then
+                                snapshot DuplicateEntity world
+                                let positionSnapEir = if Snaps2dSelected then Left (a__ Snaps2d) else Right (a__ Snaps3d)
+                                let duplicate = World.pasteEntity NewEntityDistance RightClickPosition positionSnapEir PasteAtLook entity selectedEntity world
+                                duplicate.SetPositionLocal v3Zero world
+                                selectEntityOpt (Some duplicate) world
+                            ImGui.PopID ()
+                            if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                                ImGui.Text "Create as copy of the specified entity as a child of the selected entity at local origin."
+                                ImGui.EndTooltip ()
+                    | None -> ()
                     ImGui.TreePop ()
             ImGui.EndChild ()
         ImGui.End ()
@@ -4372,15 +4377,13 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             let lightProbeModels =
                 entities
                 |> Seq.filter (fun entity -> entity.Group = SelectedGroup && entity.Group.GetEditing world && eyeFrustum.Intersects (entity.GetBounds world))
-                |> Seq.map (fun light -> (light.GetAffineMatrix world, false, Omnipresent, None, MaterialProperties.defaultProperties))
+                |> Seq.map (fun light -> (light.GetAffineMatrix world, false, Omnipresent, None, Material.empty, MaterialProperties.defaultProperties))
                 |> SList.ofSeq
             if SList.notEmpty lightProbeModels then
                 World.enqueueRenderMessage3d
                     (RenderStaticModels
                         { StaticModels = lightProbeModels
                           StaticModel = Assets.Default.LightProbeModel
-                          Clipped = false
-                          DepthTest = LessThanTest
                           RenderType = DeferredRenderType
                           RenderPass = NormalPass })
                     world
@@ -4390,15 +4393,13 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             let lightModels =
                 entities
                 |> Seq.filter (fun entity -> entity.Group = SelectedGroup && entity.Group.GetEditing world && eyeFrustum.Intersects (entity.GetBounds world))
-                |> Seq.map (fun light -> (light.GetAffineMatrix world, false, Omnipresent, None, MaterialProperties.defaultProperties))
+                |> Seq.map (fun light -> (light.GetAffineMatrix world, false, Omnipresent, None, Material.empty, MaterialProperties.defaultProperties))
                 |> SList.ofSeq
             if SList.notEmpty lightModels then
                 World.enqueueRenderMessage3d
                     (RenderStaticModels
                         { StaticModels = lightModels
                           StaticModel = Assets.Default.LightbulbModel
-                          Clipped = false
-                          DepthTest = LessThanTest
                           RenderType = DeferredRenderType
                           RenderPass = NormalPass })
                     world
@@ -4449,10 +4450,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                   CastShadow = false
                                   Presence = Omnipresent
                                   InsetOpt = None
+                                  Material = { Material.empty with ClippedOpt = ValueSome true }
                                   MaterialProperties = { MaterialProperties.defaultProperties with SpecularScalarOpt = ValueSome 0.0f }
                                   StaticModel = Assets.Default.HighlightModel
-                                  Clipped = true
-                                  DepthTest = LessThanTest
                                   RenderType = DeferredRenderType
                                   RenderPass = NormalPass })
                             world

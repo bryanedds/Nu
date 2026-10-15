@@ -240,12 +240,7 @@ type GameplayDispatcher () =
          if gameplay.GameplayState = Playing then
             Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" []
 
-                [// static model
-                 Content.staticModel "StaticModel"
-                    [Entity.Position == v3 0.0f 0.0f -2.0f
-                     Entity.Rotation := Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, gameplay.GameplayTime % 360L |> single |> degToRadF)]
-
-                 // walls
+                [// walls
                  Content.staticSprite "LeftWall"
                     [Entity.Position == v3 -164.0f 0.0f 0.0f
                      Entity.Size == v3 8.0f 360.0f 0.0f

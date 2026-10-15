@@ -259,11 +259,11 @@ module WorldModule2 =
                 | OutgoingState transitionTime -> World.updateScreenOutgoing transitionTime selectedScreen world
             | None -> ()
 
-        static member private updateScreenRequestedSong world =
+        static member private updateScreenSongRequest world =
             match World.getSelectedScreenOpt world with
             | Some selectedScreen ->
-                match World.getScreenRequestedSong selectedScreen world with
-                | Request song ->
+                match World.getScreenSongRequest selectedScreen world with
+                | RequestSong song ->
                     match World.getSongOpt world with
                     | Some current ->
                         if  current.FadeInTime <> song.FadeInTime ||
@@ -276,13 +276,13 @@ module WorldModule2 =
                             World.setSongVolume song.Volume world
                     | None -> World.playSong song.FadeInTime song.FadeOutTime song.StartTime song.RepeatLimitOpt song.Volume song.Song world
                 | RequestFadeOut fadeOutTime -> if not (World.getSongFadingOut world) then World.fadeOutSong fadeOutTime world
-                | RequestNone -> World.stopSong world
+                | RequestSilence -> World.stopSong world
                 | RequestIgnore -> ()
             | None -> ()
 
         static member private processScreenTransitioning world =
             World.updateScreenTransition world
-            World.updateScreenRequestedSong world
+            World.updateScreenSongRequest world
 
         /// Try to transition to the given screen if no other transition is in progress.
         static member tryTransitionScreen destination world =
@@ -1435,36 +1435,36 @@ module WorldModule2 =
 
                 // update game
                 world.Timers.UpdateGameTimer.Restart ()
-                World.tryProcessGame false game world
                 if timeAdvancing then World.updateGame game world
+                World.tryProcessGame false game world
                 world.Timers.UpdateGameTimer.Stop ()
 
                 // process screens
                 world.Timers.UpdateScreensTimer.Restart ()
                 for screen in screens do
-                    if screen.GetExists world then World.tryProcessScreen false screen world
                     if timeAdvancing && screen.GetExists world && Option.contains screen selectedScreenOpt then World.updateScreen screen world
+                    if screen.GetExists world then World.tryProcessScreen false screen world
                 world.Timers.UpdateScreensTimer.Stop ()
 
                 // update groups
                 world.Timers.UpdateGroupsTimer.Restart ()
                 for group in groups do
-                    if group.GetExists world then World.tryProcessGroup false group world
                     if timeAdvancing && Option.contains group.Screen selectedScreenOpt && group.GetExists world then World.updateGroup group world
+                    if group.GetExists world then World.tryProcessGroup false group world
                 world.Timers.UpdateGroupsTimer.Stop ()
 
                 // update entities
                 world.Timers.UpdateEntitiesTimer.Restart ()
                 for element in WorldModuleInternal2.HashSet3dNormalCached do
-                    if element.Entry.GetExists world then
-                        World.tryProcessEntity false element.Entry world
                     if element.Entry.GetExists world && (timeAdvancing && not (element.Entry.GetStatic world) || element.Entry.GetAlwaysUpdate world) then
                         World.updateEntity element.Entry world
+                    if element.Entry.GetExists world then
+                        World.tryProcessEntity false element.Entry world
                 for element in WorldModuleInternal2.HashSet2dNormalCached do
-                    if element.Entry.GetExists world then
-                        World.tryProcessEntity false element.Entry world
                     if element.Entry.GetExists world && (timeAdvancing && not (element.Entry.GetStatic world) || element.Entry.GetAlwaysUpdate world) then
                         World.updateEntity element.Entry world
+                    if element.Entry.GetExists world then
+                        World.tryProcessEntity false element.Entry world
                 world.Timers.UpdateEntitiesTimer.Stop ()
 
             // free cached values
@@ -1702,7 +1702,7 @@ module WorldModule2 =
                     let lightType = light.GetLightType world
                     let dynamicShadows = light.GetDynamicShadows world
                     match lightType with
-                    | PointLight ->
+                    | PointLight _ ->
                         if shadowMapsCount < Constants.Render.ShadowMapsMax then
 
                             // grab light info
@@ -1735,7 +1735,7 @@ module WorldModule2 =
                             // fin
                             shadowMapsCount <- inc shadowMapsCount
 
-                    | SpotLight (_, _) ->
+                    | SpotLight (_, _, _) ->
                         if shadowTexturesCount < Constants.Render.ShadowTexturesMax then
                             World.renderSimulantsInternal false (ShadowPass (light.GetId world, None, lightType, dynamicShadows, light.GetRotation world, shadowFrustum)) world
                             shadowTexturesCount <- inc shadowTexturesCount
@@ -1904,12 +1904,12 @@ module WorldModule2 =
             World.processPhysics3d world
             World.processPhysics2d world
 
-        /// Clean-up the resources held by the world.
+        /// Clean up the resources held by the world.
         static member cleanUp (world : World) =
+            world.WorldExtension.Plugin.CleanUp world
             world.WorldExtension.JobGraph.CleanUp ()
             World.unregisterGame Nu.Game.Handle world
             World.cleanUpSubsystems world |> ignore
-            world.WorldExtension.Plugin.CleanUp ()
 
         /// Run the game engine with the given handlers, but don't clean up at the end.
         static member runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess firstFrameCallbackOpt (world : World) =
@@ -2468,8 +2468,8 @@ module EntityPropertyDescriptor =
                 | _ -> (4, Left "Configuration")
             | ValueSome lateBindings ->
                 match propertyDescriptor.PropertyName with
-                | nameof Entity.MaterialProperties -> (5, Left "Material")
-                | nameof Entity.Material | nameof Entity.Clipped -> (6, Left "Material 2")
+                | nameof Entity.Material -> (5, Left "Material")
+                | nameof Entity.MaterialProperties -> (6, Left "Material Properties")
                 | _ -> (Int32.MaxValue, Right lateBindings))
         |> Seq.sortBy (function ((i, Left name), _) -> (i, Left name) | ((i, Right (ty : Type)), _) -> (i, Right (not (ty.IsAssignableTo typeof<Dispatcher>), ty.Name)))
         |> Seq.map (fun ((_, category), descriptors) -> (category, Seq.map snd descriptors))
