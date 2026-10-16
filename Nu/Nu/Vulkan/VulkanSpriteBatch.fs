@@ -13,6 +13,27 @@ open Vortice.Vulkan
 open Prime
 open Nu
 
+///
+type [<Struct>] Material2d =
+    { mutable ImageTexture : Texture
+      mutable UserDefinedImage0Texture : Texture
+      mutable UserDefinedImage1Texture : Texture
+      mutable UserDefinedImage2Texture : Texture
+      mutable Blend : Blend
+      mutable PipelineName : string }
+
+///
+type [<Struct>] MaterialProperties2d =
+    { mutable Color : Color
+      mutable UserDefinedSetting0 : single
+      mutable UserDefinedSetting1 : single
+      mutable UserDefinedSetting2 : single
+      mutable UserDefinedSetting3 : single
+      mutable UserDefinedSetting4 : single
+      mutable UserDefinedSetting5 : single
+      mutable UserDefinedSetting6 : single
+      mutable UserDefinedSetting7 : single }
+
 [<Struct; StructLayout (LayoutKind.Explicit, Size = 64)>]
 type SpriteStruct =
     [<FieldOffset(0)>] val mutable perimeter : Vector4
@@ -30,7 +51,7 @@ type [<Struct>] SpriteBatchState =
     { Absolute : bool
       ClipOpt : Box2 voption
       Blend : VulkanBlend
-      TextureOpt : Texture voption }
+      MaterialOpt : Material2d voption }
 
     static member inline changed state state2 =
         state.Absolute <> state2.Absolute ||

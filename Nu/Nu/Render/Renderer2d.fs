@@ -16,11 +16,18 @@ open TiledSharp
 open Prime
 open Nu.Vulkan
 
-/// A mutable particle value.
-type [<Struct>] Particle =
-    { mutable Transform : Transform
-      mutable InsetOpt : Box2 ValueOption
-      mutable Color : Color
+///
+type [<Struct>] Material2dValue =
+    { mutable Image : Image AssetTag
+      mutable UserDefinedImage0 : Image AssetTag
+      mutable UserDefinedImage1 : Image AssetTag
+      mutable UserDefinedImage2 : Image AssetTag
+      mutable Blend : Blend
+      mutable PipelineName : string }
+
+///
+type [<Struct>] MaterialProperties2dValue =
+    { mutable Color : Color
       mutable Emission : Color
       mutable Flip : Flip
       mutable UserDefinedSetting0 : single
@@ -32,28 +39,19 @@ type [<Struct>] Particle =
       mutable UserDefinedSetting6 : single
       mutable UserDefinedSetting7 : single }
 
+/// A mutable particle value.
+type [<Struct>] Particle =
+    { mutable Transform : Transform
+      mutable InsetOpt : Box2 ValueOption
+      mutable MaterialProperties : MaterialProperties2dValue }
+
 /// A mutable sprite value.
 type [<Struct>] SpriteValue =
     { mutable Transform : Transform
       mutable InsetOpt : Box2 voption
       mutable ClipOpt : Box2 voption
-      mutable Image : Image AssetTag
-      mutable UserDefinedImage0 : Image AssetTag
-      mutable UserDefinedImage1 : Image AssetTag
-      mutable UserDefinedImage2 : Image AssetTag
-      mutable PipelineName : string
-      mutable Color : Color
-      mutable Blend : Blend
-      mutable Emission : Color
-      mutable Flip : Flip
-      mutable UserDefinedSetting0 : single
-      mutable UserDefinedSetting1 : single
-      mutable UserDefinedSetting2 : single
-      mutable UserDefinedSetting3 : single
-      mutable UserDefinedSetting4 : single
-      mutable UserDefinedSetting5 : single
-      mutable UserDefinedSetting6 : single
-      mutable UserDefinedSetting7 : single }
+      mutable Material : Material2dValue
+      mutable MaterialProperties : MaterialProperties2dValue }
 
 /// A mutable text value.
 type [<Struct>] TextValue =
@@ -67,18 +65,18 @@ type [<Struct>] TextValue =
       mutable Justification : Justification
       mutable CaretOpt : int option }
 
-/// Describes how to render a sprite to a rendering subsystem.
-type SpriteDescriptor =
-    { mutable Transform : Transform
-      InsetOpt : Box2 voption
-      ClipOpt : Box2 voption
-      Image : Image AssetTag
+///
+type Material2d =
+    { Image : Image AssetTag
       UserDefinedImage0 : Image AssetTag
       UserDefinedImage1 : Image AssetTag
       UserDefinedImage2 : Image AssetTag
-      PipelineName : string
-      Color : Color
       Blend : Blend
+      PipelineName : string }
+
+///
+type MaterialProperties2d =
+    { Color : Color
       Emission : Color
       Flip : Flip
       UserDefinedSetting0 : single
@@ -89,6 +87,14 @@ type SpriteDescriptor =
       UserDefinedSetting5 : single
       UserDefinedSetting6 : single
       UserDefinedSetting7 : single }
+
+/// Describes how to render a sprite to a rendering subsystem.
+type SpriteDescriptor =
+    { mutable Transform : Transform
+      InsetOpt : Box2 voption
+      ClipOpt : Box2 voption
+      Material : Material2d
+      MaterialProperties : MaterialProperties2d }
 
 /// Describes how to render multiple sprites to a rendering subsystem.
 type [<NoEquality; NoComparison>] SpritesDescriptor =
