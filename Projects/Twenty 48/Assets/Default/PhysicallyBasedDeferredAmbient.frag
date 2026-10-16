@@ -12,7 +12,7 @@ struct Eye3dStruct
     mat4 viewProjection;
 };
 
-struct LightMap3dStruct
+struct LightMapStruct
 {
     vec3 origin;
     vec3 min;
@@ -22,8 +22,8 @@ struct LightMap3dStruct
 };
 
 layout(set = 0, binding = 0) uniform Eye3dUniform { Eye3dStruct eye; };
-layout(set = 0, binding = 1) uniform LightMap3dUniform { LightMap3dStruct lightMapFallback; };
-layout(set = 0, binding = 2) uniform LightMap3dsUniform { LightMap3dStruct lightMaps[LIGHT_MAPS_MAX]; };
+layout(set = 0, binding = 1) uniform LightMapUniform { LightMapStruct lightMapFallback; };
+layout(set = 0, binding = 2) uniform LightMapsUniform { LightMapStruct lightMaps[LIGHT_MAPS_MAX]; };
 layout(set = 0, binding = 3) uniform texture2D depthTexture;
 layout(set = 0, binding = 4) uniform texture2D lightMappingTexture;
 

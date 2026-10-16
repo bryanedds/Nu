@@ -294,9 +294,9 @@ type CharacterDispatcher () =
         // declare animated model
         let material =
             match characterType with
-            | Enemy -> { Material.empty with AlbedoImageOpt = ValueSome (asset Assets.Gameplay.PackageName "AmmoBox_Albedo") }
-            | Player -> Material.empty
-        let materialProperties = { MaterialProperties.empty with ScatterTypeOpt = ValueSome SkinScatter }
+            | Enemy -> { Material3d.empty with AlbedoImageOpt = ValueSome (asset Assets.Gameplay.PackageName "AmmoBox_Albedo") }
+            | Player -> Material3d.empty
+        let properties = { MaterialProperties3d.empty with ScatterTypeOpt = ValueSome SkinScatter }
         let animations = computeTraversalAnimations entity world
         let (visible, animations) = tryComputeActionAnimation animations entity world
         World.doEntity<AnimatedModelDispatcher> Constants.Gameplay.CharacterAnimatedModelName
@@ -307,8 +307,8 @@ type CharacterDispatcher () =
              Entity.MountOpt .= None
              Entity.Visible @= visible
              Entity.Pickable .= false
-             Entity.Material .= material
-             Entity.MaterialProperties .= materialProperties
+             Entity.Material3d .= material
+             Entity.MaterialProperties3d .= properties
              Entity.Animations @= animations
              Entity.AnimatedModel .= Assets.Gameplay.JoanModel] world
         let animatedModel = world.DeclaredEntity

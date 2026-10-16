@@ -53,7 +53,7 @@
         <Compile Include="Vulkan\VulkanAttachment.fs" />
         <Compile Include="Vulkan\VulkanPipeline.fs" />
         <Compile Include="Vulkan\VulkanCubeMap.fs" />
-        <Compile Include="Vulkan\VulkanLightMap3d.fs" />
+        <Compile Include="Vulkan\VulkanLightMap.fs" />
         <Compile Include="Vulkan\VulkanSpriteSingleton.fs" />
         <Compile Include="Vulkan\VulkanSpriteBatch.fs" />
 		<Compile Include="Vulkan\VulkanContour.fs" />

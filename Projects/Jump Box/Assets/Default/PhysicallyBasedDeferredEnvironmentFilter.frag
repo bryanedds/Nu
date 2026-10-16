@@ -14,7 +14,7 @@ struct Eye3dStruct
     mat4 viewProjection;
 };
 
-struct LightMap3dStruct
+struct LightMapStruct
 {
     vec3 origin;
     vec3 min;
@@ -24,7 +24,7 @@ struct LightMap3dStruct
 };
 
 layout(set = 0, binding = 0) uniform Eye3dUniform { Eye3dStruct eye; };
-layout(set = 0, binding = 1) uniform LightMap3dsUniform { LightMap3dStruct lightMaps[LIGHT_MAPS_MAX]; };
+layout(set = 0, binding = 1) uniform LightMapsUniform { LightMapStruct lightMaps[LIGHT_MAPS_MAX]; };
 layout(set = 0, binding = 2) uniform texture2D depthTexture;
 layout(set = 0, binding = 3) uniform texture2D materialTexture;
 layout(set = 0, binding = 4) uniform texture2D normalPlusTexture;
@@ -65,7 +65,7 @@ vec4 depthToPosition(float depth, vec2 texCoords)
     return eye.viewInverse * positionView;
 }
 
-vec3 parallaxCorrection(LightMap3dStruct lightMap, vec3 positionWorld, vec3 normalWorld)
+vec3 parallaxCorrection(LightMapStruct lightMap, vec3 positionWorld, vec3 normalWorld)
 {
     vec3 directionWorld = positionWorld - eye.center;
     vec3 reflectionWorld = reflect(directionWorld, normalWorld);

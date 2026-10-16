@@ -60,10 +60,10 @@
         [UserDefinedSetting6Opt [Some 0]]
         [UserDefinedSetting7Opt [Some 0]]]]]
      []]
-    [LightProbe3dDispatcher
+    [LightProbeDispatcher
      [[AmbientColor [1 0.8901961 0.78431374 1]]
       [MountOpt [Some ^]]
-      [Name LightProbe3d]
+      [Name LightProbe]
       [Position [12.4 5.7 11.4]]
       [PositionLocal [12.4 5.7 11.4]]
       [Presence Omnipresent]
@@ -171,7 +171,7 @@
         [Position [0 1.64 0]]
         [Static True]]
        [[RigidModelSurfaceDispatcher
-         [[Material
+         [[Material3d
            [[AlbedoImageOpt
              [Some [Gameplay Slab_Albedo]]]
             [RoughnessImageOpt
@@ -197,7 +197,7 @@
             [DepthWriteOpt None]
             [BlendOpt None]
             [PipelineNameOpt None]]]
-          [MaterialProperties
+          [MaterialProperties3d
            [[AlbedoOpt None]
             [RoughnessOpt [Some 1.25]]
             [MetallicOpt None]
@@ -232,7 +232,7 @@
           [Static True]]
          []]
         [RigidModelSurfaceDispatcher
-         [[Material
+         [[Material3d
            [[AlbedoImageOpt
              [Some [Gameplay Slab_Albedo]]]
             [RoughnessImageOpt
@@ -258,7 +258,7 @@
             [DepthWriteOpt None]
             [BlendOpt None]
             [PipelineNameOpt None]]]
-          [MaterialProperties
+          [MaterialProperties3d
            [[AlbedoOpt None]
             [RoughnessOpt [Some 1.25]]
             [MetallicOpt None]
@@ -351,7 +351,7 @@
          [[BodyShape
            [StaticModelShape
             [[Gameplay House2] Concave None None]]]
-          [MaterialProperties
+          [MaterialProperties3d
            [[AlbedoOpt
              [Some [1 1 1 1]]]
             [RoughnessOpt None]
@@ -389,7 +389,7 @@
              [[BodyShape
                [StaticModelShape
                 [[Gameplay House2] Concave None None]]]
-              [MaterialProperties
+              [MaterialProperties3d
                [[AlbedoOpt
                  [Some [1 1 1 1]]]
                 [RoughnessOpt None]
@@ -422,7 +422,7 @@
          [[BodyShape
            [StaticModelShape
             [[Gameplay House2] Concave None None]]]
-          [MaterialProperties
+          [MaterialProperties3d
            [[AlbedoOpt
              [Some [1 1 1 1]]]
             [RoughnessOpt None]
@@ -467,7 +467,7 @@
          [[BodyShape
            [StaticModelShape
             [[Gameplay Well] Convex None None]]]
-          [MaterialProperties
+          [MaterialProperties3d
            [[AlbedoOpt
              [Some [1 1 1 1]]]
             [RoughnessOpt None]
@@ -505,7 +505,7 @@
              [[BodyShape
                [StaticModelShape
                 [[Gameplay Well] Convex None None]]]
-              [MaterialProperties
+              [MaterialProperties3d
                [[AlbedoOpt
                  [Some [1 1 1 1]]]
                 [RoughnessOpt None]
@@ -533,7 +533,7 @@
          [[BodyShape
            [StaticModelShape
             [[Gameplay Well] Convex None None]]]
-          [MaterialProperties
+          [MaterialProperties3d
            [[AlbedoOpt
              [Some [1 1 1 1]]]
             [RoughnessOpt None]
@@ -574,7 +574,7 @@
          [[BodyShape
            [StaticModelShape
             [[Gameplay RedBarrelDestroyed] Convex None None]]]
-          [MaterialProperties
+          [MaterialProperties3d
            [[AlbedoOpt
              [Some [1 1 1 1]]]
             [RoughnessOpt None]
@@ -613,7 +613,7 @@
              [[BodyShape
                [StaticModelShape
                 [[Gameplay RedBarrelDestroyed] Convex None None]]]
-              [MaterialProperties
+              [MaterialProperties3d
                [[AlbedoOpt
                  [Some [1 1 1 1]]]
                 [RoughnessOpt None]
@@ -644,7 +644,7 @@
          [[BodyShape
            [StaticModelShape
             [[Gameplay RedBarrelDestroyed] Convex None None]]]
-          [MaterialProperties
+          [MaterialProperties3d
            [[AlbedoOpt
              [Some [1 1 1 1]]]
             [RoughnessOpt None]
@@ -686,7 +686,7 @@
          [[BodyShape
            [StaticModelShape
             [[Gameplay RedBarrelDestroyed] Convex None None]]]
-          [MaterialProperties
+          [MaterialProperties3d
            [[AlbedoOpt
              [Some [1 1 1 1]]]
             [RoughnessOpt None]
@@ -728,7 +728,7 @@
          [[BodyShape
            [StaticModelShape
             [[Gameplay RedBarrelDestroyed] Convex None None]]]
-          [MaterialProperties
+          [MaterialProperties3d
            [[AlbedoOpt
              [Some [1 1 1 1]]]
             [RoughnessOpt None]
@@ -770,7 +770,7 @@
          [[BodyShape
            [StaticModelShape
             [[Gameplay RedBarrelDestroyed] Convex None None]]]
-          [MaterialProperties
+          [MaterialProperties3d
            [[AlbedoOpt
              [Some [1 1 1 1]]]
             [RoughnessOpt None]
@@ -978,7 +978,7 @@
          [[BodyShape
            [StaticModelShape
             [[Gameplay Genorator] Convex None None]]]
-          [MaterialProperties
+          [MaterialProperties3d
            [[AlbedoOpt None]
             [RoughnessOpt [Some 0.75]]
             [MetallicOpt None]
@@ -1015,7 +1015,7 @@
              [[BodyShape
                [StaticModelShape
                 [[Gameplay Genorator] Convex None None]]]
-              [MaterialProperties
+              [MaterialProperties3d
                [[AlbedoOpt None]
                 [RoughnessOpt [Some 0.75]]
                 [MetallicOpt None]
@@ -1046,7 +1046,7 @@
          [[BodyShape
            [StaticModelShape
             [[Gameplay Genorator] Convex None None]]]
-          [MaterialProperties
+          [MaterialProperties3d
            [[AlbedoOpt None]
             [RoughnessOpt [Some 0.75]]
             [MetallicOpt None]
@@ -1090,7 +1090,7 @@
          [[BodyShape
            [StaticModelShape
             [[Gameplay Genorator] Convex None None]]]
-          [MaterialProperties
+          [MaterialProperties3d
            [[AlbedoOpt None]
             [RoughnessOpt [Some 0.75]]
             [MetallicOpt None]
@@ -1132,7 +1132,7 @@
          [[BodyShape
            [StaticModelShape
             [[Gameplay WoodenCrate] Convex None None]]]
-          [MaterialProperties
+          [MaterialProperties3d
            [[AlbedoOpt None]
             [RoughnessOpt [Some 2]]
             [MetallicOpt None]
@@ -1169,7 +1169,7 @@
              [[BodyShape
                [StaticModelShape
                 [[Gameplay WoodenCrate] Convex None None]]]
-              [MaterialProperties
+              [MaterialProperties3d
                [[AlbedoOpt None]
                 [RoughnessOpt [Some 2]]
                 [MetallicOpt None]
@@ -1198,7 +1198,7 @@
          [[BodyShape
            [StaticModelShape
             [[Gameplay WoodenCrate] Convex None None]]]
-          [MaterialProperties
+          [MaterialProperties3d
            [[AlbedoOpt None]
             [RoughnessOpt [Some 2]]
             [MetallicOpt None]
@@ -1241,7 +1241,7 @@
          [[BodyShape
            [StaticModelShape
             [[Gameplay WoodenCrate] Convex None None]]]
-          [MaterialProperties
+          [MaterialProperties3d
            [[AlbedoOpt None]
             [RoughnessOpt [Some 2]]
             [MetallicOpt None]
@@ -1282,7 +1282,7 @@
          [[BodyShape
            [StaticModelShape
             [[Gameplay WoodenCrate] Convex None None]]]
-          [MaterialProperties
+          [MaterialProperties3d
            [[AlbedoOpt None]
             [RoughnessOpt [Some 2]]
             [MetallicOpt None]
@@ -1322,7 +1322,7 @@
          [[BodyShape
            [StaticModelShape
             [[Gameplay WoodenCrate] Convex None None]]]
-          [MaterialProperties
+          [MaterialProperties3d
            [[AlbedoOpt None]
             [RoughnessOpt [Some 2]]
             [MetallicOpt None]
@@ -1362,7 +1362,7 @@
          [[BodyShape
            [StaticModelShape
             [[Gameplay WoodenCrate] Convex None None]]]
-          [MaterialProperties
+          [MaterialProperties3d
            [[AlbedoOpt None]
             [RoughnessOpt [Some 2]]
             [MetallicOpt None]
@@ -1405,7 +1405,7 @@
          [[BodyShape
            [StaticModelShape
             [[Gameplay WoodenCrate] Convex None None]]]
-          [MaterialProperties
+          [MaterialProperties3d
            [[AlbedoOpt None]
             [RoughnessOpt [Some 2]]
             [MetallicOpt None]
@@ -1446,7 +1446,7 @@
          [[BodyShape
            [StaticModelSurfaceShape
             [[Gameplay PalmTree] 0 Concave None None]]]
-          [Material
+          [Material3d
            [[AlbedoImageOpt None]
             [RoughnessImageOpt None]
             [MetallicImageOpt None]
@@ -1480,7 +1480,7 @@
              [[BodyShape
                [StaticModelSurfaceShape
                 [[Gameplay PalmTree] 0 Concave None None]]]
-              [Material
+              [Material3d
                [[AlbedoImageOpt None]
                 [RoughnessImageOpt None]
                 [MetallicImageOpt None]
@@ -1520,7 +1520,7 @@
          [[BodyShape
            [StaticModelSurfaceShape
             [[Gameplay PalmTree] 0 Concave None None]]]
-          [Material
+          [Material3d
            [[AlbedoImageOpt None]
             [RoughnessImageOpt None]
             [MetallicImageOpt None]
@@ -1559,7 +1559,7 @@
          [[BodyShape
            [StaticModelSurfaceShape
             [[Gameplay PalmTree] 0 Concave None None]]]
-          [Material
+          [Material3d
            [[AlbedoImageOpt None]
             [RoughnessImageOpt None]
             [MetallicImageOpt None]
@@ -1600,7 +1600,7 @@
          [[BodyShape
            [StaticModelSurfaceShape
             [[Gameplay PalmTree] 0 Concave None None]]]
-          [Material
+          [Material3d
            [[AlbedoImageOpt None]
             [RoughnessImageOpt None]
             [MetallicImageOpt None]
@@ -1641,7 +1641,7 @@
          [[BodyShape
            [StaticModelSurfaceShape
             [[Gameplay PalmTree] 0 Concave None None]]]
-          [Material
+          [Material3d
            [[AlbedoImageOpt None]
             [RoughnessImageOpt None]
             [MetallicImageOpt None]
@@ -1682,7 +1682,7 @@
          [[BodyShape
            [StaticModelSurfaceShape
             [[Gameplay PalmTree] 0 Concave None None]]]
-          [Material
+          [Material3d
            [[AlbedoImageOpt None]
             [RoughnessImageOpt None]
             [MetallicImageOpt None]
@@ -1723,7 +1723,7 @@
          [[BodyShape
            [StaticModelSurfaceShape
             [[Gameplay PalmTree] 0 Concave None None]]]
-          [Material
+          [Material3d
            [[AlbedoImageOpt None]
             [RoughnessImageOpt None]
             [MetallicImageOpt None]
@@ -1764,7 +1764,7 @@
          [[BodyShape
            [StaticModelSurfaceShape
             [[Gameplay PalmTree] 0 Concave None None]]]
-          [Material
+          [Material3d
            [[AlbedoImageOpt None]
             [RoughnessImageOpt None]
             [MetallicImageOpt None]
@@ -1805,7 +1805,7 @@
          [[BodyShape
            [StaticModelShape
             [[Gameplay Container] Bounds None None]]]
-          [Material
+          [Material3d
            [[AlbedoImageOpt None]
             [RoughnessImageOpt
              [Some [Default LightProbeModelRoughness]]]
@@ -1890,7 +1890,7 @@
          []]]]]]
     [Static True]]
    [[RigidModelSurfaceDispatcher
-     [[Material
+     [[Material3d
        [[AlbedoImageOpt
          [Some [Gameplay Slab_Albedo]]]
         [RoughnessImageOpt
@@ -1916,7 +1916,7 @@
         [DepthWriteOpt None]
         [BlendOpt None]
         [PipelineNameOpt None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 1.25]]
         [MetallicOpt None]
@@ -1950,7 +1950,7 @@
       [Static True]]
      []]
     [RigidModelSurfaceDispatcher
-     [[Material
+     [[Material3d
        [[AlbedoImageOpt
          [Some [Gameplay Slab_Albedo]]]
         [RoughnessImageOpt
@@ -1976,7 +1976,7 @@
         [DepthWriteOpt None]
         [BlendOpt None]
         [PipelineNameOpt None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 1.25]]
         [MetallicOpt None]
@@ -2066,7 +2066,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay House2] Concave None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt
          [Some [1 1 1 1]]]
         [RoughnessOpt None]
@@ -2103,7 +2103,7 @@
          [[BodyShape
            [StaticModelShape
             [[Gameplay House2] Concave None None]]]
-          [MaterialProperties
+          [MaterialProperties3d
            [[AlbedoOpt
              [Some [1 1 1 1]]]
             [RoughnessOpt None]
@@ -2136,7 +2136,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay House2] Concave None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt
          [Some [1 1 1 1]]]
         [RoughnessOpt None]
@@ -2180,7 +2180,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay Well] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt
          [Some [1 1 1 1]]]
         [RoughnessOpt None]
@@ -2217,7 +2217,7 @@
          [[BodyShape
            [StaticModelShape
             [[Gameplay Well] Convex None None]]]
-          [MaterialProperties
+          [MaterialProperties3d
            [[AlbedoOpt
              [Some [1 1 1 1]]]
             [RoughnessOpt None]
@@ -2245,7 +2245,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay Well] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt
          [Some [1 1 1 1]]]
         [RoughnessOpt None]
@@ -2285,7 +2285,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay RedBarrelDestroyed] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt
          [Some [1 1 1 1]]]
         [RoughnessOpt None]
@@ -2323,7 +2323,7 @@
          [[BodyShape
            [StaticModelShape
             [[Gameplay RedBarrelDestroyed] Convex None None]]]
-          [MaterialProperties
+          [MaterialProperties3d
            [[AlbedoOpt
              [Some [1 1 1 1]]]
             [RoughnessOpt None]
@@ -2354,7 +2354,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay RedBarrelDestroyed] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt
          [Some [1 1 1 1]]]
         [RoughnessOpt None]
@@ -2395,7 +2395,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay RedBarrelDestroyed] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt
          [Some [1 1 1 1]]]
         [RoughnessOpt None]
@@ -2436,7 +2436,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay RedBarrelDestroyed] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt
          [Some [1 1 1 1]]]
         [RoughnessOpt None]
@@ -2477,7 +2477,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay RedBarrelDestroyed] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt
          [Some [1 1 1 1]]]
         [RoughnessOpt None]
@@ -2675,7 +2675,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay Genorator] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 0.75]]
         [MetallicOpt None]
@@ -2711,7 +2711,7 @@
          [[BodyShape
            [StaticModelShape
             [[Gameplay Genorator] Convex None None]]]
-          [MaterialProperties
+          [MaterialProperties3d
            [[AlbedoOpt None]
             [RoughnessOpt [Some 0.75]]
             [MetallicOpt None]
@@ -2742,7 +2742,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay Genorator] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 0.75]]
         [MetallicOpt None]
@@ -2785,7 +2785,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay Genorator] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 0.75]]
         [MetallicOpt None]
@@ -2826,7 +2826,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
         [MetallicOpt None]
@@ -2862,7 +2862,7 @@
          [[BodyShape
            [StaticModelShape
             [[Gameplay WoodenCrate] Convex None None]]]
-          [MaterialProperties
+          [MaterialProperties3d
            [[AlbedoOpt None]
             [RoughnessOpt [Some 2]]
             [MetallicOpt None]
@@ -2891,7 +2891,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
         [MetallicOpt None]
@@ -2933,7 +2933,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
         [MetallicOpt None]
@@ -2973,7 +2973,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
         [MetallicOpt None]
@@ -3012,7 +3012,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
         [MetallicOpt None]
@@ -3051,7 +3051,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
         [MetallicOpt None]
@@ -3093,7 +3093,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
         [MetallicOpt None]
@@ -3133,7 +3133,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Material
+      [Material3d
        [[AlbedoImageOpt None]
         [RoughnessImageOpt None]
         [MetallicImageOpt None]
@@ -3166,7 +3166,7 @@
          [[BodyShape
            [StaticModelSurfaceShape
             [[Gameplay PalmTree] 0 Concave None None]]]
-          [Material
+          [Material3d
            [[AlbedoImageOpt None]
             [RoughnessImageOpt None]
             [MetallicImageOpt None]
@@ -3206,7 +3206,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Material
+      [Material3d
        [[AlbedoImageOpt None]
         [RoughnessImageOpt None]
         [MetallicImageOpt None]
@@ -3244,7 +3244,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Material
+      [Material3d
        [[AlbedoImageOpt None]
         [RoughnessImageOpt None]
         [MetallicImageOpt None]
@@ -3284,7 +3284,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Material
+      [Material3d
        [[AlbedoImageOpt None]
         [RoughnessImageOpt None]
         [MetallicImageOpt None]
@@ -3324,7 +3324,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Material
+      [Material3d
        [[AlbedoImageOpt None]
         [RoughnessImageOpt None]
         [MetallicImageOpt None]
@@ -3364,7 +3364,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Material
+      [Material3d
        [[AlbedoImageOpt None]
         [RoughnessImageOpt None]
         [MetallicImageOpt None]
@@ -3404,7 +3404,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Material
+      [Material3d
        [[AlbedoImageOpt None]
         [RoughnessImageOpt None]
         [MetallicImageOpt None]
@@ -3444,7 +3444,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Material
+      [Material3d
        [[AlbedoImageOpt None]
         [RoughnessImageOpt None]
         [MetallicImageOpt None]
@@ -3484,7 +3484,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay Container] Bounds None None]]]
-      [Material
+      [Material3d
        [[AlbedoImageOpt None]
         [RoughnessImageOpt
          [Some [Default LightProbeModelRoughness]]]
@@ -3572,7 +3572,7 @@
     [Rotation [0 -0.70710677 0 0.70710677]]
     [Static True]]
    [[RigidModelSurfaceDispatcher
-     [[Material
+     [[Material3d
        [[AlbedoImageOpt
          [Some [Gameplay Slab_Albedo]]]
         [RoughnessImageOpt
@@ -3598,7 +3598,7 @@
         [DepthWriteOpt None]
         [BlendOpt None]
         [PipelineNameOpt None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 1.25]]
         [MetallicOpt None]
@@ -3633,7 +3633,7 @@
       [Static True]]
      []]
     [RigidModelSurfaceDispatcher
-     [[Material
+     [[Material3d
        [[AlbedoImageOpt
          [Some [Gameplay Slab_Albedo]]]
         [RoughnessImageOpt
@@ -3659,7 +3659,7 @@
         [DepthWriteOpt None]
         [BlendOpt None]
         [PipelineNameOpt None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 1.25]]
         [MetallicOpt None]
@@ -3733,7 +3733,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay House2] Concave None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt
          [Some [1 1 1 1]]]
         [RoughnessOpt None]
@@ -3776,7 +3776,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay House2] Concave None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt
          [Some [1 1 1 1]]]
         [RoughnessOpt None]
@@ -3820,7 +3820,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay Well] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt
          [Some [1 1 1 1]]]
         [RoughnessOpt None]
@@ -3861,7 +3861,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay Well] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt
          [Some [1 1 1 1]]]
         [RoughnessOpt None]
@@ -3902,7 +3902,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay RedBarrelDestroyed] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt
          [Some [1 1 1 1]]]
         [RoughnessOpt None]
@@ -3944,7 +3944,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay RedBarrelDestroyed] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt
          [Some [1 1 1 1]]]
         [RoughnessOpt None]
@@ -3986,7 +3986,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay RedBarrelDestroyed] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt
          [Some [1 1 1 1]]]
         [RoughnessOpt None]
@@ -4028,7 +4028,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay RedBarrelDestroyed] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt
          [Some [1 1 1 1]]]
         [RoughnessOpt None]
@@ -4070,7 +4070,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay RedBarrelDestroyed] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt
          [Some [1 1 1 1]]]
         [RoughnessOpt None]
@@ -4256,7 +4256,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay Genorator] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 0.75]]
         [MetallicOpt None]
@@ -4298,7 +4298,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay Genorator] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 0.75]]
         [MetallicOpt None]
@@ -4341,7 +4341,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay Genorator] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 0.75]]
         [MetallicOpt None]
@@ -4383,7 +4383,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
         [MetallicOpt None]
@@ -4423,7 +4423,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
         [MetallicOpt None]
@@ -4465,7 +4465,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
         [MetallicOpt None]
@@ -4505,7 +4505,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
         [MetallicOpt None]
@@ -4545,7 +4545,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
         [MetallicOpt None]
@@ -4585,7 +4585,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
         [MetallicOpt None]
@@ -4627,7 +4627,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
         [MetallicOpt None]
@@ -4667,7 +4667,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Material
+      [Material3d
        [[AlbedoImageOpt None]
         [RoughnessImageOpt None]
         [MetallicImageOpt None]
@@ -4704,7 +4704,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Material
+      [Material3d
        [[AlbedoImageOpt None]
         [RoughnessImageOpt None]
         [MetallicImageOpt None]
@@ -4742,7 +4742,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Material
+      [Material3d
        [[AlbedoImageOpt None]
         [RoughnessImageOpt None]
         [MetallicImageOpt None]
@@ -4782,7 +4782,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Material
+      [Material3d
        [[AlbedoImageOpt None]
         [RoughnessImageOpt None]
         [MetallicImageOpt None]
@@ -4822,7 +4822,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Material
+      [Material3d
        [[AlbedoImageOpt None]
         [RoughnessImageOpt None]
         [MetallicImageOpt None]
@@ -4862,7 +4862,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Material
+      [Material3d
        [[AlbedoImageOpt None]
         [RoughnessImageOpt None]
         [MetallicImageOpt None]
@@ -4902,7 +4902,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Material
+      [Material3d
        [[AlbedoImageOpt None]
         [RoughnessImageOpt None]
         [MetallicImageOpt None]
@@ -4942,7 +4942,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Material
+      [Material3d
        [[AlbedoImageOpt None]
         [RoughnessImageOpt None]
         [MetallicImageOpt None]
@@ -4982,7 +4982,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay Container] Bounds None None]]]
-      [Material
+      [Material3d
        [[AlbedoImageOpt None]
         [RoughnessImageOpt
          [Some [Default LightProbeModelRoughness]]]
@@ -5056,7 +5056,7 @@
     [Rotation [0 -1 0 -4.371139E-08]]
     [Static True]]
    [[RigidModelSurfaceDispatcher
-     [[Material
+     [[Material3d
        [[AlbedoImageOpt
          [Some [Gameplay Slab_Albedo]]]
         [RoughnessImageOpt
@@ -5082,7 +5082,7 @@
         [DepthWriteOpt None]
         [BlendOpt None]
         [PipelineNameOpt None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 1.25]]
         [MetallicOpt None]
@@ -5117,7 +5117,7 @@
       [Static True]]
      []]
     [RigidModelSurfaceDispatcher
-     [[Material
+     [[Material3d
        [[AlbedoImageOpt
          [Some [Gameplay Slab_Albedo]]]
         [RoughnessImageOpt
@@ -5143,7 +5143,7 @@
         [DepthWriteOpt None]
         [BlendOpt None]
         [PipelineNameOpt None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 1.25]]
         [MetallicOpt None]
@@ -5217,7 +5217,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay House2] Concave None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt
          [Some [1 1 1 1]]]
         [RoughnessOpt None]
@@ -5260,7 +5260,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay House2] Concave None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt
          [Some [1 1 1 1]]]
         [RoughnessOpt None]
@@ -5304,7 +5304,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay Well] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt
          [Some [1 1 1 1]]]
         [RoughnessOpt None]
@@ -5345,7 +5345,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay Well] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt
          [Some [1 1 1 1]]]
         [RoughnessOpt None]
@@ -5386,7 +5386,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay RedBarrelDestroyed] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt
          [Some [1 1 1 1]]]
         [RoughnessOpt None]
@@ -5428,7 +5428,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay RedBarrelDestroyed] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt
          [Some [1 1 1 1]]]
         [RoughnessOpt None]
@@ -5470,7 +5470,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay RedBarrelDestroyed] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt
          [Some [1 1 1 1]]]
         [RoughnessOpt None]
@@ -5512,7 +5512,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay RedBarrelDestroyed] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt
          [Some [1 1 1 1]]]
         [RoughnessOpt None]
@@ -5554,7 +5554,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay RedBarrelDestroyed] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt
          [Some [1 1 1 1]]]
         [RoughnessOpt None]
@@ -5740,7 +5740,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay Genorator] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 0.75]]
         [MetallicOpt None]
@@ -5782,7 +5782,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay Genorator] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 0.75]]
         [MetallicOpt None]
@@ -5825,7 +5825,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay Genorator] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 0.75]]
         [MetallicOpt None]
@@ -5867,7 +5867,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
         [MetallicOpt None]
@@ -5907,7 +5907,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
         [MetallicOpt None]
@@ -5949,7 +5949,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
         [MetallicOpt None]
@@ -5989,7 +5989,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
         [MetallicOpt None]
@@ -6029,7 +6029,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
         [MetallicOpt None]
@@ -6069,7 +6069,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
         [MetallicOpt None]
@@ -6111,7 +6111,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
         [MetallicOpt None]
@@ -6151,7 +6151,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Material
+      [Material3d
        [[AlbedoImageOpt None]
         [RoughnessImageOpt None]
         [MetallicImageOpt None]
@@ -6188,7 +6188,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Material
+      [Material3d
        [[AlbedoImageOpt None]
         [RoughnessImageOpt None]
         [MetallicImageOpt None]
@@ -6226,7 +6226,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Material
+      [Material3d
        [[AlbedoImageOpt None]
         [RoughnessImageOpt None]
         [MetallicImageOpt None]
@@ -6266,7 +6266,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Material
+      [Material3d
        [[AlbedoImageOpt None]
         [RoughnessImageOpt None]
         [MetallicImageOpt None]
@@ -6306,7 +6306,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Material
+      [Material3d
        [[AlbedoImageOpt None]
         [RoughnessImageOpt None]
         [MetallicImageOpt None]
@@ -6346,7 +6346,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Material
+      [Material3d
        [[AlbedoImageOpt None]
         [RoughnessImageOpt None]
         [MetallicImageOpt None]
@@ -6386,7 +6386,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Material
+      [Material3d
        [[AlbedoImageOpt None]
         [RoughnessImageOpt None]
         [MetallicImageOpt None]
@@ -6426,7 +6426,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Material
+      [Material3d
        [[AlbedoImageOpt None]
         [RoughnessImageOpt None]
         [MetallicImageOpt None]
@@ -6466,7 +6466,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay Container] Bounds None None]]]
-      [Material
+      [Material3d
        [[AlbedoImageOpt None]
         [RoughnessImageOpt
          [Some [Default LightProbeModelRoughness]]]
@@ -6540,7 +6540,7 @@
     [Rotation [-0 1 -0 -4.371139E-08]]
     [Static True]]
    [[RigidModelSurfaceDispatcher
-     [[Material
+     [[Material3d
        [[AlbedoImageOpt
          [Some [Gameplay Slab_Albedo]]]
         [RoughnessImageOpt
@@ -6566,7 +6566,7 @@
         [DepthWriteOpt None]
         [BlendOpt None]
         [PipelineNameOpt None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 1.25]]
         [MetallicOpt None]
@@ -6601,7 +6601,7 @@
       [Static True]]
      []]
     [RigidModelSurfaceDispatcher
-     [[Material
+     [[Material3d
        [[AlbedoImageOpt
          [Some [Gameplay Slab_Albedo]]]
         [RoughnessImageOpt
@@ -6627,7 +6627,7 @@
         [DepthWriteOpt None]
         [BlendOpt None]
         [PipelineNameOpt None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 1.25]]
         [MetallicOpt None]
@@ -6701,7 +6701,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay House2] Concave None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt
          [Some [1 1 1 1]]]
         [RoughnessOpt None]
@@ -6744,7 +6744,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay House2] Concave None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt
          [Some [1 1 1 1]]]
         [RoughnessOpt None]
@@ -6788,7 +6788,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay Well] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt
          [Some [1 1 1 1]]]
         [RoughnessOpt None]
@@ -6829,7 +6829,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay Well] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt
          [Some [1 1 1 1]]]
         [RoughnessOpt None]
@@ -6870,7 +6870,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay RedBarrelDestroyed] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt
          [Some [1 1 1 1]]]
         [RoughnessOpt None]
@@ -6912,7 +6912,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay RedBarrelDestroyed] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt
          [Some [1 1 1 1]]]
         [RoughnessOpt None]
@@ -6954,7 +6954,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay RedBarrelDestroyed] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt
          [Some [1 1 1 1]]]
         [RoughnessOpt None]
@@ -6996,7 +6996,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay RedBarrelDestroyed] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt
          [Some [1 1 1 1]]]
         [RoughnessOpt None]
@@ -7038,7 +7038,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay RedBarrelDestroyed] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt
          [Some [1 1 1 1]]]
         [RoughnessOpt None]
@@ -7224,7 +7224,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay Genorator] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 0.75]]
         [MetallicOpt None]
@@ -7266,7 +7266,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay Genorator] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 0.75]]
         [MetallicOpt None]
@@ -7309,7 +7309,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay Genorator] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 0.75]]
         [MetallicOpt None]
@@ -7351,7 +7351,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
         [MetallicOpt None]
@@ -7391,7 +7391,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
         [MetallicOpt None]
@@ -7433,7 +7433,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
         [MetallicOpt None]
@@ -7473,7 +7473,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
         [MetallicOpt None]
@@ -7513,7 +7513,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
         [MetallicOpt None]
@@ -7553,7 +7553,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
         [MetallicOpt None]
@@ -7595,7 +7595,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay WoodenCrate] Convex None None]]]
-      [MaterialProperties
+      [MaterialProperties3d
        [[AlbedoOpt None]
         [RoughnessOpt [Some 2]]
         [MetallicOpt None]
@@ -7635,7 +7635,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Material
+      [Material3d
        [[AlbedoImageOpt None]
         [RoughnessImageOpt None]
         [MetallicImageOpt None]
@@ -7672,7 +7672,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Material
+      [Material3d
        [[AlbedoImageOpt None]
         [RoughnessImageOpt None]
         [MetallicImageOpt None]
@@ -7710,7 +7710,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Material
+      [Material3d
        [[AlbedoImageOpt None]
         [RoughnessImageOpt None]
         [MetallicImageOpt None]
@@ -7750,7 +7750,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Material
+      [Material3d
        [[AlbedoImageOpt None]
         [RoughnessImageOpt None]
         [MetallicImageOpt None]
@@ -7790,7 +7790,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Material
+      [Material3d
        [[AlbedoImageOpt None]
         [RoughnessImageOpt None]
         [MetallicImageOpt None]
@@ -7830,7 +7830,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Material
+      [Material3d
        [[AlbedoImageOpt None]
         [RoughnessImageOpt None]
         [MetallicImageOpt None]
@@ -7870,7 +7870,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Material
+      [Material3d
        [[AlbedoImageOpt None]
         [RoughnessImageOpt None]
         [MetallicImageOpt None]
@@ -7910,7 +7910,7 @@
      [[BodyShape
        [StaticModelSurfaceShape
         [[Gameplay PalmTree] 0 Concave None None]]]
-      [Material
+      [Material3d
        [[AlbedoImageOpt None]
         [RoughnessImageOpt None]
         [MetallicImageOpt None]
@@ -7950,7 +7950,7 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay Container] Bounds None None]]]
-      [Material
+      [Material3d
        [[AlbedoImageOpt None]
         [RoughnessImageOpt
          [Some [Default LightProbeModelRoughness]]]

@@ -14,7 +14,7 @@ struct Eye3dStruct
     mat4 viewProjection;
 };
 
-struct LightMap3dStruct
+struct LightMapStruct
 {
     vec3 origin;
     vec3 min;
@@ -31,7 +31,7 @@ struct Lighting3d3Struct
 };
 
 layout(set = 0, binding = 0) uniform Eye3dUniform { Eye3dStruct eye; };
-layout(set = 0, binding = 1) uniform LightMap3dsUniform { LightMap3dStruct lightMaps[LIGHT_MAPS_MAX]; };
+layout(set = 0, binding = 1) uniform LightMapsUniform { LightMapStruct lightMaps[LIGHT_MAPS_MAX]; };
 layout(set = 0, binding = 2) uniform Lighting3d3Uniform { Lighting3d3Struct lighting3; };
 layout(set = 0, binding = 3) uniform texture2D depthTexture;
 layout(set = 0, binding = 4) uniform texture2D normalPlusTexture;
@@ -122,7 +122,7 @@ void main()
     {
         for (int i = 0; i < lighting3.lightMapsCount; ++i)
         {
-            LightMap3dStruct lightMap = lightMaps[i];
+            LightMapStruct lightMap = lightMaps[i];
             if (inBounds(position.xyz, lightMap.min, lightMap.size))
             {
                 vec3 delta = lightMap.origin - position.xyz;
