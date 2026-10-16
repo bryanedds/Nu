@@ -42,6 +42,15 @@ module StaticSpriteFacetExtensions =
         member this.GetStaticImage world : Image AssetTag = this.Get (nameof this.StaticImage) world
         member this.SetStaticImage (value : Image AssetTag) world = this.Set (nameof this.StaticImage) value world
         member this.StaticImage = lens (nameof this.StaticImage) this this.GetStaticImage this.SetStaticImage
+        member this.GetUserDefinedImage0 world : Image AssetTag = this.Get (nameof this.UserDefinedImage0) world
+        member this.SetUserDefinedImage0 (value : Image AssetTag) world = this.Set (nameof this.UserDefinedImage0) value world
+        member this.UserDefinedImage0 = lens (nameof this.UserDefinedImage0) this this.GetUserDefinedImage0 this.SetUserDefinedImage0
+        member this.GetUserDefinedImage1 world : Image AssetTag = this.Get (nameof this.UserDefinedImage1) world
+        member this.SetUserDefinedImage1 (value : Image AssetTag) world = this.Set (nameof this.UserDefinedImage1) value world
+        member this.UserDefinedImage1 = lens (nameof this.UserDefinedImage1) this this.GetUserDefinedImage1 this.SetUserDefinedImage1
+        member this.GetUserDefinedImage2 world : Image AssetTag = this.Get (nameof this.UserDefinedImage2) world
+        member this.SetUserDefinedImage2 (value : Image AssetTag) world = this.Set (nameof this.UserDefinedImage2) value world
+        member this.UserDefinedImage2 = lens (nameof this.UserDefinedImage2) this this.GetUserDefinedImage2 this.SetUserDefinedImage2
         member this.GetColor world : Color = this.Get (nameof this.Color) world
         member this.SetColor (value : Color) world = this.Set (nameof this.Color) value world
         member this.Color = lens (nameof this.Color) this this.GetColor this.SetColor
@@ -54,6 +63,30 @@ module StaticSpriteFacetExtensions =
         member this.GetFlip world : Flip = this.Get (nameof this.Flip) world
         member this.SetFlip (value : Flip) world = this.Set (nameof this.Flip) value world
         member this.Flip = lens (nameof this.Flip) this this.GetFlip this.SetFlip
+        member this.GetUserDefinedSetting0 world : single = this.Get (nameof this.UserDefinedSetting0) world
+        member this.SetUserDefinedSetting0 (value : single) world = this.Set (nameof this.UserDefinedSetting0) value world
+        member this.UserDefinedSetting0 = lens (nameof this.UserDefinedSetting0) this this.GetUserDefinedSetting0 this.SetUserDefinedSetting0
+        member this.GetUserDefinedSetting1 world : single = this.Get (nameof this.UserDefinedSetting1) world
+        member this.SetUserDefinedSetting1 (value : single) world = this.Set (nameof this.UserDefinedSetting1) value world
+        member this.UserDefinedSetting1 = lens (nameof this.UserDefinedSetting1) this this.GetUserDefinedSetting1 this.SetUserDefinedSetting1
+        member this.GetUserDefinedSetting2 world : single = this.Get (nameof this.UserDefinedSetting2) world
+        member this.SetUserDefinedSetting2 (value : single) world = this.Set (nameof this.UserDefinedSetting2) value world
+        member this.UserDefinedSetting2 = lens (nameof this.UserDefinedSetting2) this this.GetUserDefinedSetting2 this.SetUserDefinedSetting2
+        member this.GetUserDefinedSetting3 world : single = this.Get (nameof this.UserDefinedSetting3) world
+        member this.SetUserDefinedSetting3 (value : single) world = this.Set (nameof this.UserDefinedSetting3) value world
+        member this.UserDefinedSetting3 = lens (nameof this.UserDefinedSetting3) this this.GetUserDefinedSetting3 this.SetUserDefinedSetting3
+        member this.GetUserDefinedSetting4 world : single = this.Get (nameof this.UserDefinedSetting4) world
+        member this.SetUserDefinedSetting4 (value : single) world = this.Set (nameof this.UserDefinedSetting4) value world
+        member this.UserDefinedSetting4 = lens (nameof this.UserDefinedSetting4) this this.GetUserDefinedSetting4 this.SetUserDefinedSetting4
+        member this.GetUserDefinedSetting5 world : single = this.Get (nameof this.UserDefinedSetting5) world
+        member this.SetUserDefinedSetting5 (value : single) world = this.Set (nameof this.UserDefinedSetting5) value world
+        member this.UserDefinedSetting5 = lens (nameof this.UserDefinedSetting5) this this.GetUserDefinedSetting5 this.SetUserDefinedSetting5
+        member this.GetUserDefinedSetting6 world : single = this.Get (nameof this.UserDefinedSetting6) world
+        member this.SetUserDefinedSetting6 (value : single) world = this.Set (nameof this.UserDefinedSetting6) value world
+        member this.UserDefinedSetting6 = lens (nameof this.UserDefinedSetting6) this this.GetUserDefinedSetting6 this.SetUserDefinedSetting6
+        member this.GetUserDefinedSetting7 world : single = this.Get (nameof this.UserDefinedSetting7) world
+        member this.SetUserDefinedSetting7 (value : single) world = this.Set (nameof this.UserDefinedSetting7) value world
+        member this.UserDefinedSetting7 = lens (nameof this.UserDefinedSetting7) this this.GetUserDefinedSetting7 this.SetUserDefinedSetting7
 
 /// Augments an entity with a static sprite.
 type StaticSpriteFacet () =
@@ -63,10 +96,21 @@ type StaticSpriteFacet () =
         [define Entity.InsetOpt None
          define Entity.ClipOpt None
          define Entity.StaticImage Assets.Default.StaticSprite
+         define Entity.UserDefinedImage0 Assets.Default.StaticSprite
+         define Entity.UserDefinedImage1 Assets.Default.StaticSprite
+         define Entity.UserDefinedImage2 Assets.Default.StaticSprite
          define Entity.Color Color.One
          define Entity.Blend Transparent
          define Entity.Emission Color.Zero
-         define Entity.Flip Unflipped]
+         define Entity.Flip Unflipped
+         define Entity.UserDefinedSetting0 Constants.Render.UserDefinedSettingDefault
+         define Entity.UserDefinedSetting1 Constants.Render.UserDefinedSettingDefault
+         define Entity.UserDefinedSetting2 Constants.Render.UserDefinedSettingDefault
+         define Entity.UserDefinedSetting3 Constants.Render.UserDefinedSettingDefault
+         define Entity.UserDefinedSetting4 Constants.Render.UserDefinedSettingDefault
+         define Entity.UserDefinedSetting5 Constants.Render.UserDefinedSettingDefault
+         define Entity.UserDefinedSetting6 Constants.Render.UserDefinedSettingDefault
+         define Entity.UserDefinedSetting7 Constants.Render.UserDefinedSettingDefault]
 
     override this.Render (_, entity, world) =
         let mutable transform = entity.GetTransform world

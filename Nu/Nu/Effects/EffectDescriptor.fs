@@ -68,7 +68,11 @@ type Slice =
       mutable UserDefinedSetting0 : single
       mutable UserDefinedSetting1 : single
       mutable UserDefinedSetting2 : single
-      mutable UserDefinedSetting3 : single } // TODO: consider utilizing settings 4-7 as well.
+      mutable UserDefinedSetting3 : single
+      mutable UserDefinedSetting4 : single
+      mutable UserDefinedSetting5 : single
+      mutable UserDefinedSetting6 : single
+      mutable UserDefinedSetting7 : single }
     static member copy slice =
         { slice with SliceDelta = slice.SliceDelta }
 
@@ -179,6 +183,10 @@ and Aspect =
     | UserDefinedSetting1 of single
     | UserDefinedSetting2 of single
     | UserDefinedSetting3 of single
+    | UserDefinedSetting4 of single
+    | UserDefinedSetting5 of single
+    | UserDefinedSetting6 of single
+    | UserDefinedSetting7 of single
     | Positions of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : Tween3KeyFrame array
     | PositionLocals of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : Tween3KeyFrame array
     | Scales of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : Tween3KeyFrame array
@@ -201,6 +209,10 @@ and Aspect =
     | UserDefinedSetting1s of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
     | UserDefinedSetting2s of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
     | UserDefinedSetting3s of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
+    | UserDefinedSetting4s of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
+    | UserDefinedSetting5s of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
+    | UserDefinedSetting6s of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
+    | UserDefinedSetting7s of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
     | Expand of Name : string * Args : Argument array
     | Aspects of Aspects : Aspect array
 
