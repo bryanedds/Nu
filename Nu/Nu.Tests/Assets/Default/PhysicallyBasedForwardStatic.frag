@@ -86,7 +86,7 @@ struct Lighting3dStruct
     float shadowNear;
 };
 
-struct LightMap3dStruct
+struct LightMapStruct
 {
     vec3 origin;
     vec3 min;
@@ -138,7 +138,7 @@ layout(set = 1, binding = 12) uniform texture2D userDefinedImage0Texture;
 layout(set = 1, binding = 13) uniform texture2D userDefinedImage1Texture;
 layout(set = 1, binding = 14) uniform texture2D userDefinedImage2Texture;
 
-layout(set = 2, binding = 1) uniform LightMap3dsUniform { LightMap3dStruct lightMaps[LIGHT_MAPS_MAX]; };
+layout(set = 2, binding = 1) uniform LightMapsUniform { LightMapStruct lightMaps[LIGHT_MAPS_MAX]; };
 layout(set = 2, binding = 2) uniform Lighting3d3Uniform { Lighting3d3Struct lighting3; };
 layout(set = 2, binding = 3) uniform Light3dsUniform { Light3dStruct lights[LIGHTS_MAX]; };
 layout(set = 2, binding = 4) uniform ShadowMatricesUniform { mat4 shadowMatrices[SHADOW_TEXTURES_MAX + SHADOW_CASCADES_MAX * SHADOW_CASCADE_LEVELS]; };
@@ -279,7 +279,7 @@ float computeDepthRatio(vec3 minA, vec3 sizeA, vec3 minB, vec3 sizeB, vec3 posit
     return intersectionRatios != vec2(0.0) ? intersectionRatios.y / (intersectionRatios.y - intersectionRatios.x) : 0.5;
 }
 
-vec3 parallaxCorrection(LightMap3dStruct lightMap, vec3 positionWorld, vec3 normalWorld)
+vec3 parallaxCorrection(LightMapStruct lightMap, vec3 positionWorld, vec3 normalWorld)
 {
     vec3 directionWorld = positionWorld - eye.center;
     vec3 reflectionWorld = reflect(directionWorld, normalWorld);
@@ -1018,8 +1018,8 @@ void main()
     // determine light map indices, including their validity
     int lm1 = lighting3.lightMapsCount > 0 && !ignoreLightMaps ? 0 : -1;
     int lm2 = lighting3.lightMapsCount > 1 && !ignoreLightMaps ? 1 : -1;
-    LightMap3dStruct lightMap1 = lightMaps[lm1];
-    LightMap3dStruct lightMap2 = lightMaps[lm2];
+    LightMapStruct lightMap1 = lightMaps[lm1];
+    LightMapStruct lightMap2 = lightMaps[lm2];
     if (lm2 != -1 && !inBounds(position.xyz, lightMap2.min, lightMap2.size)) lm2 = -1;
     if (lm1 != -1 && !inBounds(position.xyz, lightMap1.min, lightMap1.size)) lm1 = lm2;
     lightMap1 = lightMaps[lm1];

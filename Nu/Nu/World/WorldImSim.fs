@@ -700,10 +700,10 @@ module WorldImSim =
         static member doWedgeContour2d name args world = World.doEntity<WedgeContour2dDispatcher> name args world
 
         /// <summary>
-        /// ImSim declare a 3d light probe with the given arguments.
-        /// See <see cref="LightProbe3dDispatcher" />.
+        /// ImSim declare a light probe with the given arguments.
+        /// See <see cref="LightProbeDispatcher" />.
         /// </summary>
-        static member doLightProbe3d name args world = World.doEntity<LightProbe3dDispatcher> name args world
+        static member doLightProbe name args world = World.doEntity<LightProbeDispatcher> name args world
 
         /// <summary>
         /// ImSim declare a 3d light with the given arguments.

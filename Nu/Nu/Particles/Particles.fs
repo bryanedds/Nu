@@ -997,8 +997,8 @@ type BasicSpriteEmitterDescriptors =
 type [<ReferenceEquality>] StaticBillboardEmitter<'a when 'a :> Particle and 'a : equality and 'a : struct> =
     { mutable Body : Body // mutable for animation
       Absolute : bool
-      Material : Material
-      MaterialProperties : MaterialProperties
+      Material : Material3d
+      MaterialProperties : MaterialProperties3d
       ShadowOffset : single
       RenderType : RenderType
       Life : Life
@@ -1168,7 +1168,7 @@ module BasicStaticBillboardEmitter =
         let emitterBehavior = fun _ _ -> Output.empty
         let emitterBehaviors = Behaviors.empty
         make
-            time Body.defaultBody false Material.defaultMaterial MaterialProperties.defaultProperties
+            time Body.defaultBody false Material3d.defaultMaterial MaterialProperties3d.defaultProperties
             Constants.Engine.ParticleShadowOffsetDefault (ForwardRenderType (0.0f, 0.0f)) lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
             Constraint.empty particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors
 
@@ -1218,14 +1218,14 @@ module BasicStaticBillboardEmitter =
         let emitterBehaviors =
             Behaviors.empty
         make
-            time Body.defaultBody false Material.defaultMaterial MaterialProperties.defaultProperties
+            time Body.defaultBody false Material3d.defaultMaterial MaterialProperties3d.defaultProperties
             Constants.Engine.ParticleShadowOffsetDefault (ForwardRenderType (0.0f, 0.0f)) lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
             Constraint.empty particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors
 
 /// Describes a billboard emitter.
 type [<ReferenceEquality>] BillboardEmitterDescriptor<'a when 'a :> Particle and 'a : struct> =
     { Body : Body
-      Material : Material
+      Material : Material3d
       RenderType : RenderType
       LifeTimeOpt : GameTime
       ParticleLifeTimeMaxOpt : GameTime

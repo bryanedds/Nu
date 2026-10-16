@@ -153,7 +153,7 @@ type Lighting3d2Struct =
     [<FieldOffset(32)>] val mutable shadowNear : single
 
 [<Struct; StructLayout (LayoutKind.Explicit, Size = 64)>]
-type LightMap3dStruct =
+type LightMapStruct =
     [<FieldOffset(0)>] val mutable origin : Vector3
     [<FieldOffset(16)>] val mutable min : Vector3
     [<FieldOffset(32)>] val mutable size : Vector3
@@ -192,8 +192,8 @@ type SsaoStruct =
     [<FieldOffset(20)>] val mutable distanceMax : single
     [<FieldOffset(24)>] val mutable sampleCount : int
 
-/// A set of physically-based attachments that support a given viewport.
-type PhysicallyBasedAttachments =
+/// A set of physically-based attachments for 3d rendering.
+type PhysicallyBasedAttachments3d =
     { DownSampleColorAttachment : Texture
       DownSampleDepthAttachment : Texture
       UpSampleColorAttachment : Texture
@@ -223,8 +223,8 @@ type PhysicallyBasedAttachments =
       ColoringAttachments : Texture * Texture
       CompositionAttachment : Texture }
 
-/// Describes a physically-based material.
-type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial =
+/// Describes a physically-based material for 3d surfaces.
+type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial3d =
     { AlbedoTexture : Texture
       RoughnessTexture : Texture
       MetallicTexture : Texture
@@ -325,15 +325,15 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial =
         left.Names = right.Names
 
     override this.GetHashCode () = 
-        PhysicallyBasedMaterial.hash this
+        PhysicallyBasedMaterial3d.hash this
 
     override this.Equals that =
         match that with
-        | :? PhysicallyBasedMaterial as that -> PhysicallyBasedMaterial.equals this that
+        | :? PhysicallyBasedMaterial3d as that -> PhysicallyBasedMaterial3d.equals this that
         | _ -> false
 
-/// Describes the configurable properties of a physically-based material.
-type PhysicallyBasedMaterialProperties =
+/// Describes the configurable properties of a physically-based 3dmaterial for 3d surfaces.
+type PhysicallyBasedMaterialProperties3d =
     { Albedo : Color
       Roughness : single
       Metallic : single
@@ -420,8 +420,8 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedSurface =
       SurfaceMatrixIsIdentity : bool // OPTIMIZATION: avoid matrix multiply when unnecessary.
       SurfaceMatrix : Matrix4x4
       SurfaceBounds : Box3
-      SurfaceMaterial : PhysicallyBasedMaterial
-      SurfaceMaterialProperties : PhysicallyBasedMaterialProperties
+      SurfaceMaterial : PhysicallyBasedMaterial3d
+      SurfaceMaterialProperties : PhysicallyBasedMaterialProperties3d
       SurfaceMaterialIndex : int
       SurfaceNode : Assimp.Node
       PhysicallyBasedGeometry : PhysicallyBasedGeometry }
@@ -647,7 +647,7 @@ type PhysicallyBasedLightProbe =
       LightProbeBounds : Box3 }
 
 /// A light inside a physically-based static model.
-type PhysicallyBasedLight =
+type PhysicallyBasedLight3d =
     { LightNames : string array
       LightMatrixIsIdentity : bool
       LightMatrix : Matrix4x4
@@ -664,7 +664,7 @@ type PhysicallyBasedLight =
 type PhysicallyBasedPart =
     | PhysicallyBasedNode of string array
     | PhysicallyBasedLightProbe of PhysicallyBasedLightProbe
-    | PhysicallyBasedLight of PhysicallyBasedLight
+    | PhysicallyBasedLight3d of PhysicallyBasedLight3d
     | PhysicallyBasedSurface of PhysicallyBasedSurface
 
 /// A physically-based model.
@@ -672,7 +672,7 @@ type PhysicallyBasedModel =
     { Animated : bool
       Bounds : Box3
       LightProbes : PhysicallyBasedLightProbe array
-      Lights : PhysicallyBasedLight array
+      Lights : PhysicallyBasedLight3d array
       Surfaces : PhysicallyBasedSurface array
       SceneOpt : Assimp.Scene option
       PhysicallyBasedHierarchy : PhysicallyBasedPart array TreeNode }
@@ -689,7 +689,7 @@ type PhysicallyBasedPipeline =
     { Eye3dUniform : VulkanBuffer
       Lighting3dUniform : VulkanBuffer
       BoneUniform : VulkanBuffer
-      LightMap3dUniform : VulkanBuffer
+      LightMapUniform : VulkanBuffer
       Lighting3d3Uniform : VulkanBuffer
       LightUniform : VulkanBuffer
       ShadowMatrixUniform : VulkanBuffer
@@ -701,8 +701,8 @@ type PhysicallyBasedDeferredTerrainPipeline =
       Lighting3d3Uniform : VulkanBuffer
       Pipeline : Pipeline }
 
-/// Describes the lighting pass of a deferred physically-based pipeline that's loaded into GPU.
-type PhysicallyBasedDeferredLightingPipeline =
+/// Describes the 3d lighting pass of a deferred physically-based pipeline that's loaded into GPU.
+type PhysicallyBasedDeferredLighting3dPipeline =
     { Eye3dUniform : VulkanBuffer
       Lighting2Uniform : VulkanBuffer
       LightUniform : VulkanBuffer
@@ -710,7 +710,7 @@ type PhysicallyBasedDeferredLightingPipeline =
       Pipeline : Pipeline }
 
 /// Describes the fogging pass of a deferred physically-based pipeline that's loaded into GPU.
-type PhysicallyBasedDeferredFoggingPipeline =
+type PhysicallyBasedDeferredFogging3dPipeline =
     { Eye3dUniform : VulkanBuffer
       Lighting3dUniform : VulkanBuffer
       Lighting3d3Uniform : VulkanBuffer
@@ -721,15 +721,15 @@ type PhysicallyBasedDeferredFoggingPipeline =
 /// Describes the light mapping pass of a deferred physically-based pipeline that's loaded into GPU.
 type PhysicallyBasedDeferredLightMappingPipeline =
     { Eye3dUniform : VulkanBuffer
-      LightMap3dsUniform : VulkanBuffer
+      LightMapsUniform : VulkanBuffer
       Lighting3d3Uniform : VulkanBuffer
       Pipeline : Pipeline }
 
 /// Describes the ambient pass of a deferred physically-based pipeline that's loaded into GPU.
 type PhysicallyBasedDeferredAmbientPipeline =
     { Eye3dUniform : VulkanBuffer
-      LightMap3dUniform : VulkanBuffer
-      LightMap3dsUniform : VulkanBuffer
+      LightMapUniform : VulkanBuffer
+      LightMapsUniform : VulkanBuffer
       Pipeline : Pipeline }
 
 /// Describes the irradiance pass of a deferred physically-based pipeline that's loaded into GPU.
@@ -740,7 +740,7 @@ type PhysicallyBasedDeferredIrradiancePipeline =
 /// Describes the environment filter pass of a deferred physically-based pipeline that's loaded into GPU.
 type PhysicallyBasedDeferredEnvironmentFilterPipeline =
     { Eye3dUniform : VulkanBuffer
-      LightMap3dsUniform : VulkanBuffer
+      LightMapsUniform : VulkanBuffer
       Pipeline : Pipeline }
 
 /// Describes the ssao pass of a deferred physically-based pipeline that's loaded into GPU.
@@ -857,8 +857,8 @@ type PhysicallyBasedPipelines =
       DeferredStaticClippedPipeline : PhysicallyBasedPipeline
       DeferredAnimatedPipeline : PhysicallyBasedPipeline
       DeferredTerrainPipeline : PhysicallyBasedDeferredTerrainPipeline
-      DeferredLightingPipeline : PhysicallyBasedDeferredLightingPipeline
-      DeferredFoggingPipeline : PhysicallyBasedDeferredFoggingPipeline
+      DeferredLighting3dPipeline : PhysicallyBasedDeferredLighting3dPipeline
+      DeferredFogging3dPipeline : PhysicallyBasedDeferredFogging3dPipeline
       DeferredLightMappingPipeline : PhysicallyBasedDeferredLightMappingPipeline
       DeferredAmbientPipeline : PhysicallyBasedDeferredAmbientPipeline
       DeferredIrradiancePipeline : PhysicallyBasedDeferredIrradiancePipeline
@@ -1078,7 +1078,7 @@ module PhysicallyBased =
           CompositionAttachment = compositionAttachment }
 
     /// Update the size of the attachments.
-    let updatePhysicallyBasedAttachmentsSize (geometryViewport : Viewport) (attachments : PhysicallyBasedAttachments) context =
+    let updatePhysicallyBasedAttachmentsSize (geometryViewport : Viewport) (attachments : PhysicallyBasedAttachments3d) context =
         Attachment.updateColorAttachmentSize geometryViewport.ShadowTextureResolution.X geometryViewport.ShadowTextureResolution.Y attachments.GaussianEsmAttachment context
         Attachment.updateColorAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.ColorFull0Attachment context
         Attachment.updateColorAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.ColorFull1Attachment context
@@ -1113,7 +1113,7 @@ module PhysicallyBased =
         Attachment.updateCompositionAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.CompositionAttachment context
 
     /// Destroy the physically-based attachments.
-    let destroyPhysicallyBasedAttachments (attachments : PhysicallyBasedAttachments) context =
+    let destroyPhysicallyBasedAttachments (attachments : PhysicallyBasedAttachments3d) context =
         Attachment.destroyColorAttachment attachments.DownSampleColorAttachment context
         Attachment.destroyColorAttachment attachments.DownSampleDepthAttachment context
         Attachment.destroyColorAttachment attachments.UpSampleColorAttachment context
@@ -3696,7 +3696,7 @@ module PhysicallyBased =
         (bones : Matrix4x4 array)
         (surfacesCount : int)
         (instanceFields : single array)
-        (material : PhysicallyBasedMaterial)
+        (material : PhysicallyBasedMaterial3d)
         (geometry : PhysicallyBasedGeometry)
         (uniformsDescriptorSet : VkDescriptorSet)
         (pipeline : PhysicallyBasedShadowPipeline)
@@ -3779,7 +3779,7 @@ module PhysicallyBased =
         // create set 2 uniform buffers
         let shadowMatrixMax = Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels
         let boneUniform = VulkanBuffer.create Uniform (Constants.Render.BonesMax * sizeof<Matrix4x4>) context
-        let lightMapsUniform = VulkanBuffer.create Uniform (lightMapsMax * sizeof<LightMap3dStruct>) context
+        let lightMapsUniform = VulkanBuffer.create Uniform (lightMapsMax * sizeof<LightMapStruct>) context
         let lighting3Uniform = VulkanBuffer.create Uniform sizeof<Lighting3d3Struct> context
         let lightsUniform = VulkanBuffer.create Uniform (lightsMax * sizeof<Light3dStruct>) context
         let shadowMatrixUniform = VulkanBuffer.create Uniform (shadowMatrixMax * sizeof<Matrix4x4>) context
@@ -3801,7 +3801,7 @@ module PhysicallyBased =
                       Pipeline.descriptor 6 SampledImage FragmentStage 1|] // environmentFilterMap
 
                   // descriptor set 1: per material
-                  Pipeline.descriptorSet<PhysicallyBasedMaterial>
+                  Pipeline.descriptorSet<PhysicallyBasedMaterial3d>
                     [|Pipeline.descriptor 0 SampledImage FragmentStage 1 // albedoTexture
                       Pipeline.descriptor 1 SampledImage FragmentStage 1 // roughnessTexture
                       Pipeline.descriptor 2 SampledImage FragmentStage 1 // metallicTexture
@@ -3855,7 +3855,7 @@ module PhysicallyBased =
             { Eye3dUniform = eyeUniform
               Lighting3dUniform = lightingUniform
               BoneUniform = boneUniform
-              LightMap3dUniform = lightMapsUniform
+              LightMapUniform = lightMapsUniform
               Lighting3d3Uniform = lighting3Uniform
               LightUniform = lightsUniform
               ShadowMatrixUniform = shadowMatrixUniform
@@ -3919,7 +3919,7 @@ module PhysicallyBased =
         (bones : Matrix4x4 array)
         (surfacesCount : int)
         (instanceFields : single array)
-        (material : PhysicallyBasedMaterial)
+        (material : PhysicallyBasedMaterial3d)
         (geometry : PhysicallyBasedGeometry)
         (eyeDescriptorSet : VkDescriptorSet)
         (samplerDescriptorSet : VkDescriptorSet)
@@ -4027,7 +4027,7 @@ module PhysicallyBased =
                 [|Pipeline.descriptorSet<int * int>
                     [|Pipeline.descriptor 0 UniformBuffer VertexAndFragmentStage 1 // eye
                       Pipeline.descriptor 1 UniformBuffer FragmentStage 1|] // terrainFrag
-                  Pipeline.descriptorSet<PhysicallyBasedMaterial array>
+                  Pipeline.descriptorSet<PhysicallyBasedMaterial3d array>
                     [|Pipeline.descriptor 0 SampledImage FragmentStage Constants.Render.TerrainLayersMax // albedoTextures
                       Pipeline.descriptor 1 SampledImage FragmentStage Constants.Render.TerrainLayersMax // roughnessTextures
                       Pipeline.descriptor 2 SampledImage FragmentStage Constants.Render.TerrainLayersMax // ambientOcclusionTextures
@@ -4044,7 +4044,7 @@ module PhysicallyBased =
                 [||] colorAttachmentFormats (Some depthTest)
                 [|eyeUniform; terrainFragUniform|]
 
-        // make PhysicallyBasedDeferredLightingPipeline
+        // make PhysicallyBasedDeferredLighting3dPipeline
         let physicallyBasedDeferredTerrainPipeline =
             { Eye3dUniform = eyeUniform
               Lighting3d3Uniform = terrainFragUniform
@@ -4068,7 +4068,7 @@ module PhysicallyBased =
         (lightShadowSampleScalar : single)
         (lightShadowExponent : single)
         (lightShadowDensity : single)
-        (materials : PhysicallyBasedMaterial array)
+        (materials : PhysicallyBasedMaterial3d array)
         (userDefinedImage0Texture : Texture)
         (userDefinedImage1Texture : Texture)
         (materialSamplers : Sampler array)
@@ -4188,8 +4188,8 @@ module PhysicallyBased =
         // advance rendering command buffer
         VulkanContext.advanceRenderCommandBuffer context
 
-    /// Create a PhysicallyBasedDeferredLightingPipeline.
-    let createPhysicallyBasedDeferredLightingPipeline colorAttachmentFormat context =
+    /// Create a PhysicallyBasedDeferredLighting3dPipeline.
+    let createPhysicallyBasedDeferredLighting3dPipeline colorAttachmentFormat context =
 
         // create uniform buffers
         let shadowMatrixMax = Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels
@@ -4201,7 +4201,7 @@ module PhysicallyBased =
         // create pipeline
         let pipeline =
             Pipeline.create
-                Constants.Paths.PhysicallyBasedDeferredLightingShaderFilePath
+                Constants.Paths.PhysicallyBasedDeferredLighting3dShaderFilePath
                 [|VulkanUnblended|] [|CullNone|] StaticVertices
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // eye
@@ -4225,8 +4225,8 @@ module PhysicallyBased =
                 [||] [|colorAttachmentFormat|] None
                 [|eyeUniform; lightingUniform; lightUniform; shadowMatrixUniform|]
 
-        // make PhysicallyBasedDeferredLightingPipeline
-        let physicallyBasedDeferredLightingPipeline =
+        // make PhysicallyBasedDeferredLighting3dPipeline
+        let physicallyBasedDeferredLighting3dPipeline =
             { Eye3dUniform = eyeUniform
               Lighting2Uniform = lightingUniform
               LightUniform = lightUniform
@@ -4234,14 +4234,14 @@ module PhysicallyBased =
               Pipeline = pipeline }
         
         // fin
-        physicallyBasedDeferredLightingPipeline
+        physicallyBasedDeferredLighting3dPipeline
     
-    /// Destroy PhysicallyBasedDeferredLightingPipeline.
-    let destroyPhysicallyBasedDeferredLightingPipeline (pipeline : PhysicallyBasedDeferredLightingPipeline) context =
+    /// Destroy PhysicallyBasedDeferredLighting3dPipeline.
+    let destroyPhysicallyBasedDeferredLighting3dPipeline (pipeline : PhysicallyBasedDeferredLighting3dPipeline) context =
         Pipeline.destroy pipeline.Pipeline context
 
     /// Draw the deferred lighting pass of a physically-based surface.
-    let drawPhysicallyBasedDeferredLightingSurface
+    let drawPhysicallyBasedDeferredLighting3dSurface
         (eyeCenter : Vector3)
         (view : Matrix4x4)
         (projectionUnflipped : Matrix4x4)
@@ -4286,7 +4286,7 @@ module PhysicallyBased =
         (renderPassIndex : int)
         (geometry : PhysicallyBasedGeometry)
         (lightAccumAttachment : Texture)
-        (pipeline : PhysicallyBasedDeferredLightingPipeline)
+        (pipeline : PhysicallyBasedDeferredLighting3dPipeline)
         (context : VulkanContext) =
 
         // compute vulkan-appropriate matrices
@@ -4413,8 +4413,8 @@ module PhysicallyBased =
         // abort
         | None -> Log.warnOnce ("Cannot draw " + getTypeName pipeline + " because VkPipeline does not exist.")
 
-    /// Create a PhysicallyBasedDeferredFoggingPipeline.
-    let createPhysicallyBasedDeferredFoggingPipeline colorAttachmentFormat context =
+    /// Create a PhysicallyBasedDeferredFogging3dPipeline.
+    let createPhysicallyBasedDeferredFogging3dPipeline colorAttachmentFormat context =
 
         // create uniform buffers
         let shadowMatrixMax = Constants.Render.ShadowTexturesMax + Constants.Render.ShadowCascadesMax * Constants.Render.ShadowCascadeLevels
@@ -4427,7 +4427,7 @@ module PhysicallyBased =
         // create pipeline
         let pipeline =
             Pipeline.create
-                Constants.Paths.PhysicallyBasedDeferredFoggingShaderFilePath
+                Constants.Paths.PhysicallyBasedDeferredFogging3dShaderFilePath
                 [|VulkanUnblended|] [|CullNone|] StaticVertices
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer FragmentStage 1 // eye
@@ -4445,8 +4445,8 @@ module PhysicallyBased =
                 [||] [|colorAttachmentFormat|] None
                 [|eyeUniform; lightingUniform; lighting3Uniform; lightsUniform; shadowMatricesUniform|]
 
-        // make PhysicallyBasedDeferredFoggingPipeline
-        let physicallyBasedDeferredFoggingPipeline =
+        // make PhysicallyBasedDeferredFogging3dPipeline
+        let physicallyBasedDeferredFogging3dPipeline =
             { Eye3dUniform = eyeUniform
               Lighting3dUniform = lightingUniform
               Lighting3d3Uniform = lighting3Uniform
@@ -4455,14 +4455,14 @@ module PhysicallyBased =
               Pipeline = pipeline }
 
         // fin
-        physicallyBasedDeferredFoggingPipeline
+        physicallyBasedDeferredFogging3dPipeline
 
-    /// Destroy PhysicallyBasedDeferredFoggingPipeline.
-    let destroyPhysicallyBasedDeferredFoggingPipeline (pipeline : PhysicallyBasedDeferredFoggingPipeline) context =
+    /// Destroy PhysicallyBasedDeferredFogging3dPipeline.
+    let destroyPhysicallyBasedDeferredFogging3dPipeline (pipeline : PhysicallyBasedDeferredFogging3dPipeline) context =
         Pipeline.destroy pipeline.Pipeline context
 
     /// Draw the deferred fogging pass of a physically-based surface.
-    let drawPhysicallyBasedDeferredFoggingSurface
+    let drawPhysicallyBasedDeferredFogging3dSurface
         (eyeCenter : Vector3)
         (view : Matrix4x4)
         (projectionUnflipped : Matrix4x4)
@@ -4498,7 +4498,7 @@ module PhysicallyBased =
         (resolution : Vector2i)
         (renderPassIndex : int)
         (geometry : PhysicallyBasedGeometry)
-        (pipeline : PhysicallyBasedDeferredFoggingPipeline)
+        (pipeline : PhysicallyBasedDeferredFogging3dPipeline)
         (context : VulkanContext) =
 
         // compute vulkan-appropriate matrices
@@ -4626,7 +4626,7 @@ module PhysicallyBased =
 
         // create uniform buffers
         let eyeUniform = VulkanBuffer.create Uniform sizeof<Eye3dStruct> context
-        let lightMapsUniform = VulkanBuffer.create Uniform (Constants.Render.LightMapsMaxDeferred * sizeof<LightMap3dStruct>) context
+        let lightMapsUniform = VulkanBuffer.create Uniform (Constants.Render.LightMapsMaxDeferred * sizeof<LightMapStruct>) context
         let lighting3Uniform = VulkanBuffer.create Uniform sizeof<Lighting3d3Struct> context
 
         // create pipeline
@@ -4645,10 +4645,10 @@ module PhysicallyBased =
                 [||] [|colorAttachmentFormat|] None
                 [|eyeUniform; lightMapsUniform; lighting3Uniform|]
 
-        // make PhysicallyBasedDeferredLightingPipeline
+        // make PhysicallyBasedDeferredLighting3dPipeline
         let physicallyBasedDeferredLightMappingPipeline =
             { Eye3dUniform = eyeUniform
-              LightMap3dsUniform = lightMapsUniform
+              LightMapsUniform = lightMapsUniform
               Lighting3d3Uniform = lighting3Uniform
               Pipeline = pipeline }
 
@@ -4701,7 +4701,7 @@ module PhysicallyBased =
                 Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.Eye3dUniform vkSet
 
                 // specify light maps
-                let mutable lightMap = LightMap3dStruct ()
+                let mutable lightMap = LightMapStruct ()
                 use lightMapPtr = fixed &lightMap
                 for i in 0 .. dec Constants.Render.LightMapsMaxDeferred do
                     if i < lightMapOrigins.Length then
@@ -4711,9 +4711,9 @@ module PhysicallyBased =
                         lightMap.ambientColor <- lightMapAmbientColors[i].V3
                         lightMap.ambientBrightness <- lightMapAmbientBrightnesses[i]
                     else lightMap <- Unchecked.defaultof<_>
-                    VulkanBuffer.writeSubdata (i * sizeof<LightMap3dStruct>) 0 sizeof<LightMap3dStruct> 1 (NativePtr.toNativeInt lightMapPtr) pipeline.LightMap3dsUniform context
-                VulkanBuffer.flushSubdata 0 0 sizeof<LightMap3dStruct> Constants.Render.LightMapsMaxDeferred pipeline.LightMap3dsUniform context
-                Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.LightMap3dsUniform vkSet
+                    VulkanBuffer.writeSubdata (i * sizeof<LightMapStruct>) 0 sizeof<LightMapStruct> 1 (NativePtr.toNativeInt lightMapPtr) pipeline.LightMapsUniform context
+                VulkanBuffer.flushSubdata 0 0 sizeof<LightMapStruct> Constants.Render.LightMapsMaxDeferred pipeline.LightMapsUniform context
+                Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.LightMapsUniform vkSet
 
                 // specify lighting 3
                 let mutable lighting3 = Lighting3d3Struct ()
@@ -4778,8 +4778,8 @@ module PhysicallyBased =
 
         // create uniform buffers
         let eyeUniform = VulkanBuffer.create Uniform sizeof<Eye3dStruct> context
-        let lightMapUniform = VulkanBuffer.create Uniform sizeof<LightMap3dStruct> context
-        let lightMapsUniform = VulkanBuffer.create Uniform (Constants.Render.LightMapsMaxDeferred * sizeof<LightMap3dStruct>) context
+        let lightMapUniform = VulkanBuffer.create Uniform sizeof<LightMapStruct> context
+        let lightMapsUniform = VulkanBuffer.create Uniform (Constants.Render.LightMapsMaxDeferred * sizeof<LightMapStruct>) context
 
         // create pipeline
         let pipeline =
@@ -4800,8 +4800,8 @@ module PhysicallyBased =
         // make PhysicallyBasedDeferredAmbientPipeline
         let physicallyBasedDeferredAmbientPipeline =
             { Eye3dUniform = eyeUniform
-              LightMap3dUniform = lightMapUniform
-              LightMap3dsUniform = lightMapsUniform
+              LightMapUniform = lightMapUniform
+              LightMapsUniform = lightMapsUniform
               Pipeline = pipeline }
         
         // fin
@@ -4849,11 +4849,11 @@ module PhysicallyBased =
                 Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.Eye3dUniform vkSet
 
                 // specify fallback light map
-                let mutable lightMap = LightMap3dStruct ()
+                let mutable lightMap = LightMapStruct ()
                 lightMap.ambientColor <- lightMapFallbackAmbientColor.V3
                 lightMap.ambientBrightness <- lightMapFallbackAmbientBrightness
-                VulkanBuffer.uploadValue lightMap pipeline.LightMap3dUniform context
-                Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.LightMap3dUniform vkSet
+                VulkanBuffer.uploadValue lightMap pipeline.LightMapUniform context
+                Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.LightMapUniform vkSet
 
                 // specify light maps
                 use lightMapPtr = fixed &lightMap
@@ -4862,9 +4862,9 @@ module PhysicallyBased =
                         lightMap.ambientColor <- lightMapAmbientColors[i].V3
                         lightMap.ambientBrightness <- lightMapAmbientBrightnesses[i]
                     else lightMap <- Unchecked.defaultof<_>
-                    VulkanBuffer.writeSubdata (i * sizeof<LightMap3dStruct>) 0 sizeof<LightMap3dStruct> 1 (NativePtr.toNativeInt lightMapPtr) pipeline.LightMap3dsUniform context
-                VulkanBuffer.flushSubdata 0 0 sizeof<LightMap3dStruct> Constants.Render.LightMapsMaxDeferred pipeline.LightMap3dsUniform context
-                Pipeline.writeDescriptorUniformBuffer 2 0 pipeline.LightMap3dsUniform vkSet
+                    VulkanBuffer.writeSubdata (i * sizeof<LightMapStruct>) 0 sizeof<LightMapStruct> 1 (NativePtr.toNativeInt lightMapPtr) pipeline.LightMapsUniform context
+                VulkanBuffer.flushSubdata 0 0 sizeof<LightMapStruct> Constants.Render.LightMapsMaxDeferred pipeline.LightMapsUniform context
+                Pipeline.writeDescriptorUniformBuffer 2 0 pipeline.LightMapsUniform vkSet
 
                 // specify static environment textures
                 Pipeline.writeDescriptorSampledTexture 3 0 depthTexture vkSet
@@ -5048,7 +5048,7 @@ module PhysicallyBased =
 
         // create uniform buffers
         let eyeUniform = VulkanBuffer.create Uniform sizeof<Eye3dStruct> context
-        let lightMapsUniform = VulkanBuffer.create Uniform (Constants.Render.LightMapsMaxDeferred * sizeof<LightMap3dStruct>) context
+        let lightMapsUniform = VulkanBuffer.create Uniform (Constants.Render.LightMapsMaxDeferred * sizeof<LightMapStruct>) context
 
         // create pipeline
         let pipeline =
@@ -5074,7 +5074,7 @@ module PhysicallyBased =
         // make PhysicallyBasedDeferredEnvironmentFilterPipeline
         let physicallyBasedDeferredEnvironmentFilterPipeline =
             { Eye3dUniform = eyeUniform
-              LightMap3dsUniform = lightMapsUniform
+              LightMapsUniform = lightMapsUniform
               Pipeline = pipeline }
         
         // fin
@@ -5129,7 +5129,7 @@ module PhysicallyBased =
                 Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.Eye3dUniform vkSet
 
                 // specify light maps
-                let mutable lightMap = LightMap3dStruct ()
+                let mutable lightMap = LightMapStruct ()
                 use lightMapPtr = fixed &lightMap
                 for i in 0 .. dec Constants.Render.LightMapsMaxDeferred do
                     if i < lightMapOrigins.Length then
@@ -5139,9 +5139,9 @@ module PhysicallyBased =
                         lightMap.ambientColor <- lightMapAmbientColors[i].V3
                         lightMap.ambientBrightness <- lightMapAmbientBrightnesses[i]
                     else lightMap <- Unchecked.defaultof<_>
-                    VulkanBuffer.writeSubdata (i * sizeof<LightMap3dStruct>) 0 sizeof<LightMap3dStruct> 1 (NativePtr.toNativeInt lightMapPtr) pipeline.LightMap3dsUniform context
-                VulkanBuffer.flushSubdata 0 0 sizeof<LightMap3dStruct> Constants.Render.LightMapsMaxDeferred pipeline.LightMap3dsUniform context
-                Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.LightMap3dsUniform vkSet
+                    VulkanBuffer.writeSubdata (i * sizeof<LightMapStruct>) 0 sizeof<LightMapStruct> 1 (NativePtr.toNativeInt lightMapPtr) pipeline.LightMapsUniform context
+                VulkanBuffer.flushSubdata 0 0 sizeof<LightMapStruct> Constants.Render.LightMapsMaxDeferred pipeline.LightMapsUniform context
+                Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.LightMapsUniform vkSet
 
                 // specify static environment textures
                 Pipeline.writeDescriptorSampledTexture 2 0 depthTexture vkSet
@@ -5825,7 +5825,7 @@ module PhysicallyBased =
         (lightShadowIndices : int array)
         (lightsCount : int)
         (shadowMatrices : Matrix4x4 array)
-        (material : PhysicallyBasedMaterial)
+        (material : PhysicallyBasedMaterial3d)
         (geometry : PhysicallyBasedGeometry)
         (uniformsDescriptorSet : VkDescriptorSet)
         (samplersDescriptorSet : VkDescriptorSet)
@@ -5866,7 +5866,7 @@ module PhysicallyBased =
                     Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.BoneUniform vkSet
 
                 // specify light maps
-                let mutable lightMap = LightMap3dStruct ()
+                let mutable lightMap = LightMapStruct ()
                 use lightMapPtr = fixed &lightMap
                 for i in 0 .. dec Constants.Render.LightMapsMaxForward do
                     if i < lightMapOrigins.Length then
@@ -5876,9 +5876,9 @@ module PhysicallyBased =
                         lightMap.ambientColor <- lightMapAmbientColors[i].V3
                         lightMap.ambientBrightness <- lightMapAmbientBrightnesses[i]
                     else lightMap <- Unchecked.defaultof<_>
-                    VulkanBuffer.writeSubdata (i * sizeof<LightMap3dStruct>) 0 sizeof<LightMap3dStruct> 1 (NativePtr.toNativeInt lightMapPtr) pipeline.LightMap3dUniform context
-                VulkanBuffer.flushSubdata 0 0 sizeof<LightMap3dStruct> Constants.Render.LightMapsMaxForward pipeline.LightMap3dUniform context
-                Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.LightMap3dUniform vkSet
+                    VulkanBuffer.writeSubdata (i * sizeof<LightMapStruct>) 0 sizeof<LightMapStruct> 1 (NativePtr.toNativeInt lightMapPtr) pipeline.LightMapUniform context
+                VulkanBuffer.flushSubdata 0 0 sizeof<LightMapStruct> Constants.Render.LightMapsMaxForward pipeline.LightMapUniform context
+                Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.LightMapUniform vkSet
 
                 // specify lighting 3
                 let mutable lighting3 = Lighting3d3Struct ()
@@ -6156,8 +6156,8 @@ module PhysicallyBased =
                 context
         
         // create deferred lighting pipelines
-        let deferredLightingPipeline = createPhysicallyBasedDeferredLightingPipeline attachments.LightingAttachment.VkFormat context
-        let deferredFoggingPipeline = createPhysicallyBasedDeferredFoggingPipeline attachments.FoggingAttachment.VkFormat context
+        let deferredLightingPipeline = createPhysicallyBasedDeferredLighting3dPipeline attachments.LightingAttachment.VkFormat context
+        let deferredFoggingPipeline = createPhysicallyBasedDeferredFogging3dPipeline attachments.FoggingAttachment.VkFormat context
         let deferredLightMappingPipeline = createPhysicallyBasedDeferredLightMappingPipeline attachments.LightMappingAttachment.VkFormat context
         let deferredAmbientPipeline = createPhysicallyBasedDeferredAmbientPipeline attachments.AmbientAttachment.VkFormat context
         let deferredIrradiancePipeline = createPhysicallyBasedDeferredIrradiancePipeline attachments.IrradianceAttachment.VkFormat context
@@ -6222,8 +6222,8 @@ module PhysicallyBased =
               DeferredStaticClippedPipeline = deferredStaticClippedPipeline
               DeferredAnimatedPipeline = deferredAnimatedPipeline
               DeferredTerrainPipeline = deferredTerrainPipeline
-              DeferredLightingPipeline = deferredLightingPipeline
-              DeferredFoggingPipeline = deferredFoggingPipeline
+              DeferredLighting3dPipeline = deferredLightingPipeline
+              DeferredFogging3dPipeline = deferredFoggingPipeline
               DeferredLightMappingPipeline = deferredLightMappingPipeline
               DeferredAmbientPipeline = deferredAmbientPipeline
               DeferredIrradiancePipeline = deferredIrradiancePipeline
@@ -6271,8 +6271,8 @@ module PhysicallyBased =
         Pipeline.beginFrame physicallyBasedPipelines.DeferredStaticClippedPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.DeferredAnimatedPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.DeferredTerrainPipeline.Pipeline
-        Pipeline.beginFrame physicallyBasedPipelines.DeferredLightingPipeline.Pipeline
-        Pipeline.beginFrame physicallyBasedPipelines.DeferredFoggingPipeline.Pipeline
+        Pipeline.beginFrame physicallyBasedPipelines.DeferredLighting3dPipeline.Pipeline
+        Pipeline.beginFrame physicallyBasedPipelines.DeferredFogging3dPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.DeferredLightMappingPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.DeferredAmbientPipeline.Pipeline
         Pipeline.beginFrame physicallyBasedPipelines.DeferredIrradiancePipeline.Pipeline
@@ -6317,8 +6317,8 @@ module PhysicallyBased =
         destroyPhysicallyBasedPipeline physicallyBasedPipelines.DeferredStaticClippedPipeline context
         destroyPhysicallyBasedPipeline physicallyBasedPipelines.DeferredAnimatedPipeline context
         destroyPhysicallyBasedDeferredTerrainPipeline physicallyBasedPipelines.DeferredTerrainPipeline context
-        destroyPhysicallyBasedDeferredLightingPipeline physicallyBasedPipelines.DeferredLightingPipeline context
-        destroyPhysicallyBasedDeferredFoggingPipeline physicallyBasedPipelines.DeferredFoggingPipeline context
+        destroyPhysicallyBasedDeferredLighting3dPipeline physicallyBasedPipelines.DeferredLighting3dPipeline context
+        destroyPhysicallyBasedDeferredFogging3dPipeline physicallyBasedPipelines.DeferredFogging3dPipeline context
         destroyPhysicallyBasedDeferredLightMappingPipeline physicallyBasedPipelines.DeferredLightMappingPipeline context
         destroyPhysicallyBasedDeferredAmbientPipeline physicallyBasedPipelines.DeferredAmbientPipeline context
         destroyPhysicallyBasedDeferredIrradiancePipeline physicallyBasedPipelines.DeferredIrradiancePipeline context
@@ -6363,8 +6363,8 @@ module PhysicallyBased =
         Pipeline.reloadShaders physicallyBasedPipelines.DeferredStaticClippedPipeline.Pipeline context
         Pipeline.reloadShaders physicallyBasedPipelines.DeferredAnimatedPipeline.Pipeline context
         Pipeline.reloadShaders physicallyBasedPipelines.DeferredTerrainPipeline.Pipeline context
-        Pipeline.reloadShaders physicallyBasedPipelines.DeferredLightingPipeline.Pipeline context
-        Pipeline.reloadShaders physicallyBasedPipelines.DeferredFoggingPipeline.Pipeline context
+        Pipeline.reloadShaders physicallyBasedPipelines.DeferredLighting3dPipeline.Pipeline context
+        Pipeline.reloadShaders physicallyBasedPipelines.DeferredFogging3dPipeline.Pipeline context
         Pipeline.reloadShaders physicallyBasedPipelines.DeferredLightMappingPipeline.Pipeline context
         Pipeline.reloadShaders physicallyBasedPipelines.DeferredAmbientPipeline.Pipeline context
         Pipeline.reloadShaders physicallyBasedPipelines.DeferredIrradiancePipeline.Pipeline context
@@ -6463,7 +6463,7 @@ type PhysicallyBasedSceneClient () =
                                       LightType = lightType
                                       LightDesireShadows = false }
                                 lights.Add physicallyBasedLight
-                                yield PhysicallyBasedLight physicallyBasedLight
+                                yield PhysicallyBasedLight3d physicallyBasedLight
 
                           // collect surfaces
                           for i in 0 .. dec node.MeshIndices.Count do

@@ -25,7 +25,7 @@ type EnvironmentFilterPipeline =
       Pipeline : Pipeline }
 
 /// A collection of cube maps composing a single 3d light map.
-type [<Struct>] LightMap3d =
+type [<Struct>] LightMap =
     { Enabled : bool
       Origin : Vector3
       Bounds : Box3
@@ -36,7 +36,7 @@ type [<Struct>] LightMap3d =
 
 /// Light map operations.
 [<RequireQualifiedAccess>]
-module LightMap3d =
+module LightMap =
 
     /// Create a reflection map.
     let createReflectionMap render resolution origin ambientColor ambientBrightness getCommandBuffer context =
