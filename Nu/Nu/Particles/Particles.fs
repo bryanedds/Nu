@@ -747,6 +747,10 @@ type [<ReferenceEquality>] StaticSpriteEmitter<'a when 'a :> Particle and 'a : e
       Blend : Blend
       ClipOpt : Box2 option
       Image : Image AssetTag
+      UserDefinedImage0 : Image AssetTag
+      UserDefinedImage1 : Image AssetTag
+      UserDefinedImage2 : Image AssetTag
+      PipelineName : string
       Life : Life
       ParticleLifeTimeMaxOpt : GameTime // OPTIMIZATION: uses GameTime.zero to represent infinite particle life.
       ParticleRate : single
@@ -812,14 +816,19 @@ type [<ReferenceEquality>] StaticSpriteEmitter<'a when 'a :> Particle and 'a : e
 
     /// Make a basic static sprite particle emitter.
     static member make<'a>
-        time body absolute elevation blend clipOpt image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
-        constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors toParticlesDescriptor : 'a StaticSpriteEmitter =
+        time body absolute elevation blend clipOpt image userDefinedImage0 userDefinedImage1 userDefinedImage2 pipelineName
+        lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed constrain
+        particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors toParticlesDescriptor : 'a StaticSpriteEmitter =
         { Body = body
           Absolute = absolute
           Elevation = elevation
           Blend = blend
           ClipOpt = clipOpt
           Image = image
+          UserDefinedImage0 = userDefinedImage0
+          UserDefinedImage1 = userDefinedImage1
+          UserDefinedImage2 = userDefinedImage2
+          PipelineName = pipelineName
           Life = Life.make time lifeTimeOpt
           ParticleLifeTimeMaxOpt = particleLifeTimeMaxOpt
           ParticleRate = particleRate
@@ -886,6 +895,10 @@ module BasicStaticSpriteEmitter =
           ClipOpt = Option.toValueOption emitter.ClipOpt
           Blend = emitter.Blend
           Image = emitter.Image
+          UserDefinedImage0 = emitter.UserDefinedImage0
+          UserDefinedImage1 = emitter.UserDefinedImage1
+          UserDefinedImage2 = emitter.UserDefinedImage2
+          PipelineName = emitter.PipelineName
           Particles = particles' }
 
     /// Resize the emitter.

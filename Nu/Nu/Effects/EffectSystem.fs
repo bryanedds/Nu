@@ -471,7 +471,15 @@ module EffectSystem =
                       Color = slice.Color
                       Blend = slice.Blend
                       Emission = slice.Emission
-                      Flip = slice.Flip }
+                      Flip = slice.Flip
+                      UserDefinedSetting0 = slice.UserDefinedSetting0
+                      UserDefinedSetting1 = slice.UserDefinedSetting1
+                      UserDefinedSetting2 = slice.UserDefinedSetting2
+                      UserDefinedSetting3 = slice.UserDefinedSetting3
+                      UserDefinedSetting4 = slice.UserDefinedSetting4
+                      UserDefinedSetting5 = slice.UserDefinedSetting5
+                      UserDefinedSetting6 = slice.UserDefinedSetting6
+                      UserDefinedSetting7 = slice.UserDefinedSetting7 }
                 let spriteToken = SpriteToken (transform.Elevation, transform.Horizon, image, sprite)
                 addDataToken spriteToken effectSystem
             else effectSystem
@@ -509,7 +517,15 @@ module EffectSystem =
                           Color = slice.Color
                           Blend = slice.Blend
                           Emission = slice.Emission
-                          Flip = slice.Flip }
+                          Flip = slice.Flip
+                          UserDefinedSetting0 = slice.UserDefinedSetting0
+                          UserDefinedSetting1 = slice.UserDefinedSetting1
+                          UserDefinedSetting2 = slice.UserDefinedSetting2
+                          UserDefinedSetting3 = slice.UserDefinedSetting3
+                          UserDefinedSetting4 = slice.UserDefinedSetting4
+                          UserDefinedSetting5 = slice.UserDefinedSetting5
+                          UserDefinedSetting6 = slice.UserDefinedSetting6
+                          UserDefinedSetting7 = slice.UserDefinedSetting7 }
                     let spriteToken = SpriteToken (transform.Elevation, transform.Horizon, image, sprite)
                     addDataToken spriteToken effectSystem
                 else effectSystem
