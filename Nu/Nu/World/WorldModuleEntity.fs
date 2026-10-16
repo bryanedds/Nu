@@ -1992,7 +1992,7 @@ module WorldModuleEntity =
                 if World.getEntityExists entity world then
                     let changed = setter property entity world
                     struct (true, changed)
-                else (false, false)
+                else struct (false, false)
             | (false, _) -> World.trySetEntityXtensionProperty propertyName property entity world
 
         static member internal setEntityPropertyFast propertyName property entity world =
