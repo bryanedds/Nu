@@ -8,13 +8,13 @@ open SandBox3d
 [<AutoOpen>]
 module UserDefinedExtensions =
 
-    type Material3d with
+    type Material with
         member this.TestImageOpt = this.UserDefinedImage0Opt
         member this.TestImage = this.UserDefinedImage0
         member this.SetTestImageOpt value = { this with UserDefinedImage0Opt = value }
         member this.SetTestImage value = { this with UserDefinedImage0Opt = ValueSome value }
 
-    type MaterialProperties3d with
+    type MaterialProperties with
         member this.TestSettingOpt = this.UserDefinedSetting0Opt
         member this.TestSetting = this.UserDefinedSetting0
         member this.SetTestSettingOpt value = { this with UserDefinedSetting0Opt = value } // would be nice if F# allowed usage to be baked down to { this with TestSettingOpt = value }

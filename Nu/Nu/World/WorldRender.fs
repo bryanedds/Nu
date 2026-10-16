@@ -36,15 +36,15 @@ module WorldRender =
             World.enqueueRenderMessage3d (ConfigureRenderer3d config) world
 
         /// Send a message to the render system to render a static model using a fast path.
-        static member renderStaticModelFast (modelMatrix : Matrix4x4 inref, castShadow, presence, insetOpt, material : Material3d, materialProperties : MaterialProperties3d, staticModel, renderType, renderPass, world) =
+        static member renderStaticModelFast (modelMatrix : Matrix4x4 inref, castShadow, presence, insetOpt, material : Material, materialProperties : MaterialProperties, staticModel, renderType, renderPass, world) =
             (World.getRendererProcess world).RenderStaticModelFast (&modelMatrix, castShadow, presence, insetOpt, material, materialProperties, staticModel, renderType, renderPass)
 
         /// Send a message to the render system to render a static model surface using a fast path.
-        static member renderStaticModelSurfaceFast (modelMatrix : Matrix4x4 inref, castShadow, presence, insetOpt, material : Material3d, materialProperties : MaterialProperties3d, staticModel, surfaceIndex, renderType, renderPass, world) =
+        static member renderStaticModelSurfaceFast (modelMatrix : Matrix4x4 inref, castShadow, presence, insetOpt, material : Material, materialProperties : MaterialProperties, staticModel, surfaceIndex, renderType, renderPass, world) =
             (World.getRendererProcess world).RenderStaticModelSurfaceFast (&modelMatrix, castShadow, presence, insetOpt, material, materialProperties, staticModel, surfaceIndex, renderType, renderPass)
 
         /// Send a message to the render system to render an animated model using a fast path.
-        static member renderAnimatedModelFast (modelMatrix : Matrix4x4 inref, castShadow, presence, insetOpt, material : Material3d, materialProperties : MaterialProperties3d, animations, animatedModel, subsortOffsets, dualRenderedSurfaces, renderType, renderPass, world) =
+        static member renderAnimatedModelFast (modelMatrix : Matrix4x4 inref, castShadow, presence, insetOpt, material : Material, materialProperties : MaterialProperties, animations, animatedModel, subsortOffsets, dualRenderedSurfaces, renderType, renderPass, world) =
             (World.getRendererProcess world).RenderAnimatedModelFast (&modelMatrix, castShadow, presence, insetOpt, material, materialProperties, animations, animatedModel, subsortOffsets, dualRenderedSurfaces, renderType, renderPass)
 
         /// Load a 3d render asset package. Should be used to avoid loading assets at inconvenient times (such as in the

@@ -111,7 +111,7 @@ type Pipeline3dType =
     | Terrain
 
 /// Material description for 3d surfaces.
-type [<SymbolicExpansion; CustomEquality; NoComparison>] Material3d =
+type [<SymbolicExpansion; CustomEquality; NoComparison>] Material =
     { AlbedoImageOpt : Image AssetTag voption
       RoughnessImageOpt : Image AssetTag voption
       MetallicImageOpt : Image AssetTag voption
@@ -252,20 +252,20 @@ type [<SymbolicExpansion; CustomEquality; NoComparison>] Material3d =
           PipelineNameOpt = ValueNone }
 
     override this.GetHashCode () =
-        Material3d.hash this
+        Material.hash this
 
     override this.Equals (that : obj) =
         match that with
-        | :? Material3d as that -> Material3d.equals this that
+        | :? Material as that -> Material.equals this that
         | _ -> false
 
-    interface IEquatable<Material3d> with
+    interface IEquatable<Material> with
         member this.Equals that =
-            Material3d.equals this that
+            Material.equals this that
 
 /// Material properties for 3d surfaces.
 /// NOTE: this type has to go after TerrainMaterialProperties lest the latter's field names shadow this one's.
-type [<SymbolicExpansion>] MaterialProperties3d =
+type [<SymbolicExpansion>] MaterialProperties =
     { AlbedoOpt : Color voption
       RoughnessOpt : single voption
       MetallicOpt : single voption
@@ -401,8 +401,8 @@ type [<Struct>] BillboardValue =
       mutable CastShadow : bool
       mutable Presence : Presence
       mutable InsetOpt : Box2 option
-      mutable Material : Material3d
-      mutable MaterialProperties : MaterialProperties3d
+      mutable Material : Material
+      mutable MaterialProperties : MaterialProperties
       mutable ShadowOffset : single
       mutable RenderType : RenderType }
 
@@ -412,8 +412,8 @@ type [<Struct>] StaticModelValue =
       mutable CastShadow : bool
       mutable Presence : Presence
       mutable InsetOpt : Box2 option
-      mutable Material : Material3d
-      mutable MaterialProperties : MaterialProperties3d
+      mutable Material : Material
+      mutable MaterialProperties : MaterialProperties
       mutable StaticModel : StaticModel AssetTag
       mutable RenderType : RenderType }
 
@@ -423,16 +423,16 @@ type [<Struct>] StaticModelSurfaceValue =
       mutable CastShadow : bool
       mutable Presence : Presence
       mutable InsetOpt : Box2 option
-      mutable Material : Material3d
-      mutable MaterialProperties : MaterialProperties3d
+      mutable Material : Material
+      mutable MaterialProperties : MaterialProperties
       mutable StaticModel : StaticModel AssetTag
       mutable SurfaceIndex : int
       mutable RenderType : RenderType }
 
 /// Describes billboard-based particles.
 type BillboardParticlesDescriptor =
-    { Material : Material3d
-      MaterialProperties : MaterialProperties3d
+    { Material : Material
+      MaterialProperties : MaterialProperties
       ShadowOffset : single
       Particles : Particle SArray
       RenderType : RenderType }
@@ -483,8 +483,8 @@ type CachedStaticModelMessage =
       mutable CachedStaticModelCastShadow : bool
       mutable CachedStaticModelPresence : Presence
       mutable CachedStaticModelInsetOpt : Box2 voption
-      mutable CachedStaticModelMaterial : Material3d
-      mutable CachedStaticModelMaterialProperties : MaterialProperties3d
+      mutable CachedStaticModelMaterial : Material
+      mutable CachedStaticModelMaterialProperties : MaterialProperties
       mutable CachedStaticModel : StaticModel AssetTag
       mutable CachedStaticModelRenderType : RenderType
       mutable CachedStaticModelRenderPass : RenderPass }
@@ -495,8 +495,8 @@ type CachedStaticModelSurfaceMessage =
       mutable CachedStaticModelSurfaceCastShadow : bool
       mutable CachedStaticModelSurfacePresence : Presence
       mutable CachedStaticModelSurfaceInsetOpt : Box2 voption
-      mutable CachedStaticModelSurfaceMaterial : Material3d
-      mutable CachedStaticModelSurfaceMaterialProperties : MaterialProperties3d
+      mutable CachedStaticModelSurfaceMaterial : Material
+      mutable CachedStaticModelSurfaceMaterialProperties : MaterialProperties
       mutable CachedStaticModelSurfaceModel : StaticModel AssetTag
       mutable CachedStaticModelSurfaceIndex : int
       mutable CachedStaticModelSurfaceRenderType : RenderType
@@ -508,12 +508,12 @@ type CachedAnimatedModelMessage =
       mutable CachedAnimatedModelCastShadow : bool
       mutable CachedAnimatedModelPresence : Presence
       mutable CachedAnimatedModelInsetOpt : Box2 voption
-      mutable CachedAnimatedModelMaterial : Material3d
-      mutable CachedAnimatedModelMaterialProperties : MaterialProperties3d
+      mutable CachedAnimatedModelMaterial : Material
+      mutable CachedAnimatedModelMaterialProperties : MaterialProperties
       mutable CachedAnimatedModelBoneTransforms : Matrix4x4 array
       mutable CachedAnimatedModel : AnimatedModel AssetTag
       mutable CachedAnimatedModelSubsortOffsets : Map<int, single>
-      mutable CachedAnimatedModelDualRenderedSurfaces : Map<int, MaterialProperties3d option>
+      mutable CachedAnimatedModelDualRenderedSurfaces : Map<int, MaterialProperties option>
       mutable CachedAnimatedModelRenderType : RenderType
       mutable CachedAnimatedModelRenderPass : RenderPass }
 
@@ -523,8 +523,8 @@ type CachedAnimatedModelSurfaceMessage =
       mutable CachedAnimatedModelSurfaceCastShadow : bool
       mutable CachedAnimatedModelSurfacePresence : Presence
       mutable CachedAnimatedModelSurfaceInsetOpt : Box2 voption
-      mutable CachedAnimatedModelSurfaceMaterial : Material3d
-      mutable CachedAnimatedModelSurfaceMaterialProperties : MaterialProperties3d
+      mutable CachedAnimatedModelSurfaceMaterial : Material
+      mutable CachedAnimatedModelSurfaceMaterialProperties : MaterialProperties
       mutable CachedAnimatedModelSurfaceBoneTransforms : Matrix4x4 array
       mutable CachedAnimatedModelSurfaceModel : AnimatedModel AssetTag
       mutable CachedAnimatedModelSurfaceIndex : int
@@ -556,7 +556,7 @@ type StaticModelSurfaceDescriptor =
       Indices : int array
       ModelMatrix : Matrix4x4
       Bounds : Box3
-      MaterialProperties : PhysicallyBasedMaterialProperties3d
+      MaterialProperties : PhysicallyBasedMaterialProperties
       IgnoreLightMaps : bool
       AlbedoImage : Image AssetTag
       RoughnessImage : Image AssetTag
@@ -641,8 +641,8 @@ type RenderBillboard =
       InsetOpt : Box2 option
       OrientUp : bool
       Planar : bool
-      Material : Material3d
-      MaterialProperties : MaterialProperties3d
+      Material : Material
+      MaterialProperties : MaterialProperties
       ShadowOffset : single
       RenderType : RenderType
       RenderPass : RenderPass }
@@ -650,8 +650,8 @@ type RenderBillboard =
 /// Describes how to render multiple billboards with shared attributes.
 type RenderBillboards =
     { Billboards : (Matrix4x4 * bool * Presence * Box2 option * bool * bool) SList
-      Material : Material3d
-      MaterialProperties : MaterialProperties3d
+      Material : Material
+      MaterialProperties : MaterialProperties
       ShadowOffset : single
       RenderType : RenderType
       RenderPass : RenderPass }
@@ -660,8 +660,8 @@ type RenderBillboards =
 type RenderBillboardParticles =
     { CastShadow : bool
       Presence : Presence
-      Material : Material3d
-      MaterialProperties : MaterialProperties3d
+      Material : Material
+      MaterialProperties : MaterialProperties
       ShadowOffset : single
       Particles : Particle SArray
       RenderType : RenderType
@@ -673,8 +673,8 @@ type RenderStaticModelSurface =
       CastShadow : bool
       Presence : Presence
       InsetOpt : Box2 option
-      MaterialProperties : MaterialProperties3d
-      Material : Material3d
+      MaterialProperties : MaterialProperties
+      Material : Material
       StaticModel : StaticModel AssetTag
       SurfaceIndex : int
       RenderType : RenderType
@@ -686,14 +686,14 @@ type [<Struct>] StaticModelSurfacePreBatchItem =
       CastShadow : bool 
       Presence : Presence
       Inset : Box2
-      MaterialProperties : MaterialProperties3d
+      MaterialProperties : MaterialProperties
       Bounds : Box3 }
 
 /// Represents a pre-composed batch of static model surfaces.
 type StaticModelSurfacePreBatch =
     { PreBatchId : Guid
       PreBatchItems : StaticModelSurfacePreBatchItem array
-      Material : Material3d
+      Material : Material
       StaticModel : StaticModel AssetTag
       SurfaceIndex : int
       RenderType : RenderType }
@@ -714,15 +714,15 @@ type RenderStaticModel =
       CastShadow : bool
       Presence : Presence
       InsetOpt : Box2 option
-      Material : Material3d
-      MaterialProperties : MaterialProperties3d
+      Material : Material
+      MaterialProperties : MaterialProperties
       StaticModel : StaticModel AssetTag
       RenderType : RenderType
       RenderPass : RenderPass }
 
 /// Describes how to render multiple static model with shared attributes.
 type RenderStaticModels =
-    { StaticModels : (Matrix4x4 * bool * Presence * Box2 option * Material3d * MaterialProperties3d) SList
+    { StaticModels : (Matrix4x4 * bool * Presence * Box2 option * Material * MaterialProperties) SList
       StaticModel : StaticModel AssetTag
       RenderType : RenderType
       RenderPass : RenderPass }
@@ -733,8 +733,8 @@ type RenderAnimatedModelSurface =
       CastShadow : bool
       Presence : Presence
       InsetOpt : Box2 option
-      Material : Material3d
-      MaterialProperties : MaterialProperties3d
+      Material : Material
+      MaterialProperties : MaterialProperties
       BoneTransforms : Matrix4x4 array
       AnimatedModel : AnimatedModel AssetTag
       SurfaceIndex : int
@@ -748,22 +748,22 @@ type RenderAnimatedModel =
       CastShadow : bool
       Presence : Presence
       InsetOpt : Box2 option
-      Material : Material3d
-      MaterialProperties : MaterialProperties3d
+      Material : Material
+      MaterialProperties : MaterialProperties
       BoneTransforms : Matrix4x4 array
       AnimatedModel : AnimatedModel AssetTag
       SubsortOffsets : Map<int, single>
-      DualRenderedSurfaces : Map<int, MaterialProperties3d option>
+      DualRenderedSurfaces : Map<int, MaterialProperties option>
       RenderType : RenderType
       RenderPass : RenderPass }
 
 /// Describes how to render multiple animated models with shared attributes.
 type RenderAnimatedModels =
     { BoneTransforms : Matrix4x4 array
-      AnimatedModels : (Matrix4x4 * bool * Presence * Box2 option * Material3d * MaterialProperties3d) SList
+      AnimatedModels : (Matrix4x4 * bool * Presence * Box2 option * Material * MaterialProperties) SList
       AnimatedModel : AnimatedModel AssetTag
       SubsortOffsets : Map<int, single>
-      DualRenderedSurfaces : Map<int, MaterialProperties3d option>
+      DualRenderedSurfaces : Map<int, MaterialProperties option>
       RenderType : RenderType
       RenderPass : RenderPass }
 
@@ -773,8 +773,8 @@ type RenderUserDefinedStaticModel =
       CastShadow : bool
       Presence : Presence
       InsetOpt : Box2 option
-      Material : Material3d
-      MaterialProperties : MaterialProperties3d
+      Material : Material
+      MaterialProperties : MaterialProperties
       StaticModelSurfaceDescriptors : StaticModelSurfaceDescriptor array
       Bounds : Box3
       RenderType : RenderType
@@ -1270,14 +1270,14 @@ type [<ReferenceEquality>] private RenderTasks =
       LightMaps : SortableLightMap List
       LightMapRenders : uint64 HashSet
       Lights : SortableLight List
-      DeferredStatic : Dictionary<string, Dictionary<PhysicallyBasedSurface, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties3d) List>>
+      DeferredStatic : Dictionary<string, Dictionary<PhysicallyBasedSurface, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>>
       DeferredStaticPreBatches : Dictionary<string, Dictionary<Guid, struct (PhysicallyBasedSurface * StaticModelSurfacePreBatchItem array)>>
-      DeferredStaticClipped : Dictionary<string, Dictionary<PhysicallyBasedSurface, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties3d) List>>
+      DeferredStaticClipped : Dictionary<string, Dictionary<PhysicallyBasedSurface, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>>
       DeferredStaticClippedPreBatches : Dictionary<string, Dictionary<Guid, struct (PhysicallyBasedSurface * StaticModelSurfacePreBatchItem array)>>
-      DeferredAnimated : Dictionary<string, Dictionary<AnimatedModelSurfaceKey, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties3d) List>>
+      DeferredAnimated : Dictionary<string, Dictionary<AnimatedModelSurfaceKey, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>>
       DeferredTerrains : Dictionary<string, struct (TerrainDescriptor * TerrainPatchDescriptor * PhysicallyBasedGeometry) List>
-      Forward : struct (single * single * Matrix4x4 * bool * Presence * Box2 * MaterialProperties3d * Matrix4x4 array voption * PhysicallyBasedSurface) List
-      ForwardSorted : struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties3d * Matrix4x4 array voption * PhysicallyBasedSurface) List
+      Forward : struct (single * single * Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * PhysicallyBasedSurface) List
+      ForwardSorted : struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * PhysicallyBasedSurface) List
       DeferredStaticRemovals : struct (string * PhysicallyBasedSurface) List
       DeferredStaticClippedRemovals : struct (string * PhysicallyBasedSurface) List
       DeferredAnimatedRemovals : struct (string * AnimatedModelSurfaceKey) List
@@ -1585,7 +1585,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           BrdfTexture : Texture
           IrradianceMap : Texture
           EnvironmentFilterMap : Texture
-          PhysicallyBasedMaterial : PhysicallyBasedMaterial3d
+          PhysicallyBasedMaterial : PhysicallyBasedMaterial
           mutable PhysicallyBasedAttachments : PhysicallyBasedAttachments3d
           LightMaps : Dictionary<uint64, LightMap>
           mutable LightingConfig : Lighting3dConfig
@@ -1595,8 +1595,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           mutable InstanceFields : single array
           mutable UserDefinedStaticModelFields : single array
           UserDefinedStaticModelsToDestroy : StaticModel AssetTag SList
-          ForwardSurfacesComparer : IComparer<struct (single * single * Matrix4x4 * bool * Presence * Box2 * MaterialProperties3d * Matrix4x4 array voption * PhysicallyBasedSurface * single * int)>
-          ForwardSurfacesSortBuffer : struct (single * single * Matrix4x4 * bool * Presence * Box2 * MaterialProperties3d * Matrix4x4 array voption * PhysicallyBasedSurface * single * int) List
+          ForwardSurfacesComparer : IComparer<struct (single * single * Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * PhysicallyBasedSurface * single * int)>
+          ForwardSurfacesSortBuffer : struct (single * single * Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * PhysicallyBasedSurface * single * int) List
           RenderPackages : Packages<RenderAsset, AssetClient>
           mutable RenderPasses : Dictionary<RenderPass, RenderTasks>
           mutable RenderPasses2 : Dictionary<RenderPass, RenderTasks>
@@ -2478,7 +2478,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // error
         | (_, _) -> None
 
-    static member private makeBillboardMaterial (material : Material3d) (properties : MaterialProperties3d) renderer =
+    static member private makeBillboardMaterial (material : Material) (properties : MaterialProperties) renderer =
         let albedoTexture =
             match VulkanRenderer3d.tryGetRenderAsset material.AlbedoImage renderer with
             | ValueSome (TextureAsset texture) -> texture
@@ -2539,7 +2539,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             match VulkanRenderer3d.tryGetRenderAsset material.UserDefinedImage2 renderer with
             | ValueSome (TextureAsset texture) -> texture
             | _ -> renderer.PhysicallyBasedMaterial.UserDefinedImage2Texture
-        let material : PhysicallyBasedMaterial3d =
+        let material : PhysicallyBasedMaterial =
             { AlbedoTexture = albedoTexture
               RoughnessTexture = roughnessTexture
               MetallicTexture = metallicTexture
@@ -2562,7 +2562,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               Blend = material.Blend
               PipelineName = material.PipelineName
               Names = "" }
-        let properties : PhysicallyBasedMaterialProperties3d =
+        let properties : PhysicallyBasedMaterialProperties =
             { Albedo = properties.Albedo
               Roughness = properties.Roughness
               Metallic = properties.Metallic
@@ -2589,7 +2589,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               UserDefinedSetting7 = properties.UserDefinedSetting7 }
         struct (material, properties)
 
-    static member private applySurfaceMaterial (material : Material3d) (surfaceMaterial : PhysicallyBasedMaterial3d) renderer =
+    static member private applySurfaceMaterial (material : Material) (surfaceMaterial : PhysicallyBasedMaterial) renderer =
         let albedoTexture =
             match material.AlbedoImageOpt with
             | ValueSome image ->
@@ -2711,7 +2711,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             match material.PipelineNameOpt with
             | ValueSome pipelineName -> pipelineName
             | ValueNone -> Constants.Render.PipelineNameDefault
-        let surfaceMaterial : PhysicallyBasedMaterial3d =
+        let surfaceMaterial : PhysicallyBasedMaterial =
             { AlbedoTexture = albedoTexture
               RoughnessTexture = roughnessTexture
               MetallicTexture = metallicTexture
@@ -2764,9 +2764,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
     
     static member private sortForwardSurfaces
         eyeCenter
-        (surfaces : struct (single * single * Matrix4x4 * bool * Presence * Box2 * MaterialProperties3d * Matrix4x4 array voption * PhysicallyBasedSurface) List)
-        (forwardSurfacesComparer : IComparer<struct (single * single * Matrix4x4 * bool * Presence * Box2 * MaterialProperties3d * Matrix4x4 array voption * PhysicallyBasedSurface * single * int)>)
-        (forwardSurfacesSortBuffer : struct (single * single * Matrix4x4 * bool * Presence * Box2 * MaterialProperties3d * Matrix4x4 array voption * PhysicallyBasedSurface * single * int) List) =
+        (surfaces : struct (single * single * Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * PhysicallyBasedSurface) List)
+        (forwardSurfacesComparer : IComparer<struct (single * single * Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * PhysicallyBasedSurface * single * int)>)
+        (forwardSurfacesSortBuffer : struct (single * single * Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * PhysicallyBasedSurface * single * int) List) =
         for i in 0 .. dec surfaces.Count do
             let struct (subsort, sort, model, castShadow, presence, texCoordsOffset, properties, boneTransformsOpt, surface) = surfaces[i]
             forwardSurfacesSortBuffer.Add struct (subsort, sort, model, castShadow, presence, texCoordsOffset, properties, boneTransformsOpt, surface, (model.Translation - eyeCenter).MagnitudeSquared, i)
@@ -2930,7 +2930,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
          castShadow : bool,
          presence : Presence,
          insetOpt : Box2 voption inref,
-         properties : MaterialProperties3d,
+         properties : MaterialProperties,
          surface : PhysicallyBasedSurface,
          renderType : RenderType,
          renderPass : RenderPass,
@@ -2992,8 +2992,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
          castShadow : bool,
          presence : Presence,
          insetOpt : Box2 voption inref,
-         material : Material3d,
-         properties : MaterialProperties3d,
+         material : Material,
+         properties : MaterialProperties,
          staticModel : StaticModel AssetTag,
          surfaceIndex : int,
          renderType : RenderType,
@@ -3006,7 +3006,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 if surfaceIndex > -1 && surfaceIndex < modelAsset.Surfaces.Length then
                     let surface = modelAsset.Surfaces[surfaceIndex]
                     let surface = // OPTIMIZATION: apply surface material only if effective.
-                        if material <> Material3d.empty then
+                        if material <> Material.empty then
                             let surfaceMaterial = VulkanRenderer3d.applySurfaceMaterial material surface.SurfaceMaterial renderer
                             { surface with HashCode = surface.HashCode ^^^ hash surfaceMaterial; SurfaceMaterial = surfaceMaterial }
                         else surface
@@ -3017,7 +3017,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
     static member private categorizeStaticModelSurfacePreBatch
         (preBatchId : Guid,
          preBatchItems : StaticModelSurfacePreBatchItem array,
-         material : Material3d,
+         material : Material,
          staticModel : StaticModel AssetTag,
          surfaceIndex : int,
          renderType : RenderType,
@@ -3034,7 +3034,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 if surfaceIndex > -1 && surfaceIndex < modelAsset.Surfaces.Length then
                     let surface = modelAsset.Surfaces[surfaceIndex]
                     let surface = // OPTIMIZATION: apply surface material only if effective.
-                        if material <> Material3d.empty then
+                        if material <> Material.empty then
                             let surfaceMaterial = VulkanRenderer3d.applySurfaceMaterial material surface.SurfaceMaterial renderer
                             { surface with HashCode = surface.HashCode ^^^ hash surfaceMaterial; SurfaceMaterial = surfaceMaterial }
                         else surface
@@ -3088,8 +3088,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
          castShadow : bool,
          presence : Presence,
          insetOpt : Box2 voption inref,
-         material : Material3d,
-         properties : MaterialProperties3d,
+         material : Material,
+         properties : MaterialProperties,
          staticModel : StaticModel AssetTag,
          renderType : RenderType,
          renderPass : RenderPass,
@@ -3133,7 +3133,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                         renderTasks.Lights.Add light
                 for surface in modelAsset.Surfaces do
                     let surface = // OPTIMIZATION: apply surface material only if effective.
-                        if material <> Material3d.empty then
+                        if material <> Material.empty then
                             let surfaceMaterial = VulkanRenderer3d.applySurfaceMaterial material surface.SurfaceMaterial renderer
                             { surface with HashCode = surface.HashCode ^^^ hash surfaceMaterial; SurfaceMaterial = surfaceMaterial }
                         else surface
@@ -3166,8 +3166,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
          castShadow : bool,
          presence : Presence,
          insetOpt : Box2 voption inref,
-         material : Material3d,
-         properties : MaterialProperties3d,
+         material : Material,
+         properties : MaterialProperties,
          boneTransforms : Matrix4x4 array,
          animatedModel : AnimatedModel AssetTag,
          surfaceIndex : int,
@@ -3240,12 +3240,12 @@ type [<ReferenceEquality>] VulkanRenderer3d =
          castShadow : bool,
          presence : Presence,
          insetOpt : Box2 voption inref,
-         material : Material3d,
-         properties : MaterialProperties3d,
+         material : Material,
+         properties : MaterialProperties,
          boneTransforms : Matrix4x4 array,
          animatedModel : AnimatedModel AssetTag,
          subsortOffsets : Map<int, single>,
-         dualRenderedSurfaces : Map<int, MaterialProperties3d option>,
+         dualRenderedSurfaces : Map<int, MaterialProperties option>,
          renderType : RenderType,
          renderTasks : RenderTasks,
          renderer) =
@@ -3327,11 +3327,11 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         | ValueNone -> Log.infoOnce ("Cannot render animated model due to unloadable asset(s) for '" + scstring animatedModel + "'.")
 
     static member private categorizeAnimatedModels
-        (animatedModels : (Matrix4x4 * bool * Presence * Box2 option * Material3d * MaterialProperties3d) SList,
+        (animatedModels : (Matrix4x4 * bool * Presence * Box2 option * Material * MaterialProperties) SList,
          boneTransforms : Matrix4x4 array,
          animatedModel : AnimatedModel AssetTag,
          subsortOffsets : Map<int, single>,
-         dualRenderedSurfaces : Map<int, MaterialProperties3d option>,
+         dualRenderedSurfaces : Map<int, MaterialProperties option>,
          renderType : RenderType,
          renderTasks : RenderTasks,
          renderer) =
@@ -3688,7 +3688,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             cubeMapFace eyeCenter view projection lightShadowExponent colorClearValue colorAttachment depthAttachment resolution renderPassIndex pipeline renderer.VulkanContext
 
     static member private renderPhysicallyBasedShadowSurfaces
-        bones (parameters : struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties3d) List) (surface : PhysicallyBasedSurface)
+        bones (parameters : struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List) (surface : PhysicallyBasedSurface)
         uniformsDescriptorSet pipeline renderer =
 
         // ensure we have a large enough instance fields array
@@ -3752,7 +3752,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             eyeCenter view projection materialSamplers loadOperation colorAttachments depthAttachment resolution renderPassIndex pipeline renderer.VulkanContext
 
     static member private renderPhysicallyBasedDeferredSurfaces
-        bones (parameters : struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties3d) List) (surface : PhysicallyBasedSurface)
+        bones (parameters : struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List) (surface : PhysicallyBasedSurface)
         eyeDescriptorSet samplerDescriptorSet pipeline renderer =
                                                                       
         // ensure we have a large enough instance fields array
@@ -3932,7 +3932,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             depthTexture colorTexture brdfTexture irradianceMap environmentFilterMap unfilteredSampler filteredSampler materialSamplers colorAttachments depthAttachment resolution renderPass pipeline context
 
     static member private renderPhysicallyBasedForwardSurfaces
-        bonesArrays (parameters : struct (Matrix4x4 * Presence * Box2 * MaterialProperties3d) SList)
+        bonesArrays (parameters : struct (Matrix4x4 * Presence * Box2 * MaterialProperties) SList)
         irradianceMaps environmentFilterMaps shadowTextureArray shadowMaps shadowCascades lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses lightMapsCount lightMapSingletonBlendMargin
         lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightSpecularities lightCutoffs lightTypes lightRadii lightConeInners lightConeOuters lightDesireFogs lightShadowIndices lightsCount shadowMatricesFlipped
         (surface : PhysicallyBasedSurface) uniformsDescriptorSet samplersDescriptorSet pipeline renderer =
@@ -4701,7 +4701,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     | ValueNone -> defaultMaterial.UserDefinedImage1Texture
                 (albedoMetadata.TextureTexelWidth, albedoMetadata.TextureTexelHeight, [|material|], userDefinedImage0Texture, userDefinedImage1Texture)
         let materials =
-            Array.create Constants.Render.TerrainLayersMax PhysicallyBasedMaterial3d.empty
+            Array.create Constants.Render.TerrainLayersMax PhysicallyBasedMaterial.empty
             |> Array.append materials
             |> Array.take Constants.Render.TerrainLayersMax
         let terrainMaterialProperties = terrainDescriptor.MaterialProperties
@@ -5749,7 +5749,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             | Left error -> failwith ("Could not load albedo material due to: " + error)
 
         // create default physically-based material
-        let physicallyBasedMaterial : PhysicallyBasedMaterial3d =
+        let physicallyBasedMaterial : PhysicallyBasedMaterial =
             let roughnessTexture =
                 match TextureInternal.tryCreate false true ColorCompression ("Assets/Default/Roughness" + ext) RenderThread context with
                 | Right textureInternal -> EagerTexture textureInternal
@@ -5831,7 +5831,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         
         // create forward surfaces comparer
         let forwardSurfacesComparer =
-            { new IComparer<struct (single * single * Matrix4x4 * bool * Presence * Box2 * MaterialProperties3d * Matrix4x4 array voption * PhysicallyBasedSurface * single * int)> with
+            { new IComparer<struct (single * single * Matrix4x4 * bool * Presence * Box2 * MaterialProperties * Matrix4x4 array voption * PhysicallyBasedSurface * single * int)> with
                 member this.Compare ((subsort, sort, _, _, _, _, _, _, _, distanceSquared, order), (subsort2, sort2, _, _, _, _, _, _, _, distanceSquared2, order2)) =
                     let sc = sort.CompareTo sort2
                     if sc <> 0 then sc

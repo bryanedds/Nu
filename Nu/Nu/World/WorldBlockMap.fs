@@ -122,7 +122,7 @@ type BlockMapDispatcher () =
             let blockMapSize = blockMap.Size
             let bounds = entity.GetBounds world
             let material =
-                { Material3d.empty with
+                { Material.empty with
                     AlbedoImageOpt = ValueSome Assets.Default.Albedo
                     NormalImageOpt = ValueSome Assets.Default.Normal }
             for struct (positionI, block) in chunk.Blocks.Pairs' do
@@ -130,7 +130,7 @@ type BlockMapDispatcher () =
                 | Some color ->
                     let position = bounds.Center + positionI.V3 * blockMapScale - blockMapSize * 0.5f + blockMapScale * 0.5f
                     let modelMatrix = Matrix4x4.CreateTranslation position
-                    let properties = { MaterialProperties3d.empty with AlbedoOpt = ValueSome color }
+                    let properties = { MaterialProperties.empty with AlbedoOpt = ValueSome color }
                     World.renderStaticModelSurfaceFast
                         (&modelMatrix, blockMap.Config.CastShadows, Omnipresent, ValueNone, material, properties,
                          Assets.Default.StaticModel, 0, DeferredRenderType, renderPass, world)
@@ -147,7 +147,7 @@ type BlockMapDispatcher () =
                     match BlockMap.tryGetSelectedColor blockMap with
                     | Some color ->
                         let colorBlinking = if int world.DateTime.TimeOfDay.TotalMilliseconds % 666 < 333 then Color.CornflowerBlue else color
-                        let properties = { MaterialProperties3d.empty with AlbedoOpt = ValueSome colorBlinking }
+                        let properties = { MaterialProperties.empty with AlbedoOpt = ValueSome colorBlinking }
                         for i in 0 .. dec blockMap.PaintHeight do
                             let position = bounds.Center + positionI.V3 * blockMapScale - blockMapSize * 0.5f + blockMapScale * 0.5f
                             let offsetI =

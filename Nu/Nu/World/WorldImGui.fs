@@ -340,8 +340,8 @@ module WorldImGui =
                     ty.GetGenericTypeDefinition () = typedefof<_ option> &&
                     (not ty.GenericTypeArguments[0].IsGenericType || ty.GenericTypeArguments[0].GetGenericTypeDefinition () <> typedefof<_ option>) &&
                     (not ty.GenericTypeArguments[0].IsGenericType || ty.GenericTypeArguments[0].GetGenericTypeDefinition () <> typedefof<_ voption>) &&
-                    ty.GenericTypeArguments[0] <> typeof<Material3d> &&
-                    ty.GenericTypeArguments[0] <> typeof<MaterialProperties3d> &&
+                    ty.GenericTypeArguments[0] <> typeof<Material> &&
+                    ty.GenericTypeArguments[0] <> typeof<MaterialProperties> &&
                     (ty.GenericTypeArguments[0].IsValueType ||
                      ty.GenericTypeArguments[0] = typeof<string> ||
                      ty.GenericTypeArguments[0] = typeof<Slide> ||
@@ -430,8 +430,8 @@ module WorldImGui =
                      ty.GetGenericTypeDefinition () = typedefof<_ voption> &&
                      (not ty.GenericTypeArguments[0].IsGenericType || ty.GenericTypeArguments[0].GetGenericTypeDefinition () <> typedefof<_ option>) &&
                      (not ty.GenericTypeArguments[0].IsGenericType || ty.GenericTypeArguments[0].GetGenericTypeDefinition () <> typedefof<_ voption>) &&
-                     ty.GenericTypeArguments[0] <> typeof<Material3d> &&
-                     ty.GenericTypeArguments[0] <> typeof<MaterialProperties3d> &&
+                     ty.GenericTypeArguments[0] <> typeof<Material> &&
+                     ty.GenericTypeArguments[0] <> typeof<MaterialProperties> &&
                      (ty.GenericTypeArguments[0].IsValueType ||
                       ty.GenericTypeArguments[0] = typeof<string> ||
                       ty.GenericTypeArguments[0] = typeof<Slide> ||
@@ -831,7 +831,7 @@ module WorldImGui =
                         else None
                     | None -> None
                 World.imGuiEditPropertyRecordPlus tryReplaceUserDefinedSettingOpt true name (typeof<TerrainMaterialProperties>) tmps context world
-            | :? Material3d as material ->
+            | :? Material as material ->
                 let tryReplaceUserDefinedImageOpt (fieldInfo : PropertyInfo) (field : obj) =
                     match context.SelectedEntityOpt with
                     | Some selectedEntity ->
@@ -937,8 +937,8 @@ module WorldImGui =
                                 Some (isSomeEdited, pipelineNameOpt :> obj)
                         else None
                     | None -> None
-                World.imGuiEditPropertyRecordPlus tryReplaceUserDefinedImageOpt false name (typeof<Material3d>) material context world
-            | :? MaterialProperties3d as properties ->
+                World.imGuiEditPropertyRecordPlus tryReplaceUserDefinedImageOpt false name (typeof<Material>) material context world
+            | :? MaterialProperties as properties ->
                 let tryReplaceUserDefinedSettingOpt (fieldInfo : PropertyInfo) (field : obj) =
                     match context.SelectedEntityOpt with
                     | Some selectedEntity ->
@@ -954,8 +954,8 @@ module WorldImGui =
                             | Some index ->
                                 let pipelineName =
                                     match selectedEntity.TryGetProperty "Material" world with
-                                    | Some property when (property.PropertyValue :? Material3d) ->
-                                        let material = property.PropertyValue :?> Material3d
+                                    | Some property when (property.PropertyValue :? Material) ->
+                                        let material = property.PropertyValue :?> Material
                                         match material.PipelineNameOpt with
                                         | ValueSome pipelineName -> pipelineName
                                         | ValueNone ->
@@ -1009,7 +1009,7 @@ module WorldImGui =
                             | None -> Some (false, field)
                         else None
                     | None -> None
-                World.imGuiEditPropertyRecordPlus tryReplaceUserDefinedSettingOpt false name (typeof<MaterialProperties3d>) properties context world
+                World.imGuiEditPropertyRecordPlus tryReplaceUserDefinedSettingOpt false name (typeof<MaterialProperties>) properties context world
             | :? Justification as justification ->
                 let (_, caseNameEdited, caseName) = World.imGuiSelectCase name ty justification context
                 let justification =
