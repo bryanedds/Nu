@@ -30,6 +30,10 @@ module EffectSystem =
               EffectDataTokens : DataToken SList
               EffectEnv : Definitions }
 
+    let private UserDefinedResource0 = Resource (Assets.Default.PackageName, Assets.Default.UserDefinedImage0Name)
+    let private UserDefinedResource1 = Resource (Assets.Default.PackageName, Assets.Default.UserDefinedImage1Name)
+    let private UserDefinedResource2 = Resource (Assets.Default.PackageName, Assets.Default.UserDefinedImage2Name)
+
     let rec private addDataToken dataToken effectSystem =
         effectSystem.EffectDataTokens.Add dataToken
         effectSystem
@@ -451,10 +455,13 @@ module EffectSystem =
             | _ -> Log.info ("Expected Content for definition '" + definitionName + "'."); effectSystem
         | None -> Log.info ("Could not find definition with name '" + definitionName + "'."); effectSystem
 
-    and private evalStaticSprite resource aspects content (slice : Slice) history effectSystem =
+    and private evalUserDefinedStaticSprite resource userDefinedResource0 userDefinedResource1 userDefinedResource2 pipelineName aspects content (slice : Slice) history effectSystem =
 
-        // pull image from resource
+        // pull images from resources
         let image = evalResource resource effectSystem
+        let userDefinedImage0 = evalResource userDefinedResource0 effectSystem
+        let userDefinedImage1 = evalResource userDefinedResource1 effectSystem
+        let userDefinedImage2 = evalResource userDefinedResource2 effectSystem
 
         // eval aspects
         let slice = evalAspects aspects slice effectSystem
@@ -468,6 +475,10 @@ module EffectSystem =
                       InsetOpt = if slice.Inset.Equals box2Zero then ValueNone else ValueSome slice.Inset
                       ClipOpt = Option.toValueOption effectSystem.EffectClipOpt
                       Image = AssetTag.specialize<Image> image
+                      UserDefinedImage0 = AssetTag.specialize<Image> userDefinedImage0
+                      UserDefinedImage1 = AssetTag.specialize<Image> userDefinedImage1
+                      UserDefinedImage2 = AssetTag.specialize<Image> userDefinedImage2
+                      PipelineName = if String.isEmpty pipelineName then Constants.Render.PipelineNameDefault else pipelineName
                       Color = slice.Color
                       Blend = slice.Blend
                       Emission = slice.Emission
@@ -487,10 +498,16 @@ module EffectSystem =
         // build implicitly mounted content
         evalContent content slice history effectSystem
 
-    and private evalAnimatedSprite resource (celSize : Vector2i) celCount celRun delay playback aspects content slice history effectSystem =
-
-        // pull image from resource
+    and private evalStaticSprite resource aspects content slice history effectSystem =
+        evalUserDefinedStaticSprite resource UserDefinedResource0 UserDefinedResource1 UserDefinedResource2 Constants.Render.PipelineNameDefault aspects content slice history effectSystem
+         
+    and private evalUserDefinedAnimatedSprite resource userDefinedResource0 userDefinedResource1 userDefinedResource2 pipelineName (celSize : Vector2i) celCount celRun delay playback aspects content slice history effectSystem =
+    
+        // pull images from resources
         let image = evalResource resource effectSystem
+        let userDefinedImage0 = evalResource userDefinedResource0 effectSystem
+        let userDefinedImage1 = evalResource userDefinedResource1 effectSystem
+        let userDefinedImage2 = evalResource userDefinedResource2 effectSystem
 
         // eval aspects
         let slice = evalAspects aspects slice effectSystem
@@ -514,6 +531,10 @@ module EffectSystem =
                           InsetOpt = ValueSome inset
                           ClipOpt = Option.toValueOption effectSystem.EffectClipOpt
                           Image = AssetTag.specialize<Image> image
+                          UserDefinedImage0 = AssetTag.specialize<Image> userDefinedImage0
+                          UserDefinedImage1 = AssetTag.specialize<Image> userDefinedImage1
+                          UserDefinedImage2 = AssetTag.specialize<Image> userDefinedImage2
+                          PipelineName = if String.isEmpty pipelineName then Constants.Render.PipelineNameDefault else pipelineName
                           Color = slice.Color
                           Blend = slice.Blend
                           Emission = slice.Emission
@@ -535,6 +556,8 @@ module EffectSystem =
 
         // abandon evaL
         else effectSystem
+    and private evalAnimatedSprite resource (celSize : Vector2i) celCount celRun delay playback aspects content slice history effectSystem =
+        evalUserDefinedAnimatedSprite resource UserDefinedResource0 UserDefinedResource1 UserDefinedResource2 Constants.Render.PipelineNameDefault celSize celCount celRun delay playback aspects content slice history effectSystem
 
     and private evalTextSprite resource text fontSizing fontStyling aspects content slice history effectSystem =
 
@@ -759,8 +782,12 @@ module EffectSystem =
         match content with
         | Nil ->
             effectSystem
+        | UserDefinedStaticSprite (resource, userDefinedResource0, userDefinedResource1, userDefinedResource2, pipelineName, aspects, content) ->
+            evalUserDefinedStaticSprite resource userDefinedResource0 userDefinedResource1 userDefinedResource2 pipelineName aspects content slice history effectSystem
         | StaticSprite (resource, aspects, content) ->
             evalStaticSprite resource aspects content slice history effectSystem
+        | UserDefinedAnimatedSprite (resource, userDefinedResource0, userDefinedResource1, userDefinedResource2, pipelineName, celSize, celCount, celRun, delay, playback, aspects, content) ->
+            evalUserDefinedAnimatedSprite resource userDefinedResource0 userDefinedResource1 userDefinedResource2 pipelineName celSize celCount celRun delay playback aspects content slice history effectSystem
         | AnimatedSprite (resource, celSize, celCount, celRun, delay, playback, aspects, content) ->
             evalAnimatedSprite resource celSize celCount celRun delay playback aspects content slice history effectSystem
         | TextSprite (resource, text, fontSizing, fontStyling, aspects, content) ->
