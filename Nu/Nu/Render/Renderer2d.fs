@@ -16,7 +16,7 @@ open TiledSharp
 open Prime
 open Nu.Vulkan
 
-/// A mutable particle value.
+/// A particle.
 type [<Struct>] Particle =
     { mutable Transform : Transform
       mutable InsetOpt : Box2 ValueOption

@@ -10,6 +10,8 @@ open SandBox3d
 type SandBox3dPlugin () =
     inherit NuPlugin ()
 
+    let WallIndex = 0
+
     let DeferredStaticFlipped =
         { PipelineType = DeferredStatic
           PipelineName = "DeferredStaticFlipped"
@@ -23,8 +25,6 @@ type SandBox3dPlugin () =
           ShaderPath = "Assets/Gameplay/DeferredTerrainFlipped"
           UserDefinedImageNames = [||]
           UserDefinedSettingNames = [|"TestSettingOpt"|] }
-
-    let WallIndex = 0
 
     let createWallColumnModel corner (affine : Affine) (parent : Entity) world =
         let name = "Wall" + string Gen.id64
