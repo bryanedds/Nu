@@ -213,9 +213,9 @@ module EffectSystem =
         | Volume volume -> slice.Volume <- volume; slice
         | Enabled enabled -> slice.Enabled <- enabled; slice
         | UserDefinedSetting0 setting -> slice.UserDefinedSetting0 <- setting; slice
-        | UserDefinedSetting1 setting -> slice.UserDefinedSetting0 <- setting; slice
-        | UserDefinedSetting2 setting -> slice.UserDefinedSetting0 <- setting; slice
-        | UserDefinedSetting3 setting -> slice.UserDefinedSetting0 <- setting; slice
+        | UserDefinedSetting1 setting -> slice.UserDefinedSetting1 <- setting; slice
+        | UserDefinedSetting2 setting -> slice.UserDefinedSetting2 <- setting; slice
+        | UserDefinedSetting3 setting -> slice.UserDefinedSetting3 <- setting; slice
         | Positions (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
