@@ -200,10 +200,11 @@ bool inBounds(vec3 point, vec3 min, vec3 size)
 
 vec4 depthToPosition(float depth, vec2 texCoords)
 {
-    vec4 positionClip = vec4(texCoords * 2.0 - 1.0, depth, 1.0);
-    vec4 positionView = eye.projectionInverse * positionClip;
-    positionView /= positionView.w;
-    return eye.viewInverse * positionView;
+    vec4 clip = vec4(texCoords * 2.0 - 1.0, 1.0, 1.0);
+    vec4 viewRay = eye.projectionInverse * clip;
+    viewRay /= viewRay.w;
+    vec3 viewPos = viewRay.xyz * (depth / -viewRay.z);
+    return eye.viewInverse * vec4(viewPos, 1.0);
 }
 
 float distanceToOutside(vec3 point, vec3 boxMin, vec3 boxSize)
@@ -1182,6 +1183,6 @@ void main()
     }
 
     // write depth and composition
-    depthOut = depth;
+    depthOut = -(eye.view * position).z;;
     compositionOut = vec4(color, alpha);
 }

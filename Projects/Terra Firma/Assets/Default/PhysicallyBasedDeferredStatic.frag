@@ -96,7 +96,7 @@ vec2 encodeOctahedral(vec3 v)
 void main()
 {
     // write depth
-    depthOut = gl_FragCoord.z;
+    depthOut = -(eye.view * position).z;
 
     // compute spatial converters
     vec3 normal = normalize(normal);

@@ -115,10 +115,11 @@ vec3 rotate(vec3 axis, float angle, vec3 v)
 
 vec4 depthToPosition(float depth, vec2 texCoords)
 {
-    vec4 positionClip = vec4(texCoords * 2.0 - 1.0, depth, 1.0);
-    vec4 positionView = eye.projectionInverse * positionClip;
-    positionView /= positionView.w;
-    return eye.viewInverse * positionView;
+    vec4 clip = vec4(texCoords * 2.0 - 1.0, 1.0, 1.0);
+    vec4 viewRay = eye.projectionInverse * clip;
+    viewRay /= viewRay.w;
+    vec3 viewPos = viewRay.xyz * (depth / -viewRay.z);
+    return eye.viewInverse * vec4(viewPos, 1.0);
 }
 
 vec3 fresnelSchlick(float cosTheta, vec3 f0)

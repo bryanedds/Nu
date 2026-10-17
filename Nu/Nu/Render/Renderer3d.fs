@@ -5159,7 +5159,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     downSampleColorTexture downSampleDepthTexture depthTexture renderer.FilteredSampler upSampleColorTexture.ImageView
                     geometryResolution renderer.QuadGeometry renderer.PhysicallyBasedPipelines.FilterBilateralUpSamplePipeline renderer.VulkanContext
                 Texture.recordTransitionLayout ColorAttachmentWrite ColorAttachmentRead upSampleColorTexture renderer.VulkanContext.RenderCommandBuffer
-                
+
                 // blit up-sample texture to fog accum texture
                 Texture.recordTransitionLayout ColorAttachmentRead TransferSrc upSampleColorTexture renderer.VulkanContext.RenderCommandBuffer
                 Texture.recordTransitionLayout ColorAttachmentRead TransferDst fogAccumTexture renderer.VulkanContext.RenderCommandBuffer
