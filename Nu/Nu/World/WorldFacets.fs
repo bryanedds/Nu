@@ -3022,12 +3022,12 @@ type Light3dFacet () =
 [<AutoOpen>]
 module StaticBillboardFacetExtensions =
     type Entity with
-        member this.GetMaterial3d world : Material3d = this.Get (nameof this.Material3d) world
-        member this.SetMaterial3d (value : Material3d) world = this.Set (nameof this.Material3d) value world
-        member this.Material3d = lens (nameof this.Material3d) this this.GetMaterial3d this.SetMaterial3d
-        member this.GetMaterialProperties3d world : MaterialProperties3d = this.Get (nameof this.MaterialProperties3d) world
-        member this.SetMaterialProperties3d (value : MaterialProperties3d) world = this.Set (nameof this.MaterialProperties3d) value world
-        member this.MaterialProperties3d = lens (nameof this.MaterialProperties3d) this this.GetMaterialProperties3d this.SetMaterialProperties3d
+        member this.GetMaterial world : Material = this.Get (nameof this.Material) world
+        member this.SetMaterial (value : Material) world = this.Set (nameof this.Material) value world
+        member this.Material = lens (nameof this.Material) this this.GetMaterial this.SetMaterial
+        member this.GetMaterialProperties world : MaterialProperties = this.Get (nameof this.MaterialProperties) world
+        member this.SetMaterialProperties (value : MaterialProperties) world = this.Set (nameof this.MaterialProperties) value world
+        member this.MaterialProperties = lens (nameof this.MaterialProperties) this this.GetMaterialProperties this.SetMaterialProperties
         member this.GetRenderStyle world : RenderStyle = this.Get (nameof this.RenderStyle) world
         member this.SetRenderStyle (value : RenderStyle) world = this.Set (nameof this.RenderStyle) value world
         member this.RenderStyle = lens (nameof this.RenderStyle) this this.GetRenderStyle this.SetRenderStyle
@@ -3047,8 +3047,8 @@ type StaticBillboardFacet () =
 
     static member Properties =
         [define Entity.InsetOpt None
-         define Entity.Material3d Material3d.defaultMaterial
-         define Entity.MaterialProperties3d MaterialProperties3d.defaultProperties
+         define Entity.Material Material.defaultMaterial
+         define Entity.MaterialProperties MaterialProperties.defaultProperties
          define Entity.RenderStyle Deferred
          define Entity.ShadowOffset Constants.Engine.BillboardShadowOffsetDefault
          define Entity.OrientUp true
@@ -3061,8 +3061,8 @@ type StaticBillboardFacet () =
             let affineMatrix = transform.AffineMatrix
             let presence = transform.Presence
             let insetOpt = entity.GetInsetOpt world
-            let material = entity.GetMaterial3d world
-            let properties = entity.GetMaterialProperties3d world
+            let material = entity.GetMaterial world
+            let properties = entity.GetMaterialProperties world
             let shadowOffset = entity.GetShadowOffset world
             let orientUp = entity.GetOrientUp world
             let planar = entity.GetPlanar world
@@ -3111,8 +3111,8 @@ type AnimatedBillboardFacet () =
          define Entity.CelRun 4
          define Entity.AnimationDelay (GameTime.ofSeconds (1.0 / 15.0))
          define Entity.AnimationStride 1
-         define Entity.Material3d Material3d.defaultMaterial
-         define Entity.MaterialProperties3d MaterialProperties3d.defaultProperties
+         define Entity.Material Material.defaultMaterial
+         define Entity.MaterialProperties MaterialProperties.defaultProperties
          define Entity.RenderStyle Deferred
          define Entity.ShadowOffset Constants.Engine.BillboardShadowOffsetDefault
          define Entity.OrientUp true
@@ -3129,8 +3129,8 @@ type AnimatedBillboardFacet () =
             let affineMatrix = transform.AffineMatrix
             let presence = transform.Presence
             let insetOpt = getSpriteInsetOpt entity world
-            let material = entity.GetMaterial3d world
-            let properties = entity.GetMaterialProperties3d world
+            let material = entity.GetMaterial world
+            let properties = entity.GetMaterialProperties world
             let shadowOffset = entity.GetShadowOffset world
             let orientUp = entity.GetOrientUp world
             let planar = entity.GetPlanar world
@@ -3153,11 +3153,11 @@ type AnimatedBillboardFacet () =
 [<AutoOpen>]
 module BasicStaticBillboardEmitterFacetExtensions =
     type Entity with
-        member this.GetEmitterMaterial world : Material3d = this.Get (nameof this.EmitterMaterial) world
-        member this.SetEmitterMaterial (value : Material3d) world = this.Set (nameof this.EmitterMaterial) value world
+        member this.GetEmitterMaterial world : Material = this.Get (nameof this.EmitterMaterial) world
+        member this.SetEmitterMaterial (value : Material) world = this.Set (nameof this.EmitterMaterial) value world
         member this.EmitterMaterial = lens (nameof this.EmitterMaterial) this this.GetEmitterMaterial this.SetEmitterMaterial
-        member this.GetEmitterMaterialProperties world : MaterialProperties3d = this.Get (nameof this.EmitterMaterialProperties) world
-        member this.SetEmitterMaterialProperties (value : MaterialProperties3d) world = this.Set (nameof this.EmitterMaterialProperties) value world
+        member this.GetEmitterMaterialProperties world : MaterialProperties = this.Get (nameof this.EmitterMaterialProperties) world
+        member this.SetEmitterMaterialProperties (value : MaterialProperties) world = this.Set (nameof this.EmitterMaterialProperties) value world
         member this.EmitterMaterialProperties = lens (nameof this.EmitterMaterialProperties) this this.GetEmitterMaterialProperties this.SetEmitterMaterialProperties
         member this.GetEmitterCastShadow world : bool = this.Get (nameof this.EmitterCastShadow) world
         member this.SetEmitterCastShadow (value : bool) world = this.Set (nameof this.EmitterCastShadow) value world
@@ -3230,12 +3230,12 @@ type BasicStaticBillboardEmitterFacet () =
         | Particles.Outputs outputs -> for output in outputs do processOutput output entity world
 
     static let handleEmitterMaterialChange evt world =
-        let emitterMaterial = evt.Data.Value :?> Material3d
+        let emitterMaterial = evt.Data.Value :?> Material
         mapEmitter (fun emitter -> if emitter.Material <> emitterMaterial then { emitter with Material = emitterMaterial } else emitter) evt.Subscriber world
         Cascade
 
     static let handleEmitterMaterialPropertiesChange evt world =
-        let emitterMaterialProperties = evt.Data.Value :?> MaterialProperties3d
+        let emitterMaterialProperties = evt.Data.Value :?> MaterialProperties
         mapEmitter (fun emitter -> if emitter.MaterialProperties <> emitterMaterialProperties then { emitter with MaterialProperties = emitterMaterialProperties } else emitter) evt.Subscriber world
         Cascade
 
@@ -3320,8 +3320,8 @@ type BasicStaticBillboardEmitterFacet () =
 
     static member Properties =
         [define Entity.SelfDestruct false
-         define Entity.EmitterMaterial Material3d.defaultMaterial
-         define Entity.EmitterMaterialProperties MaterialProperties3d.defaultProperties
+         define Entity.EmitterMaterial Material.defaultMaterial
+         define Entity.EmitterMaterialProperties MaterialProperties.defaultProperties
          define Entity.EmitterLifeTimeOpt GameTime.zero
          define Entity.ParticleLifeTimeMaxOpt (GameTime.ofSeconds 1.0)
          define Entity.ParticleRate (match Constants.GameTime.DesiredFrameRate with StaticFrameRate _ -> 1.0f | DynamicFrameRate _ -> 60.0f)
@@ -3459,8 +3459,8 @@ type StaticModelFacet () =
 
     static member Properties =
         [define Entity.InsetOpt None
-         define Entity.Material3d Material3d.empty
-         define Entity.MaterialProperties3d MaterialProperties3d.empty
+         define Entity.Material Material.empty
+         define Entity.MaterialProperties MaterialProperties.empty
          define Entity.RenderStyle Deferred
          define Entity.StaticModel Assets.Default.StaticModel]
 
@@ -3471,8 +3471,8 @@ type StaticModelFacet () =
             let affineMatrix = transform.AffineMatrix
             let presence = transform.Presence
             let insetOpt = ValueOption.ofOption (entity.GetInsetOpt world)
-            let material = entity.GetMaterial3d world
-            let properties = entity.GetMaterialProperties3d world
+            let material = entity.GetMaterial world
+            let properties = entity.GetMaterialProperties world
             let staticModel = entity.GetStaticModel world
             let renderType =
                 match entity.GetRenderStyle world with
@@ -3528,8 +3528,8 @@ type StaticModelSurfaceFacet () =
 
     static member Properties =
         [define Entity.InsetOpt None
-         define Entity.Material3d Material3d.empty
-         define Entity.MaterialProperties3d MaterialProperties3d.defaultProperties
+         define Entity.Material Material.empty
+         define Entity.MaterialProperties MaterialProperties.defaultProperties
          define Entity.RenderStyle Deferred
          define Entity.StaticModel Assets.Default.StaticModel
          define Entity.SurfaceIndex 0]
@@ -3541,8 +3541,8 @@ type StaticModelSurfaceFacet () =
             let affineMatrix = transform.AffineMatrix
             let presence = transform.Presence
             let insetOpt = Option.toValueOption (entity.GetInsetOpt world)
-            let material = entity.GetMaterial3d world
-            let properties = entity.GetMaterialProperties3d world
+            let material = entity.GetMaterial world
+            let properties = entity.GetMaterialProperties world
             let staticModel = entity.GetStaticModel world
             let surfaceIndex = entity.GetSurfaceIndex world
             let renderType =
@@ -3587,7 +3587,7 @@ module StaticModelSurfaceFacetExtensions2 =
         /// Attempt to get the currently assigned albedo image, looking it up from metadata when unassigned.
         member this.TryGetAlbedoImage world =
             if this.Has<StaticModelSurfaceFacet> world then
-                let material = this.GetMaterial3d world
+                let material = this.GetMaterial world
                 match material.AlbedoImageOpt with
                 | ValueSome _ as albedoImageOpt -> albedoImageOpt
                 | ValueNone ->
@@ -3630,8 +3630,8 @@ module AnimatedModelFacetExtensions =
         member this.GetSubsortOffsets world : Map<int, single> = this.Get (nameof this.SubsortOffsets) world
         member this.SetSubsortOffsets (value : Map<int, single>) world = this.Set (nameof this.SubsortOffsets) value world
         member this.SubsortOffsets = lens (nameof this.SubsortOffsets) this this.GetSubsortOffsets this.SetSubsortOffsets
-        member this.GetDualRenderedSurfaces world : Map<int, MaterialProperties3d option> = this.Get (nameof this.DualRenderedSurfaces) world
-        member this.SetDualRenderedSurfaces (value : Map<int, MaterialProperties3d option>) world = this.Set (nameof this.DualRenderedSurfaces) value world
+        member this.GetDualRenderedSurfaces world : Map<int, MaterialProperties option> = this.Get (nameof this.DualRenderedSurfaces) world
+        member this.SetDualRenderedSurfaces (value : Map<int, MaterialProperties option>) world = this.Set (nameof this.DualRenderedSurfaces) value world
         member this.DualRenderedSurfaces = lens (nameof this.DualRenderedSurfaces) this this.GetDualRenderedSurfaces this.SetDualRenderedSurfaces
         member this.GetBoneIdsOpt world : Dictionary<string, int> option = this.Get (nameof this.BoneIdsOpt) world
         member this.SetBoneIdsOpt (value : Dictionary<string, int> option) world = this.Set (nameof this.BoneIdsOpt) value world
@@ -3701,8 +3701,8 @@ type AnimatedModelFacet () =
 
     static member Properties =
         [define Entity.InsetOpt None
-         define Entity.Material3d Material3d.empty
-         define Entity.MaterialProperties3d MaterialProperties3d.empty
+         define Entity.Material Material.empty
+         define Entity.MaterialProperties MaterialProperties.empty
          define Entity.Animations [|{ StartTime = GameTime.zero; LifeTimeOpt = None; Name = ""; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BoneFilterOpt = None }|]
          define Entity.AnimatedModel Assets.Default.AnimatedModel
          define Entity.SubsortOffsets Map.empty
@@ -3760,8 +3760,8 @@ type AnimatedModelFacet () =
             let affineMatrix = transform.AffineMatrix
             let presence = transform.Presence
             let insetOpt = Option.toValueOption (entity.GetInsetOpt world)
-            let material = entity.GetMaterial3d world
-            let properties = entity.GetMaterialProperties3d world
+            let material = entity.GetMaterial world
+            let properties = entity.GetMaterialProperties world
             let animatedModel = entity.GetAnimatedModel world
             let subsortOffsets = entity.GetSubsortOffsets world
             let dualRenderedSurfaces = entity.GetDualRenderedSurfaces world

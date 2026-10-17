@@ -78,16 +78,16 @@ type RendererProcess =
         abstract EnqueueMessage3d : RenderMessage3d -> unit
 
         /// Potential fast-path for rendering static models.
-        abstract RenderStaticModelFast : Matrix4x4 inref * bool * Presence * Box2 voption * Material3d * MaterialProperties3d * StaticModel AssetTag * RenderType * RenderPass -> unit
+        abstract RenderStaticModelFast : Matrix4x4 inref * bool * Presence * Box2 voption * Material * MaterialProperties * StaticModel AssetTag * RenderType * RenderPass -> unit
 
         /// Potential fast-path for rendering static model surfaces.
-        abstract RenderStaticModelSurfaceFast : Matrix4x4 inref * bool * Presence * Box2 voption * Material3d * MaterialProperties3d * StaticModel AssetTag * int * RenderType * RenderPass -> unit
+        abstract RenderStaticModelSurfaceFast : Matrix4x4 inref * bool * Presence * Box2 voption * Material * MaterialProperties * StaticModel AssetTag * int * RenderType * RenderPass -> unit
 
         /// Potential fast-path for rendering animated models.
-        abstract RenderAnimatedModelFast : Matrix4x4 inref * bool * Presence * Box2 voption * Material3d * MaterialProperties3d * Matrix4x4 array * AnimatedModel AssetTag * Map<int, single> * Map<int, MaterialProperties3d option> * RenderType * RenderPass -> unit
+        abstract RenderAnimatedModelFast : Matrix4x4 inref * bool * Presence * Box2 voption * Material * MaterialProperties * Matrix4x4 array * AnimatedModel AssetTag * Map<int, single> * Map<int, MaterialProperties option> * RenderType * RenderPass -> unit
 
         /// Potential fast-path for rendering animated model surfaces.
-        abstract RenderAnimatedModelSurfaceFast : Matrix4x4 inref * bool * Presence * Box2 voption * Material3d * MaterialProperties3d * Matrix4x4 array * AnimatedModel AssetTag * int * bool * RenderType * RenderPass -> unit
+        abstract RenderAnimatedModelSurfaceFast : Matrix4x4 inref * bool * Presence * Box2 voption * Material * MaterialProperties * Matrix4x4 array * AnimatedModel AssetTag * int * bool * RenderType * RenderPass -> unit
 
         /// Enqueue a 2d rendering message.
         abstract EnqueueMessage2d : RenderMessage2d -> unit

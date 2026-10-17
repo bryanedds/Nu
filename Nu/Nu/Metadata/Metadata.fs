@@ -113,7 +113,7 @@ module Metadata =
         if File.Exists asset.FilePath then
             let textureClient = TextureClient None // unused. TODO: consider making this opt.
             let sceneClient = PhysicallyBasedSceneClient () // unused. TODO: consider making this opt.
-            match sceneClient.TryCreatePhysicallyBasedModel asset.FilePath PhysicallyBasedMaterial3d.empty textureClient None with
+            match sceneClient.TryCreatePhysicallyBasedModel asset.FilePath PhysicallyBasedMaterial.empty textureClient None with
             | Right model ->
                 if model.Animated
                 then Some (AnimatedModelMetadata model)

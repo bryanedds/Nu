@@ -224,8 +224,8 @@ and Content =
     | UserDefinedAnimatedSprite of Image : Resource * UserDefinedImage0 : Resource * UserDefinedImage1 : Resource * UserDefinedImage2 : Resource * PipelineName : string * CelSize : Vector2i * CelCount : int * CelRun : int * CelDelay : GameTime * Playback : Playback * Aspects : Aspect array * Content : Content
     | AnimatedSprite of Image : Resource * CelSize : Vector2i * CelCount : int * CelRun : int * CelDelay : GameTime * Playback : Playback * Aspects : Aspect array * Content : Content
     | TextSprite of Font : Resource * Text : string * FontSizing : single option * FontStyling : FontStyle Set * Aspects : Aspect array * Content : Content
-    | Billboard of Material : Material3d * Properties : MaterialProperties3d * Aspects : Aspect array * Content : Content
-    | StaticModel of Resource : Resource * Material : Material3d * Properties : MaterialProperties3d * Aspects : Aspect array * Content : Content
+    | Billboard of Material : Material * Properties : MaterialProperties * Aspects : Aspect array * Content : Content
+    | StaticModel of Resource : Resource * Material : Material * Properties : MaterialProperties * Aspects : Aspect array * Content : Content
     | Light3d of LightType : LightType * Aspects : Aspect array * Content : Content
     | Mount of Shift : Shift * Aspects : Aspect array * Content : Content
     | Repeat of Shift : Shift * Repetition * Aspects : Aspect array * Content : Content

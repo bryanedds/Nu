@@ -155,8 +155,8 @@ module WorldEntityHierarchyExtensions =
                                       DepthWriteOpt = Metadata.tryGetStaticModelDepthWrite surface.SurfaceMaterialIndex staticModel
                                       BlendOpt = Metadata.tryGetStaticModelBlend surface.SurfaceMaterialIndex staticModel
                                       PipelineNameOpt = Metadata.tryGetStaticModelPipelineName surface.SurfaceMaterialIndex staticModel }
-                                else Material3d.empty
-                            child.SetMaterial3d material world
+                                else Material.empty
+                            child.SetMaterial material world
                             let properties =
                                 { AlbedoOpt = ValueSome surface.SurfaceMaterialProperties.Albedo
                                   RoughnessOpt = ValueSome surface.SurfaceMaterialProperties.Roughness
@@ -182,7 +182,7 @@ module WorldEntityHierarchyExtensions =
                                   UserDefinedSetting5Opt = ValueSome userDefinedSettings[5]
                                   UserDefinedSetting6Opt = ValueSome userDefinedSettings[6]
                                   UserDefinedSetting7Opt = ValueSome userDefinedSettings[7] }
-                            child.SetMaterialProperties3d properties world
+                            child.SetMaterialProperties properties world
                             child.SetRenderStyle renderStyle world
                             child.AutoBounds world
                             i <- inc i)
@@ -195,7 +195,7 @@ module WorldEntityHierarchyExtensions =
             let frozenEntities = List ()
             let frozenPreBatches =
                 Dictionary<
-                    Material3d * Vulkan.PhysicallyBasedSurface * RenderType,
+                    Material * Vulkan.PhysicallyBasedSurface * RenderType,
                     Guid * StaticModel AssetTag * int * StaticModelSurfacePreBatchItem List> ()
             let frozenShapes = List ()
             let rec getFrozenArtifacts (entity : Entity) =
@@ -210,8 +210,8 @@ module WorldEntityHierarchyExtensions =
                             let entityBounds = transform.Bounds3d
                             let presence = transform.Presence
                             let insetOpt = match entity.GetInsetOpt world with Some inset -> Some inset | None -> None // OPTIMIZATION: localize boxed value in memory.
-                            let material = entity.GetMaterial3d world
-                            let properties = entity.GetMaterialProperties3d world
+                            let material = entity.GetMaterial world
+                            let properties = entity.GetMaterialProperties world
                             let staticModel = entity.GetStaticModel world
                             let surfaceIndex = entity.GetSurfaceIndex world
                             let renderType = match entity.GetRenderStyle world with Deferred -> DeferredRenderType | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
@@ -244,8 +244,8 @@ module WorldEntityHierarchyExtensions =
                             let castShadow = transform.CastShadow
                             let affineMatrix = transform.AffineMatrix
                             let insetOpt = match entity.GetInsetOpt world with Some inset -> Some inset | None -> None // OPTIMIZATION: localize boxed value in memory.
-                            let material = entity.GetMaterial3d world
-                            let properties = entity.GetMaterialProperties3d world
+                            let material = entity.GetMaterial world
+                            let properties = entity.GetMaterialProperties world
                             let staticModel = entity.GetStaticModel world
                             let metadata = Metadata.getStaticModelMetadata (entity.GetStaticModel world)
                             let mutable surfaceIndex = 0

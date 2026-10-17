@@ -224,7 +224,7 @@ type PhysicallyBasedAttachments3d =
       CompositionAttachment : Texture }
 
 /// Describes a physically-based material for 3d surfaces.
-type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial3d =
+type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial =
     { AlbedoTexture : Texture
       RoughnessTexture : Texture
       MetallicTexture : Texture
@@ -325,15 +325,15 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedMaterial3d =
         left.Names = right.Names
 
     override this.GetHashCode () = 
-        PhysicallyBasedMaterial3d.hash this
+        PhysicallyBasedMaterial.hash this
 
     override this.Equals that =
         match that with
-        | :? PhysicallyBasedMaterial3d as that -> PhysicallyBasedMaterial3d.equals this that
+        | :? PhysicallyBasedMaterial as that -> PhysicallyBasedMaterial.equals this that
         | _ -> false
 
 /// Describes the configurable properties of a physically-based 3dmaterial for 3d surfaces.
-type PhysicallyBasedMaterialProperties3d =
+type PhysicallyBasedMaterialProperties =
     { Albedo : Color
       Roughness : single
       Metallic : single
@@ -420,8 +420,8 @@ type [<CustomEquality; NoComparison>] PhysicallyBasedSurface =
       SurfaceMatrixIsIdentity : bool // OPTIMIZATION: avoid matrix multiply when unnecessary.
       SurfaceMatrix : Matrix4x4
       SurfaceBounds : Box3
-      SurfaceMaterial : PhysicallyBasedMaterial3d
-      SurfaceMaterialProperties : PhysicallyBasedMaterialProperties3d
+      SurfaceMaterial : PhysicallyBasedMaterial
+      SurfaceMaterialProperties : PhysicallyBasedMaterialProperties
       SurfaceMaterialIndex : int
       SurfaceNode : Assimp.Node
       PhysicallyBasedGeometry : PhysicallyBasedGeometry }
@@ -3696,7 +3696,7 @@ module PhysicallyBased =
         (bones : Matrix4x4 array)
         (surfacesCount : int)
         (instanceFields : single array)
-        (material : PhysicallyBasedMaterial3d)
+        (material : PhysicallyBasedMaterial)
         (geometry : PhysicallyBasedGeometry)
         (uniformsDescriptorSet : VkDescriptorSet)
         (pipeline : PhysicallyBasedShadowPipeline)
@@ -3801,7 +3801,7 @@ module PhysicallyBased =
                       Pipeline.descriptor 6 SampledImage FragmentStage 1|] // environmentFilterMap
 
                   // descriptor set 1: per material
-                  Pipeline.descriptorSet<PhysicallyBasedMaterial3d>
+                  Pipeline.descriptorSet<PhysicallyBasedMaterial>
                     [|Pipeline.descriptor 0 SampledImage FragmentStage 1 // albedoTexture
                       Pipeline.descriptor 1 SampledImage FragmentStage 1 // roughnessTexture
                       Pipeline.descriptor 2 SampledImage FragmentStage 1 // metallicTexture
@@ -3919,7 +3919,7 @@ module PhysicallyBased =
         (bones : Matrix4x4 array)
         (surfacesCount : int)
         (instanceFields : single array)
-        (material : PhysicallyBasedMaterial3d)
+        (material : PhysicallyBasedMaterial)
         (geometry : PhysicallyBasedGeometry)
         (eyeDescriptorSet : VkDescriptorSet)
         (samplerDescriptorSet : VkDescriptorSet)
@@ -4027,7 +4027,7 @@ module PhysicallyBased =
                 [|Pipeline.descriptorSet<int * int>
                     [|Pipeline.descriptor 0 UniformBuffer VertexAndFragmentStage 1 // eye
                       Pipeline.descriptor 1 UniformBuffer FragmentStage 1|] // terrainFrag
-                  Pipeline.descriptorSet<PhysicallyBasedMaterial3d array>
+                  Pipeline.descriptorSet<PhysicallyBasedMaterial array>
                     [|Pipeline.descriptor 0 SampledImage FragmentStage Constants.Render.TerrainLayersMax // albedoTextures
                       Pipeline.descriptor 1 SampledImage FragmentStage Constants.Render.TerrainLayersMax // roughnessTextures
                       Pipeline.descriptor 2 SampledImage FragmentStage Constants.Render.TerrainLayersMax // ambientOcclusionTextures
@@ -4068,7 +4068,7 @@ module PhysicallyBased =
         (lightShadowSampleScalar : single)
         (lightShadowExponent : single)
         (lightShadowDensity : single)
-        (materials : PhysicallyBasedMaterial3d array)
+        (materials : PhysicallyBasedMaterial array)
         (userDefinedImage0Texture : Texture)
         (userDefinedImage1Texture : Texture)
         (materialSamplers : Sampler array)
@@ -5825,7 +5825,7 @@ module PhysicallyBased =
         (lightShadowIndices : int array)
         (lightsCount : int)
         (shadowMatrices : Matrix4x4 array)
-        (material : PhysicallyBasedMaterial3d)
+        (material : PhysicallyBasedMaterial)
         (geometry : PhysicallyBasedGeometry)
         (uniformsDescriptorSet : VkDescriptorSet)
         (samplersDescriptorSet : VkDescriptorSet)
