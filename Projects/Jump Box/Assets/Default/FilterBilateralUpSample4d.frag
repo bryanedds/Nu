@@ -35,10 +35,7 @@ void main()
         colorSum += colorDownSampled * weightDownSampled;
         weight += weightDownSampled;
     }
-
-    // write color when weighted
-    frag =
-        weight > 0.0 ?
-        colorSum / weight :
-        vec4(0.0);
+    
+    // write color as weighted or zero
+    frag = weight > 0.0 ? colorSum / weight : vec4(0.0);
 }

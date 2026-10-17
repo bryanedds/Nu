@@ -61,10 +61,10 @@ bool contains(vec3 min1, vec3 size1, vec3 min2, vec3 size2)
 vec4 depthToPosition(float depth, vec2 texCoords)
 {
     vec4 clip = vec4(texCoords * 2.0 - 1.0, 1.0, 1.0);
-    vec4 viewRay = eye.projectionInverse * clip;
-    viewRay /= viewRay.w;
-    vec3 viewPos = viewRay.xyz * (depth / -viewRay.z);
-    return eye.viewInverse * vec4(viewPos, 1.0);
+    vec4 rayView = eye.projectionInverse * clip;
+    rayView /= rayView.w;
+    vec3 positionView = rayView.xyz * (depth / -rayView.z);
+    return eye.viewInverse * vec4(positionView, 1.0);
 }
 
 float distanceToOutside(vec3 point, vec3 boxMin, vec3 boxSize)
