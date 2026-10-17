@@ -823,7 +823,7 @@ module WorldModule2 =
                     let entityState = World.getEntityState entity world
                     let element = Octelement.make entityState.VisibleInView entityState.StaticInPlay entityState.LightProbe entityState.Light entityState.Presence entityState.PresenceInPlay entityState.Bounds entity
                     Octree.addElement entityState.Presence entityState.PresenceInPlay entityState.Bounds element world.Octree
-            if SList.exists (fun (entity : Entity) -> entity.Has<LightProbe3dFacet> world && entity.GetProbeStale world) entities3d then
+            if SList.exists (fun (entity : Entity) -> entity.Has<LightProbeFacet> world && entity.GetProbeStale world) entities3d then
                 World.requestLightMapRender world
                 
         static member internal evictScreenElements screen world =
@@ -1622,7 +1622,7 @@ module WorldModule2 =
 
                 // render light maps
                 if lightMapRenderRequested then
-                    let lightProbes = World.getLightProbes3dInView (HashSet HashIdentity.Structural) world // NOTE: this may not be the optimal way to query.
+                    let lightProbes = World.getLightProbesInView (HashSet HashIdentity.Structural) world // NOTE: this may not be the optimal way to query.
                     let lightProbesStale = Seq.filter (fun (lightProbe : Entity) -> lightProbe.GetProbeStale world) lightProbes
                     for lightProbe in lightProbesStale do
                         let id = lightProbe.GetId world
@@ -1631,7 +1631,7 @@ module WorldModule2 =
                         let boundsPlus = bounds.ScaleUniform 4.0f // TODO: allow user to specify bounds scalar?
                         let renderPass = LightMapPass (id, boundsPlus)
                         World.renderSimulantsInternal excludeGlobalLights renderPass world
-                        World.enqueueRenderMessage3d (RenderLightMap3d { LightProbeId = id; RenderPass = renderPass }) world
+                        World.enqueueRenderMessage3d (RenderLightMap { LightProbeId = id; RenderPass = renderPass }) world
                         lightProbe.SetProbeStale false world
 
                 // create shadow pass descriptors

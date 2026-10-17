@@ -512,12 +512,12 @@ type Lighting3dConfigDispatcher () =
         let config = entity.GetLighting3dConfig world
         World.enqueueRenderMessage3d (ConfigureLighting3d config) world
 
-/// Gives an entity the base behavior of a 3d light probe.
-type LightProbe3dDispatcher () =
+/// Gives an entity the base behavior of a light probe.
+type LightProbeDispatcher () =
     inherit Entity3dDispatcher (false, true, false)
 
     static member Facets =
-        [typeof<LightProbe3dFacet>]
+        [typeof<LightProbeFacet>]
 
     override this.GetAttributesInferred (_, _) =
         AttributesInferred.important (v3Dup 0.25f) v3Zero
@@ -732,7 +732,7 @@ type Effect3dDispatcher () =
         [typeof<EffectFacet>]
 
     static member Properties =
-        [define Entity.EffectDescriptor (scvalue "[[EffectName Effect] [LifeTimeOpt None] [Definitions []] [Content [Contents [Shift 0] [[Billboard [[AlbedoOpt [Some [Default MaterialAlbedo]]]] [] [] Nil]]]]]")]
+        [define Entity.EffectDescriptor (scvalue "[[EffectName Effect] [LifeTimeOpt None] [Definitions []] [Content [Contents [Shift 0] [[Billboard [[AlbedoOpt [Some [Default Albedo]]]] [] [] Nil]]]]]")]
 
     override this.GetAttributesInferred (_, _) =
         AttributesInferred.unimportant

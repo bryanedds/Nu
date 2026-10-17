@@ -19,7 +19,7 @@ type SkyBoxStruct =
 
 /// Describes a sky box pipeline that's loaded into GPU.
 type SkyBoxPipeline =
-    { EyeUniform : VulkanBuffer
+    { Eye3dUniform : VulkanBuffer
       SkyBoxPropertiesUniform : VulkanBuffer
       Pipeline : Pipeline }
 
@@ -31,7 +31,7 @@ module SkyBox =
     let createSkyBoxPipeline colorAttachmentFormat depthAttachmentFormat (context : VulkanContext) =
 
         // create uniform buffers
-        let eyeUniform = VulkanBuffer.create Uniform sizeof<EyeStruct> context
+        let eyeUniform = VulkanBuffer.create Uniform sizeof<Eye3dStruct> context
         let skyBoxPropertiesUniform = VulkanBuffer.create Uniform sizeof<SkyBoxStruct> context
 
         // create pipeline
@@ -53,7 +53,7 @@ module SkyBox =
 
         // make SkyBoxPipeline
         let skyBoxPipeline =
-            { EyeUniform = eyeUniform
+            { Eye3dUniform = eyeUniform
               SkyBoxPropertiesUniform = skyBoxPropertiesUniform
               Pipeline = pipeline }
 
@@ -94,9 +94,9 @@ module SkyBox =
             let mutable uniformDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.Pipeline.DrawIndex pipeline.Pipeline $ fun vkSet ->
                     
                 // specify eye
-                let eye = EyeStruct (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
-                VulkanBuffer.uploadValue eye pipeline.EyeUniform context
-                Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.EyeUniform vkSet
+                let eye = Eye3dStruct (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
+                VulkanBuffer.uploadValue eye pipeline.Eye3dUniform context
+                Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.Eye3dUniform vkSet
 
                 // specify sky box
                 let skyBox = SkyBoxStruct (color = color.V3, brightness = brightness)

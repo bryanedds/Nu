@@ -60,10 +60,10 @@
         [UserDefinedSetting6Opt [Some 0]]
         [UserDefinedSetting7Opt [Some 0]]]]]
      []]
-    [LightProbe3dDispatcher
+    [LightProbeDispatcher
      [[AmbientColor [1 0.8901961 0.78431374 1]]
       [MountOpt [Some ^]]
-      [Name LightProbe3d]
+      [Name LightProbe]
       [Position [12.4 5.7 11.4]]
       [PositionLocal [12.4 5.7 11.4]]
       [Presence Omnipresent]

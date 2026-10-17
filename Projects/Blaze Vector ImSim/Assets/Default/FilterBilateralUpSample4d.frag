@@ -1,6 +1,6 @@
 #version 450 core
 
-const float SHARPNESS = 0.05;
+const float SHARPNESS = 0.001; // NOTE: when depth became stored in a linearized format, this values we decreased from 0.05 to compensate.
 
 layout(set = 0, binding = 0) uniform texture2D downSampledColorTexture;
 layout(set = 0, binding = 1) uniform texture2D downSampledDepthTexture;
@@ -37,5 +37,8 @@ void main()
     }
 
     // write color when weighted
-    if (weight > 0.0) frag = colorSum / weight;
+    frag =
+        weight > 0.0 ?
+        colorSum / weight :
+        vec4(0.0);
 }

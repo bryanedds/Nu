@@ -1,6 +1,6 @@
 #version 450 core
 
-struct EyeStruct
+struct Eye3dStruct
 {
     vec3 center;
     mat4 view;
@@ -19,7 +19,7 @@ struct DepthOfFieldStruct
     vec2 focalPoint;
 };
 
-layout(set = 0, binding = 0) uniform EyeUniform { EyeStruct eye; };
+layout(set = 0, binding = 0) uniform Eye3dUniform { Eye3dStruct eye; };
 layout(set = 0, binding = 1) uniform DepthOfFieldUniform { DepthOfFieldStruct depthOfField; };
 layout(set = 0, binding = 2) uniform texture2D depthTexture;
 layout(set = 0, binding = 3) uniform texture2D blurredTexture;
@@ -31,22 +31,13 @@ layout(location = 0) in vec2 texCoords;
 
 layout(location = 0) out vec4 frag;
 
-float depthToDistance(float depth)
-{
-    float ndc = depth * 2.0 - 1.0;
-    vec4 clip = vec4(0.0, 0.0, ndc, 1.0);
-    vec4 view = eye.projectionInverse * clip;
-    view /= view.w;
-    return -view.z;
-}
-
 vec4 depthToPosition(float depth, vec2 texCoords)
 {
-    float z = depth * 2.0 - 1.0;
-    vec4 positionClip = vec4(texCoords * 2.0 - 1.0, z, 1.0);
-    vec4 positionView = eye.projectionInverse * positionClip;
-    positionView /= positionView.w;
-    return eye.viewInverse * positionView;
+    vec4 clip = vec4(texCoords * 2.0 - 1.0, 1.0, 1.0);
+    vec4 viewRay = eye.projectionInverse * clip;
+    viewRay /= viewRay.w;
+    vec3 viewPos = viewRay.xyz * (depth / -viewRay.z);
+    return eye.viewInverse * vec4(viewPos, 1.0);
 }
 
 void main()
@@ -83,11 +74,10 @@ void main()
         vec4 blurredColor = texture(sampler2D(blurredTexture, unfilteredSampler), texCoords);
         if (depthOfField.focalType == 0)
         {
-            float distance = depthToDistance(depth);
             float blur =
-                distance - depthOfField.focalDistance >= 0.0 ?
-                smoothstep(depthOfField.focalDistance, depthOfField.farDistance, distance) :
-                1.0 - smoothstep(depthOfField.nearDistance, depthOfField.focalDistance, distance);
+                depth - depthOfField.focalDistance >= 0.0 ?
+                smoothstep(depthOfField.focalDistance, depthOfField.farDistance, depth) :
+                1.0 - smoothstep(depthOfField.nearDistance, depthOfField.focalDistance, depth);
             frag = mix(unblurredColor, blurredColor, blur);
         }
         else

@@ -22,7 +22,7 @@ const vec2 TEX_COORDS_OFFSET_FILTERS_2[TEX_COORDS_OFFSET_VERTS] =
         vec2(1,1),
         vec2(0,1));
 
-struct EyeStruct
+struct Eye3dStruct
 {
     vec3 center;
     mat4 view;
@@ -32,7 +32,7 @@ struct EyeStruct
     mat4 viewProjection;
 };
 
-layout(set = 0, binding = 0) uniform EyeUniform { EyeStruct eye; };
+layout(set = 0, binding = 0) uniform Eye3dUniform { Eye3dStruct eye; };
 
 layout(set = 2, binding = 0) uniform BonesUniform { mat4 bones[BONES_MAX]; };
 

@@ -528,14 +528,14 @@ module WorldModuleGame =
             Octree.getElementsInView world.Eye3dFrustumInterior world.Eye3dFrustumExterior world.Eye3dFrustumImposter set octree
             Seq.map (fun (element : Entity Octelement) -> element.Entry) set
             
-        /// Get all 3d light probe entities in the given view frustum, including all uncullable light probes.
-        static member getLightProbes3dInViewFrustum frustum set world =
+        /// Get all light probe entities in the given view frustum, including all uncullable light probes.
+        static member getLightProbesInViewFrustum frustum set world =
             let octree = World.getOctree world
             Octree.getLightProbesInViewFrustum frustum set octree
             Seq.map (fun (element : Entity Octelement) -> element.Entry) set
             
-        /// Get all 3d light probe entities in the current 3d view, including all uncullable lights.
-        static member getLightProbes3dInView set world =
+        /// Get all light probe entities in the current 3d view, including all uncullable lights.
+        static member getLightProbesInView set world =
             let octree = World.getOctree world
             Octree.getLightProbesInView set octree
             Seq.map (fun (element : Entity Octelement) -> element.Entry) set

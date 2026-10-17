@@ -2671,7 +2671,7 @@ type SkyBoxFacet () =
             world
 
 [<AutoOpen>]
-module LightProbe3dFacetExtensions =
+module LightProbeFacetExtensions =
     type Entity with
 
         member this.GetExcludeGlobalLights world : bool = this.Get (nameof this.ExcludeGlobalLights) world
@@ -2699,8 +2699,8 @@ module LightProbe3dFacetExtensions =
             then this.SetPositionLocal probeBounds.Center world
             else this.SetPosition probeBounds.Center world
 
-/// Augments an entity with a 3d light probe.
-type LightProbe3dFacet () =
+/// Augments an entity with a light probe.
+type LightProbeFacet () =
     inherit Facet (false, true, false)
 
     static let handleProbeVisibleChange (evt : Event<ChangeData, Entity>) world =
@@ -2724,9 +2724,9 @@ type LightProbe3dFacet () =
          nonPersistent Entity.ProbeStale false]
 
     override this.Register (entity, world) =
-        World.sense handleProbeVisibleChange entity.Group.Editing.ChangeEvent entity (nameof LightProbe3dFacet) world
-        World.sense handleProbeVisibleChange entity.Visible.ChangeEvent entity (nameof LightProbe3dFacet) world
-        World.sense handleProbeStaleChange entity.ProbeStale.ChangeEvent entity (nameof LightProbe3dFacet) world
+        World.sense handleProbeVisibleChange entity.Group.Editing.ChangeEvent entity (nameof LightProbeFacet) world
+        World.sense handleProbeVisibleChange entity.Visible.ChangeEvent entity (nameof LightProbeFacet) world
+        World.sense handleProbeStaleChange entity.ProbeStale.ChangeEvent entity (nameof LightProbeFacet) world
         entity.SetProbeStale true world
 
     override this.Render (renderPass, entity, world) =
@@ -2736,7 +2736,7 @@ type LightProbe3dFacet () =
         let ambientColor = entity.GetAmbientColor world
         let ambientBrightness = entity.GetAmbientBrightness world
         let bounds = entity.GetProbeBounds world
-        World.enqueueRenderMessage3d (RenderLightProbe3d { LightProbeId = id; Enabled = enabled; Origin = position; AmbientColor = ambientColor; AmbientBrightness = ambientBrightness; Bounds = bounds; RenderPass = renderPass }) world
+        World.enqueueRenderMessage3d (RenderLightProbe { LightProbeId = id; Enabled = enabled; Origin = position; AmbientColor = ambientColor; AmbientBrightness = ambientBrightness; Bounds = bounds; RenderPass = renderPass }) world
 
     override this.RayCast (ray, entity, world) =
         let intersectionOpt = ray.Intersects (entity.GetBounds world)
@@ -3851,8 +3851,8 @@ type TerrainFacet () =
                       RedsMap
                         [|Assets.Default.TerrainLayer0Blend
                           Assets.Default.TerrainLayer1Blend|]
-                  UserDefinedImage0 = Assets.Default.MaterialUserDefinedImage0
-                  UserDefinedImage1 = Assets.Default.MaterialUserDefinedImage1
+                  UserDefinedImage0 = Assets.Default.UserDefinedImage0
+                  UserDefinedImage1 = Assets.Default.UserDefinedImage1
                   PipelineName = Constants.Render.PipelineNameDefault })
          define Entity.TerrainMaterialProperties TerrainMaterialProperties.defaultProperties
          define Entity.TintImageOpt None

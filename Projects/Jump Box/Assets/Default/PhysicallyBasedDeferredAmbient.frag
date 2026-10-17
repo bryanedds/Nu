@@ -2,7 +2,7 @@
 
 const int LIGHT_MAPS_MAX = 26;
 
-struct EyeStruct
+struct Eye3dStruct
 {
     vec3 center;
     mat4 view;
@@ -21,7 +21,7 @@ struct LightMapStruct
     float ambientBrightness;
 };
 
-layout(set = 0, binding = 0) uniform EyeUniform { EyeStruct eye; };
+layout(set = 0, binding = 0) uniform Eye3dUniform { Eye3dStruct eye; };
 layout(set = 0, binding = 1) uniform LightMapUniform { LightMapStruct lightMapFallback; };
 layout(set = 0, binding = 2) uniform LightMapsUniform { LightMapStruct lightMaps[LIGHT_MAPS_MAX]; };
 layout(set = 0, binding = 3) uniform texture2D depthTexture;
@@ -35,10 +35,11 @@ layout(location = 0) out vec4 frag;
 
 vec4 depthToPosition(float depth, vec2 texCoords)
 {
-    vec4 positionClip = vec4(texCoords * 2.0 - 1.0, depth, 1.0);
-    vec4 positionView = eye.projectionInverse * positionClip;
-    positionView /= positionView.w;
-    return eye.viewInverse * positionView;
+    vec4 clip = vec4(texCoords * 2.0 - 1.0, 1.0, 1.0);
+    vec4 viewRay = eye.projectionInverse * clip;
+    viewRay /= viewRay.w;
+    vec3 viewPos = viewRay.xyz * (depth / -viewRay.z);
+    return eye.viewInverse * vec4(viewPos, 1.0);
 }
 
 void main()

@@ -874,9 +874,9 @@ module WorldImGui =
                                     if index < imageNames.Length then
                                         let asset index : Image AssetTag =
                                             match index with
-                                            | 0 -> Assets.Default.MaterialUserDefinedImage0
-                                            | 1 -> Assets.Default.MaterialUserDefinedImage1
-                                            | 2 -> Assets.Default.MaterialUserDefinedImage2
+                                            | 0 -> Assets.Default.UserDefinedImage0
+                                            | 1 -> Assets.Default.UserDefinedImage1
+                                            | 2 -> Assets.Default.UserDefinedImage2
                                             | _ -> failwithumf ()
                                         let mutable valueOpt = field :?> Image AssetTag voption
                                         let mutable isSome = valueOpt.IsSome
@@ -938,7 +938,7 @@ module WorldImGui =
                         else None
                     | None -> None
                 World.imGuiEditPropertyRecordPlus tryReplaceUserDefinedImageOpt false name (typeof<Material>) material context world
-            | :? MaterialProperties as mps ->
+            | :? MaterialProperties as properties ->
                 let tryReplaceUserDefinedSettingOpt (fieldInfo : PropertyInfo) (field : obj) =
                     match context.SelectedEntityOpt with
                     | Some selectedEntity ->
@@ -1009,7 +1009,7 @@ module WorldImGui =
                             | None -> Some (false, field)
                         else None
                     | None -> None
-                World.imGuiEditPropertyRecordPlus tryReplaceUserDefinedSettingOpt false name (typeof<MaterialProperties>) mps context world
+                World.imGuiEditPropertyRecordPlus tryReplaceUserDefinedSettingOpt false name (typeof<MaterialProperties>) properties context world
             | :? Justification as justification ->
                 let (_, caseNameEdited, caseName) = World.imGuiSelectCase name ty justification context
                 let justification =

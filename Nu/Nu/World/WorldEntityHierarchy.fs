@@ -20,7 +20,7 @@ module WorldEntityHierarchyExtensions =
         member internal this.GetSurfaceFreezable world =
             this.GetIs3d world &&
             this.GetStatic world &&
-            not (this.Has<LightProbe3dFacet> world) &&
+            not (this.Has<LightProbeFacet> world) &&
             not (this.Has<Light3dFacet> world) &&
             (this.GetChildren world |> Seq.forall (fun child -> child.GetSurfaceFreezable world))
 
@@ -57,12 +57,12 @@ module WorldEntityHierarchyExtensions =
                                 | Left group -> (lightProbe.LightProbeNames.Length > 0, lightProbe.LightProbeNames, group)
                                 | Right entity -> (true, Array.append entity.Surnames lightProbe.LightProbeNames, entity.Group)
                             let mountOpt = if mountToParent then Some Address.parent else None
-                            let child = World.createEntity<LightProbe3dDispatcher> mountOpt DefaultOverlay (Some surnames) group world
+                            let child = World.createEntity<LightProbeDispatcher> mountOpt DefaultOverlay (Some surnames) group world
                             child.SetProbeBounds lightProbe.LightProbeBounds world
                             child.SetPositionLocal lightProbe.LightProbeMatrix.Translation world
                             child.SetStatic true world
                             child.AutoBounds world
-                        | Vulkan.PhysicallyBasedLight light ->
+                        | Vulkan.PhysicallyBasedLight3d light ->
                             let (mountToParent, surnames, group) =
                                 match parent with
                                 | Left group -> (light.LightNames.Length > 0, light.LightNames, group)
@@ -210,8 +210,8 @@ module WorldEntityHierarchyExtensions =
                             let entityBounds = transform.Bounds3d
                             let presence = transform.Presence
                             let insetOpt = match entity.GetInsetOpt world with Some inset -> Some inset | None -> None // OPTIMIZATION: localize boxed value in memory.
-                            let properties = entity.GetMaterialProperties world
                             let material = entity.GetMaterial world
+                            let properties = entity.GetMaterialProperties world
                             let staticModel = entity.GetStaticModel world
                             let surfaceIndex = entity.GetSurfaceIndex world
                             let renderType = match entity.GetRenderStyle world with Deferred -> DeferredRenderType | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)

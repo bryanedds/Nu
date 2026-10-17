@@ -4,7 +4,7 @@ const float GAMMA = 2.2;
 const float SAA_VARIANCE = 0.1; // TODO: consider exposing as lighting config property.
 const float SAA_THRESHOLD = 0.1; // TODO: consider exposing as lighting config property.
 
-struct EyeStruct
+struct Eye3dStruct
 {
     vec3 center;
     mat4 view;
@@ -14,7 +14,7 @@ struct EyeStruct
     mat4 viewProjection;
 };
 
-layout(set = 0, binding = 0) uniform EyeUniform { EyeStruct eye; };
+layout(set = 0, binding = 0) uniform Eye3dUniform { Eye3dStruct eye; };
 
 layout(set = 1, binding = 0) uniform texture2D albedoTexture;
 layout(set = 1, binding = 1) uniform texture2D roughnessTexture;
@@ -96,7 +96,7 @@ vec2 encodeOctahedral(vec3 v)
 void main()
 {
     // write depth
-    depthOut = gl_FragCoord.z;
+    depthOut = -(eye.view * position).z;
 
     // compute spatial converters
     vec3 normal = normalize(normal);
