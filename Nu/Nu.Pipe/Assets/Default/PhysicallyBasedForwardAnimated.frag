@@ -1058,7 +1058,7 @@ void main()
         float ambientBrightness1 = lightMap1.ambientBrightness;
         float ambientBrightness2 = lighting.lightAmbientBrightness;
         ambientColor = mix(ambientColor1, ambientColor2, ratio);
-        ambientBrightness = mix(ambientBrightness1, ambientBrightness2, ratio);
+        ambientBrightness = exp(mix(log(ambientBrightness1), log(ambientBrightness2), lmRatio));
 
         // compute blended irradiance
         vec3 irradiance1 = texture(samplerCube(irradianceMaps[lm1], filteredSampler), n).rgb;
@@ -1093,7 +1093,7 @@ void main()
         float ambientBrightness1 = lightMap1.ambientBrightness;
         float ambientBrightness2 = lightMap2.ambientBrightness;
         ambientColor = mix(ambientColor1, ambientColor2, ratio);
-        ambientBrightness = mix(ambientBrightness1, ambientBrightness2, ratio);
+        ambientBrightness = exp(mix(log(ambientBrightness1), log(ambientBrightness2), lmRatio));
 
         // compute blended irradiance
         vec3 irradiance1 = texture(samplerCube(irradianceMaps[lm1], filteredSampler), n).rgb;
