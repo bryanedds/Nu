@@ -5628,7 +5628,6 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             [|Sampler.create VkSamplerAddressMode.Repeat VkFilter.Linear VkFilter.Linear true context
               Sampler.create VkSamplerAddressMode.MirroredRepeat VkFilter.Linear VkFilter.Linear true context
               Sampler.create VkSamplerAddressMode.ClampToEdge VkFilter.Linear VkFilter.Linear true context
-              Sampler.create VkSamplerAddressMode.MirrorClampToEdge VkFilter.Linear VkFilter.Linear true context
               Sampler.create VkSamplerAddressMode.ClampToBorder VkFilter.Linear VkFilter.Linear true context|]
 
         // create physically-based attachments using the geometry viewport

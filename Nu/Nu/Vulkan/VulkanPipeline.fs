@@ -321,7 +321,7 @@ type Pipeline =
             // dynamic state info
             let dynamicStates =
                 match depthAttachmentFormatOpt with
-                | Some _ -> [|VkDynamicState.Viewport; VkDynamicState.Scissor; VkDynamicState.DepthTestEnable; VkDynamicState.DepthCompareOp|]
+                | Some _ -> [|VkDynamicState.Viewport; VkDynamicState.Scissor; VkDynamicState.DepthTestEnable; VkDynamicState.DepthWriteEnable; VkDynamicState.DepthCompareOp|]
                 | None -> [|VkDynamicState.Viewport; VkDynamicState.Scissor|]
             use dynamicStatesPin = new ArrayPin<_> (dynamicStates)
             let mutable dsInfo = VkPipelineDynamicStateCreateInfo ()
@@ -347,9 +347,10 @@ type Pipeline =
                 // extract settings
                 let (blend, cullMode) = pipelineSettings[i]
 
-                // blend info (specifying blend state for each color attachment)
-                let blendState = VulkanBlend.makeAttachment blend
-                for j in 0 .. dec colorAttachmentFormats.Length do NativePtr.set blendStates (i * colorAttachmentFormats.Length + j) blendState
+                // blend info (specifying blend state for each color attachment, but only using given blend for the last attachment)
+                for j in 0 .. dec colorAttachmentFormats.Length do
+                    let blendState = VulkanBlend.makeAttachment (if j < dec colorAttachmentFormats.Length then VulkanUnblended else blend)
+                    NativePtr.set blendStates (i * colorAttachmentFormats.Length + j) blendState
                 let mutable bInfo = VkPipelineColorBlendStateCreateInfo ()
                 bInfo.attachmentCount <- uint colorAttachmentFormats.Length
                 bInfo.pAttachments <- NativePtr.add blendStates (i * colorAttachmentFormats.Length)
