@@ -39,8 +39,7 @@ layout(set = 1, binding = 6) uniform texture2D userDefinedImage1Texture;
 layout(set = 2, binding = 0) uniform sampler materialRepeatSampler;
 layout(set = 2, binding = 1) uniform sampler materialRepeatMirrorSampler;
 layout(set = 2, binding = 2) uniform sampler materialClampToEdge;
-layout(set = 2, binding = 3) uniform sampler materialClampToEdgeMirrorSampler;
-layout(set = 2, binding = 4) uniform sampler materialClampToBorder;
+layout(set = 3, binding = 3) uniform sampler materialClampToBorder;
 
 layout(location = 0) in vec4 position;
 layout(location = 1) in vec2 texCoords;

@@ -123,6 +123,7 @@ module SkyBox =
             // set up pipeline
             DeviceApi.vkCmdBindPipeline (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
             DeviceApi.vkCmdSetDepthTestEnable (context.RenderCommandBuffer, true)
+            DeviceApi.vkCmdSetDepthWriteEnable (context.RenderCommandBuffer, false)
             DeviceApi.vkCmdSetDepthCompareOp (context.RenderCommandBuffer, VkCompareOp.LessOrEqual)
                 
             // bind vertex and index buffers

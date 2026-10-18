@@ -153,8 +153,7 @@ layout(set = 3, binding = 1) uniform sampler filteredSampler;
 layout(set = 3, binding = 2) uniform sampler materialRepeatSampler;
 layout(set = 3, binding = 3) uniform sampler materialRepeatMirrorSampler;
 layout(set = 3, binding = 4) uniform sampler materialClampToEdge;
-layout(set = 3, binding = 5) uniform sampler materialClampToEdgeMirrorSampler;
-layout(set = 3, binding = 6) uniform sampler materialClampToBorder;
+layout(set = 3, binding = 5) uniform sampler materialClampToBorder;
 
 layout(location = 0) in vec4 position;
 layout(location = 1) in vec2 texCoords;

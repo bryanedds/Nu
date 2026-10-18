@@ -3838,8 +3838,7 @@ module PhysicallyBased =
                       Pipeline.descriptor 2 Sampler FragmentStage 1
                       Pipeline.descriptor 3 Sampler FragmentStage 1
                       Pipeline.descriptor 4 Sampler FragmentStage 1
-                      Pipeline.descriptor 5 Sampler FragmentStage 1
-                      Pipeline.descriptor 6 Sampler FragmentStage 1|]|]
+                      Pipeline.descriptor 5 Sampler FragmentStage 1|]|]
 
                 [||] colorAttachmentFormats (Some depthAttachmentFormat)
                 [|eyeUniform
@@ -3900,7 +3899,6 @@ module PhysicallyBased =
             Pipeline.writeDescriptorSampler 1 0 materialSamplers[1] vkSet
             Pipeline.writeDescriptorSampler 2 0 materialSamplers[2] vkSet
             Pipeline.writeDescriptorSampler 3 0 materialSamplers[3] vkSet
-            Pipeline.writeDescriptorSampler 4 0 materialSamplers[4] vkSet
             
         // set up render
         let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
@@ -4039,8 +4037,7 @@ module PhysicallyBased =
                     [|Pipeline.descriptor 0 Sampler FragmentStage 1
                       Pipeline.descriptor 1 Sampler FragmentStage 1
                       Pipeline.descriptor 2 Sampler FragmentStage 1
-                      Pipeline.descriptor 3 Sampler FragmentStage 1
-                      Pipeline.descriptor 4 Sampler FragmentStage 1|]|]
+                      Pipeline.descriptor 3 Sampler FragmentStage 1|]|]
                 [||] colorAttachmentFormats (Some depthTest)
                 [|eyeUniform; terrainFragUniform|]
 
@@ -4139,7 +4136,6 @@ module PhysicallyBased =
                 Pipeline.writeDescriptorSampler 1 0 materialSamplers[1] vkSet
                 Pipeline.writeDescriptorSampler 2 0 materialSamplers[2] vkSet
                 Pipeline.writeDescriptorSampler 3 0 materialSamplers[3] vkSet
-                Pipeline.writeDescriptorSampler 4 0 materialSamplers[4] vkSet
 
             // specify instancing
             use instanceFieldsPin = new ArrayPin<_> (instanceFields)
@@ -5776,7 +5772,6 @@ module PhysicallyBased =
             Pipeline.writeDescriptorSampler 3 0 materialSamplers[1] vkSet
             Pipeline.writeDescriptorSampler 4 0 materialSamplers[2] vkSet
             Pipeline.writeDescriptorSampler 5 0 materialSamplers[3] vkSet
-            Pipeline.writeDescriptorSampler 6 0 materialSamplers[4] vkSet
 
         // set up render
         let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)

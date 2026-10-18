@@ -321,7 +321,7 @@ type Pipeline =
             // dynamic state info
             let dynamicStates =
                 match depthAttachmentFormatOpt with
-                | Some _ -> [|VkDynamicState.Viewport; VkDynamicState.Scissor; VkDynamicState.DepthTestEnable; VkDynamicState.DepthCompareOp|]
+                | Some _ -> [|VkDynamicState.Viewport; VkDynamicState.Scissor; VkDynamicState.DepthTestEnable; VkDynamicState.DepthWriteEnable; VkDynamicState.DepthCompareOp|]
                 | None -> [|VkDynamicState.Viewport; VkDynamicState.Scissor|]
             use dynamicStatesPin = new ArrayPin<_> (dynamicStates)
             let mutable dsInfo = VkPipelineDynamicStateCreateInfo ()
