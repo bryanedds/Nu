@@ -74,11 +74,10 @@ void main()
         vec4 blurredColor = texture(sampler2D(blurredTexture, unfilteredSampler), texCoords);
         if (depthOfField.focalType == 0)
         {
-            float distance = length(depthToPosition(depth, texCoords).xyz);
             float blur =
-                distance - depthOfField.focalDistance >= 0.0 ?
-                smoothstep(depthOfField.focalDistance, depthOfField.farDistance, distance) :
-                1.0 - smoothstep(depthOfField.nearDistance, depthOfField.focalDistance, distance);
+                depth - depthOfField.focalDistance >= 0.0 ?
+                smoothstep(depthOfField.focalDistance, depthOfField.farDistance, depth) :
+                1.0 - smoothstep(depthOfField.nearDistance, depthOfField.focalDistance, depth);
             frag = mix(unblurredColor, blurredColor, blur);
         }
         else
