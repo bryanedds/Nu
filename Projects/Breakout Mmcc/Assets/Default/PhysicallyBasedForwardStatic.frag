@@ -1182,6 +1182,6 @@ void main()
     }
 
     // write depth and composition
-    depthOut = -(eye.view * position).z;;
+    depthOut = -(eye.view * position).z;
     compositionOut = vec4(color, alpha);
 }
