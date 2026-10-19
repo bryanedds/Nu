@@ -180,10 +180,10 @@ type RendererInline (windowProperties) =
                         else VulkanRenderer3d.make geometryViewport windowViewport context :> Renderer3d
 
                     // create 2d renderer
-                    let renderer2d = VulkanRenderer2d.make windowViewport resolveTexture.VkFormat context :> Renderer2d
+                    let renderer2d = VulkanRenderer2d.make windowViewport resolveTexture.ImageFormat context :> Renderer2d
 
                     // create imgui renderer
-                    let rendererImGui = VulkanRendererImGui.make assetTextureRequests assetTextureOpts fonts windowViewport resolveTexture.VkFormat context :> RendererImGui
+                    let rendererImGui = VulkanRendererImGui.make assetTextureRequests assetTextureOpts fonts windowViewport resolveTexture.ImageFormat context :> RendererImGui
 
                     // fin
                     dependenciesOpt <- Some (renderer3d, renderer2d, rendererImGui, context)
@@ -513,10 +513,10 @@ type RendererThread (windowProperties) =
             else VulkanRenderer3d.make geometryViewport windowViewport context :> Renderer3d
 
         // create 2d renderer
-        let renderer2d = VulkanRenderer2d.make windowViewport resolveTexture.VkFormat context :> Renderer2d
+        let renderer2d = VulkanRenderer2d.make windowViewport resolveTexture.ImageFormat context :> Renderer2d
 
         // create imgui renderer
-        let rendererImGui = VulkanRendererImGui.make assetTextureRequests assetTextureOpts fonts windowViewport resolveTexture.VkFormat context :> RendererImGui
+        let rendererImGui = VulkanRendererImGui.make assetTextureRequests assetTextureOpts fonts windowViewport resolveTexture.ImageFormat context :> RendererImGui
 
         // mark as started
         started <- true

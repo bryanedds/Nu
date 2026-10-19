@@ -73,7 +73,7 @@ void main()
         float ambientBrightness1 = lightMaps[lm1].ambientBrightness;
         float ambientBrightness2 = lightMapFallback.ambientBrightness;
         ambientColor = mix(ambientColor1, ambientColor2, lmRatio);
-        ambientBrightness = mix(ambientBrightness1, ambientBrightness2, lmRatio);
+        ambientBrightness = exp(mix(log(ambientBrightness1), log(ambientBrightness2), lmRatio));
     }
     else
     {
@@ -83,7 +83,7 @@ void main()
         float ambientBrightness1 = lightMaps[lm1].ambientBrightness;
         float ambientBrightness2 = lightMaps[lm2].ambientBrightness;
         ambientColor = mix(ambientColor1, ambientColor2, lmRatio);
-        ambientBrightness = mix(ambientBrightness1, ambientBrightness2, lmRatio);
+        ambientBrightness = exp(mix(log(ambientBrightness1), log(ambientBrightness2), lmRatio));
     }
 
     // write

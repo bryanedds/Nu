@@ -7,6 +7,7 @@ const int SHADOW_TEXTURES_MAX = 12;
 const int SHADOW_MAPS_MAX = 12;
 const int SHADOW_CASCADES_MAX = 1;
 const int SHADOW_CASCADE_LEVELS = 3;
+const float SSVF_DIRECTIONAL_SCALAR = 0.01;
 
 const vec4 SSVF_DITHERING[4] =
     vec4[](
@@ -352,7 +353,7 @@ vec3 computeFogAccumDirectional(vec4 position, Light3dStruct light)
     float dithering = SSVF_DITHERING[int(gl_FragCoord.x) % 4][int(gl_FragCoord.y) % 4];
 
     // accumulate fog light
-    vec3 result = vec3(0.0);
+    float result = 0.0;
     vec3 currentPosition = startPosition + step * dithering;
     int shadowIndex = light.shadowIndex;
     if (shadowIndex < 0)
@@ -363,7 +364,7 @@ vec3 computeFogAccumDirectional(vec4 position, Light3dStruct light)
             // mie scaterring approximated with Henyey-Greenstein phase function
             float asymmetrySquared = lighting.ssvfAsymmetry * lighting.ssvfAsymmetry;
             float fogMoment = (1.0 - asymmetrySquared) / (4.0 * PI * pow(1.0 + asymmetrySquared - 2.0 * lighting.ssvfAsymmetry * theta, 1.5));
-            result += fogMoment;
+            result += fogMoment * stepLength;
 
             // step
             currentPosition += step;
@@ -389,7 +390,7 @@ vec3 computeFogAccumDirectional(vec4 position, Light3dStruct light)
                 // mie scaterring approximated with Henyey-Greenstein phase function
                 float asymmetrySquared = lighting.ssvfAsymmetry * lighting.ssvfAsymmetry;
                 float fogMoment = (1.0 - asymmetrySquared) / (4.0 * PI * pow(1.0 + asymmetrySquared - 2.0 * lighting.ssvfAsymmetry * theta, 1.5));
-                result += fogMoment;
+                result += fogMoment * stepLength;
             }
 
             // step
@@ -397,8 +398,17 @@ vec3 computeFogAccumDirectional(vec4 position, Light3dStruct light)
         }
     }
 
+    // scale intensity specially for directional lighting
+    float intensity = lighting.ssvfIntensity * SSVF_DIRECTIONAL_SCALAR;
+
+    // apply intensity
+    result = result * intensity;
+
+    // cap fog so it doesn't blow out everything
+    result = min(intensity, result);
+
     // fin
-    return smoothstep(0.0, 1.0, result / lighting.ssvfSteps) * light.color * light.brightness * lighting.ssvfIntensity;
+    return result * light.color * light.brightness;
 }
 
 vec3 computeFogAccumCascaded(vec4 position, Light3dStruct light)
@@ -420,7 +430,7 @@ vec3 computeFogAccumCascaded(vec4 position, Light3dStruct light)
     float dithering = SSVF_DITHERING[int(gl_FragCoord.x) % 4][int(gl_FragCoord.y) % 4];
 
     // accumulate fog light
-    vec3 result = vec3(0.0);
+    float result = 0.0;
     int shadowIndex = light.shadowIndex;
     vec3 currentPosition = startPosition + step * dithering;
     if (shadowIndex < 0)
@@ -434,7 +444,7 @@ vec3 computeFogAccumCascaded(vec4 position, Light3dStruct light)
                 // mie scaterring approximated with Henyey-Greenstein phase function
                 float asymmetrySquared = lighting.ssvfAsymmetry * lighting.ssvfAsymmetry;
                 float fogMoment = (1.0 - asymmetrySquared) / (4.0 * PI * pow(1.0 + asymmetrySquared - 2.0 * lighting.ssvfAsymmetry * theta, 1.5));
-                result += fogMoment;
+                result += fogMoment * stepLength;
             }
 
             // step
@@ -464,7 +474,7 @@ vec3 computeFogAccumCascaded(vec4 position, Light3dStruct light)
                     // mie scaterring approximated with Henyey-Greenstein phase function
                     float asymmetrySquared = lighting.ssvfAsymmetry * lighting.ssvfAsymmetry;
                     float fogMoment = (1.0 - asymmetrySquared) / (4.0 * PI * pow(1.0 + asymmetrySquared - 2.0 * lighting.ssvfAsymmetry * theta, 1.5));
-                    result += fogMoment;
+                    result += fogMoment * stepLength;
                 }
             }
 
@@ -473,8 +483,17 @@ vec3 computeFogAccumCascaded(vec4 position, Light3dStruct light)
         }
     }
 
+    // scale intensity specially for directional lighting
+    float intensity = lighting.ssvfIntensity * SSVF_DIRECTIONAL_SCALAR;
+
+    // apply intensity
+    result = result * intensity;
+
+    // cap fog so it doesn't blow out everything
+    result = min(intensity, result);
+
     // fin
-    return smoothstep(0.0, 1.0, result / (lighting.ssvfSteps * SHADOW_CASCADE_LEVELS)) * light.color * light.brightness * lighting.ssvfIntensity;
+    return result * light.color * light.brightness;
 }
 
 void main()
