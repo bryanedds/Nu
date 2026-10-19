@@ -1994,11 +1994,11 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             match descriptor.PipelineType with
             | DeferredStatic | DeferredStaticClipped | DeferredAnimated | Terrain ->
                 let deferredColorAttachmentFormats =
-                    [|depth.VkFormat; albedo.VkFormat; material.VkFormat; normalPlus.VkFormat; subdermalPlus.VkFormat; scatterPlus.VkFormat; clearCoatPlus.VkFormat; userDefinedBuffer.VkFormat|]
-                (deferredColorAttachmentFormats, depthBuffer.VkFormat)
+                    [|depth.ImageFormat; albedo.ImageFormat; material.ImageFormat; normalPlus.ImageFormat; subdermalPlus.ImageFormat; scatterPlus.ImageFormat; clearCoatPlus.ImageFormat; userDefinedBuffer.ImageFormat|]
+                (deferredColorAttachmentFormats, depthBuffer.ImageFormat)
             | ForwardStatic | ForwardAnimated ->
                 let composition = renderer.PhysicallyBasedAttachments.CompositionAttachment
-                ([|depth.VkFormat; composition.VkFormat|], depthBuffer.VkFormat)
+                ([|depth.ImageFormat; composition.ImageFormat|], depthBuffer.ImageFormat)
 
         let (lightMapsMax, lightsMax, vertexBindings) =
             match descriptor.PipelineType with
@@ -4070,7 +4070,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                             Constants.Render.IrradianceMapResolution
                             (CubeMapSurface.make (not fallbackFlipped) cubeMap renderer.CubeMapGeometry)
                             renderer.FilteredSampler
-                            renderer.IrradianceMap.InternalFormat
+                            renderer.IrradianceMap.ImageFormat
                             renderer.IrradiancePipeline
                             (fun () -> renderer.VulkanContext.RenderCommandBuffer)
                             (fun () -> VulkanContext.advanceRenderCommandBuffer renderer.VulkanContext)
@@ -4082,7 +4082,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                             Constants.Render.EnvironmentFilterResolution
                             (CubeMapSurface.make fallbackFlipped cubeMap renderer.CubeMapGeometry)
                             renderer.FilteredSampler
-                            renderer.EnvironmentFilterMap.InternalFormat
+                            renderer.EnvironmentFilterMap.ImageFormat
                             renderer.EnvironmentFilterPipeline
                             (fun () -> renderer.VulkanContext.RenderCommandBuffer)
                             (fun () -> VulkanContext.advanceRenderCommandBuffer renderer.VulkanContext)
@@ -4128,7 +4128,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                                 Constants.Render.IrradianceMapResolution
                                 (CubeMapSurface.make false reflectionMap renderer.CubeMapGeometry)
                                 renderer.FilteredSampler
-                                renderer.IrradianceMap.InternalFormat
+                                renderer.IrradianceMap.ImageFormat
                                 renderer.IrradiancePipeline
                                 (fun () -> renderer.VulkanContext.RenderCommandBuffer)
                                 (fun () -> VulkanContext.advanceRenderCommandBuffer renderer.VulkanContext)
@@ -4140,7 +4140,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                                 Constants.Render.EnvironmentFilterResolution
                                 (CubeMapSurface.make true reflectionMap renderer.CubeMapGeometry)
                                 renderer.FilteredSampler
-                                renderer.EnvironmentFilterMap.InternalFormat
+                                renderer.EnvironmentFilterMap.ImageFormat
                                 renderer.EnvironmentFilterPipeline
                                 (fun () -> renderer.VulkanContext.RenderCommandBuffer)
                                 (fun () -> VulkanContext.advanceRenderCommandBuffer renderer.VulkanContext)
@@ -5636,15 +5636,15 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // create sky box pipeline
         let compositionTexture = physicallyBasedAttachments.CompositionAttachment
         let (_, _, _, _, _, _, _, _, depthBufferTexture) = physicallyBasedAttachments.GeometryAttachments
-        let skyBoxPipeline = SkyBox.createSkyBoxPipeline compositionTexture.VkFormat depthBufferTexture.VkFormat context
+        let skyBoxPipeline = SkyBox.createSkyBoxPipeline compositionTexture.ImageFormat depthBufferTexture.ImageFormat context
 
         // create irradiance pipeline
         let irradianceFormat = Rgba16f
-        let irradiancePipeline = CubeMap.createCubeMapPipeline Constants.Paths.IrradianceShaderFilePath irradianceFormat.VkFormat context
+        let irradiancePipeline = CubeMap.createCubeMapPipeline Constants.Paths.IrradianceShaderFilePath irradianceFormat context
 
         // create environment filter pipeline
         let environmentFilterFormat = Rgba16f
-        let environmentFilterPipeline = LightMap.createEnvironmentFilterPipeline Constants.Paths.EnvironmentFilterShaderFilePath environmentFilterFormat.VkFormat context
+        let environmentFilterPipeline = LightMap.createEnvironmentFilterPipeline Constants.Paths.EnvironmentFilterShaderFilePath environmentFilterFormat context
 
         // create physically-based pipelines
         let physicallyBasedPipelines =
