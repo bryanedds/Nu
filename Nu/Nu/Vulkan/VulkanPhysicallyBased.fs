@@ -83,7 +83,7 @@ type ShadowFragStruct =
     [<FieldOffset(12)>] val mutable lightShadowExponent : single
 
 [<Struct; StructLayout (LayoutKind.Explicit)>]
-type TerrainFragStruct =
+type TerrainStruct =
     [<FieldOffset(0)>] val mutable layersCount : int
     [<FieldOffset(4)>] val mutable lightShadowSamples : int
     [<FieldOffset(8)>] val mutable lightShadowBias : single
@@ -3814,9 +3814,9 @@ module PhysicallyBased =
                       Pipeline.descriptor 9 SampledImage FragmentStage 1 // clearCoatTexture
                       Pipeline.descriptor 10 SampledImage FragmentStage 1 // clearCoatRoughnessTexture
                       Pipeline.descriptor 11 SampledImage FragmentStage 1 // clearCoatNormalTexture
-                      Pipeline.descriptor 12 SampledImage FragmentStage 1 // userDefinedImage0Texture
-                      Pipeline.descriptor 13 SampledImage FragmentStage 1 // userDefinedImage1Texture
-                      Pipeline.descriptor 14 SampledImage FragmentStage 1|] // userDefinedImage2Texture
+                      Pipeline.descriptor 12 SampledImage VertexAndFragmentStage 1 // userDefinedImage0Texture
+                      Pipeline.descriptor 13 SampledImage VertexAndFragmentStage 1 // userDefinedImage1Texture
+                      Pipeline.descriptor 14 SampledImage VertexAndFragmentStage 1|] // userDefinedImage2Texture
 
                   // descriptor set 2: dynamic
                   Pipeline.descriptorSet<int>
@@ -3833,12 +3833,12 @@ module PhysicallyBased =
 
                   // descriptor set 3: samplers
                   Pipeline.descriptorSet<Unit>
-                    [|Pipeline.descriptor 0 Sampler FragmentStage 1
-                      Pipeline.descriptor 1 Sampler FragmentStage 1
-                      Pipeline.descriptor 2 Sampler FragmentStage 1
-                      Pipeline.descriptor 3 Sampler FragmentStage 1
-                      Pipeline.descriptor 4 Sampler FragmentStage 1
-                      Pipeline.descriptor 5 Sampler FragmentStage 1|]|]
+                    [|Pipeline.descriptor 0 Sampler VertexAndFragmentStage 1
+                      Pipeline.descriptor 1 Sampler VertexAndFragmentStage 1
+                      Pipeline.descriptor 2 Sampler VertexAndFragmentStage 1
+                      Pipeline.descriptor 3 Sampler VertexAndFragmentStage 1
+                      Pipeline.descriptor 4 Sampler VertexAndFragmentStage 1
+                      Pipeline.descriptor 5 Sampler VertexAndFragmentStage 1|]|]
 
                 [||] colorAttachmentFormats (Some depthAttachmentFormat)
                 [|eyeUniform
@@ -3899,6 +3899,8 @@ module PhysicallyBased =
             Pipeline.writeDescriptorSampler 1 0 materialSamplers[1] vkSet
             Pipeline.writeDescriptorSampler 2 0 materialSamplers[2] vkSet
             Pipeline.writeDescriptorSampler 3 0 materialSamplers[3] vkSet
+            Pipeline.writeDescriptorSampler 4 0 materialSamplers[4] vkSet
+            Pipeline.writeDescriptorSampler 5 0 materialSamplers[5] vkSet
             
         // set up render
         let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
@@ -4015,7 +4017,7 @@ module PhysicallyBased =
 
         // create uniform buffers
         let eyeUniform = VulkanBuffer.create Uniform sizeof<Eye3dStruct> context
-        let terrainFragUniform = VulkanBuffer.create Uniform sizeof<TerrainFragStruct> context
+        let terrainUniform = VulkanBuffer.create Uniform sizeof<TerrainStruct> context
 
         // create pipeline
         let pipeline =
@@ -4024,27 +4026,27 @@ module PhysicallyBased =
                 [|VulkanUnblended|] [|CullBack|] TerrainVertices
                 [|Pipeline.descriptorSet<int * int>
                     [|Pipeline.descriptor 0 UniformBuffer VertexAndFragmentStage 1 // eye
-                      Pipeline.descriptor 1 UniformBuffer FragmentStage 1|] // terrainFrag
+                      Pipeline.descriptor 1 UniformBuffer VertexAndFragmentStage 1|] // terrain
                   Pipeline.descriptorSet<PhysicallyBasedMaterial array>
                     [|Pipeline.descriptor 0 SampledImage FragmentStage Constants.Render.TerrainLayersMax // albedoTextures
                       Pipeline.descriptor 1 SampledImage FragmentStage Constants.Render.TerrainLayersMax // roughnessTextures
                       Pipeline.descriptor 2 SampledImage FragmentStage Constants.Render.TerrainLayersMax // ambientOcclusionTextures
                       Pipeline.descriptor 3 SampledImage FragmentStage Constants.Render.TerrainLayersMax // normalTextures
-                      Pipeline.descriptor 4 SampledImage FragmentStage Constants.Render.TerrainLayersMax // userDefinedImageTextures
-                      Pipeline.descriptor 5 SampledImage FragmentStage 1 // userDefinedImage0Texture
-                      Pipeline.descriptor 6 SampledImage FragmentStage 1|] // userDefinedImage1Texture
+                      Pipeline.descriptor 4 SampledImage VertexAndFragmentStage Constants.Render.TerrainLayersMax // userDefinedImageTextures
+                      Pipeline.descriptor 5 SampledImage VertexAndFragmentStage 1 // userDefinedImage0Texture
+                      Pipeline.descriptor 6 SampledImage VertexAndFragmentStage 1|] // userDefinedImage1Texture
                   Pipeline.descriptorSet<Unit>
-                    [|Pipeline.descriptor 0 Sampler FragmentStage 1
-                      Pipeline.descriptor 1 Sampler FragmentStage 1
-                      Pipeline.descriptor 2 Sampler FragmentStage 1
-                      Pipeline.descriptor 3 Sampler FragmentStage 1|]|]
+                    [|Pipeline.descriptor 0 Sampler VertexAndFragmentStage 1
+                      Pipeline.descriptor 1 Sampler VertexAndFragmentStage 1
+                      Pipeline.descriptor 2 Sampler VertexAndFragmentStage 1
+                      Pipeline.descriptor 3 Sampler VertexAndFragmentStage 1|]|]
                 [||] colorAttachmentFormats (Some depthTest)
-                [|eyeUniform; terrainFragUniform|]
+                [|eyeUniform; terrainUniform|]
 
         // make PhysicallyBasedDeferredLighting3dPipeline
         let physicallyBasedDeferredTerrainPipeline =
             { Eye3dUniform = eyeUniform
-              Lighting3d3Uniform = terrainFragUniform
+              Lighting3d3Uniform = terrainUniform
               Pipeline = pipeline }
 
         // fin
@@ -4109,14 +4111,14 @@ module PhysicallyBased =
                 Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.Eye3dUniform vkSet
 
                 // specify terrain frag
-                let mutable terrainFrag = TerrainFragStruct ()
-                terrainFrag.layersCount <- layersCount
-                terrainFrag.lightShadowSamples <- lightShadowSamples
-                terrainFrag.lightShadowBias <- lightShadowBias
-                terrainFrag.lightShadowSampleScalar <- lightShadowSampleScalar
-                terrainFrag.lightShadowExponent <- lightShadowExponent
-                terrainFrag.lightShadowDensity <- lightShadowDensity
-                VulkanBuffer.uploadValue terrainFrag pipeline.Lighting3d3Uniform context
+                let mutable terrain = TerrainStruct ()
+                terrain.layersCount <- layersCount
+                terrain.lightShadowSamples <- lightShadowSamples
+                terrain.lightShadowBias <- lightShadowBias
+                terrain.lightShadowSampleScalar <- lightShadowSampleScalar
+                terrain.lightShadowExponent <- lightShadowExponent
+                terrain.lightShadowDensity <- lightShadowDensity
+                VulkanBuffer.uploadValue terrain pipeline.Lighting3d3Uniform context
                 Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.Lighting3d3Uniform vkSet
 
             // specify materials
@@ -4136,6 +4138,8 @@ module PhysicallyBased =
                 Pipeline.writeDescriptorSampler 1 0 materialSamplers[1] vkSet
                 Pipeline.writeDescriptorSampler 2 0 materialSamplers[2] vkSet
                 Pipeline.writeDescriptorSampler 3 0 materialSamplers[3] vkSet
+                Pipeline.writeDescriptorSampler 4 0 materialSamplers[4] vkSet
+                Pipeline.writeDescriptorSampler 5 0 materialSamplers[5] vkSet
 
             // specify instancing
             use instanceFieldsPin = new ArrayPin<_> (instanceFields)
@@ -5698,8 +5702,6 @@ module PhysicallyBased =
         (brdfTexture : Texture)
         (irradianceMap : Texture)
         (environmentFilterMap : Texture)
-        (unfilteredSampler : Sampler)
-        (filteredSampler : Sampler)
         (materialSamplers : Sampler array)
         (colorAttachments : VkImageView array)
         (depthAttachment : VkImageView)
@@ -5766,12 +5768,12 @@ module PhysicallyBased =
 
         // specify samplers
         let mutable samplersDescriptorSet = Pipeline.specifyDescriptorSet 3 Unit pipeline.Pipeline $ fun vkSet ->
-            Pipeline.writeDescriptorSampler 0 0 unfilteredSampler vkSet
-            Pipeline.writeDescriptorSampler 1 0 filteredSampler vkSet
-            Pipeline.writeDescriptorSampler 2 0 materialSamplers[0] vkSet
-            Pipeline.writeDescriptorSampler 3 0 materialSamplers[1] vkSet
-            Pipeline.writeDescriptorSampler 4 0 materialSamplers[2] vkSet
-            Pipeline.writeDescriptorSampler 5 0 materialSamplers[3] vkSet
+            Pipeline.writeDescriptorSampler 0 0 materialSamplers[0] vkSet
+            Pipeline.writeDescriptorSampler 1 0 materialSamplers[1] vkSet
+            Pipeline.writeDescriptorSampler 2 0 materialSamplers[2] vkSet
+            Pipeline.writeDescriptorSampler 3 0 materialSamplers[3] vkSet
+            Pipeline.writeDescriptorSampler 4 0 materialSamplers[4] vkSet
+            Pipeline.writeDescriptorSampler 5 0 materialSamplers[5] vkSet
 
         // set up render
         let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
@@ -6417,7 +6419,8 @@ type PhysicallyBasedSceneClient () =
                           // attempt to collect light probe
                           let lastNameLower = Array.last(names).ToLowerInvariant()
                           if lastNameLower.Contains "probe" && not (lastNameLower.Contains "probes") then
-                            let names = Array.append names [|"LightProbe"|]
+                            let name = "LightProbe"
+                            let names = Array.append names [|name|]
                             let lightProbeOrigin = transform.Translation
                             let lightProbeBounds =
                                 box3
@@ -6436,7 +6439,8 @@ type PhysicallyBasedSceneClient () =
                           for i in 0 .. dec lightNodes.Length do
                             let (light, lightNode) = lightNodes[i]
                             if lightNode = node then
-                                let names = Array.append names [|"Light" + if i > 0 then string i else ""|]
+                                let name = if i > 0 then String.Intern ("Light" + string i) else "Light"
+                                let names = Array.append names [|name|]
                                 let lightMatrix = Assimp.ExportMatrix node.TransformWorld
                                 let color = color (min 1.0f light.ColorDiffuse.R) (min 1.0f light.ColorDiffuse.G) (min 1.0f light.ColorDiffuse.B) 1.0f
                                 let areaSize = light.AreaSize
@@ -6462,7 +6466,8 @@ type PhysicallyBasedSceneClient () =
 
                           // collect surfaces
                           for i in 0 .. dec node.MeshIndices.Count do
-                            let names = Array.append names [|"Geometry" + if i > 0 then string (inc i) else ""|]
+                            let name = if i > 0 then String.Intern ("Geometry" + string (inc i)) else "Geometry"
+                            let names = Array.append names [|name|]
                             let meshIndex = node.MeshIndices[i]
                             let materialIndex = scene.Meshes[meshIndex].MaterialIndex
                             let (material, properties) = materials[materialIndex]
