@@ -739,7 +739,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         World.getGroups SelectedScreen world
         |> Seq.map (fun group -> World.getEntities group world)
         |> Seq.concat
-        |> Seq.filter (fun entity -> entity.Has<LightProbe3dFacet> world)
+        |> Seq.filter (fun entity -> entity.Has<LightProbeFacet> world)
         |> Seq.iter (fun lightProbe -> lightProbe.SetProbeStale true world)
 
     let private tryMoveSelectedEntityToOrigin skipSnapshot world =
@@ -1259,7 +1259,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                           """<PackageReference Include="JoltPhysicsSharp" Version="2.19.5" />"""
                           """<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.15.0" />"""
                           """<PackageReference Include="Pfim" Version="0.11.4" />"""
-                          """<PackageReference Include="Prime" Version="11.5.3" />"""
+                          """<PackageReference Include="Prime" Version="11.5.5" />"""
                           """<PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.1" />"""
                           """<PackageReference Include="System.Drawing.Common" Version="10.0.1" />"""
                           """<PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" />"""
@@ -1352,23 +1352,25 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         focusPropertyOpt None world // drop any reference to old property type
                         World.updateLateBindings initializing FsiSession.DynamicAssemblies world // replace references to old types
                         Log.info "Code updated."
-                    | (Choice2Of2 _, diags) ->
-                        let diagsStr =
-                            diags
-                            |> Array.map (fun diag ->
-                                let range = diag.Range
-                                let start = range.Start
-                                let end_ = range.End
-                                let debugCodeProperty = typeof<FSharp.Compiler.Text.Range>.GetProperty ("DebugCode", BindingFlags.NonPublic ||| BindingFlags.Instance)
-                                let debugCodeOpt = if notNull debugCodeProperty then debugCodeProperty.GetValue range :?> string else null
-                                let debugCode = if String.IsNullOrEmpty debugCodeOpt then "<unavailable>" else debugCodeOpt
-                                let diagStr =
-                                    string diag.Severity + " " + diag.ErrorNumberText + " in " +
-                                    diag.FileName + " " + string start + "-" + string end_ + "\n" +
-                                    debugCode + " -> " + diag.Message
-                                diagStr)
-                            |> String.join Environment.NewLine
-                        Log.error ("Failed to compile code due to:\n" + diagsStr)
+                    | (Choice2Of2 exn, diags) ->
+                        if diags.Length > 0 then
+                            let diagsStr =
+                                diags
+                                |> Array.map (fun diag ->
+                                    let range = diag.Range
+                                    let start = range.Start
+                                    let end_ = range.End
+                                    let debugCodeProperty = typeof<FSharp.Compiler.Text.Range>.GetProperty ("DebugCode", BindingFlags.NonPublic ||| BindingFlags.Instance)
+                                    let debugCodeOpt = if notNull debugCodeProperty then debugCodeProperty.GetValue range :?> string else null
+                                    let debugCode = if String.IsNullOrEmpty debugCodeOpt then "<unavailable>" else debugCodeOpt
+                                    let diagStr =
+                                        string diag.Severity + " " + diag.ErrorNumberText + " in " +
+                                        diag.FileName + " " + string start + "-" + string end_ + "\n" +
+                                        debugCode + " -> " + diag.Message
+                                    diagStr)
+                                |> String.join Environment.NewLine
+                            Log.error ("Failed to compile code due to:\n" + diagsStr)
+                        else Log.error ("Failed to compile code due to:\n" + scstring exn)
                         World.switch worldStateOld world
                     FsiErrorStream.GetStringBuilder().Clear() |> ignore<StringBuilder>
                     FsiOutStream.GetStringBuilder().Clear() |> ignore<StringBuilder>
@@ -2016,10 +2018,13 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private imGuiAppendPropertiesDispatcherExplicit simulant world =
         let ty = getType (World.getDispatcher simulant world)
-        if ImGui.CollapsingHeader (ty.Name.Spaced, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow) then
+        if ImGui.CollapsingHeader (ty.Name.Spaced, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow ||| ImGuiTreeNodeFlags.AllowOverlap) then
+            let y = ImGui.GetCursorPosY ()
             let unfocusProperty () = focusPropertyOpt None world
             let appendProperties : AppendProperties = { EditContext = makeEditContext None (Some unfocusProperty) }
             World.edit (fun o -> o.GetType () = ty) (AppendProperties appendProperties) simulant world
+            y
+        else ImGui.GetCursorPosY ()
 
     let private imGuiEditPropertyRecord
         (getProperty : PropertyDescriptor -> Simulant -> World -> obj)
@@ -2106,8 +2111,15 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 | _ -> failwithumf ()
             match propertyCategory with // preempt with dispatcher category if it is not represented by any of the properties
             | Right ty when not appendedToDispatcher && not (ty.IsAssignableTo typeof<Dispatcher>) ->
-                imGuiAppendPropertiesDispatcherExplicit simulant world
+                let yBeforeHeader = ImGui.GetCursorPosY ()
+                let yAfterHeader = imGuiAppendPropertiesDispatcherExplicit simulant world
                 appendedToDispatcher <- true
+                if yAfterHeader = ImGui.GetCursorPosY () then // overwrite dispatcher header when no dispatcher properties
+                    let drawList = ImGui.GetWindowDrawList ()
+                    let itemMin = ImGui.GetItemRectMin ()
+                    let itemMax = ImGui.GetItemRectMax ()
+                    drawList.AddRectFilled (itemMin, itemMax, ImGui.ColorConvertFloat4ToU32 (Vector4 (0.4f, 0.4f, 0.4f, 1.0f)), 5.0f) // draw colored square to overwrite unutilized header
+                    ImGui.SetCursorPosY yBeforeHeader // back up cursor Y if it didn't advance due to no dispatcher properties
             | Right _ | Left _ -> ()
             if  (propertyCategoryName <> "Model" || modelUsed) &&
                 (propertyCategoryName = "Ambient" || ImGui.CollapsingHeader (propertyCategoryName + "##category", ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow)) then
@@ -2243,7 +2255,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     imGuiEditEntityAppliedTypes entity world
                 | _ ->
                     Log.infoOnce "Unexpected simulant type."
-        if not appendedToDispatcher then imGuiAppendPropertiesDispatcherExplicit simulant world
+        if not appendedToDispatcher then imGuiAppendPropertiesDispatcherExplicit simulant world |> ignore<single>
         detectEyeChangedElsewhere world
 
     let private imGuiViewportManipulation (world : World) =
@@ -2290,7 +2302,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
                 // light probe bounds manipulation
                 match SelectedEntityOpt with
-                | Some entity when entity.GetExists world && entity.Has<LightProbe3dFacet> world ->
+                | Some entity when entity.GetExists world && entity.Has<LightProbeFacet> world ->
                     let mutable lightProbeBounds = entity.GetProbeBounds world
                     let manipulationResult =
                         ImGuizmo.ManipulateBox3
@@ -2996,31 +3008,36 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         ImGui.EndTooltip ()
                     ImGui.PopID ()
                     match SelectedEntityOpt with
-                    | Some selectedEntity when not (propagationSources.Contains selectedEntity) ->
-                        ImGui.SameLine ()
-                        ImGui.PushID ("##asChild" + scstringMemo entity)
-                        if ImGui.SmallButton "as Child" then
-                            snapshot DuplicateEntity world
-                            let positionSnapEir = if Snaps2dSelected then Left (a__ Snaps2d) else Right (a__ Snaps3d)
-                            let duplicate = World.pasteEntity NewEntityDistance RightClickPosition positionSnapEir PasteAtLook entity selectedEntity world
-                            selectEntityOpt (Some duplicate) world
-                        ImGui.PopID ()
-                        if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                            ImGui.Text "Create a copy of the specified entity as a child of the selected entity."
-                            ImGui.EndTooltip ()
-                        ImGui.SameLine ()
-                        ImGui.PushID ("##atLocalOrigin" + scstringMemo entity)
-                        if ImGui.SmallButton "at Local Origin" then
-                            snapshot DuplicateEntity world
-                            let positionSnapEir = if Snaps2dSelected then Left (a__ Snaps2d) else Right (a__ Snaps3d)
-                            let duplicate = World.pasteEntity NewEntityDistance RightClickPosition positionSnapEir PasteAtLook entity selectedEntity world
-                            duplicate.SetPositionLocal v3Zero world
-                            selectEntityOpt (Some duplicate) world
-                        ImGui.PopID ()
-                        if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                            ImGui.Text "Create as copy of the specified entity as a child of the selected entity at local origin."
-                            ImGui.EndTooltip ()
-                    | Some _ | None -> ()
+                    | Some selectedEntity ->
+                        let propagationSources =
+                            [entity; yield! World.getEntityDescendants entity world]
+                            |> List.map (fun entity -> entity.GetPropagationSourceOpt world)
+                            |> List.definitize
+                        if entity <> selectedEntity && not (List.contains selectedEntity propagationSources) then
+                            ImGui.SameLine ()
+                            ImGui.PushID ("##asChild" + scstringMemo entity)
+                            if ImGui.SmallButton "as Child" then
+                                snapshot DuplicateEntity world
+                                let positionSnapEir = if Snaps2dSelected then Left (a__ Snaps2d) else Right (a__ Snaps3d)
+                                let duplicate = World.pasteEntity NewEntityDistance RightClickPosition positionSnapEir PasteAtLook entity selectedEntity world
+                                selectEntityOpt (Some duplicate) world
+                            ImGui.PopID ()
+                            if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                                ImGui.Text "Create a copy of the specified entity as a child of the selected entity."
+                                ImGui.EndTooltip ()
+                            ImGui.SameLine ()
+                            ImGui.PushID ("##atLocalOrigin" + scstringMemo entity)
+                            if ImGui.SmallButton "at Local Origin" then
+                                snapshot DuplicateEntity world
+                                let positionSnapEir = if Snaps2dSelected then Left (a__ Snaps2d) else Right (a__ Snaps3d)
+                                let duplicate = World.pasteEntity NewEntityDistance RightClickPosition positionSnapEir PasteAtLook entity selectedEntity world
+                                duplicate.SetPositionLocal v3Zero world
+                                selectEntityOpt (Some duplicate) world
+                            ImGui.PopID ()
+                            if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                                ImGui.Text "Create as copy of the specified entity as a child of the selected entity at local origin."
+                                ImGui.EndTooltip ()
+                    | None -> ()
                     ImGui.TreePop ()
             ImGui.EndChild ()
         ImGui.End ()
@@ -3331,9 +3348,12 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     if errorStr.Length > 0
                     then InteractiveOutputStr <- InteractiveOutputStr + errorStr
                     else InteractiveOutputStr <- InteractiveOutputStr + Environment.NewLine + outStr
-                | (Choice2Of2 _, diags) ->
+                | (Choice2Of2 exn, diags) ->
+                    let exnStr = "Unhandled exception: " + scstring exn
+                    InteractiveOutputStr <- InteractiveOutputStr + Environment.NewLine + exnStr
                     let diagsStr = diags |> Array.map _.Message |> String.join Environment.NewLine
-                    InteractiveOutputStr <- InteractiveOutputStr + Environment.NewLine + diagsStr
+                    if diagsStr.Length > 0 then
+                        InteractiveOutputStr <- InteractiveOutputStr + Environment.NewLine + diagsStr
                 InteractiveOutputStr <-
                     InteractiveOutputStr.Split Environment.NewLine
                     |> Array.filter (not << String.IsNullOrWhiteSpace)
@@ -4353,19 +4373,17 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
             // render light probes of the selected group in view
             let eyeFrustum = World.getEye3dFrustum world
-            let entities = World.getLightProbes3dInView (HashSet ()) world
+            let entities = World.getLightProbesInView (HashSet ()) world
             let lightProbeModels =
                 entities
                 |> Seq.filter (fun entity -> entity.Group = SelectedGroup && entity.Group.GetEditing world && eyeFrustum.Intersects (entity.GetBounds world))
-                |> Seq.map (fun light -> (light.GetAffineMatrix world, false, Omnipresent, None, MaterialProperties.defaultProperties))
+                |> Seq.map (fun light -> (light.GetAffineMatrix world, false, Omnipresent, None, Material.empty, MaterialProperties.defaultProperties))
                 |> SList.ofSeq
             if SList.notEmpty lightProbeModels then
                 World.enqueueRenderMessage3d
                     (RenderStaticModels
                         { StaticModels = lightProbeModels
                           StaticModel = Assets.Default.LightProbeModel
-                          Clipped = false
-                          DepthTest = LessThanTest
                           RenderType = DeferredRenderType
                           RenderPass = NormalPass })
                     world
@@ -4375,15 +4393,13 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             let lightModels =
                 entities
                 |> Seq.filter (fun entity -> entity.Group = SelectedGroup && entity.Group.GetEditing world && eyeFrustum.Intersects (entity.GetBounds world))
-                |> Seq.map (fun light -> (light.GetAffineMatrix world, false, Omnipresent, None, MaterialProperties.defaultProperties))
+                |> Seq.map (fun light -> (light.GetAffineMatrix world, false, Omnipresent, None, Material.empty, MaterialProperties.defaultProperties))
                 |> SList.ofSeq
             if SList.notEmpty lightModels then
                 World.enqueueRenderMessage3d
                     (RenderStaticModels
                         { StaticModels = lightModels
                           StaticModel = Assets.Default.LightbulbModel
-                          Clipped = false
-                          DepthTest = LessThanTest
                           RenderType = DeferredRenderType
                           RenderPass = NormalPass })
                     world
@@ -4434,10 +4450,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                   CastShadow = false
                                   Presence = Omnipresent
                                   InsetOpt = None
+                                  Material = { Material.empty with ClippedOpt = ValueSome true }
                                   MaterialProperties = { MaterialProperties.defaultProperties with SpecularScalarOpt = ValueSome 0.0f }
                                   StaticModel = Assets.Default.HighlightModel
-                                  Clipped = true
-                                  DepthTest = LessThanTest
                                   RenderType = DeferredRenderType
                                   RenderPass = NormalPass })
                             world

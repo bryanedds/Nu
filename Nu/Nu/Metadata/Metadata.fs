@@ -570,36 +570,6 @@ module Metadata =
         | ValueNone -> ValueNone
 
     /// Thread-safe.
-    let private tryGetModelHeightImage materialIndex model =
-        match tryGetModelMetadata model with
-        | ValueSome modelMetadata ->
-            match modelMetadata.SceneOpt with
-            | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
-                let material = scene.Materials[materialIndex]
-                let mutable (_, heightTextureSlot) = material.GetMaterialTexture (Assimp.TextureType.Height, 0)
-                if isNull heightTextureSlot.FilePath then heightTextureSlot.FilePath <- "" // ensure not null
-                let assetName = PathF.GetFileNameWithoutExtension heightTextureSlot.FilePath
-                let image = asset model.PackageName assetName
-                if not (getMetadataExists image) then
-                    match tryGetModelAlbedoImage materialIndex model with
-                    | ValueSome albedoImage ->
-                        let albedoAssetName =   albedoImage.AssetName
-                        let has_bc =            albedoAssetName.Contains "_bc"
-                        let has_d =             albedoAssetName.Contains "_d"
-                        let hasBaseColor =      albedoAssetName.Contains "BaseColor"
-                        let hasDiffuse =        albedoAssetName.Contains "Diffuse"
-                        let hasAlbedo =         albedoAssetName.Contains "Albedo"
-                        let hAsset =            asset albedoImage.PackageName (if has_bc then albedoAssetName.Replace ("_bc", "_h")                 elif has_d then albedoAssetName.Replace ("_d", "_h")                else "")
-                        let heightAsset =       asset albedoImage.PackageName (if hasBaseColor then albedoAssetName.Replace ("BaseColor", "Height") elif hasDiffuse then albedoAssetName.Replace ("Diffuse", "Height")  elif hasAlbedo  then albedoAssetName.Replace ("Albedo", "Height") else "")
-                        if getMetadataExists hAsset then ValueSome hAsset
-                        elif getMetadataExists heightAsset then ValueSome heightAsset
-                        else ValueNone
-                    | ValueNone -> ValueNone
-                else ValueSome image
-            | Some _ | None -> ValueNone
-        | ValueNone -> ValueNone
-
-    /// Thread-safe.
     let private tryGetModelSubdermalImage materialIndex model =
         match tryGetModelMetadata model with
         | ValueSome modelMetadata ->
@@ -738,14 +708,83 @@ module Metadata =
         | ValueNone -> ValueNone
 
     /// Thread-safe.
-    let private tryGetModelTwoSided materialIndex model =
+    let private tryGetModelUserDefinedImage0 materialIndex model =
+        match tryGetModelMetadata model with
+        | ValueSome modelMetadata ->
+            match modelMetadata.SceneOpt with
+            | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
+                match tryGetModelAlbedoImage materialIndex model with
+                | ValueSome albedoImage ->
+                    let albedoAssetName =           albedoImage.AssetName
+                    let has_bc =                    albedoAssetName.Contains "_bc"
+                    let has_d =                     albedoAssetName.Contains "_d"
+                    let hasBaseColor =              albedoAssetName.Contains "BaseColor"
+                    let hasDiffuse =                albedoAssetName.Contains "Diffuse"
+                    let hasAlbedo =                 albedoAssetName.Contains "Albedo"
+                    let userDefinedImage0Asset =    asset albedoImage.PackageName (if has_bc then albedoAssetName.Replace ("_bc", "_user_defined_image_0")          elif has_d then albedoAssetName.Replace ("_d", "_user_defined_image_0")         else "")
+                    let userDefinedImage0Asset' =   asset albedoImage.PackageName (if hasBaseColor then albedoAssetName.Replace ("BaseColor", "UserDefinedImage0")  elif hasDiffuse then albedoAssetName.Replace ("Diffuse", "UserDefinedImage0")   elif hasAlbedo  then albedoAssetName.Replace ("Albedo", "UserDefinedImage0") else "")
+                    if getMetadataExists userDefinedImage0Asset then ValueSome userDefinedImage0Asset
+                    elif getMetadataExists userDefinedImage0Asset' then ValueSome userDefinedImage0Asset'
+                    else ValueNone
+                | ValueNone -> ValueNone
+            | Some _ | None -> ValueNone
+        | ValueNone -> ValueNone
+
+    /// Thread-safe.
+    let private tryGetModelUserDefinedImage1 materialIndex model =
+        match tryGetModelMetadata model with
+        | ValueSome modelMetadata ->
+            match modelMetadata.SceneOpt with
+            | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
+                match tryGetModelAlbedoImage materialIndex model with
+                | ValueSome albedoImage ->
+                    let albedoAssetName =           albedoImage.AssetName
+                    let has_bc =                    albedoAssetName.Contains "_bc"
+                    let has_d =                     albedoAssetName.Contains "_d"
+                    let hasBaseColor =              albedoAssetName.Contains "BaseColor"
+                    let hasDiffuse =                albedoAssetName.Contains "Diffuse"
+                    let hasAlbedo =                 albedoAssetName.Contains "Albedo"
+                    let userDefinedImage1Asset =    asset albedoImage.PackageName (if has_bc then albedoAssetName.Replace ("_bc", "_user_defined_image_1")          elif has_d then albedoAssetName.Replace ("_d", "_user_defined_image_1")         else "")
+                    let userDefinedImage1Asset' =   asset albedoImage.PackageName (if hasBaseColor then albedoAssetName.Replace ("BaseColor", "UserDefinedImage1")  elif hasDiffuse then albedoAssetName.Replace ("Diffuse", "UserDefinedImage1")   elif hasAlbedo  then albedoAssetName.Replace ("Albedo", "UserDefinedImage1") else "")
+                    if getMetadataExists userDefinedImage1Asset then ValueSome userDefinedImage1Asset
+                    elif getMetadataExists userDefinedImage1Asset' then ValueSome userDefinedImage1Asset'
+                    else ValueNone
+                | ValueNone -> ValueNone
+            | Some _ | None -> ValueNone
+        | ValueNone -> ValueNone
+
+    /// Thread-safe.
+    let private tryGetModelUserDefinedImage2 materialIndex model =
+        match tryGetModelMetadata model with
+        | ValueSome modelMetadata ->
+            match modelMetadata.SceneOpt with
+            | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
+                match tryGetModelAlbedoImage materialIndex model with
+                | ValueSome albedoImage ->
+                    let albedoAssetName =           albedoImage.AssetName
+                    let has_bc =                    albedoAssetName.Contains "_bc"
+                    let has_d =                     albedoAssetName.Contains "_d"
+                    let hasBaseColor =              albedoAssetName.Contains "BaseColor"
+                    let hasDiffuse =                albedoAssetName.Contains "Diffuse"
+                    let hasAlbedo =                 albedoAssetName.Contains "Albedo"
+                    let userDefinedImage2Asset =    asset albedoImage.PackageName (if has_bc then albedoAssetName.Replace ("_bc", "_user_defined_image_2")          elif has_d then albedoAssetName.Replace ("_d", "_user_defined_image_2")         else "")
+                    let userDefinedImage2Asset' =   asset albedoImage.PackageName (if hasBaseColor then albedoAssetName.Replace ("BaseColor", "UserDefinedImage2")  elif hasDiffuse then albedoAssetName.Replace ("Diffuse", "UserDefinedImage2")   elif hasAlbedo  then albedoAssetName.Replace ("Albedo", "UserDefinedImage2") else "")
+                    if getMetadataExists userDefinedImage2Asset then ValueSome userDefinedImage2Asset
+                    elif getMetadataExists userDefinedImage2Asset' then ValueSome userDefinedImage2Asset'
+                    else ValueNone
+                | ValueNone -> ValueNone
+            | Some _ | None -> ValueNone
+        | ValueNone -> ValueNone
+
+    /// Thread-safe.
+    let private tryGetModelCullMode materialIndex model =
         match tryGetModelMetadata model with
         | ValueSome modelMetadata ->
             match modelMetadata.SceneOpt with
             | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
                 let material = scene.Materials[materialIndex]
-                match material.TwoSidedOpt with
-                | ValueSome twoSided -> ValueSome twoSided
+                match material.CullModeOpt with
+                | ValueSome cullMode -> ValueSome cullMode
                 | ValueNone -> ValueNone
             | Some _ | None -> ValueNone
         | ValueNone -> ValueNone
@@ -758,6 +797,55 @@ module Metadata =
             | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
                 let material = scene.Materials[materialIndex]
                 match material.ClippedOpt with
+                | ValueSome clipped -> ValueSome clipped
+                | ValueNone -> ValueNone
+            | Some _ | None -> ValueNone
+        | ValueNone -> ValueNone
+
+    let private tryGetModelDepthTest materialIndex model =
+        match tryGetModelMetadata model with
+        | ValueSome modelMetadata ->
+            match modelMetadata.SceneOpt with
+            | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
+                let material = scene.Materials[materialIndex]
+                match material.DepthTestOpt with
+                | ValueSome depthTest -> ValueSome depthTest
+                | ValueNone -> ValueNone
+            | Some _ | None -> ValueNone
+        | ValueNone -> ValueNone
+
+    let private tryGetModelDepthWrite materialIndex model =
+        match tryGetModelMetadata model with
+        | ValueSome modelMetadata ->
+            match modelMetadata.SceneOpt with
+            | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
+                let material = scene.Materials[materialIndex]
+                match material.DepthWriteOpt with
+                | ValueSome depthWrite -> ValueSome depthWrite
+                | ValueNone -> ValueNone
+            | Some _ | None -> ValueNone
+        | ValueNone -> ValueNone
+
+    let private tryGetModelBlend materialIndex model =
+        match tryGetModelMetadata model with
+        | ValueSome modelMetadata ->
+            match modelMetadata.SceneOpt with
+            | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
+                let material = scene.Materials[materialIndex]
+                match material.BlendOpt with
+                | ValueSome blendMode -> ValueSome blendMode
+                | ValueNone -> ValueNone
+            | Some _ | None -> ValueNone
+        | ValueNone -> ValueNone
+
+    /// Thread-safe.
+    let private tryGetModelPipelineName materialIndex model =
+        match tryGetModelMetadata model with
+        | ValueSome modelMetadata ->
+            match modelMetadata.SceneOpt with
+            | Some scene when materialIndex >= 0 && materialIndex < scene.Materials.Count ->
+                let material = scene.Materials[materialIndex]
+                match material.PipelineNameOpt with
                 | ValueSome clipped -> ValueSome clipped
                 | ValueNone -> ValueNone
             | Some _ | None -> ValueNone
@@ -819,11 +907,6 @@ module Metadata =
     let tryGetStaticModelNormalImage materialIndex (staticModel : StaticModel AssetTag) =
         tryGetModelNormalImage materialIndex staticModel
 
-    /// Attempt to get the height image asset for the given material index and static model.
-    /// Thread-safe.
-    let tryGetStaticModelHeightImage materialIndex (staticModel : StaticModel AssetTag) =
-        tryGetModelHeightImage materialIndex staticModel
-
     /// Attempt to get the subsurface image asset for the given material index and static model.
     /// Thread-safe.
     let tryGetStaticModelSubdermalImage materialIndex (staticModel : StaticModel AssetTag) =
@@ -849,20 +932,55 @@ module Metadata =
     let tryGetStaticModelClearCoatNormalImage materialIndex (staticModel : StaticModel AssetTag) =
         tryGetModelClearCoatNormalImage materialIndex staticModel
 
+    /// Attempt to get the user-defined image 0 asset for the given material index and static model.
+    /// Thread-safe.
+    let tryGetStaticModelUserDefinedImage0 materialIndex (staticModel : StaticModel AssetTag) =
+        tryGetModelUserDefinedImage0 materialIndex staticModel
+
+    /// Attempt to get the user-defined image 1 asset for the given material index and static model.
+    /// Thread-safe.
+    let tryGetStaticModelUserDefinedImage1 materialIndex (staticModel : StaticModel AssetTag) =
+        tryGetModelUserDefinedImage1 materialIndex staticModel
+
+    /// Attempt to get the user-defined image 2 asset for the given material index and static model.
+    /// Thread-safe.
+    let tryGetStaticModelUserDefinedImage2 materialIndex (staticModel : StaticModel AssetTag) =
+        tryGetModelUserDefinedImage2 materialIndex staticModel
+
     /// Attempt to get the scatter image asset for the given material index and static model.
     /// Thread-safe.
     let tryGetStaticModelScatterImage materialIndex (staticModel : StaticModel AssetTag) =
         tryGetModelScatterImage materialIndex staticModel
 
-    /// Attempt to get the two-sided property for the given material index and static model.
+    /// Attempt to get the cull mode for the given material index and static model.
     /// Thread-safe.
-    let tryGetStaticModelTwoSided materialIndex (staticModel : StaticModel AssetTag) =
-        tryGetModelTwoSided materialIndex staticModel
+    let tryGetStaticModelCullMode materialIndex (staticModel : StaticModel AssetTag) =
+        tryGetModelCullMode materialIndex staticModel
 
     /// Attempt to get the clipped property for the given material index and static model.
     /// Thread-safe.
     let tryGetStaticModelClipped materialIndex (staticModel : StaticModel AssetTag) =
         tryGetModelClipped materialIndex staticModel
+
+    /// Attempt to get the depth test for the given material index and static model.
+    /// Thread-safe.
+    let tryGetStaticModelDepthTest materialIndex (staticModel : StaticModel AssetTag) =
+        tryGetModelDepthTest materialIndex staticModel
+
+    /// Attempt to get the depth write for the given material index and static model.
+    /// Thread-safe.
+    let tryGetStaticModelDepthWrite materialIndex (staticModel : StaticModel AssetTag) =
+        tryGetModelDepthWrite materialIndex staticModel
+
+    /// Attempt to get the blend property for the given material index and static model.
+    /// Thread-safe.
+    let tryGetStaticModelBlend materialIndex (staticModel : StaticModel AssetTag) =
+        tryGetModelBlend materialIndex staticModel
+
+    /// Attempt to get the pipeline name for the given material index and static model.
+    /// Thread-safe.
+    let tryGetStaticModelPipelineName materialIndex (staticModel : StaticModel AssetTag) =
+        tryGetModelPipelineName materialIndex staticModel
 
     /// Attempt to get the 3d navigation shape for the given material index and static model.
     /// Thread-safe.
@@ -911,11 +1029,6 @@ module Metadata =
     let tryGetAnimatedModelNormalImage materialIndex (animatedModel : AnimatedModel AssetTag) =
         tryGetModelNormalImage materialIndex animatedModel
 
-    /// Attempt to get the height image asset for the given material index and animated model.
-    /// Thread-safe.
-    let tryGetAnimatedModelHeightImage materialIndex (animatedModel : AnimatedModel AssetTag) =
-        tryGetModelHeightImage materialIndex animatedModel
-
     /// Attempt to get the subdermal image asset for the given material index and animated model.
     /// Thread-safe.
     let tryGetAnimatedModelSubdermalImage materialIndex (animatedModel : AnimatedModel AssetTag) =
@@ -946,10 +1059,45 @@ module Metadata =
     let tryGetAnimatedModelClearCoatNormalImage materialIndex (animatedModel : AnimatedModel AssetTag) =
         tryGetModelClearCoatNormalImage materialIndex animatedModel
 
-    /// Attempt to get the two-sided property for the given material index and animated model.
+    /// Attempt to get the user-defined image 0 asset for the given material index and animated model.
     /// Thread-safe.
-    let tryGetAnimatedModelTwoSided materialIndex (animatedModel : AnimatedModel AssetTag) =
-        tryGetModelTwoSided materialIndex animatedModel
+    let tryGetAnimatedModelUserDefinedImage0 materialIndex (animatedModel : AnimatedModel AssetTag) =
+        tryGetModelUserDefinedImage0 materialIndex animatedModel
+
+    /// Attempt to get the user-defined image 1 asset for the given material index and animated model.
+    /// Thread-safe.
+    let tryGetAnimatedModelUserDefinedImage1 materialIndex (animatedModel : AnimatedModel AssetTag) =
+        tryGetModelUserDefinedImage1 materialIndex animatedModel
+
+    /// Attempt to get the user-defined image 2 asset for the given material index and animated model.
+    /// Thread-safe.
+    let tryGetAnimatedModelUserDefinedImage2 materialIndex (animatedModel : AnimatedModel AssetTag) =
+        tryGetModelUserDefinedImage2 materialIndex animatedModel
+
+    /// Attempt to get the cull mode for the given material index and animated model.
+    /// Thread-safe.
+    let tryGetAnimatedModelCullMode materialIndex (animatedModel : AnimatedModel AssetTag) =
+        tryGetModelCullMode materialIndex animatedModel
+
+    /// Attempt to get the depth test for the given material index and animated model.
+    /// Thread-safe.
+    let tryGetAnimatedModelDepthTest materialIndex (animatedModel : AnimatedModel AssetTag) =
+        tryGetModelDepthTest materialIndex animatedModel
+
+    /// Attempt to get the depth write for the given material index and animated model.
+    /// Thread-safe.
+    let tryGetAnimatedModelDepthWrite materialIndex (animatedModel : AnimatedModel AssetTag) =
+        tryGetModelDepthWrite materialIndex animatedModel
+
+    /// Attempt to get the blend property for the given material index and animated model.
+    /// Thread-safe.
+    let tryGetAnimatedModelBlend materialIndex (animatedModel : AnimatedModel AssetTag) =
+        tryGetModelBlend materialIndex animatedModel
+
+    /// Attempt to get the pipeline name for the given material index and animated model.
+    /// Thread-safe.
+    let tryGetAnimatedModelPipelineName materialIndex (animatedModel : AnimatedModel AssetTag) =
+        tryGetModelPipelineName materialIndex animatedModel
 
     /// Attempt to get the 3d navigation shape property for the given material index and animated model.
     /// Thread-safe.

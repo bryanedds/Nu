@@ -50,22 +50,22 @@ type GamepadAxis =
     /// Extract the respective name identifying the given gamepad axis.
     static member toEventName this =
         match this with
-        | StickLeftX -> "StickLeftX"
-        | StickLeftY -> "StickLeftY"
-        | StickRightX -> "StickRightX"
-        | StickRightY -> "StickRightY"
-        | TriggerLeft -> "TriggerLeft"
-        | TriggerRight -> "TriggerRight"
+        | StickLeftX -> nameof StickLeftX
+        | StickLeftY -> nameof StickLeftY
+        | StickRightX -> nameof StickRightX
+        | StickRightY -> nameof StickRightY
+        | TriggerLeft -> nameof TriggerLeft
+        | TriggerRight -> nameof TriggerRight
 
     /// Extract the respective gamepad axis identified by the given name.
     static member ofEventName eventName =
         match eventName with
-        | "StickLeftX" -> StickLeftX
-        | "StickLeftY" -> StickLeftY
-        | "StickRightX" -> StickRightX
-        | "StickRightY" -> StickRightY
-        | "TriggerLeft" -> TriggerLeft
-        | "TriggerRight" -> TriggerRight
+        | nameof StickLeftX -> StickLeftX
+        | nameof StickLeftY -> StickLeftY
+        | nameof StickRightX -> StickRightX
+        | nameof StickRightY -> StickRightY
+        | nameof TriggerLeft -> TriggerLeft
+        | nameof TriggerRight -> TriggerRight
         | _ -> failwithumf ()
 
 /// Describes a gamepad button.

@@ -373,7 +373,7 @@ type TextureWrapper =
 type [<CustomEquality; NoComparison>] TextureInternal =
     private
         { Id_ : uint32
-          InternalFormat_ : Vulkan.ImageFormat
+          ImageFormat_ : Vulkan.ImageFormat
           PixelFormat_ : PixelFormat
           MipLevels_ : int
           ImageUsages_ : VkImageUsageFlags
@@ -384,7 +384,16 @@ type [<CustomEquality; NoComparison>] TextureInternal =
 
     /// The id.
     member this.Id = this.Id_
-    
+
+    /// The image format.
+    member this.ImageFormat = this.ImageFormat_
+
+    /// The mip level count.
+    member this.MipLevels = this.MipLevels_
+
+    /// The number of layer used in this type of texture.
+    member this.Layers = this.TextureType_.Layers
+
     /// The image.
     member this.Image = this.TextureWrapper_.Image
 
@@ -396,15 +405,6 @@ type [<CustomEquality; NoComparison>] TextureInternal =
 
     /// The image views for each mip level and layer.
     member this.SubViews = this.TextureWrapper_.SubViews
-
-    /// The internal format.
-    member this.InternalFormat = this.InternalFormat_
-    
-    /// The VkFormat.
-    member this.VkFormat = this.InternalFormat_.VkFormat
-    
-    /// The mip level count.
-    member this.MipLevels = this.MipLevels_
 
     /// Metadata describing the texture.
     member this.TextureMetadata = this.TextureMetadata_
@@ -437,8 +437,7 @@ type [<CustomEquality; NoComparison>] TextureInternal =
                 match attachmentMode with
                 | AttachmentNone ->
 
-                    // check if hardware supports mipmap generation; this is done here to prevent unused (i.e. blank) mip levels
-                    // TODO: P0: check for VkFormatFeatureFlags.BlitSrc/Dst as well.
+                    // check that hardware supports mipmap generation; this is done here to prevent unused (i.e. blank) mip levels
                     let mutable formatProperties = Unchecked.defaultof<VkFormatProperties>
                     InstanceApi.vkGetPhysicalDeviceFormatProperties (context.PhysicalDevice.VkPhysicalDevice, internalFormat.VkFormat, &formatProperties)
                     let mipGenSupport = formatProperties.optimalTilingFeatures &&& VkFormatFeatureFlags.SampledImageFilterLinear <> VkFormatFeatureFlags.None
@@ -457,14 +456,14 @@ type [<CustomEquality; NoComparison>] TextureInternal =
         // make internal texture
         let textureInternal =
             { Id_ = Hl.genTextureId ()
-              TextureWrapper_ = textureWrapper
-              TextureMetadata_ = metadata
-              InternalFormat_ = internalFormat
+              ImageFormat_ = internalFormat
               PixelFormat_ = pixelFormat
               MipLevels_ = mipLevels
               ImageUsages_ = usageFlags
               AttachmentMode_ = attachmentMode
-              TextureType_ = textureType }
+              TextureType_ = textureType
+              TextureWrapper_ = textureWrapper
+              TextureMetadata_ = metadata }
 
         // fin
         textureInternal
@@ -547,7 +546,7 @@ type [<CustomEquality; NoComparison>] TextureInternal =
     static member updateSize textureMetadata (textureInternal : TextureInternal) (context : VulkanContext) =
         if  textureMetadata.TextureWidth <> textureInternal.TextureMetadata_.TextureWidth ||
             textureMetadata.TextureHeight <> textureInternal.TextureMetadata_.TextureHeight then
-            let textureWrapper = TextureWrapper.create textureInternal.PixelFormat_ textureInternal.InternalFormat_ textureMetadata textureInternal.MipLevels_ textureInternal.AttachmentMode_ textureInternal.TextureType_ textureInternal.ImageUsages_ context
+            let textureWrapper = TextureWrapper.create textureInternal.PixelFormat_ textureInternal.ImageFormat_ textureMetadata textureInternal.MipLevels_ textureInternal.AttachmentMode_ textureInternal.TextureType_ textureInternal.ImageUsages_ context
             TextureWrapper.destroy textureInternal.TextureWrapper_ context
             textureInternal.TextureWrapper_ <- textureWrapper
             textureInternal.TextureMetadata_ <- textureMetadata
@@ -556,7 +555,7 @@ type [<CustomEquality; NoComparison>] TextureInternal =
     static member uploadAsync commandBuffer metadata mipLevel layer pixels (textureInternal : TextureInternal) (context : VulkanContext) =
         match textureInternal.AttachmentMode_ with
         | AttachmentNone ->
-            let uploadSize = ImageFormat.getImageSize metadata.TextureWidth metadata.TextureHeight textureInternal.InternalFormat_
+            let uploadSize = ImageFormat.getImageSize metadata.TextureWidth metadata.TextureHeight textureInternal.ImageFormat_
             let stagingBuffer = VulkanBuffer.stageData uploadSize pixels context
             textureInternal.TextureWrapper_.StagingBuffers.Add stagingBuffer
             Hl.recordCopyBufferToImage commandBuffer metadata.TextureWidth metadata.TextureHeight mipLevel layer stagingBuffer.VkBuffer textureInternal.Image
@@ -665,7 +664,7 @@ type LazyTexture (filePath : string, minimalTexture : TextureInternal) =
                 | Left error -> Log.info ("Could not serve lazy texture due to:" + error)
                 fullServeAttempted <- true
 
-/// A 2d texture.
+/// A vulkan texture.
 type [<CustomEquality; NoComparison>] Texture =
     | EmptyTexture
     | EagerTexture of TextureInternal
@@ -678,14 +677,13 @@ type [<CustomEquality; NoComparison>] Texture =
         | LazyTexture lazyTexture -> lazyTexture.TextureInternal
 
     member this.Id = this.TextureInternal.Id
+    member this.ImageFormat = this.TextureInternal.ImageFormat
+    member this.MipLevels = this.TextureInternal.MipLevels
+    member this.Layers = this.TextureInternal.Layers
     member this.Image = this.TextureInternal.Image
     member this.ImageView = this.TextureInternal.ImageView
     member this.LayerViews = this.TextureInternal.LayerViews
     member this.SubViews = this.TextureInternal.SubViews
-    member this.InternalFormat = this.TextureInternal.InternalFormat
-    member this.VkFormat = this.TextureInternal.VkFormat
-    member this.MipLevels = this.TextureInternal.MipLevels_
-    member this.Layers = this.TextureInternal.TextureType_.Layers
 
     member this.TextureMetadata =
         match this with
@@ -729,7 +727,7 @@ type [<CustomEquality; NoComparison>] Texture =
 
     /// Asynchronously transition the layout of the current texture.
     static member recordTransitionLayout srcLayout dstLayout (texture : Texture) commandBuffer =
-        Hl.recordTransitionLayout true texture.MipLevels 0 texture.Layers texture.InternalFormat.VkImageAspectFlags srcLayout dstLayout texture.Image commandBuffer
+        Hl.recordTransitionLayout true texture.MipLevels 0 texture.Layers texture.ImageFormat.VkImageAspectFlags srcLayout dstLayout texture.Image commandBuffer
     
     override this.GetHashCode () =
         Texture.hash this

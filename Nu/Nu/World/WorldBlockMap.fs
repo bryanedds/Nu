@@ -123,17 +123,17 @@ type BlockMapDispatcher () =
             let bounds = entity.GetBounds world
             let material =
                 { Material.empty with
-                    AlbedoImageOpt = ValueSome Assets.Default.MaterialAlbedo
-                    NormalImageOpt = ValueSome Assets.Default.MaterialNormal }
+                    AlbedoImageOpt = ValueSome Assets.Default.Albedo
+                    NormalImageOpt = ValueSome Assets.Default.Normal }
             for struct (positionI, block) in chunk.Blocks.Pairs' do
                 match BlockMap.tryGetBlockColor block blockMap with
                 | Some color ->
                     let position = bounds.Center + positionI.V3 * blockMapScale - blockMapSize * 0.5f + blockMapScale * 0.5f
                     let modelMatrix = Matrix4x4.CreateTranslation position
-                    let materialProperties = { MaterialProperties.empty with AlbedoOpt = ValueSome color }
+                    let properties = { MaterialProperties.empty with AlbedoOpt = ValueSome color }
                     World.renderStaticModelSurfaceFast
-                        (&modelMatrix, blockMap.Config.CastShadows, Omnipresent, ValueNone, &materialProperties, &material,
-                         Assets.Default.StaticModel, 0, LessThanTest, DeferredRenderType, renderPass, world)
+                        (&modelMatrix, blockMap.Config.CastShadows, Omnipresent, ValueNone, material, properties,
+                         Assets.Default.StaticModel, 0, DeferredRenderType, renderPass, world)
                 | None -> ()
 
             // render cursor when needed
@@ -147,7 +147,7 @@ type BlockMapDispatcher () =
                     match BlockMap.tryGetSelectedColor blockMap with
                     | Some color ->
                         let colorBlinking = if int world.DateTime.TimeOfDay.TotalMilliseconds % 666 < 333 then Color.CornflowerBlue else color
-                        let materialProperties = { MaterialProperties.empty with AlbedoOpt = ValueSome colorBlinking }
+                        let properties = { MaterialProperties.empty with AlbedoOpt = ValueSome colorBlinking }
                         for i in 0 .. dec blockMap.PaintHeight do
                             let position = bounds.Center + positionI.V3 * blockMapScale - blockMapSize * 0.5f + blockMapScale * 0.5f
                             let offsetI =
@@ -161,8 +161,8 @@ type BlockMapDispatcher () =
                             let offset = offsetI.V3 * blockMapScale
                             let modelMatrix = Matrix4x4.CreateTranslation (position + offset)
                             World.renderStaticModelSurfaceFast
-                                (&modelMatrix, blockMap.Config.CastShadows, Omnipresent, ValueNone, &materialProperties, &material,
-                                 Assets.Default.StaticModel, 0, LessThanTest, DeferredRenderType, renderPass, world)
+                                (&modelMatrix, blockMap.Config.CastShadows, Omnipresent, ValueNone, material, properties,
+                                 Assets.Default.StaticModel, 0, DeferredRenderType, renderPass, world)
                     | None -> ()
                 | None -> ()
             | Some _ | None -> ()

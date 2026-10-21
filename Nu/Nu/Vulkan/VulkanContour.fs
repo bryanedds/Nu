@@ -64,7 +64,7 @@ module Contour =
         let pipeline =
             Pipeline.create
                 Constants.Paths.ContourShaderFilePath
-                [|VulkanTransparent|] [|true|]
+                [|VulkanTransparent|] [|CullBack|]
                 [|Pipeline.vertex 0 vertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Single2 0|]|]
                 [|Pipeline.descriptorSet<int>
@@ -96,7 +96,7 @@ module Contour =
             if geometry.BandEntries.Length = geometry.HBands + geometry.VBands then
 
                 // ensure band curve index count matches band layout
-                match Pipeline.tryGetVkPipeline VulkanTransparent true pipeline with
+                match Pipeline.tryGetVkPipeline VulkanTransparent CullBack pipeline with
                 | Some vkPipeline ->
 
                     // upload curve data

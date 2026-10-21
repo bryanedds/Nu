@@ -10,6 +10,20 @@ open SandBox3d
 type SandBox3dPlugin () =
     inherit NuPlugin ()
 
+    let DeferredStaticFlipped =
+        { PipelineType = DeferredStatic
+          PipelineName = "DeferredStaticFlipped"
+          ShaderPath = "Assets/Gameplay/DeferredStaticFlipped"
+          UserDefinedImageNames = [|"TestImageOpt"|]
+          UserDefinedSettingNames = [|"TestSettingOpt"|] }
+
+    let TerrainFlipped =
+        { PipelineType = Terrain
+          PipelineName = "TerrainFlipped"
+          ShaderPath = "Assets/Gameplay/DeferredTerrainFlipped"
+          UserDefinedImageNames = [||]
+          UserDefinedSettingNames = [|"TestSettingOpt"|] }
+
     let WallIndex = 0
 
     let createWallColumnModel corner (affine : Affine) (parent : Entity) world =
@@ -165,6 +179,11 @@ type SandBox3dPlugin () =
     override this.InitialPackages =
         [Assets.Gui.PackageName
          Assets.Gameplay.PackageName]
+
+    override this.UserDefinedPipeline3dDescriptors =
+        Map.ofSeq
+            [(DeferredStaticFlipped.PipelineName, DeferredStaticFlipped)
+             (TerrainFlipped.PipelineName, TerrainFlipped)]
 
     override this.ProcessFns =
         let fns = base.ProcessFns

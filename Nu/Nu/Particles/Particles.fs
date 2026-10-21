@@ -535,14 +535,13 @@ module Scope =
 
     /// Make a scope with in-place in and out delegates.
     let inline make<'a, 'b when 'a : struct> (getField : In<'a, 'b>) (setField : Out<'a, 'b>) : Scope<'a, 'b> =
-        { In =
-            fun (targets : 'a SArray) ->
-                let fields = SArray.zeroCreate targets.Length
-                let mutable i = 0
-                while i < targets.Length do
-                    getField.Invoke (&targets[i], &fields[i])
-                    i <- inc i
-                fields
+        { In = fun (targets : 'a SArray) ->
+            let fields = SArray.zeroCreate targets.Length
+            let mutable i = 0
+            while i < targets.Length do
+                getField.Invoke (&targets[i], &fields[i])
+                i <- inc i
+            fields
           Out = fun output fields (targets : 'a SArray) ->
             let mutable i = 0
             while i < targets.Length do
@@ -811,7 +810,7 @@ type [<ReferenceEquality>] StaticSpriteEmitter<'a when 'a :> Particle and 'a : e
         // fin
         (output + output2 + output3 + output4, emitter)
 
-    /// Make a basic particle emitter.
+    /// Make a basic static sprite particle emitter.
     static member make<'a>
         time body absolute elevation blend clipOpt image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
         constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors toParticlesDescriptor : 'a StaticSpriteEmitter =
@@ -998,8 +997,8 @@ type BasicSpriteEmitterDescriptors =
 type [<ReferenceEquality>] StaticBillboardEmitter<'a when 'a :> Particle and 'a : equality and 'a : struct> =
     { mutable Body : Body // mutable for animation
       Absolute : bool
-      MaterialProperties : MaterialProperties
       Material : Material
+      MaterialProperties : MaterialProperties
       ShadowOffset : single
       RenderType : RenderType
       Life : Life
@@ -1065,15 +1064,15 @@ type [<ReferenceEquality>] StaticBillboardEmitter<'a when 'a :> Particle and 'a 
         // fin
         (output + output2 + output3 + output4, emitter)
 
-    /// Make a basic particle emitter.
+    /// Make a basic billboard particle emitter.
     static member make<'a>
-        time body absolute materialProperties material
+        time body absolute material properties
         shadowOffset renderType lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
         constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors toParticlesDescriptor : 'a StaticBillboardEmitter =
         let particleMax = max 1 particleMax
         { Body = body
           Absolute = absolute
-          MaterialProperties = materialProperties
+          MaterialProperties = properties
           Material = material
           ShadowOffset = shadowOffset
           RenderType = renderType
@@ -1139,8 +1138,8 @@ module BasicStaticBillboardEmitter =
                 particle'.InsetOpt <- if particle.Inset.Equals box2Zero then ValueNone else ValueSome particle.Inset
                 particle'.Flip <- particle.Flip
         let descriptor =
-            { MaterialProperties = emitter.MaterialProperties
-              Material = emitter.Material
+            { Material = emitter.Material
+              MaterialProperties = emitter.MaterialProperties
               Particles = particles'
               ShadowOffset = emitter.ShadowOffset
               RenderType = emitter.RenderType }
@@ -1152,11 +1151,11 @@ module BasicStaticBillboardEmitter =
 
     /// Make a basic static billboard particle emitter.
     let make
-        time body absolute materialProperties material
+        time body absolute material properties
         shadowOffset renderType lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
         constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors =
         BasicStaticBillboardEmitter.make
-            time body absolute materialProperties material
+            time body absolute material properties
             shadowOffset renderType lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
             constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors toParticlesDescriptor
 
@@ -1169,7 +1168,7 @@ module BasicStaticBillboardEmitter =
         let emitterBehavior = fun _ _ -> Output.empty
         let emitterBehaviors = Behaviors.empty
         make
-            time Body.defaultBody false MaterialProperties.defaultProperties Material.defaultMaterial
+            time Body.defaultBody false Material.defaultMaterial MaterialProperties.defaultProperties
             Constants.Engine.ParticleShadowOffsetDefault (ForwardRenderType (0.0f, 0.0f)) lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
             Constraint.empty particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors
 
@@ -1219,7 +1218,7 @@ module BasicStaticBillboardEmitter =
         let emitterBehaviors =
             Behaviors.empty
         make
-            time Body.defaultBody false MaterialProperties.defaultProperties Material.defaultMaterial
+            time Body.defaultBody false Material.defaultMaterial MaterialProperties.defaultProperties
             Constants.Engine.ParticleShadowOffsetDefault (ForwardRenderType (0.0f, 0.0f)) lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
             Constraint.empty particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors
 

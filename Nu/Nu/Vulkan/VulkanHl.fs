@@ -35,7 +35,6 @@ type ImageFormat =
     | Rgba8
     | Rgba16f
     | Rgba32f
-    | Rgb16f
     | Rgb32f
     | Rg32f
     | R16f
@@ -56,7 +55,6 @@ type ImageFormat =
         | Rgba8 -> VkFormat.R8G8B8A8Unorm
         | Rgba16f -> VkFormat.R16G16B16A16Sfloat
         | Rgba32f -> VkFormat.R32G32B32A32Sfloat
-        | Rgb16f -> VkFormat.R16G16B16Sfloat
         | Rgb32f -> VkFormat.R32G32B32Sfloat
         | Rg32f -> VkFormat.R32G32Sfloat
         | R16f -> VkFormat.R16Sfloat
@@ -71,13 +69,32 @@ type ImageFormat =
         | D24s8ui -> VkFormat.D24UnormS8Uint
         | D32fs8ui -> VkFormat.D32SfloatS8Uint
 
+    /// The VkFormat.
+    member this.Blendable =
+        match this with
+        | Rgba8
+        | Rgba16f
+        | Rgba32f
+        | Bc3
+        | Bc5
+        | Astc -> true
+        | Rgb32f
+        | Rg32f
+        | R16f
+        | R32f
+        | D16
+        | X8d24Pack32
+        | D32f
+        | D16s8ui
+        | D24s8ui
+        | D32fs8ui -> false
+
     /// The VkImageAspectFlags.
     member this.VkImageAspectFlags =
         match this with
         | Rgba8
         | Rgba16f
         | Rgba32f
-        | Rgb16f
         | Rgb32f
         | Rg32f
         | R16f
@@ -98,7 +115,6 @@ type ImageFormat =
         | Rgba8 -> width * height * 4
         | Rgba16f -> width * height * 8
         | Rgba32f -> width * height * 16
-        | Rgb16f -> width * height * 6
         | Rgb32f -> width * height * 12
         | Rg32f -> width * height * 8
         | R16f -> width * height * 2
@@ -481,7 +497,6 @@ module Hl =
             | Rgba8
             | Rgba16f
             | Rgba32f
-            | Rgb16f
             | Rgb32f
             | Rg32f
             | R16f
@@ -509,8 +524,6 @@ module Hl =
                 match format with
                 | Bc3 | Bc5 | Astc ->
                     Log.fail ("Compressed image formats are not supported for attachment textures.")
-                | Rgb16f ->
-                    checkAttachmentFormat vkPhysicalDevice Rgba16f
                 | Rgb32f ->
                     checkAttachmentFormat vkPhysicalDevice Rgba32f
                 | Rgba32f ->

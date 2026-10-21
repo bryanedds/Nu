@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "Nu.Gaia": {
+    "Nu": {
       "commandName": "Project",
       "debugEngines": "managed,native"
     }

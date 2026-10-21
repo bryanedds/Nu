@@ -44,7 +44,7 @@ const vec3[SSAO_SAMPLES_MAX] SSAO_SAMPLING_DIRECTIONS = vec3[](
     vec3(0.430, -0.194, -0.881),    vec3(-0.568, -0.537, -0.623),   vec3(-0.598, 0.707, -0.377),    vec3(0.366, -0.804, 0.469),
     vec3(0.062, 0.981, -0.184),     vec3(0.211, -0.936, 0.281),     vec3(0.151, -0.988, -0.027),    vec3(-0.949, -0.169, 0.266));
 
-struct EyeStruct
+struct Eye3dStruct
 {
     vec3 center;
     mat4 view;
@@ -64,7 +64,7 @@ struct SsaoStruct
     int sampleCount;
 };
 
-layout(set = 0, binding = 0) uniform EyeUniform { EyeStruct eye; };
+layout(set = 0, binding = 0) uniform Eye3dUniform { Eye3dStruct eye; };
 layout(set = 0, binding = 1) uniform SsaoUniform { SsaoStruct ssao; };
 layout(set = 0, binding = 2) uniform texture2D depthTexture;
 layout(set = 0, binding = 3) uniform texture2D normalPlusTexture;
@@ -93,10 +93,11 @@ float randomAngle()
 
 vec4 depthToPosition(float depth, vec2 texCoords)
 {
-    vec4 positionClip = vec4(texCoords * 2.0 - 1.0, depth, 1.0);
-    vec4 positionView = eye.projectionInverse * positionClip;
-    positionView /= positionView.w;
-    return eye.viewInverse * positionView;
+    vec4 clip = vec4(texCoords * 2.0 - 1.0, 1.0, 1.0);
+    vec4 rayView = eye.projectionInverse * clip;
+    rayView /= rayView.w;
+    vec3 positionView = rayView.xyz * (depth / -rayView.z);
+    return eye.viewInverse * vec4(positionView, 1.0);
 }
 
 void main()

@@ -41,9 +41,9 @@ module WorldScreenModule =
         member this.GetOutgoing world = World.getScreenOutgoing this world
         member this.SetOutgoing value world = World.setScreenOutgoing value this world |> ignore<bool>
         member this.Outgoing = lens (nameof this.Outgoing) this this.GetOutgoing this.SetOutgoing
-        member this.GetRequestedSong world = World.getScreenRequestedSong this world
-        member this.SetRequestedSong value world = World.setScreenRequestedSong value this world |> ignore<bool>
-        member this.RequestedSong = lens (nameof this.RequestedSong) this this.GetRequestedSong this.SetRequestedSong
+        member this.GetSongRequest world = World.getScreenSongRequest this world
+        member this.SetSongRequest value world = World.setScreenSongRequest value this world |> ignore<bool>
+        member this.SongRequest = lens (nameof this.SongRequest) this this.GetSongRequest this.SetSongRequest
         member this.GetSlideOpt world = World.getScreenSlideOpt this world
         member this.SetSlideOpt value world = World.setScreenSlideOpt value this world |> ignore<bool>
         member this.SlideOpt = lens (nameof this.SlideOpt) this this.GetSlideOpt this.SetSlideOpt
@@ -102,6 +102,17 @@ module WorldScreenModule =
         /// Set an xtension property value.
         member this.Set<'a> propertyName (value : 'a) world =
             World.setScreenXtensionValue<'a> propertyName value this world
+
+        /// Try to map an xtension property value.
+        member this.TryMap<'a> (mapper : 'a -> 'a) propertyName world =
+            match this.TryGet<'a> propertyName world with
+            | ValueSome value -> this.TrySet<'a> propertyName (mapper value) world
+            | ValueNone -> struct (false, false)
+
+        /// Map an xtension property value.
+        member this.Map<'a> (mapper : 'a -> 'a) propertyName world =
+            let value = this.Get<'a> propertyName world
+            this.Set<'a> propertyName (mapper value) world
 
         /// Check that a screen is in an idling state (not transitioning in nor out).
         member this.GetIdling world =
@@ -634,22 +645,26 @@ module WorldScreenModule =
                 else None
             else None
 
-        /// Compute angular velocity for the given turn speed and navDirection.
+        /// Compute rotation and angular velocity required to face navDirection.
         static member nav3dFace turnSpeed (rotation : Quaternion) (navDirection : Vector3) (world : World) =
             let deltaTime = let gameDelta = world.GameDelta in gameDelta.SecondsF
-            let navRotationDesired = Quaternion.CreateFromAxisAngle (v3Up, atan2 navDirection.X navDirection.Z + MathF.PI)
-            let navSign = (rotation.Forward.Cross navRotationDesired.Forward).Y
-            let navAngleBetweenOpt = rotation.Forward.AngleBetween navRotationDesired.Forward
-            let navAngleBetween = if Single.IsNaN navAngleBetweenOpt then 0.0f else navAngleBetweenOpt
-            let navRotation =
-                if navAngleBetween > turnSpeed * deltaTime
-                then rotation * Quaternion.CreateFromAxisAngle (v3Up, MathF.CopySign (turnSpeed * deltaTime, navSign))
-                else navRotationDesired
-            let navSign = if v3Up.Dot (rotation.Forward.Cross navRotation.Forward) < 0.0f then -1.0f else 1.0f
-            let navAngleBetweenOpt = rotation.Forward.AngleBetween navRotation.Forward
-            let navAngleBetween = if Single.IsNaN navAngleBetweenOpt then 0.0f else navAngleBetweenOpt
-            let navAngularVelocity = v3 0.0f (navAngleBetween * navSign / deltaTime) 0.0f
-            (navRotation, navAngularVelocity)
+            if navDirection.LengthSquared () > 0.000001f && deltaTime > 0.0f then
+                let currentForward = rotation.Forward.Normalized
+                let desiredForward = navDirection.Normalized
+                let signedAngle =
+                    atan2
+                        ((currentForward.Cross desiredForward).Y)
+                        (Math.Clamp (currentForward.Dot desiredForward, -1.0f, 1.0f))
+                let appliedAngle =
+                    Math.Clamp (signedAngle, -turnSpeed * deltaTime, turnSpeed * deltaTime)
+                let newRotation =
+                    if abs signedAngle <= abs appliedAngle
+                    then Quaternion.CreateFromAxisAngle (v3Up, atan2 desiredForward.X desiredForward.Z + MathF.PI)
+                    else rotation * Quaternion.CreateFromAxisAngle (v3Up, appliedAngle)
+                let angularVelocity =
+                    v3 0.0f (appliedAngle / deltaTime) 0.0f
+                (newRotation, angularVelocity)
+            else (rotation, v3Zero)
 
         /// Compute navigation information that results in following the given destination.
         static member nav3dFollow distanceMinOpt distanceMaxOpt moveSpeed turnSpeed (position : Vector3) (rotation : Quaternion) (destination : Vector3) screen (world : World) =

@@ -990,9 +990,9 @@ module WorldModule =
             | (true, callback) -> callback world
             | (false, _) -> ()
 
-        /// Invoke a user-defined callback.
-        static member invoke name args (world : World) =
-            world.WorldExtension.Plugin.Invoke name args world
+        /// Get the user-defined 3D pipeline descriptors.
+        static member getUserDefinedPipeline3dDescriptors (world : World) =
+            world.WorldExtension.Plugin.UserDefinedPipeline3dDescriptors
 
         /// Attempt to make an emitter with the given parameters.
         static member tryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle (world : World) =
@@ -1169,7 +1169,11 @@ module WorldModule =
         /// Present SimulantState properties for viewing.
         static member internal viewSimulantStateProperties state =
             let properties = World.getSimulantStateProperties state
-            properties |> Array.ofList |> Array.map a_c |> Array.sortBy fst
+            properties
+            |> Array.ofList
+            |> Array.filter (fun (name, _, _) -> not (Constants.Engine.NonDebugViewablePropertyNames.Contains name))
+            |> Array.map a_c
+            |> Array.sortBy fst
 
     type World with // Handlers
 

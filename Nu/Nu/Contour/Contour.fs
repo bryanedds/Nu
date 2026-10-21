@@ -16,17 +16,17 @@ open Prime
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Contour =
 
-    // The epsilon used by the reference Slug implementation for nearly-linear curves.
-    let [<Literal>] private kSlugEpsilon = 1.0f / 65536.0f
+    /// The epsilon used by the reference Slug implementation for nearly-linear curves.
+    let [<Literal>] private SlugEpsilon = 1.0f / 65536.0f
 
-    // Epsilon used for band overlap, in em-space (reference recommends 1/1024).
-    let [<Literal>] private kBandOverlap = 1.0f / 1024.0f
+    /// Epsilon used for band overlap, in em-space (reference recommends 1/1024).
+    let [<Literal>] private BandOverlap = 1.0f / 1024.0f
 
-    // Default number of bands when bounds are degenerate.
-    let [<Literal>] private kDefaultBands = 1
+    /// Default number of bands when bounds are degenerate.
+    let [<Literal>] private BandsDefault = 1
 
-    // Maximum number of subdivision iterations for adaptive cubic-to-quadratic conversion.
-    let [<Literal>] private kMaxCubicSubdivisions = 8
+    /// Maximum number of subdivision iterations for adaptive cubic-to-quadratic conversion.
+    let [<Literal>] private CubicSubdivisionsMax = 8
 
     /// Compute the maximum x-coordinate among the three control points of a curve.
     let private curveMaxX (c : ContourCurve) =
@@ -86,7 +86,7 @@ module Contour =
     /// Recursively subdivide a cubic Bézier until the fitted quadratic error is below tolerance.
     let rec private subdivideCubic (tolerance : single) (p0 : Vector2) (p1 : Vector2) (p2 : Vector2) (p3 : Vector2) (depth : int) (quads : List<ContourCurve>) =
         let candidate = fitQuadraticToCubic p0 p1 p2 p3
-        if depth >= kMaxCubicSubdivisions || cubicToQuadError p0 p1 p2 p3 candidate <= tolerance then
+        if depth >= CubicSubdivisionsMax || cubicToQuadError p0 p1 p2 p3 candidate <= tolerance then
             quads.Add candidate
         else
             // Subdivide at t = 0.5 using de Casteljau construction.
@@ -193,7 +193,7 @@ module Contour =
         if Array.isEmpty curves then
             (Array.empty, Array.empty, 0, 0, Vector4.Zero)
         else
-            let emEpsilon = kBandOverlap
+            let emEpsilon = BandOverlap
 
             // ---- Horizontal bands (split y-range) ----
             let hBandThickness =

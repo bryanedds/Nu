@@ -94,6 +94,7 @@ type private Box2dNetFluidEmitter =
       mutable NextBodyIndex : int }
 
     static let CellCapacityDefault = 16
+
     static let Neighborhood =
         [|for x in -1 .. 1 do
             for y in -1 .. 1 do

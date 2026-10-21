@@ -146,8 +146,8 @@ type [<Struct>] BufferWrapper =
                 let stride = Math.Stride (alignment, size)
                 let offset = Math.AlignOffset (offset, alignment)
                 if offset + stride * count <= bufferWrapper.Size_ then
-
-                    // manually flush as memory may not be host-coherent on non-windows platforms, see
+                    
+                    // NOTE: we manually flush as memory may not be host-coherent on non-windows platforms:
                     // https://gpuopen-librariesandsdks.github.io/VulkanMemoryAllocator/html/memory_mapping.html#memory_mapping_cache_control
                     Vma.vmaFlushAllocation (context.VmaAllocator, bufferWrapper.VmaAllocation_, uint64 offset, uint64 (stride * count)) |> Hl.check
 

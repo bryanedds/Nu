@@ -13,7 +13,7 @@ open Vortice.Vulkan
 open Prime
 open Nu
 
-[<Struct; StructLayout (LayoutKind.Explicit)>]
+[<Struct; StructLayout (LayoutKind.Explicit, Size = 64)>]
 type SpriteStruct =
     [<FieldOffset(0)>] val mutable perimeter : Vector4
     [<FieldOffset(16)>] val mutable pivot : Vector2
@@ -90,7 +90,7 @@ module SpriteBatch =
         let pipeline =
             Pipeline.create
                 Constants.Paths.SpriteBatchShaderFilePath
-                [|VulkanTransparent; VulkanAdditive; VulkanOverwrite|] [|true|] [||]
+                [|VulkanUnblended; VulkanTransparent; VulkanAdditive; VulkanOverwrite|] [|CullBack|] [||]
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer VertexStage 1
                       Pipeline.descriptor 1 UniformBuffer VertexStage 1|]
@@ -140,7 +140,7 @@ module SpriteBatch =
             if Hl.validateRect scissor then
 
                 // only draw when required vkPipeline exists
-                match Pipeline.tryGetVkPipeline env.State.Blend true env.Pipeline with
+                match Pipeline.tryGetVkPipeline env.State.Blend CullBack env.Pipeline with
                 | Some vkPipeline ->
                     
                     // specify uniforms

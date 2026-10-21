@@ -4,7 +4,7 @@ const float GAMMA = 2.2;
 const float SAA_VARIANCE = 0.1; // TODO: consider exposing as lighting config property.
 const float SAA_THRESHOLD = 0.1; // TODO: consider exposing as lighting config property.
 
-struct EyeStruct
+struct Eye3dStruct
 {
     vec3 center;
     mat4 view;
@@ -14,7 +14,7 @@ struct EyeStruct
     mat4 viewProjection;
 };
 
-layout(set = 0, binding = 0) uniform EyeUniform { EyeStruct eye; };
+layout(set = 0, binding = 0) uniform Eye3dUniform { Eye3dStruct eye; };
 
 layout(set = 1, binding = 0) uniform texture2D albedoTexture;
 layout(set = 1, binding = 1) uniform texture2D roughnessTexture;
@@ -22,24 +22,30 @@ layout(set = 1, binding = 2) uniform texture2D metallicTexture;
 layout(set = 1, binding = 3) uniform texture2D ambientOcclusionTexture;
 layout(set = 1, binding = 4) uniform texture2D emissionTexture;
 layout(set = 1, binding = 5) uniform texture2D normalTexture;
-layout(set = 1, binding = 6) uniform texture2D heightTexture;
-layout(set = 1, binding = 7) uniform texture2D subdermalTexture;
-layout(set = 1, binding = 8) uniform texture2D finenessTexture;
-layout(set = 1, binding = 9) uniform texture2D scatterTexture;
-layout(set = 1, binding = 10) uniform texture2D clearCoatTexture;
-layout(set = 1, binding = 11) uniform texture2D clearCoatRoughnessTexture;
-layout(set = 1, binding = 12) uniform texture2D clearCoatNormalTexture;
+layout(set = 1, binding = 6) uniform texture2D subdermalTexture;
+layout(set = 1, binding = 7) uniform texture2D finenessTexture;
+layout(set = 1, binding = 8) uniform texture2D scatterTexture;
+layout(set = 1, binding = 9) uniform texture2D clearCoatTexture;
+layout(set = 1, binding = 10) uniform texture2D clearCoatRoughnessTexture;
+layout(set = 1, binding = 11) uniform texture2D clearCoatNormalTexture;
+layout(set = 1, binding = 12) uniform texture2D userDefinedImage0Texture;
+layout(set = 1, binding = 13) uniform texture2D userDefinedImage1Texture;
+layout(set = 1, binding = 14) uniform texture2D userDefinedImage2Texture;
 
-layout(set = 3, binding = 0) uniform sampler materialSampler;
+layout(set = 3, binding = 0) uniform sampler materialRepeatSampler;
+layout(set = 3, binding = 1) uniform sampler materialRepeatMirrorSampler;
+layout(set = 3, binding = 2) uniform sampler materialClampToEdge;
+layout(set = 3, binding = 3) uniform sampler materialClampToBorder;
 
 layout(location = 0) in vec4 position;
 layout(location = 1) in vec2 texCoords;
 layout(location = 2) in vec3 normal;
-layout(location = 3) flat in vec4 albedo;
-layout(location = 4) flat in vec4 material;
-layout(location = 5) flat in vec4 heightPlus;
-layout(location = 6) flat in vec4 subsurfacePlus;
-layout(location = 7) flat in vec4 clearCoatPlus;
+layout(location = 3) in vec3 tangent;
+layout(location = 4) flat in vec4 albedo;
+layout(location = 5) flat in vec4 material;
+layout(location = 6) flat in vec4 material2;
+layout(location = 7) flat in vec4 subsurfacePlus;
+layout(location = 8) flat in vec4 clearCoatPlus;
 
 layout(location = 0) out float depthOut;
 layout(location = 1) out vec3 albedoOut;
@@ -48,6 +54,7 @@ layout(location = 3) out vec4 normalPlusOut;
 layout(location = 4) out vec4 subdermalPlusOut;
 layout(location = 5) out vec4 scatterPlusOut;
 layout(location = 6) out vec4 clearCoatPlusOut;
+layout(location = 7) out vec4 userDefinedBufferOut;
 
 // NOTE: algorithm from Chapter 16 of OpenGL Shading Language.
 vec3 saturate(vec3 rgb, float adjustment)
@@ -88,41 +95,26 @@ vec2 encodeOctahedral(vec3 v)
 void main()
 {
     // write depth
-    depthOut = gl_FragCoord.z;
+    depthOut = -(eye.view * position).z;
 
     // compute spatial converters
-    vec3 q1 = dFdx(position.xyz);
-    vec3 q2 = dFdy(position.xyz);
-    vec2 st1 = dFdx(texCoords);
-    vec2 st2 = dFdy(texCoords);
     vec3 normal = normalize(normal);
-    vec3 tangent = normalize(q1 * st2.t - q2 * st1.t);
+    vec3 tangent = normalize(tangent);
     vec3 binormal = -normalize(cross(normal, tangent));
-    tangent = normalize(tangent - normal * dot(normal, tangent));
-    binormal = cross(normal, tangent);
     mat3 toWorld = mat3(tangent, binormal, normal);
-    mat3 toTangent = transpose(toWorld);
-
-    // compute tex coords in parallax space
-    vec3 eyeCenterTangent = toTangent * eye.center;
-    vec3 positionTangent = toTangent * position.xyz;
-    vec3 toEyeTangent = normalize(eyeCenterTangent - positionTangent);
-    float height = texture(sampler2D(heightTexture, materialSampler), texCoords).x * heightPlus.x;
-    vec2 parallax = toEyeTangent.xy * height;
-    vec2 texCoords = texCoords - parallax;
 
     // compute albedo
-    vec4 albedoSample = texture(sampler2D(albedoTexture, materialSampler), texCoords);
+    vec4 albedoSample = texture(sampler2D(albedoTexture, materialRepeatSampler), texCoords);
     albedoOut = pow(albedoSample.rgb, vec3(GAMMA)) * albedo.rgb;
 
-    // compute normal and ignore local height maps
-    normalPlusOut.xyz = normalize(toWorld * decodeNormal(texture(sampler2D(normalTexture, materialSampler), texCoords).xy));
-    normalPlusOut.w = heightPlus.y;
+    // compute normal and ignore local light maps
+    normalPlusOut.xyz = normalize(toWorld * decodeNormal(texture(sampler2D(normalTexture, materialRepeatSampler), texCoords).xy));
+    normalPlusOut.w = material2.x;
 
     // compute roughness with specular anti-aliasing (Tokuyoshi & Kaplanyan 2019)
     // NOTE: the SAA algo also includes derivative scalars that are currently not utilized here due to lack of need -
     // https://github.com/google/filament/blob/d7b44a2585a7ce19615dbe226501acc3fe3f0c16/shaders/src/surface_shading_lit.fs#L41-L42
-    float roughness = texture(sampler2D(roughnessTexture, materialSampler), texCoords).r * material.r;
+    float roughness = texture(sampler2D(roughnessTexture, materialRepeatSampler), texCoords).r * material.r;
     vec3 du = dFdx(normalPlusOut.xyz);
     vec3 dv = dFdy(normalPlusOut.xyz);
     float variance = SAA_VARIANCE * (dot(du, du) + dot(dv, dv));
@@ -132,21 +124,21 @@ void main()
     roughness = sqrt(sqrt(roughnessPerceptualSquared));
 
     // compute remaining material properties
-    float metallic = texture(sampler2D(metallicTexture, materialSampler), texCoords).g * material.g;
-    float ambientOcclusion = texture(sampler2D(ambientOcclusionTexture, materialSampler), texCoords).b * material.b;
-    float emission = texture(sampler2D(emissionTexture, materialSampler), texCoords).r * material.a;
+    float metallic = texture(sampler2D(metallicTexture, materialRepeatSampler), texCoords).g * material.g;
+    float ambientOcclusion = texture(sampler2D(ambientOcclusionTexture, materialRepeatSampler), texCoords).b * material.b;
+    float emission = texture(sampler2D(emissionTexture, materialRepeatSampler), texCoords).r * material.a;
     materialOut = vec4(roughness, metallic, ambientOcclusion, emission);
 
     // compute subsurface scattering properties
     float scatterType = subsurfacePlus.g;
     if (scatterType != 0.0) // not no scatter
     {
-        vec4 subdermal = texture(sampler2D(subdermalTexture, materialSampler), texCoords);
+        vec4 subdermal = texture(sampler2D(subdermalTexture, materialRepeatSampler), texCoords);
         float finenessOffset = subsurfacePlus.r;
-        float fineness = texture(sampler2D(finenessTexture, materialSampler), texCoords).r;
+        float fineness = texture(sampler2D(finenessTexture, materialRepeatSampler), texCoords).r;
         subdermalPlusOut.rgb = subdermal.a == 0.0 ? saturate(albedoOut, 1.5) : subdermal.rgb;
         subdermalPlusOut.a = clamp(fineness + finenessOffset, 0.0, 1.5);
-        vec4 scatter = texture(sampler2D(scatterTexture, materialSampler), texCoords);
+        vec4 scatter = texture(sampler2D(scatterTexture, materialRepeatSampler), texCoords);
         if (scatter.a == 0.0)
             scatterPlusOut.rgb =
                 scatterType > 0.09 && scatterType < 0.11 ?
@@ -162,14 +154,17 @@ void main()
     }
 
     // compute clear coat properties
-    float clearCoat = texture(sampler2D(clearCoatTexture, materialSampler), texCoords).r * clearCoatPlus.r;
+    float clearCoat = texture(sampler2D(clearCoatTexture, materialRepeatSampler), texCoords).r * clearCoatPlus.r;
     if (clearCoat > 0.0)
     {
-        float clearCoatRoughness = clamp(texture(sampler2D(clearCoatRoughnessTexture, materialSampler), texCoords).r * clearCoatPlus.g, 0.0, 1.0);
-        vec3 clearCoatNormal = normalize(toWorld * decodeNormal(texture(sampler2D(clearCoatNormalTexture, materialSampler), texCoords).rg));
+        float clearCoatRoughness = clamp(texture(sampler2D(clearCoatRoughnessTexture, materialRepeatSampler), texCoords).r * clearCoatPlus.g, 0.0, 1.0);
+        vec3 clearCoatNormal = normalize(toWorld * decodeNormal(texture(sampler2D(clearCoatNormalTexture, materialRepeatSampler), texCoords).rg));
         clearCoatPlusOut.r = clearCoat;
         clearCoatPlusOut.g = clearCoatRoughness;
         clearCoatPlusOut.ba = encodeOctahedral(clearCoatNormal);
     }
     else clearCoatPlusOut = vec4(0.0);
+
+    // write zero to user-defined buffer
+    userDefinedBufferOut = vec4(0.0);
 }

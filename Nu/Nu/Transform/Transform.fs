@@ -13,6 +13,7 @@ open Prime
 /// Masks for Transform flags.
 module TransformMasks =
 
+    // OPTIMIZATION: Transform flag bit-masks for performance.
     let [<Literal>] ActiveMask =                    0b00000000000000000000001u // for use as a component in an ECS or other data-oriented context
     let [<Literal>] DirtyMask =                     0b00000000000000000000010u // for use as a component in an ECS or other data-oriented context
     let [<Literal>] InvalidatedMask =               0b00000000000000000000100u
