@@ -4039,7 +4039,9 @@ module PhysicallyBased =
                     [|Pipeline.descriptor 0 Sampler VertexAndFragmentStage 1
                       Pipeline.descriptor 1 Sampler VertexAndFragmentStage 1
                       Pipeline.descriptor 2 Sampler VertexAndFragmentStage 1
-                      Pipeline.descriptor 3 Sampler VertexAndFragmentStage 1|]|]
+                      Pipeline.descriptor 3 Sampler VertexAndFragmentStage 1
+                      Pipeline.descriptor 4 Sampler VertexAndFragmentStage 1
+                      Pipeline.descriptor 5 Sampler VertexAndFragmentStage 1|]|]
                 [||] colorAttachmentFormats (Some depthTest)
                 [|eyeUniform; terrainUniform|]
 
