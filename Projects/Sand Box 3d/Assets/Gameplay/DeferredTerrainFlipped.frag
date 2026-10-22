@@ -114,7 +114,7 @@ void main()
     roughness = sqrt(sqrt(roughnessPerceptualSquared));
 
     // populate remaining outputs
-    depthOut = gl_FragCoord.z;
+    depthOut = -(eye.view * position).z;
     albedoOut = vec3(userDefinedSettings[0][0]) - pow(albedoBlend.rgb, vec3(GAMMA)) * tint * albedo.rgb;
     materialOut = vec4(roughness * material.g, 0.0, ambientOcclusionBlend * material.b, 0.0);
     subdermalPlusOut = vec4(0.0);
