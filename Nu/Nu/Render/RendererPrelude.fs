@@ -52,7 +52,7 @@ type [<Struct>] RenderType =
 /// Describes the nature of the rendering that takes place.
 type [<CustomEquality; NoComparison>] RenderPass =
     | LightMapPass of LightProbeId : uint64 * LightMapBounds : Box3
-    | ShadowPass of LightId : uint64 * FaceInfoOpt : (int * Matrix4x4 * Matrix4x4) option * LightType : LightType * DynamicShadows : bool * ShadowRotation : Quaternion * ShadowFrustum : Frustum
+    | ShadowPass of LightId : uint64 * FaceInfoOpt : (int * Matrix4x4 * Matrix4x4) option * LightType : LightType * DynamicShadowing : bool * ShadowRotation : Quaternion * ShadowFrustum : Frustum
     | ReflectionPass of ReflectorId : int64 * ShadowFrustum : Frustum
     | NormalPass
 
@@ -77,11 +77,11 @@ type [<CustomEquality; NoComparison>] RenderPass =
     static member hash renderPass =
         match renderPass with
         | LightMapPass (id, _) -> hash id
-        | ShadowPass (id, indexInfoOpt, _, dynamicShadows, _, _) ->
+        | ShadowPass (id, indexInfoOpt, _, dynamicShadowing, _, _) ->
             1 ^^^
             hash id ^^^
             (match indexInfoOpt with Some (index, _, _) -> hash index | None -> 0) ^^^
-            hash dynamicShadows
+            hash dynamicShadowing
         | ReflectionPass (id, _) -> 2 ^^^ hash id
         | NormalPass -> 3
 
@@ -93,9 +93,9 @@ type [<CustomEquality; NoComparison>] RenderPass =
             match right with
             | LightMapPass (id2, bounds2) -> id = id2 && bounds = bounds2
             | _ -> false
-        | ShadowPass (id, indexInfoOpt, lightType, dynamicShadows, rotation, frustum) ->
+        | ShadowPass (id, indexInfoOpt, lightType, dynamicShadowing, rotation, frustum) ->
             match right with
-            | ShadowPass (id2, indexInfoOpt2, lightType2, dynamicShadows2, rotation2, frustum2) ->
+            | ShadowPass (id2, indexInfoOpt2, lightType2, dynamicShadowing2, rotation2, frustum2) ->
                 id = id2 &&
                 (match indexInfoOpt with
                  | Some (index, view, projection) ->
@@ -104,7 +104,7 @@ type [<CustomEquality; NoComparison>] RenderPass =
                     | None -> false
                  | None -> indexInfoOpt2.IsNone) &&
                 lightType = lightType2 &&
-                dynamicShadows = dynamicShadows2 &&
+                dynamicShadowing = dynamicShadowing2 &&
                 rotation = rotation2 &&
                 frustum = frustum2
             | _ -> false

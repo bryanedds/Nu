@@ -628,8 +628,7 @@ type RenderLight3d =
       Specularity : single
       LightCutoff : single
       LightType : LightType
-      DesireShadows : bool
-      DynamicShadows : bool
+      ShadowingType : ShadowingType
       DesireFog : bool
       RenderPass : RenderPass }
 
@@ -3587,11 +3586,11 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                       SortableLightRadius = rl.LightType.Radius
                       SortableLightConeInner = coneInner
                       SortableLightConeOuter = coneOuter
-                      SortableLightDesireShadows = if rl.DesireShadows then 1 else 0
+                      SortableLightDesireShadows = if rl.ShadowingType.IsShadowing then 1 else 0
                       SortableLightDesireFog = if rl.DesireFog then 1 else 0
                       SortableLightDistance = Single.MaxValue }
                 renderTasks.Lights.Add light
-                if rl.DesireShadows then
+                if rl.ShadowingType.IsShadowing then
                     renderer.LightsDesiringShadows[rl.LightId] <- light
             | RenderBillboard rb ->
                 let struct (billboardMaterial, billboardProperties) = VulkanRenderer3d.makeBillboardMaterial rb.Material rb.MaterialProperties renderer
