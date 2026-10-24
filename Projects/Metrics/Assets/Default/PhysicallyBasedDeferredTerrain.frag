@@ -36,10 +36,12 @@ layout(set = 1, binding = 4) uniform texture2D userDefinedImageTextures[TERRAIN_
 layout(set = 1, binding = 5) uniform texture2D userDefinedImage0Texture;
 layout(set = 1, binding = 6) uniform texture2D userDefinedImage1Texture;
 
-layout(set = 2, binding = 0) uniform sampler materialRepeatSampler;
-layout(set = 2, binding = 1) uniform sampler materialRepeatMirrorSampler;
-layout(set = 2, binding = 2) uniform sampler materialClampToEdge;
-layout(set = 3, binding = 3) uniform sampler materialClampToBorder;
+layout(set = 2, binding = 0) uniform sampler unfilteredSampler;
+layout(set = 2, binding = 1) uniform sampler filteredSampler;
+layout(set = 2, binding = 2) uniform sampler materialRepeatSampler;
+layout(set = 2, binding = 3) uniform sampler materialRepeatMirrorSampler;
+layout(set = 2, binding = 4) uniform sampler materialClampToEdge;
+layout(set = 2, binding = 5) uniform sampler materialClampToBorder;
 
 layout(location = 0) in vec4 position;
 layout(location = 1) in vec2 texCoords;

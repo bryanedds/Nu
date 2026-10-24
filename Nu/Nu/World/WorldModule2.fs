@@ -1589,10 +1589,10 @@ module WorldModule2 =
                             WorldModuleInternal2.HashSet3dNormalCached.Remove element |> ignore<bool>
                         elif excludeGlobalLights && element.Light && (element.Entry.GetLightType world).IsGlobalLight then
                             WorldModuleInternal2.HashSet3dNormalCached.Remove element |> ignore<bool>
-                | ShadowPass (_, _, lightType, dynamicShadows, _, shadowFrustum) ->
+                | ShadowPass (_, _, lightType, dynamicShadowing, _, shadowFrustum) ->
                     let shadowInterior = LightType.shouldShadowInterior lightType
                     World.getElements3dInViewFrustum shadowInterior true shadowFrustum WorldModuleInternal2.HashSet3dNormalCached world
-                    if not dynamicShadows then
+                    if not dynamicShadowing then
                         for element in WorldModuleInternal2.HashSet3dNormalCached do
                             if not element.StaticInPlay then
                                 WorldModuleInternal2.HashSet3dNormalCached.Remove element |> ignore<bool>
@@ -1639,7 +1639,8 @@ module WorldModule2 =
                 let lights = World.getLights3dInView WorldModuleInternal2.HashSet3dShadowCached world // NOTE: this may not be the optimal way to query.
                 let shadowPassDescriptorsSortable =
                     [|for light in lights do
-                        if light.GetDesireShadows world then
+                        let shadowingType = light.GetShadowingType world
+                        if shadowingType.IsShadowing then
                             let shadowFrustum =
                                 light.ComputeShadowFrustum world
                             let shadowInView =
@@ -1667,7 +1668,7 @@ module WorldModule2 =
                 let mutable shadowCascadesCount = 0
                 for (shadowFrustum, light : Entity) in shadowPassDescriptors do
                     let lightType = light.GetLightType world
-                    let dynamicShadows = light.GetDynamicShadows world
+                    let shadowingType = light.GetShadowingType world
                     match lightType with
                     | PointLight _ ->
                         if shadowMapsCount < Constants.Render.ShadowMapsMax then
@@ -1697,14 +1698,14 @@ module WorldModule2 =
                                 let shadowView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + eyeForward, eyeUp)
                                 let shadowViewProjection = shadowView * shadowProjection
                                 let shadowFrustum = Frustum shadowViewProjection
-                                World.renderSimulantsInternal false (ShadowPass (lightId, Some (i, shadowView, shadowProjection), lightType, dynamicShadows, shadowRotation, shadowFrustum)) world
+                                World.renderSimulantsInternal false (ShadowPass (lightId, Some (i, shadowView, shadowProjection), lightType, shadowingType.IsDynamicShadowing, shadowRotation, shadowFrustum)) world
 
                             // fin
                             shadowMapsCount <- inc shadowMapsCount
 
                     | SpotLight (_, _, _) ->
                         if shadowTexturesCount < Constants.Render.ShadowTexturesMax then
-                            World.renderSimulantsInternal false (ShadowPass (light.GetId world, None, lightType, dynamicShadows, light.GetRotation world, shadowFrustum)) world
+                            World.renderSimulantsInternal false (ShadowPass (light.GetId world, None, lightType, shadowingType.IsDynamicShadowing, light.GetRotation world, shadowFrustum)) world
                             shadowTexturesCount <- inc shadowTexturesCount
 
                     | DirectionalLight offsetForwardScalar ->
@@ -1723,7 +1724,7 @@ module WorldModule2 =
                             let cullFrustum = Frustum (cullView * cullProjection)
 
                             // render
-                            World.renderSimulantsInternal false (ShadowPass (light.GetId world, None, lightType, dynamicShadows, light.GetRotation world, cullFrustum)) world
+                            World.renderSimulantsInternal false (ShadowPass (light.GetId world, None, lightType, shadowingType.IsDynamicShadowing, light.GetRotation world, cullFrustum)) world
 
                             // fin
                             shadowTexturesCount <- inc shadowTexturesCount
@@ -1815,7 +1816,7 @@ module WorldModule2 =
                                     World.renderSimulantsInternal8
                                         game screenOpt groups groupsInvisible
                                         WorldModuleInternal2.HashSet3dNormalCached WorldModuleInternal2.HashSet2dNormalCached
-                                        (ShadowPass (lightId, Some (i, sectionViewOrtho, sectionProjectionOrtho), lightType, dynamicShadows, shadowRotation, cullFrustum)) world
+                                        (ShadowPass (lightId, Some (i, sectionViewOrtho, sectionProjectionOrtho), lightType, shadowingType.IsDynamicShadowing, shadowRotation, cullFrustum)) world
 
                             // free cached values
                             finally
