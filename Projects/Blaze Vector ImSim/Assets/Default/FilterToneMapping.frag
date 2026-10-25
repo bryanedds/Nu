@@ -231,6 +231,6 @@ void main()
         default: color = applyKronosNeutralToneMap(color * toneMapping.lightExposure); break;
     }
 
-    // fin
+    // write fragment
     frag = vec4(color, 1.0);
 }
