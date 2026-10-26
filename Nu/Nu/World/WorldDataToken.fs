@@ -46,8 +46,7 @@ module WorldDataToken =
                       Specularity = light.Specularity
                       LightCutoff = light.LightCutoff
                       LightType = light.LightType
-                      DesireShadows = false
-                      DynamicShadows = true
+                      ShadowingType = NoShadowing
                       DesireFog = false
                       RenderPass = renderPass }
                 World.enqueueRenderMessage3d (RenderLight3d renderLight) world

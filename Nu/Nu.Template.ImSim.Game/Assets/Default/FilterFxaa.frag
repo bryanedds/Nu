@@ -56,7 +56,7 @@ void main()
     float lumMax = max(lumCC, max(max(lumTL, lumTR), max(lumBL, lumBR)));
     float lumResult2 = dot(lum, result2);
 
-    // write    
+    // write fragment
     frag =
         lumResult2 < lumMin || lumResult2 > lumMax ?
         vec4(result1, 1.0) :

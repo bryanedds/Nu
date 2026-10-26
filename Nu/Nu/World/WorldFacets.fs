@@ -2825,12 +2825,9 @@ module Light3dFacetExtensions =
         member this.GetLightType world : LightType = this.Get (nameof this.LightType) world
         member this.SetLightType (value : LightType) world = this.Set (nameof this.LightType) value world
         member this.LightType = lens (nameof this.LightType) this this.GetLightType this.SetLightType
-        member this.GetDesireShadows world : bool = this.Get (nameof this.DesireShadows) world
-        member this.SetDesireShadows (value : bool) world = this.Set (nameof this.DesireShadows) value world
-        member this.DesireShadows = lens (nameof this.DesireShadows) this this.GetDesireShadows this.SetDesireShadows
-        member this.GetDynamicShadows world : bool = this.Get (nameof this.DynamicShadows) world
-        member this.SetDynamicShadows (value : bool) world = this.Set (nameof this.DynamicShadows) value world
-        member this.DynamicShadows = lens (nameof this.DynamicShadows) this this.GetDynamicShadows this.SetDynamicShadows
+        member this.GetShadowingType world : ShadowingType = this.Get (nameof this.ShadowingType) world
+        member this.SetShadowingType (value : ShadowingType) world = this.Set (nameof this.ShadowingType) value world
+        member this.ShadowingType = lens (nameof this.ShadowingType) this this.GetShadowingType this.SetShadowingType
         member this.GetDesireFog world : bool = this.Get (nameof this.DesireFog) world
         member this.SetDesireFog (value : bool) world = this.Set (nameof this.DesireFog) value world
         member this.DesireFog = lens (nameof this.DesireFog) this this.GetDesireFog this.SetDesireFog
@@ -2947,8 +2944,7 @@ type Light3dFacet () =
          define Entity.Specularity 1.0f
          define Entity.LightCutoff Constants.Render.LightCutoffDefault
          define Entity.LightType (PointLight 0.0f)
-         define Entity.DesireShadows false
-         define Entity.DynamicShadows true
+         define Entity.ShadowingType NoShadowing
          define Entity.DesireFog false]
 
     override this.Register (entity, world) =
@@ -2971,8 +2967,7 @@ type Light3dFacet () =
         let attenuationLinear = entity.GetAttenuationLinear world
         let attenuationQuadratic = entity.GetAttenuationQuadratic world
         let specularity = entity.GetSpecularity world
-        let desireShadows = entity.GetDesireShadows world
-        let dynamicShadows = entity.GetDynamicShadows world
+        let shadowingType = entity.GetShadowingType world
         let desireFog = entity.GetDesireFog world
         World.enqueueRenderMessage3d
             (RenderLight3d
@@ -2987,8 +2982,7 @@ type Light3dFacet () =
                   Specularity = specularity
                   LightCutoff = lightCutoff
                   LightType = lightType
-                  DesireShadows = desireShadows
-                  DynamicShadows = dynamicShadows
+                  ShadowingType = shadowingType
                   DesireFog = desireFog
                   RenderPass = renderPass })
             world

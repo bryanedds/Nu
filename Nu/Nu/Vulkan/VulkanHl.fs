@@ -69,6 +69,26 @@ type ImageFormat =
         | D24s8ui -> VkFormat.D24UnormS8Uint
         | D32fs8ui -> VkFormat.D32SfloatS8Uint
 
+    /// The VkFormat.
+    member this.Blendable =
+        match this with
+        | Rgba8
+        | Rgba16f
+        | Rgba32f
+        | Bc3
+        | Bc5
+        | Astc -> true
+        | Rgb32f
+        | Rg32f
+        | R16f
+        | R32f
+        | D16
+        | X8d24Pack32
+        | D32f
+        | D16s8ui
+        | D24s8ui
+        | D32fs8ui -> false
+
     /// The VkImageAspectFlags.
     member this.VkImageAspectFlags =
         match this with

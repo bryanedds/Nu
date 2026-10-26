@@ -1,6 +1,7 @@
 #version 450 core
 
 const int TEX_COORDS_OFFSET_VERTS = 6;
+const int TERRAIN_LAYERS_MAX = 6;
 
 const vec2 TEX_COORDS_OFFSET_FILTERS[TEX_COORDS_OFFSET_VERTS] =
     vec2[TEX_COORDS_OFFSET_VERTS](
@@ -30,7 +31,29 @@ struct Eye3dStruct
     mat4 viewProjection;
 };
 
+struct TerrainStruct
+{
+    int layersCount;
+    int lightShadowSamples;
+    float lightShadowBias;
+    float lightShadowSampleScalar;
+    float lightShadowExponent;
+    float lightShadowDensity;
+};
+
 layout(set = 0, binding = 0) uniform Eye3dUniform { Eye3dStruct eye; };
+layout(set = 0, binding = 1) uniform TerrainUniform { TerrainStruct terrain; };
+
+layout(set = 1, binding = 4) uniform texture2D userDefinedImageTextures[TERRAIN_LAYERS_MAX];
+layout(set = 1, binding = 5) uniform texture2D userDefinedImage0Texture;
+layout(set = 1, binding = 6) uniform texture2D userDefinedImage1Texture;
+
+layout(set = 2, binding = 0) uniform sampler unfilteredSampler;
+layout(set = 2, binding = 1) uniform sampler filteredSampler;
+layout(set = 2, binding = 2) uniform sampler materialRepeatSampler;
+layout(set = 2, binding = 3) uniform sampler materialRepeatMirrorSampler;
+layout(set = 2, binding = 4) uniform sampler materialClampToEdge;
+layout(set = 2, binding = 5) uniform sampler materialClampToBorder;
 
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec2 texCoords;

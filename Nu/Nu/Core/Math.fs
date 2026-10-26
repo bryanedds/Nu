@@ -1878,6 +1878,16 @@ type [<DefaultValue "[PointLight 0]">] LightType =
           nameof DirectionalLight
           nameof CascadedLight|]
 
+/// The type of shadowing used by a light.
+type [<Struct>] ShadowingType =
+    | NoShadowing
+    | StaticShadowing
+    | DynamicShadowing
+
+    /// Whether shadowing is utilized in any form.
+    member this.IsShadowing =
+        not this.IsNoShadowing
+
 /// The type of tone map used in tone mapping.
 type [<Struct>] ToneMapType =
     | AgXToneMap

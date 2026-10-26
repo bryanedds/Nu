@@ -83,7 +83,7 @@ type ShadowFragStruct =
     [<FieldOffset(12)>] val mutable lightShadowExponent : single
 
 [<Struct; StructLayout (LayoutKind.Explicit)>]
-type TerrainFragStruct =
+type TerrainStruct =
     [<FieldOffset(0)>] val mutable layersCount : int
     [<FieldOffset(4)>] val mutable lightShadowSamples : int
     [<FieldOffset(8)>] val mutable lightShadowBias : single
@@ -991,11 +991,11 @@ module PhysicallyBased =
         let bloomSampleAttachments = Attachment.createBloomSampleAttachments (geometryViewport.Bounds.Size.X / 2) (geometryViewport.Bounds.Size.Y / 2) context
         let bloomApplyAttachment = Attachment.createColorAttachment Texture2d (VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferSrc) Rgba16f Rgba geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y context
 
-        // create tone-mapping attachments
-        let toneMappingAttachment = Attachment.createToneMappingAttachments geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y context
+        // create tone-mapping attachment
+        let toneMappingAttachment = Attachment.createToneMappingAttachment geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y context
 
-        // create gamma-correction attachments
-        let gammaCorrectionAttachment = Attachment.createGammaCorrectionAttachments geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y context
+        // create gamma-correction attachment
+        let gammaCorrectionAttachment = Attachment.createGammaCorrectionAttachment geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y context
 
         // create shadow texture array attachments
         let shadowTextureArrayAttachments =
@@ -1090,8 +1090,8 @@ module PhysicallyBased =
         Attachment.updateColorAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.BloomExtractAttachment context
         Attachment.updateBloomSampleAttachmentsSize (geometryViewport.Bounds.Size.X / 2) (geometryViewport.Bounds.Size.Y / 2) attachments.BloomSampleAttachments context
         Attachment.updateColorAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.BloomApplyAttachment context
-        Attachment.updateToneMappingAttachmentsSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.ToneMappingAttachment context
-        Attachment.updateGammaCorrectionAttachmentsSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.GammaCorrectionAttachment context
+        Attachment.updateToneMappingAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.ToneMappingAttachment context
+        Attachment.updateGammaCorrectionAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.GammaCorrectionAttachment context
         let (colorTexture, zTexture) = attachments.ShadowTextureArrayAttachments
         Attachment.updateShadowTextureArrayAttachmentsSize geometryViewport.ShadowTextureResolution.X geometryViewport.ShadowTextureResolution.Y colorTexture zTexture context
         for i in 0 .. dec attachments.ShadowMapAttachmentsArray.Length do
@@ -1126,7 +1126,7 @@ module PhysicallyBased =
         Attachment.destroyColorAttachment attachments.BloomExtractAttachment context
         Attachment.destroyBloomSampleAttachments attachments.BloomSampleAttachments context
         Attachment.destroyColorAttachment attachments.BloomApplyAttachment context
-        Attachment.destroyToneMappingAttachments attachments.ToneMappingAttachment context
+        Attachment.destroyToneMappingAttachment attachments.ToneMappingAttachment context
         Attachment.destroyGammaCorrectionAttachment attachments.GammaCorrectionAttachment context
         let (colorTexture, zTexture) = attachments.ShadowTextureArrayAttachments
         Attachment.destroyShadowTextureArrayAttachments colorTexture zTexture context
@@ -3814,9 +3814,9 @@ module PhysicallyBased =
                       Pipeline.descriptor 9 SampledImage FragmentStage 1 // clearCoatTexture
                       Pipeline.descriptor 10 SampledImage FragmentStage 1 // clearCoatRoughnessTexture
                       Pipeline.descriptor 11 SampledImage FragmentStage 1 // clearCoatNormalTexture
-                      Pipeline.descriptor 12 SampledImage FragmentStage 1 // userDefinedImage0Texture
-                      Pipeline.descriptor 13 SampledImage FragmentStage 1 // userDefinedImage1Texture
-                      Pipeline.descriptor 14 SampledImage FragmentStage 1|] // userDefinedImage2Texture
+                      Pipeline.descriptor 12 SampledImage VertexAndFragmentStage 1 // userDefinedImage0Texture
+                      Pipeline.descriptor 13 SampledImage VertexAndFragmentStage 1 // userDefinedImage1Texture
+                      Pipeline.descriptor 14 SampledImage VertexAndFragmentStage 1|] // userDefinedImage2Texture
 
                   // descriptor set 2: dynamic
                   Pipeline.descriptorSet<int>
@@ -3833,13 +3833,12 @@ module PhysicallyBased =
 
                   // descriptor set 3: samplers
                   Pipeline.descriptorSet<Unit>
-                    [|Pipeline.descriptor 0 Sampler FragmentStage 1
-                      Pipeline.descriptor 1 Sampler FragmentStage 1
-                      Pipeline.descriptor 2 Sampler FragmentStage 1
-                      Pipeline.descriptor 3 Sampler FragmentStage 1
-                      Pipeline.descriptor 4 Sampler FragmentStage 1
-                      Pipeline.descriptor 5 Sampler FragmentStage 1
-                      Pipeline.descriptor 6 Sampler FragmentStage 1|]|]
+                    [|Pipeline.descriptor 0 Sampler VertexAndFragmentStage 1
+                      Pipeline.descriptor 1 Sampler VertexAndFragmentStage 1
+                      Pipeline.descriptor 2 Sampler VertexAndFragmentStage 1
+                      Pipeline.descriptor 3 Sampler VertexAndFragmentStage 1
+                      Pipeline.descriptor 4 Sampler VertexAndFragmentStage 1
+                      Pipeline.descriptor 5 Sampler VertexAndFragmentStage 1|]|]
 
                 [||] colorAttachmentFormats (Some depthAttachmentFormat)
                 [|eyeUniform
@@ -3901,6 +3900,7 @@ module PhysicallyBased =
             Pipeline.writeDescriptorSampler 2 0 materialSamplers[2] vkSet
             Pipeline.writeDescriptorSampler 3 0 materialSamplers[3] vkSet
             Pipeline.writeDescriptorSampler 4 0 materialSamplers[4] vkSet
+            Pipeline.writeDescriptorSampler 5 0 materialSamplers[5] vkSet
             
         // set up render
         let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
@@ -4017,7 +4017,7 @@ module PhysicallyBased =
 
         // create uniform buffers
         let eyeUniform = VulkanBuffer.create Uniform sizeof<Eye3dStruct> context
-        let terrainFragUniform = VulkanBuffer.create Uniform sizeof<TerrainFragStruct> context
+        let terrainUniform = VulkanBuffer.create Uniform sizeof<TerrainStruct> context
 
         // create pipeline
         let pipeline =
@@ -4026,28 +4026,29 @@ module PhysicallyBased =
                 [|VulkanUnblended|] [|CullBack|] TerrainVertices
                 [|Pipeline.descriptorSet<int * int>
                     [|Pipeline.descriptor 0 UniformBuffer VertexAndFragmentStage 1 // eye
-                      Pipeline.descriptor 1 UniformBuffer FragmentStage 1|] // terrainFrag
+                      Pipeline.descriptor 1 UniformBuffer VertexAndFragmentStage 1|] // terrain
                   Pipeline.descriptorSet<PhysicallyBasedMaterial array>
                     [|Pipeline.descriptor 0 SampledImage FragmentStage Constants.Render.TerrainLayersMax // albedoTextures
                       Pipeline.descriptor 1 SampledImage FragmentStage Constants.Render.TerrainLayersMax // roughnessTextures
                       Pipeline.descriptor 2 SampledImage FragmentStage Constants.Render.TerrainLayersMax // ambientOcclusionTextures
                       Pipeline.descriptor 3 SampledImage FragmentStage Constants.Render.TerrainLayersMax // normalTextures
-                      Pipeline.descriptor 4 SampledImage FragmentStage Constants.Render.TerrainLayersMax // userDefinedImageTextures
-                      Pipeline.descriptor 5 SampledImage FragmentStage 1 // userDefinedImage0Texture
-                      Pipeline.descriptor 6 SampledImage FragmentStage 1|] // userDefinedImage1Texture
+                      Pipeline.descriptor 4 SampledImage VertexAndFragmentStage Constants.Render.TerrainLayersMax // userDefinedImageTextures
+                      Pipeline.descriptor 5 SampledImage VertexAndFragmentStage 1 // userDefinedImage0Texture
+                      Pipeline.descriptor 6 SampledImage VertexAndFragmentStage 1|] // userDefinedImage1Texture
                   Pipeline.descriptorSet<Unit>
-                    [|Pipeline.descriptor 0 Sampler FragmentStage 1
-                      Pipeline.descriptor 1 Sampler FragmentStage 1
-                      Pipeline.descriptor 2 Sampler FragmentStage 1
-                      Pipeline.descriptor 3 Sampler FragmentStage 1
-                      Pipeline.descriptor 4 Sampler FragmentStage 1|]|]
+                    [|Pipeline.descriptor 0 Sampler VertexAndFragmentStage 1
+                      Pipeline.descriptor 1 Sampler VertexAndFragmentStage 1
+                      Pipeline.descriptor 2 Sampler VertexAndFragmentStage 1
+                      Pipeline.descriptor 3 Sampler VertexAndFragmentStage 1
+                      Pipeline.descriptor 4 Sampler VertexAndFragmentStage 1
+                      Pipeline.descriptor 5 Sampler VertexAndFragmentStage 1|]|]
                 [||] colorAttachmentFormats (Some depthTest)
-                [|eyeUniform; terrainFragUniform|]
+                [|eyeUniform; terrainUniform|]
 
         // make PhysicallyBasedDeferredLighting3dPipeline
         let physicallyBasedDeferredTerrainPipeline =
             { Eye3dUniform = eyeUniform
-              Lighting3d3Uniform = terrainFragUniform
+              Lighting3d3Uniform = terrainUniform
               Pipeline = pipeline }
 
         // fin
@@ -4112,14 +4113,14 @@ module PhysicallyBased =
                 Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.Eye3dUniform vkSet
 
                 // specify terrain frag
-                let mutable terrainFrag = TerrainFragStruct ()
-                terrainFrag.layersCount <- layersCount
-                terrainFrag.lightShadowSamples <- lightShadowSamples
-                terrainFrag.lightShadowBias <- lightShadowBias
-                terrainFrag.lightShadowSampleScalar <- lightShadowSampleScalar
-                terrainFrag.lightShadowExponent <- lightShadowExponent
-                terrainFrag.lightShadowDensity <- lightShadowDensity
-                VulkanBuffer.uploadValue terrainFrag pipeline.Lighting3d3Uniform context
+                let mutable terrain = TerrainStruct ()
+                terrain.layersCount <- layersCount
+                terrain.lightShadowSamples <- lightShadowSamples
+                terrain.lightShadowBias <- lightShadowBias
+                terrain.lightShadowSampleScalar <- lightShadowSampleScalar
+                terrain.lightShadowExponent <- lightShadowExponent
+                terrain.lightShadowDensity <- lightShadowDensity
+                VulkanBuffer.uploadValue terrain pipeline.Lighting3d3Uniform context
                 Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.Lighting3d3Uniform vkSet
 
             // specify materials
@@ -4140,6 +4141,7 @@ module PhysicallyBased =
                 Pipeline.writeDescriptorSampler 2 0 materialSamplers[2] vkSet
                 Pipeline.writeDescriptorSampler 3 0 materialSamplers[3] vkSet
                 Pipeline.writeDescriptorSampler 4 0 materialSamplers[4] vkSet
+                Pipeline.writeDescriptorSampler 5 0 materialSamplers[5] vkSet
 
             // specify instancing
             use instanceFieldsPin = new ArrayPin<_> (instanceFields)
@@ -5702,8 +5704,6 @@ module PhysicallyBased =
         (brdfTexture : Texture)
         (irradianceMap : Texture)
         (environmentFilterMap : Texture)
-        (unfilteredSampler : Sampler)
-        (filteredSampler : Sampler)
         (materialSamplers : Sampler array)
         (colorAttachments : VkImageView array)
         (depthAttachment : VkImageView)
@@ -5770,13 +5770,12 @@ module PhysicallyBased =
 
         // specify samplers
         let mutable samplersDescriptorSet = Pipeline.specifyDescriptorSet 3 Unit pipeline.Pipeline $ fun vkSet ->
-            Pipeline.writeDescriptorSampler 0 0 unfilteredSampler vkSet
-            Pipeline.writeDescriptorSampler 1 0 filteredSampler vkSet
-            Pipeline.writeDescriptorSampler 2 0 materialSamplers[0] vkSet
-            Pipeline.writeDescriptorSampler 3 0 materialSamplers[1] vkSet
-            Pipeline.writeDescriptorSampler 4 0 materialSamplers[2] vkSet
-            Pipeline.writeDescriptorSampler 5 0 materialSamplers[3] vkSet
-            Pipeline.writeDescriptorSampler 6 0 materialSamplers[4] vkSet
+            Pipeline.writeDescriptorSampler 0 0 materialSamplers[0] vkSet
+            Pipeline.writeDescriptorSampler 1 0 materialSamplers[1] vkSet
+            Pipeline.writeDescriptorSampler 2 0 materialSamplers[2] vkSet
+            Pipeline.writeDescriptorSampler 3 0 materialSamplers[3] vkSet
+            Pipeline.writeDescriptorSampler 4 0 materialSamplers[4] vkSet
+            Pipeline.writeDescriptorSampler 5 0 materialSamplers[5] vkSet
 
         // set up render
         let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
@@ -5976,53 +5975,53 @@ module PhysicallyBased =
     let createPhysicallyBasedPipelines lightMapsMax lightsMax attachments context =
 
         // create 1d box filter pipeline
-        let filterBox1dPipeline = createFilterBoxPipeline Constants.Paths.FilterBox1dShaderFilePath R16f.VkFormat
+        let filterBox1dPipeline = createFilterBoxPipeline Constants.Paths.FilterBox1dShaderFilePath R16f
 
         // create bilateral down-sample pipeline
         let filterBilateralDownSamplePipeline =
             createFilterDownSamplePipeline
                 Constants.Paths.FilterBilateralDownSample4dShaderFilePath
-                [|attachments.DownSampleColorAttachment.VkFormat
-                  attachments.DownSampleDepthAttachment.VkFormat|]
+                [|attachments.DownSampleColorAttachment.ImageFormat
+                  attachments.DownSampleDepthAttachment.ImageFormat|]
 
         // create bilateral up-sample pipeline
         let filterBilateralUpSamplePipeline =
             createFilterUpSamplePipeline
                 Constants.Paths.FilterBilateralUpSample4dShaderFilePath
-                attachments.UpSampleColorAttachment.VkFormat
+                attachments.UpSampleColorAttachment.ImageFormat
 
         // create esm gaussian filter pipeline
-        let filterGaussianEsmPipeline = createFilterGaussianEsmPipeline Rg32f.VkFormat context
+        let filterGaussianEsmPipeline = createFilterGaussianEsmPipeline Rg32f context
 
         // create depth-of-field gaussian filter pipeline
-        let filterGaussianDofPipeline = createFilterGaussianDofPipeline Rgba16f.VkFormat context
+        let filterGaussianDofPipeline = createFilterGaussianDofPipeline Rgba16f context
 
         // create depth-of-field filter pipeline
-        let filterDepthOfFieldPipeline = createFilterDepthOfFieldPipeline Rgba16f.VkFormat context
+        let filterDepthOfFieldPipeline = createFilterDepthOfFieldPipeline Rgba16f context
 
         // create bloom extract filter pipeline
-        let filterBloomExtractPipeline = createFilterBloomExtractPipeline attachments.BloomExtractAttachment.VkFormat context
+        let filterBloomExtractPipeline = createFilterBloomExtractPipeline attachments.BloomExtractAttachment.ImageFormat context
 
         // create bloom down-sample filter pipeline
-        let filterBloomDownSamplePipeline = createFilterBloomDownSamplePipeline attachments.BloomSampleAttachments[0].VkFormat context
+        let filterBloomDownSamplePipeline = createFilterBloomDownSamplePipeline attachments.BloomSampleAttachments[0].ImageFormat context
 
         // create bloom up-sample filter pipeline
-        let filterBloomUpSamplePipeline = createFilterBloomUpSamplePipeline attachments.BloomSampleAttachments[0].VkFormat context
+        let filterBloomUpSamplePipeline = createFilterBloomUpSamplePipeline attachments.BloomSampleAttachments[0].ImageFormat context
 
         // create bloom apply filter pipeline
-        let filterBloomApplyPipeline = createFilterBloomApplyPipeline attachments.BloomApplyAttachment.VkFormat context
+        let filterBloomApplyPipeline = createFilterBloomApplyPipeline attachments.BloomApplyAttachment.ImageFormat context
 
         // create tone-mapping filter pipeline
-        let filterToneMappingPipeline = createFilterToneMappingPipeline attachments.ToneMappingAttachment.VkFormat context
+        let filterToneMappingPipeline = createFilterToneMappingPipeline attachments.ToneMappingAttachment.ImageFormat context
 
         // create chromatic aberration filter pipeline
-        let filterChromaticAberrationPipeline = createFilterChromaticAberrationPipeline Rgba16f.VkFormat context
+        let filterChromaticAberrationPipeline = createFilterChromaticAberrationPipeline Rgba16f context
 
         // create tone-mapping filter pipeline
-        let filterFxaaPipeline = createFilterFxaaPipeline attachments.ColorFull0Attachment.VkFormat context
+        let filterFxaaPipeline = createFilterFxaaPipeline attachments.ColorFull0Attachment.ImageFormat context
 
         // create gamma-correction filter pipeline
-        let filterGammaCorrectionPipeline = createFilterGammaCorrectionPipeline attachments.GammaCorrectionAttachment.VkFormat
+        let filterGammaCorrectionPipeline = createFilterGammaCorrectionPipeline attachments.GammaCorrectionAttachment.ImageFormat
 
         // create shadow static point pipeline
         let (shadowMapColorAttachment, shadowMapZAttachment) = attachments.ShadowMapAttachmentsArray[0] // assume all like first
@@ -6030,8 +6029,8 @@ module PhysicallyBased =
             createPhysicallyBasedShadowPipeline
                 Constants.Paths.PhysicallyBasedShadowStaticPointShaderFilePath
                 StaticVertices
-                [|shadowMapColorAttachment.VkFormat|]
-                shadowMapZAttachment.VkFormat
+                [|shadowMapColorAttachment.ImageFormat|]
+                shadowMapZAttachment.ImageFormat
                 context
 
         // create shadow static spot pipeline
@@ -6040,8 +6039,8 @@ module PhysicallyBased =
             createPhysicallyBasedShadowPipeline
                 Constants.Paths.PhysicallyBasedShadowStaticSpotShaderFilePath
                 StaticVertices
-                [|shadowTextureArrayColorAttachment.VkFormat|]
-                shadowTextureArrayZAttachment.VkFormat
+                [|shadowTextureArrayColorAttachment.ImageFormat|]
+                shadowTextureArrayZAttachment.ImageFormat
                 context
 
         // create shadow static directional pipeline
@@ -6049,8 +6048,8 @@ module PhysicallyBased =
             createPhysicallyBasedShadowPipeline
                 Constants.Paths.PhysicallyBasedShadowStaticDirectionalShaderFilePath
                 StaticVertices
-                [|shadowTextureArrayColorAttachment.VkFormat|]
-                shadowTextureArrayZAttachment.VkFormat
+                [|shadowTextureArrayColorAttachment.ImageFormat|]
+                shadowTextureArrayZAttachment.ImageFormat
                 context
 
         // create shadow animated point pipeline
@@ -6058,8 +6057,8 @@ module PhysicallyBased =
             createPhysicallyBasedShadowPipeline
                 Constants.Paths.PhysicallyBasedShadowAnimatedPointShaderFilePath
                 AnimatedVertices
-                [|shadowMapColorAttachment.VkFormat|]
-                shadowMapZAttachment.VkFormat
+                [|shadowMapColorAttachment.ImageFormat|]
+                shadowMapZAttachment.ImageFormat
                 context
 
         // create shadow animated spot pipeline
@@ -6067,8 +6066,8 @@ module PhysicallyBased =
             createPhysicallyBasedShadowPipeline
                 Constants.Paths.PhysicallyBasedShadowAnimatedSpotShaderFilePath
                 AnimatedVertices
-                [|shadowTextureArrayColorAttachment.VkFormat|]
-                shadowTextureArrayZAttachment.VkFormat
+                [|shadowTextureArrayColorAttachment.ImageFormat|]
+                shadowTextureArrayZAttachment.ImageFormat
                 context
 
         // create shadow animated directional pipeline
@@ -6076,39 +6075,39 @@ module PhysicallyBased =
             createPhysicallyBasedShadowPipeline
                 Constants.Paths.PhysicallyBasedShadowAnimatedDirectionalShaderFilePath
                 AnimatedVertices
-                [|shadowTextureArrayColorAttachment.VkFormat|]
-                shadowTextureArrayZAttachment.VkFormat
+                [|shadowTextureArrayColorAttachment.ImageFormat|]
+                shadowTextureArrayZAttachment.ImageFormat
                 context
 
         // create shadow terrain point pipeline
         let shadowTerrainPointPipeline =
             createPhysicallyBasedTerrainPipeline
                 Constants.Paths.PhysicallyBasedShadowTerrainPointShaderFilePath
-                [|shadowMapColorAttachment.VkFormat|]
-                shadowTextureArrayZAttachment.VkFormat
+                [|shadowMapColorAttachment.ImageFormat|]
+                shadowTextureArrayZAttachment.ImageFormat
                 context
 
         // create shadow terrain spot pipeline
         let shadowTerrainSpotPipeline =
             createPhysicallyBasedTerrainPipeline
                 Constants.Paths.PhysicallyBasedShadowTerrainSpotShaderFilePath
-                [|shadowTextureArrayColorAttachment.VkFormat|]
-                shadowTextureArrayZAttachment.VkFormat
+                [|shadowTextureArrayColorAttachment.ImageFormat|]
+                shadowTextureArrayZAttachment.ImageFormat
                 context
 
         // create shadow terrain directional pipeline
         let shadowTerrainDirectionalPipeline =
             createPhysicallyBasedTerrainPipeline
                 Constants.Paths.PhysicallyBasedShadowTerrainDirectionalShaderFilePath
-                [|shadowTextureArrayColorAttachment.VkFormat|]
-                shadowTextureArrayZAttachment.VkFormat
+                [|shadowTextureArrayColorAttachment.ImageFormat|]
+                shadowTextureArrayZAttachment.ImageFormat
                 context
 
         // create deferred static pipeline
         let (depth, albedo, material, normalPlus, subdermalPlus, scatterPlus, clearCoatPlus, userDefinedBuffer, depthBuffer) =
             attachments.GeometryAttachments
         let deferredColorAttachmentFormats =
-            [|depth.VkFormat; albedo.VkFormat; material.VkFormat; normalPlus.VkFormat; subdermalPlus.VkFormat; scatterPlus.VkFormat; clearCoatPlus.VkFormat; userDefinedBuffer.VkFormat|]
+            [|depth.ImageFormat; albedo.ImageFormat; material.ImageFormat; normalPlus.ImageFormat; subdermalPlus.ImageFormat; scatterPlus.ImageFormat; clearCoatPlus.ImageFormat; userDefinedBuffer.ImageFormat|]
         let deferredStaticPipeline =
             createPhysicallyBasedPipeline
                 lightMapsMax
@@ -6118,7 +6117,7 @@ module PhysicallyBased =
                 [|CullNone; CullBack; CullFront|]
                 StaticVertices
                 deferredColorAttachmentFormats
-                depthBuffer.VkFormat
+                depthBuffer.ImageFormat
                 context
 
         // create deferred static clipped pipeline
@@ -6131,7 +6130,7 @@ module PhysicallyBased =
                 [|CullNone; CullBack; CullFront|]
                 StaticVertices
                 deferredColorAttachmentFormats
-                depthBuffer.VkFormat
+                depthBuffer.ImageFormat
                 context
 
         // create deferred animated pipeline
@@ -6144,7 +6143,7 @@ module PhysicallyBased =
                 [|CullNone; CullBack; CullFront|]
                 AnimatedVertices
                 deferredColorAttachmentFormats
-                depthBuffer.VkFormat
+                depthBuffer.ImageFormat
                 context
 
         // create deferred terrain pipeline
@@ -6152,19 +6151,19 @@ module PhysicallyBased =
             createPhysicallyBasedTerrainPipeline
                 Constants.Paths.PhysicallyBasedDeferredTerrainShaderFilePath
                 deferredColorAttachmentFormats
-                depthBuffer.VkFormat
+                depthBuffer.ImageFormat
                 context
         
         // create deferred lighting pipelines
-        let deferredLightingPipeline = createPhysicallyBasedDeferredLighting3dPipeline attachments.LightingAttachment.VkFormat context
-        let deferredFoggingPipeline = createPhysicallyBasedDeferredFogging3dPipeline attachments.FoggingAttachment.VkFormat context
-        let deferredLightMappingPipeline = createPhysicallyBasedDeferredLightMappingPipeline attachments.LightMappingAttachment.VkFormat context
-        let deferredAmbientPipeline = createPhysicallyBasedDeferredAmbientPipeline attachments.AmbientAttachment.VkFormat context
-        let deferredIrradiancePipeline = createPhysicallyBasedDeferredIrradiancePipeline attachments.IrradianceAttachment.VkFormat context
-        let deferredEnvironmentFilterPipeline = createPhysicallyBasedDeferredEnvironmentFilterPipeline attachments.EnvironmentFilterAttachment.VkFormat context
-        let deferredSsaoPipeline = createPhysicallyBasedDeferredSsaoPipeline attachments.SsaoUnfilteredAttachment.VkFormat context
-        let deferredColoringPipeline = createPhysicallyBasedDeferredColoringPipeline [|(fst attachments.ColoringAttachments).VkFormat; (snd attachments.ColoringAttachments).VkFormat|] context
-        let deferredCompositionPipeline = createPhysicallyBasedDeferredCompositionPipeline attachments.CompositionAttachment.VkFormat context
+        let deferredLightingPipeline = createPhysicallyBasedDeferredLighting3dPipeline attachments.LightingAttachment.ImageFormat context
+        let deferredFoggingPipeline = createPhysicallyBasedDeferredFogging3dPipeline attachments.FoggingAttachment.ImageFormat context
+        let deferredLightMappingPipeline = createPhysicallyBasedDeferredLightMappingPipeline attachments.LightMappingAttachment.ImageFormat context
+        let deferredAmbientPipeline = createPhysicallyBasedDeferredAmbientPipeline attachments.AmbientAttachment.ImageFormat context
+        let deferredIrradiancePipeline = createPhysicallyBasedDeferredIrradiancePipeline attachments.IrradianceAttachment.ImageFormat context
+        let deferredEnvironmentFilterPipeline = createPhysicallyBasedDeferredEnvironmentFilterPipeline attachments.EnvironmentFilterAttachment.ImageFormat context
+        let deferredSsaoPipeline = createPhysicallyBasedDeferredSsaoPipeline attachments.SsaoUnfilteredAttachment.ImageFormat context
+        let deferredColoringPipeline = createPhysicallyBasedDeferredColoringPipeline [|(fst attachments.ColoringAttachments).ImageFormat; (snd attachments.ColoringAttachments).ImageFormat|] context
+        let deferredCompositionPipeline = createPhysicallyBasedDeferredCompositionPipeline attachments.CompositionAttachment.ImageFormat context
         
         // create forward static pipeline
         let composition = attachments.CompositionAttachment
@@ -6176,8 +6175,8 @@ module PhysicallyBased =
                 [|VulkanUnblended; VulkanTransparent; VulkanAdditive; VulkanSummation; VulkanOverwrite|]
                 [|CullNone; CullBack; CullFront|]
                 StaticVertices
-                [|depth.VkFormat; composition.VkFormat|]
-                depthBuffer.VkFormat
+                [|depth.ImageFormat; composition.ImageFormat|]
+                depthBuffer.ImageFormat
                 context
 
         // create forward animated pipeline
@@ -6189,8 +6188,8 @@ module PhysicallyBased =
                 [|VulkanUnblended; VulkanTransparent; VulkanAdditive; VulkanSummation; VulkanOverwrite|]
                 [|CullNone; CullBack; CullFront|]
                 AnimatedVertices
-                [|depth.VkFormat; composition.VkFormat|]
-                depthBuffer.VkFormat
+                [|depth.ImageFormat; composition.ImageFormat|]
+                depthBuffer.ImageFormat
                 context
         
         // create PhysicallyBasedPipelines
@@ -6422,7 +6421,8 @@ type PhysicallyBasedSceneClient () =
                           // attempt to collect light probe
                           let lastNameLower = Array.last(names).ToLowerInvariant()
                           if lastNameLower.Contains "probe" && not (lastNameLower.Contains "probes") then
-                            let names = Array.append names [|"LightProbe"|]
+                            let name = "LightProbe"
+                            let names = Array.append names [|name|]
                             let lightProbeOrigin = transform.Translation
                             let lightProbeBounds =
                                 box3
@@ -6441,7 +6441,8 @@ type PhysicallyBasedSceneClient () =
                           for i in 0 .. dec lightNodes.Length do
                             let (light, lightNode) = lightNodes[i]
                             if lightNode = node then
-                                let names = Array.append names [|"Light" + if i > 0 then string i else ""|]
+                                let name = if i > 0 then String.Intern ("Light" + string i) else "Light"
+                                let names = Array.append names [|name|]
                                 let lightMatrix = Assimp.ExportMatrix node.TransformWorld
                                 let color = color (min 1.0f light.ColorDiffuse.R) (min 1.0f light.ColorDiffuse.G) (min 1.0f light.ColorDiffuse.B) 1.0f
                                 let areaSize = light.AreaSize
@@ -6467,7 +6468,8 @@ type PhysicallyBasedSceneClient () =
 
                           // collect surfaces
                           for i in 0 .. dec node.MeshIndices.Count do
-                            let names = Array.append names [|"Geometry" + if i > 0 then string (inc i) else ""|]
+                            let name = if i > 0 then String.Intern ("Geometry" + string (inc i)) else "Geometry"
+                            let names = Array.append names [|name|]
                             let meshIndex = node.MeshIndices[i]
                             let materialIndex = scene.Meshes[meshIndex].MaterialIndex
                             let (material, properties) = materials[materialIndex]

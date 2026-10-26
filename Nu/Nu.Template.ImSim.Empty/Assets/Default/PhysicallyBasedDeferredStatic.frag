@@ -32,11 +32,12 @@ layout(set = 1, binding = 12) uniform texture2D userDefinedImage0Texture;
 layout(set = 1, binding = 13) uniform texture2D userDefinedImage1Texture;
 layout(set = 1, binding = 14) uniform texture2D userDefinedImage2Texture;
 
-layout(set = 3, binding = 0) uniform sampler materialRepeatSampler;
-layout(set = 3, binding = 1) uniform sampler materialRepeatMirrorSampler;
-layout(set = 3, binding = 2) uniform sampler materialClampToEdge;
-layout(set = 3, binding = 3) uniform sampler materialClampToEdgeMirrorSampler;
-layout(set = 3, binding = 4) uniform sampler materialClampToBorder;
+layout(set = 3, binding = 0) uniform sampler unfilteredSampler;
+layout(set = 3, binding = 1) uniform sampler filteredSampler;
+layout(set = 3, binding = 2) uniform sampler materialRepeatSampler;
+layout(set = 3, binding = 3) uniform sampler materialRepeatMirrorSampler;
+layout(set = 3, binding = 4) uniform sampler materialClampToEdge;
+layout(set = 3, binding = 5) uniform sampler materialClampToBorder;
 
 layout(location = 0) in vec4 position;
 layout(location = 1) in vec2 texCoords;

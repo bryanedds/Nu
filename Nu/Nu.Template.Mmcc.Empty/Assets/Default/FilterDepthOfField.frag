@@ -1,5 +1,7 @@
 #version 450 core
 
+const float DOF_FOCAL_FAR_SCALAR = 0.5; // HACK: until we do #1452, we scale down blur effect on distant surfaces.
+
 struct Eye3dStruct
 {
     vec3 center;
@@ -75,22 +77,20 @@ void main()
         if (depthOfField.focalType == 0)
         {
             float blur =
-                depth - depthOfField.focalDistance >= 0.0 ?
-                smoothstep(depthOfField.focalDistance, depthOfField.farDistance, depth) :
-                1.0 - smoothstep(depthOfField.nearDistance, depthOfField.focalDistance, depth);
+                depth <= depthOfField.focalDistance ?
+                1.0 - smoothstep(depthOfField.nearDistance, depthOfField.focalDistance, depth) :
+                smoothstep(depthOfField.focalDistance, depthOfField.farDistance, depth) * DOF_FOCAL_FAR_SCALAR;
             frag = mix(unblurredColor, blurredColor, blur);
         }
         else
         {
-            float focalDistance = texture(sampler2D(depthTexture, unfilteredSampler), depthOfField.focalPoint + vec2(0.5)).r;
-            if (focalDistance != 0.0)
-            {
-                vec2 focalTexCoords = depthOfField.focalPoint + vec2(0.5);
-                float distance = length(depthToPosition(depth, texCoords).xyz - depthToPosition(focalDistance, focalTexCoords).xyz);
-                float blur = smoothstep(depthOfField.nearDistance, depthOfField.farDistance, distance);
-                frag = mix(unblurredColor, blurredColor, blur);
-            }
-            else frag = blurredColor;
+            vec2 focalTexCoords = depthOfField.focalPoint + vec2(0.5);
+            float focalDepth = texture(sampler2D(depthTexture, unfilteredSampler), focalTexCoords).r;
+            float distance = length(depthToPosition(depth, texCoords).xyz - depthToPosition(focalDepth, focalTexCoords).xyz);
+            float midDistance = (depthOfField.nearDistance + depthOfField.farDistance) * 0.5;
+            float scalar = distance < midDistance ? 1.0 : DOF_FOCAL_FAR_SCALAR;
+            float blur = smoothstep(depthOfField.nearDistance, depthOfField.farDistance, distance) * scalar;
+            frag = mix(unblurredColor, blurredColor, blur);
         }
     }
     else frag = unblurredColor;
