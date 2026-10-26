@@ -28,7 +28,7 @@ void main()
     // apply gamma correction
     color = pow(color, vec3(1.0 / GAMMA));
 
-    // apply dithering to make up for precision reduction from gamma correction
+    // apply dithering to make up for precision reduction from quantization
     // sourced from - https://lettier.github.io/3d-game-shaders-for-beginners/film-grain.html
     color.rgb += vec3(computeDither());
 
