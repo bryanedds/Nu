@@ -69,25 +69,25 @@ module Attachment =
         for i in 0 .. dec Constants.Render.BloomSampleLevels do
             Texture.destroy bloomSamples[i] context
 
-    /// Create tone-mapping attachments.
-    let createToneMappingAttachments resolutionX resolutionY context =
+    /// Create tone-mapping attachment.
+    let createToneMappingAttachment resolutionX resolutionY context =
         createColorAttachment Texture2d (VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferSrc ||| VkImageUsageFlags.TransferDst) Rgba16f Rgb resolutionX resolutionY context
 
-    /// Update size of tone-mapping attachments.
-    let updateToneMappingAttachmentsSize resolutionX resolutionY toneMapping context =
+    /// Update size of tone-mapping attachment.
+    let updateToneMappingAttachmentSize resolutionX resolutionY toneMapping context =
         let metadata = TextureMetadata.make resolutionX resolutionY
         Texture.updateSize metadata toneMapping context
 
-    /// Destroy tone-mapping attachments.
-    let destroyToneMappingAttachments (toneMapping : Texture) context =
+    /// Destroy tone-mapping attachment.
+    let destroyToneMappingAttachment (toneMapping : Texture) context =
         Texture.destroy toneMapping context
 
-    /// Create gamma correction attachments.
-    let createGammaCorrectionAttachments resolutionX resolutionY context =
+    /// Create gamma correction attachment.
+    let createGammaCorrectionAttachment resolutionX resolutionY context =
         createColorAttachment Texture2d (VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferSrc) Rgba16f Rgba resolutionX resolutionY context
 
     /// Update size of gamma-correction attachments.
-    let updateGammaCorrectionAttachmentsSize resolutionX resolutionY gammaCorrection context =
+    let updateGammaCorrectionAttachmentSize resolutionX resolutionY gammaCorrection context =
         let metadata = TextureMetadata.make resolutionX resolutionY
         Texture.updateSize metadata gammaCorrection context
 

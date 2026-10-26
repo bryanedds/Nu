@@ -991,11 +991,11 @@ module PhysicallyBased =
         let bloomSampleAttachments = Attachment.createBloomSampleAttachments (geometryViewport.Bounds.Size.X / 2) (geometryViewport.Bounds.Size.Y / 2) context
         let bloomApplyAttachment = Attachment.createColorAttachment Texture2d (VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferSrc) Rgba16f Rgba geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y context
 
-        // create tone-mapping attachments
-        let toneMappingAttachment = Attachment.createToneMappingAttachments geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y context
+        // create tone-mapping attachment
+        let toneMappingAttachment = Attachment.createToneMappingAttachment geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y context
 
-        // create gamma-correction attachments
-        let gammaCorrectionAttachment = Attachment.createGammaCorrectionAttachments geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y context
+        // create gamma-correction attachment
+        let gammaCorrectionAttachment = Attachment.createGammaCorrectionAttachment geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y context
 
         // create shadow texture array attachments
         let shadowTextureArrayAttachments =
@@ -1090,8 +1090,8 @@ module PhysicallyBased =
         Attachment.updateColorAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.BloomExtractAttachment context
         Attachment.updateBloomSampleAttachmentsSize (geometryViewport.Bounds.Size.X / 2) (geometryViewport.Bounds.Size.Y / 2) attachments.BloomSampleAttachments context
         Attachment.updateColorAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.BloomApplyAttachment context
-        Attachment.updateToneMappingAttachmentsSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.ToneMappingAttachment context
-        Attachment.updateGammaCorrectionAttachmentsSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.GammaCorrectionAttachment context
+        Attachment.updateToneMappingAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.ToneMappingAttachment context
+        Attachment.updateGammaCorrectionAttachmentSize geometryViewport.Bounds.Size.X geometryViewport.Bounds.Size.Y attachments.GammaCorrectionAttachment context
         let (colorTexture, zTexture) = attachments.ShadowTextureArrayAttachments
         Attachment.updateShadowTextureArrayAttachmentsSize geometryViewport.ShadowTextureResolution.X geometryViewport.ShadowTextureResolution.Y colorTexture zTexture context
         for i in 0 .. dec attachments.ShadowMapAttachmentsArray.Length do
@@ -1126,7 +1126,7 @@ module PhysicallyBased =
         Attachment.destroyColorAttachment attachments.BloomExtractAttachment context
         Attachment.destroyBloomSampleAttachments attachments.BloomSampleAttachments context
         Attachment.destroyColorAttachment attachments.BloomApplyAttachment context
-        Attachment.destroyToneMappingAttachments attachments.ToneMappingAttachment context
+        Attachment.destroyToneMappingAttachment attachments.ToneMappingAttachment context
         Attachment.destroyGammaCorrectionAttachment attachments.GammaCorrectionAttachment context
         let (colorTexture, zTexture) = attachments.ShadowTextureArrayAttachments
         Attachment.destroyShadowTextureArrayAttachments colorTexture zTexture context
