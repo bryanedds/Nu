@@ -472,7 +472,7 @@ type RendererThread (windowProperties) =
         lock cachedSpriteMessagesLock (fun () ->
             if cachedSpriteMessages.Count = 0 then
                 for _ in 0 .. dec cachedSpriteMessagesCapacity do
-                    let spriteDescriptor = RenderCachedSprite { CachedSprite = Unchecked.defaultof<_> }
+                    let spriteDescriptor = RenderCachedSprite { CachedSprite = SpriteValue.defaultValue }
                     let cachedSpriteMessage = LayeredOperation2d { Elevation = 0.0f; Horizon = 0.0f; AssetTag = Unchecked.defaultof<_>; RenderOperation2d = spriteDescriptor }
                     cachedSpriteMessages.Enqueue cachedSpriteMessage
                 cachedSpriteMessagesCapacity <- cachedSpriteMessagesCapacity * 2

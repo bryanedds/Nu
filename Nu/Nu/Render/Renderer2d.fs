@@ -37,6 +37,10 @@ type [<Struct>] Particle =
       mutable Flip : Flip
       mutable UserDefinedSettings : UserDefinedSettings }
 
+    /// The default text value.
+    static member defaultValue =
+        Unchecked.defaultof<Particle>
+
 /// A mutable sprite value.
 type [<Struct>] SpriteValue =
     { mutable Transform : Transform
@@ -51,6 +55,12 @@ type [<Struct>] SpriteValue =
       mutable Flip : Flip
       mutable UserDefinedSettings : UserDefinedSettings }
 
+    /// The default sprite value.
+    static member defaultValue =
+        { Unchecked.defaultof<SpriteValue> with
+            UserDefinedImages = UserDefinedImages.defaultImages
+            PipelineName = Constants.Render.PipelineNameDefault }
+
 /// A mutable text value.
 type [<Struct>] TextValue =
     { mutable Transform : Transform
@@ -62,6 +72,10 @@ type [<Struct>] TextValue =
       mutable Color : Color
       mutable Justification : Justification
       mutable CaretOpt : int option }
+
+    /// The default text value.
+    static member defaultValue =
+        Unchecked.defaultof<TextValue>
 
 /// Describes how to render a sprite to a rendering subsystem.
 type SpriteDescriptor =
