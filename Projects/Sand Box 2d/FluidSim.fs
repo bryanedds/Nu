@@ -69,7 +69,12 @@ type LineSegmentsDispatcher () =
             transform.Position <- ((p1 + p2) * 0.5f).V3
             transform.Rotation <- Quaternion.CreateLookAt2d (p2 - p1)
             transform.Size <- v3 (p2 - p1).Magnitude lineWidth 0f
-            World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, staticImage, &transform, &insetOpt, &clipOpt, staticImage, &color, blend, &emission, flip, world)
+            let userDefinedImages = UserDefinedImages.defaultImages
+            let userDefinedSettings = UserDefinedSettings.defaultSettings
+            World.renderLayeredSpriteFast
+                (transform.Elevation, transform.Horizon, staticImage, &transform,
+                 &insetOpt, &clipOpt, staticImage, &userDefinedImages, Constants.Render.PipelineNameDefault,
+                 &color, blend, &emission, flip, &userDefinedSettings, world)
 
 type SelectedTool = Water | Sand | Smoke | Oil | Bubble | Line | Box | Explosion
 
