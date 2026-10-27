@@ -2256,6 +2256,10 @@ and [<AbstractClass>] NuPlugin () =
     abstract EditModes : Map<string, World -> unit>
     default this.EditModes = Map.empty
 
+    /// Describes a collection of user-defined 2D pipelines to create.
+    abstract UserDefinedPipeline2dDescriptors : Map<string, UserDefinedPipeline2dDescriptor>
+    default this.UserDefinedPipeline2dDescriptors = Map.empty
+
     /// Describes a collection of user-defined 3D pipelines to create.
     abstract UserDefinedPipeline3dDescriptors : Map<string, UserDefinedPipeline3dDescriptor>
     default this.UserDefinedPipeline3dDescriptors = Map.empty

@@ -389,9 +389,13 @@ module WorldModule4 =
             let pluginScreenDispatchers = plugin.Birth<ScreenDispatcher> assemblies
             let pluginGameDispatchers = plugin.Birth<GameDispatcher> assemblies
 
-            // update user-defined pipelines
+            // update user-defined 2d pipelines
+            for descriptor in plugin.UserDefinedPipeline2dDescriptors.Values do
+                World.enqueueRenderMessage2d (CreateUserDefinedPipeline2d { Pipeline2dDescriptor = descriptor }) world
+
+            // update user-defined 3d pipelines
             for descriptor in plugin.UserDefinedPipeline3dDescriptors.Values do
-                World.enqueueRenderMessage3d (CreateUserDefinedPipeline { Pipeline3dDescriptor = descriptor }) world
+                World.enqueueRenderMessage3d (CreateUserDefinedPipeline3d { Pipeline3dDescriptor = descriptor }) world
 
             // update instances
             let worldExtension = world.WorldExtension
@@ -679,9 +683,13 @@ module WorldModule4 =
             // initialize plugin
             world.WorldExtension.Plugin.Init world
 
+            // initialize 2D pipelines
+            for descriptor in world.WorldExtension.Plugin.UserDefinedPipeline2dDescriptors.Values do
+                World.enqueueRenderMessage2d (CreateUserDefinedPipeline2d { Pipeline2dDescriptor = descriptor }) world
+
             // initialize 3D pipelines
             for descriptor in world.WorldExtension.Plugin.UserDefinedPipeline3dDescriptors.Values do
-                World.enqueueRenderMessage3d (CreateUserDefinedPipeline { Pipeline3dDescriptor = descriptor }) world
+                World.enqueueRenderMessage3d (CreateUserDefinedPipeline3d { Pipeline3dDescriptor = descriptor }) world
 
             // register the game
             World.registerGame Game world

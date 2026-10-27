@@ -26,7 +26,7 @@ type SpriteStruct =
 [<Struct; StructLayout (LayoutKind.Explicit)>]
 type ViewProjectionStruct =
     [<FieldOffset(0)>] val mutable viewProjection : Matrix4x4
-    
+
 /// The state of a sprite batch.
 type [<Struct>] SpriteBatchState =
     { Absolute : bool
@@ -117,7 +117,19 @@ module SpriteBatch =
 
         // fin
         (spritesUniform, viewProjectionUniform, pipeline)
-    
+
+    /// Attempt to create a user-defined pipeline
+    let tryCreateUserDefinedPipeline (descriptor : UserDefinedPipeline2dDescriptor) resolveTextureFormat env context =
+        match descriptor.Pipeline2dType with
+        | Sprite ->
+            let pipeline = createSpriteBatchPipeline resolveTextureFormat context
+            match env.Pipelines.TryGetValue descriptor.PipelineName with
+            | (true, (_, _, pipeline)) ->
+                ConcurrentCommandQueue.waitIdle context.RenderQueue // pipeline may still be in use by previous frame
+                Pipeline.destroy pipeline context
+            | (false, _) -> ()
+            env.Pipelines[descriptor.PipelineName] <- pipeline
+
     /// Reload the shaders used by the environment.
     let reloadShaders env (context : VulkanContext) =
         for (_, _, pipeline) in env.Pipelines.Values do

@@ -270,7 +270,7 @@ type RendererInline (windowProperties) =
                 messages3d.Clear ()
 
                 // pre-render 2d
-                renderer2d.PreRender eye2dCenter eye2dSize windowViewport messages2d
+                renderer2d.PreRender eye2dCenter eye2dSize windowViewport messages2d resolveTexture.ImageFormat
                 messages2d.Clear ()
 
                 // pre-render imgui
@@ -553,7 +553,7 @@ type RendererThread (windowProperties) =
                 renderer3dConfig <- renderer3d.RendererConfig
 
                 // pre-render 2d
-                renderer2d.PreRender eye2dCenter eye2dSize windowViewport messages2d
+                renderer2d.PreRender eye2dCenter eye2dSize windowViewport messages2d resolveTexture.ImageFormat
 
                 // pre-render imgui
                 rendererImGui.PreRender messagesImGui

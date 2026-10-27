@@ -101,15 +101,6 @@ module TerrainMaterialProperties =
           UserDefinedSetting6Opt = None
           UserDefinedSetting7Opt = None }
 
-/// Indicates the type of rendering pipeline.
-type Pipeline3dType =
-    | DeferredStatic
-    | DeferredStaticClipped
-    | DeferredAnimated
-    | ForwardStatic
-    | ForwardAnimated
-    | Terrain
-
 /// Material description for 3d surfaces.
 type [<SymbolicExpansion; CustomEquality; NoComparison>] Material =
     { AlbedoImageOpt : Image AssetTag voption
@@ -531,14 +522,6 @@ type CachedAnimatedModelSurfaceMessage =
       mutable CachedAnimatedModelSurfaceDualRendering : bool
       mutable CachedAnimatedModelSurfaceRenderType : RenderType
       mutable CachedAnimatedModelSurfaceRenderPass : RenderPass }
-
-/// Describes a user-defined 3d rendering pipeline.
-type UserDefinedPipeline3dDescriptor =
-    { PipelineType : Pipeline3dType
-      PipelineName : string
-      ShaderPath : string
-      UserDefinedImageNames : string array
-      UserDefinedSettingNames : string array }
 
 /// Describes how to create a user-defined 3d rendering pipeline.
 type CreateUserDefinedPipeline3d =
@@ -973,7 +956,7 @@ type [<SymbolicExpansion>] Renderer3dConfig =
 
 /// A message to the 3d renderer.
 type RenderMessage3d =
-    | CreateUserDefinedPipeline of CreateUserDefinedPipeline3d
+    | CreateUserDefinedPipeline3d of CreateUserDefinedPipeline3d
     | CreateUserDefinedStaticModel of CreateUserDefinedStaticModel
     | DestroyUserDefinedStaticModel of DestroyUserDefinedStaticModel
     | RenderSkyBox of RenderSkyBox
@@ -1981,7 +1964,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             renderer.PhysicallyBasedAttachments.GeometryAttachments
 
         let (blends, cullModes) =
-            match descriptor.PipelineType with
+            match descriptor.Pipeline3dType with
             | DeferredStatic | DeferredStaticClipped | DeferredAnimated ->
                 ([|VulkanUnblended|], [|CullNone; CullBack; CullFront|])
             | ForwardStatic | ForwardAnimated ->
@@ -1990,7 +1973,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 ([|VulkanUnblended|], [|CullBack|])
 
         let (colorAttachmentFormats, depthAttachmentFormat) =
-            match descriptor.PipelineType with
+            match descriptor.Pipeline3dType with
             | DeferredStatic | DeferredStaticClipped | DeferredAnimated | Terrain ->
                 let deferredColorAttachmentFormats =
                     [|depth.ImageFormat; albedo.ImageFormat; material.ImageFormat; normalPlus.ImageFormat; subdermalPlus.ImageFormat; scatterPlus.ImageFormat; clearCoatPlus.ImageFormat; userDefinedBuffer.ImageFormat|]
@@ -2000,7 +1983,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 ([|depth.ImageFormat; composition.ImageFormat|], depthBuffer.ImageFormat)
 
         let (lightMapsMax, lightsMax, vertexBindings) =
-            match descriptor.PipelineType with
+            match descriptor.Pipeline3dType with
             | DeferredStatic | DeferredStaticClipped | ForwardStatic ->
                 (Constants.Render.LightMapsMaxDeferred, Constants.Render.LightsMaxDeferred, PhysicallyBased.StaticVertices)
             | DeferredAnimated | ForwardAnimated ->
@@ -2008,7 +1991,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             | Terrain ->
                 (Constants.Render.LightMapsMaxDeferred, Constants.Render.LightsMaxDeferred, PhysicallyBased.TerrainVertices)
 
-        match descriptor.PipelineType with
+        match descriptor.Pipeline3dType with
         | DeferredStatic ->
             let pipelines = renderer.PhysicallyBasedPipelines.UserDefinedDeferredStaticPipelines
             let pipeline = PhysicallyBased.createPhysicallyBasedPipeline lightMapsMax lightsMax descriptor.ShaderPath blends cullModes vertexBindings colorAttachmentFormats depthAttachmentFormat renderer.VulkanContext
@@ -3548,7 +3531,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         renderer =
         for message in renderMessages do
             match message with
-            | CreateUserDefinedPipeline cudp ->
+            | CreateUserDefinedPipeline3d cudp ->
                 VulkanRenderer3d.tryCreateUserDefinedPipeline cudp.Pipeline3dDescriptor renderer
             | CreateUserDefinedStaticModel cudsm ->
                 VulkanRenderer3d.tryCreateUserDefinedStaticModel cudsm.StaticModelSurfaceDescriptors cudsm.Bounds cudsm.StaticModel renderer

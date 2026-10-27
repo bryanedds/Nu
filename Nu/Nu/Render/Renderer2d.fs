@@ -135,6 +135,10 @@ type [<NoEquality; NoComparison>] ContourDescriptor =
       ClipOpt : Box2 voption
       Contour : Contour }
 
+/// Describes how to create a user-defined 2d rendering pipeline.
+type CreateUserDefinedPipeline2d =
+    { Pipeline2dDescriptor : UserDefinedPipeline2dDescriptor }
+
 /// Describes a 2d rendering operation.
 type RenderOperation2d =
     | RenderSprite of SpriteDescriptor
@@ -156,6 +160,7 @@ type LayeredOperation2d =
 
 /// A message to a 2d rendering subsystem.
 type RenderMessage2d =
+    | CreateUserDefinedPipeline2d of CreateUserDefinedPipeline2d
     | LayeredOperation2d of LayeredOperation2d
     | LoadRenderPackage2d of string
     | UnloadRenderPackage2d of string
@@ -189,7 +194,7 @@ type [<NoEquality; NoComparison>] private RenderAssetCached =
 type Renderer2d =
     
     /// Pre-render a frame of the game.
-    abstract PreRender : eyeCenter : Vector2 -> eyeSize : Vector2 -> viewport : Viewport -> renderMessages : RenderMessage2d List -> unit
+    abstract PreRender : eyeCenter : Vector2 -> eyeSize : Vector2 -> viewport : Viewport -> renderMessages : RenderMessage2d List -> ImageFormat -> unit
 
     /// Render a frame of the game.
     abstract Render : eyeCenter : Vector2 -> eyeSize : Vector2 -> viewport : Viewport -> Texture -> unit
@@ -207,7 +212,7 @@ type [<ReferenceEquality>] StubRenderer2d =
         { StubRenderer2d = () }
 
     interface Renderer2d with
-        member renderer.PreRender _ _ _ _ = ()
+        member renderer.PreRender _ _ _ _ _ = ()
         member renderer.Render _ _ _ _ = ()
         member renderer.CleanUp () = ()
 
@@ -220,7 +225,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
           UnfilteredSampler : Sampler
           FilteredSampler : Sampler
           SpriteBatchEnv : SpriteBatchEnv
-          SpritePipelines : Dictionary<string, VulkanBuffer * VulkanBuffer * Pipeline>
+          SpriteSingletonPipelines : Dictionary<string, VulkanBuffer * VulkanBuffer * Pipeline>
           ContourPipeline : VulkanBuffer * VulkanBuffer * VulkanBuffer * VulkanBuffer * VulkanBuffer * Pipeline
           TextTextures : Dictionary<obj, bool ref * (int * int * Vector2 * Texture)>
           UserDefinedImage0Texture : Texture
@@ -410,6 +415,23 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             | TextureAsset texture -> ValueSome texture
             | _ -> ValueNone
         | ValueNone -> ValueNone
+
+    static member private tryCreateUserDefinedPipeline (descriptor : UserDefinedPipeline2dDescriptor) resolveTextureFormat renderer =
+        match descriptor.Pipeline2dType with
+        | Sprite ->
+
+            // create batch sprite pipeline
+            SpriteBatch.tryCreateUserDefinedPipeline descriptor resolveTextureFormat renderer.SpriteBatchEnv renderer.VulkanContext
+
+            // create singleton sprite pipeline
+            let pipelines = renderer.SpriteSingletonPipelines
+            let pipeline = SpriteSingleton.createSpriteSingletonPipeline resolveTextureFormat renderer.VulkanContext
+            match pipelines.TryGetValue descriptor.PipelineName with
+            | (true, (_, _, pipeline)) ->
+                ConcurrentCommandQueue.waitIdle renderer.VulkanContext.RenderQueue // pipeline may still be in use by previous frame
+                Pipeline.destroy pipeline renderer.VulkanContext
+            | (false, _) -> ()
+            pipelines[descriptor.PipelineName] <- pipeline
     
     static member private handleLoadRenderPackage hintPackageName renderer =
         VulkanRenderer2d.tryLoadRenderPackage hintPackageName renderer
@@ -424,8 +446,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
 
     static member private handleReloadShaders renderer =
         SpriteBatch.reloadShaders renderer.SpriteBatchEnv renderer.VulkanContext
-        for (_, _, spritePipeline) in renderer.SpritePipelines.Values do
-            Pipeline.reloadShaders spritePipeline renderer.VulkanContext
+        for (_, _, spriteSingletonPipeline) in renderer.SpriteSingletonPipelines.Values do
+            Pipeline.reloadShaders spriteSingletonPipeline renderer.VulkanContext
         let (_, _, _, _, _, contourPipeline) = renderer.ContourPipeline
         Pipeline.reloadShaders contourPipeline renderer.VulkanContext
 
@@ -434,16 +456,17 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         for packageName in renderer.RenderPackages |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq do
             VulkanRenderer2d.tryLoadRenderPackage packageName renderer
     
-    static member private categorizeRenderMessage renderMessage renderer =
-        match renderMessage with
+    static member private categorizeRenderMessage message resolveTextureFormat renderer =
+        match message with
+        | CreateUserDefinedPipeline2d cudp -> VulkanRenderer2d.tryCreateUserDefinedPipeline cudp.Pipeline2dDescriptor resolveTextureFormat renderer
         | LayeredOperation2d operation -> renderer.LayeredOperations.Add operation
         | LoadRenderPackage2d hintPackageUse -> VulkanRenderer2d.handleLoadRenderPackage hintPackageUse renderer
         | UnloadRenderPackage2d hintPackageDisuse -> VulkanRenderer2d.handleUnloadRenderPackage hintPackageDisuse renderer
         | ReloadRenderAssets2d -> renderer.ReloadAssetsRequested <- true
 
-    static member private categorizeRenderMessages renderMessages renderer =
+    static member private categorizeRenderMessages renderMessages resolveTextureFormat renderer =
         for renderMessage in renderMessages do
-            VulkanRenderer2d.categorizeRenderMessage renderMessage renderer
+            VulkanRenderer2d.categorizeRenderMessage renderMessage resolveTextureFormat renderer
     
     static member private sortLayeredOperations renderer =
         renderer.LayeredOperations.Sort (LayeredOperation2dComparer ())
@@ -905,7 +928,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
 
                             // draw text sprite
                             let (vertices, indices) = renderer.TextQuad
-                            let (spriteVertUniform, spriteFragUniform, pipeline) = renderer.SpritePipelines[Constants.Render.PipelineNameDefault]
+                            let (spriteVertUniform, spriteFragUniform, pipeline) = renderer.SpriteSingletonPipelines[Constants.Render.PipelineNameDefault]
                             let insetOpt : Box2 voption = ValueNone
                             let userDefinedImageTextures =
                                 { UserDefinedImage0Texture = renderer.UserDefinedImage0Texture
@@ -968,7 +991,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         for operation in renderer.LayeredOperations do
             VulkanRenderer2d.renderDescriptor operation.RenderOperation2d eyeCenter eyeSize resolveTexture renderer
 
-    static member private preRender eyeCenter eyeSize viewport renderMessages renderer =
+    static member private preRender eyeCenter eyeSize viewport renderMessages resolveTextureFormat renderer =
 
         // delete textures as requested on previous frame
         TextureDumpster.dump renderer.TextureDumpster renderer.VulkanContext
@@ -981,14 +1004,14 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         SpriteBatch.beginSpriteBatchFrame (&viewProjectionAbsolute, &viewProjectionRelative, &viewProjectionClipAbsolute, &viewProjectionClipRelative, renderer.SpriteBatchEnv)
 
         // begin single sprite frame
-        for (_, _, pipeline) in renderer.SpritePipelines.Values do
+        for (_, _, pipeline) in renderer.SpriteSingletonPipelines.Values do
             Pipeline.beginFrame pipeline
 
         // being contour frame
         match renderer.ContourPipeline with (_, _, _, _, _, pipeline) -> Pipeline.beginFrame pipeline
 
         // categorize render messages
-        VulkanRenderer2d.categorizeRenderMessages renderMessages renderer
+        VulkanRenderer2d.categorizeRenderMessages renderMessages resolveTextureFormat renderer
 
         // sort layered operations
         VulkanRenderer2d.sortLayeredOperations renderer
@@ -1079,7 +1102,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
               UnfilteredSampler = unfilteredSampler
               FilteredSampler = filteredSampler
               SpriteBatchEnv = spriteBatchEnv
-              SpritePipelines = spriteSingletonPipelines
+              SpriteSingletonPipelines = spriteSingletonPipelines
               ContourPipeline = contourPipeline
               TextTextures = dictPlus HashIdentity.Structural []
               UserDefinedImage0Texture = userDefinedImage0Texture
@@ -1098,8 +1121,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
     
     interface Renderer2d with
 
-        member renderer.PreRender eyeCenter eyeSize viewport renderMessages =
-            VulkanRenderer2d.preRender eyeCenter eyeSize viewport renderMessages renderer
+        member renderer.PreRender eyeCenter eyeSize viewport renderMessages resolveTextureFormat =
+            VulkanRenderer2d.preRender eyeCenter eyeSize viewport renderMessages resolveTextureFormat renderer
 
         member renderer.Render eyeCenter eyeSize viewport resolveTexture =
             VulkanRenderer2d.render eyeCenter eyeSize viewport resolveTexture renderer
@@ -1107,8 +1130,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         member renderer.CleanUp () =
 
             // destroy vulkan resources
-            for (_, _, spritePipeline) in renderer.SpritePipelines.Values do
-                Pipeline.destroy spritePipeline renderer.VulkanContext
+            for (_, _, spriteSingletonPipeline) in renderer.SpriteSingletonPipelines.Values do
+                Pipeline.destroy spriteSingletonPipeline renderer.VulkanContext
             let (textVertexBuffer, textIndexBuffer) = renderer.TextQuad
             let (_, _, _, _, _, contourPipeline) = renderer.ContourPipeline
             Texture.destroy renderer.UserDefinedImage0Texture renderer.VulkanContext

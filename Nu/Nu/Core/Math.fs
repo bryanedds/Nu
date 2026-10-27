@@ -1835,6 +1835,35 @@ type [<Struct; StructLayout (LayoutKind.Explicit, Size = 32)>] UserDefinedSettin
     static member defaultSettings =
         Unchecked.defaultof<UserDefinedSettings>
 
+/// Indicates the type of 2d rendering pipeline.
+type Pipeline2dType =
+    | Sprite
+
+/// Describes a user-defined 2d rendering pipeline.
+type UserDefinedPipeline2dDescriptor =
+    { Pipeline2dType : Pipeline2dType
+      PipelineName : string
+      ShaderPath : string
+      UserDefinedImageNames : string array
+      UserDefinedSettingNames : string array }
+
+/// Indicates the type of 3d rendering pipeline.
+type Pipeline3dType =
+    | DeferredStatic
+    | DeferredStaticClipped
+    | DeferredAnimated
+    | ForwardStatic
+    | ForwardAnimated
+    | Terrain
+
+/// Describes a user-defined 3d rendering pipeline.
+type UserDefinedPipeline3dDescriptor =
+    { Pipeline3dType : Pipeline3dType
+      PipelineName : string
+      ShaderPath : string
+      UserDefinedImageNames : string array
+      UserDefinedSettingNames : string array }
+
 /// Type of light.
 type [<DefaultValue "[PointLight 0]">] LightType =
     | PointLight of Radius : single
