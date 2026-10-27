@@ -216,14 +216,14 @@ module EffectSystem =
         | LightCutoff lightCutoff -> slice.LightCutoff <- lightCutoff; slice
         | Volume volume -> slice.Volume <- volume; slice
         | Enabled enabled -> slice.Enabled <- enabled; slice
-        | UserDefinedSetting0 setting -> slice.UserDefinedSetting0 <- setting; slice
-        | UserDefinedSetting1 setting -> slice.UserDefinedSetting1 <- setting; slice
-        | UserDefinedSetting2 setting -> slice.UserDefinedSetting2 <- setting; slice
-        | UserDefinedSetting3 setting -> slice.UserDefinedSetting3 <- setting; slice
-        | UserDefinedSetting4 setting -> slice.UserDefinedSetting4 <- setting; slice
-        | UserDefinedSetting5 setting -> slice.UserDefinedSetting5 <- setting; slice
-        | UserDefinedSetting6 setting -> slice.UserDefinedSetting6 <- setting; slice
-        | UserDefinedSetting7 setting -> slice.UserDefinedSetting7 <- setting; slice
+        | UserDefinedSetting0 setting -> slice.UserDefinedSettings.UserDefinedSetting0 <- setting; slice
+        | UserDefinedSetting1 setting -> slice.UserDefinedSettings.UserDefinedSetting1 <- setting; slice
+        | UserDefinedSetting2 setting -> slice.UserDefinedSettings.UserDefinedSetting2 <- setting; slice
+        | UserDefinedSetting3 setting -> slice.UserDefinedSettings.UserDefinedSetting3 <- setting; slice
+        | UserDefinedSetting4 setting -> slice.UserDefinedSettings.UserDefinedSetting4 <- setting; slice
+        | UserDefinedSetting5 setting -> slice.UserDefinedSettings.UserDefinedSetting5 <- setting; slice
+        | UserDefinedSetting6 setting -> slice.UserDefinedSettings.UserDefinedSetting6 <- setting; slice
+        | UserDefinedSetting7 setting -> slice.UserDefinedSettings.UserDefinedSetting7 <- setting; slice
         | Positions (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
@@ -369,64 +369,64 @@ module EffectSystem =
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween (fun (x, y) -> x * single y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.UserDefinedSetting0 tweened applicator
-                slice.UserDefinedSetting0 <- applied
+                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.UserDefinedSettings.UserDefinedSetting0 tweened applicator
+                slice.UserDefinedSettings.UserDefinedSetting0 <- applied
             slice
         | UserDefinedSetting1s (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween (fun (x, y) -> x * single y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.UserDefinedSetting1 tweened applicator
-                slice.UserDefinedSetting1 <- applied
+                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.UserDefinedSettings.UserDefinedSetting1 tweened applicator
+                slice.UserDefinedSettings.UserDefinedSetting1 <- applied
             slice
         | UserDefinedSetting2s (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween (fun (x, y) -> x * single y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.UserDefinedSetting2 tweened applicator
-                slice.UserDefinedSetting2 <- applied
+                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.UserDefinedSettings.UserDefinedSetting2 tweened applicator
+                slice.UserDefinedSettings.UserDefinedSetting2 <- applied
             slice
         | UserDefinedSetting3s (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween (fun (x, y) -> x * single y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.UserDefinedSetting3 tweened applicator
-                slice.UserDefinedSetting3 <- applied
+                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.UserDefinedSettings.UserDefinedSetting3 tweened applicator
+                slice.UserDefinedSettings.UserDefinedSetting3 <- applied
             slice
         | UserDefinedSetting4s (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween (fun (x, y) -> x * single y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.UserDefinedSetting4 tweened applicator
-                slice.UserDefinedSetting4 <- applied
+                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.UserDefinedSettings.UserDefinedSetting4 tweened applicator
+                slice.UserDefinedSettings.UserDefinedSetting4 <- applied
             slice
         | UserDefinedSetting5s (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween (fun (x, y) -> x * single y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.UserDefinedSetting5 tweened applicator
-                slice.UserDefinedSetting5 <- applied
+                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.UserDefinedSettings.UserDefinedSetting5 tweened applicator
+                slice.UserDefinedSettings.UserDefinedSetting5 <- applied
             slice
         | UserDefinedSetting6s (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween (fun (x, y) -> x * single y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.UserDefinedSetting6 tweened applicator
-                slice.UserDefinedSetting6 <- applied
+                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.UserDefinedSettings.UserDefinedSetting6 tweened applicator
+                slice.UserDefinedSettings.UserDefinedSetting6 <- applied
             slice
         | UserDefinedSetting7s (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween (fun (x, y) -> x * single y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.UserDefinedSetting7 tweened applicator
-                slice.UserDefinedSetting7 <- applied
+                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.UserDefinedSettings.UserDefinedSetting7 tweened applicator
+                slice.UserDefinedSettings.UserDefinedSetting7 <- applied
             slice
         | Aspect.Expand (definitionName, _) ->
             match Map.tryFind definitionName effectSystem.EffectEnv with
@@ -470,27 +470,22 @@ module EffectSystem =
         let effectSystem =
             if slice.Enabled then
                 let mutable transform = Transform.makeIntuitive effectSystem.EffectAbsolute slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation
+                let userDefinedImages =
+                    { UserDefinedImage0 = AssetTag.specialize<Image> userDefinedImage0
+                      UserDefinedImage1 = AssetTag.specialize<Image> userDefinedImage1
+                      UserDefinedImage2 = AssetTag.specialize<Image> userDefinedImage2 }
                 let sprite =
                     { SpriteValue.Transform = transform
                       InsetOpt = if slice.Inset.Equals box2Zero then ValueNone else ValueSome slice.Inset
                       ClipOpt = Option.toValueOption effectSystem.EffectClipOpt
                       Image = AssetTag.specialize<Image> image
-                      UserDefinedImage0 = AssetTag.specialize<Image> userDefinedImage0
-                      UserDefinedImage1 = AssetTag.specialize<Image> userDefinedImage1
-                      UserDefinedImage2 = AssetTag.specialize<Image> userDefinedImage2
+                      UserDefinedImages = userDefinedImages
                       PipelineName = if String.isEmpty pipelineName then Constants.Render.PipelineNameDefault else pipelineName
                       Color = slice.Color
                       Blend = slice.Blend
                       Emission = slice.Emission
                       Flip = slice.Flip
-                      UserDefinedSetting0 = slice.UserDefinedSetting0
-                      UserDefinedSetting1 = slice.UserDefinedSetting1
-                      UserDefinedSetting2 = slice.UserDefinedSetting2
-                      UserDefinedSetting3 = slice.UserDefinedSetting3
-                      UserDefinedSetting4 = slice.UserDefinedSetting4
-                      UserDefinedSetting5 = slice.UserDefinedSetting5
-                      UserDefinedSetting6 = slice.UserDefinedSetting6
-                      UserDefinedSetting7 = slice.UserDefinedSetting7 }
+                      UserDefinedSettings = slice.UserDefinedSettings }
                 let spriteToken = SpriteToken (transform.Elevation, transform.Horizon, image, sprite)
                 addDataToken spriteToken effectSystem
             else effectSystem
@@ -526,27 +521,22 @@ module EffectSystem =
                 if  slice.Enabled &&
                     not (playback = Once && cel >= celCount) then
                     let mutable transform = Transform.makeIntuitive effectSystem.EffectAbsolute slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation
+                    let userDefinedImages =
+                        { UserDefinedImage0 = AssetTag.specialize<Image> userDefinedImage0
+                          UserDefinedImage1 = AssetTag.specialize<Image> userDefinedImage1
+                          UserDefinedImage2 = AssetTag.specialize<Image> userDefinedImage2 }
                     let sprite =
                         { SpriteValue.Transform = transform
                           InsetOpt = ValueSome inset
                           ClipOpt = Option.toValueOption effectSystem.EffectClipOpt
                           Image = AssetTag.specialize<Image> image
-                          UserDefinedImage0 = AssetTag.specialize<Image> userDefinedImage0
-                          UserDefinedImage1 = AssetTag.specialize<Image> userDefinedImage1
-                          UserDefinedImage2 = AssetTag.specialize<Image> userDefinedImage2
+                          UserDefinedImages = userDefinedImages
                           PipelineName = if String.isEmpty pipelineName then Constants.Render.PipelineNameDefault else pipelineName
                           Color = slice.Color
                           Blend = slice.Blend
                           Emission = slice.Emission
                           Flip = slice.Flip
-                          UserDefinedSetting0 = slice.UserDefinedSetting0
-                          UserDefinedSetting1 = slice.UserDefinedSetting1
-                          UserDefinedSetting2 = slice.UserDefinedSetting2
-                          UserDefinedSetting3 = slice.UserDefinedSetting3
-                          UserDefinedSetting4 = slice.UserDefinedSetting4
-                          UserDefinedSetting5 = slice.UserDefinedSetting5
-                          UserDefinedSetting6 = slice.UserDefinedSetting6
-                          UserDefinedSetting7 = slice.UserDefinedSetting7 }
+                          UserDefinedSettings = slice.UserDefinedSettings }
                     let spriteToken = SpriteToken (transform.Elevation, transform.Horizon, image, sprite)
                     addDataToken spriteToken effectSystem
                 else effectSystem
@@ -636,10 +626,14 @@ module EffectSystem =
                         IgnoreLightMapsOpt = ValueSome (match properties.IgnoreLightMapsOpt with ValueSome ignoreLightMaps -> ignoreLightMaps && slice.IgnoreLightMaps | ValueNone -> slice.IgnoreLightMaps)
                         AnisotropyOpt = ValueSome (match properties.AnisotropyOpt with ValueSome anisotropy -> anisotropy * slice.Anisotropy | ValueNone -> slice.Anisotropy)
                         SpecularScalarOpt = ValueSome (match properties.SpecularScalarOpt with ValueSome specularScalar -> specularScalar * slice.Specularity | ValueNone -> slice.Anisotropy)
-                        UserDefinedSetting0Opt = ValueSome (match properties.UserDefinedSetting0Opt with ValueSome setting -> setting * slice.UserDefinedSetting0 | ValueNone -> slice.UserDefinedSetting0)
-                        UserDefinedSetting1Opt = ValueSome (match properties.UserDefinedSetting1Opt with ValueSome setting -> setting * slice.UserDefinedSetting1 | ValueNone -> slice.UserDefinedSetting1)
-                        UserDefinedSetting2Opt = ValueSome (match properties.UserDefinedSetting2Opt with ValueSome setting -> setting * slice.UserDefinedSetting2 | ValueNone -> slice.UserDefinedSetting2)
-                        UserDefinedSetting3Opt = ValueSome (match properties.UserDefinedSetting3Opt with ValueSome setting -> setting * slice.UserDefinedSetting3 | ValueNone -> slice.UserDefinedSetting3) }
+                        UserDefinedSetting0Opt = ValueSome (match properties.UserDefinedSetting0Opt with ValueSome setting -> setting * slice.UserDefinedSettings.UserDefinedSetting0 | ValueNone -> slice.UserDefinedSettings.UserDefinedSetting0)
+                        UserDefinedSetting1Opt = ValueSome (match properties.UserDefinedSetting1Opt with ValueSome setting -> setting * slice.UserDefinedSettings.UserDefinedSetting1 | ValueNone -> slice.UserDefinedSettings.UserDefinedSetting1)
+                        UserDefinedSetting2Opt = ValueSome (match properties.UserDefinedSetting2Opt with ValueSome setting -> setting * slice.UserDefinedSettings.UserDefinedSetting2 | ValueNone -> slice.UserDefinedSettings.UserDefinedSetting2)
+                        UserDefinedSetting3Opt = ValueSome (match properties.UserDefinedSetting3Opt with ValueSome setting -> setting * slice.UserDefinedSettings.UserDefinedSetting3 | ValueNone -> slice.UserDefinedSettings.UserDefinedSetting3)
+                        UserDefinedSetting4Opt = ValueSome (match properties.UserDefinedSetting4Opt with ValueSome setting -> setting * slice.UserDefinedSettings.UserDefinedSetting4 | ValueNone -> slice.UserDefinedSettings.UserDefinedSetting4)
+                        UserDefinedSetting5Opt = ValueSome (match properties.UserDefinedSetting5Opt with ValueSome setting -> setting * slice.UserDefinedSettings.UserDefinedSetting5 | ValueNone -> slice.UserDefinedSettings.UserDefinedSetting5)
+                        UserDefinedSetting6Opt = ValueSome (match properties.UserDefinedSetting6Opt with ValueSome setting -> setting * slice.UserDefinedSettings.UserDefinedSetting6 | ValueNone -> slice.UserDefinedSettings.UserDefinedSetting6)
+                        UserDefinedSetting7Opt = ValueSome (match properties.UserDefinedSetting7Opt with ValueSome setting -> setting * slice.UserDefinedSettings.UserDefinedSetting7 | ValueNone -> slice.UserDefinedSettings.UserDefinedSetting7) }
                 let billboardToken =
                     BillboardToken
                         { ModelMatrix = affineMatrix
@@ -677,10 +671,14 @@ module EffectSystem =
                         IgnoreLightMapsOpt = ValueSome (match properties.IgnoreLightMapsOpt with ValueSome ignoreLightMaps -> ignoreLightMaps && slice.IgnoreLightMaps | ValueNone -> slice.IgnoreLightMaps)
                         AnisotropyOpt = ValueSome (match properties.AnisotropyOpt with ValueSome anisotropy -> anisotropy * slice.Anisotropy | ValueNone -> slice.Anisotropy)
                         SpecularScalarOpt = ValueSome (match properties.SpecularScalarOpt with ValueSome specularScalarOpt -> specularScalarOpt * slice.Specularity | ValueNone -> slice.Anisotropy)
-                        UserDefinedSetting0Opt = ValueSome (match properties.UserDefinedSetting0Opt with ValueSome setting -> setting * slice.UserDefinedSetting0 | ValueNone -> slice.UserDefinedSetting0)
-                        UserDefinedSetting1Opt = ValueSome (match properties.UserDefinedSetting1Opt with ValueSome setting -> setting * slice.UserDefinedSetting1 | ValueNone -> slice.UserDefinedSetting1)
-                        UserDefinedSetting2Opt = ValueSome (match properties.UserDefinedSetting2Opt with ValueSome setting -> setting * slice.UserDefinedSetting2 | ValueNone -> slice.UserDefinedSetting2)
-                        UserDefinedSetting3Opt = ValueSome (match properties.UserDefinedSetting3Opt with ValueSome setting -> setting * slice.UserDefinedSetting3 | ValueNone -> slice.UserDefinedSetting3) }
+                        UserDefinedSetting0Opt = ValueSome (match properties.UserDefinedSetting0Opt with ValueSome setting -> setting * slice.UserDefinedSettings.UserDefinedSetting0 | ValueNone -> slice.UserDefinedSettings.UserDefinedSetting0)
+                        UserDefinedSetting1Opt = ValueSome (match properties.UserDefinedSetting1Opt with ValueSome setting -> setting * slice.UserDefinedSettings.UserDefinedSetting1 | ValueNone -> slice.UserDefinedSettings.UserDefinedSetting1)
+                        UserDefinedSetting2Opt = ValueSome (match properties.UserDefinedSetting2Opt with ValueSome setting -> setting * slice.UserDefinedSettings.UserDefinedSetting2 | ValueNone -> slice.UserDefinedSettings.UserDefinedSetting2)
+                        UserDefinedSetting3Opt = ValueSome (match properties.UserDefinedSetting3Opt with ValueSome setting -> setting * slice.UserDefinedSettings.UserDefinedSetting3 | ValueNone -> slice.UserDefinedSettings.UserDefinedSetting3)
+                        UserDefinedSetting4Opt = ValueSome (match properties.UserDefinedSetting4Opt with ValueSome setting -> setting * slice.UserDefinedSettings.UserDefinedSetting4 | ValueNone -> slice.UserDefinedSettings.UserDefinedSetting4)
+                        UserDefinedSetting5Opt = ValueSome (match properties.UserDefinedSetting5Opt with ValueSome setting -> setting * slice.UserDefinedSettings.UserDefinedSetting5 | ValueNone -> slice.UserDefinedSettings.UserDefinedSetting5)
+                        UserDefinedSetting6Opt = ValueSome (match properties.UserDefinedSetting6Opt with ValueSome setting -> setting * slice.UserDefinedSettings.UserDefinedSetting6 | ValueNone -> slice.UserDefinedSettings.UserDefinedSetting6)
+                        UserDefinedSetting7Opt = ValueSome (match properties.UserDefinedSetting7Opt with ValueSome setting -> setting * slice.UserDefinedSettings.UserDefinedSetting7 | ValueNone -> slice.UserDefinedSettings.UserDefinedSetting7) }
                 let staticModelToken =
                     StaticModelToken
                         { ModelMatrix = affineMatrix

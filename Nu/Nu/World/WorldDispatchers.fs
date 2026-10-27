@@ -408,6 +408,7 @@ type Character2dDispatcher () =
             else
                 let image = entity.GetCharacter2dWalkSheet world
                 struct (ValueSome (computeWalkCelInset world.GameTime animationDelay celSize celRun), image)
+        let userDefinedSettings = entity.GetUserDefinedSettings world
         World.enqueueLayeredOperation2d
             { Elevation = transform.Elevation
               Horizon = transform.Horizon
@@ -418,22 +419,13 @@ type Character2dDispatcher () =
                       InsetOpt = insetOpt
                       ClipOpt = ValueNone
                       Image = image
-                      UserDefinedImage0 = Assets.Default.UserDefinedImage0
-                      UserDefinedImage1 = Assets.Default.UserDefinedImage1
-                      UserDefinedImage2 = Assets.Default.UserDefinedImage2
+                      UserDefinedImages = UserDefinedImages.defaultImages
                       PipelineName = entity.GetPipelineName world
                       Color = Color.One
                       Blend = Transparent
                       Emission = Color.Zero
                       Flip = if facingLeft then Horizontal else Unflipped
-                      UserDefinedSetting0 = entity.GetUserDefinedSetting0 world
-                      UserDefinedSetting1 = entity.GetUserDefinedSetting1 world
-                      UserDefinedSetting2 = entity.GetUserDefinedSetting2 world
-                      UserDefinedSetting3 = entity.GetUserDefinedSetting3 world
-                      UserDefinedSetting4 = entity.GetUserDefinedSetting4 world
-                      UserDefinedSetting5 = entity.GetUserDefinedSetting5 world
-                      UserDefinedSetting6 = entity.GetUserDefinedSetting6 world
-                      UserDefinedSetting7 = entity.GetUserDefinedSetting7 world }}
+                      UserDefinedSettings = userDefinedSettings }}
             world
 
 /// Gives an entity the base behavior of a physics-driven 2d joint.
@@ -463,12 +455,24 @@ type FluidEmitter2dDispatcher () =
     static member Properties =
         let fluidSize = v3 31.0f 31.0f 0.0f // NOTE: these have to be hard-coded since Metadata isn't necessarily available here.
         let smokeSize = v3 96.0f 96.0f 0.0f // NOTE: these have to be hard-coded since Metadata isn't necessarily available here.
+        let particleRender =
+            { Transform = Transform.makeEmpty ()
+              InsetOpt = ValueNone
+              ClipOpt = ValueNone
+              Image = Assets.Default.Image
+              UserDefinedImages = UserDefinedImages.defaultImages
+              PipelineName = Constants.Render.PipelineNameDefault
+              Color = colorOne
+              Blend = Transparent
+              Emission = colorZero
+              Flip = Unflipped
+              UserDefinedSettings = UserDefinedSettings.defaultSettings }
         [define Entity.FluidParticleRenders
             (Map.ofList
-                [("Water", { Transform = Transform.makeIntuitive false v3Zero v3One v3Zero fluidSize v3Zero -0.03f; InsetOpt = ValueNone; ClipOpt = ValueNone; Image = Assets.Default.Fluid; Color = colorPacked 0x0094FFFFu; Blend = Transparent; Emission = colorZero; Flip = Unflipped })
-                 ("Sand", { Transform = Transform.makeIntuitive false v3Zero v3One v3Zero fluidSize v3Zero -0.01f; InsetOpt = ValueNone; ClipOpt = ValueNone; Image = Assets.Default.Fluid; Color = Color.Yellow; Blend = Transparent; Emission = colorZero; Flip = Unflipped })
-                 ("Smoke", { Transform = Transform.makeIntuitive false v3Zero v3One v3Zero smokeSize v3Zero 0.0f; InsetOpt = ValueNone; ClipOpt = ValueNone; Image = Assets.Default.Gas; Color = colorOne; Blend = Transparent; Emission = colorZero; Flip = Unflipped })
-                 ("Oil", { Transform = Transform.makeIntuitive false v3Zero v3One v3Zero fluidSize v3Zero -0.02f; InsetOpt = ValueNone; ClipOpt = ValueNone; Image = Assets.Default.Fluid; Color = Color.color 0.36862746f 0.22352941f 0.039215688f 1.0f; Blend = Transparent; Emission = colorZero; Flip = Unflipped })])]
+                [("Water", { particleRender with Transform = Transform.makeIntuitive false v3Zero v3One v3Zero fluidSize v3Zero -0.03f; Image = Assets.Default.Fluid; Color = colorPacked 0x0094FFFFu })
+                 ("Sand", { particleRender with Transform = Transform.makeIntuitive false v3Zero v3One v3Zero fluidSize v3Zero -0.01f; Image = Assets.Default.Fluid; Color = Color.Yellow })
+                 ("Smoke", { particleRender with Transform = Transform.makeIntuitive false v3Zero v3One v3Zero smokeSize v3Zero 0.0f; Image = Assets.Default.Gas; Color = colorOne })
+                 ("Oil", { particleRender with Transform = Transform.makeIntuitive false v3Zero v3One v3Zero fluidSize v3Zero -0.02f; Image = Assets.Default.Fluid; Color = Color.color 0.36862746f 0.22352941f 0.039215688f 1.0f })])]
 
     override this.Render (_, emitter, world) =
         let mutable transform = emitter.GetTransform world

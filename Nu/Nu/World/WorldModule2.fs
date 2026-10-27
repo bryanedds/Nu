@@ -1528,14 +1528,13 @@ module WorldModule2 =
                                   InsetOpt = ValueNone
                                   ClipOpt = ValueNone
                                   Image = dissolveImage
-                                  UserDefinedImage0 = Assets.Default.UserDefinedImage0
-                                  UserDefinedImage1 = Assets.Default.UserDefinedImage1
-                                  UserDefinedImage2 = Assets.Default.UserDefinedImage2
+                                  UserDefinedImages = UserDefinedImages.defaultImages
                                   PipelineName = Constants.Render.PipelineNameDefault
                                   Color = color
                                   Blend = Transparent
                                   Emission = Color.Zero
-                                  Flip = Unflipped }}
+                                  Flip = Unflipped
+                                  UserDefinedSettings = UserDefinedSettings.defaultSettings }}
                         world
                 | None -> ()
             | _ -> ()

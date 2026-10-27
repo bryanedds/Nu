@@ -371,7 +371,6 @@ module Render =
     let [<Literal>] RefractiveIndexDefault = 1.0f
     let [<Literal>] ClearCoatDefault = 1.0f
     let [<Literal>] ClearCoatRoughnessDefault = 1.0f
-    let [<Literal>] UserDefinedSettingDefault = 0.0f
     let [<Literal>] FontSizeDefault = 14.0f
     let [<Literal>] Body3dSegmentRenderMagnitudeMax = 48.0f
     let [<Literal>] Body3dSegmentRenderDistanceMax = 40.0f

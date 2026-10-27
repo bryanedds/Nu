@@ -1778,6 +1778,7 @@ module MathOperators =
 namespace Nu
 open System
 open System.Numerics
+open System.Runtime.InteropServices
 open Prime
 
 /// The single inhabitant type / value for use where unit / () won't suffice, such as for a dictionary key.
@@ -1818,6 +1819,21 @@ type [<Struct>] Flip =
     | Horizontal
     | Vertical
     | Diagonal
+
+/// User-defined settings.
+type [<Struct; StructLayout (LayoutKind.Explicit, Size = 32)>] UserDefinedSettings =
+    { [<FieldOffset(0)>] mutable UserDefinedSetting0 : single
+      [<FieldOffset(4)>] mutable UserDefinedSetting1 : single
+      [<FieldOffset(8)>] mutable UserDefinedSetting2 : single
+      [<FieldOffset(12)>] mutable UserDefinedSetting3 : single
+      [<FieldOffset(16)>] mutable UserDefinedSetting4 : single
+      [<FieldOffset(20)>] mutable UserDefinedSetting5 : single
+      [<FieldOffset(24)>] mutable UserDefinedSetting6 : single
+      [<FieldOffset(28)>] mutable UserDefinedSetting7 : single }
+
+    /// The default user-defined settings.
+    static member defaultSettings =
+        Unchecked.defaultof<UserDefinedSettings>
 
 /// Type of light.
 type [<DefaultValue "[PointLight 0]">] LightType =

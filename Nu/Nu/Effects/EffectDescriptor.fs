@@ -65,14 +65,7 @@ type Slice =
       mutable LightCutoff : single
       mutable Volume : single
       mutable Enabled : bool
-      mutable UserDefinedSetting0 : single
-      mutable UserDefinedSetting1 : single
-      mutable UserDefinedSetting2 : single
-      mutable UserDefinedSetting3 : single
-      mutable UserDefinedSetting4 : single
-      mutable UserDefinedSetting5 : single
-      mutable UserDefinedSetting6 : single
-      mutable UserDefinedSetting7 : single }
+      mutable UserDefinedSettings : UserDefinedSettings }
     static member copy slice =
         { slice with SliceDelta = slice.SliceDelta }
 

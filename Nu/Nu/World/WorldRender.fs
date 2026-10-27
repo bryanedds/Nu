@@ -94,13 +94,10 @@ module WorldRender =
         /// Send a message to the render system to render a static model using a fast path.
         static member renderLayeredSpriteFast
             (elevation, horizon, assetTag, transform : Transform inref, insetOpt : Box2 ValueOption inref, clipOpt : Box2 ValueOption inref,
-            image, userDefinedImage0, userDefinedImage1, userDefinedImage2, pipelineName, color : Color inref, blend, emission : Color inref, flip,
-            userDefinedSetting0, userDefinedSetting1, userDefinedSetting2, userDefinedSetting3, userDefinedSetting4, userDefinedSetting5, userDefinedSetting6, userDefinedSetting7,
-            world) =
+            image, userDefinedImages : UserDefinedImages inref, pipelineName, color : Color inref, blend, emission : Color inref, flip, userDefinedSettings : UserDefinedSettings inref, world) =
             (World.getRendererProcess world).RenderLayeredSpriteFast
                 (elevation, horizon, assetTag, &transform, &insetOpt, &clipOpt,
-                 image, userDefinedImage0, userDefinedImage1, userDefinedImage2, pipelineName, &color, blend, &emission, flip,
-                 userDefinedSetting0, userDefinedSetting1, userDefinedSetting2, userDefinedSetting3, userDefinedSetting4, userDefinedSetting5, userDefinedSetting6, userDefinedSetting7)
+                 image, &userDefinedImages, pipelineName, &color, blend, &emission, flip, &userDefinedSettings)
 
         /// Load a 2d render asset package. Should be used to avoid loading assets at inconvenient times (such as in the
         /// middle of game play!)
@@ -128,15 +125,18 @@ module WorldRender =
             World.enqueueRenderMessageImGui reloadRenderAssetsMessage world
 
         /// Render a gui sprite.
-        static member renderGuiSprite absolute perimeter spriteImage offset elevation color world =
+        static member renderGuiSprite absolute perimeter spriteImage pipelineName offset elevation color userDefinedSettings world =
             let mutable spriteTransform = Transform.makePerimeter absolute perimeter offset elevation // out-of-box gui ignores rotation
             let insetOpt = ValueOption<Box2>.None
             let perimeter = ValueSome perimeter.Box2
+            let userDefinedImages = UserDefinedImages.defaultImages
             let blend = Color.Zero
-            World.renderLayeredSpriteFast (spriteTransform.Elevation, spriteTransform.Horizon, spriteImage, &spriteTransform, &insetOpt, &perimeter, spriteImage, &color, Transparent, &blend, Unflipped, world)
+            World.renderLayeredSpriteFast
+                (spriteTransform.Elevation, spriteTransform.Horizon, spriteImage, &spriteTransform, &insetOpt, &perimeter,
+                 spriteImage, &userDefinedImages, pipelineName, &color, Transparent, &blend, Unflipped, &userDefinedSettings, world)
 
         /// Render a gui sprite with 9-way slicing.
-        static member renderGuiSpriteSliced absolute perimeter margin spriteImage offset elevation color world =
+        static member renderGuiSpriteSliced absolute perimeter margin spriteImage pipelineName offset elevation color userDefinedSettings world =
             if margin <> v2Zero then
                 for i in 0 .. dec 9 do
                     let slice = box3Slice i margin perimeter
@@ -146,9 +146,12 @@ module WorldRender =
                         | ValueNone -> ValueNone
                     let mutable spriteTransform = Transform.makePerimeter absolute slice offset elevation // out-of-box gui ignores rotation
                     let perimeter = ValueSome perimeter.Box2
+                    let userDefinedImages = UserDefinedImages.defaultImages
                     let blend = Color.Zero
-                    World.renderLayeredSpriteFast (spriteTransform.Elevation, spriteTransform.Horizon, spriteImage, &spriteTransform, &insetOpt, &perimeter, spriteImage, &color, Transparent, &blend, Unflipped, world)
-            else World.renderGuiSprite absolute perimeter spriteImage offset elevation color world
+                    World.renderLayeredSpriteFast
+                        (spriteTransform.Elevation, spriteTransform.Horizon, spriteImage, &spriteTransform, &insetOpt, &perimeter,
+                         spriteImage, &userDefinedImages, pipelineName, &color, Transparent, &blend, Unflipped, &userDefinedSettings, world)
+            else World.renderGuiSprite absolute perimeter spriteImage pipelineName offset elevation color userDefinedSettings world
 
         static member renderGuiText absolute (perimeter : Box3) offset elevation shift clipOpt justification caretOpt textMargin color font fontSizing fontStyling text world =
             if not (String.IsNullOrWhiteSpace text) || Option.isSome caretOpt then

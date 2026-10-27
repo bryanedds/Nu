@@ -810,7 +810,7 @@ module WorldImGui =
                                         if ImGui.IsItemFocused () then context.FocusProperty ()
                                         if isSomeEdited then
                                             if isSome
-                                            then valueOpt <- Some Constants.Render.UserDefinedSettingDefault
+                                            then valueOpt <- Some 0.0f
                                             else valueOpt <- None
                                         match valueOpt with
                                         | Some value ->
@@ -989,7 +989,7 @@ module WorldImGui =
                                         if ImGui.IsItemFocused () then context.FocusProperty ()
                                         if isSomeEdited then
                                             if isSome
-                                            then valueOpt <- ValueSome Constants.Render.UserDefinedSettingDefault
+                                            then valueOpt <- ValueSome 0.0f
                                             else valueOpt <- ValueNone
                                         match valueOpt with
                                         | ValueSome value ->

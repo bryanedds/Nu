@@ -330,8 +330,7 @@ module TmxMap =
         bodyProperties
 
     let getLayeredMessages2d
-        time absolute (viewBounds : Box2) (tileMapPosition : Vector2) tileMapElevation tileMapClipOpt tileMapPipelineName tileMapColor tileMapEmission
-        tileMapUserDefinedSetting0 tileMapUserDefinedSetting1 tileMapUserDefinedSetting2 tileMapUserDefinedSetting3 tileMapUserDefinedSetting4 tileMapUserDefinedSetting5 tileMapUserDefinedSetting6 tileMapUserDefinedSetting7
+        time absolute (viewBounds : Box2) (tileMapPosition : Vector2) tileMapElevation tileMapClipOpt tileMapPipelineName tileMapColor tileMapEmission tileMapUserDefinedSettings
         tileLayerClearance tileSizeDivisor tileIndexOffset tileIndexOffsetRange tileMapPackage (tileMap : TmxMap) =
 
         // compute descriptors for visible layers
@@ -413,14 +412,7 @@ module TmxMap =
                                       PipelineName = tileMapPipelineName
                                       Color = tileMapColor
                                       Emission = tileMapEmission
-                                      UserDefinedSetting0 = tileMapUserDefinedSetting0
-                                      UserDefinedSetting1 = tileMapUserDefinedSetting1
-                                      UserDefinedSetting2 = tileMapUserDefinedSetting2
-                                      UserDefinedSetting3 = tileMapUserDefinedSetting3
-                                      UserDefinedSetting4 = tileMapUserDefinedSetting4
-                                      UserDefinedSetting5 = tileMapUserDefinedSetting5
-                                      UserDefinedSetting6 = tileMapUserDefinedSetting6
-                                      UserDefinedSetting7 = tileMapUserDefinedSetting7
+                                      UserDefinedSettings = tileMapUserDefinedSettings
                                       MapSize = Vector2i (tileMap.Width, tileMap.Height)
                                       Tiles = tileStrip
                                       TileSourceSize = tileSourceSize

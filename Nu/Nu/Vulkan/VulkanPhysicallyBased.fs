@@ -1584,7 +1584,7 @@ module PhysicallyBased =
             [for i in 0 .. dec Constants.Render.UserDefinedSettingCount do
                 match material.UserDefinedSettingOpt i with
                 | ValueSome userDefinedSetting -> userDefinedSetting
-                | ValueNone -> Constants.Render.UserDefinedSettingDefault]
+                | ValueNone -> 0.0f]
         let userDefinedImage0Texture =
             match contextOpt with
             | Some context ->

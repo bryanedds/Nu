@@ -12,6 +12,12 @@ open Vortice.Vulkan
 open Prime
 open Nu
 
+/// User-defined textures.
+type [<Struct>] UserDefinedImageTextures =
+    { UserDefinedImage0Texture : Texture
+      UserDefinedImage1Texture : Texture
+      UserDefinedImage2Texture : Texture }
+
 [<Struct; StructLayout (LayoutKind.Explicit)>]
 type SpriteVertStruct =
     [<FieldOffset(0)>] val mutable modelViewProjection : Matrix4x4
@@ -20,14 +26,7 @@ type SpriteVertStruct =
 [<Struct; StructLayout (LayoutKind.Explicit)>]
 type SpriteFragStruct =
     [<FieldOffset(0)>] val mutable color : Vector4
-    [<FieldOffset(16)>] val mutable userDefinedSetting0 : single
-    [<FieldOffset(20)>] val mutable userDefinedSetting1 : single
-    [<FieldOffset(24)>] val mutable userDefinedSetting2 : single
-    [<FieldOffset(28)>] val mutable userDefinedSetting3 : single
-    [<FieldOffset(32)>] val mutable userDefinedSetting4 : single
-    [<FieldOffset(36)>] val mutable userDefinedSetting5 : single
-    [<FieldOffset(40)>] val mutable userDefinedSetting6 : single
-    [<FieldOffset(44)>] val mutable userDefinedSetting7 : single
+    [<FieldOffset(16)>] val mutable userDefinedSettings : UserDefinedSettings
 
 /// Single sprite operations.
 [<RequireQualifiedAccess>]
@@ -53,7 +52,7 @@ module SpriteSingleton =
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer VertexStage 1
                       Pipeline.descriptor 1 UniformBuffer FragmentStage 1|]
-                  Pipeline.descriptorSet<struct (Texture * Texture * Texture * Texture)>
+                  Pipeline.descriptorSet<struct (Texture * UserDefinedImageTextures)>
                     [|Pipeline.descriptor 0 SampledImage FragmentStage 1
                       Pipeline.descriptor 1 SampledImage FragmentStage 1
                       Pipeline.descriptor 2 SampledImage FragmentStage 1
@@ -105,19 +104,10 @@ module SpriteSingleton =
          textureWidth : int,
          textureHeight : int,
          texture : Texture,
-         userDefinedImage0Texture : Texture,
-         userDefinedImage1Texture : Texture,
-         userDefinedImage2Texture : Texture,
+         userDefinedImageTextures : UserDefinedImageTextures inref,
          color : Color inref,
          flip : Flip,
-         userDefinedSetting0 : single,
-         userDefinedSetting1 : single,
-         userDefinedSetting2 : single,
-         userDefinedSetting3 : single,
-         userDefinedSetting4 : single,
-         userDefinedSetting5 : single,
-         userDefinedSetting6 : single,
-         userDefinedSetting7 : single,
+         userDefinedSettings : UserDefinedSettings inref,
          sampler : Sampler,
          viewport : Viewport,
          resolveTexture : Texture,
@@ -194,31 +184,23 @@ module SpriteSingleton =
 
                 // specify uniforms
                 let color = color
+                let userDefinedSettings = userDefinedSettings
                 let mutable uniformDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.DrawIndex pipeline $ fun vkSet ->
                     let spriteVert = SpriteVertStruct (modelViewProjection = modelViewProjection, texCoords4 = v4 texCoords.Min.X texCoords.Min.Y texCoords.Size.X texCoords.Size.Y)
-                    let spriteFrag =
-                        SpriteFragStruct
-                            (color = color.V4,
-                             userDefinedSetting0 = userDefinedSetting0,
-                             userDefinedSetting1 = userDefinedSetting1,
-                             userDefinedSetting2 = userDefinedSetting2,
-                             userDefinedSetting3 = userDefinedSetting3,
-                             userDefinedSetting4 = userDefinedSetting4,
-                             userDefinedSetting5 = userDefinedSetting5,
-                             userDefinedSetting6 = userDefinedSetting6,
-                             userDefinedSetting7 = userDefinedSetting7)
+                    let spriteFrag = SpriteFragStruct (color = color.V4, userDefinedSettings = userDefinedSettings)
                     VulkanBuffer.uploadValue spriteVert spriteVertUniform context
                     VulkanBuffer.uploadValue spriteFrag spriteFragUniform context
                     Pipeline.writeDescriptorUniformBuffer 0 0 spriteVertUniform vkSet
                     Pipeline.writeDescriptorUniformBuffer 1 0 spriteFragUniform vkSet
 
                 // specify textures
-                let textures = struct (texture, userDefinedImage0Texture, userDefinedImage1Texture, userDefinedImage2Texture)
+                let textures = struct (texture, userDefinedImageTextures)
+                let userDefinedImageTextures = userDefinedImageTextures
                 let mutable texturesDescriptorSet = Pipeline.specifyDescriptorSet 1 textures pipeline $ fun vkSet ->
                     Pipeline.writeDescriptorSampledTexture 0 0 texture vkSet
-                    Pipeline.writeDescriptorSampledTexture 1 0 userDefinedImage0Texture vkSet
-                    Pipeline.writeDescriptorSampledTexture 2 0 userDefinedImage1Texture vkSet
-                    Pipeline.writeDescriptorSampledTexture 3 0 userDefinedImage2Texture vkSet
+                    Pipeline.writeDescriptorSampledTexture 1 0 userDefinedImageTextures.UserDefinedImage0Texture vkSet
+                    Pipeline.writeDescriptorSampledTexture 2 0 userDefinedImageTextures.UserDefinedImage1Texture vkSet
+                    Pipeline.writeDescriptorSampledTexture 3 0 userDefinedImageTextures.UserDefinedImage2Texture vkSet
 
                 // specify sampler
                 let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 2 sampler pipeline $ fun vkSet ->
