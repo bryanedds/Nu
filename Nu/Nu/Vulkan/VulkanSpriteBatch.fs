@@ -121,7 +121,7 @@ module SpriteBatch =
     /// Attempt to create a user-defined pipeline
     let tryCreateUserDefinedPipeline (descriptor : UserDefinedPipeline2dDescriptor) resolveTextureFormat env context =
         match descriptor.Pipeline2dType with
-        | Sprite ->
+        | SpritePipeline ->
             let pipeline = createSpriteBatchPipeline resolveTextureFormat context
             match env.Pipelines.TryGetValue descriptor.PipelineName with
             | (true, (_, _, pipeline)) ->

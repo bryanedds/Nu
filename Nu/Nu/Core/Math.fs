@@ -1837,7 +1837,7 @@ type [<Struct; StructLayout (LayoutKind.Explicit, Size = 32)>] UserDefinedSettin
 
 /// Indicates the type of 2d rendering pipeline.
 type Pipeline2dType =
-    | Sprite
+    | SpritePipeline
 
 /// Describes a user-defined 2d rendering pipeline.
 type UserDefinedPipeline2dDescriptor =
@@ -1849,12 +1849,12 @@ type UserDefinedPipeline2dDescriptor =
 
 /// Indicates the type of 3d rendering pipeline.
 type Pipeline3dType =
-    | DeferredStatic
-    | DeferredStaticClipped
-    | DeferredAnimated
-    | ForwardStatic
-    | ForwardAnimated
-    | Terrain
+    | DeferredStaticPipeline
+    | DeferredStaticClippedPipeline
+    | DeferredAnimatedPipeline
+    | ForwardStaticPipeline
+    | ForwardAnimatedPipeline
+    | TerrainPipeline
 
 /// Describes a user-defined 3d rendering pipeline.
 type UserDefinedPipeline3dDescriptor =

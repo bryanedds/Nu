@@ -1965,34 +1965,34 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
         let (blends, cullModes) =
             match descriptor.Pipeline3dType with
-            | DeferredStatic | DeferredStaticClipped | DeferredAnimated ->
+            | DeferredStaticPipeline | DeferredStaticClippedPipeline | DeferredAnimatedPipeline ->
                 ([|VulkanUnblended|], [|CullNone; CullBack; CullFront|])
-            | ForwardStatic | ForwardAnimated ->
+            | ForwardStaticPipeline | ForwardAnimatedPipeline ->
                 ([|VulkanUnblended; VulkanTransparent; VulkanAdditive; VulkanSummation; VulkanOverwrite|], [|CullNone; CullBack; CullFront|])
-            | Terrain ->
+            | TerrainPipeline ->
                 ([|VulkanUnblended|], [|CullBack|])
 
         let (colorAttachmentFormats, depthAttachmentFormat) =
             match descriptor.Pipeline3dType with
-            | DeferredStatic | DeferredStaticClipped | DeferredAnimated | Terrain ->
+            | DeferredStaticPipeline | DeferredStaticClippedPipeline | DeferredAnimatedPipeline | TerrainPipeline ->
                 let deferredColorAttachmentFormats =
                     [|depth.ImageFormat; albedo.ImageFormat; material.ImageFormat; normalPlus.ImageFormat; subdermalPlus.ImageFormat; scatterPlus.ImageFormat; clearCoatPlus.ImageFormat; userDefinedBuffer.ImageFormat|]
                 (deferredColorAttachmentFormats, depthBuffer.ImageFormat)
-            | ForwardStatic | ForwardAnimated ->
+            | ForwardStaticPipeline | ForwardAnimatedPipeline ->
                 let composition = renderer.PhysicallyBasedAttachments.CompositionAttachment
                 ([|depth.ImageFormat; composition.ImageFormat|], depthBuffer.ImageFormat)
 
         let (lightMapsMax, lightsMax, vertexBindings) =
             match descriptor.Pipeline3dType with
-            | DeferredStatic | DeferredStaticClipped | ForwardStatic ->
+            | DeferredStaticPipeline | DeferredStaticClippedPipeline | ForwardStaticPipeline ->
                 (Constants.Render.LightMapsMaxDeferred, Constants.Render.LightsMaxDeferred, PhysicallyBased.StaticVertices)
-            | DeferredAnimated | ForwardAnimated ->
+            | DeferredAnimatedPipeline | ForwardAnimatedPipeline ->
                 (Constants.Render.LightMapsMaxForward, Constants.Render.LightsMaxForward, PhysicallyBased.AnimatedVertices)
-            | Terrain ->
+            | TerrainPipeline ->
                 (Constants.Render.LightMapsMaxDeferred, Constants.Render.LightsMaxDeferred, PhysicallyBased.TerrainVertices)
 
         match descriptor.Pipeline3dType with
-        | DeferredStatic ->
+        | DeferredStaticPipeline ->
             let pipelines = renderer.PhysicallyBasedPipelines.UserDefinedDeferredStaticPipelines
             let pipeline = PhysicallyBased.createPhysicallyBasedPipeline lightMapsMax lightsMax descriptor.ShaderPath blends cullModes vertexBindings colorAttachmentFormats depthAttachmentFormat renderer.VulkanContext
             match pipelines.TryGetValue descriptor.PipelineName with
@@ -2001,7 +2001,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 PhysicallyBased.destroyPhysicallyBasedPipeline pipeline renderer.VulkanContext
             | (false, _) -> ()
             pipelines[descriptor.PipelineName] <- pipeline
-        | DeferredStaticClipped ->
+        | DeferredStaticClippedPipeline ->
             let pipelines = renderer.PhysicallyBasedPipelines.UserDefinedDeferredStaticClippedPipelines
             let pipeline = PhysicallyBased.createPhysicallyBasedPipeline lightMapsMax lightsMax descriptor.ShaderPath blends cullModes vertexBindings colorAttachmentFormats depthAttachmentFormat renderer.VulkanContext
             match pipelines.TryGetValue descriptor.PipelineName with
@@ -2010,7 +2010,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 PhysicallyBased.destroyPhysicallyBasedPipeline pipeline renderer.VulkanContext
             | (false, _) -> ()
             pipelines[descriptor.PipelineName] <- pipeline
-        | DeferredAnimated ->
+        | DeferredAnimatedPipeline ->
             let pipelines = renderer.PhysicallyBasedPipelines.UserDefinedDeferredAnimatedPipelines
             let pipeline = PhysicallyBased.createPhysicallyBasedPipeline lightMapsMax lightsMax descriptor.ShaderPath blends cullModes vertexBindings colorAttachmentFormats depthAttachmentFormat renderer.VulkanContext
             match pipelines.TryGetValue descriptor.PipelineName with
@@ -2019,7 +2019,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 PhysicallyBased.destroyPhysicallyBasedPipeline pipeline renderer.VulkanContext
             | (false, _) -> ()
             pipelines[descriptor.PipelineName] <- pipeline
-        | ForwardStatic ->
+        | ForwardStaticPipeline ->
             let pipelines = renderer.PhysicallyBasedPipelines.UserDefinedForwardStaticPipelines
             let pipeline = PhysicallyBased.createPhysicallyBasedPipeline lightMapsMax lightsMax descriptor.ShaderPath blends cullModes vertexBindings colorAttachmentFormats depthAttachmentFormat renderer.VulkanContext
             match pipelines.TryGetValue descriptor.PipelineName with
@@ -2028,7 +2028,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 PhysicallyBased.destroyPhysicallyBasedPipeline pipeline renderer.VulkanContext
             | (false, _) -> ()
             pipelines[descriptor.PipelineName] <- pipeline
-        | ForwardAnimated ->
+        | ForwardAnimatedPipeline ->
             let pipelines = renderer.PhysicallyBasedPipelines.UserDefinedForwardAnimatedPipelines
             let pipeline = PhysicallyBased.createPhysicallyBasedPipeline lightMapsMax lightsMax descriptor.ShaderPath blends cullModes vertexBindings colorAttachmentFormats depthAttachmentFormat renderer.VulkanContext
             match pipelines.TryGetValue descriptor.PipelineName with
@@ -2037,7 +2037,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 PhysicallyBased.destroyPhysicallyBasedPipeline pipeline renderer.VulkanContext
             | (false, _) -> ()
             pipelines[descriptor.PipelineName] <- pipeline
-        | Terrain ->
+        | TerrainPipeline ->
             let pipelines = renderer.PhysicallyBasedPipelines.UserDefinedTerrainPipelines
             let pipeline = PhysicallyBased.createPhysicallyBasedTerrainPipeline descriptor.ShaderPath colorAttachmentFormats depthAttachmentFormat renderer.VulkanContext
             match pipelines.TryGetValue descriptor.PipelineName with

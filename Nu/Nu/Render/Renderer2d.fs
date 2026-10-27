@@ -418,7 +418,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
 
     static member private tryCreateUserDefinedPipeline (descriptor : UserDefinedPipeline2dDescriptor) resolveTextureFormat renderer =
         match descriptor.Pipeline2dType with
-        | Sprite ->
+        | SpritePipeline ->
 
             // create batch sprite pipeline
             SpriteBatch.tryCreateUserDefinedPipeline descriptor resolveTextureFormat renderer.SpriteBatchEnv renderer.VulkanContext
