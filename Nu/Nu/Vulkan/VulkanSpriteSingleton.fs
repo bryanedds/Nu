@@ -36,7 +36,7 @@ module SpriteSingleton =
     let VertexSize = sizeof<single> * 2
     
     /// Create a sprite singleton pipeline.
-    let createSpriteSingletonPipeline resolveTextureFormat (context : VulkanContext) =
+    let createSpriteSingletonPipeline shaderPath resolveTextureFormat (context : VulkanContext) =
 
         // create sprite uniform buffers
         let spriteVertUniform = VulkanBuffer.create Uniform sizeof<SpriteVertStruct> context
@@ -45,7 +45,7 @@ module SpriteSingleton =
         // create sprite pipeline
         let pipeline =
             Pipeline.create
-                Constants.Paths.SpriteShaderFilePath
+                shaderPath
                 [|VulkanTransparent|] [|CullBack|]
                 [|Pipeline.vertex 0 VertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Single2 0|]|]

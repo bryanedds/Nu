@@ -493,7 +493,7 @@ module Paths =
 
     let [<Literal>] LogFilePath = "Log.txt"
     let [<Literal>] ImGuiShaderFilePath = "Assets/Default/ImGui"
-    let [<Literal>] SpriteShaderFilePath = "Assets/Default/Sprite"
+    let [<Literal>] SpriteSingletonShaderFilePath = "Assets/Default/SpriteSingleton"
     let [<Literal>] SpriteBatchShaderFilePath = "Assets/Default/SpriteBatch"
     let [<Literal>] ContourShaderFilePath = "Assets/Default/Contour"
     let [<Literal>] SkyBoxShaderFilePath = "Assets/Default/SkyBox"

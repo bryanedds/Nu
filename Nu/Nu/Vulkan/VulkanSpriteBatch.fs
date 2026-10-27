@@ -91,7 +91,7 @@ type [<ReferenceEquality>] SpriteBatchEnv =
 module SpriteBatch =
 
     /// Create a sprite batch pipeline.
-    let private createSpriteBatchPipeline resolveTextureFormat (context : VulkanContext) =
+    let private createSpriteBatchPipeline shaderPath resolveTextureFormat (context : VulkanContext) =
 
         // create uniforms
         let spritesUniform = VulkanBuffer.create Uniform (Constants.Render.SpriteBatchSize * sizeof<SpriteStruct>) context
@@ -100,7 +100,7 @@ module SpriteBatch =
         // create sprite batch pipeline
         let pipeline =
             Pipeline.create
-                Constants.Paths.SpriteBatchShaderFilePath
+                shaderPath
                 [|VulkanUnblended; VulkanTransparent; VulkanAdditive; VulkanOverwrite|] [|CullBack|] [||]
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer VertexStage 1
@@ -119,16 +119,14 @@ module SpriteBatch =
         (spritesUniform, viewProjectionUniform, pipeline)
 
     /// Attempt to create a user-defined pipeline
-    let tryCreateUserDefinedPipeline (descriptor : UserDefinedPipeline2dDescriptor) resolveTextureFormat env context =
-        match descriptor.Pipeline2dType with
-        | SpritePipeline ->
-            let pipeline = createSpriteBatchPipeline resolveTextureFormat context
-            match env.Pipelines.TryGetValue descriptor.PipelineName with
-            | (true, (_, _, pipeline)) ->
-                ConcurrentCommandQueue.waitIdle context.RenderQueue // pipeline may still be in use by previous frame
-                Pipeline.destroy pipeline context
-            | (false, _) -> ()
-            env.Pipelines[descriptor.PipelineName] <- pipeline
+    let tryCreateUserDefinedPipeline pipelineName shaderPath resolveTextureFormat env context =
+        let pipeline = createSpriteBatchPipeline shaderPath resolveTextureFormat context
+        match env.Pipelines.TryGetValue pipelineName with
+        | (true, (_, _, pipeline)) ->
+            ConcurrentCommandQueue.waitIdle context.RenderQueue // pipeline may still be in use by previous frame
+            Pipeline.destroy pipeline context
+        | (false, _) -> ()
+        env.Pipelines[pipelineName] <- pipeline
 
     /// Reload the shaders used by the environment.
     let reloadShaders env (context : VulkanContext) =
@@ -330,7 +328,7 @@ module SpriteBatch =
     let createSpriteBatchEnv unfilteredSampler filteredSampler resolveTexture context =
         
         // create pipelines
-        let pipeline = createSpriteBatchPipeline resolveTexture context
+        let pipeline = createSpriteBatchPipeline Constants.Paths.SpriteBatchShaderFilePath resolveTexture context
         let pipelines = dictPlus StringComparer.Ordinal [(Constants.Render.PipelineNameDefault, pipeline)]
 
         // create env

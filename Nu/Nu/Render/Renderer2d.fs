@@ -238,8 +238,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
           TextQuad : VulkanBuffer * VulkanBuffer
           UnfilteredSampler : Sampler
           FilteredSampler : Sampler
-          SpriteBatchEnv : SpriteBatchEnv
           SpriteSingletonPipelines : Dictionary<string, VulkanBuffer * VulkanBuffer * Pipeline>
+          SpriteBatchEnv : SpriteBatchEnv
           ContourPipeline : VulkanBuffer * VulkanBuffer * VulkanBuffer * VulkanBuffer * VulkanBuffer * Pipeline
           TextTextures : Dictionary<obj, bool ref * (int * int * Vector2 * Texture)>
           UserDefinedImage0Texture : Texture
@@ -431,22 +431,26 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         | ValueNone -> ValueNone
 
     static member private tryCreateUserDefinedPipeline (descriptor : UserDefinedPipeline2dDescriptor) resolveTextureFormat renderer =
-        match descriptor.Pipeline2dType with
-        | SpritePipeline ->
 
-            // create batch sprite pipeline
-            SpriteBatch.tryCreateUserDefinedPipeline descriptor resolveTextureFormat renderer.SpriteBatchEnv renderer.VulkanContext
+        // create appropriate type of pipeline
+        match descriptor.Pipeline2dType with
+        | SpriteSingletonPipeline ->
 
             // create singleton sprite pipeline
             let pipelines = renderer.SpriteSingletonPipelines
-            let pipeline = SpriteSingleton.createSpriteSingletonPipeline resolveTextureFormat renderer.VulkanContext
+            let pipeline = SpriteSingleton.createSpriteSingletonPipeline descriptor.ShaderPath resolveTextureFormat renderer.VulkanContext
             match pipelines.TryGetValue descriptor.PipelineName with
             | (true, (_, _, pipeline)) ->
                 ConcurrentCommandQueue.waitIdle renderer.VulkanContext.RenderQueue // pipeline may still be in use by previous frame
                 Pipeline.destroy pipeline renderer.VulkanContext
             | (false, _) -> ()
             pipelines[descriptor.PipelineName] <- pipeline
-    
+
+        | SpriteBatchPipeline ->
+
+            // create batch sprite pipeline
+            SpriteBatch.tryCreateUserDefinedPipeline descriptor.PipelineName descriptor.ShaderPath resolveTextureFormat renderer.SpriteBatchEnv renderer.VulkanContext
+
     static member private handleLoadRenderPackage hintPackageName renderer =
         VulkanRenderer2d.tryLoadRenderPackage hintPackageName renderer
 
@@ -1084,7 +1088,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         let filteredSampler = Sampler.create VkSamplerAddressMode.Repeat VkFilter.Linear VkFilter.Linear true context
 
         // create text resources
-        let spriteSingletonPipeline = SpriteSingleton.createSpriteSingletonPipeline resolveTexture context
+        let spriteSingletonPipeline = SpriteSingleton.createSpriteSingletonPipeline Constants.Paths.SpriteSingletonShaderFilePath resolveTexture context
         let spriteSingletonPipelines = dictPlus StringComparer.Ordinal [(Constants.Render.PipelineNameDefault, spriteSingletonPipeline)]
         let textQuad = SpriteSingleton.createSpriteQuad true context
         let textureDumpster = TextureDumpster.create ()
@@ -1115,8 +1119,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
               TextQuad = textQuad
               UnfilteredSampler = unfilteredSampler
               FilteredSampler = filteredSampler
-              SpriteBatchEnv = spriteBatchEnv
               SpriteSingletonPipelines = spriteSingletonPipelines
+              SpriteBatchEnv = spriteBatchEnv
               ContourPipeline = contourPipeline
               TextTextures = dictPlus HashIdentity.Structural []
               UserDefinedImage0Texture = userDefinedImage0Texture

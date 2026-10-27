@@ -1837,7 +1837,8 @@ type [<Struct; StructLayout (LayoutKind.Explicit, Size = 32)>] UserDefinedSettin
 
 /// Indicates the type of 2d rendering pipeline.
 type Pipeline2dType =
-    | SpritePipeline
+    | SpriteSingletonPipeline
+    | SpriteBatchPipeline
 
 /// Describes a user-defined 2d rendering pipeline.
 type UserDefinedPipeline2dDescriptor =
