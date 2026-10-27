@@ -19,6 +19,7 @@ struct SpriteStruct
     float rotation;
     vec4 texCoords;
     vec4 color;
+    vec4 userDefinedSettings[2];
 };
 
 struct ViewProjectionStruct

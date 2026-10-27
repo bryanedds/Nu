@@ -1,6 +1,9 @@
 #version 450 core
 
 layout(set = 1, binding = 0) uniform texture2D inputTexture;
+layout(set = 1, binding = 1) uniform texture2D userDefinedImage0Texture;
+layout(set = 1, binding = 2) uniform texture2D userDefinedImage1Texture;
+layout(set = 1, binding = 3) uniform texture2D userDefinedImage2Texture;
 
 layout(set = 2, binding = 0) uniform sampler inputSampler;
 
