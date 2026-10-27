@@ -5674,7 +5674,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
         // create physically-based quad
         let quadGeometry = PhysicallyBased.createPhysicallyBasedQuadGeometry (Some context)
-        
+
         // create white texture
         let whiteTexture =
             match TextureInternal.tryCreate false true Uncompressed "Assets/Default/White.png" RenderThread context with
