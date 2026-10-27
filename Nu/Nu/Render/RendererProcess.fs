@@ -93,7 +93,10 @@ type RendererProcess =
         abstract EnqueueMessage2d : RenderMessage2d -> unit
 
         /// Potential fast-path for rendering layered sprite.
-        abstract RenderLayeredSpriteFast : single * single * AssetTag * Transform inref * Box2 ValueOption inref * Box2 ValueOption inref * Image AssetTag * Image AssetTag * Image AssetTag * Image AssetTag * Color inref * Blend * Color inref * Flip -> unit
+        abstract RenderLayeredSpriteFast :
+            single * single * AssetTag * Transform inref * Box2 ValueOption inref * Box2 ValueOption inref *
+            Image AssetTag * Image AssetTag * Image AssetTag * Image AssetTag * string *
+            Color inref * Blend * Color inref * Flip * single * single * single * single * single * single * single * single -> unit
 
         /// Enqueue an ImGui rendering message.
         abstract EnqueueMessageImGui : RenderMessageImGui -> unit
@@ -235,13 +238,13 @@ type RendererInline (windowProperties) =
 
         member ri.RenderLayeredSpriteFast
             (elevation, horizon, assetTag, transform, insetOpt, clipOpt,
-             image, userDefinedImage0, userDefinedImage1, userDefinedImage2, color, blend, emission, flip,
+             image, userDefinedImage0, userDefinedImage1, userDefinedImage2, pipelineName, color, blend, emission, flip,
              userDefinedSetting0, userDefinedSetting1, userDefinedSetting2, userDefinedSetting3, userDefinedSetting4, userDefinedSetting5, userDefinedSetting6, userDefinedSetting7) =
             match dependenciesOpt with
             | Some _ ->
                 let renderSprite =
                     { Transform = transform; InsetOpt = insetOpt; ClipOpt = clipOpt
-                      Image = image; UserDefinedImage0 = userDefinedImage0; UserDefinedImage1 = userDefinedImage1; UserDefinedImage2 = userDefinedImage2; Color = color; Blend = blend; Emission = emission; Flip = flip;
+                      Image = image; UserDefinedImage0 = userDefinedImage0; UserDefinedImage1 = userDefinedImage1; UserDefinedImage2 = userDefinedImage2; PipelineName = pipelineName; Color = color; Blend = blend; Emission = emission; Flip = flip;
                       UserDefinedSetting0 = userDefinedSetting0; UserDefinedSetting1 = userDefinedSetting1; UserDefinedSetting2 = userDefinedSetting2; UserDefinedSetting3 = userDefinedSetting3; UserDefinedSetting4 = userDefinedSetting4; UserDefinedSetting5 = userDefinedSetting5; UserDefinedSetting6 = userDefinedSetting6; UserDefinedSetting7 = userDefinedSetting7 }
                 messages2d.Add (LayeredOperation2d { Elevation = elevation; Horizon = horizon; AssetTag = assetTag; RenderOperation2d = RenderSprite renderSprite })
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
@@ -835,7 +838,8 @@ type RendererThread (windowProperties) =
 
         member rt.RenderLayeredSpriteFast
             (elevation, horizon, assetTag, transform, insetOpt, clipOpt,
-             image, userDefinedImage0, userDefinedImage1, userDefinedImage2, color, blend, emission, flip) =
+             image, userDefinedImage0, userDefinedImage1, userDefinedImage2, pipelineName, color, blend, emission, flip,
+             userDefinedSetting0, userDefinedSetting1, userDefinedSetting2, userDefinedSetting3, userDefinedSetting4, userDefinedSetting5, userDefinedSetting6, userDefinedSetting7) =
             let cachedSpriteMessage = allocSpriteMessage ()
             match cachedSpriteMessage with
             | LayeredOperation2d cachedOperation ->
@@ -851,10 +855,19 @@ type RendererThread (windowProperties) =
                     descriptor.CachedSprite.UserDefinedImage0 <- userDefinedImage0
                     descriptor.CachedSprite.UserDefinedImage1 <- userDefinedImage1
                     descriptor.CachedSprite.UserDefinedImage2 <- userDefinedImage2
+                    descriptor.CachedSprite.PipelineName <- pipelineName
                     descriptor.CachedSprite.Color <- color
                     descriptor.CachedSprite.Blend <- blend
                     descriptor.CachedSprite.Emission <- emission
                     descriptor.CachedSprite.Flip <- flip
+                    descriptor.CachedSprite.UserDefinedSetting0 <- userDefinedSetting0
+                    descriptor.CachedSprite.UserDefinedSetting1 <- userDefinedSetting1
+                    descriptor.CachedSprite.UserDefinedSetting2 <- userDefinedSetting2
+                    descriptor.CachedSprite.UserDefinedSetting3 <- userDefinedSetting3
+                    descriptor.CachedSprite.UserDefinedSetting4 <- userDefinedSetting4
+                    descriptor.CachedSprite.UserDefinedSetting5 <- userDefinedSetting5
+                    descriptor.CachedSprite.UserDefinedSetting6 <- userDefinedSetting6
+                    descriptor.CachedSprite.UserDefinedSetting7 <- userDefinedSetting7
                     messageBuffers2d[messageBufferIndex].Add cachedSpriteMessage 
                 | _ -> failwithumf ()
             | _ -> failwithumf ()

@@ -330,7 +330,7 @@ module TmxMap =
         bodyProperties
 
     let getLayeredMessages2d
-        time absolute (viewBounds : Box2) (tileMapPosition : Vector2) tileMapElevation tileMapClipOpt tileMapColor tileMapEmission
+        time absolute (viewBounds : Box2) (tileMapPosition : Vector2) tileMapElevation tileMapClipOpt tileMapPipelineName tileMapColor tileMapEmission
         tileMapUserDefinedSetting0 tileMapUserDefinedSetting1 tileMapUserDefinedSetting2 tileMapUserDefinedSetting3 tileMapUserDefinedSetting4 tileMapUserDefinedSetting5 tileMapUserDefinedSetting6 tileMapUserDefinedSetting7
         tileLayerClearance tileSizeDivisor tileIndexOffset tileIndexOffsetRange tileMapPackage (tileMap : TmxMap) =
 
@@ -410,6 +410,7 @@ module TmxMap =
                                   RenderTiles
                                     { Transform = transform
                                       ClipOpt = tileMapClipOpt
+                                      PipelineName = tileMapPipelineName
                                       Color = tileMapColor
                                       Emission = tileMapEmission
                                       UserDefinedSetting0 = tileMapUserDefinedSetting0

@@ -367,6 +367,7 @@ type Character2dDispatcher () =
 
     static member Properties =
         [define Entity.MountOpt None
+         define Entity.PipelineName Constants.Render.PipelineNameDefault
          define Entity.CelSize (v2 28.0f 28.0f)
          define Entity.CelRun 8
          define Entity.AnimationDelay (GameTime.ofSeconds (1.0 / 15.0))
@@ -417,10 +418,22 @@ type Character2dDispatcher () =
                       InsetOpt = insetOpt
                       ClipOpt = ValueNone
                       Image = image
+                      UserDefinedImage0 = Assets.Default.UserDefinedImage0
+                      UserDefinedImage1 = Assets.Default.UserDefinedImage1
+                      UserDefinedImage2 = Assets.Default.UserDefinedImage2
+                      PipelineName = entity.GetPipelineName world
                       Color = Color.One
                       Blend = Transparent
                       Emission = Color.Zero
-                      Flip = if facingLeft then Horizontal else Unflipped }}
+                      Flip = if facingLeft then Horizontal else Unflipped
+                      UserDefinedSetting0 = entity.GetUserDefinedSetting0 world
+                      UserDefinedSetting1 = entity.GetUserDefinedSetting1 world
+                      UserDefinedSetting2 = entity.GetUserDefinedSetting2 world
+                      UserDefinedSetting3 = entity.GetUserDefinedSetting3 world
+                      UserDefinedSetting4 = entity.GetUserDefinedSetting4 world
+                      UserDefinedSetting5 = entity.GetUserDefinedSetting5 world
+                      UserDefinedSetting6 = entity.GetUserDefinedSetting6 world
+                      UserDefinedSetting7 = entity.GetUserDefinedSetting7 world }}
             world
 
 /// Gives an entity the base behavior of a physics-driven 2d joint.

@@ -51,6 +51,9 @@ module StaticSpriteFacetExtensions =
         member this.GetUserDefinedImage2 world : Image AssetTag = this.Get (nameof this.UserDefinedImage2) world
         member this.SetUserDefinedImage2 (value : Image AssetTag) world = this.Set (nameof this.UserDefinedImage2) value world
         member this.UserDefinedImage2 = lens (nameof this.UserDefinedImage2) this this.GetUserDefinedImage2 this.SetUserDefinedImage2
+        member this.GetPipelineName world : string = this.Get (nameof this.PipelineName) world
+        member this.SetPipelineName (value : string) world = this.Set (nameof this.PipelineName) value world
+        member this.PipelineName = lens (nameof this.PipelineName) this this.GetPipelineName this.SetPipelineName
         member this.GetColor world : Color = this.Get (nameof this.Color) world
         member this.SetColor (value : Color) world = this.Set (nameof this.Color) value world
         member this.Color = lens (nameof this.Color) this this.GetColor this.SetColor
@@ -99,6 +102,7 @@ type StaticSpriteFacet () =
          define Entity.UserDefinedImage0 Assets.Default.StaticSprite
          define Entity.UserDefinedImage1 Assets.Default.StaticSprite
          define Entity.UserDefinedImage2 Assets.Default.StaticSprite
+         define Entity.PipelineName Constants.Render.PipelineNameDefault
          define Entity.Color Color.One
          define Entity.Blend Transparent
          define Entity.Emission Color.Zero
@@ -115,13 +119,29 @@ type StaticSpriteFacet () =
     override this.Render (_, entity, world) =
         let mutable transform = entity.GetTransform world
         let staticImage = entity.GetStaticImage world
+        let userDefinedImage0 = entity.GetUserDefinedImage0 world
+        let userDefinedImage1 = entity.GetUserDefinedImage1 world
+        let userDefinedImage2 = entity.GetUserDefinedImage2 world
+        let pipelineName= entity.GetPipelineName world
         let insetOpt = entity.GetInsetOpt world |> Option.toValueOption
         let clipOpt = entity.GetClipOpt world |> Option.toValueOption
         let color = entity.GetColor world
         let blend = entity.GetBlend world
         let emission = entity.GetEmission world
         let flip = entity.GetFlip world
-        World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, staticImage, &transform, &insetOpt, &clipOpt, staticImage, &color, blend, &emission, flip, world)
+        let userDefinedSetting0 = entity.GetUserDefinedSetting0 world
+        let userDefinedSetting1 = entity.GetUserDefinedSetting1 world
+        let userDefinedSetting2 = entity.GetUserDefinedSetting2 world
+        let userDefinedSetting3 = entity.GetUserDefinedSetting3 world
+        let userDefinedSetting4 = entity.GetUserDefinedSetting4 world
+        let userDefinedSetting5 = entity.GetUserDefinedSetting5 world
+        let userDefinedSetting6 = entity.GetUserDefinedSetting6 world
+        let userDefinedSetting7 = entity.GetUserDefinedSetting7 world
+        World.renderLayeredSpriteFast
+            (transform.Elevation, transform.Horizon, staticImage, &transform, &insetOpt, &clipOpt,
+             staticImage, userDefinedImage0, userDefinedImage1, userDefinedImage2, pipelineName, &color, blend, &emission, flip,
+             userDefinedSetting0, userDefinedSetting1, userDefinedSetting2, userDefinedSetting3, userDefinedSetting4, userDefinedSetting5, userDefinedSetting6, userDefinedSetting7,
+             world)
 
     override this.GetAttributesInferred (entity, world) =
         match Metadata.tryGetTextureSizeF (entity.GetStaticImage world) with
@@ -176,7 +196,11 @@ type AnimatedSpriteFacet () =
         else None
 
     static member Properties =
-        [define Entity.StartTime GameTime.zero
+        [define Entity.UserDefinedImage0 Assets.Default.StaticSprite
+         define Entity.UserDefinedImage1 Assets.Default.StaticSprite
+         define Entity.UserDefinedImage2 Assets.Default.StaticSprite
+         define Entity.PipelineName Constants.Render.PipelineNameDefault
+         define Entity.StartTime GameTime.zero
          define Entity.CelSize (Vector2 (32.0f, 32.0f))
          define Entity.CelCount 16
          define Entity.CelRun 4
@@ -187,7 +211,15 @@ type AnimatedSpriteFacet () =
          define Entity.Color Color.One
          define Entity.Blend Transparent
          define Entity.Emission Color.Zero
-         define Entity.Flip Unflipped]
+         define Entity.Flip Unflipped
+         define Entity.UserDefinedSetting0 Constants.Render.UserDefinedSettingDefault
+         define Entity.UserDefinedSetting1 Constants.Render.UserDefinedSettingDefault
+         define Entity.UserDefinedSetting2 Constants.Render.UserDefinedSettingDefault
+         define Entity.UserDefinedSetting3 Constants.Render.UserDefinedSettingDefault
+         define Entity.UserDefinedSetting4 Constants.Render.UserDefinedSettingDefault
+         define Entity.UserDefinedSetting5 Constants.Render.UserDefinedSettingDefault
+         define Entity.UserDefinedSetting6 Constants.Render.UserDefinedSettingDefault
+         define Entity.UserDefinedSetting7 Constants.Render.UserDefinedSettingDefault]
 
     override this.Update (entity, world) =
         if not (entity.GetEnabled world) then
@@ -196,13 +228,29 @@ type AnimatedSpriteFacet () =
     override this.Render (_, entity, world) =
         let mutable transform = entity.GetTransform world
         let animationSheet = entity.GetAnimationSheet world
+        let userDefinedImage0 = entity.GetUserDefinedImage0 world
+        let userDefinedImage1 = entity.GetUserDefinedImage1 world
+        let userDefinedImage2 = entity.GetUserDefinedImage2 world
+        let pipelineName= entity.GetPipelineName world
         let insetOpt = getSpriteInsetOpt entity world |> Option.toValueOption
         let clipOpt = entity.GetClipOpt world |> Option.toValueOption
         let color = entity.GetColor world
         let blend = entity.GetBlend world
         let emission = entity.GetEmission world
         let flip = entity.GetFlip world
-        World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, animationSheet, &transform, &insetOpt, &clipOpt, animationSheet, &color, blend, &emission, flip, world)
+        let userDefinedSetting0 = entity.GetUserDefinedSetting0 world
+        let userDefinedSetting1 = entity.GetUserDefinedSetting1 world
+        let userDefinedSetting2 = entity.GetUserDefinedSetting2 world
+        let userDefinedSetting3 = entity.GetUserDefinedSetting3 world
+        let userDefinedSetting4 = entity.GetUserDefinedSetting4 world
+        let userDefinedSetting5 = entity.GetUserDefinedSetting5 world
+        let userDefinedSetting6 = entity.GetUserDefinedSetting6 world
+        let userDefinedSetting7 = entity.GetUserDefinedSetting7 world
+        World.renderLayeredSpriteFast
+            (transform.Elevation, transform.Horizon, animationSheet, &transform, &insetOpt, &clipOpt,
+             animationSheet, userDefinedImage0, userDefinedImage1, userDefinedImage2, pipelineName, &color, blend, &emission, flip,
+             userDefinedSetting0, userDefinedSetting1, userDefinedSetting2, userDefinedSetting3, userDefinedSetting4, userDefinedSetting5, userDefinedSetting6, userDefinedSetting7,
+             world)
 
     override this.GetAttributesInferred (entity, world) =
         AttributesInferred.important (entity.GetCelSize world).V3 v3Zero
@@ -1865,6 +1913,14 @@ type TileMapFacet () =
          define Entity.ClipOpt None
          define Entity.Color Color.One
          define Entity.Emission Color.Zero
+         define Entity.UserDefinedSetting0 Constants.Render.UserDefinedSettingDefault
+         define Entity.UserDefinedSetting1 Constants.Render.UserDefinedSettingDefault
+         define Entity.UserDefinedSetting2 Constants.Render.UserDefinedSettingDefault
+         define Entity.UserDefinedSetting3 Constants.Render.UserDefinedSettingDefault
+         define Entity.UserDefinedSetting4 Constants.Render.UserDefinedSettingDefault
+         define Entity.UserDefinedSetting5 Constants.Render.UserDefinedSettingDefault
+         define Entity.UserDefinedSetting6 Constants.Render.UserDefinedSettingDefault
+         define Entity.UserDefinedSetting7 Constants.Render.UserDefinedSettingDefault
          define Entity.TileLayerClearance 2.0f
          define Entity.TileSizeDivisor 1
          define Entity.TileIndexOffset 0
@@ -1944,6 +2000,14 @@ type TileMapFacet () =
                     (entity.GetClipOpt world |> Option.toValueOption)
                     (entity.GetColor world)
                     (entity.GetEmission world)
+                    (entity.GetUserDefinedSetting0 world)
+                    (entity.GetUserDefinedSetting1 world)
+                    (entity.GetUserDefinedSetting2 world)
+                    (entity.GetUserDefinedSetting3 world)
+                    (entity.GetUserDefinedSetting4 world)
+                    (entity.GetUserDefinedSetting5 world)
+                    (entity.GetUserDefinedSetting6 world)
+                    (entity.GetUserDefinedSetting7 world)
                     (entity.GetTileLayerClearance world)
                     (entity.GetTileSizeDivisor world)
                     (entity.GetTileIndexOffset world)
@@ -1980,6 +2044,14 @@ type TmxMapFacet () =
          define Entity.ClipOpt None
          define Entity.Color Color.One
          define Entity.Emission Color.Zero
+         define Entity.UserDefinedSetting0 Constants.Render.UserDefinedSettingDefault
+         define Entity.UserDefinedSetting1 Constants.Render.UserDefinedSettingDefault
+         define Entity.UserDefinedSetting2 Constants.Render.UserDefinedSettingDefault
+         define Entity.UserDefinedSetting3 Constants.Render.UserDefinedSettingDefault
+         define Entity.UserDefinedSetting4 Constants.Render.UserDefinedSettingDefault
+         define Entity.UserDefinedSetting5 Constants.Render.UserDefinedSettingDefault
+         define Entity.UserDefinedSetting6 Constants.Render.UserDefinedSettingDefault
+         define Entity.UserDefinedSetting7 Constants.Render.UserDefinedSettingDefault
          define Entity.TileLayerClearance 2.0f
          define Entity.TileSizeDivisor 1
          define Entity.TileIndexOffset 0
@@ -2056,6 +2128,14 @@ type TmxMapFacet () =
                 (entity.GetClipOpt world |> Option.toValueOption)
                 (entity.GetColor world)
                 (entity.GetEmission world)
+                (entity.GetUserDefinedSetting0 world)
+                (entity.GetUserDefinedSetting1 world)
+                (entity.GetUserDefinedSetting2 world)
+                (entity.GetUserDefinedSetting3 world)
+                (entity.GetUserDefinedSetting4 world)
+                (entity.GetUserDefinedSetting5 world)
+                (entity.GetUserDefinedSetting6 world)
+                (entity.GetUserDefinedSetting7 world)
                 (entity.GetTileLayerClearance world)
                 (entity.GetTileSizeDivisor world)
                 (entity.GetTileIndexOffset world)

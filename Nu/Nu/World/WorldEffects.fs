@@ -125,7 +125,11 @@ module Effect =
                   UserDefinedSetting0 = Constants.Render.UserDefinedSettingDefault
                   UserDefinedSetting1 = Constants.Render.UserDefinedSettingDefault
                   UserDefinedSetting2 = Constants.Render.UserDefinedSettingDefault
-                  UserDefinedSetting3 = Constants.Render.UserDefinedSettingDefault }
+                  UserDefinedSetting3 = Constants.Render.UserDefinedSettingDefault
+                  UserDefinedSetting4 = Constants.Render.UserDefinedSettingDefault
+                  UserDefinedSetting5 = Constants.Render.UserDefinedSettingDefault
+                  UserDefinedSetting6 = Constants.Render.UserDefinedSettingDefault
+                  UserDefinedSetting7 = Constants.Render.UserDefinedSettingDefault }
             let effectSystem = EffectSystem.make localTime transform.Absolute transform.CastShadow transform.Presence effect.ClipOpt_ effect.ShadowOffset_ effect.RenderType_ effect.Definitions_
 
             // evaluate effect with effect system

@@ -92,8 +92,15 @@ module WorldRender =
             for operation in operations do rendererProcess.EnqueueMessage2d (LayeredOperation2d operation)
 
         /// Send a message to the render system to render a static model using a fast path.
-        static member renderLayeredSpriteFast (elevation, horizon, assetTag, transform : Transform inref, insetOpt : Box2 ValueOption inref, clipOpt : Box2 ValueOption inref, image, color : Color inref, blend, emission : Color inref, flip, world) =
-            (World.getRendererProcess world).RenderLayeredSpriteFast (elevation, horizon, assetTag, &transform, &insetOpt, &clipOpt, image, &color, blend, &emission, flip)
+        static member renderLayeredSpriteFast
+            (elevation, horizon, assetTag, transform : Transform inref, insetOpt : Box2 ValueOption inref, clipOpt : Box2 ValueOption inref,
+            image, userDefinedImage0, userDefinedImage1, userDefinedImage2, pipelineName, color : Color inref, blend, emission : Color inref, flip,
+            userDefinedSetting0, userDefinedSetting1, userDefinedSetting2, userDefinedSetting3, userDefinedSetting4, userDefinedSetting5, userDefinedSetting6, userDefinedSetting7,
+            world) =
+            (World.getRendererProcess world).RenderLayeredSpriteFast
+                (elevation, horizon, assetTag, &transform, &insetOpt, &clipOpt,
+                 image, userDefinedImage0, userDefinedImage1, userDefinedImage2, pipelineName, &color, blend, &emission, flip,
+                 userDefinedSetting0, userDefinedSetting1, userDefinedSetting2, userDefinedSetting3, userDefinedSetting4, userDefinedSetting5, userDefinedSetting6, userDefinedSetting7)
 
         /// Load a 2d render asset package. Should be used to avoid loading assets at inconvenient times (such as in the
         /// middle of game play!)
