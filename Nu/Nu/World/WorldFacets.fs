@@ -472,6 +472,12 @@ module TextFacetExtensions =
         member this.GetTextShift world : single = this.Get (nameof this.TextShift) world
         member this.SetTextShift (value : single) world = this.Set (nameof this.TextShift) value world
         member this.TextShift = lens (nameof this.TextShift) this this.GetTextShift this.SetTextShift
+        member this.GetTextPipelineName world : string = this.Get (nameof this.TextPipelineName) world
+        member this.SetTextPipelineName (value : string) world = this.Set (nameof this.TextPipelineName) value world
+        member this.TextPipelineName = lens (nameof this.TextPipelineName) this this.GetTextPipelineName this.SetTextPipelineName
+        member this.GetTextUserDefinedSettings world : UserDefinedSettings = this.Get (nameof this.TextUserDefinedSettings) world
+        member this.SetTextUserDefinedSettings (value : UserDefinedSettings) world = this.Set (nameof this.TextUserDefinedSettings) value world
+        member this.TextUserDefinedSettings = lens (nameof this.TextUserDefinedSettings) this this.GetTextUserDefinedSettings this.SetTextUserDefinedSettings
 
 /// Augments an entity with text.
 type TextFacet () =
@@ -487,7 +493,9 @@ type TextFacet () =
          define Entity.TextColor Color.White
          define Entity.TextColorDisabled Constants.Gui.ColorDisabledDefault
          define Entity.TextOffset v2Zero
-         define Entity.TextShift Constants.Gui.TextShiftDefault]
+         define Entity.TextShift Constants.Gui.TextShiftDefault
+         define Entity.TextPipelineName Constants.Render.PipelineNameDefault
+         define Entity.TextUserDefinedSettings UserDefinedSettings.defaultSettings]
 
     override this.Render (_, entity, world) =
         let mutable transform = entity.GetTransform world
@@ -497,14 +505,18 @@ type TextFacet () =
         let elevation = transform.Elevation
         let shift = entity.GetTextShift world
         let clipOpt = ValueSome transform.Bounds2d.Box2
-        let justification = entity.GetJustification world
+        let pipelineName = entity.GetTextPipelineName world
+        let text = entity.GetText world
         let margin = (entity.GetTextMargin world).V3
-        let color = if transform.Enabled then entity.GetTextColor world else entity.GetTextColorDisabled world
         let font = entity.GetFont world
         let fontSizing = entity.GetFontSizing world
         let fontStyling = entity.GetFontStyling world
-        let text = entity.GetText world
-        World.renderGuiText absolute perimeter offset elevation shift clipOpt justification None margin color font fontSizing fontStyling text world
+        let color = if transform.Enabled then entity.GetTextColor world else entity.GetTextColorDisabled world
+        let justification = entity.GetJustification world
+        let userDefinedSettings = entity.GetTextUserDefinedSettings world
+        World.renderGuiText
+            absolute perimeter offset elevation shift clipOpt pipelineName text margin
+            font fontSizing fontStyling color justification None userDefinedSettings world
 
     override this.GetAttributesInferred (_, _) =
         AttributesInferred.important Constants.Engine.EntityGuiSizeDefault v3Zero
@@ -1155,23 +1167,27 @@ type TextBoxFacet () =
 
     override this.Render (_, entity, world) =
         let mutable transform = entity.GetTransform world
-        let absolute = transform.Absolute
         let enabled = transform.Enabled
+        let absolute = transform.Absolute
         let perimeter = transform.Perimeter
         let offset = (entity.GetTextOffset world).V3
         let elevation = transform.Elevation
         let shift = entity.GetTextShift world
         let clipOpt = ValueSome transform.Bounds2d.Box2
-        let justification = Justified (JustifyLeft, JustifyMiddle)
-        let focused = entity.GetFocused world
-        let caretOpt = if enabled && focused then Some (entity.GetCaret world) else None
+        let pipelineName = entity.GetTextPipelineName world
+        let text = entity.GetText world
         let margin = (entity.GetTextMargin world).V3
-        let color = if enabled then entity.GetTextColor world else entity.GetTextColorDisabled world
         let font = entity.GetFont world
         let fontSizing = entity.GetFontSizing world
         let fontStyling = entity.GetFontStyling world
-        let text = entity.GetText world
-        World.renderGuiText absolute perimeter offset elevation shift clipOpt justification caretOpt margin color font fontSizing fontStyling text world
+        let color = if enabled then entity.GetTextColor world else entity.GetTextColorDisabled world
+        let justification = Justified (JustifyLeft, JustifyMiddle)
+        let focused = entity.GetFocused world
+        let caretOpt = if enabled && focused then Some (entity.GetCaret world) else None
+        let userDefinedSettings = entity.GetTextUserDefinedSettings world
+        World.renderGuiText
+            absolute perimeter offset elevation shift clipOpt pipelineName text margin
+            font fontSizing fontStyling color justification caretOpt userDefinedSettings world
 
     override this.GetAttributesInferred (_, _) =
         AttributesInferred.important Constants.Engine.EntityGuiSizeDefault v3Zero

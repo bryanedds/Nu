@@ -26,13 +26,15 @@ module WorldDataToken =
                 let renderText =
                     { Transform = text.Transform
                       ClipOpt = text.ClipOpt
+                      PipelineName = text.PipelineName
                       Text = text.Text
                       Font = text.Font
                       FontSizing = text.FontSizing
                       FontStyling = text.FontStyling
                       Color = text.Color
                       Justification = text.Justification
-                      CaretOpt = None }
+                      CaretOpt = None
+                      UserDefinedSettings = text.UserDefinedSettings }
                 World.enqueueLayeredOperation2d { Elevation = elevation; Horizon = horizon; AssetTag = assetTag; RenderOperation2d = RenderText renderText } world
 
             | Light3dToken light ->

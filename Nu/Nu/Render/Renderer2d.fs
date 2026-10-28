@@ -65,17 +65,20 @@ type [<Struct>] SpriteValue =
 type [<Struct>] TextValue =
     { mutable Transform : Transform
       mutable ClipOpt : Box2 voption
+      mutable PipelineName : string
       mutable Text : string
       mutable Font : Font AssetTag
       mutable FontSizing : single option
       mutable FontStyling : FontStyle Set
       mutable Color : Color
       mutable Justification : Justification
-      mutable CaretOpt : int option }
+      mutable CaretOpt : int option
+      mutable UserDefinedSettings : UserDefinedSettings }
 
     /// The default text value.
     static member defaultValue =
-        Unchecked.defaultof<TextValue>
+        { Unchecked.defaultof<TextValue> with
+            PipelineName = Constants.Render.PipelineNameDefault }
 
 /// Describes how to render a sprite to a rendering subsystem.
 type SpriteDescriptor =
@@ -135,13 +138,15 @@ type [<NoEquality; NoComparison>] SpriteParticlesDescriptor =
 type TextDescriptor =
     { mutable Transform : Transform
       ClipOpt : Box2 voption
+      PipelineName : string
       Text : string
       Font : Font AssetTag
       FontSizing : single option
       FontStyling : FontStyle Set
       Color : Color
       Justification : Justification
-      CaretOpt : int option }
+      CaretOpt : int option
+      UserDefinedSettings : UserDefinedSettings }
 
 /// Describes how to render a vector graphics contour to a rendering subsystem.
 type [<NoEquality; NoComparison>] ContourDescriptor =
@@ -788,6 +793,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
     static member renderText
         (transform : Transform byref,
          clipOpt : Box2 voption inref,
+         pipelineName : string,
          text : string,
          font : Font AssetTag,
          fontSizing : single option,
@@ -795,6 +801,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
          color : Color inref,
          justification : Justification,
          caretOpt : int option,
+         userDefinedSettings : UserDefinedSettings inref,
          eyeCenter : Vector2,
          eyeSize : Vector2,
          resolveTexture : Texture,
@@ -815,6 +822,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             color.A8 <> 0uy then // render only when color isn't fully transparent because SDL_TTF doesn't handle zero alpha text as expected.
             let transform = transform // copy to local to make visible from lambda
             let clipOpt = clipOpt // same
+            let userDefinedSettings = userDefinedSettings // same
             flip4 SpriteBatch.InterruptSpriteBatchFrame renderer.Viewport resolveTexture renderer.SpriteBatchEnv $ fun () ->
 
                 // gather context for rendering text
@@ -946,14 +954,16 @@ type [<ReferenceEquality>] VulkanRenderer2d =
 
                             // draw text sprite
                             let (vertices, indices) = renderer.TextQuad
-                            let (spriteVertUniform, spriteFragUniform, pipeline) = renderer.SpriteSingletonPipelines[Constants.Render.PipelineNameDefault]
+                            let (spriteVertUniform, spriteFragUniform, pipeline) =
+                                match renderer.SpriteSingletonPipelines.TryGetValue pipelineName with
+                                | (true, pipeline) -> pipeline
+                                | (false, _) -> renderer.SpriteSingletonPipelines[Constants.Render.PipelineNameDefault]
                             let insetOpt : Box2 voption = ValueNone
                             let userDefinedImageTextures =
                                 { UserDefinedImage0Texture = renderer.UserDefinedImage0Texture
                                   UserDefinedImage1Texture = renderer.UserDefinedImage1Texture
                                   UserDefinedImage2Texture = renderer.UserDefinedImage2Texture }
                             let color = Color.White
-                            let userDefinedSettings = UserDefinedSettings.defaultSettings
                             SpriteSingleton.drawSpriteSingleton
                                 (vertices, indices, absolute, &viewProjectionClipAbsolute, &viewProjectionClipRelative, modelViewProjection,
                                  &insetOpt, &clipOpt, textSurfaceWidth, textSurfaceHeight, textTexture, &userDefinedImageTextures,
@@ -996,7 +1006,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                  &d.CachedSprite.Color, d.CachedSprite.Blend, &d.CachedSprite.Emission, d.CachedSprite.Flip, &d.CachedSprite.UserDefinedSettings, resolveTexture, renderer)
         | RenderText descriptor ->
             VulkanRenderer2d.renderText
-                (&descriptor.Transform, &descriptor.ClipOpt, descriptor.Text, descriptor.Font, descriptor.FontSizing, descriptor.FontStyling, &descriptor.Color, descriptor.Justification, descriptor.CaretOpt, eyeCenter, eyeSize, resolveTexture, renderer)
+                (&descriptor.Transform, &descriptor.ClipOpt, descriptor.PipelineName, descriptor.Text, descriptor.Font, descriptor.FontSizing, descriptor.FontStyling,
+                 &descriptor.Color, descriptor.Justification, descriptor.CaretOpt, &descriptor.UserDefinedSettings, eyeCenter, eyeSize, resolveTexture, renderer)
         | RenderTiles descriptor ->
             VulkanRenderer2d.renderTiles
                 (&descriptor.Transform, &descriptor.ClipOpt, &descriptor.Color, &descriptor.Emission, descriptor.PipelineName,

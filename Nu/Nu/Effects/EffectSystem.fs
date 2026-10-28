@@ -549,7 +549,7 @@ module EffectSystem =
     and private evalAnimatedSprite resource (celSize : Vector2i) celCount celRun delay playback aspects content slice history effectSystem =
         evalUserDefinedAnimatedSprite resource UserDefinedResource0 UserDefinedResource1 UserDefinedResource2 Constants.Render.PipelineNameDefault celSize celCount celRun delay playback aspects content slice history effectSystem
 
-    and private evalTextSprite resource text fontSizing fontStyling aspects content slice history effectSystem =
+    and private evalTextSprite resource text pipelineName fontSizing fontStyling aspects content slice history effectSystem =
 
         // pull font from resource
         let font = evalResource resource effectSystem
@@ -564,13 +564,15 @@ module EffectSystem =
                 let text =
                     { TextValue.Transform = transform
                       ClipOpt = Option.toValueOption effectSystem.EffectClipOpt
+                      PipelineName = pipelineName
                       Text = text
                       Font = AssetTag.specialize<Font> font
                       FontSizing = fontSizing
                       FontStyling = fontStyling
                       Color = slice.Color
                       Justification = Justified (JustifyCenter, JustifyMiddle)
-                      CaretOpt = None }
+                      CaretOpt = None
+                      UserDefinedSettings = slice.UserDefinedSettings }
                 let textToken = TextToken (transform.Elevation, transform.Horizon, font, text)
                 addDataToken textToken effectSystem
             else effectSystem
@@ -788,8 +790,8 @@ module EffectSystem =
             evalUserDefinedAnimatedSprite resource userDefinedResource0 userDefinedResource1 userDefinedResource2 pipelineName celSize celCount celRun delay playback aspects content slice history effectSystem
         | AnimatedSprite (resource, celSize, celCount, celRun, delay, playback, aspects, content) ->
             evalAnimatedSprite resource celSize celCount celRun delay playback aspects content slice history effectSystem
-        | TextSprite (resource, text, fontSizing, fontStyling, aspects, content) ->
-            evalTextSprite resource text fontSizing fontStyling aspects content slice history effectSystem
+        | TextSprite (resource, text, pipelineName, fontSizing, fontStyling, aspects, content) ->
+            evalTextSprite resource text pipelineName fontSizing fontStyling aspects content slice history effectSystem
         | Light3d (lightType, aspects, content) ->
             evalLight3d lightType aspects content slice history effectSystem
         | Billboard (materialOpt, propertiesOpt, aspects, content) ->
