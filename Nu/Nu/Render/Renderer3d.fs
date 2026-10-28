@@ -3499,6 +3499,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                             | (true, existingGeometry) -> existingGeometry.Add (patchDescriptor, geometry)
                             | (false, _) -> renderer.TerrainGeometries.Add (geometryDescriptor, dictPlus HashIdentity.Structural [(patchDescriptor, geometry)])
 
+                            // clean up memory footprint
+                            Core.garbageCollect true
+
                     // could not create geometry
                     | None -> ()
 

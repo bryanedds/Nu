@@ -47,7 +47,7 @@ type GameplayDispatcher () =
             World.beginGroupFromFile Simulants.GameplayScene.Name sceneGroupFilePath [] world
 
             // process nav sync at end of selection frame since optimized scene entities (like frozen entities) won't
-            // have their nav info registered until then
+            // have their nav info registered until then.
             if selecting then
                 let sceneNavFilePath = PathF.ChangeExtension (sceneGroupFilePath, ".nav")
                 World.defer (World.synchronizeNav3d false (Some sceneNavFilePath) screen) screen world

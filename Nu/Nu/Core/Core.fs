@@ -7,6 +7,7 @@
 namespace Nu
 open System
 open System.Diagnostics
+open System.Runtime
 open Prime
 
 /// Provides core operations for basic Nu functionality.
@@ -29,6 +30,12 @@ module Core =
             while nextStamp = LastTimeStamp do nextStamp <- getTimeStamp ()
             LastTimeStamp <- nextStamp
             nextStamp
+
+    /// Do a full garbage collection pass, including compaction of the LOH.
+    /// Thread-safe.
+    let garbageCollect compactLoh =
+        if compactLoh then GCSettings.LargeObjectHeapCompactionMode <- GCLargeObjectHeapCompactionMode.CompactOnce;
+        GC.Collect ()
 
 /// The core operators that come with the Nu Game Engine.
 [<AutoOpen>]
