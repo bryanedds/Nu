@@ -47,13 +47,10 @@ type GameplayDispatcher () =
             World.beginGroupFromFile Simulants.GameplayScene.Name sceneGroupFilePath [] world
 
             // process nav sync at end of selection frame since optimized scene entities (like frozen entities) won't
-            // have their nav info registered until then; also do a GC.Collect () for scene entry.
+            // have their nav info registered until then.
             if selecting then
                 let sceneNavFilePath = PathF.ChangeExtension (sceneGroupFilePath, ".nav")
-                World.defer (fun world ->
-                    World.synchronizeNav3d false (Some sceneNavFilePath) screen world
-                    GC.Collect ())
-                    screen world
+                World.defer (World.synchronizeNav3d false (Some sceneNavFilePath) screen) screen world
 
             // declare player as protected from accidental deletion in Gaia
             World.doEntity<PlayerDispatcher> Simulants.GameplayPlayer.Name [Entity.Protection .= ManualProtection] world
