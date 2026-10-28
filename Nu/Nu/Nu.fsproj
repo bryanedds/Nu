@@ -52,11 +52,11 @@
         <Compile Include="Vulkan\VulkanTexture.fs" />
         <Compile Include="Vulkan\VulkanAttachment.fs" />
         <Compile Include="Vulkan\VulkanPipeline.fs" />
-        <Compile Include="Vulkan\VulkanCubeMap.fs" />
-        <Compile Include="Vulkan\VulkanLightMap.fs" />
         <Compile Include="Vulkan\VulkanSpriteSingleton.fs" />
         <Compile Include="Vulkan\VulkanSpriteBatch.fs" />
-		    <Compile Include="Vulkan\VulkanContour.fs" />
+        <Compile Include="Vulkan\VulkanCubeMap.fs" />
+        <Compile Include="Vulkan\VulkanLightMap.fs" />
+        <Compile Include="Vulkan\VulkanContour.fs" />
         <Compile Include="Vulkan\VulkanSkyBox.fs" />
         <Compile Include="Vulkan\VulkanPhysicallyBased.fs" />
         <Compile Include="Sdl\SdlInputBindings.fs" />
@@ -89,8 +89,8 @@
         <Compile Include="Render\Renderer3d.fs" />
         <Compile Include="Render\RendererImGui.fs" />
         <Compile Include="Render\RendererProcess.fs" />
-		    <Compile Include="Audio\AudioPlayer.fs" />
-		    <Compile Include="Cursor\CursorClient.fs" />
+        <Compile Include="Audio\AudioPlayer.fs" />
+        <Compile Include="Cursor\CursorClient.fs" />
         <Compile Include="Symbolics\Symbolics.fs" />
         <Compile Include="Particles\Particles.fs" />
         <Compile Include="Effects\EffectDescriptor.fs" />

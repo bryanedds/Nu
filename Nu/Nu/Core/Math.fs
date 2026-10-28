@@ -1778,6 +1778,7 @@ module MathOperators =
 namespace Nu
 open System
 open System.Numerics
+open System.Runtime.InteropServices
 open Prime
 
 /// The single inhabitant type / value for use where unit / () won't suffice, such as for a dictionary key.
@@ -1818,6 +1819,51 @@ type [<Struct>] Flip =
     | Horizontal
     | Vertical
     | Diagonal
+
+/// User-defined settings.
+type [<Struct; StructLayout (LayoutKind.Explicit, Size = 32); SymbolicExpansion>] UserDefinedSettings =
+    { [<FieldOffset(0)>] mutable UserDefinedSetting0 : single
+      [<FieldOffset(4)>] mutable UserDefinedSetting1 : single
+      [<FieldOffset(8)>] mutable UserDefinedSetting2 : single
+      [<FieldOffset(12)>] mutable UserDefinedSetting3 : single
+      [<FieldOffset(16)>] mutable UserDefinedSetting4 : single
+      [<FieldOffset(20)>] mutable UserDefinedSetting5 : single
+      [<FieldOffset(24)>] mutable UserDefinedSetting6 : single
+      [<FieldOffset(28)>] mutable UserDefinedSetting7 : single }
+
+    /// The default user-defined settings.
+    static member defaultSettings =
+        Unchecked.defaultof<UserDefinedSettings>
+
+/// Indicates the type of 2d rendering pipeline.
+type Pipeline2dType =
+    | SpriteSingletonPipeline
+    | SpriteBatchPipeline
+
+/// Describes a user-defined 2d rendering pipeline.
+type UserDefinedPipeline2dDescriptor =
+    { Pipeline2dType : Pipeline2dType
+      PipelineName : string
+      ShaderPath : string
+      UserDefinedImageNames : string array
+      UserDefinedSettingNames : string array }
+
+/// Indicates the type of 3d rendering pipeline.
+type Pipeline3dType =
+    | DeferredStaticPipeline
+    | DeferredStaticClippedPipeline
+    | DeferredAnimatedPipeline
+    | ForwardStaticPipeline
+    | ForwardAnimatedPipeline
+    | TerrainPipeline
+
+/// Describes a user-defined 3d rendering pipeline.
+type UserDefinedPipeline3dDescriptor =
+    { Pipeline3dType : Pipeline3dType
+      PipelineName : string
+      ShaderPath : string
+      UserDefinedImageNames : string array
+      UserDefinedSettingNames : string array }
 
 /// Type of light.
 type [<DefaultValue "[PointLight 0]">] LightType =

@@ -855,6 +855,10 @@ module WorldModule =
             | (true, callback) -> callback world
             | (false, _) -> ()
 
+        /// Get the user-defined 2D pipeline descriptors.
+        static member getUserDefinedPipeline2dDescriptors (world : World) =
+            world.WorldExtension.Plugin.UserDefinedPipeline2dDescriptors
+
         /// Get the user-defined 3D pipeline descriptors.
         static member getUserDefinedPipeline3dDescriptors (world : World) =
             world.WorldExtension.Plugin.UserDefinedPipeline3dDescriptors

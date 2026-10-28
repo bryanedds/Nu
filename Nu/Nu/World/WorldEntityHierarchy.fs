@@ -124,7 +124,7 @@ module WorldEntityHierarchyExtensions =
                             let clearCoatRoughness = Vulkan.PhysicallyBasedSurfaceFns.extractClearCoatRoughness Constants.Render.ClearCoatRoughnessDefault staticModelMetadata.SceneOpt surface
                             let userDefinedSettings =
                                 [for i in 0 .. dec 8 do
-                                    Vulkan.PhysicallyBasedSurfaceFns.extractUserDefinedSetting i Constants.Render.UserDefinedSettingDefault staticModelMetadata.SceneOpt surface]
+                                    Vulkan.PhysicallyBasedSurfaceFns.extractUserDefinedSetting i 0.0f staticModelMetadata.SceneOpt surface]
                             child.SetPositionLocal position world
                             child.SetRotationLocal rotation world
                             child.SetScaleLocal scale world

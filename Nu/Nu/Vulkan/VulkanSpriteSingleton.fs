@@ -12,6 +12,12 @@ open Vortice.Vulkan
 open Prime
 open Nu
 
+/// User-defined textures.
+type [<Struct>] UserDefinedImageTextures =
+    { UserDefinedImage0Texture : Texture
+      UserDefinedImage1Texture : Texture
+      UserDefinedImage2Texture : Texture }
+
 [<Struct; StructLayout (LayoutKind.Explicit)>]
 type SpriteVertStruct =
     [<FieldOffset(0)>] val mutable modelViewProjection : Matrix4x4
@@ -20,6 +26,7 @@ type SpriteVertStruct =
 [<Struct; StructLayout (LayoutKind.Explicit)>]
 type SpriteFragStruct =
     [<FieldOffset(0)>] val mutable color : Vector4
+    [<FieldOffset(16)>] val mutable userDefinedSettings : UserDefinedSettings
 
 /// Single sprite operations.
 [<RequireQualifiedAccess>]
@@ -29,7 +36,7 @@ module SpriteSingleton =
     let VertexSize = sizeof<single> * 2
     
     /// Create a sprite singleton pipeline.
-    let createSpriteSingletonPipeline resolveTextureFormat (context : VulkanContext) =
+    let createSpriteSingletonPipeline shaderPath resolveTextureFormat (context : VulkanContext) =
 
         // create sprite uniform buffers
         let spriteVertUniform = VulkanBuffer.create Uniform sizeof<SpriteVertStruct> context
@@ -38,15 +45,18 @@ module SpriteSingleton =
         // create sprite pipeline
         let pipeline =
             Pipeline.create
-                Constants.Paths.SpriteShaderFilePath
+                shaderPath
                 [|VulkanTransparent|] [|CullBack|]
                 [|Pipeline.vertex 0 VertexSize VkVertexInputRate.Vertex
                     [|Pipeline.attribute 0 Single2 0|]|]
                 [|Pipeline.descriptorSet<int>
                     [|Pipeline.descriptor 0 UniformBuffer VertexStage 1
                       Pipeline.descriptor 1 UniformBuffer FragmentStage 1|]
-                  Pipeline.descriptorSet<Texture>
-                    [|Pipeline.descriptor 0 SampledImage FragmentStage 1|]
+                  Pipeline.descriptorSet<struct (Texture * UserDefinedImageTextures)>
+                    [|Pipeline.descriptor 0 SampledImage FragmentStage 1
+                      Pipeline.descriptor 1 SampledImage FragmentStage 1
+                      Pipeline.descriptor 2 SampledImage FragmentStage 1
+                      Pipeline.descriptor 3 SampledImage FragmentStage 1|]
                   Pipeline.descriptorSet<Sampler>
                     [|Pipeline.descriptor 0 Sampler FragmentStage 1|]|]
                 [||] [|resolveTextureFormat|] None
@@ -85,17 +95,19 @@ module SpriteSingleton =
     let drawSpriteSingleton
         (vertices : VulkanBuffer,
          indices : VulkanBuffer,
-         absolute,
+         absolute : bool,
          viewProjectionClipAbsolute : Matrix4x4 inref,
          viewProjectionClipRelative : Matrix4x4 inref,
          modelViewProjection : Matrix4x4,
          insetOpt : Box2 voption inref,
          clipOpt : Box2 voption inref,
-         color : Color inref,
-         flip,
-         textureWidth,
-         textureHeight,
+         textureWidth : int,
+         textureHeight : int,
          texture : Texture,
+         userDefinedImageTextures : UserDefinedImageTextures inref,
+         color : Color inref,
+         flip : Flip,
+         userDefinedSettings : UserDefinedSettings inref,
          sampler : Sampler,
          viewport : Viewport,
          resolveTexture : Texture,
@@ -121,9 +133,9 @@ module SpriteSingleton =
             scissor <-
                 VkRect2D
                     ((minScissor.X |> round |> int) + offset.X,
-                        (single renderArea.extent.height - minScissor.Y |> round |> int) + offset.Y,
-                        uint sizeScissor.X,
-                        uint sizeScissor.Y)
+                     (single renderArea.extent.height - minScissor.Y |> round |> int) + offset.Y,
+                     uint sizeScissor.X,
+                     uint sizeScissor.Y)
             scissor <- Hl.clipRect renderArea scissor
         | ValueNone -> ()
         if Hl.validateRect scissor then
@@ -172,17 +184,23 @@ module SpriteSingleton =
 
                 // specify uniforms
                 let color = color
+                let userDefinedSettings = userDefinedSettings
                 let mutable uniformDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.DrawIndex pipeline $ fun vkSet ->
                     let spriteVert = SpriteVertStruct (modelViewProjection = modelViewProjection, texCoords4 = v4 texCoords.Min.X texCoords.Min.Y texCoords.Size.X texCoords.Size.Y)
-                    let spriteFrag = SpriteFragStruct (color = color.V4)
+                    let spriteFrag = SpriteFragStruct (color = color.V4, userDefinedSettings = userDefinedSettings)
                     VulkanBuffer.uploadValue spriteVert spriteVertUniform context
                     VulkanBuffer.uploadValue spriteFrag spriteFragUniform context
                     Pipeline.writeDescriptorUniformBuffer 0 0 spriteVertUniform vkSet
                     Pipeline.writeDescriptorUniformBuffer 1 0 spriteFragUniform vkSet
 
-                // specify material
-                let mutable materialDescriptorSet = Pipeline.specifyDescriptorSet 1 texture pipeline $ fun vkSet ->
+                // specify textures
+                let textures = struct (texture, userDefinedImageTextures)
+                let userDefinedImageTextures = userDefinedImageTextures
+                let mutable texturesDescriptorSet = Pipeline.specifyDescriptorSet 1 textures pipeline $ fun vkSet ->
                     Pipeline.writeDescriptorSampledTexture 0 0 texture vkSet
+                    Pipeline.writeDescriptorSampledTexture 1 0 userDefinedImageTextures.UserDefinedImage0Texture vkSet
+                    Pipeline.writeDescriptorSampledTexture 2 0 userDefinedImageTextures.UserDefinedImage1Texture vkSet
+                    Pipeline.writeDescriptorSampledTexture 3 0 userDefinedImageTextures.UserDefinedImage2Texture vkSet
 
                 // specify sampler
                 let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 2 sampler pipeline $ fun vkSet ->
@@ -206,7 +224,7 @@ module SpriteSingleton =
 
                 // bind descriptor sets
                 DeviceApi.vkCmdBindDescriptorSets (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.PipelineLayout, 0u, 1u, &&uniformDescriptorSet, 0u, nullPtr)
-                DeviceApi.vkCmdBindDescriptorSets (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.PipelineLayout, 1u, 1u, &&materialDescriptorSet, 0u, nullPtr)
+                DeviceApi.vkCmdBindDescriptorSets (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.PipelineLayout, 1u, 1u, &&texturesDescriptorSet, 0u, nullPtr)
                 DeviceApi.vkCmdBindDescriptorSets (context.RenderCommandBuffer, VkPipelineBindPoint.Graphics, pipeline.PipelineLayout, 2u, 1u, &&samplerDescriptorSet, 0u, nullPtr)
 
                 // draw

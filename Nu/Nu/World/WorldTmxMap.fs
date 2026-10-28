@@ -329,7 +329,9 @@ module TmxMap =
               BodyIndex = bodyIndex }
         bodyProperties
 
-    let getLayeredMessages2d time absolute (viewBounds : Box2) (tileMapPosition : Vector2) tileMapElevation tileMapClipOpt tileMapColor tileMapEmission tileLayerClearance tileSizeDivisor tileIndexOffset tileIndexOffsetRange tileMapPackage (tileMap : TmxMap) =
+    let getLayeredMessages2d
+        time absolute (viewBounds : Box2) (tileMapPosition : Vector2) tileMapElevation tileMapClipOpt tileMapPipelineName tileMapColor tileMapEmission tileMapUserDefinedSettings
+        tileLayerClearance tileSizeDivisor tileIndexOffset tileIndexOffsetRange tileMapPackage (tileMap : TmxMap) =
 
         // compute descriptors for visible layers
         let layers = List.ofSeq tileMap.TileLayers
@@ -407,8 +409,10 @@ module TmxMap =
                                   RenderTiles
                                     { Transform = transform
                                       ClipOpt = tileMapClipOpt
+                                      PipelineName = tileMapPipelineName
                                       Color = tileMapColor
                                       Emission = tileMapEmission
+                                      UserDefinedSettings = tileMapUserDefinedSettings
                                       MapSize = Vector2i (tileMap.Width, tileMap.Height)
                                       Tiles = tileStrip
                                       TileSourceSize = tileSourceSize

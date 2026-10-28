@@ -30,6 +30,10 @@ module EffectSystem =
               EffectDataTokens : DataToken SList
               EffectEnv : Definitions }
 
+    let private UserDefinedResource0 = Resource (Assets.Default.PackageName, Assets.Default.UserDefinedImage0Name)
+    let private UserDefinedResource1 = Resource (Assets.Default.PackageName, Assets.Default.UserDefinedImage1Name)
+    let private UserDefinedResource2 = Resource (Assets.Default.PackageName, Assets.Default.UserDefinedImage2Name)
+
     let rec private addDataToken dataToken effectSystem =
         effectSystem.EffectDataTokens.Add dataToken
         effectSystem
@@ -212,10 +216,17 @@ module EffectSystem =
         | LightCutoff lightCutoff -> slice.LightCutoff <- lightCutoff; slice
         | Volume volume -> slice.Volume <- volume; slice
         | Enabled enabled -> slice.Enabled <- enabled; slice
-        | UserDefinedSetting0 setting -> slice.UserDefinedSetting0 <- setting; slice
-        | UserDefinedSetting1 setting -> slice.UserDefinedSetting1 <- setting; slice
-        | UserDefinedSetting2 setting -> slice.UserDefinedSetting2 <- setting; slice
-        | UserDefinedSetting3 setting -> slice.UserDefinedSetting3 <- setting; slice
+        | UserDefinedSetting (index, setting) ->
+            match index with
+            | 0 -> slice.UserDefinedSettings.UserDefinedSetting0 <- setting; slice
+            | 1 -> slice.UserDefinedSettings.UserDefinedSetting1 <- setting; slice
+            | 2 -> slice.UserDefinedSettings.UserDefinedSetting2 <- setting; slice
+            | 3 -> slice.UserDefinedSettings.UserDefinedSetting3 <- setting; slice
+            | 4 -> slice.UserDefinedSettings.UserDefinedSetting4 <- setting; slice
+            | 5 -> slice.UserDefinedSettings.UserDefinedSetting5 <- setting; slice
+            | 6 -> slice.UserDefinedSettings.UserDefinedSetting6 <- setting; slice
+            | 7 -> slice.UserDefinedSettings.UserDefinedSetting7 <- setting; slice
+            | _ -> slice
         | Positions (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
@@ -356,37 +367,22 @@ module EffectSystem =
                 let applied = applyLogic slice.Enabled keyFrame.LogicValue applicator
                 slice.Enabled <- applied
             slice
-        | UserDefinedSetting0s (applicator, algorithm, playback, keyFrames) ->
+        | UserDefinedSettings (index, applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween (fun (x, y) -> x * single y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.UserDefinedSetting0 tweened applicator
-                slice.UserDefinedSetting0 <- applied
-            slice
-        | UserDefinedSetting1s (applicator, algorithm, playback, keyFrames) ->
-            if Array.notEmpty keyFrames then
-                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
-                let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
-                let tweened = tween (fun (x, y) -> x * single y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.UserDefinedSetting1 tweened applicator
-                slice.UserDefinedSetting1 <- applied
-            slice
-        | UserDefinedSetting2s (applicator, algorithm, playback, keyFrames) ->
-            if Array.notEmpty keyFrames then
-                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
-                let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
-                let tweened = tween (fun (x, y) -> x * single y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.UserDefinedSetting2 tweened applicator
-                slice.UserDefinedSetting2 <- applied
-            slice
-        | UserDefinedSetting3s (applicator, algorithm, playback, keyFrames) ->
-            if Array.notEmpty keyFrames then
-                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
-                let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
-                let tweened = tween (fun (x, y) -> x * single y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.UserDefinedSetting3 tweened applicator
-                slice.UserDefinedSetting3 <- applied
+                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.UserDefinedSettings.UserDefinedSetting0 tweened applicator
+                match index with
+                | 0 -> slice.UserDefinedSettings.UserDefinedSetting0 <- applied
+                | 1 -> slice.UserDefinedSettings.UserDefinedSetting1 <- applied
+                | 2 -> slice.UserDefinedSettings.UserDefinedSetting2 <- applied
+                | 3 -> slice.UserDefinedSettings.UserDefinedSetting3 <- applied
+                | 4 -> slice.UserDefinedSettings.UserDefinedSetting4 <- applied
+                | 5 -> slice.UserDefinedSettings.UserDefinedSetting5 <- applied
+                | 6 -> slice.UserDefinedSettings.UserDefinedSetting6 <- applied
+                | 7 -> slice.UserDefinedSettings.UserDefinedSetting7 <- applied
+                | _ -> ()
             slice
         | Aspect.Expand (definitionName, _) ->
             match Map.tryFind definitionName effectSystem.EffectEnv with
@@ -415,10 +411,13 @@ module EffectSystem =
             | _ -> Log.info ("Expected Content for definition '" + definitionName + "'."); effectSystem
         | None -> Log.info ("Could not find definition with name '" + definitionName + "'."); effectSystem
 
-    and private evalStaticSprite resource aspects content (slice : Slice) history effectSystem =
+    and private evalUserDefinedStaticSprite resource userDefinedResource0 userDefinedResource1 userDefinedResource2 pipelineName aspects content (slice : Slice) history effectSystem =
 
-        // pull image from resource
+        // pull images from resources
         let image = evalResource resource effectSystem
+        let userDefinedImage0 = evalResource userDefinedResource0 effectSystem
+        let userDefinedImage1 = evalResource userDefinedResource1 effectSystem
+        let userDefinedImage2 = evalResource userDefinedResource2 effectSystem
 
         // eval aspects
         let slice = evalAspects aspects slice effectSystem
@@ -427,15 +426,22 @@ module EffectSystem =
         let effectSystem =
             if slice.Enabled then
                 let mutable transform = Transform.makeIntuitive effectSystem.EffectAbsolute slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation
+                let userDefinedImages =
+                    { UserDefinedImage0 = AssetTag.specialize<Image> userDefinedImage0
+                      UserDefinedImage1 = AssetTag.specialize<Image> userDefinedImage1
+                      UserDefinedImage2 = AssetTag.specialize<Image> userDefinedImage2 }
                 let sprite =
                     { SpriteValue.Transform = transform
                       InsetOpt = if slice.Inset.Equals box2Zero then ValueNone else ValueSome slice.Inset
                       ClipOpt = Option.toValueOption effectSystem.EffectClipOpt
                       Image = AssetTag.specialize<Image> image
+                      UserDefinedImages = userDefinedImages
+                      PipelineName = if String.isEmpty pipelineName then Constants.Render.PipelineNameDefault else pipelineName
                       Color = slice.Color
                       Blend = slice.Blend
                       Emission = slice.Emission
-                      Flip = slice.Flip }
+                      Flip = slice.Flip
+                      UserDefinedSettings = slice.UserDefinedSettings }
                 let spriteToken = SpriteToken (transform.Elevation, transform.Horizon, image, sprite)
                 addDataToken spriteToken effectSystem
             else effectSystem
@@ -443,10 +449,16 @@ module EffectSystem =
         // build implicitly mounted content
         evalContent content slice history effectSystem
 
-    and private evalAnimatedSprite resource (celSize : Vector2i) celCount celRun delay playback aspects content slice history effectSystem =
-
-        // pull image from resource
+    and private evalStaticSprite resource pipelineName aspects content slice history effectSystem =
+        evalUserDefinedStaticSprite resource UserDefinedResource0 UserDefinedResource1 UserDefinedResource2 pipelineName aspects content slice history effectSystem
+         
+    and private evalUserDefinedAnimatedSprite resource userDefinedResource0 userDefinedResource1 userDefinedResource2 pipelineName (celSize : Vector2i) celCount celRun delay playback aspects content slice history effectSystem =
+    
+        // pull images from resources
         let image = evalResource resource effectSystem
+        let userDefinedImage0 = evalResource userDefinedResource0 effectSystem
+        let userDefinedImage1 = evalResource userDefinedResource1 effectSystem
+        let userDefinedImage2 = evalResource userDefinedResource2 effectSystem
 
         // eval aspects
         let slice = evalAspects aspects slice effectSystem
@@ -465,15 +477,22 @@ module EffectSystem =
                 if  slice.Enabled &&
                     not (playback = Once && cel >= celCount) then
                     let mutable transform = Transform.makeIntuitive effectSystem.EffectAbsolute slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation
+                    let userDefinedImages =
+                        { UserDefinedImage0 = AssetTag.specialize<Image> userDefinedImage0
+                          UserDefinedImage1 = AssetTag.specialize<Image> userDefinedImage1
+                          UserDefinedImage2 = AssetTag.specialize<Image> userDefinedImage2 }
                     let sprite =
                         { SpriteValue.Transform = transform
                           InsetOpt = ValueSome inset
                           ClipOpt = Option.toValueOption effectSystem.EffectClipOpt
                           Image = AssetTag.specialize<Image> image
+                          UserDefinedImages = userDefinedImages
+                          PipelineName = if String.isEmpty pipelineName then Constants.Render.PipelineNameDefault else pipelineName
                           Color = slice.Color
                           Blend = slice.Blend
                           Emission = slice.Emission
-                          Flip = slice.Flip }
+                          Flip = slice.Flip
+                          UserDefinedSettings = slice.UserDefinedSettings }
                     let spriteToken = SpriteToken (transform.Elevation, transform.Horizon, image, sprite)
                     addDataToken spriteToken effectSystem
                 else effectSystem
@@ -481,10 +500,13 @@ module EffectSystem =
             // build implicitly mounted content
             evalContent content slice history effectSystem
 
-        // abandon evaL
+        // abandon evaluation
         else effectSystem
 
-    and private evalTextSprite resource text fontSizing fontStyling aspects content slice history effectSystem =
+    and private evalAnimatedSprite resource pipelineName (celSize : Vector2i) celCount celRun delay playback aspects content slice history effectSystem =
+        evalUserDefinedAnimatedSprite resource UserDefinedResource0 UserDefinedResource1 UserDefinedResource2 pipelineName celSize celCount celRun delay playback aspects content slice history effectSystem
+
+    and private evalTextSprite resource text pipelineName fontSizing fontStyling aspects content slice history effectSystem =
 
         // pull font from resource
         let font = evalResource resource effectSystem
@@ -499,13 +521,15 @@ module EffectSystem =
                 let text =
                     { TextValue.Transform = transform
                       ClipOpt = Option.toValueOption effectSystem.EffectClipOpt
+                      PipelineName = pipelineName
                       Text = text
                       Font = AssetTag.specialize<Font> font
                       FontSizing = fontSizing
                       FontStyling = fontStyling
                       Color = slice.Color
                       Justification = Justified (JustifyCenter, JustifyMiddle)
-                      CaretOpt = None }
+                      CaretOpt = None
+                      UserDefinedSettings = slice.UserDefinedSettings }
                 let textToken = TextToken (transform.Elevation, transform.Horizon, font, text)
                 addDataToken textToken effectSystem
             else effectSystem
@@ -561,10 +585,14 @@ module EffectSystem =
                         IgnoreLightMapsOpt = ValueSome (match properties.IgnoreLightMapsOpt with ValueSome ignoreLightMaps -> ignoreLightMaps && slice.IgnoreLightMaps | ValueNone -> slice.IgnoreLightMaps)
                         AnisotropyOpt = ValueSome (match properties.AnisotropyOpt with ValueSome anisotropy -> anisotropy * slice.Anisotropy | ValueNone -> slice.Anisotropy)
                         SpecularScalarOpt = ValueSome (match properties.SpecularScalarOpt with ValueSome specularScalar -> specularScalar * slice.Specularity | ValueNone -> slice.Anisotropy)
-                        UserDefinedSetting0Opt = ValueSome (match properties.UserDefinedSetting0Opt with ValueSome setting -> setting * slice.UserDefinedSetting0 | ValueNone -> slice.UserDefinedSetting0)
-                        UserDefinedSetting1Opt = ValueSome (match properties.UserDefinedSetting1Opt with ValueSome setting -> setting * slice.UserDefinedSetting1 | ValueNone -> slice.UserDefinedSetting1)
-                        UserDefinedSetting2Opt = ValueSome (match properties.UserDefinedSetting2Opt with ValueSome setting -> setting * slice.UserDefinedSetting2 | ValueNone -> slice.UserDefinedSetting2)
-                        UserDefinedSetting3Opt = ValueSome (match properties.UserDefinedSetting3Opt with ValueSome setting -> setting * slice.UserDefinedSetting3 | ValueNone -> slice.UserDefinedSetting3) }
+                        UserDefinedSetting0Opt = ValueSome (match properties.UserDefinedSetting0Opt with ValueSome setting -> setting * slice.UserDefinedSettings.UserDefinedSetting0 | ValueNone -> slice.UserDefinedSettings.UserDefinedSetting0)
+                        UserDefinedSetting1Opt = ValueSome (match properties.UserDefinedSetting1Opt with ValueSome setting -> setting * slice.UserDefinedSettings.UserDefinedSetting1 | ValueNone -> slice.UserDefinedSettings.UserDefinedSetting1)
+                        UserDefinedSetting2Opt = ValueSome (match properties.UserDefinedSetting2Opt with ValueSome setting -> setting * slice.UserDefinedSettings.UserDefinedSetting2 | ValueNone -> slice.UserDefinedSettings.UserDefinedSetting2)
+                        UserDefinedSetting3Opt = ValueSome (match properties.UserDefinedSetting3Opt with ValueSome setting -> setting * slice.UserDefinedSettings.UserDefinedSetting3 | ValueNone -> slice.UserDefinedSettings.UserDefinedSetting3)
+                        UserDefinedSetting4Opt = ValueSome (match properties.UserDefinedSetting4Opt with ValueSome setting -> setting * slice.UserDefinedSettings.UserDefinedSetting4 | ValueNone -> slice.UserDefinedSettings.UserDefinedSetting4)
+                        UserDefinedSetting5Opt = ValueSome (match properties.UserDefinedSetting5Opt with ValueSome setting -> setting * slice.UserDefinedSettings.UserDefinedSetting5 | ValueNone -> slice.UserDefinedSettings.UserDefinedSetting5)
+                        UserDefinedSetting6Opt = ValueSome (match properties.UserDefinedSetting6Opt with ValueSome setting -> setting * slice.UserDefinedSettings.UserDefinedSetting6 | ValueNone -> slice.UserDefinedSettings.UserDefinedSetting6)
+                        UserDefinedSetting7Opt = ValueSome (match properties.UserDefinedSetting7Opt with ValueSome setting -> setting * slice.UserDefinedSettings.UserDefinedSetting7 | ValueNone -> slice.UserDefinedSettings.UserDefinedSetting7) }
                 let billboardToken =
                     BillboardToken
                         { ModelMatrix = affineMatrix
@@ -602,10 +630,14 @@ module EffectSystem =
                         IgnoreLightMapsOpt = ValueSome (match properties.IgnoreLightMapsOpt with ValueSome ignoreLightMaps -> ignoreLightMaps && slice.IgnoreLightMaps | ValueNone -> slice.IgnoreLightMaps)
                         AnisotropyOpt = ValueSome (match properties.AnisotropyOpt with ValueSome anisotropy -> anisotropy * slice.Anisotropy | ValueNone -> slice.Anisotropy)
                         SpecularScalarOpt = ValueSome (match properties.SpecularScalarOpt with ValueSome specularScalarOpt -> specularScalarOpt * slice.Specularity | ValueNone -> slice.Anisotropy)
-                        UserDefinedSetting0Opt = ValueSome (match properties.UserDefinedSetting0Opt with ValueSome setting -> setting * slice.UserDefinedSetting0 | ValueNone -> slice.UserDefinedSetting0)
-                        UserDefinedSetting1Opt = ValueSome (match properties.UserDefinedSetting1Opt with ValueSome setting -> setting * slice.UserDefinedSetting1 | ValueNone -> slice.UserDefinedSetting1)
-                        UserDefinedSetting2Opt = ValueSome (match properties.UserDefinedSetting2Opt with ValueSome setting -> setting * slice.UserDefinedSetting2 | ValueNone -> slice.UserDefinedSetting2)
-                        UserDefinedSetting3Opt = ValueSome (match properties.UserDefinedSetting3Opt with ValueSome setting -> setting * slice.UserDefinedSetting3 | ValueNone -> slice.UserDefinedSetting3) }
+                        UserDefinedSetting0Opt = ValueSome (match properties.UserDefinedSetting0Opt with ValueSome setting -> setting * slice.UserDefinedSettings.UserDefinedSetting0 | ValueNone -> slice.UserDefinedSettings.UserDefinedSetting0)
+                        UserDefinedSetting1Opt = ValueSome (match properties.UserDefinedSetting1Opt with ValueSome setting -> setting * slice.UserDefinedSettings.UserDefinedSetting1 | ValueNone -> slice.UserDefinedSettings.UserDefinedSetting1)
+                        UserDefinedSetting2Opt = ValueSome (match properties.UserDefinedSetting2Opt with ValueSome setting -> setting * slice.UserDefinedSettings.UserDefinedSetting2 | ValueNone -> slice.UserDefinedSettings.UserDefinedSetting2)
+                        UserDefinedSetting3Opt = ValueSome (match properties.UserDefinedSetting3Opt with ValueSome setting -> setting * slice.UserDefinedSettings.UserDefinedSetting3 | ValueNone -> slice.UserDefinedSettings.UserDefinedSetting3)
+                        UserDefinedSetting4Opt = ValueSome (match properties.UserDefinedSetting4Opt with ValueSome setting -> setting * slice.UserDefinedSettings.UserDefinedSetting4 | ValueNone -> slice.UserDefinedSettings.UserDefinedSetting4)
+                        UserDefinedSetting5Opt = ValueSome (match properties.UserDefinedSetting5Opt with ValueSome setting -> setting * slice.UserDefinedSettings.UserDefinedSetting5 | ValueNone -> slice.UserDefinedSettings.UserDefinedSetting5)
+                        UserDefinedSetting6Opt = ValueSome (match properties.UserDefinedSetting6Opt with ValueSome setting -> setting * slice.UserDefinedSettings.UserDefinedSetting6 | ValueNone -> slice.UserDefinedSettings.UserDefinedSetting6)
+                        UserDefinedSetting7Opt = ValueSome (match properties.UserDefinedSetting7Opt with ValueSome setting -> setting * slice.UserDefinedSettings.UserDefinedSetting7 | ValueNone -> slice.UserDefinedSettings.UserDefinedSetting7) }
                 let staticModelToken =
                     StaticModelToken
                         { ModelMatrix = affineMatrix
@@ -707,12 +739,16 @@ module EffectSystem =
         match content with
         | Nil ->
             effectSystem
-        | StaticSprite (resource, aspects, content) ->
-            evalStaticSprite resource aspects content slice history effectSystem
-        | AnimatedSprite (resource, celSize, celCount, celRun, delay, playback, aspects, content) ->
-            evalAnimatedSprite resource celSize celCount celRun delay playback aspects content slice history effectSystem
-        | TextSprite (resource, text, fontSizing, fontStyling, aspects, content) ->
-            evalTextSprite resource text fontSizing fontStyling aspects content slice history effectSystem
+        | UserDefinedStaticSprite (resource, userDefinedResource0, userDefinedResource1, userDefinedResource2, pipelineName, aspects, content) ->
+            evalUserDefinedStaticSprite resource userDefinedResource0 userDefinedResource1 userDefinedResource2 pipelineName aspects content slice history effectSystem
+        | StaticSprite (resource, pipelineName, aspects, content) ->
+            evalStaticSprite resource pipelineName aspects content slice history effectSystem
+        | UserDefinedAnimatedSprite (resource, userDefinedResource0, userDefinedResource1, userDefinedResource2, pipelineName, celSize, celCount, celRun, delay, playback, aspects, content) ->
+            evalUserDefinedAnimatedSprite resource userDefinedResource0 userDefinedResource1 userDefinedResource2 pipelineName celSize celCount celRun delay playback aspects content slice history effectSystem
+        | AnimatedSprite (resource, pipelineName, celSize, celCount, celRun, delay, playback, aspects, content) ->
+            evalAnimatedSprite resource pipelineName celSize celCount celRun delay playback aspects content slice history effectSystem
+        | TextSprite (resource, text, pipelineName, fontSizing, fontStyling, aspects, content) ->
+            evalTextSprite resource text pipelineName fontSizing fontStyling aspects content slice history effectSystem
         | Light3d (lightType, aspects, content) ->
             evalLight3d lightType aspects content slice history effectSystem
         | Billboard (materialOpt, propertiesOpt, aspects, content) ->

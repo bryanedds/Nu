@@ -77,14 +77,14 @@ module TerrainMaterialProperties =
           RoughnessOpt = Some Constants.Render.RoughnessDefault
           AmbientOcclusionOpt = Some Constants.Render.AmbientOcclusionDefault
           IgnoreLightMapsOpt = Some false
-          UserDefinedSetting0Opt = Some Constants.Render.UserDefinedSettingDefault
-          UserDefinedSetting1Opt = Some Constants.Render.UserDefinedSettingDefault
-          UserDefinedSetting2Opt = Some Constants.Render.UserDefinedSettingDefault
-          UserDefinedSetting3Opt = Some Constants.Render.UserDefinedSettingDefault
-          UserDefinedSetting4Opt = Some Constants.Render.UserDefinedSettingDefault
-          UserDefinedSetting5Opt = Some Constants.Render.UserDefinedSettingDefault
-          UserDefinedSetting6Opt = Some Constants.Render.UserDefinedSettingDefault
-          UserDefinedSetting7Opt = Some Constants.Render.UserDefinedSettingDefault }
+          UserDefinedSetting0Opt = Some 0.0f
+          UserDefinedSetting1Opt = Some 0.0f
+          UserDefinedSetting2Opt = Some 0.0f
+          UserDefinedSetting3Opt = Some 0.0f
+          UserDefinedSetting4Opt = Some 0.0f
+          UserDefinedSetting5Opt = Some 0.0f
+          UserDefinedSetting6Opt = Some 0.0f
+          UserDefinedSetting7Opt = Some 0.0f }
 
     /// Empty terrain material properties.
     let empty =
@@ -100,15 +100,6 @@ module TerrainMaterialProperties =
           UserDefinedSetting5Opt = None
           UserDefinedSetting6Opt = None
           UserDefinedSetting7Opt = None }
-
-/// Indicates the type of rendering pipeline.
-type Pipeline3dType =
-    | DeferredStatic
-    | DeferredStaticClipped
-    | DeferredAnimated
-    | ForwardStatic
-    | ForwardAnimated
-    | Terrain
 
 /// Material description for 3d surfaces.
 type [<SymbolicExpansion; CustomEquality; NoComparison>] Material =
@@ -335,14 +326,14 @@ type [<SymbolicExpansion>] MaterialProperties =
           RefractiveIndexOpt = ValueSome Constants.Render.RefractiveIndexDefault
           ClearCoatOpt = ValueSome Constants.Render.ClearCoatDefault
           ClearCoatRoughnessOpt = ValueSome Constants.Render.ClearCoatRoughnessDefault
-          UserDefinedSetting0Opt = ValueSome Constants.Render.UserDefinedSettingDefault
-          UserDefinedSetting1Opt = ValueSome Constants.Render.UserDefinedSettingDefault
-          UserDefinedSetting2Opt = ValueSome Constants.Render.UserDefinedSettingDefault
-          UserDefinedSetting3Opt = ValueSome Constants.Render.UserDefinedSettingDefault
-          UserDefinedSetting4Opt = ValueSome Constants.Render.UserDefinedSettingDefault
-          UserDefinedSetting5Opt = ValueSome Constants.Render.UserDefinedSettingDefault
-          UserDefinedSetting6Opt = ValueSome Constants.Render.UserDefinedSettingDefault
-          UserDefinedSetting7Opt = ValueSome Constants.Render.UserDefinedSettingDefault }
+          UserDefinedSetting0Opt = ValueSome 0.0f
+          UserDefinedSetting1Opt = ValueSome 0.0f
+          UserDefinedSetting2Opt = ValueSome 0.0f
+          UserDefinedSetting3Opt = ValueSome 0.0f
+          UserDefinedSetting4Opt = ValueSome 0.0f
+          UserDefinedSetting5Opt = ValueSome 0.0f
+          UserDefinedSetting6Opt = ValueSome 0.0f
+          UserDefinedSetting7Opt = ValueSome 0.0f }
 
     /// Empty material properties.
     static member val empty =
@@ -531,14 +522,6 @@ type CachedAnimatedModelSurfaceMessage =
       mutable CachedAnimatedModelSurfaceDualRendering : bool
       mutable CachedAnimatedModelSurfaceRenderType : RenderType
       mutable CachedAnimatedModelSurfaceRenderPass : RenderPass }
-
-/// Describes a user-defined 3d rendering pipeline.
-type UserDefinedPipeline3dDescriptor =
-    { PipelineType : Pipeline3dType
-      PipelineName : string
-      ShaderPath : string
-      UserDefinedImageNames : string array
-      UserDefinedSettingNames : string array }
 
 /// Describes how to create a user-defined 3d rendering pipeline.
 type CreateUserDefinedPipeline3d =
@@ -973,7 +956,7 @@ type [<SymbolicExpansion>] Renderer3dConfig =
 
 /// A message to the 3d renderer.
 type RenderMessage3d =
-    | CreateUserDefinedPipeline of CreateUserDefinedPipeline3d
+    | CreateUserDefinedPipeline3d of CreateUserDefinedPipeline3d
     | CreateUserDefinedStaticModel of CreateUserDefinedStaticModel
     | DestroyUserDefinedStaticModel of DestroyUserDefinedStaticModel
     | RenderSkyBox of RenderSkyBox
@@ -1579,6 +1562,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           TerrainGeometries : Dictionary<TerrainGeometryDescriptor, Dictionary<TerrainPatchDescriptor, PhysicallyBasedGeometry>>
           TerrainGeometriesUtilized : TerrainGeometryDescriptor HashSet
           CubeMap : Texture
+          ImageTexture : Texture
           WhiteTexture : Texture
           BlackTexture : Texture
           BrdfTexture : Texture
@@ -1606,11 +1590,21 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           TextureServer : TextureServer
           TextureDumpster : TextureDumpster }
 
-    static member private logRenderAssetUnavailableOnce (assetTag : AssetTag) =
-        let message =
-            "Render asset " + assetTag.AssetName + " is not available from " + assetTag.PackageName + " package in a " + Constants.Associations.Render3d + " context. " +
-            "Note that images from a " + Constants.Associations.Render2d + " context are usually not available in a " + Constants.Associations.Render3d + " context."
-        Log.infoOnce message
+    static member private handleRenderAssetUnavailable (assetTag : AssetTag) renderer =
+        if assetTag.PackageName = Assets.Default.PackageName && assetTag.AssetName = Assets.Default.ImageName then
+            ValueSome (TextureAsset renderer.ImageTexture)
+        elif assetTag.PackageName = Assets.Default.PackageName && assetTag.AssetName = Assets.Default.UserDefinedImage0Name then
+            ValueSome (TextureAsset renderer.PhysicallyBasedMaterial.UserDefinedImage0Texture)
+        elif assetTag.PackageName = Assets.Default.PackageName && assetTag.AssetName = Assets.Default.UserDefinedImage1Name then
+            ValueSome (TextureAsset renderer.PhysicallyBasedMaterial.UserDefinedImage1Texture)
+        elif assetTag.PackageName = Assets.Default.PackageName && assetTag.AssetName = Assets.Default.UserDefinedImage2Name then
+            ValueSome (TextureAsset renderer.PhysicallyBasedMaterial.UserDefinedImage2Texture)
+        else
+            let message =
+                "Render asset " + assetTag.AssetName + " is not available from " + assetTag.PackageName + " package in a " + Constants.Associations.Render3d + " context. " +
+                "Note that images from a " + Constants.Associations.Render2d + " context are usually not available in a " + Constants.Associations.Render3d + " context."
+            Log.infoOnce message
+            ValueNone
 
     static member private radicalInverse (bits : uint) =
         let mutable bits = bits
@@ -1914,7 +1908,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag
                 renderer.RenderAssetCached.CachedRenderAsset <- asset
                 ValueSome asset
-            else VulkanRenderer3d.logRenderAssetUnavailableOnce assetTag; ValueNone
+            else VulkanRenderer3d.handleRenderAssetUnavailable assetTag renderer
         else
             match Dictionary.tryFind assetTag.PackageName renderer.RenderPackages with
             | Some package ->
@@ -1924,7 +1918,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag
                     renderer.RenderAssetCached.CachedRenderAsset <- asset
                     ValueSome asset
-                else VulkanRenderer3d.logRenderAssetUnavailableOnce assetTag; ValueNone
+                else VulkanRenderer3d.handleRenderAssetUnavailable assetTag renderer
             | None ->
                 Log.info ("Loading Render3d package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
                 VulkanRenderer3d.tryLoadRenderPackage assetTag.PackageName renderer
@@ -1936,7 +1930,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                         renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag
                         renderer.RenderAssetCached.CachedRenderAsset <- asset
                         ValueSome asset
-                    else VulkanRenderer3d.logRenderAssetUnavailableOnce assetTag; ValueNone
+                    else VulkanRenderer3d.handleRenderAssetUnavailable assetTag renderer
                 | (false, _) -> ValueNone
 
     static member private tryGetFilePath (assetTag : AssetTag) renderer =
@@ -1981,35 +1975,35 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             renderer.PhysicallyBasedAttachments.GeometryAttachments
 
         let (blends, cullModes) =
-            match descriptor.PipelineType with
-            | DeferredStatic | DeferredStaticClipped | DeferredAnimated ->
+            match descriptor.Pipeline3dType with
+            | DeferredStaticPipeline | DeferredStaticClippedPipeline | DeferredAnimatedPipeline ->
                 ([|VulkanUnblended|], [|CullNone; CullBack; CullFront|])
-            | ForwardStatic | ForwardAnimated ->
+            | ForwardStaticPipeline | ForwardAnimatedPipeline ->
                 ([|VulkanUnblended; VulkanTransparent; VulkanAdditive; VulkanSummation; VulkanOverwrite|], [|CullNone; CullBack; CullFront|])
-            | Terrain ->
+            | TerrainPipeline ->
                 ([|VulkanUnblended|], [|CullBack|])
 
         let (colorAttachmentFormats, depthAttachmentFormat) =
-            match descriptor.PipelineType with
-            | DeferredStatic | DeferredStaticClipped | DeferredAnimated | Terrain ->
+            match descriptor.Pipeline3dType with
+            | DeferredStaticPipeline | DeferredStaticClippedPipeline | DeferredAnimatedPipeline | TerrainPipeline ->
                 let deferredColorAttachmentFormats =
                     [|depth.ImageFormat; albedo.ImageFormat; material.ImageFormat; normalPlus.ImageFormat; subdermalPlus.ImageFormat; scatterPlus.ImageFormat; clearCoatPlus.ImageFormat; userDefinedBuffer.ImageFormat|]
                 (deferredColorAttachmentFormats, depthBuffer.ImageFormat)
-            | ForwardStatic | ForwardAnimated ->
+            | ForwardStaticPipeline | ForwardAnimatedPipeline ->
                 let composition = renderer.PhysicallyBasedAttachments.CompositionAttachment
                 ([|depth.ImageFormat; composition.ImageFormat|], depthBuffer.ImageFormat)
 
         let (lightMapsMax, lightsMax, vertexBindings) =
-            match descriptor.PipelineType with
-            | DeferredStatic | DeferredStaticClipped | ForwardStatic ->
+            match descriptor.Pipeline3dType with
+            | DeferredStaticPipeline | DeferredStaticClippedPipeline | ForwardStaticPipeline ->
                 (Constants.Render.LightMapsMaxDeferred, Constants.Render.LightsMaxDeferred, PhysicallyBased.StaticVertices)
-            | DeferredAnimated | ForwardAnimated ->
+            | DeferredAnimatedPipeline | ForwardAnimatedPipeline ->
                 (Constants.Render.LightMapsMaxForward, Constants.Render.LightsMaxForward, PhysicallyBased.AnimatedVertices)
-            | Terrain ->
+            | TerrainPipeline ->
                 (Constants.Render.LightMapsMaxDeferred, Constants.Render.LightsMaxDeferred, PhysicallyBased.TerrainVertices)
 
-        match descriptor.PipelineType with
-        | DeferredStatic ->
+        match descriptor.Pipeline3dType with
+        | DeferredStaticPipeline ->
             let pipelines = renderer.PhysicallyBasedPipelines.UserDefinedDeferredStaticPipelines
             let pipeline = PhysicallyBased.createPhysicallyBasedPipeline lightMapsMax lightsMax descriptor.ShaderPath blends cullModes vertexBindings colorAttachmentFormats depthAttachmentFormat renderer.VulkanContext
             match pipelines.TryGetValue descriptor.PipelineName with
@@ -2018,7 +2012,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 PhysicallyBased.destroyPhysicallyBasedPipeline pipeline renderer.VulkanContext
             | (false, _) -> ()
             pipelines[descriptor.PipelineName] <- pipeline
-        | DeferredStaticClipped ->
+        | DeferredStaticClippedPipeline ->
             let pipelines = renderer.PhysicallyBasedPipelines.UserDefinedDeferredStaticClippedPipelines
             let pipeline = PhysicallyBased.createPhysicallyBasedPipeline lightMapsMax lightsMax descriptor.ShaderPath blends cullModes vertexBindings colorAttachmentFormats depthAttachmentFormat renderer.VulkanContext
             match pipelines.TryGetValue descriptor.PipelineName with
@@ -2027,7 +2021,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 PhysicallyBased.destroyPhysicallyBasedPipeline pipeline renderer.VulkanContext
             | (false, _) -> ()
             pipelines[descriptor.PipelineName] <- pipeline
-        | DeferredAnimated ->
+        | DeferredAnimatedPipeline ->
             let pipelines = renderer.PhysicallyBasedPipelines.UserDefinedDeferredAnimatedPipelines
             let pipeline = PhysicallyBased.createPhysicallyBasedPipeline lightMapsMax lightsMax descriptor.ShaderPath blends cullModes vertexBindings colorAttachmentFormats depthAttachmentFormat renderer.VulkanContext
             match pipelines.TryGetValue descriptor.PipelineName with
@@ -2036,7 +2030,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 PhysicallyBased.destroyPhysicallyBasedPipeline pipeline renderer.VulkanContext
             | (false, _) -> ()
             pipelines[descriptor.PipelineName] <- pipeline
-        | ForwardStatic ->
+        | ForwardStaticPipeline ->
             let pipelines = renderer.PhysicallyBasedPipelines.UserDefinedForwardStaticPipelines
             let pipeline = PhysicallyBased.createPhysicallyBasedPipeline lightMapsMax lightsMax descriptor.ShaderPath blends cullModes vertexBindings colorAttachmentFormats depthAttachmentFormat renderer.VulkanContext
             match pipelines.TryGetValue descriptor.PipelineName with
@@ -2045,7 +2039,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 PhysicallyBased.destroyPhysicallyBasedPipeline pipeline renderer.VulkanContext
             | (false, _) -> ()
             pipelines[descriptor.PipelineName] <- pipeline
-        | ForwardAnimated ->
+        | ForwardAnimatedPipeline ->
             let pipelines = renderer.PhysicallyBasedPipelines.UserDefinedForwardAnimatedPipelines
             let pipeline = PhysicallyBased.createPhysicallyBasedPipeline lightMapsMax lightsMax descriptor.ShaderPath blends cullModes vertexBindings colorAttachmentFormats depthAttachmentFormat renderer.VulkanContext
             match pipelines.TryGetValue descriptor.PipelineName with
@@ -2054,7 +2048,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 PhysicallyBased.destroyPhysicallyBasedPipeline pipeline renderer.VulkanContext
             | (false, _) -> ()
             pipelines[descriptor.PipelineName] <- pipeline
-        | Terrain ->
+        | TerrainPipeline ->
             let pipelines = renderer.PhysicallyBasedPipelines.UserDefinedTerrainPipelines
             let pipeline = PhysicallyBased.createPhysicallyBasedTerrainPipeline descriptor.ShaderPath colorAttachmentFormats depthAttachmentFormat renderer.VulkanContext
             match pipelines.TryGetValue descriptor.PipelineName with
@@ -3548,7 +3542,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         renderer =
         for message in renderMessages do
             match message with
-            | CreateUserDefinedPipeline cudp ->
+            | CreateUserDefinedPipeline3d cudp ->
                 VulkanRenderer3d.tryCreateUserDefinedPipeline cudp.Pipeline3dDescriptor renderer
             | CreateUserDefinedStaticModel cudsm ->
                 VulkanRenderer3d.tryCreateUserDefinedStaticModel cudsm.StaticModelSurfaceDescriptors cudsm.Bounds cudsm.StaticModel renderer
@@ -4721,14 +4715,14 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               RefractiveIndex = Constants.Render.RefractiveIndexDefault
               ClearCoat = Constants.Render.ClearCoatDefault
               ClearCoatRoughness = Constants.Render.ClearCoatRoughnessDefault
-              UserDefinedSetting0 = Option.defaultValue Constants.Render.UserDefinedSettingDefault terrainMaterialProperties.UserDefinedSetting0Opt
-              UserDefinedSetting1 = Option.defaultValue Constants.Render.UserDefinedSettingDefault terrainMaterialProperties.UserDefinedSetting1Opt
-              UserDefinedSetting2 = Option.defaultValue Constants.Render.UserDefinedSettingDefault terrainMaterialProperties.UserDefinedSetting2Opt
-              UserDefinedSetting3 = Option.defaultValue Constants.Render.UserDefinedSettingDefault terrainMaterialProperties.UserDefinedSetting3Opt
-              UserDefinedSetting4 = Option.defaultValue Constants.Render.UserDefinedSettingDefault terrainMaterialProperties.UserDefinedSetting4Opt
-              UserDefinedSetting5 = Option.defaultValue Constants.Render.UserDefinedSettingDefault terrainMaterialProperties.UserDefinedSetting5Opt
-              UserDefinedSetting6 = Option.defaultValue Constants.Render.UserDefinedSettingDefault terrainMaterialProperties.UserDefinedSetting6Opt
-              UserDefinedSetting7 = Option.defaultValue Constants.Render.UserDefinedSettingDefault terrainMaterialProperties.UserDefinedSetting7Opt }
+              UserDefinedSetting0 = Option.defaultValue 0.0f terrainMaterialProperties.UserDefinedSetting0Opt
+              UserDefinedSetting1 = Option.defaultValue 0.0f terrainMaterialProperties.UserDefinedSetting1Opt
+              UserDefinedSetting2 = Option.defaultValue 0.0f terrainMaterialProperties.UserDefinedSetting2Opt
+              UserDefinedSetting3 = Option.defaultValue 0.0f terrainMaterialProperties.UserDefinedSetting3Opt
+              UserDefinedSetting4 = Option.defaultValue 0.0f terrainMaterialProperties.UserDefinedSetting4Opt
+              UserDefinedSetting5 = Option.defaultValue 0.0f terrainMaterialProperties.UserDefinedSetting5Opt
+              UserDefinedSetting6 = Option.defaultValue 0.0f terrainMaterialProperties.UserDefinedSetting6Opt
+              UserDefinedSetting7 = Option.defaultValue 0.0f terrainMaterialProperties.UserDefinedSetting7Opt }
         let texCoordsOffset =
             match terrainDescriptor.InsetOpt with
             | Some inset ->
@@ -5674,7 +5668,13 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
         // create physically-based quad
         let quadGeometry = PhysicallyBased.createPhysicallyBasedQuadGeometry (Some context)
-        
+
+        // create image texture
+        let imageTexture =
+            match TextureInternal.tryCreate false true Uncompressed "Assets/Default/Image.png" RenderThread context with
+            | Right textureInternal -> EagerTexture textureInternal
+            | Left error -> failwith ("Could not load image texture due to: " + error)
+
         // create white texture
         let whiteTexture =
             match TextureInternal.tryCreate false true Uncompressed "Assets/Default/White.png" RenderThread context with
@@ -5795,15 +5795,15 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 | Right textureInternal -> EagerTexture textureInternal
                 | Left error -> failwith ("Could not load clear coat normal texture due to: " + error)
             let userDefinedImage0Texture =
-                match TextureInternal.tryCreate false true ColorCompression ("Assets/Default/UserDefinedImage0" + ext) RenderThread context with
+                match TextureInternal.tryCreate false true ColorCompression ("Assets/Default/UserDefinedImage0.png") RenderThread context with
                 | Right textureInternal -> EagerTexture textureInternal
                 | Left error -> failwith ("Could not load user-defined image 0 texture due to: " + error)
             let userDefinedImage1Texture =
-                match TextureInternal.tryCreate false true ColorCompression ("Assets/Default/UserDefinedImage1" + ext) RenderThread context with
+                match TextureInternal.tryCreate false true ColorCompression ("Assets/Default/UserDefinedImage1.png") RenderThread context with
                 | Right textureInternal -> EagerTexture textureInternal
                 | Left error -> failwith ("Could not load user-defined image 1 texture due to: " + error)
             let userDefinedImage2Texture =
-                match TextureInternal.tryCreate false true ColorCompression ("Assets/Default/UserDefinedImage2" + ext) RenderThread context with
+                match TextureInternal.tryCreate false true ColorCompression ("Assets/Default/UserDefinedImage2.png") RenderThread context with
                 | Right textureInternal -> EagerTexture textureInternal
                 | Left error -> failwith ("Could not load user-defined image 2 texture due to: " + error)
             { AlbedoTexture = albedoTexture
@@ -5865,6 +5865,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               TerrainGeometries = Dictionary HashIdentity.Structural
               TerrainGeometriesUtilized = HashSet HashIdentity.Structural
               CubeMap = cubeMap
+              ImageTexture = imageTexture
               WhiteTexture = whiteTexture
               BlackTexture = blackTexture
               BrdfTexture = brdfTexture

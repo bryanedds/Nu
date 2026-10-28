@@ -16,28 +16,69 @@ open TiledSharp
 open Prime
 open Nu.Vulkan
 
+/// User-defined images.
+type [<Struct; SymbolicExpansion>] UserDefinedImages =
+    { mutable UserDefinedImage0 : Image AssetTag
+      mutable UserDefinedImage1 : Image AssetTag
+      mutable UserDefinedImage2 : Image AssetTag }
+
+    /// The default user-defined images.
+    static member defaultImages =
+        { UserDefinedImage0 = asset Assets.Default.PackageName Assets.Default.UserDefinedImage0Name
+          UserDefinedImage1 = asset Assets.Default.PackageName Assets.Default.UserDefinedImage1Name
+          UserDefinedImage2 = asset Assets.Default.PackageName Assets.Default.UserDefinedImage2Name }
+
+/// A particle.
+type [<Struct>] Particle =
+    { mutable Transform : Transform
+      mutable InsetOpt : Box2 ValueOption
+      mutable Color : Color
+      mutable Emission : Color
+      mutable Flip : Flip
+      mutable UserDefinedSettings : UserDefinedSettings }
+
+    /// The default text value.
+    static member defaultValue =
+        Unchecked.defaultof<Particle>
+
 /// A mutable sprite value.
 type [<Struct>] SpriteValue =
     { mutable Transform : Transform
       mutable InsetOpt : Box2 voption
       mutable ClipOpt : Box2 voption
       mutable Image : Image AssetTag
+      mutable UserDefinedImages : UserDefinedImages
+      mutable PipelineName : string
       mutable Color : Color
       mutable Blend : Blend
       mutable Emission : Color
-      mutable Flip : Flip }
+      mutable Flip : Flip
+      mutable UserDefinedSettings : UserDefinedSettings }
+
+    /// The default sprite value.
+    static member defaultValue =
+        { Unchecked.defaultof<SpriteValue> with
+            UserDefinedImages = UserDefinedImages.defaultImages
+            PipelineName = Constants.Render.PipelineNameDefault }
 
 /// A mutable text value.
 type [<Struct>] TextValue =
     { mutable Transform : Transform
       mutable ClipOpt : Box2 voption
+      mutable PipelineName : string
       mutable Text : string
       mutable Font : Font AssetTag
       mutable FontSizing : single option
       mutable FontStyling : FontStyle Set
       mutable Color : Color
       mutable Justification : Justification
-      mutable CaretOpt : int option }
+      mutable CaretOpt : int option
+      mutable UserDefinedSettings : UserDefinedSettings }
+
+    /// The default text value.
+    static member defaultValue =
+        { Unchecked.defaultof<TextValue> with
+            PipelineName = Constants.Render.PipelineNameDefault }
 
 /// Describes how to render a sprite to a rendering subsystem.
 type SpriteDescriptor =
@@ -45,10 +86,13 @@ type SpriteDescriptor =
       InsetOpt : Box2 voption
       ClipOpt : Box2 voption
       Image : Image AssetTag
+      UserDefinedImages : UserDefinedImages
+      PipelineName : string
       Color : Color
       Blend : Blend
       Emission : Color
-      Flip : Flip }
+      Flip : Flip
+      UserDefinedSettings : UserDefinedSettings }
 
 /// Describes how to render multiple sprites to a rendering subsystem.
 type [<NoEquality; NoComparison>] SpritesDescriptor =
@@ -68,6 +112,8 @@ type [<NoEquality; NoComparison>] TilesDescriptor =
       ClipOpt : Box2 voption
       Color : Color
       Emission : Color
+      PipelineName : string
+      UserDefinedSettings : UserDefinedSettings
       MapSize : Vector2i
       Tiles : TmxLayerTile SList
       TileSourceSize : Vector2i
@@ -80,27 +126,35 @@ type [<NoEquality; NoComparison>] SpriteParticlesDescriptor =
       Elevation : single
       Horizon : single
       ClipOpt : Box2 voption
-      Blend : Blend
       Image : Image AssetTag
+      UserDefinedImages : UserDefinedImages
+      PipelineName : string
+      Blend : Blend
       Particles : Particle SArray }
 
 /// Describes how to render text to a rendering subsystem.
 type TextDescriptor =
     { mutable Transform : Transform
       ClipOpt : Box2 voption
+      PipelineName : string
       Text : string
       Font : Font AssetTag
       FontSizing : single option
       FontStyling : FontStyle Set
       Color : Color
       Justification : Justification
-      CaretOpt : int option }
+      CaretOpt : int option
+      UserDefinedSettings : UserDefinedSettings }
 
 /// Describes how to render a vector graphics contour to a rendering subsystem.
 type [<NoEquality; NoComparison>] ContourDescriptor =
     { mutable Transform : Transform
       ClipOpt : Box2 voption
       Contour : Contour }
+
+/// Describes how to create a user-defined 2d rendering pipeline.
+type CreateUserDefinedPipeline2d =
+    { Pipeline2dDescriptor : UserDefinedPipeline2dDescriptor }
 
 /// Describes a 2d rendering operation.
 type RenderOperation2d =
@@ -123,6 +177,7 @@ type LayeredOperation2d =
 
 /// A message to a 2d rendering subsystem.
 type RenderMessage2d =
+    | CreateUserDefinedPipeline2d of CreateUserDefinedPipeline2d
     | LayeredOperation2d of LayeredOperation2d
     | LoadRenderPackage2d of string
     | UnloadRenderPackage2d of string
@@ -156,7 +211,7 @@ type [<NoEquality; NoComparison>] private RenderAssetCached =
 type Renderer2d =
     
     /// Pre-render a frame of the game.
-    abstract PreRender : eyeCenter : Vector2 -> eyeSize : Vector2 -> viewport : Viewport -> renderMessages : RenderMessage2d List -> unit
+    abstract PreRender : eyeCenter : Vector2 -> eyeSize : Vector2 -> viewport : Viewport -> renderMessages : RenderMessage2d List -> ImageFormat -> unit
 
     /// Render a frame of the game.
     abstract Render : eyeCenter : Vector2 -> eyeSize : Vector2 -> viewport : Viewport -> Texture -> unit
@@ -174,7 +229,7 @@ type [<ReferenceEquality>] StubRenderer2d =
         { StubRenderer2d = () }
 
     interface Renderer2d with
-        member renderer.PreRender _ _ _ _ = ()
+        member renderer.PreRender _ _ _ _ _ = ()
         member renderer.Render _ _ _ _ = ()
         member renderer.CleanUp () = ()
 
@@ -186,10 +241,13 @@ type [<ReferenceEquality>] VulkanRenderer2d =
           TextQuad : VulkanBuffer * VulkanBuffer
           UnfilteredSampler : Sampler
           FilteredSampler : Sampler
-          TextTextures : Dictionary<obj, bool ref * (int * int * Vector2 * Texture)>
+          SpriteSingletonPipelines : Dictionary<string, VulkanBuffer * VulkanBuffer * Pipeline>
           SpriteBatchEnv : SpriteBatchEnv
-          SpritePipeline : VulkanBuffer * VulkanBuffer * Pipeline
           ContourPipeline : VulkanBuffer * VulkanBuffer * VulkanBuffer * VulkanBuffer * VulkanBuffer * Pipeline
+          TextTextures : Dictionary<obj, bool ref * (int * int * Vector2 * Texture)>
+          UserDefinedImage0Texture : Texture
+          UserDefinedImage1Texture : Texture
+          UserDefinedImage2Texture : Texture
           RenderPackages : Packages<RenderAsset, AssetClient>
           mutable RenderPackageCachedOpt : RenderPackageCached
           mutable RenderAssetCached : RenderAssetCached
@@ -197,11 +255,12 @@ type [<ReferenceEquality>] VulkanRenderer2d =
           LayeredOperations : LayeredOperation2d List
           TextureDumpster : TextureDumpster }
 
-    static member private logRenderAssetUnavailableOnce (assetTag : AssetTag) =
+    static member private handleRenderAssetUnavailable (assetTag : AssetTag) renderer =
         let message =
             "Render asset " + assetTag.AssetName + " is not available from " + assetTag.PackageName + " package in a " + Constants.Associations.Render2d + " context. " +
             "Note that images from a " + Constants.Associations.Render3d + " context are usually not available in a " + Constants.Associations.Render2d + " context."
         Log.infoOnce message
+        ValueNone
 
     static member private invalidateCaches renderer =
         renderer.RenderPackageCachedOpt <- Unchecked.defaultof<_>
@@ -342,7 +401,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                 renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag
                 renderer.RenderAssetCached.CachedRenderAsset <- asset
                 ValueSome asset
-            else VulkanRenderer2d.logRenderAssetUnavailableOnce assetTag; ValueNone
+            else VulkanRenderer2d.handleRenderAssetUnavailable assetTag renderer
         else
             match Dictionary.tryFind assetTag.PackageName renderer.RenderPackages with
             | Some package ->
@@ -352,7 +411,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                     renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag
                     renderer.RenderAssetCached.CachedRenderAsset <- asset
                     ValueSome asset
-                else VulkanRenderer2d.logRenderAssetUnavailableOnce assetTag; ValueNone
+                else VulkanRenderer2d.handleRenderAssetUnavailable assetTag renderer
             | None ->
                 Log.info ("Loading Render2d package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
                 VulkanRenderer2d.tryLoadRenderPackage assetTag.PackageName renderer
@@ -364,9 +423,38 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                         renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag
                         renderer.RenderAssetCached.CachedRenderAsset <- asset
                         ValueSome asset
-                    else VulkanRenderer2d.logRenderAssetUnavailableOnce assetTag; ValueNone
+                    else VulkanRenderer2d.handleRenderAssetUnavailable assetTag renderer
                 | (false, _) -> ValueNone
-    
+
+    static member private tryGetTexture image renderer =
+        match VulkanRenderer2d.tryGetRenderAsset image renderer with
+        | ValueSome asset ->
+            match asset with
+            | TextureAsset texture -> ValueSome texture
+            | _ -> ValueNone
+        | ValueNone -> ValueNone
+
+    static member private tryCreateUserDefinedPipeline (descriptor : UserDefinedPipeline2dDescriptor) resolveTextureFormat renderer =
+
+        // create appropriate type of pipeline
+        match descriptor.Pipeline2dType with
+        | SpriteSingletonPipeline ->
+
+            // create singleton sprite pipeline
+            let pipelines = renderer.SpriteSingletonPipelines
+            let pipeline = SpriteSingleton.createSpriteSingletonPipeline descriptor.ShaderPath resolveTextureFormat renderer.VulkanContext
+            match pipelines.TryGetValue descriptor.PipelineName with
+            | (true, (_, _, pipeline)) ->
+                ConcurrentCommandQueue.waitIdle renderer.VulkanContext.RenderQueue // pipeline may still be in use by previous frame
+                Pipeline.destroy pipeline renderer.VulkanContext
+            | (false, _) -> ()
+            pipelines[descriptor.PipelineName] <- pipeline
+
+        | SpriteBatchPipeline ->
+
+            // create batch sprite pipeline
+            SpriteBatch.tryCreateUserDefinedPipeline descriptor.PipelineName descriptor.ShaderPath resolveTextureFormat renderer.SpriteBatchEnv renderer.VulkanContext
+
     static member private handleLoadRenderPackage hintPackageName renderer =
         VulkanRenderer2d.tryLoadRenderPackage hintPackageName renderer
 
@@ -379,27 +467,28 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         | None -> ()
 
     static member private handleReloadShaders renderer =
-        let (_, _, spritePipeline) = renderer.SpritePipeline
-        let (_, _, _, _, _, contourPipeline) = renderer.ContourPipeline
-        Pipeline.reloadShaders spritePipeline renderer.VulkanContext
-        Pipeline.reloadShaders contourPipeline renderer.VulkanContext
         SpriteBatch.reloadShaders renderer.SpriteBatchEnv renderer.VulkanContext
+        for (_, _, spriteSingletonPipeline) in renderer.SpriteSingletonPipelines.Values do
+            Pipeline.reloadShaders spriteSingletonPipeline renderer.VulkanContext
+        let (_, _, _, _, _, contourPipeline) = renderer.ContourPipeline
+        Pipeline.reloadShaders contourPipeline renderer.VulkanContext
 
     static member private handleReloadRenderAssets renderer =
         VulkanRenderer2d.invalidateCaches renderer
         for packageName in renderer.RenderPackages |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq do
             VulkanRenderer2d.tryLoadRenderPackage packageName renderer
     
-    static member private categorizeRenderMessage renderMessage renderer =
-        match renderMessage with
+    static member private categorizeRenderMessage message resolveTextureFormat renderer =
+        match message with
+        | CreateUserDefinedPipeline2d cudp -> VulkanRenderer2d.tryCreateUserDefinedPipeline cudp.Pipeline2dDescriptor resolveTextureFormat renderer
         | LayeredOperation2d operation -> renderer.LayeredOperations.Add operation
         | LoadRenderPackage2d hintPackageUse -> VulkanRenderer2d.handleLoadRenderPackage hintPackageUse renderer
         | UnloadRenderPackage2d hintPackageDisuse -> VulkanRenderer2d.handleUnloadRenderPackage hintPackageDisuse renderer
         | ReloadRenderAssets2d -> renderer.ReloadAssetsRequested <- true
 
-    static member private categorizeRenderMessages renderMessages renderer =
+    static member private categorizeRenderMessages renderMessages resolveTextureFormat renderer =
         for renderMessage in renderMessages do
-            VulkanRenderer2d.categorizeRenderMessage renderMessage renderer
+            VulkanRenderer2d.categorizeRenderMessage renderMessage resolveTextureFormat renderer
     
     static member private sortLayeredOperations renderer =
         renderer.LayeredOperations.Sort (LayeredOperation2dComparer ())
@@ -417,11 +506,14 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         (insetOpt : Box2 voption)
         (clipOpt : Box2 voption)
         (texture : Texture)
+        (userDefinedImageTextures : UserDefinedImageTextures)
+        (pipelineName : string)
         (color : Color)
         (blend : Blend)
         (emission : Color)
         (flip : Flip)
-        (resolveTexture : Texture)
+        userDefinedSettings
+        resolveTexture
         renderer =
 
         // compute unflipped tex coords
@@ -468,11 +560,15 @@ type [<ReferenceEquality>] VulkanRenderer2d =
 
         // attempt to draw regular sprite
         if color.A <> 0.0f then
-            SpriteBatch.submitSpriteBatchSprite (absolute, min, size, pivot, rotation, &texCoords, &clipOpt, &color, vulkanBlend, texture, renderer.Viewport, resolveTexture, renderer.SpriteBatchEnv)
+            SpriteBatch.submitSpriteBatchSprite
+                (absolute, min, size, pivot, rotation, &texCoords, &clipOpt, texture, &userDefinedImageTextures, pipelineName,
+                 &color, vulkanBlend, &userDefinedSettings, renderer.Viewport, resolveTexture, renderer.SpriteBatchEnv)
 
         // attempt to draw emission sprite
         if emission.A <> 0.0f then
-            SpriteBatch.submitSpriteBatchSprite (absolute, min, size, pivot, rotation, &texCoords, &clipOpt, &emission, VulkanAdditive, texture, renderer.Viewport, resolveTexture, renderer.SpriteBatchEnv)
+            SpriteBatch.submitSpriteBatchSprite
+                (absolute, min, size, pivot, rotation, &texCoords, &clipOpt, texture, &userDefinedImageTextures, pipelineName,
+                 &emission, VulkanAdditive, &userDefinedSettings, renderer.Viewport, resolveTexture, renderer.SpriteBatchEnv)
 
     /// Render sprite.
     static member renderSprite
@@ -480,10 +576,13 @@ type [<ReferenceEquality>] VulkanRenderer2d =
          insetOpt : Box2 voption inref,
          clipOpt : Box2 voption inref,
          image : Image AssetTag,
+         userDefinedImages : UserDefinedImages inref,
+         pipelineName : string,
          color : Color inref,
          blend : Blend,
          emission : Color inref,
          flip : Flip,
+         userDefinedSettings : UserDefinedSettings inref,
          resolveTexture : Texture,
          renderer) =
         let absolute = transform.Absolute
@@ -497,16 +596,28 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         | ValueSome renderAsset ->
             match renderAsset with
             | TextureAsset texture ->
-                VulkanRenderer2d.batchSprite absolute min size pivot rotation insetOpt clipOpt texture color blend emission flip resolveTexture renderer
+                let userDefinedImageTextures =
+                    { UserDefinedImage0Texture = VulkanRenderer2d.tryGetTexture userDefinedImages.UserDefinedImage0 renderer |> ValueOption.defaultValue renderer.UserDefinedImage0Texture
+                      UserDefinedImage1Texture = VulkanRenderer2d.tryGetTexture userDefinedImages.UserDefinedImage1 renderer |> ValueOption.defaultValue renderer.UserDefinedImage1Texture
+                      UserDefinedImage2Texture = VulkanRenderer2d.tryGetTexture userDefinedImages.UserDefinedImage2 renderer |> ValueOption.defaultValue renderer.UserDefinedImage2Texture }
+                VulkanRenderer2d.batchSprite
+                    absolute min size pivot rotation insetOpt clipOpt texture userDefinedImageTextures pipelineName
+                    color blend emission flip userDefinedSettings resolveTexture renderer
             | _ -> Log.infoOnce ("Cannot render sprite with a non-texture asset for '" + scstring image + "'.")
         | ValueNone -> Log.infoOnce ("Sprite failed to render due to unloadable asset for '" + scstring image + "'.")
     
     /// Render sprite particles.
-    static member renderSpriteParticles (clipOpt : Box2 voption inref, blend : Blend, image : Image AssetTag, particles : Particle SArray, resolveTexture : Texture, renderer) =
+    static member renderSpriteParticles
+        (clipOpt : Box2 voption inref, blend : Blend, image : Image AssetTag, userDefinedImages : UserDefinedImages, pipelineName : string,
+         particles : Particle SArray, resolveTexture : Texture, renderer) =
         match VulkanRenderer2d.tryGetRenderAsset image renderer with
         | ValueSome renderAsset ->
             match renderAsset with
             | TextureAsset texture ->
+                let userDefinedImageTextures =
+                    { UserDefinedImage0Texture = VulkanRenderer2d.tryGetTexture userDefinedImages.UserDefinedImage0 renderer |> ValueOption.defaultValue renderer.UserDefinedImage0Texture
+                      UserDefinedImage1Texture = VulkanRenderer2d.tryGetTexture userDefinedImages.UserDefinedImage1 renderer |> ValueOption.defaultValue renderer.UserDefinedImage1Texture
+                      UserDefinedImage2Texture = VulkanRenderer2d.tryGetTexture userDefinedImages.UserDefinedImage2 renderer |> ValueOption.defaultValue renderer.UserDefinedImage2Texture }
                 let mutable index = 0
                 while index < particles.Length do
                     let particle = &particles[index]
@@ -522,7 +633,10 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                     let emission = &particle.Emission
                     let flip = particle.Flip
                     let insetOpt = &particle.InsetOpt
-                    VulkanRenderer2d.batchSprite absolute min size pivot rotation insetOpt clipOpt texture color blend emission flip resolveTexture renderer
+                    let userDefinedSettings = particle.UserDefinedSettings
+                    VulkanRenderer2d.batchSprite
+                        absolute min size pivot rotation insetOpt clipOpt texture userDefinedImageTextures pipelineName
+                        color blend emission flip userDefinedSettings resolveTexture renderer
                     index <- inc index
             | _ -> Log.infoOnce ("Cannot render sprite particle with a non-texture asset for '" + scstring image + "'.")
         | ValueNone -> Log.infoOnce ("Sprite particles failed to render due to unloadable asset for '" + scstring image + "'.")
@@ -533,6 +647,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
          clipOpt : Box2 voption inref,
          color : Color inref,
          emission : Color inref,
+         pipelineName : string,
+         userDefinedSettings : UserDefinedSettings inref,
          mapSize : Vector2i,
          tiles : TmxLayerTile SList,
          tileSourceSize : Vector2i,
@@ -614,11 +730,17 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                         // attempt to render tile
                         match tileSetTextureOpt with
                         | ValueSome texture ->
+                            let userDefinedImageTextures =
+                                { UserDefinedImage0Texture = renderer.UserDefinedImage0Texture
+                                  UserDefinedImage1Texture = renderer.UserDefinedImage1Texture
+                                  UserDefinedImage2Texture = renderer.UserDefinedImage2Texture }
                             let tileId = tile.Gid - tileOffset
                             let tileIdPosition = tileId * tileSourceSize.X
                             let tileSourcePosition = v2 (single (tileIdPosition % tileSetWidth)) (single (tileIdPosition / tileSetWidth * tileSourceSize.Y))
                             let inset = box2 tileSourcePosition (v2 (single tileSourceSize.X) (single tileSourceSize.Y))
-                            VulkanRenderer2d.batchSprite absolute tileMin tileSize tilePivot 0.0f (ValueSome inset) clipOpt texture color Transparent emission flip resolveTexture renderer
+                            VulkanRenderer2d.batchSprite
+                                absolute tileMin tileSize tilePivot 0.0f (ValueSome inset) clipOpt texture userDefinedImageTextures pipelineName
+                                color Transparent emission flip userDefinedSettings resolveTexture renderer
                         | ValueNone -> ()
 
                 // fin
@@ -669,6 +791,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
     static member renderText
         (transform : Transform byref,
          clipOpt : Box2 voption inref,
+         pipelineName : string,
          text : string,
          font : Font AssetTag,
          fontSizing : single option,
@@ -676,6 +799,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
          color : Color inref,
          justification : Justification,
          caretOpt : int option,
+         userDefinedSettings : UserDefinedSettings inref,
          eyeCenter : Vector2,
          eyeSize : Vector2,
          resolveTexture : Texture,
@@ -696,6 +820,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             color.A8 <> 0uy then // render only when color isn't fully transparent because SDL_TTF doesn't handle zero alpha text as expected.
             let transform = transform // copy to local to make visible from lambda
             let clipOpt = clipOpt // same
+            let userDefinedSettings = userDefinedSettings // same
             flip4 SpriteBatch.InterruptSpriteBatchFrame renderer.Viewport resolveTexture renderer.SpriteBatchEnv $ fun () ->
 
                 // gather context for rendering text
@@ -827,30 +952,20 @@ type [<ReferenceEquality>] VulkanRenderer2d =
 
                             // draw text sprite
                             let (vertices, indices) = renderer.TextQuad
-                            let (spriteVertUniform, spriteFragUniform, pipeline) = renderer.SpritePipeline
+                            let (spriteVertUniform, spriteFragUniform, pipeline) =
+                                match renderer.SpriteSingletonPipelines.TryGetValue pipelineName with
+                                | (true, pipeline) -> pipeline
+                                | (false, _) -> renderer.SpriteSingletonPipelines[Constants.Render.PipelineNameDefault]
                             let insetOpt : Box2 voption = ValueNone
+                            let userDefinedImageTextures =
+                                { UserDefinedImage0Texture = renderer.UserDefinedImage0Texture
+                                  UserDefinedImage1Texture = renderer.UserDefinedImage1Texture
+                                  UserDefinedImage2Texture = renderer.UserDefinedImage2Texture }
                             let color = Color.White
                             SpriteSingleton.drawSpriteSingleton
-                                (vertices,
-                                 indices,
-                                 absolute,
-                                 &viewProjectionClipAbsolute,
-                                 &viewProjectionClipRelative,
-                                 modelViewProjection,
-                                 &insetOpt,
-                                 &clipOpt,
-                                 &color,
-                                 Unflipped,
-                                 textSurfaceWidth,
-                                 textSurfaceHeight,
-                                 textTexture,
-                                 renderer.UnfilteredSampler,
-                                 renderer.Viewport,
-                                 resolveTexture,
-                                 spriteVertUniform,
-                                 spriteFragUniform,
-                                 pipeline,
-                                 renderer.VulkanContext)
+                                (vertices, indices, absolute, &viewProjectionClipAbsolute, &viewProjectionClipRelative, modelViewProjection,
+                                 &insetOpt, &clipOpt, textSurfaceWidth, textSurfaceHeight, textTexture, &userDefinedImageTextures,
+                                 &color, Unflipped, &userDefinedSettings, renderer.UnfilteredSampler, renderer.Viewport, resolveTexture, spriteVertUniform, spriteFragUniform, pipeline, renderer.VulkanContext)
 
                         | None -> ()
 
@@ -861,27 +976,40 @@ type [<ReferenceEquality>] VulkanRenderer2d =
     static member private renderDescriptor descriptor eyeCenter eyeSize resolveTexture renderer =
         match descriptor with
         | RenderSprite descriptor ->
-            VulkanRenderer2d.renderSprite (&descriptor.Transform, &descriptor.InsetOpt, &descriptor.ClipOpt, descriptor.Image, &descriptor.Color, descriptor.Blend, &descriptor.Emission, descriptor.Flip, resolveTexture, renderer)
+            VulkanRenderer2d.renderSprite
+                (&descriptor.Transform, &descriptor.InsetOpt, &descriptor.ClipOpt, descriptor.Image, &descriptor.UserDefinedImages, descriptor.PipelineName,
+                 &descriptor.Color, descriptor.Blend, &descriptor.Emission, descriptor.Flip, &descriptor.UserDefinedSettings, resolveTexture, renderer)
         | RenderSprites descriptor ->
             let sprites = descriptor.Sprites
             for index in 0 .. sprites.Length - 1 do
                 let sprite = &sprites[index]
-                VulkanRenderer2d.renderSprite (&sprite.Transform, &sprite.InsetOpt, &sprite.ClipOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Emission, sprite.Flip, resolveTexture, renderer)
+                VulkanRenderer2d.renderSprite
+                    (&sprite.Transform, &sprite.InsetOpt, &sprite.ClipOpt, sprite.Image, &sprite.UserDefinedImages, sprite.PipelineName,
+                     &sprite.Color, sprite.Blend, &sprite.Emission, sprite.Flip, &sprite.UserDefinedSettings, resolveTexture, renderer)
         | RenderSpriteDescriptors descriptor ->
             let sprites = descriptor.SpriteDescriptors
             for index in 0 .. sprites.Length - 1 do
                 let sprite = sprites[index]
-                VulkanRenderer2d.renderSprite (&sprite.Transform, &sprite.InsetOpt, &sprite.ClipOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Emission, sprite.Flip, resolveTexture, renderer)
+                VulkanRenderer2d.renderSprite
+                    (&sprite.Transform, &sprite.InsetOpt, &sprite.ClipOpt, sprite.Image, &sprite.UserDefinedImages, sprite.PipelineName,
+                     &sprite.Color, sprite.Blend, &sprite.Emission, sprite.Flip, &sprite.UserDefinedSettings, resolveTexture, renderer)
         | RenderSpriteParticles descriptor ->
-            VulkanRenderer2d.renderSpriteParticles (&descriptor.ClipOpt, descriptor.Blend, descriptor.Image, descriptor.Particles, resolveTexture, renderer)
+            VulkanRenderer2d.renderSpriteParticles
+                (&descriptor.ClipOpt, descriptor.Blend, descriptor.Image, descriptor.UserDefinedImages, descriptor.PipelineName,
+                 descriptor.Particles, resolveTexture, renderer)
         | RenderCachedSprite descriptor ->
-            VulkanRenderer2d.renderSprite (&descriptor.CachedSprite.Transform, &descriptor.CachedSprite.InsetOpt, &descriptor.CachedSprite.ClipOpt, descriptor.CachedSprite.Image, &descriptor.CachedSprite.Color, descriptor.CachedSprite.Blend, &descriptor.CachedSprite.Emission, descriptor.CachedSprite.Flip, resolveTexture, renderer)
+            let d = descriptor
+            VulkanRenderer2d.renderSprite
+                (&d.CachedSprite.Transform, &d.CachedSprite.InsetOpt, &d.CachedSprite.ClipOpt, d.CachedSprite.Image, &d.CachedSprite.UserDefinedImages, d.CachedSprite.PipelineName,
+                 &d.CachedSprite.Color, d.CachedSprite.Blend, &d.CachedSprite.Emission, d.CachedSprite.Flip, &d.CachedSprite.UserDefinedSettings, resolveTexture, renderer)
         | RenderText descriptor ->
-            VulkanRenderer2d.renderText (&descriptor.Transform, &descriptor.ClipOpt, descriptor.Text, descriptor.Font, descriptor.FontSizing, descriptor.FontStyling, &descriptor.Color, descriptor.Justification, descriptor.CaretOpt, eyeCenter, eyeSize, resolveTexture, renderer)
+            VulkanRenderer2d.renderText
+                (&descriptor.Transform, &descriptor.ClipOpt, descriptor.PipelineName, descriptor.Text, descriptor.Font, descriptor.FontSizing, descriptor.FontStyling,
+                 &descriptor.Color, descriptor.Justification, descriptor.CaretOpt, &descriptor.UserDefinedSettings, eyeCenter, eyeSize, resolveTexture, renderer)
         | RenderTiles descriptor ->
             VulkanRenderer2d.renderTiles
-                (&descriptor.Transform, &descriptor.ClipOpt, &descriptor.Color, &descriptor.Emission,
-                 descriptor.MapSize, descriptor.Tiles, descriptor.TileSourceSize, descriptor.TileSize, descriptor.TileAssets,
+                (&descriptor.Transform, &descriptor.ClipOpt, &descriptor.Color, &descriptor.Emission, descriptor.PipelineName,
+                 &descriptor.UserDefinedSettings, descriptor.MapSize, descriptor.Tiles, descriptor.TileSourceSize, descriptor.TileSize, descriptor.TileAssets,
                  eyeCenter, eyeSize, resolveTexture, renderer)
         | RenderContour descriptor ->
             VulkanRenderer2d.renderContour descriptor eyeCenter eyeSize resolveTexture renderer
@@ -890,7 +1018,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         for operation in renderer.LayeredOperations do
             VulkanRenderer2d.renderDescriptor operation.RenderOperation2d eyeCenter eyeSize resolveTexture renderer
 
-    static member private preRender eyeCenter eyeSize viewport renderMessages renderer =
+    static member private preRender eyeCenter eyeSize viewport renderMessages resolveTextureFormat renderer =
 
         // delete textures as requested on previous frame
         TextureDumpster.dump renderer.TextureDumpster renderer.VulkanContext
@@ -903,13 +1031,14 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         SpriteBatch.beginSpriteBatchFrame (&viewProjectionAbsolute, &viewProjectionRelative, &viewProjectionClipAbsolute, &viewProjectionClipRelative, renderer.SpriteBatchEnv)
 
         // begin single sprite frame
-        match renderer.SpritePipeline with (_, _, pipeline) -> Pipeline.beginFrame pipeline
+        for (_, _, pipeline) in renderer.SpriteSingletonPipelines.Values do
+            Pipeline.beginFrame pipeline
 
         // being contour frame
         match renderer.ContourPipeline with (_, _, _, _, _, pipeline) -> Pipeline.beginFrame pipeline
 
-        // categorzie render messages
-        VulkanRenderer2d.categorizeRenderMessages renderMessages renderer
+        // categorize render messages
+        VulkanRenderer2d.categorizeRenderMessages renderMessages resolveTextureFormat renderer
 
         // sort layered operations
         VulkanRenderer2d.sortLayeredOperations renderer
@@ -968,7 +1097,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         let filteredSampler = Sampler.create VkSamplerAddressMode.Repeat VkFilter.Linear VkFilter.Linear true context
 
         // create text resources
-        let spriteSingletonPipeline = SpriteSingleton.createSpriteSingletonPipeline resolveTexture context
+        let spriteSingletonPipeline = SpriteSingleton.createSpriteSingletonPipeline Constants.Paths.SpriteSingletonShaderFilePath resolveTexture context
+        let spriteSingletonPipelines = dictPlus StringComparer.Ordinal [(Constants.Render.PipelineNameDefault, spriteSingletonPipeline)]
         let textQuad = SpriteSingleton.createSpriteQuad true context
         let textureDumpster = TextureDumpster.create ()
 
@@ -978,16 +1108,33 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         // create contour pipeline (Slug analytic coverage)
         let contourPipeline = Contour.createPipeline resolveTexture context
 
+        // create user-defined textures
+        let userDefinedImage0Texture =
+            match TextureInternal.tryCreate false true ColorCompression ("Assets/Default/UserDefinedImage0.png") RenderThread context with
+            | Right textureInternal -> EagerTexture textureInternal
+            | Left error -> failwith ("Could not load user-defined image 0 texture due to: " + error)
+        let userDefinedImage1Texture =
+            match TextureInternal.tryCreate false true ColorCompression ("Assets/Default/UserDefinedImage1.png") RenderThread context with
+            | Right textureInternal -> EagerTexture textureInternal
+            | Left error -> failwith ("Could not load user-defined image 1 texture due to: " + error)
+        let userDefinedImage2Texture =
+            match TextureInternal.tryCreate false true ColorCompression ("Assets/Default/UserDefinedImage2.png") RenderThread context with
+            | Right textureInternal -> EagerTexture textureInternal
+            | Left error -> failwith ("Could not load user-defined image 2 texture due to: " + error)
+
         // make renderer
         let renderer =
             { Viewport = viewport
               TextQuad = textQuad
               UnfilteredSampler = unfilteredSampler
               FilteredSampler = filteredSampler
-              TextTextures = dictPlus HashIdentity.Structural []
+              SpriteSingletonPipelines = spriteSingletonPipelines
               SpriteBatchEnv = spriteBatchEnv
-              SpritePipeline = spriteSingletonPipeline
               ContourPipeline = contourPipeline
+              TextTextures = dictPlus HashIdentity.Structural []
+              UserDefinedImage0Texture = userDefinedImage0Texture
+              UserDefinedImage1Texture = userDefinedImage1Texture
+              UserDefinedImage2Texture = userDefinedImage2Texture
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCached = { CachedAssetTagOpt = Unchecked.defaultof<_>; CachedRenderAsset = Unchecked.defaultof<_> }
@@ -1001,8 +1148,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
     
     interface Renderer2d with
 
-        member renderer.PreRender eyeCenter eyeSize viewport renderMessages =
-            VulkanRenderer2d.preRender eyeCenter eyeSize viewport renderMessages renderer
+        member renderer.PreRender eyeCenter eyeSize viewport renderMessages resolveTextureFormat =
+            VulkanRenderer2d.preRender eyeCenter eyeSize viewport renderMessages resolveTextureFormat renderer
 
         member renderer.Render eyeCenter eyeSize viewport resolveTexture =
             VulkanRenderer2d.render eyeCenter eyeSize viewport resolveTexture renderer
@@ -1010,14 +1157,17 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         member renderer.CleanUp () =
 
             // destroy vulkan resources
-            let (_, _, spritePipeline) = renderer.SpritePipeline
+            for (_, _, spriteSingletonPipeline) in renderer.SpriteSingletonPipelines.Values do
+                Pipeline.destroy spriteSingletonPipeline renderer.VulkanContext
             let (textVertexBuffer, textIndexBuffer) = renderer.TextQuad
             let (_, _, _, _, _, contourPipeline) = renderer.ContourPipeline
+            Texture.destroy renderer.UserDefinedImage0Texture renderer.VulkanContext
+            Texture.destroy renderer.UserDefinedImage1Texture renderer.VulkanContext
+            Texture.destroy renderer.UserDefinedImage2Texture renderer.VulkanContext
             for (_, _, _, textTexture) in Seq.map snd renderer.TextTextures.Values do Texture.destroy textTexture renderer.VulkanContext
             renderer.TextTextures.Clear ()
             Sampler.destroy renderer.UnfilteredSampler
             Sampler.destroy renderer.FilteredSampler
-            Pipeline.destroy spritePipeline renderer.VulkanContext
             Pipeline.destroy contourPipeline renderer.VulkanContext
             VulkanBuffer.destroy textVertexBuffer renderer.VulkanContext
             VulkanBuffer.destroy textIndexBuffer renderer.VulkanContext

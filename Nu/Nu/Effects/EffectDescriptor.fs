@@ -65,10 +65,7 @@ type Slice =
       mutable LightCutoff : single
       mutable Volume : single
       mutable Enabled : bool
-      mutable UserDefinedSetting0 : single
-      mutable UserDefinedSetting1 : single
-      mutable UserDefinedSetting2 : single
-      mutable UserDefinedSetting3 : single } // TODO: consider utilizing settings 4-7 as well.
+      mutable UserDefinedSettings : UserDefinedSettings }
     static member copy slice =
         { slice with SliceDelta = slice.SliceDelta }
 
@@ -175,10 +172,7 @@ and Aspect =
     | LightCutoff of single
     | Volume of single
     | Enabled of bool
-    | UserDefinedSetting0 of single
-    | UserDefinedSetting1 of single
-    | UserDefinedSetting2 of single
-    | UserDefinedSetting3 of single
+    | UserDefinedSetting of int * single
     | Positions of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : Tween3KeyFrame array
     | PositionLocals of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : Tween3KeyFrame array
     | Scales of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : Tween3KeyFrame array
@@ -197,19 +191,18 @@ and Aspect =
     | LightCutoffs of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
     | Volumes of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
     | Enableds of Applicator : LogicApplicator * Playback : Playback * KeyFrames : LogicKeyFrame array
-    | UserDefinedSetting0s of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
-    | UserDefinedSetting1s of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
-    | UserDefinedSetting2s of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
-    | UserDefinedSetting3s of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
+    | UserDefinedSettings of Index : int * Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
     | Expand of Name : string * Args : Argument array
     | Aspects of Aspects : Aspect array
 
 /// Represents types of content used in an effect.
 and Content =
     | Nil // first to make default value when missing
-    | StaticSprite of Image : Resource * Aspects : Aspect array * Content : Content
-    | AnimatedSprite of Image : Resource * CelSize : Vector2i * CelCount : int * CelRun : int * CelDelay : GameTime * Playback : Playback * Aspects : Aspect array * Content : Content
-    | TextSprite of Font : Resource * Text : string * FontSizing : single option * FontStyling : FontStyle Set * Aspects : Aspect array * Content : Content
+    | UserDefinedStaticSprite of Image : Resource * UserDefinedImage0 : Resource * UserDefinedImage1 : Resource * UserDefinedImage2 : Resource * PipelineName : string * Aspects : Aspect array * Content : Content
+    | StaticSprite of Image : Resource * PipelineName : string * Aspects : Aspect array * Content : Content
+    | UserDefinedAnimatedSprite of Image : Resource * UserDefinedImage0 : Resource * UserDefinedImage1 : Resource * UserDefinedImage2 : Resource * PipelineName : string * CelSize : Vector2i * CelCount : int * CelRun : int * CelDelay : GameTime * Playback : Playback * Aspects : Aspect array * Content : Content
+    | AnimatedSprite of Image : Resource * PipelineName : string * CelSize : Vector2i * CelCount : int * CelRun : int * CelDelay : GameTime * Playback : Playback * Aspects : Aspect array * Content : Content
+    | TextSprite of Font : Resource * Text : string * PipelineName : string * FontSizing : single option * FontStyling : FontStyle Set * Aspects : Aspect array * Content : Content
     | Billboard of Material : Material * Properties : MaterialProperties * Aspects : Aspect array * Content : Content
     | StaticModel of Resource : Resource * Material : Material * Properties : MaterialProperties * Aspects : Aspect array * Content : Content
     | Light3d of LightType : LightType * Aspects : Aspect array * Content : Content

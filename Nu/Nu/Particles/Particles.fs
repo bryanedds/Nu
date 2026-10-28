@@ -744,9 +744,11 @@ type [<ReferenceEquality>] StaticSpriteEmitter<'a when 'a :> Particle and 'a : e
     { mutable Body : Body // mutable for animation
       Absolute : bool
       Elevation : single
-      Blend : Blend
       ClipOpt : Box2 option
       Image : Image AssetTag
+      UserDefinedImages : UserDefinedImages
+      PipelineName : string
+      Blend : Blend
       Life : Life
       ParticleLifeTimeMaxOpt : GameTime // OPTIMIZATION: uses GameTime.zero to represent infinite particle life.
       ParticleRate : single
@@ -812,14 +814,16 @@ type [<ReferenceEquality>] StaticSpriteEmitter<'a when 'a :> Particle and 'a : e
 
     /// Make a basic static sprite particle emitter.
     static member make<'a>
-        time body absolute elevation blend clipOpt image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
-        constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors toParticlesDescriptor : 'a StaticSpriteEmitter =
+        time body absolute elevation clipOpt image userDefinedImages pipelineName blend lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed constrain
+        particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors toParticlesDescriptor : 'a StaticSpriteEmitter =
         { Body = body
           Absolute = absolute
           Elevation = elevation
-          Blend = blend
           ClipOpt = clipOpt
           Image = image
+          UserDefinedImages = userDefinedImages
+          PipelineName = pipelineName
+          Blend = blend
           Life = Life.make time lifeTimeOpt
           ParticleLifeTimeMaxOpt = particleLifeTimeMaxOpt
           ParticleRate = particleRate
@@ -884,8 +888,10 @@ module BasicStaticSpriteEmitter =
           Elevation = emitter.Elevation
           Horizon = emitter.Body.Position.Y
           ClipOpt = Option.toValueOption emitter.ClipOpt
-          Blend = emitter.Blend
           Image = emitter.Image
+          UserDefinedImages = emitter.UserDefinedImages
+          PipelineName = emitter.PipelineName
+          Blend = emitter.Blend
           Particles = particles' }
 
     /// Resize the emitter.
@@ -895,15 +901,21 @@ module BasicStaticSpriteEmitter =
 
     /// Make a basic static sprite particle emitter.
     let make
-        time body elevation absolute blend clipOpt image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
-        constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors =
+        time body elevation absolute clipOpt image userDefinedImages pipelineName blend
+        lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed constrain
+        particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors =
         BasicStaticSpriteEmitter.make
-            time body elevation absolute blend clipOpt image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
-            constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors toParticlesDescriptor
+            time body elevation absolute clipOpt image userDefinedImages pipelineName blend
+            lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed constrain
+            particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors toParticlesDescriptor
 
     /// Make an empty basic sprite particle emitter.
     let makeEmpty time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax =
         let image = asset Assets.Default.PackageName Assets.Default.ImageName
+        let userDefinedImages =
+            { UserDefinedImage0 = asset Assets.Default.PackageName Assets.Default.UserDefinedImage0Name
+              UserDefinedImage1 = asset Assets.Default.PackageName Assets.Default.UserDefinedImage1Name
+              UserDefinedImage2 = asset Assets.Default.PackageName Assets.Default.UserDefinedImage2Name }
         let particleSeed = Unchecked.defaultof<BasicParticle>
         let particleInitializer = fun _ (emitter : BasicStaticSpriteEmitter) -> emitter.ParticleSeed
         let particleBehavior = fun _ _ -> Output.empty
@@ -911,12 +923,17 @@ module BasicStaticSpriteEmitter =
         let emitterBehavior = fun _ _ -> Output.empty
         let emitterBehaviors = Behaviors.empty
         make
-            time Body.defaultBody false 0.0f Transparent None image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
-            Constraint.empty particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors
+            time Body.defaultBody false 0.0f None image userDefinedImages
+            Constants.Render.PipelineNameDefault Transparent lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed Constraint.empty
+            particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors
 
     /// Make the default basic sprite particle emitter.
     let makeDefault time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax =
         let image = asset Assets.Default.PackageName Assets.Default.ImageName
+        let userDefinedImages =
+            { UserDefinedImage0 = asset Assets.Default.PackageName Assets.Default.UserDefinedImage0Name
+              UserDefinedImage1 = asset Assets.Default.PackageName Assets.Default.UserDefinedImage1Name
+              UserDefinedImage2 = asset Assets.Default.PackageName Assets.Default.UserDefinedImage2Name }
         let particleSeed =
             { Life = Life.make GameTime.zero (GameTime.ofSeconds 2.0)
               Body = Body.defaultBody
@@ -961,7 +978,8 @@ module BasicStaticSpriteEmitter =
         let emitterBehaviors =
             Behaviors.empty
         make
-            time Body.defaultBody false 0.0f Transparent None image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
+            time Body.defaultBody false 0.0f None image userDefinedImages
+            Constants.Render.PipelineNameDefault Transparent lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
             Constraint.empty particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors
 
 /// A tag interface for emitter descriptors.

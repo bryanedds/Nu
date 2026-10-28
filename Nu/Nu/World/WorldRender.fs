@@ -92,8 +92,12 @@ module WorldRender =
             for operation in operations do rendererProcess.EnqueueMessage2d (LayeredOperation2d operation)
 
         /// Send a message to the render system to render a static model using a fast path.
-        static member renderLayeredSpriteFast (elevation, horizon, assetTag, transform : Transform inref, insetOpt : Box2 ValueOption inref, clipOpt : Box2 ValueOption inref, image, color : Color inref, blend, emission : Color inref, flip, world) =
-            (World.getRendererProcess world).RenderLayeredSpriteFast (elevation, horizon, assetTag, &transform, &insetOpt, &clipOpt, image, &color, blend, &emission, flip)
+        static member renderLayeredSpriteFast
+            (elevation, horizon, assetTag, transform : Transform inref, insetOpt : Box2 ValueOption inref, clipOpt : Box2 ValueOption inref,
+            image, userDefinedImages : UserDefinedImages inref, pipelineName, color : Color inref, blend, emission : Color inref, flip, userDefinedSettings : UserDefinedSettings inref, world) =
+            (World.getRendererProcess world).RenderLayeredSpriteFast
+                (elevation, horizon, assetTag, &transform, &insetOpt, &clipOpt,
+                 image, &userDefinedImages, pipelineName, &color, blend, &emission, flip, &userDefinedSettings)
 
         /// Load a 2d render asset package. Should be used to avoid loading assets at inconvenient times (such as in the
         /// middle of game play!)
@@ -121,15 +125,18 @@ module WorldRender =
             World.enqueueRenderMessageImGui reloadRenderAssetsMessage world
 
         /// Render a gui sprite.
-        static member renderGuiSprite absolute perimeter spriteImage offset elevation color world =
+        static member renderGuiSprite absolute perimeter spriteImage pipelineName offset elevation color userDefinedSettings world =
             let mutable spriteTransform = Transform.makePerimeter absolute perimeter offset elevation // out-of-box gui ignores rotation
             let insetOpt = ValueOption<Box2>.None
             let perimeter = ValueSome perimeter.Box2
+            let userDefinedImages = UserDefinedImages.defaultImages
             let blend = Color.Zero
-            World.renderLayeredSpriteFast (spriteTransform.Elevation, spriteTransform.Horizon, spriteImage, &spriteTransform, &insetOpt, &perimeter, spriteImage, &color, Transparent, &blend, Unflipped, world)
+            World.renderLayeredSpriteFast
+                (spriteTransform.Elevation, spriteTransform.Horizon, spriteImage, &spriteTransform, &insetOpt, &perimeter,
+                 spriteImage, &userDefinedImages, pipelineName, &color, Transparent, &blend, Unflipped, &userDefinedSettings, world)
 
         /// Render a gui sprite with 9-way slicing.
-        static member renderGuiSpriteSliced absolute perimeter margin spriteImage offset elevation color world =
+        static member renderGuiSpriteSliced absolute perimeter margin spriteImage pipelineName offset elevation color userDefinedSettings world =
             if margin <> v2Zero then
                 for i in 0 .. dec 9 do
                     let slice = box3Slice i margin perimeter
@@ -139,18 +146,21 @@ module WorldRender =
                         | ValueNone -> ValueNone
                     let mutable spriteTransform = Transform.makePerimeter absolute slice offset elevation // out-of-box gui ignores rotation
                     let perimeter = ValueSome perimeter.Box2
+                    let userDefinedImages = UserDefinedImages.defaultImages
                     let blend = Color.Zero
-                    World.renderLayeredSpriteFast (spriteTransform.Elevation, spriteTransform.Horizon, spriteImage, &spriteTransform, &insetOpt, &perimeter, spriteImage, &color, Transparent, &blend, Unflipped, world)
-            else World.renderGuiSprite absolute perimeter spriteImage offset elevation color world
+                    World.renderLayeredSpriteFast
+                        (spriteTransform.Elevation, spriteTransform.Horizon, spriteImage, &spriteTransform, &insetOpt, &perimeter,
+                         spriteImage, &userDefinedImages, pipelineName, &color, Transparent, &blend, Unflipped, &userDefinedSettings, world)
+            else World.renderGuiSprite absolute perimeter spriteImage pipelineName offset elevation color userDefinedSettings world
 
-        static member renderGuiText absolute (perimeter : Box3) offset elevation shift clipOpt justification caretOpt textMargin color font fontSizing fontStyling text world =
+        static member renderGuiText absolute (perimeter : Box3) offset elevation shift clipOpt pipelineName text textMargin font fontSizing fontStyling color justification caretOpt userDefinedSettings world =
             if not (String.IsNullOrWhiteSpace text) || Option.isSome caretOpt then
                 let mutable textTransform = Transform.makeDefault ()
                 textTransform.Position <- perimeter.Center + textMargin + offset // out-of-box gui ignores rotation and scale
                 textTransform.Size <- perimeter.Size - textMargin * 2.0f
                 textTransform.Elevation <- elevation + shift
                 textTransform.Absolute <- absolute
-                let descriptor = { Transform = textTransform; ClipOpt = clipOpt; Text = text; Font = font; FontSizing = fontSizing; FontStyling = fontStyling; Color = color; Justification = justification; CaretOpt = caretOpt }
+                let descriptor = { Transform = textTransform; ClipOpt = clipOpt; PipelineName = pipelineName; Text = text; Font = font; FontSizing = fontSizing; FontStyling = fontStyling; Color = color; Justification = justification; CaretOpt = caretOpt; UserDefinedSettings = userDefinedSettings }
                 let operation = { Elevation = textTransform.Elevation; Horizon = perimeter.Center.Y; AssetTag = font; RenderOperation2d = RenderText descriptor }
                 World.enqueueLayeredOperation2d operation world
 
