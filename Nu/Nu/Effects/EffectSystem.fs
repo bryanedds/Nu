@@ -449,8 +449,8 @@ module EffectSystem =
         // build implicitly mounted content
         evalContent content slice history effectSystem
 
-    and private evalStaticSprite resource aspects content slice history effectSystem =
-        evalUserDefinedStaticSprite resource UserDefinedResource0 UserDefinedResource1 UserDefinedResource2 Constants.Render.PipelineNameDefault aspects content slice history effectSystem
+    and private evalStaticSprite resource pipelineName aspects content slice history effectSystem =
+        evalUserDefinedStaticSprite resource UserDefinedResource0 UserDefinedResource1 UserDefinedResource2 pipelineName aspects content slice history effectSystem
          
     and private evalUserDefinedAnimatedSprite resource userDefinedResource0 userDefinedResource1 userDefinedResource2 pipelineName (celSize : Vector2i) celCount celRun delay playback aspects content slice history effectSystem =
     
@@ -503,8 +503,8 @@ module EffectSystem =
         // abandon evaluation
         else effectSystem
 
-    and private evalAnimatedSprite resource (celSize : Vector2i) celCount celRun delay playback aspects content slice history effectSystem =
-        evalUserDefinedAnimatedSprite resource UserDefinedResource0 UserDefinedResource1 UserDefinedResource2 Constants.Render.PipelineNameDefault celSize celCount celRun delay playback aspects content slice history effectSystem
+    and private evalAnimatedSprite resource pipelineName (celSize : Vector2i) celCount celRun delay playback aspects content slice history effectSystem =
+        evalUserDefinedAnimatedSprite resource UserDefinedResource0 UserDefinedResource1 UserDefinedResource2 pipelineName celSize celCount celRun delay playback aspects content slice history effectSystem
 
     and private evalTextSprite resource text pipelineName fontSizing fontStyling aspects content slice history effectSystem =
 
@@ -741,12 +741,12 @@ module EffectSystem =
             effectSystem
         | UserDefinedStaticSprite (resource, userDefinedResource0, userDefinedResource1, userDefinedResource2, pipelineName, aspects, content) ->
             evalUserDefinedStaticSprite resource userDefinedResource0 userDefinedResource1 userDefinedResource2 pipelineName aspects content slice history effectSystem
-        | StaticSprite (resource, aspects, content) ->
-            evalStaticSprite resource aspects content slice history effectSystem
+        | StaticSprite (resource, pipelineName, aspects, content) ->
+            evalStaticSprite resource pipelineName aspects content slice history effectSystem
         | UserDefinedAnimatedSprite (resource, userDefinedResource0, userDefinedResource1, userDefinedResource2, pipelineName, celSize, celCount, celRun, delay, playback, aspects, content) ->
             evalUserDefinedAnimatedSprite resource userDefinedResource0 userDefinedResource1 userDefinedResource2 pipelineName celSize celCount celRun delay playback aspects content slice history effectSystem
-        | AnimatedSprite (resource, celSize, celCount, celRun, delay, playback, aspects, content) ->
-            evalAnimatedSprite resource celSize celCount celRun delay playback aspects content slice history effectSystem
+        | AnimatedSprite (resource, pipelineName, celSize, celCount, celRun, delay, playback, aspects, content) ->
+            evalAnimatedSprite resource pipelineName celSize celCount celRun delay playback aspects content slice history effectSystem
         | TextSprite (resource, text, pipelineName, fontSizing, fontStyling, aspects, content) ->
             evalTextSprite resource text pipelineName fontSizing fontStyling aspects content slice history effectSystem
         | Light3d (lightType, aspects, content) ->
