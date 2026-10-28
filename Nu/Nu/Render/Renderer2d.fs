@@ -255,11 +255,12 @@ type [<ReferenceEquality>] VulkanRenderer2d =
           LayeredOperations : LayeredOperation2d List
           TextureDumpster : TextureDumpster }
 
-    static member private logRenderAssetUnavailableOnce (assetTag : AssetTag) =
+    static member private handleRenderAssetUnavailable (assetTag : AssetTag) renderer =
         let message =
             "Render asset " + assetTag.AssetName + " is not available from " + assetTag.PackageName + " package in a " + Constants.Associations.Render2d + " context. " +
             "Note that images from a " + Constants.Associations.Render3d + " context are usually not available in a " + Constants.Associations.Render2d + " context."
         Log.infoOnce message
+        ValueNone
 
     static member private invalidateCaches renderer =
         renderer.RenderPackageCachedOpt <- Unchecked.defaultof<_>
@@ -400,7 +401,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                 renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag
                 renderer.RenderAssetCached.CachedRenderAsset <- asset
                 ValueSome asset
-            else VulkanRenderer2d.logRenderAssetUnavailableOnce assetTag; ValueNone
+            else VulkanRenderer2d.handleRenderAssetUnavailable assetTag renderer
         else
             match Dictionary.tryFind assetTag.PackageName renderer.RenderPackages with
             | Some package ->
@@ -410,7 +411,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                     renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag
                     renderer.RenderAssetCached.CachedRenderAsset <- asset
                     ValueSome asset
-                else VulkanRenderer2d.logRenderAssetUnavailableOnce assetTag; ValueNone
+                else VulkanRenderer2d.handleRenderAssetUnavailable assetTag renderer
             | None ->
                 Log.info ("Loading Render2d package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
                 VulkanRenderer2d.tryLoadRenderPackage assetTag.PackageName renderer
@@ -422,7 +423,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                         renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag
                         renderer.RenderAssetCached.CachedRenderAsset <- asset
                         ValueSome asset
-                    else VulkanRenderer2d.logRenderAssetUnavailableOnce assetTag; ValueNone
+                    else VulkanRenderer2d.handleRenderAssetUnavailable assetTag renderer
                 | (false, _) -> ValueNone
 
     static member private tryGetTexture image renderer =

@@ -777,6 +777,77 @@ module WorldImGui =
                         | Some _ | None -> None
                     | _ -> None
                 World.imGuiEditPropertyRecordPlus tryReplaceAnimationName true name (typeof<Animation>) animation context world
+            | :? UserDefinedImages as images ->
+                let tryReplaceUserDefinedImageOpt (fieldInfo : PropertyInfo) (field : obj) =
+                    match context.SelectedEntityOpt with
+                    | Some selectedEntity ->
+                        let userDefinedImageSubstring = "UserDefinedImage"
+                        if fieldInfo.Name.StartsWith userDefinedImageSubstring then
+                            let indexStr = fieldInfo.Name.Substring (userDefinedImageSubstring.Length, fieldInfo.Name.Length - userDefinedImageSubstring.Length)
+                            let indexOpt =
+                                match Int32.TryParse indexStr with
+                                | (true, number) -> Some number
+                                | (false, _) -> None
+                            match indexOpt with
+                            | Some index ->
+                                let pipelineName =
+                                    match selectedEntity.TryGetProperty "PipelineName" world with
+                                    | Some property when (property.PropertyValue :? string) -> property.PropertyValue :?> string
+                                    | Some _ | None -> Constants.Render.PipelineNameDefault
+                                let descriptors = World.getUserDefinedPipeline2dDescriptors world
+                                match descriptors.TryGetValue pipelineName with
+                                | (true, pipelineDescriptor) ->
+                                    let imageNames = pipelineDescriptor.UserDefinedImageNames
+                                    if index < imageNames.Length then
+                                        ImGui.PushID name
+                                        let mutable value = field
+                                        let mutable valueStr = scstring value
+                                        let valueEdited = ImGui.InputText (imageNames[index], &valueStr, 4096u)
+                                        try let value = scvalue<Image AssetTag> valueStr
+                                            if ImGui.IsItemFocused () then context.FocusProperty ()
+                                            ImGui.PopID ()
+                                            Some (valueEdited, value :> obj)
+                                        with _ -> Some (false, field)
+                                    else Some (false, field)
+                                | (false, _) -> Some (false, field)
+                            | None -> Some (false, field)
+                        else None
+                    | None -> None
+                World.imGuiEditPropertyRecordPlus tryReplaceUserDefinedImageOpt false name (typeof<UserDefinedImages>) images context world
+            | :? UserDefinedSettings as settings ->
+                let tryReplaceUserDefinedSettingOpt (fieldInfo : PropertyInfo) (field : obj) =
+                    match context.SelectedEntityOpt with
+                    | Some selectedEntity ->
+                        let userDefinedSettingSubstring = "UserDefinedSetting"
+                        if fieldInfo.Name.StartsWith userDefinedSettingSubstring then
+                            let indexStr = fieldInfo.Name.Substring (userDefinedSettingSubstring.Length, fieldInfo.Name.Length - userDefinedSettingSubstring.Length)
+                            let indexOpt =
+                                match Int32.TryParse indexStr with
+                                | (true, number) -> Some number
+                                | (false, _) -> None
+                            match indexOpt with
+                            | Some index ->
+                                let pipelineName =
+                                    match selectedEntity.TryGetProperty "PipelineName" world with
+                                    | Some property when (property.PropertyValue :? string) -> property.PropertyValue :?> string
+                                    | Some _ | None -> Constants.Render.PipelineNameDefault
+                                let descriptors = World.getUserDefinedPipeline2dDescriptors world
+                                match descriptors.TryGetValue pipelineName with
+                                | (true, pipelineDescriptor) ->
+                                    let settingNames = pipelineDescriptor.UserDefinedSettingNames
+                                    if index < settingNames.Length then
+                                        ImGui.PushID name
+                                        let mutable value = field :?> single
+                                        let valueEdited = ImGui.DragFloat (settingNames[index], &value, context.SnapDrag)
+                                        if ImGui.IsItemFocused () then context.FocusProperty ()
+                                        ImGui.PopID ()
+                                        Some (valueEdited, value :> obj)
+                                    else Some (false, field)
+                                | (false, _) -> Some (false, field)
+                            | None -> Some (false, field)
+                        else None
+                    | None -> None
+                World.imGuiEditPropertyRecordPlus tryReplaceUserDefinedSettingOpt false name (typeof<UserDefinedSettings>) settings context world
             | :? TerrainMaterialProperties as tmps ->
                 let tryReplaceUserDefinedSettingOpt (fieldInfo : PropertyInfo) (field : obj) =
                     match context.SelectedEntityOpt with

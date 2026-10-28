@@ -16,15 +16,15 @@ type SandBox3dPlugin () =
         { Pipeline2dType = SpriteSingletonPipeline
           PipelineName = "SpriteSingletonFlipped"
           ShaderPath = "Assets/Gameplay/SpriteSingletonFlipped"
-          UserDefinedImageNames = [|"TestImageOpt"|]
-          UserDefinedSettingNames = [|"TestSettingOpt"|] }
+          UserDefinedImageNames = [|"TestImage"|]
+          UserDefinedSettingNames = [|"TestSetting"|] }
 
     let SpriteBatchFlipped =
         { Pipeline2dType = SpriteBatchPipeline
           PipelineName = "SpriteBatchFlipped"
           ShaderPath = "Assets/Gameplay/SpriteBatchFlipped"
-          UserDefinedImageNames = [|"TestImageOpt"|]
-          UserDefinedSettingNames = [|"TestSettingOpt"|] }
+          UserDefinedImageNames = [|"TestImage"|]
+          UserDefinedSettingNames = [|"TestSetting"|] }
 
     let DeferredStaticFlipped =
         { Pipeline3dType = DeferredStaticPipeline

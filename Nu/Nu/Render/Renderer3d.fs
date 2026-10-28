@@ -1562,6 +1562,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           TerrainGeometries : Dictionary<TerrainGeometryDescriptor, Dictionary<TerrainPatchDescriptor, PhysicallyBasedGeometry>>
           TerrainGeometriesUtilized : TerrainGeometryDescriptor HashSet
           CubeMap : Texture
+          ImageTexture : Texture
           WhiteTexture : Texture
           BlackTexture : Texture
           BrdfTexture : Texture
@@ -1589,11 +1590,21 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           TextureServer : TextureServer
           TextureDumpster : TextureDumpster }
 
-    static member private logRenderAssetUnavailableOnce (assetTag : AssetTag) =
-        let message =
-            "Render asset " + assetTag.AssetName + " is not available from " + assetTag.PackageName + " package in a " + Constants.Associations.Render3d + " context. " +
-            "Note that images from a " + Constants.Associations.Render2d + " context are usually not available in a " + Constants.Associations.Render3d + " context."
-        Log.infoOnce message
+    static member private handleRenderAssetUnavailable (assetTag : AssetTag) renderer =
+        if assetTag.PackageName = Assets.Default.PackageName && assetTag.AssetName = Assets.Default.ImageName then
+            ValueSome (TextureAsset renderer.ImageTexture)
+        elif assetTag.PackageName = Assets.Default.PackageName && assetTag.AssetName = Assets.Default.UserDefinedImage0Name then
+            ValueSome (TextureAsset renderer.PhysicallyBasedMaterial.UserDefinedImage0Texture)
+        elif assetTag.PackageName = Assets.Default.PackageName && assetTag.AssetName = Assets.Default.UserDefinedImage1Name then
+            ValueSome (TextureAsset renderer.PhysicallyBasedMaterial.UserDefinedImage1Texture)
+        elif assetTag.PackageName = Assets.Default.PackageName && assetTag.AssetName = Assets.Default.UserDefinedImage2Name then
+            ValueSome (TextureAsset renderer.PhysicallyBasedMaterial.UserDefinedImage2Texture)
+        else
+            let message =
+                "Render asset " + assetTag.AssetName + " is not available from " + assetTag.PackageName + " package in a " + Constants.Associations.Render3d + " context. " +
+                "Note that images from a " + Constants.Associations.Render2d + " context are usually not available in a " + Constants.Associations.Render3d + " context."
+            Log.infoOnce message
+            ValueNone
 
     static member private radicalInverse (bits : uint) =
         let mutable bits = bits
@@ -1897,7 +1908,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag
                 renderer.RenderAssetCached.CachedRenderAsset <- asset
                 ValueSome asset
-            else VulkanRenderer3d.logRenderAssetUnavailableOnce assetTag; ValueNone
+            else VulkanRenderer3d.handleRenderAssetUnavailable assetTag renderer
         else
             match Dictionary.tryFind assetTag.PackageName renderer.RenderPackages with
             | Some package ->
@@ -1907,7 +1918,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag
                     renderer.RenderAssetCached.CachedRenderAsset <- asset
                     ValueSome asset
-                else VulkanRenderer3d.logRenderAssetUnavailableOnce assetTag; ValueNone
+                else VulkanRenderer3d.handleRenderAssetUnavailable assetTag renderer
             | None ->
                 Log.info ("Loading Render3d package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
                 VulkanRenderer3d.tryLoadRenderPackage assetTag.PackageName renderer
@@ -1919,7 +1930,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                         renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag
                         renderer.RenderAssetCached.CachedRenderAsset <- asset
                         ValueSome asset
-                    else VulkanRenderer3d.logRenderAssetUnavailableOnce assetTag; ValueNone
+                    else VulkanRenderer3d.handleRenderAssetUnavailable assetTag renderer
                 | (false, _) -> ValueNone
 
     static member private tryGetFilePath (assetTag : AssetTag) renderer =
@@ -5658,6 +5669,12 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         // create physically-based quad
         let quadGeometry = PhysicallyBased.createPhysicallyBasedQuadGeometry (Some context)
 
+        // create image texture
+        let imageTexture =
+            match TextureInternal.tryCreate false true Uncompressed "Assets/Default/Image.png" RenderThread context with
+            | Right textureInternal -> EagerTexture textureInternal
+            | Left error -> failwith ("Could not load image texture due to: " + error)
+
         // create white texture
         let whiteTexture =
             match TextureInternal.tryCreate false true Uncompressed "Assets/Default/White.png" RenderThread context with
@@ -5778,15 +5795,15 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 | Right textureInternal -> EagerTexture textureInternal
                 | Left error -> failwith ("Could not load clear coat normal texture due to: " + error)
             let userDefinedImage0Texture =
-                match TextureInternal.tryCreate false true ColorCompression ("Assets/Default/UserDefinedImage0" + ext) RenderThread context with
+                match TextureInternal.tryCreate false true ColorCompression ("Assets/Default/UserDefinedImage0.png") RenderThread context with
                 | Right textureInternal -> EagerTexture textureInternal
                 | Left error -> failwith ("Could not load user-defined image 0 texture due to: " + error)
             let userDefinedImage1Texture =
-                match TextureInternal.tryCreate false true ColorCompression ("Assets/Default/UserDefinedImage1" + ext) RenderThread context with
+                match TextureInternal.tryCreate false true ColorCompression ("Assets/Default/UserDefinedImage1.png") RenderThread context with
                 | Right textureInternal -> EagerTexture textureInternal
                 | Left error -> failwith ("Could not load user-defined image 1 texture due to: " + error)
             let userDefinedImage2Texture =
-                match TextureInternal.tryCreate false true ColorCompression ("Assets/Default/UserDefinedImage2" + ext) RenderThread context with
+                match TextureInternal.tryCreate false true ColorCompression ("Assets/Default/UserDefinedImage2.png") RenderThread context with
                 | Right textureInternal -> EagerTexture textureInternal
                 | Left error -> failwith ("Could not load user-defined image 2 texture due to: " + error)
             { AlbedoTexture = albedoTexture
@@ -5848,6 +5865,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               TerrainGeometries = Dictionary HashIdentity.Structural
               TerrainGeometriesUtilized = HashSet HashIdentity.Structural
               CubeMap = cubeMap
+              ImageTexture = imageTexture
               WhiteTexture = whiteTexture
               BlackTexture = blackTexture
               BrdfTexture = brdfTexture
