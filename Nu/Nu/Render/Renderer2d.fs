@@ -127,9 +127,7 @@ type [<NoEquality; NoComparison>] SpriteParticlesDescriptor =
       Horizon : single
       ClipOpt : Box2 voption
       Image : Image AssetTag
-      UserDefinedImage0 : Image AssetTag
-      UserDefinedImage1 : Image AssetTag
-      UserDefinedImage2 : Image AssetTag
+      UserDefinedImages : UserDefinedImages
       PipelineName : string
       Blend : Blend
       Particles : Particle SArray }
@@ -609,17 +607,16 @@ type [<ReferenceEquality>] VulkanRenderer2d =
     
     /// Render sprite particles.
     static member renderSpriteParticles
-        (clipOpt : Box2 voption inref, blend : Blend,
-         image : Image AssetTag, userDefinedImage0 : Image AssetTag, userDefinedImage1 : Image AssetTag, userDefinedImage2 : Image AssetTag, pipelineName : string,
+        (clipOpt : Box2 voption inref, blend : Blend, image : Image AssetTag, userDefinedImages : UserDefinedImages, pipelineName : string,
          particles : Particle SArray, resolveTexture : Texture, renderer) =
         match VulkanRenderer2d.tryGetRenderAsset image renderer with
         | ValueSome renderAsset ->
             match renderAsset with
             | TextureAsset texture ->
                 let userDefinedImageTextures =
-                    { UserDefinedImage0Texture = VulkanRenderer2d.tryGetTexture userDefinedImage0 renderer |> ValueOption.defaultValue renderer.UserDefinedImage0Texture
-                      UserDefinedImage1Texture = VulkanRenderer2d.tryGetTexture userDefinedImage1 renderer |> ValueOption.defaultValue renderer.UserDefinedImage1Texture
-                      UserDefinedImage2Texture = VulkanRenderer2d.tryGetTexture userDefinedImage2 renderer |> ValueOption.defaultValue renderer.UserDefinedImage2Texture }
+                    { UserDefinedImage0Texture = VulkanRenderer2d.tryGetTexture userDefinedImages.UserDefinedImage0 renderer |> ValueOption.defaultValue renderer.UserDefinedImage0Texture
+                      UserDefinedImage1Texture = VulkanRenderer2d.tryGetTexture userDefinedImages.UserDefinedImage1 renderer |> ValueOption.defaultValue renderer.UserDefinedImage1Texture
+                      UserDefinedImage2Texture = VulkanRenderer2d.tryGetTexture userDefinedImages.UserDefinedImage2 renderer |> ValueOption.defaultValue renderer.UserDefinedImage2Texture }
                 let mutable index = 0
                 while index < particles.Length do
                     let particle = &particles[index]
@@ -997,7 +994,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                      &sprite.Color, sprite.Blend, &sprite.Emission, sprite.Flip, &sprite.UserDefinedSettings, resolveTexture, renderer)
         | RenderSpriteParticles descriptor ->
             VulkanRenderer2d.renderSpriteParticles
-                (&descriptor.ClipOpt, descriptor.Blend, descriptor.Image, descriptor.UserDefinedImage0, descriptor.UserDefinedImage1, descriptor.UserDefinedImage2, descriptor.PipelineName,
+                (&descriptor.ClipOpt, descriptor.Blend, descriptor.Image, descriptor.UserDefinedImages, descriptor.PipelineName,
                  descriptor.Particles, resolveTexture, renderer)
         | RenderCachedSprite descriptor ->
             let d = descriptor
