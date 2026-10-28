@@ -12,6 +12,20 @@ type SandBox3dPlugin () =
 
     let WallIndex = 0
 
+    let SpriteSingletonFlipped =
+        { Pipeline2dType = SpriteSingletonPipeline
+          PipelineName = "SpriteSingletonFlipped"
+          ShaderPath = "Assets/Gameplay/SpriteSingletonFlipped"
+          UserDefinedImageNames = [|"TestImageOpt"|]
+          UserDefinedSettingNames = [|"TestSettingOpt"|] }
+
+    let SpriteBatchFlipped =
+        { Pipeline2dType = SpriteBatchPipeline
+          PipelineName = "SpriteBatchFlipped"
+          ShaderPath = "Assets/Gameplay/SpriteBatchFlipped"
+          UserDefinedImageNames = [|"TestImageOpt"|]
+          UserDefinedSettingNames = [|"TestSettingOpt"|] }
+
     let DeferredStaticFlipped =
         { Pipeline3dType = DeferredStaticPipeline
           PipelineName = "DeferredStaticFlipped"
@@ -179,6 +193,11 @@ type SandBox3dPlugin () =
     override this.InitialPackages =
         [Assets.Gui.PackageName
          Assets.Gameplay.PackageName]
+
+    override this.UserDefinedPipeline2dDescriptors =
+        Map.ofSeq
+            [(SpriteSingletonFlipped.PipelineName, SpriteSingletonFlipped)
+             (SpriteBatchFlipped.PipelineName, SpriteBatchFlipped)]
 
     override this.UserDefinedPipeline3dDescriptors =
         Map.ofSeq
