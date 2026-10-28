@@ -1821,7 +1821,7 @@ type [<Struct>] Flip =
     | Diagonal
 
 /// User-defined settings.
-type [<Struct; StructLayout (LayoutKind.Explicit, Size = 32)>] UserDefinedSettings =
+type [<Struct; StructLayout (LayoutKind.Explicit, Size = 32); SymbolicExpansion>] UserDefinedSettings =
     { [<FieldOffset(0)>] mutable UserDefinedSetting0 : single
       [<FieldOffset(4)>] mutable UserDefinedSetting1 : single
       [<FieldOffset(8)>] mutable UserDefinedSetting2 : single

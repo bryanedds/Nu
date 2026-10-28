@@ -17,7 +17,7 @@ open Prime
 open Nu.Vulkan
 
 /// User-defined images.
-type [<Struct>] UserDefinedImages =
+type [<Struct; SymbolicExpansion>] UserDefinedImages =
     { mutable UserDefinedImage0 : Image AssetTag
       mutable UserDefinedImage1 : Image AssetTag
       mutable UserDefinedImage2 : Image AssetTag }

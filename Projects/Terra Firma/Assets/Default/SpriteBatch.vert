@@ -1,7 +1,7 @@
 #version 450 core
 
 const int VERTS = 6;
-const int SPRITE_BATCH_SIZE = 192;
+const int SPRITE_BATCH_SIZE = 128;
 
 const vec4 FILTERS[VERTS] =
     vec4[VERTS](
