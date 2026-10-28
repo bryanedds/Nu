@@ -500,8 +500,9 @@ module EffectSystem =
             // build implicitly mounted content
             evalContent content slice history effectSystem
 
-        // abandon evaL
+        // abandon evaluation
         else effectSystem
+
     and private evalAnimatedSprite resource (celSize : Vector2i) celCount celRun delay playback aspects content slice history effectSystem =
         evalUserDefinedAnimatedSprite resource UserDefinedResource0 UserDefinedResource1 UserDefinedResource2 Constants.Render.PipelineNameDefault celSize celCount celRun delay playback aspects content slice history effectSystem
 
