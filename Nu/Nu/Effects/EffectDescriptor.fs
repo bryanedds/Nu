@@ -172,14 +172,7 @@ and Aspect =
     | LightCutoff of single
     | Volume of single
     | Enabled of bool
-    | UserDefinedSetting0 of single
-    | UserDefinedSetting1 of single
-    | UserDefinedSetting2 of single
-    | UserDefinedSetting3 of single
-    | UserDefinedSetting4 of single
-    | UserDefinedSetting5 of single
-    | UserDefinedSetting6 of single
-    | UserDefinedSetting7 of single
+    | UserDefinedSetting of int * single
     | Positions of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : Tween3KeyFrame array
     | PositionLocals of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : Tween3KeyFrame array
     | Scales of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : Tween3KeyFrame array
@@ -198,14 +191,7 @@ and Aspect =
     | LightCutoffs of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
     | Volumes of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
     | Enableds of Applicator : LogicApplicator * Playback : Playback * KeyFrames : LogicKeyFrame array
-    | UserDefinedSetting0s of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
-    | UserDefinedSetting1s of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
-    | UserDefinedSetting2s of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
-    | UserDefinedSetting3s of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
-    | UserDefinedSetting4s of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
-    | UserDefinedSetting5s of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
-    | UserDefinedSetting6s of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
-    | UserDefinedSetting7s of Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
+    | UserDefinedSettings of Index : int * Applicator : TweenApplicator * Algorithm : TweenAlgorithm * Playback : Playback * KeyFrames : TweenKeyFrame array
     | Expand of Name : string * Args : Argument array
     | Aspects of Aspects : Aspect array
 

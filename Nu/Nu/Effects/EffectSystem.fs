@@ -216,14 +216,17 @@ module EffectSystem =
         | LightCutoff lightCutoff -> slice.LightCutoff <- lightCutoff; slice
         | Volume volume -> slice.Volume <- volume; slice
         | Enabled enabled -> slice.Enabled <- enabled; slice
-        | UserDefinedSetting0 setting -> slice.UserDefinedSettings.UserDefinedSetting0 <- setting; slice
-        | UserDefinedSetting1 setting -> slice.UserDefinedSettings.UserDefinedSetting1 <- setting; slice
-        | UserDefinedSetting2 setting -> slice.UserDefinedSettings.UserDefinedSetting2 <- setting; slice
-        | UserDefinedSetting3 setting -> slice.UserDefinedSettings.UserDefinedSetting3 <- setting; slice
-        | UserDefinedSetting4 setting -> slice.UserDefinedSettings.UserDefinedSetting4 <- setting; slice
-        | UserDefinedSetting5 setting -> slice.UserDefinedSettings.UserDefinedSetting5 <- setting; slice
-        | UserDefinedSetting6 setting -> slice.UserDefinedSettings.UserDefinedSetting6 <- setting; slice
-        | UserDefinedSetting7 setting -> slice.UserDefinedSettings.UserDefinedSetting7 <- setting; slice
+        | UserDefinedSetting (index, setting) ->
+            match index with
+            | 0 -> slice.UserDefinedSettings.UserDefinedSetting0 <- setting; slice
+            | 1 -> slice.UserDefinedSettings.UserDefinedSetting1 <- setting; slice
+            | 2 -> slice.UserDefinedSettings.UserDefinedSetting2 <- setting; slice
+            | 3 -> slice.UserDefinedSettings.UserDefinedSetting3 <- setting; slice
+            | 4 -> slice.UserDefinedSettings.UserDefinedSetting4 <- setting; slice
+            | 5 -> slice.UserDefinedSettings.UserDefinedSetting5 <- setting; slice
+            | 6 -> slice.UserDefinedSettings.UserDefinedSetting6 <- setting; slice
+            | 7 -> slice.UserDefinedSettings.UserDefinedSetting7 <- setting; slice
+            | _ -> slice
         | Positions (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
@@ -364,69 +367,22 @@ module EffectSystem =
                 let applied = applyLogic slice.Enabled keyFrame.LogicValue applicator
                 slice.Enabled <- applied
             slice
-        | UserDefinedSetting0s (applicator, algorithm, playback, keyFrames) ->
+        | UserDefinedSettings (index, applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween (fun (x, y) -> x * single y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
                 let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.UserDefinedSettings.UserDefinedSetting0 tweened applicator
-                slice.UserDefinedSettings.UserDefinedSetting0 <- applied
-            slice
-        | UserDefinedSetting1s (applicator, algorithm, playback, keyFrames) ->
-            if Array.notEmpty keyFrames then
-                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
-                let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
-                let tweened = tween (fun (x, y) -> x * single y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.UserDefinedSettings.UserDefinedSetting1 tweened applicator
-                slice.UserDefinedSettings.UserDefinedSetting1 <- applied
-            slice
-        | UserDefinedSetting2s (applicator, algorithm, playback, keyFrames) ->
-            if Array.notEmpty keyFrames then
-                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
-                let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
-                let tweened = tween (fun (x, y) -> x * single y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.UserDefinedSettings.UserDefinedSetting2 tweened applicator
-                slice.UserDefinedSettings.UserDefinedSetting2 <- applied
-            slice
-        | UserDefinedSetting3s (applicator, algorithm, playback, keyFrames) ->
-            if Array.notEmpty keyFrames then
-                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
-                let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
-                let tweened = tween (fun (x, y) -> x * single y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.UserDefinedSettings.UserDefinedSetting3 tweened applicator
-                slice.UserDefinedSettings.UserDefinedSetting3 <- applied
-            slice
-        | UserDefinedSetting4s (applicator, algorithm, playback, keyFrames) ->
-            if Array.notEmpty keyFrames then
-                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
-                let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
-                let tweened = tween (fun (x, y) -> x * single y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.UserDefinedSettings.UserDefinedSetting4 tweened applicator
-                slice.UserDefinedSettings.UserDefinedSetting4 <- applied
-            slice
-        | UserDefinedSetting5s (applicator, algorithm, playback, keyFrames) ->
-            if Array.notEmpty keyFrames then
-                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
-                let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
-                let tweened = tween (fun (x, y) -> x * single y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.UserDefinedSettings.UserDefinedSetting5 tweened applicator
-                slice.UserDefinedSettings.UserDefinedSetting5 <- applied
-            slice
-        | UserDefinedSetting6s (applicator, algorithm, playback, keyFrames) ->
-            if Array.notEmpty keyFrames then
-                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
-                let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
-                let tweened = tween (fun (x, y) -> x * single y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.UserDefinedSettings.UserDefinedSetting6 tweened applicator
-                slice.UserDefinedSettings.UserDefinedSetting6 <- applied
-            slice
-        | UserDefinedSetting7s (applicator, algorithm, playback, keyFrames) ->
-            if Array.notEmpty keyFrames then
-                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
-                let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
-                let tweened = tween (fun (x, y) -> x * single y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> single (Math.Pow (double x, double y))) (fun (x, y) -> x % y) slice.UserDefinedSettings.UserDefinedSetting7 tweened applicator
-                slice.UserDefinedSettings.UserDefinedSetting7 <- applied
+                match index with
+                | 0 -> slice.UserDefinedSettings.UserDefinedSetting0 <- applied
+                | 1 -> slice.UserDefinedSettings.UserDefinedSetting1 <- applied
+                | 2 -> slice.UserDefinedSettings.UserDefinedSetting2 <- applied
+                | 3 -> slice.UserDefinedSettings.UserDefinedSetting3 <- applied
+                | 4 -> slice.UserDefinedSettings.UserDefinedSetting4 <- applied
+                | 5 -> slice.UserDefinedSettings.UserDefinedSetting5 <- applied
+                | 6 -> slice.UserDefinedSettings.UserDefinedSetting6 <- applied
+                | 7 -> slice.UserDefinedSettings.UserDefinedSetting7 <- applied
+                | _ -> ()
             slice
         | Aspect.Expand (definitionName, _) ->
             match Map.tryFind definitionName effectSystem.EffectEnv with
