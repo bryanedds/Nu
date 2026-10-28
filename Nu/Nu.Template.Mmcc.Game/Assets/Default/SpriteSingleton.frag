@@ -3,6 +3,7 @@
 struct SpriteFragStruct
 {
     vec4 color;
+    vec4 userDefinedSettings[2];
 };
 
 layout(set = 0, binding = 1) uniform SpriteFragUniform { SpriteFragStruct sprite; };
