@@ -83,5 +83,6 @@ void main()
     materialOut = material;
     material2Out = material2;
     subsurfacePlusOut = subsurfacePlus;
+    userDefinedSettingsOut = userDefinedSettings;
     gl_Position = eye.viewProjection * positionOut;
 }
