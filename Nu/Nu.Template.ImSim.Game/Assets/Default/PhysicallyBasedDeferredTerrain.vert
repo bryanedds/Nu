@@ -76,6 +76,7 @@ layout(location = 5) out vec3 tintOut;
 layout(location = 6) flat out vec4 albedoOut;
 layout(location = 7) flat out vec4 materialOut;
 layout(location = 8) flat out vec4 material2Out;
+layout(location = 9) flat out vec4 userDefinedSettingsOut[2];
 
 void main()
 {
@@ -85,11 +86,11 @@ void main()
     vec2 texCoordsOffsetFilter2 = TEX_COORDS_OFFSET_FILTERS_2[texCoordsOffsetIndex];
     texCoordsOut = texCoords + texCoordsOffset.xy * texCoordsOffsetFilter + texCoordsOffset.zw * texCoordsOffsetFilter2;
     normalOut = transpose(inverse(mat3(model))) * normal;
+    blendsOut = blends;
+    tintOut = tint;
     albedoOut = albedo;
     materialOut = material;
     material2Out = material2;
-    blendsOut[0] = blends[0];
-    blendsOut[1] = blends[1];
-    tintOut = tint;
+    userDefinedSettingsOut = userDefinedSettings;
     gl_Position = eye.viewProjection * positionOut;
 }
