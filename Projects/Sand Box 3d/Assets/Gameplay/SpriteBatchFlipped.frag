@@ -9,6 +9,7 @@ layout(set = 2, binding = 0) uniform sampler inputSampler;
 
 layout(location = 0) in vec2 texCoords;
 layout(location = 1) in vec4 color;
+layout(location = 2) in vec4 userDefinedSettings[2];
 
 layout(location = 0) out vec4 frag;
 
