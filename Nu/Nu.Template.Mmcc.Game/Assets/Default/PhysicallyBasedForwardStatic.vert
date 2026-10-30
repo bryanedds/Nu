@@ -68,6 +68,7 @@ layout(location = 4) flat out vec4 albedoOut;
 layout(location = 5) flat out vec4 materialOut;
 layout(location = 6) flat out vec4 material2Out;
 layout(location = 7) flat out vec4 subsurfacePlusOut;
+layout(location = 8) flat out vec4 userDefinedSettingsOut[2];
 
 void main()
 {

@@ -1341,12 +1341,11 @@ module WorldModuleEntity =
             let facetType = facet.GetType ()
             let facetPropertyDefinitions = Reflection.getPropertyDefinitions facetType
             if Reflection.isFacetCompatibleWithDispatcher entityDispatchers facet entityState then
-                List.notExists
-                    (fun (propertyDefinition : PropertyDefinition) ->
-                        let mutable property = Unchecked.defaultof<_>
-                        match Xtension.tryGetProperty (propertyDefinition.PropertyName, entityState.Xtension, &property) with
-                        | true -> property.PropertyType <> propertyDefinition.PropertyType
-                        | false -> false)
+                List.notExists (fun (propertyDefinition : PropertyDefinition) ->
+                    let mutable property = Unchecked.defaultof<_>
+                    match Xtension.tryGetProperty (propertyDefinition.PropertyName, entityState.Xtension, &property) with
+                    | true -> property.PropertyType <> propertyDefinition.PropertyType
+                    | false -> false)
                     facetPropertyDefinitions
             else false
 
@@ -1363,21 +1362,18 @@ module WorldModuleEntity =
 
             // compute the difference of the counts
             let finalPropertyDefinitionNameCounts =
-                Map.map
-                    (fun propertyName propertyCount ->
-                        match Map.tryFind propertyName facetPropertyDefinitionNameCounts with
-                        | Some facetPropertyCount -> propertyCount - facetPropertyCount
-                        | None -> propertyCount)
+                Map.map (fun propertyName propertyCount ->
+                    match Map.tryFind propertyName facetPropertyDefinitionNameCounts with
+                    | Some facetPropertyCount -> propertyCount - facetPropertyCount
+                    | None -> propertyCount)
                     propertyDefinitionNameCounts
 
             // build a set of all property names where the final counts are negative
-            Map.fold
-                (fun propertyNamesToDetach propertyName propertyCount ->
-                    if propertyCount = 0
-                    then Set.add propertyName propertyNamesToDetach
-                    else propertyNamesToDetach)
-                Set.empty
-                finalPropertyDefinitionNameCounts
+            Map.fold (fun propertyNamesToDetach propertyName propertyCount ->
+                if propertyCount = 0
+                then Set.add propertyName propertyNamesToDetach
+                else propertyNamesToDetach)
+                Set.empty finalPropertyDefinitionNameCounts
 
         /// Get an entity's intrinsic facet names.
         static member getEntityIntrinsicFacetNames entityState =
@@ -1768,12 +1764,10 @@ module WorldModuleEntity =
             let dispatcher = World.getEntityDispatcher entity world
             let facets = World.getEntityFacets entity world
             let attributes = dispatcher.GetAttributesInferred (entity, world)
-            Array.fold
-                (fun attributes (facet : Facet) ->
-                    let attributes2 = facet.GetAttributesInferred (entity, world)
-                    AttributesInferred.choose attributes attributes2)
-                attributes
-                facets
+            Array.fold (fun attributes (facet : Facet) ->
+                let attributes2 = facet.GetAttributesInferred (entity, world)
+                AttributesInferred.choose attributes attributes2)
+                attributes facets
 
         static member internal getEntitySortingPriority2d entity world =
             let entityState = World.getEntityState entity world
