@@ -7,15 +7,15 @@
     <meta content="Nu" name="author">
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
-    <meta property="og:title" content="TerrainFragStruct (Nu)" />
+    <meta property="og:title" content="SongRequest (Nu)" />
     <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="/Nu/">
-    <meta name="twitter:title" content="TerrainFragStruct (Nu)">
+    <meta name="twitter:title" content="SongRequest (Nu)">
     
-    <title>TerrainFragStruct (Nu) | Nu</title>
+    <title>SongRequest (Nu) | Nu</title>
     <link href="https://fonts.googleapis.com" rel="preconnect">
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
@@ -92,13 +92,13 @@
     <div id="content">
         <div>
   <h2>
-    TerrainFragStruct Type
+    SongRequest Type
   </h2>
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="/Nu/reference/nu-vulkan.html">
-        Nu.Vulkan
+      <a href="/Nu/reference/nu.html">
+        Nu
       </a>
     </dt>
     <dt>
@@ -106,44 +106,40 @@
     </dt>
     <dt>
       Base Type: 
-      <code><a href="https://learn.microsoft.com/dotnet/api/system.valuetype">ValueType</a></code>
+      <code>obj</code>
     </dt>
     <dt>
       All Interfaces: 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/nu-vulkan-terrainfragstruct.html">TerrainFragStruct</a>&gt;</span></code>
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/nu-songrequest.html">SongRequest</a>&gt;</span></code>
       , 
       <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralequatable">IStructuralEquatable</a></code>
       , 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.icomparable-1">IComparable</a>&lt;<a href="/Nu/reference/nu-vulkan-terrainfragstruct.html">TerrainFragStruct</a>&gt;</span></code>
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.icomparable-1">IComparable</a>&lt;<a href="/Nu/reference/nu-songrequest.html">SongRequest</a>&gt;</span></code>
       , 
       <code><a href="https://learn.microsoft.com/dotnet/api/system.icomparable">IComparable</a></code>
       , 
       <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralcomparable">IStructuralComparable</a></code>
     </dt>
-    <dt>
-      Kind: Struct
-    </dt>
   </dl>
   <div class="fsdocs-xmldoc">
     <div>
       <p class="fsdocs-summary">
-        
+         Specified the requested song, if any, or whether to ignore song request functionality altogether.
       </p>
     </div>
   </div>
   <div></div>
   <div></div>
   <div></div>
-  <div></div>
   <div>
     <h3>
-      Record fields
+      Union cases
     </h3>
     <table class="table outer-list fsdocs-member-list">
       <thead>
         <tr>
           <td class="fsdocs-member-list-header">
-            Record Field
+            Union case
           </td>
           <td class="fsdocs-member-list-header">
             Description
@@ -154,252 +150,160 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '9562', 9562)" onmouseover="showTip(event, '9562', 9562)">
+              <code onmouseout="hideTip(event, '7780', 7780)" onmouseover="showTip(event, '7780', 7780)">
                 <p>
-                  <a id="layersCount">
-                    <a href="#layersCount">
-                      <code>layersCount</code>
+                  <a id="RequestFadeOut">
+                    <a href="#RequestFadeOut">
+                      <code><span>RequestFadeOut&#32;<a href="/Nu/reference/nu-gametime.html">GameTime</a></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="9562">
+              <div class="fsdocs-tip" id="7780">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>layersCount</code>
+                  <code><span>RequestFadeOut&#32;<a href="/Nu/reference/nu-gametime.html">GameTime</a></span></code>
                   <br/>
                   <br/>
-                  <span>
-                    Field type: 
-                    <code>int</code>
-                  </span>
-                  <br/>
-                  Modifiers: 
-                  mutable
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/nu-gametime.html">GameTime</a></code>
+                    </span>
+                    <br/>
+                  </ul>
                   <br/>
                 </div>
               </div>
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
                 </span>
-                <code>int</code>
+                :
+                <code><a href="/Nu/reference/nu-gametime.html">GameTime</a></code>
               </dt>
-              <dd class="fsdocs-return-docs"></dd>
+              <dd class="fsdocs-param-docs"></dd>
             </dl>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '9563', 9563)" onmouseover="showTip(event, '9563', 9563)">
+              <code onmouseout="hideTip(event, '7781', 7781)" onmouseover="showTip(event, '7781', 7781)">
                 <p>
-                  <a id="lightShadowBias">
-                    <a href="#lightShadowBias">
-                      <code>lightShadowBias</code>
+                  <a id="RequestIgnore">
+                    <a href="#RequestIgnore">
+                      <code><span>RequestIgnore</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="9563">
+              <div class="fsdocs-tip" id="7781">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>lightShadowBias</code>
+                  <code><span>RequestIgnore</span></code>
                   <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code>single</code>
-                  </span>
-                  <br/>
-                  Modifiers: 
-                  mutable
                   <br/>
                 </div>
               </div>
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code>single</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L255-255" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '9564', 9564)" onmouseover="showTip(event, '9564', 9564)">
+              <code onmouseout="hideTip(event, '7782', 7782)" onmouseover="showTip(event, '7782', 7782)">
                 <p>
-                  <a id="lightShadowDensity">
-                    <a href="#lightShadowDensity">
-                      <code>lightShadowDensity</code>
+                  <a id="RequestSilence">
+                    <a href="#RequestSilence">
+                      <code><span>RequestSilence</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="9564">
+              <div class="fsdocs-tip" id="7782">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>lightShadowDensity</code>
+                  <code><span>RequestSilence</span></code>
                   <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code>single</code>
-                  </span>
-                  <br/>
-                  Modifiers: 
-                  mutable
                   <br/>
                 </div>
               </div>
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code>single</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/World/WorldTypes.fs#L254-254" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '9565', 9565)" onmouseover="showTip(event, '9565', 9565)">
+              <code onmouseout="hideTip(event, '7783', 7783)" onmouseover="showTip(event, '7783', 7783)">
                 <p>
-                  <a id="lightShadowExponent">
-                    <a href="#lightShadowExponent">
-                      <code>lightShadowExponent</code>
+                  <a id="RequestSong">
+                    <a href="#RequestSong">
+                      <code><span>RequestSong&#32;<a href="/Nu/reference/nu-songdescriptor.html">SongDescriptor</a></span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="9565">
+              <div class="fsdocs-tip" id="7783">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>lightShadowExponent</code>
+                  <code><span>RequestSong&#32;<a href="/Nu/reference/nu-songdescriptor.html">SongDescriptor</a></span></code>
                   <br/>
                   <br/>
-                  <span>
-                    Field type: 
-                    <code>single</code>
-                  </span>
-                  <br/>
-                  Modifiers: 
-                  mutable
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Item
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/nu-songdescriptor.html">SongDescriptor</a></code>
+                    </span>
+                    <br/>
+                  </ul>
                   <br/>
                 </div>
               </div>
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Item
                 </span>
-                <code>single</code>
+                :
+                <code><a href="/Nu/reference/nu-songdescriptor.html">SongDescriptor</a></code>
               </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '9566', 9566)" onmouseover="showTip(event, '9566', 9566)">
-                <p>
-                  <a id="lightShadowSampleScalar">
-                    <a href="#lightShadowSampleScalar">
-                      <code>lightShadowSampleScalar</code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="9566">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code>lightShadowSampleScalar</code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code>single</code>
-                  </span>
-                  <br/>
-                  Modifiers: 
-                  mutable
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code>single</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '9567', 9567)" onmouseover="showTip(event, '9567', 9567)">
-                <p>
-                  <a id="lightShadowSamples">
-                    <a href="#lightShadowSamples">
-                      <code>lightShadowSamples</code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="9567">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code>lightShadowSamples</code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code>int</code>
-                  </span>
-                  <br/>
-                  Modifiers: 
-                  mutable
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code>int</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
+              <dd class="fsdocs-param-docs"></dd>
             </dl>
           </td>
         </tr>
@@ -409,6 +313,181 @@
   <div></div>
   <div></div>
   <div></div>
+  <div>
+    <h3>
+      Instance members
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Instance member
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '7784', 7784)" onmouseover="showTip(event, '7784', 7784)">
+                <p>
+                  <a id="IsRequestFadeOut">
+                    <a href="#IsRequestFadeOut">
+                      <code><span>this.IsRequestFadeOut</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="7784">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.IsRequestFadeOut</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>bool</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '7785', 7785)" onmouseover="showTip(event, '7785', 7785)">
+                <p>
+                  <a id="IsRequestIgnore">
+                    <a href="#IsRequestIgnore">
+                      <code><span>this.IsRequestIgnore</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="7785">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.IsRequestIgnore</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>bool</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '7786', 7786)" onmouseover="showTip(event, '7786', 7786)">
+                <p>
+                  <a id="IsRequestSilence">
+                    <a href="#IsRequestSilence">
+                      <code><span>this.IsRequestSilence</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="7786">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.IsRequestSilence</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>bool</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '7787', 7787)" onmouseover="showTip(event, '7787', 7787)">
+                <p>
+                  <a id="IsRequestSong">
+                    <a href="#IsRequestSong">
+                      <code><span>this.IsRequestSong</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="7787">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.IsRequestSong</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>bool</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
   <div></div>
 </div>
         

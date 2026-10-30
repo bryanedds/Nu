@@ -144,19 +144,19 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '8536', 8536)" onmouseover="showTip(event, '8536', 8536)">
+              <code onmouseout="hideTip(event, '8757', 8757)" onmouseover="showTip(event, '8757', 8757)">
                 <p>
                   <a id="AnimatedSprite">
                     <a href="#AnimatedSprite">
-                      <code><span>AnimatedSprite(<span>Image,&#32;CelSize,&#32;CelCount,&#32;CelRun,&#32;CelDelay,&#32;Playback,&#32;Aspects,&#32;Content</span>)</span></code>
+                      <code><span>AnimatedSprite(<span>Image,&#32;PipelineName,&#32;CelSize,&#32;CelCount,&#32;CelRun,&#32;CelDelay,&#32;Playback,&#32;Aspects,&#32;Content</span>)</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="8536">
+              <div class="fsdocs-tip" id="8757">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>AnimatedSprite(<span>Image,&#32;CelSize,&#32;CelCount,&#32;CelRun,&#32;CelDelay,&#32;Playback,&#32;Aspects,&#32;Content</span>)</span></code>
+                  <code><span>AnimatedSprite(<span>Image,&#32;PipelineName,&#32;CelSize,&#32;CelCount,&#32;CelRun,&#32;CelDelay,&#32;Playback,&#32;Aspects,&#32;Content</span>)</span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -167,6 +167,14 @@
                       </b>
                       :
                       <code><a href="/Nu/reference/nu-effects-resource.html">Resource</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        PipelineName
+                      </b>
+                      :
+                      <code>string</code>
                     </span>
                     <br/>
                     <span>
@@ -243,6 +251,14 @@
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
+                  PipelineName
+                </span>
+                :
+                <code>string</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
                   CelSize
                 </span>
                 :
@@ -303,93 +319,37 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '8537', 8537)" onmouseover="showTip(event, '8537', 8537)">
+              <code onmouseout="hideTip(event, '8758', 8758)" onmouseover="showTip(event, '8758', 8758)">
                 <p>
                   <a id="Billboard">
                     <a href="#Billboard">
-                      <code><span>Billboard(<span>Albedo,&#32;Roughness,&#32;Metallic,&#32;AmbientOcclusion,&#32;Emission,&#32;Normal,&#32;HeightMap,&#32;TwoSided,&#32;Clipped,&#32;Aspects,&#32;Content</span>)</span></code>
+                      <code><span>Billboard(<span>Material,&#32;Properties,&#32;Aspects,&#32;Content</span>)</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="8537">
+              <div class="fsdocs-tip" id="8758">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>Billboard(<span>Albedo,&#32;Roughness,&#32;Metallic,&#32;AmbientOcclusion,&#32;Emission,&#32;Normal,&#32;HeightMap,&#32;TwoSided,&#32;Clipped,&#32;Aspects,&#32;Content</span>)</span></code>
+                  <code><span>Billboard(<span>Material,&#32;Properties,&#32;Aspects,&#32;Content</span>)</span></code>
                   <br/>
                   <br/>
                   Parameters: 
                   <ul>
                     <span>
                       <b>
-                        Albedo
+                        Material
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-effects-resource.html">Resource</a></code>
+                      <code><a href="/Nu/reference/nu-material.html">Material</a></code>
                     </span>
                     <br/>
                     <span>
                       <b>
-                        Roughness
+                        Properties
                       </b>
                       :
-                      <code><a href="/Nu/reference/nu-effects-resource.html">Resource</a></code>
-                    </span>
-                    <br/>
-                    <span>
-                      <b>
-                        Metallic
-                      </b>
-                      :
-                      <code><a href="/Nu/reference/nu-effects-resource.html">Resource</a></code>
-                    </span>
-                    <br/>
-                    <span>
-                      <b>
-                        AmbientOcclusion
-                      </b>
-                      :
-                      <code><a href="/Nu/reference/nu-effects-resource.html">Resource</a></code>
-                    </span>
-                    <br/>
-                    <span>
-                      <b>
-                        Emission
-                      </b>
-                      :
-                      <code><a href="/Nu/reference/nu-effects-resource.html">Resource</a></code>
-                    </span>
-                    <br/>
-                    <span>
-                      <b>
-                        Normal
-                      </b>
-                      :
-                      <code><a href="/Nu/reference/nu-effects-resource.html">Resource</a></code>
-                    </span>
-                    <br/>
-                    <span>
-                      <b>
-                        HeightMap
-                      </b>
-                      :
-                      <code><a href="/Nu/reference/nu-effects-resource.html">Resource</a></code>
-                    </span>
-                    <br/>
-                    <span>
-                      <b>
-                        TwoSided
-                      </b>
-                      :
-                      <code>bool</code>
-                    </span>
-                    <br/>
-                    <span>
-                      <b>
-                        Clipped
-                      </b>
-                      :
-                      <code>bool</code>
+                      <code><a href="/Nu/reference/nu-materialproperties.html">MaterialProperties</a></code>
                     </span>
                     <br/>
                     <span>
@@ -418,74 +378,18 @@
             <dl class="fsdocs-params">
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
-                  Albedo
+                  Material
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-effects-resource.html">Resource</a></code>
+                <code><a href="/Nu/reference/nu-material.html">Material</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
-                  Roughness
+                  Properties
                 </span>
                 :
-                <code><a href="/Nu/reference/nu-effects-resource.html">Resource</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  Metallic
-                </span>
-                :
-                <code><a href="/Nu/reference/nu-effects-resource.html">Resource</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  AmbientOcclusion
-                </span>
-                :
-                <code><a href="/Nu/reference/nu-effects-resource.html">Resource</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  Emission
-                </span>
-                :
-                <code><a href="/Nu/reference/nu-effects-resource.html">Resource</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  Normal
-                </span>
-                :
-                <code><a href="/Nu/reference/nu-effects-resource.html">Resource</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  HeightMap
-                </span>
-                :
-                <code><a href="/Nu/reference/nu-effects-resource.html">Resource</a></code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  TwoSided
-                </span>
-                :
-                <code>bool</code>
-              </dt>
-              <dd class="fsdocs-param-docs"></dd>
-              <dt class="fsdocs-param">
-                <span class="fsdocs-param-name">
-                  Clipped
-                </span>
-                :
-                <code>bool</code>
+                <code><a href="/Nu/reference/nu-materialproperties.html">MaterialProperties</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -510,7 +414,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '8538', 8538)" onmouseover="showTip(event, '8538', 8538)">
+              <code onmouseout="hideTip(event, '8759', 8759)" onmouseover="showTip(event, '8759', 8759)">
                 <p>
                   <a id="Contents">
                     <a href="#Contents">
@@ -519,7 +423,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="8538">
+              <div class="fsdocs-tip" id="8759">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Contents(<span>Shift,&#32;Contents</span>)</span></code>
@@ -573,7 +477,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '8539', 8539)" onmouseover="showTip(event, '8539', 8539)">
+              <code onmouseout="hideTip(event, '8760', 8760)" onmouseover="showTip(event, '8760', 8760)">
                 <p>
                   <a id="Delay">
                     <a href="#Delay">
@@ -582,7 +486,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="8539">
+              <div class="fsdocs-tip" id="8760">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Delay(<span>Time,&#32;Content</span>)</span></code>
@@ -636,7 +540,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '8540', 8540)" onmouseover="showTip(event, '8540', 8540)">
+              <code onmouseout="hideTip(event, '8761', 8761)" onmouseover="showTip(event, '8761', 8761)">
                 <p>
                   <a id="Emit">
                     <a href="#Emit">
@@ -645,7 +549,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="8540">
+              <div class="fsdocs-tip" id="8761">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Emit(<span>Shift,&#32;Rate,&#32;EmitterAspects,&#32;Aspects,&#32;Content</span>)</span></code>
@@ -747,7 +651,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '8541', 8541)" onmouseover="showTip(event, '8541', 8541)">
+              <code onmouseout="hideTip(event, '8762', 8762)" onmouseover="showTip(event, '8762', 8762)">
                 <p>
                   <a id="Expand">
                     <a href="#Expand">
@@ -756,7 +660,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="8541">
+              <div class="fsdocs-tip" id="8762">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Expand(<span>Name,&#32;Args</span>)</span></code>
@@ -810,7 +714,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '8542', 8542)" onmouseover="showTip(event, '8542', 8542)">
+              <code onmouseout="hideTip(event, '8763', 8763)" onmouseover="showTip(event, '8763', 8763)">
                 <p>
                   <a id="Light3d">
                     <a href="#Light3d">
@@ -819,7 +723,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="8542">
+              <div class="fsdocs-tip" id="8763">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Light3d(<span>LightType,&#32;Aspects,&#32;Content</span>)</span></code>
@@ -889,7 +793,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '8543', 8543)" onmouseover="showTip(event, '8543', 8543)">
+              <code onmouseout="hideTip(event, '8764', 8764)" onmouseover="showTip(event, '8764', 8764)">
                 <p>
                   <a id="Mount">
                     <a href="#Mount">
@@ -898,7 +802,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="8543">
+              <div class="fsdocs-tip" id="8764">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Mount(<span>Shift,&#32;Aspects,&#32;Content</span>)</span></code>
@@ -968,7 +872,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '8544', 8544)" onmouseover="showTip(event, '8544', 8544)">
+              <code onmouseout="hideTip(event, '8765', 8765)" onmouseover="showTip(event, '8765', 8765)">
                 <p>
                   <a id="Nil">
                     <a href="#Nil">
@@ -977,7 +881,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="8544">
+              <div class="fsdocs-tip" id="8765">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Nil</span></code>
@@ -989,7 +893,7 @@
           </td>
           <td class="fsdocs-member-xmldoc">
             <div class="fsdocs-summary">
-              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Effects/EffectDescriptor.fs#L194-194" class="fsdocs-source-link" title="Source on GitHub">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Effects/EffectDescriptor.fs#L200-200" class="fsdocs-source-link" title="Source on GitHub">
                 <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
               </a>
               <p class="fsdocs-summary">
@@ -1001,7 +905,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '8545', 8545)" onmouseover="showTip(event, '8545', 8545)">
+              <code onmouseout="hideTip(event, '8766', 8766)" onmouseover="showTip(event, '8766', 8766)">
                 <p>
                   <a id="Repeat">
                     <a href="#Repeat">
@@ -1010,7 +914,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="8545">
+              <div class="fsdocs-tip" id="8766">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Repeat(<span>Shift,&#32;<a href="/Nu/reference/nu-repetition.html">Repetition</a>,&#32;Aspects,&#32;Content</span>)</span></code>
@@ -1096,7 +1000,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '8546', 8546)" onmouseover="showTip(event, '8546', 8546)">
+              <code onmouseout="hideTip(event, '8767', 8767)" onmouseover="showTip(event, '8767', 8767)">
                 <p>
                   <a id="Segment">
                     <a href="#Segment">
@@ -1105,7 +1009,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="8546">
+              <div class="fsdocs-tip" id="8767">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Segment(<span>StartTime,&#32;StopTime,&#32;Content</span>)</span></code>
@@ -1175,19 +1079,19 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '8547', 8547)" onmouseover="showTip(event, '8547', 8547)">
+              <code onmouseout="hideTip(event, '8768', 8768)" onmouseover="showTip(event, '8768', 8768)">
                 <p>
                   <a id="StaticModel">
                     <a href="#StaticModel">
-                      <code><span>StaticModel(<span>Resource,&#32;Clipped,&#32;Aspects,&#32;Content</span>)</span></code>
+                      <code><span>StaticModel(<span>Resource,&#32;Material,&#32;Properties,&#32;Aspects,&#32;Content</span>)</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="8547">
+              <div class="fsdocs-tip" id="8768">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>StaticModel(<span>Resource,&#32;Clipped,&#32;Aspects,&#32;Content</span>)</span></code>
+                  <code><span>StaticModel(<span>Resource,&#32;Material,&#32;Properties,&#32;Aspects,&#32;Content</span>)</span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -1202,10 +1106,18 @@
                     <br/>
                     <span>
                       <b>
-                        Clipped
+                        Material
                       </b>
                       :
-                      <code>bool</code>
+                      <code><a href="/Nu/reference/nu-material.html">Material</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        Properties
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/nu-materialproperties.html">MaterialProperties</a></code>
                     </span>
                     <br/>
                     <span>
@@ -1242,10 +1154,18 @@
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
-                  Clipped
+                  Material
                 </span>
                 :
-                <code>bool</code>
+                <code><a href="/Nu/reference/nu-material.html">Material</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Properties
+                </span>
+                :
+                <code><a href="/Nu/reference/nu-materialproperties.html">MaterialProperties</a></code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -1270,19 +1190,19 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '8548', 8548)" onmouseover="showTip(event, '8548', 8548)">
+              <code onmouseout="hideTip(event, '8769', 8769)" onmouseover="showTip(event, '8769', 8769)">
                 <p>
                   <a id="StaticSprite">
                     <a href="#StaticSprite">
-                      <code><span>StaticSprite(<span>Image,&#32;Aspects,&#32;Content</span>)</span></code>
+                      <code><span>StaticSprite(<span>Image,&#32;PipelineName,&#32;Aspects,&#32;Content</span>)</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="8548">
+              <div class="fsdocs-tip" id="8769">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>StaticSprite(<span>Image,&#32;Aspects,&#32;Content</span>)</span></code>
+                  <code><span>StaticSprite(<span>Image,&#32;PipelineName,&#32;Aspects,&#32;Content</span>)</span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -1293,6 +1213,14 @@
                       </b>
                       :
                       <code><a href="/Nu/reference/nu-effects-resource.html">Resource</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        PipelineName
+                      </b>
+                      :
+                      <code>string</code>
                     </span>
                     <br/>
                     <span>
@@ -1329,6 +1257,14 @@
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
+                  PipelineName
+                </span>
+                :
+                <code>string</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
                   Aspects
                 </span>
                 :
@@ -1349,7 +1285,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '8549', 8549)" onmouseover="showTip(event, '8549', 8549)">
+              <code onmouseout="hideTip(event, '8770', 8770)" onmouseover="showTip(event, '8770', 8770)">
                 <p>
                   <a id="Tag">
                     <a href="#Tag">
@@ -1358,7 +1294,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="8549">
+              <div class="fsdocs-tip" id="8770">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>Tag(<span>Name,&#32;Aspects,&#32;Content</span>)</span></code>
@@ -1428,19 +1364,19 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '8550', 8550)" onmouseover="showTip(event, '8550', 8550)">
+              <code onmouseout="hideTip(event, '8771', 8771)" onmouseover="showTip(event, '8771', 8771)">
                 <p>
                   <a id="TextSprite">
                     <a href="#TextSprite">
-                      <code><span>TextSprite(<span>Font,&#32;Text,&#32;FontSizing,&#32;FontStyling,&#32;Aspects,&#32;Content</span>)</span></code>
+                      <code><span>TextSprite(<span>Font,&#32;Text,&#32;PipelineName,&#32;FontSizing,&#32;FontStyling,&#32;Aspects,&#32;Content</span>)</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="8550">
+              <div class="fsdocs-tip" id="8771">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code><span>TextSprite(<span>Font,&#32;Text,&#32;FontSizing,&#32;FontStyling,&#32;Aspects,&#32;Content</span>)</span></code>
+                  <code><span>TextSprite(<span>Font,&#32;Text,&#32;PipelineName,&#32;FontSizing,&#32;FontStyling,&#32;Aspects,&#32;Content</span>)</span></code>
                   <br/>
                   <br/>
                   Parameters: 
@@ -1456,6 +1392,14 @@
                     <span>
                       <b>
                         Text
+                      </b>
+                      :
+                      <code>string</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        PipelineName
                       </b>
                       :
                       <code>string</code>
@@ -1519,6 +1463,14 @@
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
                 <span class="fsdocs-param-name">
+                  PipelineName
+                </span>
+                :
+                <code>string</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
                   FontSizing
                 </span>
                 :
@@ -1531,6 +1483,372 @@
                 </span>
                 :
                 <code><span><a href="https://fsharp.github.io/fsharp-core-docs/reference/fsharp-collections-fsharpset-1">Set</a>&lt;<a href="/Nu/reference/nu-fontstyle.html">FontStyle</a>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Aspects
+                </span>
+                :
+                <code><span><a href="/Nu/reference/nu-effects-aspect.html">Aspect</a>&#32;array</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Content
+                </span>
+                :
+                <code><a href="/Nu/reference/nu-effects-content.html">Content</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8772', 8772)" onmouseover="showTip(event, '8772', 8772)">
+                <p>
+                  <a id="UserDefinedAnimatedSprite">
+                    <a href="#UserDefinedAnimatedSprite">
+                      <code><span>UserDefinedAnimatedSprite(<span>Image,&#32;UserDefinedImage0,&#32;UserDefinedImage1,&#32;UserDefinedImage2,&#32;PipelineName,&#32;CelSize,&#32;CelCount,&#32;CelRun,&#32;CelDelay,&#32;Playback,&#32;Aspects,&#32;Content</span>)</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8772">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>UserDefinedAnimatedSprite(<span>Image,&#32;UserDefinedImage0,&#32;UserDefinedImage1,&#32;UserDefinedImage2,&#32;PipelineName,&#32;CelSize,&#32;CelCount,&#32;CelRun,&#32;CelDelay,&#32;Playback,&#32;Aspects,&#32;Content</span>)</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Image
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/nu-effects-resource.html">Resource</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        UserDefinedImage0
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/nu-effects-resource.html">Resource</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        UserDefinedImage1
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/nu-effects-resource.html">Resource</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        UserDefinedImage2
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/nu-effects-resource.html">Resource</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        PipelineName
+                      </b>
+                      :
+                      <code>string</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        CelSize
+                      </b>
+                      :
+                      <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector2i">Vector2i</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        CelCount
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        CelRun
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        CelDelay
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/nu-gametime.html">GameTime</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        Playback
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/nu-playback.html">Playback</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        Aspects
+                      </b>
+                      :
+                      <code><span><a href="/Nu/reference/nu-effects-aspect.html">Aspect</a>&#32;array</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        Content
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/nu-effects-content.html">Content</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Image
+                </span>
+                :
+                <code><a href="/Nu/reference/nu-effects-resource.html">Resource</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  UserDefinedImage0
+                </span>
+                :
+                <code><a href="/Nu/reference/nu-effects-resource.html">Resource</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  UserDefinedImage1
+                </span>
+                :
+                <code><a href="/Nu/reference/nu-effects-resource.html">Resource</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  UserDefinedImage2
+                </span>
+                :
+                <code><a href="/Nu/reference/nu-effects-resource.html">Resource</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  PipelineName
+                </span>
+                :
+                <code>string</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  CelSize
+                </span>
+                :
+                <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector2i">Vector2i</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  CelCount
+                </span>
+                :
+                <code>int</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  CelRun
+                </span>
+                :
+                <code>int</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  CelDelay
+                </span>
+                :
+                <code><a href="/Nu/reference/nu-gametime.html">GameTime</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Playback
+                </span>
+                :
+                <code><a href="/Nu/reference/nu-playback.html">Playback</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Aspects
+                </span>
+                :
+                <code><span><a href="/Nu/reference/nu-effects-aspect.html">Aspect</a>&#32;array</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Content
+                </span>
+                :
+                <code><a href="/Nu/reference/nu-effects-content.html">Content</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8773', 8773)" onmouseover="showTip(event, '8773', 8773)">
+                <p>
+                  <a id="UserDefinedStaticSprite">
+                    <a href="#UserDefinedStaticSprite">
+                      <code><span>UserDefinedStaticSprite(<span>Image,&#32;UserDefinedImage0,&#32;UserDefinedImage1,&#32;UserDefinedImage2,&#32;PipelineName,&#32;Aspects,&#32;Content</span>)</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8773">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>UserDefinedStaticSprite(<span>Image,&#32;UserDefinedImage0,&#32;UserDefinedImage1,&#32;UserDefinedImage2,&#32;PipelineName,&#32;Aspects,&#32;Content</span>)</span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        Image
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/nu-effects-resource.html">Resource</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        UserDefinedImage0
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/nu-effects-resource.html">Resource</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        UserDefinedImage1
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/nu-effects-resource.html">Resource</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        UserDefinedImage2
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/nu-effects-resource.html">Resource</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        PipelineName
+                      </b>
+                      :
+                      <code>string</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        Aspects
+                      </b>
+                      :
+                      <code><span><a href="/Nu/reference/nu-effects-aspect.html">Aspect</a>&#32;array</span></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        Content
+                      </b>
+                      :
+                      <code><a href="/Nu/reference/nu-effects-content.html">Content</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  Image
+                </span>
+                :
+                <code><a href="/Nu/reference/nu-effects-resource.html">Resource</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  UserDefinedImage0
+                </span>
+                :
+                <code><a href="/Nu/reference/nu-effects-resource.html">Resource</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  UserDefinedImage1
+                </span>
+                :
+                <code><a href="/Nu/reference/nu-effects-resource.html">Resource</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  UserDefinedImage2
+                </span>
+                :
+                <code><a href="/Nu/reference/nu-effects-resource.html">Resource</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  PipelineName
+                </span>
+                :
+                <code>string</code>
               </dt>
               <dd class="fsdocs-param-docs"></dd>
               <dt class="fsdocs-param">
@@ -1577,7 +1895,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '8551', 8551)" onmouseover="showTip(event, '8551', 8551)">
+              <code onmouseout="hideTip(event, '8774', 8774)" onmouseover="showTip(event, '8774', 8774)">
                 <p>
                   <a id="IsAnimatedSprite">
                     <a href="#IsAnimatedSprite">
@@ -1586,7 +1904,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="8551">
+              <div class="fsdocs-tip" id="8774">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.IsAnimatedSprite</span></code>
@@ -1616,7 +1934,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '8552', 8552)" onmouseover="showTip(event, '8552', 8552)">
+              <code onmouseout="hideTip(event, '8775', 8775)" onmouseover="showTip(event, '8775', 8775)">
                 <p>
                   <a id="IsBillboard">
                     <a href="#IsBillboard">
@@ -1625,7 +1943,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="8552">
+              <div class="fsdocs-tip" id="8775">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.IsBillboard</span></code>
@@ -1655,7 +1973,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '8553', 8553)" onmouseover="showTip(event, '8553', 8553)">
+              <code onmouseout="hideTip(event, '8776', 8776)" onmouseover="showTip(event, '8776', 8776)">
                 <p>
                   <a id="IsContents">
                     <a href="#IsContents">
@@ -1664,7 +1982,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="8553">
+              <div class="fsdocs-tip" id="8776">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.IsContents</span></code>
@@ -1694,7 +2012,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '8554', 8554)" onmouseover="showTip(event, '8554', 8554)">
+              <code onmouseout="hideTip(event, '8777', 8777)" onmouseover="showTip(event, '8777', 8777)">
                 <p>
                   <a id="IsDelay">
                     <a href="#IsDelay">
@@ -1703,7 +2021,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="8554">
+              <div class="fsdocs-tip" id="8777">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.IsDelay</span></code>
@@ -1733,7 +2051,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '8555', 8555)" onmouseover="showTip(event, '8555', 8555)">
+              <code onmouseout="hideTip(event, '8778', 8778)" onmouseover="showTip(event, '8778', 8778)">
                 <p>
                   <a id="IsEmit">
                     <a href="#IsEmit">
@@ -1742,7 +2060,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="8555">
+              <div class="fsdocs-tip" id="8778">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.IsEmit</span></code>
@@ -1772,7 +2090,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '8556', 8556)" onmouseover="showTip(event, '8556', 8556)">
+              <code onmouseout="hideTip(event, '8779', 8779)" onmouseover="showTip(event, '8779', 8779)">
                 <p>
                   <a id="IsExpand">
                     <a href="#IsExpand">
@@ -1781,7 +2099,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="8556">
+              <div class="fsdocs-tip" id="8779">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.IsExpand</span></code>
@@ -1811,7 +2129,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '8557', 8557)" onmouseover="showTip(event, '8557', 8557)">
+              <code onmouseout="hideTip(event, '8780', 8780)" onmouseover="showTip(event, '8780', 8780)">
                 <p>
                   <a id="IsLight3d">
                     <a href="#IsLight3d">
@@ -1820,7 +2138,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="8557">
+              <div class="fsdocs-tip" id="8780">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.IsLight3d</span></code>
@@ -1850,7 +2168,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '8558', 8558)" onmouseover="showTip(event, '8558', 8558)">
+              <code onmouseout="hideTip(event, '8781', 8781)" onmouseover="showTip(event, '8781', 8781)">
                 <p>
                   <a id="IsMount">
                     <a href="#IsMount">
@@ -1859,7 +2177,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="8558">
+              <div class="fsdocs-tip" id="8781">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.IsMount</span></code>
@@ -1889,7 +2207,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '8559', 8559)" onmouseover="showTip(event, '8559', 8559)">
+              <code onmouseout="hideTip(event, '8782', 8782)" onmouseover="showTip(event, '8782', 8782)">
                 <p>
                   <a id="IsNil">
                     <a href="#IsNil">
@@ -1898,7 +2216,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="8559">
+              <div class="fsdocs-tip" id="8782">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.IsNil</span></code>
@@ -1928,7 +2246,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '8560', 8560)" onmouseover="showTip(event, '8560', 8560)">
+              <code onmouseout="hideTip(event, '8783', 8783)" onmouseover="showTip(event, '8783', 8783)">
                 <p>
                   <a id="IsRepeat">
                     <a href="#IsRepeat">
@@ -1937,7 +2255,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="8560">
+              <div class="fsdocs-tip" id="8783">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.IsRepeat</span></code>
@@ -1967,7 +2285,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '8561', 8561)" onmouseover="showTip(event, '8561', 8561)">
+              <code onmouseout="hideTip(event, '8784', 8784)" onmouseover="showTip(event, '8784', 8784)">
                 <p>
                   <a id="IsSegment">
                     <a href="#IsSegment">
@@ -1976,7 +2294,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="8561">
+              <div class="fsdocs-tip" id="8784">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.IsSegment</span></code>
@@ -2006,7 +2324,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '8562', 8562)" onmouseover="showTip(event, '8562', 8562)">
+              <code onmouseout="hideTip(event, '8785', 8785)" onmouseover="showTip(event, '8785', 8785)">
                 <p>
                   <a id="IsStaticModel">
                     <a href="#IsStaticModel">
@@ -2015,7 +2333,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="8562">
+              <div class="fsdocs-tip" id="8785">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.IsStaticModel</span></code>
@@ -2045,7 +2363,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '8563', 8563)" onmouseover="showTip(event, '8563', 8563)">
+              <code onmouseout="hideTip(event, '8786', 8786)" onmouseover="showTip(event, '8786', 8786)">
                 <p>
                   <a id="IsStaticSprite">
                     <a href="#IsStaticSprite">
@@ -2054,7 +2372,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="8563">
+              <div class="fsdocs-tip" id="8786">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.IsStaticSprite</span></code>
@@ -2084,7 +2402,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '8564', 8564)" onmouseover="showTip(event, '8564', 8564)">
+              <code onmouseout="hideTip(event, '8787', 8787)" onmouseover="showTip(event, '8787', 8787)">
                 <p>
                   <a id="IsTag">
                     <a href="#IsTag">
@@ -2093,7 +2411,7 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="8564">
+              <div class="fsdocs-tip" id="8787">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.IsTag</span></code>
@@ -2123,7 +2441,7 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '8565', 8565)" onmouseover="showTip(event, '8565', 8565)">
+              <code onmouseout="hideTip(event, '8788', 8788)" onmouseover="showTip(event, '8788', 8788)">
                 <p>
                   <a id="IsTextSprite">
                     <a href="#IsTextSprite">
@@ -2132,10 +2450,88 @@
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="8565">
+              <div class="fsdocs-tip" id="8788">
                 <div class="member-tooltip">
                   Full Usage: 
                   <code><span>this.IsTextSprite</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>bool</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8789', 8789)" onmouseover="showTip(event, '8789', 8789)">
+                <p>
+                  <a id="IsUserDefinedAnimatedSprite">
+                    <a href="#IsUserDefinedAnimatedSprite">
+                      <code><span>this.IsUserDefinedAnimatedSprite</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8789">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.IsUserDefinedAnimatedSprite</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>bool</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '8790', 8790)" onmouseover="showTip(event, '8790', 8790)">
+                <p>
+                  <a id="IsUserDefinedStaticSprite">
+                    <a href="#IsUserDefinedStaticSprite">
+                      <code><span>this.IsUserDefinedStaticSprite</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="8790">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.IsUserDefinedStaticSprite</span></code>
                   <br/>
                   <br/>
                   <span>

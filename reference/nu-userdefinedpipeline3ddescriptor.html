@@ -7,15 +7,15 @@
     <meta content="Nu" name="author">
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
-    <meta property="og:title" content="PhysicallyBasedDeferredLightingPipeline (Nu)" />
+    <meta property="og:title" content="UserDefinedPipeline3dDescriptor (Nu)" />
     <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="/Nu/">
-    <meta name="twitter:title" content="PhysicallyBasedDeferredLightingPipeline (Nu)">
+    <meta name="twitter:title" content="UserDefinedPipeline3dDescriptor (Nu)">
     
-    <title>PhysicallyBasedDeferredLightingPipeline (Nu) | Nu</title>
+    <title>UserDefinedPipeline3dDescriptor (Nu) | Nu</title>
     <link href="https://fonts.googleapis.com" rel="preconnect">
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
@@ -92,13 +92,13 @@
     <div id="content">
         <div>
   <h2>
-    PhysicallyBasedDeferredLightingPipeline Type
+    UserDefinedPipeline3dDescriptor Type
   </h2>
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="/Nu/reference/nu-vulkan.html">
-        Nu.Vulkan
+      <a href="/Nu/reference/nu.html">
+        Nu
       </a>
     </dt>
     <dt>
@@ -110,15 +110,21 @@
     </dt>
     <dt>
       All Interfaces: 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/nu-vulkan-physicallybaseddeferredlightingpipeline.html">PhysicallyBasedDeferredLightingPipeline</a>&gt;</span></code>
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/nu-userdefinedpipeline3ddescriptor.html">UserDefinedPipeline3dDescriptor</a>&gt;</span></code>
       , 
       <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralequatable">IStructuralEquatable</a></code>
+      , 
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.icomparable-1">IComparable</a>&lt;<a href="/Nu/reference/nu-userdefinedpipeline3ddescriptor.html">UserDefinedPipeline3dDescriptor</a>&gt;</span></code>
+      , 
+      <code><a href="https://learn.microsoft.com/dotnet/api/system.icomparable">IComparable</a></code>
+      , 
+      <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralcomparable">IStructuralComparable</a></code>
     </dt>
   </dl>
   <div class="fsdocs-xmldoc">
     <div>
       <p class="fsdocs-summary">
-         Describes the lighting pass of a deferred physically-based pipeline that's loaded into GPU.
+         Describes a user-defined 3d rendering pipeline.
       </p>
     </div>
   </div>
@@ -145,24 +151,24 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '9255', 9255)" onmouseover="showTip(event, '9255', 9255)">
+              <code onmouseout="hideTip(event, '8275', 8275)" onmouseover="showTip(event, '8275', 8275)">
                 <p>
-                  <a id="EyeUniform">
-                    <a href="#EyeUniform">
-                      <code>EyeUniform</code>
+                  <a id="Pipeline3dType">
+                    <a href="#Pipeline3dType">
+                      <code>Pipeline3dType</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="9255">
+              <div class="fsdocs-tip" id="8275">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>EyeUniform</code>
+                  <code>Pipeline3dType</code>
                   <br/>
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="/Nu/reference/nu-vulkan-vulkanbuffer.html">VulkanBuffer</a></code>
+                    <code><a href="/Nu/reference/nu-pipeline3dtype.html">Pipeline3dType</a></code>
                   </span>
                   <br/>
                 </div>
@@ -175,7 +181,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="/Nu/reference/nu-vulkan-vulkanbuffer.html">VulkanBuffer</a></code>
+                <code><a href="/Nu/reference/nu-pipeline3dtype.html">Pipeline3dType</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -184,24 +190,24 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '9256', 9256)" onmouseover="showTip(event, '9256', 9256)">
+              <code onmouseout="hideTip(event, '8276', 8276)" onmouseover="showTip(event, '8276', 8276)">
                 <p>
-                  <a id="LightUniform">
-                    <a href="#LightUniform">
-                      <code>LightUniform</code>
+                  <a id="PipelineName">
+                    <a href="#PipelineName">
+                      <code>PipelineName</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="9256">
+              <div class="fsdocs-tip" id="8276">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>LightUniform</code>
+                  <code>PipelineName</code>
                   <br/>
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="/Nu/reference/nu-vulkan-vulkanbuffer.html">VulkanBuffer</a></code>
+                    <code>string</code>
                   </span>
                   <br/>
                 </div>
@@ -214,7 +220,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="/Nu/reference/nu-vulkan-vulkanbuffer.html">VulkanBuffer</a></code>
+                <code>string</code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -223,24 +229,24 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '9257', 9257)" onmouseover="showTip(event, '9257', 9257)">
+              <code onmouseout="hideTip(event, '8277', 8277)" onmouseover="showTip(event, '8277', 8277)">
                 <p>
-                  <a id="Lighting2Uniform">
-                    <a href="#Lighting2Uniform">
-                      <code>Lighting2Uniform</code>
+                  <a id="ShaderPath">
+                    <a href="#ShaderPath">
+                      <code>ShaderPath</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="9257">
+              <div class="fsdocs-tip" id="8277">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>Lighting2Uniform</code>
+                  <code>ShaderPath</code>
                   <br/>
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="/Nu/reference/nu-vulkan-vulkanbuffer.html">VulkanBuffer</a></code>
+                    <code>string</code>
                   </span>
                   <br/>
                 </div>
@@ -253,7 +259,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="/Nu/reference/nu-vulkan-vulkanbuffer.html">VulkanBuffer</a></code>
+                <code>string</code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -262,24 +268,24 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '9258', 9258)" onmouseover="showTip(event, '9258', 9258)">
+              <code onmouseout="hideTip(event, '8278', 8278)" onmouseover="showTip(event, '8278', 8278)">
                 <p>
-                  <a id="Pipeline">
-                    <a href="#Pipeline">
-                      <code>Pipeline</code>
+                  <a id="UserDefinedImageNames">
+                    <a href="#UserDefinedImageNames">
+                      <code>UserDefinedImageNames</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="9258">
+              <div class="fsdocs-tip" id="8278">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>Pipeline</code>
+                  <code>UserDefinedImageNames</code>
                   <br/>
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="/Nu/reference/nu-vulkan-pipeline.html">Pipeline</a></code>
+                    <code><span>string&#32;array</span></code>
                   </span>
                   <br/>
                 </div>
@@ -292,7 +298,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="/Nu/reference/nu-vulkan-pipeline.html">Pipeline</a></code>
+                <code><span>string&#32;array</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -301,24 +307,24 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '9259', 9259)" onmouseover="showTip(event, '9259', 9259)">
+              <code onmouseout="hideTip(event, '8279', 8279)" onmouseover="showTip(event, '8279', 8279)">
                 <p>
-                  <a id="ShadowMatrixUniform">
-                    <a href="#ShadowMatrixUniform">
-                      <code>ShadowMatrixUniform</code>
+                  <a id="UserDefinedSettingNames">
+                    <a href="#UserDefinedSettingNames">
+                      <code>UserDefinedSettingNames</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="9259">
+              <div class="fsdocs-tip" id="8279">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>ShadowMatrixUniform</code>
+                  <code>UserDefinedSettingNames</code>
                   <br/>
                   <br/>
                   <span>
                     Field type: 
-                    <code><a href="/Nu/reference/nu-vulkan-vulkanbuffer.html">VulkanBuffer</a></code>
+                    <code><span>string&#32;array</span></code>
                   </span>
                   <br/>
                 </div>
@@ -331,7 +337,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code><a href="/Nu/reference/nu-vulkan-vulkanbuffer.html">VulkanBuffer</a></code>
+                <code><span>string&#32;array</span></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>

@@ -7,15 +7,15 @@
     <meta content="Nu" name="author">
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
-    <meta property="og:title" content="Lighting2Struct (Nu)" />
+    <meta property="og:title" content="RenderLightProbe (Nu)" />
     <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="/Nu/">
-    <meta name="twitter:title" content="Lighting2Struct (Nu)">
+    <meta name="twitter:title" content="RenderLightProbe (Nu)">
     
-    <title>Lighting2Struct (Nu) | Nu</title>
+    <title>RenderLightProbe (Nu) | Nu</title>
     <link href="https://fonts.googleapis.com" rel="preconnect">
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
@@ -92,13 +92,13 @@
     <div id="content">
         <div>
   <h2>
-    Lighting2Struct Type
+    RenderLightProbe Type
   </h2>
   <dl class="fsdocs-metadata">
     <dt>
       Namespace: 
-      <a href="/Nu/reference/nu-vulkan.html">
-        Nu.Vulkan
+      <a href="/Nu/reference/nu.html">
+        Nu
       </a>
     </dt>
     <dt>
@@ -106,28 +106,19 @@
     </dt>
     <dt>
       Base Type: 
-      <code><a href="https://learn.microsoft.com/dotnet/api/system.valuetype">ValueType</a></code>
+      <code>obj</code>
     </dt>
     <dt>
       All Interfaces: 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/nu-vulkan-lighting2struct.html">Lighting2Struct</a>&gt;</span></code>
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/nu-renderlightprobe.html">RenderLightProbe</a>&gt;</span></code>
       , 
       <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralequatable">IStructuralEquatable</a></code>
-      , 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.icomparable-1">IComparable</a>&lt;<a href="/Nu/reference/nu-vulkan-lighting2struct.html">Lighting2Struct</a>&gt;</span></code>
-      , 
-      <code><a href="https://learn.microsoft.com/dotnet/api/system.icomparable">IComparable</a></code>
-      , 
-      <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralcomparable">IStructuralComparable</a></code>
-    </dt>
-    <dt>
-      Kind: Struct
     </dt>
   </dl>
   <div class="fsdocs-xmldoc">
     <div>
       <p class="fsdocs-summary">
-        
+         Describes how to render a light probe.
       </p>
     </div>
   </div>
@@ -154,28 +145,25 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '9121', 9121)" onmouseover="showTip(event, '9121', 9121)">
+              <code onmouseout="hideTip(event, '7281', 7281)" onmouseover="showTip(event, '7281', 7281)">
                 <p>
-                  <a id="lightCutoffMargin">
-                    <a href="#lightCutoffMargin">
-                      <code>lightCutoffMargin</code>
+                  <a id="AmbientBrightness">
+                    <a href="#AmbientBrightness">
+                      <code>AmbientBrightness</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="9121">
+              <div class="fsdocs-tip" id="7281">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>lightCutoffMargin</code>
+                  <code>AmbientBrightness</code>
                   <br/>
                   <br/>
                   <span>
                     Field type: 
                     <code>single</code>
                   </span>
-                  <br/>
-                  Modifiers: 
-                  mutable
                   <br/>
                 </div>
               </div>
@@ -196,28 +184,25 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '9122', 9122)" onmouseover="showTip(event, '9122', 9122)">
+              <code onmouseout="hideTip(event, '7282', 7282)" onmouseover="showTip(event, '7282', 7282)">
                 <p>
-                  <a id="lightShadowBias">
-                    <a href="#lightShadowBias">
-                      <code>lightShadowBias</code>
+                  <a id="AmbientColor">
+                    <a href="#AmbientColor">
+                      <code>AmbientColor</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="9122">
+              <div class="fsdocs-tip" id="7282">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>lightShadowBias</code>
+                  <code>AmbientColor</code>
                   <br/>
                   <br/>
                   <span>
                     Field type: 
-                    <code>single</code>
+                    <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.color">Color</a></code>
                   </span>
-                  <br/>
-                  Modifiers: 
-                  mutable
                   <br/>
                 </div>
               </div>
@@ -229,7 +214,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code>single</code>
+                <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.color">Color</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -238,28 +223,25 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '9123', 9123)" onmouseover="showTip(event, '9123', 9123)">
+              <code onmouseout="hideTip(event, '7283', 7283)" onmouseover="showTip(event, '7283', 7283)">
                 <p>
-                  <a id="lightShadowDensity">
-                    <a href="#lightShadowDensity">
-                      <code>lightShadowDensity</code>
+                  <a id="Bounds">
+                    <a href="#Bounds">
+                      <code>Bounds</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="9123">
+              <div class="fsdocs-tip" id="7283">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>lightShadowDensity</code>
+                  <code>Bounds</code>
                   <br/>
                   <br/>
                   <span>
                     Field type: 
-                    <code>single</code>
+                    <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.box3">Box3</a></code>
                   </span>
-                  <br/>
-                  Modifiers: 
-                  mutable
                   <br/>
                 </div>
               </div>
@@ -271,7 +253,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code>single</code>
+                <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.box3">Box3</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -280,28 +262,25 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '9124', 9124)" onmouseover="showTip(event, '9124', 9124)">
+              <code onmouseout="hideTip(event, '7284', 7284)" onmouseover="showTip(event, '7284', 7284)">
                 <p>
-                  <a id="lightShadowExponent">
-                    <a href="#lightShadowExponent">
-                      <code>lightShadowExponent</code>
+                  <a id="Enabled">
+                    <a href="#Enabled">
+                      <code>Enabled</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="9124">
+              <div class="fsdocs-tip" id="7284">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>lightShadowExponent</code>
+                  <code>Enabled</code>
                   <br/>
                   <br/>
                   <span>
                     Field type: 
-                    <code>single</code>
+                    <code>bool</code>
                   </span>
-                  <br/>
-                  Modifiers: 
-                  mutable
                   <br/>
                 </div>
               </div>
@@ -313,7 +292,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code>single</code>
+                <code>bool</code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -322,28 +301,25 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '9125', 9125)" onmouseover="showTip(event, '9125', 9125)">
+              <code onmouseout="hideTip(event, '7285', 7285)" onmouseover="showTip(event, '7285', 7285)">
                 <p>
-                  <a id="lightShadowSampleScalar">
-                    <a href="#lightShadowSampleScalar">
-                      <code>lightShadowSampleScalar</code>
+                  <a id="LightProbeId">
+                    <a href="#LightProbeId">
+                      <code>LightProbeId</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="9125">
+              <div class="fsdocs-tip" id="7285">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>lightShadowSampleScalar</code>
+                  <code>LightProbeId</code>
                   <br/>
                   <br/>
                   <span>
                     Field type: 
-                    <code>single</code>
+                    <code>uint64</code>
                   </span>
-                  <br/>
-                  Modifiers: 
-                  mutable
                   <br/>
                 </div>
               </div>
@@ -355,7 +331,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code>single</code>
+                <code>uint64</code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -364,28 +340,25 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '9126', 9126)" onmouseover="showTip(event, '9126', 9126)">
+              <code onmouseout="hideTip(event, '7286', 7286)" onmouseover="showTip(event, '7286', 7286)">
                 <p>
-                  <a id="lightShadowSamples">
-                    <a href="#lightShadowSamples">
-                      <code>lightShadowSamples</code>
+                  <a id="Origin">
+                    <a href="#Origin">
+                      <code>Origin</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="9126">
+              <div class="fsdocs-tip" id="7286">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>lightShadowSamples</code>
+                  <code>Origin</code>
                   <br/>
                   <br/>
                   <span>
                     Field type: 
-                    <code>int</code>
+                    <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a></code>
                   </span>
-                  <br/>
-                  Modifiers: 
-                  mutable
                   <br/>
                 </div>
               </div>
@@ -397,7 +370,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code>int</code>
+                <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -406,28 +379,25 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '9127', 9127)" onmouseover="showTip(event, '9127', 9127)">
+              <code onmouseout="hideTip(event, '7287', 7287)" onmouseover="showTip(event, '7287', 7287)">
                 <p>
-                  <a id="lightsCount">
-                    <a href="#lightsCount">
-                      <code>lightsCount</code>
+                  <a id="RenderPass">
+                    <a href="#RenderPass">
+                      <code>RenderPass</code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="9127">
+              <div class="fsdocs-tip" id="7287">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>lightsCount</code>
+                  <code>RenderPass</code>
                   <br/>
                   <br/>
                   <span>
                     Field type: 
-                    <code>int</code>
+                    <code><a href="/Nu/reference/nu-renderpass.html">RenderPass</a></code>
                   </span>
-                  <br/>
-                  Modifiers: 
-                  mutable
                   <br/>
                 </div>
               </div>
@@ -439,91 +409,7 @@
                 <span class="fsdocs-return-name">
                   Field type: 
                 </span>
-                <code>int</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '9128', 9128)" onmouseover="showTip(event, '9128', 9128)">
-                <p>
-                  <a id="shadowNear">
-                    <a href="#shadowNear">
-                      <code>shadowNear</code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="9128">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code>shadowNear</code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code>single</code>
-                  </span>
-                  <br/>
-                  Modifiers: 
-                  mutable
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code>single</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
-          </td>
-        </tr>
-        <tr>
-          <td class="fsdocs-member-usage">
-            <div>
-              <code onmouseout="hideTip(event, '9129', 9129)" onmouseover="showTip(event, '9129', 9129)">
-                <p>
-                  <a id="sssEnabled">
-                    <a href="#sssEnabled">
-                      <code>sssEnabled</code>
-                    </a>
-                  </a>
-                </p>
-              </code>
-              <div class="fsdocs-tip" id="9129">
-                <div class="member-tooltip">
-                  Full Usage: 
-                  <code>sssEnabled</code>
-                  <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code>int</code>
-                  </span>
-                  <br/>
-                  Modifiers: 
-                  mutable
-                  <br/>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code>int</code>
+                <code><a href="/Nu/reference/nu-renderpass.html">RenderPass</a></code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>

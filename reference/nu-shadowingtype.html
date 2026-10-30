@@ -7,15 +7,15 @@
     <meta content="Nu" name="author">
     <!-- Opengraph properties (https://ogp.me/) -->
     <meta property="og:site_name" content="Nu">
-    <meta property="og:title" content="RenderLightProbe3d (Nu)" />
+    <meta property="og:title" content="ShadowingType (Nu)" />
     <meta property="og:url" content="/Nu/{{fsdocs-source-basename}}.html">
     <meta property="og:type" content="website" />
     <!-- Twitter cards (https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/summary-card-with-large-image) -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="/Nu/">
-    <meta name="twitter:title" content="RenderLightProbe3d (Nu)">
+    <meta name="twitter:title" content="ShadowingType (Nu)">
     
-    <title>RenderLightProbe3d (Nu) | Nu</title>
+    <title>ShadowingType (Nu) | Nu</title>
     <link href="https://fonts.googleapis.com" rel="preconnect">
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
@@ -92,7 +92,7 @@
     <div id="content">
         <div>
   <h2>
-    RenderLightProbe3d Type
+    ShadowingType Type
   </h2>
   <dl class="fsdocs-metadata">
     <dt>
@@ -106,35 +106,43 @@
     </dt>
     <dt>
       Base Type: 
-      <code>obj</code>
+      <code><a href="https://learn.microsoft.com/dotnet/api/system.valuetype">ValueType</a></code>
     </dt>
     <dt>
       All Interfaces: 
-      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/nu-renderlightprobe3d.html">RenderLightProbe3d</a>&gt;</span></code>
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="/Nu/reference/nu-shadowingtype.html">ShadowingType</a>&gt;</span></code>
       , 
       <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralequatable">IStructuralEquatable</a></code>
+      , 
+      <code><span><a href="https://learn.microsoft.com/dotnet/api/system.icomparable-1">IComparable</a>&lt;<a href="/Nu/reference/nu-shadowingtype.html">ShadowingType</a>&gt;</span></code>
+      , 
+      <code><a href="https://learn.microsoft.com/dotnet/api/system.icomparable">IComparable</a></code>
+      , 
+      <code><a href="https://learn.microsoft.com/dotnet/api/system.collections.istructuralcomparable">IStructuralComparable</a></code>
+    </dt>
+    <dt>
+      Kind: Struct
     </dt>
   </dl>
   <div class="fsdocs-xmldoc">
     <div>
       <p class="fsdocs-summary">
-         Describes how to render a 3D light probe.
+         The type of shadowing used by a light.
       </p>
     </div>
   </div>
   <div></div>
   <div></div>
   <div></div>
-  <div></div>
   <div>
     <h3>
-      Record fields
+      Union cases
     </h3>
     <table class="table outer-list fsdocs-member-list">
       <thead>
         <tr>
           <td class="fsdocs-member-list-header">
-            Record Field
+            Union case
           </td>
           <td class="fsdocs-member-list-header">
             Description
@@ -145,140 +153,144 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '7141', 7141)" onmouseover="showTip(event, '7141', 7141)">
+              <code onmouseout="hideTip(event, '7661', 7661)" onmouseover="showTip(event, '7661', 7661)">
                 <p>
-                  <a id="AmbientBrightness">
-                    <a href="#AmbientBrightness">
-                      <code>AmbientBrightness</code>
+                  <a id="DynamicShadowing">
+                    <a href="#DynamicShadowing">
+                      <code><span>DynamicShadowing</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="7141">
+              <div class="fsdocs-tip" id="7661">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>AmbientBrightness</code>
+                  <code><span>DynamicShadowing</span></code>
                   <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code>single</code>
-                  </span>
                   <br/>
                 </div>
               </div>
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code>single</code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Math.fs#L1931-1931" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '7142', 7142)" onmouseover="showTip(event, '7142', 7142)">
+              <code onmouseout="hideTip(event, '7662', 7662)" onmouseover="showTip(event, '7662', 7662)">
                 <p>
-                  <a id="AmbientColor">
-                    <a href="#AmbientColor">
-                      <code>AmbientColor</code>
+                  <a id="NoShadowing">
+                    <a href="#NoShadowing">
+                      <code><span>NoShadowing</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="7142">
+              <div class="fsdocs-tip" id="7662">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>AmbientColor</code>
+                  <code><span>NoShadowing</span></code>
                   <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.color">Color</a></code>
-                  </span>
                   <br/>
                 </div>
               </div>
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.color">Color</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Math.fs#L1929-1929" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '7143', 7143)" onmouseover="showTip(event, '7143', 7143)">
+              <code onmouseout="hideTip(event, '7663', 7663)" onmouseover="showTip(event, '7663', 7663)">
                 <p>
-                  <a id="Bounds">
-                    <a href="#Bounds">
-                      <code>Bounds</code>
+                  <a id="StaticShadowing">
+                    <a href="#StaticShadowing">
+                      <code><span>StaticShadowing</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="7143">
+              <div class="fsdocs-tip" id="7663">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>Bounds</code>
+                  <code><span>StaticShadowing</span></code>
                   <br/>
-                  <br/>
-                  <span>
-                    Field type: 
-                    <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.box3">Box3</a></code>
-                  </span>
                   <br/>
                 </div>
               </div>
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.box3">Box3</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <div class="fsdocs-summary">
+              <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Math.fs#L1930-1930" class="fsdocs-source-link" title="Source on GitHub">
+                <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
           </td>
         </tr>
+      </tbody>
+    </table>
+  </div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div>
+    <h3>
+      Instance members
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Instance member
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '7144', 7144)" onmouseover="showTip(event, '7144', 7144)">
+              <code onmouseout="hideTip(event, '7664', 7664)" onmouseover="showTip(event, '7664', 7664)">
                 <p>
-                  <a id="Enabled">
-                    <a href="#Enabled">
-                      <code>Enabled</code>
+                  <a id="IsDynamicShadowing">
+                    <a href="#IsDynamicShadowing">
+                      <code><span>this.IsDynamicShadowing</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="7144">
+              <div class="fsdocs-tip" id="7664">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>Enabled</code>
+                  <code><span>this.IsDynamicShadowing</span></code>
                   <br/>
                   <br/>
                   <span>
-                    Field type: 
+                    Returns: 
                     <code>bool</code>
                   </span>
                   <br/>
@@ -290,7 +302,7 @@
             <dl class="fsdocs-returns">
               <dt>
                 <span class="fsdocs-return-name">
-                  Field type: 
+                  Returns: 
                 </span>
                 <code>bool</code>
               </dt>
@@ -301,24 +313,24 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '7145', 7145)" onmouseover="showTip(event, '7145', 7145)">
+              <code onmouseout="hideTip(event, '7665', 7665)" onmouseover="showTip(event, '7665', 7665)">
                 <p>
-                  <a id="LightProbeId">
-                    <a href="#LightProbeId">
-                      <code>LightProbeId</code>
+                  <a id="IsNoShadowing">
+                    <a href="#IsNoShadowing">
+                      <code><span>this.IsNoShadowing</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="7145">
+              <div class="fsdocs-tip" id="7665">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>LightProbeId</code>
+                  <code><span>this.IsNoShadowing</span></code>
                   <br/>
                   <br/>
                   <span>
-                    Field type: 
-                    <code>uint64</code>
+                    Returns: 
+                    <code>bool</code>
                   </span>
                   <br/>
                 </div>
@@ -329,9 +341,9 @@
             <dl class="fsdocs-returns">
               <dt>
                 <span class="fsdocs-return-name">
-                  Field type: 
+                  Returns: 
                 </span>
-                <code>uint64</code>
+                <code>bool</code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -340,24 +352,24 @@
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '7146', 7146)" onmouseover="showTip(event, '7146', 7146)">
+              <code onmouseout="hideTip(event, '7666', 7666)" onmouseover="showTip(event, '7666', 7666)">
                 <p>
-                  <a id="Origin">
-                    <a href="#Origin">
-                      <code>Origin</code>
+                  <a id="IsShadowing">
+                    <a href="#IsShadowing">
+                      <code><span>this.IsShadowing</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="7146">
+              <div class="fsdocs-tip" id="7666">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>Origin</code>
+                  <code><span>this.IsShadowing</span></code>
                   <br/>
                   <br/>
                   <span>
-                    Field type: 
-                    <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a></code>
+                    Returns: 
+                    <code>bool</code>
                   </span>
                   <br/>
                 </div>
@@ -365,38 +377,56 @@
             </div>
           </td>
           <td class="fsdocs-member-xmldoc">
-            <dl class="fsdocs-returns">
-              <dt>
-                <span class="fsdocs-return-name">
-                  Field type: 
-                </span>
-                <code><a href="https://learn.microsoft.com/dotnet/api/system.numerics.vector3">Vector3</a></code>
-              </dt>
-              <dd class="fsdocs-return-docs"></dd>
-            </dl>
+            <details>
+              <summary>
+                <div class="fsdocs-summary">
+                  <div class="fsdocs-source-link" title="Copy signature (Markdown)" onclick="Clipboard_CopyTo('`cref:P:Nu.ShadowingType.IsShadowing`')">
+                    <iconify-icon icon="bi:filetype-md" height="24" width="24"></iconify-icon>
+                  </div>
+                  <div class="fsdocs-source-link" title="Copy signature (XML)" onclick="Clipboard_CopyTo('<see cref=\'P:Nu.ShadowingType.IsShadowing\'/>')">
+                    <iconify-icon icon="bi:filetype-xml" height="24" width="24"></iconify-icon>
+                  </div>
+                  <a href="https://github.com/bryanedds/Nu/tree/master/Nu/Nu/Core/Math.fs#L1934-1934" class="fsdocs-source-link" title="Source on GitHub">
+                    <iconify-icon icon="ri:github-fill" height="24" width="24"></iconify-icon>
+                  </a>
+                  <p class="fsdocs-summary">
+                     Whether shadowing is utilized in any form.
+                  </p>
+                </div>
+              </summary>
+              <dl class="fsdocs-returns">
+                <dt>
+                  <span class="fsdocs-return-name">
+                    Returns: 
+                  </span>
+                  <code>bool</code>
+                </dt>
+                <dd class="fsdocs-return-docs"></dd>
+              </dl>
+            </details>
           </td>
         </tr>
         <tr>
           <td class="fsdocs-member-usage">
             <div>
-              <code onmouseout="hideTip(event, '7147', 7147)" onmouseover="showTip(event, '7147', 7147)">
+              <code onmouseout="hideTip(event, '7667', 7667)" onmouseover="showTip(event, '7667', 7667)">
                 <p>
-                  <a id="RenderPass">
-                    <a href="#RenderPass">
-                      <code>RenderPass</code>
+                  <a id="IsStaticShadowing">
+                    <a href="#IsStaticShadowing">
+                      <code><span>this.IsStaticShadowing</span></code>
                     </a>
                   </a>
                 </p>
               </code>
-              <div class="fsdocs-tip" id="7147">
+              <div class="fsdocs-tip" id="7667">
                 <div class="member-tooltip">
                   Full Usage: 
-                  <code>RenderPass</code>
+                  <code><span>this.IsStaticShadowing</span></code>
                   <br/>
                   <br/>
                   <span>
-                    Field type: 
-                    <code><a href="/Nu/reference/nu-renderpass.html">RenderPass</a></code>
+                    Returns: 
+                    <code>bool</code>
                   </span>
                   <br/>
                 </div>
@@ -407,9 +437,9 @@
             <dl class="fsdocs-returns">
               <dt>
                 <span class="fsdocs-return-name">
-                  Field type: 
+                  Returns: 
                 </span>
-                <code><a href="/Nu/reference/nu-renderpass.html">RenderPass</a></code>
+                <code>bool</code>
               </dt>
               <dd class="fsdocs-return-docs"></dd>
             </dl>
@@ -418,9 +448,6 @@
       </tbody>
     </table>
   </div>
-  <div></div>
-  <div></div>
-  <div></div>
   <div></div>
 </div>
         
