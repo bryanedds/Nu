@@ -191,7 +191,7 @@ module AssetGraph =
                     use stream = File.OpenWrite refinementFilePath
                     let defines = DdsWriteDefines ()
                     defines.FastMipmaps <- false
-                    image.Alpha AlphaOption.Set // implicitly directs use of dxt5 compression - https://github.com/ImageMagick/ImageMagick/pull/4914#issuecomment-1060654324
+                    image.Alpha AlphaAction.Set // implicitly directs use of dxt5 compression - https://github.com/ImageMagick/ImageMagick/pull/4914#issuecomment-1060654324
                     image.Write (stream, defines)
                 | AstcCompression ->
                     use image = new MagickImage (intermediateFilePath)
