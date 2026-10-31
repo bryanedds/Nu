@@ -271,8 +271,8 @@ type [<SymbolicExpansion>] MaterialProperties =
       SubsurfaceCutoffOpt : single voption // forward only
       SubsurfaceCutoffMarginOpt : single voption // forward only
       RefractiveIndexOpt : single voption // forward only
-      ClearCoatOpt : single voption // deferred only - TODO: consider implementing for forward surfaces as well.
-      ClearCoatRoughnessOpt : single voption // deferred only - TODO: same as above.
+      ClearCoatOpt : single voption // deferred only - TODO: consider implementing clear coat for forward surfaces as well.
+      ClearCoatRoughnessOpt : single voption // deferred only
       // NOTE: 6 fields here are reserved for engine use.
       UserDefinedSetting0Opt : single voption
       UserDefinedSetting1Opt : single voption
@@ -787,7 +787,7 @@ type [<SymbolicExpansion>] Lighting3dConfig =
       ToneMapPower : Vector3
       ToneMapSaturation : single
       ToneMapWhitePoint : single
-      FogEnabled : bool // TODO: rename to DistanceFogEnabled and so on for others?
+      FogEnabled : bool // TODO: P1: rename to DistanceFogEnabled and so on for others.
       FogType : FogType
       FogStart : single
       FogFinish : single
@@ -3340,7 +3340,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
                     // render animated surfaces
                     let surface = modelAsset.Surfaces[i]
-                    for (model, castShadow, presence, insetOpt, material, properties) in animatedModels do // TODO: see if these should a struct tuples.
+                    for (model, castShadow, presence, insetOpt, material, properties) in animatedModels do // TODO: see if these should be struct tuples.
 
                         // compute tex coords offset
                         let texCoordsOffset =
@@ -4608,6 +4608,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity
         terrainDescriptor materialSamplers geometry colorAttachments depthAttachment resolution renderPassIndex pipeline renderer =
         let (texelWidth, texelHeight, materials, userDefinedImage0Texture, userDefinedImage1Texture) =
+
+            // determine terrain material textures
             match terrainDescriptor.Material with
             | BlendMaterial blendMaterial ->
                 let defaultMaterial =
@@ -4696,11 +4698,18 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     | ValueSome renderAsset -> match renderAsset with TextureAsset texture -> texture | _ -> defaultMaterial.NormalTexture
                     | ValueNone -> defaultMaterial.UserDefinedImage1Texture
                 (albedoMetadata.TextureTexelWidth, albedoMetadata.TextureTexelHeight, [|material|], userDefinedImage0Texture, userDefinedImage1Texture)
+
+        // ensure that we have enough materials to fill the terrain material array
         let materials =
             Array.create Constants.Render.TerrainLayersMax PhysicallyBasedMaterial.empty
             |> Array.append materials
             |> Array.take Constants.Render.TerrainLayersMax
-        let terrainMaterialProperties = terrainDescriptor.MaterialProperties
+
+        // determine terrain material properties
+        let terrainMaterialProperties =
+            terrainDescriptor.MaterialProperties
+
+        // determine terrain material properties with defaults
         let materialProperties =
             { Albedo = Option.defaultValue Constants.Render.AlbedoDefault terrainMaterialProperties.AlbedoOpt
               Roughness = Option.defaultValue Constants.Render.RoughnessDefault terrainMaterialProperties.RoughnessOpt
@@ -4726,6 +4735,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
               UserDefinedSetting5 = Option.defaultValue 0.0f terrainMaterialProperties.UserDefinedSetting5Opt
               UserDefinedSetting6 = Option.defaultValue 0.0f terrainMaterialProperties.UserDefinedSetting6Opt
               UserDefinedSetting7 = Option.defaultValue 0.0f terrainMaterialProperties.UserDefinedSetting7Opt }
+
+        // determine terrain material texture coordinates offset
         let texCoordsOffset =
             match terrainDescriptor.InsetOpt with
             | Some inset ->
@@ -4737,6 +4748,8 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                 let sy = -inset.Size.Y * texelHeight
                 Box2 (px, py, sx, sy)
             | None -> box2 v2Zero v2Zero
+
+        // populate terrain material instance fields
         let instanceFields = Array.zeroCreate Constants.Render.InstanceFieldCount
         m4Identity.ToArray (instanceFields, 0)
         instanceFields[16] <- texCoordsOffset.Min.X

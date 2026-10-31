@@ -468,7 +468,8 @@ type [<ReferenceEquality>] VulkanContext =
         SetInstanceApi (Vulkan.GetApi instance)
         (validationLayersActivated, instance)
 
-    // TODO: try separate this from validation status, same for create instance debug.
+    /// Create the debug messenger when validation layers are activated.
+    /// TODO: try separate this from validation status, same for create instance debug.
     static member private tryCreateDebugMessenger validationLayersActivated info =
         if validationLayersActivated then
             let mutable debugMessenger = Unchecked.defaultof<VkDebugUtilsMessengerEXT>
