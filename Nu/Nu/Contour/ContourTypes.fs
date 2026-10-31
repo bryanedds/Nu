@@ -10,37 +10,33 @@ open System.Runtime.InteropServices
 open Prime
 open Nu
 
-// ============================================================
-//  Slug-based GPU Contour Pipeline — Semantic Model
-// ============================================================
-//  This module describes the data types for Nu's GPU-accelerated contour renderer, which is a port of Eric Lengyel's
-//  Slug algorithm (JCGT 2017).  The pipeline works as follows:
-//
-//    1. ContourCommand[]  —  user-facing shape description (move/line/quad/cubic/close).  Cubics are adaptively split
-//       into quadratics during packing.
-//
-//    2. Contour.decomposeToCurves  —  converts commands to ContourCurve[] (quadratic Béziers).  Lines are encoded as
-//       {p1, p2, p2} per the Slug reference.
-//
-//    3. Contour.buildBands  —  groups curves into horizontal and vertical bands, sorts each band by descending
-//       max-x (H) / max-y (V), and produces a flat index array.  Straight-horizontal curves are excluded from H-bands;
-//       straight-vertical from V-bands.
-//
-//    4. ContourSlugGeometry  —  pure GPU-ready data for one draw pass.  Contains only curve/band data; paint is
-//       separate so the same geometry can be reused with different colors.
-//
-//    5. Contour  —  up to two ContourSlugGeometry values: an optional fill pass and an optional stroke pass.  Stroke
-//       is rendered as a filled Slug contour built from a CPU-generated offset outline (miter joints, closed ring ->
-//       NonZero fill).
-//
-//    6. drawContour  —  uploads each ContourSlugGeometry + color to SSBOs, draws a full-screen quad mapped to the
-//       bounding box, and computes analytic coverage in the fragment shader via horizontal + vertical ray casting.
-//
-//  Fill rules: EvenOdd and NonZero only.  The fragment shader distinguishes them via a single flag bit (bit 0 of
-//  flags).
-//
-//  Reference: https://github.com/EricLengyel/Slug
-// ============================================================
+(* Slug-based GPU Contour Pipeline Types
+
+A port of Eric Lengyel's Slug algorithm (JCGT 2017, https://github.com/EricLengyel/Slug).
+
+The pipeline works as follows:
+
+    1. ContourCommand[] — user-facing shape description (move/line/quad/cubic/close). Cubics are adaptively split
+       into quadratics during packing.
+
+    2. Contour.decomposeToCurves — converts commands to ContourCurve[] (quadratic Béziers). Lines are encoded as
+       {p1, p2, p2} per the Slug reference.
+
+    3. Contour.buildBands — groups curves into horizontal and vertical bands, sorts each band by descending
+       max-x (H) / max-y (V), and produces a flat index array. Straight-horizontal curves are excluded from H-bands;
+       straight-vertical from V-bands.
+
+    4. ContourSlugGeometry — pure GPU-ready data for one draw pass. Contains only curve/band data; paint is
+       separate so the same geometry can be reused with different colors.
+
+    5. Contour — up to two ContourSlugGeometry values: an optional fill pass and an optional stroke pass. Stroke
+       is rendered as a filled Slug contour built from a CPU-generated offset outline (miter joints, closed ring ->
+       NonZero fill).
+
+    6. drawContour — uploads each ContourSlugGeometry + color to SSBOs, draws a full-screen quad mapped to the
+       bounding box, and computes analytic coverage in the fragment shader via horizontal + vertical ray casting.
+
+Fill rules: EvenOdd and NonZero only. The fragment shader distinguishes them via a single flag bit (bit 0 of flags). *)
 
 /// Represents a contour command.
 type [<Struct>] ContourCommand =
@@ -117,6 +113,8 @@ type Contour =
       FillColor : Color
       StrokeGeometryOpt : ContourSlugGeometry voption
       StrokeColor : Color }
+
+    /// The empty contour.
     static member val empty =
         { FillGeometryOpt = ValueNone
           FillColor = Color.Zero

@@ -1986,6 +1986,14 @@ type [<DefaultValue "[PointLight 0]">] LightType =
     member this.IsGlobalLight =
         not this.IsLocalLight
 
+    /// The names of the light types.
+    /// TODO: generate these reflectively and memoized.
+    static member Names =
+        [|nameof PointLight
+          nameof SpotLight
+          nameof DirectionalLight
+          nameof CascadedLight|]
+
     /// Convert to an int tag that can be utilized by a shader.
     member this.Enumerate =
         match this with
@@ -2022,14 +2030,6 @@ type [<DefaultValue "[PointLight 0]">] LightType =
         | 3 -> CascadedLight
         | _ -> failwithumf ()
 
-    /// The names of the light types.
-    /// TODO: generate these reflectively and memoized.
-    static member Names =
-        [|nameof PointLight
-          nameof SpotLight
-          nameof DirectionalLight
-          nameof CascadedLight|]
-
 /// The type of shadowing used by a light.
 type [<Struct>] ShadowingType =
     | NoShadowing
@@ -2052,6 +2052,20 @@ type [<Struct>] ToneMapType =
     | Uncharted2FilmicToneMap
     | LottesToneMap
     | KronosNeutralToneMap
+
+    /// The names of the tone map types.
+    /// TODO: generate these reflectively and memoized.
+    static member Names =
+        [|nameof AgXToneMap
+          nameof ReinhardToneMap
+          nameof ReinhardExtendedToneMap
+          nameof UnrealToneMap
+          nameof AcesFittedToneMap
+          nameof AcesFilmicToneMap
+          nameof Uncharted2ToneMap
+          nameof Uncharted2FilmicToneMap
+          nameof LottesToneMap
+          nameof KronosNeutralToneMap|]
 
     /// Convert to an int tag that can be utilized by a shader.
     member this.Enumerate =
@@ -2082,20 +2096,6 @@ type [<Struct>] ToneMapType =
         | 9 -> KronosNeutralToneMap
         | _ -> failwithumf ()
 
-    /// The names of the tone map types.
-    /// TODO: generate these reflectively and memoized.
-    static member Names =
-        [|nameof AgXToneMap
-          nameof ReinhardToneMap
-          nameof ReinhardExtendedToneMap
-          nameof UnrealToneMap
-          nameof AcesFittedToneMap
-          nameof AcesFilmicToneMap
-          nameof Uncharted2ToneMap
-          nameof Uncharted2FilmicToneMap
-          nameof LottesToneMap
-          nameof KronosNeutralToneMap|]
-
 /// The type of fog to utilize.
 type [<Struct>] FogType =
 
@@ -2107,6 +2107,13 @@ type [<Struct>] FogType =
 
     /// Useful for a distance for that mostly just includes 'background' based on FogDensity.
     | ExponentialSquaredFog
+
+    /// The names of the fog types.
+    /// TODO: generate these reflectively and memoized.
+    static member Names =
+        [|nameof LinearFog
+          nameof ExponentialFog
+          nameof ExponentialSquaredFog|]
 
     /// Convert to an int tag that can be utilized by a shader.
     member this.Enumerate =
@@ -2122,13 +2129,6 @@ type [<Struct>] FogType =
         | 1 -> ExponentialFog
         | 2 -> ExponentialSquaredFog
         | _ -> failwithumf ()
-
-    /// The names of the fog types.
-    /// TODO: generate these reflectively and memoized.
-    static member Names =
-        [|nameof LinearFog
-          nameof ExponentialFog
-          nameof ExponentialSquaredFog|]
 
 /// The type of subsurface scattering that a material utilizes.
 type [<Struct>] ScatterType =
@@ -2150,6 +2150,11 @@ type [<Struct>] FocalType =
     | StaticFocalDistance
     | DynamicFocalDistance
 
+    /// The names of the focal depth types.
+    static member Names =
+        [|nameof StaticFocalDistance
+          nameof DynamicFocalDistance|]
+
     /// Convert to an int tag that can be utilized by a shader.
     member this.Enumerate =
         match this with
@@ -2162,11 +2167,6 @@ type [<Struct>] FocalType =
         | 0 -> StaticFocalDistance
         | 1 -> DynamicFocalDistance
         | _ -> failwithumf ()
-
-    /// The names of the focal depth types.
-    static member Names =
-        [|nameof StaticFocalDistance
-          nameof DynamicFocalDistance|]
 
 namespace System.Collections.Generic
 
