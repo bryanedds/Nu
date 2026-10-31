@@ -29,6 +29,9 @@ type CharacterType =
         | Enemy -> 40
         | Player -> 30
 
+    member this.JumpSpeed =
+        5.0f
+
 type AttackState =
     { AttackTime : int64
       FollowUpBuffered : bool
@@ -191,7 +194,7 @@ type CharacterDispatcher () =
             let sinceGrounded = world.UpdateTime - entity.GetLastTimeGrounded world
             let sinceJump = world.UpdateTime - entity.GetLastTimeJump world
             if sinceJump >= 12L && sinceGrounded < 10L && actionState = NormalState then
-                entity.SetLinearVelocity (entity.GetLinearVelocity world + v3Up * 5.0f) world // TODO: use jump velocity constant.
+                entity.SetLinearVelocity (entity.GetLinearVelocity world + v3Up * Player.JumpSpeed) world
                 entity.SetLastTimeJump world.UpdateTime world
 
         // process attacking

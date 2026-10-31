@@ -30,7 +30,7 @@ type ChainBuilder () =
             chainMapper eir)
 
     /// Applicative apply for the chain monad.
-    /// TODO: Implement!
+    /// TODO: P1: implement!
     [<DebuggerHidden; DebuggerStepThrough>]
     member this.Apply (c : Chain<'e, 'a -> 'b>) (_ : Chain<'e, 'a>) : Chain<'e, 'b> =
         Chain (fun () ->

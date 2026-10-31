@@ -600,6 +600,7 @@ type Pipeline =
           Size = size
           ShaderStage = shaderStage }
 
+    /// Convert Blend to VulkanBlend.
     static member blendToVkBlend blend =
         match blend with
         | Unblended -> VulkanUnblended
@@ -608,8 +609,6 @@ type Pipeline =
         | Overwrite -> VulkanOverwrite
     
     /// Convert DepthTest to VkCompareOp.
-    /// TODO: BGE: since this is the odd one out in terms of being the only function directly in this module that is
-    /// not an operator, perhaps it should either be privatized or moved elsewhere?
     static member depthTestToVkCompareOp depthTest =
         match depthTest with
         | LessThanTest -> VkCompareOp.Less

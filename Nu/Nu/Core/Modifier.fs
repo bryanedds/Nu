@@ -11,7 +11,7 @@ open Prime
 open Nu
 
 /// Modifies behaviors.
-/// TODO: implement arrow choice combinators.
+/// TODO: P1: implement arrow choice combinators.
 type Modifier<'a, 'b> =
     | Modifier of ('a Behavior -> 'b Behavior)
 
@@ -44,7 +44,7 @@ type Modifier<'a, 'b> =
             let bhvrC = Behavior.map f bhvrB
             bhvrC
 
-    // TODO: make sure we implemented this properly.
+    // TODO: P1: make sure we implemented this properly.
     member internal this.ComposeRight (f : 'c -> 'a) : Modifier<'c, 'b> =
         Modifier $ fun (bhvrA : 'c Behavior) ->
             let bhvrA = Behavior.map f bhvrA
@@ -222,13 +222,13 @@ module Modifier =
     let composeLeftFlip (mdfr : Modifier<'a, 'b>) (f : 'b -> 'c) : Modifier<'a, 'c> =
         mdfr.ComposeLeft f
 
-    // TODO: figure out how to implement this properly.
+    // TODO: P1: figure out how to implement this properly.
     let private apply (mdfr : Modifier<Modifier<'a, 'b> * 'b, 'b>) =
         Modifier $ fun (_ : 'b Behavior) ->
             let _ = run Unchecked.defaultof<_> mdfr
             Unchecked.defaultof<_>
 
-    // TODO: figure out how to implement this properly.
+    // TODO: P1: figure out how to implement this properly.
     let rec private delay (a : 'a) : Modifier<'a, 'a> =
         Modifier $ fun (bhvrA : 'a Behavior) ->
             Behavior $ fun time ->

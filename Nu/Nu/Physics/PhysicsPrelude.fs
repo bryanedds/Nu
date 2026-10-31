@@ -136,7 +136,8 @@ type Profile =
     /// A concave shape.
     /// This shape is defined by a body may form a concave hull.
     /// Least efficient but often more accurate.
-    /// TODO: should this case be specified to require points to be formatted as groups of 3 to form triangles even for user-defined 2D and 3D engines?
+    /// TODO: should this case be specified to require points to be formatted as groups of 3 to form triangles even for
+    /// user-defined 2D and 3D engines?
     | Concave
 
     /// A simplified axis-aligned bounds.

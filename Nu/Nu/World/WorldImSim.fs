@@ -144,7 +144,7 @@ module WorldImSim =
             results.Sort (fun (leftId, _) (rightId, _) -> leftId.CompareTo rightId)
             results |> Seq.map snd |> FQueue.ofSeq
 
-        /// TODO: document this!
+        /// ImSim subscribe to the given entity's body events, mapping the results to a user-defined result.
         static member initBodyResult updateResult (entity : Entity) world =
             World.monitor (fun event world -> updateResult (FQueue.conj $ BodyPenetrationData event.Data) world; Cascade) entity.BodyPenetrationEvent entity world
             World.monitor (fun event world -> updateResult (FQueue.conj $ BodySeparationExplicitData event.Data) world; Cascade) entity.BodySeparationExplicitEvent entity world

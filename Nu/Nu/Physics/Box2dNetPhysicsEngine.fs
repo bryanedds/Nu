@@ -1414,7 +1414,8 @@ type [<ReferenceEquality>] Box2dNetPhysicsEngine =
         explosionDef.maskBits <- applyExplosionMessage.CollisionMask
         B2Worlds.b2World_Explode (physicsEngine.PhysicsContextId, &explosionDef)
         
-    // TODO: make characterGroundCastCallback store multiple contacts (fraction value minimal but around similar) and read them here
+    // TODO: make characterGroundCastCallback store multiple contacts (fraction value minimal but around similar) and
+    // read them here.
     static member private getCharacterGroundContactNormalOpt bodyId physicsEngine =
         match physicsEngine.Characters.TryGetValue bodyId with
         | (true, character) ->

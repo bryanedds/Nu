@@ -228,7 +228,7 @@ module Transformer =
                     body.LinearVelocity <- reflectedVelocity * body.Restitution
                 i <- inc i
         | Box box ->
-            // TODO: implement properly bouncing angles.
+            // TODO: P1: implement properly bouncing angles.
             let mutable i = 0
             while i < bodies.Length do
                 let body = &bodies[i]

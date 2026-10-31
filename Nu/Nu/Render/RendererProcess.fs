@@ -151,7 +151,7 @@ type RendererInline (windowProperties) =
                     let context =
                         match VulkanContext.tryCreate TryCreateVkSurfaceRequest.tryCreateVkSurface window with
                         | Some context -> context
-                        | None -> Log.fail "Could not create Vulkan context." // TODO: P1: handle failure more gracefully here?
+                        | None -> Log.fail "Could not create Vulkan context."
 
                     // create and populate the empty texture
                     let emptyTexture =
@@ -621,7 +621,7 @@ type RendererThread (windowProperties) =
                 let context =
                     match VulkanContext.tryCreate TryCreateVkSurfaceRequest.tryCreateVkSurface window with
                     | Some context -> context
-                    | None -> Log.fail "Could not create Vulkan context." // TODO: P1: handle failure more gracefully here?
+                    | None -> Log.fail "Could not create Vulkan context."
                 contextOpt <- Some context
 
                 // start real thread

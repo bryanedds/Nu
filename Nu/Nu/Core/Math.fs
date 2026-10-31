@@ -1499,19 +1499,126 @@ module Segment3 =
         member this.Magnitude = this.Length ()
         member this.MagnitudeSquared = this.LengthSquared ()
 
-// TODO: create symbolic converter for Ray2.
+/// Converts Ray2 types.
+type Ray2Converter () =
+    inherit TypeConverter ()
+
+    override this.CanConvertTo (_, destType) =
+        destType = typeof<Symbol> ||
+        destType = typeof<Ray2>
+
+    override this.ConvertTo (_, _, source, destType) =
+        if destType = typeof<Symbol> then
+            let ray2 = source :?> Ray2
+            Symbols
+                ([Symbols ([Number (string ray2.Origin.X, ValueNone); Number (string ray2.Origin.Y, ValueNone)], ValueNone)
+                  Symbols ([Number (string ray2.Direction.X, ValueNone); Number (string ray2.Direction.Y, ValueNone)], ValueNone)], ValueNone) :> obj
+        elif destType = typeof<Ray2> then source
+        else failconv "Invalid Ray2Converter conversion to source." None
+
+    override this.CanConvertFrom (_, sourceType) =
+        sourceType = typeof<Symbol> ||
+        sourceType = typeof<Ray2>
+
+    override this.ConvertFrom (_, _, source) =
+        match source with
+        | :? Symbol as symbol ->
+            match symbol with
+            | Symbols ([originSymbol; directionSymbol], _) ->
+                match (originSymbol, directionSymbol) with
+                | (Symbols ([Number (originX, _); Number (originY, _)], _), Symbols ([Number (directionX, _); Number (directionY, _)], _)) ->
+                    let origin = Vector2 (Single.Parse originX, Single.Parse originY)
+                    let direction = Vector2 (Single.Parse directionX, Single.Parse directionY)
+                    Ray2 (origin, direction) :> obj
+                | _ -> failconv "Invalid Ray2Converter conversion from source." (Some symbol)
+            | _ -> failconv "Invalid Ray2Converter conversion from source." (Some symbol)
+        | :? Ray2 -> source
+        | _ -> failconv "Invalid Ray2Converter conversion from source." None
+
 [<AutoOpen>]
 module Ray2 =
 
     let inline ray2 (origin : Vector2) (direction : Vector2) = Ray2 (origin, direction)
 
-// TODO: create symbolic converter for Ray3.
+/// Converts Ray3 types.
+type Ray3Converter () =
+    inherit TypeConverter ()
+
+    override this.CanConvertTo (_, destType) =
+        destType = typeof<Symbol> ||
+        destType = typeof<Ray3>
+
+    override this.ConvertTo (_, _, source, destType) =
+        if destType = typeof<Symbol> then
+            let ray3 = source :?> Ray3
+            Symbols
+                ([Symbols ([Number (string ray3.Origin.X, ValueNone); Number (string ray3.Origin.Y, ValueNone); Number (string ray3.Origin.Z, ValueNone)], ValueNone)
+                  Symbols ([Number (string ray3.Direction.X, ValueNone); Number (string ray3.Direction.Y, ValueNone); Number (string ray3.Direction.Z, ValueNone)], ValueNone)], ValueNone) :> obj
+        elif destType = typeof<Ray3> then source
+        else failconv "Invalid Ray3Converter conversion to source." None
+
+    override this.CanConvertFrom (_, sourceType) =
+        sourceType = typeof<Symbol> ||
+        sourceType = typeof<Ray3>
+
+    override this.ConvertFrom (_, _, source) =
+        match source with
+        | :? Symbol as symbol ->
+            match symbol with
+            | Symbols ([originSymbol; directionSymbol], _) ->
+                match (originSymbol, directionSymbol) with
+                | (Symbols ([Number (originX, _); Number (originY, _); Number (originZ, _)], _), Symbols ([Number (directionX, _); Number (directionY, _); Number (directionZ, _)], _)) ->
+                    let origin = Vector3 (Single.Parse originX, Single.Parse originY, Single.Parse originZ)
+                    let direction = Vector3 (Single.Parse directionX, Single.Parse directionY, Single.Parse directionZ)
+                    Ray3 (origin, direction) :> obj
+                | _ -> failconv "Invalid Ray3Converter conversion from source." (Some symbol)
+            | _ -> failconv "Invalid Ray3Converter conversion from source." (Some symbol)
+        | :? Ray3 -> source
+        | _ -> failconv "Invalid Ray3Converter conversion from source." None
+
 [<AutoOpen>]
 module Ray3 =
 
     let inline ray3 (origin : Vector3) (direction : Vector3) = Ray3 (origin, direction)
 
-// TODO: create symbolic converter for Plane3.
+// TODO: P1: create symbolic converter for Plane3.
+/// Converts Plane3 types.
+type Plane3Converter () =
+    inherit TypeConverter ()
+
+    override this.CanConvertTo (_, destType) =
+        destType = typeof<Symbol> ||
+        destType = typeof<Plane3>
+
+    override this.ConvertTo (_, _, source, destType) =
+        if destType = typeof<Symbol> then
+            let plane3 = source :?> Plane3
+            Symbols
+                ([Symbols ([Number (string plane3.Normal.X, ValueNone); Number (string plane3.Normal.Y, ValueNone); Number (string plane3.Normal.Z, ValueNone)], ValueNone)
+                  Number (string plane3.D, ValueNone)], ValueNone) :> obj
+        elif destType = typeof<Plane3> then source
+        else failconv "Invalid Plane3Converter conversion to source." None
+
+    override this.CanConvertFrom (_, sourceType) =
+        sourceType = typeof<Symbol> ||
+        sourceType = typeof<Plane3>
+
+    override this.ConvertFrom (_, _, source) =
+        match source with
+        | :? Symbol as symbol ->
+            match symbol with
+            | Symbols ([normalSymbol; dSymbol], _) ->
+                match (normalSymbol, dSymbol) with
+                | (Symbols ([Number (nx, _); Number (ny, _); Number (nz, _)], _), Number (d, _)) ->
+                    let normal = Vector3 (Single.Parse nx, Single.Parse ny, Single.Parse nz)
+                    let d = Single.Parse d
+                    Plane3 (normal, d) :> obj
+                | _ -> failconv "Invalid Plane3Converter conversion from source." (Some symbol)
+            | _ -> failconv "Invalid Plane3Converter conversion from source." (Some symbol)
+        | :? Plane3 -> source
+        | _ -> failconv "Invalid Plane3Converter conversion from source." None
+
+
 [<AutoOpen>]
 module Plane3 =
 
@@ -1741,8 +1848,7 @@ module Math =
         else (offset / alignment + 1) * alignment // offset shifted forward to align
 
     /// Compute the minimum buffer size.
-    /// TODO: find a more general name for this.
-    let MinimumBufferSize (offset, alignment, size, count) =
+    let BufferSizeMin (offset, alignment, size, count) =
         let stride = Stride (alignment, size)
         let offset = AlignOffset (offset, alignment)
         offset + stride * count
