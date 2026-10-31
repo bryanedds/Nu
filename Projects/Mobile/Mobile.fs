@@ -49,12 +49,10 @@ type MobileDispatcher () =
         World.endScreen world
 
         // declare gameplay screen
-        let gameplay = Simulants.Gameplay
         let behavior = Dissolve (Constants.Dissolve.Default, None)
-        let results = World.beginScreen<GameplayDispatcher> gameplay.Name (game.GetGameState world = Gameplay) behavior [] world
-        if FQueue.contains Select results then gameplay.SetGameplayState Playing world
-        if FQueue.contains Deselecting results then gameplay.SetGameplayState Quit world
-        if gameplay.GetSelected world && gameplay.GetGameplayState world = Quit then game.SetGameState Title world
+        let results = World.beginScreen<GameplayDispatcher> Simulants.Gameplay.Name (game.GetGameState world = Gameplay) behavior [] world
+        if FQueue.contains Select results then Simulants.Gameplay.SetGameplayState Playing world
+        if Simulants.Gameplay.GetSelected world && Simulants.Gameplay.GetGameplayState world = Quit then game.SetGameState Title world
         World.endScreen world
 
         // declare credits screen
