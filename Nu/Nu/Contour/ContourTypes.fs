@@ -10,7 +10,7 @@ open System.Runtime.InteropServices
 open Prime
 open Nu
 
-(* Slug-based GPU Contour Pipeline Types
+(* Slug-based GPU Contour Types
 
 A port of Eric Lengyel's Slug algorithm (JCGT 2017, https://github.com/EricLengyel/Slug).
 
