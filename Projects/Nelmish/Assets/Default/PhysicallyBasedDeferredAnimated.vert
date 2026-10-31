@@ -75,6 +75,7 @@ layout(location = 5) flat out vec4 materialOut;
 layout(location = 6) flat out vec4 material2Out;
 layout(location = 7) flat out vec4 subsurfacePlusOut;
 layout(location = 8) flat out vec4 clearCoatPlusOut;
+layout(location = 9) flat out vec4 userDefinedSettingsOut[2];
 
 void main()
 {
@@ -105,5 +106,6 @@ void main()
     material2Out = material2;
     subsurfacePlusOut = subsurfacePlus;
     clearCoatPlusOut = clearCoatPlus;
+    userDefinedSettingsOut = userDefinedSettings;
     gl_Position = eye.viewProjection * positionOut;
 }

@@ -31,9 +31,9 @@ module Core =
             LastTimeStamp <- nextStamp
             nextStamp
 
-    /// Do a full garbage collection pass, including compaction of the LOH.
+    /// Do a full garbage collection pass, optionally also compacting the LOH.
     /// Thread-safe.
-    let garbageCollect compactLoh =
+    let collectGarbage compactLoh =
         if compactLoh then GCSettings.LargeObjectHeapCompactionMode <- GCLargeObjectHeapCompactionMode.CompactOnce;
         GC.Collect ()
 

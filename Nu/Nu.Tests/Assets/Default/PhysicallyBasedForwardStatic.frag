@@ -164,6 +164,7 @@ layout(location = 4) flat in vec4 albedo;
 layout(location = 5) flat in vec4 material;
 layout(location = 6) flat in vec4 material2;
 layout(location = 7) flat in vec4 subsurfacePlus;
+layout(location = 8) flat in vec4 userDefinedSettings[2];
 
 layout(location = 0) out float depthOut;
 layout(location = 1) out vec4 compositionOut;
@@ -312,7 +313,7 @@ float computeShadowScalarPoint(vec4 position, vec3 lightOrigin, int shadowIndex)
         {
             for (int k = 0; k < lighting.lightShadowSamples; ++k)
             {
-                vec3 offset = (vec3(i, j, k) - vec3(lighting.lightShadowSamples / 2.0)) * (lighting.lightShadowSampleScalar / lighting.lightShadowSamples);
+                vec3 offset = (vec3(i, j, k) - vec3(lighting.lightShadowSamples * 0.5)) * (lighting.lightShadowSampleScalar / lighting.lightShadowSamples);
                 shadowHits += shadowZ - lighting.lightShadowBias > texture(samplerCube(shadowMaps[shadowIndex - SHADOW_TEXTURES_MAX], filteredSampler), positionShadow + offset).x ? 1.0 : 0.0;
             }
         }

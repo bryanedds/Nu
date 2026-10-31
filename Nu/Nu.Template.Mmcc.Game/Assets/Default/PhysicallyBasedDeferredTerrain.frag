@@ -51,6 +51,7 @@ layout(location = 5) in vec3 tint;
 layout(location = 6) flat in vec4 albedo;
 layout(location = 7) flat in vec4 material;
 layout(location = 8) flat in vec4 material2;
+layout(location = 9) flat in vec4 userDefinedSettings[2];
 
 layout(location = 0) out float depthOut;
 layout(location = 1) out vec3 albedoOut;
