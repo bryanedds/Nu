@@ -54,6 +54,14 @@ module WorldModule2 =
         static member setTimeHalted halted (world : World) =
             AmbientState.setTimeAdvancing (not halted) world.AmbientState
 
+        /// Get all the light probes in a group.
+        static member getLightProbes (group : Group) (world : World) : Entity seq =
+            World.getEntitiesWith<LightProbeFacet> group world
+
+        /// Get all the 3d lights in a group.
+        static member getLights3d (group : Group) (world : World) : Entity seq =
+            World.getEntitiesWith<Light3dFacet> group world
+
         /// Select the given screen without transitioning, even if another transition is taking place.
         static member internal selectScreenOpt transitionStateAndScreenOpt world =
             match World.getSelectedScreenOpt world with
