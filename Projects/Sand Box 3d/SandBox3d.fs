@@ -13,7 +13,7 @@ type GameState =
     | Credits
     | Gameplay
 
-// this extends the Game API to expose the above ImSim model as a property.
+// this extends the Game API to expose GameState as a property.
 [<AutoOpen>]
 module SandBox3dExtensions =
     type Game with
