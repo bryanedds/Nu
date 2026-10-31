@@ -12,7 +12,7 @@ open System.Net.Http
 open System.Diagnostics
 open System.Text.RegularExpressions
 
-// ---- CLI ----
+(* CLI *)
 
 let args = fsi.CommandLineArgs |> Array.skip 1
 
@@ -33,7 +33,7 @@ if not (File.Exists projectFullPath) then
 
 let projectDir = Path.GetDirectoryName projectFullPath
 
-// Clean up orphaned probe directories from aborted runs (older than 1 hour)
+// clean up orphaned probe directories from aborted runs (older than 1 hour)
 try
     let probeBase = Path.Combine (Path.GetTempPath (), "NuAssetDeliveryProbe")
     if Directory.Exists probeBase then
@@ -45,10 +45,10 @@ try
             with _ -> ()
 with _ -> ()
 
-// ---- NuGet feed query ----
+(* NuGet feed query *)
 
-// A broken or offline system proxy can make nuget.org unreachable even when the network is fine, so we attempt
-// the query normally first (honoring any system proxy) and then fall back to direct connection with a warning.
+// a broken or offline system proxy can make nuget.org unreachable even when the network is fine, so we attempt the
+// query normally first (honoring any system proxy) and then fall back to direct connection with a warning.
 let fetchVersionsFromNuget () : Result<string[], string> =
     let attempt useProxy =
         task {
@@ -90,8 +90,7 @@ let fallbackVersionsFromAssets () : string[] =
 let tryParseVersion (s: string) : Version voption =
     let clean = s.Replace("-alpha", "").Replace("-beta", "").Replace("-rc", "").Replace("-preview", "")
     let dotParts = clean.Split('.')
-    // Pad to at least 4 parts
-    let padded =
+    let padded = // pad to at least 4 parts
         [|yield! dotParts
           for _ in dotParts.Length .. 3 do yield "0"|]
         |> Array.map (fun p ->
@@ -104,14 +103,13 @@ let tryParseVersion (s: string) : Version voption =
         ValueNone
 
 let runRestoreProbe (candidate: string) : bool * bool =
-    // Use a temporary project file to probe — running restore on the real
-    // project would overwrite obj/project.assets.json with Android-only data,
-    // losing non-Android TFM entries and breaking subsequent builds.
+    // use a temporary project file to probe — running restore on the real project would overwrite
+    // obj/project.assets.json with Android-only data, losing non-Android TFM entries and breaking subsequent builds.
     let probeDir = Path.Combine (Path.GetTempPath (), "NuAssetDeliveryProbe", Guid.NewGuid().ToString "N", candidate.Replace (".", "_"))
     Directory.CreateDirectory probeDir |> ignore
     let probeProject = Path.Combine (probeDir, "Probe.fsproj")
 
-    // Create a minimal project that reproduces the same dependency chain:
+    // create a minimal project that reproduces the same dependency chain:
     // MAUI (implicit via UseMaui=true, pulls in Ktx packages with upper bounds)
     // + Asset.Delivery (pulls in Fragment 1.8.9.2+ which violates those bounds)
     File.WriteAllText (probeProject, $"""<Project Sdk="Microsoft.NET.Sdk">
@@ -146,11 +144,10 @@ let runRestoreProbe (candidate: string) : bool * bool =
     let output = stdout + stderr
     let succeeded = p.ExitCode = 0
     let hasNu1608 = output.Contains "NU1608"
-    // Clean up temp directory after probe
-    try Directory.Delete (probeDir, recursive = true) with _ -> ()
+    try Directory.Delete (probeDir, recursive = true) with _ -> () // clean up temp directory after probe
     succeeded, hasNu1608
 
-// ---- Main ----
+(* Main *)
 
 let candidates =
     let fromNuGet =
