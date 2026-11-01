@@ -2004,7 +2004,7 @@ module Battle =
                 let poisoning =
                     let actionTime = character.ActionTime + actionTimeDelta
                     Map.containsKey Poison character.Statuses &&
-                    actionTime % 500.0f < 250.0f &&
+                    character.ActionTime % 500.0f < 250.0f &&
                     actionTime % 500.0f >= 250.0f
                 let character =
                     if character.Healthy && not (Map.containsKey StatusType.Sleep character.Statuses)
