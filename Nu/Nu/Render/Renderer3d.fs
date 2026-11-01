@@ -15,6 +15,19 @@ open SDL
 open Prime
 open Nu.Vulkan
 
+/// Cascaded shadow map utilities.
+[<RequireQualifiedAccess>]
+module ShadowCascade =
+
+    /// Compute the far view depth of the given cascade with the practical split scheme - a blend of logarithmic and
+    /// uniform splits weighted by Constants.Render.ShadowCascadeSplitLambda.
+    /// NOTE: must match computeShadowCascadeSplit in shaders.
+    let computeSplit (near : single) (far : single) (cascade : int) =
+        let t = single (inc cascade) / single Constants.Render.ShadowCascadeLevels
+        let splitLog = near * MathF.Pow (far / near, t)
+        let splitUniform = near + (far - near) * t
+        Constants.Render.ShadowCascadeSplitLambda * splitLog + (1.0f - Constants.Render.ShadowCascadeSplitLambda) * splitUniform
+
 /// Material properties for terrain surfaces.
 type [<SymbolicExpansion>] TerrainMaterialProperties =
     { AlbedoOpt : Color option

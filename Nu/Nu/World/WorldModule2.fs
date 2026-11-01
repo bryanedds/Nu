@@ -1821,8 +1821,8 @@ module WorldModule2 =
                                         let sectionNear =
                                             match i with
                                             | 0 -> Constants.Render.NearPlaneDistanceInterior
-                                            | _ -> shadowFarDistance * Constants.Render.ShadowCascadeLimits[dec i]
-                                        let sectionFar = shadowFarDistance * Constants.Render.ShadowCascadeLimits[i]
+                                            | _ -> ShadowCascade.computeSplit Constants.Render.NearPlaneDistanceInterior shadowFarDistance (dec i)
+                                        let sectionFar = ShadowCascade.computeSplit Constants.Render.NearPlaneDistanceInterior shadowFarDistance i
                                         let sectionProjection = Matrix4x4.CreatePerspectiveFieldOfView (eyeFov, eyeAspectRatio, sectionNear, sectionFar)
                                         let sectionFrustum = Frustum (eyeView * sectionProjection)
                                         let sectionCornersWorld = sectionFrustum.Corners

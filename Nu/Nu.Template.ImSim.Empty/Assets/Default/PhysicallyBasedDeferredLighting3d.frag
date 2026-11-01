@@ -12,7 +12,6 @@ const int SHADOW_CASCADES_MAX = 1;
 const int SHADOW_CASCADE_LEVELS = 3;
 const float SHADOW_CASCADE_SEAM_TEXELS = 6.0; // cascade edge inset in shadow texels, covering the shadow blur's reach
 const float SHADOW_CASCADE_BLEND = 0.15; // fraction of a cascade's depth range over which it cross-fades into the next
-const float SHADOW_CASCADE_LIMITS[SHADOW_CASCADE_LEVELS] = float[](0.2, 0.6, 1.0); // NOTE: must match Constants.Render.ShadowCascadeLimits
 const float SHADOW_FOV_MAX = 2.1;
 const float CLEAR_COAT_REFRACTIVE_INDEX = 1.5; // typical for automotive clear coat
 
@@ -37,6 +36,7 @@ struct Lighting3d2Struct
     int sssEnabled;
     int lightsCount;
     float shadowNear;
+    float shadowCascadeSplitLambda;
 };
 
 struct Light3dStruct
@@ -270,6 +270,16 @@ float sampleShadowCascade(vec4 position, int shadowIndex, int cascade, float ins
     return pow(shadowScalar, lighting2.lightShadowDensity);
 }
 
+float computeShadowCascadeSplit(float shadowCutoff, int cascade)
+{
+    // practical split scheme - a blend of logarithmic and uniform splits
+    // NOTE: must match ShadowCascade.computeSplit
+    float t = float(cascade + 1) / float(SHADOW_CASCADE_LEVELS);
+    float splitLog = lighting2.shadowNear * pow(shadowCutoff / lighting2.shadowNear, t);
+    float splitUniform = lighting2.shadowNear + (shadowCutoff - lighting2.shadowNear) * t;
+    return mix(splitUniform, splitLog, lighting2.shadowCascadeSplitLambda);
+}
+
 float computeShadowScalarCascaded(vec4 position, float shadowCutoff, int shadowIndex)
 {
     // cascades are selected by view depth against the same splits the cascades are built from, so transitions sit at
@@ -279,13 +289,13 @@ float computeShadowScalarCascaded(vec4 position, float shadowCutoff, int shadowI
     float depthView = -(eye.view * position).z;
     for (int i = 0; i < SHADOW_CASCADE_LEVELS; ++i)
     {
-        float splitFar = shadowCutoff * SHADOW_CASCADE_LIMITS[i];
+        float splitFar = computeShadowCascadeSplit(shadowCutoff, i);
         if (depthView < splitFar)
         {
             float shadowScalar = sampleShadowCascade(position, shadowIndex, i, inset);
             if (shadowScalar >= 0.0) // otherwise outside this cascade's map (shouldn't happen as cascades bound their splits), so try the next
             {
-                float splitNear = i == 0 ? 0.0 : shadowCutoff * SHADOW_CASCADE_LIMITS[i - 1];
+                float splitNear = i == 0 ? 0.0 : computeShadowCascadeSplit(shadowCutoff, i - 1);
                 float blend = (splitFar - depthView) / ((splitFar - splitNear) * SHADOW_CASCADE_BLEND); // 0 at the split, 1 at the band's start
                 if (blend < 1.0)
                 {

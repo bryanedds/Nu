@@ -139,6 +139,7 @@ type Lighting3dStruct =
     [<FieldOffset(204)>] val mutable ssrlEdgeHorizontalMargin : single
     [<FieldOffset(208)>] val mutable ssrlEdgeVerticalMargin : single
     [<FieldOffset(212)>] val mutable shadowNear : single
+    [<FieldOffset(216)>] val mutable shadowCascadeSplitLambda : single
 
 [<Struct; StructLayout (LayoutKind.Explicit)>]
 type Lighting3d2Struct =
@@ -151,6 +152,7 @@ type Lighting3d2Struct =
     [<FieldOffset(24)>] val mutable sssEnabled : int
     [<FieldOffset(28)>] val mutable lightsCount : int
     [<FieldOffset(32)>] val mutable shadowNear : single
+    [<FieldOffset(36)>] val mutable shadowCascadeSplitLambda : single
 
 [<Struct; StructLayout (LayoutKind.Explicit, Size = 64)>]
 type LightMapStruct =
@@ -4318,10 +4320,10 @@ module PhysicallyBased =
                 lighting2.lightShadowSampleScalar <- lightShadowSampleScalar
                 lighting2.lightShadowExponent <- lightShadowExponent
                 lighting2.lightShadowDensity <- lightShadowDensity
-                lighting2.shadowNear <- shadowNear
                 lighting2.sssEnabled <- sssEnabled
                 lighting2.lightsCount <- lightsCount
                 lighting2.shadowNear <- shadowNear
+                lighting2.shadowCascadeSplitLambda <- Constants.Render.ShadowCascadeSplitLambda
                 VulkanBuffer.uploadValue lighting2 pipeline.Lighting2Uniform context
                 Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.Lighting2Uniform vkSet
 
@@ -5759,6 +5761,7 @@ module PhysicallyBased =
             lighting.ssrrEdgeHorizontalMargin <- ssrrEdgeHorizontalMargin
             lighting.ssrrEdgeVerticalMargin <- ssrrEdgeVerticalMargin
             lighting.shadowNear <- shadowNear
+            lighting.shadowCascadeSplitLambda <- Constants.Render.ShadowCascadeSplitLambda
             VulkanBuffer.uploadValue lighting pipeline.Lighting3dUniform context
             Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.Lighting3dUniform vkSet
 
