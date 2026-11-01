@@ -19,7 +19,7 @@ open System.IO
 open System.Diagnostics
 open ImageMagick
 
-// ---- CLI ----
+(* CLI *)
 
 let usage () =
     eprintfn """Usage: dotnet fsi GenerateIcons.fsx <platform> <bg.svg> [<fg.svg>] <output>
@@ -29,7 +29,7 @@ let usage () =
   output  : output directory (macOS/linux) or .ico file path (Windows)
 The SVGs in App/ are the single source of truth for the app icon design."""
 
-// ---- ICO binary writer (PNG-encoded entries, Vista+) ----
+(* ICO binary writer (PNG-encoded entries, Vista+) *)
 
 let writeIco (pngDataList : (int * byte[]) list) (path : string) =
     use fs = new FileStream (path, FileMode.Create, FileAccess.Write)
@@ -55,7 +55,7 @@ let writeIco (pngDataList : (int * byte[]) list) (path : string) =
     for _, data in pngDataList do
         bw.Write data
 
-// ---- macOS .icns via iconutil ----
+(* macOS .icns via iconutil *)
 
 let writeIcns (png1024Path : string) (outputDir : string) =
     let iconsetDir = Path.Combine (outputDir, "AppIcon.iconset")
@@ -92,7 +92,7 @@ let writeIcns (png1024Path : string) (outputDir : string) =
     Directory.Delete (iconsetDir, true)
     icnsPath
 
-// ---- Linux icon (.png at 512px) ----
+(* Linux icon (.png at 512px) *)
 
 let writeLinuxPng (png1024Path : string) (outputDir : string) =
     Directory.CreateDirectory outputDir |> ignore
@@ -103,7 +103,7 @@ let writeLinuxPng (png1024Path : string) (outputDir : string) =
     src.Write pngPath
     pngPath
 
-// ---- Windows .ico ----
+(* Windows .ico *)
 
 let writeWindowsIco (png1024Path : string) (outputIco : string) =
     Directory.CreateDirectory (Path.GetDirectoryName outputIco) |> ignore
@@ -120,7 +120,7 @@ let writeWindowsIco (png1024Path : string) (outputIco : string) =
     writeIco pngEntries outputIco
     outputIco
 
-// ---- Main compositing ----
+(* Main compositing *)
 
 let compositeIcon (bgSvgPath : string) (fgSvgPath : string) (outputPngPath : string) =
     let readSettings =
@@ -139,7 +139,7 @@ let compositeIcon (bgSvgPath : string) (fgSvgPath : string) (outputPngPath : str
     Directory.CreateDirectory (Path.GetDirectoryName outputPngPath) |> ignore
     bg.Write outputPngPath
 
-// ---- Entry point ----
+(* Entry point *)
 
 match fsi.CommandLineArgs |> Array.toList with
 | _scriptPath :: "macos" :: bgSvg :: fgSvg :: outputDir :: _ ->

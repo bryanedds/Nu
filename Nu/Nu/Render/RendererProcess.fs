@@ -93,7 +93,7 @@ type RendererProcess =
         abstract EnqueueMessage2d : RenderMessage2d -> unit
 
         /// Potential fast-path for rendering layered sprite.
-        abstract RenderLayeredSpriteFast : single * single * AssetTag * Transform inref * Box2 ValueOption inref * Box2 ValueOption inref * Image AssetTag * Color inref * Blend * Color inref * Flip -> unit
+        abstract RenderLayeredSpriteFast : single * single * AssetTag * Transform inref * Box2 ValueOption inref * Box2 ValueOption inref * Image AssetTag * UserDefinedImages inref * string * Color inref * Blend * Color inref * Flip * UserDefinedSettings inref -> unit
 
         /// Enqueue an ImGui rendering message.
         abstract EnqueueMessageImGui : RenderMessageImGui -> unit
@@ -151,7 +151,7 @@ type RendererInline (windowProperties) =
                     let context =
                         match VulkanContext.tryCreate TryCreateVkSurfaceRequest.tryCreateVkSurface window with
                         | Some context -> context
-                        | None -> Log.fail "Could not create Vulkan context." // TODO: P1: handle failure more gracefully here?
+                        | None -> Log.fail "Could not create Vulkan context."
 
                     // create and populate the empty texture
                     let emptyTexture =
@@ -180,10 +180,10 @@ type RendererInline (windowProperties) =
                         else VulkanRenderer3d.make geometryViewport windowViewport context :> Renderer3d
 
                     // create 2d renderer
-                    let renderer2d = VulkanRenderer2d.make windowViewport resolveTexture.VkFormat context :> Renderer2d
+                    let renderer2d = VulkanRenderer2d.make windowViewport resolveTexture.ImageFormat context :> Renderer2d
 
                     // create imgui renderer
-                    let rendererImGui = VulkanRendererImGui.make assetTextureRequests assetTextureOpts fonts windowViewport resolveTexture.VkFormat context :> RendererImGui
+                    let rendererImGui = VulkanRendererImGui.make assetTextureRequests assetTextureOpts fonts windowViewport resolveTexture.ImageFormat context :> RendererImGui
 
                     // fin
                     dependenciesOpt <- Some (renderer3d, renderer2d, rendererImGui, context)
@@ -233,9 +233,14 @@ type RendererInline (windowProperties) =
             | Some _ -> messages2d.Add message 
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
-        member ri.RenderLayeredSpriteFast (elevation, horizon, assetTag, transform, insetOpt, clipOpt, image, color, blend, emission, flip) =
+        member ri.RenderLayeredSpriteFast (elevation, horizon, assetTag, transform, insetOpt, clipOpt, image, userDefinedImages, pipelineName, color, blend, emission, flip, userDefinedSettings) =
             match dependenciesOpt with
-            | Some _ -> messages2d.Add (LayeredOperation2d { Elevation = elevation; Horizon = horizon; AssetTag = assetTag; RenderOperation2d = RenderSprite { Transform = transform; InsetOpt = insetOpt; ClipOpt = clipOpt; Image = image; Color = color; Blend = blend; Emission = emission; Flip = flip }})
+            | Some _ ->
+                let renderSprite =
+                    { Transform = transform; InsetOpt = insetOpt; ClipOpt = clipOpt;
+                      Image = image; UserDefinedImages = userDefinedImages; PipelineName = pipelineName;
+                      Color = color; Blend = blend; Emission = emission; Flip = flip; UserDefinedSettings = userDefinedSettings }
+                messages2d.Add (LayeredOperation2d { Elevation = elevation; Horizon = horizon; AssetTag = assetTag; RenderOperation2d = RenderSprite renderSprite })
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
         member ri.EnqueueMessageImGui message =
@@ -265,7 +270,7 @@ type RendererInline (windowProperties) =
                 messages3d.Clear ()
 
                 // pre-render 2d
-                renderer2d.PreRender eye2dCenter eye2dSize windowViewport messages2d
+                renderer2d.PreRender eye2dCenter eye2dSize windowViewport messages2d resolveTexture.ImageFormat
                 messages2d.Clear ()
 
                 // pre-render imgui
@@ -467,7 +472,7 @@ type RendererThread (windowProperties) =
         lock cachedSpriteMessagesLock (fun () ->
             if cachedSpriteMessages.Count = 0 then
                 for _ in 0 .. dec cachedSpriteMessagesCapacity do
-                    let spriteDescriptor = RenderCachedSprite { CachedSprite = Unchecked.defaultof<_> }
+                    let spriteDescriptor = RenderCachedSprite { CachedSprite = SpriteValue.defaultValue }
                     let cachedSpriteMessage = LayeredOperation2d { Elevation = 0.0f; Horizon = 0.0f; AssetTag = Unchecked.defaultof<_>; RenderOperation2d = spriteDescriptor }
                     cachedSpriteMessages.Enqueue cachedSpriteMessage
                 cachedSpriteMessagesCapacity <- cachedSpriteMessagesCapacity * 2
@@ -513,10 +518,10 @@ type RendererThread (windowProperties) =
             else VulkanRenderer3d.make geometryViewport windowViewport context :> Renderer3d
 
         // create 2d renderer
-        let renderer2d = VulkanRenderer2d.make windowViewport resolveTexture.VkFormat context :> Renderer2d
+        let renderer2d = VulkanRenderer2d.make windowViewport resolveTexture.ImageFormat context :> Renderer2d
 
         // create imgui renderer
-        let rendererImGui = VulkanRendererImGui.make assetTextureRequests assetTextureOpts fonts windowViewport resolveTexture.VkFormat context :> RendererImGui
+        let rendererImGui = VulkanRendererImGui.make assetTextureRequests assetTextureOpts fonts windowViewport resolveTexture.ImageFormat context :> RendererImGui
 
         // mark as started
         started <- true
@@ -548,7 +553,7 @@ type RendererThread (windowProperties) =
                 renderer3dConfig <- renderer3d.RendererConfig
 
                 // pre-render 2d
-                renderer2d.PreRender eye2dCenter eye2dSize windowViewport messages2d
+                renderer2d.PreRender eye2dCenter eye2dSize windowViewport messages2d resolveTexture.ImageFormat
 
                 // pre-render imgui
                 rendererImGui.PreRender messagesImGui
@@ -616,7 +621,7 @@ type RendererThread (windowProperties) =
                 let context =
                     match VulkanContext.tryCreate TryCreateVkSurfaceRequest.tryCreateVkSurface window with
                     | Some context -> context
-                    | None -> Log.fail "Could not create Vulkan context." // TODO: P1: handle failure more gracefully here?
+                    | None -> Log.fail "Could not create Vulkan context."
                 contextOpt <- Some context
 
                 // start real thread
@@ -825,7 +830,7 @@ type RendererThread (windowProperties) =
                 | _ -> messageBuffers2d[messageBufferIndex].Add message
             | _ -> messageBuffers2d[messageBufferIndex].Add message
 
-        member rt.RenderLayeredSpriteFast (elevation, horizon, assetTag, transform, insetOpt, clipOpt, image, color, blend, emission, flip) =
+        member rt.RenderLayeredSpriteFast (elevation, horizon, assetTag, transform, insetOpt, clipOpt, image, userDefinedImages, pipelineName, color, blend, emission, flip, userDefinedSettings) =
             let cachedSpriteMessage = allocSpriteMessage ()
             match cachedSpriteMessage with
             | LayeredOperation2d cachedOperation ->
@@ -838,10 +843,13 @@ type RendererThread (windowProperties) =
                     descriptor.CachedSprite.InsetOpt <- insetOpt
                     descriptor.CachedSprite.ClipOpt <- clipOpt
                     descriptor.CachedSprite.Image <- image
+                    descriptor.CachedSprite.UserDefinedImages <- userDefinedImages
+                    descriptor.CachedSprite.PipelineName <- pipelineName
                     descriptor.CachedSprite.Color <- color
                     descriptor.CachedSprite.Blend <- blend
                     descriptor.CachedSprite.Emission <- emission
                     descriptor.CachedSprite.Flip <- flip
+                    descriptor.CachedSprite.UserDefinedSettings <- userDefinedSettings
                     messageBuffers2d[messageBufferIndex].Add cachedSpriteMessage 
                 | _ -> failwithumf ()
             | _ -> failwithumf ()

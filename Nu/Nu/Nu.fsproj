@@ -52,11 +52,11 @@
         <Compile Include="Vulkan\VulkanTexture.fs" />
         <Compile Include="Vulkan\VulkanAttachment.fs" />
         <Compile Include="Vulkan\VulkanPipeline.fs" />
-        <Compile Include="Vulkan\VulkanCubeMap.fs" />
-        <Compile Include="Vulkan\VulkanLightMap.fs" />
         <Compile Include="Vulkan\VulkanSpriteSingleton.fs" />
         <Compile Include="Vulkan\VulkanSpriteBatch.fs" />
-		<Compile Include="Vulkan\VulkanContour.fs" />
+        <Compile Include="Vulkan\VulkanCubeMap.fs" />
+        <Compile Include="Vulkan\VulkanLightMap.fs" />
+        <Compile Include="Vulkan\VulkanContour.fs" />
         <Compile Include="Vulkan\VulkanSkyBox.fs" />
         <Compile Include="Vulkan\VulkanPhysicallyBased.fs" />
         <Compile Include="Sdl\SdlInputBindings.fs" />
@@ -89,8 +89,8 @@
         <Compile Include="Render\Renderer3d.fs" />
         <Compile Include="Render\RendererImGui.fs" />
         <Compile Include="Render\RendererProcess.fs" />
-		<Compile Include="Audio\AudioPlayer.fs" />
-		<Compile Include="Cursor\CursorClient.fs" />
+        <Compile Include="Audio\AudioPlayer.fs" />
+        <Compile Include="Cursor\CursorClient.fs" />
         <Compile Include="Symbolics\Symbolics.fs" />
         <Compile Include="Particles\Particles.fs" />
         <Compile Include="Effects\EffectDescriptor.fs" />
@@ -154,7 +154,7 @@
         <PackageReference Include="BCnEncoder.Net" Version="2.2.1" />
         <PackageReference Include="DotRecast.Recast.Toolset" Version="2026.1.1" />
         <PackageReference Include="JoltPhysicsSharp" Version="2.19.5" />
-        <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.15.0" />
+        <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="15.0.0" />
         <PackageReference Include="Pfim" Version="0.11.4" />
         <PackageReference Include="Prime" Version="11.5.5" />
         <PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.1" />

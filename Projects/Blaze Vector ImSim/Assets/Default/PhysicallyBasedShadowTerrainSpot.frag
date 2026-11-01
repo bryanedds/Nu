@@ -1,6 +1,6 @@
 #version 450 core
 
-struct TerrainFragStruct
+struct TerrainStruct
 {
     int layersCount;
     int lightShadowSamples;
@@ -10,12 +10,12 @@ struct TerrainFragStruct
     float lightShadowDensity;
 };
 
-layout(set = 0, binding = 1) uniform TerrainFragUniform { TerrainFragStruct terrainFrag; };
+layout(set = 0, binding = 1) uniform TerrainUniform { TerrainStruct terrain; };
 
 layout(location = 0) out vec2 depths;
 
 void main()
 {
 	depths.x = gl_FragCoord.z; // non-linear, screen space depth
-	depths.y = exp(terrainFrag.lightShadowExponent * depths.x);
+	depths.y = exp(terrain.lightShadowExponent * depths.x);
 }

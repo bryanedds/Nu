@@ -1,0 +1,181 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ProjectGuid>{A7A6F758-E122-4C2C-9525-1F29802D007C}</ProjectGuid>
+        <GenerateDocumentationFile>True</GenerateDocumentationFile>
+        <RepositoryUrl>https://github.com/bryanedds/Nu</RepositoryUrl>
+        <RepositoryBranch>master</RepositoryBranch>
+        <RepositoryType>git</RepositoryType>
+        <FsDocsLicenseLink>https://github.com/bryanedds/Nu/blob/master/License.md</FsDocsLicenseLink>
+        <FsDocsReleaseNotesLink>https://github.com/bryanedds/Nu</FsDocsReleaseNotesLink>
+        <WarnOn>FS1182</WarnOn>
+        <NoWarn>FS0009;FS0051;FS1118;FS1178;FS3391;FS3536;FS3560</NoWarn>
+        <Tailcalls>False</Tailcalls>
+        <WarningLevel>5</WarningLevel>
+        <DefineConstants>TRACE</DefineConstants>
+        <WarningsAsErrors>FS0026;FS0049;FS3239;$(WarningsAsErrors)</WarningsAsErrors>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Include="Core\Core.fs" />
+        <Compile Include="Core\Log.fs" />
+        <Compile Include="Core\Gen.fs" />
+        <Compile Include="Core\Math.fs" />
+        <Compile Include="Core\Branchless.fs" />
+        <Compile Include="Core\Native.fs" />
+        <Compile Include="Core\PathF.fs" />
+        <Compile Include="Core\Xtension.fs" />
+        <Compile Include="Core\Assets.fs" />
+        <Compile Include="Core\Address.fs" />
+        <Compile Include="Core\GameTime.fs" />
+        <Compile Include="Core\Coroutine.fs" />
+        <Compile Include="Core\Behavior.fs" />
+        <Compile Include="Core\Modifier.fs" />
+        <Compile Include="Core\JobGraph.fs" />
+        <Compile Include="Core\EventFilter.fs" />
+        <Compile Include="Core\Constants.fs" />
+        <Compile Include="Core\Globals.fs" />
+        <Compile Include="Transform\Viewport.fs" />
+        <Compile Include="Transform\WindowProperties.fs" />
+        <Compile Include="Transform\Protection.fs" />
+        <Compile Include="Transform\Presence.fs" />
+        <Compile Include="Transform\Quadtree.fs" />
+        <Compile Include="Transform\Octree.fs" />
+        <Compile Include="Transform\Transform.fs" />
+        <Compile Include="Contour\ContourTypes.fs" />
+        <Compile Include="Contour\Contour.fs" />
+        <Compile Include="Assimp\Assimp.fs" />
+        <Compile Include="Vulkan\VulkanHl.fs" />
+        <Compile Include="Vulkan\VulkanContext.fs" />
+        <Compile Include="Vulkan\VulkanBuffer.fs" />
+        <Compile Include="Vulkan\VulkanTexture.fs" />
+        <Compile Include="Vulkan\VulkanAttachment.fs" />
+        <Compile Include="Vulkan\VulkanPipeline.fs" />
+        <Compile Include="Vulkan\VulkanCubeMap.fs" />
+        <Compile Include="Vulkan\VulkanLightMap.fs" />
+        <Compile Include="Vulkan\VulkanSpriteSingleton.fs" />
+        <Compile Include="Vulkan\VulkanSpriteBatch.fs" />
+		<Compile Include="Vulkan\VulkanContour.fs" />
+        <Compile Include="Vulkan\VulkanSkyBox.fs" />
+        <Compile Include="Vulkan\VulkanPhysicallyBased.fs" />
+        <Compile Include="Sdl\SdlInputBindings.fs" />
+        <Compile Include="Sdl\SdlInput.fs" />
+        <Compile Include="Sdl\SdlDeps.fs" />
+        <Compile Include="ImGui\ImGuiInterop.fs" />
+        <Compile Include="ImGui\ImGuiIOPtr.fs" />
+        <Compile Include="ImGui\ImGui.fs" />
+        <Compile Include="ImGui\ImGuiFileDialog.fs" />
+        <Compile Include="ImGui\ImGuizmo.fs" />
+        <Compile Include="Overlayer\Reflection.fs" />
+        <Compile Include="Overlayer\Overlayer.fs" />
+        <Compile Include="AssetGraph\AssetTag.fs" />
+        <Compile Include="AssetGraph\AssetTypes.fs" />
+        <Compile Include="AssetGraph\AssetGraph.fs" />
+        <Compile Include="AssetGraph\AssetClient.fs" />
+        <Compile Include="EventGraph\Simulant.fs" />
+        <Compile Include="EventGraph\EventTrace.fs" />
+        <Compile Include="EventGraph\Event.fs" />
+        <Compile Include="EventGraph\EventGraph.fs" />
+        <Compile Include="Metadata\Metadata.fs" />
+        <Compile Include="Metadata\HeightMap.fs" />
+        <Compile Include="Physics\PhysicsPrelude.fs" />
+        <Compile Include="Physics\PhysicsEngine.fs" />
+        <Compile Include="Physics\AetherPhysicsEngine.fs" />
+        <Compile Include="Physics\Box2dNetPhysicsEngine.fs" />
+        <Compile Include="Physics\JoltPhysicsEngine.fs" />
+        <Compile Include="Render\RendererPrelude.fs" />
+        <Compile Include="Render\Renderer2d.fs" />
+        <Compile Include="Render\Renderer3d.fs" />
+        <Compile Include="Render\RendererImGui.fs" />
+        <Compile Include="Render\RendererProcess.fs" />
+		<Compile Include="Audio\AudioPlayer.fs" />
+		<Compile Include="Cursor\CursorClient.fs" />
+        <Compile Include="Symbolics\Symbolics.fs" />
+        <Compile Include="Particles\Particles.fs" />
+        <Compile Include="Effects\EffectDescriptor.fs" />
+        <Compile Include="Effects\DataToken.fs" />
+        <Compile Include="Effects\EffectSystem.fs" />
+        <Compile Include="BlockMap\BlockMap.fs" />
+        <Compile Include="World\WorldPrelude.fs" />
+        <Compile Include="World\WorldTypes.fs" />
+        <Compile Include="World\WorldAssets.fs" />
+        <Compile Include="World\WorldConstants.fs" />
+        <Compile Include="World\WorldConfigure.fs" />
+        <Compile Include="World\WorldEvents.fs" />
+        <Compile Include="World\WorldModule.fs" />
+        <Compile Include="World\WorldModuleGame.fs" />
+        <Compile Include="World\WorldModuleScreen.fs" />
+        <Compile Include="World\WorldModuleGroup.fs" />
+        <Compile Include="World\WorldModuleEntity.fs" />
+        <Compile Include="World\WorldEntity.fs" />
+        <Compile Include="World\WorldGroup.fs" />
+        <Compile Include="World\WorldScreen.fs" />
+        <Compile Include="World\WorldGame.fs" />
+        <Compile Include="World\WorldSimulant.fs" />
+        <Compile Include="World\WorldInput.fs" />
+        <Compile Include="World\WorldStream.fs" />
+        <Compile Include="World\WorldChain.fs" />
+        <Compile Include="World\WorldPhysics.fs" />
+        <Compile Include="World\WorldRender.fs" />
+        <Compile Include="World\WorldAudio.fs" />
+        <Compile Include="World\WorldCursor.fs" />
+        <Compile Include="World\WorldImGui.fs" />
+        <Compile Include="World\WorldTmxMap.fs" />
+        <Compile Include="World\WorldDataToken.fs" />
+        <Compile Include="World\WorldEffects.fs" />
+        <Compile Include="World\WorldFacets.fs" />
+        <Compile Include="World\WorldDispatchers.fs" />
+        <Compile Include="World\WorldEntityHierarchy.fs" />
+        <Compile Include="World\WorldBlockMap.fs" />
+        <Compile Include="World\WorldImSim.fs" />
+        <Compile Include="World\WorldContent.fs" />
+        <Compile Include="World\WorldModule2.fs" />
+        <Compile Include="World\World.fs" />
+        <None Include="Scripts\GenerateDependencyGraph.fsx" />
+        <None Include="Scripts\GenerateInputBindings.fsx" />
+        <None Include="Scripts\GenerateIcons.fsx" />
+        <None Include="Scripts\SelectCompatibleAssetDeliveryVersion.fsx" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Reference Include="AssimpNet">
+            <HintPath>..\Nu.Dependencies\AssimpNet\netstandard2.1\AssimpNet.dll</HintPath>
+        </Reference>
+        <Reference Include="BulletSharpPInvoke">
+            <HintPath>..\Nu.Dependencies\BulletSharpPInvoke\netstandard2.1\BulletSharp.dll</HintPath>
+        </Reference>
+        <Reference Include="TiledSharp">
+            <HintPath>..\Nu.Dependencies\TiledSharp\lib\netstandard2.0\TiledSharp.dll</HintPath>
+        </Reference>
+        <PackageReference Include="Aether.Physics2D" Version="2.2.0" />
+        <PackageReference Include="AstcEncoderCSharp" Version="5.5.0" />
+        <PackageReference Include="Box2D.NET" Version="3.1.654" />
+        <PackageReference Include="BCnEncoder.Net" Version="2.2.1" />
+        <PackageReference Include="DotRecast.Recast.Toolset" Version="2026.1.1" />
+        <PackageReference Include="JoltPhysicsSharp" Version="2.19.5" />
+        <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.15.0" />
+        <PackageReference Include="Pfim" Version="0.11.4" />
+        <PackageReference Include="Prime" Version="11.5.5" />
+        <PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.1" />
+        <PackageReference Include="System.Drawing.Common" Version="10.0.1" />
+        <PackageReference Include="System.Formats.Nrbf" Version="10.0.1" /> <!-- we need this to AOT System.Drawing.Common for macOS/mobile when building in Release -->
+        <PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.2" />
+        <PackageReference Include="ppy.SDL3-CS" Version="2026.722.0" />
+        <PackageReference Include="ppy.SDL3_ttf-CS" Version="2026.722.0" />
+        <PackageReference Include="ppy.SDL3_image-CS" Version="2026.722.0" />
+        <PackageReference Include="ppy.SDL3_mixer-CS" Version="2026.722.0" />
+        <PackageReference Include="Vortice.ShaderCompiler" Version="1.9.0" />
+        <PackageReference Include="Vortice.Vulkan" Version="3.2.3" />
+        <PackageReference Include="Vortice.VulkanMemoryAllocator" Version="1.7.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Nu.Math\Nu.Math.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Update="FSharp.Core" Version="10.1.204" /> <!-- if this version conflicts with Nu.Gaia's FSharp.Compiler.Service's pinned version, building Gaia will fail -->
+    </ItemGroup>
+
+</Project>

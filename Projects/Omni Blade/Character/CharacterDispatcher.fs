@@ -63,10 +63,13 @@ type CharacterDispatcher () =
                           InsetOpt = ValueSome (Character.getAnimationInset time character)
                           ClipOpt = ValueNone
                           Image = character.AnimationSheet
+                          UserDefinedImages = UserDefinedImages.defaultImages
+                          PipelineName = Constants.Render.PipelineNameDefault
                           Color = Character.getAnimationColor time character
                           Blend = Transparent
                           Emission = Character.getAnimationEmission time character
-                          Flip = Unflipped }}
+                          Flip = Unflipped
+                          UserDefinedSettings = UserDefinedSettings.defaultSettings }}
                 world
 
             // render affliction (if any)
@@ -95,10 +98,13 @@ type CharacterDispatcher () =
                               InsetOpt = ValueSome afflictionInset
                               ClipOpt = ValueNone
                               Image = afflictionImage
+                              UserDefinedImages = UserDefinedImages.defaultImages
+                              PipelineName = Constants.Render.PipelineNameDefault
                               Color = Color.One
                               Blend = Transparent
                               Emission = Color.Zero
-                              Flip = Unflipped }}
+                              Flip = Unflipped
+                              UserDefinedSettings = UserDefinedSettings.defaultSettings }}
                     world
             | None -> ()
 
@@ -128,9 +134,12 @@ type CharacterDispatcher () =
                               InsetOpt = ValueSome chargeOrbInset
                               ClipOpt = ValueNone
                               Image = chargeOrbImage
+                              UserDefinedImages = UserDefinedImages.defaultImages
+                              PipelineName = Constants.Render.PipelineNameDefault
                               Color = Color.One
                               Blend = Transparent
                               Emission = Color.Zero
-                              Flip = Unflipped }}
+                              Flip = Unflipped
+                              UserDefinedSettings = UserDefinedSettings.defaultSettings }}
                     world
             | None -> ()

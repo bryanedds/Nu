@@ -284,8 +284,11 @@ type PropDispatcher () =
                           InsetOpt = insetOpt
                           ClipOpt = ValueNone
                           Image = image
+                          UserDefinedImages = UserDefinedImages.defaultImages
+                          PipelineName = Constants.Render.PipelineNameDefault
                           Color = color
                           Blend = blend
                           Emission = emission
-                          Flip = flip }}
+                          Flip = flip
+                          UserDefinedSettings = UserDefinedSettings.defaultSettings }}
                 world

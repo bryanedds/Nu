@@ -143,7 +143,7 @@ module WorldImSim =
             results.Sort (fun (leftId, _) (rightId, _) -> leftId.CompareTo rightId)
             results |> Seq.map snd |> FQueue.ofSeq
 
-        /// TODO: document this!
+        /// ImSim subscribe to the given entity's body events, mapping the results to a user-defined result.
         static member initBodyResult mapResult (entity : Entity) world =
             World.monitor (fun event world -> mapResult (FQueue.conj $ BodyPenetrationData event.Data) world; Cascade) entity.BodyPenetrationEvent entity world
             World.monitor (fun event world -> mapResult (FQueue.conj $ BodySeparationExplicitData event.Data) world; Cascade) entity.BodySeparationExplicitEvent entity world
@@ -700,10 +700,10 @@ module WorldImSim =
         static member doWedgeContour2d name args world = World.doEntity<WedgeContour2dDispatcher> name args world
 
         /// <summary>
-        /// ImSim declare a 3d light probe with the given arguments.
-        /// See <see cref="LightProbe3dDispatcher" />.
+        /// ImSim declare a light probe with the given arguments.
+        /// See <see cref="LightProbeDispatcher" />.
         /// </summary>
-        static member doLightProbe3d name args world = World.doEntity<LightProbe3dDispatcher> name args world
+        static member doLightProbe name args world = World.doEntity<LightProbeDispatcher> name args world
 
         /// <summary>
         /// ImSim declare a 3d light with the given arguments.

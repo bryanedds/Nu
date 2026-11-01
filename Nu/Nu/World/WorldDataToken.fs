@@ -18,19 +18,23 @@ module WorldDataToken =
 
             match dataToken with
             | SpriteToken (elevation, horizon, assetTag, sprite) ->
-                World.renderLayeredSpriteFast (elevation, horizon, assetTag, &sprite.Transform, &sprite.InsetOpt, &sprite.ClipOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Emission, sprite.Flip, world)
+                World.renderLayeredSpriteFast
+                    (elevation, horizon, assetTag, &sprite.Transform, &sprite.InsetOpt, &sprite.ClipOpt, sprite.Image, &sprite.UserDefinedImages, sprite.PipelineName,
+                     &sprite.Color, sprite.Blend, &sprite.Emission, sprite.Flip, &sprite.UserDefinedSettings, world)
 
             | TextToken (elevation, horizon, assetTag, text) ->
                 let renderText =
                     { Transform = text.Transform
                       ClipOpt = text.ClipOpt
+                      PipelineName = text.PipelineName
                       Text = text.Text
                       Font = text.Font
                       FontSizing = text.FontSizing
                       FontStyling = text.FontStyling
                       Color = text.Color
                       Justification = text.Justification
-                      CaretOpt = None }
+                      CaretOpt = None
+                      UserDefinedSettings = text.UserDefinedSettings }
                 World.enqueueLayeredOperation2d { Elevation = elevation; Horizon = horizon; AssetTag = assetTag; RenderOperation2d = RenderText renderText } world
 
             | Light3dToken light ->
@@ -46,8 +50,7 @@ module WorldDataToken =
                       Specularity = light.Specularity
                       LightCutoff = light.LightCutoff
                       LightType = light.LightType
-                      DesireShadows = false
-                      DynamicShadows = true
+                      ShadowingType = NoShadowing
                       DesireFog = false
                       RenderPass = renderPass }
                 World.enqueueRenderMessage3d (RenderLight3d renderLight) world

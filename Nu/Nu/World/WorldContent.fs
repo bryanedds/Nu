@@ -539,10 +539,10 @@ module Content =
     let wedgeContour2d entityName definitions = entity<WedgeContour2dDispatcher> entityName definitions
 
     /// <summary>
-    /// Describe a 3d light probe with the given definitions.
-    /// See <see cref="LightProbe3dDispatcher"/>.
+    /// Describe a light probe with the given definitions.
+    /// See <see cref="LightProbeDispatcher"/>.
     /// </summary>
-    let lightProbe3d entityName definitions = entity<LightProbe3dDispatcher> entityName definitions
+    let lightProbe entityName definitions = entity<LightProbeDispatcher> entityName definitions
 
     /// <summary>
     /// Describe a 3d light with the given definitions.

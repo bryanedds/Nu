@@ -1499,19 +1499,126 @@ module Segment3 =
         member this.Magnitude = this.Length ()
         member this.MagnitudeSquared = this.LengthSquared ()
 
-// TODO: create symbolic converter for Ray2.
+/// Converts Ray2 types.
+type Ray2Converter () =
+    inherit TypeConverter ()
+
+    override this.CanConvertTo (_, destType) =
+        destType = typeof<Symbol> ||
+        destType = typeof<Ray2>
+
+    override this.ConvertTo (_, _, source, destType) =
+        if destType = typeof<Symbol> then
+            let ray2 = source :?> Ray2
+            Symbols
+                ([Symbols ([Number (string ray2.Origin.X, ValueNone); Number (string ray2.Origin.Y, ValueNone)], ValueNone)
+                  Symbols ([Number (string ray2.Direction.X, ValueNone); Number (string ray2.Direction.Y, ValueNone)], ValueNone)], ValueNone) :> obj
+        elif destType = typeof<Ray2> then source
+        else failconv "Invalid Ray2Converter conversion to source." None
+
+    override this.CanConvertFrom (_, sourceType) =
+        sourceType = typeof<Symbol> ||
+        sourceType = typeof<Ray2>
+
+    override this.ConvertFrom (_, _, source) =
+        match source with
+        | :? Symbol as symbol ->
+            match symbol with
+            | Symbols ([originSymbol; directionSymbol], _) ->
+                match (originSymbol, directionSymbol) with
+                | (Symbols ([Number (originX, _); Number (originY, _)], _), Symbols ([Number (directionX, _); Number (directionY, _)], _)) ->
+                    let origin = Vector2 (Single.Parse originX, Single.Parse originY)
+                    let direction = Vector2 (Single.Parse directionX, Single.Parse directionY)
+                    Ray2 (origin, direction) :> obj
+                | _ -> failconv "Invalid Ray2Converter conversion from source." (Some symbol)
+            | _ -> failconv "Invalid Ray2Converter conversion from source." (Some symbol)
+        | :? Ray2 -> source
+        | _ -> failconv "Invalid Ray2Converter conversion from source." None
+
 [<AutoOpen>]
 module Ray2 =
 
     let inline ray2 (origin : Vector2) (direction : Vector2) = Ray2 (origin, direction)
 
-// TODO: create symbolic converter for Ray3.
+/// Converts Ray3 types.
+type Ray3Converter () =
+    inherit TypeConverter ()
+
+    override this.CanConvertTo (_, destType) =
+        destType = typeof<Symbol> ||
+        destType = typeof<Ray3>
+
+    override this.ConvertTo (_, _, source, destType) =
+        if destType = typeof<Symbol> then
+            let ray3 = source :?> Ray3
+            Symbols
+                ([Symbols ([Number (string ray3.Origin.X, ValueNone); Number (string ray3.Origin.Y, ValueNone); Number (string ray3.Origin.Z, ValueNone)], ValueNone)
+                  Symbols ([Number (string ray3.Direction.X, ValueNone); Number (string ray3.Direction.Y, ValueNone); Number (string ray3.Direction.Z, ValueNone)], ValueNone)], ValueNone) :> obj
+        elif destType = typeof<Ray3> then source
+        else failconv "Invalid Ray3Converter conversion to source." None
+
+    override this.CanConvertFrom (_, sourceType) =
+        sourceType = typeof<Symbol> ||
+        sourceType = typeof<Ray3>
+
+    override this.ConvertFrom (_, _, source) =
+        match source with
+        | :? Symbol as symbol ->
+            match symbol with
+            | Symbols ([originSymbol; directionSymbol], _) ->
+                match (originSymbol, directionSymbol) with
+                | (Symbols ([Number (originX, _); Number (originY, _); Number (originZ, _)], _), Symbols ([Number (directionX, _); Number (directionY, _); Number (directionZ, _)], _)) ->
+                    let origin = Vector3 (Single.Parse originX, Single.Parse originY, Single.Parse originZ)
+                    let direction = Vector3 (Single.Parse directionX, Single.Parse directionY, Single.Parse directionZ)
+                    Ray3 (origin, direction) :> obj
+                | _ -> failconv "Invalid Ray3Converter conversion from source." (Some symbol)
+            | _ -> failconv "Invalid Ray3Converter conversion from source." (Some symbol)
+        | :? Ray3 -> source
+        | _ -> failconv "Invalid Ray3Converter conversion from source." None
+
 [<AutoOpen>]
 module Ray3 =
 
     let inline ray3 (origin : Vector3) (direction : Vector3) = Ray3 (origin, direction)
 
-// TODO: create symbolic converter for Plane3.
+// TODO: P1: create symbolic converter for Plane3.
+/// Converts Plane3 types.
+type Plane3Converter () =
+    inherit TypeConverter ()
+
+    override this.CanConvertTo (_, destType) =
+        destType = typeof<Symbol> ||
+        destType = typeof<Plane3>
+
+    override this.ConvertTo (_, _, source, destType) =
+        if destType = typeof<Symbol> then
+            let plane3 = source :?> Plane3
+            Symbols
+                ([Symbols ([Number (string plane3.Normal.X, ValueNone); Number (string plane3.Normal.Y, ValueNone); Number (string plane3.Normal.Z, ValueNone)], ValueNone)
+                  Number (string plane3.D, ValueNone)], ValueNone) :> obj
+        elif destType = typeof<Plane3> then source
+        else failconv "Invalid Plane3Converter conversion to source." None
+
+    override this.CanConvertFrom (_, sourceType) =
+        sourceType = typeof<Symbol> ||
+        sourceType = typeof<Plane3>
+
+    override this.ConvertFrom (_, _, source) =
+        match source with
+        | :? Symbol as symbol ->
+            match symbol with
+            | Symbols ([normalSymbol; dSymbol], _) ->
+                match (normalSymbol, dSymbol) with
+                | (Symbols ([Number (nx, _); Number (ny, _); Number (nz, _)], _), Number (d, _)) ->
+                    let normal = Vector3 (Single.Parse nx, Single.Parse ny, Single.Parse nz)
+                    let d = Single.Parse d
+                    Plane3 (normal, d) :> obj
+                | _ -> failconv "Invalid Plane3Converter conversion from source." (Some symbol)
+            | _ -> failconv "Invalid Plane3Converter conversion from source." (Some symbol)
+        | :? Plane3 -> source
+        | _ -> failconv "Invalid Plane3Converter conversion from source." None
+
+
 [<AutoOpen>]
 module Plane3 =
 
@@ -1741,8 +1848,7 @@ module Math =
         else (offset / alignment + 1) * alignment // offset shifted forward to align
 
     /// Compute the minimum buffer size.
-    /// TODO: find a more general name for this.
-    let MinimumBufferSize (offset, alignment, size, count) =
+    let BufferSizeMin (offset, alignment, size, count) =
         let stride = Stride (alignment, size)
         let offset = AlignOffset (offset, alignment)
         offset + stride * count
@@ -1778,6 +1884,7 @@ module MathOperators =
 namespace Nu
 open System
 open System.Numerics
+open System.Runtime.InteropServices
 open Prime
 
 /// The single inhabitant type / value for use where unit / () won't suffice, such as for a dictionary key.
@@ -1819,6 +1926,51 @@ type [<Struct>] Flip =
     | Vertical
     | Diagonal
 
+/// User-defined settings.
+type [<Struct; StructLayout (LayoutKind.Explicit, Size = 32); SymbolicExpansion>] UserDefinedSettings =
+    { [<FieldOffset(0)>] mutable UserDefinedSetting0 : single
+      [<FieldOffset(4)>] mutable UserDefinedSetting1 : single
+      [<FieldOffset(8)>] mutable UserDefinedSetting2 : single
+      [<FieldOffset(12)>] mutable UserDefinedSetting3 : single
+      [<FieldOffset(16)>] mutable UserDefinedSetting4 : single
+      [<FieldOffset(20)>] mutable UserDefinedSetting5 : single
+      [<FieldOffset(24)>] mutable UserDefinedSetting6 : single
+      [<FieldOffset(28)>] mutable UserDefinedSetting7 : single }
+
+    /// The default user-defined settings.
+    static member defaultSettings =
+        Unchecked.defaultof<UserDefinedSettings>
+
+/// Indicates the type of 2d rendering pipeline.
+type Pipeline2dType =
+    | SpriteSingletonPipeline
+    | SpriteBatchPipeline
+
+/// Describes a user-defined 2d rendering pipeline.
+type UserDefinedPipeline2dDescriptor =
+    { Pipeline2dType : Pipeline2dType
+      PipelineName : string
+      ShaderPath : string
+      UserDefinedImageNames : string array
+      UserDefinedSettingNames : string array }
+
+/// Indicates the type of 3d rendering pipeline.
+type Pipeline3dType =
+    | DeferredStaticPipeline
+    | DeferredStaticClippedPipeline
+    | DeferredAnimatedPipeline
+    | ForwardStaticPipeline
+    | ForwardAnimatedPipeline
+    | TerrainPipeline
+
+/// Describes a user-defined 3d rendering pipeline.
+type UserDefinedPipeline3dDescriptor =
+    { Pipeline3dType : Pipeline3dType
+      PipelineName : string
+      ShaderPath : string
+      UserDefinedImageNames : string array
+      UserDefinedSettingNames : string array }
+
 /// Type of light.
 type [<DefaultValue "[PointLight 0]">] LightType =
     | PointLight of Radius : single
@@ -1833,6 +1985,14 @@ type [<DefaultValue "[PointLight 0]">] LightType =
 
     member this.IsGlobalLight =
         not this.IsLocalLight
+
+    /// The names of the light types.
+    /// TODO: generate these reflectively and memoized.
+    static member Names =
+        [|nameof PointLight
+          nameof SpotLight
+          nameof DirectionalLight
+          nameof CascadedLight|]
 
     /// Convert to an int tag that can be utilized by a shader.
     member this.Enumerate =
@@ -1870,13 +2030,15 @@ type [<DefaultValue "[PointLight 0]">] LightType =
         | 3 -> CascadedLight
         | _ -> failwithumf ()
 
-    /// The names of the light types.
-    /// TODO: generate these reflectively and memoized.
-    static member Names =
-        [|nameof PointLight
-          nameof SpotLight
-          nameof DirectionalLight
-          nameof CascadedLight|]
+/// The type of shadowing used by a light.
+type [<Struct>] ShadowingType =
+    | NoShadowing
+    | StaticShadowing
+    | DynamicShadowing
+
+    /// Whether shadowing is utilized in any form.
+    member this.IsShadowing =
+        not this.IsNoShadowing
 
 /// The type of tone map used in tone mapping.
 type [<Struct>] ToneMapType =
@@ -1890,6 +2052,20 @@ type [<Struct>] ToneMapType =
     | Uncharted2FilmicToneMap
     | LottesToneMap
     | KronosNeutralToneMap
+
+    /// The names of the tone map types.
+    /// TODO: generate these reflectively and memoized.
+    static member Names =
+        [|nameof AgXToneMap
+          nameof ReinhardToneMap
+          nameof ReinhardExtendedToneMap
+          nameof UnrealToneMap
+          nameof AcesFittedToneMap
+          nameof AcesFilmicToneMap
+          nameof Uncharted2ToneMap
+          nameof Uncharted2FilmicToneMap
+          nameof LottesToneMap
+          nameof KronosNeutralToneMap|]
 
     /// Convert to an int tag that can be utilized by a shader.
     member this.Enumerate =
@@ -1920,20 +2096,6 @@ type [<Struct>] ToneMapType =
         | 9 -> KronosNeutralToneMap
         | _ -> failwithumf ()
 
-    /// The names of the tone map types.
-    /// TODO: generate these reflectively and memoized.
-    static member Names =
-        [|nameof AgXToneMap
-          nameof ReinhardToneMap
-          nameof ReinhardExtendedToneMap
-          nameof UnrealToneMap
-          nameof AcesFittedToneMap
-          nameof AcesFilmicToneMap
-          nameof Uncharted2ToneMap
-          nameof Uncharted2FilmicToneMap
-          nameof LottesToneMap
-          nameof KronosNeutralToneMap|]
-
 /// The type of fog to utilize.
 type [<Struct>] FogType =
 
@@ -1945,6 +2107,13 @@ type [<Struct>] FogType =
 
     /// Useful for a distance for that mostly just includes 'background' based on FogDensity.
     | ExponentialSquaredFog
+
+    /// The names of the fog types.
+    /// TODO: generate these reflectively and memoized.
+    static member Names =
+        [|nameof LinearFog
+          nameof ExponentialFog
+          nameof ExponentialSquaredFog|]
 
     /// Convert to an int tag that can be utilized by a shader.
     member this.Enumerate =
@@ -1960,13 +2129,6 @@ type [<Struct>] FogType =
         | 1 -> ExponentialFog
         | 2 -> ExponentialSquaredFog
         | _ -> failwithumf ()
-
-    /// The names of the fog types.
-    /// TODO: generate these reflectively and memoized.
-    static member Names =
-        [|nameof LinearFog
-          nameof ExponentialFog
-          nameof ExponentialSquaredFog|]
 
 /// The type of subsurface scattering that a material utilizes.
 type [<Struct>] ScatterType =
@@ -1988,6 +2150,11 @@ type [<Struct>] FocalType =
     | StaticFocalDistance
     | DynamicFocalDistance
 
+    /// The names of the focal depth types.
+    static member Names =
+        [|nameof StaticFocalDistance
+          nameof DynamicFocalDistance|]
+
     /// Convert to an int tag that can be utilized by a shader.
     member this.Enumerate =
         match this with
@@ -2000,11 +2167,6 @@ type [<Struct>] FocalType =
         | 0 -> StaticFocalDistance
         | 1 -> DynamicFocalDistance
         | _ -> failwithumf ()
-
-    /// The names of the focal depth types.
-    static member Names =
-        [|nameof StaticFocalDistance
-          nameof DynamicFocalDistance|]
 
 namespace System.Collections.Generic
 

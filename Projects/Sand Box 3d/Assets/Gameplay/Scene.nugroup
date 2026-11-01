@@ -22,8 +22,8 @@
         [[Default TerrainLayer1Albedo] [Default TerrainLayer1Roughness] [Default TerrainLayer1AmbientOcclusion] [Default TerrainLayer1Normal] [Default TerrainLayer1UserDefinedImage]]]
        [RedsMap
         [[Default TerrainLayer0Blend] [Default TerrainLayer1Blend]]]
-       [Default MaterialNormal]
-       [Default MaterialUserDefinedImage1]
+       [Default Normal]
+       [Default UserDefinedImage1]
        TerrainFlipped]]]
     [TerrainMaterialProperties
      [[AlbedoOpt
@@ -372,8 +372,11 @@
       [UserDefinedImage0Opt None]
       [UserDefinedImage1Opt None]
       [UserDefinedImage2Opt None]
-      [TwoSidedOpt None]
+      [CullModeOpt None]
       [ClippedOpt None]
+      [DepthTestOpt None]
+      [DepthWriteOpt None]
+      [BlendOpt None]
       [PipelineNameOpt [Some DeferredStaticFlipped]]]]
     [MaterialProperties
      [[AlbedoOpt
@@ -383,6 +386,7 @@
       [AmbientOcclusionOpt [Some 1]]
       [EmissionOpt [Some 1]]
       [IgnoreLightMapsOpt [Some False]]
+      [AnisotropyOpt None]
       [OpaqueDistanceOpt [Some 100000]]
       [FinenessOffsetOpt [Some 0]]
       [ScatterTypeOpt [Some NoScatter]]

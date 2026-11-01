@@ -29,6 +29,9 @@ type CharacterType =
         | Enemy -> 40
         | Player -> 30
 
+    member this.JumpSpeed =
+        5.0f
+
 type AttackState =
     { AttackTime : int64
       FollowUpBuffered : bool
@@ -191,7 +194,7 @@ type CharacterDispatcher () =
             let sinceGrounded = world.UpdateTime - entity.GetLastTimeGrounded world
             let sinceJump = world.UpdateTime - entity.GetLastTimeJump world
             if sinceJump >= 12L && sinceGrounded < 10L && actionState = NormalState then
-                entity.SetLinearVelocity (entity.GetLinearVelocity world + v3Up * 5.0f) world // TODO: use jump velocity constant.
+                entity.SetLinearVelocity (entity.GetLinearVelocity world + v3Up * Player.JumpSpeed) world
                 entity.SetLastTimeJump world.UpdateTime world
 
         // process attacking
@@ -296,7 +299,7 @@ type CharacterDispatcher () =
             match characterType with
             | Enemy -> { Material.empty with AlbedoImageOpt = ValueSome (asset Assets.Gameplay.PackageName "AmmoBox_Albedo") }
             | Player -> Material.empty
-        let materialProperties = { MaterialProperties.empty with ScatterTypeOpt = ValueSome SkinScatter }
+        let properties = { MaterialProperties.empty with ScatterTypeOpt = ValueSome SkinScatter }
         let animations = computeTraversalAnimations entity world
         let (visible, animations) = tryComputeActionAnimation animations entity world
         World.doEntity<AnimatedModelDispatcher> Constants.Gameplay.CharacterAnimatedModelName
@@ -308,7 +311,7 @@ type CharacterDispatcher () =
              Entity.Visible @= visible
              Entity.Pickable .= false
              Entity.Material .= material
-             Entity.MaterialProperties .= materialProperties
+             Entity.MaterialProperties .= properties
              Entity.Animations @= animations
              Entity.AnimatedModel .= Assets.Gameplay.JoanModel] world
         let animatedModel = world.DeclaredEntity

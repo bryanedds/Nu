@@ -65,7 +65,7 @@ module Gaia =
     let mutable private DragDropPayloadOpt = Option<DragDropPayload>.None
     let mutable private DragEntityState = DragEntityInactive
     let mutable private DragEyeState = DragEyeInactive
-    let mutable private SelectedScreen = Game / "Screen" // TODO: see if this is necessary or if we can just use World.getSelectedScreen.
+    let mutable private SelectedScreen = Game / "Screen" // TODO: P1: see if this is necessary or if we can just use World.getSelectedScreen.
     let mutable private SelectedGroup = SelectedScreen / "Group" // use the default group
     let mutable private SelectedEntityOpt = Option<Entity>.None
     let mutable private OpenProjectDllsOpt = Option<string array>.None
@@ -739,7 +739,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         World.getGroups SelectedScreen world
         |> Seq.map (fun group -> World.getEntities group world)
         |> Seq.concat
-        |> Seq.filter (fun entity -> entity.Has<LightProbe3dFacet> world)
+        |> Seq.filter (fun entity -> entity.Has<LightProbeFacet> world)
         |> Seq.iter (fun lightProbe -> lightProbe.SetProbeStale true world)
 
     let private tryMoveSelectedEntityToOrigin skipSnapshot world =
@@ -2302,7 +2302,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
                 // light probe bounds manipulation
                 match SelectedEntityOpt with
-                | Some entity when entity.GetExists world && entity.Has<LightProbe3dFacet> world ->
+                | Some entity when entity.GetExists world && entity.Has<LightProbeFacet> world ->
                     let mutable lightProbeBounds = entity.GetProbeBounds world
                     let manipulationResult =
                         ImGuizmo.ManipulateBox3
@@ -4373,7 +4373,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
             // render light probes of the selected group in view
             let eyeFrustum = World.getEye3dFrustum world
-            let entities = World.getLightProbes3dInView (HashSet ()) world
+            let entities = World.getLightProbesInView (HashSet ()) world
             let lightProbeModels =
                 entities
                 |> Seq.filter (fun entity -> entity.Group = SelectedGroup && entity.Group.GetEditing world && eyeFrustum.Intersects (entity.GetBounds world))
@@ -4424,10 +4424,13 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                       InsetOpt = ValueNone
                                       ClipOpt = ValueNone
                                       Image = image
+                                      UserDefinedImages = UserDefinedImages.defaultImages
+                                      PipelineName = Constants.Render.PipelineNameDefault
                                       Color = Color.One
                                       Blend = Transparent
                                       Emission = Color.Zero
-                                      Flip = Unflipped }})
+                                      Flip = Unflipped
+                                      UserDefinedSettings = UserDefinedSettings.defaultSettings }})
                         world
                 else
                     let bounds = entity.GetBounds world

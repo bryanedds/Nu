@@ -21,7 +21,7 @@ type RenderMessageImGui =
 /// Renders an imgui view.
 /// NOTE: API is object-oriented / mutation-based because it's ported from a port. 
 type RendererImGui =
-    abstract Initialize : fonts : ImFontAtlasPtr -> VkFormat -> unit
+    abstract Initialize : fonts : ImFontAtlasPtr -> ImageFormat -> unit
     abstract PreRender : renderMessages : RenderMessageImGui List -> unit
     abstract Render : viewport_ : Viewport -> drawData : ImDrawDataPtr -> Texture -> unit
     abstract CleanUp : unit -> unit

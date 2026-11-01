@@ -15,7 +15,7 @@ const vec2 SSRL_BLUR_KERNEL[] = vec2[9](
     vec2(-1.0, 1.0),    // diag
     vec2(1.0, 1.0));    // diag
 
-struct EyeStruct
+struct Eye3dStruct
 {
     vec3 center;
     mat4 view;
@@ -25,7 +25,7 @@ struct EyeStruct
     mat4 viewProjection;
 };
 
-struct LightingStruct
+struct Lighting3dStruct
 {
     float lightCutoffMargin;
     vec3 lightAmbientColor;
@@ -75,27 +75,28 @@ struct LightingStruct
     float shadowNear;
 };
 
-layout(set = 0, binding = 0) uniform EyeUniform { EyeStruct eye; };
-layout(set = 0, binding = 1) uniform LightingUniform { LightingStruct lighting; };
+layout(set = 0, binding = 0) uniform Eye3dUniform { Eye3dStruct eye; };
+layout(set = 0, binding = 1) uniform Lighting3dUniform { Lighting3dStruct lighting; };
 layout(set = 0, binding = 2) uniform texture2D depthTexture;
 layout(set = 0, binding = 3) uniform texture2D albedoTexture;
 layout(set = 0, binding = 4) uniform texture2D materialTexture;
 layout(set = 0, binding = 5) uniform texture2D normalPlusTexture;
 layout(set = 0, binding = 6) uniform texture2D clearCoatPlusTexture;
-layout(set = 0, binding = 7) uniform texture2D lightAccumTexture;
-layout(set = 0, binding = 8) uniform texture2D brdfTexture;
-layout(set = 0, binding = 9) uniform texture2D ambientTexture;
-layout(set = 0, binding = 10) uniform texture2D irradianceTexture;
-layout(set = 0, binding = 11) uniform texture2D environmentFilterTexture;
-layout(set = 0, binding = 12) uniform texture2D ssaoTexture;
+layout(set = 0, binding = 7) uniform texture2D userDefinedBufferTexture;
+layout(set = 0, binding = 8) uniform texture2D lightAccumTexture;
+layout(set = 0, binding = 9) uniform texture2D brdfTexture;
+layout(set = 0, binding = 10) uniform texture2D ambientTexture;
+layout(set = 0, binding = 11) uniform texture2D irradianceTexture;
+layout(set = 0, binding = 12) uniform texture2D environmentFilterTexture;
+layout(set = 0, binding = 13) uniform texture2D ssaoTexture;
 
 layout(set = 1, binding = 0) uniform sampler unfilteredSampler;
 layout(set = 1, binding = 1) uniform sampler filteredSampler;
 
 layout(location = 0) in vec2 texCoords;
 
-layout(location = 0) out vec3 color;
-layout(location = 1) out float depth;
+layout(location = 0) out vec3 colorOut;
+layout(location = 1) out float depthOut;
 
 float saturate(float v)
 {
@@ -114,10 +115,11 @@ vec3 rotate(vec3 axis, float angle, vec3 v)
 
 vec4 depthToPosition(float depth, vec2 texCoords)
 {
-    vec4 positionClip = vec4(texCoords * 2.0 - 1.0, depth, 1.0);
-    vec4 positionView = eye.projectionInverse * positionClip;
-    positionView /= positionView.w;
-    return eye.viewInverse * positionView;
+    vec4 clip = vec4(texCoords * 2.0 - 1.0, 1.0, 1.0);
+    vec4 rayView = eye.projectionInverse * clip;
+    rayView /= rayView.w;
+    vec3 positionView = rayView.xyz * (depth / -rayView.z);
+    return eye.viewInverse * vec4(positionView, 1.0);
 }
 
 vec3 fresnelSchlick(float cosTheta, vec3 f0)
@@ -285,11 +287,11 @@ void computeSsrl(float depth, vec4 position, vec3 albedo, float roughness, float
 void main()
 {
     // ensure fragment was written
-    float depthInput = texture(sampler2D(depthTexture, unfilteredSampler), texCoords).r;
-    if (depthInput == 0.0) discard;
+    float depth = texture(sampler2D(depthTexture, unfilteredSampler), texCoords).r;
+    if (depth == 0.0) discard;
 
     // recover position from depth
-    vec4 position = depthToPosition(depthInput, texCoords);
+    vec4 position = depthToPosition(depth, texCoords);
 
     // retrieve remaining data from geometry buffers
     vec3 albedo = texture(sampler2D(albedoTexture, unfilteredSampler), texCoords).rgb;
@@ -353,7 +355,7 @@ void main()
 
         // if hit failed, try again on the proper tex coord
         if (specularScreenWeight == 0.0)
-            computeSsrl(depthInput, position, albedo, roughness, metallic, normal, slope, specularScreen, specularScreenWeight);
+            computeSsrl(depth, position, albedo, roughness, metallic, normal, slope, specularScreen, specularScreenWeight);
     }
 
     // compute specular term
@@ -363,8 +365,8 @@ void main()
     vec3 specular = (1.0 - specularScreenWeight) * specularEnvironment + specularScreenWeight * specularScreen;
 
     // write color
-    color = lightAccum + diffuse + emission * albedo + specular;
+    colorOut = lightAccum + diffuse + emission * albedo + specular;
 
     // write depth
-    depth = depthInput;
+    depthOut = depth;
 }

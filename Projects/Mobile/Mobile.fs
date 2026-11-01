@@ -13,7 +13,7 @@ type GameState =
     | Credits
     | Gameplay
 
-// this extends the Game API to expose the above ImSim model as a property.
+// this extends the Game API to expose GameState as a property.
 [<AutoOpen>]
 module MobileExtensions =
     type Game with
@@ -52,7 +52,6 @@ type MobileDispatcher () =
         let behavior = Dissolve (Constants.Dissolve.Default, None)
         let results = World.beginScreen<GameplayDispatcher> Simulants.Gameplay.Name (game.GetGameState world = Gameplay) behavior [] world
         if FQueue.contains Select results then Simulants.Gameplay.SetGameplayState Playing world
-        if FQueue.contains Deselecting results then Simulants.Gameplay.SetGameplayState Quit world
         if Simulants.Gameplay.GetSelected world && Simulants.Gameplay.GetGameplayState world = Quit then game.SetGameState Title world
         World.endScreen world
 

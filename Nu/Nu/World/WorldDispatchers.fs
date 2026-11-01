@@ -287,7 +287,7 @@ type Effect2dDispatcher () =
 
     static member Properties =
         [define Entity.PerimeterCentered true
-         define Entity.EffectDescriptor (scvalue "[[EffectName Effect] [LifeTimeOpt None] [Definitions []] [Content [Contents [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]]")]
+         define Entity.EffectDescriptor (scvalue "[[EffectName Effect] [LifeTimeOpt None] [Definitions []] [Content [Contents [Shift 0] [[StaticSprite [Resource Default Image] Default [] Nil]]]]]")]
 
     override this.GetAttributesInferred (_, _) =
         AttributesInferred.unimportant
@@ -376,6 +376,7 @@ type Character2dDispatcher () =
 
     static member Properties =
         [define Entity.MountOpt None
+         define Entity.PipelineName Constants.Render.PipelineNameDefault
          define Entity.CelSize (v2 28.0f 28.0f)
          define Entity.CelRun 8
          define Entity.AnimationDelay (GameTime.ofSeconds (1.0 / 15.0))
@@ -416,6 +417,7 @@ type Character2dDispatcher () =
             else
                 let image = entity.GetCharacter2dWalkSheet world
                 struct (ValueSome (computeWalkCelInset world.GameTime animationDelay celSize celRun), image)
+        let userDefinedSettings = entity.GetUserDefinedSettings world
         World.enqueueLayeredOperation2d
             { Elevation = transform.Elevation
               Horizon = transform.Horizon
@@ -426,10 +428,13 @@ type Character2dDispatcher () =
                       InsetOpt = insetOpt
                       ClipOpt = ValueNone
                       Image = image
+                      UserDefinedImages = UserDefinedImages.defaultImages
+                      PipelineName = entity.GetPipelineName world
                       Color = Color.One
                       Blend = Transparent
                       Emission = Color.Zero
-                      Flip = if facingLeft then Horizontal else Unflipped }}
+                      Flip = if facingLeft then Horizontal else Unflipped
+                      UserDefinedSettings = userDefinedSettings }}
             world
 
 /// Gives an entity the base behavior of a physics-driven 2d joint.
@@ -460,12 +465,24 @@ type FluidEmitter2dDispatcher () =
         let fluidSize = v3 31.0f 31.0f 0.0f // NOTE: these have to be hard-coded since Metadata isn't necessarily available here.
         let smokeSize = v3 96.0f 96.0f 0.0f // NOTE: these have to be hard-coded since Metadata isn't necessarily available here.
         let perimeterCentered = Constants.Engine.Entity2dPerimeterCenteredDefault
+        let particleRender =
+            { Transform = Transform.makeEmpty ()
+              InsetOpt = ValueNone
+              ClipOpt = ValueNone
+              Image = Assets.Default.Image
+              UserDefinedImages = UserDefinedImages.defaultImages
+              PipelineName = Constants.Render.PipelineNameDefault
+              Color = colorOne
+              Blend = Transparent
+              Emission = colorZero
+              Flip = Unflipped
+              UserDefinedSettings = UserDefinedSettings.defaultSettings }
         [define Entity.FluidParticleRenders
             (Map.ofList
-                [("Water", { Transform = Transform.makeIntuitive false v3Zero v3One v3Zero fluidSize v3Zero -0.03f perimeterCentered; InsetOpt = ValueNone; ClipOpt = ValueNone; Image = Assets.Default.Fluid; Color = colorPacked 0x0094FFFFu; Blend = Transparent; Emission = colorZero; Flip = Unflipped })
-                 ("Sand", { Transform = Transform.makeIntuitive false v3Zero v3One v3Zero fluidSize v3Zero -0.01f perimeterCentered; InsetOpt = ValueNone; ClipOpt = ValueNone; Image = Assets.Default.Fluid; Color = Color.Yellow; Blend = Transparent; Emission = colorZero; Flip = Unflipped })
-                 ("Smoke", { Transform = Transform.makeIntuitive false v3Zero v3One v3Zero smokeSize v3Zero 0.0f perimeterCentered; InsetOpt = ValueNone; ClipOpt = ValueNone; Image = Assets.Default.Gas; Color = colorOne; Blend = Transparent; Emission = colorZero; Flip = Unflipped })
-                 ("Oil", { Transform = Transform.makeIntuitive false v3Zero v3One v3Zero fluidSize v3Zero -0.02f perimeterCentered; InsetOpt = ValueNone; ClipOpt = ValueNone; Image = Assets.Default.Fluid; Color = Color.color 0.36862746f 0.22352941f 0.039215688f 1.0f; Blend = Transparent; Emission = colorZero; Flip = Unflipped })])]
+                [("Water", { particleRender with Transform = Transform.makeIntuitive false v3Zero v3One v3Zero fluidSize v3Zero -0.03f perimeterCentered; Image = Assets.Default.Fluid; Color = colorPacked 0x0094FFFFu })
+                 ("Sand", { particleRender with Transform = Transform.makeIntuitive false v3Zero v3One v3Zero fluidSize v3Zero -0.01f perimeterCentered; Image = Assets.Default.Fluid; Color = Color.Yellow })
+                 ("Smoke", { particleRender with Transform = Transform.makeIntuitive false v3Zero v3One v3Zero smokeSize v3Zero 0.0f perimeterCentered; Image = Assets.Default.Gas; Color = colorOne })
+                 ("Oil", { particleRender with Transform = Transform.makeIntuitive false v3Zero v3One v3Zero fluidSize v3Zero -0.02f perimeterCentered; Image = Assets.Default.Fluid; Color = Color.color 0.36862746f 0.22352941f 0.039215688f 1.0f })])]
 
     override this.Render (_, emitter, world) =
         let mutable transform = emitter.GetTransform world
@@ -522,12 +539,12 @@ type Lighting3dConfigDispatcher () =
         let config = entity.GetLighting3dConfig world
         World.enqueueRenderMessage3d (ConfigureLighting3d config) world
 
-/// Gives an entity the base behavior of a 3d light probe.
-type LightProbe3dDispatcher () =
+/// Gives an entity the base behavior of a light probe.
+type LightProbeDispatcher () =
     inherit Entity3dDispatcher (false, true, false)
 
     static member Facets =
-        [typeof<LightProbe3dFacet>]
+        [typeof<LightProbeFacet>]
 
     override this.GetAttributesInferred (_, _) =
         AttributesInferred.important (v3Dup 0.25f) v3Zero
@@ -742,7 +759,7 @@ type Effect3dDispatcher () =
         [typeof<EffectFacet>]
 
     static member Properties =
-        [define Entity.EffectDescriptor (scvalue "[[EffectName Effect] [LifeTimeOpt None] [Definitions []] [Content [Contents [Shift 0] [[Billboard [[AlbedoOpt [Some [Default MaterialAlbedo]]]] [] [] Nil]]]]]")]
+        [define Entity.EffectDescriptor (scvalue "[[EffectName Effect] [LifeTimeOpt None] [Definitions []] [Content [Contents [Shift 0] [[Billboard [[AlbedoOpt [Some [Default Albedo]]]] [] [] Nil]]]]]")]
 
     override this.GetAttributesInferred (_, _) =
         AttributesInferred.unimportant

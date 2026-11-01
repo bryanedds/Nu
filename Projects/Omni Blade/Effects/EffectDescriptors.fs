@@ -11,6 +11,9 @@ open Nu.Effects
 [<RequireQualifiedAccess>]
 module EffectDescriptors =
 
+    let pipeline =
+        Constants.Render.PipelineNameDefault
+
     let hop start stop =
         { EffectName = "Hop"
           LifeTimeOpt = Some 20L
@@ -36,7 +39,7 @@ module EffectDescriptors =
           Content =
             TextSprite
                 (Resource (AssetTag.toPair Assets.Gui.Font),
-                 scstring (abs delta), Some 24.0f, Set.empty,
+                 scstring (abs delta), pipeline, Some 24.0f, Set.empty,
                  [|Positions
                     (Sum, Linear, Bounce,
                      [|{ TweenValue = v3Zero; TweenLength = 10L }
@@ -56,7 +59,7 @@ module EffectDescriptors =
           Definitions = Map.empty
           Content =
             StaticSprite
-                (Resource (AssetTag.toPair Assets.Battle.CriticalMessageImage),
+                (Resource (AssetTag.toPair Assets.Battle.CriticalMessageImage), pipeline,
                  [|Angleses
                     (Sum, Linear, Bounce,
                      [|{ TweenValue = v3 0.0f 0.0f (MathF.TWO_PI); TweenLength = 10L }
@@ -75,7 +78,7 @@ module EffectDescriptors =
           Definitions = Map.empty
           Content =
             StaticSprite
-                (Resource (AssetTag.toPair Assets.Battle.CancelMessageImage),
+                (Resource (AssetTag.toPair Assets.Battle.CancelMessageImage), pipeline,
                  [|Angleses
                     (Sum, Linear, Bounce,
                      [|{ TweenValue = v3 0.0f 0.0f (MathF.TWO_PI); TweenLength = 10L }
@@ -95,12 +98,12 @@ module EffectDescriptors =
           Definitions = Map.empty
           Content =
               StaticSprite
-               (Resource (AssetTag.toPair image),
-                [|Colors
-                   (Set, EaseOut, Once,
-                    [|{ TweenValue = Color.One; TweenLength = 24L }
-                      { TweenValue = Color.One.WithA8 (byte 0); TweenLength = 0L }|])|],
-                Nil) }
+                (Resource (AssetTag.toPair image), pipeline,
+                 [|Colors
+                    (Set, EaseOut, Once,
+                        [|{ TweenValue = Color.One; TweenLength = 24L }
+                          { TweenValue = Color.One.WithA8 (byte 0); TweenLength = 0L }|])|],
+                    Nil) }
 
     let critical =
         { EffectName = "Critical"
@@ -108,7 +111,7 @@ module EffectDescriptors =
           Definitions = Map.empty
           Content =
             AnimatedSprite
-                (Resource (AssetTag.toPair Assets.Battle.CriticalAnimationSheet),
+                (Resource (AssetTag.toPair Assets.Battle.CriticalAnimationSheet), pipeline,
                  v2i 32 32, 8, 8, 3L, Once,
                  [|Size (v3 96.0f 96.0f 0.0f)|],
                  Nil) }
@@ -119,7 +122,7 @@ module EffectDescriptors =
           Definitions = Map.empty
           Content =
             AnimatedSprite
-                (Resource (AssetTag.toPair Assets.Battle.PowerCriticalAnimationSheet),
+                (Resource (AssetTag.toPair Assets.Battle.PowerCriticalAnimationSheet), pipeline,
                  v2i 32 32, 14, 14, 3L, Once,
                  [|Size (v3 96.0f 96.0f 0.0f)|],
                  Nil) }
@@ -130,7 +133,7 @@ module EffectDescriptors =
           Definitions = Map.empty
           Content =
             AnimatedSprite
-                (Resource (AssetTag.toPair Assets.Battle.PoisonCutAnimationSheet),
+                (Resource (AssetTag.toPair Assets.Battle.PoisonCutAnimationSheet), pipeline,
                  v2i 32 32, 5, 5, 5L, Once,
                  [|Size (v3 96.0f 96.0f 0.0f)|],
                  Nil) }
@@ -141,7 +144,7 @@ module EffectDescriptors =
           Definitions = Map.empty
           Content =
             AnimatedSprite
-                (Resource (AssetTag.toPair Assets.Battle.PowerCutAnimationSheet),
+                (Resource (AssetTag.toPair Assets.Battle.PowerCutAnimationSheet), pipeline,
                  v2i 48 48, 8, 8, 3L, Once,
                  [|Size (v3 144.0f 144.0f 0.0f)|],
                  Nil) }
@@ -152,7 +155,7 @@ module EffectDescriptors =
           Definitions = Map.empty
           Content =
             AnimatedSprite
-                (Resource (AssetTag.toPair Assets.Battle.DispelCutAnimationSheet),
+                (Resource (AssetTag.toPair Assets.Battle.DispelCutAnimationSheet), pipeline,
                  v2i 48 48, 8, 8, 4L, Once,
                  [|Size (v3 192.0f 192.0f 0.0f)|],
                  Nil) }
@@ -163,13 +166,13 @@ module EffectDescriptors =
           Definitions = Map.empty
           Content =
             AnimatedSprite
-                (Resource (AssetTag.toPair Assets.Battle.DoubleCutAnimationSheet),
+                (Resource (AssetTag.toPair Assets.Battle.DoubleCutAnimationSheet), pipeline,
                  v2i 48 48, 10, 8, 3L, Once,
                  [|Size (v3 144.0f 144.0f 0.0f)|],
                  Nil) }
 
     let slashSpike position position2 =
-        let spike = AnimatedSprite (Resource (AssetTag.toPair Assets.Battle.SpikeAnimationSheet), v2i 32 32, 5, 5, 3L, Once, [||], Nil)
+        let spike = AnimatedSprite (Resource (AssetTag.toPair Assets.Battle.SpikeAnimationSheet), pipeline, v2i 32 32, 5, 5, 3L, Once, [||], Nil)
         let emit =
             Emit
                 (Shift 0.1f,
@@ -183,7 +186,7 @@ module EffectDescriptors =
           Content = emit }
 
     let slashWind position position2 =
-        let twister = AnimatedSprite (Resource (AssetTag.toPair Assets.Battle.CriticalSlashAnimationSheet), v2i 32 32, 8, 8, 3L, Once, [||], Nil)
+        let twister = AnimatedSprite (Resource (AssetTag.toPair Assets.Battle.CriticalSlashAnimationSheet), pipeline, v2i 32 32, 8, 8, 3L, Once, [||], Nil)
         let emit =
             Emit
                 (Shift 0.1f,
@@ -201,11 +204,11 @@ module EffectDescriptors =
           LifeTimeOpt = Some 98L
           Definitions = Map.empty
           Content =
-              AnimatedSprite
-               (Resource (AssetTag.toPair Assets.Battle.CycloneBlurAnimationSheet),
-                v2i 78 78, 4, 2, 3L, Loop,
-                [|Circle (radius, 2.0, 98L); Size (v3 234.0f 234.0f 0.0f)|],
-                Nil) }
+            AnimatedSprite
+                (Resource (AssetTag.toPair Assets.Battle.CycloneBlurAnimationSheet), pipeline,
+                 v2i 78 78, 4, 2, 3L, Loop,
+                 [|Circle (radius, 2.0, 98L); Size (v3 234.0f 234.0f 0.0f)|],
+                 Nil) }
 
     let buff statusType =
         let image =
@@ -227,7 +230,7 @@ module EffectDescriptors =
           Content =
               Contents
                   (Shift 0.0f,
-                   [|StaticSprite (Resource (AssetTag.toPair image), [|shrink; Position (v3 0.0f 32.0f 0.0f)|], Nil)|]) }
+                   [|StaticSprite (Resource (AssetTag.toPair image), pipeline, [|shrink; Position (v3 0.0f 32.0f 0.0f)|], Nil)|]) }
 
     let debuff statusType =
         let image =
@@ -249,7 +252,7 @@ module EffectDescriptors =
           Content =
               Contents
                   (Shift 0.0f,
-                   [|StaticSprite (Resource (AssetTag.toPair image), [|shrink; Position (v3 0.0f 32.0f 0.0f)|], Nil)|]) }
+                   [|StaticSprite (Resource (AssetTag.toPair image), pipeline, [|shrink; Position (v3 0.0f 32.0f 0.0f)|], Nil)|]) }
 
     let impactSplash =
         { EffectName = "ImpactSplash"
@@ -259,12 +262,12 @@ module EffectDescriptors =
             Contents
                 (Shift 0.0f,
                  [|AnimatedSprite
-                    (Resource (AssetTag.toPair Assets.Battle.ImpactSplashAnimationSheet),
+                    (Resource (AssetTag.toPair Assets.Battle.ImpactSplashAnimationSheet), pipeline,
                      v2i 32 32, 3, 3, 8L, Once,
                      [|Position (v3 -48.0f 0.0f 0.0f); Size (v3 96.0f 96.0f 0.0f); Flip Horizontal|],
                      Nil)
                    AnimatedSprite
-                    (Resource (AssetTag.toPair Assets.Battle.ImpactSplashAnimationSheet),
+                    (Resource (AssetTag.toPair Assets.Battle.ImpactSplashAnimationSheet), pipeline,
                      v2i 32 32, 3, 3, 8L, Once,
                      [|Position (v3 48.0f 0.0f 0.0f); Size (v3 96.0f 96.0f 0.0f); Flip Unflipped|],
                      Nil)|]) }
@@ -275,7 +278,7 @@ module EffectDescriptors =
           Definitions = Map.empty
           Content =
               AnimatedSprite
-               (Resource (AssetTag.toPair Assets.Battle.HolyCastAnimationSheet),
+               (Resource (AssetTag.toPair Assets.Battle.HolyCastAnimationSheet), pipeline,
                 v2i 100 100, 36, 6, 1L, Once, [||], Nil) }
 
     let genericCast =
@@ -292,11 +295,11 @@ module EffectDescriptors =
                   { TweenValue = Color.One.WithA8 (byte 0); TweenLength = 0L }|])
         let floorLight =
             AnimatedSprite
-               (Resource (AssetTag.toPair Assets.Battle.FloorLightAnimationSheet),
+               (Resource (AssetTag.toPair Assets.Battle.FloorLightAnimationSheet), pipeline,
                 v2i 64 64, 12, 12, 2L, Loop, [|Size (v3 192.0f 192.0f 0.0f); fadeOut|], Nil)
         let floorBeam =
             AnimatedSprite
-               (Resource (AssetTag.toPair Assets.Battle.FloorBeamAnimationSheet),
+               (Resource (AssetTag.toPair Assets.Battle.FloorBeamAnimationSheet), pipeline,
                 v2i 64 64, 5, 5, 2L, Loop, [|Size (v3 192.0f 192.0f 0.0f); fadeIn|], Nil)
         { EffectName = "GenericCast"
           LifeTimeOpt = Some 65L
@@ -339,10 +342,10 @@ module EffectDescriptors =
           Content =
               Contents
                   (Shift 0.0f,
-                   [|StaticSprite (Resource (AssetTag.toPair Assets.Battle.ElectronBlueImage), [|orbitH; electronSize|], Nil);
-                     Emit (Shift 0.0f, Rate 1.0, [|orbitH|], [||], StaticSprite (Resource (AssetTag.toPair Assets.Battle.NonLocationBlueImage), [|nonLocationSize; fade|], Nil));
-                     StaticSprite (Resource (AssetTag.toPair Assets.Battle.ElectronGreenImage), [|orbitV; electronSize; positionAdjustY|], Nil)
-                     Emit (Shift 0.0f, Rate 1.0, [|orbitV; positionAdjustY|], [||], StaticSprite (Resource (AssetTag.toPair Assets.Battle.NonLocationGreenImage), [|nonLocationSize; fade|], Nil))|]) }
+                   [|StaticSprite (Resource (AssetTag.toPair Assets.Battle.ElectronBlueImage), pipeline, [|orbitH; electronSize|], Nil);
+                     Emit (Shift 0.0f, Rate 1.0, [|orbitH|], [||], StaticSprite (Resource (AssetTag.toPair Assets.Battle.NonLocationBlueImage), pipeline, [|nonLocationSize; fade|], Nil));
+                     StaticSprite (Resource (AssetTag.toPair Assets.Battle.ElectronGreenImage), pipeline, [|orbitV; electronSize; positionAdjustY|], Nil)
+                     Emit (Shift 0.0f, Rate 1.0, [|orbitV; positionAdjustY|], [||], StaticSprite (Resource (AssetTag.toPair Assets.Battle.NonLocationGreenImage), pipeline, [|nonLocationSize; fade|], Nil))|]) }
 
     let fire position position2 =
         let fireSize = Size (v3 96.0f 96.0f 0.0f)
@@ -350,12 +353,12 @@ module EffectDescriptors =
         let linearTravel position position2 duration = Positions (Set, EaseOut, Once, [|{ TweenValue = position; TweenLength = duration }; { TweenValue = position2; TweenLength = 0L }|])
         let fire playback aspects =
             AnimatedSprite
-             (Resource (AssetTag.toPair Assets.Battle.FireAnimationSheet),
-              v2i 32 32, 8, 4, 2L, playback, aspects, Nil)
+                (Resource (AssetTag.toPair Assets.Battle.FireAnimationSheet), pipeline,
+                 v2i 32 32, 8, 4, 2L, playback, aspects, Nil)
         let burn =
             AnimatedSprite
-             (Resource (AssetTag.toPair Assets.Battle.BurnAnimationSheet),
-              v2i 32 32, 12, 4, 3L, Once, [||], Nil)
+                (Resource (AssetTag.toPair Assets.Battle.BurnAnimationSheet), pipeline,
+                 v2i 32 32, 12, 4, 3L, Once, [||], Nil)
         let fireball travel activation =
             Contents
                 (Shift 0.0f,
@@ -384,7 +387,7 @@ module EffectDescriptors =
                    Sizes (Set, Linear, Once, [|{ TweenValue = v3 32.0f 32.0f 0.0f; TweenLength = 36L }; { TweenValue = v3 192.0f 192.0f 0.0f; TweenLength = 0L }|])
                    Degrees (v3 0.0f 0.0f 0.0f)
                    Color (Color.One.WithA8 (byte 207))|],
-                 AnimatedSprite (Resource (AssetTag.toPair Assets.Battle.FlameAnimationSheet), v2i 64 64, 6, 6, 6L, Once, [||], Nil)) }
+                 AnimatedSprite (Resource (AssetTag.toPair Assets.Battle.FlameAnimationSheet), pipeline, v2i 64 64, 6, 6, 6L, Once, [||], Nil)) }
 
     let ice =
         { EffectName = "Ice"
@@ -392,7 +395,7 @@ module EffectDescriptors =
           Definitions = Map.empty
           Content =
             AnimatedSprite
-                (Resource (AssetTag.toPair Assets.Battle.IceAnimationSheet),
+                (Resource (AssetTag.toPair Assets.Battle.IceAnimationSheet), pipeline,
                  v2i 48 48, 20, 20, 5L, Once,
                  [|Size (v3 144.0f 144.0f 0.0f)|],
                  Nil) }
@@ -410,7 +413,7 @@ module EffectDescriptors =
           Definitions = Map.empty
           Content =
               StaticSprite
-               (Resource (AssetTag.toPair Assets.Battle.SnowballImage),
+               (Resource (AssetTag.toPair Assets.Battle.SnowballImage), pipeline,
                 [|Size (v3 288.0f 288.0f 0.0f); fall; rotate|], Nil) }
 
     let cure =
@@ -429,7 +432,7 @@ module EffectDescriptors =
                     [|{ TweenValue = v3 0.0f -100.0f 0.0f; TweenLength = 1L }|])|]
         let sparkle =
             AnimatedSprite
-             (Resource (AssetTag.toPair Assets.Battle.SparkleAnimationSheet),
+             (Resource (AssetTag.toPair Assets.Battle.SparkleAnimationSheet), pipeline,
               v2i 16 16, 6, 6, 4L, Once, [||], Nil)
         { EffectName = "Cure"
           LifeTimeOpt = Some 100L
@@ -437,7 +440,7 @@ module EffectDescriptors =
           Content = Emit (Shift 0.0f, Rate 0.3, [|path|], [||], sparkle) }
 
     let protect =
-        let protection aspects = StaticSprite (Resource (AssetTag.toPair Assets.Battle.ProtectSphereImage), aspects, Nil)
+        let protection aspects = StaticSprite (Resource (AssetTag.toPair Assets.Battle.ProtectSphereImage), pipeline, aspects, Nil)
         let blink = Enableds (Equal, Loop, [|{ LogicValue = true; LogicLength = 1L };{ LogicValue = false; LogicLength = 2L }|])
         let outwardReach = 64.0f
         let clockwiseBias = 50.0f
@@ -464,8 +467,8 @@ module EffectDescriptors =
     let purify =
         let sprite position =
             AnimatedSprite
-             (Resource (AssetTag.toPair Assets.Battle.PurifyAnimationSheet),
-              v2i 64 64, 10, 5, 3L, Once, [|Position position|], Nil)
+                (Resource (AssetTag.toPair Assets.Battle.PurifyAnimationSheet), pipeline,
+                 v2i 64 64, 10, 5, 3L, Once, [|Position position|], Nil)
         { EffectName = "Purify"
           LifeTimeOpt = Some 54L
           Definitions = Map.empty
@@ -479,7 +482,7 @@ module EffectDescriptors =
     let bolt =
         let boltSprite =
             StaticSprite
-                (Resource (AssetTag.toPair Assets.Battle.BoltAnimationSheet),
+                (Resource (AssetTag.toPair Assets.Battle.BoltAnimationSheet), pipeline,
                  [|Insets
                     (Set, Constant, Once,
                      [|{ TweenValue = Box2 (0.0f,   0.0f,   64.0f,  256.0f); TweenLength = 5L }
@@ -494,7 +497,7 @@ module EffectDescriptors =
                  Nil)
         let explosionSprite =
             AnimatedSprite
-                (Resource (AssetTag.toPair Assets.Battle.ExplosionAnimationSheet),
+                (Resource (AssetTag.toPair Assets.Battle.ExplosionAnimationSheet), pipeline,
                  v2i 32 32, 12, 4, 4L, Once,
                  [|Position (v3 0.0f -384.0f 0.0f)
                    Size (v3 96.0f 96.0f 0.0f)
@@ -519,7 +522,7 @@ module EffectDescriptors =
           Definitions = Map.empty
           Content =
             StaticSprite
-                (Resource Assets.Default.White.Pair,
+                (Resource Assets.Default.White.Pair, pipeline,
                  [|Size (v3 (single Constants.Render.DisplayVirtualResolution.X) (single Constants.Render.DisplayVirtualResolution.Y) 0.0f)
                    Colors
                     (Set, Linear, Once,
@@ -533,7 +536,7 @@ module EffectDescriptors =
         let fireSpinSize = Size (v3 600.0f 600.0f 0.0f)
         let fireSpin aspects =
             AnimatedSprite
-             (Resource (AssetTag.toPair Assets.Battle.FireSpinAnimationSheet),
+             (Resource (AssetTag.toPair Assets.Battle.FireSpinAnimationSheet), pipeline,
               v2i 100 100, 61, 8, 1L, Loop, aspects, Nil)
         { EffectName = "Inferno"
           LifeTimeOpt = Some 80L
@@ -552,7 +555,7 @@ module EffectDescriptors =
           Definitions = Map.empty
           Content =
             AnimatedSprite
-                (Resource (AssetTag.toPair Assets.Battle.SilkAnimationSheet),
+                (Resource (AssetTag.toPair Assets.Battle.SilkAnimationSheet), pipeline,
                  v2i 48 48, 21, 21, 3L, Once,
                  [|Size (v3 144.0f 144.0f 0.0f)|],
                  Nil) }

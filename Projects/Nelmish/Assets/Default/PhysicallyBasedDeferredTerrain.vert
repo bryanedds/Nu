@@ -1,6 +1,7 @@
 #version 450 core
 
 const int TEX_COORDS_OFFSET_VERTS = 6;
+const int TERRAIN_LAYERS_MAX = 6;
 
 const vec2 TEX_COORDS_OFFSET_FILTERS[TEX_COORDS_OFFSET_VERTS] =
     vec2[TEX_COORDS_OFFSET_VERTS](
@@ -20,7 +21,7 @@ const vec2 TEX_COORDS_OFFSET_FILTERS_2[TEX_COORDS_OFFSET_VERTS] =
         vec2(1,1),
         vec2(0,1));
 
-struct EyeStruct
+struct Eye3dStruct
 {
     vec3 center;
     mat4 view;
@@ -30,7 +31,29 @@ struct EyeStruct
     mat4 viewProjection;
 };
 
-layout(set = 0, binding = 0) uniform EyeUniform { EyeStruct eye; };
+struct TerrainStruct
+{
+    int layersCount;
+    int lightShadowSamples;
+    float lightShadowBias;
+    float lightShadowSampleScalar;
+    float lightShadowExponent;
+    float lightShadowDensity;
+};
+
+layout(set = 0, binding = 0) uniform Eye3dUniform { Eye3dStruct eye; };
+layout(set = 0, binding = 1) uniform TerrainUniform { TerrainStruct terrain; };
+
+layout(set = 1, binding = 4) uniform texture2D userDefinedImageTextures[TERRAIN_LAYERS_MAX];
+layout(set = 1, binding = 5) uniform texture2D userDefinedImage0Texture;
+layout(set = 1, binding = 6) uniform texture2D userDefinedImage1Texture;
+
+layout(set = 2, binding = 0) uniform sampler unfilteredSampler;
+layout(set = 2, binding = 1) uniform sampler filteredSampler;
+layout(set = 2, binding = 2) uniform sampler materialRepeatSampler;
+layout(set = 2, binding = 3) uniform sampler materialRepeatMirrorSampler;
+layout(set = 2, binding = 4) uniform sampler materialClampToEdge;
+layout(set = 2, binding = 5) uniform sampler materialClampToBorder;
 
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec2 texCoords;
@@ -53,6 +76,7 @@ layout(location = 5) out vec3 tintOut;
 layout(location = 6) flat out vec4 albedoOut;
 layout(location = 7) flat out vec4 materialOut;
 layout(location = 8) flat out vec4 material2Out;
+layout(location = 9) flat out vec4 userDefinedSettingsOut[2];
 
 void main()
 {
@@ -62,11 +86,11 @@ void main()
     vec2 texCoordsOffsetFilter2 = TEX_COORDS_OFFSET_FILTERS_2[texCoordsOffsetIndex];
     texCoordsOut = texCoords + texCoordsOffset.xy * texCoordsOffsetFilter + texCoordsOffset.zw * texCoordsOffsetFilter2;
     normalOut = transpose(inverse(mat3(model))) * normal;
+    blendsOut = blends;
+    tintOut = tint;
     albedoOut = albedo;
     materialOut = material;
     material2Out = material2;
-    blendsOut[0] = blends[0];
-    blendsOut[1] = blends[1];
-    tintOut = tint;
+    userDefinedSettingsOut = userDefinedSettings;
     gl_Position = eye.viewProjection * positionOut;
 }

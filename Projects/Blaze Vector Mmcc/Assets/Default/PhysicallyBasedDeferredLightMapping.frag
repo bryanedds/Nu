@@ -4,7 +4,7 @@ const float PI = 3.141592654;
 const float FLOAT_MAX = 3.402823466e+38;
 const int LIGHT_MAPS_MAX = 26;
 
-struct EyeStruct
+struct Eye3dStruct
 {
     vec3 center;
     mat4 view;
@@ -23,16 +23,16 @@ struct LightMapStruct
     float ambientBrightness;
 };
 
-struct LightsGeneralStruct
+struct Lighting3d3Struct
 {
     int lightMapsCount;
     float lightMapSingletonBlendMargin;
     int lightsCount;
 };
 
-layout(set = 0, binding = 0) uniform EyeUniform { EyeStruct eye; };
+layout(set = 0, binding = 0) uniform Eye3dUniform { Eye3dStruct eye; };
 layout(set = 0, binding = 1) uniform LightMapsUniform { LightMapStruct lightMaps[LIGHT_MAPS_MAX]; };
-layout(set = 0, binding = 2) uniform LightsGeneralUniform { LightsGeneralStruct lightsGeneral; };
+layout(set = 0, binding = 2) uniform Lighting3d3Uniform { Lighting3d3Struct lighting3; };
 layout(set = 0, binding = 3) uniform texture2D depthTexture;
 layout(set = 0, binding = 4) uniform texture2D normalPlusTexture;
 
@@ -60,10 +60,11 @@ bool contains(vec3 min1, vec3 size1, vec3 min2, vec3 size2)
 
 vec4 depthToPosition(float depth, vec2 texCoords)
 {
-    vec4 positionClip = vec4(texCoords * 2.0 - 1.0, depth, 1.0);
-    vec4 positionView = eye.projectionInverse * positionClip;
-    positionView /= positionView.w;
-    return eye.viewInverse * positionView;
+    vec4 clip = vec4(texCoords * 2.0 - 1.0, 1.0, 1.0);
+    vec4 rayView = eye.projectionInverse * clip;
+    rayView /= rayView.w;
+    vec3 positionView = rayView.xyz * (depth / -rayView.z);
+    return eye.viewInverse * vec4(positionView, 1.0);
 }
 
 float distanceToOutside(vec3 point, vec3 boxMin, vec3 boxSize)
@@ -120,7 +121,7 @@ void main()
     float lm2DistanceSquared = FLOAT_MAX;
     if (!ignoreLightMaps)
     {
-        for (int i = 0; i < lightsGeneral.lightMapsCount; ++i)
+        for (int i = 0; i < lighting3.lightMapsCount; ++i)
         {
             LightMapStruct lightMap = lightMaps[i];
             if (inBounds(position.xyz, lightMap.min, lightMap.size))
@@ -150,7 +151,7 @@ void main()
         vec3 min1 = lightMaps[lm1].min;
         vec3 size1 = lightMaps[lm1].size;
         float distance = distanceToOutside(position.xyz, min1, size1);
-        ratio = 1.0 - smoothstep(0.0, lightsGeneral.lightMapSingletonBlendMargin, distance);
+        ratio = 1.0 - smoothstep(0.0, lighting3.lightMapSingletonBlendMargin, distance);
     }
     else if (lm1 != -1 && lm2 != -1)
     {

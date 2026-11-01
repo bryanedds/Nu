@@ -1,7 +1,7 @@
 #version 450 core
 
 const int VERTS = 6;
-const int SPRITE_BATCH_SIZE = 192;
+const int SPRITE_BATCH_SIZE = 128;
 
 const vec4 FILTERS[VERTS] =
     vec4[VERTS](
@@ -19,6 +19,7 @@ struct SpriteStruct
     float rotation;
     vec4 texCoords;
     vec4 color;
+    vec4 userDefinedSettings[2];
 };
 
 struct ViewProjectionStruct
@@ -31,6 +32,7 @@ layout(set = 0, binding = 1) uniform ViewProjectionUniform { ViewProjectionStruc
 
 layout(location = 0) out vec2 texCoordsOut;
 layout(location = 1) out vec4 colorOut;
+layout(location = 2) out vec4 userDefinedSettingsOut[2];
 
 vec2 rotate(vec2 v, float a)
 {
@@ -59,6 +61,7 @@ void main()
     vec4 texCoords4 = sprite.texCoords * filt;
     texCoordsOut = vec2(texCoords4.x + texCoords4.z, texCoords4.y + texCoords4.w);
 
-    // compute color
+    // compute color and user-defined settings
     colorOut = sprite.color;
+    userDefinedSettingsOut = sprite.userDefinedSettings;
 }

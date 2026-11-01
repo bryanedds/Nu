@@ -54,8 +54,11 @@ type AvatarDispatcher () =
                           InsetOpt = ValueSome (getSpriteInset entity world)
                           ClipOpt = ValueNone
                           Image = avatar.AnimationSheet
+                          UserDefinedImages = UserDefinedImages.defaultImages
+                          PipelineName = Constants.Render.PipelineNameDefault
                           Color = Color.One
                           Blend = Transparent
                           Emission = Color.Zero
-                          Flip = Unflipped }}
+                          Flip = Unflipped
+                          UserDefinedSettings = UserDefinedSettings.defaultSettings }}
                 world

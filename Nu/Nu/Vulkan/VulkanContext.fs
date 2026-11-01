@@ -468,7 +468,8 @@ type [<ReferenceEquality>] VulkanContext =
         SetInstanceApi (Vulkan.GetApi instance)
         (validationLayersActivated, instance)
 
-    // TODO: try separate this from validation status, same for create instance debug.
+    /// Create the debug messenger when validation layers are activated.
+    /// TODO: try separate this from validation status, same for create instance debug.
     static member private tryCreateDebugMessenger validationLayersActivated info =
         if validationLayersActivated then
             let mutable debugMessenger = Unchecked.defaultof<VkDebugUtilsMessengerEXT>
@@ -550,15 +551,10 @@ type [<ReferenceEquality>] VulkanContext =
         let mutable portabilityFeatures = VkPhysicalDevicePortabilitySubsetFeaturesKHR ()
         portabilityFeatures.imageViewFormatSwizzle <- true
 
-        // configure Vulkan 1.2 features
-        let mutable vulkan12 = VkPhysicalDeviceVulkan12Features ()
-        vulkan12.samplerMirrorClampToEdge <- true
-        if Constants.Vulkan.MoltenVk && portabilitySubsetAvailable then vulkan12.pNext <- asVoidPtr &portabilityFeatures
-
         // configure Vulkan 1.3 features
         let mutable vulkan13 = VkPhysicalDeviceVulkan13Features ()
         vulkan13.dynamicRendering <- true
-        if Constants.Vulkan.MoltenVk && portabilitySubsetAvailable then vulkan13.pNext <- asVoidPtr &vulkan12
+        if Constants.Vulkan.MoltenVk && portabilitySubsetAvailable then vulkan13.pNext <- asVoidPtr &portabilityFeatures
 
         // queue create infos
         let mutable queuePriority = 1.0f

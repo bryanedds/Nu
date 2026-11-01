@@ -72,8 +72,11 @@ type ToyCharacter2dDispatcher () =
                       InsetOpt = insetOpt
                       ClipOpt = ValueNone
                       Image = image
+                      UserDefinedImages = UserDefinedImages.defaultImages
+                      PipelineName = Constants.Render.PipelineNameDefault
                       Color = Color.One
                       Blend = Transparent
                       Emission = Color.Zero
-                      Flip = if facingLeft then Horizontal else Unflipped }}
+                      Flip = if facingLeft then Horizontal else Unflipped
+                      UserDefinedSettings = UserDefinedSettings.defaultSettings }}
             world

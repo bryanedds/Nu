@@ -777,6 +777,77 @@ module WorldImGui =
                         | Some _ | None -> None
                     | _ -> None
                 World.imGuiEditPropertyRecordPlus tryReplaceAnimationName true name (typeof<Animation>) animation context world
+            | :? UserDefinedImages as images ->
+                let tryReplaceUserDefinedImageOpt (fieldInfo : PropertyInfo) (field : obj) =
+                    match context.SelectedEntityOpt with
+                    | Some selectedEntity ->
+                        let userDefinedImageSubstring = "UserDefinedImage"
+                        if fieldInfo.Name.StartsWith userDefinedImageSubstring then
+                            let indexStr = fieldInfo.Name.Substring (userDefinedImageSubstring.Length, fieldInfo.Name.Length - userDefinedImageSubstring.Length)
+                            let indexOpt =
+                                match Int32.TryParse indexStr with
+                                | (true, number) -> Some number
+                                | (false, _) -> None
+                            match indexOpt with
+                            | Some index ->
+                                let pipelineName =
+                                    match selectedEntity.TryGetProperty "PipelineName" world with
+                                    | Some property when (property.PropertyValue :? string) -> property.PropertyValue :?> string
+                                    | Some _ | None -> Constants.Render.PipelineNameDefault
+                                let descriptors = World.getUserDefinedPipeline2dDescriptors world
+                                match descriptors.TryGetValue pipelineName with
+                                | (true, pipelineDescriptor) ->
+                                    let imageNames = pipelineDescriptor.UserDefinedImageNames
+                                    if index < imageNames.Length then
+                                        ImGui.PushID name
+                                        let mutable value = field
+                                        let mutable valueStr = scstring value
+                                        let valueEdited = ImGui.InputText (imageNames[index], &valueStr, 4096u)
+                                        try let value = scvalue<Image AssetTag> valueStr
+                                            if ImGui.IsItemFocused () then context.FocusProperty ()
+                                            ImGui.PopID ()
+                                            Some (valueEdited, value :> obj)
+                                        with _ -> Some (false, field)
+                                    else Some (false, field)
+                                | (false, _) -> Some (false, field)
+                            | None -> Some (false, field)
+                        else None
+                    | None -> None
+                World.imGuiEditPropertyRecordPlus tryReplaceUserDefinedImageOpt false name (typeof<UserDefinedImages>) images context world
+            | :? UserDefinedSettings as settings ->
+                let tryReplaceUserDefinedSettingOpt (fieldInfo : PropertyInfo) (field : obj) =
+                    match context.SelectedEntityOpt with
+                    | Some selectedEntity ->
+                        let userDefinedSettingSubstring = "UserDefinedSetting"
+                        if fieldInfo.Name.StartsWith userDefinedSettingSubstring then
+                            let indexStr = fieldInfo.Name.Substring (userDefinedSettingSubstring.Length, fieldInfo.Name.Length - userDefinedSettingSubstring.Length)
+                            let indexOpt =
+                                match Int32.TryParse indexStr with
+                                | (true, number) -> Some number
+                                | (false, _) -> None
+                            match indexOpt with
+                            | Some index ->
+                                let pipelineName =
+                                    match selectedEntity.TryGetProperty "PipelineName" world with
+                                    | Some property when (property.PropertyValue :? string) -> property.PropertyValue :?> string
+                                    | Some _ | None -> Constants.Render.PipelineNameDefault
+                                let descriptors = World.getUserDefinedPipeline2dDescriptors world
+                                match descriptors.TryGetValue pipelineName with
+                                | (true, pipelineDescriptor) ->
+                                    let settingNames = pipelineDescriptor.UserDefinedSettingNames
+                                    if index < settingNames.Length then
+                                        ImGui.PushID name
+                                        let mutable value = field :?> single
+                                        let valueEdited = ImGui.DragFloat (settingNames[index], &value, context.SnapDrag)
+                                        if ImGui.IsItemFocused () then context.FocusProperty ()
+                                        ImGui.PopID ()
+                                        Some (valueEdited, value :> obj)
+                                    else Some (false, field)
+                                | (false, _) -> Some (false, field)
+                            | None -> Some (false, field)
+                        else None
+                    | None -> None
+                World.imGuiEditPropertyRecordPlus tryReplaceUserDefinedSettingOpt false name (typeof<UserDefinedSettings>) settings context world
             | :? TerrainMaterialProperties as tmps ->
                 let tryReplaceUserDefinedSettingOpt (fieldInfo : PropertyInfo) (field : obj) =
                     match context.SelectedEntityOpt with
@@ -810,7 +881,7 @@ module WorldImGui =
                                         if ImGui.IsItemFocused () then context.FocusProperty ()
                                         if isSomeEdited then
                                             if isSome
-                                            then valueOpt <- Some Constants.Render.UserDefinedSettingDefault
+                                            then valueOpt <- Some 0.0f
                                             else valueOpt <- None
                                         match valueOpt with
                                         | Some value ->
@@ -874,9 +945,9 @@ module WorldImGui =
                                     if index < imageNames.Length then
                                         let asset index : Image AssetTag =
                                             match index with
-                                            | 0 -> Assets.Default.MaterialUserDefinedImage0
-                                            | 1 -> Assets.Default.MaterialUserDefinedImage1
-                                            | 2 -> Assets.Default.MaterialUserDefinedImage2
+                                            | 0 -> Assets.Default.UserDefinedImage0
+                                            | 1 -> Assets.Default.UserDefinedImage1
+                                            | 2 -> Assets.Default.UserDefinedImage2
                                             | _ -> failwithumf ()
                                         let mutable valueOpt = field :?> Image AssetTag voption
                                         let mutable isSome = valueOpt.IsSome
@@ -938,7 +1009,7 @@ module WorldImGui =
                         else None
                     | None -> None
                 World.imGuiEditPropertyRecordPlus tryReplaceUserDefinedImageOpt false name (typeof<Material>) material context world
-            | :? MaterialProperties as mps ->
+            | :? MaterialProperties as properties ->
                 let tryReplaceUserDefinedSettingOpt (fieldInfo : PropertyInfo) (field : obj) =
                     match context.SelectedEntityOpt with
                     | Some selectedEntity ->
@@ -989,7 +1060,7 @@ module WorldImGui =
                                         if ImGui.IsItemFocused () then context.FocusProperty ()
                                         if isSomeEdited then
                                             if isSome
-                                            then valueOpt <- ValueSome Constants.Render.UserDefinedSettingDefault
+                                            then valueOpt <- ValueSome 0.0f
                                             else valueOpt <- ValueNone
                                         match valueOpt with
                                         | ValueSome value ->
@@ -1009,7 +1080,7 @@ module WorldImGui =
                             | None -> Some (false, field)
                         else None
                     | None -> None
-                World.imGuiEditPropertyRecordPlus tryReplaceUserDefinedSettingOpt false name (typeof<MaterialProperties>) mps context world
+                World.imGuiEditPropertyRecordPlus tryReplaceUserDefinedSettingOpt false name (typeof<MaterialProperties>) properties context world
             | :? Justification as justification ->
                 let (_, caseNameEdited, caseName) = World.imGuiSelectCase name ty justification context
                 let justification =
@@ -1205,7 +1276,7 @@ module WorldImGui =
                     lighting3dEdited <- ImGui.SliderFloat3 ("Tone Map Power", &toneMapPower, 0.0f, 2.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                     lighting3dEdited <- ImGui.SliderFloat ("Tone Map Saturation", &toneMapSaturation, 0.0f, 2.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 if toneMapType = ReinhardExtendedToneMap.Enumerate then
-                    lighting3dEdited <- ImGui.SliderFloat ("Tone Map White Point", &toneMapWhitePoint, 0.0f, 20.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                    lighting3dEdited <- ImGui.SliderFloat ("Tone Map White Point", &toneMapWhitePoint, 0.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 ImGui.Text "Distance Fog"
                 lighting3dEdited <- ImGui.Checkbox ("Fog Enabled", &fogEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.Combo ("Fog Type", &fogType, FogType.Names, FogType.Names.Length) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
@@ -1225,7 +1296,7 @@ module WorldImGui =
                 lighting3dEdited <- ImGui.SliderFloat ("Ssao Distance Max", &ssaoDistanceMax, 0.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 ImGui.Text "Screen-Space Volumetric Fog"
                 lighting3dEdited <- ImGui.Checkbox ("Ssvf Enabled", &ssvfEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderFloat ("Ssvf Intensity", &ssvfIntensity, 0.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Ssvf Intensity", &ssvfIntensity, 0.0f, 5.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderInt ("Ssvf Steps", &ssvfSteps, 0, 128) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Ssvf Asymmetry", &ssvfAsymmetry, -1.0f, 1.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 ImGui.Text "Screen-Space Reflection"
@@ -1265,7 +1336,7 @@ module WorldImGui =
                 lighting3dEdited <- ImGui.Checkbox ("Depth of Field Enabled", &depthOfFieldEnabled) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Depth of Field Near Distance", &depthOfFieldNearDistance, 0.0f, 128.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.SliderFloat ("Depth of Field Far Distance", &depthOfFieldFarDistance, 0.0f, 128.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dEdited <- ImGui.SliderFloat ("Depth of Field Radius", &depthOfFieldRadius, 0.0f, 10.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dEdited <- ImGui.SliderFloat ("Depth of Field Radius", &depthOfFieldRadius, 0.0f, 20.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dEdited <- ImGui.Combo ("Depth of Field Focal Type", &depthOfFieldFocalType, FocalType.Names, FocalType.Names.Length) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()
                 if depthOfFieldFocalType = StaticFocalDistance.Enumerate then
                     lighting3dEdited <- ImGui.SliderFloat ("Depth of Field Focal Distance", &depthOfFieldFocalDistance, 0.0f, 64.0f) || lighting3dEdited; if ImGui.IsItemFocused () then context.FocusProperty ()

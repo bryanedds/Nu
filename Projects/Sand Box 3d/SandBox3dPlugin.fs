@@ -10,21 +10,35 @@ open SandBox3d
 type SandBox3dPlugin () =
     inherit NuPlugin ()
 
+    let WallIndex = 0
+
+    let SpriteSingletonFlipped =
+        { Pipeline2dType = SpriteSingletonPipeline
+          PipelineName = "SpriteSingletonFlipped"
+          ShaderPath = "Assets/Gameplay/SpriteSingletonFlipped"
+          UserDefinedImageNames = [|"TestImage"|]
+          UserDefinedSettingNames = [|"TestSetting"|] }
+
+    let SpriteBatchFlipped =
+        { Pipeline2dType = SpriteBatchPipeline
+          PipelineName = "SpriteBatchFlipped"
+          ShaderPath = "Assets/Gameplay/SpriteBatchFlipped"
+          UserDefinedImageNames = [|"TestImage"|]
+          UserDefinedSettingNames = [|"TestSetting"|] }
+
     let DeferredStaticFlipped =
-        { PipelineType = DeferredStatic
+        { Pipeline3dType = DeferredStaticPipeline
           PipelineName = "DeferredStaticFlipped"
           ShaderPath = "Assets/Gameplay/DeferredStaticFlipped"
           UserDefinedImageNames = [|"TestImageOpt"|]
           UserDefinedSettingNames = [|"TestSettingOpt"|] }
 
     let TerrainFlipped =
-        { PipelineType = Terrain
+        { Pipeline3dType = TerrainPipeline
           PipelineName = "TerrainFlipped"
           ShaderPath = "Assets/Gameplay/DeferredTerrainFlipped"
           UserDefinedImageNames = [||]
           UserDefinedSettingNames = [|"TestSettingOpt"|] }
-
-    let WallIndex = 0
 
     let createWallColumnModel corner (affine : Affine) (parent : Entity) world =
         let name = "Wall" + string Gen.id64
@@ -179,6 +193,11 @@ type SandBox3dPlugin () =
     override this.InitialPackages =
         [Assets.Gui.PackageName
          Assets.Gameplay.PackageName]
+
+    override this.UserDefinedPipeline2dDescriptors =
+        Map.ofSeq
+            [(SpriteSingletonFlipped.PipelineName, SpriteSingletonFlipped)
+             (SpriteBatchFlipped.PipelineName, SpriteBatchFlipped)]
 
     override this.UserDefinedPipeline3dDescriptors =
         Map.ofSeq

@@ -5,7 +5,7 @@ const int TERRAIN_LAYERS_MAX = 6;
 const float SAA_VARIANCE = 0.1; // TODO: consider exposing as terrainFrag config property.
 const float SAA_THRESHOLD = 0.1; // TODO: consider exposing as terrainFrag config property.
 
-struct EyeStruct
+struct Eye3dStruct
 {
     vec3 center;
     mat4 view;
@@ -25,7 +25,7 @@ struct TerrainFragStruct
     float lightShadowDensity;
 };
 
-layout(set = 0, binding = 0) uniform EyeUniform { EyeStruct eye; };
+layout(set = 0, binding = 0) uniform Eye3dUniform { Eye3dStruct eye; };
 layout(set = 0, binding = 1) uniform TerrainFragUniform { TerrainFragStruct terrainFrag; };
 
 layout(set = 1, binding = 0) uniform texture2D albedoTextures[TERRAIN_LAYERS_MAX];
@@ -36,11 +36,12 @@ layout(set = 1, binding = 4) uniform texture2D userDefinedImageTextures[TERRAIN_
 layout(set = 1, binding = 5) uniform texture2D userDefinedImage0Texture;
 layout(set = 1, binding = 6) uniform texture2D userDefinedImage1Texture;
 
-layout(set = 2, binding = 0) uniform sampler materialRepeatSampler;
-layout(set = 2, binding = 1) uniform sampler materialRepeatMirrorSampler;
-layout(set = 2, binding = 2) uniform sampler materialClampToEdge;
-layout(set = 2, binding = 3) uniform sampler materialClampToEdgeMirrorSampler;
-layout(set = 2, binding = 4) uniform sampler materialClampToBorder;
+layout(set = 2, binding = 0) uniform sampler unfilteredSampler;
+layout(set = 2, binding = 1) uniform sampler filteredSampler;
+layout(set = 2, binding = 2) uniform sampler materialRepeatSampler;
+layout(set = 2, binding = 3) uniform sampler materialRepeatMirrorSampler;
+layout(set = 2, binding = 4) uniform sampler materialClampToEdge;
+layout(set = 2, binding = 5) uniform sampler materialClampToBorder;
 
 layout(location = 0) in vec4 position;
 layout(location = 1) in vec2 texCoords;
@@ -50,6 +51,7 @@ layout(location = 5) in vec3 tint;
 layout(location = 6) flat in vec4 albedo;
 layout(location = 7) flat in vec4 material;
 layout(location = 8) flat in vec4 material2;
+layout(location = 9) flat in vec4 userDefinedSettings[2];
 
 layout(location = 0) out float depthOut;
 layout(location = 1) out vec3 albedoOut;
@@ -113,7 +115,7 @@ void main()
     roughness = sqrt(sqrt(roughnessPerceptualSquared));
 
     // populate remaining outputs
-    depthOut = gl_FragCoord.z;
+    depthOut = -(eye.view * position).z;
     albedoOut = pow(albedoBlend.rgb, vec3(GAMMA)) * tint * albedo.rgb;
     materialOut = vec4(roughness * material.g, 0.0, ambientOcclusionBlend * material.b, 0.0);
     subdermalPlusOut = vec4(0.0);

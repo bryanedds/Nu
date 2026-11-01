@@ -42,6 +42,12 @@ module StaticSpriteFacetExtensions =
         member this.GetStaticImage world : Image AssetTag = this.Get (nameof this.StaticImage) world
         member this.SetStaticImage (value : Image AssetTag) world = this.Set (nameof this.StaticImage) value world
         member this.StaticImage = lens (nameof this.StaticImage) this this.GetStaticImage this.SetStaticImage
+        member this.GetUserDefinedImages world : UserDefinedImages = this.Get (nameof this.UserDefinedImages) world
+        member this.SetUserDefinedImages (value : UserDefinedImages) world = this.Set (nameof this.UserDefinedImages) value world
+        member this.UserDefinedImages = lens (nameof this.UserDefinedImages) this this.GetUserDefinedImages this.SetUserDefinedImages
+        member this.GetPipelineName world : string = this.Get (nameof this.PipelineName) world
+        member this.SetPipelineName (value : string) world = this.Set (nameof this.PipelineName) value world
+        member this.PipelineName = lens (nameof this.PipelineName) this this.GetPipelineName this.SetPipelineName
         member this.GetColor world : Color = this.Get (nameof this.Color) world
         member this.SetColor (value : Color) world = this.Set (nameof this.Color) value world
         member this.Color = lens (nameof this.Color) this this.GetColor this.SetColor
@@ -54,6 +60,9 @@ module StaticSpriteFacetExtensions =
         member this.GetFlip world : Flip = this.Get (nameof this.Flip) world
         member this.SetFlip (value : Flip) world = this.Set (nameof this.Flip) value world
         member this.Flip = lens (nameof this.Flip) this this.GetFlip this.SetFlip
+        member this.GetUserDefinedSettings world : UserDefinedSettings = this.Get (nameof this.UserDefinedSettings) world
+        member this.SetUserDefinedSettings (value : UserDefinedSettings) world = this.Set (nameof this.UserDefinedSettings) value world
+        member this.UserDefinedSettings = lens (nameof this.UserDefinedSettings) this this.GetUserDefinedSettings this.SetUserDefinedSettings
 
 /// Augments an entity with a static sprite.
 type StaticSpriteFacet () =
@@ -63,21 +72,29 @@ type StaticSpriteFacet () =
         [define Entity.InsetOpt None
          define Entity.ClipOpt None
          define Entity.StaticImage Assets.Default.StaticSprite
+         define Entity.UserDefinedImages UserDefinedImages.defaultImages
+         define Entity.PipelineName Constants.Render.PipelineNameDefault
          define Entity.Color Color.One
          define Entity.Blend Transparent
          define Entity.Emission Color.Zero
-         define Entity.Flip Unflipped]
+         define Entity.Flip Unflipped
+         define Entity.UserDefinedSettings UserDefinedSettings.defaultSettings]
 
     override this.Render (_, entity, world) =
         let mutable transform = entity.GetTransform world
         let staticImage = entity.GetStaticImage world
+        let userDefinedImages = entity.GetUserDefinedImages world
+        let pipelineName = entity.GetPipelineName world
         let insetOpt = entity.GetInsetOpt world |> Option.toValueOption
         let clipOpt = entity.GetClipOpt world |> Option.toValueOption
         let color = entity.GetColor world
         let blend = entity.GetBlend world
         let emission = entity.GetEmission world
         let flip = entity.GetFlip world
-        World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, staticImage, &transform, &insetOpt, &clipOpt, staticImage, &color, blend, &emission, flip, world)
+        let userDefinedSettings = entity.GetUserDefinedSettings world
+        World.renderLayeredSpriteFast
+            (transform.Elevation, transform.Horizon, staticImage, &transform, &insetOpt, &clipOpt,
+             staticImage, &userDefinedImages, pipelineName, &color, blend, &emission, flip, &userDefinedSettings, world)
 
     override this.GetAttributesInferred (entity, world) =
         match Metadata.tryGetTextureSizeF (entity.GetStaticImage world) with
@@ -132,7 +149,9 @@ type AnimatedSpriteFacet () =
         else None
 
     static member Properties =
-        [define Entity.StartTime GameTime.zero
+        [define Entity.UserDefinedImages UserDefinedImages.defaultImages
+         define Entity.PipelineName Constants.Render.PipelineNameDefault
+         define Entity.StartTime GameTime.zero
          define Entity.CelSize (Vector2 (32.0f, 32.0f))
          define Entity.CelCount 16
          define Entity.CelRun 4
@@ -143,7 +162,8 @@ type AnimatedSpriteFacet () =
          define Entity.Color Color.One
          define Entity.Blend Transparent
          define Entity.Emission Color.Zero
-         define Entity.Flip Unflipped]
+         define Entity.Flip Unflipped
+         define Entity.UserDefinedSettings UserDefinedSettings.defaultSettings]
 
     override this.Update (entity, world) =
         if not (entity.GetEnabled world) then
@@ -152,13 +172,18 @@ type AnimatedSpriteFacet () =
     override this.Render (_, entity, world) =
         let mutable transform = entity.GetTransform world
         let animationSheet = entity.GetAnimationSheet world
+        let userDefinedImages = entity.GetUserDefinedImages world
+        let pipelineName= entity.GetPipelineName world
         let insetOpt = getSpriteInsetOpt entity world |> Option.toValueOption
         let clipOpt = entity.GetClipOpt world |> Option.toValueOption
         let color = entity.GetColor world
         let blend = entity.GetBlend world
         let emission = entity.GetEmission world
         let flip = entity.GetFlip world
-        World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, animationSheet, &transform, &insetOpt, &clipOpt, animationSheet, &color, blend, &emission, flip, world)
+        let userDefinedSettings = entity.GetUserDefinedSettings world
+        World.renderLayeredSpriteFast
+            (transform.Elevation, transform.Horizon, animationSheet, &transform, &insetOpt, &clipOpt,
+             animationSheet, &userDefinedImages, pipelineName, &color, blend, &emission, flip, &userDefinedSettings, world)
 
     override this.GetAttributesInferred (entity, world) =
         AttributesInferred.important (entity.GetCelSize world).V3 v3Zero
@@ -447,6 +472,12 @@ module TextFacetExtensions =
         member this.GetTextShift world : single = this.Get (nameof this.TextShift) world
         member this.SetTextShift (value : single) world = this.Set (nameof this.TextShift) value world
         member this.TextShift = lens (nameof this.TextShift) this this.GetTextShift this.SetTextShift
+        member this.GetTextPipelineName world : string = this.Get (nameof this.TextPipelineName) world
+        member this.SetTextPipelineName (value : string) world = this.Set (nameof this.TextPipelineName) value world
+        member this.TextPipelineName = lens (nameof this.TextPipelineName) this this.GetTextPipelineName this.SetTextPipelineName
+        member this.GetTextUserDefinedSettings world : UserDefinedSettings = this.Get (nameof this.TextUserDefinedSettings) world
+        member this.SetTextUserDefinedSettings (value : UserDefinedSettings) world = this.Set (nameof this.TextUserDefinedSettings) value world
+        member this.TextUserDefinedSettings = lens (nameof this.TextUserDefinedSettings) this this.GetTextUserDefinedSettings this.SetTextUserDefinedSettings
 
 /// Augments an entity with text.
 type TextFacet () =
@@ -462,7 +493,9 @@ type TextFacet () =
          define Entity.TextColor Color.White
          define Entity.TextColorDisabled Constants.Gui.ColorDisabledDefault
          define Entity.TextOffset v2Zero
-         define Entity.TextShift Constants.Gui.TextShiftDefault]
+         define Entity.TextShift Constants.Gui.TextShiftDefault
+         define Entity.TextPipelineName Constants.Render.PipelineNameDefault
+         define Entity.TextUserDefinedSettings UserDefinedSettings.defaultSettings]
 
     override this.Render (_, entity, world) =
         let text = entity.GetText world
@@ -489,13 +522,15 @@ type TextFacet () =
                     RenderText
                         { Transform = textTransform
                           ClipOpt = ValueSome transform.Bounds2d.Box2
+                          PipelineName = Constants.Render.PipelineNameDefault
                           Text = text
                           Font = font
                           FontSizing = fontSizing
                           FontStyling = fontStyling
                           Color = if transform.Enabled then entity.GetTextColor world else entity.GetTextColorDisabled world
                           Justification = entity.GetJustification world
-                          CaretOpt = None }}
+                          CaretOpt = None
+                          UserDefinedSettings = UserDefinedSettings.defaultSettings }}
                 world
 
     override this.GetAttributesInferred (_, _) =
@@ -519,7 +554,9 @@ type BackdroppableFacet () =
     inherit Facet (false, false, false)
 
     static member Properties =
-        [define Entity.SliceMargin Constants.Gui.SliceMarginDefault
+        [define Entity.PipelineName Constants.Render.PipelineNameDefault
+         define Entity.UserDefinedSettings UserDefinedSettings.defaultSettings
+         define Entity.SliceMargin Constants.Gui.SliceMarginDefault
          define Entity.Color Color.One
          define Entity.ColorDisabled Constants.Gui.ColorDisabledDefault
          define Entity.BackdropImageOpt None]
@@ -528,9 +565,11 @@ type BackdroppableFacet () =
         match entity.GetBackdropImageOpt world with
         | Some spriteImage ->
             let mutable transform = entity.GetTransform world
+            let pipelineName = entity.GetPipelineName world
+            let userDefinedSettings = entity.GetUserDefinedSettings world
             let sliceMargin = entity.GetSliceMargin world
             let color = if transform.Enabled then entity.GetColor world else entity.GetColorDisabled world
-            World.renderGuiSpriteSliced transform.Absolute transform.Perimeter sliceMargin spriteImage transform.Offset transform.Elevation transform.PerimeterCentered color world
+            World.renderGuiSpriteSliced transform.Absolute transform.Perimeter sliceMargin spriteImage pipelineName transform.Offset transform.Elevation transform.PerimeterCentered color userDefinedSettings world
         | None -> ()
 
     override this.GetAttributesInferred (entity, world) =
@@ -611,7 +650,9 @@ type ButtonFacet () =
         else Cascade
 
     static member Properties =
-        [define Entity.SliceMargin Constants.Gui.SliceMarginDefault
+        [define Entity.PipelineName Constants.Render.PipelineNameDefault
+         define Entity.UserDefinedSettings UserDefinedSettings.defaultSettings
+         define Entity.SliceMargin Constants.Gui.SliceMarginDefault
          define Entity.ColorDisabled Constants.Gui.ColorDisabledDefault
          define Entity.Down false
          define Entity.DownOffset v2Zero
@@ -626,10 +667,12 @@ type ButtonFacet () =
 
     override this.Render (_, entity, world) =
         let mutable transform = entity.GetTransform world
+        let pipelineName = entity.GetPipelineName world
+        let userDefinedSettings = entity.GetUserDefinedSettings world
         let sliceMargin = entity.GetSliceMargin world
         let spriteImage = if entity.GetDown world then entity.GetDownImage world else entity.GetUpImage world
         let color = if transform.Enabled then Color.One else entity.GetColorDisabled world
-        World.renderGuiSpriteSliced transform.Absolute transform.Perimeter sliceMargin spriteImage transform.Offset transform.Elevation transform.PerimeterCentered color world
+        World.renderGuiSpriteSliced transform.Absolute transform.Perimeter sliceMargin spriteImage pipelineName transform.Offset transform.Elevation transform.PerimeterCentered color userDefinedSettings world
 
     override this.GetAttributesInferred (entity, world) =
         match Metadata.tryGetTextureSizeF (entity.GetUpImage world) with
@@ -711,7 +754,9 @@ type ToggleButtonFacet () =
         else Cascade
 
     static member Properties =
-        [define Entity.SliceMargin Constants.Gui.SliceMarginDefault
+        [define Entity.PipelineName Constants.Render.PipelineNameDefault
+         define Entity.UserDefinedSettings UserDefinedSettings.defaultSettings
+         define Entity.SliceMargin Constants.Gui.SliceMarginDefault
          define Entity.ColorDisabled Constants.Gui.ColorDisabledDefault
          define Entity.Toggled false
          define Entity.ToggledOffset v2Zero
@@ -735,13 +780,15 @@ type ToggleButtonFacet () =
 
     override this.Render (_, entity, world) =
         let mutable transform = entity.GetTransform world
+        let pipelineName = entity.GetPipelineName world
+        let userDefinedSettings = entity.GetUserDefinedSettings world
         let sliceMargin = entity.GetSliceMargin world
         let spriteImage =
             if entity.GetToggled world || entity.GetPushed world
             then entity.GetToggledImage world
             else entity.GetUntoggledImage world
         let color = if transform.Enabled then Color.One else entity.GetColorDisabled world
-        World.renderGuiSpriteSliced transform.Absolute transform.Perimeter sliceMargin spriteImage transform.Offset transform.Elevation transform.PerimeterCentered color world
+        World.renderGuiSpriteSliced transform.Absolute transform.Perimeter sliceMargin spriteImage pipelineName transform.Offset transform.Elevation transform.PerimeterCentered color userDefinedSettings world
 
     override this.GetAttributesInferred (entity, world) =
         match Metadata.tryGetTextureSizeF (entity.GetUntoggledImage world) with
@@ -818,7 +865,9 @@ type RadioButtonFacet () =
         else Cascade
 
     static member Properties =
-        [define Entity.SliceMargin Constants.Gui.SliceMarginDefault
+        [define Entity.PipelineName Constants.Render.PipelineNameDefault
+         define Entity.UserDefinedSettings UserDefinedSettings.defaultSettings
+         define Entity.SliceMargin Constants.Gui.SliceMarginDefault
          define Entity.ColorDisabled Constants.Gui.ColorDisabledDefault
          define Entity.Dialed false
          define Entity.DialedOffset v2Zero
@@ -842,13 +891,15 @@ type RadioButtonFacet () =
 
     override this.Render (_, entity, world) =
         let mutable transform = entity.GetTransform world
+        let pipelineName = entity.GetPipelineName world
+        let userDefinedSettings = entity.GetUserDefinedSettings world
         let sliceMargin = entity.GetSliceMargin world
         let spriteImage =
             if entity.GetDialed world || entity.GetPushed world
             then entity.GetDialedImage world
             else entity.GetUndialedImage world
         let color = if transform.Enabled then Color.One else entity.GetColorDisabled world
-        World.renderGuiSpriteSliced transform.Absolute transform.Perimeter sliceMargin spriteImage transform.Offset transform.Elevation transform.PerimeterCentered color world
+        World.renderGuiSpriteSliced transform.Absolute transform.Perimeter sliceMargin spriteImage pipelineName transform.Offset transform.Elevation transform.PerimeterCentered color userDefinedSettings world
 
     override this.GetAttributesInferred (entity, world) =
         match Metadata.tryGetTextureSizeF (entity.GetUndialedImage world) with
@@ -882,7 +933,9 @@ type FillBarFacet () =
     inherit Facet (false, false, false)
 
     static member Properties =
-        [define Entity.SliceMargin Constants.Gui.SliceMarginDefault
+        [define Entity.PipelineName Constants.Render.PipelineNameDefault
+         define Entity.UserDefinedSettings UserDefinedSettings.defaultSettings
+         define Entity.SliceMargin Constants.Gui.SliceMarginDefault
          define Entity.ColorDisabled Constants.Gui.ColorDisabledDefault
          define Entity.Fill 0.0f
          define Entity.FillInset 0.0f
@@ -895,12 +948,14 @@ type FillBarFacet () =
 
         // border sprite
         let mutable transform = entity.GetTransform world
+        let pipelineName = entity.GetPipelineName world
+        let userDefinedSettings = entity.GetUserDefinedSettings world
         let sliceMargin = entity.GetSliceMargin world
         let elevation = transform.Elevation + 0.5f
         let color = if transform.Enabled then Color.White else entity.GetColorDisabled world
         let borderImageColor = entity.GetBorderColor world * color
         let borderImage = entity.GetBorderImage world
-        World.renderGuiSpriteSliced transform.Absolute transform.Perimeter sliceMargin borderImage transform.Offset elevation transform.PerimeterCentered borderImageColor world
+        World.renderGuiSpriteSliced transform.Absolute transform.Perimeter sliceMargin borderImage pipelineName transform.Offset elevation transform.PerimeterCentered borderImageColor userDefinedSettings world
 
         // fill sprite
         let fillSize = transform.Perimeter.Size
@@ -912,7 +967,7 @@ type FillBarFacet () =
         let fillPerimeter = box3 (if transform.PerimeterCentered then fillPosition - fillSize * 0.5f else fillPosition) fillSize
         let fillImageColor = entity.GetFillColor world * color
         let fillImage = entity.GetFillImage world
-        World.renderGuiSpriteSliced transform.Absolute fillPerimeter sliceMargin fillImage transform.Offset transform.Elevation transform.PerimeterCentered fillImageColor world
+        World.renderGuiSpriteSliced transform.Absolute fillPerimeter sliceMargin fillImage pipelineName transform.Offset transform.Elevation transform.PerimeterCentered fillImageColor userDefinedSettings world
 
     override this.GetAttributesInferred (entity, world) =
         match Metadata.tryGetTextureSizeF (entity.GetBorderImage world) with
@@ -1150,13 +1205,15 @@ type TextBoxFacet () =
                     RenderText
                         { Transform = textTransform
                           ClipOpt = ValueSome transform.Bounds2d.Box2
+                          PipelineName = Constants.Render.PipelineNameDefault
                           Text = text
                           Font = font
                           FontSizing = fontSizing
                           FontStyling = fontStyling
                           Color = if transform.Enabled then entity.GetTextColor world else entity.GetTextColorDisabled world
                           Justification = entity.GetJustification world
-                          CaretOpt = Some (entity.GetCaret world) }}
+                          CaretOpt = Some (entity.GetCaret world)
+                          UserDefinedSettings = UserDefinedSettings.defaultSettings }}
                 world
 
     override this.GetAttributesInferred (_, _) =
@@ -1855,8 +1912,10 @@ type TileMapFacet () =
          define Entity.CollisionMask Constants.Physics.CollisionWildcard
          define Entity.PhysicsMotion SynchronizedMotion
          define Entity.ClipOpt None
+         define Entity.PipelineName Constants.Render.PipelineNameDefault
          define Entity.Color Color.One
          define Entity.Emission Color.Zero
+         define Entity.UserDefinedSettings UserDefinedSettings.defaultSettings
          define Entity.TileLayerClearance 2.0f
          define Entity.TileSizeDivisor 1
          define Entity.TileIndexOffset 0
@@ -1920,6 +1979,7 @@ type TileMapFacet () =
         else World.destroyBody3d (entity.GetBodyId world) world
 
     override this.Render (_, entity, world) =
+        let userDefinedSettings = entity.GetUserDefinedSettings world
         let tileMapAsset = entity.GetTileMap world
         match TmxMap.tryGetTileMap tileMapAsset with
         | Some tileMap ->
@@ -1934,8 +1994,10 @@ type TileMapFacet () =
                     perimeterUnscaled.Min.V2
                     transform.Elevation
                     (entity.GetClipOpt world |> Option.toValueOption)
+                    (entity.GetPipelineName world)
                     (entity.GetColor world)
                     (entity.GetEmission world)
+                    userDefinedSettings
                     (entity.GetTileLayerClearance world)
                     (entity.GetTileSizeDivisor world)
                     (entity.GetTileIndexOffset world)
@@ -1970,8 +2032,10 @@ type TmxMapFacet () =
          define Entity.CollisionMask Constants.Physics.CollisionWildcard
          define Entity.PhysicsMotion SynchronizedMotion
          define Entity.ClipOpt None
+         define Entity.PipelineName Constants.Render.PipelineNameDefault
          define Entity.Color Color.One
          define Entity.Emission Color.Zero
+         define Entity.UserDefinedSettings UserDefinedSettings.defaultSettings
          define Entity.TileLayerClearance 2.0f
          define Entity.TileSizeDivisor 1
          define Entity.TileIndexOffset 0
@@ -2036,6 +2100,7 @@ type TmxMapFacet () =
         let mutable transform = entity.GetTransform world
         let perimeterUnscaled = transform.PerimeterUnscaled // tile map currently ignores rotation and scale
         let viewBounds = World.getViewBounds2dRelative world
+        let userDefinedSettings = entity.GetUserDefinedSettings world
         let tmxMap = entity.GetTmxMap world
         let tmxPackage = if tmxMap.TmxDirectory = "" then Assets.Default.PackageName else PathF.GetFileName tmxMap.TmxDirectory // really folder name, but whatever...
         let tmxMapMessages =
@@ -2046,8 +2111,10 @@ type TmxMapFacet () =
                 perimeterUnscaled.Min.V2
                 transform.Elevation
                 (entity.GetClipOpt world |> Option.toValueOption)
+                (entity.GetPipelineName world)
                 (entity.GetColor world)
                 (entity.GetEmission world)
+                userDefinedSettings
                 (entity.GetTileLayerClearance world)
                 (entity.GetTileSizeDivisor world)
                 (entity.GetTileIndexOffset world)
@@ -2712,7 +2779,7 @@ type SkyBoxFacet () =
             world
 
 [<AutoOpen>]
-module LightProbe3dFacetExtensions =
+module LightProbeFacetExtensions =
     type Entity with
 
         member this.GetExcludeGlobalLights world : bool = this.Get (nameof this.ExcludeGlobalLights) world
@@ -2740,8 +2807,8 @@ module LightProbe3dFacetExtensions =
             then this.SetPositionLocal probeBounds.Center world
             else this.SetPosition probeBounds.Center world
 
-/// Augments an entity with a 3d light probe.
-type LightProbe3dFacet () =
+/// Augments an entity with a light probe.
+type LightProbeFacet () =
     inherit Facet (false, true, false)
 
     static let handleProbeVisibleChange (evt : Event<ChangeData, Entity>) world =
@@ -2765,9 +2832,9 @@ type LightProbe3dFacet () =
          nonPersistent Entity.ProbeStale false]
 
     override this.Register (entity, world) =
-        World.sense handleProbeVisibleChange entity.Group.Editing.ChangeEvent entity (nameof LightProbe3dFacet) world
-        World.sense handleProbeVisibleChange entity.Visible.ChangeEvent entity (nameof LightProbe3dFacet) world
-        World.sense handleProbeStaleChange entity.ProbeStale.ChangeEvent entity (nameof LightProbe3dFacet) world
+        World.sense handleProbeVisibleChange entity.Group.Editing.ChangeEvent entity (nameof LightProbeFacet) world
+        World.sense handleProbeVisibleChange entity.Visible.ChangeEvent entity (nameof LightProbeFacet) world
+        World.sense handleProbeStaleChange entity.ProbeStale.ChangeEvent entity (nameof LightProbeFacet) world
         entity.SetProbeStale true world
 
     override this.Render (renderPass, entity, world) =
@@ -2777,7 +2844,7 @@ type LightProbe3dFacet () =
         let ambientColor = entity.GetAmbientColor world
         let ambientBrightness = entity.GetAmbientBrightness world
         let bounds = entity.GetProbeBounds world
-        World.enqueueRenderMessage3d (RenderLightProbe3d { LightProbeId = id; Enabled = enabled; Origin = position; AmbientColor = ambientColor; AmbientBrightness = ambientBrightness; Bounds = bounds; RenderPass = renderPass }) world
+        World.enqueueRenderMessage3d (RenderLightProbe { LightProbeId = id; Enabled = enabled; Origin = position; AmbientColor = ambientColor; AmbientBrightness = ambientBrightness; Bounds = bounds; RenderPass = renderPass }) world
 
     override this.RayCast (ray, entity, world) =
         let intersectionOpt = ray.Intersects (entity.GetBounds world)
@@ -2822,12 +2889,9 @@ module Light3dFacetExtensions =
         member this.GetLightType world : LightType = this.Get (nameof this.LightType) world
         member this.SetLightType (value : LightType) world = this.Set (nameof this.LightType) value world
         member this.LightType = lens (nameof this.LightType) this this.GetLightType this.SetLightType
-        member this.GetDesireShadows world : bool = this.Get (nameof this.DesireShadows) world
-        member this.SetDesireShadows (value : bool) world = this.Set (nameof this.DesireShadows) value world
-        member this.DesireShadows = lens (nameof this.DesireShadows) this this.GetDesireShadows this.SetDesireShadows
-        member this.GetDynamicShadows world : bool = this.Get (nameof this.DynamicShadows) world
-        member this.SetDynamicShadows (value : bool) world = this.Set (nameof this.DynamicShadows) value world
-        member this.DynamicShadows = lens (nameof this.DynamicShadows) this this.GetDynamicShadows this.SetDynamicShadows
+        member this.GetShadowingType world : ShadowingType = this.Get (nameof this.ShadowingType) world
+        member this.SetShadowingType (value : ShadowingType) world = this.Set (nameof this.ShadowingType) value world
+        member this.ShadowingType = lens (nameof this.ShadowingType) this this.GetShadowingType this.SetShadowingType
         member this.GetDesireFog world : bool = this.Get (nameof this.DesireFog) world
         member this.SetDesireFog (value : bool) world = this.Set (nameof this.DesireFog) value world
         member this.DesireFog = lens (nameof this.DesireFog) this this.GetDesireFog this.SetDesireFog
@@ -2944,8 +3008,7 @@ type Light3dFacet () =
          define Entity.Specularity 1.0f
          define Entity.LightCutoff Constants.Render.LightCutoffDefault
          define Entity.LightType (PointLight 0.0f)
-         define Entity.DesireShadows false
-         define Entity.DynamicShadows true
+         define Entity.ShadowingType NoShadowing
          define Entity.DesireFog false]
 
     override this.Register (entity, world) =
@@ -2968,8 +3031,7 @@ type Light3dFacet () =
         let attenuationLinear = entity.GetAttenuationLinear world
         let attenuationQuadratic = entity.GetAttenuationQuadratic world
         let specularity = entity.GetSpecularity world
-        let desireShadows = entity.GetDesireShadows world
-        let dynamicShadows = entity.GetDynamicShadows world
+        let shadowingType = entity.GetShadowingType world
         let desireFog = entity.GetDesireFog world
         World.enqueueRenderMessage3d
             (RenderLight3d
@@ -2984,8 +3046,7 @@ type Light3dFacet () =
                   Specularity = specularity
                   LightCutoff = lightCutoff
                   LightType = lightType
-                  DesireShadows = desireShadows
-                  DynamicShadows = dynamicShadows
+                  ShadowingType = shadowingType
                   DesireFog = desireFog
                   RenderPass = renderPass })
             world
@@ -3893,8 +3954,8 @@ type TerrainFacet () =
                       RedsMap
                         [|Assets.Default.TerrainLayer0Blend
                           Assets.Default.TerrainLayer1Blend|]
-                  UserDefinedImage0 = Assets.Default.MaterialUserDefinedImage0
-                  UserDefinedImage1 = Assets.Default.MaterialUserDefinedImage1
+                  UserDefinedImage0 = Assets.Default.UserDefinedImage0
+                  UserDefinedImage1 = Assets.Default.UserDefinedImage1
                   PipelineName = Constants.Render.PipelineNameDefault })
          define Entity.TerrainMaterialProperties TerrainMaterialProperties.defaultProperties
          define Entity.TintImageOpt None

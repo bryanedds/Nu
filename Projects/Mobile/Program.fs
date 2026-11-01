@@ -47,7 +47,7 @@ Reference to all needed attributes for SDL:
 *)
 
 // declare desired features: https://developer.android.com/guide/topics/manifest/uses-feature-element#features-reference
-[<UsesFeature (PackageManager.FeatureVulkanHardwareVersion, Required = true)>] // TODO: Use Version property in .NET 11 - https://github.com/dotnet/android/pull/10890
+[<UsesFeature (PackageManager.FeatureVulkanHardwareVersion, Required = true)>] // TODO: P0: use Version property in .NET 11 - https://github.com/dotnet/android/pull/10890
 [<UsesFeature (PackageManager.FeatureTouchscreen, Required = false)>] // SDL - Declare touch screen support
 [<UsesFeature (PackageManager.FeatureBluetooth, Required = false)>] // SDL - Declare game controller support
 [<UsesFeature (PackageManager.FeatureGamepad, Required = false)>] // SDL - Declare game controller support

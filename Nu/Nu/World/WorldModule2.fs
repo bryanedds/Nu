@@ -54,6 +54,14 @@ module WorldModule2 =
         static member setTimeHalted halted (world : World) =
             World.mapAmbientState (AmbientState.setTimeAdvancing (not halted)) world
 
+        /// Get all the light probes in a group.
+        static member getLightProbes (group : Group) (world : World) : Entity seq =
+            World.getEntitiesWith<LightProbeFacet> group world
+
+        /// Get all the 3d lights in a group.
+        static member getLights3d (group : Group) (world : World) : Entity seq =
+            World.getEntitiesWith<Light3dFacet> group world
+
         /// Select the given screen without transitioning, even if another transition is taking place.
         static member internal selectScreenOpt transitionStateAndScreenOpt world =
             match World.getSelectedScreenOpt world with
@@ -819,7 +827,7 @@ module WorldModule2 =
                     let entityState = World.getEntityState entity world
                     let element = Octelement.make entityState.VisibleInView entityState.StaticInPlay entityState.LightProbe entityState.Light entityState.Presence entityState.PresenceInPlay entityState.Bounds entity
                     Octree.addElement entityState.Presence entityState.PresenceInPlay entityState.Bounds element world.Octree
-            if SList.exists (fun (entity : Entity) -> entity.Has<LightProbe3dFacet> world && entity.GetProbeStale world) entities3d then
+            if SList.exists (fun (entity : Entity) -> entity.Has<LightProbeFacet> world && entity.GetProbeStale world) entities3d then
                 World.requestLightMapRender world
                 
         static member internal evictScreenElements screen world =
@@ -1533,10 +1541,13 @@ module WorldModule2 =
                                   InsetOpt = ValueNone
                                   ClipOpt = ValueNone
                                   Image = dissolveImage
+                                  UserDefinedImages = UserDefinedImages.defaultImages
+                                  PipelineName = Constants.Render.PipelineNameDefault
                                   Color = color
                                   Blend = Transparent
                                   Emission = Color.Zero
-                                  Flip = Unflipped }}
+                                  Flip = Unflipped
+                                  UserDefinedSettings = UserDefinedSettings.defaultSettings }}
                         world
                 | None -> ()
             | _ -> ()
@@ -1622,10 +1633,10 @@ module WorldModule2 =
                             WorldModuleInternal2.HashSet3dNormalCached.Remove element |> ignore<bool>
                         elif excludeGlobalLights && element.Light && (element.Entry.GetLightType world).IsGlobalLight then
                             WorldModuleInternal2.HashSet3dNormalCached.Remove element |> ignore<bool>
-                | ShadowPass (_, _, lightType, dynamicShadows, _, shadowFrustum) ->
+                | ShadowPass (_, _, lightType, dynamicShadowing, _, shadowFrustum) ->
                     let shadowInterior = LightType.shouldShadowInterior lightType
                     World.getElements3dInViewFrustum shadowInterior true shadowFrustum WorldModuleInternal2.HashSet3dNormalCached world
-                    if not dynamicShadows then
+                    if not dynamicShadowing then
                         for element in WorldModuleInternal2.HashSet3dNormalCached do
                             if not element.StaticInPlay then
                                 WorldModuleInternal2.HashSet3dNormalCached.Remove element |> ignore<bool>
@@ -1655,7 +1666,7 @@ module WorldModule2 =
 
                 // render light maps
                 if lightMapRenderRequested then
-                    let lightProbes = World.getLightProbes3dInView (HashSet HashIdentity.Structural) world // NOTE: this may not be the optimal way to query.
+                    let lightProbes = World.getLightProbesInView (HashSet HashIdentity.Structural) world // NOTE: this may not be the optimal way to query.
                     let lightProbesStale = Seq.filter (fun (lightProbe : Entity) -> lightProbe.GetProbeStale world) lightProbes
                     for lightProbe in lightProbesStale do
                         let id = lightProbe.GetId world
@@ -1664,7 +1675,7 @@ module WorldModule2 =
                         let boundsPlus = bounds.ScaleUniform 4.0f // TODO: allow user to specify bounds scalar?
                         let renderPass = LightMapPass (id, boundsPlus)
                         World.renderSimulantsInternal excludeGlobalLights renderPass world
-                        World.enqueueRenderMessage3d (RenderLightMap3d { LightProbeId = id; RenderPass = renderPass }) world
+                        World.enqueueRenderMessage3d (RenderLightMap { LightProbeId = id; RenderPass = renderPass }) world
                         lightProbe.SetProbeStale false world
 
                 // create shadow pass descriptors
@@ -1672,7 +1683,8 @@ module WorldModule2 =
                 let lights = World.getLights3dInView WorldModuleInternal2.HashSet3dShadowCached world // NOTE: this may not be the optimal way to query.
                 let shadowPassDescriptorsSortable =
                     [|for light in lights do
-                        if light.GetDesireShadows world then
+                        let shadowingType = light.GetShadowingType world
+                        if shadowingType.IsShadowing then
                             let shadowFrustum =
                                 light.ComputeShadowFrustum world
                             let shadowInView =
@@ -1700,7 +1712,7 @@ module WorldModule2 =
                 let mutable shadowCascadesCount = 0
                 for (shadowFrustum, light : Entity) in shadowPassDescriptors do
                     let lightType = light.GetLightType world
-                    let dynamicShadows = light.GetDynamicShadows world
+                    let shadowingType = light.GetShadowingType world
                     match lightType with
                     | PointLight _ ->
                         if shadowMapsCount < Constants.Render.ShadowMapsMax then
@@ -1730,14 +1742,14 @@ module WorldModule2 =
                                 let shadowView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + eyeForward, eyeUp)
                                 let shadowViewProjection = shadowView * shadowProjection
                                 let shadowFrustum = Frustum shadowViewProjection
-                                World.renderSimulantsInternal false (ShadowPass (lightId, Some (i, shadowView, shadowProjection), lightType, dynamicShadows, shadowRotation, shadowFrustum)) world
+                                World.renderSimulantsInternal false (ShadowPass (lightId, Some (i, shadowView, shadowProjection), lightType, shadowingType.IsDynamicShadowing, shadowRotation, shadowFrustum)) world
 
                             // fin
                             shadowMapsCount <- inc shadowMapsCount
 
                     | SpotLight (_, _, _) ->
                         if shadowTexturesCount < Constants.Render.ShadowTexturesMax then
-                            World.renderSimulantsInternal false (ShadowPass (light.GetId world, None, lightType, dynamicShadows, light.GetRotation world, shadowFrustum)) world
+                            World.renderSimulantsInternal false (ShadowPass (light.GetId world, None, lightType, shadowingType.IsDynamicShadowing, light.GetRotation world, shadowFrustum)) world
                             shadowTexturesCount <- inc shadowTexturesCount
 
                     | DirectionalLight offsetForwardScalar ->
@@ -1756,7 +1768,7 @@ module WorldModule2 =
                             let cullFrustum = Frustum (cullView * cullProjection)
 
                             // render
-                            World.renderSimulantsInternal false (ShadowPass (light.GetId world, None, lightType, dynamicShadows, light.GetRotation world, cullFrustum)) world
+                            World.renderSimulantsInternal false (ShadowPass (light.GetId world, None, lightType, shadowingType.IsDynamicShadowing, light.GetRotation world, cullFrustum)) world
 
                             // fin
                             shadowTexturesCount <- inc shadowTexturesCount
@@ -1848,7 +1860,7 @@ module WorldModule2 =
                                     World.renderSimulantsInternal8
                                         game screenOpt groups groupsInvisible
                                         WorldModuleInternal2.HashSet3dNormalCached WorldModuleInternal2.HashSet2dNormalCached
-                                        (ShadowPass (lightId, Some (i, sectionViewOrtho, sectionProjectionOrtho), lightType, dynamicShadows, shadowRotation, cullFrustum)) world
+                                        (ShadowPass (lightId, Some (i, sectionViewOrtho, sectionProjectionOrtho), lightType, shadowingType.IsDynamicShadowing, shadowRotation, cullFrustum)) world
 
                             // free cached values
                             finally

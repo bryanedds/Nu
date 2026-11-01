@@ -371,7 +371,7 @@ module WorldModule4 =
             Content.UpdateLateBindingsCount <- inc Content.UpdateLateBindingsCount
             World.clearEntityFromClipboard world // HACK: clear what's on the clipboard rather than changing its dispatcher instance.
 
-            // update late-bound types
+            // update plugin
             let pluginType =
                 assemblies
                 |> Array.map (fun assembly -> assembly.GetTypes ())
@@ -381,11 +381,23 @@ module WorldModule4 =
                 |> Array.filter (fun ty -> ty.GetConstructors () |> Seq.exists (fun ctor -> ctor.GetParameters().Length = 0))
                 |> Array.head
             let plugin = Activator.CreateInstance pluginType :?> NuPlugin
+
+            // update late-bound types
             let pluginFacets = plugin.Birth<Facet> assemblies
             let pluginEntityDispatchers = plugin.Birth<EntityDispatcher> assemblies
             let pluginGroupDispatchers = plugin.Birth<GroupDispatcher> assemblies
             let pluginScreenDispatchers = plugin.Birth<ScreenDispatcher> assemblies
             let pluginGameDispatchers = plugin.Birth<GameDispatcher> assemblies
+
+            // update user-defined 2d pipelines
+            for descriptor in plugin.UserDefinedPipeline2dDescriptors.Values do
+                World.enqueueRenderMessage2d (CreateUserDefinedPipeline2d { Pipeline2dDescriptor = descriptor }) world
+
+            // update user-defined 3d pipelines
+            for descriptor in plugin.UserDefinedPipeline3dDescriptors.Values do
+                World.enqueueRenderMessage3d (CreateUserDefinedPipeline3d { Pipeline3dDescriptor = descriptor }) world
+
+            // update instances
             let worldExtension = world.WorldExtension
             let worldExtension = { worldExtension with Plugin = plugin }
             let worldExtension =
@@ -671,9 +683,13 @@ module WorldModule4 =
             // initialize plugin
             world.WorldExtension.Plugin.Init world
 
+            // initialize 2D pipelines
+            for descriptor in world.WorldExtension.Plugin.UserDefinedPipeline2dDescriptors.Values do
+                World.enqueueRenderMessage2d (CreateUserDefinedPipeline2d { Pipeline2dDescriptor = descriptor }) world
+
             // initialize 3D pipelines
             for descriptor in world.WorldExtension.Plugin.UserDefinedPipeline3dDescriptors.Values do
-                World.enqueueRenderMessage3d (CreateUserDefinedPipeline { Pipeline3dDescriptor = descriptor }) world
+                World.enqueueRenderMessage3d (CreateUserDefinedPipeline3d { Pipeline3dDescriptor = descriptor }) world
 
             // register the game
             World.registerGame Game world

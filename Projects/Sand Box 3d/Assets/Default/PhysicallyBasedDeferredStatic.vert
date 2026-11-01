@@ -20,7 +20,7 @@ const vec2 TEX_COORDS_OFFSET_FILTERS_2[TEX_COORDS_OFFSET_VERTS] =
         vec2(1,1),
         vec2(0,1));
 
-struct EyeStruct
+struct Eye3dStruct
 {
     vec3 center;
     mat4 view;
@@ -30,7 +30,18 @@ struct EyeStruct
     mat4 viewProjection;
 };
 
-layout(set = 0, binding = 0) uniform EyeUniform { EyeStruct eye; };
+layout(set = 0, binding = 0) uniform Eye3dUniform { Eye3dStruct eye; };
+
+layout(set = 1, binding = 12) uniform texture2D userDefinedImage0Texture;
+layout(set = 1, binding = 13) uniform texture2D userDefinedImage1Texture;
+layout(set = 1, binding = 14) uniform texture2D userDefinedImage2Texture;
+
+layout(set = 3, binding = 0) uniform sampler unfilteredSampler;
+layout(set = 3, binding = 1) uniform sampler filteredSampler;
+layout(set = 3, binding = 2) uniform sampler materialRepeatSampler;
+layout(set = 3, binding = 3) uniform sampler materialRepeatMirrorSampler;
+layout(set = 3, binding = 4) uniform sampler materialClampToEdge;
+layout(set = 3, binding = 5) uniform sampler materialClampToBorder;
 
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec2 texCoords;
@@ -58,6 +69,7 @@ layout(location = 5) flat out vec4 materialOut;
 layout(location = 6) flat out vec4 material2Out;
 layout(location = 7) flat out vec4 subsurfacePlusOut;
 layout(location = 8) flat out vec4 clearCoatPlusOut;
+layout(location = 9) flat out vec4 userDefinedSettingsOut[2];
 
 void main()
 {
@@ -73,5 +85,6 @@ void main()
     material2Out = material2;
     subsurfacePlusOut = subsurfacePlus;
     clearCoatPlusOut = clearCoatPlus;
+    userDefinedSettingsOut = userDefinedSettings;
     gl_Position = eye.viewProjection * positionOut;
 }

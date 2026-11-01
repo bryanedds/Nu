@@ -645,22 +645,26 @@ module WorldScreenModule =
                 else None
             else None
 
-        /// Compute angular velocity for the given turn speed and navDirection.
+        /// Compute rotation and angular velocity required to face navDirection.
         static member nav3dFace turnSpeed (rotation : Quaternion) (navDirection : Vector3) (world : World) =
             let deltaTime = let gameDelta = world.GameDelta in gameDelta.SecondsF
-            let navRotationDesired = Quaternion.CreateFromAxisAngle (v3Up, atan2 navDirection.X navDirection.Z + MathF.PI)
-            let navSign = (rotation.Forward.Cross navRotationDesired.Forward).Y
-            let navAngleBetweenOpt = rotation.Forward.AngleBetween navRotationDesired.Forward
-            let navAngleBetween = if Single.IsNaN navAngleBetweenOpt then 0.0f else navAngleBetweenOpt
-            let navRotation =
-                if navAngleBetween > turnSpeed * deltaTime
-                then rotation * Quaternion.CreateFromAxisAngle (v3Up, MathF.CopySign (turnSpeed * deltaTime, navSign))
-                else navRotationDesired
-            let navSign = if v3Up.Dot (rotation.Forward.Cross navRotation.Forward) < 0.0f then -1.0f else 1.0f
-            let navAngleBetweenOpt = rotation.Forward.AngleBetween navRotation.Forward
-            let navAngleBetween = if Single.IsNaN navAngleBetweenOpt then 0.0f else navAngleBetweenOpt
-            let navAngularVelocity = v3 0.0f (navAngleBetween * navSign / deltaTime) 0.0f
-            (navRotation, navAngularVelocity)
+            if navDirection.LengthSquared () > 0.000001f && deltaTime > 0.0f then
+                let currentForward = rotation.Forward.Normalized
+                let desiredForward = navDirection.Normalized
+                let signedAngle =
+                    atan2
+                        ((currentForward.Cross desiredForward).Y)
+                        (Math.Clamp (currentForward.Dot desiredForward, -1.0f, 1.0f))
+                let appliedAngle =
+                    Math.Clamp (signedAngle, -turnSpeed * deltaTime, turnSpeed * deltaTime)
+                let newRotation =
+                    if abs signedAngle <= abs appliedAngle
+                    then Quaternion.CreateFromAxisAngle (v3Up, atan2 desiredForward.X desiredForward.Z + MathF.PI)
+                    else rotation * Quaternion.CreateFromAxisAngle (v3Up, appliedAngle)
+                let angularVelocity =
+                    v3 0.0f (appliedAngle / deltaTime) 0.0f
+                (newRotation, angularVelocity)
+            else (rotation, v3Zero)
 
         /// Compute navigation information that results in following the given destination.
         static member nav3dFollow distanceMinOpt distanceMaxOpt moveSpeed turnSpeed (position : Vector3) (rotation : Quaternion) (destination : Vector3) screen (world : World) =

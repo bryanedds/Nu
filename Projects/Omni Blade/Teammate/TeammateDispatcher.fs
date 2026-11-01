@@ -38,10 +38,13 @@ type TeammateDispatcher () =
                       InsetOpt = ValueNone
                       ClipOpt = ValueNone
                       Image = borderImage
+                      UserDefinedImages = UserDefinedImages.defaultImages
+                      PipelineName = Constants.Render.PipelineNameDefault
                       Color = borderImageColor
                       Blend = Transparent
                       Emission = Color.Zero
-                      Flip = Unflipped }}
+                      Flip = Unflipped
+                      UserDefinedSettings = UserDefinedSettings.defaultSettings }}
             world
 
         // fill sprite
@@ -67,10 +70,13 @@ type TeammateDispatcher () =
                       InsetOpt = ValueNone
                       ClipOpt = ValueNone
                       Image = fillImage
+                      UserDefinedImages = UserDefinedImages.defaultImages
+                      PipelineName = Constants.Render.PipelineNameDefault
                       Color = fillImageColor
                       Blend = Transparent
                       Emission = Color.Zero
-                      Flip = Unflipped }}
+                      Flip = Unflipped
+                      UserDefinedSettings = UserDefinedSettings.defaultSettings }}
             world
 
     static member Facets =

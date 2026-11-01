@@ -2,7 +2,7 @@
 
 const int LIGHT_MAPS_MAX = 26;
 
-struct EyeStruct
+struct Eye3dStruct
 {
     vec3 center;
     mat4 view;
@@ -21,7 +21,7 @@ struct LightMapStruct
     float ambientBrightness;
 };
 
-layout(set = 0, binding = 0) uniform EyeUniform { EyeStruct eye; };
+layout(set = 0, binding = 0) uniform Eye3dUniform { Eye3dStruct eye; };
 layout(set = 0, binding = 1) uniform LightMapUniform { LightMapStruct lightMapFallback; };
 layout(set = 0, binding = 2) uniform LightMapsUniform { LightMapStruct lightMaps[LIGHT_MAPS_MAX]; };
 layout(set = 0, binding = 3) uniform texture2D depthTexture;
@@ -35,10 +35,11 @@ layout(location = 0) out vec4 frag;
 
 vec4 depthToPosition(float depth, vec2 texCoords)
 {
-    vec4 positionClip = vec4(texCoords * 2.0 - 1.0, depth, 1.0);
-    vec4 positionView = eye.projectionInverse * positionClip;
-    positionView /= positionView.w;
-    return eye.viewInverse * positionView;
+    vec4 clip = vec4(texCoords * 2.0 - 1.0, 1.0, 1.0);
+    vec4 rayView = eye.projectionInverse * clip;
+    rayView /= rayView.w;
+    vec3 positionView = rayView.xyz * (depth / -rayView.z);
+    return eye.viewInverse * vec4(positionView, 1.0);
 }
 
 void main()
@@ -72,7 +73,7 @@ void main()
         float ambientBrightness1 = lightMaps[lm1].ambientBrightness;
         float ambientBrightness2 = lightMapFallback.ambientBrightness;
         ambientColor = mix(ambientColor1, ambientColor2, lmRatio);
-        ambientBrightness = mix(ambientBrightness1, ambientBrightness2, lmRatio);
+        ambientBrightness = exp(mix(log(ambientBrightness1), log(ambientBrightness2), lmRatio));
     }
     else
     {
@@ -82,7 +83,7 @@ void main()
         float ambientBrightness1 = lightMaps[lm1].ambientBrightness;
         float ambientBrightness2 = lightMaps[lm2].ambientBrightness;
         ambientColor = mix(ambientColor1, ambientColor2, lmRatio);
-        ambientBrightness = mix(ambientBrightness1, ambientBrightness2, lmRatio);
+        ambientBrightness = exp(mix(log(ambientBrightness1), log(ambientBrightness2), lmRatio));
     }
 
     // write

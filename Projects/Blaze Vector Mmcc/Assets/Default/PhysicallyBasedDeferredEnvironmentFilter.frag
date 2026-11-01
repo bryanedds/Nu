@@ -4,7 +4,7 @@ const float PI = 3.141592654;
 const float REFLECTION_LOD_MAX = 7.0;
 const int LIGHT_MAPS_MAX = 26;
 
-struct EyeStruct
+struct Eye3dStruct
 {
     vec3 center;
     mat4 view;
@@ -23,7 +23,7 @@ struct LightMapStruct
     float ambientBrightness;
 };
 
-layout(set = 0, binding = 0) uniform EyeUniform { EyeStruct eye; };
+layout(set = 0, binding = 0) uniform Eye3dUniform { Eye3dStruct eye; };
 layout(set = 0, binding = 1) uniform LightMapsUniform { LightMapStruct lightMaps[LIGHT_MAPS_MAX]; };
 layout(set = 0, binding = 2) uniform texture2D depthTexture;
 layout(set = 0, binding = 3) uniform texture2D materialTexture;
@@ -59,10 +59,11 @@ vec3 decodeOctahedral(vec2 o)
 
 vec4 depthToPosition(float depth, vec2 texCoords)
 {
-    vec4 positionClip = vec4(texCoords * 2.0 - 1.0, depth, 1.0);
-    vec4 positionView = eye.projectionInverse * positionClip;
-    positionView /= positionView.w;
-    return eye.viewInverse * positionView;
+    vec4 clip = vec4(texCoords * 2.0 - 1.0, 1.0, 1.0);
+    vec4 rayView = eye.projectionInverse * clip;
+    rayView /= rayView.w;
+    vec3 positionView = rayView.xyz * (depth / -rayView.z);
+    return eye.viewInverse * vec4(positionView, 1.0);
 }
 
 vec3 parallaxCorrection(LightMapStruct lightMap, vec3 positionWorld, vec3 normalWorld)

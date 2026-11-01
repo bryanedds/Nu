@@ -22,7 +22,7 @@ module ContourQuad =
 
 /// Per-shape data uploaded to the GPU uniform buffer.
 /// Layout matches the GLSL std430 layout in Contour.vert/frag:
-///   mat4 MVP (64B), vec4 color (16B), uint curveCount (4B), uint flags (4B),
+///   mat4 modelViewProjection (64B), vec4 color (16B), uint curveCount (4B), uint flags (4B),
 ///   uint hBands (4B), uint vBands (4B), vec2 bboxMin (8B), vec2 bboxSize (8B),
 ///   vec4 bandTransform (16B) = 128B.
 /// The vertex shader maps a [0,1] unit quad to [bboxMin, bboxMin+bboxSize].
@@ -30,8 +30,8 @@ module ContourQuad =
 /// Flags bit layout (must match Contour.frag):
 ///   bit 0: fillMode (0=NonZero, 1=EvenOdd)
 [<Struct; StructLayout (LayoutKind.Sequential)>]
-type ShapeGPU =
-    { MVP : Matrix4x4
+type ShapeData =
+    { ModelViewProjection : Matrix4x4
       Color : Color
       CurveCount : uint32
       Flags : uint32 // bit 0: fillMode
@@ -57,7 +57,7 @@ module Contour =
         let quadIndexBuffer = VulkanBuffer.create (BufferType.Index true) (sizeof<uint32> * ContourQuad.Indices.Length) context
         VulkanBuffer.uploadArray ContourQuad.Vertices quadVertexBuffer context
         VulkanBuffer.uploadArray ContourQuad.Indices quadIndexBuffer context
-        let shapeDataBuffer = VulkanBuffer.create Uniform (sizeof<ShapeGPU> * ShapeDataSizeInitial) context
+        let shapeDataBuffer = VulkanBuffer.create Uniform (sizeof<ShapeData> * ShapeDataSizeInitial) context
         let curveDataBuffer = VulkanBuffer.create Storage (sizeof<Vector4> * 2 * CurvesMax) context
         let bandDataBuffer = VulkanBuffer.create Storage (sizeof<uint32> * BandDataSizeInitial) context
         let vertexSize = sizeof<Vector2>
@@ -161,7 +161,7 @@ module Contour =
                         else 0.001f
                     let flags = match geometry.FillWinding with EvenOdd -> 1u | NonZero -> 0u
                     let shapeGPU =
-                        { MVP = modelViewProjection
+                        { ModelViewProjection = modelViewProjection
                           Color = color
                           CurveCount = uint32 geometry.Curves.Length
                           Flags = flags

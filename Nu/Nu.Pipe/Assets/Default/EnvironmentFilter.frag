@@ -119,6 +119,6 @@ void main()
     // normalize filtered color
     filterColor = filterColor / totalWeight;
 
-    // fin
+    // write fragment
     frag = vec4(filterColor, 1.0);
 }

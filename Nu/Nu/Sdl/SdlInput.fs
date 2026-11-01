@@ -69,7 +69,6 @@ type GamepadAxis =
         | _ -> failwithumf ()
 
 /// Describes a gamepad button.
-// TODO: The actual button and the button name should be decoupled! See https://wiki.libsdl.org/SDL3/SDL_GamepadButton#remarks
 type GamepadButton =
     | ButtonUp
     | ButtonLeft
