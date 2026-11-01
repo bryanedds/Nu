@@ -31,6 +31,7 @@ module internal WorldModuleInternal2 =
     let internal HashSet2dNormalCached = HashSet (QuadelementEqualityComparer ())
     let internal HashSet3dNormalCached = HashSet (OctelementEqualityComparer ())
     let internal HashSet3dShadowCached = HashSet (OctelementEqualityComparer ())
+    let internal HashSet3dCascadeCached = HashSet (OctelementEqualityComparer ())
 
     (* Frame Pacing *)
     let mutable internal FramePaceIssues = 0
@@ -1799,8 +1800,7 @@ module WorldModule2 =
                             try
 
                                 // gather simulants for rendering
-                                // OPTIMIZATION: gather simulants for all cascades so we can call
-                                // World.renderSimulantsInternal8.
+                                // OPTIMIZATION: gather simulants for all cascades once, then cull them per cascade below.
                                 world.Timers.RenderGatherTimer.Restart ()
                                 let game = Nu.Game.Handle
                                 let screenOpt = World.getSelectedScreenOpt world
@@ -1864,15 +1864,30 @@ module WorldModule2 =
                                         Matrix4x4.CreateOrthographicOffCenter
                                             (-sectionRadius, sectionRadius, -sectionRadius, sectionRadius, -sectionRadius, cascadeDepthScale - sectionRadius)
 
+                                    // compute this cascade's cull frustum - its square in light space, reaching toward the light by
+                                    // the gather extent (since casters there get pancaked onto it) and ending at the far side of its
+                                    // sphere (since nothing beyond can shadow inside it)
+                                    let cascadeCullProjection =
+                                        Matrix4x4.CreateOrthographicOffCenter
+                                            (-sectionRadius, sectionRadius, -sectionRadius, sectionRadius, -sectionRadius - cascadeDepthExtent, sectionRadius)
+                                    let cascadeCullFrustum = Frustum (sectionViewOrtho * cascadeCullProjection)
+
+                                    // cull the gathered casters to this cascade so smaller cascades don't draw everything
+                                    for element in WorldModuleInternal2.HashSet3dNormalCached do
+                                        if cascadeCullFrustum.Intersects element.Bounds then
+                                            WorldModuleInternal2.HashSet3dCascadeCached.Add element |> ignore<bool>
+
                                     // render
                                     World.renderSimulantsInternal8
                                         game screenOpt groups groupsInvisible
-                                        WorldModuleInternal2.HashSet3dNormalCached WorldModuleInternal2.HashSet2dNormalCached
-                                        (ShadowPass (lightId, Some (i, sectionViewOrtho, sectionProjectionOrtho), lightType, shadowingType.IsDynamicShadowing, shadowRotation, cullFrustum)) world
+                                        WorldModuleInternal2.HashSet3dCascadeCached WorldModuleInternal2.HashSet2dNormalCached
+                                        (ShadowPass (lightId, Some (i, sectionViewOrtho, sectionProjectionOrtho), lightType, shadowingType.IsDynamicShadowing, shadowRotation, cascadeCullFrustum)) world
+                                    WorldModuleInternal2.HashSet3dCascadeCached.Clear ()
 
                             // free cached values
                             finally
                                 WorldModuleInternal2.HashSet3dNormalCached.Clear ()
+                                WorldModuleInternal2.HashSet3dCascadeCached.Clear ()
                                 WorldModuleInternal2.HashSet2dNormalCached.Clear ()
 
                             // fin

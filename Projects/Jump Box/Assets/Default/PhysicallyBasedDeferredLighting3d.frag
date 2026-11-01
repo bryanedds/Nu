@@ -283,17 +283,19 @@ float computeShadowScalarCascaded(vec4 position, float shadowCutoff, int shadowI
         if (depthView < splitFar)
         {
             float shadowScalar = sampleShadowCascade(position, shadowIndex, i, inset);
-            if (shadowScalar < 0.0) continue; // outside this cascade's map (shouldn't happen as cascades bound their splits), so try the next
-            float splitNear = i == 0 ? 0.0 : shadowCutoff * SHADOW_CASCADE_LIMITS[i - 1];
-            float blend = (splitFar - depthView) / ((splitFar - splitNear) * SHADOW_CASCADE_BLEND); // 0 at the split, 1 at the band's start
-            if (blend < 1.0)
+            if (shadowScalar >= 0.0) // otherwise outside this cascade's map (shouldn't happen as cascades bound their splits), so try the next
             {
-                // cross-fade into the next cascade over the end of this one's depth range, or fade out past the last
-                float shadowScalarNext = i < SHADOW_CASCADE_LEVELS - 1 ? sampleShadowCascade(position, shadowIndex, i + 1, inset) : 1.0;
-                if (shadowScalarNext < 0.0) shadowScalarNext = shadowScalar;
-                shadowScalar = mix(shadowScalarNext, shadowScalar, smoothstep(0.0, 1.0, blend));
+                float splitNear = i == 0 ? 0.0 : shadowCutoff * SHADOW_CASCADE_LIMITS[i - 1];
+                float blend = (splitFar - depthView) / ((splitFar - splitNear) * SHADOW_CASCADE_BLEND); // 0 at the split, 1 at the band's start
+                if (blend < 1.0)
+                {
+                    // cross-fade into the next cascade over the end of this one's depth range, or fade out past the last
+                    float shadowScalarNext = i < SHADOW_CASCADE_LEVELS - 1 ? sampleShadowCascade(position, shadowIndex, i + 1, inset) : 1.0;
+                    if (shadowScalarNext < 0.0) shadowScalarNext = shadowScalar;
+                    shadowScalar = mix(shadowScalarNext, shadowScalar, smoothstep(0.0, 1.0, blend));
+                }
+                return shadowScalar;
             }
-            return shadowScalar;
         }
     }
     return 1.0;
