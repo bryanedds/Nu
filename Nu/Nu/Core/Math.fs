@@ -1853,6 +1853,15 @@ module Math =
         let offset = AlignOffset (offset, alignment)
         offset + stride * count
 
+    /// Compute the far view depth of the given cascade with the practical split scheme - a blend of logarithmic
+    /// (lambda = 1) and uniform (lambda = 0) splits.
+    /// NOTE: must match computeShadowCascadeSplit in shaders.
+    let ShadowCascadeSplit (lambda, near : single, far : single, cascade : int, cascadeCount : int) =
+        let t = single (inc cascade) / single cascadeCount
+        let splitLog = near * MathF.Pow (far / near, t)
+        let splitUniform = near + (far - near) * t
+        lambda * splitLog + (1.0f - lambda) * splitUniform
+
 /// Math operators.
 [<AutoOpen>]
 module MathOperators =

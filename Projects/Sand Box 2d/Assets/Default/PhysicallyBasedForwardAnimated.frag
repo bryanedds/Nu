@@ -384,7 +384,7 @@ float sampleShadowCascade(vec4 position, int shadowIndex, int cascade, float ins
 float computeShadowCascadeSplit(float shadowCutoff, int cascade)
 {
     // practical split scheme - a blend of logarithmic and uniform splits
-    // NOTE: must match ShadowCascade.computeSplit
+    // NOTE: must match Math.ShadowCascadeSplit.
     float t = float(cascade + 1) / float(SHADOW_CASCADE_LEVELS);
     float splitLog = lighting.shadowNear * pow(shadowCutoff / lighting.shadowNear, t);
     float splitUniform = lighting.shadowNear + (shadowCutoff - lighting.shadowNear) * t;
