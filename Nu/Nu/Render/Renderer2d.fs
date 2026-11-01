@@ -760,7 +760,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         // render contour when it has fill or stroke geometry
         let prepared = descriptor.Contour
         if prepared.FillGeometryOpt.IsSome || prepared.StrokeGeometryOpt.IsSome then
-            flip4 SpriteBatch.InterruptSpriteBatchFrame renderer.Viewport resolveTexture renderer.SpriteBatchEnv $ fun () ->
+            flip4 SpriteBatch.interruptSpriteBatchFrame renderer.Viewport resolveTexture renderer.SpriteBatchEnv $ fun () ->
             
                 // gather context for rendering contour
                 let viewProjection2d = Viewport.getViewProjection2d descriptor.Transform.Absolute eyeCenter eyeSize renderer.Viewport
@@ -821,7 +821,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             let transform = transform // copy to local to make visible from lambda
             let clipOpt = clipOpt // same
             let userDefinedSettings = userDefinedSettings // same
-            flip4 SpriteBatch.InterruptSpriteBatchFrame renderer.Viewport resolveTexture renderer.SpriteBatchEnv $ fun () ->
+            flip4 SpriteBatch.interruptSpriteBatchFrame renderer.Viewport resolveTexture renderer.SpriteBatchEnv $ fun () ->
 
                 // gather context for rendering text
                 let mutable transform = transform
