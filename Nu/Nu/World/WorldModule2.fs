@@ -1786,8 +1786,13 @@ module WorldModule2 =
                             let eyeAspectRatio = World.getEye3dAspectRatio world
 
                             // compute cull frustum
+                            // NOTE: cascade spheres reach past the cutoff at the frustum's far corners, and casters toward
+                            // the light (which get pancaked onto cascade near planes) must be included, so the cull volume
+                            // is padded.
+                            let cascadeDepthExtent = shadowFarDistance * Constants.Render.ShadowCascadeDepthScalar
+                            let cullWidth = shadowFarDistance * 2.0f * Constants.Render.ShadowCascadeCullScalar
                             let cullView = Matrix4x4.CreateLookAt (shadowOrigin, shadowOrigin + shadowForward, shadowUp)
-                            let cullProjection = Matrix4x4.CreateOrthographic (shadowFarDistance * +2.0f, shadowFarDistance * +2.0f,shadowFarDistance * -1.0f, shadowFarDistance * +1.0f)
+                            let cullProjection = Matrix4x4.CreateOrthographic (cullWidth, cullWidth, -cascadeDepthExtent - shadowFarDistance, cascadeDepthExtent + shadowFarDistance)
                             let cullFrustum = Frustum (cullView * cullProjection)
 
                             // use a finally block to free cached values
@@ -1809,42 +1814,55 @@ module WorldModule2 =
                                 World.getElements2dInView WorldModuleInternal2.HashSet2dNormalCached world
                                 world.Timers.RenderGatherTimer.Stop ()
 
+                                // compute a bounding sphere for each cascade's section of the eye frustum so a cascade's size
+                                // doesn't change as the eye rotates (which would make shadows swim and change resolution)
+                                let sections =
+                                    [|for i in 0 .. dec Constants.Render.ShadowCascadeLevels do
+                                        let sectionNear =
+                                            match i with
+                                            | 0 -> Constants.Render.NearPlaneDistanceInterior
+                                            | _ -> shadowFarDistance * Constants.Render.ShadowCascadeLimits[dec i]
+                                        let sectionFar = shadowFarDistance * Constants.Render.ShadowCascadeLimits[i]
+                                        let sectionProjection = Matrix4x4.CreatePerspectiveFieldOfView (eyeFov, eyeAspectRatio, sectionNear, sectionFar)
+                                        let sectionFrustum = Frustum (eyeView * sectionProjection)
+                                        let sectionCornersWorld = sectionFrustum.Corners
+                                        let sectionCenterWorld = Array.sum sectionCornersWorld / single sectionCornersWorld.Length
+                                        let mutable sectionRadius = 0.0f
+                                        for corner in sectionCornersWorld do
+                                            sectionRadius <- max sectionRadius (corner - sectionCenterWorld).Magnitude
+                                        let sectionRadius = ceil (sectionRadius * 16.0f) / 16.0f // quantize to keep the size stable under float noise
+                                        (sectionCenterWorld, sectionRadius)|]
+
+                                // every cascade maps depth with the same scale so that exponential shadow depths (and thus
+                                // shadow darkness) match across cascades; the scale only needs to span the largest cascade
+                                // since casters nearer the light than a cascade's near plane are pancaked onto it by the
+                                // directional shadow vertex shaders
+                                let cascadeDepthScale = sections |> Array.map (fun (_, radius) -> radius * 2.0f) |> Array.max
+
                                 // render cascades
                                 for i in 0 .. dec Constants.Render.ShadowCascadeLevels do
 
-                                    // compute section frustum
-                                    let sectionNear =
-                                        match i with
-                                        | 0 -> Constants.Render.NearPlaneDistanceInterior
-                                        | _ -> shadowFarDistance * Constants.Render.ShadowCascadeLimits[dec i]
-                                    let sectionFar = shadowFarDistance * Constants.Render.ShadowCascadeLimits[i]
-                                    let sectionProjection = Matrix4x4.CreatePerspectiveFieldOfView (eyeFov, eyeAspectRatio, sectionNear, sectionFar)
-                                    let sectionViewProjection = eyeView * sectionProjection
-                                    let sectionFrustum = Frustum sectionViewProjection
+                                    // snap the section center to whole shadow texels in light space so that static shadows
+                                    // don't shimmer as the eye translates
+                                    // https://learn.microsoft.com/en-us/windows/win32/dxtecharts/common-techniques-to-improve-shadow-depth-maps
+                                    let (sectionCenterWorld, sectionRadius) = sections[i]
+                                    let shadowResolution = world.GeometryViewport.ShadowCascadeResolution
+                                    let shadowTexelSize = sectionRadius * 2.0f / single shadowResolution.X
+                                    let lightView = Matrix4x4.CreateLookAt (v3Zero, shadowForward, shadowUp)
+                                    let sectionCenterLight = sectionCenterWorld.Transform lightView
+                                    let sectionCenterLightSnapped =
+                                        v3
+                                            (floor (sectionCenterLight.X / shadowTexelSize) * shadowTexelSize)
+                                            (floor (sectionCenterLight.Y / shadowTexelSize) * shadowTexelSize)
+                                            sectionCenterLight.Z
+                                    let sectionCenterSnapped = sectionCenterLightSnapped.Transform lightView.Inverted
 
-                                    // compute frustum corners and center in world space
-                                    let sectionCornersWorld = sectionFrustum.Corners
-                                    let sectionCenterWorld = Array.sum sectionCornersWorld / single sectionCornersWorld.Length
-
-                                    // compute frustum corner bounds in ortho space
-                                    let sectionViewOrtho = Matrix4x4.CreateLookAt (sectionCenterWorld, sectionCenterWorld + shadowForward, shadowUp)
-                                    let mutable minX = Single.MaxValue
-                                    let mutable maxX = Single.MinValue
-                                    let mutable minY = Single.MaxValue
-                                    let mutable maxY = Single.MinValue
-                                    let mutable minZ = Single.MaxValue
-                                    let mutable maxZ = Single.MinValue
-                                    for corner in sectionCornersWorld do
-                                        let cornerView = corner.Transform sectionViewOrtho
-                                        minX <- min minX cornerView.X
-                                        maxX <- max maxX cornerView.X
-                                        minY <- min minY cornerView.Y
-                                        maxY <- max maxY cornerView.Y
-                                        minZ <- min minZ cornerView.Z
-                                        maxZ <- max maxZ cornerView.Z
-
-                                    // compute ortho projection
-                                    let sectionProjectionOrtho = Matrix4x4.CreateOrthographicOffCenter (minX, maxX, minY, maxY, minZ, maxZ)
+                                    // compute ortho view and projection; depth starts at the light-facing edge of the cascade's
+                                    // sphere (view-space z = +radius, as the view looks along the light) and spans the shared scale
+                                    let sectionViewOrtho = Matrix4x4.CreateLookAt (sectionCenterSnapped, sectionCenterSnapped + shadowForward, shadowUp)
+                                    let sectionProjectionOrtho =
+                                        Matrix4x4.CreateOrthographicOffCenter
+                                            (-sectionRadius, sectionRadius, -sectionRadius, sectionRadius, -sectionRadius, cascadeDepthScale - sectionRadius)
 
                                     // render
                                     World.renderSimulantsInternal8

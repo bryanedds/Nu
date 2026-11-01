@@ -13,8 +13,9 @@ const float SHADOW_DIRECTIONAL_SEAM_INSET = 0.05; // TODO: see if this should be
 const float SHADOW_DIRECTIONAL_CUTOFF = 0.75;
 const int SHADOW_CASCADES_MAX = 1;
 const int SHADOW_CASCADE_LEVELS = 3;
-const float SHADOW_CASCADE_SEAM_INSET = 0.001;
-const float SHADOW_CASCADE_DENSITY_BONUS = 0.5;
+const float SHADOW_CASCADE_SEAM_TEXELS = 6.0; // cascade edge inset in shadow texels, covering the shadow blur's reach
+const float SHADOW_CASCADE_BLEND = 0.15; // fraction of a cascade's depth range over which it cross-fades into the next
+const float SHADOW_CASCADE_LIMITS[SHADOW_CASCADE_LEVELS] = float[](0.2, 0.6, 1.0); // NOTE: must match Constants.Render.ShadowCascadeLimits
 const float SHADOW_FOV_MAX = 2.1;
 const float SAA_VARIANCE = 0.1; // TODO: consider exposing as lighting config property.
 const float SAA_THRESHOLD = 0.1; // TODO: consider exposing as lighting config property.
@@ -366,24 +367,43 @@ float computeShadowScalarDirectional(vec4 position, int shadowIndex)
     return 1.0;
 }
 
+float sampleShadowCascade(vec4 position, int shadowIndex, int cascade, float inset)
+{
+    // returns -1.0 when the position falls outside the cascade's usable area (inset by the shadow blur's reach)
+    mat4 shadowMatrix = shadowMatrices[SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + cascade];
+    vec4 positionShadowClip = shadowMatrix * position;
+    vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
+    if (max(abs(shadowTexCoordsProj.x), abs(shadowTexCoordsProj.y)) >= 1.0 - inset || shadowTexCoordsProj.z < 0.0 || shadowTexCoordsProj.z >= 1.0) return -1.0;
+    vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5;
+    float shadowZExp = exp(-lighting.lightShadowExponent * shadowTexCoordsProj.z);
+    float shadowDepthExp = texture(sampler2DArray(shadowCascades[shadowIndex - SHADOW_TEXTURES_MAX], filteredSampler), vec3(shadowTexCoords, float(cascade))).y;
+    float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
+    return pow(shadowScalar, lighting.lightShadowDensity);
+}
+
 float computeShadowScalarCascaded(vec4 position, float shadowCutoff, int shadowIndex)
 {
+    // cascades are selected by view depth against the same splits the cascades are built from, so transitions sit at
+    // constant screen depth regardless of how the eye moves
+    vec2 shadowTextureSize = textureSize(sampler2DArray(shadowCascades[shadowIndex - SHADOW_TEXTURES_MAX], filteredSampler), 0).xy;
+    float inset = 2.0 * SHADOW_CASCADE_SEAM_TEXELS / shadowTextureSize.x;
+    float depthView = -(eye.view * position).z;
     for (int i = 0; i < SHADOW_CASCADE_LEVELS; ++i)
     {
-        mat4 shadowMatrix = shadowMatrices[SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + i];
-        vec4 positionShadowClip = shadowMatrix * position;
-        vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
-        if (shadowTexCoordsProj.x >= -1.0 + SHADOW_CASCADE_SEAM_INSET && shadowTexCoordsProj.x < 1.0 - SHADOW_CASCADE_SEAM_INSET &&
-            shadowTexCoordsProj.y >= -1.0 + SHADOW_CASCADE_SEAM_INSET && shadowTexCoordsProj.y < 1.0 - SHADOW_CASCADE_SEAM_INSET &&
-            shadowTexCoordsProj.z >= SHADOW_CASCADE_SEAM_INSET && shadowTexCoordsProj.z < 1.0 - SHADOW_CASCADE_SEAM_INSET)
+        float splitFar = shadowCutoff * SHADOW_CASCADE_LIMITS[i];
+        if (depthView < splitFar)
         {
-            vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5;
-            float shadowZ = shadowTexCoordsProj.z;
-            float shadowZExp = exp(-lighting.lightShadowExponent * shadowZ);
-            float shadowDepthExp = texture(sampler2DArray(shadowCascades[shadowIndex - SHADOW_TEXTURES_MAX], filteredSampler), vec3(shadowTexCoords, float(i))).y;
-            float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
-            float densityScalar = 1.0f + float(i) * SHADOW_CASCADE_DENSITY_BONUS;
-            shadowScalar = pow(shadowScalar, lighting.lightShadowDensity * densityScalar);
+            float shadowScalar = sampleShadowCascade(position, shadowIndex, i, inset);
+            if (shadowScalar < 0.0) continue; // outside this cascade's map (shouldn't happen as cascades bound their splits), so try the next
+            float splitNear = i == 0 ? 0.0 : shadowCutoff * SHADOW_CASCADE_LIMITS[i - 1];
+            float blend = (splitFar - depthView) / ((splitFar - splitNear) * SHADOW_CASCADE_BLEND); // 0 at the split, 1 at the band's start
+            if (blend < 1.0)
+            {
+                // cross-fade into the next cascade over the end of this one's depth range, or fade out past the last
+                float shadowScalarNext = i < SHADOW_CASCADE_LEVELS - 1 ? sampleShadowCascade(position, shadowIndex, i + 1, inset) : 1.0;
+                if (shadowScalarNext < 0.0) shadowScalarNext = shadowScalar;
+                shadowScalar = mix(shadowScalarNext, shadowScalar, smoothstep(0.0, 1.0, blend));
+            }
             return shadowScalar;
         }
     }

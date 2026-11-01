@@ -32,4 +32,5 @@ void main()
     vec4 positionOut = model * positionBlended;
     positionOut /= positionOut.w; // NOTE: normalizing by w seems to fix a bug caused by weights not summing to 1.0.
     gl_Position = shadowVert.viewProjection * positionOut;
+    gl_Position.z = max(gl_Position.z, 0.0); // pancake casters nearer the light than the near plane so they still cast (orthographic, so w = 1)
 }
