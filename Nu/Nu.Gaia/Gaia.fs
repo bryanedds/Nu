@@ -96,6 +96,7 @@ module Gaia =
     let mutable private InteractiveInputFocusRequested = false
     let mutable private InteractiveInputStr = ""
     let mutable private InteractiveOutputStr = ""
+    let mutable private FsiSessionHasProjectCode = false
     let mutable private LogStr = ""
 
     (* Configuration States *)
@@ -1338,6 +1339,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     // mark interactive as needing initialization
                     InteractiveNeedsInitialization <- true
 
+                    // the new session won't contain project code until the reload script below succeeds
+                    FsiSessionHasProjectCode <- false
+
                     // create a new session for code reload
                     Log.info ("Compiling code via generated F# script:\n" + fsxFileString)
                     let fsiArgs = if String.notEmpty fsprojDefineConstants then Array.add ("--define:" + fsprojDefineConstants) FsiArgs else FsiArgs
@@ -1351,6 +1355,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         Log.info "Updating code..."
                         focusPropertyOpt None world // drop any reference to old property type
                         World.updateLateBindings initializing FsiSession.DynamicAssemblies world // replace references to old types
+                        FsiSessionHasProjectCode <- true
                         Log.info "Code updated."
                     | (Choice2Of2 exn, diags) ->
                         if diags.Length > 0 then
@@ -3289,7 +3294,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         "#r \"Nu.Math.dll\"\n" +
                         "#r \"Nu.dll\"\n" +
                         "#r \"Nu.Gaia.dll\"\n" +
-                        (if projectDllPathValid then "#r \"" + PathF.GetFileName ProjectDllPath + "\"\n" else "") +
+                        (if projectDllPathValid && not FsiSessionHasProjectCode then "#r \"" + PathF.GetFileName ProjectDllPath + "\"\n" else "") +
                         "open System\n" +
                         "open System.Numerics\n" +
                         "open Prime\n" +
