@@ -13,8 +13,8 @@ const float SHADOW_DIRECTIONAL_SEAM_INSET = 0.05; // TODO: see if this should be
 const float SHADOW_DIRECTIONAL_CUTOFF = 0.75;
 const int SHADOW_CASCADES_MAX = 1;
 const int SHADOW_CASCADE_LEVELS = 3;
-const float SHADOW_CASCADE_SEAM_INSET = 0.001;
-const float SHADOW_CASCADE_DENSITY_BONUS = 0.5;
+const float SHADOW_CASCADE_SEAM_TEXELS = 6.0; // cascade edge inset in shadow texels, covering the shadow blur's reach
+const float SHADOW_CASCADE_BLEND = 0.15; // fraction of a cascade's depth range over which it cross-fades into the next
 const float SHADOW_FOV_MAX = 2.1;
 const float SAA_VARIANCE = 0.1; // TODO: consider exposing as lighting config property.
 const float SAA_THRESHOLD = 0.1; // TODO: consider exposing as lighting config property.
@@ -85,6 +85,7 @@ struct Lighting3dStruct
     float ssrlEdgeHorizontalMargin;
     float ssrlEdgeVerticalMargin;
     float shadowNear;
+    float shadowCascadeSplitLambda;
 };
 
 struct LightMapStruct
@@ -366,25 +367,56 @@ float computeShadowScalarDirectional(vec4 position, int shadowIndex)
     return 1.0;
 }
 
+float sampleShadowCascade(vec4 position, int shadowIndex, int cascade, float inset)
+{
+    // returns -1.0 when the position falls outside the cascade's usable area (inset by the shadow blur's reach)
+    mat4 shadowMatrix = shadowMatrices[SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + cascade];
+    vec4 positionShadowClip = shadowMatrix * position;
+    vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
+    if (max(abs(shadowTexCoordsProj.x), abs(shadowTexCoordsProj.y)) >= 1.0 - inset || shadowTexCoordsProj.z < 0.0 || shadowTexCoordsProj.z >= 1.0) return -1.0;
+    vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5;
+    float shadowZExp = exp(-lighting.lightShadowExponent * shadowTexCoordsProj.z);
+    float shadowDepthExp = texture(sampler2DArray(shadowCascades[shadowIndex - SHADOW_TEXTURES_MAX], filteredSampler), vec3(shadowTexCoords, float(cascade))).y;
+    float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
+    return pow(shadowScalar, lighting.lightShadowDensity);
+}
+
+float computeShadowCascadeSplit(float shadowCutoff, int cascade)
+{
+    // practical split scheme - a blend of logarithmic and uniform splits
+    // NOTE: must match Math.ShadowCascadeSplit.
+    float t = float(cascade + 1) / float(SHADOW_CASCADE_LEVELS);
+    float splitLog = lighting.shadowNear * pow(shadowCutoff / lighting.shadowNear, t);
+    float splitUniform = lighting.shadowNear + (shadowCutoff - lighting.shadowNear) * t;
+    return mix(splitUniform, splitLog, lighting.shadowCascadeSplitLambda);
+}
+
 float computeShadowScalarCascaded(vec4 position, float shadowCutoff, int shadowIndex)
 {
+    // cascades are selected by view depth against the same splits the cascades are built from, so transitions sit at
+    // constant screen depth regardless of how the eye moves
+    vec2 shadowTextureSize = textureSize(sampler2DArray(shadowCascades[shadowIndex - SHADOW_TEXTURES_MAX], filteredSampler), 0).xy;
+    float inset = 2.0 * SHADOW_CASCADE_SEAM_TEXELS / shadowTextureSize.x;
+    float depthView = -(eye.view * position).z;
     for (int i = 0; i < SHADOW_CASCADE_LEVELS; ++i)
     {
-        mat4 shadowMatrix = shadowMatrices[SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + i];
-        vec4 positionShadowClip = shadowMatrix * position;
-        vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
-        if (shadowTexCoordsProj.x >= -1.0 + SHADOW_CASCADE_SEAM_INSET && shadowTexCoordsProj.x < 1.0 - SHADOW_CASCADE_SEAM_INSET &&
-            shadowTexCoordsProj.y >= -1.0 + SHADOW_CASCADE_SEAM_INSET && shadowTexCoordsProj.y < 1.0 - SHADOW_CASCADE_SEAM_INSET &&
-            shadowTexCoordsProj.z >= SHADOW_CASCADE_SEAM_INSET && shadowTexCoordsProj.z < 1.0 - SHADOW_CASCADE_SEAM_INSET)
+        float splitFar = computeShadowCascadeSplit(shadowCutoff, i);
+        if (depthView < splitFar)
         {
-            vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5;
-            float shadowZ = shadowTexCoordsProj.z;
-            float shadowZExp = exp(-lighting.lightShadowExponent * shadowZ);
-            float shadowDepthExp = texture(sampler2DArray(shadowCascades[shadowIndex - SHADOW_TEXTURES_MAX], filteredSampler), vec3(shadowTexCoords, float(i))).y;
-            float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
-            float densityScalar = 1.0f + float(i) * SHADOW_CASCADE_DENSITY_BONUS;
-            shadowScalar = pow(shadowScalar, lighting.lightShadowDensity * densityScalar);
-            return shadowScalar;
+            float shadowScalar = sampleShadowCascade(position, shadowIndex, i, inset);
+            if (shadowScalar >= 0.0) // otherwise outside this cascade's map (shouldn't happen as cascades bound their splits), so try the next
+            {
+                float splitNear = i == 0 ? 0.0 : computeShadowCascadeSplit(shadowCutoff, i - 1);
+                float blend = (splitFar - depthView) / ((splitFar - splitNear) * SHADOW_CASCADE_BLEND); // 0 at the split, 1 at the band's start
+                if (blend < 1.0)
+                {
+                    // cross-fade into the next cascade over the end of this one's depth range, or fade out past the last
+                    float shadowScalarNext = i < SHADOW_CASCADE_LEVELS - 1 ? sampleShadowCascade(position, shadowIndex, i + 1, inset) : 1.0;
+                    if (shadowScalarNext < 0.0) shadowScalarNext = shadowScalar;
+                    shadowScalar = mix(shadowScalarNext, shadowScalar, smoothstep(0.0, 1.0, blend));
+                }
+                return shadowScalar;
+            }
         }
     }
     return 1.0;
@@ -674,6 +706,48 @@ vec3 computeFogAccumDirectional(vec4 position, Light3dStruct light)
     return result * light.color * light.brightness;
 }
 
+float sampleFogVisibilityCascade(vec3 position, int shadowIndex, int cascade)
+{
+    // returns -1.0 when the position falls outside the cascade's map, otherwise whether light reaches it
+    mat4 shadowMatrix = shadowMatrices[SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + cascade];
+    vec4 positionShadowClip = shadowMatrix * vec4(position, 1.0);
+    vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
+    if (max(abs(shadowTexCoordsProj.x), abs(shadowTexCoordsProj.y)) >= 1.0 || shadowTexCoordsProj.z < 0.0) return -1.0;
+    if (shadowTexCoordsProj.z >= 1.0) return 1.0;
+    vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5;
+    float shadowDepth = texture(sampler2DArray(shadowCascades[shadowIndex - SHADOW_TEXTURES_MAX], filteredSampler), vec3(shadowTexCoords, float(cascade))).x;
+    return shadowTexCoordsProj.z <= shadowDepth ? 1.0 : 0.0;
+}
+
+float computeFogVisibilityCascaded(vec3 position, float shadowCutoff, int shadowIndex)
+{
+    // cascades are selected by view depth against the same splits the shadows use, and cross-faded over the same bands,
+    // so the fog's light shafts don't step or double up where one cascade hands off to the next
+    float depthView = -(eye.view * vec4(position, 1.0)).z;
+    for (int i = 0; i < SHADOW_CASCADE_LEVELS; ++i)
+    {
+        float splitFar = computeShadowCascadeSplit(shadowCutoff, i);
+        if (depthView < splitFar)
+        {
+            float visibility = sampleFogVisibilityCascade(position, shadowIndex, i);
+            if (visibility >= 0.0) // otherwise outside this cascade's map, so try the next
+            {
+                float splitNear = i == 0 ? 0.0 : computeShadowCascadeSplit(shadowCutoff, i - 1);
+                float blend = (splitFar - depthView) / ((splitFar - splitNear) * SHADOW_CASCADE_BLEND); // 0 at the split, 1 at the band's start
+                if (blend < 1.0)
+                {
+                    // cross-fade into the next cascade over the end of this one's depth range, or toward unshadowed past the last
+                    float visibilityNext = i < SHADOW_CASCADE_LEVELS - 1 ? sampleFogVisibilityCascade(position, shadowIndex, i + 1) : 1.0;
+                    if (visibilityNext < 0.0) visibilityNext = visibility;
+                    visibility = mix(visibilityNext, visibility, smoothstep(0.0, 1.0, blend));
+                }
+                return visibility;
+            }
+        }
+    }
+    return 1.0; // beyond the cascades, nothing is shadowed
+}
+
 vec3 computeFogAccumCascaded(vec4 position, Light3dStruct light)
 {
     // compute ray info
@@ -692,58 +766,19 @@ vec3 computeFogAccumCascaded(vec4 position, Light3dStruct light)
     // compute dithering
     float dithering = SSVF_DITHERING[int(gl_FragCoord.x) % 4][int(gl_FragCoord.y) % 4];
 
-    // accumulate fog light
+    // mie scaterring approximated with Henyey-Greenstein phase function, constant along the ray
+    float asymmetrySquared = lighting.ssvfAsymmetry * lighting.ssvfAsymmetry;
+    float fogMoment = (1.0 - asymmetrySquared) / (4.0 * PI * pow(1.0 + asymmetrySquared - 2.0 * lighting.ssvfAsymmetry * theta, 1.5));
+
+    // accumulate fog light once per step, as the directional variant does
     float result = 0.0;
     int shadowIndex = light.shadowIndex;
     vec3 currentPosition = startPosition + step * dithering;
-    if (shadowIndex < 0)
+    for (int i = 0; i < lighting.ssvfSteps; ++i)
     {
-        // march over ray, accumulating fog light value without shadows
-        for (int i = 0; i < lighting.ssvfSteps; ++i)
-        {
-            // use the nearest available cascade for this step
-            for (int j = 0; j < SHADOW_CASCADE_LEVELS; ++j)
-            {
-                // mie scaterring approximated with Henyey-Greenstein phase function
-                float asymmetrySquared = lighting.ssvfAsymmetry * lighting.ssvfAsymmetry;
-                float fogMoment = (1.0 - asymmetrySquared) / (4.0 * PI * pow(1.0 + asymmetrySquared - 2.0 * lighting.ssvfAsymmetry * theta, 1.5));
-                result += fogMoment * stepLength;
-            }
-
-            // step
-            currentPosition += step;
-        }
-    }
-    else
-    {
-        // march over ray, accumulating fog light value with shadows
-        for (int i = 0; i < lighting.ssvfSteps; ++i)
-        {
-            // use the nearest available cascade for this step
-            for (int j = 0; j < SHADOW_CASCADE_LEVELS; ++j)
-            {
-                // compute depths
-                mat4 shadowMatrix = shadowMatrices[SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + j];
-                vec4 positionShadowClip = shadowMatrix * vec4(currentPosition, 1.0);
-                vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
-                vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5;
-                bool shadowTexCoordsInRange = shadowTexCoords.x >= 0.0 && shadowTexCoords.x < 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y < 1.0;
-                float shadowZ = shadowTexCoordsProj.z;
-                float shadowDepth = shadowTexCoordsInRange ? texture(sampler2DArray(shadowCascades[shadowIndex - SHADOW_TEXTURES_MAX], filteredSampler), vec3(shadowTexCoords, float(i))).x : 1.0;
-
-                // step through ray, accumulating fog light moment
-                if (shadowZ <= shadowDepth || shadowZ >= 1.0f)
-                {
-                    // mie scaterring approximated with Henyey-Greenstein phase function
-                    float asymmetrySquared = lighting.ssvfAsymmetry * lighting.ssvfAsymmetry;
-                    float fogMoment = (1.0 - asymmetrySquared) / (4.0 * PI * pow(1.0 + asymmetrySquared - 2.0 * lighting.ssvfAsymmetry * theta, 1.5));
-                    result += fogMoment * stepLength;
-                }
-            }
-
-            // step
-            currentPosition += step;
-        }
+        float visibility = shadowIndex < 0 ? 1.0 : computeFogVisibilityCascaded(currentPosition, light.cutoff, shadowIndex);
+        result += fogMoment * stepLength * visibility;
+        currentPosition += step;
     }
 
     // scale intensity specially for directional lighting
