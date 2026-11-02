@@ -4191,9 +4191,9 @@ type [<ReferenceEquality>] VulkanRenderer3d =
             let loadOperation =
                 if clear then
                     match lightType with
-                    | PointLight _ | CascadedLight ->
+                    | PointLight _ ->
                         ClearAttachments (Color (lightCutoff, 0.0f, 0.0f, 0.0f)) // TODO: make derived from constant.
-                    | SpotLight _ | DirectionalLight _ ->
+                    | SpotLight _ | DirectionalLight _ | CascadedLight ->
                         ClearAttachments (Color (1.0f, Single.MaxValue, 0.0f, 0.0f)) // TODO: make derived from constant.
                 else LoadAttachments
             uniformsDescriptorSet <-
