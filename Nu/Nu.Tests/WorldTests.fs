@@ -6,6 +6,7 @@
 
 namespace Nu.Tests
 open System
+open System.Numerics
 open NUnit.Framework
 open Prime
 open Nu
@@ -35,3 +36,22 @@ module WorldTests =
     let [<Test; Category "Integration">] ``Run integration frame then clean up - three times.`` () =
         for _ in 0 .. dec 3 do
             ``Run integration frame then clean up.`` ()
+
+    let [<Test>] ``Write screen to file then read it back.`` () =
+        Nu.init ()
+        let world = World.makeStub (constant None) { WorldConfig.defaultConfig with Accompanied = true } (TestPlugin ())
+        let screen = World.createScreen<ScreenDispatcher> (Some "Screen") world
+        let group = World.createGroup<GroupDispatcher> (Some "Group") screen world
+        let entity = World.createEntity<StaticSpriteDispatcher> None DefaultOverlay (Some [|"Entity"|]) group world
+        entity.SetPosition (v3 1.0f 2.0f 3.0f) world
+        let filePath = IO.Path.Combine (IO.Path.GetTempPath (), "Nu.Tests." + string Gen.id64 + ".nuscreen")
+        try World.writeScreenToFile filePath screen world
+            World.destroyScreenImmediate screen world
+            Assert.False (screen.GetExists world)
+            let screen' = World.readScreenFromFile filePath None world
+            Assert.Equal (screen, screen')
+            Assert.True (screen.GetExists world)
+            Assert.True (group.GetExists world)
+            Assert.True (entity.GetExists world)
+            Assert.Equal (v3 1.0f 2.0f 3.0f, entity.GetPosition world)
+        finally IO.File.Delete filePath
