@@ -91,6 +91,16 @@ float randomAngle()
     return result;
 }
 
+vec2 snapToTexel(vec2 texCoords, vec2 textureSize)
+{
+    // snap to the center of the geometry buffer texel a nearest sample at these coordinates reads. At reduced ssao
+    // resolution each ssao pixel center lands exactly on a boundary between geometry texels, where nearest sampling picks
+    // one side or the other by floating point happenstance, column by column - and reconstructing position at the
+    // unsnapped coordinates from a neighboring texel's depth then biases occlusion differently in each column, striping
+    // broad surfaces. The quarter texel nudge breaks those ties consistently at every resolution.
+    return (floor(texCoords * textureSize + 0.25) + 0.5) / textureSize;
+}
+
 vec4 depthToPosition(float depth, vec2 texCoords)
 {
     vec4 clip = vec4(texCoords * 2.0 - 1.0, 1.0, 1.0);
@@ -102,18 +112,20 @@ vec4 depthToPosition(float depth, vec2 texCoords)
 
 void main()
 {
+    // sample the geometry buffers at the center of the texel this pixel covers so that depth, normal and the position
+    // reconstructed from them all agree
+    vec2 geometrySize = vec2(textureSize(sampler2D(depthTexture, unfilteredSampler), 0));
+    vec2 texCoordsSnapped = snapToTexel(texCoords, geometrySize);
+
     // ensure fragment was written
-    float depth = texture(sampler2D(depthTexture, unfilteredSampler), texCoords).r;
+    float depth = texture(sampler2D(depthTexture, unfilteredSampler), texCoordsSnapped).r;
     if (depth == 0.0) discard;
 
     // recover position from depth
-    vec4 position = depthToPosition(depth, texCoords);
+    vec4 position = depthToPosition(depth, texCoordsSnapped);
 
     // retrieve remaining data from geometry buffers
-    vec3 normal = normalize(texture(sampler2D(normalPlusTexture, unfilteredSampler), texCoords).xyz);
-
-    // pre-compute resolution inverse
-    vec2 ssaoResolutionInverse = vec2(1.0) / vec2(ssao.resolution);
+    vec3 normal = normalize(texture(sampler2D(normalPlusTexture, unfilteredSampler), texCoordsSnapped).xyz);
 
     // ensure sample count is in range and pre-compute sample count inverse
     int ssaoSampleCountCeil = max(0, min(SSAO_SAMPLES_MAX, ssao.sampleCount));
@@ -140,7 +152,7 @@ void main()
         samplingDirectionView = dot(samplingDirectionView, normalView) > 0.0 ? samplingDirectionView : -samplingDirectionView; // only sampling upper hemisphere
 
         // compute position and sampling position in screen space along with distance from origin
-        vec2 positionScreen = gl_FragCoord.xy * ssaoResolutionInverse;
+        vec2 positionScreen = texCoordsSnapped; // rather than from gl_FragCoord and a resolution that may not be this target's
         vec3 samplingPositionView = positionView + samplingDirectionView;
         vec4 samplingPositionClip = eye.projection * vec4(samplingPositionView, 1.0);
         vec2 samplingPositionScreen = samplingPositionClip.xy / samplingPositionClip.w * 0.5 + 0.5;
@@ -149,12 +161,13 @@ void main()
         // ensure we're not sampling too far from origin and thus blowing the texture cache
         if (distanceScreen < ssao.distanceMax)
         {
-            // ensure sample is actually written
-            float sampleDepth = texture(sampler2D(depthTexture, unfilteredSampler), samplingPositionScreen).r;
+            // ensure sample is actually written, reading and reconstructing at the same texel center for the same reason
+            vec2 samplingTexCoords = snapToTexel(samplingPositionScreen, geometrySize);
+            float sampleDepth = texture(sampler2D(depthTexture, unfilteredSampler), samplingTexCoords).r;
             if (sampleDepth != 0.0)
             {
                 // compute sample position in view space
-                vec4 samplePosition = depthToPosition(sampleDepth, samplingPositionScreen);
+                vec4 samplePosition = depthToPosition(sampleDepth, samplingTexCoords);
                 vec4 samplePositionView = eye.view * samplePosition;
 
                 // perform range check and accumulate if occluded

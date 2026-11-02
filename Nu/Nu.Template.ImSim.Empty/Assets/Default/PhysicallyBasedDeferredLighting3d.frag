@@ -14,6 +14,10 @@ const float SHADOW_CASCADE_SEAM_TEXELS = 6.0; // cascade edge inset in shadow te
 const float SHADOW_CASCADE_BLEND = 0.15; // fraction of a cascade's depth range over which it cross-fades into the next
 const float SHADOW_FOV_MAX = 2.1;
 const float CLEAR_COAT_REFRACTIVE_INDEX = 1.5; // typical for automotive clear coat
+const float SSS_TRAVEL_MAX = 2.0; // the most travel any one shadow sample contributes; past this no scatter type passes light, and capping keeps a far occluder from swamping the average
+const float SSS_TRAVEL_RADIUS = 0.3; // world radius over which travel is averaged so scattering fades in and out across an occluder's silhouette like a soft shadow
+const int SSS_TRAVEL_TAPS = 2; // taps to each side of center, so (2 * SSS_TRAVEL_TAPS + 1)^2 samples
+const float SSS_TRAVEL_SPOT_SPREAD = 4.0; // texels between spot light samples, which lack an orthographic world scale
 
 struct Eye3dStruct
 {
@@ -326,7 +330,7 @@ float geometryTravelPoint(vec4 position, Light3dStruct light, int shadowIndex)
                 vec3 offset = vec3(i, j, k) * lighting2.lightShadowSampleScalar;
                 float shadowDepth = texture(samplerCube(shadowMaps[shadowIndex - SHADOW_TEXTURES_MAX], filteredSampler), positionShadow + offset).x;
                 float delta = shadowZ - shadowDepth;
-                travel += max(0.0, delta);
+                travel += clamp(delta, 0.0, SSS_TRAVEL_MAX);
             }
         }
     }
@@ -352,17 +356,17 @@ float geometryTravelSpot(vec4 position, Light3dStruct light, int shadowIndex)
         vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5; // adj-ndc space
         vec2 shadowTextureSize = textureSize(sampler2DArray(shadowTextures, filteredSampler), 0).xy;
         vec2 shadowTexelSize = 1.0 / shadowTextureSize;
-        for (int i = -1; i <= 1; ++i)
+        for (int i = -SSS_TRAVEL_TAPS; i <= SSS_TRAVEL_TAPS; ++i)
         {
-            for (int j = -1; j <= 1; ++j)
+            for (int j = -SSS_TRAVEL_TAPS; j <= SSS_TRAVEL_TAPS; ++j)
             {
-                float shadowDepthScreen = texture(sampler2DArray(shadowTextures, filteredSampler), vec3(shadowTexCoords + vec2(i, j) * shadowTexelSize, float(shadowIndex))).x;
+                float shadowDepthScreen = texture(sampler2DArray(shadowTextures, filteredSampler), vec3(shadowTexCoords + vec2(i, j) * shadowTexelSize * SSS_TRAVEL_SPOT_SPREAD, float(shadowIndex))).x;
                 float shadowDepth = depthScreenToDepthView(lighting2.shadowNear, shadowFar, shadowDepthScreen);
                 float delta = shadowZ - shadowDepth;
-                travel += max(0.0, delta);
+                travel += clamp(delta, 0.0, SSS_TRAVEL_MAX);
             }
         }
-        return travel / 9.0;
+        return travel / float((2 * SSS_TRAVEL_TAPS + 1) * (2 * SSS_TRAVEL_TAPS + 1));
     }
 
     // tracing out of range, return default
@@ -379,47 +383,96 @@ float geometryTravelDirectional(vec4 position, Light3dStruct light, int shadowIn
         shadowTexCoordsProj.y >= -1.0 && shadowTexCoordsProj.y < 1.0 &&
         shadowTexCoordsProj.z >= 0.0 && shadowTexCoordsProj.z < 1.0)
     {
-        // compute light distance travel through surface (not accounting for incidental surface concavity)
+        // compute light distance travel through surface (not accounting for incidental surface concavity), averaged
+        // over a world radius so that it fades across an occluder's silhouette instead of stepping at a single texel
         vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5;
         float shadowZScreen = shadowTexCoordsProj.z; // linear, screen space
-        vec2 shadowTextureSize = textureSize(sampler2DArray(shadowTextures, filteredSampler), 0).xy;
-        vec2 shadowTexelSize = 1.0 / shadowTextureSize;
-        float shadowDepthScreen = texture(sampler2DArray(shadowTextures, filteredSampler), vec3(shadowTexCoords, float(shadowIndex))).x; // linear, screen space
-        float delta = shadowZScreen - shadowDepthScreen;
         float shadowFar = light.cutoff;
-        return max(0.0, delta * shadowFar);
+        vec2 worldToTexCoords = 0.5 * vec2(length(vec3(shadowMatrix[0][0], shadowMatrix[1][0], shadowMatrix[2][0])), length(vec3(shadowMatrix[0][1], shadowMatrix[1][1], shadowMatrix[2][1]))); // orthographic scale
+        vec2 tapSpacing = worldToTexCoords * (SSS_TRAVEL_RADIUS / float(SSS_TRAVEL_TAPS));
+        float travel = 0.0;
+        for (int i = -SSS_TRAVEL_TAPS; i <= SSS_TRAVEL_TAPS; ++i)
+        {
+            for (int j = -SSS_TRAVEL_TAPS; j <= SSS_TRAVEL_TAPS; ++j)
+            {
+                float shadowDepthScreen = texture(sampler2DArray(shadowTextures, filteredSampler), vec3(shadowTexCoords + vec2(i, j) * tapSpacing, float(shadowIndex))).x; // linear, screen space
+                float delta = (shadowZScreen - shadowDepthScreen) * shadowFar;
+                travel += clamp(delta, 0.0, SSS_TRAVEL_MAX);
+            }
+        }
+        travel /= float((2 * SSS_TRAVEL_TAPS + 1) * (2 * SSS_TRAVEL_TAPS + 1));
+
+        // fade toward the unoccluded travel of zero near the shadow's edges just as the shadow itself fades to fully lit,
+        // so scattering doesn't step at the shadow region's boundary either
+        float fadeX = 1.0 - smoothstep(SHADOW_DIRECTIONAL_CUTOFF, 1.0 - SHADOW_DIRECTIONAL_SEAM_INSET, abs(shadowTexCoordsProj.x));
+        float fadeY = 1.0 - smoothstep(SHADOW_DIRECTIONAL_CUTOFF, 1.0 - SHADOW_DIRECTIONAL_SEAM_INSET, abs(shadowTexCoordsProj.y));
+        float fadeZ = 1.0 - smoothstep(SHADOW_DIRECTIONAL_CUTOFF, 1.0 - SHADOW_DIRECTIONAL_SEAM_INSET, abs(shadowTexCoordsProj.z * 2.0 - 1.0));
+        return travel * min(fadeX, min(fadeY, fadeZ));
     }
 
-    // tracing out of range, return default
-    return 1.0;
+    // tracing out of range where nothing is shadowed, so nothing occludes
+    return 0.0;
+}
+
+float sampleTravelCascade(vec4 position, Light3dStruct light, int shadowIndex, int cascade, float inset)
+{
+    // returns -1.0 when the position falls outside the cascade's usable area (inset by the shadow blur's reach)
+    mat4 shadowMatrix = shadowMatrices[SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + cascade];
+    vec4 positionShadowClip = shadowMatrix * position;
+    vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
+    if (max(abs(shadowTexCoordsProj.x), abs(shadowTexCoordsProj.y)) >= 1.0 - inset || shadowTexCoordsProj.z < 0.0 || shadowTexCoordsProj.z >= 1.0) return -1.0;
+
+    // compute light distance travel through surface (not accounting for incidental surface concavity), averaged over a
+    // world radius so that it fades across an occluder's silhouette instead of stepping at a single texel
+    vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5;
+    float shadowZScreen = shadowTexCoordsProj.z; // linear, screen space
+    float shadowFar = light.cutoff;
+    vec2 worldToTexCoords = 0.5 * vec2(length(vec3(shadowMatrix[0][0], shadowMatrix[1][0], shadowMatrix[2][0])), length(vec3(shadowMatrix[0][1], shadowMatrix[1][1], shadowMatrix[2][1]))); // orthographic scale
+    vec2 tapSpacing = worldToTexCoords * (SSS_TRAVEL_RADIUS / float(SSS_TRAVEL_TAPS));
+    float travel = 0.0;
+    for (int j = -SSS_TRAVEL_TAPS; j <= SSS_TRAVEL_TAPS; ++j)
+    {
+        for (int k = -SSS_TRAVEL_TAPS; k <= SSS_TRAVEL_TAPS; ++k)
+        {
+            float shadowDepthScreen = texture(sampler2DArray(shadowCascades[shadowIndex - SHADOW_TEXTURES_MAX], filteredSampler), vec3(shadowTexCoords + vec2(j, k) * tapSpacing, float(cascade))).x; // linear, screen space
+            float delta = (shadowZScreen - shadowDepthScreen) * shadowFar;
+            travel += clamp(delta, 0.0, SSS_TRAVEL_MAX);
+        }
+    }
+    return travel / float((2 * SSS_TRAVEL_TAPS + 1) * (2 * SSS_TRAVEL_TAPS + 1));
 }
 
 float geometryTravelCascaded(vec4 position, Light3dStruct light, int shadowIndex)
 {
+    // cascades are selected by view depth against the same splits the shadows use, and cross-faded over the same bands,
+    // so travel doesn't step where one cascade's map hands off to the next
+    vec2 shadowTextureSize = textureSize(sampler2DArray(shadowCascades[shadowIndex - SHADOW_TEXTURES_MAX], filteredSampler), 0).xy;
+    float inset = 2.0 * SHADOW_CASCADE_SEAM_TEXELS / shadowTextureSize.x;
+    float depthView = -(eye.view * position).z;
     for (int i = 0; i < SHADOW_CASCADE_LEVELS; ++i)
     {
-        // attempt to compute travel average in view space
-        mat4 shadowMatrix = shadowMatrices[SHADOW_TEXTURES_MAX + (shadowIndex - SHADOW_TEXTURES_MAX) * SHADOW_CASCADE_LEVELS + i];
-        vec4 positionShadowClip = shadowMatrix * position;
-        vec3 shadowTexCoordsProj = positionShadowClip.xyz / positionShadowClip.w; // ndc space
-        if (shadowTexCoordsProj.x >= -1.0 && shadowTexCoordsProj.x < 1.0 &&
-            shadowTexCoordsProj.y >= -1.0 && shadowTexCoordsProj.y < 1.0 &&
-            shadowTexCoordsProj.z >= 0.0 && shadowTexCoordsProj.z < 1.0)
+        float splitFar = computeShadowCascadeSplit(light.cutoff, i);
+        if (depthView < splitFar)
         {
-            // compute light distance travel through surface (not accounting for incidental surface concavity)
-            vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5;
-            float shadowZScreen = shadowTexCoordsProj.z; // linear, screen space
-            vec2 shadowTextureSize = textureSize(sampler2DArray(shadowCascades[shadowIndex - SHADOW_TEXTURES_MAX], filteredSampler), 0).xy;
-            vec2 shadowTexelSize = 1.0 / shadowTextureSize;
-            float shadowDepthScreen = texture(sampler2DArray(shadowCascades[shadowIndex - SHADOW_TEXTURES_MAX], filteredSampler), vec3(shadowTexCoords, float(i))).x; // linear, screen space
-            float delta = shadowZScreen - shadowDepthScreen;
-            float shadowFar = light.cutoff;
-            return max(0.0, delta * shadowFar);
+            float travel = sampleTravelCascade(position, light, shadowIndex, i, inset);
+            if (travel >= 0.0) // otherwise outside this cascade's map, so try the next
+            {
+                float splitNear = i == 0 ? 0.0 : computeShadowCascadeSplit(light.cutoff, i - 1);
+                float blend = (splitFar - depthView) / ((splitFar - splitNear) * SHADOW_CASCADE_BLEND); // 0 at the split, 1 at the band's start
+                if (blend < 1.0)
+                {
+                    // cross-fade into the next cascade over the end of this one's depth range, or toward unoccluded past the last
+                    float travelNext = i < SHADOW_CASCADE_LEVELS - 1 ? sampleTravelCascade(position, light, shadowIndex, i + 1, inset) : 0.0;
+                    if (travelNext < 0.0) travelNext = travel;
+                    travel = mix(travelNext, travel, smoothstep(0.0, 1.0, blend));
+                }
+                return travel;
+            }
         }
     }
 
-    // tracing out of range, return default
-    return 1.0;
+    // tracing out of range where nothing is shadowed, so nothing occludes
+    return 0.0;
 }
 
 vec3 computeSubsurfaceScatter(vec4 position, vec3 albedo, vec4 subdermalPlus, vec4 scatterPlus, float nDotL, vec2 texCoords, Light3dStruct light)
