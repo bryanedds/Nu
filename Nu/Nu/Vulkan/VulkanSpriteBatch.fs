@@ -274,7 +274,7 @@ module SpriteBatch =
         endSpriteBatch viewport env
 
     /// Forcibly end the current sprite batch frame, if any, run the given fn, then restart the sprite batch frame.
-    let InterruptSpriteBatchFrame fn viewport resolveTexture env =
+    let interruptSpriteBatchFrame fn viewport resolveTexture env =
         let state = env.State
         endSpriteBatch viewport resolveTexture env
         fn ()
