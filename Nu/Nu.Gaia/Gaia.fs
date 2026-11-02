@@ -2756,15 +2756,17 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 ImGui.EndTooltip ()
             ImGui.SameLine ()
             ImGui.Text "|"
+
+            // overlay mode
             ImGui.SameLine ()
             ImGui.Text "Overlay Mode"
             ImGui.SameLine ()
-            let mutable captureMode = ViewMode.IsCaptureMode
-            if ImGui.Checkbox ("##captureMode", &captureMode) then
-                setViewMode (if captureMode then FreeMode else NormalMode) world
+            ImGui.Checkbox ("##overlayMode", &OverlayMode) |> ignore<bool>
             if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                ImGui.Text "Toggle capture mode view (F10 to toggle)."
+                ImGui.Text "Toggle overlay mode (F12 to toggle)."
                 ImGui.EndTooltip ()
+
+            // free mode
             ImGui.SameLine ()
             ImGui.Text "Free Mode"
             ImGui.SameLine ()
@@ -2774,13 +2776,18 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                 ImGui.Text "Toggle free mode (F11 to toggle)."
                 ImGui.EndTooltip ()
+
+            // capture mode
             ImGui.SameLine ()
             ImGui.Text "Capture Mode"
             ImGui.SameLine ()
-            ImGui.Checkbox ("##overlayMode", &OverlayMode) |> ignore<bool>
+            let mutable captureMode = ViewMode.IsCaptureMode
+            if ImGui.Checkbox ("##captureMode", &captureMode) then
+                setViewMode (if captureMode then FreeMode else NormalMode) world
             if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                ImGui.Text "Toggle overlay mode (F12 to toggle)."
+                ImGui.Text "Toggle capture mode view (F10 to toggle)."
                 ImGui.EndTooltip ()
+
         ImGui.End ()
 
     let private imGuiHierarchyWindow world =
