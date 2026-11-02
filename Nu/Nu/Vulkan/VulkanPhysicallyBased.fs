@@ -4475,6 +4475,7 @@ module PhysicallyBased =
         (ssvfIntensity : single)
         (ssvfSteps : int)
         (ssvfAsymmetry : single)
+        (shadowNear : single)
         (depthTexture : Texture)
         (shadowTextureArray : Texture)
         (shadowMaps : Texture array)
@@ -4531,6 +4532,8 @@ module PhysicallyBased =
                 lighting.ssvfIntensity <- ssvfIntensity
                 lighting.ssvfSteps <- ssvfSteps
                 lighting.ssvfAsymmetry <- ssvfAsymmetry
+                lighting.shadowNear <- shadowNear
+                lighting.shadowCascadeSplitLambda <- Constants.Render.ShadowCascadeSplitLambda
                 VulkanBuffer.uploadValue lighting pipeline.Lighting3dUniform context
                 Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.Lighting3dUniform vkSet
 
