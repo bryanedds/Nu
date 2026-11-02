@@ -317,7 +317,7 @@ module WorldScreenModule =
                 | None -> screenState
 
             // add the screen's state to the world
-            let screen = Screen (ntoa screenState.Name)
+            let screen = Game.Handle / screenState.Name
             World.addScreen true screenState screen world
             
             // read the screen's groups
