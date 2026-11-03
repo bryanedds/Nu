@@ -1,7 +1,7 @@
 #version 450 core
 
 const float PI = 3.141592654;
-const float REFLECTION_LOD_MAX = 7.0;
+const float REFLECTION_LOD_MAX = 6.0;
 const float GAMMA = 2.2;
 const float ATTENUATION_CONSTANT = 1.0f;
 const float ENVIRONMENT_FILTER_REFRACTED_SATURATION = 2.0;
