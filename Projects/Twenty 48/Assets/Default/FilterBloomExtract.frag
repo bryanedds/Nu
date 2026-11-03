@@ -1,7 +1,5 @@
 #version 450 core
 
-const float BLOOM_KNEE = ; // half the width of the soft knee about the threshold, relative to the threshold
-
 struct BloomExtractStruct
 {
     float threshold;
