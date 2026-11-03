@@ -1,7 +1,7 @@
 #version 450 core
 
 const float PI = 3.141592654;
-const float REFLECTION_LOD_MAX = 7.0;
+const float REFLECTION_LOD_MAX = 6.0;
 const int LIGHT_MAPS_MAX = 26;
 
 struct Eye3dStruct
