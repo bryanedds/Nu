@@ -19,5 +19,5 @@ void main()
 {
     vec3 bloomBlurColor = texture(sampler2D(bloomFilterTexture, filteredSampler), texCoords).rgb;
     vec3 sceneColor = texture(sampler2D(compositionTexture, filteredSampler), texCoords).rgb;
-    frag = vec4(mix(sceneColor, bloomBlurColor, bloomApply.strength), 0.0);
+    frag = vec4(sceneColor + bloomBlurColor * bloomApply.strength, 0.0);
 }
