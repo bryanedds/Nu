@@ -111,6 +111,27 @@ type RendererProcess =
         abstract Terminate : unit -> unit
         end
 
+/// The stub implementation of RendererProcess, for running headless, as in tests. It renders nothing, discarding
+/// whatever it's given.
+type RendererStub () =
+
+    interface RendererProcess with
+        member rendererProcess.Renderer3dConfig = Renderer3dConfig.defaultConfig
+        member rendererProcess.Start _ _ _ _ = ()
+        member rendererProcess.TryGetImGuiTextureId _ = ValueNone
+        member rendererProcess.EnqueueMessage3d _ = ()
+        member rendererProcess.RenderStaticModelFast (_, _, _, _, _, _, _, _, _) = ()
+        member rendererProcess.RenderStaticModelSurfaceFast (_, _, _, _, _, _, _, _, _, _) = ()
+        member rendererProcess.RenderAnimatedModelFast (_, _, _, _, _, _, _, _, _, _, _, _) = ()
+        member rendererProcess.RenderAnimatedModelSurfaceFast (_, _, _, _, _, _, _, _, _, _, _, _) = ()
+        member rendererProcess.EnqueueMessage2d _ = ()
+        member rendererProcess.RenderLayeredSpriteFast (_, _, _, _, _, _, _, _, _, _, _, _, _, _) = ()
+        member rendererProcess.EnqueueMessageImGui _ = ()
+        member rendererProcess.SubmitMessages _ _ _ _ _ _ _ _ _ _ _ _ = ()
+        member rendererProcess.RequestSwap () = ()
+        member rendererProcess.TryCreateVkSurface _ _ = None
+        member rendererProcess.Terminate () = ()
+
 /// A non-threaded render process.
 type RendererInline (windowProperties) =
 

@@ -508,8 +508,37 @@ module WorldModule4 =
             // fin
             world
 
+        /// Make the facets and dispatchers a plugin brings from its assembly and those it references.
+        static member private makePluginLateBindings (plugin : NuPlugin) =
+            let pluginAssemblyNamePredicate =
+                fun (assemblyName : AssemblyName) ->
+                    not (assemblyName.Name.StartsWith "System.") && // OPTIMIZATION: skip known irrelevant assemblies.
+                    not (assemblyName.Name.StartsWith "FSharp.") &&
+                    not (assemblyName.Name.StartsWith "Prime.") &&
+                    not (assemblyName.Name.StartsWith "Nu.") &&
+                    assemblyName.Name <> "Prime" &&
+                    assemblyName.Name <> "Nu" &&
+                    assemblyName.Name <> "netstandard" &&
+                    not (assemblyName.Name.StartsWith "ppy.SDL3")
+            let pluginAssembly = plugin.GetType().Assembly
+            let pluginAssembliesReferenced = Reflection.loadReferencedAssembliesTransitively pluginAssemblyNamePredicate pluginAssembly
+            let pluginAssemblies = Array.cons pluginAssembly pluginAssembliesReferenced
+            (plugin.Birth<Facet> pluginAssemblies,
+             plugin.Birth<EntityDispatcher> pluginAssemblies,
+             plugin.Birth<GroupDispatcher> pluginAssemblies,
+             plugin.Birth<ScreenDispatcher> pluginAssemblies,
+             plugin.Birth<GameDispatcher> pluginAssemblies)
+
         /// Make a world with stub dependencies.
         static member makeStub tryMakeEditContext worldConfig (plugin : NuPlugin) =
+
+            // initialize metadata and load initial packages where their assets can be found, so a game's content can
+            // refer to them as it would with a window
+            let assetGraph = AssetGraph.makeFromFileOpt Assets.Global.AssetGraphFilePath
+            let initialPackages = Assets.Default.PackageName :: plugin.InitialPackages
+            Metadata.init assetGraph
+            for package in initialPackages do
+                Metadata.loadMetadataPackage package
 
             // make the world's event delegate
             let eventGraph =
@@ -519,6 +548,10 @@ module WorldModule4 =
                 let globalSimulantGeneralized = { GsgAddress = atoa Game.GameAddress }
                 let eventConfig = if worldConfig.Imperative then Imperative else Functional
                 EventGraph.make eventTracerOpt eventFilter globalSimulantGeneralized eventConfig
+
+            // make the plug-in's facets and dispatchers, so a game's own simulants can run headless
+            let (pluginFacets, pluginEntityDispatchers, pluginGroupDispatchers, pluginScreenDispatchers, pluginGameDispatchers) =
+                World.makePluginLateBindings plugin
 
             // make the default game dispatcher
             let defaultGameDispatcher = World.makeDefaultGameDispatcher ()
@@ -532,18 +565,24 @@ module WorldModule4 =
 
             // make the world's late-bindings instances
             let lateBindingsInstances =
-                { Facets = World.makeDefaultFacets ()
-                  EntityDispatchers = World.makeDefaultEntityDispatchers ()
-                  GroupDispatchers = World.makeDefaultGroupDispatchers ()
-                  ScreenDispatchers = World.makeDefaultScreenDispatchers ()
-                  GameDispatchers = Map.ofList [defaultGameDispatcher] }
+                { Facets = Map.addMany pluginFacets (World.makeDefaultFacets ())
+                  EntityDispatchers = Map.addMany pluginEntityDispatchers (World.makeDefaultEntityDispatchers ())
+                  GroupDispatchers = Map.addMany pluginGroupDispatchers (World.makeDefaultGroupDispatchers ())
+                  ScreenDispatchers = Map.addMany pluginScreenDispatchers (World.makeDefaultScreenDispatchers ())
+                  GameDispatchers = Map.addMany pluginGameDispatchers (Map.ofList [defaultGameDispatcher]) }
+
+            // get the first game dispatcher
+            let activeGameDispatcher =
+                match Array.tryHead pluginGameDispatchers with
+                | Some (_, dispatcher) -> dispatcher
+                | None -> snd defaultGameDispatcher
 
             // make the world's subsystems
             let imGui = ImGui (true, windowViewport.Bounds.Size)
             let physicsEngine2d = StubPhysicsEngine.make ()
             let physicsEngine3d = StubPhysicsEngine.make ()
-            let rendererProcess = RendererInline WindowProperties.empty :> RendererProcess
-            rendererProcess.Start imGui.Fonts None geometryViewport windowViewport // params implicate stub renderers
+            let rendererProcess = RendererStub () :> RendererProcess
+            rendererProcess.Start imGui.Fonts None geometryViewport windowViewport
             let audioPlayer = StubAudioPlayer.make ()
             let cursorClient = StubCursorClient.make ()
 
@@ -555,7 +594,10 @@ module WorldModule4 =
             let world =
                 World.makePlus
                     tryMakeEditContext plugin eventGraph jobGraph geometryViewport windowViewport lateBindingsInstances quadtree octree worldConfig None
-                    imGui physicsEngine2d physicsEngine3d None rendererProcess audioPlayer cursorClient (snd defaultGameDispatcher)
+                    imGui physicsEngine2d physicsEngine3d None rendererProcess audioPlayer cursorClient activeGameDispatcher
+
+            // initialize plugin
+            world.WorldExtension.Plugin.Init world
 
             // register the game
             World.registerGame Game world
@@ -595,27 +637,9 @@ module WorldModule4 =
                 let eventConfig = if config.Imperative then Imperative else Functional
                 EventGraph.make eventTracerOpt eventFilter globalSimulantGeneralized eventConfig
 
-            // collect plugin assemblies
-            let pluginAssemblyNamePredicate =
-                fun (assemblyName : AssemblyName) ->
-                    not (assemblyName.Name.StartsWith "System.") && // OPTIMIZATION: skip known irrelevant assemblies.
-                    not (assemblyName.Name.StartsWith "FSharp.") &&
-                    not (assemblyName.Name.StartsWith "Prime.") &&
-                    not (assemblyName.Name.StartsWith "Nu.") &&
-                    assemblyName.Name <> "Prime" &&
-                    assemblyName.Name <> "Nu" &&
-                    assemblyName.Name <> "netstandard" &&
-                    not (assemblyName.Name.StartsWith "ppy.SDL3")
-            let pluginAssembly = plugin.GetType().Assembly
-            let pluginAssembliesReferenced = Reflection.loadReferencedAssembliesTransitively pluginAssemblyNamePredicate pluginAssembly
-            let pluginAssemblies = Array.cons pluginAssembly pluginAssembliesReferenced
-
             // make plug-in facets and dispatchers
-            let pluginFacets = plugin.Birth<Facet> pluginAssemblies
-            let pluginEntityDispatchers = plugin.Birth<EntityDispatcher> pluginAssemblies
-            let pluginGroupDispatchers = plugin.Birth<GroupDispatcher> pluginAssemblies
-            let pluginScreenDispatchers = plugin.Birth<ScreenDispatcher> pluginAssemblies
-            let pluginGameDispatchers = plugin.Birth<GameDispatcher> pluginAssemblies
+            let (pluginFacets, pluginEntityDispatchers, pluginGroupDispatchers, pluginScreenDispatchers, pluginGameDispatchers) =
+                World.makePluginLateBindings plugin
 
             // make the default game dispatcher
             let defaultGameDispatcher =
