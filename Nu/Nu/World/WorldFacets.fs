@@ -2672,9 +2672,16 @@ type LayoutFacet () =
             | _ -> Log.warnOnce "Layouts are not supported for uncentered entities."
 
     static let performLayoutPlus (entity : Entity) world =
+
+        // a flowing layout's placements depend on its children's sizes, so when a child's size or order changes, every
+        // flowing layout it's nested in must be performed again - innermost first, so each outer layout sees its
+        // children as the inner layouts leave them. Performing only the outermost would leave any flowing layout
+        // nested inside it with its children where it first placed them, as at their default sizes before their real
+        // sizes arrived.
         let mutable top = entity
-        let mutable currentOpt = Some top
-        while currentOpt.IsSome do
+        let mutable climbing = true
+        let mutable climbed = false
+        while climbing do
             match top.GetMountOpt world with
             | Some mount ->
                 let mountAddress = Address.resolve mount top.EntityAddress
@@ -2683,12 +2690,15 @@ type LayoutFacet () =
                     if  mountee.GetExists world &&
                         mountee.Has<LayoutFacet> world then
                         match mountee.GetLayout world with
-                        | Flow _ | Grid (_, Some _, _) -> top <- mountee; currentOpt <- Some top
-                        | Dock _ | Grid (_, None, _) | Manual -> currentOpt <- None
-                    else currentOpt <- None
-                else currentOpt <- None
-            | None -> currentOpt <- None
-        performLayout top world
+                        | Flow _ | Grid (_, Some _, _) ->
+                            performLayout mountee world
+                            top <- mountee
+                            climbed <- true
+                        | Dock _ | Grid (_, None, _) | Manual -> climbing <- false
+                    else climbing <- false
+                else climbing <- false
+            | None -> climbing <- false
+        if not climbed then performLayout entity world
 
     static let handleLayout evt world =
         let entity = evt.Subscriber : Entity
@@ -2701,24 +2711,32 @@ type LayoutFacet () =
         Cascade
 
     static let handleMount evt world =
+
+        // re-perform layout whenever the mounter's place in it changes - these subscriptions must be made now, applied
+        // to the world, so they're in effect from the mounting on, and undone on unmounting
         let entity = evt.Subscriber : Entity
         let mounter = evt.Data.Mounter
-        let orderChangeUnsub = World.sensePlus (fun _ world -> performLayout entity world; Cascade) (Entity.Order.ChangeEvent --> mounter) entity (nameof LayoutFacet)
-        let layoutOrderChangeUnsub = World.sensePlus (fun _ world -> performLayout entity world; Cascade) (Entity.LayoutOrder.ChangeEvent --> mounter) entity (nameof LayoutFacet)
-        let dockTypeChangeUnsub = World.sensePlus (fun _ world -> performLayout entity world; Cascade) (Entity.DockType.ChangeEvent --> mounter) entity (nameof LayoutFacet)
-        let gridPositionChangeUnsub = World.sensePlus (fun _ world -> performLayout entity world; Cascade) (Entity.GridPosition.ChangeEvent --> mounter) entity (nameof LayoutFacet)
-        World.sense (fun evt world ->
-            if evt.Data.Mounter = mounter then
-                orderChangeUnsub world |> ignore<World -> unit>
-                layoutOrderChangeUnsub world |> ignore<World -> unit>
-                dockTypeChangeUnsub world |> ignore<World -> unit>
-                gridPositionChangeUnsub world |> ignore<World -> unit>
-                performLayout entity world
-            Cascade)
-            entity.UnmountEvent
-            entity
-            (nameof LayoutFacet)
-            world
+        let orderChangeUnsub = World.sensePlus (fun _ world -> performLayout entity world; Cascade) (Entity.Order.ChangeEvent --> mounter) entity (nameof LayoutFacet) world
+        let layoutOrderChangeUnsub = World.sensePlus (fun _ world -> performLayout entity world; Cascade) (Entity.LayoutOrder.ChangeEvent --> mounter) entity (nameof LayoutFacet) world
+        let dockTypeChangeUnsub = World.sensePlus (fun _ world -> performLayout entity world; Cascade) (Entity.DockType.ChangeEvent --> mounter) entity (nameof LayoutFacet) world
+        let gridPositionChangeUnsub = World.sensePlus (fun _ world -> performLayout entity world; Cascade) (Entity.GridPosition.ChangeEvent --> mounter) entity (nameof LayoutFacet) world
+
+        // on the mounter's unmounting, undo all of that, this subscription included, so none pile up on the layout
+        let unmountUnsub = ref ignore<World>
+        unmountUnsub.Value <-
+            World.sensePlus (fun evt world ->
+                if evt.Data.Mounter = mounter then
+                    orderChangeUnsub world
+                    layoutOrderChangeUnsub world
+                    dockTypeChangeUnsub world
+                    gridPositionChangeUnsub world
+                    unmountUnsub.Value world
+                    performLayout entity world
+                Cascade)
+                entity.UnmountEvent
+                entity
+                (nameof LayoutFacet)
+                world
         performLayout entity world
         Cascade
 
