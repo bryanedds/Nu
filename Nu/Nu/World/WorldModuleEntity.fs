@@ -2370,13 +2370,8 @@ module WorldModuleEntity =
 
             // propagate properties
             match Option.bind (flip tryResolve entity) (World.getEntityMountOpt entity world) with
-            | Some mount ->
-                // NOTE: this results in an n^2 application of propagation, which might need to be optimized by
-                // creating a new function that only propagates from the mount to this individual entity.
-                World.propagateEntityAffineMatrix mount world
-                World.propagateEntityElevation mount world
-                World.propagateEntityEnabled mount world
-                World.propagateEntityVisible mount world
+            | Some _ ->
+                World.propagateEntityProperties3 (World.getEntityMountOpt entity world) entity world
             | None when World.getEntityMounted entity world ->
                 World.propagateEntityAffineMatrix entity world
                 World.propagateEntityElevation entity world
