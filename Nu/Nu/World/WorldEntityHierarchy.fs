@@ -242,11 +242,7 @@ module WorldEntityHierarchyExtensions =
                                 let navShape = entity.GetNavShape world
                                 let bodyShape = entity.GetBodyShape world
                                 frozenShapes.Add (entityBounds, affineMatrix, staticModel, surfaceIndex, navShape, affine, bodyShape)
-                        elif
-                            entity.Has<StaticModelFacet> world &&
-                            (match Metadata.tryGetStaticModelMetadata (entity.GetStaticModel world) with
-                             | ValueSome metadata -> metadata.LightProbes.Length = 0 && metadata.Lights.Length = 0
-                             | ValueNone -> false) then
+                        else
                             let mutable transform = entity.GetTransform world
                             let castShadow = transform.CastShadow
                             let affineMatrix = transform.AffineMatrix
