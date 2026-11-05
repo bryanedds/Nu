@@ -2395,12 +2395,27 @@ module WorldModuleEntity =
 
         /// Change the dispatcher of the given entity.
         static member changeEntityDispatcher dispatcherName entity world =
+
+            // attempt to change the dispatcher only if it is different than the current one
             let dispatcherNameCurrent = getTypeName (World.getEntityDispatcher entity world)
             if dispatcherNameCurrent <> dispatcherName then
+
+                // attempt to change the dispatcher only if the new dispatcher exists
                 let dispatchers = World.getEntityDispatchers world
                 if dispatchers.ContainsKey dispatcherName then
+
+                    // write entity with updated dispatcher
                     let entityDescriptor = World.writeEntity true true EntityDescriptor.empty entity world
                     let entityDescriptor = { entityDescriptor with EntityDispatcherName = dispatcherName }
+
+                    // keep the entity's mount, which isn't written when it matches the old dispatcher's default and so
+                    // would otherwise become the new dispatcher's default, leaving the entity's propagated properties
+                    // stale
+                    let mountOptSymbol = valueToSymbol (World.getEntityMountOpt entity world)
+                    let entityProperties = Map.add Constants.Engine.MountOptPropertyName mountOptSymbol entityDescriptor.EntityProperties
+                    let entityDescriptor = { entityDescriptor with EntityProperties = entityProperties }
+
+                    // recreate
                     World.destroyEntityImmediate entity world
                     World.readEntity true true entityDescriptor (Some entity.Name) entity.Parent world |> ignore<Entity>
 
