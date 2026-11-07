@@ -436,10 +436,13 @@ module WorldModule4 =
             for (simulant, _) in world.Simulants do
                 World.trySynchronize initializing true simulant world
 
-        /// Make the world.
+        /// Make the world from its subsystems, its facets and dispatchers and its active game dispatcher (as made by
+        /// World.makeLateBindings), then initialize the plugin, create the plugin's user-defined 2d and 3d pipelines, and
+        /// register the game. Given a window size, the window is resized to it first if it isn't already that size, as on
+        /// mobile or a display smaller than the configured scale asks - give none for a world without a window.
         static member makePlus
             tryMakeEditContext plugin eventGraph jobGraph geometryViewport windowViewport lateBindingsInstances quadtree octree worldConfig sdlDepsOpt
-            imGui physicsEngine2d physicsEngine3d rendererPhysics3dOpt rendererProcess audioPlayer cursorClient activeGameDispatcher =
+            imGui physicsEngine2d physicsEngine3d rendererPhysics3dOpt rendererProcess audioPlayer cursorClient activeGameDispatcher windowSizeOpt =
 
             // ensure we haven't forgot to initialize Nu!
             Nu.init ()
@@ -505,11 +508,37 @@ module WorldModule4 =
             // initialize world debugging reference
             WorldTypes.WorldForDebug <- world
 
+            // synchronize window size with actual size, e.g. fullscreen for mobile or a display with size smaller than
+            // the configured DisplayScalar
+            match windowSizeOpt with
+            | Some windowSize ->
+                if World.getWindowSizeOtherwiseViewportSize world <> windowSize then
+                    World.processWindowResize world
+            | None -> ()
+
+            // initialize plugin
+            world.WorldExtension.Plugin.Init world
+
+            // initialize 2D pipelines
+            for descriptor in world.WorldExtension.Plugin.UserDefinedPipeline2dDescriptors.Values do
+                World.enqueueRenderMessage2d (CreateUserDefinedPipeline2d { Pipeline2dDescriptor = descriptor }) world
+
+            // initialize 3D pipelines
+            for descriptor in world.WorldExtension.Plugin.UserDefinedPipeline3dDescriptors.Values do
+                World.enqueueRenderMessage3d (CreateUserDefinedPipeline3d { Pipeline3dDescriptor = descriptor }) world
+
+            // register the game
+            World.registerGame Game world
+
             // fin
             world
 
-        /// Make the facets and dispatchers a plugin brings from its assembly and those it references.
-        static member private makePluginLateBindings (plugin : NuPlugin) =
+        /// Make the world's facets and dispatchers - Nu's own and those a plugin brings from its assembly and those it
+        /// references - and pick the active game dispatcher, the plugin's first if it has one, else Nu's default. These are
+        /// the late-bindings instances and active game dispatcher World.makePlus takes.
+        static member makeLateBindings (plugin : NuPlugin) =
+            
+            // make plugin late-bindings
             let pluginAssemblyNamePredicate =
                 fun (assemblyName : AssemblyName) ->
                     not (assemblyName.Name.StartsWith "System.") && // OPTIMIZATION: skip known irrelevant assemblies.
@@ -523,11 +552,29 @@ module WorldModule4 =
             let pluginAssembly = plugin.GetType().Assembly
             let pluginAssembliesReferenced = Reflection.loadReferencedAssembliesTransitively pluginAssemblyNamePredicate pluginAssembly
             let pluginAssemblies = Array.cons pluginAssembly pluginAssembliesReferenced
-            (plugin.Birth<Facet> pluginAssemblies,
-             plugin.Birth<EntityDispatcher> pluginAssemblies,
-             plugin.Birth<GroupDispatcher> pluginAssemblies,
-             plugin.Birth<ScreenDispatcher> pluginAssemblies,
-             plugin.Birth<GameDispatcher> pluginAssemblies)
+            let pluginFacets = plugin.Birth<Facet> pluginAssemblies
+            let pluginEntityDispatchers = plugin.Birth<EntityDispatcher> pluginAssemblies
+            let pluginGroupDispatchers = plugin.Birth<GroupDispatcher> pluginAssemblies
+            let pluginScreenDispatchers = plugin.Birth<ScreenDispatcher> pluginAssemblies
+            let pluginGameDispatchers = plugin.Birth<GameDispatcher> pluginAssemblies
+
+            // combine plugin late-bindings with Nu's own late-bindings
+            let defaultGameDispatcher = World.makeDefaultGameDispatcher ()
+            let lateBindingsInstances =
+                { Facets = Map.addMany pluginFacets (World.makeDefaultFacets ())
+                  EntityDispatchers = Map.addMany pluginEntityDispatchers (World.makeDefaultEntityDispatchers ())
+                  GroupDispatchers = Map.addMany pluginGroupDispatchers (World.makeDefaultGroupDispatchers ())
+                  ScreenDispatchers = Map.addMany pluginScreenDispatchers (World.makeDefaultScreenDispatchers ())
+                  GameDispatchers = Map.addMany pluginGameDispatchers (Map.ofList [defaultGameDispatcher]) }
+
+            // pick the active game dispatcher
+            let activeGameDispatcher =
+                match Array.tryHead pluginGameDispatchers with
+                | Some (_, dispatcher) -> dispatcher
+                | None -> snd defaultGameDispatcher
+
+            // fin
+            (lateBindingsInstances, activeGameDispatcher)
 
         /// Make a world with stub dependencies.
         static member makeStub tryMakeEditContext worldConfig (plugin : NuPlugin) =
@@ -549,12 +596,9 @@ module WorldModule4 =
                 let eventConfig = if worldConfig.Imperative then Imperative else Functional
                 EventGraph.make eventTracerOpt eventFilter globalSimulantGeneralized eventConfig
 
-            // make the plug-in's facets and dispatchers, so a game's own simulants can run headless
-            let (pluginFacets, pluginEntityDispatchers, pluginGroupDispatchers, pluginScreenDispatchers, pluginGameDispatchers) =
-                World.makePluginLateBindings plugin
-
-            // make the default game dispatcher
-            let defaultGameDispatcher = World.makeDefaultGameDispatcher ()
+            // make the world's facets and dispatchers, the plug-in's among them so a game's own simulants can run
+            // headless, and pick the active game dispatcher
+            let (lateBindingsInstances, activeGameDispatcher) = World.makeLateBindings plugin
 
             // make the default job graph
             let jobGraph = JobGraphInline ()
@@ -562,20 +606,6 @@ module WorldModule4 =
             // make the default viewports
             let windowViewport = Viewport.makeWindow1 Constants.Render.DisplayVirtualResolution
             let geometryViewport = Viewport.makeGeometry windowViewport.Bounds.Size
-
-            // make the world's late-bindings instances
-            let lateBindingsInstances =
-                { Facets = Map.addMany pluginFacets (World.makeDefaultFacets ())
-                  EntityDispatchers = Map.addMany pluginEntityDispatchers (World.makeDefaultEntityDispatchers ())
-                  GroupDispatchers = Map.addMany pluginGroupDispatchers (World.makeDefaultGroupDispatchers ())
-                  ScreenDispatchers = Map.addMany pluginScreenDispatchers (World.makeDefaultScreenDispatchers ())
-                  GameDispatchers = Map.addMany pluginGameDispatchers (Map.ofList [defaultGameDispatcher]) }
-
-            // get the first game dispatcher
-            let activeGameDispatcher =
-                match Array.tryHead pluginGameDispatchers with
-                | Some (_, dispatcher) -> dispatcher
-                | None -> snd defaultGameDispatcher
 
             // make the world's subsystems
             let imGui = ImGui (true, windowViewport.Bounds.Size)
@@ -591,19 +621,9 @@ module WorldModule4 =
             let octree = Octree.make Constants.Engine.OctreeDepth Constants.Engine.OctreeSize
 
             // make the world
-            let world =
-                World.makePlus
-                    tryMakeEditContext plugin eventGraph jobGraph geometryViewport windowViewport lateBindingsInstances quadtree octree worldConfig None
-                    imGui physicsEngine2d physicsEngine3d None rendererProcess audioPlayer cursorClient activeGameDispatcher
-
-            // initialize plugin
-            world.WorldExtension.Plugin.Init world
-
-            // register the game
-            World.registerGame Game world
-
-            // fin
-            world
+            World.makePlus
+                tryMakeEditContext plugin eventGraph jobGraph geometryViewport windowViewport lateBindingsInstances quadtree octree worldConfig None
+                imGui physicsEngine2d physicsEngine3d None rendererProcess audioPlayer cursorClient activeGameDispatcher None
 
         /// Make the world with the given SDL dependencies.
         static member make tryMakeEditContext sdlDeps config windowSize geometryViewport (windowViewport : Viewport) (plugin : NuPlugin) =
@@ -637,33 +657,14 @@ module WorldModule4 =
                 let eventConfig = if config.Imperative then Imperative else Functional
                 EventGraph.make eventTracerOpt eventFilter globalSimulantGeneralized eventConfig
 
-            // make plug-in facets and dispatchers
-            let (pluginFacets, pluginEntityDispatchers, pluginGroupDispatchers, pluginScreenDispatchers, pluginGameDispatchers) =
-                World.makePluginLateBindings plugin
-
-            // make the default game dispatcher
-            let defaultGameDispatcher =
-                World.makeDefaultGameDispatcher ()
+            // make the world's facets and dispatchers, and pick the active game dispatcher
+            let (lateBindingsInstances, activeGameDispatcher) = World.makeLateBindings plugin
 
             // make the job graph
             let jobGraph =
                 if Constants.Engine.RunSynchronously
                 then JobGraphInline () :> JobGraph
                 else JobGraphParallel (TimeSpan.FromSeconds 0.5) :> JobGraph
-
-            // make the world's late-bindings instances
-            let lateBindingsInstances =
-                { Facets = Map.addMany pluginFacets (World.makeDefaultFacets ())
-                  EntityDispatchers = Map.addMany pluginEntityDispatchers (World.makeDefaultEntityDispatchers ())
-                  GroupDispatchers = Map.addMany pluginGroupDispatchers (World.makeDefaultGroupDispatchers ())
-                  ScreenDispatchers = Map.addMany pluginScreenDispatchers (World.makeDefaultScreenDispatchers ())
-                  GameDispatchers = Map.addMany pluginGameDispatchers (Map.ofList [defaultGameDispatcher]) }
-
-            // get the first game dispatcher
-            let activeGameDispatcher =
-                match Array.tryHead pluginGameDispatchers with
-                | Some (_, dispatcher) -> dispatcher
-                | None -> GameDispatcher ()
 
             // make the world's subsystems, loading initial packages where applicable
             let imGui = ImGui (false, windowViewport.Bounds.Size)
@@ -694,30 +695,9 @@ module WorldModule4 =
             let octree = Octree.make Constants.Engine.OctreeDepth Constants.Engine.OctreeSize
 
             // make the world record
-            let world =
-                World.makePlus
-                    tryMakeEditContext plugin eventGraph jobGraph geometryViewport windowViewport lateBindingsInstances quadtree octree config (Some sdlDeps)
-                    imGui physicsEngine2d physicsEngine3d (Some joltDebugRendererImGuiOpt) rendererProcess audioPlayer cursorClient activeGameDispatcher
-
-            // synchronize window size with actual size, e.g. fullscreen for mobile or a display with size smaller than
-            // the configured DisplayScalar
-            if World.getWindowSizeOtherwiseViewportSize world <> windowSize then
-                World.processWindowResize world
-
-            // initialize plugin
-            world.WorldExtension.Plugin.Init world
-
-            // initialize 2D pipelines
-            for descriptor in world.WorldExtension.Plugin.UserDefinedPipeline2dDescriptors.Values do
-                World.enqueueRenderMessage2d (CreateUserDefinedPipeline2d { Pipeline2dDescriptor = descriptor }) world
-
-            // initialize 3D pipelines
-            for descriptor in world.WorldExtension.Plugin.UserDefinedPipeline3dDescriptors.Values do
-                World.enqueueRenderMessage3d (CreateUserDefinedPipeline3d { Pipeline3dDescriptor = descriptor }) world
-
-            // register the game
-            World.registerGame Game world
-            world
+            World.makePlus
+                tryMakeEditContext plugin eventGraph jobGraph geometryViewport windowViewport lateBindingsInstances quadtree octree config (Some sdlDeps)
+                imGui physicsEngine2d physicsEngine3d (Some joltDebugRendererImGuiOpt) rendererProcess audioPlayer cursorClient activeGameDispatcher (Some windowSize)
 
         /// Run the game engine, initializing dependencies as indicated by WorldConfig, and returning exit code upon
         /// termination.
