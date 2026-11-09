@@ -1966,7 +1966,7 @@ module WorldModuleEntity =
                         if value =/= previous then
                             changed <- true
                             if world.Imperative then
-                                propertyOld.PropertyType <- property.PropertyType
+                                propertyOld.PropertyType <- typeof<'a>
                                 propertyOld.PropertyValue <- value
                             else
                                 let property = { propertyOld with PropertyValue = value }
@@ -1977,7 +1977,7 @@ module WorldModuleEntity =
                     if value =/= previous then
                         changed <- true
                         if world.Imperative then
-                            propertyOld.PropertyType <- property.PropertyType
+                            propertyOld.PropertyType <- typeof<'a>
                             propertyOld.PropertyValue <- value
                         else
                             let property = { propertyOld with PropertyValue = value }
