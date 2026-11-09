@@ -16,7 +16,6 @@ module Assets =
         let BackgroundImage = asset<Image> PackageName "Background"
         let CapsuleImage = asset<Image> PackageName "Capsule"
         let GooImage = asset<Image> PackageName "Goo"
-        let LinkImage = asset<Image> PackageName "Link"
         let CarImage = asset<Image> PackageName "Car"
         let WheelImage = asset<Image> PackageName "Wheel"
         let BubbleImage = asset<Image> PackageName "Bubble"

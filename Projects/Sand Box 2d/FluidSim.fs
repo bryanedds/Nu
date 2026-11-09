@@ -101,8 +101,7 @@ type FluidSimDispatcher () =
 
     // here we define default property values
     static member Properties =
-        [define Screen.InfoOpened false
-         define Screen.LineSegments []
+        [define Screen.LineSegments []
          define Screen.MouseBubbleSize 0f
          define Screen.SelectedTool Water
          define Screen.Boxes FSet.empty]
@@ -112,7 +111,6 @@ type FluidSimDispatcher () =
 
         // clean up lines and gravity when initializing
         if FQueue.contains Select selectionResults then
-            fluidSim.SetInfoOpened false world
             fluidSim.SetLineSegments [] world
             fluidSim.SetMouseBubbleSize 0f world
             fluidSim.SetSelectedTool Water world
@@ -301,69 +299,6 @@ type FluidSimDispatcher () =
                 [Entity.Position .= v3 255f -130f 0f
                  Entity.Text .= "Switch Screen"
                  Entity.Elevation .= 1f] world |> ignore
-
-            // info button
-            if World.doButton "Info"
-                [Entity.Position .= v3 255f -160f 0f
-                 Entity.Text .= "Info"
-                 Entity.Elevation .= 1f] world then
-                fluidSim.SetInfoOpened true world
-
-            // info panel
-            if fluidSim.GetInfoOpened world then
-
-                // declare info background - block button interactions behind info panel while opened
-                World.doPanel "Info Background"
-                    [Entity.Size .= Constants.Render.DisplayVirtualResolution.V3
-                     Entity.Elevation .= 10f
-                     Entity.BackdropImageOpt .= Some Assets.Default.Black
-                     Entity.Color .= color 0f 0f 0f 0.5f] world
-
-                // being info panel declaration
-                World.beginPanel "Info Panel"
-                    [Entity.Size .= Constants.Render.DisplayVirtualResolution.V3 * 0.8f
-                     Entity.Layout .= Grid (v2i 1 5, Some FlowDownward, true)
-                     Entity.Elevation .= 10f] world
-
-                // declare info entities
-                World.doText "Info Origin 1"
-                    [Entity.LayoutOrder .= 0
-                     Entity.Text .= "Box2DFluid by klutch (Graeme Collins)"] world
-                World.doText "Info Origin 2"
-                    [Entity.LayoutOrder .= 1
-                     Entity.Text .= "Ported to Nu by Happypig375 (Hadrian Tang)"] world
-                World.doText "Info Controls"
-                    [Entity.LayoutOrder .= 2
-                     Entity.Justification .= Unjustified true // required for line breaks to render.
-                     Entity.Text .=
-                     "Controls: \n\
-                        Mouse Left - Click button / Use tool. \n\
-                        Mouse Right - Delete particles and boxes."
-                     Entity.FontSizing .= Some 9.5f
-                     Entity.TextMargin .= v2 5f 0f] world
-                if World.doButton "Info Close"
-                    [Entity.LayoutOrder .= 3
-                     Entity.Text .= "Close"] world then
-                    fluidSim.SetInfoOpened false world
-                if World.doButton "Info Exit"
-                    [Entity.LayoutOrder .= 4
-                     Entity.Text .= "Exit"] world && world.Unaccompanied then
-                    World.exit world
-
-                // end info panel declaration
-                World.endPanel world
-
-                // declare info links
-                for (position, size, url) in
-                    [(v2 -115f 115f, v2 95f 32f, "https://github.com/klutch/Box2DFluid")
-                     (v2 -12.5f 115f, v2 60f 32f, "https://github.com/klutch")
-                     (v2 -127.5f 57.5f, v2 115f 32f, "https://github.com/bryanedds/Nu/pull/1162")
-                     (v2 3.5f 57.5f, v2 105f 32f, "https://github.com/Happypig375")] do
-                    if World.doButton $"Info Origin Button {url.Replace ('/', '\\')}"
-                        [Entity.Position .= position.V3
-                         Entity.Size .= size.V3
-                         Entity.Elevation .= 11f] world then
-                        Process.Start (ProcessStartInfo (url, UseShellExecute = true)) |> ignore
                   
             // declare boxes
             let mousePosition = World.getMousePosition2dWorld false world
