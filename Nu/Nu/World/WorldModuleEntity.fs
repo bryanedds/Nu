@@ -1015,6 +1015,13 @@ module WorldModuleEntity =
 
                 // OPTIMIZATION: do updates and propagation in-place as much as possible.
                 if entityState.Optimized world.Imperative then
+                    let visibleInViewOld = entityState.VisibleInView
+                    let staticInPlayOld = entityState.StaticInPlay
+                    let lightProbeOld = entityState.LightProbe
+                    let lightOld = entityState.Light
+                    let presenceOld = entityState.Presence
+                    let presenceInPlayOld = entityState.PresenceInPlay
+                    let boundsOld = entityState.Bounds
                     entityState.PositionLocal <- value
                     let position =
                         match Option.bind (flip tryResolve entity) entityState.MountOpt with
@@ -1023,6 +1030,7 @@ module WorldModuleEntity =
                             value.Transform affineMatrix
                         | _ -> value
                     entityState.Position <- position
+                    World.updateEntityInEntityTree visibleInViewOld staticInPlayOld lightProbeOld lightOld presenceOld presenceInPlayOld boundsOld entity world
                     if entityState.Mounted then World.propagateEntityAffineMatrix entity world
                     true
 
@@ -1087,6 +1095,13 @@ module WorldModuleEntity =
                 // OPTIMIZATION: do updates and propagation in-place as much as possible.
                 let anglesLocal = value.RollPitchYaw
                 if entityState.Optimized world.Imperative then
+                    let visibleInViewOld = entityState.VisibleInView
+                    let staticInPlayOld = entityState.StaticInPlay
+                    let lightProbeOld = entityState.LightProbe
+                    let lightOld = entityState.Light
+                    let presenceOld = entityState.Presence
+                    let presenceInPlayOld = entityState.PresenceInPlay
+                    let boundsOld = entityState.Bounds
                     entityState.RotationLocal <- value
                     entityState.AnglesLocal <- anglesLocal
                     let rotation =
@@ -1096,6 +1111,7 @@ module WorldModuleEntity =
                             rotationLocal * value
                         | _ -> value
                     entityState.Rotation <- rotation
+                    World.updateEntityInEntityTree visibleInViewOld staticInPlayOld lightProbeOld lightOld presenceOld presenceInPlayOld boundsOld entity world
                     if entityState.Mounted then World.propagateEntityAffineMatrix entity world
                     true
 
@@ -1158,6 +1174,13 @@ module WorldModuleEntity =
 
                 // OPTIMIZATION: do updates and propagation in-place as much as possible.
                 if entityState.Optimized world.Imperative then
+                    let visibleInViewOld = entityState.VisibleInView
+                    let staticInPlayOld = entityState.StaticInPlay
+                    let lightProbeOld = entityState.LightProbe
+                    let lightOld = entityState.Light
+                    let presenceOld = entityState.Presence
+                    let presenceInPlayOld = entityState.PresenceInPlay
+                    let boundsOld = entityState.Bounds
                     entityState.ScaleLocal <- value
                     let scale =
                         match Option.bind (flip tryResolve entity) entityState.MountOpt with
@@ -1166,6 +1189,7 @@ module WorldModuleEntity =
                             value * scale
                         | _ -> value
                     entityState.Scale <- scale
+                    World.updateEntityInEntityTree visibleInViewOld staticInPlayOld lightProbeOld lightOld presenceOld presenceInPlayOld boundsOld entity world
                     if entityState.Mounted then World.propagateEntityAffineMatrix entity world
                     true
 
@@ -1257,6 +1281,13 @@ module WorldModuleEntity =
                 // OPTIMIZATION: do updates and propagation in-place as much as possible.
                 let rotationLocal = value.RollPitchYaw
                 if entityState.Optimized world.Imperative then
+                    let visibleInViewOld = entityState.VisibleInView
+                    let staticInPlayOld = entityState.StaticInPlay
+                    let lightProbeOld = entityState.LightProbe
+                    let lightOld = entityState.Light
+                    let presenceOld = entityState.Presence
+                    let presenceInPlayOld = entityState.PresenceInPlay
+                    let boundsOld = entityState.Bounds
                     entityState.RotationLocal <- rotationLocal
                     entityState.AnglesLocal <- value
                     let rotation =
@@ -1266,6 +1297,7 @@ module WorldModuleEntity =
                             rotationMount * rotationLocal
                         | _ -> rotationLocal
                     entityState.Rotation <- rotation
+                    World.updateEntityInEntityTree visibleInViewOld staticInPlayOld lightProbeOld lightOld presenceOld presenceInPlayOld boundsOld entity world
                     if entityState.Mounted then World.propagateEntityAffineMatrix entity world
                     true
 
