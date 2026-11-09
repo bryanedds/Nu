@@ -1891,7 +1891,7 @@ module WorldModuleEntity =
                             else
                                 match EntityState.trySetProperty propertyName property entityState with
                                 | struct (true, entityState) ->
-                                    if world.Functional then World.setEntityState entityState entity world
+                                    World.setEntityState entityState entity world
                                     struct (true, true, previous)
                                 | struct (false, _) -> struct (false, false, previous)
                         else struct (true, false, previous)
@@ -1905,7 +1905,7 @@ module WorldModuleEntity =
                         else
                             match EntityState.trySetProperty propertyName property entityState with
                             | struct (true, entityState) ->
-                                if world.Functional then World.setEntityState entityState entity world
+                                World.setEntityState entityState entity world
                                 struct (true, true, previous)
                             | struct (false, _) -> struct (false, false, previous)
                     else struct (true, false, previous)
@@ -1971,7 +1971,7 @@ module WorldModuleEntity =
                             else
                                 let property = { propertyOld with PropertyValue = value }
                                 let entityState = EntityState.setProperty propertyName property entityState
-                                if world.Functional then World.setEntityState entityState entity world
+                                World.setEntityState entityState entity world
                 else
                     previous <- propertyOld.PropertyValue
                     if value =/= previous then
@@ -1982,7 +1982,7 @@ module WorldModuleEntity =
                         else
                             let property = { propertyOld with PropertyValue = value }
                             let entityState = EntityState.setProperty propertyName property entityState
-                            if world.Functional then World.setEntityState entityState entity world
+                            World.setEntityState entityState entity world
                 if changed then World.publishEntityChange propertyName previous value entityState.PublishChangeEvents entity world
             else Log.warnOnce ("Setting non-existent Xtension property '" + propertyName + "'.")
 

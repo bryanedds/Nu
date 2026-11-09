@@ -1026,6 +1026,7 @@ module WorldModule2 =
             World.restoreTasklets taskletsNotRun world
 
         static member private processImSim (world : World) =
+            WorldImSim.Initializing <- false
             WorldImSim.Reinitializing <- false
             World.sweepSimulants world
 
