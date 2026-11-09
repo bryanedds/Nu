@@ -213,6 +213,7 @@ module WorldScreenModule =
             World.tryRemoveSimulantFromDestruction screen world
             EventGraph.cleanEventAddressCache screen.ScreenAddress
             if World.getScreenExists screen world then
+                if World.getSelectedScreenOpt world = Some screen then World.setSelectedScreenOpt None world
                 let groups = World.getGroups screen world
                 World.unregisterScreen screen world
                 World.removeTasklets screen world

@@ -1941,6 +1941,7 @@ module WorldModule2 =
 
         /// Clean up the resources held by the world.
         static member cleanUp (world : World) =
+            for screen in World.getScreens world do World.destroyScreen screen world
             world.WorldExtension.Plugin.CleanUp world
             world.WorldExtension.JobGraph.CleanUp ()
             World.unregisterGame Nu.Game.Handle world
