@@ -44,6 +44,7 @@ module Xtension =
     let trySetProperty name property xtension =
         let mutable propertyRef = Unchecked.defaultof<_>
         if xtension.Properties_.TryGetValue (name, &propertyRef) then
+            propertyRef.PropertyType <- property.PropertyType
             propertyRef.PropertyValue <- property.PropertyValue
             true
         else false

@@ -227,7 +227,9 @@ module WorldModuleGroup =
                     match property.PropertyValue with
                     | :? DesignerProperty as dp -> dp.DesignerType <- typeof<'a>; dp.DesignerValue <- valueObj
                     | :? ComputedProperty -> () // nothing to do
-                    | _ -> property.PropertyType <- typeof<'a>; property.PropertyValue <- valueObj
+                    | _ ->
+                        property.PropertyType <- typeof<'a>
+                        property.PropertyValue <- valueObj
                     Some valueObj
             else
                 let definitions = Reflection.getPropertyDefinitions (getType groupState.Dispatcher)

@@ -1001,6 +1001,7 @@ module WorldModule2 =
             World.restoreTasklets taskletsNotRun world
 
         static member private processImSim (world : World) =
+            WorldImSim.Initializing <- false
             WorldImSim.Reinitializing <- false
             World.sweepSimulants world
 
@@ -1918,6 +1919,7 @@ module WorldModule2 =
 
         /// Clean up the resources held by the world.
         static member cleanUp (world : World) =
+            for screen in World.getScreens world do World.destroyScreen screen world
             world.WorldExtension.Plugin.CleanUp world
             world.WorldExtension.JobGraph.CleanUp ()
             World.unregisterGame Nu.Game.Handle world

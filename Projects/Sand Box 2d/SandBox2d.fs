@@ -7,7 +7,6 @@ open Nu
 // this determines what state the game is in. To learn about ImSim in Nu, see -
 // https://github.com/bryanedds/Nu/wiki/Immediate-Mode-for-Games-via-ImSim
 type GameState =
-    | ToyBox
     | RaceCourse
     | FluidSim
 
@@ -25,23 +24,19 @@ type SandBox2dDispatcher () =
 
     // here we define default property values
     static member Properties =
-        [define Game.GameState ToyBox]
+        [define Game.GameState RaceCourse]
 
     // here we define the game's top-level behavior
     override this.Process (game, world) =
 
-        // declare toy box screen
-        let behavior = Dissolve (Constants.Dissolve.Default, None)
-        World.doScreen<ToyBoxDispatcher> Simulants.ToyBox.Name (game.GetGameState world = ToyBox) behavior [] world |> ignore
-        if World.doSubscriptionAny "SwitchScreen" Simulants.ToyBoxSwitchScreen.ClickEvent world then game.SetGameState RaceCourse world
-
         // declare race course screen
+        let behavior = Dissolve (Constants.Dissolve.Default, None)
         World.doScreen<RaceCourseDispatcher> Simulants.RaceCourse.Name (game.GetGameState world = RaceCourse) behavior [] world |> ignore
         if World.doSubscriptionAny "SwitchScreen" Simulants.RaceCourseSwitchScreen.ClickEvent world then game.SetGameState FluidSim world
         
         // declare fluid sim screen
         World.doScreen<FluidSimDispatcher> Simulants.FluidSim.Name (game.GetGameState world = FluidSim) behavior [] world |> ignore
-        if World.doSubscriptionAny "SwitchScreen" Simulants.FluidSimSwitchScreen.ClickEvent world then game.SetGameState ToyBox world
+        if World.doSubscriptionAny "SwitchScreen" Simulants.FluidSimSwitchScreen.ClickEvent world then game.SetGameState RaceCourse world
 
         // when not in editor, handle close window button or Alt+F4
         if world.Unaccompanied then

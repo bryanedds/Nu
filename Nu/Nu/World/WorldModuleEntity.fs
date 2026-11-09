@@ -1539,7 +1539,9 @@ module WorldModuleEntity =
                     match property.PropertyValue with
                     | :? DesignerProperty as dp -> dp.DesignerType <- typeof<'a>; dp.DesignerValue <- valueObj
                     | :? ComputedProperty -> () // nothing to do
-                    | _ -> property.PropertyType <- typeof<'a>; property.PropertyValue <- valueObj
+                    | _ ->
+                        property.PropertyType <- typeof<'a>
+                        property.PropertyValue <- valueObj
                     Some valueObj
             else
                 let valueObjOpt =
@@ -1610,12 +1612,14 @@ module WorldModuleEntity =
                     | _ ->
                         let previous = propertyOld.PropertyValue
                         if property.PropertyValue =/= previous then
+                            propertyOld.PropertyType <- property.PropertyType
                             propertyOld.PropertyValue <- property.PropertyValue
                             struct (true, true, previous)
                         else struct (true, false, previous)
                 else
                     let previous = propertyOld.PropertyValue
                     if property.PropertyValue =/= previous then
+                        propertyOld.PropertyType <- property.PropertyType
                         propertyOld.PropertyValue <- property.PropertyValue
                         struct (true, true, previous)
                     else struct (true, false, previous)
@@ -1672,11 +1676,13 @@ module WorldModuleEntity =
                         previous <- propertyOld.PropertyValue
                         if value =/= previous then
                             changed <- true
+                            propertyOld.PropertyType <- typeof<'a>
                             propertyOld.PropertyValue <- value
                 else
                     previous <- propertyOld.PropertyValue
                     if value =/= previous then
                         changed <- true
+                        propertyOld.PropertyType <- typeof<'a>
                         propertyOld.PropertyValue <- value
                 if changed then World.publishEntityChange propertyName previous value entityState.PublishChangeEvents entity world
             else Log.warnOnce ("Setting non-existent Xtension property '" + propertyName + "'.")
