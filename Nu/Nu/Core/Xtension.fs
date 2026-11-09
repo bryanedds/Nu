@@ -55,6 +55,7 @@ module Xtension =
         match UMap.tryGetValue (name, xtension.Properties_, &propertyRef) with
         | true ->
             if xtension.Imperative then
+                propertyRef.PropertyType <- property.PropertyType
                 propertyRef.PropertyValue <- property.PropertyValue
                 struct (true, xtension)
             else struct (true, { xtension with Properties_ = UMap.add name property xtension.Properties_ })
