@@ -364,8 +364,8 @@ module WorldModule =
 
         /// Launch a coroutine to be processed by the engine.
         static member launchCoroutine timeScaled pred coroutine (world : World) =
-            let time = if timeScaled then world.ScaledTime else world.UnscaledTime
-            AmbientState.addCoroutine (time, timeScaled, pred, coroutine) world.AmbientState
+            let gameTime = if timeScaled then world.ScaledTime else world.UnscaledTime
+            AmbientState.addCoroutine (gameTime, timeScaled, pred, coroutine) world.AmbientState
 
         static member internal getTasklets (world : World) =
             AmbientState.getTasklets world.AmbientState
@@ -420,8 +420,8 @@ module WorldModule =
         /// When called in an ImSim Process context, will provide the ImSim simulant context and declared values from
         /// World that were active in that Process context as well as time and advancement state.
         static member defer operation (simulant : Simulant) (world : World) =
-            let time = if WorldModuleInternal.EndFrameProcessingStarted && world.TimeAdvancing then GameTime.epsilon else GameTime.zero
-            World.schedule false time operation simulant world
+            let gameTime = if WorldModuleInternal.EndFrameProcessingStarted && world.TimeAdvancing then GameTime.epsilon else GameTime.zero
+            World.schedule false gameTime operation simulant world
 
         /// Attempt to get the window flags.
         static member tryGetWindowFlags world =
