@@ -125,7 +125,7 @@ and [<Struct; CustomEquality; CustomComparison; TypeConverter (typeof<GameTimeCo
     static member toUpdates time =
         match struct (Constants.GameTime.DesiredFrameRate, time) with
         | struct (_, UpdateTime time) -> time
-        | struct (DynamicFrameRate frameRate, TickTime time) -> int64 (double time / (1.0 / double frameRate))
+        | struct (DynamicFrameRate frameRate, TickTime time) -> int64 (double time / double Stopwatch.Frequency * double frameRate)
         | struct (_, _) -> failwith "Cannot apply operation to mixed GameTimes."
 
     /// Get the total amount of seconds assuming desired frame rate is met.

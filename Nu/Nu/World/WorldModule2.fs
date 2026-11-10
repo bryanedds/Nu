@@ -173,7 +173,7 @@ module WorldModule2 =
 
         static member private updateScreenIncoming transitionTime (selectedScreen : Screen) (world : World) =
             if world.Alive then
-                if transitionTime = world.GameTime then
+                if transitionTime = world.UnscaledTime then
                     let eventTrace = EventTrace.debug "World" "updateScreenIncoming" "IncomingStart" EventTrace.empty
                     World.publishPlus () selectedScreen.IncomingStartEvent eventTrace selectedScreen false false world
                     match (selectedScreen.GetIncoming world).SongOpt with
@@ -185,7 +185,7 @@ module WorldModule2 =
                 if world.Alive then
                     if World.updateScreenTransition3 Incoming selectedScreen world then
                         let eventTrace = EventTrace.debug "World" "updateScreenIncoming" "IncomingFinish" EventTrace.empty
-                        World.setScreenTransitionStatePlus (IdlingState world.GameTime) selectedScreen world
+                        World.setScreenTransitionStatePlus (IdlingState world.UnscaledTime) selectedScreen world
                         World.publishPlus () selectedScreen.IncomingFinishEvent eventTrace selectedScreen false false world
 
         static member internal updateScreenIdling transitionTime (selectedScreen : Screen) (world : World) =
@@ -204,13 +204,13 @@ module WorldModule2 =
                     // executing a series of slides). Additionally, to keep this hack's implementation self-contained,
                     // we use a special case to quick cut when halted in the editor.
                     if World.updateScreenIdling3 transitionTime slide selectedScreen world then
-                        let transitionTime = world.GameTime
+                        let transitionTime = world.UnscaledTime
                         World.setScreenTransitionStatePlus (OutgoingState transitionTime) selectedScreen world
                         World.updateScreenOutgoing transitionTime selectedScreen world
                 | None -> ()
 
         static member private updateScreenOutgoing transitionTime (selectedScreen : Screen) (world : World) =
-            if transitionTime = world.GameTime then
+            if transitionTime = world.UnscaledTime then
                 let incoming = selectedScreen.GetIncoming world
                 let outgoing = selectedScreen.GetOutgoing world
                 match outgoing.SongOpt with
@@ -237,7 +237,7 @@ module WorldModule2 =
                 World.publishPlus () selectedScreen.OutgoingStartEvent eventTrace selectedScreen false false world
             if world.Alive then
                 if World.updateScreenTransition3 Outgoing selectedScreen world then
-                    let transitionTime = world.GameTime
+                    let transitionTime = world.UnscaledTime
                     World.setScreenTransitionStatePlus (IdlingState transitionTime) selectedScreen world
                     World.updateScreenIdling transitionTime selectedScreen world
                     if world.Alive then
@@ -254,7 +254,7 @@ module WorldModule2 =
                         match destinationOpt with
                         | Some destination ->
                             if destination <> selectedScreen then
-                                let transitionTime = world.GameTime
+                                let transitionTime = world.UnscaledTime
                                 World.selectScreen (IncomingState transitionTime) destination world
                                 World.updateScreenIncoming transitionTime destination world
                         | None -> World.selectScreenOpt None world
@@ -299,14 +299,14 @@ module WorldModule2 =
             | Some selectedScreen ->
                 if  selectedScreen <> destination &&
                     not (World.getSelectedScreenTransitioning world) then
-                    let transitionTime = world.GameTime
+                    let transitionTime = world.UnscaledTime
                     World.setScreenTransitionDestinationOpt (Some destination) world
                     World.setScreenTransitionStatePlus (OutgoingState transitionTime) selectedScreen world
                     World.updateScreenOutgoing transitionTime selectedScreen world
                     true
                 else false
             | None ->
-                let transitionTime = world.GameTime
+                let transitionTime = world.UnscaledTime
                 World.setScreenTransitionStatePlus (IncomingState transitionTime) destination world
                 World.setSelectedScreen destination world
                 let eventTrace = EventTrace.debug "World" "selectScreen" "Select" EventTrace.empty
@@ -378,7 +378,7 @@ module WorldModule2 =
             if screen.GetExists world && select && not (Option.contains screen (World.getSelectedScreenOpt world)) then
                 if world.Accompanied && world.TimeHalted && not world.TimeAdvancementCleared then // special case to quick cut when time halted in the editor
                     World.defer (fun world ->
-                        let transitionTime = world.GameTime
+                        let transitionTime = world.UnscaledTime
                         World.selectScreen (IdlingState transitionTime) screen world
                         World.updateScreenIdling transitionTime screen world)
                         screen
@@ -981,14 +981,14 @@ module WorldModule2 =
             if world.TimeAdvancing then
                 let coroutines = World.getCoroutines world
                 let coroutinesRemaining =
-                    OMap.fold (fun coroutines id (scheduledTime, pred, coroutine) ->
+                    OMap.fold (fun coroutines id (scheduledTime, timeScaled, pred, coroutine) ->
                         if pred () then
-                            if scheduledTime <= world.GameTime then
+                            if scheduledTime <= (if timeScaled then world.ScaledTime else world.UnscaledTime) then
                                 match coroutine () with
                                 | Sleep (duration, continuation) ->
-                                    OMap.add id (scheduledTime + duration, pred, continuation) coroutines
+                                    OMap.add id (scheduledTime + duration, timeScaled, pred, continuation) coroutines
                                 | Cancel | Complete -> coroutines
-                            else OMap.add id (scheduledTime, pred, coroutine) coroutines
+                            else OMap.add id (scheduledTime, timeScaled, pred, coroutine) coroutines
                         else coroutines)
                         (OMap.makeEmpty (OMap.comparer coroutines) (OMap.config coroutines))
                         coroutines
@@ -997,10 +997,8 @@ module WorldModule2 =
                 World.setCoroutines (OMap.concat coroutinesRemaining coroutinesAdded) world
 
         static member private processTasklet simulant tasklet (taskletsNotRun : OMap<Simulant, World Tasklet UList>) (world : World) =
-            let shouldRun =
-                match tasklet.ScheduledTime with
-                | UpdateTime time -> time <= world.UpdateTime
-                | TickTime time -> time <= world.TickTime
+            let gameTime = if tasklet.ScheduledTimeScaled then world.ScaledTime else world.UnscaledTime
+            let shouldRun = tasklet.ScheduledGameTime <= gameTime
             if shouldRun then
                 tasklet.ScheduledOp world
                 taskletsNotRun
@@ -1928,7 +1926,7 @@ module WorldModule2 =
 
         static member private processPhysics2d world =
             let physicsEngine = World.getPhysicsEngine2d world
-            match physicsEngine.TryIntegrate world.GameDelta with
+            match physicsEngine.TryIntegrate world.ScaledDelta with
             | Some integrationMessages ->
                 let eventTrace = EventTrace.debug "World" "processPhysics2d" "" EventTrace.empty
                 World.publishPlus { IntegrationMessages = integrationMessages } Nu.Game.Handle.IntegrationEvent eventTrace Nu.Game.Handle false false world
@@ -1938,7 +1936,7 @@ module WorldModule2 =
 
         static member private processPhysics3d world =
             let physicsEngine = World.getPhysicsEngine3d world
-            match physicsEngine.TryIntegrate world.GameDelta with
+            match physicsEngine.TryIntegrate world.ScaledDelta with
             | Some integrationMessages ->
                 let eventTrace = EventTrace.debug "World" "processPhysics3d" "" EventTrace.empty
                 World.publishPlus { IntegrationMessages = integrationMessages } Nu.Game.Handle.IntegrationEvent eventTrace Nu.Game.Handle false false world

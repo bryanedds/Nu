@@ -11,7 +11,7 @@ type BulletCommand =
     interface Command
 
 type BulletDispatcher () =
-    inherit Entity2dDispatcher<int64, Message, BulletCommand> (true, false, false, fun world -> world.UpdateTime)
+    inherit Entity2dDispatcher<GameTime, Message, BulletCommand> (true, false, false, fun world -> world.ScaledTime)
 
     static member Facets =
         [typeof<RigidBodyFacet>
@@ -36,7 +36,7 @@ type BulletDispatcher () =
     override this.Command (startTime, command, entity, world) =
         match command with
         | Update ->
-            let localTime = world.UpdateTime - startTime
+            let localTime = world.ScaledTime - startTime
             if localTime = Constants.Gameplay.BulletLifeTime then World.destroyEntity entity world
         | Penetration ->
             World.destroyEntity entity world

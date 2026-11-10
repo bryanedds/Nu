@@ -36,7 +36,8 @@ type GameplayDispatcher () =
             World.beginGroupFromFile "Scene" "Assets/Gameplay/Scene.nugroup" [] world
 
             // declare static model
-            let rotation = Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, world.UpdateTime % 360L |> single |> degToRadF)
+            let degrees = world.ScaledTime.SecondsF * 60.0f % 360.0f // 60 degrees a second
+            let rotation = Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, degToRadF degrees)
             World.doStaticModel "StaticModel" [Entity.Scale .= v3Dup 0.5f; Entity.Rotation @= rotation] world
 
             // declare quit button

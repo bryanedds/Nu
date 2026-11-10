@@ -42,6 +42,7 @@ type GuiDispatcher () =
          define Entity.Size Constants.Engine.EntityGuiSizeDefault
          define Entity.PerimeterCentered Constants.Engine.EntityGuiPerimeterCenteredDefault
          define Entity.Presence Omnipresent
+         define Entity.TimeScaled false
          define Entity.ColorDisabled Constants.Gui.ColorDisabledDefault
          define Entity.Layout Manual
          define Entity.LayoutMargin v2Zero
@@ -61,7 +62,8 @@ type VuiDispatcher () =
     inherit EntityDispatcher (false, true, false, false, false)
 
     static member Properties =
-        [define Entity.Size Constants.Engine.EntityVuiSizeDefault]
+        [define Entity.Size Constants.Engine.EntityVuiSizeDefault
+         define Entity.TimeScaled false]
 
 /// Gives an entity the base behavior of a static sprite.
 type StaticSpriteDispatcher () =
@@ -400,6 +402,7 @@ type Character2dDispatcher () =
             elif not facingLeft && velocity.X < -1.0f then entity.SetCharacter2dFacingLeft true world
 
     override this.Render (_, entity, world) =
+        let gameTime = if entity.GetTimeScaled world then world.ScaledTime else world.UnscaledTime
         let bodyId = entity.GetBodyId world
         let facingLeft = entity.GetCharacter2dFacingLeft world
         let velocity = entity.GetLinearVelocity world
@@ -416,7 +419,7 @@ type Character2dDispatcher () =
                 struct (ValueNone, image)
             else
                 let image = entity.GetCharacter2dWalkSheet world
-                struct (ValueSome (computeWalkCelInset world.GameTime animationDelay celSize celRun), image)
+                struct (ValueSome (computeWalkCelInset gameTime animationDelay celSize celRun), image)
         let userDefinedSettings = entity.GetUserDefinedSettings world
         World.enqueueLayeredOperation2d
             { Elevation = transform.Elevation

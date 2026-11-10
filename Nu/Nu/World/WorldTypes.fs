@@ -663,6 +663,7 @@ and EntityDispatcher (is2d, perimeterCentered, physical, lightProbe, light) =
          Define? EnabledLocal true
          Define? Visible true
          Define? VisibleLocal true
+         Define? TimeScaled true
          Define? CastShadow true
          Define? Pickable true
          Define? PerimeterCentered true
@@ -1263,6 +1264,7 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member this.EnabledLocal with get () = this.Transform.EnabledLocal and set value = this.Transform.EnabledLocal <- value
     member this.Visible with get () = this.Transform.Visible and set value = this.Transform.Visible <- value
     member this.VisibleLocal with get () = this.Transform.VisibleLocal and set value = this.Transform.VisibleLocal <- value
+    member this.TimeScaled with get () = this.Transform.TimeScaled and set value = this.Transform.TimeScaled <- value
     member this.CastShadow with get () = this.Transform.CastShadow and set value = this.Transform.CastShadow <- value
     member this.Pickable with get () = this.Transform.Pickable and internal set value = this.Transform.Pickable <- value
     member this.AlwaysUpdate with get () = this.Transform.AlwaysUpdate and set value = this.Transform.AlwaysUpdate <- value
@@ -2080,13 +2082,27 @@ and [<NoEquality; NoComparison>] World =
     member this.TickTime =
         AmbientState.getTickTime this.AmbientState
 
-    /// Get the polymorphic engine time between this and the previous frame.
-    member this.GameDelta =
-        AmbientState.getGameDelta this.AmbientState
+    /// Get the polymorphic engine time between this and the previous frame, unscaled by the time scalar.
+    member this.UnscaledDelta =
+        AmbientState.getUnscaledDelta this.AmbientState
 
-    /// Get the polymorphic engine time that has transpired since the world began advancing.
-    member this.GameTime =
-        AmbientState.getGameTime this.AmbientState
+    /// Get the polymorphic engine time that has transpired since the world began advancing, unscaled by the time
+    /// scalar.
+    member this.UnscaledTime =
+        AmbientState.getUnscaledTime this.AmbientState
+
+    /// Get the polymorphic engine time between this and the previous frame, scaled by the time scalar.
+    member this.ScaledDelta =
+        AmbientState.getScaledDelta this.AmbientState
+
+    /// Get the polymorphic engine time that has transpired since the world began advancing, scaled by the time
+    /// scalar as it went.
+    member this.ScaledTime =
+        AmbientState.getScaledTime this.AmbientState
+
+    /// Get the time scalar - how fast scaled game time passes relative to unscaled game time, 0 holding it still.
+    member this.TimeScalar =
+        AmbientState.getTimeScalar this.AmbientState
 
     /// Get the amount of date time that has transpired between this and the previous frame. This value is independent
     /// of whether the world was or is advancing.

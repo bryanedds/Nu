@@ -7,9 +7,9 @@ open Nu
 // this is our top-level MMCC model type. It determines what state the game is in. To learn about MMCC in Nu, see -
 // https://github.com/bryanedds/Nu/wiki/Model-View-Update-for-Games-via-MMCC
 type MyGame =
-    { MyGameTime : int64 }
+    { MyGameTime : GameTime }
     static member val initial =
-        { MyGameTime = 0L }
+        { MyGameTime = GameTime.zero }
 
 // this is our top-level MMCC message type.
 type MyGameMessage =
@@ -43,7 +43,7 @@ type MyGameDispatcher () =
     override this.Message (myGame, message, _, _) =
         match message with
         | Update ->
-            let myGame = { myGame with MyGameTime = inc myGame.MyGameTime }
+            let myGame = { myGame with MyGameTime = myGame.MyGameTime + UpdateTime 1L } // just assume 1 for simplicity
             just myGame
 
     // here we handle the above commands
@@ -53,11 +53,13 @@ type MyGameDispatcher () =
 
     // here we describe the content of the game, including a screen, a group, and a couple example entities
     override this.Content (myGame, _) =
-        [Content.screen "Screen" true Vanilla []
+
+        [// the scene group while playing
+         Content.screen "Screen" true Vanilla []
             [Content.group "Group" []
                 [Content.staticModel "StaticModel"
                     [Entity.Position == v3 0.0f 0.0f -2.0f
-                     Entity.Rotation := Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, myGame.MyGameTime % 360L |> single |> degToRadF)]
+                     Entity.Rotation := Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, myGame.MyGameTime.SecondsF * 60.0f % 360.0f |> degToRadF)]
                  Content.button "Exit"
                     [Entity.Position == v3 232.0f -144.0f 0.0f
                      Entity.Text == "Exit"

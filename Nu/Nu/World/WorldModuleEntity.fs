@@ -369,6 +369,7 @@ module WorldModuleEntity =
         static member internal getEntityEnabledLocal entity world = (World.getEntityState entity world).EnabledLocal
         static member internal getEntityVisible entity world = (World.getEntityState entity world).Visible
         static member internal getEntityVisibleLocal entity world = (World.getEntityState entity world).VisibleLocal
+        static member internal getEntityTimeScaled entity world = (World.getEntityState entity world).TimeScaled
         static member internal getEntityCastShadow entity world = (World.getEntityState entity world).CastShadow
         static member internal getEntityPickable entity world = (World.getEntityState entity world).Pickable
         static member internal getEntityAlwaysUpdate entity world = (World.getEntityState entity world).AlwaysUpdate
@@ -1533,6 +1534,20 @@ module WorldModuleEntity =
                     | _ -> true
                 let visible = visibleMount && value
                 World.setEntityVisible visible entity world |> ignore<bool>
+                true
+            else false
+
+        static member internal setEntityTimeScaled value entity world =
+            let entityState = World.getEntityState entity world
+            let previous = entityState.TimeScaled
+            if value <> previous then
+                if world.Imperative then
+                    entityState.TimeScaled <- value
+                else
+                    let entityState = EntityState.copy entityState
+                    entityState.TimeScaled <- value
+                    World.setEntityState entityState entity world
+                World.publishEntityChange (nameof entityState.TimeScaled) previous value entityState.PublishChangeEvents entity world
                 true
             else false
 
@@ -2825,6 +2840,7 @@ module WorldModuleEntity =
                  ("EnabledLocal", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityEnabledLocal entity world })
                  ("Visible", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityVisible entity world })
                  ("VisibleLocal", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityVisibleLocal entity world })
+                 ("TimeScaled", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityTimeScaled entity world })
                  ("CastShadow", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityCastShadow entity world })
                  ("Pickable", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPickable entity world })
                  ("AlwaysUpdate", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAlwaysUpdate entity world })
@@ -2893,6 +2909,7 @@ module WorldModuleEntity =
                  ("EnabledLocal", fun property entity world -> World.setEntityEnabledLocal (property.PropertyValue :?> bool) entity world)
                  ("Visible", fun property entity world -> World.setEntityVisible (property.PropertyValue :?> bool) entity world)
                  ("VisibleLocal", fun property entity world -> World.setEntityVisibleLocal (property.PropertyValue :?> bool) entity world)
+                 ("TimeScaled", fun property entity world -> World.setEntityTimeScaled (property.PropertyValue :?> bool) entity world)
                  ("CastShadow", fun property entity world -> World.setEntityCastShadow (property.PropertyValue :?> bool) entity world)
                  ("Pickable", fun property entity world -> World.setEntityPickable (property.PropertyValue :?> bool) entity world)
                  ("PerimeterCentered", fun property entity world -> World.setEntityPerimeterCentered (property.PropertyValue :?> bool) entity world)

@@ -236,7 +236,7 @@ module WorldScreenModule =
                 | (false, _) -> failwith ("Could not find ScreenDispatcher named '" + dispatcherName + "'.")
 
             // make the screen state and populate its properties
-            let screenState = ScreenState.make world.GameTime nameOpt dispatcher
+            let screenState = ScreenState.make world.UnscaledTime nameOpt dispatcher
             let screenState = Reflection.attachProperties ScreenState.copy screenState.Dispatcher screenState world
             let screen = Game.Handle / screenState.Name
             if World.getScreenExists screen world then
@@ -307,7 +307,7 @@ module WorldScreenModule =
                 | (false, _) -> failwith ("Could not find a ScreenDispatcher named '" + dispatcherName + "'.")
 
             // make the screen state and populate its properties
-            let screenState = ScreenState.make world.GameTime None dispatcher
+            let screenState = ScreenState.make world.UnscaledTime None dispatcher
             let screenState = Reflection.attachProperties ScreenState.copy screenState.Dispatcher screenState world
             let screenState = Reflection.readPropertiesToTarget ScreenState.copy screenDescriptor.ScreenProperties screenState
 
@@ -648,7 +648,7 @@ module WorldScreenModule =
 
         /// Compute rotation and angular velocity required to face navDirection.
         static member nav3dFace turnSpeed (rotation : Quaternion) (navDirection : Vector3) (world : World) =
-            let deltaTime = let gameDelta = world.GameDelta in gameDelta.SecondsF
+            let deltaTime = let gameDelta = world.ScaledDelta in gameDelta.SecondsF
             if navDirection.LengthSquared () > 0.000001f && deltaTime > 0.0f then
                 let currentForward = rotation.Forward.Normalized
                 let desiredForward = navDirection.Normalized
@@ -669,7 +669,7 @@ module WorldScreenModule =
 
         /// Compute navigation information that results in following the given destination.
         static member nav3dFollow distanceMinOpt distanceMaxOpt moveSpeed turnSpeed (position : Vector3) (rotation : Quaternion) (destination : Vector3) screen (world : World) =
-            let deltaTime = let gameDelta = world.GameDelta in gameDelta.SecondsF
+            let deltaTime = let gameDelta = world.ScaledDelta in gameDelta.SecondsF
             let distance = (destination - position).Magnitude
             if  (Option.isNone distanceMinOpt || distance > distanceMinOpt.Value) &&
                 (Option.isNone distanceMaxOpt || distance <= distanceMaxOpt.Value) then
