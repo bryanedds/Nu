@@ -87,6 +87,7 @@ type GameplayDispatcher () =
                         World.destroyEntity character world
                     | Player ->
                         screen.SetGameplayState Quit world
+                        World.setTimeScalar 0.0f world
 
             // update eye to look at player while game time is advancing
             if world.TimeAdvancing then
@@ -107,8 +108,8 @@ type GameplayDispatcher () =
 
             // declare quit button
             if World.doButton "Quit" [Entity.Position .= v3 232.0f -144.0f 0.0f; Entity.Elevation .= 10.0f; Entity.Text .= "Quit"] world then
-                World.setTimeScalar 0.0f world
                 screen.SetGameplayState Quit world
+                World.setTimeScalar 0.0f world
 
             // end scene declaration
             World.endGroup world
