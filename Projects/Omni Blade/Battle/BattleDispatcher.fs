@@ -20,7 +20,7 @@ type BattleDispatcher () =
     inherit ScreenDispatcher<Battle, BattleMessage, BattleCommand> (Battle.empty : Battle)
 
     static let displayEffect (delay : int64) size positioning layering descriptor screen world =
-        World.schedule delay (fun world ->
+        World.schedule true delay (fun world ->
             let entity = World.createEntity<Effect2dDispatcher> (Some Address.parent) DefaultOverlay None Simulants.BattleScene world
             entity.SetSize size world
             match positioning with
@@ -170,7 +170,7 @@ type BattleDispatcher () =
             | _ -> ()
 
         | ScheduleSound (delay, volume, sound) ->
-            World.schedule delay (fun world -> World.playSound 0.0f 0.0f volume sound world) screen world
+            World.schedule true delay (fun world -> World.playSound 0.0f 0.0f volume sound world) screen world
 
         | DisplayHop (hopStart, hopStop) ->
             let descriptor = EffectDescriptors.hop hopStart hopStop
