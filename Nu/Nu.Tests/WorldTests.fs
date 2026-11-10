@@ -18,6 +18,23 @@ module WorldTests =
         let result = World.runWithCleanUp (fun world -> world.UpdateTime < 1L) ignore ignore ignore ignore ignore (Some ignore) world
         Assert.Equal (Constants.Engine.ExitCodeSuccess, result)
 
+    let [<Test>] ``Scaled game time advances by the time scalar, and unscaled game time regardless.`` () =
+        Nu.init ()
+        match Constants.GameTime.DesiredFrameRate with
+        | StaticFrameRate _ ->
+            let world = World.makeStub (constant None) { WorldConfig.defaultConfig with Accompanied = true } (TestPlugin ())
+            World.setTimeScalar 0.5f world
+            World.runWithoutCleanUp (fun world -> world.UpdateTime < 10L) ignore ignore ignore ignore ignore (Some ignore) world |> ignore
+            Assert.Equal (UpdateTime 10L, world.UnscaledTime)
+            Assert.Equal (UpdateTime 5L, world.ScaledTime)
+            World.setTimeScalar 0.0f world
+            World.runWithoutCleanUp (fun world -> world.UpdateTime < 15L) ignore ignore ignore ignore ignore (Some ignore) world |> ignore
+            Assert.Equal (UpdateTime 15L, world.UnscaledTime)
+            Assert.Equal (UpdateTime 5L, world.ScaledTime)
+            Assert.Equal (UpdateTime 0L, world.ScaledDelta)
+            World.cleanUp world
+        | DynamicFrameRate _ -> ()
+
     let [<Test; Category "Integration">] ``Run integration frame then clean up.`` () =
         Nu.init ()
         let worldConfig = { WorldConfig.defaultConfig with Accompanied = true }

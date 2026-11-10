@@ -135,7 +135,8 @@ type AnimatedSpriteFacet () =
         let celCount = entity.GetCelCount world
         let celRun = entity.GetCelRun world
         if celCount <> 0 && celRun <> 0 then
-            let localTime = world.GameTime - startTime
+            let gameTime = if entity.GetTimeScaled world then world.ScaledTime else world.UnscaledTime
+            let localTime = gameTime - startTime
             let animationDelay = entity.GetAnimationDelay world
             let animationStride = entity.GetAnimationStride world
             let cel = int64 (localTime / animationDelay) % int64 celCount * int64 animationStride
@@ -167,7 +168,8 @@ type AnimatedSpriteFacet () =
 
     override this.Update (entity, world) =
         if not (entity.GetEnabled world) then
-            entity.StartTime.Map ((+) world.GameDelta) world
+            let gameDelta = if entity.GetTimeScaled world then world.ScaledDelta else world.UnscaledDelta
+            entity.StartTime.Map ((+) gameDelta) world
 
     override this.Render (_, entity, world) =
         let mutable transform = entity.GetTransform world
@@ -237,7 +239,7 @@ type BasicStaticSpriteEmitterFacet () =
 
     static let tryMakeEmitter (entity : Entity) (world : World) =
         World.tryMakeEmitter
-            world.GameTime
+            (if entity.GetTimeScaled world then world.ScaledTime else world.UnscaledTime)
             (entity.GetEmitterLifeTimeOpt world)
             (entity.GetParticleLifeTimeMaxOpt world)
             (entity.GetParticleRate world)
@@ -267,7 +269,7 @@ type BasicStaticSpriteEmitterFacet () =
                 Constraint = entity.GetEmitterConstraint world }
         | None ->
             Particles.BasicStaticSpriteEmitter.makeEmpty
-                world.GameTime
+                (if entity.GetTimeScaled world then world.ScaledTime else world.UnscaledTime)
                 (entity.GetEmitterLifeTimeOpt world)
                 (entity.GetParticleLifeTimeMaxOpt world)
                 (entity.GetParticleRate world)
@@ -414,19 +416,19 @@ type BasicStaticSpriteEmitterFacet () =
 
     override this.Update (entity, world) =
         if entity.GetEnabled world then
-            let delta = world.GameDelta
-            let time = world.GameTime
+            let gameDelta = if entity.GetTimeScaled world then world.ScaledDelta else world.UnscaledDelta
+            let gameTime = if entity.GetTimeScaled world then world.ScaledTime else world.UnscaledTime
             let particleSystem = entity.GetParticleSystem world
-            let (particleSystem, output) = Particles.ParticleSystem.run delta time particleSystem
+            let (particleSystem, output) = Particles.ParticleSystem.run gameDelta gameTime particleSystem
             entity.SetParticleSystem particleSystem world
             processOutput output entity world
 
     override this.Render (_, entity, world) =
-        let time = world.GameTime
+        let gameTime = if entity.GetTimeScaled world then world.ScaledTime else world.UnscaledTime
         let particleSystem = entity.GetParticleSystem world
         let particlesMessages =
             particleSystem
-            |> Particles.ParticleSystem.toParticlesDescriptors time
+            |> Particles.ParticleSystem.toParticlesDescriptors gameTime
             |> List.map (fun descriptor ->
                 match descriptor with
                 | Particles.SpriteParticlesDescriptor descriptor ->
@@ -1259,6 +1261,7 @@ type EffectFacet () =
         let effect =
             Effect.makePlus
                 (match entity.GetEffectStartTimeOpt world with Some effectStartTime -> effectStartTime | None -> GameTime.zero)
+                (entity.GetTimeScaled world)
                 (entity.GetEffectOffset world)
                 (entity.GetTransform world)
                 (entity.GetEffectClipOpt world)
@@ -1331,7 +1334,8 @@ type EffectFacet () =
          nonPersistent Entity.EffectDataToken DataToken.empty]
 
     override this.Register (entity, world) =
-        let effectStartTime = Option.defaultValue world.GameTime (entity.GetEffectStartTimeOpt world)
+        let gameTime = if entity.GetTimeScaled world then world.ScaledTime else world.UnscaledTime
+        let effectStartTime = Option.defaultValue gameTime (entity.GetEffectStartTimeOpt world)
         entity.SetEffectStartTimeOpt (Some effectStartTime) world
         World.sense handleEffectDescriptorChange entity.EffectDescriptor.ChangeEvent entity (nameof EffectFacet) world
         World.sense handleEffectsChange entity.EffectSymbolOpt.ChangeEvent entity (nameof EffectFacet) world
@@ -1346,14 +1350,14 @@ type EffectFacet () =
         if not renderPass.IsShadowPass || castShadow then
 
             // render effect data token
-            let time = world.GameTime
+            let gameTime = if entity.GetTimeScaled world then world.ScaledTime else world.UnscaledTime
             let dataToken = entity.GetEffectDataToken world
             World.renderDataToken renderPass dataToken world
 
             // render particles
             let presence = entity.GetPresence world
             let particleSystem = entity.GetParticleSystem world
-            let descriptors = ParticleSystem.toParticlesDescriptors time particleSystem
+            let descriptors = ParticleSystem.toParticlesDescriptors gameTime particleSystem
             for descriptor in descriptors do
                 match descriptor with
                 | SpriteParticlesDescriptor descriptor ->
@@ -1956,7 +1960,7 @@ type TileMapFacet () =
             let viewBounds = World.getViewBounds2dRelative world
             let tileMapMessages =
                 TmxMap.getLayeredMessages2d
-                    world.GameTime
+                    (if entity.GetTimeScaled world then world.ScaledTime else world.UnscaledTime)
                     transform.Absolute
                     viewBounds
                     perimeterUnscaled.Min.V2
@@ -2073,7 +2077,7 @@ type TmxMapFacet () =
         let tmxPackage = if tmxMap.TmxDirectory = "" then Assets.Default.PackageName else PathF.GetFileName tmxMap.TmxDirectory // really folder name, but whatever...
         let tmxMapMessages =
             TmxMap.getLayeredMessages2d
-                world.GameTime
+                (if entity.GetTimeScaled world then world.ScaledTime else world.UnscaledTime)
                 transform.Absolute
                 viewBounds
                 perimeterUnscaled.Min.V2
@@ -3130,7 +3134,8 @@ type AnimatedBillboardFacet () =
         let celCount = entity.GetCelCount world
         let celRun = entity.GetCelRun world
         if celCount <> 0 && celRun <> 0 then
-            let localTime = world.GameTime - startTime
+            let gameTime = if entity.GetTimeScaled world then world.ScaledTime else world.UnscaledTime
+            let localTime = gameTime - startTime
             let animationDelay = entity.GetAnimationDelay world
             let animationStride = entity.GetAnimationStride world
             let cel = int64 (localTime / animationDelay) % int64 celCount * int64 animationStride
@@ -3159,7 +3164,8 @@ type AnimatedBillboardFacet () =
 
     override this.Update (entity, world) =
         if not (entity.GetEnabled world) then
-            entity.StartTime.Map ((+) world.GameDelta) world
+            let gameDelta = if entity.GetTimeScaled world then world.ScaledDelta else world.UnscaledDelta
+            entity.StartTime.Map ((+) gameDelta) world
 
     override this.Render (renderPass, entity, world) =
         let mutable transform = entity.GetTransform world
@@ -3214,7 +3220,7 @@ type BasicStaticBillboardEmitterFacet () =
 
     static let tryMakeEmitter (entity : Entity) (world : World) =
         World.tryMakeEmitter
-            world.GameTime
+            (if entity.GetTimeScaled world then world.ScaledTime else world.UnscaledTime)
             (entity.GetEmitterLifeTimeOpt world)
             (entity.GetParticleLifeTimeMaxOpt world)
             (entity.GetParticleRate world)
@@ -3243,7 +3249,7 @@ type BasicStaticBillboardEmitterFacet () =
                 RenderType = renderType }
         | None ->
             Particles.BasicStaticBillboardEmitter.makeEmpty
-                world.GameTime
+                (if entity.GetTimeScaled world then world.ScaledTime else world.UnscaledTime)
                 (entity.GetEmitterLifeTimeOpt world)
                 (entity.GetParticleLifeTimeMaxOpt world)
                 (entity.GetParticleRate world)
@@ -3399,22 +3405,22 @@ type BasicStaticBillboardEmitterFacet () =
 
     override this.Update (entity, world) =
         if entity.GetEnabled world then
-            let delta = world.GameDelta
-            let time = world.GameTime
+            let gameDelta = if entity.GetTimeScaled world then world.ScaledDelta else world.UnscaledDelta
+            let gameTime = if entity.GetTimeScaled world then world.ScaledTime else world.UnscaledTime
             let particleSystem = entity.GetParticleSystem world
-            let (particleSystem, output) = Particles.ParticleSystem.run delta time particleSystem
+            let (particleSystem, output) = Particles.ParticleSystem.run gameDelta gameTime particleSystem
             entity.SetParticleSystem particleSystem world
             processOutput output entity world
 
     override this.Render (renderPass, entity, world) =
         let castShadow = (World.getRenderer3dConfig world).LightShadowingEnabled && entity.GetEmitterCastShadow world
         if not renderPass.IsShadowPass || castShadow then
-            let time = world.GameTime
+            let gameTime = if entity.GetTimeScaled world then world.ScaledTime else world.UnscaledTime
             let presence = entity.GetPresence world
             let particleSystem = entity.GetParticleSystem world
             let particlesMessages =
                 particleSystem
-                |> Particles.ParticleSystem.toParticlesDescriptors time
+                |> Particles.ParticleSystem.toParticlesDescriptors gameTime
                 |> List.map (fun descriptor ->
                     match descriptor with
                     | Particles.BillboardParticlesDescriptor descriptor ->
@@ -3726,11 +3732,11 @@ module AnimatedModelFacetExtensions =
 
         /// TODO: document this!
         member this.AnimateBones (world : World) =
-            let time = world.GameTime
+            let gameTime = if this.GetTimeScaled world then world.ScaledTime else world.UnscaledTime
             let animations = this.GetAnimations world
             let animatedModel = this.GetAnimatedModel world
             let sceneOpt = match Metadata.tryGetAnimatedModelMetadata animatedModel with ValueSome model -> model.SceneOpt | ValueNone -> None
-            match this.TryComputeBoneTransforms time animations sceneOpt with
+            match this.TryComputeBoneTransforms gameTime animations sceneOpt with
             | Some (boneIds, boneOffsets, boneTransforms) -> this.SetBoneTransformsFast boneIds boneOffsets boneTransforms world
             | None -> ()
 
@@ -3768,7 +3774,7 @@ type AnimatedModelFacet () =
 
     override this.Update (entity, world) =
         if entity.GetEnabled world then
-            let time = world.GameTime
+            let gameTime = if entity.GetTimeScaled world then world.ScaledTime else world.UnscaledTime
             let animations = entity.GetAnimations world
             let animatedModel = entity.GetAnimatedModel world
             let sceneOpt = match Metadata.tryGetAnimatedModelMetadata animatedModel with ValueSome model -> model.SceneOpt | ValueNone -> None
@@ -3778,17 +3784,18 @@ type AnimatedModelFacet () =
                         match World.tryAwaitJob (world.DateTime + TimeSpan.FromSeconds 0.001) (entity, nameof AnimatedModelFacet) world with
                         | Some (JobCompletion (_, _, (:? ((Dictionary<string, int> * Matrix4x4 array * Matrix4x4 array) option) as boneOffsetsAndTransformsOpt))) -> boneOffsetsAndTransformsOpt
                         | _ -> None
-                    let job = Job.make (entity, nameof AnimatedModelFacet) (fun () -> entity.TryComputeBoneTransforms time animations sceneOpt)
+                    let job = Job.make (entity, nameof AnimatedModelFacet) (fun () -> entity.TryComputeBoneTransforms gameTime animations sceneOpt)
                     World.enqueueJob 1.0f job world
                     resultOpt
-                else entity.TryComputeBoneTransforms time animations sceneOpt
+                else entity.TryComputeBoneTransforms gameTime animations sceneOpt
             match resultOpt with
             | Some (boneIds, boneOffsets, boneTransforms) -> entity.SetBoneTransformsFast boneIds boneOffsets boneTransforms world
             | None -> ()
         else
+            let gameDelta = if entity.GetTimeScaled world then world.ScaledDelta else world.UnscaledDelta
             let animations =
                 Array.map (fun (animation : Animation) ->
-                    { animation with StartTime = animation.StartTime + world.GameDelta })
+                    { animation with StartTime = animation.StartTime + gameDelta })
                     (entity.GetAnimations world)
             entity.SetAnimations animations world
 
@@ -4161,7 +4168,8 @@ module TraversalInterpolatedFacetExtensions =
                 // the time-averaged position is defined as the integral of the position over time divided by the total
                 // time duration. for discrete data points, this involves assuming a linear interpolation between
                 // points and computing the integral as the sum of areas under the curve (trapezoids).
-                let history = history |> FQueue.conj (world.GameTime, current)
+                let gameTime = if this.GetTimeScaled world then world.ScaledTime else world.UnscaledTime
+                let history = history |> FQueue.conj (gameTime, current)
                 let (sum, totalTime, _) =
                     history |> FQueue.fold
                         (fun (sum, totalTime, prevOpt) (time, value) ->
@@ -4193,7 +4201,8 @@ module TraversalInterpolatedFacetExtensions =
             if FQueue.notEmpty rotationHistory then
 
                 // interpolate rotation using time-weighted slerp between all pairs
-                let history = rotationHistory |> FQueue.conj (world.GameTime, rotation)
+                let gameTime = if this.GetTimeScaled world then world.ScaledTime else world.UnscaledTime
+                let history = rotationHistory |> FQueue.conj (gameTime, rotation)
                 let (sum, totalTime, _) =
                     history |> FQueue.fold
                         (fun (sum, totalTime, prevOpt) (time, rotation) ->
@@ -4230,16 +4239,16 @@ type TraversalInterpolatedFacet () =
         // update history for interposation at the end of frame
         World.defer (fun world ->
             let historyMax = entity.GetTraversalHistoryMax world
-            let time = world.GameTime
+            let gameTime = if entity.GetTimeScaled world then world.ScaledTime else world.UnscaledTime
             let filterFQueue (history : FQueue<GameTime * 'a>) =
                 if FQueue.notEmpty history then
                     let (head, tail) = FQueue.uncons history
-                    if fst head <= time - historyMax then tail else history // OPTIMIZATION: only filter oldest item instead of all items.
+                    if fst head <= gameTime - historyMax then tail else history // OPTIMIZATION: only filter oldest item instead of all items.
                 else history
-            entity.PositionHistory.Map (filterFQueue >> FQueue.conj (time, entity.GetPosition world)) world
-            entity.RotationHistory.Map (filterFQueue >> FQueue.conj (time, entity.GetRotation world)) world
-            entity.LinearVelocityHistory.Map (filterFQueue >> FQueue.conj (time, entity.GetLinearVelocity world)) world
-            entity.AngularVelocityHistory.Map (filterFQueue >> FQueue.conj (time, entity.GetAngularVelocity world)) world)
+            entity.PositionHistory.Map (filterFQueue >> FQueue.conj (gameTime, entity.GetPosition world)) world
+            entity.RotationHistory.Map (filterFQueue >> FQueue.conj (gameTime, entity.GetRotation world)) world
+            entity.LinearVelocityHistory.Map (filterFQueue >> FQueue.conj (gameTime, entity.GetLinearVelocity world)) world
+            entity.AngularVelocityHistory.Map (filterFQueue >> FQueue.conj (gameTime, entity.GetAngularVelocity world)) world)
             entity world
 
     override this.Edit (op, entity, world) =
@@ -4248,7 +4257,8 @@ type TraversalInterpolatedFacet () =
         match op with
         | ViewportOverlay _ when world.TimeHalted ->
             let position = entity.GetPosition world
-            let positionHistory = FQueue.singleton (world.GameTime, position)
+            let gameTime = if entity.GetTimeScaled world then world.ScaledTime else world.UnscaledTime
+            let positionHistory = FQueue.singleton (gameTime, position)
             entity.SetPositionHistory positionHistory world
         | _ -> ()
 

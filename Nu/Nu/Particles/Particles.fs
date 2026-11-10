@@ -760,7 +760,7 @@ type [<ReferenceEquality>] StaticSpriteEmitter<'a when 'a :> Particle and 'a : e
       ParticleInitializer : GameTime -> 'a StaticSpriteEmitter -> 'a
       ParticleBehavior : GameTime -> 'a StaticSpriteEmitter -> Output
       ParticleBehaviors : Behaviors
-      EmitterBehavior : GameTime -> 'a StaticSpriteEmitter -> Output
+      EmitterBehavior : GameTime -> GameTime -> 'a StaticSpriteEmitter -> Output
       EmitterBehaviors : Behaviors
       ToParticlesDescriptor : GameTime -> 'a StaticSpriteEmitter -> SpriteParticlesDescriptor }
 
@@ -798,7 +798,7 @@ type [<ReferenceEquality>] StaticSpriteEmitter<'a when 'a :> Particle and 'a : e
             for _ in 0 .. emitCount - 1 do StaticSpriteEmitter<'a>.emit time emitter
 
         // update emitter in-place
-        let output = emitter.EmitterBehavior time emitter
+        let output = emitter.EmitterBehavior delta time emitter
 
         // update emitter compositionally
         let (output2, emitter) = Behaviors.run delta time emitter.EmitterBehaviors emitter.Constraint emitter
@@ -920,7 +920,7 @@ module BasicStaticSpriteEmitter =
         let particleInitializer = fun _ (emitter : BasicStaticSpriteEmitter) -> emitter.ParticleSeed
         let particleBehavior = fun _ _ -> Output.empty
         let particleBehaviors = Behaviors.empty
-        let emitterBehavior = fun _ _ -> Output.empty
+        let emitterBehavior = fun _ _ _ -> Output.empty
         let emitterBehaviors = Behaviors.empty
         make
             time Body.defaultBody false 0.0f None image userDefinedImages
@@ -972,8 +972,12 @@ module BasicStaticSpriteEmitter =
                 (Behavior.ofSeq BasicParticle.body
                     [Transformer.force (Gravity gravity)
                      Transformer.force (Velocity Constraint.empty)])
-        let emitterBehavior = fun _ (emitter : BasicStaticSpriteEmitter) ->
-            emitter.Body.Angles <- emitter.Body.Angles + v3 0.0f 0.0f 0.1f
+        let emitterSpin =
+            match Constants.GameTime.DesiredFrameRate with
+            | StaticFrameRate _ -> 0.1f
+            | DynamicFrameRate frameRate -> 0.1f * single frameRate
+        let emitterBehavior = fun delta _ (emitter : BasicStaticSpriteEmitter) ->
+            emitter.Body.Angles <- emitter.Body.Angles + v3 0.0f 0.0f (emitterSpin * (delta |> double |> single))
             Output.empty
         let emitterBehaviors =
             Behaviors.empty
@@ -1030,7 +1034,7 @@ type [<ReferenceEquality>] StaticBillboardEmitter<'a when 'a :> Particle and 'a 
       ParticleInitializer : GameTime -> 'a StaticBillboardEmitter -> 'a
       ParticleBehavior : GameTime -> 'a StaticBillboardEmitter -> Output
       ParticleBehaviors : Behaviors
-      EmitterBehavior : GameTime -> 'a StaticBillboardEmitter -> Output
+      EmitterBehavior : GameTime -> GameTime -> 'a StaticBillboardEmitter -> Output
       EmitterBehaviors : Behaviors
       ToParticlesDescriptor : GameTime -> 'a StaticBillboardEmitter -> BillboardParticlesDescriptor }
 
@@ -1068,7 +1072,7 @@ type [<ReferenceEquality>] StaticBillboardEmitter<'a when 'a :> Particle and 'a 
             for _ in 0 .. emitCount - 1 do StaticBillboardEmitter<'a>.emit time emitter
 
         // update emitter in-place
-        let output = emitter.EmitterBehavior time emitter
+        let output = emitter.EmitterBehavior delta time emitter
 
         // update emitter compositionally
         let (output2, emitter) = Behaviors.run delta time emitter.EmitterBehaviors emitter.Constraint emitter
@@ -1183,7 +1187,7 @@ module BasicStaticBillboardEmitter =
         let particleInitializer = fun _ (emitter : BasicStaticBillboardEmitter) -> emitter.ParticleSeed
         let particleBehavior = fun _ _ -> Output.empty
         let particleBehaviors = Behaviors.empty
-        let emitterBehavior = fun _ _ -> Output.empty
+        let emitterBehavior = fun _ _ _ -> Output.empty
         let emitterBehaviors = Behaviors.empty
         make
             time Body.defaultBody false Material.defaultMaterial MaterialProperties.defaultProperties
@@ -1230,8 +1234,12 @@ module BasicStaticBillboardEmitter =
                 (Behavior.ofSeq BasicParticle.body
                     [Transformer.force (Gravity gravity)
                      Transformer.force (Velocity Constraint.empty)])
-        let emitterBehavior = fun _ (emitter : BasicStaticBillboardEmitter) ->
-            emitter.Body.Angles <- emitter.Body.Angles + v3 0.0f 0.0f 0.1f
+        let emitterSpin =
+            match Constants.GameTime.DesiredFrameRate with
+            | StaticFrameRate _ -> 0.1f
+            | DynamicFrameRate frameRate -> 0.1f * single frameRate
+        let emitterBehavior = fun delta _ (emitter : BasicStaticBillboardEmitter) ->
+            emitter.Body.Angles <- emitter.Body.Angles + v3 0.0f 0.0f (emitterSpin * (delta |> double |> single))
             Output.empty
         let emitterBehaviors =
             Behaviors.empty

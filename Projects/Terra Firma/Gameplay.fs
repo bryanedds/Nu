@@ -70,11 +70,11 @@ type GameplayDispatcher () =
                 for _ in World.doSubscription "Damage" character.DamageEvent world do
                     if character.GetHitPoints world > 0 then
                         if not (character.GetActionState world).IsInjuryState then
-                            character.SetActionState (InjuryState { InjuryTime = world.UpdateTime }) world
+                            character.SetActionState (InjuryState { InjuryTime = world.ScaledTime }) world
                             character.LinearVelocity.Map ((*) v3Up) world // zero out horizontal velocity on injury
                             World.playSound 0.0f 0.0f 1.0f Assets.Gameplay.InjureSound world
                     elif not (character.GetActionState world).IsWoundState then
-                        character.SetActionState (WoundState { WoundTime = world.UpdateTime }) world
+                        character.SetActionState (WoundState { WoundTime = world.ScaledTime }) world
                         character.LinearVelocity.Map ((*) v3Up) world // zero out horizontal velocity on wound
                         World.playSound 0.0f 0.0f 1.0f Assets.Gameplay.InjureSound world
 
@@ -101,15 +101,18 @@ type GameplayDispatcher () =
 
             // declare pause button
             if World.doButton "Pause" [Entity.Position .= v3 232.0f -104.0f 0.0f; Entity.Elevation .= 10.0f; Entity.Text .= "Pause"] world then
-                World.setTimeAdvancing (not world.TimeAdvancing) world
+                let timeScalar = world.TimeScalar
+                let timeScalar = if timeScalar = 0.0f then 1.0f else 0.0f
+                World.setTimeScalar timeScalar world
 
             // declare quit button
             if World.doButton "Quit" [Entity.Position .= v3 232.0f -144.0f 0.0f; Entity.Elevation .= 10.0f; Entity.Text .= "Quit"] world then
+                World.setTimeScalar 0.0f world
                 screen.SetGameplayState Quit world
-
-            // ensure game is unpaused when quitting
-            if screen.GetGameplayState world = Quit then
-                World.setTimeAdvancing true world
 
             // end scene declaration
             World.endGroup world
+
+        // unpause on deselection
+        if FQueue.contains Deselecting selectionResults then
+            World.setTimeScalar 1.0f world

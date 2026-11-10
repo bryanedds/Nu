@@ -290,7 +290,7 @@ type FluidSimDispatcher () =
                 paddle.SetStaticImage Assets.Default.Paddle world
                 paddle.SetBodyType Kinematic world
                 paddle.SetLinearVelocity (v3 50f 0f 0f) world
-                coroutine world.Launcher {
+                coroutine world.LauncherScaled {
                     do! Coroutine.sleep (GameTime.ofSeconds 10)
                     World.destroyEntity paddle world }
 

@@ -321,7 +321,7 @@ module Content =
                     if screenContent.Select then
                         if world.Accompanied && world.TimeHalted && not world.TimeAdvancementCleared then // special case to quick cut when time halted in the editor
                             World.defer (fun world ->
-                                let transitionTime = world.GameTime
+                                let transitionTime = world.UnscaledTime
                                 selectScreen (IdlingState transitionTime) screen world
                                 updateScreenIdling transitionTime screen world)
                                 screen

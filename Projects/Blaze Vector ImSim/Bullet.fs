@@ -8,8 +8,8 @@ open BlazeVector
 [<AutoOpen>]
 module BulletExtensions =
     type Entity with
-        member this.GetCreationTime world : int64 = this.Get (nameof this.CreationTime) world
-        member this.SetCreationTime (value : int64) world = this.Set (nameof this.CreationTime) value world
+        member this.GetCreationTime world : GameTime = this.Get (nameof this.CreationTime) world
+        member this.SetCreationTime (value : GameTime) world = this.Set (nameof this.CreationTime) value world
         member this.CreationTime = lens (nameof this.CreationTime) this this.GetCreationTime this.SetCreationTime
 
 type BulletDispatcher () =
@@ -32,12 +32,12 @@ type BulletDispatcher () =
          define Entity.CollisionDetection Continuous
          define Entity.Sensor true
          define Entity.StaticImage Assets.Gameplay.PlayerBulletImage
-         define Entity.CreationTime 0L]
+         define Entity.CreationTime GameTime.zero]
 
     override this.Process (entity, world) =
 
         // process impact
-        let localTime = world.UpdateTime - entity.GetCreationTime world
+        let localTime = world.ScaledTime - entity.GetCreationTime world
         let penetrated = World.doSubscriptionAny "Penetration" entity.BodyPenetrationEvent world
         if localTime = Constants.Gameplay.BulletLifeTime || penetrated then
             World.destroyEntity entity world

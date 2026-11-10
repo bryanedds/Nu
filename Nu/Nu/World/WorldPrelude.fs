@@ -345,7 +345,8 @@ type OverlayDescriptor =
 
 /// A tasklet to be completed at the scheduled time.
 type [<ReferenceEquality>] 'w Tasklet =
-    { ScheduledTime : GameTime
+    { ScheduledGameTime : GameTime
+      ScheduledTimeScaled : bool
       ScheduledOp : 'w -> unit }
 
 /// Configuration parameters for the world.
@@ -461,27 +462,24 @@ module internal AmbientState =
     /// The 'ambient' state of the world (miscellaneous world state such as time).
     type [<ReferenceEquality>] internal 'w AmbientState =
         private
-            { // cache line 1 (assuming 16 byte header)
-              Flags : uint
+            { Flags : uint
               Alive : bool
               UpdateDelta : int64
               UpdateTime : int64
               ClockDelta : single
-
-              // cache line 2
+              TimeScalar : single
+              ScaledDeltaUnits : int64
+              ScaledTimeUnits : int64
               ClockTime : single
               TickDelta : int64
               KeyValueStore : SUMap<string, obj>
               TickTime : int64
+              ScaledTimeAccumulator : double
               TickWatch : Stopwatch
               DateDelta : TimeSpan
-
-              // cache line 3
               TickDeltaPrevious : int64
               DateTime : DateTimeOffset
-              Coroutines : OMap<uint64, GameTime * (unit -> bool) * CoroutineDelayed>
-
-              // cache line 4
+              Coroutines : OMap<uint64, GameTime * bool * (unit -> bool) * CoroutineDelayed>
               Tasklets : OMap<Simulant, 'w Tasklet UList>
               SdlDepsOpt : SdlDeps option
               Symbolics : Symbolics
@@ -548,15 +546,32 @@ module internal AmbientState =
     let internal getTickTime state =
         state.TickTime
 
-    let internal getGameDelta (state : 'w AmbientState) =
+    let internal getUnscaledDelta (state : 'w AmbientState) =
         match Constants.GameTime.DesiredFrameRate with
         | StaticFrameRate _ -> UpdateTime (if state.TimeAdvancing then 1L else 0L)
         | DynamicFrameRate _ -> TickTime (getTickDelta state)
 
-    let internal getGameTime state =
+    let internal getUnscaledTime state =
         match Constants.GameTime.DesiredFrameRate with
         | StaticFrameRate _ -> UpdateTime (getUpdateTime state)
         | DynamicFrameRate _ -> TickTime (getTickTime state)
+
+    let internal getScaledDelta (state : 'w AmbientState) =
+        let units = if state.TimeAdvancing then state.ScaledDeltaUnits else 0L
+        match Constants.GameTime.DesiredFrameRate with
+        | StaticFrameRate _ -> UpdateTime units
+        | DynamicFrameRate _ -> TickTime units
+
+    let internal getScaledTime (state : 'w AmbientState) =
+        match Constants.GameTime.DesiredFrameRate with
+        | StaticFrameRate _ -> UpdateTime state.ScaledTimeUnits
+        | DynamicFrameRate _ -> TickTime state.ScaledTimeUnits
+
+    let internal getTimeScalar (state : 'w AmbientState) =
+        state.TimeScalar
+
+    let internal setTimeScalar (scalar : single) (state : 'w AmbientState) =
+        { state with TimeScalar = max 0.0f scalar }
 
     let internal getDateDelta state =
         state.DateDelta
@@ -589,17 +604,26 @@ module internal AmbientState =
             then (tickDeltaCurrent + state.TickDeltaPrevious) / 2L
             else tickDeltaCurrent
         let tickTime = state.TickTime + tickDelta
+        let unscaledDeltaUnits =
+            match Constants.GameTime.DesiredFrameRate with
+            | StaticFrameRate _ -> updateDelta
+            | DynamicFrameRate _ -> tickDelta
+        let scaledTimeAccumulator = state.ScaledTimeAccumulator + double unscaledDeltaUnits * double state.TimeScalar
+        let scaledTimeUnits = int64 scaledTimeAccumulator
         let dateTime = DateTimeOffset.Now
         { state with
             UpdateDelta = updateDelta
             UpdateTime = state.UpdateTime + updateDelta
             ClockDelta = single tickDelta / single Stopwatch.Frequency
+            ScaledDeltaUnits = scaledTimeUnits - state.ScaledTimeUnits
+            ScaledTimeUnits = scaledTimeUnits
             ClockTime = single tickTime / single Stopwatch.Frequency
             TickDelta = tickDelta
-            TickDeltaPrevious = tickDeltaCurrent
             TickTime = tickTime
-            DateTime = dateTime
-            DateDelta = dateTime - state.DateTime }
+            ScaledTimeAccumulator = scaledTimeAccumulator
+            DateDelta = dateTime - state.DateTime
+            TickDeltaPrevious = tickDeltaCurrent
+            DateTime = dateTime }
 
     let internal switch (state : 'w AmbientState) =
         if state.TimeAdvancing
@@ -765,10 +789,14 @@ module internal AmbientState =
           UpdateDelta = 0L
           UpdateTime = 0L
           ClockDelta = 0.0f
+          TimeScalar = 1.0f
+          ScaledDeltaUnits = 0L
+          ScaledTimeUnits = 0L
           ClockTime = 0.0f
           TickDelta = 0L
           KeyValueStore = SUMap.makeEmpty HashIdentity.Structural config
           TickTime = 0L
+          ScaledTimeAccumulator = 0.0
           TickWatch = if timeAdvancing then Stopwatch.StartNew () else Stopwatch ()
           DateDelta = TimeSpan.Zero
           TickDeltaPrevious = 0L

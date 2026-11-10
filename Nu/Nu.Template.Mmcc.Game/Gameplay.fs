@@ -13,7 +13,7 @@ type GameplayState =
 // this is our MMCC model type representing gameplay.
 // this model representation uses update time, that is, time based on number of engine updates.
 type Gameplay =
-    { GameplayTime : int64
+    { GameplayTime : GameTime
       GameplayState : GameplayState }
 
     // this represents the gameplay model in an unutilized state, such as when the gameplay screen is not selected.
@@ -76,8 +76,7 @@ type GameplayDispatcher () =
             just gameplay
 
         | AdvanceTime ->
-            let gameDelta = world.GameDelta
-            let gameplay = { gameplay with GameplayTime = gameplay.GameplayTime + gameDelta.Updates }
+            let gameplay = { gameplay with GameplayTime = gameplay.GameplayTime + world.ScaledDelta }
             just gameplay
 
     // here we handle the above commands
@@ -96,7 +95,7 @@ type GameplayDispatcher () =
                 [// decor
                  Content.staticModel "StaticModel"
                     [Entity.Position == v3 0.0f 0.0f -2.0f
-                     Entity.Rotation := Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, gameplay.GameplayTime % 360L |> single |> degToRadF)]
+                     Entity.Rotation := Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, gameplay.GameplayTime.SecondsF * 60.0f % 360.0f |> degToRadF)]
 
                  // quit
                  Content.button Simulants.GameplayQuit.Name

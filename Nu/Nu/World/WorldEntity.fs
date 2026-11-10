@@ -61,6 +61,7 @@ module WorldEntityModule =
         let mutable EnabledLocal = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Visible = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable VisibleLocal = Unchecked.defaultof<Lens<bool, Entity>>
+        let mutable TimeScaled = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable CastShadow = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Pickable = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable AlwaysUpdate = Unchecked.defaultof<Lens<bool, Entity>>
@@ -206,6 +207,9 @@ module WorldEntityModule =
         member this.GetVisibleLocal world = World.getEntityVisibleLocal this world
         member this.SetVisibleLocal value world = World.setEntityVisibleLocal value this world |> ignore<bool>
         member this.VisibleLocal = if notNull (this :> obj) then lens (nameof this.VisibleLocal) this this.GetVisibleLocal this.SetVisibleLocal else Cached.VisibleLocal
+        member this.GetTimeScaled world = World.getEntityTimeScaled this world
+        member this.SetTimeScaled value world = World.setEntityTimeScaled value this world |> ignore<bool>
+        member this.TimeScaled = if notNull (this :> obj) then lens (nameof this.TimeScaled) this this.GetTimeScaled this.SetTimeScaled else Cached.TimeScaled
         member this.GetCastShadow world = World.getEntityCastShadow this world
         member this.SetCastShadow value world = World.setEntityCastShadow value this world |> ignore<bool>
         member this.CastShadow = if notNull (this :> obj) then lens (nameof this.CastShadow) this this.GetCastShadow this.SetCastShadow else Cached.CastShadow
@@ -295,6 +299,7 @@ module WorldEntityModule =
             Cached.EnabledLocal <- lens (nameof Cached.EnabledLocal) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Visible <- lens (nameof Cached.Visible) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.VisibleLocal <- lens (nameof Cached.VisibleLocal) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.TimeScaled <- lens (nameof Cached.TimeScaled) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.CastShadow <- lens (nameof Cached.CastShadow) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Pickable <- lens (nameof Cached.Pickable) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.AlwaysUpdate <- lens (nameof Cached.AlwaysUpdate) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
