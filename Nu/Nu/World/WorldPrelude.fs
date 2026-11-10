@@ -608,7 +608,11 @@ module internal AmbientState =
             match Constants.GameTime.DesiredFrameRate with
             | StaticFrameRate _ -> updateDelta
             | DynamicFrameRate _ -> tickDelta
-        let scaledTimeAccumulator = state.ScaledTimeAccumulator + double unscaledDeltaUnits * double state.TimeScalar
+        let scaledDeltaUnitsMax =
+            match Constants.GameTime.DesiredFrameRate with
+            | StaticFrameRate frameRate -> double Constants.Engine.TickDeltaMax / double Stopwatch.Frequency * double frameRate
+            | DynamicFrameRate _ -> double Constants.Engine.TickDeltaMax
+        let scaledTimeAccumulator = state.ScaledTimeAccumulator + min (double unscaledDeltaUnits * double state.TimeScalar) scaledDeltaUnitsMax
         let scaledTimeUnits = int64 scaledTimeAccumulator
         let dateTime = DateTimeOffset.Now
         { state with
