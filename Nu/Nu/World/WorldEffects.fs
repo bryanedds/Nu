@@ -83,14 +83,14 @@ module Effect =
                 effect outputs
 
     let private getAlive effect (world : World) =
-        let time = if effect.TimeScaled_ then world.ScaledTime else world.UnscaledTime
+        let gameTime = if effect.TimeScaled_ then world.ScaledTime else world.UnscaledTime
         let particleSystem = effect.ParticleSystem_
         let effectDescriptor = effect.Descriptor_
         match effectDescriptor.LifeTimeOpt with
         | Some lifeTime ->
-            let localTime = time - effect.StartTime_
+            let localTime = gameTime - effect.StartTime_
             if localTime <= lifeTime then true
-            else ParticleSystem.getAlive time particleSystem
+            else ParticleSystem.getAlive gameTime particleSystem
         | None -> true
 
     /// Run an effect, returning any resulting requests as data tokens.
