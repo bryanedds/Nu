@@ -44,6 +44,7 @@ module Effect =
     and [<ReferenceEquality; NoComparison; TypeConverter (typeof<EffectConverter>)>] Effect =
         private
             { StartTime_ : GameTime
+              TimeScaled_ : bool
               Offset_ : Vector3
               Transform_ : Transform
               ClipOpt_ : Box2 option
@@ -57,6 +58,7 @@ module Effect =
               Descriptor_ : EffectDescriptor }
 
         member this.StartTime = this.StartTime_
+        member this.TimeScaled = this.TimeScaled_
         member this.Transform = this.Transform_
         member this.ClipOpt = this.ClipOpt_
         member this.ShadowOffset = this.ShadowOffset_
@@ -80,7 +82,7 @@ module Effect =
                 effect outputs
 
     let private getAlive effect (world : World) =
-        let time = world.GameTime
+        let time = if effect.TimeScaled_ then world.ScaledTime else world.UnscaledTime
         let particleSystem = effect.ParticleSystem_
         let effectDescriptor = effect.Descriptor_
         match effectDescriptor.LifeTimeOpt with
@@ -97,12 +99,12 @@ module Effect =
         if getAlive effect world then
 
             // set up effect system to evaluate effect
-            let time = world.GameTime
-            let localTime = time - effect.StartTime_
-            let delta = world.GameDelta
+            let gameDelta = if effect.TimeScaled_ then world.ScaledDelta else world.UnscaledDelta
+            let gameTime = if effect.TimeScaled_ then world.ScaledTime else world.UnscaledTime
+            let localTime = gameTime - effect.StartTime_
             let mutable transform = effect.Transform_
             let effectSlice =
-                { SliceDelta = delta
+                { SliceDelta = gameDelta
                   SliceTime = localTime
                   Position = transform.Position
                   Scale = transform.Scale
@@ -144,7 +146,7 @@ module Effect =
                 |> Seq.choose (fun (name : string, descriptorObj : Particles.EmitterDescriptor) ->
                     match descriptorObj with
                     | :? BasicSpriteEmitterDescriptor as descriptor ->
-                        match World.tryMakeEmitter time descriptor.LifeTimeOpt descriptor.ParticleLifeTimeMaxOpt descriptor.ParticleRate descriptor.ParticleMax descriptor.Style world with
+                        match World.tryMakeEmitter gameTime descriptor.LifeTimeOpt descriptor.ParticleLifeTimeMaxOpt descriptor.ParticleRate descriptor.ParticleMax descriptor.Style world with
                         | Some (:? BasicStaticSpriteEmitter as emitter) ->
                             let emitter =
                                 { emitter with
@@ -156,7 +158,7 @@ module Effect =
                             Some (name, emitter :> Emitter)
                         | _ -> None
                     | :? BasicBillboardEmitterDescriptor as descriptor ->
-                        match World.tryMakeEmitter time descriptor.LifeTimeOpt descriptor.ParticleLifeTimeMaxOpt descriptor.ParticleRate descriptor.ParticleMax descriptor.Style world with
+                        match World.tryMakeEmitter gameTime descriptor.LifeTimeOpt descriptor.ParticleLifeTimeMaxOpt descriptor.ParticleRate descriptor.ParticleMax descriptor.Style world with
                         | Some (:? BasicStaticBillboardEmitter as emitter) ->
                             let emitter =
                                 { emitter with
@@ -181,7 +183,7 @@ module Effect =
             let effect = { effect with TagTokens_ = tagTokens }
 
             // run particles
-            let (particleSystem, output) = ParticleSystem.run delta time particleSystem
+            let (particleSystem, output) = ParticleSystem.run gameDelta gameTime particleSystem
             let effect = { effect with ParticleSystem_ = particleSystem }
             let effect = processParticleSystemOutput output effect world
 
@@ -191,9 +193,10 @@ module Effect =
         // dead
         else (false, effect, DataToken.empty)
 
-    /// Make an effect.
-    let makePlus startTime offset transform clipOpt shadowOffset renderType particleSystem historyMax history definitions descriptor =
+    /// Make an effect, timed by the scaled game time when timeScaled, else by the unscaled game time.
+    let makePlus startTime timeScaled offset transform clipOpt shadowOffset renderType particleSystem historyMax history definitions descriptor =
         { StartTime_ = startTime
+          TimeScaled_ = timeScaled
           Offset_ = offset
           Transform_ = transform
           ClipOpt_ = clipOpt
@@ -206,13 +209,13 @@ module Effect =
           TagTokens_ = Map.empty
           Descriptor_ = descriptor }
 
-    /// Make an effect.
-    let make startTime offset transform clipOpt shadowOffset renderType descriptor =
-        makePlus startTime offset transform clipOpt shadowOffset renderType ParticleSystem.empty Constants.Effects.EffectHistoryMaxDefault (System.Collections.Generic.Deque ()) Map.empty descriptor
+    /// Make an effect, timed by the scaled game time when timeScaled, else by the unscaled game time.
+    let make startTime timeScaled offset transform clipOpt shadowOffset renderType descriptor =
+        makePlus startTime timeScaled offset transform clipOpt shadowOffset renderType ParticleSystem.empty Constants.Effects.EffectHistoryMaxDefault (System.Collections.Generic.Deque ()) Map.empty descriptor
 
     /// The empty effect.
     let empty =
-        make GameTime.zero v3Zero (Transform.makeEmpty ()) None 0.0f DeferredRenderType EffectDescriptor.empty
+        make GameTime.zero true v3Zero (Transform.makeEmpty ()) None 0.0f DeferredRenderType EffectDescriptor.empty
         
 /// A time-based effect.
 type Effect = Effect.Effect

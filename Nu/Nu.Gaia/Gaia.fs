@@ -1434,7 +1434,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             | Some screen -> screen
 
         // proceed directly to idle state
-        World.selectScreen (IdlingState world.GameTime) screen world
+        World.selectScreen (IdlingState world.UnscaledTime) screen world
         (screen, world)
 
     let private tryMakeSdlDeps accompanied windowSize =

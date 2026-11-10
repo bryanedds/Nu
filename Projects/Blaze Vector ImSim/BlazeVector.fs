@@ -49,7 +49,7 @@ type BlazeVectorDispatcher () =
         World.endScreen world
 
         // declare gameplay screen
-        let behavior = Dissolve (Constants.Dissolve.Default, None)
+        let behavior = Dissolve (Constants.Dissolve.Default, Some Assets.Gameplay.DeadBlazeSong)
         let results = World.beginScreen<GameplayDispatcher> Simulants.Gameplay.Name (game.GetGameState world = Gameplay) behavior [] world
         if FQueue.contains Select results then Simulants.Gameplay.SetGameplayState Playing world
         if Simulants.Gameplay.GetSelected world && Simulants.Gameplay.GetGameplayState world = Quit then game.SetGameState Title world

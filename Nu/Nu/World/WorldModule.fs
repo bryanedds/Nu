@@ -174,6 +174,15 @@ module WorldModule =
         static member getTimeHalted (world : World) =
             world.TimeHalted
 
+        /// Get the time scalar - how fast scaled game time passes relative to unscaled game time, 0 holding it still.
+        static member getTimeScalar world =
+            World.getAmbientStateBy AmbientState.getTimeScalar world
+
+        /// Set the time scalar - how fast scaled game time passes relative to unscaled game time, 0 holding it still.
+        /// Negative values are treated as 0. Takes effect as of the next frame.
+        static member setTimeScalar scalar world =
+            AmbientState.setTimeScalar scalar world.AmbientState
+
         /// Set whether the world's frame rate is being explicitly paced based on clock progression.
         static member setFramePacing clockPacing world =
             AmbientState.setFramePacing clockPacing world.AmbientState
@@ -219,13 +228,23 @@ module WorldModule =
         static member getTickTime world =
             AmbientState.getTickTime world.AmbientState
 
-        /// Get the polymorphic engine time between this and the previous frame.
-        static member getGameDelta world =
-            World.getAmbientStateBy AmbientState.getGameDelta world
+        /// Get the polymorphic engine time between this and the previous frame, unscaled by the time scalar.
+        static member getUnscaledDelta world =
+            World.getAmbientStateBy AmbientState.getUnscaledDelta world
 
-        /// Get the polymorphic engine time that has transpired since the world began advancing.
-        static member getGameTime world =
-            World.getAmbientStateBy AmbientState.getGameTime world
+        /// Get the polymorphic engine time that has transpired since the world began advancing, unscaled by the time
+        /// scalar.
+        static member getUnscaledTime world =
+            World.getAmbientStateBy AmbientState.getUnscaledTime world
+
+        /// Get the polymorphic engine time between this and the previous frame, scaled by the time scalar.
+        static member getScaledDelta world =
+            World.getAmbientStateBy AmbientState.getScaledDelta world
+
+        /// Get the polymorphic engine time that has transpired since the world began advancing, scaled by the time
+        /// scalar as it went.
+        static member getScaledTime world =
+            World.getAmbientStateBy AmbientState.getScaledTime world
 
         /// Get the amount of date time that has transpired between this and the previous frame. This value is independent
         /// of whether the world was or is advancing.
@@ -344,8 +363,9 @@ module WorldModule =
             AmbientState.setCoroutines coroutines world.AmbientState
 
         /// Launch a coroutine to be processed by the engine.
-        static member launchCoroutine pred coroutine (world : World) =
-            AmbientState.addCoroutine (world.GameTime, pred, coroutine) world.AmbientState
+        static member launchCoroutine timeScaled pred coroutine (world : World) =
+            let time = if timeScaled then world.ScaledTime else world.UnscaledTime
+            AmbientState.addCoroutine (time, timeScaled, pred, coroutine) world.AmbientState
 
         static member internal getTasklets (world : World) =
             AmbientState.getTasklets world.AmbientState
@@ -366,13 +386,10 @@ module WorldModule =
         /// Schedule an operation to be executed by the engine with the given delay.
         /// When called in an ImSim Process context, will provide the ImSim simulant context and declared values from
         /// World that were active in that Process context as well as time and advancement state.
-        static member schedule delay operation (simulant : Simulant) (world : World) =
+        static member schedule timeScaled delay operation (simulant : Simulant) (world : World) =
 
             // compute time at which to schedule the operation
-            let time =
-                match delay with
-                | UpdateTime delay -> UpdateTime (world.UpdateTime + delay)
-                | TickTime delay -> TickTime (world.TickTime + delay)
+            let gameTime = (if timeScaled then world.ScaledTime else world.UnscaledTime) + delay
 
             // restore the ImSim context when we're in an ImSim Process context
             let operation =
@@ -394,16 +411,17 @@ module WorldModule =
                 else operation
 
             // add tasklet
-            let tasklet = { ScheduledTime = time; ScheduledOp = operation }
+            let tasklet = { ScheduledGameTime = gameTime; ScheduledTimeScaled = timeScaled; ScheduledOp = operation }
             World.addTasklet simulant tasklet world
 
         /// Schedule an operation to be executed by the engine at the end of the current frame or the next frame if
-        /// we've already started processing tasklets.
+        /// we've already started processing tasklets, timed by the unscaled game time so it runs however time is
+        /// scaled.
         /// When called in an ImSim Process context, will provide the ImSim simulant context and declared values from
         /// World that were active in that Process context as well as time and advancement state.
         static member defer operation (simulant : Simulant) (world : World) =
             let time = if WorldModuleInternal.EndFrameProcessingStarted && world.TimeAdvancing then GameTime.epsilon else GameTime.zero
-            World.schedule time operation simulant world
+            World.schedule false time operation simulant world
 
         /// Attempt to get the window flags.
         static member tryGetWindowFlags world =
@@ -545,13 +563,21 @@ module WorldModule =
         static member internal getOctree world =
             world.Octree
 
-        /// A coroutine launcher.
-        member this.Launcher =
-            flip (World.launchCoroutine tautology) this
+        /// A coroutine launcher with its time scaled.
+        member this.LauncherScaled =
+            flip (World.launchCoroutine true tautology) this
 
-        /// A cancellable coroutine launcher.
-        member this.LauncherWhile pred =
-            flip (World.launchCoroutine pred) this
+        /// A cancellable coroutine launcher with its time scaled.
+        member this.LauncherScaledWhile pred =
+            flip (World.launchCoroutine true pred) this
+
+        /// A coroutine launcher with its time unscaled.
+        member this.LauncherUnscaled =
+            flip (World.launchCoroutine false tautology) this
+
+        /// A cancellable coroutine launcher with its time unscaled.
+        member this.LauncherUnscaledWhile pred =
+            flip (World.launchCoroutine false pred) this
 
     type World with // Subsystems
 

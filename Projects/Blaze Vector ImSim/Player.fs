@@ -8,11 +8,11 @@ open BlazeVector
 [<AutoOpen>]
 module PlayerExtensions =
     type Entity with
-        member this.GetLastTimeGrounded world : int64 = this.Get (nameof this.LastTimeGrounded) world
-        member this.SetLastTimeGrounded (value : int64) world = this.Set (nameof this.LastTimeGrounded) value world
+        member this.GetLastTimeGrounded world : GameTime = this.Get (nameof this.LastTimeGrounded) world
+        member this.SetLastTimeGrounded (value : GameTime) world = this.Set (nameof this.LastTimeGrounded) value world
         member this.LastTimeGrounded = lens (nameof this.LastTimeGrounded) this this.GetLastTimeGrounded this.SetLastTimeGrounded
-        member this.GetLastTimeJump world : int64 = this.Get (nameof this.LastTimeJump) world
-        member this.SetLastTimeJump (value : int64) world = this.Set (nameof this.LastTimeJump) value world
+        member this.GetLastTimeJump world : GameTime = this.Get (nameof this.LastTimeJump) world
+        member this.SetLastTimeJump (value : GameTime) world = this.Set (nameof this.LastTimeJump) value world
         member this.LastTimeJump = lens (nameof this.LastTimeJump) this this.GetLastTimeJump this.SetLastTimeJump
 
 type PlayerDispatcher () =
@@ -55,24 +55,24 @@ type PlayerDispatcher () =
 
         // process last time on ground
         if World.getBodyGrounded bodyId world then
-            entity.SetLastTimeGrounded world.UpdateTime world
+            entity.SetLastTimeGrounded world.ScaledTime world
 
         // process shooting
         let fallen = (entity.GetPosition world).Y <= -320.0f
-        if world.TimeAdvancing && not fallen && world.UpdateTime % 5L = 0L then
+        if world.TimeAdvancing && not fallen && world.ScaledTime % UpdateTime 5L = 0L then
             let bullet = World.createEntity<BulletDispatcher> None NoOverlay None entity.Group world // OPTIMIZATION: NoOverlay to avoid reflection.
             bullet.SetPosition (entity.GetPosition world + v3 16.0f 1.0f 0.0f) world
             bullet.SetElevation (entity.GetElevation world) world
-            bullet.SetCreationTime world.UpdateTime world
+            bullet.SetCreationTime world.ScaledTime world
             World.applyBodyLinearImpulse (v3 Constants.Gameplay.BulletImpulse 0.0f 0.0f) None (bullet.GetBodyId world) world
             World.playSound 0.0f 0.0f 1.0f Assets.Gameplay.ShotSound world
 
         // process jumping
         if  world.TimeAdvancing &&
-            world.UpdateTime >= entity.GetLastTimeJump world + 12L &&
-            world.UpdateTime <= entity.GetLastTimeGrounded world + 10L &&
+            world.ScaledTime >= entity.GetLastTimeJump world + UpdateTime 12L &&
+            world.ScaledTime <= entity.GetLastTimeGrounded world + UpdateTime 10L &&
             World.isKeyboardKeyPressed KeyboardKey.Space world then
-            entity.SetLastTimeJump world.UpdateTime world
+            entity.SetLastTimeJump world.ScaledTime world
             World.applyBodyLinearImpulse (v3 0.0f Constants.Gameplay.PlayerJumpForce 0.0f) None (entity.GetBodyId world) world
             World.playSound 0.0f -0.5f 1.0f Assets.Gameplay.JumpSound world
 

@@ -7,13 +7,13 @@ open BlazeVector
 
 type [<SymbolicExpansion>] Player =
     { Alive : bool
-      LastTimeGrounded : int64
-      LastTimeJump : int64 }
+      LastTimeGrounded : GameTime
+      LastTimeJump : GameTime }
 
     static member val initial =
         { Alive = true
-          LastTimeGrounded = Int64.MinValue
-          LastTimeJump = Int64.MinValue }
+          LastTimeGrounded = GameTime.MinValue
+          LastTimeJump = GameTime.MinValue }
 
 type PlayerMessage =
     | UpdateMessage
@@ -67,20 +67,20 @@ type PlayerDispatcher () =
         | UpdateMessage ->
             let player =
                 if World.getBodyGrounded (entity.GetBodyId world) world
-                then { player with LastTimeGrounded = world.UpdateTime }
+                then { player with LastTimeGrounded = world.ScaledTime }
                 else player
             let (player, dying) =
                 if player.Alive && (entity.GetPosition world).Y <= -320.0f
                 then ({ player with Alive = false }, true)
                 else (player, false)
             if dying then withSignal Die player
-            elif player.Alive && world.UpdateTime % 5L = 0L then withSignal Shoot player
+            elif player.Alive && world.ScaledTime % UpdateTime 5L = 0L then withSignal Shoot player
             else just player
 
         | TryJumpByMouse ->
-            let time = world.UpdateTime
-            if  time >= player.LastTimeJump + 12L &&
-                time <= player.LastTimeGrounded + 10L then
+            let time = world.ScaledTime
+            if  time >= player.LastTimeJump + UpdateTime 12L &&
+                time <= player.LastTimeGrounded + UpdateTime 10L then
                 let player = { player with LastTimeJump = time }
                 withSignal Jump player
             else just player
@@ -88,9 +88,9 @@ type PlayerDispatcher () =
         | TryJumpByKeyboard keyboardKeyData ->
             match (keyboardKeyData.KeyboardKey, keyboardKeyData.Repeated) with
             | (KeyboardKey.Space, false) ->
-                let time = world.UpdateTime
-                if  time >= player.LastTimeJump + 12L &&
-                    time <= player.LastTimeGrounded + 10L then
+                let time = world.ScaledTime
+                if  time >= player.LastTimeJump + UpdateTime 12L &&
+                    time <= player.LastTimeGrounded + UpdateTime 10L then
                     let player = { player with LastTimeJump = time }
                     withSignal Jump player
                 else just player

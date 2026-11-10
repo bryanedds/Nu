@@ -223,7 +223,7 @@ type GameplayDispatcher () =
             just gameplay
 
         | AdvanceTime ->
-            let gameDelta = world.GameDelta
+            let gameDelta = world.ScaledDelta
             let gameplay = { gameplay with GameplayTime = gameplay.GameplayTime + gameDelta.Updates }
             just gameplay
 

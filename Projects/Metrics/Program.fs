@@ -123,7 +123,7 @@ type MyGameDispatcher () =
             entity.SetPresence Omnipresent world
             entity.SetPosition (position + v3 -12.5f -12.5f -20.0f) world
             entity.SetScale (v3Dup 0.1f) world
-        World.selectScreen (IdlingState world.GameTime) screen world
+        World.selectScreen (IdlingState world.UnscaledTime) screen world
 #endif
 
     override this.Update (game, world) =

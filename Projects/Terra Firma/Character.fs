@@ -26,14 +26,14 @@ type CharacterType =
 
     member this.InjuryTime =
         match this with
-        | Enemy -> 40
-        | Player -> 30
+        | Enemy -> UpdateTime 40L
+        | Player -> UpdateTime 30L
 
     member this.JumpSpeed =
         5.0f
 
 type AttackState =
-    { AttackTime : int64
+    { AttackTime : GameTime
       FollowUpBuffered : bool
       AttackedCharacters : Entity Set }
 
@@ -43,10 +43,10 @@ type AttackState =
           AttackedCharacters = Set.empty }
 
 type InjuryState =
-    { InjuryTime : int64 }
+    { InjuryTime : GameTime }
 
 type WoundState =
-    { WoundTime : int64 }
+    { WoundTime : GameTime }
 
 type ActionState =
     | NormalState
@@ -66,11 +66,11 @@ module CharacterExtensions =
         member this.GetHitPoints world : int = this.Get (nameof this.HitPoints) world
         member this.SetHitPoints (value : int) world = this.Set (nameof this.HitPoints) value world
         member this.HitPoints = lens (nameof this.HitPoints) this this.GetHitPoints this.SetHitPoints
-        member this.GetLastTimeGrounded world : int64 = this.Get (nameof this.LastTimeGrounded) world
-        member this.SetLastTimeGrounded (value : int64) world = this.Set (nameof this.LastTimeGrounded) value world
+        member this.GetLastTimeGrounded world : GameTime = this.Get (nameof this.LastTimeGrounded) world
+        member this.SetLastTimeGrounded (value : GameTime) world = this.Set (nameof this.LastTimeGrounded) value world
         member this.LastTimeGrounded = lens (nameof this.LastTimeGrounded) this this.GetLastTimeGrounded this.SetLastTimeGrounded
-        member this.GetLastTimeJump world : int64 = this.Get (nameof this.LastTimeJump) world
-        member this.SetLastTimeJump (value : int64) world = this.Set (nameof this.LastTimeJump) value world
+        member this.GetLastTimeJump world : GameTime = this.Get (nameof this.LastTimeJump) world
+        member this.SetLastTimeJump (value : GameTime) world = this.Set (nameof this.LastTimeJump) value world
         member this.LastTimeJump = lens (nameof this.LastTimeJump) this this.GetLastTimeJump this.SetLastTimeJump
         member this.GetWeaponCollisions world : Entity Set = this.Get (nameof this.WeaponCollisions) world
         member this.SetWeaponCollisions (value : Entity Set) world = this.Set (nameof this.WeaponCollisions) value world
@@ -114,28 +114,30 @@ type CharacterDispatcher () =
             Array.ofList animations
         | _ -> [||]
 
+    /// Whether a mark in an action's local time was passed this frame - never while scaled time is held.
+    static let passed (mark : GameTime) (localTime : GameTime) (world : World) =
+        localTime >= mark && localTime - world.ScaledDelta < mark
+
     static let tryComputeActionAnimation animations (entity : Entity) world =
         match entity.GetActionState world with
         | NormalState ->
             (true, animations)
         | AttackState attack ->
-            let localTime = world.UpdateTime - attack.AttackTime
-            match localTime with
-            | 7L -> World.playSound 0.0f 0.0f 1.0f Assets.Gameplay.SlashSound world
-            | 67L -> World.playSound 0.0f 0.0f 1.0f Assets.Gameplay.Slash2Sound world
-            | _ -> ()
+            let localTime = world.ScaledTime - attack.AttackTime
+            if passed (UpdateTime 7L) localTime world then World.playSound 0.0f 0.0f 1.0f Assets.Gameplay.SlashSound world
+            if passed (UpdateTime 67L) localTime world then World.playSound 0.0f 0.0f 1.0f Assets.Gameplay.Slash2Sound world
             let (animationTime, animationName) =
-                if localTime <= 55L
+                if localTime <= UpdateTime 55L
                 then (attack.AttackTime, "AttackVertical")
-                else (attack.AttackTime + 55L, "AttackHorizontal")
+                else (attack.AttackTime + UpdateTime 55L, "AttackHorizontal")
             let animation = Animation.once animationTime None animationName
             (true, [|animation|])
         | InjuryState injury ->
             let animation = Animation.once injury.InjuryTime None "WalkBack"
             (true, [|animation|])
         | WoundState wound ->
-            let localTime = world.UpdateTime - wound.WoundTime
-            let visible = localTime / 5L % 2L <> 0L
+            let localTime = world.ScaledTime - wound.WoundTime
+            let visible = localTime.Updates / 5L % 2L <> 0L
             let animation = Animation.loop wound.WoundTime None "WalkBack"
             (visible, [|animation|])
 
@@ -152,12 +154,12 @@ type CharacterDispatcher () =
             if position.Y - playerPosition.Y >= 0.25f then // above player
                 if  playerPositionFlat.Distance positionFlat < 1.0f &&
                     rotationForwardFlat.AngleBetween (playerPositionFlat - positionFlat) < 0.1f then
-                    entity.SetActionState (AttackState (AttackState.make world.UpdateTime)) world
+                    entity.SetActionState (AttackState (AttackState.make world.ScaledTime)) world
                     entity.SetLinearVelocity (entity.GetLinearVelocity world * v3Up) world
             elif playerPosition.Y - position.Y < 1.3f then // at or a bit below player
                 if  playerPositionFlat.Distance positionFlat < 1.75f &&
                     rotationForwardFlat.AngleBetween (playerPositionFlat - positionFlat) < 0.15f then
-                    entity.SetActionState (AttackState (AttackState.make world.UpdateTime)) world
+                    entity.SetActionState (AttackState (AttackState.make world.ScaledTime)) world
                     entity.SetLinearVelocity (entity.GetLinearVelocity world * v3Up) world
         | _ -> ()
 
@@ -191,21 +193,21 @@ type CharacterDispatcher () =
         let grounded = World.getBodyGrounded bodyId world
         if World.isKeyboardKeyPressed KeyboardKey.Space world then
             let actionState = entity.GetActionState world
-            let sinceGrounded = world.UpdateTime - entity.GetLastTimeGrounded world
-            let sinceJump = world.UpdateTime - entity.GetLastTimeJump world
-            if sinceJump >= 12L && sinceGrounded < 10L && actionState = NormalState then
+            let sinceGrounded = world.ScaledTime - entity.GetLastTimeGrounded world
+            let sinceJump = world.ScaledTime - entity.GetLastTimeJump world
+            if sinceJump >= UpdateTime 12L && sinceGrounded < UpdateTime 10L && actionState = NormalState then
                 entity.SetLinearVelocity (entity.GetLinearVelocity world + v3Up * Player.JumpSpeed) world
-                entity.SetLastTimeJump world.UpdateTime world
+                entity.SetLastTimeJump world.ScaledTime world
 
         // process attacking
         elif World.isKeyboardKeyPressed KeyboardKey.RShift world then
             match entity.GetActionState world with
             | NormalState ->
-                entity.SetActionState (AttackState (AttackState.make world.UpdateTime)) world
+                entity.SetActionState (AttackState (AttackState.make world.ScaledTime)) world
                 entity.SetLinearVelocity (entity.GetLinearVelocity world * v3Up) world
             | AttackState attack ->
-                let localTime = world.UpdateTime - attack.AttackTime
-                if localTime > 10L && not attack.FollowUpBuffered then
+                let localTime = world.ScaledTime - attack.AttackTime
+                if localTime > UpdateTime 10L && not attack.FollowUpBuffered then
                     entity.SetActionState (AttackState { attack with FollowUpBuffered = true }) world
             | InjuryState _ | WoundState _ -> ()
 
@@ -234,7 +236,7 @@ type CharacterDispatcher () =
             let turnVelocity =
                 (if World.isKeyboardKeyDown KeyboardKey.Right world then -turnSpeed else 0.0f) +
                 (if World.isKeyboardKeyDown KeyboardKey.Left world then turnSpeed else 0.0f)
-            let rotation = if turnVelocity <> 0.0f then rotation * Quaternion.CreateFromAxisAngle (v3Up, turnVelocity * world.GameDelta.SecondsF) else rotation
+            let rotation = if turnVelocity <> 0.0f then rotation * Quaternion.CreateFromAxisAngle (v3Up, turnVelocity * world.ScaledDelta.SecondsF) else rotation
 
             // apply changes
             entity.SetLinearVelocity (walkVelocity.WithY 0.0f + entity.GetLinearVelocity world * v3Up) world
@@ -258,8 +260,8 @@ type CharacterDispatcher () =
          define Entity.CharacterType characterType
          define Entity.ActionState NormalState
          define Entity.HitPoints characterType.HitPointsMax
-         define Entity.LastTimeGrounded 0L
-         define Entity.LastTimeJump 0L
+         define Entity.LastTimeGrounded GameTime.zero
+         define Entity.LastTimeJump GameTime.zero
          define Entity.WeaponCollisions Set.empty
          define Entity.WeaponModel Assets.Gameplay.GreatSwordModel]
 
@@ -268,11 +270,11 @@ type CharacterDispatcher () =
         // process last time on ground
         let bodyId = entity.GetBodyId world
         if World.getBodyGrounded bodyId world then
-            entity.SetLastTimeGrounded world.UpdateTime world
+            entity.SetLastTimeGrounded world.ScaledTime world
 
         // process input
         let characterType = entity.GetCharacterType world
-        if world.TimeAdvancing then
+        if world.TimeAdvancing && world.TimeScalar > 0.0f then
             match characterType with
             | Enemy -> processEnemyInput (Simulants.GameplayPlayer.GetPosition world) entity world
             | Player -> processPlayerInput entity world
@@ -281,14 +283,14 @@ type CharacterDispatcher () =
         match entity.GetActionState world with
         | NormalState -> ()
         | AttackState attack ->
-            let localTime = world.UpdateTime - attack.AttackTime
+            let localTime = world.ScaledTime - attack.AttackTime
             let actionState =
-                if localTime < 55 || localTime < 130 && attack.FollowUpBuffered
+                if localTime < UpdateTime 55L || localTime < UpdateTime 130L && attack.FollowUpBuffered
                 then AttackState attack
                 else NormalState
             entity.SetActionState actionState world
         | InjuryState injury ->
-            let localTime = world.UpdateTime - injury.InjuryTime
+            let localTime = world.ScaledTime - injury.InjuryTime
             let injuryTime = characterType.InjuryTime
             let actionState = if localTime < injuryTime then InjuryState injury else NormalState
             entity.SetActionState actionState world
@@ -364,12 +366,12 @@ type CharacterDispatcher () =
         // process attacks
         match entity.GetActionState world with
         | AttackState attack ->
-            let localTime = world.UpdateTime - attack.AttackTime
+            let localTime = world.ScaledTime - attack.AttackTime
             let attack =
-                match localTime with
-                | 55L -> { attack with AttackedCharacters = Set.empty } // reset attack tracking at start of buffered attack
-                | _ -> attack
-            if localTime >= 20 && localTime < 30 || localTime >= 78 && localTime < 88 then
+                if passed (UpdateTime 55L) localTime world
+                then { attack with AttackedCharacters = Set.empty } // reset attack tracking at start of buffered attack
+                else attack
+            if localTime >= UpdateTime 20L && localTime < UpdateTime 30L || localTime >= UpdateTime 78L && localTime < UpdateTime 88L then
                 let weaponCollisions = entity.GetWeaponCollisions world
                 let attackedCharacters = Set.difference weaponCollisions attack.AttackedCharacters
                 entity.SetActionState (AttackState { attack with AttackedCharacters = Set.union attack.AttackedCharacters weaponCollisions }) world
@@ -392,7 +394,7 @@ type CharacterDispatcher () =
 
         // process death
         match entity.GetActionState world with
-        | WoundState wound when wound.WoundTime = world.UpdateTime - 60L ->
+        | WoundState wound when passed (UpdateTime 60L) (world.ScaledTime - wound.WoundTime) world ->
             World.publish () entity.DeathEvent entity world
         | _ -> ()
 

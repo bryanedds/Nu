@@ -20,7 +20,7 @@ module CoroutineTests =
         let runWhile (world : World) = world.UpdateTime < 10L
         let perProcess (world : World) =
             if world.UpdateTime = 0 then
-                coroutine world.Launcher {
+                coroutine world.LauncherScaled {
                     numbers.Add world.UpdateTime
                     numbers.Add world.UpdateTime
                     do! Coroutine.sleep 1L
@@ -35,6 +35,22 @@ module CoroutineTests =
         CollectionAssert.AreEqual ([0; 0; 1; 2; 4], numbers)
         Assert.Equal (Constants.Engine.ExitCodeSuccess, result)
 
+    let [<Test>] ``Time scaled coroutine sleeps by scaled game time.`` () =
+        Nu.init ()
+        let world = World.makeStub (constant None) { WorldConfig.defaultConfig with Accompanied = true } (TestPlugin ())
+        World.setTimeScalar 0.5f world
+        let numbers = List<_> ()
+        let runWhile (world : World) = world.UpdateTime < 10L
+        let perProcess (world : World) =
+            if world.UpdateTime = 0 then
+                coroutine world.LauncherScaled {
+                    numbers.Add world.UpdateTime
+                    do! Coroutine.sleep 2L
+                    numbers.Add world.UpdateTime }
+        let result = World.runWithCleanUp runWhile ignore perProcess ignore ignore ignore (Some ignore) world
+        CollectionAssert.AreEqual ([0; 4], numbers)
+        Assert.Equal (Constants.Engine.ExitCodeSuccess, result)
+
     let [<Test>] ``Coroutine can run relative.`` () =
         Nu.init ()
         let world = World.makeStub (constant None) { WorldConfig.defaultConfig with Accompanied = true } (TestPlugin ())
@@ -42,7 +58,7 @@ module CoroutineTests =
         let runWhile (world : World) = world.UpdateTime < 10L
         let perProcess (world : World) =
             if world.UpdateTime = 1L then
-                coroutine world.Launcher {
+                coroutine world.LauncherScaled {
                     numbers.Add world.UpdateTime
                     do! Coroutine.sleep 1L
                     numbers.Add world.UpdateTime
@@ -62,7 +78,7 @@ module CoroutineTests =
         let perProcess (world : World) =
             if world.UpdateTime = 0 then
                 let rec c () =
-                    coroutine world.Launcher {
+                    coroutine world.LauncherScaled {
                         numbers.Add world.UpdateTime
                         c () }
                 c ()
@@ -77,7 +93,7 @@ module CoroutineTests =
         let runWhile (world : World) = world.UpdateTime < 15L
         let perProcess (world : World) =
             if world.UpdateTime = 2 then
-                coroutine (world.LauncherWhile (fun () -> world.UpdateTime <> 10L)) {
+                coroutine (world.LauncherScaledWhile (fun () -> world.UpdateTime <> 10L)) {
                     while true do
                         numbers.Add world.UpdateTime
                         do! Coroutine.sleep 3L }
@@ -92,7 +108,7 @@ module CoroutineTests =
         let runWhile (world : World) = world.UpdateTime < 20L
         let perProcess (world : World) =
             if world.UpdateTime = 3 then
-                coroutine (world.LauncherWhile (fun () -> world.UpdateTime < 12L)) {
+                coroutine (world.LauncherScaledWhile (fun () -> world.UpdateTime < 12L)) {
                     numbers.Add world.UpdateTime
                     for n in [3L; 4L; 5L] do
                         numbers.Add (world.UpdateTime - n)
