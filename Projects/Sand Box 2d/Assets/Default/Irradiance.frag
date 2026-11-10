@@ -1,19 +1,15 @@
 #version 450 core
 
 const float PI = 3.14159265359;
-const int SAMPLE_RESOLUTION = 32; // samples along each side of each cube face, for 6 * 32 * 32 samples per coefficient
 
-struct Eye3dStruct
+struct IrradianceStruct
 {
-    vec3 center;
-    mat4 view;
-    mat4 viewInverse;
-    mat4 projection;
-    mat4 projectionInverse;
-    mat4 viewProjection;
+    int flipped;
+    int sampleResolution;
+    float sampleLod;
 };
 
-layout(set = 0, binding = 0) uniform Eye3dUniform { Eye3dStruct eye; };
+layout(set = 0, binding = 1) uniform IrradianceUniform { IrradianceStruct irradiance; };
 
 layout(set = 1, binding = 0) uniform textureCube inputCubeMap;
 
@@ -68,25 +64,22 @@ void main()
     int index = int(gl_FragCoord.x);
     float convolution = index == 0 ? 1.0 : index < 4 ? 2.0 / 3.0 : 0.25;
 
-    // whether the input is flipped, as signaled by its projection being flipped
-    bool flipped = eye.projection[1][1] < 0.0;
-
     // project the input's radiance onto the coefficient's basis function, weighting each sample by the solid angle of
     // the cube face texel it stands for
     vec3 coefficient = vec3(0.0);
     float weightTotal = 0.0;
     for (int face = 0; face < 6; ++face)
     {
-        for (int j = 0; j < SAMPLE_RESOLUTION; ++j)
+        for (int j = 0; j < irradiance.sampleResolution; ++j)
         {
-            for (int i = 0; i < SAMPLE_RESOLUTION; ++i)
+            for (int i = 0; i < irradiance.sampleResolution; ++i)
             {
-                vec2 uv = (vec2(i, j) + 0.5) / float(SAMPLE_RESOLUTION) * 2.0 - 1.0;
+                vec2 uv = (vec2(i, j) + 0.5) / float(irradiance.sampleResolution) * 2.0 - 1.0;
                 vec3 direction = getFaceDirection(face, uv);
                 float weight = 1.0 / pow(dot(direction, direction), 1.5); // solid angle of the texel, up to a constant
                 direction = normalize(direction);
-                vec3 lookup = flipped ? getFlippedDirection(direction) : direction;
-                vec3 radiance = texture(samplerCube(inputCubeMap, inputSampler), lookup).rgb;
+                vec3 lookup = irradiance.flipped == 1 ? getFlippedDirection(direction) : direction;
+                vec3 radiance = textureLod(samplerCube(inputCubeMap, inputSampler), lookup, irradiance.sampleLod).rgb;
                 if (!any(isnan(radiance))) // TODO: understand why NaN can come from this sample and try to apply a more appropriate fix.
                 {
                     coefficient += radiance * getBasis(index, direction) * weight;

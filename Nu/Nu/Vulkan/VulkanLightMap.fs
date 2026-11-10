@@ -18,6 +18,20 @@ type EnvironmentFilterStruct =
     [<FieldOffset(0)>] val mutable roughness : single
     [<FieldOffset(4)>] val mutable resolution : single
 
+/// Represents the irradiance data for a shader - whether its input cube map is flipped, and how many samples to take
+/// along each side of each of its faces from which mip.
+[<Struct; StructLayout (LayoutKind.Explicit)>]
+type IrradianceStruct =
+    [<FieldOffset(0)>] val mutable flipped : int
+    [<FieldOffset(4)>] val mutable sampleResolution : int
+    [<FieldOffset(8)>] val mutable sampleLod : single
+
+/// Describes an irradiance pipeline that's loaded into GPU.
+type IrradiancePipeline =
+    { Eye3dUniform : VulkanBuffer
+      IrradianceUniform : VulkanBuffer
+      Pipeline : Pipeline }
+
 /// Describes an environment filter pipeline that's loaded into GPU.
 type EnvironmentFilterPipeline =
     { Eye3dUniform : VulkanBuffer
@@ -41,11 +55,12 @@ module LightMap =
     /// Create a reflection map.
     let createReflectionMap render resolution origin ambientColor ambientBrightness getCommandBuffer context =
 
-        // create reflection cube map
+        // create reflection cube map, mipmapped so its irradiance can be projected from a small mip
         let metadata = TextureMetadata.make resolution resolution
+        let mips = inc (int (MathF.Log2 (single resolution)))
         let reflectionCubeMapInternal =
             TextureInternal.create
-                MipmapNone (AttachmentColor false) TextureCubeMap (VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferDst)
+                (MipmapManual mips) (AttachmentColor false) TextureCubeMap (VkImageUsageFlags.Sampled ||| VkImageUsageFlags.TransferSrc ||| VkImageUsageFlags.TransferDst)
                 Rgba16f Rgba metadata context
         let reflectionCubeMap = EagerTexture reflectionCubeMapInternal
 
@@ -96,11 +111,137 @@ module LightMap =
         // end reflection rendering
         Hl.recordTransitionLayout true 1 0 6 VkImageAspectFlags.Color ColorAttachmentWrite ColorAttachmentRead reflectionCubeMap.Image (getCommandBuffer ())
 
+        // generate reflection mipmaps
+        for i in 0 .. dec 6 do
+            Hl.recordGenerateMipmaps (getCommandBuffer ()) resolution resolution mips i reflectionCubeMap.Image
+
         // fin
         reflectionCubeMap
 
+    /// Create an IrradiancePipeline.
+    let createIrradiancePipeline shaderPath colorAttachmentFormat (context : VulkanContext) =
+
+        // create uniform buffers
+        let eyeUniform = VulkanBuffer.create Uniform sizeof<Eye3dStruct> context
+        let irradianceUniform = VulkanBuffer.create Uniform sizeof<IrradianceStruct> context
+
+        // create pipeline
+        let pipeline =
+            Pipeline.create
+                shaderPath [|VulkanUnblended|] [|CullNone|]
+                [|Pipeline.vertex 0 CubeMap.VertexSize VkVertexInputRate.Vertex
+                    [|Pipeline.attribute 0 Single3 0|]|]
+                [|Pipeline.descriptorSet<int>
+                    [|Pipeline.descriptor 0 UniformBuffer VertexStage 1
+                      Pipeline.descriptor 1 UniformBuffer FragmentStage 1|]
+                  Pipeline.descriptorSet<Texture>
+                      [|Pipeline.descriptor 0 SampledImage FragmentStage 1|]
+                  Pipeline.descriptorSet<Sampler>
+                    [|Pipeline.descriptor 0 Sampler FragmentStage 1|]|]
+                [||] [|colorAttachmentFormat|] None
+                [|eyeUniform; irradianceUniform|]
+
+        // fin
+        { Eye3dUniform = eyeUniform; IrradianceUniform = irradianceUniform; Pipeline = pipeline }
+
+    /// Destroy an IrradiancePipeline.
+    let destroyIrradiancePipeline (irradiancePipeline : IrradiancePipeline) context =
+        Pipeline.destroy irradiancePipeline.Pipeline context
+
+    /// Draw an irradiance map's coefficients.
+    let drawIrradiance
+        (eyeCenter : Vector3)
+        (view : Matrix4x4)
+        (projection : Matrix4x4)
+        (flipped : bool)
+        (sampleResolution : int)
+        (sampleLod : single)
+        (cubeMap : Texture)
+        (sampler : Sampler)
+        (geometry : CubeMapGeometry)
+        (resolution : Vector2i)
+        (colorAttachment : VkImageView)
+        (pipeline : IrradiancePipeline)
+        (getCommandBuffer : unit -> VkCommandBuffer)
+        (advanceCommandBufferWhenNeeded : unit -> unit)
+        (context : VulkanContext) =
+
+        // compute matrices
+        let viewInverse = view.Inverted
+        let projectionInverse = projection.Inverted
+        let viewProjection = view * projection
+
+        // only draw when required vkPipeline exists
+        match Pipeline.tryGetVkPipeline VulkanUnblended CullNone pipeline.Pipeline with
+        | Some vkPipeline ->
+
+            // specify uniforms
+            let mutable uniformDescriptorSet = Pipeline.specifyDescriptorSet 0 pipeline.Pipeline.DrawIndex pipeline.Pipeline $ fun vkSet ->
+
+                // specify eye
+                let eye = Eye3dStruct (center = eyeCenter, view = view, viewInverse = viewInverse, projection = projection, projectionInverse = projectionInverse, viewProjection = viewProjection)
+                VulkanBuffer.uploadValue eye pipeline.Eye3dUniform context
+                Pipeline.writeDescriptorUniformBuffer 0 0 pipeline.Eye3dUniform vkSet
+
+                // specify irradiance
+                let irradiance = IrradianceStruct (flipped = (if flipped then 1 else 0), sampleResolution = sampleResolution, sampleLod = sampleLod)
+                VulkanBuffer.uploadValue irradiance pipeline.IrradianceUniform context
+                Pipeline.writeDescriptorUniformBuffer 1 0 pipeline.IrradianceUniform vkSet
+
+            // specify cube map
+            let mutable cubeMapDescriptorSet = Pipeline.specifyDescriptorSet 1 cubeMap pipeline.Pipeline $ fun vkSet ->
+                Pipeline.writeDescriptorSampledTexture 0 0 cubeMap vkSet
+
+            // specify sampler
+            let mutable samplerDescriptorSet = Pipeline.specifyDescriptorSet 2 sampler pipeline.Pipeline $ fun vkSet ->
+                Pipeline.writeDescriptorSampler 0 0 sampler vkSet
+
+            // set up render
+            let commandBuffer = getCommandBuffer ()
+            let mutable renderArea = VkRect2D (0, 0, uint resolution.X, uint resolution.Y)
+            let mutable vkViewport = Hl.makeViewport false renderArea
+            Hl.withRenderingInfo [|colorAttachment|] None renderArea DontCareAttachments $ fun renderingInfo ->
+                let mutable renderingInfo = renderingInfo
+                DeviceApi.vkCmdBeginRendering (commandBuffer, &&renderingInfo)
+            DeviceApi.vkCmdSetViewport (commandBuffer, 0u, 1u, &&vkViewport)
+            DeviceApi.vkCmdSetScissor (commandBuffer, 0u, 1u, &&renderArea)
+
+            // set up pipeline
+            DeviceApi.vkCmdBindPipeline (commandBuffer, VkPipelineBindPoint.Graphics, vkPipeline)
+
+            // bind vertex and index buffers
+            let mutable vertexBuffer = geometry.VertexBuffer.VkBuffer
+            let mutable vertexOffset = 0UL
+            DeviceApi.vkCmdBindVertexBuffers (commandBuffer, 0u, 1u, &&vertexBuffer, &&vertexOffset)
+            DeviceApi.vkCmdBindIndexBuffer (commandBuffer, geometry.IndexBuffer.VkBuffer, 0UL, VkIndexType.Uint32)
+
+            // bind descriptor sets
+            DeviceApi.vkCmdBindDescriptorSets (commandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 0u, 1u, &&uniformDescriptorSet, 0u, nullPtr)
+            DeviceApi.vkCmdBindDescriptorSets (commandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 1u, 1u, &&cubeMapDescriptorSet, 0u, nullPtr)
+            DeviceApi.vkCmdBindDescriptorSets (commandBuffer, VkPipelineBindPoint.Graphics, pipeline.Pipeline.PipelineLayout, 2u, 1u, &&samplerDescriptorSet, 0u, nullPtr)
+
+            // draw
+            DeviceApi.vkCmdDrawIndexed (commandBuffer, uint geometry.ElementCount, 1u, 0u, 0, 0u)
+
+            // tear down render
+            DeviceApi.vkCmdEndRendering commandBuffer
+
+            // report drawing
+            Hl.reportDrawCall 1 true
+
+            // advance pipeline
+            Pipeline.advance pipeline.Pipeline
+
+            // advance rendering command buffer when needed
+            advanceCommandBufferWhenNeeded ()
+
+        // abort
+        | None -> Log.warnOnce ("Cannot draw " + getTypeName pipeline + " because VkPipeline does not exist.")
+
     /// Create an irradiance map - the spherical harmonic coefficients (bands 0 through 2) of the irradiance a cube map's
-    /// radiance casts, convolved with the cosine lobe and divided by pi, one per texel of a 9x1 texture.
+    /// radiance casts, convolved with the cosine lobe and divided by pi, one per texel of a 9x1 texture. They're
+    /// projected from the cube map's mip of IrradianceSampleResolution if it has one, otherwise more densely from its
+    /// full resolution.
     let createIrradianceMap (cubeMapSurface : CubeMapSurface) sampler colorFormat irradiancePipeline getCommandBuffer advanceCommandBufferWhenNeeded context =
 
         // create irradiance map
@@ -112,14 +253,22 @@ module LightMap =
                 colorFormat Rgba metadata context
         let irradianceMap = EagerTexture irradianceMapInternal
 
+        // compute sampling
+        let cubeMap = cubeMapSurface.CubeMap
+        let sampleLod = int (MathF.Log2 (single cubeMap.TextureMetadata.TextureWidth / single Constants.Render.IrradianceSampleResolution))
+        let (sampleResolution, sampleLod) =
+            if dec cubeMap.MipLevels >= sampleLod
+            then (Constants.Render.IrradianceSampleResolution, sampleLod)
+            else (Constants.Render.IrradianceSampleResolutionUnmipped, 0)
+
         // compute view and projection that cover the irradiance map with the cube's faces, one fragment per coefficient
         let view = Matrix4x4.Identity
         let projection = Matrix4x4.CreateScale (1.0f, 1.0f, 0.25f) * Matrix4x4.CreateTranslation (0.0f, 0.0f, 0.5f)
 
         // render coefficients to irradiance map
         Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color ColorAttachmentRead ColorAttachmentWrite irradianceMap.Image (getCommandBuffer ())
-        CubeMap.drawCubeMap
-            v3Zero view projection cubeMapSurface.Flipped cubeMapSurface.CubeMap sampler
+        drawIrradiance
+            v3Zero view projection cubeMapSurface.Flipped sampleResolution (single sampleLod) cubeMap sampler
             cubeMapSurface.Geometry resolution irradianceMap.ImageView
             irradiancePipeline getCommandBuffer advanceCommandBufferWhenNeeded context
         Hl.recordTransitionLayout true 1 0 1 VkImageAspectFlags.Color ColorAttachmentWrite ColorAttachmentRead irradianceMap.Image (getCommandBuffer ())

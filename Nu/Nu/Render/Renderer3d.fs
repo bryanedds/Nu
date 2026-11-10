@@ -1550,7 +1550,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
           mutable RenderPassIndex : int
           GeometryInstanced : PhysicallyBasedGeometry HashSet
           mutable SkyBoxPipeline : SkyBoxPipeline
-          mutable IrradiancePipeline : CubeMapPipeline
+          mutable IrradiancePipeline : IrradiancePipeline
           mutable EnvironmentFilterPipeline : EnvironmentFilterPipeline
           mutable PhysicallyBasedPipelines : PhysicallyBasedPipelines
           ShadowMatricesFlipped : Matrix4x4 array
@@ -4063,7 +4063,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                     // render fallback irradiance map
                     let irradianceMap =
                         LightMap.createIrradianceMap
-                            (CubeMapSurface.make fallbackFlipped cubeMap renderer.CubeMapGeometry)
+                            (CubeMapSurface.make (not fallbackFlipped) cubeMap renderer.CubeMapGeometry)
                             renderer.FilteredSampler
                             renderer.IrradianceMap.ImageFormat
                             renderer.IrradiancePipeline
@@ -4120,7 +4120,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
                         // create irradiance map
                         let irradianceMap =
                             LightMap.createIrradianceMap
-                                (CubeMapSurface.make true reflectionMap renderer.CubeMapGeometry)
+                                (CubeMapSurface.make false reflectionMap renderer.CubeMapGeometry)
                                 renderer.FilteredSampler
                                 renderer.IrradianceMap.ImageFormat
                                 renderer.IrradiancePipeline
@@ -5649,7 +5649,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
         // create irradiance pipeline
         let irradianceFormat = Rgba16f
-        let irradiancePipeline = CubeMap.createCubeMapPipeline Constants.Paths.IrradianceShaderFilePath irradianceFormat context
+        let irradiancePipeline = LightMap.createIrradiancePipeline Constants.Paths.IrradianceShaderFilePath irradianceFormat context
 
         // create environment filter pipeline
         let environmentFilterFormat = Rgba16f
@@ -5728,7 +5728,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
         let commandBuffer = Hl.createTransientCommandBuffer context.TransientCommandPool
         let irradianceMap =
             LightMap.createIrradianceMap
-                (CubeMapSurface.make true cubeMap cubeMapGeometry)
+                (CubeMapSurface.make false cubeMap cubeMapGeometry)
                 filteredSampler
                 irradianceFormat
                 irradiancePipeline
@@ -5930,7 +5930,7 @@ type [<ReferenceEquality>] VulkanRenderer3d =
 
             // destroy omnipresent pipelines
             SkyBox.destroySkyBoxPipeline renderer.SkyBoxPipeline renderer.VulkanContext
-            CubeMap.destroyCubeMapPipeline renderer.IrradiancePipeline.Pipeline renderer.VulkanContext
+            LightMap.destroyIrradiancePipeline renderer.IrradiancePipeline renderer.VulkanContext
             LightMap.destroyEnvironmentFilterPipeline renderer.EnvironmentFilterPipeline renderer.VulkanContext
             PhysicallyBased.destroyPhysicallyBasedPipelines renderer.PhysicallyBasedPipelines renderer.VulkanContext
 
