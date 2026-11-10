@@ -725,7 +725,6 @@ module WorldModuleEntity =
                     Log.warn ("Cannot modify declarative protection of entity '" + scstring entity + "'.")
                     false
                 else
-                    let entityState = EntityState.copy entityState
                     entityState.Protection <- value
                     World.publishEntityChange (nameof entityState.Protection) previous value entityState.PublishChangeEvents entity world
                     true
@@ -1305,12 +1304,7 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             let previous = entityState.TimeScaled
             if value <> previous then
-                if world.Imperative then
-                    entityState.TimeScaled <- value
-                else
-                    let entityState = EntityState.copy entityState
-                    entityState.TimeScaled <- value
-                    World.setEntityState entityState entity world
+                entityState.TimeScaled <- value
                 World.publishEntityChange (nameof entityState.TimeScaled) previous value entityState.PublishChangeEvents entity world
                 true
             else false
